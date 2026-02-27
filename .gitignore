@@ -1,0 +1,32 @@
+# ROS build artefacts
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+
+# Bags and generated outputs
+bags/
+figures/
+reports/
+
+# Local logs and dumps
+infer_service/gstshark_*/
+infer_service/*.log
+*.log
+
+# OS / editor
+.DS_Store
+.vscode/
+
+# Vendor / external
+hailo-rpi5-examples/
+
+# Large vendor payloads, keep out of git
+infer_service/opt/
+infer_service/*.deb
+infer_service/*.mcap
+infer_service/*.mp4
+infer_service/resources/hefs/

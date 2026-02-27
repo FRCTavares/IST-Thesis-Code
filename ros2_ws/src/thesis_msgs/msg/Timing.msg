@@ -1,0 +1,10 @@
+uint32 seq
+uint32 frame_id
+int64  pts_ns
+int64  t_pub_ns
+float32 pub_dt_ms
+float32 lat_ms
+float32 recv_ms
+float32 json_ms
+float32 track_ms
+float32 loop_ms
