@@ -1,7 +1,7 @@
-# Daily Log — 2026-02-27 — Tracker Benchmark Harness v0 Working (Week 9, Day 4)
+# Daily Log — 2026-02-27 — Benchmark Harness v0, Repo Cleanup, Smoke Test Baseline (Week 9, Day 4)
 
 ## Goal
-Build a replayable benchmarking harness so the same detections stream can be replayed through different trackers and analysed into a single markdown summary with plots.
+Build a replayable benchmarking harness so the same detections stream can be replayed through different trackers and analysed into a markdown summary with plots.
 
 **Target outcome:**
 - Replayable eval mode (bag play + tracker + selector + record outputs)
@@ -19,7 +19,7 @@ Build a replayable benchmarking harness so the same detections stream can be rep
 | Camera | Not available, tests use bag replay |
 | Host OS | Ubuntu 24.04, ROS 2 Jazzy |
 | Storage | MCAP |
-| Target env | Outdoor tennis court |
+| Repo | `~/Desktop/Thesis-Code` |
 | Targets | Perception 15 FPS, control 30 Hz with prediction, latency budget 200 ms |
 
 ---
@@ -27,131 +27,142 @@ Build a replayable benchmarking harness so the same detections stream can be rep
 ## Work Plan
 
 ### A) Create replayable evaluation mode (core)
-- [x] Created replay runner launch file.
+- [x] Implemented replay runner launch file.
 - Launch plays an input bag and records tracked outputs into a new MCAP bag directory.
 - Outputs recorded: `/tracks`, `/target`, `/timing_tracker`.
-- **Deliverable:** `thesis_bringup/launch/eval_replay.launch.py` ✓
+- Naming: `YYYY-MM-DD__eval__<rawbag>__<tracker>__rN` (collision suffix enabled).
+- **Deliverable:** `ros2_ws/src/thesis_bringup/launch/eval_replay.launch.py` ✓
 - Notes:
-  - `ros2 bag record` prints "Press SPACE", ignore — it always prints this.
-  - Stop with Ctrl-C once; recorder flushes and finalises MCAP cleanly.
+  - `ros2 bag record` always prints "Press SPACE", ignore.
+  - Recorder finalises cleanly on SIGINT, but for replay we will make shutdown automatic (future improvement).
 
 ### B) Define the tracker interface contract
-- [~] Contract drafted (in this log for now), needs to be moved into `thesis_tracker/README.md` tomorrow.
+- [~] Contract drafted, still needs to be moved into `thesis_tracker/README.md`.
 - Contract v0:
-  - Input: `/detections` (Detection2DArray)
-  - Output: `/tracks` (Track2DArray)
-  - Output: `/timing_tracker` (Timing) with `track_ms` populated
-  - Required fields in Timing for v0: `frame_id`, `track_ms`
+  - Input: `/detections` (`vision_msgs/Detection2DArray`)
+  - Output: `/tracks` (`thesis_msgs/Track2DArray`)
+  - Output: `/timing_tracker` (`thesis_msgs/Timing`) with `track_ms` populated
 - Notes:
-  - `Timing` has no header; do not write `tmsg.header`.
+  - `Timing.msg` has no header, do not assign `tmsg.header`.
 
 ### C) Implement metric extraction script v0
-- [x] Created `~/Desktop/Thesis/tools/analyse_bag_tracking.py`
-- Script reads `/target` and `/timing_tracker`, generates:
+- [x] Implemented `tools/analyse_bag_tracking.py`.
+- Reads `/target` + `/timing_tracker`, generates:
   - Target lock continuity (quality-gated)
   - Reacquisition events and timings
-  - Target switches (currently naive, needs debounce fix)
-  - `track_ms` stats and plots
-- Produces `summary.md` + plots:
-  - `target_lock_timeseries.png`
-  - `track_ms_cdf.png`
-  - `reacq_hist.png`
+  - Debounced target switches (k frames)
+  - `track_ms` stats + plots
+- Outputs:
+  - `reports/tracking/<eval_run>/summary.md`
+  - `target_lock_timeseries.png`, `track_ms_cdf.png`, `reacq_hist.png`
 - **Deliverable:** `tools/analyse_bag_tracking.py` ✓
-- Notes:
-  - Target gating rule used: `has_target := (TargetState.quality > 0)`.
 
-### D) Choose tracker candidates today
-- [x] Tracker 1: SORT — already implemented and integrated.
-- [x] Tracker 2: OC-SORT — chosen for stronger occlusion handling with minimal extra compute.
-- [x] Tracker 3: ByteTrack — chosen over transformer trackers for shippable integration and predictable compute.
-- **Deliverable:** Decision rationale to write in `artefacts.md` tomorrow.
+### D) Choose tracker candidates
+- [x] A: SORT (baseline, working)
+- [x] B: OC-SORT (next, occlusion handling)
+- [x] C: ByteTrack (shippable, predictable compute)
+- Rationale to write into `Written Logs/.../artefacts.md` tomorrow.
+
+---
+
+## System organisation work (today)
+- Reorganised workspace layout and outputs:
+  - `bags/raw/`, `bags/eval/`, `reports/timing/`, `reports/tracking/`, `figures/timing/`
+- Removed unwanted git repo in `hailo-rpi5-examples` (now plain folder).
+- Created top-level Git repo for thesis code:
+  - repo name: `Thesis-Code` (`FRCTavares/Thesis-Code`)
+  - tag: `v0.1-smoke`
+  - fixed `.gitignore` to exclude bags, reports, figures, ROS build artefacts, vendor payloads.
+- Set `THESIS_ROOT` env var and updated scripts/launch defaults to use it.
+- Fixed rclpy shutdown instability in `thesis_tracker` (tracker_node crash during eval shutdown).
+- Added SSH key on Pi and switched remote to SSH.
 
 ---
 
 ## Results
 
 ### Deliverables checklist
-- [x] `thesis_bringup/launch/eval_replay.launch.py`
-- [x] `~/Desktop/Thesis/tools/analyse_bag_tracking.py`
-- [ ] Tracker contract moved into `thesis_tracker/README.md` (do tomorrow)
-- [ ] Tracker candidates rationale written into `artefacts.md` (do tomorrow)
+- [x] `ros2_ws/src/thesis_bringup/launch/eval_replay.launch.py`
+- [x] `tools/analyse_bag_tracking.py`
+- [x] `tools/analyse_bag_timing.py` default outputs working under new folders
+- [x] Folder structure + repo pushed + tag `v0.1-smoke`
+- [ ] Tracker contract moved into `thesis_tracker/README.md` (tomorrow)
+- [ ] Tracker candidates rationale in `artefacts.md` (tomorrow)
 
-### Harness commands (verified)
+### Smoke test (end-to-end, verified)
+
+Recorded a new raw bag using a safe recipe (no background job control):
+- Raw bag: `bags/raw/2026-02-27__slice__smoke`
+- Duration: 59.03 s
+- Counts:
+  - `/detections`: 1772
+  - `/timing`: 1772
+  - `/target`: 1772
+  - `/tracks`: 1723
+
+Timing analysis ran successfully:
+- Report: `reports/timing/2026-02-27__slice__smoke__timing.md`
+- Figures: `figures/timing/2026-02-27__slice__smoke/`
+
+Eval replay ran successfully and produced:
+- Eval bag: `bags/eval/2026-02-27__eval__2026-02-27__slice__smoke__sort`
+- Counts:
+  - `/target`: 14129
+  - `/timing_tracker`: 5051
+  - `/tracks`: 6774
+
+Tracking analysis ran successfully:
+- Report: `reports/tracking/2026-02-27__eval__2026-02-27__slice__smoke__sort/summary.md`
+
+### Harness commands (final, verified)
 
 ```bash
-# Replay evaluation and record tracked outputs
-cd ~/Desktop/Thesis/ros2_ws
-colcon build --packages-select thesis_bringup
+export THESIS_ROOT="$HOME/Desktop/Thesis-Code"
+
+# 1) Record raw bag (reliable)
+source "$THESIS_ROOT/ros2_ws/install/setup.bash"
+BAG="$THESIS_ROOT/bags/raw/$(date +%F)__slice__smoke"
+timeout -s SIGINT 60s ros2 bag record --storage mcap -o "$BAG" \
+  --topics /detections /timing /tracks /target
+ros2 bag info "$BAG"
+
+# 2) Timing analysis
+python3 "$THESIS_ROOT/tools/analyse_bag_timing.py" "$BAG"
+
+# 3) Replay eval
+cd "$THESIS_ROOT/ros2_ws"
 source install/setup.bash
+ros2 launch thesis_bringup eval_replay.launch.py bag:="$BAG" tracker:=sort
 
-ros2 launch thesis_bringup eval_replay.launch.py \
-  bag:=/home/francisco/Desktop/Thesis/bags/raw/2026-02-25__slice__primary \
-  tracker:=sort
-
-# Analyse
-cd ~/Desktop/Thesis
-python3 tools/analyse_bag_tracking.py \
-  /home/francisco/Desktop/Thesis/bags/eval/2026-02-27__eval__2026-02-25__slice__primary__sort \
-  --tag sort
+# 4) Tracking analysis (newest eval bag)
+cd "$THESIS_ROOT"
+EVAL_BAG="$(ls -td "$THESIS_ROOT/bags/eval/"*__eval__"$(basename "$BAG")"__sort* | head -n 1)"
+python3 tools/analyse_bag_tracking.py "$EVAL_BAG"
 ```
-
-### Bag used (tracked outputs)
-- Bag: `.../bags/eval/2026-02-27__eval__2026-02-25__slice__primary__sort`
-- Duration: 109.206 s
-- Msg counts:
-  - `/target`: 9389
-  - `/timing_tracker`: 3248
-  - `/tracks`: 6513
-
-### Numbers (SORT baseline, v0)
-
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Target lock continuity (longest) | 108.498 s | quality gate `quality > 0` |
-| Reacquisition events | 3 | likely brief quality blips |
-| Reacq mean / p95 | 0.025 s / 0.041 s | not true occlusion yet |
-| track_ms mean / p50 | 1.946 ms / 0.693 ms | median is good |
-| track_ms p95 / p99 | 9.256 ms / 29.339 ms | heavy tail |
-| track_ms max | 79.806 ms | outlier tail, investigate later |
-| Target switches | 6116 | **invalid metric v0** — needs debounce + semantic meaning for `TargetState.id` |
-
-### Tracker comparison table
-
-| Tracker | Status | Notes |
-|---------|--------|-------|
-| SORT | ✓ Working | Baseline, already implemented |
-| OC-SORT | Pending | Implement Day 28 |
-| ByteTrack | Pending | Implement Day 28 |
-
-### Interpretation (what we learned)
-- Harness is functional end-to-end.
-- SORT update runtime is usually sub-millisecond but has a heavy tail, which matters for latency budgets and control stability.
-- "Target switches" cannot be treated as ID switches yet; the metric needs debounce and `TargetState.id` must be confirmed as a stable identity, not a churning track id.
 
 ---
 
 ## Issues / Risks
-- `Timing` message has no header — ensure tracker node does not assign one.
-- Current "switch count" is not meaningful without debounce and clarified semantics of `TargetState.id`.
-- Runtime tails (p99, max) could impact control loop even if mean is small.
+- If you background `ros2 bag record` (`&`), it can be suspended (`Stopped (tty output)`) and never finalise. Use `timeout -s SIGINT` always.
+- Inference long-run loop inside container still needs a clean "forever" command path; confirm mount path and script entrypoint for repeatability.
+- `Timing` has no header — ensure tracker node does not assign one.
 
 ---
 
 ## Next steps (Day 28)
 
-**Must do**
-- [ ] Move tracker interface contract into `thesis_tracker/README.md` (short and strict).
-- [ ] Fix analysis metric: implement debounced target switches (k=8 frames).
-- [ ] Add a second metric: fraction of time locked (`sum(has_target)/N`) and total lost time.
+**Benchmark harness polish**
+- [ ] Move tracker contract into `ros2_ws/src/thesis_tracker/README.md`.
+- [ ] Add "fraction locked" and "total lost time" metrics to tracking analysis report.
+- [ ] Add automatic shutdown to eval replay when `ros2 bag play` exits (avoid manual Ctrl-C).
 
-**Tracker implementation**
-- [ ] Implement OC-SORT in `thesis_tracker` under same contract (`tracker:=ocsort`).
-- [ ] Implement ByteTrack (or integrate a minimal Python implementation) under same contract (`tracker:=bytetrack`).
-- [ ] Create per-tracker YAML config files and load them via `cfg:=...`.
+**Trackers**
+- [ ] Implement OC-SORT under `tracker:=ocsort` with same output contract.
+- [ ] Implement ByteTrack under `tracker:=bytetrack` with same output contract.
+- [ ] Add per-tracker YAML configs and load via launch.
 
-**Comparative run**
-- [ ] Run the same detections bag through: `sort`, `ocsort`, `bytetrack`.
-- [ ] Produce a single comparison markdown with one table.
+**Comparison run**
+- [ ] Run same raw bag through `sort`, `ocsort`, `bytetrack`, generate one comparison markdown table.
 
 ---
 
