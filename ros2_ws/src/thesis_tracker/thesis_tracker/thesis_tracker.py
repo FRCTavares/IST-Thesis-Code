@@ -155,30 +155,29 @@ class ThesisTrackerNode(Node):
         tmsg.track_ms = float(track_ms)
         self.pub_timing.publish(tmsg)
 
-
 def main(args=None) -> None:
     from rclpy.executors import SingleThreadedExecutor
 
     rclpy.init(args=args)
-    node = None
+    node = ThesisTrackerNode()
     executor = SingleThreadedExecutor()
+    executor.add_node(node)
 
     try:
-        node = ThesisTrackerNode()
-        executor.add_node(node)
         executor.spin()
     except KeyboardInterrupt:
         pass
     finally:
+        # stop executor first, then destroy node
         try:
-            if node is not None:
-                executor.remove_node(node)
-                node.destroy_node()
+            executor.shutdown()
         except Exception:
             pass
-
         try:
-            if rclpy.ok():
-                rclpy.shutdown()
+            node.destroy_node()
+        except Exception:
+            pass
+        try:
+            rclpy.shutdown()
         except Exception:
             pass
