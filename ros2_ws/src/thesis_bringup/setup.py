@@ -12,6 +12,7 @@ setup(
         ("share/ament_index/resource_index/packages", ["resource/thesis_bringup"]),
         ("share/thesis_bringup", ["package.xml"]),
         (os.path.join("share", "thesis_bringup", "launch"), glob("launch/*.launch.py")),
+        (os.path.join("share", "thesis_bringup", "config"), glob("config/*.yaml")),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

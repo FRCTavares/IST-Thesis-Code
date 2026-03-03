@@ -1,0 +1,15 @@
+# SORT (Simple Online and Realtime Tracking) configuration
+# Baseline tracker with Kalman filter + Hungarian IoU matching
+
+tracker_node:
+  ros__parameters:
+    tracker_type: "sort"
+    
+    # Common parameters
+    min_score: 0.35  # Minimum detection confidence to consider
+    
+    # SORT-specific parameters
+    iou_threshold: 0.18  # Minimum IoU for track-detection association
+    max_age: 4           # Maximum frames to keep track alive without matches
+    min_hits: 3          # Minimum hits before track is confirmed
+    centre_gate: 200.0   # Centre distance gating (pixels) for efficient matching

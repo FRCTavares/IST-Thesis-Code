@@ -1,0 +1,16 @@
+# ByteTrack configuration
+# Uses low-confidence detections to rescue tracks during occlusions
+
+tracker_node:
+  ros__parameters:
+    tracker_type: "bytetrack"
+    
+    # Common parameters
+    min_score: 0.35  
+    
+    # ByteTrack-specific parameters
+    track_thresh: 0.5         # High confidence threshold for primary matching
+    match_thresh: 0.25        # Minimum IoU threshold for first-stage matching
+    track_buffer: 30          # Maximum frames to keep lost tracks for recovery
+    det_thresh: 0.2           # Low confidence threshold (below this, ignore detection)
+    second_match_thresh: 0.2  # Minimum IoU threshold for second-stage matching with low-conf dets

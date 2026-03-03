@@ -1,8 +1,14 @@
+import os
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    # Get default SORT config
+    bringup_share = get_package_share_directory("thesis_bringup")
+    tracker_config = os.path.join(bringup_share, "config", "tracker_sort.yaml")
+    
     inference = Node(
         package="thesis_inference_client",
         executable="inference_client_node",
@@ -23,16 +29,9 @@ def generate_launch_description():
     tracker = Node(
         package="thesis_tracker",
         executable="tracker_node",
-        name="thesis_tracker_node",
+        name="tracker_node",
         output="screen",
-        parameters=[
-            {
-                "iou_threshold": 0.18,
-                "max_age": 4,
-                "min_hits": 3,
-                "min_score": 0.35,
-            }
-        ],
+        parameters=[tracker_config],
     )
 
     selector = Node(

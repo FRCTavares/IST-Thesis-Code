@@ -1,0 +1,17 @@
+# OC-SORT (Observation-Centric SORT) configuration
+# SORT with observation-centric momentum and improved occlusion handling
+
+tracker_node:
+  ros__parameters:
+    tracker_type: "ocsort"
+    
+    # Common parameters
+    min_score: 0.35  # Minimum detection confidence to consider
+    
+    # OC-SORT parameters
+    iou_threshold: 0.18      # Primary IoU threshold for matching
+    max_age: 4               # Maximum frames to keep track alive
+    min_hits: 3              # Minimum hits before track is confirmed
+    centre_gate: 200.0       # Centre distance gating (pixels)
+    delta_t: 3               # Frames to look back for second-stage association
+    asso_threshold: 0.1      # Lower IoU threshold for second-stage matching (occlusion recovery)

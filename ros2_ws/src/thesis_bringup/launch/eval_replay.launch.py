@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
@@ -25,23 +26,20 @@ def _setup(context, *args, **kwargs):
 
     os.makedirs(out_root, exist_ok=True)
 
+    # Get config file path based on tracker type
+    bringup_share = get_package_share_directory("thesis_bringup")
+    config_file = os.path.join(bringup_share, "config", f"tracker_{tracker_type}.yaml")
+    
+    # Validate tracker type
+    if not os.path.exists(config_file):
+        raise ValueError(f"Unknown tracker type: {tracker_type}. Config file not found: {config_file}")
+
     tracker = Node(
         package="thesis_tracker",
         executable="tracker_node",
-        name="thesis_tracker_node",
+        name="tracker_node",
         output="screen",
-        parameters=[
-            {
-                # keep your SORT params as defaults
-                "iou_threshold": 0.18,
-                "max_age": 4,
-                "min_hits": 3,
-                "min_score": 0.35,
-
-                # future-proof: switch tracker implementation internally
-                "tracker": tracker_type,
-            }
-        ],
+        parameters=[config_file],
     )
 
     selector = Node(

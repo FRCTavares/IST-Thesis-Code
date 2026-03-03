@@ -24,7 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'tracker_node = thesis_tracker.thesis_tracker:main',
+            'tracker_node = thesis_tracker.tracker_node:main',
+            'thesis_tracker_node = thesis_tracker.thesis_tracker:main',  # Keep old node for compatibility
         ],
     },
 )
