@@ -3,7 +3,8 @@ from datetime import datetime
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, OpaqueFunction, RegisterEventHandler, Shutdown
+from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -69,8 +70,13 @@ def _setup(context, *args, **kwargs):
         output="screen",
     )
 
+    # Shut everything down (recorder, nodes) as soon as bag play exits
+    auto_shutdown = RegisterEventHandler(
+        OnProcessExit(target_action=play, on_exit=[Shutdown()])
+    )
+
     # Order: start nodes, start recorder, then play bag
-    return [tracker, selector, record, echo, play]
+    return [tracker, selector, record, echo, play, auto_shutdown]
 
 
 def generate_launch_description():

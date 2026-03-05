@@ -115,19 +115,19 @@ timeout -s SIGINT 75s ros2 launch thesis_bringup eval_replay_ambiguous.launch.py
 ### C) Extended metrics
 Extend tracking analysis beyond basic stats.
 
-- [ ] Reacquisition time distribution:
+- [x] Reacquisition time distribution:
   - After each occlusion event, measure time until target reacquired
   - Plot histogram of reacquisition times
-- [ ] Switches per minute:
+- [x] Switches per minute:
   - Count number of target switches (proxy for ID switches)
   - Normalize by active tracking time
-- [ ] "Time locked" percentage:
+- [x] "Time locked" percentage:
   - Percentage of time with valid target lock (no `target_lost` events)
   - Higher is better for control stability
-- [ ] Total lost time (s) and time locked % in summary
-- [ ] Switches per minute computed as switches / (duration_s/60)
-- [ ] Update `analyse_bag_tracking.py` or create separate occlusion analysis script
-- **Deliverable:** `reports/tracking/<eval>/summary.md` includes `time_locked_pct` + `switches_per_min` + reacq hist plot
+- [x] Total lost time (s) and time locked % in summary
+- [x] Switches per minute computed as switches / (duration_s/60)
+- [x] Update `analyse_bag_tracking.py` or create separate occlusion analysis script
+- **Deliverable:** `reports/tracking/<eval>/summary.md` includes `time_locked_pct` + `switches_per_min` + reacq hist plot ✓
 - Notes: *(fill)*
 
 ---
@@ -137,7 +137,7 @@ Extend tracking analysis beyond basic stats.
 ### Deliverables checklist
 - [x] `.../detections_occluder_node.py` working (2 modes minimum)
 - [x] `.../detections_ambiguity_node.py` working (synthetic crossing)
-- [ ] `analyse_bag_tracking.py` extended metrics implemented
+- [x] `analyse_bag_tracking.py` extended metrics implemented (`time_locked_pct`, `total_lost_time`, `switches_per_min`, reacq histogram) ✓
 - [x] Results for 2 trackers on both tests (occlusion + ambiguity)
 
 ### Occlusion test parameters
@@ -207,11 +207,11 @@ Extend tracking analysis beyond basic stats.
 ---
 
 ## Next steps (Day 02, March 2)
-- [ ] **Priority:** Implement extended metrics in `analyse_bag_tracking.py`:
-  - [ ] switches/min (normalized by duration)
-  - [ ] time_locked_pct (percentage of time with valid target)
-  - [ ] total_lost_time (sum of all lost intervals)
-  - [ ] reacq histogram plot (distribution of reacquisition times)
+- [x] **Priority:** Implement extended metrics in `analyse_bag_tracking.py` ✓
+  - [x] switches/min (normalized by duration)
+  - [x] time_locked_pct (percentage of time with valid target)
+  - [x] total_lost_time (sum of all lost intervals)
+  - [x] reacq histogram plot (distribution of reacquisition times)
 - [ ] Implement 30 Hz prediction node (control interface stub)
 - [ ] Define controller inputs clearly (ex, ey, ez in pixels, target_valid flag)
 - [ ] Add appearance embedding hook to association logic (placeholder: colour histogram + gradient)

@@ -1,9 +1,12 @@
-# Weekly Summary — W09 (2026-02-24 to 2026-03-02)
+# Weekly Summary — W09 (2026-02-23 to 2026-03-01)
 
 ## Goals for the week
 - [x] Get ROS 2 slice end-to-end (inference → tracker → target selector)
 - [x] Record MCAP bags and generate quantitative timing reports
 - [x] Establish reproducible baseline before camera bringup
+- [x] Benchmarking harness (eval replay + tracking metrics script, 3 tracker candidates)
+- [x] OC-SORT + ByteTrack implemented and compared against SORT
+- [x] Occlusion + ambiguity test protocol with repeatable runs and extended metrics
 
 ## What shipped (bulletproof facts)
 - ROS 2 slice stable: `/detections → /tracks → /target`, plus `/timing` diagnostic topic.
@@ -11,6 +14,11 @@
 - Long-run bag (~465 s) produced with looping inference service (`run_detection_zmq_forever.sh`), gap-filtered active-only analysis confirmed no latency growth across restarts.
 - Added `/timing_tracker` stub; fixed `tracker_node` Ctrl-C crash (executor-based shutdown); made `inference_client_node` restart-safe.
 - All timing figures saved with bag-ID tags (thesis-ready).
+- `eval_replay.launch.py`: replayable harness, auto-shuts down on bag-play exit, collision-safe output naming.
+- OC-SORT and ByteTrack backends implemented; per-tracker YAML configs; comparison report generated.
+- `tools/analyse_bag_tracking.py`: target lock %, total lost time, switches/min, reacq histogram.
+- `detections_occluder_node.py` (periodic + target-centric modes) and `detections_ambiguity_node.py` (synthetic crossing).
+- Tracker candidates rationale locked in `artefacts.md`; tracker interface contract in `thesis_tracker/README.md`.
 
 ## Numbers (primary bag: 2026-02-25__slice__primary, n=3296)
 
@@ -29,31 +37,25 @@
 - Camera (CSI) not connected this week — all tests on pre-recorded video from inference service.
 - `ros2 topic hz` does not accept multiple topics; use bag count÷duration instead.
 
-## Week 9 Ambition Targets (by end of Mar 2)
+## Week 9 Ambition Targets (by end of Mar 1)
 
 Move from "pipeline works" to "outdoor, control-ready demo path" with real novelty hooks.
 
-By end of Day 02 (March 2), you should have:
+By end of Day 06 (March 1), you should have:
 
-1. **Tracker benchmarking harness** (apples-to-apples) with at least 3 trackers:
+1. ✅ **Tracker benchmarking harness** (apples-to-apples) with at least 3 trackers:
    - SORT baseline
-   - OC-SORT (or ByteTrack)
-   - "Attention/transformer style" tracker candidate (realistic, not research rabbit hole)
+   - OC-SORT
+   - ByteTrack
 
-2. **Occlusion + ambiguity test protocol** implemented as repeatable runs:
+2. ✅ **Occlusion + ambiguity test protocol** implemented as repeatable runs:
    - Synthetic occlusion injection in replay
    - Multi-person crossing scenario
-   - Metrics: reacquisition time, target-lock continuity, ID switches proxy
+   - Metrics: reacquisition time, target-lock continuity, switches/min, time_locked_pct
 
-3. **Control interface stub** running at 30 Hz:
-   - Prediction-based output at 30 Hz
-   - Stable even when detections arrive at lower rate
-   - Publishes control setpoints to a dummy topic
+3. ⏩ **Control interface stub** running at 30 Hz — **moved to W10 Day 1 (Mar 2)**
 
-4. **Novelty wedge started**:
-   - Tiny learned embedding hook defined
-   - Working "placeholder embedding pipeline" with interface and logging
-   - Even if embedding is dummy initially
+4. ⏩ **Novelty wedge / embedding hook** — **moved to W10 Day 1 (Mar 2)**
 
 **Target specs:**
 - Outdoor tennis court target environment
@@ -105,23 +107,14 @@ By end of Day 02 (March 2), you should have:
 - At least one repeatable run scenario for ambiguity
 - Plots/tables showing test results for at least 2 trackers
 
-### Day 02 (03-02): Control-ready 30 Hz loop with prediction, and "novelty wedge" hook
-**Outcome:** You publish a 30 Hz control-setpoint topic driven by tracker prediction, and you have an embedding "slot" ready.
+### Day 02 (03-02) — moved to W10
+This day's goals (30 Hz control ref node, embedding hook) fall on March 2 which is W10 Day 1.
+See [W10 daily log](../../W10_2026-03-02_to_03-08/daily/2026-03-02__30hz-control-stub-and-embedding-hook.md).
 
-**Work blocks:**
-- A) 30 Hz prediction node (subscribes `/tracks`, `/target`, outputs `/control_ref` at 30 Hz)
-- B) Define controller inputs clearly (ex, ey, ez in pixels, target_valid flag)
-- C) Novelty wedge starter: add appearance_vec field to association logic with placeholder (colour histogram + gradient)
-
-**Deliverables:**
-- `thesis_control_ref_node`
-- Diagram: detection rate vs tracker update vs controller tick
-- Evidence: `/control_ref` stable at 30 Hz in bag
-- Association code has plug-in for embeddings with logged appearance distance
-
-## Next week plan
+## Next week plan (W10)
+- [ ] 30 Hz control ref node (`thesis_control_ref_node`, `/control_ref` topic)
+- [ ] Appearance embedding hook in tracker association (placeholder: colour histogram)
 - [ ] Replace placeholder with learned embedding
-- [ ] Instrument all nodes with timing metrics
 - [ ] Camera bringup when hardware arrives (CSI ribbon, format, FPS lock)
 - [ ] Finish comprehensive README
 

@@ -26,6 +26,18 @@
 - `figures/timing/loop_ms_cdf_2026-02-25__slice__secondary.png`
 - `figures/timing/pub_dt_ms_timeseries_2026-02-25__slice__secondary.png`
 
+## Tracker Candidates — Rationale and Decision
+
+| Tracker | Chosen role | Rationale |
+|---------|------------|----------|
+| **SORT** | Online baseline (flight-safe) | Lowest compute tail: p95 < 2 ms under target-centric occlusion. Simplest, no extra deps. Default for all live/control runs. Params: `iou=0.18`, `max_age=4`, `min_hits=3`, `min_score=0.35`. |
+| **OC-SORT** | Offline identity experiments | Fewest target switches (28 vs 37 SORT vs 50 ByteTrack) and best p95 runtime (2.71 ms) in clean scenes. Runtime tail explodes under occlusion (p95 11–23 ms). Re-evaluate once ReID embeddings are added. |
+| **ByteTrack** | Reserve / comparison | Two-stage high/low-confidence matching. Most target switches in current test clip (50). No extra deps. Kept for completeness. |
+
+**Decision:** Use **SORT** as baseline tracker for all online and control-coupled runs. Use **OC-SORT** for offline identity-consistency experiments. Re-run comparison after appearance embeddings are integrated.
+
+---
+
 ## Code (paths only)
 - `tools/analyse_bag_timing.py`
 - `infer_service/run_detection_zmq_forever.sh`

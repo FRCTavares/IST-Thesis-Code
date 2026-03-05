@@ -117,7 +117,7 @@ Motion-only comparison, no ground-truth ID metrics yet; next step is occlusion i
 ---
 
 ## Next steps (Day 01, March 1)
-- [ ] Fix `eval_replay.launch.py` to auto-shutdown when bag play exits (remove need for timeout).
+- [x] Fix `eval_replay.launch.py` to auto-shutdown when bag play exits ✓ (`OnProcessExit → Shutdown`).
 - [ ] Add "switches per minute" and "fraction locked" to tracking summary (if not already present).
 - [ ] Implement occlusion injection node for synthetic testing
 - [ ] Design ambiguity test scenario (crossing persons)

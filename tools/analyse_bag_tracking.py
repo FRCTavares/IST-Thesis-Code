@@ -162,6 +162,19 @@ def main():
     reacq = reacq_times(t_s, has)
     switches = target_switches_debounced(has, ids)
 
+    # Extended metrics
+    duration_s = t_s[-1] if len(t_s) > 1 else 0.0
+    switches_per_min = switches / (duration_s / 60.0) if duration_s > 0 else 0.0
+
+    # time_locked_pct: fraction of *time* (not samples) where has=True
+    locked_time_s = sum(
+        t_s[i] - t_s[i - 1] for i in range(1, len(t_s)) if has[i]
+    )
+    total_lost_time_s = sum(
+        t_s[i] - t_s[i - 1] for i in range(1, len(t_s)) if not has[i]
+    )
+    time_locked_pct = 100.0 * locked_time_s / duration_s if duration_s > 0 else 0.0
+
     track_ms = []
     if "/timing_tracker" in data and len(data["/timing_tracker"]) > 0:
         track_ms = [float(x[1].track_ms) for x in data["/timing_tracker"]]
@@ -205,16 +218,19 @@ def main():
     md = []
     md.append(f"# Tracking Summary: {name}\n\n")
     md.append(f"- Bag: `{bag_dir}`\n")
-    md.append(f"- Duration: {t_s[-1]:.3f} s\n")
+    md.append(f"- Duration: {duration_s:.3f} s\n")
     md.append(f"- /target msgs: {len(has)}\n")
     md.append(f"- /timing_tracker msgs: {len(track_ms)}\n\n")
 
     md.append("## Metrics\n")
+    md.append(f"- Time locked: **{time_locked_pct:.1f}%** ({locked_time_s:.1f} s / {duration_s:.1f} s)\n")
+    md.append(f"- Total lost time: **{total_lost_time_s:.3f} s**\n")
     md.append(f"- Target lock continuity (longest): **{continuity:.3f} s**\n")
     md.append(f"- Reacquisition events: **{len(reacq)}**\n")
     if len(reacq) > 0:
         md.append(f"- Reacq mean: **{np.mean(reacq):.3f} s**, p95: **{np.percentile(reacq, 95):.3f} s**\n")
-    md.append(f"- Target switches (id changes while locked): **{switches}**\n\n")
+    md.append(f"- Target switches (id changes while locked): **{switches}**\n")
+    md.append(f"- Switches per minute: **{switches_per_min:.2f}**\n\n")
 
     md.append("## Tracker runtime (/timing_tracker.track_ms)\n")
     if s_track is None:

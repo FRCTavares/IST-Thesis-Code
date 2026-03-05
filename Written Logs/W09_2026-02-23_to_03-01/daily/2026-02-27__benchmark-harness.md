@@ -37,7 +37,7 @@ Build a replayable benchmarking harness so the same detections stream can be rep
   - Recorder finalises cleanly on SIGINT, but for replay we will make shutdown automatic (future improvement).
 
 ### B) Define the tracker interface contract
-- [~] Contract drafted, still needs to be moved into `thesis_tracker/README.md`.
+- [x] Contract drafted and written into `thesis_tracker/README.md` (input `/detections`, outputs `/tracks` + `/timing_tracker` with `track_ms`).
 - Contract v0:
   - Input: `/detections` (`vision_msgs/Detection2DArray`)
   - Output: `/tracks` (`thesis_msgs/Track2DArray`)
@@ -86,8 +86,8 @@ Build a replayable benchmarking harness so the same detections stream can be rep
 - [x] `tools/analyse_bag_tracking.py`
 - [x] `tools/analyse_bag_timing.py` default outputs working under new folders
 - [x] Folder structure + repo pushed + tag `v0.1-smoke`
-- [ ] Tracker contract moved into `thesis_tracker/README.md` (tomorrow)
-- [ ] Tracker candidates rationale in `artefacts.md` (tomorrow)
+- [x] Tracker contract in `thesis_tracker/README.md` ✓
+- [x] Tracker candidates rationale in `artefacts.md` ✓
 
 ### Smoke test (end-to-end, verified)
 
@@ -152,9 +152,10 @@ python3 tools/analyse_bag_tracking.py "$EVAL_BAG"
 ## Next steps (Day 28)
 
 **Benchmark harness polish**
-- [ ] Move tracker contract into `ros2_ws/src/thesis_tracker/README.md`.
-- [ ] Add "fraction locked" and "total lost time" metrics to tracking analysis report.
-- [ ] Add automatic shutdown to eval replay when `ros2 bag play` exits (avoid manual Ctrl-C).
+- [x] Tracker contract in `ros2_ws/src/thesis_tracker/README.md` ✓
+- [x] Tracker candidates rationale in `artefacts.md` ✓
+- [x] Add "fraction locked" and "total lost time" metrics to tracking analysis report ✓
+- [x] Add automatic shutdown to eval replay when `ros2 bag play` exits ✓
 
 **Trackers**
 - [ ] Implement OC-SORT under `tracker:=ocsort` with same output contract.
