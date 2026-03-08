@@ -3,6 +3,7 @@ ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
 
+
 # Python cache
 **/__pycache__/
 **/*.pyc
@@ -11,6 +12,7 @@ ros2_ws/log/
 bags/
 figures/
 reports/
+log
 
 # Local logs and dumps
 infer_service/gstshark_*/

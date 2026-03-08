@@ -29,6 +29,7 @@ setup(
         "console_scripts": [
             "detections_occluder_node = thesis_bringup.nodes.detections_occluder_node:main",
             "detections_ambiguity_node = thesis_bringup.nodes.detections_ambiguity_node:main",
+            "camera_init_node = thesis_bringup.nodes.camera_init_node:main",
         ],
     },
 )
