@@ -9,6 +9,7 @@ from pathlib import Path
 
 import rclpy
 from rclpy.lifecycle import LifecycleNode, LifecycleState, TransitionCallbackReturn
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
 from std_msgs.msg import String
 
 
@@ -18,15 +19,19 @@ class CameraInitNode(LifecycleNode):
 
         self.declare_parameter("device", "/dev/video0")
         self.declare_parameter("media_dev", "/dev/media0")
+        self.declare_parameter("sensor_subdev", "/dev/v4l-subdev2")
+
         self.declare_parameter("width", 1920)
         self.declare_parameter("height", 1080)
-        self.declare_parameter("pixel_format", "UYVY")
-        self.declare_parameter("sensor_entity", "tevs 10-0048")
-        self.declare_parameter("csi_entity", "rp1-cfe-csi2_ch0")
+
+        self.declare_parameter("sensor_entity", "tevs 11-0048")
+        self.declare_parameter("csi_entity", "csi2")
+        self.declare_parameter("csi_source_pad", 4)
+        self.declare_parameter("video_entity", "rp1-cfe-csi2_ch0")
+
         self.declare_parameter("trigger_mode", 0)
-        self.declare_parameter("verify_stream", True)
-        self.declare_parameter("stream_count", 5)
         self.declare_parameter("command_delay_s", 0.10)
+        self.declare_parameter("command_timeout_s", 5.0)
 
         self._status_pub = None
 
@@ -37,36 +42,22 @@ class CameraInitNode(LifecycleNode):
             self._check_binaries()
             self._check_devices()
             self._init_media_pipeline()
-            self._verify_format()
-            if self.get_parameter("verify_stream").value:
-                self._verify_streaming()
 
-            self._status_pub = self.create_publisher(String, "/camera/status", 10)
+            qos = QoSProfile(depth=1)
+            qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
+            qos.reliability = ReliabilityPolicy.RELIABLE
+            self._status_pub = self.create_publisher(String, "/camera/status", qos)
+
+            msg = String()
+            msg.data = "ready"
+            self._status_pub.publish(msg)
+
             self.get_logger().info("TEVS camera configured successfully")
             return TransitionCallbackReturn.SUCCESS
 
         except Exception as exc:
             self.get_logger().error(f"Camera configuration failed: {exc}")
             return TransitionCallbackReturn.FAILURE
-
-    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("Activating camera_init_node")
-
-        if self._status_pub is not None:
-            self._status_pub.on_activate()
-            msg = String()
-            msg.data = "ready"
-            self._status_pub.publish(msg)
-
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.get_logger().info("Deactivating camera_init_node")
-
-        if self._status_pub is not None:
-            self._status_pub.on_deactivate()
-
-        return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
         self.get_logger().info("Cleaning up camera_init_node")
@@ -81,20 +72,27 @@ class CameraInitNode(LifecycleNode):
     def _check_devices(self) -> None:
         device = Path(self.get_parameter("device").value)
         media_dev = Path(self.get_parameter("media_dev").value)
+        sensor_subdev = Path(self.get_parameter("sensor_subdev").value)
 
         if not device.exists():
             raise RuntimeError(f"Camera device not found: {device}")
         if not media_dev.exists():
             raise RuntimeError(f"Media device not found: {media_dev}")
+        if not sensor_subdev.exists():
+            raise RuntimeError(f"Sensor subdevice not found: {sensor_subdev}")
 
     def _init_media_pipeline(self) -> None:
         media_dev = self.get_parameter("media_dev").value
-        device = self.get_parameter("device").value
+        sensor_subdev = self.get_parameter("sensor_subdev").value
+
         width = int(self.get_parameter("width").value)
         height = int(self.get_parameter("height").value)
-        pixel_format = self.get_parameter("pixel_format").value
+
         sensor_entity = self.get_parameter("sensor_entity").value
         csi_entity = self.get_parameter("csi_entity").value
+        csi_source_pad = int(self.get_parameter("csi_source_pad").value)
+        video_entity = self.get_parameter("video_entity").value
+
         trigger_mode = int(self.get_parameter("trigger_mode").value)
         delay_s = float(self.get_parameter("command_delay_s").value)
 
@@ -104,53 +102,16 @@ class CameraInitNode(LifecycleNode):
         )
 
         commands = [
-            f"media-ctl -d {media_dev} --reset",
-            f"media-ctl -d {media_dev} -l '\"{sensor_entity}\":0 -> \"{csi_entity}\":0[1]'",
             f"media-ctl -d {media_dev} -V '\"{sensor_entity}\":0 [{fmt_string}]'",
             f"media-ctl -d {media_dev} -V '\"{csi_entity}\":0 [{fmt_string}]'",
-            f"v4l2-ctl -d {device} --set-fmt-video=width={width},height={height},pixelformat={pixel_format}",
-            f"v4l2-ctl -d {device} --set-ctrl=trigger_mode={trigger_mode}",
+            f"media-ctl -d {media_dev} -V '\"{csi_entity}\":{csi_source_pad} [{fmt_string}]'",
+            f"media-ctl -d {media_dev} -l '\"{csi_entity}\":{csi_source_pad} -> \"{video_entity}\":0 [1]'",
+            f"v4l2-ctl -d {sensor_subdev} --set-ctrl=trigger_mode={trigger_mode}",
         ]
 
         for cmd in commands:
             self._run_shell(cmd)
             time.sleep(delay_s)
-
-    def _verify_format(self) -> None:
-        device = self.get_parameter("device").value
-        width = int(self.get_parameter("width").value)
-        height = int(self.get_parameter("height").value)
-        pixel_format = self.get_parameter("pixel_format").value
-
-        result = self._run_shell(
-            f"v4l2-ctl -d {device} --get-fmt-video",
-            capture_output=True,
-        )
-
-        stdout = result.stdout
-
-        if pixel_format not in stdout:
-            raise RuntimeError(
-                f"Unexpected pixel format after init. Expected {pixel_format}. Output:\n{stdout}"
-            )
-
-        expected_size = f"Width/Height      : {width}/{height}"
-        if expected_size not in stdout and f"{width}/{height}" not in stdout:
-            raise RuntimeError(
-                f"Unexpected resolution after init. Expected {width}x{height}. Output:\n{stdout}"
-            )
-
-        self.get_logger().info("Format verification passed")
-
-    def _verify_streaming(self) -> None:
-        device = self.get_parameter("device").value
-        stream_count = int(self.get_parameter("stream_count").value)
-
-        self._run_shell(
-            f"v4l2-ctl -d {device} --stream-mmap=3 --stream-count={stream_count}",
-            capture_output=True,
-        )
-        self.get_logger().info("Streaming verification passed")
 
     def _run_shell(
         self,
@@ -160,13 +121,19 @@ class CameraInitNode(LifecycleNode):
     ) -> subprocess.CompletedProcess:
         self.get_logger().info(f"Running: {cmd}")
 
-        result = subprocess.run(
-            cmd,
-            shell=True,
-            check=False,
-            text=True,
-            capture_output=capture_output,
-        )
+        timeout_s = float(self.get_parameter("command_timeout_s").value)
+
+        try:
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                check=False,
+                text=True,
+                capture_output=capture_output,
+                timeout=timeout_s,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(f"Command timed out after {exc.timeout}s\nCMD: {cmd}") from exc
 
         if result.returncode != 0:
             stderr = result.stderr.strip() if result.stderr else ""
@@ -186,12 +153,19 @@ def main(args=None) -> None:
     node = CameraInitNode()
 
     try:
+        result = node.trigger_configure()
+        if result != TransitionCallbackReturn.SUCCESS:
+            raise RuntimeError("camera_init_node failed to configure")
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        try:
+            node.destroy_node()
+        except Exception:
+            pass
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":
