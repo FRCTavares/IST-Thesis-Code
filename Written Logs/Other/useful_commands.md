@@ -1,11 +1,17 @@
 # Useful Commands — Thesis Project
 
 Quick reference for the most important commands used across the thesis work.
-Organised by task area. All host commands assume `~/Desktop/Thesis` unless noted.
+Organized by workflow: live camera (primary) and file-based replay (baseline/eval).
+
+**Path conventions:** All commands assume `~/Desktop/Thesis-Code` unless noted.
+
+**Important timing note:** `track_ms` inside `/timing` is currently always 0.0 (not authoritative). Real tracker runtime is in `/timing_tracker` topic.
 
 ---
 
-## 1. Golden State Check (run before any session)
+---
+
+## 1. Golden State Check (Run Before Any Session)
 
 ```bash
 # Host — verify Hailo driver
@@ -29,120 +35,165 @@ docker exec pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 \
 docker exec pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 \
   ls /root/thesis_service/resources/hefs/yolov6n_hailo8.hef
 
-# Container — safe test clip present
-docker exec pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 \
-  ls /root/thesis_service/example_640_x10_safe.mp4
+# Host — camera device permissions (live camera only)
+ls -l /dev/video0
+# should be accessible by user or add user to video group: sudo usermod -a -G video $USER
 
-# Host — ZMQ port not already bound
-ss -ltnp | grep 5555 || true
-```
-I
----
-
-## 2. Docker Container
-
-```bash
-# Start container
-cd ~/pi-ai-kit-ubuntu
-docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
-
-# Shell into container
-docker compose -f docker-compose.yaml exec hailo-ubuntu-pi bash
-# or:
-docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash
-
-# Run a one-off command in the container
-docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash -lc 'hailortcli scan'
-
-# Stop / restart container
-docker compose -f docker-compose.yaml stop hailo-ubuntu-pi
-docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
+# Host — ZMQ ports not already bound
+ss -ltnp | grep 5555 || true  # file-based service
+ss -ltnp | grep 5556 || true  # live camera service
 ```
 
 ---
 
-## 3. Inference Service (Container)
+## 2. Build ROS 2 Workspace
 
 ```bash
-# Standard run (single clip, stops at EOS ~110 s)
-docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash -lc '
-  cd /root/thesis_service
-  ./run_detection_zmq.sh
-'
+cd ~/Desktop/Thesis-Code/ros2_ws
 
-# Looping / forever mode (for long runs / bags)
-docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash -lc '
-  cd /root/thesis_service
-  ./run_detection_zmq_forever.sh
-'
+# Recommended: symlink-install for faster Python iteration
+colcon build --symlink-install \
+  --packages-up-to thesis_bringup thesis_inference_client thesis_tracker \
+  thesis_target_selector thesis_msgs
 
-# With custom video source
-export HAILO_VIDEO_SINK=fakesink
-export HAILO_LOOP_VIDEO=0
-export HAILO_VIDEO_SOURCE=/root/thesis_service/resources/example_640_x10.mp4
-./run_detection_zmq.sh
-
-# Baseline inference benchmark (no service, direct pipeline)
-cd /root/hailo-rpi5-examples && source ./setup_env.sh
-timeout 10s python3 -m basic_pipelines.detection_simple \
-  --input /usr/local/hailo/resources/videos/example_640.mp4 \
-  --hef-path /usr/local/hailo/resources/models/hailo8/yolov6n.hef \
-  --show-fps --disable-sync --frame-rate 30
-```
-
----
-
-## 4. ROS 2 Workspace Build
-
-```bash
-cd ~/Desktop/Thesis/ros2_ws
-
-# Build specific packages
-colcon build --packages-select thesis_msgs
-colcon build --packages-select thesis_inference_client thesis_tracker \
-  thesis_target_selector thesis_bringup
-
-# Build everything
-colcon build
-
-# Source workspace (required after every build, every new terminal)
+# Source workspace (required after build, in every new terminal)
 source install/setup.bash
 ```
 
 ---
 
-## 5. ROS 2 Launch
+## 3. File-Based Inference Service — Replay and Baseline Work Only
+
+**Port:** 5555 (not used for live camera)
+
+**Use cases:** Tracker evaluation replay, baseline timing comparisons, initial testing.
+
+### Start File-Based Service
 
 ```bash
-cd ~/Desktop/Thesis/ros2_ws && source install/setup.bash
+# Looping mode (for long runs / bags)
+docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash -lc '
+  cd /root/thesis_service && ./run_detection_zmq_forever.sh
+'
+
+# Single clip mode (stops at EOS ~110s)
+docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash -lc '
+  cd /root/thesis_service && ./run_detection_zmq.sh
+'
+```
+
+### Launch File-Based Pipeline
+
+```bash
+cd ~/Desktop/Thesis-Code/ros2_ws && source install/setup.bash
+export RMW_FASTRTPS_USE_SHM=0
 
 # Full pipeline (inference → tracker → target selector)
 ros2 launch thesis_bringup first_ros2_slice.launch.py
 
-# Tracker evaluation replay (swap tracker with arg)
+# Tracker evaluation replay (swap tracker algorithm)
 ros2 launch thesis_bringup eval_replay.launch.py \
   bag:=bags/raw/eval_bag tracker:=sort
+```
 
-ros2 launch thesis_bringup eval_replay.launch.py \
-  bag:=bags/raw/eval_bag tracker:=ocsort
+### Record File-Based Bag
 
-# Run individual nodes
-ros2 run thesis_inference_client inference_client_node --ros-args \
-  -p addr:=tcp://127.0.0.1:5555 -p topic:=dets \
-  -p img_w:=640 -p img_h:=640 -p min_score:=0.35 -p conflate:=true
+```bash
+cd ~/Desktop/Thesis-Code/bags/raw
+export RMW_FASTRTPS_USE_SHM=0
+
+ros2 bag record --storage mcap \
+  --topics /detections /tracks /target /timing /timing_tracker
+
+# After Ctrl-C: rename to convention YYYY-MM-DD__slice__<tag>
 ```
 
 ---
 
-## 6. ROS 2 Inspection
+## 4. Live Camera Stack — Normal Startup (Port 5556)
+
+This is the **primary workflow** for live camera validation and outdoor testing.
+
+### Terminal 1 — Camera Init
 
 ```bash
-# Topic rates
-ros2 topic hz /detections
-ros2 topic hz /tracks
-ros2 topic hz /target
+cd ~/Desktop/Thesis-Code/ros2_ws
+source install/setup.bash
+ros2 run thesis_bringup camera_init_node
+```
 
-# Single message inspection
+### Terminal 2 — Camera Capture
+
+```bash
+cd ~/Desktop/Thesis-Code/ros2_ws
+source install/setup.bash
+ros2 run thesis_bringup camera_capture_node
+```
+
+### Terminal 3 — Container Live Inference Service
+
+```bash
+# Enter container first
+docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash
+
+# Inside container:
+VENV=/root/hailo-rpi5-examples/venv_hailo_rpi_examples
+export PYTHONPATH=/root/hailo-rpi5-examples:${PYTHONPATH:-}
+cd /root/thesis_service
+
+export HAILO_FRAME_SOURCE=ros
+export HAILO_REQREP_BIND=tcp://0.0.0.0:5556
+export HAILO_INFER_WIDTH=640
+export HAILO_INFER_HEIGHT=640
+export HAILO_VIDEO_SINK=fakesink
+export HAILO_POST_FUNC=filter
+
+$VENV/bin/python /root/thesis_service/detection_zmq.py
+```
+
+### Terminal 4 — Inference Client
+
+```bash
+cd ~/Desktop/Thesis-Code/ros2_ws
+source install/setup.bash
+ros2 run thesis_inference_client inference_client_node --ros-args \
+  -p image_topic:=/camera/image_raw \
+  -p addr:=tcp://127.0.0.1:5556 \
+  -p queue_size:=1 \
+  -p img_w:=640 \
+  -p img_h:=640 \
+  -p min_score:=0.35
+```
+
+### Terminal 5 — Tracker
+
+```bash
+cd ~/Desktop/Thesis-Code/ros2_ws
+source install/setup.bash
+ros2 run thesis_tracker tracker_node
+```
+
+### Terminal 6 — Target Selector
+
+```bash
+cd ~/Desktop/Thesis-Code/ros2_ws
+source install/setup.bash
+ros2 run thesis_target_selector target_selector_node
+```
+
+---
+
+## 5. One-Shot Validation Checks (Debug Only)
+
+**Use for health checks only. Do NOT leave these running during bag recording — they add subscriber load and can distort measurements.**
+
+```bash
+cd ~/Desktop/Thesis-Code/ros2_ws
+source install/setup.bash
+
+# One-shot topic inspection (safe, use freely)
+ros2 topic echo /camera/fps --once
+ros2 topic echo /detections --once
 ros2 topic echo /tracks --once
 ros2 topic echo /target --once
 ros2 topic echo /timing --once
@@ -150,63 +201,68 @@ ros2 topic echo /timing --once
 # Message interfaces
 ros2 interface show thesis_msgs/msg/Timing
 ros2 interface show thesis_msgs/msg/Detection
+ros2 interface show thesis_msgs/msg/Track
+ros2 interface show thesis_msgs/msg/Target
 
-# Node / topic graph
+# Node list
 ros2 node list
 ros2 topic list
 
-# Bag metadata
-ros2 bag info bags/raw/2026-02-25__slice__primary
+# Rate monitoring (ADDS LOAD — close terminal before bag recording)
+ros2 topic hz /detections  # stop before recording
+ros2 topic hz /tracks      # stop before recording
+ros2 topic hz /target      # stop before recording
 ```
 
 ---
 
-## 7. Bag Recording
+## 6. Bag Recording
+
+### Live Camera Bag
 
 ```bash
-cd ~/Desktop/Thesis/bags/raw
-export RMW_FASTRTPS_USE_SHM=0   # suppress SHM warning
+cd ~/Desktop/Thesis-Code/ros2_ws
+source install/setup.bash
+export RMW_FASTRTPS_USE_SHM=0
 
-# Record all thesis topics (MCAP)
 ros2 bag record --storage mcap \
-  --topics /detections /tracks /target /timing /timing_tracker
+  -o ../bags/live_camera/2026-03-10__stability_10min \
+  /camera/fps \
+  /detections \
+  /timing \
+  /tracks \
+  /timing_tracker \
+  /target
 
-# Record detections only (for eval replay input)
-ros2 bag record --storage mcap -o detections_only /detections /timing
+# Run for target duration (e.g., 8-10 minutes for stress test)
+# Stop cleanly with Ctrl-C (SIGINT)
+```
 
-# Stop gracefully — always use SIGINT to ensure metadata is written
-# (Ctrl-C in the terminal, or:)
-kill -SIGINT <bag_record_pid>
+### Bag Inspection
 
-# Rename to convention immediately after recording:
-#   Raw:  YYYY-MM-DD__slice__<tag>
-#   Eval: produced automatically by eval_replay.launch.py into bags/eval/
-# Example:
-mv rosbag2_2026_02_27-16_30_00 2026-02-27__slice__<tag>
-
-# Inspect a bag
+```bash
 ros2 bag info bags/raw/2026-02-26__slice__primary
+ros2 bag info bags/live_camera/2026-03-10__stability_10min
 ```
 
 ---
 
-## 8. Offline Analysis
+## 7. Offline Timing Analysis
 
 ```bash
-cd ~/Desktop/Thesis
+cd ~/Desktop/Thesis-Code
 
-# Timing analysis (lat_ms, loop_ms, pub_dt_ms, track_ms — stats + figures)
-python3 tools/analyse_bag_timing.py bags/raw/2026-02-25__slice__primary
+# Normal timing analysis (lat_ms, loop_ms, pub_dt_ms from /timing + track_ms from /timing_tracker)
+python3 tools/analyse_bag_timing.py bags/live_camera/2026-03-10__stability_10min \
+  --out reports/timing/W11_2026-03-10__stability_10min.md \
+  --figdir figures/timing/
 
-# With options (output to reports/timing/, figures to figures/)
+# Gap-filtered analysis (exclude restarts, only active runs)
 python3 tools/analyse_bag_timing.py bags/raw/2026-02-25__slice__primary \
-  --out reports/timing/2026-02-26__timing_summary.md --figdir figures/timing/
+  --gap-ms 100 \
+  --out reports/timing/2026-02-26__timing_summary_active_only.md
 
-# Active-only analysis (gap filter to exclude restarts)
-python3 tools/analyse_bag_timing.py bags/raw/2026-02-25__slice__primary \
-  --gap-ms 100 --out reports/timing/2026-02-26__timing_summary_longrun.md
-
-# Tracker metrics analysis (output goes to reports/tracking/<run_dir>/)
+# Tracker metrics analysis (HOTA, IDF1, MOTA from ground truth comparison)
 python3 tools/analyse_bag_tracking.py \
   bags/eval/2026-02-27__eval__2026-02-25__slice__primary__sort \
   --tag sort
@@ -214,10 +270,104 @@ python3 tools/analyse_bag_tracking.py \
 
 ---
 
-## 9. ZMQ Quick Validation (Host Python one-liners)
+## 8. Thermal and Resource Monitoring
 
 ```bash
-# Receive one detection frame and print it
+# Current temperature (Pi 5)
+vcgencmd measure_temp
+
+# Check for throttling events
+vcgencmd get_throttled
+# 0x0 = no throttling, any other value = throttling occurred
+
+# Continuous temperature logging (every 30s for 10 minutes)
+cd ~/Desktop/Thesis-Code/reports/system
+for i in {1..20}; do
+  echo "$(date +%s) $(vcgencmd measure_temp | cut -d= -f2)" | tee -a thermal_log_$(date +%Y%m%d).txt
+  sleep 30
+done
+
+# Resource usage monitoring
+htop  # interactive
+top -b -d 30 -n 20 > resource_log.txt  # batch: 30s intervals, 20 samples
+
+# Memory usage
+free -h
+
+# Process memory monitoring (check for leaks)
+watch -n 5 'ps aux | grep -E "camera_capture|inference_client|tracker_node"'
+
+# Disk space
+df -h ~/Desktop/Thesis-Code/bags
+
+# ZMQ connection status
+ss -ltnp | grep -E "5555|5556"
+```
+
+---
+
+## 9. Key Frozen Parameters
+
+| Parameter | Value | Context |
+|-----------|-------|---------|
+| `iou` | 0.18 | SORT tracker |
+| `max_age` | 4 | SORT tracker |
+| `min_hits` | 3 | SORT tracker |
+| `min_score` | 0.35 | Detection confidence threshold |
+| ZMQ port (file-based) | 5555 | Service → host (file replay) |
+| ZMQ port (live camera) | 5556 | Service → host (live camera) |
+| Hailo driver | 4.20.0 | **Do not update kernel — will break driver** |
+| HEF | `yolov6n_hailo8.hef` | Confirmed working at ~30 Hz |
+| Bag format | MCAP | Always pass `--storage mcap` |
+| File-based inference rate | ~30 Hz | Pre-camera baseline |
+| Live camera target | ≥15 Hz | Sustained rate on all topics |
+| Latency target (excellent) | p95 ≤120 ms | End-to-end |
+| Latency target (acceptable) | p95 ≤200 ms | End-to-end |
+
+---
+
+## 10. Troubleshooting and Recovery
+
+### Docker Container Management
+
+```bash
+# Start container
+cd ~/pi-ai-kit-ubuntu
+docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
+
+# Shell into container
+docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash
+
+# Stop / restart container
+docker compose -f docker-compose.yaml stop hailo-ubuntu-pi
+docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
+```
+
+### Container One-Time Setup (Recovery Only)
+
+**These are recovery commands, not normal workflow. Only run if golden state check fails.**
+
+```bash
+# Inside container only:
+
+# Fix hailonet SONAME mismatch (if gst-inspect-1.0 hailonet fails)
+ln -sf /lib/libhailort.so.4.20.0 /lib/libhailort.so.4.17.0 && ldconfig
+
+# Install TAPPAS core (if missing)
+apt-get install -y pkg-config hailo-tappas-core
+
+# Download HEFs and resources (if missing)
+cd /root/hailo-rpi5-examples && ./download_resources.sh --all
+
+# Symlink YOLO postprocess SO (if missing)
+ln -sf /usr/lib/aarch64-linux-gnu/hailo/tappas/post_processes/libyolo_hailortpp_post.so \
+  /usr/local/hailo/resources/so/libyolo_hailortpp_postprocess.so && ldconfig
+```
+
+### ZMQ Quick Validation (Debug)
+
+```bash
+# Receive one detection frame (file-based, port 5555)
 python3 - <<'PY'
 import zmq, json
 ctx = zmq.Context.instance()
@@ -230,14 +380,27 @@ print("n_dets:", len(msg.get("dets", [])))
 print("sample:", msg.get("dets", [])[:2])
 PY
 
-# Pub-dt stall detector
+# Same for live camera service (port 5556)
+python3 - <<'PY'
+import zmq, json
+ctx = zmq.Context.instance()
+s = ctx.socket(zmq.SUB)
+s.setsockopt(zmq.SUBSCRIBE, b"dets")
+s.connect("tcp://127.0.0.1:5556")
+topic, payload = s.recv_multipart()
+msg = json.loads(payload.decode())
+print("n_dets:", len(msg.get("dets", [])))
+print("sample:", msg.get("dets", [])[:2])
+PY
+
+# Pub-dt stall detector (debug timing issues)
 python3 - <<'PY'
 import zmq, json, time
 ctx = zmq.Context.instance()
 s = ctx.socket(zmq.SUB)
 s.setsockopt(zmq.SUBSCRIBE, b"dets")
 s.setsockopt(zmq.RCVTIMEO, 3000)
-s.connect("tcp://127.0.0.1:5555")
+s.connect("tcp://127.0.0.1:5556")  # or 5555 for file-based
 last_t = None
 while True:
     try:
@@ -254,96 +417,13 @@ while True:
 PY
 ```
 
----
-
-## 10. Host Client Tester (`host_client/client_tester.py`)
+### Baseline Inference Benchmark (Debug Performance)
 
 ```bash
-cd ~/Desktop/Thesis/host_client
-
-# Baseline run (frozen SORT params)
-./client_tester.py \
-  --addr tcp://127.0.0.1:5555 --topic dets \
-  --w 640 --h 640 \
-  --iou 0.18 --max_age 4 --min_hits 3 --min_score 0.35 \
-  --print_every 60
-
-# With timing record and GC disabled
-./client_tester.py \
-  --addr tcp://127.0.0.1:5555 --topic dets \
-  --w 640 --h 640 \
-  --iou 0.18 --max_age 4 --min_hits 3 --min_score 0.35 \
-  --print_every 60 --gc_disable --timing \
-  --record run_$(date +%Y%m%d_%H%M%S).jsonl
-```
-
----
-
-## 11. Container Setup / Troubleshooting
-
-```bash
-# Fix hailonet SONAME mismatch
-ln -sf /lib/libhailort.so.4.20.0 /lib/libhailort.so.4.17.0 && ldconfig
-
-# Install TAPPAS core
-apt-get install -y pkg-config hailo-tappas-core
-
-# Download HEFs and resources
-cd /root/hailo-rpi5-examples && ./download_resources.sh --all
-
-# Symlink YOLO postprocess SO
-ln -sf /usr/lib/aarch64-linux-gnu/hailo/tappas/post_processes/libyolo_hailortpp_post.so \
-  /usr/local/hailo/resources/so/libyolo_hailortpp_postprocess.so && ldconfig
-
-# Source hailo-rpi5-examples env (required inside container before any pipeline call)
+# Inside container: direct pipeline (no ZMQ, no ROS overhead)
 cd /root/hailo-rpi5-examples && source ./setup_env.sh
-
-# Create extended test clip (10× loop, no re-encode)
-ffmpeg -stream_loop 9 -i example_640.mp4 -c copy example_640_x10.mp4
-```
-
----
-
-## 12. Key Frozen Parameters
-
-| Parameter | Value | Context |
-|-----------|-------|---------|
-| `iou` | 0.18 | SORT tracker |
-| `max_age` | 4 | SORT tracker |
-| `min_hits` | 3 | SORT tracker |
-| `min_score` | 0.35 | Detection confidence threshold |
-| ZMQ port | 5555 | Service → host |
-| ZMQ topic | `b"dets"` | Multipart frame: `[topic, payload]` |
-| Hailo driver | 4.20.0 | **Do not update kernel — will break driver** |
-| HEF | `yolov6n_hailo8.hef` | Confirmed working at ~30 Hz |
-| Bag format | MCAP | Always pass `--storage mcap` |
-| Inference rate | ~30 Hz | Pre-camera baseline |
-| Control rate target | 30 Hz | `/control_ref` output rate |
-| Latency target | p95 ≤ 200 ms | End-to-end |
-
----
-
-## 13. Typical Session Startup (Full Pipeline)
-
-```bash
-# Terminal 1 — start inference service
-docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash -lc '
-  cd /root/thesis_service && ./run_detection_zmq_forever.sh
-'
-
-# Terminal 2 — build + launch ROS 2 slice
-cd ~/Desktop/Thesis/ros2_ws
-colcon build && source install/setup.bash
-export RMW_FASTRTPS_USE_SHM=0
-ros2 launch thesis_bringup first_ros2_slice.launch.py
-
-# Terminal 3 — record bag (rename immediately after Ctrl-C)
-cd ~/Desktop/Thesis/bags/raw
-export RMW_FASTRTPS_USE_SHM=0
-ros2 bag record --storage mcap \
-  --topics /detections /tracks /target /timing /timing_tracker
-# After recording: mv rosbag2_<timestamp> YYYY-MM-DD__slice__<tag>
-
-# Terminal 4 — validate topics live
-ros2 topic hz /detections /tracks /target
+timeout 10s python3 -m basic_pipelines.detection_simple \
+  --input /usr/local/hailo/resources/videos/example_640.mp4 \
+  --hef-path /usr/local/hailo/resources/models/hailo8/yolov6n.hef \
+  --show-fps --disable-sync --frame-rate 30
 ```

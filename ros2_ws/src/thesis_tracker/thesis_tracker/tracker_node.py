@@ -183,39 +183,9 @@ class TrackerNode(Node):
             tbox = track.bbox_xyxy
             cx, cy, w, h = xyxy_to_cxcywh(tbox)
 
-            # ByteTrack carries scores itself. SORT and OC-SORT do not, so
-            # recover a per-frame score from the best-IoU matched detection.
-            best_score = float(track.score)
-
-            if best_score <= 0.0 and det_boxes:
-                best_iou = 0.0
-                best_i = -1
-
-                tx1, ty1, tx2, ty2 = tbox
-                t_area = max(0.0, tx2 - tx1) * max(0.0, ty2 - ty1)
-
-                for i, dbox in enumerate(det_boxes):
-                    dx1, dy1, dx2, dy2 = dbox
-
-                    xx1 = max(tx1, dx1)
-                    yy1 = max(ty1, dy1)
-                    xx2 = min(tx2, dx2)
-                    yy2 = min(ty2, dy2)
-
-                    iw = max(0.0, xx2 - xx1)
-                    ih = max(0.0, yy2 - yy1)
-                    inter = iw * ih
-
-                    d_area = max(0.0, dx2 - dx1) * max(0.0, dy2 - dy1)
-                    union = t_area + d_area - inter
-                    iou = inter / union if union > 0.0 else 0.0
-
-                    if iou > best_iou:
-                        best_iou = iou
-                        best_i = i
-
-                if best_i >= 0 and best_iou > 0.0:
-                    best_score = float(det_scores[best_i])
+            # Fast path for performance isolation:
+            # skip per-track best-IoU score recovery in Python.
+            best_score = float(track.score) if float(track.score) > 0.0 else 1.0
 
             m = Track2D()
             m.id = int(track.track_id)
@@ -230,11 +200,11 @@ class TrackerNode(Node):
         out.tracks = tracks_ros
         self.pub.publish(out)
         
-        # Publish timing
-        tmsg = Timing()
-        tmsg.frame_id = _parse_frame_id(msg.header.frame_id)
-        tmsg.track_ms = float(track_ms)
-        self.pub_timing.publish(tmsg)
+        # Publish timing disabled for live operational mode
+        # tmsg = Timing()
+        # tmsg.frame_id = _parse_frame_id(msg.header.frame_id)
+        # tmsg.track_ms = float(track_ms)
+        # self.pub_timing.publish(tmsg)
 
 
 def main(args=None) -> None:

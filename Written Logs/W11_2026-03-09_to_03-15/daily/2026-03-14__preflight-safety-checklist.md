@@ -19,7 +19,7 @@ Comprehensively validate all safety mechanisms and finalize the pre-flight check
 | Key | Value |
 |-----|-------|
 | Safety priority | Flight testing must not proceed until all safety mechanisms validated |
-| Previous work | Day 13 control integration with initial safety implementation |
+| Previous work | Day 11 control integration (ground-only), Day 12-13 outdoor tests |
 | Hardware | Full system: Pi 5 + Hailo + TEVS camera + Pixhawk 4 + F9P + Tattu 6S 4500 mAh |
 | Safety critical | This day determines if system is safe enough for W12 flight tests |
 | Test type | Ground-based safety validation (no flight yet) |

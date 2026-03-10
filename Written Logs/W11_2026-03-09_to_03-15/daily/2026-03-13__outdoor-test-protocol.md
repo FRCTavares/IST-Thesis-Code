@@ -1,4 +1,4 @@
-# Daily Log — 2026-03-12 — Outdoor Test Protocol Execution and Refinement
+# Daily Log — 2026-03-13 — Outdoor Test Protocol Execution and Refinement
 
 ## Goal
 
@@ -17,10 +17,12 @@ Execute the full outdoor test protocol with defined scenarios and success criter
 
 | Key | Value |
 |-----|-------|
-| Previous test | Day 11 exploratory outdoor test |
-| Test location | Tennis court (same as Day 11) |
+| Previous test | Day 12 exploratory outdoor test |
+| Previous work | Day 11 control integration (ground-only) and lean mode freeze |
+| Test location | Tennis court (same as Day 12) |
+| Operational mode | Lean perception mode (16.6 Hz validated indoors) |
 | Test type | Formal protocol execution |
-| Protocol source | W10 Day 06 planning (adapted based on Day 11 learnings) |
+| Protocol source | W10 Day 06 planning (adapted based on Day 12 learnings) |
 | Personnel | *(List test participants and roles)* |
 | Weather | *(Check and document)* |
 | Success criteria | Quantitative metrics for each scenario |
@@ -31,7 +33,7 @@ Execute the full outdoor test protocol with defined scenarios and success criter
 
 ### Protocol Overview
 
-Based on W10 Day 06 planning and adapted for Day 11 learnings.
+Based on W10 Day 06 planning and adapted for Day 12 learnings.
 
 **Test scenarios (6 total):**
 1. Single target, static distance (10m)
@@ -46,7 +48,7 @@ Based on W10 Day 06 planning and adapted for Day 11 learnings.
 - Tracking continuity: ≥80% time locked in multi-person scenarios
 - Target reacquisition: ≤1.0 s after temporary occlusion (p95)
 - ID switches: ≤2 switches per minute
-- FPS: ≥15 Hz sustained throughout all scenarios
+- FPS: ≥15 Hz sustained throughout all scenarios (lean mode)
 - Latency: p95 ≤ 200 ms
 
 ---
@@ -58,11 +60,11 @@ Based on W10 Day 06 planning and adapted for Day 11 learnings.
 Ensure repeatable test conditions.
 
 **Tasks:**
-- [ ] Complete pre-test checklist from Day 11
-- [ ] Set up consistent camera position and height
+- [ ] Complete pre-test checklist from Day 11 outdoor prep
+- [ ] Set up consistent camera position and height (same as Day 12)
 - [ ] Mark distance markers on court (5m, 10m, 15m)
 - [ ] Note lighting conditions and time of day
-- [ ] Configure bag recording for all relevant topics
+- [ ] Configure bag recording for lean mode topics
 - [ ] Brief test participants on each scenario
 - [ ] Prepare scenario execution checklist
 
@@ -80,7 +82,7 @@ Ensure repeatable test conditions.
 - [ ] Person stands at 10m distance, facing camera
 - [ ] Person performs simple movements (shift left/right, turn around)
 - [ ] Record for 2 minutes
-- [ ] Bag: `bags/outdoor/2026-03-12__scenario1_static_10m/`
+- [ ] Bag: `bags/outdoor/2026-03-13__scenario1_static_10m/`
 
 **Measurements:**
 - [ ] Detection rate (% frames with detection when person visible)
@@ -107,7 +109,7 @@ Ensure repeatable test conditions.
 - [ ] Person walks slowly to 15m (taking ~30s)
 - [ ] Person walks back to 5m (taking ~30s)
 - [ ] Repeat 3 times
-- [ ] Bag: `bags/outdoor/2026-03-12__scenario2_distance_variation/`
+- [ ] Bag: `bags/outdoor/2026-03-13__scenario2_distance_variation/`
 
 **Measurements:**
 - [ ] Detection rate vs. distance (bin by 5m, 10m, 15m)
@@ -137,7 +139,7 @@ Ensure repeatable test conditions.
 - [ ] Monitor if target selector locks on intended target
 - [ ] People move around, test if lock is maintained
 - [ ] Record for 2 minutes
-- [ ] Bag: `bags/outdoor/2026-03-12__scenario3_two_people/`
+- [ ] Bag: `bags/outdoor/2026-03-13__scenario3_two_people/`
 
 **Measurements:**
 - [ ] Detection rate for both people
@@ -166,7 +168,7 @@ Ensure repeatable test conditions.
 - [ ] Include brief moments of close proximity (but not full occlusion)
 - [ ] Target person (one of three) performs specific path
 - [ ] Record for 2 minutes
-- [ ] Bag: `bags/outdoor/2026-03-12__scenario4_three_people/`
+- [ ] Bag: `bags/outdoor/2026-03-13__scenario4_three_people/`
 
 **Measurements:**
 - [ ] Detection rate for all three people
@@ -194,7 +196,7 @@ Ensure repeatable test conditions.
 - [ ] Occlusion duration: ~1-2 seconds
 - [ ] Person re-emerges on other side
 - [ ] Repeat occlusions 5 times
-- [ ] Bag: `bags/outdoor/2026-03-12__scenario5_occlusion_reacq/`
+- [ ] Bag: `bags/outdoor/2026-03-13__scenario5_occlusion_reacq/`
 
 **Measurements:**
 - [ ] Track loss count (does track break during occlusion?)
@@ -221,7 +223,7 @@ Ensure repeatable test conditions.
 - [ ] Person performs direction changes (zigzag)
 - [ ] Person does sudden stops and starts
 - [ ] Record for 1-2 minutes
-- [ ] Bag: `bags/outdoor/2026-03-12__scenario6_dynamic_motion/`
+- [ ] Bag: `bags/outdoor/2026-03-13__scenario6_dynamic_motion/`
 
 **Measurements:**
 - [ ] Detection rate during motion (vs. static)
@@ -286,7 +288,7 @@ Document what to improve for future outdoor tests and final demo.
 
 ## Expected Outcomes
 
-By end of Day 12, you should have:
+By end of Day 13, you should have:
 
 1. **Complete outdoor test dataset**
    - 6 scenario bags with full coverage
@@ -302,7 +304,7 @@ By end of Day 12, you should have:
    - Quantified limits: distance, lighting, motion, crowding
 
 4. **Confidence for flight test planning**
-   - Know what to expect during actual flight demo
+   - Know what to expect during actual flight demo or integrated control tests
    - Understand what scenarios are feasible vs. risky
 
 5. **Improved test protocol**
@@ -320,7 +322,7 @@ By end of Day 12, you should have:
 - System may not meet all success criteria (this is OK, document it)
 
 ### Adaptation Strategy
-- If weather bad: defer to Day 13 or later, use Day 12 for analysis/fixes
+- If weather bad: defer to Day 14 or later, use Day 13 for analysis/fixes
 - If personnel limited: prioritize Scenarios 1, 2, 5 (single person)
 - If detection range insufficient: adjust scenarios to work at closer distances
 - If success criteria too strict: document actual performance and adjust criteria
@@ -335,3 +337,4 @@ By end of Day 12, you should have:
 - Failures are valuable data: document what didn't work and why
 - Outdoor performance may be worse than indoors: accept reality, don't force it
 - This test builds the evidence base for claims about system outdoor capability
+- Control integration from Day 11 means control nodes exist but flight testing is separate

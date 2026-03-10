@@ -2,61 +2,62 @@
 
 ## Week 11 Ambition Targets (by end of Mar 15)
 
-Move from "frozen baseline with live camera" to "outdoor-validated system ready for flight control."
+Move from "live camera validated indoors" to "lean operational perception validated outdoors and connected to the ground control interface."
 
 By end of Day 15 (March 15), you should have:
 
-1. **Live camera validated and stable**
-   - ≥15 Hz sustained for 5+ minute runs
-   - End-to-end latency with live camera quantified
-   - Thermal and memory stability confirmed
+1. **Live perception operational mode frozen and validated**
+   - Lean live configuration frozen and documented
+   - Sustained live performance demonstrated at or above 15 Hz over extended runs
+   - End-to-end latency, thermal behaviour, and memory stability quantified
 
-2. **Outdoor perception validated**
-   - Tennis court test runs completed with multi-person scenarios
-   - Real-world detection and tracking performance measured
-   - Outdoor-specific issues identified and documented (lighting, distance, occlusions)
+2. **First outdoor perception validation completed**
+   - Tennis court exploratory tests completed with single-person and multi-person scenarios
+   - Real-world issues documented: lighting, distance, occlusions, target size limits
+   - Clear conclusion on what the current perception stack can reliably do outdoors
 
-3. **Outdoor test protocol executed**
-   - 6 tennis court scenarios run and analyzed
-   - Success criteria measured: pixel error, reacquisition time, ID switches, latency
-   - Thesis-ready outdoor test report generated
+3. **Outdoor protocol either executed or made execution-ready**
+   - Scenario definitions, bag naming, and field checklist finalized
+   - At least one structured outdoor scenario set completed if logistics allow
+   - If logistics do not allow, protocol pack fully prepared and blocked only by field access
 
-4. **Control pipeline integrated (ground validation)**
-   - `control_ref_node` outputs MAVROS setpoints
-   - Control message flow validated end-to-end
-   - Safety mechanisms implemented and tested
+4. **Control pipeline integrated at ground level**
+   - `control_ref_node` consumes the validated `/target` interface
+   - MAVROS message flow validated end-to-end on ground
+   - Loss behaviour, bounds, and basic fail-safe logic checked without flight
 
-5. **Flight test readiness assessed**
-   - Pre-flight safety checklist finalized
-   - All safety mechanisms validated
-   - GO/NO-GO decision for W12 first flight
+5. **W12 readiness assessed honestly**
+   - GO or NO-GO for first flight-related work based on evidence
+   - Blocking issues listed clearly
+   - Next-risk items prioritized
 
-**System requirements (unchanged):**
+**System requirements for this week:**
 - Outdoor tennis court target environment
-- Full online processing
-- 15 FPS perception, 30 Hz control
-- Latency budget: p95 ≤ 200 ms
-- Multi-person robustness with target lock
+- Fully online processing
+- Lean operational perception mode for field use
+- Perception target: at or above 15 Hz
+- Latency budget: p95 at or below 200 ms
+- Multi-person robustness with stable target lock where feasible
 
-**New validation targets:**
-- Live camera sustained performance: 5+ min at ≥15 Hz
-- Outdoor detection rate: ≥90% when target in frame and visible
-- Outdoor tracking continuity: ≥80% time locked in multi-person scenarios
-- Target reacquisition: ≤1.0 s after temporary occlusion
-- Control update rate: 30 Hz with <5% jitter
+**Validation targets:**
+- Lean live perception: 5+ minute runs at or above 15 Hz
+- Outdoor detection and target output recorded successfully
+- Outdoor tracking continuity characterized, even if not yet at final thesis target
+- Control message flow validated on ground
+- Safety behaviour reviewed before any flight-related escalation
 
 ---
 
 ## Goals for the week
-- [ ] Complete W10 freeze and validate live camera performance
-- [ ] Prove live camera stability under extended runs (5+ min)
-- [ ] Execute first outdoor perception test (tennis court, multi-person)
-- [ ] Run full outdoor test protocol with quantified results
-- [ ] Integrate control_ref with MAVROS (ground validation only)
-- [ ] Implement and validate all safety mechanisms (bounds, loss behavior, emergency stop)
-- [ ] Finalize pre-flight checklist with safety procedures
-- [ ] Generate outdoor test reports with thesis-ready data
-- [ ] Assess flight test readiness and plan W12
+- [ ] Freeze the validated lean live configuration for operational use
+- [ ] Document live mode vs profiling mode clearly
+- [ ] Execute first outdoor perception test when logistics allow
+- [ ] Run structured outdoor scenarios or finish the full protocol pack if field access slips
+- [ ] Integrate control_ref_node with MAVROS for ground-only validation
+- [ ] Validate bounds, target-loss behaviour, and basic fail-safe handling
+- [ ] Finalize pre-flight and field-operation checklist
+- [ ] Generate outdoor and timing notes with thesis-usable evidence
+- [ ] Assess W12 readiness with a clear GO or NO-GO decision
 
 ---
 
@@ -85,7 +86,7 @@ By end of Day 15 (March 15), you should have:
 ---
 
 ### Day 11 (Tuesday, 2026-03-11)
-**Focus:** First outdoor perception test
+**Focus:** Lean-mode freeze, control integration (ground-only), outdoor prep
 
 **Completed:**
 - *(To be filled)*
@@ -96,7 +97,7 @@ By end of Day 15 (March 15), you should have:
 ---
 
 ### Day 12 (Wednesday, 2026-03-12)
-**Focus:** Outdoor test protocol execution
+**Focus:** First outdoor perception test
 
 **Completed:**
 - *(To be filled)*
@@ -107,7 +108,7 @@ By end of Day 15 (March 15), you should have:
 ---
 
 ### Day 13 (Thursday, 2026-03-13)
-**Focus:** Control integration and ground demo
+**Focus:** Outdoor test protocol execution
 
 **Completed:**
 - *(To be filled)*
@@ -141,27 +142,28 @@ By end of Day 15 (March 15), you should have:
 
 ## Key Results (to be filled at end of week)
 
-### Live Camera Performance
+### Live Perception Operational Mode
+- Lean configuration: *(frozen / in progress)*
 - Sustained FPS: *(value)* Hz over *(duration)* min
 - End-to-end latency: mean *(value)* ms, p95 *(value)* ms
-- Stability issues: *(none / describe)*
+- Thermal and memory stability: *(confirmed / issues noted)*
 
-### Outdoor Perception
+### Outdoor Perception Validation
 - Test location: *(tennis court / other)*
 - Scenarios tested: *(count and types)*
-- Detection rate: *(percentage)* when target visible
-- Tracking continuity: *(percentage)* time locked
-- Reacquisition time: median *(value)* s, p95 *(value)* s
+- Real-world issues documented: *(lighting, distance, occlusions, etc.)*
+- Outdoor tracking continuity: *(characterized / not yet tested)*
+- Conclusion on outdoor reliability: *(to be filled)*
 
-### Control Integration
-- MAVROS interface: *(completed / in progress)*
-- Control update rate: *(value)* Hz
-- Safety mechanisms: *(list validated items)*
+### Control Integration (Ground-Only)
+- control_ref_node status: *(integrated / in progress)*
+- MAVROS message flow: *(validated / in progress)*
+- Safety mechanisms checked: *(list items)*
 
-### Flight Readiness
-- Decision: *(GO / NO-GO for W12)*
+### W12 Readiness Assessment
+- Decision: *(GO / NO-GO for flight-related work)*
 - Blocking issues: *(none / list)*
-- Remaining work: *(none / list)*
+- Next-risk items: *(list)*
 
 ---
 
