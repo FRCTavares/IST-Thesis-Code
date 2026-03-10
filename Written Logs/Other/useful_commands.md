@@ -36,7 +36,7 @@ docker exec pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 \
 # Host — ZMQ port not already bound
 ss -ltnp | grep 5555 || true
 ```
-
+I
 ---
 
 ## 2. Docker Container
