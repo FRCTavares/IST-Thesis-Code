@@ -1,15 +1,16 @@
-# Daily Log — 2026-03-12 — First Outdoor Perception Test
+# Daily Log — 2026-03-12 — Outdoor Readiness Pack, Control Rehearsal, and Simulation Preparation
 
 ## Goal
 
-Take the system outdoors and validate perception performance in real-world conditions.
+Finish the field-readiness documentation, rehearse the perception-to-control interface safely, and prepare a simulation or replay workflow before attempting any real outdoor testing.
 
 **Target outcome:**
-- Tennis court test run with live camera and multi-person scenarios
-- Outdoor bag recorded with full topic coverage
-- Initial outdoor perception quality assessed
-- Real-world issues documented (lighting, distance, occlusions)
-- Decision: are we ready for full protocol execution (Day 13) or do we need fixes?
+- Outdoor field checklist completed
+- Scenario sheet and bag naming frozen
+- Portable bring-up procedure documented
+- `control_ref_node` further validated indoors or via replay
+- Safe simulation or bag-replay rehearsal path prepared
+- Clear conditions defined for the first real outdoor test day
 
 ---
 
@@ -17,157 +18,97 @@ Take the system outdoors and validate perception performance in real-world condi
 
 | Key | Value |
 |-----|-------|
-| Test location | Tennis court (or similar outdoor open space) |
-| Previous validation | Indoor stability confirmed on Day 10, lean mode frozen on Day 11 |
-| Operational mode | Lean perception mode (16.6 Hz validated indoors) |
-| Test type | Exploratory (not formal protocol yet) |
-| Personnel | *(List who is available for testing)* |
-| Weather | *(Check forecast and note conditions)* |
-| Hardware | Full system portable, battery tested |
-| Primary unknowns | Lighting, detection range, tracking in real motion |
+| Previous validation | Lean perception frozen on Day 11 |
+| Control status | Ground-only `control_ref_node` validated on `/control_ref/cmd_vel` |
+| Outdoor status | Not ready today, field session postponed |
+| Current priority | Preparation, rehearsal, and simulation before real tests |
+| Risk to avoid | Rushing into outdoor testing without full readiness |
+| Test mode | Indoor only, ground-only, no flight authority |
 
 ---
 
 ## Work Plan
 
-### A) Pre-Test Preparation and Checklist
+### A) Outdoor Readiness Pack
 
-Ensure system is ready before going outdoors.
+Prepare all logistics and field documentation before any real test day.
 
 **Tasks:**
-- [ ] Charge battery fully (Tattu 6S 4500 mAh)
-- [ ] Verify all hardware connections secure
-- [ ] Test full system indoors one final time (quick validation)
-- [ ] Use lean operational mode from Day 11 (16.6 Hz validated)
-- [ ] Prepare bag recording: check disk space, test bag recording works
-- [ ] Prepare portable setup: mounting, cables, monitor/laptop for monitoring
-- [ ] Check weather: avoid rain, extreme wind, or very low sun angle
-- [ ] Confirm test location availability
-- [ ] Brief any test participants on scenarios
+- [ ] Finalize outdoor field checklist
+- [ ] Finalize startup procedure for field use
+- [ ] Finalize shutdown procedure for field use
+- [ ] Finalize field packing list
+- [ ] Confirm disk space requirements and bag storage plan
+- [ ] Confirm battery and cable checklist
+- [ ] Freeze outdoor bag naming convention
+- [ ] Prepare participant scenario sheet
 
 **Deliverables:**
-- Pre-test checklist completed (use Day 11 outdoor checklist)
-- System physically ready for transport
+- `docs/outdoor_field_checklist.md`
+- `docs/outdoor_scenarios.md`
+- `docs/field_startup_shutdown.md`
+- Frozen outdoor bag naming scheme
 
 ---
 
-### B) Initial Outdoor System Validation (Static Test)
+### B) Control Rehearsal — Indoor and Ground-Only
 
-First confirm the system runs outdoors before testing perception.
+Continue validating the controller safely before any real-world vehicle integration.
 
 **Tasks:**
-- [ ] Set up system at tennis court
-- [ ] Power on and launch full ROS pipeline in lean mode
-- [ ] Verify camera is capturing (check `/camera/image_raw`)
-- [ ] Verify detections are publishing (check `/detections`)
-- [ ] Check FPS and basic timing (quick sanity check)
-- [ ] Note any immediate issues: lighting, glare, exposure
-
-**Success criteria:**
-- System boots and runs without errors
-- Camera captures clear images (not overexposed or too dark)
-- Detections appear at reasonable rate
-- No obvious hardware issues
+- [ ] Re-run lean perception stack + `control_ref_node`
+- [ ] Reconfirm yaw sign and forward sign
+- [ ] Reconfirm zero-on-invalid behaviour
+- [ ] Reconfirm smooth slew-limited commands
+- [ ] Optionally record one more short indoor bag if needed
+- [ ] Freeze the validated run command in documentation
 
 **Deliverables:**
-- Initial outdoor system validation notes
-- Camera sample images: `figures/outdoor/W11_first_outdoor_camera_samples.png`
+- Confirmed indoor ground-only control behaviour
+- Finalized command-line invocation for `control_ref_node`
+- Updated `docs/control_interface.md`
 
 ---
 
-### C) Multi-Person Detection and Tracking Scenarios
+### C) Replay or Simulation Preparation
 
-Test perception with realistic outdoor scenarios.
+Prepare a safe way to rehearse controller behaviour without going outdoors.
 
-**Scenario 1: Single person, various distances**
-- [ ] Person walks from 5m → 10m → 15m → 10m → 5m
-- [ ] Record bag: `bags/outdoor/2026-03-12__scenario1_single_distance/`
-- [ ] Note detection quality at each distance
-- [ ] Check tracking continuity throughout
-
-**Scenario 2: Two people, simultaneous tracking**
-- [ ] Two people stand/walk in frame simultaneously
-- [ ] Record bag: `bags/outdoor/2026-03-12__scenario2_two_people/`
-- [ ] Check if both are detected and tracked
-- [ ] Note any ID switches or tracking failures
-
-**Scenario 3: Three people, crowding and occlusion**
-- [ ] Three people in frame, some closer together
-- [ ] Include brief occlusions (people passing between each other)
-- [ ] Record bag: `bags/outdoor/2026-03-12__scenario3_three_people_occlusion/`
-- [ ] Check tracking continuity through occlusions
-- [ ] Note any target selector issues (if monitoring `/target`)
-
-**Scenario 4: Dynamic motion**
-- [ ] Person runs or moves quickly
-- [ ] Person changes direction
-- [ ] Record bag: `bags/outdoor/2026-03-12__scenario4_dynamic_motion/`
-- [ ] Check tracking under fast motion
-- [ ] Note any motion blur or detection drops
+**Tasks:**
+- [ ] Decide whether tomorrow's rehearsal uses:
+  - bag replay, or
+  - lightweight simulation, or
+  - both
+- [ ] Identify which topic stream is easiest to replay into `control_ref_node`
+- [ ] If using bag replay, confirm `/target` replay works
+- [ ] If using simulation, define minimal synthetic target motion cases:
+  - centred target
+  - left/right motion
+  - near/far motion
+  - target loss
+- [ ] Document the rehearsal method and commands
 
 **Deliverables:**
-- 4 outdoor scenario bags
-- Initial qualitative observations for each scenario
+- Safe replay or simulation rehearsal path
+- Notes on what can be tested before real outdoor runs
 
 ---
 
-### D) Lighting and Environmental Effects
+### D) First Real-Test Gate Definition
 
-Characterize outdoor lighting challenges.
-
-**Tasks:**
-- [ ] Test in full sun (if possible)
-- [ ] Test in shade (if available)
-- [ ] Test with sun behind camera (best case)
-- [ ] Test with sun behind target (backlight challenge)
-- [ ] Test at different times if possible (morning vs. afternoon)
-- [ ] Note any glare, lens flare, or saturation issues
-- [ ] Check camera auto-exposure behavior
-
-**Deliverables:**
-- Lighting conditions log
-- Camera sample images in different lighting: `figures/outdoor/W11_lighting_effects/`
-- Recommendations for camera tuning (if needed)
-
----
-
-### E) Offline Analysis and Initial Metrics
-
-Analyze bags back at the lab and extract initial metrics.
+Define exactly what must be true before the first outdoor session is allowed.
 
 **Tasks:**
-- [ ] Copy all bags to lab storage: `bags/outdoor/2026-03-12__first_outdoor_test/`
-- [ ] Run timing analysis on outdoor bags
-- [ ] Extract basic tracking metrics:
-  - Detection rate (detections per frame when person visible)
-  - Tracking continuity (time locked %)
-  - ID switches (count)
-  - Lost target events
-- [ ] Compare outdoor metrics to indoor baseline
-- [ ] Generate initial plots: detection rate, tracking quality
+- [ ] Write GO conditions for first outdoor day
+- [ ] Write NO-GO conditions
+- [ ] List remaining blockers
+- [ ] Decide whether first real session is:
+  - perception-only, or
+  - perception + ground-only control monitoring
 
 **Deliverables:**
-- Initial outdoor report: `reports/outdoor/W11_first_outdoor_test.md`
-- Key findings and issues list
-- Comparison: indoor vs. outdoor performance
-
----
-
-### F) Assess Readiness for Full Protocol (Day 13)
-
-Decide if system is ready for formal protocol execution or needs fixes.
-
-**Tasks:**
-- [ ] Review all qualitative and quantitative results
-- [ ] Identify any blocking issues
-- [ ] List what worked well and what didn't
-- [ ] Decide: GO for Day 13 protocol or fix issues first?
-- [ ] If fixes needed: prioritize and plan
-
-**Deliverables:**
-- GO/NO-GO decision for Day 13 outdoor protocol
-- Issues list with severity
-- Day 13 plan (protocol execution or fixes)
+- Explicit GO / NO-GO gate for first outdoor field day
+- Updated sequence for the rest of W11 or early W12
 
 ---
 
@@ -175,59 +116,58 @@ Decide if system is ready for formal protocol execution or needs fixes.
 
 By end of Day 12, you should have:
 
-1. **System validated outdoors**
-   - Proof that system runs in real-world conditions
-   - Camera and perception working (even if not perfectly)
+1. **Field documentation ready**
+   - checklist
+   - packing list
+   - startup / shutdown steps
+   - scenario sheet
 
-2. **Real-world challenges identified**
-   - Lighting effects documented
-   - Detection range limits known
-   - Tracking issues in real motion characterized
+2. **Controller better frozen**
+   - validated indoor behaviour
+   - known-good run command
+   - updated control interface notes
 
-3. **Initial outdoor performance data**
-   - 4 scenario bags with qualitative observations
-   - Basic metrics: detection rate, tracking continuity
-   - Comparison to indoor baseline
+3. **Safe rehearsal path prepared**
+   - replay or simulation ready
+   - controller can be exercised without outdoor deployment
 
-4. **Decision for Day 13**
-   - GO: proceed with full protocol
-   - NO-GO: fix critical issues first
-
-5. **Realistic expectations for outdoor demo**
-   - Know what the system can and cannot do outdoors
-   - Understand limitations and workarounds
-
----
-
-## Issues and Risks
-
-### Potential Outdoor Issues
-- Camera auto-exposure may not handle sun/shade transitions well
-- Detection quality may drop significantly at 10m+ distance
-- Tracking may become unreliable with real motion and occlusions
-- FPS may drop due to outdoor load or thermal effects
-- Battery life may be shorter than expected
-
-### Backup Plans
-- If lighting is terrible: test in shade only, retune camera exposure
-- If detection range insufficient: test at closer distances for now
-- If tracking fails badly: validate detections only, defer tracking outdoor validation
-- If system unstable: shorter test runs, bring backup battery
-
-### Safety and Logistics
-- Have backup power (charged laptop or extra battery)
-- Bring sun protection for equipment and personnel
-- Have water and breaks planned for test participants
-- Be prepared to abort if weather turns bad
+4. **Real outdoor gate clarified**
+   - know exactly what remains before real tests
+   - no ambiguity about readiness
 
 ---
 
 ## Notes
 
-- This is an exploratory test: expect to learn, not to validate perfection
-- Goal is to understand what "outdoor" means for this system
-- Don't be discouraged if performance is worse than indoors: this is expected
-- Document everything: issues found today guide improvements for rest of thesis
-- If outdoor performance is very poor, may need to revisit system design (e.g., better camera, different detector)
-- Tennis court is representative of final demo environment: results here matter
-- Day 11 work (lean freeze + control integration + outdoor prep) enables this test to run smoothly
+- **No outdoor testing today**
+- No MAVROS authority work unless explicitly needed for documentation only
+- Focus on reducing uncertainty before any real field session
+- Better preparation now means cleaner real results later
+
+---
+
+## Revised W11 Sequence
+
+Instead of:
+- Day 12: outdoor testing
+- Day 13: protocol execution
+
+**New realistic sequence:**
+- **Day 12:** readiness pack + replay/simulation rehearsal
+- **Day 13:** controller rehearsal + MAVROS topic-level prep if needed
+- **Day 14 or next available:** first real outdoor perception session
+- **After that:** larger structured outdoor protocol
+
+---
+
+## Simulation Approach Recommendation
+
+For the current state, the best low-friction option is probably **bag replay or synthetic `/target` publishing**, not a full UAV simulator yet.
+
+This lets you test:
+- left/right target motion
+- near/far target motion
+- timeout / target loss
+- command smoothness
+
+...without adding the chaos of full vehicle simulation.

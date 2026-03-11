@@ -31,6 +31,7 @@ setup(
             "detections_ambiguity_node = thesis_bringup.nodes.detections_ambiguity_node:main",
             "camera_init_node = thesis_bringup.nodes.camera_init_node:main",
             "camera_capture_node = thesis_bringup.nodes.camera_capture_node:main",
+            'control_ref_node = thesis_bringup.nodes.control_ref_node:main',
         ],
     },
 )

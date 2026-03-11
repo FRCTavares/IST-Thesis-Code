@@ -48,81 +48,86 @@ The camera is now in the ROS pipeline. This week transitions from indoor validat
 ---
 
 ### Day 11 (Tuesday, 2026-03-11)
-**[First Outdoor Test Run (Perception Only)](daily/2026-03-11__first-outdoor-perception-test.md)**
+**[Lean-Mode Freeze, Control Integration, and Outdoor Prep](daily/2026-03-11__lean-freeze-control-integration-outdoor-prep.md)**
 
-**Goal:** Take the system outside and validate perception outdoors (no flight yet)
+**Goal:** Freeze validated lean perception config, advance ground-only control integration, prepare outdoor test pack
 
 **Deliverables:**
-- Tennis court test run with live camera
-- Multi-person scenarios: 1, 2, 3 people
-- Outdoor bag recording: `bags/outdoor/2026-03-11__first_outdoor_test/`
-- Outdoor perception report: detection rate, tracking continuity, lighting effects
-- Issues log: sunlight, distance, real-world occlusions
+- Lean perception mode frozen and documented
+- `control_ref_node` integrated against validated `/target` interface
+- Ground-only MAVROS/control message flow verified
+- Safety logic and fail-safe behaviour reviewed
+- Outdoor checklist, scenario plan, and bag naming prepared
 
-**Status:** *(Not started / In progress / Complete)*
+**Status:** *(In progress)*
 
 ---
 
 ### Day 12 (Wednesday, 2026-03-12)
-**[Outdoor Test Protocol Execution and Refinement](daily/2026-03-12__outdoor-test-protocol.md)**
+**[Outdoor Readiness Pack, Control Rehearsal, and Simulation Preparation](daily/2026-03-12__first-outdoor-perception-test.md)**
 
-**Goal:** Run full outdoor test protocol from W10 Day 06, measure against success criteria
+**Goal:** Finish field-readiness documentation, rehearse control interface safely, prepare simulation/replay workflow before real outdoor testing
 
 **Deliverables:**
-- 6 tennis court scenarios executed (or adapted based on Day 11 results)
-- Success criteria measured: pixel error, reacquisition time, ID switches, latency
-- Outdoor test report: `reports/outdoor/W11_tennis_court_scenarios.md`
-- Protocol refinements documented
-- Updated checklist for flight tests
+- Outdoor field checklist completed: `docs/outdoor_field_checklist.md`
+- Scenario sheet and bag naming frozen: `docs/outdoor_scenarios.md`
+- Field startup/shutdown procedures: `docs/field_startup_shutdown.md`
+- `control_ref_node` further validated indoors or via replay
+- Safe replay or simulation rehearsal path prepared
+- GO/NO-GO gate defined for first real outdoor test day
 
 **Status:** *(Not started / In progress / Complete)*
 
 ---
 
 ### Day 13 (Thursday, 2026-03-13)
-**[Control Interface Integration and Ground Control Demo](daily/2026-03-13__control-integration-demo.md)**
+**[Replay Rehearsal, MAVROS Topic Prep, and Real-Test Readiness Gate](daily/2026-03-13__outdoor-test-protocol.md)**
 
-**Goal:** Integrate control_ref with MAVROS, validate control pipeline on ground
+**Goal:** Rehearse perception-to-control pipeline safely using replay/synthetic inputs, prepare MAVROS topic integration, define outdoor gate
 
 **Deliverables:**
-- `control_ref_node` outputs MAVROS setpoint messages
-- Ground-based control validation (no flight, just message flow)
-- MAVROS interface documented: topic mapping, coordinate frames, safety bounds
-- Control demo script: `tools/run_control_demo.sh`
-- Control integration report: `reports/control/W11_control_integration.md`
+- Replay or synthetic `/target` rehearsal completed
+- `control_ref_node` exercised in safe repeatable cases (centred, left, right, near, far, stale)
+- MAVROS topic choice frozen and documented
+- Outdoor readiness documents finalized: `docs/outdoor_field_checklist.md`, `docs/outdoor_scenarios.md`, `docs/field_startup_shutdown.md`
+- GO / NO-GO gate defined for first real outdoor day
+- Integrated ground-only smoke rehearsal bag recorded
 
 **Status:** *(Not started / In progress / Complete)*
 
 ---
 
 ### Day 14 (Friday, 2026-03-14)
-**[Pre-Flight Safety Validation and Checklist](daily/2026-03-14__preflight-safety-checklist.md)**
+**[First Real Outdoor Bring-Up and Exploratory Validation](daily/2026-03-14__preflight-safety-checklist.md)**
 
-**Goal:** Validate all safety mechanisms before first flight test
+**Goal:** Take frozen lean perception stack to real outdoor environment, verify reliable outdoor bring-up, record exploratory bags
 
 **Deliverables:**
-- Safety bounds implemented and tested (max velocity, max altitude, geofence)
-- Loss-of-target behavior validated (hold / return / land)
-- Emergency stop procedure tested
-- Battery test with full system load (validate Tattu 6S 4500 mAh)
-- Pre-flight checklist finalized: `docs/preflight_checklist.md`
-- Safety validation report: `reports/control/W11_safety_validation.md`
+- Outdoor checklist executed successfully
+- Lean stack brought up outdoors without major issues
+- At least 1-2 exploratory outdoor bags: single-person distance sweep, two-person scenario
+- Real-world issues documented: lighting, distance, target size, multi-person behavior
+- Optional ground-only control coexistence test
+- Clear decision on whether larger outdoor session justified
 
 **Status:** *(Not started / In progress / Complete)*
 
 ---
 
 ### Day 15 (Saturday, 2026-03-15)
-**[Week 11 Review and Flight Test Planning](daily/2026-03-15__week-review-flight-planning.md)**
+**[Week 11 Review, Readiness Assessment, and Next-Step Planning](daily/2026-03-15__week-review-flight-planning.md)**
 
-**Goal:** Consolidate W11 learnings, plan first flight test for W12
+**Goal:** Close out W11 with evidence-based review, assess readiness for next phase, plan next sequence realistically
 
 **Deliverables:**
-- W11 weekly.md completed with outdoor test results
+- W11 weekly.md completed with actual results
 - W11 artefacts.md updated with all deliverables
-- Flight test plan v1: scenarios, risks, abort criteria, personnel
-- System readiness assessment for first flight
-- W12 goals drafted
+- Current system readiness report: `reports/system/W11_system_readiness.md`
+- Evidence summary from Week 11
+- Real blockers and deferred work clearly listed
+- Next-phase plan drafted: replay rehearsal, outdoor validation, MAVROS topic prep
+- Thesis timeline review and adjustment
+- Realistic status framing: READY FOR REPLAY REHEARSAL / OUTDOOR EXPLORATORY / MAVROS TOPIC PREP (not flight-ready claims)
 
 **Status:** *(Not started / In progress / Complete)*
 
@@ -149,8 +154,8 @@ The camera is now in the ROS pipeline. This week transitions from indoor validat
 **Rationale:** *(To be filled based on stability and timing results)*
 
 ### Outdoor Test Scenarios
-**Decision:** *(Final scenario list after Day 11 outdoor exploration)*  
-**Date:** 2026-03-11 (Day 11)  
+**Decision:** *(Final scenario list after Day 14 outdoor exploration)*  
+**Date:** 2026-03-14 (Day 14)  
 **Rationale:** *(Adapt based on real-world constraints and available test personnel)*
 
 ### Control Safety Strategy

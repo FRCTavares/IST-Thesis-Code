@@ -12,30 +12,100 @@ This document tracks all deliverables, code, configurations, reports, and datase
 ### Live Camera Integration
 - **Camera init node:** `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_init_node.py`
 - **Camera capture node:** `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_capture_node.py`
-- **Inference client (live mode):** `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/inference_client_node.py`
-- **Camera configuration:** `config/camera_config.yaml`
+- **Inference client (live mode):** `ros2_ws/src/thesis_inference_client/thesis_inference_client/inference_client_node.py`
 
-**Status:** *(In progress / Complete as of Day 08-09)*
+**Status:** Complete (Day 08-10)
 
 **Key parameters:**
 - Device: `/dev/video0`
-- Resolution: *(to document)*
-- FPS target: ≥15 Hz
+- Resolution: 640x640
+- FPS target: ≥15 Hz sustained
 - Capture mode: V4L2 blocking
+- ZMQ port: 5556 (live camera service)
 
 ### Control Interface
 - **Control reference node:** `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/control_ref_node.py`
-- **MAVROS integration:** *(to implement in Days 13-14)*
-- **Safety module:** *(to implement in Day 14)*
-- **Control configuration:** `config/control_ref_frozen.yaml`
+- **Control interface specification:** `Written Logs/docs/control_interface.md`
 
-**Status:** *(Not started / In progress / Complete)*
+**Status:** Complete ground-only version (Day 11)
 
-**Features to implement:**
-- MAVROS setpoint publishing
-- Safety bounds (velocity, altitude, geofence)
-- Loss-of-target behavior
-- Emergency stop handling
+**Features implemented:**
+- `/target` subscription with BEST_EFFORT QoS
+- Internal pixel-to-normalized coordinate conversion
+- Yaw and forward control (validated signs)
+- Target validity checking (freshness, bounds, score, quality)
+- Fail-safe zeroing on target loss
+- Slew rate limiting for smooth commands
+- Bounded outputs with configurable saturation
+- Clean startup and shutdown
+
+**Frozen run command:**
+```bash
+ros2 run thesis_bringup control_ref_node --ros-args \
+  -p cmd_topic:=/control_ref/cmd_vel \
+  -p img_w:=640.0 \
+  -p img_h:=640.0 \
+  -p desired_h_norm:=0.90
+```
+
+**Features pending:**
+- MAVROS integration (Day 12)
+- Lateral and vertical control
+- Explicit target state flags
+- Flight-tuned gains
+
+### Lean Operational Mode Configuration
+- **Lean mode specification:** `Written Logs/docs/lean_operational_mode.md`
+- **Frozen startup sequence:** 6 terminals documented
+- **Recording topics:** `/camera/fps`, `/detections`, `/timing`, `/target`
+- **Excluded topics:** `/tracks`, `/timing_tracker` (profiling-only)
+
+**Status:** Complete (Day 11)
+
+**Validated performance (Day 10 baseline):**
+- Duration: 598.229 s
+- `/detections`: 16.644 Hz
+- `/target`: 16.629 Hz
+- `lat_ms` p95: 91.296 ms
+- Temperature: 59.3°C, no throttling
+- Memory: stable
+
+### Documentation Updates (Day 11)
+- **RUNBOOK.md:** Updated with lean vs profiling modes
+- **README.md:** Added operational modes section
+- **useful_commands.md:** Marked `/timing_tracker` as profiling-only
+
+---
+
+### Day 11 Control Integration Milestone
+
+**Key achievement:** First ground-only perception-to-control bridge working end-to-end
+
+**End-to-end validated path:**
+```
+camera → inference → detections → tracker → tracks → target selector → /target → control_ref_node → /control_ref/cmd_vel
+```
+
+**Technical discoveries:**
+- `/target` uses pixel coordinates (0-640), not normalized [0,1]
+- QoS must be BEST_EFFORT to match target selector
+- Internal normalization in control node avoids upstream redesign
+
+**Validation results:**
+- ✓ Yaw control sign correct (left → negative, right → positive)
+- ✓ Forward control sign correct (far → positive, close → negative)
+- ✓ Target validity logic working (freshness, bounds, score, quality)
+- ✓ Fail-safe zeroing on target loss
+- ✓ Slew rate limiting observed (0.0 → -0.03 → -0.06 → -0.09 → -0.1)
+- ✓ Command saturation at configured limits
+- ✓ Clean startup and shutdown
+
+**What remains for control:**
+- MAVROS topic integration (Day 12)
+- Systematic loss/reacquisition testing (Day 13)
+- Outdoor field validation (Day 14-15)
+
+---
 
 ### Launch Files
 - **Full system launch:** `ros2_ws/src/thesis_bringup/launch/full_system_live.launch.py`

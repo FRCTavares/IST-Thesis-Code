@@ -1,11 +1,110 @@
 # Runbook
 
-Quick recipes for the four core operations.
+Quick recipes for core operations.
 All commands run from `$THESIS_ROOT/` unless noted.
+
+**Live camera operational mode:** Use the frozen manual startup sequence documented below unless `live.launch.py` is confirmed to match the frozen lean operational configuration.
 
 ---
 
-## 1 — Record a raw bag
+## 1 — Live camera (lean operational mode)
+
+### Frozen manual startup sequence
+
+The manual startup sequence is the current operational standard.
+
+**Terminal 1 — Camera Init:**
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run thesis_bringup camera_init_node
+```
+
+**Terminal 2 — Camera Capture:**
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run thesis_bringup camera_capture_node
+```
+
+**Terminal 3 — Container Live Inference Service:**
+```bash
+cd ~/pi-ai-kit-ubuntu
+docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
+
+docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash
+# Inside container:
+VENV=/root/hailo-rpi5-examples/venv_hailo_rpi_examples
+export PYTHONPATH=/root/hailo-rpi5-examples:${PYTHONPATH:-}
+cd /root/thesis_service
+export HAILO_FRAME_SOURCE=ros
+export HAILO_REQREP_BIND=tcp://0.0.0.0:5556
+export HAILO_INFER_WIDTH=640
+export HAILO_INFER_HEIGHT=640
+export HAILO_VIDEO_SINK=fakesink
+export HAILO_POST_FUNC=filter
+$VENV/bin/python /root/thesis_service/detection_zmq.py
+```
+
+**Terminal 4 — Inference Client:**
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run thesis_inference_client inference_client_node --ros-args \
+  -p image_topic:=/camera/image_raw \
+  -p addr:=tcp://127.0.0.1:5556 \
+  -p queue_size:=1 \
+  -p img_w:=640 \
+  -p img_h:=640 \
+  -p min_score:=0.35
+```
+
+**Terminal 5 — Tracker:**
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run thesis_tracker tracker_node
+```
+
+**Terminal 6 — Target Selector:**
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run thesis_target_selector target_selector_node
+```
+
+### Record live camera bag (lean mode)
+
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+export RMW_FASTRTPS_USE_SHM=0
+
+ros2 bag record --storage mcap \
+  -o ../bags/live_camera/YYYY-MM-DD__<session_description> \
+  /camera/fps \
+  /detections \
+  /timing \
+  /target
+
+# Immediately after Ctrl-C, verify bag name matches convention
+```
+
+**Output:** `bags/live_camera/YYYY-MM-DD__<session_description>/`
+
+**Note:** `/tracks` and `/timing_tracker` are profiling-only. Do not record them in operational runs.
+
+---
+
+## 2 — Record a raw bag (file-based profiling mode)
+
+**Use case:** File-based replay for tracker evaluation and profiling.
 
 ```bash
 cd $THESIS_ROOT/bags/raw
@@ -20,9 +119,11 @@ mv rosbag2_<auto-timestamp>  YYYY-MM-DD__slice__<tag>
 
 **Output:** `bags/raw/YYYY-MM-DD__slice__<tag>/`
 
+**Note:** This mode includes `/tracks` and `/timing_tracker` which are profiling-only topics. Do not use for operational runs.
+
 ---
 
-## 2 — Run eval replay
+## 3 — Run eval replay
 
 Replays a raw detections bag through the tracker and records the result.
 
@@ -41,22 +142,27 @@ Override the date if re-running an old bag:
 
 ---
 
-## 3 — Analyse timing
+## 4 — Analyse timing
 
-Reads `/timing` (and `/timing_tracker` if present) from a raw bag.
+Reads `/timing` (and `/timing_tracker` if present) from a raw or live bag.
 
 ```bash
 python3 tools/analyse_bag_timing.py \
   bags/raw/2026-02-25__slice__primary
+# or
+python3 tools/analyse_bag_timing.py \
+  bags/live_camera/2026-03-10__stability_10min
 ```
 
 **Outputs:**
 - `reports/timing/<bag>__timing.md`
 - `figures/timing/<bag>/` (PNG plots)
 
+**Note:** `/timing_tracker` is profiling-only and will not be present in lean operational bags.
+
 ---
 
-## 4 — Analyse tracking
+## 5 — Analyse tracking
 
 Reads `/target` and `/timing_tracker` from an eval bag.
 
@@ -73,13 +179,34 @@ Tag is auto-detected from the bag name; pass `--tag` to override.
 - `reports/tracking/<evalbag>/track_ms_cdf.png`
 - `reports/tracking/<evalbag>/reacq_hist.png`
 
+**Note:** Requires `/timing_tracker` which is profiling-only. Cannot be used with lean operational bags.
+
+---
+
+## Operational vs Profiling Modes
+
+### Lean operational mode (live camera)
+- **Use for:** Indoor validation, outdoor testing, field operations
+- **Topics recorded:** `/camera/fps`, `/detections`, `/timing`, `/target`
+- **Excluded:** `/tracks`, `/timing_tracker`
+- **Startup:** Manual 6-terminal sequence (frozen operational path)
+
+### Profiling mode (file-based)
+- **Use for:** Bottleneck analysis, tracker debugging, performance profiling
+- **Topics recorded:** All topics including `/tracks` and `/timing_tracker`
+- **Note:** Adds subscriber overhead, distorts timing measurements
+- **Not for:** Operational runs or field testing
+
+**See also:** `Written Logs/docs/lean_operational_mode.md` for full details.
+
 ---
 
 ## Where outputs go
 
 | Type | Location |
 |---|---|
-| Raw bags | `bags/raw/YYYY-MM-DD__slice__<tag>/` |
+| Live camera bags (lean mode) | `bags/live_camera/YYYY-MM-DD__<session_description>/` |
+| Raw bags (file-based profiling) | `bags/raw/YYYY-MM-DD__slice__<tag>/` |
 | Eval bags | `bags/eval/YYYY-MM-DD__eval__<rawbag>__<tracker>/` |
 | Timing reports | `reports/timing/` |
 | Tracking reports + plots | `reports/tracking/<evalbag>/` |

@@ -97,7 +97,7 @@ By end of Day 15 (March 15), you should have:
 ---
 
 ### Day 12 (Wednesday, 2026-03-12)
-**Focus:** First outdoor perception test
+**Focus:** Outdoor readiness pack, control rehearsal, and simulation preparation
 
 **Completed:**
 - *(To be filled)*
@@ -108,7 +108,7 @@ By end of Day 15 (March 15), you should have:
 ---
 
 ### Day 13 (Thursday, 2026-03-13)
-**Focus:** Outdoor test protocol execution
+**Focus:** Replay rehearsal, MAVROS topic prep, and real-test readiness gate
 
 **Completed:**
 - *(To be filled)*
@@ -119,7 +119,7 @@ By end of Day 15 (March 15), you should have:
 ---
 
 ### Day 14 (Friday, 2026-03-14)
-**Focus:** Pre-flight safety validation
+**Focus:** First real outdoor bring-up and exploratory validation
 
 **Completed:**
 - *(To be filled)*
@@ -130,7 +130,7 @@ By end of Day 15 (March 15), you should have:
 ---
 
 ### Day 15 (Saturday, 2026-03-15)
-**Focus:** Week review and flight test planning
+**Focus:** Week 11 review, readiness assessment, and next-step planning
 
 **Completed:**
 - *(To be filled)*
