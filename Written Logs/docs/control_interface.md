@@ -253,29 +253,57 @@ ros2 run thesis_bringup control_ref_node --ros-args \
 
 ---
 
+## MAVROS First Bridge Freeze (2026-03-12)
+
+**Installation completed:**
+- MAVROS installed on ROS 2 Jazzy: `ros-jazzy-mavros`
+- MAVROS extras installed: `ros-jazzy-mavros-extras`
+- GeographicLib datasets installed successfully
+- ArduPilot launch file confirmed: `apm.launch`
+- Default FCU connection assumption: `/dev/ttyACM0:57600`
+
+**First MAVROS bridge topic:**
+- Topic: `/mavros/setpoint_velocity/cmd_vel`
+- Message type: `geometry_msgs/msg/TwistStamped`
+
+**Key decision:**
+- `control_ref_node` already publishes `TwistStamped`, so **no message redesign is needed**
+- Direct topic remapping from `/control_ref/cmd_vel` to `/mavros/setpoint_velocity/cmd_vel` is sufficient
+
+**First mapping (ground-only validation):**
+```
+linear.x  = forward   (m/s in body frame)
+linear.y  = 0.0       (lateral reserved for later)
+linear.z  = 0.0       (vertical reserved for later)
+angular.z = yaw_rate  (rad/s)
+```
+
+**Hardware test configuration:**
+- Keep `use_lateral = False` for first tests
+- Keep `use_vertical = False` for first tests
+- Body frame: x=forward, y=left, z=up (NED or FRD depending on vehicle config)
+
+**Topic remapping for hardware tests:**
+```bash
+ros2 run thesis_bringup control_ref_node --ros-args \
+  -r /control_ref/cmd_vel:=/mavros/setpoint_velocity/cmd_vel \
+  -p img_w:=640.0 \
+  -p img_h:=640.0 \
+  -p desired_h_norm:=0.90
+```
+
+---
+
 ## Next Integration Steps
-
-### MAVROS Topic Selection (Day 12)
-
-Need to decide:
-- Which MAVROS setpoint topic to use
-- Message format (velocity, position, or attitude)
-- Coordinate frame conventions
-- Command rate and timing
-
-**Options:**
-- `/mavros/setpoint_velocity/cmd_vel_unstamped`
-- `/mavros/setpoint_position/local`
-- `/mavros/setpoint_raw/local`
 
 ### Control Topic Remapping
 
 Current: `/control_ref/cmd_vel` (private testing topic)
 
-After MAVROS decision:
-- Remap or parameterize `cmd_topic` to actual MAVROS topic
-- Verify message type compatibility
-- Test ground-only message flow
+For MAVROS hardware tests:
+- Remap `cmd_topic` to `/mavros/setpoint_velocity/cmd_vel` at launch
+- Message type compatibility: ✅ confirmed (`TwistStamped`)
+- Test ground-only message flow before any flight authority
 
 ---
 
