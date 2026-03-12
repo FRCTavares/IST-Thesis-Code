@@ -1,102 +1,155 @@
-# Daily Log — 2026-03-12 — Outdoor Readiness Pack, Control Rehearsal, and Simulation Preparation
+# Daily Log — 2026-03-12 (Day 12) — MAVROS Learning + Indoor Baseline
 
-## Goal
+## Reality Check
 
-Finish the field-readiness documentation, rehearse the perception-to-control interface safely, and prepare a simulation or replay workflow before attempting any real outdoor testing.
+**Constraints today:**
+- ❌ No outdoor testing (Pi5 at home, Pixhawk at IST)
+- ❌ No MAVROS hardware (no Pixhawk access)
+- ✅ Indoor perception validation possible
+- ✅ MAVROS learning and preparation possible
 
-**Target outcome:**
-- Outdoor field checklist completed
-- Scenario sheet and bag naming frozen
-- Portable bring-up procedure documented
-- `control_ref_node` further validated indoors or via replay
-- Safe simulation or bag-replay rehearsal path prepared
-- Clear conditions defined for the first real outdoor test day
+**Focus:** Learn MAVROS fundamentals and establish indoor perception baseline
 
 ---
 
-## Context
+## Goals for Today
 
-| Key | Value |
-|-----|-------|
-| Previous validation | Lean perception frozen on Day 11 |
-| Control status | Ground-only `control_ref_node` validated on `/control_ref/cmd_vel` |
-| Outdoor status | Not ready today, field session postponed |
-| Current priority | Preparation, rehearsal, and simulation before real tests |
-| Risk to avoid | Rushing into outdoor testing without full readiness |
-| Test mode | Indoor only, ground-only, no flight authority |
+### 1. MAVROS Learning (Critical Path)
+- [ ] Read `docs/mavros_integration_guide.md` thoroughly
+- [ ] Install MAVROS if not already present
+- [ ] Understand topics and coordinate frames
+- [ ] Note key commands and procedures
+- [ ] Identify questions for supervisors
 
----
+### 2. First Indoor Perception Session
+- [ ] Run 10-minute sustained perception session
+- [ ] Test target lock with movement
+- [ ] Monitor system health (CPU, memory, temps)
+- [ ] Record bag: `bags/live_camera/2026-03-12__indoor_baseline_10min/`
 
-## Work Plan
+### 3. MAVROS Code Design
+- [ ] Review current `control_ref_node.py`
+- [ ] Plan MAVROS publisher integration
+- [ ] Sketch `enable_mavros` parameter logic
 
-### A) Outdoor Readiness Pack
-
-Prepare all logistics and field documentation before any real test day.
-
-**Tasks:**
-- [ ] Finalize outdoor field checklist
-- [ ] Finalize startup procedure for field use
-- [ ] Finalize shutdown procedure for field use
-- [ ] Finalize field packing list
-- [ ] Confirm disk space requirements and bag storage plan
-- [ ] Confirm battery and cable checklist
-- [ ] Freeze outdoor bag naming convention
-- [ ] Prepare participant scenario sheet
-
-**Deliverables:**
-- `docs/outdoor_field_checklist.md`
-- `docs/outdoor_scenarios.md`
-- `docs/field_startup_shutdown.md`
-- Frozen outdoor bag naming scheme
+### 4. Contact Supervisors ⚠️ CRITICAL
+- [ ] Review `supervisor_questions.md`
+- [ ] Email supervisors with safety questions
+- [ ] Request answers before Monday evening
 
 ---
 
-### B) Control Rehearsal — Indoor and Ground-Only
+## Work Sessions
 
-Continue validating the controller safely before any real-world vehicle integration.
+### Morning Session (3-4 hours)
 
-**Tasks:**
-- [ ] Re-run lean perception stack + `control_ref_node`
-- [ ] Reconfirm yaw sign and forward sign
-- [ ] Reconfirm zero-on-invalid behaviour
-- [ ] Reconfirm smooth slew-limited commands
-- [ ] Optionally record one more short indoor bag if needed
-- [ ] Freeze the validated run command in documentation
+**MAVROS learning:**
+```bash
+# Install MAVROS
+sudo apt install ros-jazzy-mavros ros-jazzy-mavros-extras
+wget https://raw.githubusercontent.com/mavlink/mavros/ros2/mavros/scripts/install_geographiclib_datasets.sh
+sudo bash ./install_geographiclib_datasets.sh
 
-**Deliverables:**
-- Confirmed indoor ground-only control behaviour
-- Finalized command-line invocation for `control_ref_node`
-- Updated `docs/control_interface.md`
+# Verify installation
+ros2 pkg list | grep mavros
+```
+
+**Read and understand:**
+- Topics: `/mavros/setpoint_velocity/cmd_vel`, `/mavros/state`
+- Coordinate frames: body frame (x=forward, y=left, z=up)
+- Launch command for Ethernet: `ros2 launch mavros apm.launch fcu_url:=udp://192.168.1.1:14550@`
+
+### Afternoon Session (3-4 hours)
+
+**Indoor perception session:**
+```bash
+# Launch lean perception stack
+# Terminal 1: camera_init_node
+# Terminal 2: camera_capture_node  
+# Terminal 3: detection_zmq.py (container)
+# Terminal 4: inference_client_node
+# Terminal 5: tracker_node
+# Terminal 6: target_selector_node
+# Terminal 7: bag record
+
+# Record 10 minutes
+cd $THESIS_ROOT/ros2_ws
+ros2 bag record --storage mcap \
+  -o ../bags/live_camera/2026-03-12__indoor_baseline_10min \
+  /camera/fps /detections /timing /target
+```
+
+**During run:**
+- Move in front of camera to test target lock
+- Note any anomalies or crashes
+- Monitor temperatures
+
+### Evening Session (2-3 hours)
+
+**Quick analysis:**
+```bash
+# Check bag stats
+ros2 bag info bags/live_camera/2026-03-12__indoor_baseline_10min
+
+# Verify ~16 Hz on /target
+# Note any issues
+```
+
+**Email supervisors:**
+- Send questions from `supervisor_questions.md`
+- Request answers before Monday
+- Emphasize Tuesday IST session importance
+
+**Plan tomorrow:**
+- Review what worked/didn't work today
+- Adjust Day 13 tasks if needed
 
 ---
 
-### C) Replay or Simulation Preparation
+## Expected Deliverables
 
-Prepare a safe way to rehearse controller behaviour without going outdoors.
-
-**Tasks:**
-- [ ] Decide whether tomorrow's rehearsal uses:
-  - bag replay, or
-  - lightweight simulation, or
-  - both
-- [ ] Identify which topic stream is easiest to replay into `control_ref_node`
-- [ ] If using bag replay, confirm `/target` replay works
-- [ ] If using simulation, define minimal synthetic target motion cases:
-  - centred target
-  - left/right motion
-  - near/far motion
-  - target loss
-- [ ] Document the rehearsal method and commands
-
-**Deliverables:**
-- Safe replay or simulation rehearsal path
-- Notes on what can be tested before real outdoor runs
+- [ ] MAVROS installed and verified
+- [ ] Understanding of MAVROS basics (topics, frames, launch)
+- [ ] 10-minute indoor perception bag recorded
+- [ ] Supervisors contacted with safety questions
+- [ ] Day 13 plan adjusted based on progress
 
 ---
 
-### D) First Real-Test Gate Definition
+## Notes and Issues
 
-Define exactly what must be true before the first outdoor session is allowed.
+*(Fill in as you work)*
+
+**MAVROS learning:**
+- 
+
+**Indoor session:**
+- 
+
+**Questions for supervisors:**
+- 
+
+**Blockers:**
+- 
+
+---
+
+## End of Day Review
+
+**Completed:**
+- [ ] MAVROS learned
+- [ ] Indoor session done
+- [ ] Supervisors emailed
+- [ ] Tomorrow planned
+
+**Time spent:**
+- Morning: ___ hours
+- Afternoon: ___ hours  
+- Evening: ___ hours
+
+**Energy level:** _(high / medium / low)_
+
+**Ready for Day 13?** _(yes / needs adjustment)_
 
 **Tasks:**
 - [ ] Write GO conditions for first outdoor day

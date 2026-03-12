@@ -1,4 +1,250 @@
-# Daily Log — 2026-03-15 — Week 11 Review, Readiness Assessment, and Next-Step Planning
+# Daily Log — 2026-03-15 (Day 15) — W11 Review + W12 Final Readiness
+
+## Reality Check
+
+**Last day of W11 preparation week**
+- ❌ No outdoor testing (deferred to W12)
+- ✅ Complete W11 deliverables review
+- ✅ Final W12 readiness verification
+
+**Focus:** Review all prep work and ensure ready for Tuesday IST session
+
+---
+
+## Goals for Today
+
+### 1. Generate Final Indoor Analysis Report
+- [ ] Combine all indoor session data
+- [ ] Create thesis-quality plots and tables
+- [ ] Write summary of baseline performance
+- [ ] Save: `reports/system/W11_indoor_baseline_validation.md`
+
+### 2. Review All W11 Deliverables
+- [ ] MAVROS integration code complete and compiles ✓
+- [ ] Indoor baseline data collected (3+ sessions) ✓
+- [ ] Timing analysis and plots generated ✓
+- [ ] Safety documentation complete ✓
+- [ ] Tuesday session plan detailed ✓  
+- [ ] Thursday options defined ✓
+- [ ] Equipment checklist finalized ✓
+- [ ] Startup/shutdown procedures documented ✓
+
+### 3. Final Code Verification
+- [ ] Review control_ref_node.py MAVROS integration
+- [ ] Test compilation one more time
+- [ ] Check for syntax errors
+- [ ] Verify git status (all changes committed)
+
+### 4. Create W12 Checklist
+- [ ] Monday (Day 16): Pack equipment, final checks
+- [ ] Tuesday (Day 17): IST session 1, transport everything
+- [ ] Thursday (Day 19): IST session 2
+- [ ] Items to bring list
+- [ ] Pre-session verification steps
+
+### 5. Identify Remaining Questions/Blockers
+- [ ] List any questions for supervisors Monday
+- [ ] Note uncertainties about MAVROS connection
+- [ ] Flag equipment concerns
+- [ ] Check supervisor answers received
+
+### 6. Fill Out W11 Retrospective
+- [ ] What worked well
+- [ ] What didn't work
+- [ ] Key learnings
+- [ ] Adjustments for W12
+
+### 7. Write W12 Readiness Assessment
+- [ ] Tuesday IST blockers: [list any]
+- [ ] Equipment ready: [yes/no]
+- [ ] Code ready: [yes/untested/issues]
+- [ ] Safety protocols: [documented/partial]
+- [ ] Confidence level: [high/medium/low]
+
+---
+
+## Work Sessions
+
+### Morning Session (3-4 hours)
+
+**Final analysis report:**
+```bash
+# Combine all data from 3 sessions
+# - 2026-03-12__indoor_baseline_10min
+# - 2026-03-13__indoor_extended_15min
+# - 2026-03-14__indoor_multiperson
+
+# Create comprehensive report with:
+# - FPS statistics (mean, std, p50, p95)
+# - Latency breakdown (capture → inference → tracker → selector)
+# - Thermal behavior over time
+# - Multi-person tracking performance
+# - Baseline for outdoor comparison
+
+# Save to reports/system/W11_indoor_baseline_validation.md
+```
+
+**Deliverable checklist review:**
+Go through each item and verify completion or note why deferred.
+
+### Afternoon Session (2-3 hours)
+
+**Code verification:**
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select thesis_bringup
+
+# Test that control_ref_node runs (without MAVROS hardware)
+ros2 run thesis_bringup control_ref_node --ros-args \
+  -p enable_mavros:=false
+
+# Verify no syntax errors, clean startup
+```
+
+**Git status check:**
+```bash
+git status
+git log --oneline -5
+# Verify MAVROS integration committed
+```
+
+**W12 Monday checklist:**
+- [ ] Pack Pi5, camera, laptop, cables
+- [ ] Charge laptop fully
+- [ ] Print or save offline:
+  - MAVROS integration guide
+  - Safety checklist  
+  - Tuesday session plan
+- [ ] Sync all code (git push)
+- [ ] Review Tuesday timeline
+- [ ] Confirm supervisor availability
+
+### Evening Session (2-3 hours)
+
+**W11 Retrospective:**
+
+What worked well:
+- Indoor validation approach (safe, controlled baseline)
+- MAVROS learning before hardware access
+- Detailed planning and documentation
+- Realistic constraint acknowledgment
+
+What didn't work:
+- Initial overambitious outdoor objectives
+- Underestimated MAVROS learning curve (?)
+- _(other issues encountered)_
+
+Key learnings:
+- Thorough preparation saves field time
+- Realistic planning beats optimistic planning
+- Hardware dependencies must be explicit
+- Safety questions need advance notice
+
+Adjustments for W12:
+- Flexible session goals (options A/B/C)
+- Conservative first tests
+- Emphasis on learning/debugging over demos
+- _(other adjustments)_
+
+**W12 Readiness Assessment:**
+
+Fill out in weekly.md:
+- MAVROS learning: complete / partial / needs work
+- Topics identified: [list]
+- Control node updated: yes / no
+- Safety checklist: complete / partial
+- Tuesday blockers: none / [list]
+- Equipment ready: yes / no / [missing]
+- Code status: compiles / errors / untested
+- Confidence: high / medium / low
+
+**Final preparation:**
+- [ ] Review supervisor_questions.md answers
+- [ ] Confirm battery charged and ready
+- [ ] Confirm Pixhawk location at IST
+- [ ] Confirm field access Tuesday
+- [ ] Check weather forecast Tuesday/Thursday
+- [ ] Get good rest before W12 integration week
+
+---
+
+## Expected Deliverables
+
+- [ ] Final indoor analysis report complete
+- [ ] All W11 deliverables reviewed and documented
+- [ ] Code verified compiling
+- [ ] W12 checklist created
+- [ ] Remaining questions identified
+- [ ] W11 retrospective filled out
+- [ ] W12 readiness assessed honestly
+- [ ] Ready for Monday packing and Tuesday session
+
+---
+
+## Notes and Issues
+
+*(Fill in as you work)*
+
+**Analysis report:**
+-
+
+** Deliverables status:**
+-
+
+**Code verification:**
+-
+
+**Remaining questions:**
+-
+
+**W11 retrospective:**
+-
+
+**W12 confidence level:**
+-
+
+**Blockers for Tuesday:**
+-
+
+---
+
+## End of Day Review — W11 COMPLETE!
+
+**W11 Major Achievements:**
+- [ ] MAVROS learned and integrated (untested)
+- [ ] Indoor baseline established
+- [ ] W12 thoroughly planned
+- [ ] Safety protocols documented
+
+**Time spent this week (total):**
+- Day 12: ___ hours
+- Day 13: ___ hours
+- Day 14: ___ hours
+- Day 15: ___ hours
+- Total: ___ hours
+
+**W11 Success Level:** _(Minimum / Target / Stretch)_
+
+**W12 Readiness:** _(Ready / Mostly ready / Need adjustments)_
+
+**Mental state:** _(Confident / Cautious / Concerned)_
+
+**Sleep priority:** ✅ GET GOOD REST TONIGHT!
+
+---
+
+## Monday (Day 16) Quick Checklist
+
+Before leaving for IST Tuesday:
+- [ ] All equipment packed
+- [ ] Laptop charged
+- [ ] Docs accessible offline
+- [ ] Git synced
+- [ ] Tuesday plan reviewed
+- [ ] Supervisor contact confirmed
+- [ ] Weather checked
+- [ ] Good mindset 🚀
 
 ## Goal
 

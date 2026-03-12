@@ -1,4 +1,227 @@
-# Daily Log — 2026-03-14 — First Real Outdoor Bring-Up and Exploratory Validation
+# Daily Log — 2026-03-14 (Day 14) — Indoor Validation Completion + Field Logistics
+
+## Reality Check
+
+**Constraints today:**
+- ❌ No outdoor testing (Pi5 at home, Pixhawk at IST  until W12)
+- ✅ Complete indoor validation possible
+- ✅ Finalize all W12 preparation tasks
+
+**Focus:** Complete indoor baseline validation and finalize W12 field logistics
+
+---
+
+## Goals for Today
+
+### 1. Third Indoor Perception Session
+- [ ] Run multi-person test if possible (recruit friend/housemate)
+- [ ] Or test with video of multiple people
+- [ ] Document target selection and switching
+- [ ] Record bag: `bags/live_camera/2026-03-14__indoor_multiperson/`
+
+### 2. Generate Timing Analysis
+- [ ] Run analysis on all 3 indoor bags
+- [ ] Create plots: FPS over time, latency distributions  
+- [ ] Calculate statistics: mean, p50, p95, p99
+- [ ] Document thermal behavior over time
+- [ ] Save report: `reports/system/W11_indoor_baseline_validation.md`
+
+### 3. Finalize IST Equipment Checklist
+- [ ] List everything to bring to IST
+- [ ] Verify you have all items at home
+- [ ] Pack non-essential items ahead of time
+- [ ] **Ethernet cable** (critical!)
+- [ ] Laptop, camera, cables
+
+### 4. Create Detailed Tuesday Session Plan
+- [ ] Hour-by-hour timeline
+- [ ] Specific tasks for each phase
+- [ ] Success criteria defined
+- [ ] Contingency plans for common issues
+
+### 5. Define Thursday Session Options
+- [ ] Option A: If Tuesday has issues (debug plan)
+- [ ] Option B: If Tuesday succeeds (outdoor perception)
+- [ ] Option C: If Tuesday succeeds (integrated outdoor test)
+
+### 6. Test Control Response
+- [ ] Run control node against recorded bags
+- [ ] Test different scenarios if time permits
+- [ ] Verify command saturation and slew limiting
+- [ ] Document any improvements needed
+
+### 7. Prepare Startup/Shutdown Procedures
+- [ ] Step-by-step startup sequence
+- [ ] MAVROS launch command
+- [ ] Perception stack startup
+- [ ] Control node startup with correct parameters
+- [ ] Clean shutdown procedure
+
+---
+
+## Work Sessions
+
+### Morning Session (3-4 hours)
+
+**Multi-person indoor session:**
+```bash
+# Option 1: Recruit someone to help test
+# Option 2: Play video with multiple people  
+# Option 3: Use objects + yourself
+
+# Launch full stack, run 10-15 min
+ros2 bag record --storage mcap \
+  -o ../bags/live_camera/2026-03-14__indoor_multiperson \
+  /camera/fps /detections /timing /target
+```
+
+**Timing analysis:**
+```bash
+# Run analysis on all 3 bags
+python tools/analyse_bag_timing.py bags/live_camera/2026-03-12__indoor_baseline_10min
+python tools/analyse_bag_timing.py bags/live_camera/2026-03-13__indoor_extended_15min  
+python tools/analyse_bag_timing.py bags/live_camera/2026-03-14__indoor_multiperson
+
+# Generate plots and statistics
+# Save to reports/system/W11_indoor_baseline_validation.md
+```
+
+### Afternoon Session (3-4 hours)
+
+**Finalize equipment checklist:**
+
+To bring to IST:
+- [ ] Raspberry Pi 5
+- [ ] Camera (TEVS-AR0234)
+- [ ] Laptop + charger
+- [ ] **Ethernet cable (Pi5 ↔ Pixhawk)** ⚠️ CRITICAL
+- [ ] Backup Ethernet cable
+- [ ] Camera connection cables
+- [ ] Notebook and pen
+- [ ] Water, snacks
+
+Available at IST (confirm):
+- [ ] Pixhawk 4 + drone
+- [ ] 4-cell LiPo battery (CONFIRMED)
+- [ ] RC transmitter
+- [ ] Tools for prop removal
+
+**Create Tuesday timeline:**
+
+Hour 1: MAVROS connection
+- Physical setup (15 min)
+- MAVROS launch (15 min)
+- Connection validation (20 min)
+- Troubleshooting buffer (10 min)
+
+Hour 2: Perception + MAVROS coexistence
+- Launch perception (20 min)
+- Resource monitoring (15 min)
+- Validation (20 min)
+- Recording (5 min)
+
+Hour 3: Control integration
+- Control node launch (10 min)
+- Setpoint validation (20 min)
+- Sign validation (20 min)
+- Recording (10 min)
+
+Hour 4: Analysis and planning
+- Shutdown (5 min)
+- Data transfer (10 min)
+- Quick analysis (20 min)
+- Documentation (15 min)
+- Thursday planning (10 min)
+
+### Evening Session (2-3 hours)
+
+**Control testing:**
+```bash
+# Test control with replayed bags
+# Verify smooth behavior
+# Test edge cases
+```
+
+**Startup/shutdown procedures:**
+
+Startup sequence:
+1. Connect Pi5 to battery
+2. Connect Pixhawk via Ethernet
+3. Remove propellers
+4. SSH into Pi5
+5. Launch MAVROS: `ros2 launch mavros apm.launch fcu_url:=udp://192.168.1.1:14550@`
+6. Verify connection: `ros2 topic echo /mavros/state`
+7. Launch perception stack (6 nodes)
+8. Launch control_ref_node with `enable_mavros:=true`
+
+Shutdown sequence:
+1. Ctrl-C all ROS nodes
+2. Verify MAVROS shutdown
+3. Disconnect Pixhawk
+4. Power off Pi5
+5. Secure equipment
+
+**Confirm with supervisors:**
+- [ ] Battery location and status
+- [ ] Pixhawk/drone location  
+- [ ] Field access Tuesday/Thursday
+- [ ] Answers to safety questions received
+
+---
+
+## Expected Deliverables
+
+- [ ] Third indoor session completed
+- [ ] Timing analysis and plots generated
+- [ ] Equipment checklist finalized
+- [ ] Tuesday session plan detailed
+- [ ] Thursday options defined
+- [ ] Startup/shutdown procedures documented
+- [ ] Supervisor confirmations received
+
+---
+
+## Notes and Issues
+
+*(Fill in as you work)*
+
+**Indoor session:**
+-
+
+**Timing analysis results:**
+-
+
+**Equipment status:**
+-
+
+**Tuesday plan:**
+-
+
+**Supervisor feedback:**
+-
+
+**Blockers:**
+-
+
+---
+
+## End of Day Review
+
+**Completed:**
+- [ ] Third session done
+- [ ] Analysis complete
+- [ ] Equipment ready
+- [ ] Tuesday planned
+- [ ] Supervisors confirmed
+
+**Time spent:**
+- Morning: ___ hours
+- Afternoon: ___ hours
+- Evening: ___ hours
+
+**W12 readiness:** _(high / medium / low)_
+
+**Ready for Day 15?** _(yes / needs adjustment)_
 
 ## Goal
 

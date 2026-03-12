@@ -1,153 +1,188 @@
-# Daily Log — 2026-03-13 — Replay Rehearsal, MAVROS Topic Prep, and Real-Test Readiness Gate
+# Daily Log — 2026-03-13 (Day 13) — MAVROS Code Implementation + Control Refinement
 
-## Goal
+## Reality Check
 
-Rehearse the perception-to-control pipeline safely using replay or synthetic target inputs, prepare MAVROS topic-level integration on the ground, and define the final gate for the first real outdoor session.
+**Constraints today:**
+- ❌ No outdoor testing (Pi5 at home, Pixhawk at IST)
+- ❌ No MAVROS hardware (no Pixhawk access until W12)
+- ✅ Can implement MAVROS integration code
+- ✅ Can test control logic with replay/synthetic targets
 
-**Target outcome:**
-- Replay or synthetic `/target` rehearsal completed
-- `control_ref_node` exercised in safe repeatable cases
-- MAVROS topic-level message path prepared or verified, ground-only
-- Outdoor readiness documents finalized
-- Clear GO / NO-GO decision for the first real outdoor day
-
----
-
-## Context
-
-| Key | Value |
-|-----|-------|
-| Previous work | Day 11 lean mode freeze and control integration |
-| Day 12 focus | Outdoor readiness pack, control rehearsal, simulation preparation |
-| Control status | `control_ref_node` validated indoors on `/control_ref/cmd_vel` |
-| `/target` status | Live message flow validated, pixel-space target fields understood |
-| Outdoor status | Real outdoor testing postponed until preparation is complete |
-| Test mode | Indoor only, ground-only, no flight authority |
-| Current priority | Rehearsal, MAVROS topic prep, and readiness definition |
+**Focus:** Implement MAVROS integration and refine control logic
 
 ---
 
-## Work Plan
+## Goals for Today
 
-### A) Finalize Outdoor Readiness Pack
+### 1. MAVROS Integration Implementation (Critical)
+- [ ] Update `control_ref_node.py` with MAVROS publisher
+- [ ] Add `geometry_msgs/Twist` publisher to `/mavros/setpoint_velocity/cmd_vel`
+- [ ] Add `enable_mavros` safety parameter (default False)
+- [ ] Implement conditional publishing logic
+- [ ] Test code compiles (no syntax errors)
+- [ ] Git commit changes
 
-Complete the documentation and logistics needed before any field session.
+### 2. MAVROS Documentation
+- [ ] Document MAVROS launch procedure
+- [ ] Write down Ethernet connection command
+- [ ] Note topic checking steps
+- [ ] Update control_interface.md
 
-**Tasks:**
-- [ ] Finalize outdoor field checklist
-- [ ] Finalize field startup procedure
-- [ ] Finalize field shutdown procedure
-- [ ] Finalize packing list
-- [ ] Freeze outdoor bag naming convention
-- [ ] Finalize participant scenario sheet
-- [ ] Confirm disk space and storage plan
-- [ ] Confirm battery and cable checklist
+### 3. Second Indoor Perception Session (Extended)
+- [ ] Run 15-20 minute session
+- [ ] Test sustained performance over time
+- [ ] Monitor thermal behavior
+- [ ] Record bag: `bags/live_camera/2026-03-13__indoor_extended_15min/`
 
-**Deliverables:**
-- `docs/outdoor_field_checklist.md`
-- `docs/outdoor_scenarios.md`
-- `docs/field_startup_shutdown.md`
-- Frozen outdoor bag naming scheme
+### 4. Control Logic Testing
+- [ ] Test control with replayed bag or synthetic targets
+- [ ] Validate target-loss behavior
+- [ ] Test edge cases (stale, out-of-bounds, low confidence)
+- [ ] Document control response
 
----
-
-### B) Replay or Synthetic `/target` Rehearsal
-
-Rehearse controller behaviour without needing an outdoor deployment.
-
-**Tasks:**
-- [ ] Choose rehearsal method:
-  - bag replay, or
-  - synthetic `/target` publisher, or
-  - both
-- [ ] Exercise these cases:
-  - centred target
-  - left target
-  - right target
-  - near target
-  - far target
-  - stale / missing target
-- [ ] Verify command signs again
-- [ ] Verify zero-on-invalid again
-- [ ] Verify slew limiting again
-- [ ] Record one short rehearsal bag if useful
-
-**Deliverables:**
-- Safe rehearsal method documented
-- Rehearsal notes on command behaviour
-- Optional bag with replay / synthetic control exercise
+### 5. Safety Documentation
+- [ ] Create pre-test safety checklist
+- [ ] Document emergency stop procedures
+- [ ] Research ArduPilot failsafes
+- [ ] Start Tuesday session plan
 
 ---
 
-### C) MAVROS Topic-Level Preparation, Ground-Only
+## Work Sessions
 
-Prepare the interface to the autopilot without giving any control authority.
+### Morning Session (3-4 hours)
 
-**Tasks:**
-- [ ] Decide the MAVROS setpoint topic to target
-- [ ] Confirm expected message type
-- [ ] Check topic names and message flow requirements
-- [ ] If possible, launch MAVROS and verify passive connectivity only
-- [ ] Verify that `control_ref_node` output can be remapped or redirected cleanly
-- [ ] Do not arm, do not command vehicle motion, do not test authority
+**MAVROS code implementation:**
 
-**Deliverables:**
-- MAVROS topic choice frozen
-- Notes added to `docs/control_interface.md`
-- Ground-only topic integration path documented
+Edit `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/control_ref_node.py`:
+
+```python
+from geometry_msgs.msg import Twist  # Add this import
+
+# In __init__:
+self.declare_parameter('enable_mavros', False)
+self.enable_mavros = bool(self.get_parameter('enable_mavros').value)
+
+# Add MAVROS publisher
+self.pub_mavros = self.create_publisher(
+    Twist,
+    '/mavros/setpoint_velocity/cmd_vel',
+    10
+)
+
+# New method:
+def publish_mavros_cmd(self, vx: float, vy: float, yaw_z: float) -> None:
+    msg = Twist()
+    msg.linear.x = vx
+    msg.linear.y = vy
+    msg.linear.z = 0.0
+    msg.angular.x = 0.0
+    msg.angular.y = 0.0
+    msg.angular.z = yaw_z
+    self.pub_mavros.publish(msg)
+
+# In on_timer(), add:
+if self.enable_mavros:
+    self.publish_mavros_cmd(self.prev_vx, self.prev_vy, self.prev_yaw_z)
+```
+
+**Test compilation:**
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select thesis_bringup
+```
+
+**Git commit:**
+```bash
+git add ros2_ws/src/thesis_bringup/thesis_bringup/nodes/control_ref_node.py
+git commit -m "Add MAVROS velocity setpoint integration (untested)"
+git push
+```
+
+### Afternoon Session (3-4 hours)
+
+**Extended indoor perception session:**
+```bash
+# Launch full lean stack
+# Run for 15-20 minutes
+# Record bag
+
+ros2 bag record --storage mcap \
+  -o ../bags/live_camera/2026-03-13__indoor_extended_15min \
+  /camera/fps /detections /timing /target
+```
+
+**Control logic testing:**
+- Option A: Replay previous bag, run control_ref_node separately
+- Option B: Create simple synthetic target publisher
+- Test target-loss → zero behavior
+- Test boundary conditions
+
+### Evening Session (2-3 hours)
+
+**Safety documentation:**
+- Create safety checklist (based on supervisor answers)
+- Emergency stop procedure
+- ArduPilot failsafe research
+- Note questions for supervisors
+
+**Tuesday session planning:**
+- Hour-by-hour timeline
+- Equipment checklist
+- Success criteria
+- Backup plans
 
 ---
 
-### D) Integrated Ground-Only Smoke Rehearsal
+## Expected Deliverables
 
-Run lean perception plus control-side nodes together again in a safe indoor setup.
-
-**Tasks:**
-- [ ] Launch lean perception stack
-- [ ] Launch `control_ref_node`
-- [ ] If ready, launch MAVROS passively
-- [ ] Verify `/target` and control outputs coexist cleanly
-- [ ] Record one short integrated smoke bag if needed
-
-**Suggested bag topics:**
-- `/camera/fps`
-- `/detections`
-- `/timing`
-- `/target`
-- `/control_ref/cmd_vel`
-- optional MAVROS state topic if passive MAVROS is running
-
-**Deliverables:**
-- Short integrated rehearsal run
-- Confirmation that perception and control coexist cleanly
+- [ ] MAVROS integration coded and compiles
+- [ ] 15-20 min indoor perception bag recorded
+- [ ] Control logic tested with replay/synthetic
+- [ ] Safety documentation started
+- [ ] Tuesday session outline drafted
+- [ ] Code committed to git
 
 ---
 
-### E) Real Outdoor GO / NO-GO Gate
+## Notes and Issues
 
-Define exactly what must be true before the first real outdoor session is allowed.
+*(Fill in as you work)*
 
-**Tasks:**
-- [ ] Write GO conditions
-- [ ] Write NO-GO conditions
-- [ ] List remaining blockers
-- [ ] Decide whether first real outdoor session will be:
-  - perception-only, or
-  - perception + ground-only control monitoring
+**MAVROS coding:**
+- 
 
-**Deliverables:**
-- Explicit GO / NO-GO gate for first real outdoor day
-- Updated next-step sequence
+**Indoor session:**
+-
+
+**Control testing:**
+-
+
+**Safety planning:**
+-
+
+**Blockers:**
+-
 
 ---
 
-## Expected Outcomes
+## End of Day Review
 
-By end of Day 13, you should have:
+**Completed:**
+- [ ] MAVROS code implemented
+- [ ] Extended session done
+- [ ] Control testing done
+- [ ] Safety docs started
 
-1. **Field prep complete**
-   - checklist
-   - startup / shutdown procedure
+**Time spent:**
+- Morning: ___ hours
+- Afternoon: ___ hours
+- Evening: ___ hours
+
+**Code status:** _(compiles / has errors / untested)_
+
+**Ready for Day 14?** _(yes / needs adjustment)_
    - packing list
    - scenario sheet
 
