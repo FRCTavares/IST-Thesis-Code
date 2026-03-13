@@ -55,10 +55,14 @@ class ControlRefNode(Node):
         self.declare_parameter('invert_lateral', False)
 
         self.declare_parameter('debug_log_every_n', 30)
+        self.declare_parameter('enable_mavros', False)
+        self.declare_parameter('mavros_topic', '/mavros/setpoint_velocity/cmd_vel')
 
         target_topic = str(self.get_parameter('target_topic').value)
         cmd_topic = str(self.get_parameter('cmd_topic').value)
         rate_hz = float(self.get_parameter('rate_hz').value)
+        self.enable_mavros = bool(self.get_parameter('enable_mavros').value)
+        self.mavros_topic = str(self.get_parameter('mavros_topic').value)
 
         self.stale_timeout_s = float(self.get_parameter('stale_timeout_s').value)
 
@@ -115,11 +119,15 @@ class ControlRefNode(Node):
         )
 
         self.pub_cmd = self.create_publisher(TwistStamped, cmd_topic, 10)
+        self.pub_mavros = self.create_publisher(TwistStamped, self.mavros_topic, 10)
 
         self.timer = self.create_timer(1.0 / rate_hz, self.on_timer)
 
         self.get_logger().info(f'Listening on {target_topic}')
         self.get_logger().info(f'Publishing commands to {cmd_topic}')
+        self.get_logger().info(
+            f'MAVROS mirroring {"enabled" if self.enable_mavros else "disabled"} on {self.mavros_topic}'
+        )
 
     def on_target(self, msg: TargetState) -> None:
         self.last_target = msg
@@ -147,22 +155,31 @@ class ControlRefNode(Node):
     def slew(self, x: float, x_prev: float, max_delta: float) -> float:
         return clamp(x, x_prev - max_delta, x_prev + max_delta)
 
-    def publish_cmd(self, vx: float, vy: float, yaw_z: float) -> None:
+    def _make_twist_msg(self, stamp, vx: float, vy: float, yaw_z: float, frame_id: str = '') -> TwistStamped:
         msg = TwistStamped()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.twist.linear.x = vx
-        msg.twist.linear.y = vy
+        msg.header.stamp = stamp
+        msg.header.frame_id = frame_id
+        msg.twist.linear.x = float(vx)
+        msg.twist.linear.y = float(vy)
         msg.twist.linear.z = 0.0
         msg.twist.angular.x = 0.0
         msg.twist.angular.y = 0.0
-        msg.twist.angular.z = yaw_z
+        msg.twist.angular.z = float(yaw_z)
+        return msg
+
+    def publish_pair(self, stamp, vx: float, vy: float, yaw_z: float) -> None:
+        """Publish the same command to both the debug topic and (if enabled) the MAVROS topic.
+        Both messages share the exact same header.stamp to make topic-diff checks reliable."""
+        msg = self._make_twist_msg(stamp, vx, vy, yaw_z)
         self.pub_cmd.publish(msg)
+        if self.enable_mavros:
+            self.pub_mavros.publish(self._make_twist_msg(stamp, vx, vy, yaw_z))
 
     def publish_zero(self) -> None:
-        self.prev_vx = self.slew(0.0, self.prev_vx, self.max_delta_vx)
-        self.prev_vy = self.slew(0.0, self.prev_vy, self.max_delta_vy)
-        self.prev_yaw_z = self.slew(0.0, self.prev_yaw_z, self.max_delta_yaw_z)
-        self.publish_cmd(self.prev_vx, self.prev_vy, self.prev_yaw_z)
+        self.prev_vx = 0.0
+        self.prev_vy = 0.0
+        self.prev_yaw_z = 0.0
+        self.publish_pair(self.get_clock().now().to_msg(), 0.0, 0.0, 0.0)
 
     def on_timer(self) -> None:
         self.tick_count += 1
@@ -202,7 +219,7 @@ class ControlRefNode(Node):
         self.prev_vy = self.slew(vy_cmd, self.prev_vy, self.max_delta_vy)
         self.prev_yaw_z = self.slew(yaw_z_cmd, self.prev_yaw_z, self.max_delta_yaw_z)
 
-        self.publish_cmd(self.prev_vx, self.prev_vy, self.prev_yaw_z)
+        self.publish_pair(self.get_clock().now().to_msg(), self.prev_vx, self.prev_vy, self.prev_yaw_z)
 
         if self.debug_log_every_n > 0 and (self.tick_count % self.debug_log_every_n == 0):
             self.get_logger().info(

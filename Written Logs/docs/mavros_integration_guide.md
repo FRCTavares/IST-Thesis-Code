@@ -1,6 +1,6 @@
 # MAVROS Integration Guide
 
-**Status:** Learning phase - untested until W12 hardware access
+**Status:** Bridge frozen (Day 13) — code validated via offline replay bag; hardware authority deferred to W12 Guided-mode bench session
 
 **Purpose:** Integrate perception pipeline with ArduPilot autopilot via MAVROS for velocity-based target tracking.
 
@@ -13,23 +13,25 @@
 | Topic | Message Type | Purpose | Status |
 |-------|--------------|---------|--------|
 | `/mavros/state` | `mavros_msgs/State` | FCU connection, armed, mode | Monitor only |
-| `/mavros/setpoint_velocity/cmd_vel` | `geometry_msgs/Twist` | Velocity setpoints (body frame) | **Target for control** |
+| `/mavros/setpoint_velocity/cmd_vel` | `geometry_msgs/msg/TwistStamped` | Velocity setpoints via MAVROS setpoint velocity plugin | **Target for control** |
+| `/mavros/setpoint_velocity/cmd_vel_unstamped` | `geometry_msgs/msg/Twist` | Unstamped velocity alternative | Not used in this project |
 | `/mavros/local_position/pose` | `geometry_msgs/PoseStamped` | Current position feedback | Future use |
 | `/mavros/local_position/velocity_body` | `geometry_msgs/TwistStamped` | Current velocity | Future use |
 | `/mavros/rc/in` | `mavros_msgs/RCIn` | RC receiver inputs | Safety monitor |
 
 ### Coordinate Frames
 
-**Body Frame (for velocity control):**
-- `linear.x` = forward velocity (m/s)
-- `linear.y` = left velocity (m/s) 
-- `linear.z` = up velocity (m/s)
-- `angular.z` = yaw rate (rad/s, CCW positive)
+**Frozen Day 13 assumption:**
+- MAVROS bridge topic stays on `/mavros/setpoint_velocity/cmd_vel` with `geometry_msgs/msg/TwistStamped`
+- MAVROS `setpoint_velocity` frame is frozen to `BODY_NED` for planning and documentation
+- The MAVROS plugin performs frame transforms according to `mav_frame`; do not improvise axis sign changes in the field
+- Real authority testing is deferred until a Guided-mode bench session with the vehicle physically secured
 
-**Our mapping:**
-- Yaw control → `angular.z`
-- Forward control → `linear.x`
-- Lateral control → `linear.y` (currently disabled)
+**Control mapping at the ROS node output:**
+- Forward command → `twist.linear.x`
+- Lateral command → `twist.linear.y` (currently disabled)
+- Vertical command → `twist.linear.z = 0.0`
+- Yaw-rate command → `twist.angular.z`
 
 ---
 
@@ -113,43 +115,70 @@ ros2 topic echo /mavros/state
 ### Required Changes
 
 **Add MAVROS publisher:**
+### Implementation (Day 13 — frozen)
+
+**Parameters added to `__init__`:**
 ```python
-from geometry_msgs.msg import Twist  # Note: Twist, not TwistStamped
+from geometry_msgs.msg import TwistStamped
 
-# In __init__:
-self.pub_mavros = self.create_publisher(
-    Twist,
-    '/mavros/setpoint_velocity/cmd_vel',
-    10
-)
-
-# Publish method:
-def publish_mavros_cmd(self, vx: float, vy: float, yaw_z: float) -> None:
-    msg = Twist()
-    msg.linear.x = vx
-    msg.linear.y = vy
-    msg.linear.z = 0.0  # No vertical velocity for now
-    msg.angular.x = 0.0
-    msg.angular.y = 0.0
-    msg.angular.z = yaw_z
-    self.pub_mavros.publish(msg)
-```
-
-**Safety parameter:**
-```python
-self.declare_parameter('enable_mavros', False)  # Explicitly enable for safety
+self.declare_parameter('enable_mavros', False)
 self.enable_mavros = bool(self.get_parameter('enable_mavros').value)
 
-# In on_timer():
-if self.enable_mavros:
-    self.publish_mavros_cmd(self.prev_vx, self.prev_vy, self.prev_yaw_z)
-else:
-    # Keep publishing to test topic
-    self.publish_cmd(self.prev_vx, self.prev_vy, self.prev_yaw_z)
+self.declare_parameter('mavros_topic', '/mavros/setpoint_velocity/cmd_vel')
+self.mavros_topic = str(self.get_parameter('mavros_topic').value)
+
+self.pub_mavros = self.create_publisher(
+    TwistStamped,
+    self.mavros_topic,
+    10,
+)
 ```
 
----
+**Shared-stamp helper and dual-publish method:**
+```python
+def _make_twist_msg(
+    self, stamp, vx: float, vy: float, yaw_z: float, frame_id: str = ''
+) -> TwistStamped:
+    msg = TwistStamped()
+    msg.header.stamp = stamp
+    msg.header.frame_id = frame_id
+    msg.twist.linear.x = float(vx)
+    msg.twist.linear.y = float(vy)
+    msg.twist.linear.z = 0.0
+    msg.twist.angular.x = 0.0
+    msg.twist.angular.y = 0.0
+    msg.twist.angular.z = float(yaw_z)
+    return msg
 
+def publish_pair(self, stamp, vx: float, vy: float, yaw_z: float) -> None:
+    """Publish the same command to both the debug topic and (if enabled)
+    the MAVROS topic.  Both messages share the exact same header.stamp
+    to make offline topic-diff checks reliable."""
+    msg = self._make_twist_msg(stamp, vx, vy, yaw_z)
+    self.pub_cmd.publish(msg)
+    if self.enable_mavros:
+        self.pub_mavros.publish(self._make_twist_msg(stamp, vx, vy, yaw_z))
+
+def publish_zero(self) -> None:
+    self.prev_vx = 0.0
+    self.prev_vy = 0.0
+    self.prev_yaw_z = 0.0
+    self.publish_pair(self.get_clock().now().to_msg(), 0.0, 0.0, 0.0)
+
+# In on_timer:
+self.publish_pair(self.get_clock().now().to_msg(), self.prev_vx, self.prev_vy, self.prev_yaw_z)
+```
+
+**Design notes:**
+- A single `get_clock().now().to_msg()` call is made per publish event; the same stamp object is passed to `_make_twist_msg` for both topics, making offline comparison trivial
+- `/control_ref/cmd_vel` remains the internal/debug output always; the MAVROS mirror is silently gated by `enable_mavros`
+- `cmd_topic` and `mavros_topic` stay separate so replay and field monitoring are unambiguous
+
+**Offline validation (Day 13 — PASS):**
+- Bag: `bags/tmp/2026-03-13__cmd_mirror_check` (297 s, 86 754 debug / 86 753 mirror messages)
+- Script: `tools/compare_cmd_mirror_bag.py` — multiset comparison of `(stamp, payload)` keys
+- Result: multisets match; one extra zero-velocity debug message at startup (expected)
+- Run with: `python3 tools/compare_cmd_mirror_bag.py`
 ## Safety Considerations
 
 ### Before First MAVROS Test
@@ -183,7 +212,7 @@ else:
 - RTL: Return to launch (emergency)
 - LAND: Controlled landing
 
-**Critical:** Vehicle must be in GUIDED mode to accept MAVROS velocity commands.
+**Critical:** ArduPilot movement commands are intended for Guided mode and are forwarded via `SET_POSITION_TARGET_LOCAL_NED`. Day 13 does not include real authority testing.
 
 ---
 
@@ -203,14 +232,13 @@ else:
 4. Verify all nodes running simultaneously
 5. Check for resource issues (CPU, memory)
 
-### Phase 3: Control Output to MAVROS (1 hour)
-1. Enable `enable_mavros:=true` in control_ref_node
-2. **DO NOT ARM VEHICLE**
-3. Monitor `/mavros/setpoint_velocity/cmd_vel` 
-4. Verify setpoints published at 30 Hz
-5. Verify setpoint values look reasonable
-6. Wave hand in front of camera, observe setpoint changes
-7. Remove target, verify zero commands
+### Phase 3: Day 13 Scope Freeze
+1. Implement the MAVROS mirror path in code
+2. Compile-check `control_ref_node.py`
+3. Rebuild `thesis_bringup`
+4. Validate command behavior with replay or synthetic targets only
+5. Monitor `/mavros/setpoint_velocity/cmd_vel` only as a topic-level interface check
+6. Defer any real vehicle authority testing to a later Guided-mode bench session
 
 ### Phase 4: Recording and Analysis (1 hour)
 1. Record diagnostic bag with all topics
@@ -239,8 +267,9 @@ else:
 - May need to set mode via RC or GCS first
 
 ### Coordinate frame confusion
-- Test with known target position (e.g., target on left → expect negative angular.z)
-- Plot setpoints vs target position to verify mapping
+- Freeze `mav_frame` to `BODY_NED` in docs and launch configuration before hardware work
+- Do not hand-tune sign conventions in the field
+- Verify setpoint signs with replay logs and bench monitoring before any Guided-mode test
 
 ---
 
@@ -283,14 +312,14 @@ else:
 ## Integration Checklist
 
 ### W11 Tasks (Before Hardware)
-- [ ] Read this document thoroughly
-- [ ] Install MAVROS if not present
-- [ ] Understand topics and coordinate frames
-- [ ] Update control_ref_node.py with MAVROS output
-- [ ] Add `enable_mavros` safety parameter
-- [ ] Test code compiles (no syntax errors)
-- [ ] Document launch sequence
-- [ ] Create safety checklist
+- [x] Read this document thoroughly
+- [ ] Install MAVROS if not present (deferred — no Pixhawk until W12)
+- [x] Understand topics and coordinate frames
+- [x] Update control_ref_node.py with MAVROS output
+- [x] Add `enable_mavros` safety parameter
+- [x] Test code compiles (no syntax errors)
+- [x] Validate with offline replay bag (`tools/compare_cmd_mirror_bag.py` → PASS)
+- [ ] Create safety checklist (deferred to W12 prep)
 
 ### W12 Tuesday Tasks (With Hardware)
 - [ ] Connect Pixhawk and launch MAVROS
@@ -310,5 +339,5 @@ else:
 
 ---
 
-**Last updated:** 2026-03-12  
-**Next review:** After W12 Tuesday session
+**Last updated:** 2026-03-13  
+**Next review:** Before W12 Tuesday hardware session

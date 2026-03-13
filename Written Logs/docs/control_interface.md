@@ -267,8 +267,10 @@ ros2 run thesis_bringup control_ref_node --ros-args \
 - Message type: `geometry_msgs/msg/TwistStamped`
 
 **Key decision:**
-- `control_ref_node` already publishes `TwistStamped`, so **no message redesign is needed**
-- Direct topic remapping from `/control_ref/cmd_vel` to `/mavros/setpoint_velocity/cmd_vel` is sufficient
+- `control_ref_node` keeps publishing its internal/debug stream to `/control_ref/cmd_vel`
+- A second publisher path mirrors the final safe command to MAVROS only when `enable_mavros:=true`
+- MAVROS `cmd_vel_unstamped` is not used in this project
+- The bridge contract is frozen around `TwistStamped` on `/mavros/setpoint_velocity/cmd_vel`
 
 **First mapping (ground-only validation):**
 ```
@@ -278,15 +280,21 @@ linear.z  = 0.0       (vertical reserved for later)
 angular.z = yaw_rate  (rad/s)
 ```
 
+**Frozen frame assumption for documentation and replay:**
+- `mav_frame = BODY_NED`
+- Do not improvise axis sign flips at the field site; validate the frozen mapping against replay/bench observations first
+
 **Hardware test configuration:**
 - Keep `use_lateral = False` for first tests
 - Keep `use_vertical = False` for first tests
-- Body frame: x=forward, y=left, z=up (NED or FRD depending on vehicle config)
+- Guided mode is required before ArduPilot accepts movement commands through MAVROS
+- Day 13 scope is code, replay, and documentation only; no real authority testing
 
-**Topic remapping for hardware tests:**
+**Launch pattern for hardware bench sessions:**
 ```bash
 ros2 run thesis_bringup control_ref_node --ros-args \
-  -r /control_ref/cmd_vel:=/mavros/setpoint_velocity/cmd_vel \
+  -p enable_mavros:=true \
+  -p mavros_topic:=/mavros/setpoint_velocity/cmd_vel \
   -p img_w:=640.0 \
   -p img_h:=640.0 \
   -p desired_h_norm:=0.90
@@ -301,9 +309,10 @@ ros2 run thesis_bringup control_ref_node --ros-args \
 Current: `/control_ref/cmd_vel` (private testing topic)
 
 For MAVROS hardware tests:
-- Remap `cmd_topic` to `/mavros/setpoint_velocity/cmd_vel` at launch
+- Keep `cmd_topic` on `/control_ref/cmd_vel`
+- Mirror the same safe command to `mavros_topic` only when enabled
 - Message type compatibility: ✅ confirmed (`TwistStamped`)
-- Test ground-only message flow before any flight authority
+- Test topic-level message flow before any Guided-mode authority
 
 ---
 

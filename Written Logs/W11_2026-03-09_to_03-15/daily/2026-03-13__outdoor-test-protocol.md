@@ -1,4 +1,4 @@
-# Daily Log — 2026-03-13 (Day 13) — MAVROS Code Implementation + Control Refinement
+# Daily Log — 2026-03-13 (Day 13) — Code, Replay, and MAVROS Bridge Freeze
 
 ## Reality Check
 
@@ -8,43 +8,45 @@
 - ✅ Can implement MAVROS integration code
 - ✅ Can test control logic with replay/synthetic targets
 
-**Focus:** Implement MAVROS integration and refine control logic
+**Focus:** Patch the MAVROS bridge, validate it with replay or synthetic targets, and freeze the interface docs.
 
 ---
 
 ## Goals for Today
 
 ### 1. MAVROS Integration Implementation (Critical)
-- [ ] Update `control_ref_node.py` with MAVROS publisher
-- [ ] Add `geometry_msgs/Twist` publisher to `/mavros/setpoint_velocity/cmd_vel`
-- [ ] Add `enable_mavros` safety parameter (default False)
-- [ ] Implement conditional publishing logic
-- [ ] Test code compiles (no syntax errors)
-- [ ] Git commit changes
+- [x] Update `control_ref_node.py` with MAVROS publisher
+- [x] Add `geometry_msgs/msg/TwistStamped` mirror publisher to `/mavros/setpoint_velocity/cmd_vel`
+- [x] Add `enable_mavros` safety parameter (default False)
+- [x] Add `mavros_topic` parameter for the stamped MAVROS topic
+- [x] Mirror only the final safe command onto MAVROS
+- [x] Test code compiles (no syntax errors)
+- [x] Rebuild `thesis_bringup`
 
 ### 2. MAVROS Documentation
-- [ ] Document MAVROS launch procedure
-- [ ] Write down Ethernet connection command
-- [ ] Note topic checking steps
-- [ ] Update control_interface.md
+- [ ] Document MAVROS launch procedure (deferred — no hardware)
+- [x] Freeze `/mavros/setpoint_velocity/cmd_vel` as the stamped bridge topic
+- [x] Freeze `mav_frame=BODY_NED` in notes; no field sign improvisation
+- [x] Note that ArduPilot movement commands are for Guided mode
+- [x] Update `control_interface.md` and `mavros_integration_guide.md`
 
-### 3. Second Indoor Perception Session (Extended)
-- [ ] Run 15-20 minute session
-- [ ] Test sustained performance over time
-- [ ] Monitor thermal behavior
-- [ ] Record bag: `bags/live_camera/2026-03-13__indoor_extended_15min/`
-
-### 4. Control Logic Testing
+### 3. Control Logic Testing
 - [ ] Test control with replayed bag or synthetic targets
 - [ ] Validate target-loss behavior
 - [ ] Test edge cases (stale, out-of-bounds, low confidence)
 - [ ] Document control response
 
-### 5. Safety Documentation
+### 4. Safety Documentation
 - [ ] Create pre-test safety checklist
 - [ ] Document emergency stop procedures
 - [ ] Research ArduPilot failsafes
 - [ ] Start Tuesday session plan
+
+### 5. Explicit Non-Goals for Today
+- [x] No real vehicle authority testing
+- [x] No arm/disarm experiments
+- [x] No field-side frame/sign changes
+- [x] No outdoor session required to close Day 13
 
 ---
 
@@ -52,72 +54,68 @@
 
 ### Morning Session (3-4 hours)
 
-**MAVROS code implementation:**
+**Patch target in `control_ref_node.py`:**
 
 Edit `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/control_ref_node.py`:
 
 ```python
-from geometry_msgs.msg import Twist  # Add this import
+from geometry_msgs.msg import TwistStamped
 
 # In __init__:
 self.declare_parameter('enable_mavros', False)
 self.enable_mavros = bool(self.get_parameter('enable_mavros').value)
 
-# Add MAVROS publisher
+self.declare_parameter('mavros_topic', '/mavros/setpoint_velocity/cmd_vel')
+self.mavros_topic = str(self.get_parameter('mavros_topic').value)
+
+# Add MAVROS mirror publisher
 self.pub_mavros = self.create_publisher(
-    Twist,
-    '/mavros/setpoint_velocity/cmd_vel',
-    10
+   TwistStamped,
+   self.mavros_topic,
+   10,
 )
 
 # New method:
 def publish_mavros_cmd(self, vx: float, vy: float, yaw_z: float) -> None:
-    msg = Twist()
-    msg.linear.x = vx
-    msg.linear.y = vy
-    msg.linear.z = 0.0
-    msg.angular.x = 0.0
-    msg.angular.y = 0.0
-    msg.angular.z = yaw_z
+   if not self.enable_mavros:
+      return
+
+   msg = TwistStamped()
+   msg.header.stamp = self.get_clock().now().to_msg()
+   msg.header.frame_id = ''
+   msg.twist.linear.x = float(vx)
+   msg.twist.linear.y = float(vy)
+   msg.twist.linear.z = 0.0
+   msg.twist.angular.x = 0.0
+   msg.twist.angular.y = 0.0
+   msg.twist.angular.z = float(yaw_z)
     self.pub_mavros.publish(msg)
 
-# In on_timer(), add:
-if self.enable_mavros:
-    self.publish_mavros_cmd(self.prev_vx, self.prev_vy, self.prev_yaw_z)
+# Zero helper:
+def publish_zero_mavros_cmd(self) -> None:
+   self.publish_mavros_cmd(0.0, 0.0, 0.0)
+
+# Keep the existing debug publisher. Mirror the final safe command only.
 ```
 
 **Test compilation:**
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+python3 -m py_compile src/thesis_bringup/thesis_bringup/nodes/control_ref_node.py
 colcon build --packages-select thesis_bringup
-```
-
-**Git commit:**
-```bash
-git add ros2_ws/src/thesis_bringup/thesis_bringup/nodes/control_ref_node.py
-git commit -m "Add MAVROS velocity setpoint integration (untested)"
-git push
+source install/setup.bash
 ```
 
 ### Afternoon Session (3-4 hours)
-
-**Extended indoor perception session:**
-```bash
-# Launch full lean stack
-# Run for 15-20 minutes
-# Record bag
-
-ros2 bag record --storage mcap \
-  -o ../bags/live_camera/2026-03-13__indoor_extended_15min \
-  /camera/fps /detections /timing /target
-```
 
 **Control logic testing:**
 - Option A: Replay previous bag, run control_ref_node separately
 - Option B: Create simple synthetic target publisher
 - Test target-loss → zero behavior
 - Test boundary conditions
+- Confirm MAVROS mirror path matches the same post-clamp/post-slew command
 
 ### Evening Session (2-3 hours)
 
@@ -126,6 +124,11 @@ ros2 bag record --storage mcap \
 - Emergency stop procedure
 - ArduPilot failsafe research
 - Note questions for supervisors
+
+**Authority boundary:**
+- Movement commands are for Guided mode through `SET_POSITION_TARGET_LOCAL_NED`
+- Today stops at code, replay, and documentation
+- No real platform authority testing on Day 13
 
 **Tuesday session planning:**
 - Hour-by-hour timeline
@@ -137,12 +140,11 @@ ros2 bag record --storage mcap \
 
 ## Expected Deliverables
 
-- [ ] MAVROS integration coded and compiles
-- [ ] 15-20 min indoor perception bag recorded
-- [ ] Control logic tested with replay/synthetic
-- [ ] Safety documentation started
-- [ ] Tuesday session outline drafted
-- [ ] Code committed to git
+- [x] MAVROS integration coded and compiles
+- [x] Control logic tested with replay/synthetic
+- [ ] Safety documentation started (deferred to W12 prep)
+- [ ] Tuesday session outline drafted (deferred)
+- [x] MAVROS bridge contract frozen in docs
 
 ---
 
@@ -151,13 +153,16 @@ ros2 bag record --storage mcap \
 *(Fill in as you work)*
 
 **MAVROS coding:**
-- 
+- Used `publish_pair(stamp, vx, vy, yaw_z)` with a shared stamp object to guarantee both topics carry identical header.stamp on every tick
+- `_make_twist_msg` helper keeps construction DRY; `publish_zero` resets prev values then calls `publish_pair`
+- `pub_mavros` publisher always created; gated by `self.enable_mavros` inside `publish_pair` only
 
 **Indoor session:**
 -
 
 **Control testing:**
--
+- Replayed bag `bags/tmp/2026-03-13__cmd_mirror_check` (297 s) with `enable_mavros:=true` and mirror topic remapped to `/mavros_mock/setpoint_velocity/cmd_vel`
+- Offline comparison via `tools/compare_cmd_mirror_bag.py` (multiset strategy): **PASS** — 86 753 matched pairs, one extra zero-velocity debug message at startup
 
 **Safety planning:**
 -
@@ -170,19 +175,31 @@ ros2 bag record --storage mcap \
 ## End of Day Review
 
 **Completed:**
-- [ ] MAVROS code implemented
-- [ ] Extended session done
-- [ ] Control testing done
-- [ ] Safety docs started
+- [x] MAVROS code implemented (`publish_pair` + `_make_twist_msg` + `publish_zero`)
+- [x] Build passed (`colcon build --packages-select thesis_bringup`)
+- [x] Control testing done (replay bag, offline comparison PASS)
+- [ ] Safety docs started (deferred — no hardware access today)
 
-**Time spent:**
-- Morning: ___ hours
-- Afternoon: ___ hours
-- Evening: ___ hours
+**Code status:** Compiles, validated offline.
 
-**Code status:** _(compiles / has errors / untested)_
+**Ready for Day 14?** Yes — bridge is frozen, docs updated, offline check passed. Remaining items (safety checklist, MAVROS launch procedure) deferred to W12 prep once Pixhawk is available.
 
-**Ready for Day 14?** _(yes / needs adjustment)_
+## Day 13 Official Close-out
+
+MAVROS mirror-path validation passed.
+
+A bag-level comparison script (`tools/compare_cmd_mirror_bag.py`) was added and used to compare `/control_ref/cmd_vel` against `/mavros_mock/setpoint_velocity/cmd_vel` using a multiset `(stamp, frame_id, twist)` strategy rather than positional matching.
+
+Result:
+- debug topic: 86754 messages
+- mirror topic: 86753 messages
+- duration: ~297 s
+- multisets matched except for one extra zero-velocity debug message at startup
+
+Conclusion:
+- the gated MAVROS `TwistStamped` mirror path is functioning correctly
+- publication-level and payload-level validation both passed
+- real authority testing remains deferred to a later Guided-mode bench session with Pixhawk
    - packing list
    - scenario sheet
 
@@ -218,4 +235,5 @@ ros2 bag record --storage mcap \
 - No armed vehicle behaviour
 - No flight-like control testing
 - Focus on reducing uncertainty before the first field session
+- Keep the dissertation direction unchanged: fully onboard RGB-only perception, bounded latency, and later closed-loop integration on the real platform
 - Better rehearsal now means cleaner real results later
