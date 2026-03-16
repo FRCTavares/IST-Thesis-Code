@@ -1,5 +1,7 @@
 # Daily Log — 2026-03-14 (Day 14) — Indoor Validation Completion + Field Logistics
 
+> Note (updated 2026-03-16): Commands in this daily log are preserved as historical context. For current operational startup/stop commands, use `RUNBOOK.md` and `tools/start_live_stack.sh`.
+
 ## Reality Check
 
 **Constraints today:**
@@ -222,6 +224,32 @@ Shutdown sequence:
 **W12 readiness:** _(high / medium / low)_
 
 **Ready for Day 15?** _(yes / needs adjustment)_
+
+---
+
+## Post-Week Addendum (2026-03-16)
+
+This day log has been updated with implementation work completed after W11 close, during final operational hardening.
+
+### What Was Added
+
+- Added and stabilized ROS dashboard telemetry bridge (`dashboard_bridge_node`) using a dedicated asyncio thread for WebSocket serving.
+- Fixed bridge startup/runtime faults:
+   - parameter type mismatch for `img_w`/`img_h` CLI overrides,
+   - internal name collision with rclpy Node internals (`_clients` renamed to `_ws_clients`),
+   - non-blocking WebSocket server startup callback path.
+- Normalized dashboard tracks to image space (`x`, `y`, `w`, `h` normalized by image width/height).
+- Added one-command live stack launcher:
+   - `tools/start_live_stack.sh` starts container inference + ROS graph + dashboard bridge + web video service,
+   - interactive shutdown in same terminal with `stop|quit|exit`.
+- Added matching stop helper:
+   - `tools/stop_live_stack.sh` (kept as optional fallback).
+- Added web video service integration (`web_video_server` on port 8080) and explicit dashboard stream URL output.
+
+### Operational Result
+
+- Full stack now starts from a single command and reports concrete endpoints for dashboard video and telemetry.
+- Startup sequence now includes dashboard bridge and web video as first-class components.
 
 ## Goal
 

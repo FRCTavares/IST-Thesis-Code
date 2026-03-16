@@ -1,5 +1,7 @@
 # Weekly Summary — W11 (2026-03-09 to 2026-03-15)
 
+> Note (updated 2026-03-16): This weekly summary preserves the week's in-time planning and execution context. Startup commands and orchestration notes inside this file may be historical. Current operational startup/stop procedure is documented in `RUNBOOK.md` and implemented in `tools/start_live_stack.sh`.
+
 ## Week 11 Reality Check
 
 **Constraints this week:**

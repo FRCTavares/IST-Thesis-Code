@@ -1,4 +1,5 @@
 # Daily Log — 2026-03-11 — Lean-Mode Freeze, Control Interface Integration, and Outdoor Readiness
+> Note (updated 2026-03-16): Commands in this daily log are preserved as historical context. For current operational startup/stop commands, use `RUNBOOK.md` and `tools/start_live_stack.sh`.
 
 ## Goal
 

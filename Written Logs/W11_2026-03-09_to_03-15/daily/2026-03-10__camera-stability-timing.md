@@ -1,5 +1,7 @@
 # Daily Log — 2026-03-10 — Live Camera Stability and Timing Under Load
 
+> Note (updated 2026-03-16): Commands in this daily log are preserved as historical context. For current operational startup/stop commands, use `RUNBOOK.md` and `tools/start_live_stack.sh`.
+
 ## Goal
 
 Prove the live camera can sustain thesis performance targets under extended runs and full system load.

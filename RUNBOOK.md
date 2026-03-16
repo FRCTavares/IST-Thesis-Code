@@ -3,33 +3,43 @@
 Quick recipes for core operations.
 All commands run from `$THESIS_ROOT/` unless noted.
 
-**Live camera operational mode:** Use the frozen manual startup sequence documented below unless `live.launch.py` is confirmed to match the frozen lean operational configuration.
+**Live camera operational mode:** Use the frozen manual startup sequence documented below.
 
 ---
 
 ## 1 — Live camera (lean operational mode)
 
+### Preferred startup (single command)
+
+```bash
+cd $THESIS_ROOT
+./tools/start_live_stack.sh
+```
+
+Interactive stop in same terminal:
+- `stop`
+- `quit`
+- `exit`
+
+Fallback stop command:
+```bash
+cd $THESIS_ROOT
+./tools/stop_live_stack.sh
+```
+
 ### Frozen manual startup sequence
 
 The manual startup sequence is the current operational standard.
 
-**Terminal 1 — Camera Init:**
+**Terminal 1 — Camera Bringup (init + capture):**
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
-ros2 run thesis_bringup camera_init_node
+ros2 launch thesis_bringup camera_bringup.launch.py
 ```
 
-**Terminal 2 — Camera Capture:**
-```bash
-cd $THESIS_ROOT/ros2_ws
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 run thesis_bringup camera_capture_node
-```
-
-**Terminal 3 — Container Live Inference Service:**
+**Terminal 2 — Container Live Inference Service:**
 ```bash
 cd ~/pi-ai-kit-ubuntu
 docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
@@ -48,7 +58,7 @@ export HAILO_POST_FUNC=filter
 $VENV/bin/python /root/thesis_service/detection_zmq.py
 ```
 
-**Terminal 4 — Inference Client:**
+**Terminal 3 — Inference Client:**
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
@@ -62,7 +72,7 @@ ros2 run thesis_inference_client inference_client_node --ros-args \
   -p min_score:=0.35
 ```
 
-**Terminal 5 — Tracker:**
+**Terminal 4 — Tracker:**
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
@@ -70,13 +80,35 @@ source install/setup.bash
 ros2 run thesis_tracker tracker_node
 ```
 
-**Terminal 6 — Target Selector:**
+**Terminal 5 — Target Selector:**
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 run thesis_target_selector target_selector_node
 ```
+
+**Terminal 6 — Dashboard Bridge (WebSocket telemetry):**
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run thesis_bringup dashboard_bridge_node --ros-args \
+  -p img_w:=640 \
+  -p img_h:=640
+```
+
+**Terminal 7 — Web Video Service (MJPEG stream):**
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run web_video_server web_video_server --ros-args -p port:=8080
+```
+
+Dashboard endpoints:
+- Video: `http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg`
+- Telemetry: `ws://<PI_IP>:8765`
 
 ### Record live camera bag (lean mode)
 
@@ -189,7 +221,7 @@ Tag is auto-detected from the bag name; pass `--tag` to override.
 - **Use for:** Indoor validation, outdoor testing, field operations
 - **Topics recorded:** `/camera/fps`, `/detections`, `/timing`, `/target`
 - **Excluded:** `/tracks`, `/timing_tracker`
-- **Startup:** Manual 6-terminal sequence (frozen operational path)
+- **Startup:** One-command launcher (`tools/start_live_stack.sh`) or manual 7-terminal sequence
 
 ### Profiling mode (file-based)
 - **Use for:** Bottleneck analysis, tracker debugging, performance profiling

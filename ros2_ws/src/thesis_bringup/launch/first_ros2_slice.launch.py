@@ -16,12 +16,12 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {
-                "addr": "tcp://127.0.0.1:5555",
-                "topic": "dets",
+                "image_topic": "/camera/image_raw",
+                "addr": "tcp://127.0.0.1:5556",
+                "queue_size": 1,
                 "img_w": 640,
                 "img_h": 640,
                 "min_score": 0.35,
-                "conflate": True,
             }
         ],
     )

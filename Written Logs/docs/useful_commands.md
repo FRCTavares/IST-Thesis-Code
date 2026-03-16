@@ -114,23 +114,28 @@ ros2 bag record --storage mcap \
 
 This is the **primary workflow** for live camera validation and outdoor testing.
 
-### Terminal 1 — Camera Init
+### One-command startup (preferred)
+
+```bash
+cd ~/Desktop/Thesis-Code
+./tools/start_live_stack.sh
+```
+
+Interactive stop in same terminal:
+- `stop`
+- `quit`
+- `exit`
+
+### Terminal 1 — Camera Bringup
 
 ```bash
 cd ~/Desktop/Thesis-Code/ros2_ws
+source /opt/ros/jazzy/setup.bash
 source install/setup.bash
-ros2 run thesis_bringup camera_init_node
+ros2 launch thesis_bringup camera_bringup.launch.py
 ```
 
-### Terminal 2 — Camera Capture
-
-```bash
-cd ~/Desktop/Thesis-Code/ros2_ws
-source install/setup.bash
-ros2 run thesis_bringup camera_capture_node
-```
-
-### Terminal 3 — Container Live Inference Service
+### Terminal 2 — Container Live Inference Service
 
 ```bash
 # Enter container first
@@ -151,7 +156,7 @@ export HAILO_POST_FUNC=filter
 $VENV/bin/python /root/thesis_service/detection_zmq.py
 ```
 
-### Terminal 4 — Inference Client
+### Terminal 3 — Inference Client
 
 ```bash
 cd ~/Desktop/Thesis-Code/ros2_ws
@@ -165,7 +170,7 @@ ros2 run thesis_inference_client inference_client_node --ros-args \
   -p min_score:=0.35
 ```
 
-### Terminal 5 — Tracker
+### Terminal 4 — Tracker
 
 ```bash
 cd ~/Desktop/Thesis-Code/ros2_ws
@@ -173,13 +178,51 @@ source install/setup.bash
 ros2 run thesis_tracker tracker_node
 ```
 
-### Terminal 6 — Target Selector
+### Terminal 5 — Target Selector
 
 ```bash
 cd ~/Desktop/Thesis-Code/ros2_ws
 source install/setup.bash
 ros2 run thesis_target_selector target_selector_node
 ```
+
+### Terminal 6 — Dashboard Bridge
+
+```bash
+cd ~/Desktop/Thesis-Code/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run thesis_bringup dashboard_bridge_node --ros-args \
+  -p img_w:=640 \
+  -p img_h:=640
+```
+
+### Terminal 7 — Web Video Server
+
+```bash
+cd ~/Desktop/Thesis-Code/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run web_video_server web_video_server --ros-args -p port:=8080
+```
+
+Dashboard endpoints:
+- Video: `http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg`
+- Telemetry: `ws://<PI_IP>:8765`
+
+### Manual startup note
+
+```bash
+# Use this manual sequence only when debugging startup internals.
+# Normal operations should use ./tools/start_live_stack.sh
+cd ~/Desktop/Thesis-Code
+./tools/start_live_stack.sh
+```
+
+Interactive stop in same terminal:
+- `stop`
+- `quit`
+- `exit`
 
 ---
 

@@ -1,5 +1,7 @@
 # Week 11 Artefacts (2026-03-09 to 2026-03-15)
 
+> Note (updated 2026-03-16): This artefact register contains historical references from W11 execution. Current operations use `ros2 launch thesis_bringup camera_bringup.launch.py` and one-command orchestration via `tools/start_live_stack.sh`.
+
 ## Overview
 This document tracks all deliverables, code, configurations, reports, and datasets produced during Week 11.
 
@@ -10,9 +12,13 @@ This document tracks all deliverables, code, configurations, reports, and datase
 ## Code and Configuration
 
 ### Live Camera Integration
-- **Camera init node:** `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_init_node.py`
+- **Camera init node (historical):** `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_init_node.py`
 - **Camera capture node:** `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_capture_node.py`
 - **Inference client (live mode):** `ros2_ws/src/thesis_inference_client/thesis_inference_client/inference_client_node.py`
+
+Current startup path:
+- `ros2 launch thesis_bringup camera_bringup.launch.py`
+- `./tools/start_live_stack.sh` (preferred)
 
 **Status:** Complete (Day 08-10)
 
@@ -56,7 +62,7 @@ ros2 run thesis_bringup control_ref_node --ros-args \
 
 ### Lean Operational Mode Configuration
 - **Lean mode specification:** `Written Logs/docs/lean_operational_mode.md`
-- **Frozen startup sequence:** 6 terminals documented
+- **Frozen startup sequence:** historical multi-terminal sequence (superseded operationally by one-command launcher)
 - **Recording topics:** `/camera/fps`, `/detections`, `/timing`, `/target`
 - **Excluded topics:** `/tracks`, `/timing_tracker` (profiling-only)
 

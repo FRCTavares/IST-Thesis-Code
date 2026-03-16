@@ -1,5 +1,7 @@
 # Weekly Summary — W10 (2026-03-03 to 2026-03-09)
 
+> Note (updated 2026-03-16): This file is a historical weekly record. Some commands and node names here reflect the integration state at that time (for example, explicit `camera_init_node` references). For current operations, use `RUNBOOK.md` and `tools/start_live_stack.sh` as the source of truth.
+
 ## Week 10 Ambition Targets (by end of Mar 9)
 
 Move from "baseline working" to "demo-ready system with frozen configuration."

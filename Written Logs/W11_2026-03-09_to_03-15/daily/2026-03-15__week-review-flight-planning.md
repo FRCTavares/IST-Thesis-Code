@@ -1,5 +1,7 @@
 # Daily Log — 2026-03-15 (Day 15) — W11 Review + W12 Final Readiness
 
+> Note (updated 2026-03-16): Commands in this daily log are preserved as historical context. For current operational startup/stop commands, use `RUNBOOK.md` and `tools/start_live_stack.sh`.
+
 ## Reality Check
 
 **Last day of W11 preparation week**
@@ -245,6 +247,33 @@ Before leaving for IST Tuesday:
 - [ ] Supervisor contact confirmed
 - [ ] Weather checked
 - [ ] Good mindset 🚀
+
+---
+
+## Post-Week Addendum (2026-03-16)
+
+W11 review conclusions were operationalized with concrete stack automation and dashboard integration work.
+
+### Implemented After This Review
+
+- Dashboard telemetry bridge finalized (`dashboard_bridge_node`):
+  - WebSocket loop isolated from ROS spin path,
+  - startup made non-blocking,
+  - runtime crash fixed by avoiding collision with rclpy internal `_clients`,
+  - normalized track geometry published for frontend overlay alignment.
+- Live video for dashboard finalized via `web_video_server` service integration.
+- One-command stack orchestration delivered in `tools/start_live_stack.sh`:
+  - sequential startup,
+  - container inference bootstrap,
+  - health waits for 5556 and 8080,
+  - concrete endpoint output,
+  - in-terminal command-driven shutdown (`stop|quit|exit`).
+- Optional helper shutdown script retained as fallback (`tools/stop_live_stack.sh`).
+
+### Readiness Delta
+
+- Prior state: reliable multi-terminal manual startup.
+- Current state: single-command operational startup with integrated dashboard telemetry/video endpoints and controlled shutdown path.
 
 ## Goal
 

@@ -1,5 +1,7 @@
 # Daily Log — 2026-03-09 — Complete W10 Freeze and Live Camera Validation
 
+> Note (updated 2026-03-16): Commands in this daily log are preserved as historical context. For current operational startup/stop commands, use `RUNBOOK.md` and `tools/start_live_stack.sh`.
+
 ## Goal
 
 Close out Week 10 deliverables and validate that the live camera integration meets thesis performance targets.

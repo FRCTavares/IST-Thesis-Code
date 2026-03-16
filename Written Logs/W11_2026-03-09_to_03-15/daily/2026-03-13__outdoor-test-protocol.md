@@ -1,5 +1,7 @@
 # Daily Log — 2026-03-13 (Day 13) — Code, Replay, and MAVROS Bridge Freeze
 
+> Note (updated 2026-03-16): Commands in this daily log are preserved as historical context. For current operational startup/stop commands, use `RUNBOOK.md` and `tools/start_live_stack.sh`.
+
 ## Reality Check
 
 **Constraints today:**
