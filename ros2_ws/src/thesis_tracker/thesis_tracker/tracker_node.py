@@ -50,6 +50,10 @@ def _parse_frame_id(frame_id_str: str) -> int:
     return 0
 
 
+def now_ns() -> int:
+    return time.monotonic_ns()
+
+
 class TrackerNode(Node):
     """Unified tracker node with selectable backend."""
     
@@ -73,8 +77,14 @@ class TrackerNode(Node):
         self.sub = self.create_subscription(
             Detection2DArray, "/detections", self.on_detections, qos
         )
+        self.sub_timing = self.create_subscription(
+            Timing, "/timing", self.on_timing, qos
+        )
         self.pub = self.create_publisher(Track2DArray, "/tracks", qos)
         self.pub_timing = self.create_publisher(Timing, "/timing_tracker", qos)
+
+        self.frame_context: dict[int, tuple[int, int]] = {}
+        self.max_context = 512
         
         # Declare min_score parameter (common filtering)
         self.declare_parameter("min_score", 0.35)
@@ -134,9 +144,22 @@ class TrackerNode(Node):
         else:
             self.get_logger().error(f"Unknown tracker_type: {tracker_type}, defaulting to SORT")
             return SortBackend()
+
+    def on_timing(self, msg: Timing) -> None:
+        frame_id = int(msg.frame_id)
+        if frame_id <= 0:
+            return
+
+        self.frame_context[frame_id] = (int(msg.src_stamp_ns), int(msg.t_cam_msg_seen_ns))
+        if len(self.frame_context) > self.max_context:
+            oldest = next(iter(self.frame_context))
+            self.frame_context.pop(oldest, None)
     
     def on_detections(self, msg: Detection2DArray) -> None:
         """Process detection message and publish tracks."""
+        t_track_cb_start_ns = now_ns()
+        frame_id = _parse_frame_id(msg.header.frame_id)
+
         det_boxes: List[BBox] = []
         det_scores: List[float] = []
         det_labels: List[str] = []
@@ -168,15 +191,19 @@ class TrackerNode(Node):
         # Get frame timestamp
         frame_time_ns = int(msg.header.stamp.sec * 1e9 + msg.header.stamp.nanosec)
         
-        # Update tracker and measure timing
-        t0 = time.perf_counter_ns()
+        # track_ms is defined as tracker backend compute only.
+        t_track_update_start_ns = now_ns()
         tracks = self.backend.update(det_boxes, det_scores, frame_time_ns)
-        t1 = time.perf_counter_ns()
-        track_ms = (t1 - t0) / 1e6
+        t_track_update_end_ns = now_ns()
         
         # Convert tracks to ROS message
         out = Track2DArray()
         out.header = msg.header
+        out.frame_id = int(frame_id)
+        src_stamp_ns, t_cam_msg_seen_ns = self.frame_context.get(frame_id, (0, 0))
+        out.src_stamp_ns = int(src_stamp_ns)
+        out.t_cam_msg_seen_ns = int(t_cam_msg_seen_ns)
+        out.t_track_cb_start_ns = int(t_track_cb_start_ns)
         tracks_ros: List[Track2D] = []
         
         for track in tracks:
@@ -198,13 +225,18 @@ class TrackerNode(Node):
             tracks_ros.append(m)
         
         out.tracks = tracks_ros
+        t_track_cb_end_ns = now_ns()
+        out.t_track_cb_end_ns = int(t_track_cb_end_ns)
         self.pub.publish(out)
-        
-        # Publish timing disabled for live operational mode
-        # tmsg = Timing()
-        # tmsg.frame_id = _parse_frame_id(msg.header.frame_id)
-        # tmsg.track_ms = float(track_ms)
-        # self.pub_timing.publish(tmsg)
+
+        tmsg = Timing()
+        tmsg.frame_id = int(frame_id)
+        tmsg.src_stamp_ns = int(src_stamp_ns)
+        tmsg.t_cam_msg_seen_ns = int(t_cam_msg_seen_ns)
+        tmsg.t_track_cb_start_ns = int(t_track_cb_start_ns)
+        tmsg.t_track_cb_end_ns = int(t_track_cb_end_ns)
+        tmsg.track_ms = float((t_track_update_end_ns - t_track_update_start_ns) / 1e6)
+        self.pub_timing.publish(tmsg)
 
 
 def main(args=None) -> None:

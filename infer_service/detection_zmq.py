@@ -7,6 +7,7 @@ import json
 import os
 import queue
 import sys
+import threading
 import time
 from collections import deque
 from pathlib import Path
@@ -29,6 +30,11 @@ from zmq_pub import ZmqPublisher
 video_src = os.getenv("HAILO_VIDEO_SOURCE", "/root/thesis_service/example_640_x10.mp4")
 video_sink = os.getenv("HAILO_VIDEO_SINK", "fakesink")
 loop_video = os.getenv("HAILO_LOOP_VIDEO", "0")
+
+
+def now_ns() -> int:
+    """Monotonic nanoseconds for container stage timing."""
+    return time.monotonic_ns()
 
 
 def _set_env_file():
@@ -200,10 +206,14 @@ class RosReqRepInferenceService:
         self.rep.bind(self.bind)
 
         self.pending_meta = deque()
+        self.pending_meta_by_pts: dict[int, dict] = {}
+        self.meta_lock = threading.Lock()
         self.result_q: queue.Queue[dict] = queue.Queue(maxsize=1)
 
         self.pipeline = None
         self.appsrc = None
+        self.pre_identity = None
+        self.infer_identity = None
         self.identity = None
 
         self._build_pipeline()
@@ -214,7 +224,9 @@ class RosReqRepInferenceService:
             f'caps=video/x-raw,format=RGB,width={self.width},height={self.height},framerate={self.fps}/1 ! '
             f'queue max-size-buffers=2 leaky=downstream ! '
             f'videoconvert ! '
+            f'identity name=pre_hailonet_identity silent=true ! '
             f'hailonet hef-path={self.hef_path} batch-size=1 force-writable=true ! '
+            f'identity name=infer_identity silent=true ! '
             f'queue max-size-buffers=2 leaky=downstream ! '
             f'hailofilter function-name={self.post_func} so-path={self.post_so} qos=false ! '
             f'identity name=post_identity silent=true ! '
@@ -223,17 +235,33 @@ class RosReqRepInferenceService:
 
         self.pipeline = Gst.parse_launch(pipeline_str)
         self.appsrc = self.pipeline.get_by_name("source")
+        self.pre_identity = self.pipeline.get_by_name("pre_hailonet_identity")
+        self.infer_identity = self.pipeline.get_by_name("infer_identity")
         self.identity = self.pipeline.get_by_name("post_identity")
 
         if self.appsrc is None:
             raise RuntimeError("Failed to get appsrc element from pipeline")
+        if self.pre_identity is None:
+            raise RuntimeError("Failed to get pre_hailonet_identity element from pipeline")
+        if self.infer_identity is None:
+            raise RuntimeError("Failed to get infer_identity element from pipeline")
         if self.identity is None:
             raise RuntimeError("Failed to get identity element from pipeline")
+
+        pre_pad = self.pre_identity.get_static_pad("src")
+        if pre_pad is None:
+            raise RuntimeError("Failed to get src pad from pre_hailonet_identity")
+
+        infer_pad = self.infer_identity.get_static_pad("src")
+        if infer_pad is None:
+            raise RuntimeError("Failed to get src pad from infer_identity")
 
         pad = self.identity.get_static_pad("src")
         if pad is None:
             raise RuntimeError("Failed to get src pad from post_identity")
 
+        pre_pad.add_probe(Gst.PadProbeType.BUFFER, self._pre_infer_probe_callback)
+        infer_pad.add_probe(Gst.PadProbeType.BUFFER, self._infer_probe_callback)
         pad.add_probe(Gst.PadProbeType.BUFFER, self._probe_callback)
 
         ret = self.pipeline.set_state(Gst.State.PLAYING)
@@ -242,25 +270,83 @@ class RosReqRepInferenceService:
 
         print("ROS pipeline:", pipeline_str, flush=True)
 
+    def _lookup_meta_by_buffer(self, buffer) -> dict | None:
+        pts = int(buffer.pts)
+        with self.meta_lock:
+            return self.pending_meta_by_pts.get(pts)
+
+    def _pre_infer_probe_callback(self, pad, info):
+        buffer = info.get_buffer()
+        if buffer is None:
+            return Gst.PadProbeReturn.OK
+
+        meta = self._lookup_meta_by_buffer(buffer)
+        if meta is not None and meta.get("t_infer_start_ns", 0) == 0:
+            meta["t_infer_start_ns"] = now_ns()
+
+        return Gst.PadProbeReturn.OK
+
+    def _infer_probe_callback(self, pad, info):
+        buffer = info.get_buffer()
+        if buffer is None:
+            return Gst.PadProbeReturn.OK
+
+        meta = self._lookup_meta_by_buffer(buffer)
+        if meta is not None:
+            t_here = now_ns()
+            meta["t_infer_end_ns"] = t_here
+            meta["t_post_start_ns"] = t_here
+
+        return Gst.PadProbeReturn.OK
+
     def _probe_callback(self, pad, info):
         buffer = info.get_buffer()
         if buffer is None:
             return Gst.PadProbeReturn.OK
 
-        try:
-            meta = self.pending_meta.popleft()
-        except IndexError:
+        meta = self._lookup_meta_by_buffer(buffer)
+        if meta is None:
             return Gst.PadProbeReturn.OK
 
+        pts = int(buffer.pts)
+        with self.meta_lock:
+            for idx, item in enumerate(self.pending_meta):
+                if int(item.get("pts", -1)) == pts:
+                    del self.pending_meta[idx]
+                    break
+
+        t_post_end_ns = now_ns()
+        meta["t_post_end_ns"] = t_post_end_ns
+
         dets = _extract_dets_from_buffer(buffer)
+
+        timing = {
+            "t_req_recv_ns": int(meta.get("t_req_recv_ns", 0)),
+            "t_frame_unpack_start_ns": int(meta.get("t_frame_unpack_start_ns", 0)),
+            "t_frame_unpack_end_ns": int(meta.get("t_frame_unpack_end_ns", 0)),
+            "t_infer_start_ns": int(meta.get("t_infer_start_ns", 0)),
+            "t_infer_end_ns": int(meta.get("t_infer_end_ns", 0)),
+            "t_post_start_ns": int(meta.get("t_post_start_ns", 0)),
+            "t_post_end_ns": int(meta.get("t_post_end_ns", 0)),
+            "t_reply_send_ns": 0,
+        }
+
+        infer_ms = 0.0
+        if timing["t_infer_end_ns"] > 0 and timing["t_infer_start_ns"] > 0 and timing["t_infer_end_ns"] >= timing["t_infer_start_ns"]:
+            infer_ms = (timing["t_infer_end_ns"] - timing["t_infer_start_ns"]) / 1e6
 
         reply = {
             "seq": meta["seq"],
             "frame_id": meta["frame_id"],
-            "timestamp_ns": meta["timestamp_ns"],
-            "infer_ms": (time.time_ns() - meta["t_infer0_ns"]) / 1e6,
+            "src_stamp_ns": meta["src_stamp_ns"],
+            "timestamp_ns": meta["src_stamp_ns"],
+            "infer_ms": infer_ms,
             "detections": dets,
+            "timing": timing,
         }
+
+        with self.meta_lock:
+            self.pending_meta_by_pts.pop(pts, None)
 
         try:
             if self.result_q.full():
@@ -284,7 +370,10 @@ class RosReqRepInferenceService:
         buf.dts = Gst.CLOCK_TIME_NONE
         buf.duration = frame_duration_ns
 
+        meta["pts"] = int(buf.pts)
         self.pending_meta.append(meta)
+        with self.meta_lock:
+            self.pending_meta_by_pts[int(buf.pts)] = meta
 
         ret = self.appsrc.emit("push-buffer", buf)
         if ret != Gst.FlowReturn.OK:
@@ -292,6 +381,8 @@ class RosReqRepInferenceService:
                 self.pending_meta.pop()
             except Exception:
                 pass
+            with self.meta_lock:
+                self.pending_meta_by_pts.pop(int(buf.pts), None)
             raise RuntimeError(f"appsrc push-buffer failed: {ret}")
 
     def serve_forever(self):
@@ -303,6 +394,8 @@ class RosReqRepInferenceService:
             except KeyboardInterrupt:
                 break
 
+            t_req_recv_ns = now_ns()
+
             if len(parts) != 2:
                 self.rep.send_json(
                     {"ok": False, "error": f"expected 2 parts, got {len(parts)}"}
@@ -310,6 +403,7 @@ class RosReqRepInferenceService:
                 continue
 
             try:
+                t_frame_unpack_start_ns = now_ns()
                 metadata = json.loads(parts[0].decode("utf-8"))
                 frame_bytes = parts[1]
 
@@ -330,8 +424,14 @@ class RosReqRepInferenceService:
                 meta = {
                     "seq": int(metadata.get("seq", 0)),
                     "frame_id": int(metadata.get("frame_id", 0)),
-                    "timestamp_ns": int(metadata["timestamp_ns"]),
-                    "t_infer0_ns": time.time_ns(),
+                    "src_stamp_ns": int(metadata.get("src_stamp_ns", metadata.get("timestamp_ns", 0))),
+                    "t_req_recv_ns": t_req_recv_ns,
+                    "t_frame_unpack_start_ns": t_frame_unpack_start_ns,
+                    "t_frame_unpack_end_ns": now_ns(),
+                    "t_infer_start_ns": 0,
+                    "t_infer_end_ns": 0,
+                    "t_post_start_ns": 0,
+                    "t_post_end_ns": 0,
                 }
 
                 self._push_frame(frame_bytes, meta)
@@ -341,6 +441,11 @@ class RosReqRepInferenceService:
                 except queue.Empty:
                     self.rep.send_json({"ok": False, "error": "inference timeout"})
                     continue
+
+                if isinstance(reply, dict):
+                    timing = reply.get("timing", {})
+                    if isinstance(timing, dict):
+                        timing["t_reply_send_ns"] = now_ns()
 
                 self.rep.send_json(reply)
 

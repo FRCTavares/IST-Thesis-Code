@@ -5,7 +5,7 @@ THESIS_ROOT="${THESIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 ROS_WS="${ROS_WS:-$THESIS_ROOT/ros2_ws}"
 PI_AI_DIR="${PI_AI_DIR:-$HOME/pi-ai-kit-ubuntu}"
 CONTAINER_NAME="${CONTAINER_NAME:-pi-ai-kit-ubuntu-hailo-ubuntu-pi-1}"
-PI_IP="${PI_IP:-$(hostname -I 2>/dev/null | awk '{print $1}') }"
+PI_IP="${PI_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
 
 if [[ -z "${PI_IP// }" ]]; then
     PI_IP="127.0.0.1"
@@ -17,6 +17,8 @@ RUN_DIR="$LOG_ROOT/$RUN_ID"
 PID_FILE="$RUN_DIR/pids.txt"
 LATEST_LINK="$LOG_ROOT/latest"
 
+declare -A PROC_PIDS
+
 mkdir -p "$RUN_DIR"
 ln -sfn "$RUN_DIR" "$LATEST_LINK"
 
@@ -25,8 +27,30 @@ start_ros_bg() {
     shift
     "$@" >"$RUN_DIR/${name}.log" 2>&1 &
     local pid=$!
+    PROC_PIDS["$name"]="$pid"
     echo "$pid $name" >>"$PID_FILE"
     echo "[start] $name (pid=$pid)"
+}
+
+check_proc_alive() {
+    local name="$1"
+    local pid="${PROC_PIDS[$name]:-}"
+
+    if [[ -z "${pid:-}" ]]; then
+        echo "[error] $name has no tracked pid"
+        return 1
+    fi
+
+    if ! kill -0 "$pid" >/dev/null 2>&1; then
+        echo "[error] $name exited unexpectedly (pid=$pid)"
+        if [[ -f "$RUN_DIR/${name}.log" ]]; then
+            echo "[error] last log lines from $name:"
+            tail -n 30 "$RUN_DIR/${name}.log" || true
+        fi
+        return 1
+    fi
+
+    echo "[ok] $name is running (pid=$pid)"
 }
 
 kill_tree() {
@@ -90,10 +114,86 @@ stop_stack() {
 
 trap 'stop_stack; exit 0' INT TERM
 
+print_usage() {
+    cat <<'EOF'
+Usage: start_live_stack.sh [options]
+
+Options:
+  --tracker <sort|ocsort|bytetrack>  Tracker backend (default: sort)
+  --no-dashboard                     Disable dashboard bridge
+    --no-tracker                       Do not start tracker node
+    --no-target                        Do not start target selector node
+    --no-web-video                     Do not start web_video_server
+    --rosbag                           Record timing/tracking topics to rosbag
+  -h, --help                         Show this help message
+EOF
+}
+
+TRACKER_TYPE="sort"
+ENABLE_DASHBOARD_BRIDGE=1
+ENABLE_TRACKER=1
+ENABLE_TARGET_SELECTOR=1
+ENABLE_WEB_VIDEO=1
+ENABLE_ROSBAG=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --tracker)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --tracker requires a value"
+                print_usage
+                exit 1
+            fi
+            TRACKER_TYPE="${2,,}"
+            shift 2
+            ;;
+        --no-dashboard)
+            ENABLE_DASHBOARD_BRIDGE=0
+            ENABLE_WEB_VIDEO=0
+            shift
+            ;;
+        --no-tracker)
+            ENABLE_TRACKER=0
+            shift
+            ;;
+        --no-target)
+            ENABLE_TARGET_SELECTOR=0
+            shift
+            ;;
+        --no-web-video)
+            ENABLE_WEB_VIDEO=0
+            shift
+            ;;
+        --rosbag)
+            ENABLE_ROSBAG=1
+            shift
+            ;;
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        *)
+            echo "[error] unknown argument: $1"
+            print_usage
+            exit 1
+            ;;
+    esac
+done
+
+case "$TRACKER_TYPE" in
+    sort|ocsort|bytetrack)
+        ;;
+    *)
+        echo "[error] invalid tracker '$TRACKER_TYPE' (expected sort|ocsort|bytetrack)"
+        exit 1
+        ;;
+esac
+
 wait_for_port() {
     local host="$1"
     local port="$2"
     local timeout_s="$3"
+    local required="${4:-0}"
 
     local start_ts
     start_ts="$(date +%s)"
@@ -107,6 +207,10 @@ wait_for_port() {
         local now
         now="$(date +%s)"
         if (( now - start_ts >= timeout_s )); then
+            if [[ "$required" == "1" ]]; then
+                echo "[error] timeout waiting for required port ${host}:${port}"
+                return 1
+            fi
             echo "[warn] timeout waiting for ${host}:${port}; continuing anyway"
             return 0
         fi
@@ -114,7 +218,83 @@ wait_for_port() {
     done
 }
 
+STACK_PROC_PATTERN="camera_bringup.launch.py|camera_capture_node|inference_client_node|tracker_node|target_selector_node|dashboard_bridge_node|web_video_server"
+
+check_stuck_camera_processes() {
+    local stuck_lines
+    stuck_lines="$(ps -eo pid=,stat=,cmd= | grep camera_capture_node | grep -v grep | awk '$2 ~ /^D/ {print}' || true)"
+
+    if [[ -n "${stuck_lines:-}" ]]; then
+        echo "[error] detected camera process(es) stuck in uninterruptible I/O state (D):"
+        echo "$stuck_lines"
+        echo "[error] this usually means the camera driver path is wedged; reboot is required"
+        return 1
+    fi
+
+    return 0
+}
+
+cleanup_existing_stack_processes() {
+    local existing
+    existing="$(pgrep -af "$STACK_PROC_PATTERN" || true)"
+    if [[ -z "${existing:-}" ]]; then
+        return 0
+    fi
+
+    echo "[warn] found existing stack-related process(es); stopping before fresh start"
+    echo "$existing"
+
+    pkill -f "$STACK_PROC_PATTERN" >/dev/null 2>&1 || true
+    sleep 1
+
+    local remaining
+    remaining="$(pgrep -af "$STACK_PROC_PATTERN" || true)"
+    if [[ -n "${remaining:-}" ]]; then
+        echo "[warn] some stack process(es) still running after stop attempt:"
+        echo "$remaining"
+        if ! check_stuck_camera_processes; then
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
 echo "[info] logs: $RUN_DIR"
+echo "[info] tracker: $TRACKER_TYPE"
+if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
+    echo "[info] dashboard bridge: enabled"
+else
+    echo "[info] dashboard bridge: disabled"
+fi
+if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
+    echo "[info] tracker node: enabled"
+else
+    echo "[info] tracker node: disabled"
+fi
+if [[ "$ENABLE_TARGET_SELECTOR" -eq 1 ]]; then
+    echo "[info] target selector: enabled"
+else
+    echo "[info] target selector: disabled"
+fi
+if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
+    echo "[info] web video server: enabled"
+else
+    echo "[info] web video server: disabled"
+fi
+if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
+    echo "[info] rosbag recording: enabled"
+else
+    echo "[info] rosbag recording: disabled"
+fi
+echo "[step] preflight checks"
+if ! check_stuck_camera_processes; then
+    exit 1
+fi
+if ! cleanup_existing_stack_processes; then
+    exit 1
+fi
+
 echo "[step] sourcing ROS environment"
 cd "$ROS_WS"
 set +u
@@ -148,11 +328,23 @@ export HAILO_POST_FUNC=filter
 nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_zmq_live.log 2>&1 &
 ' >"$RUN_DIR/container_infer_start.log" 2>&1
 
-wait_for_port 127.0.0.1 5556 20
+if ! wait_for_port 127.0.0.1 5556 20 1; then
+    stop_stack
+    exit 1
+fi
 
 echo "[step] starting ROS nodes"
-start_ros_bg camera ros2 launch thesis_bringup camera_bringup.launch.py
+CAMERA_ARGS=()
+if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 0 ]]; then
+    CAMERA_ARGS+=("publish_dashboard_topic:=false")
+fi
+
+start_ros_bg camera ros2 launch thesis_bringup camera_bringup.launch.py "${CAMERA_ARGS[@]}"
 sleep 2
+if ! check_proc_alive camera; then
+    stop_stack
+    exit 1
+fi
 
 start_ros_bg inference ros2 run thesis_inference_client inference_client_node --ros-args \
     -p image_topic:=/camera/image_raw \
@@ -162,20 +354,66 @@ start_ros_bg inference ros2 run thesis_inference_client inference_client_node --
     -p img_h:=640 \
     -p min_score:=0.35
 sleep 1
+if ! check_proc_alive inference; then
+    stop_stack
+    exit 1
+fi
 
-start_ros_bg tracker ros2 run thesis_tracker tracker_node
-sleep 1
+if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
+    start_ros_bg tracker ros2 run thesis_tracker tracker_node --ros-args -p tracker_type:=$TRACKER_TYPE
+    sleep 1
+    if ! check_proc_alive tracker; then
+        stop_stack
+        exit 1
+    fi
+fi
 
-start_ros_bg target_selector ros2 run thesis_target_selector target_selector_node
-sleep 1
+if [[ "$ENABLE_TARGET_SELECTOR" -eq 1 ]]; then
+    start_ros_bg target_selector ros2 run thesis_target_selector target_selector_node
+    sleep 1
+    if ! check_proc_alive target_selector; then
+        stop_stack
+        exit 1
+    fi
+fi
 
-start_ros_bg dashboard_bridge ros2 run thesis_bringup dashboard_bridge_node --ros-args \
-    -p img_w:=640 \
-    -p img_h:=640
-sleep 1
+if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
+    start_ros_bg dashboard_bridge ros2 run thesis_bringup dashboard_bridge_node --ros-args \
+        -p img_w:=640 \
+        -p img_h:=640
+    sleep 1
+    if ! check_proc_alive dashboard_bridge; then
+        stop_stack
+        exit 1
+    fi
+    if ! wait_for_port 127.0.0.1 8765 15 1; then
+        stop_stack
+        exit 1
+    fi
+    if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
+        start_ros_bg web_video ros2 run web_video_server web_video_server --ros-args -p port:=8080
+        sleep 1
+        if ! check_proc_alive web_video; then
+            stop_stack
+            exit 1
+        fi
+        if ! wait_for_port 127.0.0.1 8080 15 1; then
+            stop_stack
+            exit 1
+        fi
+    fi
+fi
 
-start_ros_bg web_video ros2 run web_video_server web_video_server --ros-args -p port:=8080
-wait_for_port 127.0.0.1 8080 15
+if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
+    start_ros_bg rosbag ros2 bag record \
+        /timing /timing_tracker /timing_target /detections /tracks /target \
+        -o "$RUN_DIR/rosbag2"
+    sleep 1
+    if ! check_proc_alive rosbag; then
+        stop_stack
+        exit 1
+    fi
+fi
 
 VIDEO_URL="http://${PI_IP}:8080/stream?topic=/camera/dashboard&type=mjpeg"
 WS_URL="ws://${PI_IP}:8765"
@@ -183,8 +421,14 @@ WS_URL="ws://${PI_IP}:8765"
 echo "[done] live stack started"
 echo "[info] PID file: $PID_FILE"
 echo "[info] tail logs: tail -f $RUN_DIR/*.log"
-echo "[info] video: $VIDEO_URL"
-echo "[info] telemetry ws: $WS_URL"
+if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 && "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
+    echo "[info] video: $VIDEO_URL"
+fi
+if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
+    echo "[info] telemetry ws: $WS_URL"
+else
+    echo "[info] dashboard endpoints: disabled (--no-dashboard)"
+fi
 echo "[info] type stop, quit, or exit to stop everything"
 
 while true; do

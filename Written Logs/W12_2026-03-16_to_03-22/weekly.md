@@ -2,9 +2,9 @@
 
 ## Week 12 Theme: Integration Week
 
-**Move from "preparation complete" to "MAVROS hardware integration validated and outdoor operation characterized."**
+**Move from preparation to operational integration with measurable timing evidence.**
 
-W11 was learning and indoor validation. W12 is execution: 8 hours of field time at IST to integrate perception + control + Pixhawk and validate in the target environment.
+Early W12 focus: integrate the full live ROS graph with dashboard tooling, harden one-command startup, and establish reliable timing ablation baselines before IST sessions.
 
 ---
 
@@ -93,36 +93,40 @@ By end of Day 22 (March 22), you should have:
 ## Daily Progress
 
 ### Day 16 (Sunday, 2026-03-16)
-**Focus:** Monday preparation and equipment check
+**Focus:** ROS graph + dashboard integration and one-command startup
 
 **Planned:**
-- Pack equipment
-- Review Tuesday session plan
-- Verify code ready
-- Final checks
+- Integrate live graph with frontend dashboard path
+- Create one-command startup/stop flow
+- Improve startup reliability and logging
 
 **Completed:**
-- *(To be filled)*
+- Dashboard telemetry/video path integrated with live graph
+- `tools/start_live_stack.sh` established as primary operational launch path
+- Startup checks, port readiness checks, and cleanup behavior improved
 
 **Issues:**
-- *(To be filled)*
+- Optional dashboard/video components add measurable runtime overhead for performance runs
 
 ---
 
 ### Day 17 (Monday, 2026-03-17)
-**Focus:** Pre-IST final checks and transport prep
+**Focus:** Timing ablation and startup script hardening
 
 **Planned:**
-- Git sync
-- Equipment verification
-- MAVROS procedure review
-- Confirm field access
+- Validate new timing instrumentation with live invariants
+- Run first ablation matrix and identify bottlenecks
+- Improve startup script mode controls and no-dashboard behavior
 
 **Completed:**
-- *(To be filled)*
+- Added live timing invariant checker and timing stats collector
+- Ran R1-R5 style ablation comparisons and produced bottleneck summary
+- Improved startup script flags and no-dashboard transmission behavior
+- Fixed target timing context fallback and confirmed e2e_target path
 
 **Issues:**
-- *(To be filled)*
+- `pre_ms` remains too coarse for optimization targeting; requires sub-stage split
+- tracker callback timing remains broad and should be split into compute/build/publish
 
 ---
 
@@ -145,14 +149,14 @@ By end of Day 22 (March 22), you should have:
 
 ---
 
-### Day 19 (Wednesday, 2026-03-19)
-**Focus:** Tuesday analysis and Thursday planning
+### Day 19 (Thursday, 2026-03-19)
+**Focus:** First supervised flight attempt
 
 **Planned:**
-- Analyze Tuesday bags
-- Document issues
-- Implement fixes if needed
-- Finalize Thursday plan
+- Run final pre-flight and safety checks
+- Execute short controlled assisted-flight windows
+- Capture evidence and classify outcome
+- Define immediate stabilization tasks
 
 **Completed:**
 - *(To be filled)*
@@ -162,14 +166,14 @@ By end of Day 22 (March 22), you should have:
 
 ---
 
-### Day 20 (Thursday, 2026-03-20)
-**Focus:** IST Session 2 — Outdoor validation or debug (4 hours)
+### Day 20 (Friday, 2026-03-20)
+**Focus:** Post-flight stabilization and blocker closure
 
 **Session goals:**
-- *(Depends on Tuesday results)*
-- Option A: Debug integration
-- Option B: Outdoor perception
-- Option C: Integrated outdoor test
+- Build event timeline from first-flight logs
+- Implement highest-impact fix(es)
+- Re-validate on bench/unarmed
+- Decide next-attempt scope with explicit gates
 
 **Completed:**
 - *(To be filled at end of session)*
@@ -181,8 +185,8 @@ By end of Day 22 (March 22), you should have:
 
 ---
 
-### Day 21 (Friday, 2026-03-21)
-**Focus:** Week 12 analysis and documentation
+### Day 21 (Saturday, 2026-03-21)
+**Focus:** Flight analysis and evidence packaging
 
 **Planned:**
 - Analyze all W12 bags
@@ -198,7 +202,7 @@ By end of Day 22 (March 22), you should have:
 
 ---
 
-### Day 22 (Saturday, 2026-03-22)
+### Day 22 (Sunday, 2026-03-22)
 **Focus:** Week 12 review and W13 planning
 
 **Planned:**
@@ -296,14 +300,14 @@ By end of Day 22 (March 22), you should have:
 
 **Depends on W12 outcomes:**
 
-**If Tuesday/Thursday successful:**
-- W13 focus: *(refine control, extend outdoor testing, prepare for armed ground test)*
+**If first-flight attempt was successful:**
+- W13 focus: *(repeatability, robustness, gradual envelope expansion)*
 
-**If integration issues:**
-- W13 focus: *(resolve blockers, additional integration sessions)*
+**If first-flight was partial/aborted:**
+- W13 focus: *(blocker closure, fault containment, conservative re-attempt)*
 
-**If outdoor deferred:**
-- W13 focus: *(outdoor validation priority, weather-dependent planning)*
+**If field testing was deferred:**
+- W13 focus: *(readiness gate completion and supervised field window scheduling)*
 
 ---
 

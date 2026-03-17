@@ -1,4 +1,9 @@
 std_msgs/Header header
+uint32 frame_id
+int64 src_stamp_ns
+int64 t_cam_msg_seen_ns
+int64 t_target_cb_start_ns
+int64 t_target_cb_end_ns
 uint32 id
 float32 cx
 float32 cy

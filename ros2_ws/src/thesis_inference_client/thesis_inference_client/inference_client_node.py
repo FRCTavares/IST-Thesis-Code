@@ -26,6 +26,22 @@ def stamp_to_ns(stamp) -> int:
     return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
 
 
+def now_ns() -> int:
+    """Monotonic nanoseconds for stage timing."""
+    return time.monotonic_ns()
+
+
+def _ms(dt_ns: int) -> float:
+    return float(dt_ns) / 1e6
+
+
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
 class InferenceClientNode(Node):
     def __init__(self):
         super().__init__("inference_client_node")
@@ -115,14 +131,22 @@ class InferenceClientNode(Node):
         self.req.connect(self.addr)
 
     def image_callback(self, msg: Image) -> None:
+        t_cam_msg_seen_ns = now_ns()
+        src_stamp_ns = stamp_to_ns(msg.header.stamp)
         with self.queue_lock:
             if len(self.queue) == self.queue.maxlen:
                 self.queue.popleft()
                 self.frames_dropped += 1
-            self.queue.append(msg)
+            self.queue.append(
+                {
+                    "msg": msg,
+                    "t_cam_msg_seen_ns": t_cam_msg_seen_ns,
+                    "src_stamp_ns": src_stamp_ns,
+                }
+            )
             self.frames_received += 1
 
-    def pop_latest_frame(self) -> Image | None:
+    def pop_latest_frame(self) -> dict | None:
         with self.queue_lock:
             if not self.queue:
                 return None
@@ -135,12 +159,16 @@ class InferenceClientNode(Node):
 
     def worker_loop(self) -> None:
         while rclpy.ok() and not self.stop_event.is_set():
-            image_msg = self.pop_latest_frame()
-            if image_msg is None:
+            frame_ctx = self.pop_latest_frame()
+            if frame_ctx is None:
                 time.sleep(0.001)
                 continue
 
-            t_loop0 = time.perf_counter_ns()
+            image_msg: Image = frame_ctx["msg"]
+            t_cam_msg_seen_ns = int(frame_ctx["t_cam_msg_seen_ns"])
+            src_stamp_ns = int(frame_ctx["src_stamp_ns"])
+
+            t_loop0 = now_ns()
 
             seq = self.seq_counter
             self.seq_counter += 1
@@ -148,7 +176,7 @@ class InferenceClientNode(Node):
             frame_id = self.frame_counter
             self.frame_counter += 1
 
-            t_capture_ns = stamp_to_ns(image_msg.header.stamp)
+            t_pre_start_ns = now_ns()
 
             try:
                 cv_bgr = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding="bgr8")
@@ -168,36 +196,53 @@ class InferenceClientNode(Node):
                 continue
 
             frame_bytes = resized_rgb.tobytes()
+            t_pre_end_ns = now_ns()
 
             metadata = {
                 "seq": seq,
                 "frame_id": frame_id,
-                "timestamp_ns": t_capture_ns,
+                "src_stamp_ns": src_stamp_ns,
+                "timestamp_ns": src_stamp_ns,
                 "width": self.img_w,
                 "height": self.img_h,
                 "channels": 3,
                 "dtype": "uint8",
                 "encoding": "rgb8",
+                "request_meta": {
+                    "src_width": int(image_msg.width),
+                    "src_height": int(image_msg.height),
+                    "src_encoding": str(image_msg.encoding),
+                    "infer_width": self.img_w,
+                    "infer_height": self.img_h,
+                    "infer_encoding": "rgb8",
+                },
             }
 
-            t_frame_sent_ns = time.time_ns()
+            t_frame_sent_ns = now_ns()
 
             pub_dt_ms = 0.0
             if self.last_t_frame_sent_ns is not None:
                 pub_dt_ms = (t_frame_sent_ns - self.last_t_frame_sent_ns) / 1e6
             self.last_t_frame_sent_ns = t_frame_sent_ns
 
-            t_json0 = time.perf_counter_ns()
             response = None
             try:
+                t_zmq_send_start_ns = now_ns()
                 self.req.send_json(metadata, flags=zmq.SNDMORE)
                 self.req.send(frame_bytes, flags=0, copy=False)
+                t_zmq_send_end_ns = now_ns()
+
+                t_zmq_recv_start_ns = now_ns()
                 raw_reply = self.req.recv()
+                t_zmq_recv_end_ns = now_ns()
+
+                t_decode_start_ns = now_ns()
 
                 if isinstance(raw_reply, bytes):
                     response = json.loads(raw_reply.decode("utf-8"))
                 else:
                     response = raw_reply
+                t_decode_end_ns = now_ns()
 
             except zmq.error.Again:
                 self.zmq_timeouts += 1
@@ -213,17 +258,13 @@ class InferenceClientNode(Node):
                 self.get_logger().warning(f"ZMQ request failed: {exc}")
                 self._make_req_socket()
                 continue
-            t_json1 = time.perf_counter_ns()
 
-            t_infer_end_ns = time.time_ns()
-            roundtrip_ms = (t_infer_end_ns - t_frame_sent_ns) / 1e6
+            roundtrip_ms = _ms(t_zmq_recv_end_ns - t_zmq_send_start_ns)
             self.last_roundtrip_ms = roundtrip_ms
 
             det_arr = Detection2DArray()
             det_arr.header.stamp = image_msg.header.stamp
-            det_arr.header.frame_id = (
-                image_msg.header.frame_id if image_msg.header.frame_id else f"frame_{frame_id}"
-            )
+            det_arr.header.frame_id = f"frame_{frame_id}"
 
             dets = response.get("detections", response.get("dets", []))
             for d in dets:
@@ -277,21 +318,82 @@ class InferenceClientNode(Node):
 
                 det_arr.detections.append(det)
 
+            timing_reply = response.get("timing", {}) if isinstance(response, dict) else {}
+
+            t_req_recv_ns = _safe_int(timing_reply.get("t_req_recv_ns"), 0)
+            t_frame_unpack_start_ns = _safe_int(timing_reply.get("t_frame_unpack_start_ns"), 0)
+            t_frame_unpack_end_ns = _safe_int(timing_reply.get("t_frame_unpack_end_ns"), 0)
+            t_infer_start_ns = _safe_int(timing_reply.get("t_infer_start_ns"), 0)
+            t_infer_end_reply_ns = _safe_int(timing_reply.get("t_infer_end_ns"), 0)
+            t_post_start_ns = _safe_int(timing_reply.get("t_post_start_ns"), 0)
+            t_post_end_ns = _safe_int(timing_reply.get("t_post_end_ns"), 0)
+            t_reply_send_ns = _safe_int(timing_reply.get("t_reply_send_ns"), 0)
+
+            t_det_pub_start_ns = now_ns()
+
             t_msg = Timing()
             t_msg.seq = seq
             t_msg.frame_id = frame_id
-            t_msg.pts_ns = t_capture_ns
+            t_msg.src_stamp_ns = src_stamp_ns
+            t_msg.t_cam_msg_seen_ns = t_cam_msg_seen_ns
+            t_msg.image_width = int(image_msg.width)
+            t_msg.image_height = int(image_msg.height)
+            t_msg.image_encoding = str(image_msg.encoding)
+
+            t_msg.t_pre_start_ns = t_pre_start_ns
+            t_msg.t_pre_end_ns = t_pre_end_ns
+            t_msg.t_zmq_send_start_ns = t_zmq_send_start_ns
+            t_msg.t_zmq_send_end_ns = t_zmq_send_end_ns
+            t_msg.t_zmq_recv_start_ns = t_zmq_recv_start_ns
+            t_msg.t_zmq_recv_end_ns = t_zmq_recv_end_ns
+            t_msg.t_decode_start_ns = t_decode_start_ns
+            t_msg.t_decode_end_ns = t_decode_end_ns
+            t_msg.t_det_pub_start_ns = t_det_pub_start_ns
+
+            t_msg.t_req_recv_ns = t_req_recv_ns
+            t_msg.t_frame_unpack_start_ns = t_frame_unpack_start_ns
+            t_msg.t_frame_unpack_end_ns = t_frame_unpack_end_ns
+            t_msg.t_infer_start_ns = t_infer_start_ns
+            t_msg.t_infer_end_ns = t_infer_end_reply_ns
+            t_msg.t_post_start_ns = t_post_start_ns
+            t_msg.t_post_end_ns = t_post_end_ns
+            t_msg.t_reply_send_ns = t_reply_send_ns
+
+            t_msg.ros_wait_ms = _ms(t_pre_start_ns - t_cam_msg_seen_ns)
+            t_msg.pre_ms = _ms(t_pre_end_ns - t_pre_start_ns)
+            t_msg.zmq_req_send_ms = _ms(t_zmq_send_end_ns - t_zmq_send_start_ns)
+            t_msg.zmq_wait_reply_ms = _ms(t_zmq_recv_end_ns - t_zmq_recv_start_ns)
+            t_msg.zmq_roundtrip_ms = _ms(t_zmq_recv_end_ns - t_zmq_send_start_ns)
+            t_msg.decode_ms = _ms(t_decode_end_ns - t_decode_start_ns)
+
+            if t_frame_unpack_start_ns > 0 and t_frame_unpack_end_ns >= t_frame_unpack_start_ns:
+                t_msg.container_unpack_ms = _ms(t_frame_unpack_end_ns - t_frame_unpack_start_ns)
+            if t_infer_start_ns > 0 and t_req_recv_ns > 0 and t_infer_start_ns >= t_req_recv_ns:
+                t_msg.container_queue_ms = _ms(t_infer_start_ns - t_req_recv_ns)
+            if t_infer_end_reply_ns > 0 and t_infer_start_ns > 0 and t_infer_end_reply_ns >= t_infer_start_ns:
+                t_msg.infer_ms = _ms(t_infer_end_reply_ns - t_infer_start_ns)
+            if t_post_end_ns > 0 and t_post_start_ns > 0 and t_post_end_ns >= t_post_start_ns:
+                t_msg.post_ms = _ms(t_post_end_ns - t_post_start_ns)
+
+            t_msg.pts_ns = src_stamp_ns
             t_msg.t_pub_ns = t_frame_sent_ns
             t_msg.pub_dt_ms = float(pub_dt_ms)
-            t_msg.lat_ms = float((t_infer_end_ns - t_capture_ns) / 1e6)
-            t_msg.recv_ms = float(roundtrip_ms)
-            t_msg.json_ms = float((t_json1 - t_json0) / 1e6)
+            t_msg.recv_ms = t_msg.zmq_roundtrip_ms
+            t_msg.json_ms = t_msg.decode_ms
             t_msg.track_ms = 0.0
 
-            t_loop1 = time.perf_counter_ns()
-            t_msg.loop_ms = float((t_loop1 - t_loop0) / 1e6)
-
             self.pub_dets.publish(det_arr)
+            t_det_pub_end_ns = now_ns()
+            t_msg.t_det_pub_end_ns = t_det_pub_end_ns
+            t_msg.det_pub_ms = _ms(t_det_pub_end_ns - t_det_pub_start_ns)
+            t_msg.e2e_det_ms = _ms(t_det_pub_end_ns - t_cam_msg_seen_ns)
+
+            # Keep deprecated aggregate loop metric for compatibility.
+            t_loop1 = now_ns()
+            t_msg.loop_ms = _ms(t_loop1 - t_loop0)
+            # Keep deprecated lat_ms mapped to explicit end-to-end detection latency.
+            t_msg.lat_ms = t_msg.e2e_det_ms
+
             self.pub_timing.publish(t_msg)
 
             self.frames_sent += 1

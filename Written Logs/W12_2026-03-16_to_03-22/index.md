@@ -17,34 +17,32 @@ W11 was preparation. W12 is execution: bring Pi5 + Pixhawk together, validate MA
 ## Daily Logs
 
 ### Day 16 (Sunday, 2026-03-16)
-**[Monday Preparation and Equipment Check](daily/2026-03-16__monday-prep-equipment-check.md)**
+**[ROS Graph + Dashboard Integration and One-Command Startup](daily/2026-03-16__ros-graph-dashboard-and-one-command-start.md)**
 
-**Goal:** Final preparation before Tuesday IST session
+**Goal:** Integrate full live graph with frontend dashboard and simplify operations with one-command startup
 
 **Key Tasks:**
-- Pack all equipment for IST
-- Review Tuesday session plan
-- Verify supervisor questions answered
-- Final code verification
-- Equipment checklist confirmation
+- Integrate dashboard bridge + web video path with live ROS graph
+- Build and harden `tools/start_live_stack.sh`
+- Add startup checks and cleaner stop behavior
+- Establish repeatable run/log workflow
 
-**Status:** *(Not started / In progress / Complete)*
+**Status:** Complete
 
 ---
 
 ### Day 17 (Monday, 2026-03-17)
-**[Pre-IST Final Checks](daily/2026-03-17__pre-ist-final-checks.md)**
+**[Timing Ablation and Startup Script Hardening](daily/2026-03-17__timing-ablation-and-start-script-hardening.md)**
 
-**Goal:** Last checks before tomorrow's IST session, transport preparation
+**Goal:** Validate timing instrumentation, run ablation measurements, and improve startup modes
 
 **Key Tasks:**
-- Final git sync
-- Verify all equipment packed
-- Review MAVROS launch procedure
-- Review safety checklist
-- Confirm field access
+- Add timing invariant checker and live stats collector
+- Run R1-R5 timing ablation set and summarize bottlenecks
+- Improve startup script modes (`--no-dashboard`, tracker/web-video/rosbag toggles)
+- Fix target timing context fallback and verify e2e_target
 
-**Status:** *(Not started / In progress / Complete)*
+**Status:** Complete
 
 ---
 
@@ -71,44 +69,44 @@ W11 was preparation. W12 is execution: bring Pi5 + Pixhawk together, validate MA
 
 ---
 
-### Day 19 (Wednesday, 2026-03-19)
-**[Tuesday Session Analysis and Thursday Planning](daily/2026-03-19__session-analysis-thursday-planning.md)**
+### Day 19 (Thursday, 2026-03-19)
+**[First Flight Attempt](daily/2026-03-19__first-flight-attempt.md)**
 
-**Goal:** Analyze Tuesday results, plan Thursday session
+**Goal:** Execute first supervised flight attempt with strict safety gates
 
 **Key Tasks:**
-- Analyze Tuesday bags
-- Document issues encountered
-- Implement fixes if needed
-- Finalize Thursday session plan (Option A/B/C)
-- Code updates if required
+- Final pre-flight and RC override checks
+- Run short, controlled assisted-flight windows
+- Capture logs and timing evidence
+- Debrief and classify outcome (success/partial/aborted)
+- Define immediate stabilization actions
 
 **Status:** *(Not started / In progress / Complete)*
 
 ---
 
-### Day 20 (Thursday, 2026-03-20)
-**[IST Session 2 — Outdoor Validation or Debug](daily/2026-03-20__ist-session-2-outdoor-validation.md)**
+### Day 20 (Friday, 2026-03-20)
+**[Post-Flight Stabilization](daily/2026-03-20__ist-session-2-outdoor-validation.md)**
 
-**Goal:** Outdoor testing or integration debugging (4 hours at IST)
+**Goal:** Triage first-flight evidence and close highest-priority blockers
 
-**Depends on Tuesday results:**
-- **Option A:** Debug integration issues
-- **Option B:** Outdoor perception validation
-- **Option C:** Integrated outdoor ground test
+**Key Tasks:**
+- Build first-flight event timeline from logs
+- Implement highest-impact safety/robustness fix
+- Re-validate on bench/unarmed setup
+- Decide retry scope and explicit gating criteria
 
 **Deliverables:**
-- Outdoor bags recorded (if applicable)
-- Integration issues resolved (if applicable)
-- System validated in target environment
-- Field operation experience documented
+- Root-cause shortlist
+- Stabilization fixes and validation notes
+- Clear next-attempt decision
 
 **Status:** *(Not started / In progress / Complete)*
 
 ---
 
-### Day 21 (Friday, 2026-03-21)
-**[Week 12 Analysis and Documentation](daily/2026-03-21__week-analysis-documentation.md)**
+### Day 21 (Saturday, 2026-03-21)
+**[Flight Analysis and Evidence Packaging](daily/2026-03-21__week-analysis-documentation.md)**
 
 **Goal:** Analyze both IST sessions, generate reports
 
@@ -123,7 +121,7 @@ W11 was preparation. W12 is execution: bring Pi5 + Pixhawk together, validate MA
 
 ---
 
-### Day 22 (Saturday, 2026-03-22)
+### Day 22 (Sunday, 2026-03-22)
 **[Week 12 Review and W13 Planning](daily/2026-03-22__week-review-w13-planning.md)**
 
 **Goal:** Complete W12 review, assess next steps
@@ -141,20 +139,20 @@ W11 was preparation. W12 is execution: bring Pi5 + Pixhawk together, validate MA
 
 ## Key Milestones
 
-**Tuesday Minimum Success:**
-- MAVROS connects to Pixhawk
-- Perception runs alongside MAVROS
-- Control node publishes setpoints (unarmed)
+**Wednesday Pre-Flight Gate Success:**
+- MAVROS and perception/control stack stable unarmed
+- Safety/override checks validated
+- Go/no-go criteria completed
 
-**Tuesday Target Success:**
-- Setpoints flow to Pixhawk and look reasonable
-- Target detection triggers control response
-- Sustained operation without crashes
+**Thursday First-Flight Success:**
+- At least one controlled assisted-flight window completed safely
+- Commands remain bounded and recoverable
+- Evidence captured for post-flight triage
 
-**Thursday Success (depends on Tuesday):**
-- Outdoor perception validated OR
-- Integration issues resolved OR
-- Full integrated ground test completed
+**Friday Stabilization Success:**
+- Top blocker identified and mitigated
+- Bench/unarmed re-validation passes
+- Clear next-attempt scope defined
 
 ---
 
@@ -167,7 +165,7 @@ W11 was preparation. W12 is execution: bring Pi5 + Pixhawk together, validate MA
 - Battery confirmed ready at IST
 
 **Safety priority:**
-- Props removed at all times
-- No arming during W12
-- RC override ready
+- RC override ready and tested before each run
+- Supervisor-controlled arming decision only
+- Abort criteria explicit and rehearsed
 - Emergency procedures known

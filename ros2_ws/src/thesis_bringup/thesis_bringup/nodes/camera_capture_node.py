@@ -42,6 +42,7 @@ class CameraCaptureNode(Node):
         self.declare_parameter("command_timeout_s", 5.0)
         self.declare_parameter("reopen_delay_s", 1.0)
         self.declare_parameter("publish_fps_topic", True)
+        self.declare_parameter("fail_on_media_init_error", False)
 
         self._device = self.get_parameter("device").value
         self._media_dev = self.get_parameter("media_dev").value
@@ -64,6 +65,9 @@ class CameraCaptureNode(Node):
         self._command_timeout_s = float(self.get_parameter("command_timeout_s").value)
         self._reopen_delay_s = float(self.get_parameter("reopen_delay_s").value)
         self._publish_fps_topic = bool(self.get_parameter("publish_fps_topic").value)
+        self._fail_on_media_init_error = bool(self.get_parameter("fail_on_media_init_error").value)
+
+        self._media_dev = self._resolve_media_device(self._media_dev)
 
         self._bridge = CvBridge()
         self._latest_frame = None
@@ -111,6 +115,46 @@ class CameraCaptureNode(Node):
             f"width={self._width}, height={self._height}, fps={self._fps}"
         )
 
+    def _resolve_media_device(self, configured_media_dev: str) -> str:
+        candidates = [configured_media_dev]
+        for path in sorted(Path("/dev").glob("media*")):
+            path_str = str(path)
+            if path_str not in candidates:
+                candidates.append(path_str)
+
+        def _matches_camera_topology(media_dev: str) -> bool:
+            try:
+                result = subprocess.run(
+                    ["media-ctl", "-d", media_dev, "-p"],
+                    check=False,
+                    text=True,
+                    capture_output=True,
+                    timeout=self._command_timeout_s,
+                )
+            except Exception:
+                return False
+
+            if result.returncode != 0:
+                return False
+
+            topology = result.stdout or ""
+            required_markers = (self._sensor_entity, self._csi_entity, self._video_entity)
+            return all(marker in topology for marker in required_markers)
+
+        for media_dev in candidates:
+            if _matches_camera_topology(media_dev):
+                if media_dev != configured_media_dev:
+                    self.get_logger().warn(
+                        f"Configured media_dev={configured_media_dev} does not match camera topology; "
+                        f"using {media_dev} instead"
+                    )
+                return media_dev
+
+        self.get_logger().warn(
+            f"Could not auto-detect camera media device; using configured value {configured_media_dev}"
+        )
+        return configured_media_dev
+
     def _configure_camera(self) -> None:
         self.get_logger().info("Configuring TEVS camera before capture start")
         self._check_binaries()
@@ -138,7 +182,7 @@ class CameraCaptureNode(Node):
     def _init_media_pipeline(self) -> None:
         fmt_string = (
             f"fmt:UYVY8_1X16/{self._width}x{self._height} "
-            "colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range"
+            "field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range"
         )
 
         commands = [
@@ -146,14 +190,15 @@ class CameraCaptureNode(Node):
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":0 [{fmt_string}]'",
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":{self._csi_source_pad} [{fmt_string}]'",
             f"media-ctl -d {self._media_dev} -l '\"{self._csi_entity}\":{self._csi_source_pad} -> \"{self._video_entity}\":0 [1]'",
+            f"v4l2-ctl -d {self._device} --set-fmt-video=width={self._width},height={self._height},pixelformat=UYVY",
             f"v4l2-ctl -d {self._sensor_subdev} --set-ctrl=trigger_mode={self._trigger_mode}",
         ]
 
         for cmd in commands:
-            self._run_shell(cmd)
+            self._run_shell(cmd, allow_failure=not self._fail_on_media_init_error)
             time.sleep(self._command_delay_s)
 
-    def _run_shell(self, cmd: str) -> subprocess.CompletedProcess:
+    def _run_shell(self, cmd: str, allow_failure: bool = False) -> subprocess.CompletedProcess:
         self.get_logger().info(f"Running: {cmd}")
 
         try:
@@ -166,11 +211,23 @@ class CameraCaptureNode(Node):
                 timeout=self._command_timeout_s,
             )
         except subprocess.TimeoutExpired as exc:
+            if allow_failure:
+                self.get_logger().warn(
+                    "Camera init command timed out (continuing): "
+                    f"timeout={exc.timeout}s, cmd={cmd}"
+                )
+                return subprocess.CompletedProcess(cmd, 124, "", f"timeout after {exc.timeout}s")
             raise RuntimeError(f"Command timed out after {exc.timeout}s\\nCMD: {cmd}") from exc
 
         if result.returncode != 0:
             stderr = result.stderr.strip() if result.stderr else ""
             stdout = result.stdout.strip() if result.stdout else ""
+            if allow_failure:
+                self.get_logger().warn(
+                    "Camera init command failed (continuing): "
+                    f"rc={result.returncode}, cmd={cmd}, stdout={stdout}, stderr={stderr}"
+                )
+                return result
             raise RuntimeError(
                 f"Command failed with code {result.returncode}\\n"
                 f"CMD: {cmd}\\n"

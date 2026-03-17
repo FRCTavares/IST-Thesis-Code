@@ -18,6 +18,7 @@ def generate_launch_description() -> LaunchDescription:
     dashboard_topic_arg = DeclareLaunchArgument("dashboard_topic", default_value="/camera/dashboard")
     dashboard_width_arg = DeclareLaunchArgument("dashboard_width", default_value="640")
     dashboard_height_arg = DeclareLaunchArgument("dashboard_height", default_value="360")
+    publish_dashboard_topic_arg = DeclareLaunchArgument("publish_dashboard_topic", default_value="true")
     sensor_entity_arg = DeclareLaunchArgument("sensor_entity", default_value="tevs 11-0048")
     csi_entity_arg = DeclareLaunchArgument("csi_entity", default_value="csi2")
     csi_source_pad_arg = DeclareLaunchArgument("csi_source_pad", default_value="4")
@@ -44,7 +45,7 @@ def generate_launch_description() -> LaunchDescription:
                 "dashboard_topic": LaunchConfiguration("dashboard_topic"),
                 "dashboard_width": LaunchConfiguration("dashboard_width"),
                 "dashboard_height": LaunchConfiguration("dashboard_height"),
-                "publish_dashboard_topic": True,
+                "publish_dashboard_topic": LaunchConfiguration("publish_dashboard_topic"),
                 "sensor_entity": LaunchConfiguration("sensor_entity"),
                 "csi_entity": LaunchConfiguration("csi_entity"),
                 "csi_source_pad": LaunchConfiguration("csi_source_pad"),
@@ -69,6 +70,7 @@ def generate_launch_description() -> LaunchDescription:
             dashboard_topic_arg,
             dashboard_width_arg,
             dashboard_height_arg,
+            publish_dashboard_topic_arg,
             sensor_entity_arg,
             csi_entity_arg,
             csi_source_pad_arg,

@@ -9,6 +9,20 @@ This document tracks all deliverables, code, configurations, reports, and datase
 
 ## Code and Configuration
 
+### Live Stack Integration and Operations (Days 16-17)
+- **One-command live startup script:** `tools/start_live_stack.sh`
+- **Inference client timing instrumentation:** `ros2_ws/src/thesis_inference_client/thesis_inference_client/inference_client_node.py`
+- **Tracker timing publishers:** `ros2_ws/src/thesis_tracker/thesis_tracker/tracker_node.py`
+- **Target timing and context fallback:** `ros2_ws/src/thesis_target_selector/thesis_target_selector/thesis_target_selector.py`
+- **Container timing fields:** `infer_service/detection_zmq.py`
+
+**Status:** In progress (operationally validated, further optimization pending)
+
+**Notable updates:**
+- Dashboard/no-dashboard startup modes and optional component toggles added.
+- No-dashboard mode disables dashboard transmission path.
+- Startup process checks and stop cleanup improved.
+
 ### MAVROS Integration
 - **Control node with MAVROS:** `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/control_ref_node.py`
 - **MAVROS integration guide:** `Written Logs/docs/mavros_integration_guide.md`
@@ -80,6 +94,20 @@ ros2 run thesis_bringup control_ref_node --ros-args \
 ---
 
 ## Reports and Analysis
+
+### Timing Ablation and Bottleneck Analysis (Day 17)
+- **Bottleneck summary report:** `reports/timing/2026-03-17__live-bottlenecks-summary.md`
+- **Live baseline stats:** `reports/timing/baseline_current_live.json`
+- **Post target-context-fix stats:** `reports/timing/post_target_context_fix_live.json`
+- **Ablation stats:**
+  - `reports/timing/r2_inference_tracker_target.json`
+  - `reports/timing/r3_plus_dashboard_bridge.json`
+  - `reports/timing/r4_plus_web_video.json`
+  - `reports/timing/r5_plus_rosbag.json`
+
+**Utilities added:**
+- `tools/check_live_timing_invariants.py`
+- `tools/collect_live_timing_stats.py`
 
 ### MAVROS Integration Report
 - **Tuesday session report:** `reports/system/W12_tuesday_mavros_integration.md`
