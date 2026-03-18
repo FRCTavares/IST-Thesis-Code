@@ -14,7 +14,9 @@ class SortBackend:
         iou_threshold: float = 0.18,
         max_age: int = 4,
         min_hits: int = 3,
-        centre_gate: float = 200.0
+        centre_gate: float = 200.0,
+        gate_x: float | None = None,
+        gate_y: float | None = None,
     ):
         """
         Initialize SORT tracker.
@@ -24,17 +26,23 @@ class SortBackend:
             max_age: Maximum frames to keep track alive without matches
             min_hits: Minimum hits before track is confirmed
             centre_gate: Centre distance gating (pixels) for efficient matching
+            gate_x: Optional x-axis gating threshold in pixels
+            gate_y: Optional y-axis gating threshold in pixels
         """
         self.iou_threshold = iou_threshold
         self.max_age = max_age
         self.min_hits = min_hits
         self.centre_gate = centre_gate
+        self.gate_x = gate_x
+        self.gate_y = gate_y
         
         self.tracker = Sort(
             iou_thresh=iou_threshold,
             max_age=max_age,
             min_hits=min_hits,
-            centre_gate=centre_gate
+            centre_gate=centre_gate,
+            gate_x=gate_x,
+            gate_y=gate_y,
         )
     
     def reset(self) -> None:

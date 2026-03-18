@@ -41,6 +41,10 @@ int64 t_target_cb_end_ns
 # Derived stage metrics (milliseconds)
 float32 ros_wait_ms
 float32 pre_ms
+float32 ros_to_np_ms
+float32 resize_ms
+float32 color_ms
+float32 pack_ms
 float32 zmq_req_send_ms
 float32 zmq_wait_reply_ms
 float32 zmq_roundtrip_ms

@@ -101,12 +101,21 @@ class TrackerNode(Node):
             self.declare_parameter("max_age", 4)
             self.declare_parameter("min_hits", 3)
             self.declare_parameter("centre_gate", 200.0)
+            self.declare_parameter("gate_x", -1.0)
+            self.declare_parameter("gate_y", -1.0)
+
+            gate_x = float(self.get_parameter("gate_x").value)
+            gate_y = float(self.get_parameter("gate_y").value)
+            gate_x = None if gate_x <= 0.0 else gate_x
+            gate_y = None if gate_y <= 0.0 else gate_y
             
             return SortBackend(
                 iou_threshold=float(self.get_parameter("iou_threshold").value),
                 max_age=int(self.get_parameter("max_age").value),
                 min_hits=int(self.get_parameter("min_hits").value),
-                centre_gate=float(self.get_parameter("centre_gate").value)
+                centre_gate=float(self.get_parameter("centre_gate").value),
+                gate_x=gate_x,
+                gate_y=gate_y,
             )
         
         elif tracker_type == "ocsort":

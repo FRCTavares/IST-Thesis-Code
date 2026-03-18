@@ -8,9 +8,9 @@ import time
 from collections import deque
 
 import cv2
+import numpy as np
 import rclpy
 import zmq
-from cv_bridge import CvBridge
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, qos_profile_sensor_data
 from sensor_msgs.msg import Image
@@ -72,6 +72,10 @@ class InferenceClientNode(Node):
         self.print_every = int(self.get_parameter("print_every").value)
         self.timeout_log_every = int(self.get_parameter("timeout_log_every").value)
 
+        self.resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
+        self._logged_encoding: str | None = None
+        self._logged_own_data = False
+
         qos_pub = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
@@ -86,8 +90,6 @@ class InferenceClientNode(Node):
             self.image_callback,
             qos_profile_sensor_data,
         )
-
-        self.bridge = CvBridge()
 
         self.ctx = zmq.Context.instance()
         self.req = None
@@ -177,25 +179,70 @@ class InferenceClientNode(Node):
             self.frame_counter += 1
 
             t_pre_start_ns = now_ns()
+            t_ros_to_np_start_ns = t_pre_start_ns
 
-            try:
-                cv_bgr = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding="bgr8")
-            except Exception as exc:
-                self.get_logger().warning(f"cv_bridge conversion failed: {exc}")
+            image_height = int(image_msg.height)
+            image_width = int(image_msg.width)
+            image_encoding = str(image_msg.encoding).lower()
+            image_step = int(image_msg.step)
+
+            if image_encoding != "rgb8":
+                self.get_logger().error(
+                    f"unsupported encoding '{image_msg.encoding}' in inference_client; "
+                    f"expected rgb8. Fix camera node encoding and restart."
+                )
+                continue
+
+            expected_step = image_width * 3
+            if image_step != expected_step:
+                self.get_logger().error(
+                    f"unsupported image step={image_step} (expected {expected_step} for packed 8UC3). "
+                    f"Fix camera node to publish tightly packed RGB/BGR images."
+                )
+                continue
+
+            expected_bytes = image_height * image_step
+            if len(image_msg.data) != expected_bytes:
+                self.get_logger().warning(
+                    f"image size mismatch: got={len(image_msg.data)} expected={expected_bytes}; dropping frame"
+                )
                 continue
 
             try:
-                resized_bgr = cv2.resize(
-                    cv_bgr,
+                img = np.frombuffer(image_msg.data, dtype=np.uint8)
+                img = img.reshape(image_height, image_width, 3)
+            except Exception as exc:
+                self.get_logger().warning(f"ROS image to numpy conversion failed: {exc}")
+                continue
+            t_ros_to_np_end_ns = now_ns()
+
+            if image_encoding != self._logged_encoding:
+                self._logged_encoding = image_encoding
+                self.get_logger().info(f"inference input encoding={image_encoding}")
+
+            if not self._logged_own_data:
+                self._logged_own_data = True
+                self.get_logger().info(f"numpy_view_owndata={img.flags['OWNDATA']}")
+
+            t_resize_start_ns = now_ns()
+            try:
+                cv2.resize(
+                    img,
                     (self.img_w, self.img_h),
+                    dst=self.resize_buf,
                     interpolation=cv2.INTER_LINEAR,
                 )
-                resized_rgb = cv2.cvtColor(resized_bgr, cv2.COLOR_BGR2RGB)
             except Exception as exc:
-                self.get_logger().warning(f"frame preprocessing failed: {exc}")
+                self.get_logger().warning(f"resize failed: {exc}")
                 continue
+            t_resize_end_ns = now_ns()
 
-            frame_bytes = resized_rgb.tobytes()
+            t_color_start_ns = now_ns()
+            t_color_end_ns = t_color_start_ns
+
+            t_pack_start_ns = now_ns()
+            frame_payload = memoryview(self.resize_buf)
+            t_pack_end_ns = now_ns()
             t_pre_end_ns = now_ns()
 
             metadata = {
@@ -229,7 +276,7 @@ class InferenceClientNode(Node):
             try:
                 t_zmq_send_start_ns = now_ns()
                 self.req.send_json(metadata, flags=zmq.SNDMORE)
-                self.req.send(frame_bytes, flags=0, copy=False)
+                self.req.send(frame_payload, flags=0, copy=False)
                 t_zmq_send_end_ns = now_ns()
 
                 t_zmq_recv_start_ns = now_ns()
@@ -361,6 +408,10 @@ class InferenceClientNode(Node):
 
             t_msg.ros_wait_ms = _ms(t_pre_start_ns - t_cam_msg_seen_ns)
             t_msg.pre_ms = _ms(t_pre_end_ns - t_pre_start_ns)
+            t_msg.ros_to_np_ms = _ms(t_ros_to_np_end_ns - t_ros_to_np_start_ns)
+            t_msg.resize_ms = _ms(t_resize_end_ns - t_resize_start_ns)
+            t_msg.color_ms = _ms(t_color_end_ns - t_color_start_ns)
+            t_msg.pack_ms = _ms(t_pack_end_ns - t_pack_start_ns)
             t_msg.zmq_req_send_ms = _ms(t_zmq_send_end_ns - t_zmq_send_start_ns)
             t_msg.zmq_wait_reply_ms = _ms(t_zmq_recv_end_ns - t_zmq_recv_start_ns)
             t_msg.zmq_roundtrip_ms = _ms(t_zmq_recv_end_ns - t_zmq_send_start_ns)
@@ -402,7 +453,11 @@ class InferenceClientNode(Node):
                 self.get_logger().info(
                     f"sent={self.frames_sent} recv={self.frames_received} "
                     f"drop={self.frames_dropped} dets={len(det_arr.detections)} "
-                    f"lat_ms={t_msg.lat_ms:.2f} rt_ms={roundtrip_ms:.2f} "
+                    f"lat_ms={t_msg.lat_ms:.2f} pre_ms={t_msg.pre_ms:.2f} "
+                    f"ros_to_np_ms={t_msg.ros_to_np_ms:.2f} "
+                    f"resize_ms={t_msg.resize_ms:.2f} "
+                    f"color_ms={t_msg.color_ms:.2f} pack_ms={t_msg.pack_ms:.2f} "
+                    f"rt_ms={roundtrip_ms:.2f} "
                     f"loop_ms={t_msg.loop_ms:.2f}"
                 )
 

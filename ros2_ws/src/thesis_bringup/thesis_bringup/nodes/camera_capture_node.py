@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 import cv2
+import numpy as np
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
@@ -71,6 +72,7 @@ class CameraCaptureNode(Node):
 
         self._bridge = CvBridge()
         self._latest_frame = None
+        self._rgb_buffer = None
         self._dashboard_buffer = None
         self._frame_lock = threading.Lock()
         self._cap: cv2.VideoCapture | None = None
@@ -310,7 +312,11 @@ class CameraCaptureNode(Node):
             dashboard_msg.header.frame_id = self._frame_id
             self._dashboard_pub.publish(dashboard_msg)
 
-        msg = self._bridge.cv2_to_imgmsg(frame, encoding="bgr8")
+        if self._rgb_buffer is None or self._rgb_buffer.shape != frame.shape:
+            self._rgb_buffer = np.empty_like(frame)
+        cv2.cvtColor(frame, cv2.COLOR_BGR2RGB, dst=self._rgb_buffer)
+
+        msg = self._bridge.cv2_to_imgmsg(self._rgb_buffer, encoding="rgb8")
         msg.header.stamp = stamp
         msg.header.frame_id = self._frame_id
         self._image_pub.publish(msg)
