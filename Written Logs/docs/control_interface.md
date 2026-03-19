@@ -186,6 +186,16 @@ All generated commands are bounded before output.
 - `yaw_deadband = 0.02`
 - `forward_deadband = 0.05`
 
+## Command Frame Labels
+
+`control_ref_node` now labels velocity commands with explicit frame IDs.
+
+Parameters:
+- `cmd_frame_id` (default: `base_link`) for `/control_ref/cmd_vel`
+- `mavros_frame_id` (default: `base_link`) for `/mavros/setpoint_velocity/cmd_vel`
+
+This improves traceability during validation and keeps mirror-topic comparisons unambiguous.
+
 ---
 
 ## Lost-Target Behaviour
@@ -199,6 +209,12 @@ Then `control_ref_node`:
 - Publishes zero commands on all axes
 - Resets slew limiter state
 - Continues publishing at 30 Hz (with zeros)
+
+Runtime diagnostics:
+- Logs invalid-target reason transitions (for example stale target, low score, low quality)
+- Logs periodic invalid-target reminders if invalid state persists
+- Logs when target becomes valid again after an invalid period
+- Logs timer slip warnings when loop period exceeds `timer_slip_warn_factor * expected_period`
 
 **No aggressive behavior on loss:**
 - No sudden commands
@@ -221,6 +237,8 @@ When a valid target appears after loss:
 ```bash
 ros2 run thesis_bringup control_ref_node --ros-args \
   -p cmd_topic:=/control_ref/cmd_vel \
+  -p cmd_frame_id:=base_link \
+  -p mavros_frame_id:=base_link \
   -p img_w:=640.0 \
   -p img_h:=640.0 \
   -p desired_h_norm:=0.90

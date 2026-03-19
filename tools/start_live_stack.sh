@@ -6,6 +6,7 @@ ROS_WS="${ROS_WS:-$THESIS_ROOT/ros2_ws}"
 PI_AI_DIR="${PI_AI_DIR:-$HOME/pi-ai-kit-ubuntu}"
 CONTAINER_NAME="${CONTAINER_NAME:-pi-ai-kit-ubuntu-hailo-ubuntu-pi-1}"
 PI_IP="${PI_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
+ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 
 if [[ -z "${PI_IP// }" ]]; then
     PI_IP="127.0.0.1"
@@ -105,6 +106,7 @@ stop_stack() {
     pkill -f "inference_client_node" >/dev/null 2>&1 || true
     pkill -f "tracker_node" >/dev/null 2>&1 || true
     pkill -f "target_selector_node" >/dev/null 2>&1 || true
+    pkill -f "control_ref_node" >/dev/null 2>&1 || true
     pkill -f "dashboard_bridge_node" >/dev/null 2>&1 || true
     pkill -f "web_video_server" >/dev/null 2>&1 || true
 
@@ -123,8 +125,10 @@ Options:
   --no-dashboard                     Disable dashboard bridge
     --no-tracker                       Do not start tracker node
     --no-target                        Do not start target selector node
+    --no-control                       Do not start control_ref_node
+    --control-mavros                   Enable MAVROS mirroring in control_ref_node
     --no-web-video                     Do not start web_video_server
-    --rosbag                           Record timing/tracking topics to rosbag
+    --rosbag                           Record timing/tracking/control topics to rosbag
   -h, --help                         Show this help message
 EOF
 }
@@ -133,6 +137,8 @@ TRACKER_TYPE="sort"
 ENABLE_DASHBOARD_BRIDGE=1
 ENABLE_TRACKER=1
 ENABLE_TARGET_SELECTOR=1
+ENABLE_CONTROL=1
+CONTROL_MAVROS_BOOL="false"
 ENABLE_WEB_VIDEO=1
 ENABLE_ROSBAG=0
 
@@ -158,6 +164,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-target)
             ENABLE_TARGET_SELECTOR=0
+            shift
+            ;;
+        --no-control)
+            ENABLE_CONTROL=0
+            shift
+            ;;
+        --control-mavros)
+            CONTROL_MAVROS_BOOL="true"
             shift
             ;;
         --no-web-video)
@@ -218,7 +232,7 @@ wait_for_port() {
     done
 }
 
-STACK_PROC_PATTERN="camera_bringup.launch.py|camera_capture_node|inference_client_node|tracker_node|target_selector_node|dashboard_bridge_node|web_video_server"
+STACK_PROC_PATTERN="camera_bringup.launch.py|camera_capture_node|inference_client_node|tracker_node|target_selector_node|control_ref_node|dashboard_bridge_node|web_video_server"
 
 check_stuck_camera_processes() {
     local stuck_lines
@@ -277,6 +291,16 @@ if [[ "$ENABLE_TARGET_SELECTOR" -eq 1 ]]; then
 else
     echo "[info] target selector: disabled"
 fi
+if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
+    echo "[info] control node: enabled"
+    if [[ "$CONTROL_MAVROS_BOOL" == "true" ]]; then
+        echo "[info] control MAVROS mirror: enabled"
+    else
+        echo "[info] control MAVROS mirror: disabled (safe default)"
+    fi
+else
+    echo "[info] control node: disabled"
+fi
 if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
     echo "[info] web video server: enabled"
 else
@@ -301,6 +325,8 @@ set +u
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 set -u
+export ROS_DOMAIN_ID
+echo "[info] ROS_DOMAIN_ID: $ROS_DOMAIN_ID"
 
 echo "[step] ensuring container is up"
 (
@@ -377,6 +403,18 @@ if [[ "$ENABLE_TARGET_SELECTOR" -eq 1 ]]; then
     fi
 fi
 
+if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
+    start_ros_bg control ros2 run thesis_bringup control_ref_node --ros-args \
+        -p enable_mavros:=$CONTROL_MAVROS_BOOL \
+        -p cmd_frame_id:=base_link \
+        -p mavros_frame_id:=base_link
+    sleep 1
+    if ! check_proc_alive control; then
+        stop_stack
+        exit 1
+    fi
+fi
+
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
     start_ros_bg dashboard_bridge ros2 run thesis_bringup dashboard_bridge_node --ros-args \
         -p img_w:=640 \
@@ -406,7 +444,7 @@ fi
 
 if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     start_ros_bg rosbag ros2 bag record \
-        /timing /timing_tracker /timing_target /detections /tracks /target \
+        /timing /timing_tracker /timing_target /detections /tracks /target /control_ref/cmd_vel \
         -o "$RUN_DIR/rosbag2"
     sleep 1
     if ! check_proc_alive rosbag; then

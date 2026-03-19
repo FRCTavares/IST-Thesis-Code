@@ -16,6 +16,13 @@ cd $THESIS_ROOT
 ./tools/start_live_stack.sh
 ```
 
+Default behavior now includes `control_ref_node` with MAVROS mirroring disabled (`enable_mavros=false`).
+The launcher sets `ROS_DOMAIN_ID` to `42` by default (or uses your exported value if already set).
+
+Optional flags:
+- Disable control node: `./tools/start_live_stack.sh --no-control`
+- Enable MAVROS mirror publish in control node: `./tools/start_live_stack.sh --control-mavros`
+
 Interactive stop in same terminal:
 - `stop`
 - `quit`

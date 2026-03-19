@@ -57,12 +57,20 @@ class ControlRefNode(Node):
         self.declare_parameter('debug_log_every_n', 30)
         self.declare_parameter('enable_mavros', False)
         self.declare_parameter('mavros_topic', '/mavros/setpoint_velocity/cmd_vel')
+        self.declare_parameter('cmd_frame_id', 'base_link')
+        self.declare_parameter('mavros_frame_id', 'base_link')
+        self.declare_parameter('invalid_warn_every_n', 30)
+        self.declare_parameter('timer_slip_warn_factor', 2.0)
 
         target_topic = str(self.get_parameter('target_topic').value)
         cmd_topic = str(self.get_parameter('cmd_topic').value)
         rate_hz = float(self.get_parameter('rate_hz').value)
         self.enable_mavros = bool(self.get_parameter('enable_mavros').value)
         self.mavros_topic = str(self.get_parameter('mavros_topic').value)
+        self.cmd_frame_id = str(self.get_parameter('cmd_frame_id').value)
+        self.mavros_frame_id = str(self.get_parameter('mavros_frame_id').value)
+        self.invalid_warn_every_n = int(self.get_parameter('invalid_warn_every_n').value)
+        self.timer_slip_warn_factor = float(self.get_parameter('timer_slip_warn_factor').value)
 
         self.stale_timeout_s = float(self.get_parameter('stale_timeout_s').value)
 
@@ -104,6 +112,11 @@ class ControlRefNode(Node):
         self.prev_vy = 0.0
         self.prev_yaw_z = 0.0
         self.tick_count = 0
+        self.expected_period_s = 1.0 / rate_hz if rate_hz > 0.0 else 0.0
+        self.last_timer_time = None
+        self.last_invalid_reason: Optional[str] = None
+        self.invalid_count = 0
+        self.valid_prev_tick = False
 
         target_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
@@ -126,6 +139,9 @@ class ControlRefNode(Node):
         self.get_logger().info(f'Listening on {target_topic}')
         self.get_logger().info(f'Publishing commands to {cmd_topic}')
         self.get_logger().info(
+            f'Command frame_id={self.cmd_frame_id} | MAVROS frame_id={self.mavros_frame_id}'
+        )
+        self.get_logger().info(
             f'MAVROS mirroring {"enabled" if self.enable_mavros else "disabled"} on {self.mavros_topic}'
         )
 
@@ -139,23 +155,38 @@ class ControlRefNode(Node):
         age_s = (self.get_clock().now() - self.last_target_rx_time).nanoseconds * 1e-9
         return age_s <= self.stale_timeout_s
 
-    def target_valid(self, t: TargetState) -> bool:
-        if not self.is_fresh():
-            return False
+    def target_age_s(self) -> Optional[float]:
+        if self.last_target_rx_time is None:
+            return None
+        return (self.get_clock().now() - self.last_target_rx_time).nanoseconds * 1e-9
+
+    def target_invalid_reason(self, t: TargetState) -> Optional[str]:
+        if t.id == 0:
+            return 'id_zero'
+
+        age_s = self.target_age_s()
+        if age_s is None:
+            return 'no_target_rx_time'
+        if age_s > self.stale_timeout_s:
+            return f'stale_target(age={age_s:.3f}s>{self.stale_timeout_s:.3f}s)'
+
         if not (0.0 <= t.cx <= self.img_w and 0.0 <= t.cy <= self.img_h):
-            return False
+            return 'target_out_of_bounds'
         if not (0.0 < t.w <= self.img_w and 0.0 < t.h <= self.img_h):
-            return False
+            return 'target_invalid_size'
         if t.score < self.min_score_valid:
-            return False
+            return f'low_score({t.score:.3f}<{self.min_score_valid:.3f})'
         if t.quality < self.min_quality_valid:
-            return False
-        return True
+            return f'low_quality({t.quality:.3f}<{self.min_quality_valid:.3f})'
+        return None
+
+    def target_valid(self, t: TargetState) -> bool:
+        return self.target_invalid_reason(t) is None
 
     def slew(self, x: float, x_prev: float, max_delta: float) -> float:
         return clamp(x, x_prev - max_delta, x_prev + max_delta)
 
-    def _make_twist_msg(self, stamp, vx: float, vy: float, yaw_z: float, frame_id: str = '') -> TwistStamped:
+    def _make_twist_msg(self, stamp, vx: float, vy: float, yaw_z: float, frame_id: str) -> TwistStamped:
         msg = TwistStamped()
         msg.header.stamp = stamp
         msg.header.frame_id = frame_id
@@ -170,10 +201,32 @@ class ControlRefNode(Node):
     def publish_pair(self, stamp, vx: float, vy: float, yaw_z: float) -> None:
         """Publish the same command to both the debug topic and (if enabled) the MAVROS topic.
         Both messages share the exact same header.stamp to make topic-diff checks reliable."""
-        msg = self._make_twist_msg(stamp, vx, vy, yaw_z)
+        msg = self._make_twist_msg(stamp, vx, vy, yaw_z, self.cmd_frame_id)
         self.pub_cmd.publish(msg)
         if self.enable_mavros:
-            self.pub_mavros.publish(self._make_twist_msg(stamp, vx, vy, yaw_z))
+            self.pub_mavros.publish(self._make_twist_msg(stamp, vx, vy, yaw_z, self.mavros_frame_id))
+
+    def maybe_warn_invalid_target(self, reason: str, t: Optional[TargetState]) -> None:
+        self.invalid_count += 1
+        should_log = (
+            reason != self.last_invalid_reason
+            or (
+                self.invalid_warn_every_n > 0
+                and (self.invalid_count % self.invalid_warn_every_n == 0)
+            )
+        )
+        if should_log:
+            age_s = self.target_age_s()
+            age_str = f'{age_s:.3f}s' if age_s is not None else 'n/a'
+            if t is None:
+                self.get_logger().warn(f'target invalid: {reason} age={age_str}')
+            else:
+                self.get_logger().warn(
+                    f'target invalid: {reason} age={age_str} '
+                    f'id={t.id} cx={t.cx:.1f} cy={t.cy:.1f} w={t.w:.1f} h={t.h:.1f} '
+                    f'score={t.score:.3f} quality={t.quality:.3f}'
+                )
+        self.last_invalid_reason = reason
 
     def publish_zero(self) -> None:
         self.prev_vx = 0.0
@@ -184,15 +237,35 @@ class ControlRefNode(Node):
     def on_timer(self) -> None:
         self.tick_count += 1
 
+        now = self.get_clock().now()
+        if self.last_timer_time is not None and self.expected_period_s > 0.0 and self.timer_slip_warn_factor > 1.0:
+            dt_s = (now - self.last_timer_time).nanoseconds * 1e-9
+            if dt_s > (self.expected_period_s * self.timer_slip_warn_factor):
+                self.get_logger().warn(
+                    f'control timer slip detected dt={dt_s:.3f}s expected={self.expected_period_s:.3f}s'
+                )
+        self.last_timer_time = now
+
         if self.last_target is None:
+            self.valid_prev_tick = False
+            self.maybe_warn_invalid_target('no_target_msg', None)
             self.publish_zero()
             return
 
         t = self.last_target
 
-        if not self.target_valid(t):
+        invalid_reason = self.target_invalid_reason(t)
+        if invalid_reason is not None:
+            self.valid_prev_tick = False
+            self.maybe_warn_invalid_target(invalid_reason, t)
             self.publish_zero()
             return
+
+        if not self.valid_prev_tick and self.last_invalid_reason is not None:
+            self.get_logger().info(f'target valid again after: {self.last_invalid_reason}')
+        self.last_invalid_reason = None
+        self.invalid_count = 0
+        self.valid_prev_tick = True
 
         cx_norm = float(t.cx) / self.img_w
         h_norm = float(t.h) / self.img_h

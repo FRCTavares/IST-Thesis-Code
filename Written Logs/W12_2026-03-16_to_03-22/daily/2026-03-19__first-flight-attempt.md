@@ -4,6 +4,8 @@
 
 **Focus:** First supervised flight attempt with strict safety envelope and immediate rollback path.
 
+**Gate rule:** No flight authority handover until all pre-flight closure gates below are green.
+
 ---
 
 ## Mission Objective
@@ -14,15 +16,28 @@
 
 ---
 
+## Pre-Flight Closure Gates (Must Pass First)
+
+- [ ] **Sign matrix complete:**
+	- right target (`cx > 339`) produces `angular.z > 0`
+	- far target (`h < 160`) produces `linear.x > 0`
+- [ ] **Endurance evidence:** one clean 20+ min integrated unarmed run recorded and analyzed
+- [ ] **Safety rehearsal evidence:** RC override test + emergency stop sequence rehearsed and logged
+
+**If any gate is open:** remain `NO-GO` for flight authority and continue ground validation only.
+
+---
+
 ## Session Plan (4h)
 
 ### Hour 1 — Pre-Flight and Safety Brief
 - [ ] Final hardware check (battery, props, links, telemetry)
-- [ ] RC override and failsafe check
 - [ ] Launch stack and verify critical topics
+- [ ] Close remaining pre-flight closure gates above
 - [ ] Supervisor confirms flight envelope and abort triggers
 
 ### Hour 2 — Controlled Flight Window A
+- [ ] Proceed only if all pre-flight gates are green
 - [ ] Takeoff and stabilization under manual control
 - [ ] Enable assisted behavior in short bursts
 - [ ] Monitor command bounds and target stability
