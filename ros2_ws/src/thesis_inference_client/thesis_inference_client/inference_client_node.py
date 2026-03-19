@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import queue
 import threading
 import time
 from collections import deque
@@ -58,6 +59,8 @@ class InferenceClientNode(Node):
         self.declare_parameter("recv_hwm", 1)
         self.declare_parameter("print_every", 60)
         self.declare_parameter("timeout_log_every", 10)
+        self.declare_parameter("publish_timing", True)
+        self.declare_parameter("num_workers", 2)
 
         self.image_topic = self.get_parameter("image_topic").value
         self.addr = self.get_parameter("addr").value
@@ -71,6 +74,8 @@ class InferenceClientNode(Node):
         self.recv_hwm = int(self.get_parameter("recv_hwm").value)
         self.print_every = int(self.get_parameter("print_every").value)
         self.timeout_log_every = int(self.get_parameter("timeout_log_every").value)
+        self.publish_timing = bool(self.get_parameter("publish_timing").value)
+        self.num_workers = max(1, int(self.get_parameter("num_workers").value))
 
         self.resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
         self._logged_encoding: str | None = None
@@ -92,13 +97,12 @@ class InferenceClientNode(Node):
         )
 
         self.ctx = zmq.Context.instance()
-        self.req = None
-        self._make_req_socket()
 
-        self.queue = deque(maxlen=self.queue_size)
-        self.queue_lock = threading.Lock()
+        self.queue: queue.Queue[dict] = queue.Queue(maxsize=self.queue_size)
+        self.state_lock = threading.Lock()
+        self.publish_lock = threading.Lock()
         self.stop_event = threading.Event()
-        self.worker = threading.Thread(target=self.worker_loop, daemon=True)
+        self.workers: list[threading.Thread] = []
 
         self.last_t_frame_sent_ns = None
         self.seq_counter = 0
@@ -109,61 +113,74 @@ class InferenceClientNode(Node):
         self.frames_dropped = 0
         self.zmq_timeouts = 0
         self.last_roundtrip_ms = 0.0
+        self.empty_polls = 0
+        self.pub_dt_hist_ms = deque(maxlen=600)
 
-        self.worker.start()
+        for worker_id in range(self.num_workers):
+            t = threading.Thread(target=self.worker_loop, args=(worker_id,), daemon=True)
+            self.workers.append(t)
+            t.start()
 
         self.get_logger().info(
             f"image_topic={self.image_topic} addr={self.addr} "
-            f"infer_size={self.img_w}x{self.img_h} queue_size={self.queue_size}"
+            f"infer_size={self.img_w}x{self.img_h} queue_size={self.queue_size} "
+            f"publish_timing={self.publish_timing} num_workers={self.num_workers}"
         )
 
-    def _make_req_socket(self) -> None:
-        if self.req is not None:
-            try:
-                self.req.close(0)
-            except Exception:
-                pass
-
-        self.req = self.ctx.socket(zmq.REQ)
-        self.req.setsockopt(zmq.LINGER, 0)
-        self.req.setsockopt(zmq.SNDHWM, self.send_hwm)
-        self.req.setsockopt(zmq.RCVHWM, self.recv_hwm)
-        self.req.setsockopt(zmq.SNDTIMEO, self.request_timeout_ms)
-        self.req.setsockopt(zmq.RCVTIMEO, self.request_timeout_ms)
-        self.req.connect(self.addr)
+    def _make_worker_socket(self) -> zmq.Socket:
+        sock = self.ctx.socket(zmq.REQ)
+        sock.setsockopt(zmq.LINGER, 0)
+        sock.setsockopt(zmq.SNDHWM, self.send_hwm)
+        sock.setsockopt(zmq.RCVHWM, self.recv_hwm)
+        sock.setsockopt(zmq.SNDTIMEO, self.request_timeout_ms)
+        sock.setsockopt(zmq.RCVTIMEO, self.request_timeout_ms)
+        sock.connect(self.addr)
+        return sock
 
     def image_callback(self, msg: Image) -> None:
         t_cam_msg_seen_ns = now_ns()
         src_stamp_ns = stamp_to_ns(msg.header.stamp)
-        with self.queue_lock:
-            if len(self.queue) == self.queue.maxlen:
-                self.queue.popleft()
-                self.frames_dropped += 1
-            self.queue.append(
-                {
-                    "msg": msg,
-                    "t_cam_msg_seen_ns": t_cam_msg_seen_ns,
-                    "src_stamp_ns": src_stamp_ns,
-                }
-            )
+        frame_ctx = {
+            "msg": msg,
+            "t_cam_msg_seen_ns": t_cam_msg_seen_ns,
+            "src_stamp_ns": src_stamp_ns,
+        }
+
+        dropped_count = 0
+        enqueued = False
+
+        # Keep freshest-frame behavior: if full, evict one oldest frame and retry once.
+        for _ in range(2):
+            try:
+                self.queue.put_nowait(frame_ctx)
+                enqueued = True
+                break
+            except queue.Full:
+                try:
+                    self.queue.get_nowait()
+                    dropped_count += 1
+                except queue.Empty:
+                    pass
+
+        if not enqueued:
+            # If contention still keeps the queue full, drop this incoming frame.
+            dropped_count += 1
+
+        with self.state_lock:
             self.frames_received += 1
+            self.frames_dropped += dropped_count
 
-    def pop_latest_frame(self) -> dict | None:
-        with self.queue_lock:
-            if not self.queue:
-                return None
-            latest = self.queue.pop()
-            dropped_here = len(self.queue)
-            if dropped_here > 0:
-                self.frames_dropped += dropped_here
-            self.queue.clear()
-            return latest
+    def worker_loop(self, worker_id: int) -> None:
+        req = self._make_worker_socket()
+        # Each worker needs its own resize buffer to avoid cross-thread races.
+        worker_resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
 
-    def worker_loop(self) -> None:
         while rclpy.ok() and not self.stop_event.is_set():
-            frame_ctx = self.pop_latest_frame()
-            if frame_ctx is None:
-                time.sleep(0.001)
+            try:
+                frame_ctx = self.queue.get(timeout=0.02)
+            except queue.Empty:
+                with self.state_lock:
+                    self.empty_polls += 1
                 continue
 
             image_msg: Image = frame_ctx["msg"]
@@ -171,12 +188,11 @@ class InferenceClientNode(Node):
             src_stamp_ns = int(frame_ctx["src_stamp_ns"])
 
             t_loop0 = now_ns()
-
-            seq = self.seq_counter
-            self.seq_counter += 1
-
-            frame_id = self.frame_counter
-            self.frame_counter += 1
+            with self.state_lock:
+                seq = self.seq_counter
+                self.seq_counter += 1
+                frame_id = self.frame_counter
+                self.frame_counter += 1
 
             t_pre_start_ns = now_ns()
             t_ros_to_np_start_ns = t_pre_start_ns
@@ -225,23 +241,28 @@ class InferenceClientNode(Node):
                 self.get_logger().info(f"numpy_view_owndata={img.flags['OWNDATA']}")
 
             t_resize_start_ns = now_ns()
-            try:
-                cv2.resize(
-                    img,
-                    (self.img_w, self.img_h),
-                    dst=self.resize_buf,
-                    interpolation=cv2.INTER_LINEAR,
-                )
-            except Exception as exc:
-                self.get_logger().warning(f"resize failed: {exc}")
-                continue
-            t_resize_end_ns = now_ns()
+            if image_width == self.img_w and image_height == self.img_h:
+                infer_img = img
+                t_resize_end_ns = t_resize_start_ns
+            else:
+                try:
+                    cv2.resize(
+                        img,
+                        (self.img_w, self.img_h),
+                        dst=worker_resize_buf,
+                        interpolation=cv2.INTER_LINEAR,
+                    )
+                except Exception as exc:
+                    self.get_logger().warning(f"resize failed: {exc}")
+                    continue
+                infer_img = worker_resize_buf
+                t_resize_end_ns = now_ns()
 
             t_color_start_ns = now_ns()
             t_color_end_ns = t_color_start_ns
 
             t_pack_start_ns = now_ns()
-            frame_payload = memoryview(self.resize_buf)
+            frame_payload = memoryview(infer_img)
             t_pack_end_ns = now_ns()
             t_pre_end_ns = now_ns()
 
@@ -266,25 +287,25 @@ class InferenceClientNode(Node):
             }
 
             t_frame_sent_ns = now_ns()
-
-            pub_dt_ms = 0.0
-            if self.last_t_frame_sent_ns is not None:
-                pub_dt_ms = (t_frame_sent_ns - self.last_t_frame_sent_ns) / 1e6
-            self.last_t_frame_sent_ns = t_frame_sent_ns
+            with self.state_lock:
+                pub_dt_ms = 0.0
+                if self.last_t_frame_sent_ns is not None:
+                    pub_dt_ms = (t_frame_sent_ns - self.last_t_frame_sent_ns) / 1e6
+                    self.pub_dt_hist_ms.append(pub_dt_ms)
+                self.last_t_frame_sent_ns = t_frame_sent_ns
 
             response = None
             try:
                 t_zmq_send_start_ns = now_ns()
-                self.req.send_json(metadata, flags=zmq.SNDMORE)
-                self.req.send(frame_payload, flags=0, copy=False)
+                req.send_json(metadata, flags=zmq.SNDMORE)
+                req.send(frame_payload, flags=0, copy=False)
                 t_zmq_send_end_ns = now_ns()
 
                 t_zmq_recv_start_ns = now_ns()
-                raw_reply = self.req.recv()
+                raw_reply = req.recv()
                 t_zmq_recv_end_ns = now_ns()
 
                 t_decode_start_ns = now_ns()
-
                 if isinstance(raw_reply, bytes):
                     response = json.loads(raw_reply.decode("utf-8"))
                 else:
@@ -292,22 +313,33 @@ class InferenceClientNode(Node):
                 t_decode_end_ns = now_ns()
 
             except zmq.error.Again:
-                self.zmq_timeouts += 1
+                with self.state_lock:
+                    self.zmq_timeouts += 1
+                    timeout_count = self.zmq_timeouts
                 every = self.timeout_log_every if self.timeout_log_every > 0 else 10
-                if (self.zmq_timeouts % every) == 1:
+                if (timeout_count % every) == 1:
                     self.get_logger().warning(
                         f"REQ timeout waiting for inference response "
-                        f"(count={self.zmq_timeouts})"
+                        f"(count={timeout_count}, worker={worker_id})"
                     )
-                self._make_req_socket()
+                try:
+                    req.close(0)
+                except Exception:
+                    pass
+                req = self._make_worker_socket()
                 continue
             except Exception as exc:
-                self.get_logger().warning(f"ZMQ request failed: {exc}")
-                self._make_req_socket()
+                self.get_logger().warning(f"ZMQ request failed (worker={worker_id}): {exc}")
+                try:
+                    req.close(0)
+                except Exception:
+                    pass
+                req = self._make_worker_socket()
                 continue
 
             roundtrip_ms = _ms(t_zmq_recv_end_ns - t_zmq_send_start_ns)
-            self.last_roundtrip_ms = roundtrip_ms
+            with self.state_lock:
+                self.last_roundtrip_ms = roundtrip_ms
 
             det_arr = Detection2DArray()
             det_arr.header.stamp = image_msg.header.stamp
@@ -433,56 +465,80 @@ class InferenceClientNode(Node):
             t_msg.json_ms = t_msg.decode_ms
             t_msg.track_ms = 0.0
 
-            self.pub_dets.publish(det_arr)
-            t_det_pub_end_ns = now_ns()
-            t_msg.t_det_pub_end_ns = t_det_pub_end_ns
-            t_msg.det_pub_ms = _ms(t_det_pub_end_ns - t_det_pub_start_ns)
-            t_msg.e2e_det_ms = _ms(t_det_pub_end_ns - t_cam_msg_seen_ns)
+            with self.publish_lock:
+                self.pub_dets.publish(det_arr)
+                t_det_pub_end_ns = now_ns()
+                t_msg.t_det_pub_end_ns = t_det_pub_end_ns
+                t_msg.det_pub_ms = _ms(t_det_pub_end_ns - t_det_pub_start_ns)
+                t_msg.e2e_det_ms = _ms(t_det_pub_end_ns - t_cam_msg_seen_ns)
 
-            # Keep deprecated aggregate loop metric for compatibility.
-            t_loop1 = now_ns()
-            t_msg.loop_ms = _ms(t_loop1 - t_loop0)
-            # Keep deprecated lat_ms mapped to explicit end-to-end detection latency.
-            t_msg.lat_ms = t_msg.e2e_det_ms
+                # Keep deprecated aggregate loop metric for compatibility.
+                t_loop1 = now_ns()
+                t_msg.loop_ms = _ms(t_loop1 - t_loop0)
+                # Keep deprecated lat_ms mapped to explicit end-to-end detection latency.
+                t_msg.lat_ms = t_msg.e2e_det_ms
 
-            self.pub_timing.publish(t_msg)
+                if self.publish_timing:
+                    self.pub_timing.publish(t_msg)
 
-            self.frames_sent += 1
+            with self.state_lock:
+                self.frames_sent += 1
+                sent_now = self.frames_sent
+                recv_now = self.frames_received
+                dropped_now = self.frames_dropped
+                empty_polls_now = self.empty_polls
+                pub_dt_hist = list(self.pub_dt_hist_ms)
 
-            if self.print_every > 0 and (self.frames_sent % self.print_every == 0):
+            if pub_dt_hist:
+                pub_dt_p50 = float(np.percentile(pub_dt_hist, 50))
+                pub_dt_p95 = float(np.percentile(pub_dt_hist, 95))
+                pub_dt_min = float(min(pub_dt_hist))
+                pub_dt_max = float(max(pub_dt_hist))
+            else:
+                pub_dt_p50 = 0.0
+                pub_dt_p95 = 0.0
+                pub_dt_min = 0.0
+                pub_dt_max = 0.0
+
+            if self.print_every > 0 and (sent_now % self.print_every == 0):
                 self.get_logger().info(
-                    f"sent={self.frames_sent} recv={self.frames_received} "
-                    f"drop={self.frames_dropped} dets={len(det_arr.detections)} "
+                    f"sent={sent_now} recv={recv_now} "
+                    f"drop={dropped_now} dets={len(det_arr.detections)} "
                     f"lat_ms={t_msg.lat_ms:.2f} pre_ms={t_msg.pre_ms:.2f} "
                     f"ros_to_np_ms={t_msg.ros_to_np_ms:.2f} "
                     f"resize_ms={t_msg.resize_ms:.2f} "
                     f"color_ms={t_msg.color_ms:.2f} pack_ms={t_msg.pack_ms:.2f} "
                     f"rt_ms={roundtrip_ms:.2f} "
-                    f"loop_ms={t_msg.loop_ms:.2f}"
+                    f"loop_ms={t_msg.loop_ms:.2f} "
+                    f"pub_dt_ms={pub_dt_ms:.2f} "
+                    f"pub_dt_p50_ms={pub_dt_p50:.2f} "
+                    f"pub_dt_p95_ms={pub_dt_p95:.2f} "
+                    f"pub_dt_min_ms={pub_dt_min:.2f} "
+                    f"pub_dt_max_ms={pub_dt_max:.2f} "
+                    f"empty_polls={empty_polls_now}"
                 )
+
+        try:
+            req.close(0)
+        except Exception:
+            pass
 
     def destroy_node(self):
         self.stop_event.set()
 
-        if self.worker is not None and self.worker.is_alive():
-            self.worker.join(timeout=2.0)
-
-        if self.req is not None:
-            try:
-                self.req.close(0)
-            except Exception:
-                pass
-            self.req = None
+        for t in self.workers:
+            if t.is_alive():
+                t.join(timeout=2.0)
 
         return super().destroy_node()
 
 
 def main(args=None):
-    from rclpy.executors import SingleThreadedExecutor
+    from rclpy.executors import MultiThreadedExecutor
 
     rclpy.init(args=args)
     node = None
-    executor = SingleThreadedExecutor()
+    executor = MultiThreadedExecutor(num_threads=4)
 
     try:
         node = InferenceClientNode()

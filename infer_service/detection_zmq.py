@@ -197,18 +197,22 @@ class RosReqRepInferenceService:
         self.width = int(os.getenv("HAILO_INFER_WIDTH", "640"))
         self.height = int(os.getenv("HAILO_INFER_HEIGHT", "640"))
         self.fps = int(os.getenv("HAILO_INFER_FPS", "30"))
+        self.log_every = max(0, int(os.getenv("HAILO_REQREP_LOG_EVERY", "0")))
+        self.req_count = 0
+        self.reply_count = 0
+        self.last_req_recv_ns = 0
 
         self.ctx = zmq.Context.instance()
-        self.rep = self.ctx.socket(zmq.REP)
-        self.rep.setsockopt(zmq.LINGER, 0)
-        self.rep.setsockopt(zmq.RCVHWM, 1)
-        self.rep.setsockopt(zmq.SNDHWM, 1)
-        self.rep.bind(self.bind)
+        self.router = self.ctx.socket(zmq.ROUTER)
+        self.router.setsockopt(zmq.LINGER, 0)
+        self.router.setsockopt(zmq.RCVHWM, 64)
+        self.router.setsockopt(zmq.SNDHWM, 64)
+        self.router.bind(self.bind)
 
         self.pending_meta = deque()
         self.pending_meta_by_pts: dict[int, dict] = {}
         self.meta_lock = threading.Lock()
-        self.result_q: queue.Queue[dict] = queue.Queue(maxsize=1)
+        self.result_q: queue.Queue[dict] = queue.Queue(maxsize=8)
 
         self.pipeline = None
         self.appsrc = None
@@ -220,14 +224,14 @@ class RosReqRepInferenceService:
 
     def _build_pipeline(self):
         pipeline_str = (
-            f'appsrc name=source is-live=true block=true format=time do-timestamp=false '
+            f'appsrc name=source is-live=true block=false format=time do-timestamp=false '
             f'caps=video/x-raw,format=RGB,width={self.width},height={self.height},framerate={self.fps}/1 ! '
-            f'queue max-size-buffers=2 leaky=downstream ! '
+            f'queue max-size-buffers=6 leaky=downstream ! '
             f'videoconvert ! '
             f'identity name=pre_hailonet_identity silent=true ! '
             f'hailonet hef-path={self.hef_path} batch-size=1 force-writable=true ! '
             f'identity name=infer_identity silent=true ! '
-            f'queue max-size-buffers=2 leaky=downstream ! '
+            f'queue max-size-buffers=6 leaky=downstream ! '
             f'hailofilter function-name={self.post_func} so-path={self.post_so} qos=false ! '
             f'identity name=post_identity silent=true ! '
             f'{self.video_sink} sync=false'
@@ -343,6 +347,11 @@ class RosReqRepInferenceService:
             "infer_ms": infer_ms,
             "detections": dets,
             "timing": timing,
+            "_route": {
+                "identity": meta.get("client_identity"),
+                "has_empty": bool(meta.get("client_has_empty", False)),
+            },
+            "_req_dt_ms": float(meta.get("req_dt_ms", 0.0) or 0.0),
         }
 
         with self.meta_lock:
@@ -386,71 +395,152 @@ class RosReqRepInferenceService:
             raise RuntimeError(f"appsrc push-buffer failed: {ret}")
 
     def serve_forever(self):
-        print(f"REQ/REP inference service listening on {self.bind}", flush=True)
+        print(f"ROUTER inference service listening on {self.bind}", flush=True)
+
+        poller = zmq.Poller()
+        poller.register(self.router, zmq.POLLIN)
 
         while True:
             try:
-                parts = self.rep.recv_multipart()
+                events = dict(poller.poll(5))
             except KeyboardInterrupt:
                 break
 
-            t_req_recv_ns = now_ns()
+            if self.router in events and (events[self.router] & zmq.POLLIN):
+                while True:
+                    try:
+                        parts = self.router.recv_multipart(flags=zmq.NOBLOCK)
+                    except zmq.Again:
+                        break
+                    except KeyboardInterrupt:
+                        return
 
-            if len(parts) != 2:
-                self.rep.send_json(
-                    {"ok": False, "error": f"expected 2 parts, got {len(parts)}"}
-                )
-                continue
+                    if len(parts) < 2:
+                        continue
 
-            try:
-                t_frame_unpack_start_ns = now_ns()
-                metadata = json.loads(parts[0].decode("utf-8"))
-                frame_bytes = parts[1]
+                    client_identity = parts[0]
+                    payload_idx = 1
+                    has_empty = False
+                    if len(parts) >= 2 and parts[1] == b"":
+                        has_empty = True
+                        payload_idx = 2
 
-                expected_size = (
-                    int(metadata["width"])
-                    * int(metadata["height"])
-                    * int(metadata["channels"])
-                )
-                if len(frame_bytes) != expected_size:
-                    self.rep.send_json(
-                        {
-                            "ok": False,
-                            "error": f"frame size mismatch: got={len(frame_bytes)} expected={expected_size}",
+                    payload = parts[payload_idx:]
+
+                    t_req_recv_ns = now_ns()
+                    self.req_count += 1
+                    req_dt_ms = 0.0
+                    if self.last_req_recv_ns > 0:
+                        req_dt_ms = (t_req_recv_ns - self.last_req_recv_ns) / 1e6
+                    self.last_req_recv_ns = t_req_recv_ns
+
+                    if len(payload) != 2:
+                        self._send_error(
+                            client_identity,
+                            has_empty,
+                            f"expected 2 payload parts, got {len(payload)}",
+                        )
+                        continue
+
+                    try:
+                        t_frame_unpack_start_ns = now_ns()
+                        metadata = json.loads(payload[0].decode("utf-8"))
+                        frame_bytes = payload[1]
+
+                        expected_size = (
+                            int(metadata["width"])
+                            * int(metadata["height"])
+                            * int(metadata["channels"])
+                        )
+                        if len(frame_bytes) != expected_size:
+                            self._send_error(
+                                client_identity,
+                                has_empty,
+                                f"frame size mismatch: got={len(frame_bytes)} expected={expected_size}",
+                            )
+                            continue
+
+                        meta = {
+                            "seq": int(metadata.get("seq", 0)),
+                            "frame_id": int(metadata.get("frame_id", 0)),
+                            "src_stamp_ns": int(metadata.get("src_stamp_ns", metadata.get("timestamp_ns", 0))),
+                            "t_req_recv_ns": t_req_recv_ns,
+                            "t_frame_unpack_start_ns": t_frame_unpack_start_ns,
+                            "t_frame_unpack_end_ns": now_ns(),
+                            "t_infer_start_ns": 0,
+                            "t_infer_end_ns": 0,
+                            "t_post_start_ns": 0,
+                            "t_post_end_ns": 0,
+                            "client_identity": client_identity,
+                            "client_has_empty": has_empty,
+                            "req_dt_ms": req_dt_ms,
                         }
-                    )
-                    continue
 
-                meta = {
-                    "seq": int(metadata.get("seq", 0)),
-                    "frame_id": int(metadata.get("frame_id", 0)),
-                    "src_stamp_ns": int(metadata.get("src_stamp_ns", metadata.get("timestamp_ns", 0))),
-                    "t_req_recv_ns": t_req_recv_ns,
-                    "t_frame_unpack_start_ns": t_frame_unpack_start_ns,
-                    "t_frame_unpack_end_ns": now_ns(),
-                    "t_infer_start_ns": 0,
-                    "t_infer_end_ns": 0,
-                    "t_post_start_ns": 0,
-                    "t_post_end_ns": 0,
-                }
+                        self._push_frame(frame_bytes, meta)
 
-                self._push_frame(frame_bytes, meta)
+                    except Exception as exc:
+                        self._send_error(client_identity, has_empty, str(exc))
 
+            while True:
                 try:
-                    reply = self.result_q.get(timeout=2.0)
+                    reply = self.result_q.get_nowait()
                 except queue.Empty:
-                    self.rep.send_json({"ok": False, "error": "inference timeout"})
+                    break
+
+                if not isinstance(reply, dict):
                     continue
 
-                if isinstance(reply, dict):
-                    timing = reply.get("timing", {})
+                route = reply.pop("_route", None)
+                req_dt_ms = float(reply.pop("_req_dt_ms", 0.0) or 0.0)
+                if not isinstance(route, dict):
+                    continue
+
+                client_identity = route.get("identity")
+                has_empty = bool(route.get("has_empty", False))
+                if not isinstance(client_identity, (bytes, bytearray)):
+                    continue
+
+                timing = reply.get("timing", {})
+                t_reply_send_ns = now_ns()
+                if isinstance(timing, dict):
+                    timing["t_reply_send_ns"] = t_reply_send_ns
+
+                self._send_json(client_identity, has_empty, reply)
+
+                self.reply_count += 1
+                if self.log_every > 0 and (self.reply_count % self.log_every) == 0:
+                    infer_ms = float(reply.get("infer_ms", 0.0) or 0.0)
+
+                    wait_result_ms = 0.0
+                    service_ms = 0.0
                     if isinstance(timing, dict):
-                        timing["t_reply_send_ns"] = now_ns()
+                        t_frame_unpack_end_ns = int(timing.get("t_frame_unpack_end_ns", 0))
+                        t_post_end_ns = int(timing.get("t_post_end_ns", 0))
+                        t_req_recv_ns = int(timing.get("t_req_recv_ns", 0))
+                        if t_post_end_ns > 0 and t_frame_unpack_end_ns > 0 and t_post_end_ns >= t_frame_unpack_end_ns:
+                            wait_result_ms = (t_post_end_ns - t_frame_unpack_end_ns) / 1e6
+                        if t_req_recv_ns > 0 and t_reply_send_ns >= t_req_recv_ns:
+                            service_ms = (t_reply_send_ns - t_req_recv_ns) / 1e6
 
-                self.rep.send_json(reply)
+                    print(
+                        "reqrep_prof "
+                        f"count={self.reply_count} "
+                        f"req_dt_ms={req_dt_ms:.3f} "
+                        f"wait_result_ms={wait_result_ms:.3f} "
+                        f"infer_ms={infer_ms:.3f} "
+                        f"service_ms={service_ms:.3f}",
+                        flush=True,
+                    )
 
-            except Exception as exc:
-                self.rep.send_json({"ok": False, "error": str(exc)})
+    def _send_json(self, identity: bytes, has_empty: bool, payload: dict):
+        frames = [identity]
+        if has_empty:
+            frames.append(b"")
+        frames.append(json.dumps(payload).encode("utf-8"))
+        self.router.send_multipart(frames)
+
+    def _send_error(self, identity: bytes, has_empty: bool, message: str):
+        self._send_json(identity, has_empty, {"ok": False, "error": message})
 
     def close(self):
         try:
@@ -460,7 +550,7 @@ class RosReqRepInferenceService:
             pass
 
         try:
-            self.rep.close(0)
+            self.router.close(0)
         except Exception:
             pass
 

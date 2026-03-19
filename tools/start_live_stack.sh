@@ -122,6 +122,16 @@ Usage: start_live_stack.sh [options]
 
 Options:
   --tracker <sort|ocsort|bytetrack>  Tracker backend (default: sort)
+    --tracker-profile-off               Disable tracker profiling instrumentation
+    --tracker-profile-log-every <N>     Log tracker profile every N frames (default: 1)
+    --tracker-profile-serialize-every <N>
+                                                                            Serialize sample every N frames (default: 10, 0 disables)
+        --tracks-off                         Disable /tracks publishing from tracker
+        --timing-off                         Disable /timing publishing from inference client
+    --camera-width <N>                 Camera publish width passed to camera_bringup (default: 1920)
+    --camera-height <N>                Camera publish height passed to camera_bringup (default: 1080)
+    --infer-queue-size <N>             Inference client frame queue size (default: 1)
+    --infer-workers <N>                Inference client worker threads (default: 2)
   --no-dashboard                     Disable dashboard bridge
     --no-tracker                       Do not start tracker node
     --no-target                        Do not start target selector node
@@ -134,6 +144,17 @@ EOF
 }
 
 TRACKER_TYPE="sort"
+TRACKER_PROFILE_ENABLED=1
+TRACKER_PROFILE_LOG_EVERY_N=1
+TRACKER_PROFILE_SERIALIZE_EVERY_N=10
+TRACKER_PROFILE_PUBLISH_DETAILS=1
+TRACKER_PROFILE_GC_PROBE=1
+TRACKER_PUBLISH_TRACKS_BOOL="true"
+INFER_PUBLISH_TIMING_BOOL="true"
+CAMERA_WIDTH=1920
+CAMERA_HEIGHT=1080
+INFER_QUEUE_SIZE=1
+INFER_WORKERS=2
 ENABLE_DASHBOARD_BRIDGE=1
 ENABLE_TRACKER=1
 ENABLE_TARGET_SELECTOR=1
@@ -157,6 +178,72 @@ while [[ $# -gt 0 ]]; do
             ENABLE_DASHBOARD_BRIDGE=0
             ENABLE_WEB_VIDEO=0
             shift
+            ;;
+        --tracker-profile-off)
+            TRACKER_PROFILE_ENABLED=0
+            shift
+            ;;
+        --tracker-profile-log-every)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --tracker-profile-log-every requires a value"
+                print_usage
+                exit 1
+            fi
+            TRACKER_PROFILE_LOG_EVERY_N="$2"
+            shift 2
+            ;;
+        --tracker-profile-serialize-every)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --tracker-profile-serialize-every requires a value"
+                print_usage
+                exit 1
+            fi
+            TRACKER_PROFILE_SERIALIZE_EVERY_N="$2"
+            shift 2
+            ;;
+        --tracks-off)
+            TRACKER_PUBLISH_TRACKS_BOOL="false"
+            shift
+            ;;
+        --timing-off)
+            INFER_PUBLISH_TIMING_BOOL="false"
+            shift
+            ;;
+        --camera-width)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-width requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_WIDTH="$2"
+            shift 2
+            ;;
+        --camera-height)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-height requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_HEIGHT="$2"
+            shift 2
+            ;;
+        --infer-queue-size)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --infer-queue-size requires a value"
+                print_usage
+                exit 1
+            fi
+            INFER_QUEUE_SIZE="$2"
+            shift 2
+            ;;
+        --infer-workers)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --infer-workers requires a value"
+                print_usage
+                exit 1
+            fi
+            INFER_WORKERS="$2"
+            shift 2
             ;;
         --no-tracker)
             ENABLE_TRACKER=0
@@ -202,6 +289,36 @@ case "$TRACKER_TYPE" in
         exit 1
         ;;
 esac
+
+if ! [[ "$TRACKER_PROFILE_LOG_EVERY_N" =~ ^[0-9]+$ ]]; then
+    echo "[error] --tracker-profile-log-every must be a non-negative integer"
+    exit 1
+fi
+
+if ! [[ "$TRACKER_PROFILE_SERIALIZE_EVERY_N" =~ ^[0-9]+$ ]]; then
+    echo "[error] --tracker-profile-serialize-every must be a non-negative integer"
+    exit 1
+fi
+
+if ! [[ "$INFER_QUEUE_SIZE" =~ ^[0-9]+$ ]] || [[ "$INFER_QUEUE_SIZE" -lt 1 ]]; then
+    echo "[error] --infer-queue-size must be a positive integer"
+    exit 1
+fi
+
+if ! [[ "$CAMERA_WIDTH" =~ ^[0-9]+$ ]] || [[ "$CAMERA_WIDTH" -lt 1 ]]; then
+    echo "[error] --camera-width must be a positive integer"
+    exit 1
+fi
+
+if ! [[ "$CAMERA_HEIGHT" =~ ^[0-9]+$ ]] || [[ "$CAMERA_HEIGHT" -lt 1 ]]; then
+    echo "[error] --camera-height must be a positive integer"
+    exit 1
+fi
+
+if ! [[ "$INFER_WORKERS" =~ ^[0-9]+$ ]] || [[ "$INFER_WORKERS" -lt 1 ]]; then
+    echo "[error] --infer-workers must be a positive integer"
+    exit 1
+fi
 
 wait_for_port() {
     local host="$1"
@@ -283,9 +400,19 @@ else
 fi
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     echo "[info] tracker node: enabled"
+    echo "[info] tracker publish_tracks: $TRACKER_PUBLISH_TRACKS_BOOL"
+    if [[ "$TRACKER_PROFILE_ENABLED" -eq 1 ]]; then
+        echo "[info] tracker profiling: enabled (log_every_n=$TRACKER_PROFILE_LOG_EVERY_N, serialize_every_n=$TRACKER_PROFILE_SERIALIZE_EVERY_N)"
+    else
+        echo "[info] tracker profiling: disabled"
+    fi
 else
     echo "[info] tracker node: disabled"
 fi
+echo "[info] inference publish_timing: $INFER_PUBLISH_TIMING_BOOL"
+echo "[info] camera publish size: ${CAMERA_WIDTH}x${CAMERA_HEIGHT}"
+echo "[info] inference queue_size: $INFER_QUEUE_SIZE"
+echo "[info] inference workers: $INFER_WORKERS"
 if [[ "$ENABLE_TARGET_SELECTOR" -eq 1 ]]; then
     echo "[info] target selector: enabled"
 else
@@ -351,6 +478,7 @@ export HAILO_INFER_WIDTH=640
 export HAILO_INFER_HEIGHT=640
 export HAILO_VIDEO_SINK=fakesink
 export HAILO_POST_FUNC=filter
+export HAILO_REQREP_LOG_EVERY=${HAILO_REQREP_LOG_EVERY:-0}
 nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_zmq_live.log 2>&1 &
 ' >"$RUN_DIR/container_infer_start.log" 2>&1
 
@@ -364,6 +492,8 @@ CAMERA_ARGS=()
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 0 ]]; then
     CAMERA_ARGS+=("publish_dashboard_topic:=false")
 fi
+CAMERA_ARGS+=("width:=$CAMERA_WIDTH")
+CAMERA_ARGS+=("height:=$CAMERA_HEIGHT")
 
 start_ros_bg camera ros2 launch thesis_bringup camera_bringup.launch.py "${CAMERA_ARGS[@]}"
 sleep 2
@@ -375,10 +505,12 @@ fi
 start_ros_bg inference ros2 run thesis_inference_client inference_client_node --ros-args \
     -p image_topic:=/camera/image_raw \
     -p addr:=tcp://127.0.0.1:5556 \
-    -p queue_size:=1 \
+    -p queue_size:=$INFER_QUEUE_SIZE \
+    -p num_workers:=$INFER_WORKERS \
     -p img_w:=640 \
     -p img_h:=640 \
-    -p min_score:=0.35
+    -p min_score:=0.35 \
+    -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL
 sleep 1
 if ! check_proc_alive inference; then
     stop_stack
@@ -386,7 +518,14 @@ if ! check_proc_alive inference; then
 fi
 
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
-    start_ros_bg tracker ros2 run thesis_tracker tracker_node --ros-args -p tracker_type:=$TRACKER_TYPE
+    start_ros_bg tracker ros2 run thesis_tracker tracker_node --ros-args \
+        -p tracker_type:=$TRACKER_TYPE \
+        -p publish_tracks:=$TRACKER_PUBLISH_TRACKS_BOOL \
+        -p profiling_enabled:=$([[ "$TRACKER_PROFILE_ENABLED" -eq 1 ]] && echo true || echo false) \
+        -p profiling_log_every_n:=$TRACKER_PROFILE_LOG_EVERY_N \
+        -p profiling_serialize_sample_every_n:=$TRACKER_PROFILE_SERIALIZE_EVERY_N \
+        -p profiling_publish_details:=$([[ "$TRACKER_PROFILE_PUBLISH_DETAILS" -eq 1 ]] && echo true || echo false) \
+        -p profiling_gc_probe:=$([[ "$TRACKER_PROFILE_GC_PROBE" -eq 1 ]] && echo true || echo false)
     sleep 1
     if ! check_proc_alive tracker; then
         stop_stack

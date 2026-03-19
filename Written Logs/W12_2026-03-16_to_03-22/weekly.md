@@ -159,10 +159,20 @@ By end of Day 22 (March 22), you should have:
 - Define immediate stabilization tasks
 
 **Completed:**
-- *(To be filled)*
+- Weather risk decision held at NO-GO; no flight authority handover.
+- Completed major ground-side throughput stabilization work:
+   - container inference service refactor from REP to async ROUTER
+   - inference client queue/worker tuning with runtime launch flags
+   - blocking queue wakeup fix replacing deque polling + `sleep(0)`
+- Established frozen Baseline B for next tests:
+   - `queue_size=4`, `num_workers=3`, blocking queue behavior
+- Captured live validation evidence and documented reproducible diagnostics in runbook.
 
 **Issues:**
-- *(To be filled)*
+- Weather blocked supervised flight attempt.
+- Remaining throughput variability appears upstream of container inference and needs isolated image-path A/B validation.
+
+**Day 19 outcome:** aborted flight window (weather NO-GO), but successful ground stabilization with clear next bottleneck hypothesis.
 
 ---
 
@@ -221,6 +231,16 @@ By end of Day 22 (March 22), you should have:
 
 ## Key Results (to be filled at end of week)
 
+### Throughput progression snapshot (Day 19)
+
+| Stage | Main change | Typical outcome | Notes |
+|---|---|---|---|
+| Old broken state | serialized request/reply path and unstable client pacing | unstable with large jitter tails | poor consistency under live load |
+| Async container refactor | REP -> ROUTER asynchronous in-flight handling | container `service_ms` moved to low-teens | server-side bottleneck removed |
+| Multi-worker + deeper queue | increased client concurrency and queue depth | tuned runs reached ~21.3 FPS | meaningful throughput uplift from baseline |
+| Blocking queue fix | replaced deque polling + `sleep(0)` with blocking timeout wakeup | idle behavior became bounded and less pathological | busy-yield contention removed |
+| Final stable live baseline (Baseline B) | queue=4, workers=3, blocking queue behavior frozen | stable windows observed in high-teens to low-20s FPS range depending on load | next gate is single-variable image-path A/B |
+
 ### MAVROS Integration
 - Connection established: *(yes / no / partial)*
 - Connection method: *(Ethernet UDP confirmed / other)*
@@ -264,16 +284,20 @@ By end of Day 22 (March 22), you should have:
 - ⚠️ 4-hour sessions may be tight for debugging
 
 ### Issues Encountered During W12
-*(To be filled as discovered)*
+Documented through Day 19:
 
 **Tuesday session:**
-- 
+- MAVROS hardware integration outcomes still pending final weekly closure entry.
 
 **Thursday session:**
--
+- Weather blocked first supervised flight window (NO-GO maintained).
+- Throughput remains below camera source-rate in some runs despite healthy container-side latency.
+- `ros2 topic hz` under-reports BEST_EFFORT camera stream in this Jazzy setup; camera source-rate validation must rely on `/camera/fps`.
 
 **Mitigation actions:**
--
+- Freeze Baseline B and enforce one-variable-at-a-time A/B testing.
+- Run image-path A/B (`1920x1080->resize` vs direct `640x640`) before additional tuning.
+- Re-test full stack without rosbag first, then run separate profiling bag capture.
 
 ---
 
@@ -311,5 +335,5 @@ By end of Day 22 (March 22), you should have:
 
 ---
 
-**Week status:** *(In progress / Complete)*  
-**Overall success:** *(To be assessed at end of week)*
+**Week status:** In progress  
+**Overall success:** Pending final W12 closure (ground stabilization successful; flight window deferred by weather)

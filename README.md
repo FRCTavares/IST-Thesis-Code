@@ -5,6 +5,19 @@
 - **[RUNBOOK.md](RUNBOOK.md)** — Quick command recipes for core operations
 - **[Written Logs/](Written%20Logs/)** — Weekly planning, daily logs, and useful commands
 
+### Current frozen live baseline (Baseline B)
+
+- Inference queue size: `4`
+- Inference worker threads: `3`
+- Client queue behavior: blocking bounded queue (`queue.Queue`) with timeout wakeup
+- Comparison rule: change one variable at a time (no multi-change tuning jumps)
+
+Current next controlled experiment:
+- Image-path A/B only
+- A: `1920x1080` camera publish + client resize to `640x640`
+- B: direct `640x640` camera publish + no client resize
+- Keep all other settings fixed (see throughput workflow in [RUNBOOK.md](RUNBOOK.md))
+
 ---
 
 ## Folder map

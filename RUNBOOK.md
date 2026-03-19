@@ -252,3 +252,131 @@ Tag is auto-detected from the bag name; pass `--tag` to override.
 | Timing figures | `figures/timing/<bag>/` |
 | Tracking figures | `figures/tracking/` |
 | Comparison reports | `reports/compare/` |
+
+### Throughput tuning and diagnostics (current workflow)
+
+Use this when validating inference throughput without tracker/target/control overhead.
+
+Frozen Baseline B (do not change during comparisons):
+- `queue_size=4`
+- `num_workers=3`
+- blocking queue worker wakeup (`queue.Queue` + `get(timeout)`), no `sleep(0)` idle loop
+
+**1) Rebuild inference client after code changes**
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select thesis_inference_client --symlink-install
+source install/setup.bash
+```
+
+**2) Start tuned stack (camera + inference only)**
+```bash
+cd $THESIS_ROOT
+./tools/start_live_stack.sh --no-tracker --no-target --no-control --no-dashboard --infer-queue-size 4 --infer-workers 3
+```
+
+**3) Restart container inference service with profiling enabled**
+```bash
+docker exec pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash -lc "
+set -euo pipefail
+pkill -f '/root/thesis_service/detection_zmq.py$' || true
+VENV=/root/hailo-rpi5-examples/venv_hailo_rpi_examples
+export PYTHONPATH=/root/hailo-rpi5-examples:${PYTHONPATH:-}
+cd /root/thesis_service
+export HAILO_FRAME_SOURCE=ros
+export HAILO_REQREP_BIND=tcp://0.0.0.0:5556
+export HAILO_INFER_WIDTH=640
+export HAILO_INFER_HEIGHT=640
+export HAILO_VIDEO_SINK=fakesink
+export HAILO_POST_FUNC=filter
+export HAILO_REQREP_LOG_EVERY=20
+nohup \"$VENV/bin/python\" /root/thesis_service/detection_zmq.py > /tmp/detection_zmq_live.log 2>&1 &
+sleep 2
+tail -n 20 /tmp/detection_zmq_live.log
+"
+```
+
+Expected log line:
+- `ROUTER inference service listening on tcp://0.0.0.0:5556`
+
+**4) ROS graph/session sanity check**
+```bash
+source /opt/ros/jazzy/setup.bash
+source $THESIS_ROOT/ros2_ws/install/setup.bash
+export ROS_DOMAIN_ID=42
+ros2 daemon stop
+ros2 daemon start
+sleep 2
+echo ROS_DOMAIN_ID=$ROS_DOMAIN_ID
+ros2 node list
+ros2 topic list
+```
+
+**5) Throughput checks**
+```bash
+ros2 topic hz /camera/image_raw
+ros2 topic hz /detections
+ros2 topic echo /camera/fps --once
+```
+
+Notes:
+- In this Jazzy setup, `ros2 topic hz` has no QoS override flags and can under-report BEST_EFFORT sensor streams (especially `/camera/image_raw`).
+- Treat `/camera/fps` as the authoritative camera source-rate check and use `/detections` rate plus inference log timing for throughput conclusions.
+
+**6) Capture logs for analysis**
+```bash
+tail -n 120 $THESIS_ROOT/log/live_stack/latest/inference.log
+docker exec pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 sh -lc "grep reqrep_prof /tmp/detection_zmq_live.log | tail -n 80"
+```
+
+Interpretation:
+- If `service_ms` stays mostly in low teens but `pub_dt_p95_ms` is high and `empty_polls` grows rapidly, the remaining bottleneck is upstream scheduling/frame delivery (not container inference).
+- If `reqrep_prof` lines are missing in `/tmp/detection_zmq_live.log`, verify the container was started with `HAILO_REQREP_LOG_EVERY` set; until then, use client `rt_ms` trend as a provisional service-health indicator.
+
+### Focused image-path A/B protocol (single-variable test)
+
+Goal: isolate camera/image transport and resize cost without changing frozen inference settings.
+
+Test A (current path):
+- camera publishes `1920x1080`
+- client resizes to `640x640`
+
+Test B (direct path):
+- camera publishes `640x640`
+- client bypasses resize when frame is already `640x640`
+
+Keep fixed in both A and B:
+- same container config
+- same inference queue/workers (Baseline B)
+- same runtime scope (camera + inference only for first pass)
+
+Compare these fields over matched windows:
+- FPS (`/detections` + sent-delta/window from `inference.log`)
+- `lat_ms`
+- `pre_ms`
+- `resize_ms`
+- `pub_dt_p50_ms`
+- `pub_dt_p95_ms`
+
+### Full-pipeline retest sequence (after A/B)
+
+1) Full stack functional run first (no bag):
+```bash
+cd $THESIS_ROOT
+./tools/start_live_stack.sh --infer-queue-size 4 --infer-workers 3
+```
+
+Validate topic activity and control-rate usability before recording.
+
+2) Profiling run second (with bag):
+```bash
+cd $THESIS_ROOT/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 bag record --storage mcap \
+  -o ../bags/live_camera/YYYY-MM-DD__baselineB_fullstack_profile \
+  /camera/fps /detections /timing /target /tracks /timing_tracker
+```
+
+Note: keep recording disabled in functional-run checks to avoid subscriber overhead during go/no-go evaluation.
