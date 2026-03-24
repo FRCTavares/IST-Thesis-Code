@@ -1,243 +1,248 @@
-# Thesis Workspace
+# Thesis workspace
 
-ROS 2 + Hailo runtime for person detection, tracking, target selection, and control-reference publication.
+## Quick reference
 
-## Quick Links
+- **[RUNBOOK.md](RUNBOOK.md)** — Quick command recipes for core operations
+- **[Written Logs/](Written%20Logs/)** — Weekly planning, daily logs, and useful commands
 
-- [RUNBOOK.md](RUNBOOK.md): command recipes and frozen operational procedures.
-- [Written Logs/](Written%20Logs/): weekly plans, daily logs, and thesis notes.
+### Current frozen live baseline (Baseline B)
 
-## Current Frozen Baseline (Baseline B)
+- Inference queue size: `4`
+- Inference worker threads: `3`
+- Client queue behavior: blocking bounded queue (`queue.Queue`) with timeout wakeup
+- Comparison rule: change one variable at a time (no multi-change tuning jumps)
 
-- Inference client queue size: 4
-- Inference client workers: 3
-- Queue behavior: bounded blocking queue with timeout wakeup (no busy-wait sleep loop)
-- Comparison rule: change one variable at a time
+Current next controlled experiment:
+- Image-path A/B only
+- A: `1920x1080` camera publish + client resize to `640x640`
+- B: direct `640x640` camera publish + no client resize
+- Keep all other settings fixed (see throughput workflow in [RUNBOOK.md](RUNBOOK.md))
 
-Current controlled A/B experiment:
+---
 
-- A: camera publishes 1920x1080, inference client resizes to 640x640
-- B: camera publishes 640x640, inference client skips resize
-- Keep all other settings frozen
+## Folder map
 
-## System Overview
-
-Pipeline (live mode):
-
-1. Camera node publishes /camera/image_raw (and /camera/fps).
-2. Inference client sends frames over ZMQ REQ/REP to container service.
-3. Inference client publishes /detections and /timing.
-4. Tracker consumes /detections and publishes /tracks and /timing_tracker.
-5. Target selector consumes /tracks and publishes /target and /timing_target.
-6. Control node consumes /target and publishes /control_ref/cmd_vel (optionally mirrored to MAVROS).
-7. Dashboard bridge exposes telemetry over WebSocket (and optional MJPEG stream via web_video_server).
-
-## Repository Map
-
-### Hand-edited source
-
-| Path | Purpose |
-| --- | --- |
-| ros2_ws/src/thesis_bringup/ | Launch files and utility nodes (camera, control, dashboard, synthetic perturbation nodes) |
-| ros2_ws/src/thesis_inference_client/ | ZMQ ROS client that publishes detections/timing |
-| ros2_ws/src/thesis_tracker/ | Unified tracker node (SORT, OC-SORT, ByteTrack backends) |
-| ros2_ws/src/thesis_target_selector/ | Target selection logic and target timing |
-| ros2_ws/src/thesis_msgs/ | Custom ROS message types (Timing, Track2D, Track2DArray, TargetState) |
-| infer_service/ | Hailo container inference service (file mode + ROS REQ/REP mode) |
-| tools/ | Runtime helpers and offline analysis scripts |
-| tools/camera/ | Camera-specific utility scripts |
+### Source code (edited by hand)
+| Path | Contents |
+|---|---|
+| `ros2_ws/src/thesis_bringup/` | Launch files for live and replay modes |
+| `ros2_ws/src/thesis_inference_client/` | ZMQ client node for receiving detections |
+| `ros2_ws/src/thesis_tracker/` | Multi-object tracker node (SORT, OC-SORT, ByteTrack) |
+| `ros2_ws/src/thesis_target_selector/` | Target selection and lock FSM |
+| `ros2_ws/src/thesis_msgs/` | Custom ROS 2 message definitions |
+| `infer_service/` | ZMQ inference service (runs in Hailo Docker container) |
+| `tools/` | Analysis scripts: `analyse_bag_timing.py`, `analyse_bag_tracking.py` |
+| `tools/camera/` | Camera-specific utilities and scripts |
 
 ### Documentation
+| Path | Contents |
+|---|---|
+| `RUNBOOK.md` | Command recipes for record, replay, analyse, build |
+| `Written Logs/` | Weekly plans, daily logs, thesis planning notes |
+| `Written Logs/Other/` | Camera integration docs, useful commands |
 
-| Path | Purpose |
-| --- | --- |
-| RUNBOOK.md | Operational recipes |
-| Written Logs/docs/ | Supporting docs (checklists, commands, integration notes) |
-| Written Logs/W*/ | Weekly and daily execution logs |
+### Recorded data (generated — do not edit by hand)
+| Path | Contents |
+|---|---|
+| `bags/raw/` | Raw recorded bags from live runs (detections, timing) |
+| `bags/eval/` | Eval bags from replay (tracks, target, timing_tracker) |
+| `bags/live_camera/` | Camera validation and live perception test runs |
+| `bags/tmp/` | Scratch space; safe to delete |
 
-## Important Note About Git-Ignored Folders
+### Analysis outputs (generated)
+| Path | Contents |
+|---|---|
+| `reports/timing/` | Timing analysis reports (latency, FPS) |
+| `reports/tracking/` | Tracking analysis reports (MOT metrics, ID switches) |
+| `reports/compare/` | Cross-tracker comparison reports |
+| `reports/system/` | System performance and validation reports |
+| `figures/timing/` | Timing plots (latency distributions, FPS over time) |
+| `figures/tracking/` | Tracking plots (trajectories, pixel error) |
+| `figures/compare/` | Cross-tracker comparison plots |
 
-Some directories are intentionally ignored and may not appear in a fresh clone or in your current working directory until you run the pipeline.
+### Build artifacts (generated)
+| Path | Contents |
+|---|---|
+| `ros2_ws/build/` | ROS 2 build output |
+| `ros2_ws/install/` | ROS 2 install space (source this for overlays) |
+| `ros2_ws/log/` | ROS 2 build logs |
+| `build/` | Additional build artifacts |
+| `install/` | Additional install artifacts |
+| `log/` | System and build logs |
 
-Ignored/generated paths include:
+### External dependencies
+| Path | Contents |
+|---|---|
+| `hailo-rpi5-examples/` | Hailo AI inference examples and setup scripts |
 
-- ros2_ws/build/
-- ros2_ws/install/
-- ros2_ws/log/
-- bags/
-- reports/
-- figures/
-- log/
-- hailo-rpi5-examples/
-- infer_service/opt/
+---
 
-Why this matters:
+## Workspace setup
 
-- Missing bags/, reports/, figures/, or log/ is expected before first run.
-- Analysis scripts create output directories on demand.
-- ros2_ws/install/ appears only after colcon build.
-
-Optional bootstrap command if you want the directory skeleton visible now:
-
-```bash
-mkdir -p bags/raw bags/eval bags/live_camera bags/tmp reports/timing reports/tracking figures/timing figures/tracking log
-```
-
-## Workspace Setup
-
-### Environment
-
+### Environment variables
 ```bash
 export THESIS_ROOT=/home/francisco/Desktop/Thesis-Code
-export ROS_DOMAIN_ID=42
+export ROS_DOMAIN_ID=42  # Isolate from other ROS 2 systems
 ```
 
-### Build ROS workspace
-
+### ROS 2 workspace overlay
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
-colcon build --packages-select thesis_bringup thesis_inference_client thesis_tracker thesis_target_selector thesis_msgs
 source install/setup.bash
 ```
 
-## Main Runtime Entry Points
+---
 
-### Preferred live startup
+## Naming conventions
 
-```bash
-cd $THESIS_ROOT
-./tools/start_live_stack.sh
+### Raw bags — `bags/raw/`
 ```
-
-Useful flags:
-
-- --tracker sort|ocsort|bytetrack
-- --camera-width N --camera-height N
-- --infer-queue-size N --infer-workers N
-- --no-tracker --no-target --no-control --no-dashboard --no-web-video
-- --control-mavros
-- --rosbag
-
-### Inference service mode switch
-
-The container service in infer_service/detection_zmq.py selects mode with HAILO_FRAME_SOURCE:
-
-- HAILO_FRAME_SOURCE=ros: ZMQ REQ/REP service on tcp://0.0.0.0:5556
-- HAILO_FRAME_SOURCE=file: local file playback pipeline
-
-## Launch Files That Actually Exist
-
-In ros2_ws/src/thesis_bringup/launch/:
-
-- camera_bringup.launch.py
-- first_ros2_slice.launch.py
-- eval_replay.launch.py
-- eval_replay_occluded.launch.py
-- eval_replay_ambiguous.launch.py
-
-Notes:
-
-- live.launch.py and replay.launch.py are not present in the current tree.
-- Use tools/start_live_stack.sh for live operation.
-
-## ROS Interfaces (Current)
-
-| Topic | Type | Producer | Consumer |
-| --- | --- | --- | --- |
-| /camera/image_raw | sensor_msgs/Image | camera_capture_node | inference_client_node |
-| /camera/dashboard | sensor_msgs/Image | camera_capture_node (or dashboard_resize_node) | web_video_server |
-| /camera/fps | std_msgs/Float32 | camera_capture_node | dashboard_bridge_node |
-| /detections | vision_msgs/Detection2DArray | inference_client_node | tracker_node |
-| /tracks | thesis_msgs/Track2DArray | tracker_node | target_selector_node, dashboard_bridge_node |
-| /target | thesis_msgs/TargetState | target_selector_node | control_ref_node, dashboard_bridge_node |
-| /timing | thesis_msgs/Timing | inference_client_node | tracker_node, target_selector_node, dashboard_bridge_node |
-| /timing_tracker | thesis_msgs/Timing | tracker_node | bag/analysis |
-| /timing_target | thesis_msgs/Timing | target_selector_node | bag/analysis |
-| /control_ref/cmd_vel | geometry_msgs/TwistStamped | control_ref_node | bag/control integration |
-
-## Bag Naming Conventions
-
-### Raw bags
-
-Format:
-
-```text
 YYYY-MM-DD__slice__<tag>
 ```
+Example: `2026-02-26__slice__longrun`
 
-### Eval bags
+Record with `-o` pointing directly to the final name, or rename immediately after stopping:
+```bash
+mv rosbag2_<auto-timestamp> YYYY-MM-DD__slice__<tag>
+```
 
-Format:
-
-```text
+### Eval bags — `bags/eval/`
+```
 YYYY-MM-DD__eval__<rawbag>__<tracker>
 ```
+Example: `2026-02-27__eval__2026-02-25__slice__primary__sort`
 
-### Live camera bags
+These are created automatically by `eval_replay.launch.py` — do not rename manually.
 
-Format:
-
-```text
+### Live camera bags — `bags/live_camera/`
+```
 YYYY-MM-DD__<session_description>
 ```
+Example: `2026-03-09__camera_validation`
 
-## Common Operations
+---
 
-### Eval replay
+## Common commands
 
+### Record a raw bag (file replay)
 ```bash
-ros2 launch thesis_bringup eval_replay.launch.py \
-  bag:=$THESIS_ROOT/bags/raw/<raw_bag_name> \
-  tracker:=sort
+cd $THESIS_ROOT/bags/raw
+ros2 bag record --storage mcap \
+  --topics /detections /timing /tracks /target /timing_tracker
+# Then rename:
+mv rosbag2_<timestamp> YYYY-MM-DD__slice__<tag>
 ```
 
-### Record lean live session
-
+### Record a live camera session (lean operational mode)
 ```bash
 cd $THESIS_ROOT/bags/live_camera
 ros2 bag record --storage mcap \
-  /camera/fps /detections /timing /target
+  --topics /camera/fps /detections /timing /target
+# Then rename:
+mv rosbag2_<timestamp> YYYY-MM-DD__<session_description>
+```
+For profiling sessions only, `/tracks` and `/timing_tracker` may be added explicitly.
+
+### Run eval replay (records to `bags/eval/`)
+```bash
+ros2 launch thesis_bringup eval_replay.launch.py \
+  bag:=$THESIS_ROOT/bags/raw/<YYYY-MM-DD__slice__tag> \
+  tracker:=sort
+# Available trackers: sort, ocsort, bytetrack
 ```
 
 ### Analyse timing
-
 ```bash
-python3 tools/analyse_bag_timing.py $THESIS_ROOT/bags/raw/<bag_name>
+python3 tools/analyse_bag_timing.py \
+  $THESIS_ROOT/bags/raw/<YYYY-MM-DD__slice__tag>
+# Output: reports/timing/<bag>__timing.md  +  figures/timing/<bag>/
 ```
-
-Outputs:
-
-- reports/timing/`<bag>`__timing.md
-- figures/timing/`<bag>`/
 
 ### Analyse tracking
-
 ```bash
-python3 tools/analyse_bag_tracking.py $THESIS_ROOT/bags/eval/<eval_bag_name>
+python3 tools/analyse_bag_tracking.py \
+  $THESIS_ROOT/bags/eval/<YYYY-MM-DD__eval__rawbag__tracker>
+# Output: reports/tracking/<evalbag>/summary.md  +  3 PNG plots
 ```
 
-Outputs:
+### Rebuild ROS 2 workspace
+```bash
+cd $THESIS_ROOT/ros2_ws
+colcon build --packages-select thesis_bringup thesis_tracker thesis_msgs \
+  thesis_target_selector thesis_inference_client
+source install/setup.bash
+```
 
-- reports/tracking/<eval_bag_name>/summary.md
-- reports/tracking/<eval_bag_name>/target_lock_timeseries.png
-- reports/tracking/<eval_bag_name>/track_ms_cdf.png
-- reports/tracking/<eval_bag_name>/reacq_hist.png
+### Clean build
+```bash
+cd $THESIS_ROOT/ros2_ws
+rm -rf build/ install/ log/
+colcon build
+source install/setup.bash
+```
 
-## Operational Guidance
+---
 
-### Lean operational mode (default for field/live validation)
+## Key ROS 2 topics
 
-- Record: /camera/fps, /detections, /timing, /target
-- Avoid long-running debug subscribers that add load
-- Keep tracker profiling outputs out of normal field captures unless needed
+| Topic | Message Type | Description |
+|---|---|---|
+| `/detections` | `thesis_msgs/DetectionArray` | Person detections from inference service |
+| `/tracks` | `thesis_msgs/TrackArray` | Multi-object tracker output |
+| `/target` | `thesis_msgs/Target` | Selected target for control |
+| `/timing` | `thesis_msgs/TimingArray` | End-to-end timing measurements |
+| `/timing_tracker` | `thesis_msgs/TimingArray` | Per-track timing, profiling mode only, disabled in lean live runs |
+| `/camera/fps` | `std_msgs/Float32` | Live camera frame rate |
+
+---
+
+## Operational modes
+
+### Lean operational mode
+Use for indoor validation, outdoor runs, and any real-time live session.
+
+**Topics to record:**
+- `/camera/fps`
+- `/detections`
+- `/timing`
+- `/target`
+
+**Do not record:**
+- `/tracks`
+- `/timing_tracker`
+
+**Do not run long-lived debug subscribers** such as:
+- `ros2 topic hz /detections`
+- `ros2 topic hz /tracks`
+- `ros2 topic hz /target`
 
 ### Profiling mode
+Use only for bottleneck analysis and tracker runtime inspection.
 
-- Include /tracks and /timing_tracker when characterizing tracker behavior
-- Use on controlled runs, not baseline operational sessions
+**May record:**
+- `/tracks`
+- `/timing_tracker`
 
-## Known Drift To Watch
+This mode is not the default field mode.
 
-- RUNBOOK currently references tools/stop_live_stack.sh, which is not present in tools/.
-- README should be treated as accurate for repository structure and runtime entry points as of this revision.
+---
+
+## Launch file modes
+
+### Live perception
+Preferred for now: use the frozen manual startup sequence from [RUNBOOK.md](RUNBOOK.md).
+Use `live.launch.py` only if it is confirmed to match the frozen lean operational configuration.
+
+### File replay (detections from bag)
+```bash
+ros2 launch thesis_bringup replay.launch.py \
+  bag:=$THESIS_ROOT/bags/raw/<bag_name>
+```
+
+### Eval replay (replay + record tracks for analysis)
+```bash
+ros2 launch thesis_bringup eval_replay.launch.py \
+  bag:=$THESIS_ROOT/bags/raw/<bag_name> \
+  tracker:=sort
+```
