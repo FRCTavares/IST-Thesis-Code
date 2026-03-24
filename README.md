@@ -1,9 +1,23 @@
 # Thesis workspace
 
+## System architecture
+
+This repository now contains three clearly separated layers:
+
+- ROS perception and control stack in `ros2_ws/`
+- Backend bridge (planned) in `backend/`
+- Frontend dashboard in `user-interface/`
+
+Data flow:
+
+`Drone -> ROS -> Backend -> Dashboard`
+
 ## Quick reference
 
 - **[RUNBOOK.md](RUNBOOK.md)** — Quick command recipes for core operations
 - **[Written Logs/](Written%20Logs/)** — Weekly planning, daily logs, and useful commands
+
+Temporary one-off experiment assets are not part of the core thesis pipeline and are intentionally excluded from this documentation/workflow.
 
 ### Current frozen live baseline (Baseline B)
 
@@ -30,6 +44,8 @@ Current next controlled experiment:
 | `ros2_ws/src/thesis_tracker/` | Multi-object tracker node (SORT, OC-SORT, ByteTrack) |
 | `ros2_ws/src/thesis_target_selector/` | Target selection and lock FSM |
 | `ros2_ws/src/thesis_msgs/` | Custom ROS 2 message definitions |
+| `backend/` | Planned dashboard backend bridge and API layer |
+| `user-interface/` | React + TypeScript + Vite dashboard frontend |
 | `infer_service/` | ZMQ inference service (runs in Hailo Docker container) |
 | `tools/` | Analysis scripts: `analyse_bag_timing.py`, `analyse_bag_tracking.py` |
 | `tools/camera/` | Camera-specific utilities and scripts |
@@ -124,6 +140,15 @@ Example: `2026-03-09__camera_validation`
 ---
 
 ## Common commands
+
+### Run dashboard frontend
+```bash
+cd $THESIS_ROOT/user-interface
+npm install
+npm run dev
+```
+
+The frontend defaults to `mock` data mode and does not require a running backend to start.
 
 ### Record a raw bag (file replay)
 ```bash

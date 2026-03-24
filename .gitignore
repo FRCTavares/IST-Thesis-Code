@@ -16,6 +16,8 @@ log
 
 # Local logs and dumps
 infer_service/gstshark_*/
+infer_service/Birds/
+infer_service/Birds/**
 infer_service/*.log
 *.log
 
@@ -25,6 +27,10 @@ infer_service/*.log
 
 # Vendor / external
 hailo-rpi5-examples/
+
+# Frontend workspace
+user-interface/node_modules/
+user-interface/dist/
 
 # Large vendor payloads, keep out of git
 infer_service/opt/

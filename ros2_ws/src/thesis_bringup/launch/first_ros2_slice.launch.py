@@ -21,6 +21,7 @@ def generate_launch_description():
                 "queue_size": 1,
                 "img_w": 640,
                 "img_h": 640,
+                "label": "person",
                 "min_score": 0.35,
             }
         ],

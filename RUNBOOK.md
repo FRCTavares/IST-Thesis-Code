@@ -3,6 +3,19 @@
 Quick recipes for core operations.
 All commands run from `$THESIS_ROOT/` unless noted.
 
+## Frontend dashboard (new workspace)
+
+Run the React + TypeScript dashboard locally:
+
+```bash
+cd $THESIS_ROOT/user-interface
+npm install
+npm run dev
+```
+
+Environment variables are documented in `user-interface/.env.example`.
+Default mode is `mock`, so the dashboard can run without a backend.
+
 **Live camera operational mode:** Use the frozen manual startup sequence documented below.
 
 ---

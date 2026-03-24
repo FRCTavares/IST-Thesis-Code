@@ -478,6 +478,7 @@ export HAILO_INFER_WIDTH=640
 export HAILO_INFER_HEIGHT=640
 export HAILO_VIDEO_SINK=fakesink
 export HAILO_POST_FUNC=filter
+export HAILO_DET_LABEL=person
 export HAILO_REQREP_LOG_EVERY=${HAILO_REQREP_LOG_EVERY:-0}
 nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_zmq_live.log 2>&1 &
 ' >"$RUN_DIR/container_infer_start.log" 2>&1
@@ -509,6 +510,7 @@ start_ros_bg inference ros2 run thesis_inference_client inference_client_node --
     -p num_workers:=$INFER_WORKERS \
     -p img_w:=640 \
     -p img_h:=640 \
+    -p label:=person \
     -p min_score:=0.35 \
     -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL
 sleep 1

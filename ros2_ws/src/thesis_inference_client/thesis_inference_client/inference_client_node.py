@@ -13,7 +13,7 @@ import numpy as np
 import rclpy
 import zmq
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, qos_profile_sensor_data
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import Image
 from vision_msgs.msg import Detection2DArray, Detection2D, ObjectHypothesisWithPose
 from thesis_msgs.msg import Timing
@@ -53,7 +53,7 @@ class InferenceClientNode(Node):
         self.declare_parameter("img_h", 640)
         self.declare_parameter("label", "person")
         self.declare_parameter("min_score", 0.35)
-        self.declare_parameter("queue_size", 1)
+        self.declare_parameter("queue_size", 4)
         self.declare_parameter("request_timeout_ms", 500)
         self.declare_parameter("send_hwm", 1)
         self.declare_parameter("recv_hwm", 1)
@@ -61,6 +61,8 @@ class InferenceClientNode(Node):
         self.declare_parameter("timeout_log_every", 10)
         self.declare_parameter("publish_timing", True)
         self.declare_parameter("num_workers", 2)
+        self.declare_parameter("image_reliability", "best_effort")
+        self.declare_parameter("image_qos_depth", 2)
 
         self.image_topic = self.get_parameter("image_topic").value
         self.addr = self.get_parameter("addr").value
@@ -76,6 +78,8 @@ class InferenceClientNode(Node):
         self.timeout_log_every = int(self.get_parameter("timeout_log_every").value)
         self.publish_timing = bool(self.get_parameter("publish_timing").value)
         self.num_workers = max(1, int(self.get_parameter("num_workers").value))
+        self.image_reliability = str(self.get_parameter("image_reliability").value).strip().lower()
+        self.image_qos_depth = max(1, int(self.get_parameter("image_qos_depth").value))
 
         self.resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
         self._logged_encoding: str | None = None
@@ -89,11 +93,12 @@ class InferenceClientNode(Node):
         self.pub_dets = self.create_publisher(Detection2DArray, "/detections", qos_pub)
         self.pub_timing = self.create_publisher(Timing, "/timing", qos_pub)
 
+        image_sub_qos = self._build_image_sub_qos()
         self.sub_image = self.create_subscription(
             Image,
             self.image_topic,
             self.image_callback,
-            qos_profile_sensor_data,
+            image_sub_qos,
         )
 
         self.ctx = zmq.Context.instance()
@@ -124,8 +129,23 @@ class InferenceClientNode(Node):
         self.get_logger().info(
             f"image_topic={self.image_topic} addr={self.addr} "
             f"infer_size={self.img_w}x{self.img_h} queue_size={self.queue_size} "
-            f"publish_timing={self.publish_timing} num_workers={self.num_workers}"
+            f"publish_timing={self.publish_timing} num_workers={self.num_workers} "
+            f"image_reliability={self.image_reliability} image_qos_depth={self.image_qos_depth}"
         )
+
+    def _build_image_sub_qos(self) -> QoSProfile:
+        qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=self.image_qos_depth,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+        )
+        if self.image_reliability == "reliable":
+            qos.reliability = ReliabilityPolicy.RELIABLE
+        elif self.image_reliability not in ("best_effort", "besteffort"):
+            self.get_logger().warning(
+                f"invalid image_reliability='{self.image_reliability}', using best_effort"
+            )
+        return qos
 
     def _make_worker_socket(self) -> zmq.Socket:
         sock = self.ctx.socket(zmq.REQ)
@@ -174,6 +194,7 @@ class InferenceClientNode(Node):
         req = self._make_worker_socket()
         # Each worker needs its own resize buffer to avoid cross-thread races.
         worker_resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
+        worker_rgb_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
 
         while rclpy.ok() and not self.stop_event.is_set():
             try:
@@ -202,10 +223,10 @@ class InferenceClientNode(Node):
             image_encoding = str(image_msg.encoding).lower()
             image_step = int(image_msg.step)
 
-            if image_encoding != "rgb8":
+            if image_encoding not in ("rgb8", "bgr8"):
                 self.get_logger().error(
                     f"unsupported encoding '{image_msg.encoding}' in inference_client; "
-                    f"expected rgb8. Fix camera node encoding and restart."
+                    f"expected rgb8 or bgr8. Fix camera node encoding and restart."
                 )
                 continue
 
@@ -259,7 +280,12 @@ class InferenceClientNode(Node):
                 t_resize_end_ns = now_ns()
 
             t_color_start_ns = now_ns()
-            t_color_end_ns = t_color_start_ns
+            if image_encoding == "bgr8":
+                cv2.cvtColor(infer_img, cv2.COLOR_BGR2RGB, dst=worker_rgb_buf)
+                infer_img = worker_rgb_buf
+                t_color_end_ns = now_ns()
+            else:
+                t_color_end_ns = t_color_start_ns
 
             t_pack_start_ns = now_ns()
             frame_payload = memoryview(infer_img)
@@ -351,10 +377,12 @@ class InferenceClientNode(Node):
                 if score < self.min_score:
                     continue
 
+                det_label = str(d.get("label", "")).strip()
+
                 label_ok = True
                 if self.label:
                     if "label" in d:
-                        label_ok = d.get("label") == self.label
+                        label_ok = det_label.lower() == str(self.label).strip().lower()
                     elif "class_id" in d:
                         label_ok = int(d.get("class_id", -1)) == 0
                 if not label_ok:
@@ -391,7 +419,12 @@ class InferenceClientNode(Node):
                 det.bbox.size_y = float(h_px)
 
                 hyp = ObjectHypothesisWithPose()
-                hyp.hypothesis.class_id = "person"
+                if det_label:
+                    hyp.hypothesis.class_id = det_label
+                elif self.label:
+                    hyp.hypothesis.class_id = str(self.label)
+                else:
+                    hyp.hypothesis.class_id = "person"
                 hyp.hypothesis.score = float(score)
                 det.results.append(hyp)
 

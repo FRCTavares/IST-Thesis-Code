@@ -54,7 +54,7 @@ def _parse_frame_id(frame_id_str: str) -> int:
 
 
 def now_ns() -> int:
-    return time.perf_counter_ns()
+    return time.monotonic_ns()
 
 
 class SectionProfiler:

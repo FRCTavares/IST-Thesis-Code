@@ -37,6 +37,60 @@ def now_ns() -> int:
     return time.monotonic_ns()
 
 
+def _normalize_label(label: str | None) -> str | None:
+    if label is None:
+        return None
+    value = str(label).strip().lower()
+    if not value:
+        return None
+    if value in ("none", "all", "*"):
+        return None
+    return value
+
+
+def _consume_label_arg(argv: list[str]) -> str | None:
+    parsed_label: str | None = None
+    retained = [argv[0]]
+    i = 1
+    while i < len(argv):
+        arg = argv[i]
+
+        if arg.startswith("--label="):
+            parsed_label = _normalize_label(arg.split("=", 1)[1])
+            i += 1
+            continue
+
+        if arg.startswith("--det-label="):
+            parsed_label = _normalize_label(arg.split("=", 1)[1])
+            i += 1
+            continue
+
+        if arg in ("--label", "--det-label"):
+            if i + 1 >= len(argv):
+                raise ValueError(f"{arg} requires a value")
+            parsed_label = _normalize_label(argv[i + 1])
+            i += 2
+            continue
+
+        retained.append(arg)
+        i += 1
+
+    argv[:] = retained
+    return parsed_label
+
+
+def _filter_dets_by_label(dets: list[dict], label_filter: str | None) -> list[dict]:
+    if label_filter is None:
+        return dets
+
+    filtered: list[dict] = []
+    for det in dets:
+        label = _normalize_label(det.get("label"))
+        if label == label_filter:
+            filtered.append(det)
+    return filtered
+
+
 def _set_env_file():
     project_root = Path(__file__).resolve().parent
     env_file = project_root / ".env"
@@ -100,11 +154,12 @@ def _extract_dets_from_buffer(buffer):
 
 
 class user_app_callback_class(app_callback_class):
-    def __init__(self):
+    def __init__(self, label_filter: str | None):
         super().__init__()
         self.zpub = ZmqPublisher(bind="tcp://0.0.0.0:5555", topic=b"dets")
         self.last_pts_ns = None
         self.seq = 0
+        self.label_filter = label_filter
 
 
 def app_callback(pad, info, user_data: user_app_callback_class):
@@ -123,6 +178,7 @@ def app_callback(pad, info, user_data: user_app_callback_class):
 
     user_data.seq += 1
     dets = _extract_dets_from_buffer(buffer)
+    dets = _filter_dets_by_label(dets, user_data.label_filter)
 
     user_data.zpub.send(
         dets,
@@ -137,7 +193,7 @@ def app_callback(pad, info, user_data: user_app_callback_class):
     return Gst.PadProbeReturn.OK
 
 
-def main_file_mode():
+def main_file_mode(label_filter: str | None = None):
     Gst.init(None)
     _set_env_file()
 
@@ -152,7 +208,12 @@ def main_file_mode():
     if "--hef-path" not in sys.argv:
         sys.argv += ["--hef-path", hef_path]
 
-    user_data = user_app_callback_class()
+    user_data = user_app_callback_class(label_filter)
+
+    if label_filter is None:
+        print("Detection label filter: none", flush=True)
+    else:
+        print(f"Detection label filter: {label_filter}", flush=True)
 
     with contextlib.redirect_stdout(io.StringIO()):
         app = GStreamerDetectionApp(app_callback, user_data)
@@ -179,7 +240,7 @@ def main_file_mode():
 
 
 class RosReqRepInferenceService:
-    def __init__(self):
+    def __init__(self, label_filter: str | None = None):
         Gst.init(None)
         _set_env_file()
 
@@ -201,6 +262,7 @@ class RosReqRepInferenceService:
         self.req_count = 0
         self.reply_count = 0
         self.last_req_recv_ns = 0
+        self.label_filter = label_filter
 
         self.ctx = zmq.Context.instance()
         self.router = self.ctx.socket(zmq.ROUTER)
@@ -273,6 +335,10 @@ class RosReqRepInferenceService:
             raise RuntimeError("Failed to set ROS inference pipeline to PLAYING")
 
         print("ROS pipeline:", pipeline_str, flush=True)
+        if self.label_filter is None:
+            print("Detection label filter: none", flush=True)
+        else:
+            print(f"Detection label filter: {self.label_filter}", flush=True)
 
     def _lookup_meta_by_buffer(self, buffer) -> dict | None:
         pts = int(buffer.pts)
@@ -323,6 +389,7 @@ class RosReqRepInferenceService:
         meta["t_post_end_ns"] = t_post_end_ns
 
         dets = _extract_dets_from_buffer(buffer)
+        dets = _filter_dets_by_label(dets, self.label_filter)
 
         timing = {
             "t_req_recv_ns": int(meta.get("t_req_recv_ns", 0)),
@@ -555,8 +622,8 @@ class RosReqRepInferenceService:
             pass
 
 
-def main_ros_mode():
-    service = RosReqRepInferenceService()
+def main_ros_mode(label_filter: str | None = None):
+    service = RosReqRepInferenceService(label_filter=label_filter)
     try:
         service.serve_forever()
     finally:
@@ -565,11 +632,24 @@ def main_ros_mode():
 
 def main():
     frame_source = os.getenv("HAILO_FRAME_SOURCE", "file").strip().lower()
+    cli_label = _consume_label_arg(sys.argv)
+    env_label = _normalize_label(os.getenv("HAILO_DET_LABEL", ""))
+
+    # In live ROS mode force person-only by default and ignore env overrides,
+    # which prevents stale container env values from re-enabling bird-only mode.
+    if frame_source == "ros":
+        label_filter = cli_label if cli_label is not None else "person"
+    elif cli_label is not None:
+        label_filter = cli_label
+    elif env_label is not None:
+        label_filter = env_label
+    else:
+        label_filter = None
 
     if frame_source == "ros":
-        main_ros_mode()
+        main_ros_mode(label_filter=label_filter)
     else:
-        main_file_mode()
+        main_file_mode(label_filter=label_filter)
 
 
 if __name__ == "__main__":

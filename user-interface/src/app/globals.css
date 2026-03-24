@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 35% 95%;
+  --foreground: 216 28% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 216 28% 14%;
+  --muted: 212 28% 97%;
+  --muted-foreground: 215 19% 42%;
+  --border: 213 27% 87%;
+  --accent: 174 77% 26%;
+  --accent-foreground: 0 0% 100%;
+  --danger: 346 84% 40%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: hsl(var(--foreground));
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  background: radial-gradient(circle at 8% -10%, #ffffff, #edf1f6 42%);
+}

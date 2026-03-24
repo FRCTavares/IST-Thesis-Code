@@ -5,8 +5,10 @@ Offline bag timing analysis for thesis ROS 2 slice.
 Reads a rosbag2 directory (MCAP expected) and:
 - Defines base window as [first /timing msg, last /timing msg] using bag timestamps.
 - Computes stats for /timing fields:
-  mean, p50, p95, p99, min, max for:
-    lat_ms, recv_ms, json_ms, track_ms, loop_ms, pub_dt_ms
+    mean, p50, p95, p99, min, max for:
+        lat_ms, recv_ms, json_ms, track_ms, loop_ms, pub_dt_ms
+    where explicit fields are preferred when present:
+        lat_ms <- e2e_det_ms, recv_ms <- zmq_roundtrip_ms, json_ms <- decode_ms
 - Computes achieved Hz for topics using counts within the base window.
 - Computes "active-only" window by excluding restart gaps using pub_dt_ms threshold:
     keep samples with pub_dt_ms <= gap-ms
@@ -131,8 +133,16 @@ def _read_bag_timing_and_counts(
 
     timing_msg_type = get_message(type_map[timing_topic])
 
-    required_fields = ["lat_ms", "recv_ms", "json_ms", "track_ms", "loop_ms", "pub_dt_ms"]
-    timing_vals: Dict[str, List[float]] = {k: [] for k in required_fields}
+    # Canonical analysis keys keep report compatibility while preferring explicit fields.
+    field_candidates: Dict[str, List[str]] = {
+        "lat_ms": ["e2e_det_ms", "lat_ms"],
+        "recv_ms": ["zmq_roundtrip_ms", "recv_ms"],
+        "json_ms": ["decode_ms", "json_ms"],
+        "track_ms": ["track_ms"],
+        "loop_ms": ["loop_ms"],
+        "pub_dt_ms": ["pub_dt_ms"],
+    }
+    timing_vals: Dict[str, List[float]] = {k: [] for k in field_candidates}
     timing_ts_ns: List[int] = []
 
     while reader.has_next():
@@ -141,10 +151,17 @@ def _read_bag_timing_and_counts(
             continue
         msg = deserialize_message(data, timing_msg_type)
 
-        for k in required_fields:
-            if not hasattr(msg, k):
-                raise RuntimeError(f"{timing_topic} message type missing field '{k}'.")
-            timing_vals[k].append(float(getattr(msg, k)))
+        for out_key, candidates in field_candidates.items():
+            value = None
+            for in_key in candidates:
+                if hasattr(msg, in_key):
+                    value = float(getattr(msg, in_key))
+                    break
+            if value is None:
+                raise RuntimeError(
+                    f"{timing_topic} message type missing fields for '{out_key}': {candidates}."
+                )
+            timing_vals[out_key].append(value)
 
         timing_ts_ns.append(int(t_ns))
 
@@ -514,34 +531,40 @@ def main():
     gap_count = len([1 for v in pub_dt if v > gap_ms]) if pub_dt else 0
     gap_removed_s: Optional[float] = None
 
-    # contiguous segments in index space (built from active_idx)
-    active_segments_idx: List[Tuple[int, int]] = []
+    # Build active intervals from each accepted pub_dt sample interval [t_i - pub_dt_i, t_i].
+    # This avoids severe underestimation from index-contiguity when valid samples are sparse.
+    active_intervals_ns: List[Tuple[int, int]] = []
     if active_idx:
-        seg_start = active_idx[0]
-        prev = seg_start
-        for i in active_idx[1:]:
-            if i == prev + 1:
-                prev = i
-            else:
-                active_segments_idx.append((seg_start, prev))
-                seg_start = i
-                prev = i
-        active_segments_idx.append((seg_start, prev))
+        for i in active_idx:
+            t_end = int(timing_ts_ns[i])
+            dt_ms = float(pub_dt[i]) if i < len(pub_dt) else 0.0
+            if dt_ms <= 0.0:
+                continue
+            t_start = max(base_start, t_end - int(dt_ms * 1e6))
+            if t_end > t_start:
+                active_intervals_ns.append((t_start, t_end))
 
-    # convert segments to time ranges, sum active duration (excludes gaps)
+    active_intervals_ns.sort(key=lambda x: x[0])
+
+    # Merge overlapping active intervals and compute active duration.
     active_segments_ns: List[Tuple[int, int]] = []
     active_duration_s = float("nan")
     active_start_ns = None
     active_end_ns = None
 
-    if active_segments_idx:
+    if active_intervals_ns:
+        cur_start, cur_end = active_intervals_ns[0]
+        for s, e in active_intervals_ns[1:]:
+            if s <= cur_end:
+                cur_end = max(cur_end, e)
+            else:
+                active_segments_ns.append((cur_start, cur_end))
+                cur_start, cur_end = s, e
+        active_segments_ns.append((cur_start, cur_end))
+
         active_duration_s = 0.0
-        for a_i, b_i in active_segments_idx:
-            a_ns = int(timing_ts_ns[a_i])
-            b_ns = int(timing_ts_ns[b_i])
-            active_segments_ns.append((a_ns, b_ns))
-            if b_ns > a_ns:
-                active_duration_s += (b_ns - a_ns) * 1e-9
+        for a_ns, b_ns in active_segments_ns:
+            active_duration_s += (b_ns - a_ns) * 1e-9
         active_start_ns = active_segments_ns[0][0]
         active_end_ns = active_segments_ns[-1][1]
 
