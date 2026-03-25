@@ -3,16 +3,16 @@
 @tailwind utilities;
 
 :root {
-  --background: 210 35% 95%;
-  --foreground: 216 28% 14%;
-  --card: 0 0% 100%;
-  --card-foreground: 216 28% 14%;
-  --muted: 212 28% 97%;
-  --muted-foreground: 215 19% 42%;
-  --border: 213 27% 87%;
-  --accent: 174 77% 26%;
-  --accent-foreground: 0 0% 100%;
-  --danger: 346 84% 40%;
+  --background: 222 42% 10%;
+  --foreground: 210 33% 92%;
+  --card: 221 35% 15%;
+  --card-foreground: 210 33% 92%;
+  --muted: 222 25% 19%;
+  --muted-foreground: 217 16% 65%;
+  --border: 219 19% 30%;
+  --accent: 198 89% 48%;
+  --accent-foreground: 222 42% 10%;
+  --danger: 0 72% 52%;
 }
 
 * {
@@ -24,5 +24,8 @@ body {
   min-height: 100vh;
   color: hsl(var(--foreground));
   font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-  background: radial-gradient(circle at 8% -10%, #ffffff, #edf1f6 42%);
+  background:
+    radial-gradient(circle at 10% -20%, rgba(30, 64, 175, 0.2), transparent 35%),
+    radial-gradient(circle at 90% 120%, rgba(14, 116, 144, 0.18), transparent 30%),
+    #0a1020;
 }

@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import subprocess
 import time
 import threading
 from collections import deque
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
 import rclpy
@@ -31,9 +33,17 @@ class DashboardBridgeNode(Node):
 
         self.declare_parameter("ws_host", "0.0.0.0")
         self.declare_parameter("ws_port", 8765)
+        self.declare_parameter("api_host", "0.0.0.0")
+        self.declare_parameter("api_port", 8090)
         self.declare_parameter("publish_hz", 30.0)
         self.declare_parameter("img_w", 640)
         self.declare_parameter("img_h", 640)
+        self.declare_parameter("detector_container_name", "pi-ai-kit-ubuntu-hailo-ubuntu-pi-1")
+        self.declare_parameter("detector_bind", "tcp://0.0.0.0:5556")
+        self.declare_parameter("detector_width", 640)
+        self.declare_parameter("detector_height", 640)
+        self.declare_parameter("detector_fps", 30)
+        self.declare_parameter("detector_label", "person")
 
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._detections_topic = str(self.get_parameter("detections_topic").value)
@@ -44,9 +54,23 @@ class DashboardBridgeNode(Node):
 
         self._ws_host = str(self.get_parameter("ws_host").value)
         self._ws_port = int(self.get_parameter("ws_port").value)
+        self._api_host = str(self.get_parameter("api_host").value)
+        self._api_port = int(self.get_parameter("api_port").value)
         self._publish_hz = float(self.get_parameter("publish_hz").value)
         self._img_w = max(1.0, float(self.get_parameter("img_w").value))
         self._img_h = max(1.0, float(self.get_parameter("img_h").value))
+        self._detector_container_name = str(self.get_parameter("detector_container_name").value)
+        self._detector_bind = str(self.get_parameter("detector_bind").value)
+        self._detector_width = int(self.get_parameter("detector_width").value)
+        self._detector_height = int(self.get_parameter("detector_height").value)
+        self._detector_fps = int(self.get_parameter("detector_fps").value)
+        self._detector_label = str(self.get_parameter("detector_label").value)
+
+        self._model_to_hef = {
+            "yolov6n": "yolov6n_hailo8.hef",
+            "yolov8s": "yolov8s.hef",
+            "yolov8m": "yolov8m.hef",
+        }
 
         self._state_lock = threading.Lock()
         self._state: dict[str, Any] = {
@@ -79,6 +103,10 @@ class DashboardBridgeNode(Node):
         self._loop_thread = threading.Thread(target=self._run_loop, daemon=True)
         self._loop_thread.start()
 
+        self._api_server: ThreadingHTTPServer | None = None
+        self._api_thread = threading.Thread(target=self._run_api_server, daemon=True)
+        self._api_thread.start()
+
         # Start websocket server asynchronously without blocking ROS thread startup.
         start_future = asyncio.run_coroutine_threadsafe(self._start_server(), self._loop)
         start_future.add_done_callback(self._on_server_start_done)
@@ -103,8 +131,113 @@ class DashboardBridgeNode(Node):
             "dashboard_bridge_node started: "
             f"tracks={self._tracks_topic}, detections={self._detections_topic}, target={self._target_topic}, "
             f"fps={self._fps_topic}, replay_progress={self._replay_progress_topic}, timing={self._timing_topic}, "
-            f"ws=ws://{self._ws_host}:{self._ws_port}"
+            f"ws=ws://{self._ws_host}:{self._ws_port}, api=http://{self._api_host}:{self._api_port}"
         )
+
+    def _run_api_server(self) -> None:
+        node_ref = self
+
+        class _ControlHandler(BaseHTTPRequestHandler):
+            def _send_json(self, status: int, payload: dict[str, Any]) -> None:
+                body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+                self.send_header("Access-Control-Allow-Headers", "Content-Type")
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_OPTIONS(self) -> None:
+                self.send_response(204)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+                self.send_header("Access-Control-Allow-Headers", "Content-Type")
+                self.end_headers()
+
+            def do_POST(self) -> None:
+                try:
+                    content_length = int(self.headers.get("Content-Length", "0"))
+                except Exception:
+                    content_length = 0
+
+                raw = self.rfile.read(content_length) if content_length > 0 else b"{}"
+                try:
+                    payload = json.loads(raw.decode("utf-8")) if raw else {}
+                except Exception:
+                    self._send_json(400, {"ok": False, "error": "invalid JSON body"})
+                    return
+
+                if self.path == "/api/model":
+                    model = str(payload.get("model", "")).strip().lower()
+                    result = node_ref._handle_model_switch(model)
+                    self._send_json(200 if result.get("ok") else 500, result)
+                    return
+
+                if self.path == "/api/replay":
+                    self._send_json(200, {"ok": False, "error": "replay control not implemented in live mode"})
+                    return
+
+                self._send_json(404, {"ok": False, "error": "unknown endpoint"})
+
+            def log_message(self, _format: str, *_args: Any) -> None:
+                return
+
+        try:
+            self._api_server = ThreadingHTTPServer((self._api_host, self._api_port), _ControlHandler)
+            self._api_server.serve_forever()
+        except Exception as exc:
+            self.get_logger().error(f"Control API server failed: {exc}")
+
+    def _handle_model_switch(self, model: str) -> dict[str, Any]:
+        if model not in self._model_to_hef:
+            return {"ok": False, "error": f"unsupported model: {model}"}
+
+        hef_name = self._model_to_hef[model]
+        hef_path = f"/root/thesis_service/resources/hefs/{hef_name}"
+
+        cmd = f"""
+set -euo pipefail
+for pid in $(pgrep -f '/root/thesis_service/detection_zmq.py$' || true); do
+  if [ "$pid" != "$$" ]; then
+    kill "$pid" >/dev/null 2>&1 || true
+  fi
+done
+VENV=/root/hailo-rpi5-examples/venv_hailo_rpi_examples
+export PYTHONPATH=/root/hailo-rpi5-examples:${{PYTHONPATH:-}}
+cd /root/thesis_service
+export HAILO_FRAME_SOURCE=ros
+export HAILO_REQREP_BIND={self._detector_bind}
+export HAILO_INFER_WIDTH={self._detector_width}
+export HAILO_INFER_HEIGHT={self._detector_height}
+export HAILO_INFER_FPS={self._detector_fps}
+export HAILO_VIDEO_SINK=fakesink
+export HAILO_POST_FUNC=filter
+export HAILO_DET_LABEL={self._detector_label}
+export HAILO_HEF_PATH={hef_path}
+nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_zmq_live.log 2>&1 &
+"""
+
+        try:
+            result = subprocess.run(
+                ["docker", "exec", self._detector_container_name, "bash", "-lc", cmd],
+                check=False,
+                text=True,
+                capture_output=True,
+                timeout=20,
+            )
+        except Exception as exc:
+            self.get_logger().error(f"Model switch execution failed: {exc}")
+            return {"ok": False, "error": f"model switch failed: {exc}"}
+
+        if result.returncode != 0:
+            stderr = (result.stderr or "").strip()
+            self.get_logger().error(f"Model switch command failed (model={model}): {stderr}")
+            return {"ok": False, "error": f"model switch command failed: {stderr}"}
+
+        self.get_logger().info(f"Model switch applied: {model} ({hef_name})")
+        return {"ok": True, "requested_model": model}
 
     def _run_loop(self) -> None:
         asyncio.set_event_loop(self._loop)
@@ -375,6 +508,16 @@ class DashboardBridgeNode(Node):
 
     def destroy_node(self):
         self._stop_event.set()
+
+        if self._api_server is not None:
+            try:
+                self._api_server.shutdown()
+                self._api_server.server_close()
+            except Exception:
+                pass
+
+        if self._api_thread.is_alive():
+            self._api_thread.join(timeout=2.0)
 
         if self._loop.is_running():
             close_future = asyncio.run_coroutine_threadsafe(self._shutdown_server(), self._loop)

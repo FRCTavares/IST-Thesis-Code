@@ -127,8 +127,11 @@ ros2 run web_video_server web_video_server --ros-args -p port:=8080
 ```
 
 Dashboard endpoints:
-- Video: `http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data`
+- Video: `http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45`
 - Telemetry: `ws://<PI_IP>:8765`
+- Control API: `http://<PI_IP>:8090` (`POST /api/model`, `POST /api/replay`)
+
+Tip: If video still stutters, lower only `quality` first (for example 40 or 35).
 
 ### Dashboard troubleshooting (2026-03-25 fixes)
 
@@ -140,6 +143,20 @@ Dashboard endpoints:
   - Cause: dashboard bridge normalization basis not matching detection coordinate basis.
   - Fix: keep dashboard bridge `img_w/img_h` aligned to inference bbox basis (`640x640` in current stack).
   - Current default launch path in `tools/start_live_stack.sh` already sets this correctly.
+
+- Symptom: clicking model buttons does nothing.
+  - Cause: frontend API path/host mismatch or silent request failure.
+  - Fixes now in baseline:
+    - control endpoint is served by `dashboard_bridge_node` on port `8090`
+    - frontend defaults API base URL to `http://<dashboard-host>:8090`
+    - frontend reports model-switch request errors in control status
+  - Quick check:
+    - `ss -ltnp | rg ':8090|:8765|:8080'`
+    - `python3 - <<'PY'`
+      `import json, urllib.request`
+      `req=urllib.request.Request('http://127.0.0.1:8090/api/model', data=json.dumps({'model':'yolov8s'}).encode(), headers={'Content-Type':'application/json'}, method='POST')`
+      `print(urllib.request.urlopen(req, timeout=5).read().decode())`
+      `PY`
 
 ### Record live camera bag (lean mode)
 

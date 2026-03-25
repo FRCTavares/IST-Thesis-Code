@@ -15,3 +15,6 @@ Live integration notes (2026-03-25):
 - Active runtime bridge path is still ROS-native (`dashboard_bridge_node` + `web_video_server`), not a separate backend service yet.
 - MJPEG stream compatibility requires `qos_profile=sensor_data` when consuming `/camera/dashboard`.
 - Dashboard overlay geometry depends on bridge normalization dimensions matching inference detection coordinate basis (`640x640` in the current live stack).
+- Runtime control API is currently implemented in `dashboard_bridge_node` (port `8090`) with:
+	- `POST /api/model` (switches detector model by restarting container detection service with selected HEF)
+	- `POST /api/replay` (placeholder response in live mode)

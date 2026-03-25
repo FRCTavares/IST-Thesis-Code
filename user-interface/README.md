@@ -82,6 +82,10 @@ These files define the expected backend contract and include safe placeholder be
 - The dashboard video stream URL should include sensor-data QoS for compatibility with best-effort image publishers:
   - `http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data`
 - Frontend default config now uses this URL pattern in `src/services/config.ts`.
+- Frontend control requests use backend control API endpoints:
+  - `POST /api/model`
+  - `POST /api/replay`
+- Default control API target is `http://<dashboard-host>:8090` and localhost-style env values are normalized to the active browser host for remote sessions.
 - Bounding boxes are rendered from normalized center/size values coming from dashboard telemetry.
 - Those normalized values depend on dashboard bridge `img_w/img_h` matching the detection bbox coordinate basis (currently inference size `640x640`).
 

@@ -36,6 +36,7 @@ Current next controlled experiment:
 
 - Dashboard MJPEG stream now uses sensor-data QoS compatibility (`qos_profile=sensor_data`) to avoid RELIABILITY mismatches with `/camera/dashboard` publishers.
 - Dashboard box normalization is tied to the inference frame basis (`640x640`) via dashboard bridge `img_w/img_h`, matching detection bbox coordinates from the inference client.
+- Dashboard model switching is now live through `POST /api/model` served by `dashboard_bridge_node` on port `8090`.
 - If dashboard stream or overlays look wrong after updates, restart the full live stack so bridge/video nodes pick up the latest parameters.
 
 ---

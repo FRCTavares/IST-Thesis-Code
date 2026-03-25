@@ -12,7 +12,11 @@ export async function requestModelSwitch(model: DashboardModel): Promise<Dashboa
     return { ok: true, requested_model: model };
   }
 
-  return postJson<DashboardControlResponse>(`${dashboardConfig.apiBaseUrl}/api/model`, { model });
+  try {
+    return await postJson<DashboardControlResponse>(`${dashboardConfig.apiBaseUrl}/api/model`, { model });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "model switch request failed" };
+  }
 }
 
 export async function requestReplay(): Promise<DashboardControlResponse> {
@@ -20,7 +24,11 @@ export async function requestReplay(): Promise<DashboardControlResponse> {
     return { ok: true, action: "replay" };
   }
 
-  return postJson<DashboardControlResponse>(`${dashboardConfig.apiBaseUrl}/api/replay`, {});
+  try {
+    return await postJson<DashboardControlResponse>(`${dashboardConfig.apiBaseUrl}/api/replay`, {});
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "replay request failed" };
+  }
 }
 
 async function postJson<T>(url: string, payload: object): Promise<T> {
@@ -32,6 +40,24 @@ async function postJson<T>(url: string, payload: object): Promise<T> {
     body: JSON.stringify(payload),
   });
 
-  const json = (await response.json()) as T;
-  return json;
+  let json: unknown = null;
+  try {
+    json = await response.json();
+  } catch {
+    json = null;
+  }
+
+  if (!response.ok) {
+    const serverError =
+      typeof json === "object" && json !== null && "error" in json
+        ? String((json as { error?: unknown }).error ?? "request failed")
+        : `HTTP ${response.status}`;
+    throw new Error(serverError);
+  }
+
+  if (json === null) {
+    throw new Error("empty response from control API");
+  }
+
+  return json as T;
 }

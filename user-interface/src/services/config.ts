@@ -1,15 +1,33 @@
 import type { DashboardDataMode } from "@/types/dashboard";
 
 const modeRaw = (import.meta.env.VITE_DASHBOARD_DATA_MODE ?? "backend") as string;
+const browserHost = window.location.hostname || "127.0.0.1";
+
+function normalizeEndpointHost(rawUrl: string): string {
+  try {
+    const url = new URL(rawUrl, window.location.origin);
+    const isLocalHost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    const browserIsRemote = browserHost !== "localhost" && browserHost !== "127.0.0.1";
+    if (isLocalHost && browserIsRemote) {
+      url.hostname = browserHost;
+    }
+    return url.toString();
+  } catch {
+    return rawUrl;
+  }
+}
 
 export const dashboardConfig = {
   mode: parseMode(modeRaw),
-  apiBaseUrl: String(import.meta.env.VITE_DASHBOARD_API_BASE_URL ?? window.location.origin),
-  wsUrl: String(
-    import.meta.env.VITE_DASHBOARD_WS_URL ??
-      `ws://${window.location.hostname || "127.0.0.1"}:8765`,
+  apiBaseUrl: normalizeEndpointHost(
+    String(import.meta.env.VITE_DASHBOARD_API_BASE_URL ?? `http://${browserHost}:8090`),
   ),
-  videoUrl: `http://${window.location.hostname || "127.0.0.1"}:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data`,
+  wsUrl: normalizeEndpointHost(
+    String(import.meta.env.VITE_DASHBOARD_WS_URL ?? `ws://${browserHost}:8765`),
+  ),
+  videoUrl: normalizeEndpointHost(
+    `http://${browserHost}:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45`,
+  ),
 };
 
 function parseMode(input: string): DashboardDataMode {

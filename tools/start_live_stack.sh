@@ -714,7 +714,7 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     fi
 fi
 
-VIDEO_URL="http://${PI_IP}:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data"
+VIDEO_URL="http://${PI_IP}:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45"
 WS_URL="ws://${PI_IP}:8765"
 
 echo "[done] live stack started"
