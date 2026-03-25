@@ -53,12 +53,13 @@ class InferenceClientNode(Node):
         self.declare_parameter("img_h", 640)
         self.declare_parameter("label", "person")
         self.declare_parameter("min_score", 0.35)
-        self.declare_parameter("queue_size", 4)
-        self.declare_parameter("request_timeout_ms", 500)
+        self.declare_parameter("queue_size", 2)
+        self.declare_parameter("request_timeout_ms", 200)
+        self.declare_parameter("request_retries", 2)
         self.declare_parameter("send_hwm", 1)
         self.declare_parameter("recv_hwm", 1)
-        self.declare_parameter("print_every", 60)
-        self.declare_parameter("timeout_log_every", 10)
+        self.declare_parameter("print_every", 240)
+        self.declare_parameter("timeout_log_every", 20)
         self.declare_parameter("publish_timing", True)
         self.declare_parameter("num_workers", 2)
         self.declare_parameter("image_reliability", "best_effort")
@@ -72,6 +73,7 @@ class InferenceClientNode(Node):
         self.min_score = float(self.get_parameter("min_score").value)
         self.queue_size = max(1, int(self.get_parameter("queue_size").value))
         self.request_timeout_ms = int(self.get_parameter("request_timeout_ms").value)
+        self.request_retries = max(0, int(self.get_parameter("request_retries").value))
         self.send_hwm = int(self.get_parameter("send_hwm").value)
         self.recv_hwm = int(self.get_parameter("recv_hwm").value)
         self.print_every = int(self.get_parameter("print_every").value)
@@ -321,46 +323,55 @@ class InferenceClientNode(Node):
                 self.last_t_frame_sent_ns = t_frame_sent_ns
 
             response = None
-            try:
-                t_zmq_send_start_ns = now_ns()
-                req.send_json(metadata, flags=zmq.SNDMORE)
-                req.send(frame_payload, flags=0, copy=False)
-                t_zmq_send_end_ns = now_ns()
+            attempt = 0
+            while attempt <= self.request_retries:
+                try:
+                    t_zmq_send_start_ns = now_ns()
+                    req.send_json(metadata, flags=zmq.SNDMORE)
+                    req.send(frame_payload, flags=0, copy=False)
+                    t_zmq_send_end_ns = now_ns()
 
-                t_zmq_recv_start_ns = now_ns()
-                raw_reply = req.recv()
-                t_zmq_recv_end_ns = now_ns()
+                    t_zmq_recv_start_ns = now_ns()
+                    raw_reply = req.recv()
+                    t_zmq_recv_end_ns = now_ns()
 
-                t_decode_start_ns = now_ns()
-                if isinstance(raw_reply, bytes):
-                    response = json.loads(raw_reply.decode("utf-8"))
-                else:
-                    response = raw_reply
-                t_decode_end_ns = now_ns()
+                    t_decode_start_ns = now_ns()
+                    if isinstance(raw_reply, bytes):
+                        response = json.loads(raw_reply.decode("utf-8"))
+                    else:
+                        response = raw_reply
+                    t_decode_end_ns = now_ns()
+                    break
 
-            except zmq.error.Again:
-                with self.state_lock:
-                    self.zmq_timeouts += 1
-                    timeout_count = self.zmq_timeouts
-                every = self.timeout_log_every if self.timeout_log_every > 0 else 10
-                if (timeout_count % every) == 1:
+                except zmq.error.Again:
+                    with self.state_lock:
+                        self.zmq_timeouts += 1
+                        timeout_count = self.zmq_timeouts
+                    every = self.timeout_log_every if self.timeout_log_every > 0 else 10
+                    if (timeout_count % every) == 1:
+                        self.get_logger().warning(
+                            f"REQ timeout waiting for inference response "
+                            f"(count={timeout_count}, worker={worker_id}, attempt={attempt + 1}/{self.request_retries + 1})"
+                        )
+                    try:
+                        req.close(0)
+                    except Exception:
+                        pass
+                    req = self._make_worker_socket()
+                    attempt += 1
+
+                except Exception as exc:
                     self.get_logger().warning(
-                        f"REQ timeout waiting for inference response "
-                        f"(count={timeout_count}, worker={worker_id})"
+                        f"ZMQ request failed (worker={worker_id}, attempt={attempt + 1}/{self.request_retries + 1}): {exc}"
                     )
-                try:
-                    req.close(0)
-                except Exception:
-                    pass
-                req = self._make_worker_socket()
-                continue
-            except Exception as exc:
-                self.get_logger().warning(f"ZMQ request failed (worker={worker_id}): {exc}")
-                try:
-                    req.close(0)
-                except Exception:
-                    pass
-                req = self._make_worker_socket()
+                    try:
+                        req.close(0)
+                    except Exception:
+                        pass
+                    req = self._make_worker_socket()
+                    attempt += 1
+
+            if response is None:
                 continue
 
             roundtrip_ms = _ms(t_zmq_recv_end_ns - t_zmq_send_start_ns)
@@ -494,8 +505,6 @@ class InferenceClientNode(Node):
             t_msg.pts_ns = src_stamp_ns
             t_msg.t_pub_ns = t_frame_sent_ns
             t_msg.pub_dt_ms = float(pub_dt_ms)
-            t_msg.recv_ms = t_msg.zmq_roundtrip_ms
-            t_msg.json_ms = t_msg.decode_ms
             t_msg.track_ms = 0.0
 
             with self.publish_lock:
@@ -505,11 +514,8 @@ class InferenceClientNode(Node):
                 t_msg.det_pub_ms = _ms(t_det_pub_end_ns - t_det_pub_start_ns)
                 t_msg.e2e_det_ms = _ms(t_det_pub_end_ns - t_cam_msg_seen_ns)
 
-                # Keep deprecated aggregate loop metric for compatibility.
                 t_loop1 = now_ns()
-                t_msg.loop_ms = _ms(t_loop1 - t_loop0)
-                # Keep deprecated lat_ms mapped to explicit end-to-end detection latency.
-                t_msg.lat_ms = t_msg.e2e_det_ms
+                loop_ms = _ms(t_loop1 - t_loop0)
 
                 if self.publish_timing:
                     self.pub_timing.publish(t_msg)
@@ -537,12 +543,12 @@ class InferenceClientNode(Node):
                 self.get_logger().info(
                     f"sent={sent_now} recv={recv_now} "
                     f"drop={dropped_now} dets={len(det_arr.detections)} "
-                    f"lat_ms={t_msg.lat_ms:.2f} pre_ms={t_msg.pre_ms:.2f} "
+                    f"e2e_det_ms={t_msg.e2e_det_ms:.2f} pre_ms={t_msg.pre_ms:.2f} "
                     f"ros_to_np_ms={t_msg.ros_to_np_ms:.2f} "
                     f"resize_ms={t_msg.resize_ms:.2f} "
                     f"color_ms={t_msg.color_ms:.2f} pack_ms={t_msg.pack_ms:.2f} "
                     f"rt_ms={roundtrip_ms:.2f} "
-                    f"loop_ms={t_msg.loop_ms:.2f} "
+                    f"loop_ms={loop_ms:.2f} "
                     f"pub_dt_ms={pub_dt_ms:.2f} "
                     f"pub_dt_p50_ms={pub_dt_p50:.2f} "
                     f"pub_dt_p95_ms={pub_dt_p95:.2f} "

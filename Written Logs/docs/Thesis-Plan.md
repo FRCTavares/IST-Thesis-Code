@@ -97,7 +97,7 @@ Baseline outputs per frame:
 | `/detections` | bbox, score |
 | `/tracks` | `track_id`, bbox, score, age, `last_seen` |
 | `/target` | `target_track_id`, `target_bbox_cx/cy` (normalised), `target_bbox_area` or (w,h), `target_visible`, `reacquired` |
-| `/timing` | `pub_dt_ms`, `lat_ms`, `loop_ms`, per-stage timing |
+| `/timing` | `pub_dt_ms`, `e2e_det_ms`, `pre_ms`, `zmq_roundtrip_ms`, `infer_ms`, per-stage timing |
 | `/timing_tracker` | `track_ms` (measured on host) |
 
 Baseline acceptance targets:

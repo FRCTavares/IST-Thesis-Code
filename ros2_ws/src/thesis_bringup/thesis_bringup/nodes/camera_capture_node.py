@@ -9,7 +9,6 @@ import time
 from pathlib import Path
 
 import cv2
-import numpy as np
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
@@ -25,14 +24,15 @@ class CameraCaptureNode(Node):
         self.declare_parameter("device", "/dev/video0")
         self.declare_parameter("media_dev", "/dev/media0")
         self.declare_parameter("sensor_subdev", "/dev/v4l-subdev2")
-        self.declare_parameter("width", 1920)
-        self.declare_parameter("height", 1080)
-        self.declare_parameter("fps", 60.0)
+        self.declare_parameter("width", 1280)
+        self.declare_parameter("height", 720)
+        self.declare_parameter("fps", 30.0)
         self.declare_parameter("frame_id", "camera")
         self.declare_parameter("fourcc", "UYVY")
         self.declare_parameter("dashboard_topic", "/camera/dashboard")
         self.declare_parameter("dashboard_width", 640)
         self.declare_parameter("dashboard_height", 360)
+        self.declare_parameter("dashboard_fps", 30.0)
         self.declare_parameter("publish_dashboard_topic", True)
         self.declare_parameter("sensor_entity", "tevs 11-0048")
         self.declare_parameter("csi_entity", "csi2")
@@ -43,6 +43,7 @@ class CameraCaptureNode(Node):
         self.declare_parameter("command_timeout_s", 5.0)
         self.declare_parameter("reopen_delay_s", 1.0)
         self.declare_parameter("publish_fps_topic", True)
+        self.declare_parameter("flip_image", True)
         self.declare_parameter("fail_on_media_init_error", False)
 
         self._device = self.get_parameter("device").value
@@ -56,6 +57,7 @@ class CameraCaptureNode(Node):
         self._dashboard_topic = str(self.get_parameter("dashboard_topic").value)
         self._dashboard_width = int(self.get_parameter("dashboard_width").value)
         self._dashboard_height = int(self.get_parameter("dashboard_height").value)
+        self._dashboard_fps = max(0.0, float(self.get_parameter("dashboard_fps").value))
         self._publish_dashboard_topic = bool(self.get_parameter("publish_dashboard_topic").value)
         self._sensor_entity = self.get_parameter("sensor_entity").value
         self._csi_entity = self.get_parameter("csi_entity").value
@@ -66,21 +68,24 @@ class CameraCaptureNode(Node):
         self._command_timeout_s = float(self.get_parameter("command_timeout_s").value)
         self._reopen_delay_s = float(self.get_parameter("reopen_delay_s").value)
         self._publish_fps_topic = bool(self.get_parameter("publish_fps_topic").value)
+        self._flip_image = bool(self.get_parameter("flip_image").value)
         self._fail_on_media_init_error = bool(self.get_parameter("fail_on_media_init_error").value)
 
         self._media_dev = self._resolve_media_device(self._media_dev)
 
         self._bridge = CvBridge()
         self._latest_frame = None
-        self._rgb_buffer = None
-        self._dashboard_buffer = None
+        self._latest_frame_id = 0
+        self._last_published_frame_id = 0
         self._frame_lock = threading.Lock()
+        self._new_frame_event = threading.Event()
         self._cap: cv2.VideoCapture | None = None
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
+        self._publisher_thread: threading.Thread | None = None
 
         image_qos = QoSProfile(
-            reliability=ReliabilityPolicy.RELIABLE,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.VOLATILE,
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
@@ -90,7 +95,7 @@ class CameraCaptureNode(Node):
         self._dashboard_pub = None
         if self._publish_dashboard_topic:
             dashboard_qos = QoSProfile(
-                reliability=ReliabilityPolicy.RELIABLE,
+                reliability=ReliabilityPolicy.BEST_EFFORT,
                 durability=DurabilityPolicy.VOLATILE,
                 history=HistoryPolicy.KEEP_LAST,
                 depth=1,
@@ -104,13 +109,15 @@ class CameraCaptureNode(Node):
         self._frame_counter = 0
         self._fps_window_start = time.monotonic()
         self._last_log_time = 0.0
+        self._last_dashboard_pub_time = 0.0
 
         self._configure_camera()
 
         self._open_camera()
         self._thread = threading.Thread(target=self._capture_loop, daemon=True)
         self._thread.start()
-        self.create_timer(1.0 / 30.0, self._publish_frame)
+        self._publisher_thread = threading.Thread(target=self._publisher_loop, daemon=True)
+        self._publisher_thread.start()
 
         self.get_logger().info(
             f"camera_capture_node started, device={self._device}, "
@@ -278,48 +285,62 @@ class CameraCaptureNode(Node):
                 self._retry_reopen()
                 continue
 
-            frame = cv2.flip(frame, -1)
+            if self._flip_image:
+                frame = cv2.flip(frame, -1)
 
             with self._frame_lock:
                 self._latest_frame = frame
+                self._latest_frame_id += 1
+            self._new_frame_event.set()
 
-    def _publish_frame(self) -> None:
+    def _publisher_loop(self) -> None:
+        while rclpy.ok() and not self._stop_event.is_set():
+            has_new_frame = self._new_frame_event.wait(timeout=0.25)
+            if not has_new_frame:
+                continue
+            self._new_frame_event.clear()
+            self._publish_latest_frame()
+
+    def _publish_latest_frame(self) -> None:
         with self._frame_lock:
             frame = self._latest_frame
+            frame_id = self._latest_frame_id
 
         if frame is None:
+            return
+
+        # Publish only new frames to avoid re-encoding and republishing duplicates.
+        if frame_id == self._last_published_frame_id:
             return
 
         stamp = self.get_clock().now().to_msg()
 
         if self._dashboard_pub is not None:
-            if self._dashboard_buffer is None:
-                self._dashboard_buffer = cv2.resize(
-                    frame,
-                    (self._dashboard_width, self._dashboard_height),
-                    interpolation=cv2.INTER_LINEAR,
-                )
-            else:
-                cv2.resize(
-                    frame,
-                    (self._dashboard_width, self._dashboard_height),
-                    dst=self._dashboard_buffer,
-                    interpolation=cv2.INTER_LINEAR,
-                )
+            now = time.monotonic()
+            publish_dashboard = True
+            if self._dashboard_fps > 0.0:
+                period = 1.0 / self._dashboard_fps
+                publish_dashboard = (now - self._last_dashboard_pub_time) >= period
 
-            dashboard_msg = self._bridge.cv2_to_imgmsg(self._dashboard_buffer, encoding="bgr8")
-            dashboard_msg.header.stamp = stamp
-            dashboard_msg.header.frame_id = self._frame_id
-            self._dashboard_pub.publish(dashboard_msg)
+            if publish_dashboard:
+                dashboard_frame = frame
+                if frame.shape[1] != self._dashboard_width or frame.shape[0] != self._dashboard_height:
+                    dashboard_frame = cv2.resize(
+                        frame,
+                        (self._dashboard_width, self._dashboard_height),
+                        interpolation=cv2.INTER_AREA,
+                    )
+                dashboard_msg = self._bridge.cv2_to_imgmsg(dashboard_frame, encoding="bgr8")
+                dashboard_msg.header.stamp = stamp
+                dashboard_msg.header.frame_id = self._frame_id
+                self._dashboard_pub.publish(dashboard_msg)
+                self._last_dashboard_pub_time = now
 
-        if self._rgb_buffer is None or self._rgb_buffer.shape != frame.shape:
-            self._rgb_buffer = np.empty_like(frame)
-        cv2.cvtColor(frame, cv2.COLOR_BGR2RGB, dst=self._rgb_buffer)
-
-        msg = self._bridge.cv2_to_imgmsg(self._rgb_buffer, encoding="rgb8")
+        msg = self._bridge.cv2_to_imgmsg(frame, encoding="bgr8")
         msg.header.stamp = stamp
         msg.header.frame_id = self._frame_id
         self._image_pub.publish(msg)
+        self._last_published_frame_id = frame_id
 
         self._frame_counter += 1
         self._publish_fps_if_due()
@@ -363,9 +384,13 @@ class CameraCaptureNode(Node):
 
     def destroy_node(self):
         self._stop_event.set()
+        self._new_frame_event.set()
 
         if self._thread is not None and self._thread.is_alive():
             self._thread.join(timeout=2.0)
+
+        if self._publisher_thread is not None and self._publisher_thread.is_alive():
+            self._publisher_thread.join(timeout=2.0)
 
         if self._cap is not None:
             try:

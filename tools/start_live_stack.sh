@@ -122,16 +122,23 @@ Usage: start_live_stack.sh [options]
 
 Options:
   --tracker <sort|ocsort|bytetrack>  Tracker backend (default: sort)
-    --tracker-profile-off               Disable tracker profiling instrumentation
-    --tracker-profile-log-every <N>     Log tracker profile every N frames (default: 1)
+    --tracker-profile-off               Disable tracker profiling instrumentation (default: already off)
+    --tracker-profile-log-every <N>     Log tracker profile every N frames (default: 30)
     --tracker-profile-serialize-every <N>
-                                                                            Serialize sample every N frames (default: 10, 0 disables)
+                                                                            Serialize sample every N frames (default: 0 disabled)
         --tracks-off                         Disable /tracks publishing from tracker
         --timing-off                         Disable /timing publishing from inference client
-    --camera-width <N>                 Camera publish width passed to camera_bringup (default: 1920)
-    --camera-height <N>                Camera publish height passed to camera_bringup (default: 1080)
-    --infer-queue-size <N>             Inference client frame queue size (default: 1)
+    --camera-width <N>                 Camera publish width passed to camera_bringup (default: 1280)
+    --camera-height <N>                Camera publish height passed to camera_bringup (default: 720)
+    --camera-fps <N>                   Camera publish fps passed to camera_bringup (default: 30)
+    --dashboard-fps <N>                Dashboard image publish fps (default: 30)
+    --camera-no-flip                   Disable camera frame flip
+    --infer-queue-size <N>             Inference client frame queue size (default: 2)
     --infer-workers <N>                Inference client worker threads (default: 2)
+    --infer-timeout-ms <N>             Inference ZMQ request timeout in ms (default: 200)
+    --infer-retries <N>                Inference ZMQ retries after timeout/error (default: 2)
+    --infer-print-every <N>            Inference periodic stats log interval in frames (default: 240)
+    --infer-timeout-log-every <N>      Inference timeout log interval in events (default: 20)
   --no-dashboard                     Disable dashboard bridge
     --no-tracker                       Do not start tracker node
     --no-target                        Do not start target selector node
@@ -144,17 +151,24 @@ EOF
 }
 
 TRACKER_TYPE="sort"
-TRACKER_PROFILE_ENABLED=1
-TRACKER_PROFILE_LOG_EVERY_N=1
-TRACKER_PROFILE_SERIALIZE_EVERY_N=10
+TRACKER_PROFILE_ENABLED=0
+TRACKER_PROFILE_LOG_EVERY_N=30
+TRACKER_PROFILE_SERIALIZE_EVERY_N=0
 TRACKER_PROFILE_PUBLISH_DETAILS=1
 TRACKER_PROFILE_GC_PROBE=1
 TRACKER_PUBLISH_TRACKS_BOOL="true"
 INFER_PUBLISH_TIMING_BOOL="true"
-CAMERA_WIDTH=1920
-CAMERA_HEIGHT=1080
-INFER_QUEUE_SIZE=1
+CAMERA_WIDTH=1280
+CAMERA_HEIGHT=720
+CAMERA_FPS=30.0
+CAMERA_DASHBOARD_FPS=30.0
+CAMERA_FLIP_BOOL="true"
+INFER_QUEUE_SIZE=2
 INFER_WORKERS=2
+INFER_TIMEOUT_MS=200
+INFER_RETRIES=2
+INFER_PRINT_EVERY=240
+INFER_TIMEOUT_LOG_EVERY=20
 ENABLE_DASHBOARD_BRIDGE=1
 ENABLE_TRACKER=1
 ENABLE_TARGET_SELECTOR=1
@@ -227,6 +241,28 @@ while [[ $# -gt 0 ]]; do
             CAMERA_HEIGHT="$2"
             shift 2
             ;;
+        --camera-fps)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-fps requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_FPS="$2"
+            shift 2
+            ;;
+        --dashboard-fps)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --dashboard-fps requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_DASHBOARD_FPS="$2"
+            shift 2
+            ;;
+        --camera-no-flip)
+            CAMERA_FLIP_BOOL="false"
+            shift
+            ;;
         --infer-queue-size)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --infer-queue-size requires a value"
@@ -243,6 +279,42 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             INFER_WORKERS="$2"
+            shift 2
+            ;;
+        --infer-timeout-ms)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --infer-timeout-ms requires a value"
+                print_usage
+                exit 1
+            fi
+            INFER_TIMEOUT_MS="$2"
+            shift 2
+            ;;
+        --infer-retries)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --infer-retries requires a value"
+                print_usage
+                exit 1
+            fi
+            INFER_RETRIES="$2"
+            shift 2
+            ;;
+        --infer-print-every)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --infer-print-every requires a value"
+                print_usage
+                exit 1
+            fi
+            INFER_PRINT_EVERY="$2"
+            shift 2
+            ;;
+        --infer-timeout-log-every)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --infer-timeout-log-every requires a value"
+                print_usage
+                exit 1
+            fi
+            INFER_TIMEOUT_LOG_EVERY="$2"
             shift 2
             ;;
         --no-tracker)
@@ -315,8 +387,33 @@ if ! [[ "$CAMERA_HEIGHT" =~ ^[0-9]+$ ]] || [[ "$CAMERA_HEIGHT" -lt 1 ]]; then
     exit 1
 fi
 
+if ! [[ "$CAMERA_DASHBOARD_FPS" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    echo "[error] --dashboard-fps must be a positive number"
+    exit 1
+fi
+
 if ! [[ "$INFER_WORKERS" =~ ^[0-9]+$ ]] || [[ "$INFER_WORKERS" -lt 1 ]]; then
     echo "[error] --infer-workers must be a positive integer"
+    exit 1
+fi
+
+if ! [[ "$INFER_TIMEOUT_MS" =~ ^[0-9]+$ ]] || [[ "$INFER_TIMEOUT_MS" -lt 1 ]]; then
+    echo "[error] --infer-timeout-ms must be a positive integer"
+    exit 1
+fi
+
+if ! [[ "$INFER_RETRIES" =~ ^[0-9]+$ ]]; then
+    echo "[error] --infer-retries must be a non-negative integer"
+    exit 1
+fi
+
+if ! [[ "$INFER_PRINT_EVERY" =~ ^[0-9]+$ ]]; then
+    echo "[error] --infer-print-every must be a non-negative integer"
+    exit 1
+fi
+
+if ! [[ "$INFER_TIMEOUT_LOG_EVERY" =~ ^[0-9]+$ ]]; then
+    echo "[error] --infer-timeout-log-every must be a non-negative integer"
     exit 1
 fi
 
@@ -411,8 +508,13 @@ else
 fi
 echo "[info] inference publish_timing: $INFER_PUBLISH_TIMING_BOOL"
 echo "[info] camera publish size: ${CAMERA_WIDTH}x${CAMERA_HEIGHT}"
+echo "[info] dashboard fps: $CAMERA_DASHBOARD_FPS"
 echo "[info] inference queue_size: $INFER_QUEUE_SIZE"
 echo "[info] inference workers: $INFER_WORKERS"
+echo "[info] inference timeout ms: $INFER_TIMEOUT_MS"
+echo "[info] inference retries: $INFER_RETRIES"
+echo "[info] inference print every: $INFER_PRINT_EVERY"
+echo "[info] inference timeout log every: $INFER_TIMEOUT_LOG_EVERY"
 if [[ "$ENABLE_TARGET_SELECTOR" -eq 1 ]]; then
     echo "[info] target selector: enabled"
 else
@@ -493,8 +595,22 @@ CAMERA_ARGS=()
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 0 ]]; then
     CAMERA_ARGS+=("publish_dashboard_topic:=false")
 fi
+
+# rclpy expects camera fps launch parameter as DOUBLE; normalize integer input to float.
+if [[ "$CAMERA_FPS" =~ ^[0-9]+$ ]]; then
+    CAMERA_FPS="${CAMERA_FPS}.0"
+fi
+
+# rclpy expects dashboard_fps launch parameter as DOUBLE; normalize integer input to float.
+if [[ "$CAMERA_DASHBOARD_FPS" =~ ^[0-9]+$ ]]; then
+    CAMERA_DASHBOARD_FPS="${CAMERA_DASHBOARD_FPS}.0"
+fi
+
 CAMERA_ARGS+=("width:=$CAMERA_WIDTH")
 CAMERA_ARGS+=("height:=$CAMERA_HEIGHT")
+CAMERA_ARGS+=("fps:=$CAMERA_FPS")
+CAMERA_ARGS+=("dashboard_fps:=$CAMERA_DASHBOARD_FPS")
+CAMERA_ARGS+=("flip_image:=$CAMERA_FLIP_BOOL")
 
 start_ros_bg camera ros2 launch thesis_bringup camera_bringup.launch.py "${CAMERA_ARGS[@]}"
 sleep 2
@@ -508,6 +624,10 @@ start_ros_bg inference ros2 run thesis_inference_client inference_client_node --
     -p addr:=tcp://127.0.0.1:5556 \
     -p queue_size:=$INFER_QUEUE_SIZE \
     -p num_workers:=$INFER_WORKERS \
+    -p request_timeout_ms:=$INFER_TIMEOUT_MS \
+    -p request_retries:=$INFER_RETRIES \
+    -p print_every:=$INFER_PRINT_EVERY \
+    -p timeout_log_every:=$INFER_TIMEOUT_LOG_EVERY \
     -p img_w:=640 \
     -p img_h:=640 \
     -p label:=person \
@@ -594,7 +714,7 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     fi
 fi
 
-VIDEO_URL="http://${PI_IP}:8080/stream?topic=/camera/dashboard&type=mjpeg"
+VIDEO_URL="http://${PI_IP}:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data"
 WS_URL="ws://${PI_IP}:8765"
 
 echo "[done] live stack started"

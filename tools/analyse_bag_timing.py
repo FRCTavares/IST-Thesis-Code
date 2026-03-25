@@ -4,11 +4,11 @@ Offline bag timing analysis for thesis ROS 2 slice.
 
 Reads a rosbag2 directory (MCAP expected) and:
 - Defines base window as [first /timing msg, last /timing msg] using bag timestamps.
-- Computes stats for /timing fields:
+- Computes stats for canonical /timing fields:
     mean, p50, p95, p99, min, max for:
-        lat_ms, recv_ms, json_ms, track_ms, loop_ms, pub_dt_ms
-    where explicit fields are preferred when present:
-        lat_ms <- e2e_det_ms, recv_ms <- zmq_roundtrip_ms, json_ms <- decode_ms
+        pre_ms, zmq_roundtrip_ms, infer_ms, e2e_det_ms, pub_dt_ms
+    where legacy alias fallback is read-only:
+        e2e_det_ms <- lat_ms, zmq_roundtrip_ms <- recv_ms
 - Computes achieved Hz for topics using counts within the base window.
 - Computes "active-only" window by excluding restart gaps using pub_dt_ms threshold:
     keep samples with pub_dt_ms <= gap-ms
@@ -19,8 +19,8 @@ Reads a rosbag2 directory (MCAP expected) and:
     - reads track_ms samples inside active segments
     - reports stats + active-only Hz for /timing_tracker
 - Saves figures under --figdir:
-    lat_ms_hist.png + lat_ms_cdf.png
-    loop_ms_hist.png + loop_ms_cdf.png
+    e2e_det_ms_hist.png + e2e_det_ms_cdf.png
+    pub_dt_ms_hist.png + pub_dt_ms_cdf.png
   Optional:
     pub_dt_ms_timeseries.png (enabled with --plot-timeseries)
     track_ms_hist.png + track_ms_cdf.png (if /timing_tracker present)
@@ -34,6 +34,8 @@ import math
 import os
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
+
+from timing_contract import candidates_for
 
 
 def _percentile(sorted_vals: List[float], q: float) -> float:
@@ -133,14 +135,12 @@ def _read_bag_timing_and_counts(
 
     timing_msg_type = get_message(type_map[timing_topic])
 
-    # Canonical analysis keys keep report compatibility while preferring explicit fields.
     field_candidates: Dict[str, List[str]] = {
-        "lat_ms": ["e2e_det_ms", "lat_ms"],
-        "recv_ms": ["zmq_roundtrip_ms", "recv_ms"],
-        "json_ms": ["decode_ms", "json_ms"],
-        "track_ms": ["track_ms"],
-        "loop_ms": ["loop_ms"],
-        "pub_dt_ms": ["pub_dt_ms"],
+        "pre_ms": candidates_for("pre_ms"),
+        "zmq_roundtrip_ms": candidates_for("zmq_roundtrip_ms"),
+        "infer_ms": candidates_for("infer_ms"),
+        "e2e_det_ms": candidates_for("e2e_det_ms"),
+        "pub_dt_ms": candidates_for("pub_dt_ms"),
     }
     timing_vals: Dict[str, List[float]] = {k: [] for k in field_candidates}
     timing_ts_ns: List[int] = []
@@ -191,7 +191,6 @@ def _save_plots(
     timing_vals: Dict[str, List[float]],
     timing_ts_ns: List[int],
     plot_timeseries: bool,
-    prefer_loop_field: str = "loop_ms",
 ):
     import matplotlib.pyplot as plt
 
@@ -218,12 +217,11 @@ def _save_plots(
         plt.savefig(os.path.join(figdir, f"{base}_cdf.png"), dpi=200)
         plt.close()
 
-    if timing_vals.get("lat_ms"):
-        save_hist_and_cdf(timing_vals["lat_ms"], "lat_ms", "lat_ms (ms)")
+    if timing_vals.get("e2e_det_ms"):
+        save_hist_and_cdf(timing_vals["e2e_det_ms"], "e2e_det_ms", "e2e_det_ms (ms)")
 
-    loop_key = prefer_loop_field if timing_vals.get(prefer_loop_field) else "pub_dt_ms"
-    if timing_vals.get(loop_key):
-        save_hist_and_cdf(timing_vals[loop_key], loop_key, f"{loop_key} (ms)")
+    if timing_vals.get("pub_dt_ms"):
+        save_hist_and_cdf(timing_vals["pub_dt_ms"], "pub_dt_ms", "pub_dt_ms (ms)")
 
     if plot_timeseries and timing_vals.get("pub_dt_ms") and timing_ts_ns:
         t0 = timing_ts_ns[0]
@@ -284,24 +282,25 @@ def _count_topics_in_segments(
     return counts
 
 
-def _read_track_ms_in_segments(
+def _read_metric_in_segments(
     bag_dir: str,
-    timing_tracker_topic: str,
+    topic_name: str,
+    field_name: str,
     segments_ns: List[Tuple[int, int]],
     type_map: Dict[str, str],
     storage_id: str = "",
 ) -> Tuple[List[float], List[int]]:
-    """Read track_ms from timing_tracker_topic inside union of segments."""
+    """Read one numeric field from topic_name inside union of segments."""
     from rosbag2_py import SequentialReader, StorageOptions, ConverterOptions
     from rclpy.serialization import deserialize_message
     from rosidl_runtime_py.utilities import get_message
 
     if not segments_ns:
         return [], []
-    if timing_tracker_topic not in type_map:
+    if topic_name not in type_map:
         return [], []
 
-    msg_type = get_message(type_map[timing_tracker_topic])
+    msg_type = get_message(type_map[topic_name])
 
     reader = SequentialReader()
     storage_options = StorageOptions(uri=bag_dir, storage_id=storage_id)
@@ -316,7 +315,7 @@ def _read_track_ms_in_segments(
 
     while reader.has_next() and seg_i < len(segments_ns):
         topic, data, t_ns = reader.read_next()
-        if topic != timing_tracker_topic:
+        if topic != topic_name:
             continue
 
         t_ns = int(t_ns)
@@ -331,8 +330,8 @@ def _read_track_ms_in_segments(
 
         if seg_start <= t_ns <= seg_end:
             m = deserialize_message(data, msg_type)
-            if hasattr(m, "track_ms"):
-                vals.append(float(getattr(m, "track_ms")))
+            if hasattr(m, field_name):
+                vals.append(float(getattr(m, field_name)))
                 ts.append(t_ns)
 
     return vals, ts
@@ -355,6 +354,9 @@ def _write_markdown(
     tracker_stats: Optional[FieldStats] = None,
     tracker_hz: Optional[float] = None,
     timing_tracker_topic: Optional[str] = None,
+    target_stats: Optional[FieldStats] = None,
+    target_hz: Optional[float] = None,
+    timing_target_topic: Optional[str] = None,
     gap_count: Optional[int] = None,
     gap_removed_s: Optional[float] = None,
 ):
@@ -378,7 +380,7 @@ def _write_markdown(
     lines.append("## Per-field stats (/timing)\n")
     lines.append("| field | n | mean | p50 | p95 | p99 | min | max |\n")
     lines.append("|---|---:|---:|---:|---:|---:|---:|---:|\n")
-    for field in ["lat_ms", "recv_ms", "json_ms", "track_ms", "loop_ms", "pub_dt_ms"]:
+    for field in ["pre_ms", "zmq_roundtrip_ms", "infer_ms", "e2e_det_ms", "pub_dt_ms"]:
         st = timing_stats.get(field, DEFAULT_STATS)
         lines.append(
             f"| {field} | {st.n} | {_fmt(st.mean)} | {_fmt(st.p50)} | {_fmt(st.p95)} | {_fmt(st.p99)} | {_fmt(st.vmin)} | {_fmt(st.vmax)} |\n"
@@ -424,7 +426,7 @@ def _write_markdown(
         lines.append("\n### Per-field stats (/timing), active-only\n")
         lines.append("| field | n | mean | p50 | p95 | p99 | min | max |\n")
         lines.append("|---|---:|---:|---:|---:|---:|---:|---:|\n")
-        for field in ["lat_ms", "recv_ms", "json_ms", "track_ms", "loop_ms", "pub_dt_ms"]:
+        for field in ["pre_ms", "zmq_roundtrip_ms", "infer_ms", "e2e_det_ms", "pub_dt_ms"]:
             st = timing_stats_active.get(field, DEFAULT_STATS)
             lines.append(
                 f"| {field} | {st.n} | {_fmt(st.mean)} | {_fmt(st.p50)} | {_fmt(st.p95)} | {_fmt(st.p99)} | {_fmt(st.vmin)} | {_fmt(st.vmax)} |\n"
@@ -454,6 +456,21 @@ def _write_markdown(
         if tracker_hz is not None:
             lines.append(f"\nActive-only Hz (tracker timing): `{_fmt(tracker_hz)}`\n")
 
+    if target_stats is not None:
+        lines.append("\n## Target end-to-end runtime\n")
+        if timing_target_topic:
+            lines.append(f"Topic: `{timing_target_topic}` (field: `e2e_target_ms`)\n")
+        lines.append("| metric | value |\n")
+        lines.append("|---|---:|\n")
+        lines.append(f"| n | {target_stats.n} |\n")
+        lines.append(f"| mean (ms) | {_fmt(target_stats.mean)} |\n")
+        lines.append(f"| p50 (ms) | {_fmt(target_stats.p50)} |\n")
+        lines.append(f"| p95 (ms) | {_fmt(target_stats.p95)} |\n")
+        lines.append(f"| p99 (ms) | {_fmt(target_stats.p99)} |\n")
+        lines.append(f"| max (ms) | {_fmt(target_stats.vmax)} |\n")
+        if target_hz is not None:
+            lines.append(f"\nActive-only Hz (target timing): `{_fmt(target_hz)}`\n")
+
     if figures_written:
         lines.append("\n## Figures\n")
         for fpath in figures_written:
@@ -476,6 +493,11 @@ def main():
         "--timing-tracker-topic",
         default="/timing_tracker",
         help="Topic publishing tracker runtime Timing messages (track_ms).",
+    )
+    ap.add_argument(
+        "--timing-target-topic",
+        default="/timing_target",
+        help="Topic publishing target timing Timing messages (e2e_target_ms).",
     )
     ap.add_argument("--plot-timeseries", action="store_true", help="Also save pub_dt_ms time series plot")
     ap.add_argument(
@@ -587,9 +609,18 @@ def main():
         )
 
     # tracker runtime: read track_ms from /timing_tracker inside active segments
-    track_ms_vals, _track_ts = _read_track_ms_in_segments(
+    track_ms_vals, _track_ts = _read_metric_in_segments(
         bag_dir=bag_dir,
-        timing_tracker_topic=args.timing_tracker_topic,
+        topic_name=args.timing_tracker_topic,
+        field_name="track_ms",
+        segments_ns=active_segments_ns if active_segments_ns else [],
+        type_map=type_map,
+        storage_id="",
+    )
+    target_e2e_vals, _target_ts = _read_metric_in_segments(
+        bag_dir=bag_dir,
+        topic_name=args.timing_target_topic,
+        field_name="e2e_target_ms",
         segments_ns=active_segments_ns if active_segments_ns else [],
         type_map=type_map,
         storage_id="",
@@ -598,6 +629,12 @@ def main():
     tracker_hz = (
         (len(track_ms_vals) / active_duration_s)
         if (track_ms_vals and not math.isnan(active_duration_s) and active_duration_s > 0)
+        else float("nan")
+    )
+    target_stats = _compute_stats(target_e2e_vals) if target_e2e_vals else None
+    target_hz = (
+        (len(target_e2e_vals) / active_duration_s)
+        if (target_e2e_vals and not math.isnan(active_duration_s) and active_duration_s > 0)
         else float("nan")
     )
 
@@ -611,14 +648,13 @@ def main():
         timing_vals=timing_vals,
         timing_ts_ns=timing_ts_ns,
         plot_timeseries=bool(args.plot_timeseries),
-        prefer_loop_field="loop_ms",
     )
 
     figures_written = [
-        os.path.join(figdir, "lat_ms_hist.png"),
-        os.path.join(figdir, "lat_ms_cdf.png"),
-        os.path.join(figdir, "loop_ms_hist.png"),
-        os.path.join(figdir, "loop_ms_cdf.png"),
+        os.path.join(figdir, "e2e_det_ms_hist.png"),
+        os.path.join(figdir, "e2e_det_ms_cdf.png"),
+        os.path.join(figdir, "pub_dt_ms_hist.png"),
+        os.path.join(figdir, "pub_dt_ms_cdf.png"),
     ]
     if args.plot_timeseries:
         figures_written.append(os.path.join(figdir, "pub_dt_ms_timeseries.png"))
@@ -645,6 +681,9 @@ def main():
         tracker_stats=tracker_stats,
         tracker_hz=tracker_hz,
         timing_tracker_topic=args.timing_tracker_topic if track_ms_vals else None,
+        target_stats=target_stats,
+        target_hz=target_hz,
+        timing_target_topic=args.timing_target_topic if target_e2e_vals else None,
     )
 
     print(f"Wrote: {os.path.abspath(out_path)}")

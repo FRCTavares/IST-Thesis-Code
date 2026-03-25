@@ -127,8 +127,19 @@ ros2 run web_video_server web_video_server --ros-args -p port:=8080
 ```
 
 Dashboard endpoints:
-- Video: `http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg`
+- Video: `http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data`
 - Telemetry: `ws://<PI_IP>:8765`
+
+### Dashboard troubleshooting (2026-03-25 fixes)
+
+- Symptom: dashboard video pane is blank.
+  - Cause: QoS mismatch between `web_video_server` default subscriber profile and `/camera/dashboard` publisher.
+  - Fix: use `qos_profile=sensor_data` in MJPEG stream URL (included above and in `tools/start_live_stack.sh`).
+
+- Symptom: detections visible but boxes are shifted/scaled incorrectly.
+  - Cause: dashboard bridge normalization basis not matching detection coordinate basis.
+  - Fix: keep dashboard bridge `img_w/img_h` aligned to inference bbox basis (`640x640` in current stack).
+  - Current default launch path in `tools/start_live_stack.sh` already sets this correctly.
 
 ### Record live camera bag (lean mode)
 
@@ -198,6 +209,13 @@ Override the date if re-running an old bag:
 
 Reads `/timing` (and `/timing_tracker` if present) from a raw or live bag.
 
+Canonical timing outputs are focused on:
+- `/timing`: `pre_ms`, `zmq_roundtrip_ms`, `infer_ms`, `e2e_det_ms`, `pub_dt_ms`
+- `/timing_tracker`: `track_ms` (if present)
+- `/timing_target`: `e2e_target_ms` (if present)
+
+Legacy aliases (`lat_ms`, `recv_ms`, `json_ms`, `loop_ms`) are accepted only as read fallback for historical data.
+
 ```bash
 python3 tools/analyse_bag_timing.py \
   bags/raw/2026-02-25__slice__primary
@@ -210,7 +228,18 @@ python3 tools/analyse_bag_timing.py \
 - `reports/timing/<bag>__timing.md`
 - `figures/timing/<bag>/` (PNG plots)
 
+Canonical figure names from timing analysis include:
+- `e2e_det_ms_hist.png`, `e2e_det_ms_cdf.png`
+- `pub_dt_ms_hist.png`, `pub_dt_ms_cdf.png`
+
 **Note:** `/timing_tracker` is profiling-only and will not be present in lean operational bags.
+
+Validate canonical keys in generated reports:
+```bash
+python3 tools/validate_canonical_metrics.py \
+  --json reports/timing/live_stats.json \
+  --markdown reports/timing/<bag>__timing.md
+```
 
 ---
 
@@ -366,7 +395,7 @@ Keep fixed in both A and B:
 
 Compare these fields over matched windows:
 - FPS (`/detections` + sent-delta/window from `inference.log`)
-- `lat_ms`
+- `e2e_det_ms`
 - `pre_ms`
 - `resize_ms`
 - `pub_dt_p50_ms`

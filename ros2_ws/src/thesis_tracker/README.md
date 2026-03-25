@@ -2,6 +2,11 @@
 
 Multi-object tracking node for thesis experiments.
 
+## Documentation sync (2026-03-25)
+
+Dashboard stream QoS and overlay fixes were applied outside this package.
+Tracker ROS contracts documented below remain unchanged.
+
 ## ROS Interface Contract
 
 ### Subscribes

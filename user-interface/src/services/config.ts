@@ -9,7 +9,7 @@ export const dashboardConfig = {
     import.meta.env.VITE_DASHBOARD_WS_URL ??
       `ws://${window.location.hostname || "127.0.0.1"}:8765`,
   ),
-  videoUrl: `http://${window.location.hostname || "127.0.0.1"}:8080/stream?topic=/camera/dashboard&type=mjpeg`,
+  videoUrl: `http://${window.location.hostname || "127.0.0.1"}:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data`,
 };
 
 function parseMode(input: string): DashboardDataMode {

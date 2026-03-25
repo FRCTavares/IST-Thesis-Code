@@ -342,10 +342,7 @@ class TrackerNode(Node):
         # tooling can consume one timing stream without extra message types.
         if self.profiling_publish_details:
             tmsg.ros_wait_ms = float(queue_delay_ms)
-            tmsg.target_ms = profiler.ms("per_track_loop")
-            tmsg.recv_ms = profiler.ms("build_msg")
-            tmsg.json_ms = profiler.ms("publish_tracks")
-            tmsg.loop_ms = float(t_track_cb_end_ns - t_track_cb_start_ns) / 1e6
+            # Keep detailed non-canonical profiling local to logs only.
 
         self.pub_timing.publish(tmsg)
 

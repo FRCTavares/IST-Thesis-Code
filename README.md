@@ -32,6 +32,12 @@ Current next controlled experiment:
 - B: direct `640x640` camera publish + no client resize
 - Keep all other settings fixed (see throughput workflow in [RUNBOOK.md](RUNBOOK.md))
 
+### Live stack status update (2026-03-25)
+
+- Dashboard MJPEG stream now uses sensor-data QoS compatibility (`qos_profile=sensor_data`) to avoid RELIABILITY mismatches with `/camera/dashboard` publishers.
+- Dashboard box normalization is tied to the inference frame basis (`640x640`) via dashboard bridge `img_w/img_h`, matching detection bbox coordinates from the inference client.
+- If dashboard stream or overlays look wrong after updates, restart the full live stack so bridge/video nodes pick up the latest parameters.
+
 ---
 
 ## Folder map

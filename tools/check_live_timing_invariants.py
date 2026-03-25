@@ -23,30 +23,14 @@ from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 
 from thesis_msgs.msg import Timing
 
+from timing_contract import resolve_metric, topic_fields
 
-MS_FIELDS = [
-    "ros_wait_ms",
-    "pre_ms",
-    "zmq_req_send_ms",
-    "zmq_wait_reply_ms",
-    "zmq_roundtrip_ms",
-    "decode_ms",
-    "det_pub_ms",
-    "container_unpack_ms",
-    "container_queue_ms",
-    "infer_ms",
-    "post_ms",
-    "track_ms",
-    "target_ms",
-    "e2e_det_ms",
-    "e2e_target_ms",
-    "sensor_to_target_ms",
-    "pub_dt_ms",
-    "lat_ms",
-    "recv_ms",
-    "json_ms",
-    "loop_ms",
-]
+
+TOPIC_METRIC_FIELDS = {
+    "/timing": list(topic_fields("/timing")),
+    "/timing_tracker": list(topic_fields("/timing_tracker")),
+    "/timing_target": list(topic_fields("/timing_target")),
+}
 
 NS_FIELDS = [
     "src_stamp_ns",
@@ -76,26 +60,6 @@ NS_FIELDS = [
     "pts_ns",
     "t_pub_ns",
 ]
-
-DERIVED_MS_FIELDS = [
-    "ros_wait_ms",
-    "pre_ms",
-    "zmq_req_send_ms",
-    "zmq_wait_reply_ms",
-    "zmq_roundtrip_ms",
-    "decode_ms",
-    "det_pub_ms",
-    "container_unpack_ms",
-    "container_queue_ms",
-    "infer_ms",
-    "post_ms",
-    "track_ms",
-    "target_ms",
-    "e2e_det_ms",
-    "e2e_target_ms",
-    "sensor_to_target_ms",
-]
-
 
 @dataclass
 class InvariantStat:
@@ -178,25 +142,25 @@ class TimingInvariantNode(Node):
             if int(v) == 0:
                 self.zero_counts[topic][field] += 1
 
-        for field in MS_FIELDS:
-            v = float(getattr(msg, field))
+        for field in TOPIC_METRIC_FIELDS.get(topic, []):
+            v, source_field = resolve_metric(msg, field)
             name = f"A.ms_finite.{topic}.{field}"
             self.inv.check(
                 name,
                 math.isfinite(v),
-                f"{topic}: {field}={_fmt_val(v)}",
+                f"{topic}: {field}({source_field})={_fmt_val(v)}",
             )
             if v == 0.0:
-                self.zero_counts[topic][field] += 1
+                self.zero_counts[topic][source_field] += 1
 
-        for field in DERIVED_MS_FIELDS:
-            v = float(getattr(msg, field))
+        for field in TOPIC_METRIC_FIELDS.get(topic, []):
+            v, source_field = resolve_metric(msg, field)
             if _is_populated_number(v):
                 name = f"A.derived_ms_non_negative.{topic}.{field}"
                 self.inv.check(
                     name,
                     v >= 0.0,
-                    f"{topic}: {field}={_fmt_val(v)}",
+                    f"{topic}: {field}({source_field})={_fmt_val(v)}",
                 )
 
         self.inv.check(

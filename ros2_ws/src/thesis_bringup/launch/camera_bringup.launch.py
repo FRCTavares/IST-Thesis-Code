@@ -9,15 +9,17 @@ def generate_launch_description() -> LaunchDescription:
     media_dev_arg = DeclareLaunchArgument("media_dev", default_value="/dev/media0")
     sensor_subdev_arg = DeclareLaunchArgument("sensor_subdev", default_value="/dev/v4l-subdev2")
 
-    width_arg = DeclareLaunchArgument("width", default_value="1920")
-    height_arg = DeclareLaunchArgument("height", default_value="1080")
-    fps_arg = DeclareLaunchArgument("fps", default_value="60.0")
+    width_arg = DeclareLaunchArgument("width", default_value="1280")
+    height_arg = DeclareLaunchArgument("height", default_value="720")
+    fps_arg = DeclareLaunchArgument("fps", default_value="30.0")
+    flip_image_arg = DeclareLaunchArgument("flip_image", default_value="true")
 
     frame_id_arg = DeclareLaunchArgument("frame_id", default_value="camera")
     fourcc_arg = DeclareLaunchArgument("fourcc", default_value="UYVY")
     dashboard_topic_arg = DeclareLaunchArgument("dashboard_topic", default_value="/camera/dashboard")
     dashboard_width_arg = DeclareLaunchArgument("dashboard_width", default_value="640")
     dashboard_height_arg = DeclareLaunchArgument("dashboard_height", default_value="360")
+    dashboard_fps_arg = DeclareLaunchArgument("dashboard_fps", default_value="30.0")
     publish_dashboard_topic_arg = DeclareLaunchArgument("publish_dashboard_topic", default_value="true")
     sensor_entity_arg = DeclareLaunchArgument("sensor_entity", default_value="tevs 11-0048")
     csi_entity_arg = DeclareLaunchArgument("csi_entity", default_value="csi2")
@@ -45,6 +47,7 @@ def generate_launch_description() -> LaunchDescription:
                 "dashboard_topic": LaunchConfiguration("dashboard_topic"),
                 "dashboard_width": LaunchConfiguration("dashboard_width"),
                 "dashboard_height": LaunchConfiguration("dashboard_height"),
+                "dashboard_fps": LaunchConfiguration("dashboard_fps"),
                 "publish_dashboard_topic": LaunchConfiguration("publish_dashboard_topic"),
                 "sensor_entity": LaunchConfiguration("sensor_entity"),
                 "csi_entity": LaunchConfiguration("csi_entity"),
@@ -53,6 +56,7 @@ def generate_launch_description() -> LaunchDescription:
                 "trigger_mode": LaunchConfiguration("trigger_mode"),
                 "command_delay_s": LaunchConfiguration("command_delay_s"),
                 "command_timeout_s": LaunchConfiguration("command_timeout_s"),
+                "flip_image": LaunchConfiguration("flip_image"),
             }
         ],
     )
@@ -70,6 +74,7 @@ def generate_launch_description() -> LaunchDescription:
             dashboard_topic_arg,
             dashboard_width_arg,
             dashboard_height_arg,
+            dashboard_fps_arg,
             publish_dashboard_topic_arg,
             sensor_entity_arg,
             csi_entity_arg,
@@ -78,6 +83,7 @@ def generate_launch_description() -> LaunchDescription:
             trigger_mode_arg,
             command_delay_arg,
             command_timeout_arg,
+            flip_image_arg,
             camera_capture,
         ]
     )

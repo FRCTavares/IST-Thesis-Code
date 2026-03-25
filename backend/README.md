@@ -10,3 +10,8 @@ Planned responsibilities:
 Current state:
 - The ROS dashboard bridge node remains in the ROS workspace.
 - The frontend in user-interface can run in `mock`, `offline`, or `backend` mode.
+
+Live integration notes (2026-03-25):
+- Active runtime bridge path is still ROS-native (`dashboard_bridge_node` + `web_video_server`), not a separate backend service yet.
+- MJPEG stream compatibility requires `qos_profile=sensor_data` when consuming `/camera/dashboard`.
+- Dashboard overlay geometry depends on bridge normalization dimensions matching inference detection coordinate basis (`640x640` in the current live stack).

@@ -77,6 +77,14 @@ The dashboard service adapters are prepared in:
 
 These files define the expected backend contract and include safe placeholder behavior so a running backend is not required during frontend development.
 
+## Live ROS dashboard notes (2026-03-25)
+
+- The dashboard video stream URL should include sensor-data QoS for compatibility with best-effort image publishers:
+  - `http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data`
+- Frontend default config now uses this URL pattern in `src/services/config.ts`.
+- Bounding boxes are rendered from normalized center/size values coming from dashboard telemetry.
+- Those normalized values depend on dashboard bridge `img_w/img_h` matching the detection bbox coordinate basis (currently inference size `640x640`).
+
 ## ROS integration path (planned)
 
 Target flow:

@@ -2,6 +2,11 @@
 
 Single tool for camera initialization and capture with configurable resolution.
 
+## Documentation sync (2026-03-25)
+
+This utility is independent from the dashboard bridge/web video path fixes made on 2026-03-25.
+No command or behavior changes were required here.
+
 ## Usage
 
 ### Basic capture (640x480):

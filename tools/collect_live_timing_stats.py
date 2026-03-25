@@ -26,22 +26,12 @@ from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 
 from thesis_msgs.msg import Timing
 
+from timing_contract import resolve_metric, topic_fields
 
-TIMING_FIELDS = [
-    "pre_ms",
-    "zmq_req_send_ms",
-    "zmq_wait_reply_ms",
-    "zmq_roundtrip_ms",
-    "decode_ms",
-    "container_unpack_ms",
-    "container_queue_ms",
-    "infer_ms",
-    "post_ms",
-    "e2e_det_ms",
-]
 
-TRACKER_FIELDS = ["track_ms"]
-TARGET_FIELDS = ["target_ms", "e2e_target_ms", "sensor_to_target_ms"]
+TIMING_FIELDS = list(topic_fields("/timing"))
+TRACKER_FIELDS = list(topic_fields("/timing_tracker"))
+TARGET_FIELDS = list(topic_fields("/timing_target"))
 
 
 @dataclass
@@ -110,7 +100,7 @@ class Collector(Node):
             self.frame_ids[topic].append(fid)
 
         for f in fields:
-            v = float(getattr(msg, f))
+            v, _source = resolve_metric(msg, f)
             if finite_non_negative(v):
                 self.samples[topic][f].append(v)
 

@@ -265,10 +265,7 @@ class DashboardBridgeNode(Node):
 
     def _on_timing(self, msg: Timing) -> None:
         with self._state_lock:
-            latency_ms = float(msg.e2e_det_ms)
-            if latency_ms <= 0.0:
-                latency_ms = float(msg.lat_ms)
-            self._state["latency_ms"] = latency_ms
+            self._state["latency_ms"] = float(msg.e2e_det_ms)
             self._dirty = True
 
     def _sample_system_metrics(self) -> None:

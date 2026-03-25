@@ -295,10 +295,15 @@ ros2 bag info bags/live_camera/2026-03-10__stability_10min
 ```bash
 cd ~/Desktop/Thesis-Code
 
-# Normal timing analysis (lat_ms, loop_ms, pub_dt_ms from /timing + track_ms from /timing_tracker)
+# Normal timing analysis (canonical fields from /timing + track_ms from /timing_tracker)
 python3 tools/analyse_bag_timing.py bags/live_camera/2026-03-10__stability_10min \
   --out reports/timing/W11_2026-03-10__stability_10min.md \
   --figdir figures/timing/
+
+# Validate canonical metric keys in generated outputs
+python3 tools/validate_canonical_metrics.py \
+  --json reports/timing/live_stats.json \
+  --markdown reports/timing/W11_2026-03-10__stability_10min.md
 
 # Gap-filtered analysis (exclude restarts, only active runs)
 python3 tools/analyse_bag_timing.py bags/raw/2026-02-25__slice__primary \
