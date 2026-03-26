@@ -85,7 +85,7 @@ Review and freeze the perception-to-control contract, then verify MAVROS message
 
 **Deliverables:**
 - `control_ref_node` message flow validated
-- Notes on setpoint contract and safety bounds: `docs/control_interface.md`
+- Notes on setpoint contract and safety bounds: `docs/control/control_interface.md`
 - List of remaining blockers before any flight-related test
 
 ---
@@ -210,7 +210,7 @@ Move first outdoor perception test to the next available day.
 3. **Discovered `/target` coordinate system**
    - `/target` currently uses **pixel coordinates**, not normalized [0,1]
    - `cx, cy, w, h` are in pixel space (0-640)
-   - Documented in `docs/control_interface.md`
+   - Documented in `docs/control/control_interface.md`
 
 4. **Implemented internal normalization**
    - Control node now normalizes internally: `cx_norm = cx / img_w`
@@ -240,7 +240,7 @@ ros2 run thesis_bringup control_ref_node --ros-args \
 **Deliverables completed:**
 - [x] `control_ref_node.py` created and working
 - [x] `/target` to control message flow validated
-- [x] `docs/control_interface.md` updated with pixel-space reality
+- [x] `docs/control/control_interface.md` updated with pixel-space reality
 - [x] Control signs validated (yaw and forward)
 - [x] Safety bounds and fail-safe zeroing working
 - [x] Slew limiting implemented
@@ -252,7 +252,7 @@ ros2 run thesis_bringup control_ref_node --ros-args \
 **Status:** Complete
 
 - [x] Created `docs/lean_operational_mode.md` with full frozen config
-- [x] Created `docs/control_interface.md` with perception-to-control contract
+- [x] Created `docs/control/control_interface.md` with perception-to-control contract
 - [x] Updated `RUNBOOK.md` with lean mode startup and recording commands
 - [x] Updated `README.md` with operational modes section and clarifications
 - [x] Fixed `/timing_tracker` marked as profiling-only everywhere
@@ -453,7 +453,7 @@ camera → inference → detections → tracker → tracks → target selector �
    - Choose MAVROS setpoint topic
    - Verify message format
    - Test ground-only message flow
-   - Document in `docs/control_interface.md`
+   - Document in `docs/control/control_interface.md`
 
 3. **Pre-flight safety validation (2 hours)**
    - Systematic loss-of-target testing

@@ -255,7 +255,7 @@ By end of Day 12, you should have:
 2. **Controller better frozen** ✅
    - [x] Validated indoor behaviour (6-min stable run)
    - [x] Known-good run command documented
-   - [x] MAVROS bridge frozen in `docs/control_interface.md`
+   - [x] MAVROS bridge frozen in `docs/control/control_interface.md`
 
 3. **Safe rehearsal path prepared** ⚠️ (optional for Day 13)
    - [ ] Replay or simulation ready (can defer if field-ready)

@@ -157,7 +157,7 @@ ros2 run thesis_bringup control_ref_node --ros-args \
 ## Documentation Updates
 
 ### Updated Documents
-- **Control interface:** `Written Logs/docs/control_interface.md`
+- **Control interface:** `Written Logs/docs/control/control_interface.md`
   - MAVROS integration details
   - Validated connection procedure
   - Safety procedures confirmed

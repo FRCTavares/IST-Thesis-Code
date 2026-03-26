@@ -31,7 +31,7 @@ Current startup path:
 
 ### Control Interface
 - **Control reference node:** `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/control_ref_node.py`
-- **Control interface specification:** `Written Logs/docs/control_interface.md`
+- **Control interface specification:** `Written Logs/docs/control/control_interface.md`
 
 **Status:** Complete ground-only version (Day 11)
 
