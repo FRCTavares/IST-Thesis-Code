@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Crosshair, Radar } from "lucide-react";
+import { Crosshair, Loader2 } from "lucide-react";
 import type { DashboardTelemetry } from "@/types/dashboard";
-import { fmt } from "@/features/dashboard/utils/metrics";
-import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { overlayStyle } from "@/components/dashboard/OverlayBox";
 
 interface VideoOverlayProps {
@@ -51,8 +49,7 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
   const videoRef = useRef<HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastTargetBoxRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
-  const lastTargetVisibleRef = useRef(false);
-  const [reacquired, setReacquired] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
   const detections = useMemo(() => telemetry?.detections ?? [], [telemetry]);
   const targetTrack = useMemo(() => {
@@ -61,18 +58,6 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
     }
     return telemetry.tracks.find((track) => track.id === telemetry.target) ?? null;
   }, [telemetry]);
-
-  useEffect(() => {
-    const visible = Boolean(targetTrack);
-    if (visible && !lastTargetVisibleRef.current) {
-      setReacquired(true);
-      const timer = window.setTimeout(() => setReacquired(false), 1500);
-      lastTargetVisibleRef.current = true;
-      return () => window.clearTimeout(timer);
-    }
-    lastTargetVisibleRef.current = visible;
-    return undefined;
-  }, [targetTrack]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -170,49 +155,32 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
     };
   }, [detections, targetTrack, telemetry?.target]);
 
-  const targetStatus = targetTrack ? "LOCKED" : telemetry?.target !== null && telemetry?.target !== undefined ? "LOST" : "IDLE";
-  const errorX = targetTrack ? targetTrack.x - 0.5 : null;
-  const errorY = targetTrack ? targetTrack.y - 0.5 : null;
-
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-slate-700/80 bg-slate-900">
-      <img ref={videoRef} className="h-full w-full object-contain" src={videoUrl} alt="Dashboard stream" />
+      <img
+        ref={videoRef}
+        className="h-full w-full object-contain"
+        style={{ visibility: videoLoaded ? 'visible' : 'hidden' }}
+        src={videoUrl}
+        alt="Dashboard stream"
+        onLoad={() => setVideoLoaded(true)}
+        onError={() => setVideoLoaded(false)}
+      />
       <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
 
-      <div className="pointer-events-none absolute left-2 top-2 flex flex-wrap gap-1.5">
-        <StatusBadge tone="info">FPS {fmt(telemetry?.video_fps ?? telemetry?.fps, 1)}</StatusBadge>
-        <StatusBadge tone={(telemetry?.latency_ms ?? 0) > 120 ? "warn" : "ok"}>LATENCY {fmt(telemetry?.latency_ms, 1, "ms")}</StatusBadge>
-        <StatusBadge tone={targetStatus === "LOCKED" ? "ok" : targetStatus === "LOST" ? "error" : "warn"}>
-          TARGET {targetStatus}
-        </StatusBadge>
-      </div>
+      {!videoLoaded && telemetry === null && (
+        <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2">
+          <Loader2 className="h-12 w-12 animate-spin text-sky-400" />
+          <div className="text-xs text-slate-400">Connecting...</div>
+        </div>
+      )}
 
-      <div className="pointer-events-none absolute right-2 top-2 rounded-md border border-slate-700/80 bg-slate-900/85 px-2 py-1 font-mono text-[11px] text-slate-300">
-        ex {fmt(errorX, 3)} | ey {fmt(errorY, 3)}
-      </div>
+      {videoLoaded && (
+        <div className="pointer-events-none absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-400/45 text-sky-300">
+          <Crosshair className="h-7 w-7" />
+        </div>
+      )}
 
-      <div className="pointer-events-none absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-400/45 text-sky-300">
-        <Crosshair className="h-7 w-7" />
-      </div>
-
-      <div className="pointer-events-none absolute bottom-2 left-2 right-2 grid grid-cols-2 gap-1.5 rounded-md border border-slate-700/80 bg-slate-900/88 p-2 font-mono text-[11px] text-slate-300 md:grid-cols-4">
-        <div>
-          <span className="text-slate-500">detections</span> {telemetry?.detections.length ?? 0}
-        </div>
-        <div>
-          <span className="text-slate-500">target</span> {telemetry?.target !== null && telemetry?.target !== undefined ? telemetry.target : "--"}
-        </div>
-        <div>
-          <span className="text-slate-500">lock</span>{" "}
-          <span className={targetStatus === "LOCKED" ? "text-emerald-300" : targetStatus === "LOST" ? "text-red-300" : "text-amber-300"}>
-            {targetStatus}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Radar className="h-3.5 w-3.5 text-sky-300" />
-          <span className="text-slate-500">reacquired</span> <span className={reacquired ? "text-emerald-300" : "text-slate-400"}>{reacquired ? "YES" : "NO"}</span>
-        </div>
-      </div>
     </div>
   );
 }

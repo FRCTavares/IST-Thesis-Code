@@ -1,7 +1,8 @@
 import { dashboardConfig } from "@/services/config";
-import type { DashboardControlResponse, DashboardModel } from "@/types/dashboard";
+import type { DashboardControlResponse, DashboardModel, DashboardTracker } from "@/types/dashboard";
 
 const VALID_MODELS = new Set<DashboardModel>(["yolov6n", "yolov8s", "yolov8m"]);
+const VALID_TRACKERS = new Set<DashboardTracker>(["sort", "ocsort", "bytetrack"]);
 
 export async function requestModelSwitch(model: DashboardModel): Promise<DashboardControlResponse> {
   if (!VALID_MODELS.has(model)) {
@@ -19,15 +20,19 @@ export async function requestModelSwitch(model: DashboardModel): Promise<Dashboa
   }
 }
 
-export async function requestReplay(): Promise<DashboardControlResponse> {
+export async function requestTrackerSwitch(tracker: DashboardTracker): Promise<DashboardControlResponse> {
+  if (!VALID_TRACKERS.has(tracker)) {
+    return { ok: false, error: "invalid tracker" };
+  }
+
   if (dashboardConfig.mode === "mock" || dashboardConfig.mode === "offline") {
-    return { ok: true, action: "replay" };
+    return { ok: true, requested_tracker: tracker };
   }
 
   try {
-    return await postJson<DashboardControlResponse>(`${dashboardConfig.apiBaseUrl}/api/replay`, {});
+    return await postJson<DashboardControlResponse>(`${dashboardConfig.apiBaseUrl}/api/tracker`, { tracker });
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "replay request failed" };
+    return { ok: false, error: error instanceof Error ? error.message : "tracker switch request failed" };
   }
 }
 

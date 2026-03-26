@@ -1,24 +1,49 @@
-import { Download, RefreshCw, Server } from "lucide-react";
+import { Activity, Download, Server, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PanelShell } from "@/components/dashboard/PanelShell";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
-import type { DashboardModel } from "@/types/dashboard";
+import type { DashboardModel, DashboardTracker } from "@/types/dashboard";
 
 interface ControlPanelProps {
   activeModel: DashboardModel;
-  onReplay: () => void;
+  activeTracker: DashboardTracker;
   onExport: () => void;
-  onModelSwitch: (model: DashboardModel) => void;
+  onModelSwitch: (model: DashboardModel) => Promise<void>;
+  onTrackerSwitch: (tracker: DashboardTracker) => Promise<void>;
+  isModelSwitching?: boolean;
+  isTrackerSwitching?: boolean;
   controlStatus: string;
 }
 
-export function ControlPanel({ activeModel, onReplay, onExport, onModelSwitch, controlStatus }: ControlPanelProps) {
+export function ControlPanel({
+  activeModel,
+  activeTracker,
+  onExport,
+  onModelSwitch,
+  onTrackerSwitch,
+  isModelSwitching = false,
+  isTrackerSwitching = false,
+  controlStatus,
+}: ControlPanelProps) {
   const models: DashboardModel[] = ["yolov6n", "yolov8s", "yolov8m"];
+  const trackers: DashboardTracker[] = ["sort", "ocsort", "bytetrack"];
+  const isBusy = isModelSwitching || isTrackerSwitching;
 
   return (
     <PanelShell title="Control Console" className="h-full">
       <div className="grid gap-3">
-        <div>
+        <div className="rounded-md border border-slate-700/80 bg-slate-900/45 p-2.5">
+          <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <span className="flex items-center gap-1.5"><Settings2 className="h-3.5 w-3.5" />Active Configuration</span>
+            <StatusBadge tone={isBusy ? "warn" : "ok"}>{isBusy ? "Applying" : "Ready"}</StatusBadge>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge tone="info">MODEL {activeModel.toUpperCase()}</StatusBadge>
+            <StatusBadge tone="info">TRACKER {activeTracker.toUpperCase()}</StatusBadge>
+          </div>
+        </div>
+
+        <div className="rounded-md border border-slate-700/80 bg-slate-900/45 p-2.5">
           <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Model</div>
           <div className="flex flex-wrap gap-2">
             {models.map((model) => (
@@ -26,21 +51,41 @@ export function ControlPanel({ activeModel, onReplay, onExport, onModelSwitch, c
                 key={model}
                 variant={activeModel === model ? "active" : "default"}
                 size="sm"
+                disabled={isBusy}
                 onClick={() => onModelSwitch(model)}
               >
                 {model.toUpperCase()}
               </Button>
             ))}
           </div>
+          <div className="mt-2 text-[10px] text-slate-500">
+            {isModelSwitching ? "Switching model and restarting detector..." : "Detector model switch (container restart)"}
+          </div>
         </div>
 
-        <div>
+        <div className="rounded-md border border-slate-700/80 bg-slate-900/45 p-2.5">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Tracker</div>
+          <div className="flex flex-wrap gap-2">
+            {trackers.map((tracker) => (
+              <Button
+                key={tracker}
+                variant={activeTracker === tracker ? "active" : "default"}
+                size="sm"
+                disabled={isBusy}
+                onClick={() => onTrackerSwitch(tracker)}
+              >
+                {tracker.toUpperCase()}
+              </Button>
+            ))}
+          </div>
+          <div className="mt-2 text-[10px] text-slate-500">
+            {isTrackerSwitching ? "Switching tracker backend..." : "Runtime tracker backend switch"}
+          </div>
+        </div>
+
+        <div className="rounded-md border border-slate-700/80 bg-slate-900/45 p-2.5">
           <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Actions</div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={onReplay}>
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-              Replay + Auto Log
-            </Button>
             <Button size="sm" onClick={onExport}>
               <Download className="mr-1.5 h-3.5 w-3.5" />
               Export Metrics CSV
@@ -49,7 +94,10 @@ export function ControlPanel({ activeModel, onReplay, onExport, onModelSwitch, c
         </div>
 
         <div className="rounded-md border border-slate-700/80 bg-slate-900/55 p-2.5">
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Control Status</div>
+          <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <Activity className="h-3.5 w-3.5" />
+            Control Status
+          </div>
           <div className="font-mono text-[11px] text-slate-300">{controlStatus}</div>
         </div>
 
@@ -60,9 +108,11 @@ export function ControlPanel({ activeModel, onReplay, onExport, onModelSwitch, c
           </div>
           <div className="flex flex-wrap gap-2">
             <StatusBadge tone="info">POST /api/model</StatusBadge>
-            <StatusBadge tone="info">POST /api/replay</StatusBadge>
           </div>
           <div className="mt-2 text-[10px] uppercase tracking-[0.14em] text-slate-500">WS telemetry: tracks / detections / target / fps / timing / system</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <StatusBadge tone="info">POST /api/tracker</StatusBadge>
+          </div>
         </div>
       </div>
     </PanelShell>

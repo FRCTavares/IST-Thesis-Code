@@ -8,6 +8,8 @@ from contextlib import contextmanager
 from typing import List, Tuple, Union
 
 import rclpy
+from rcl_interfaces.msg import SetParametersResult
+from rclpy.parameter import Parameter
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from rclpy.serialization import serialize_message
@@ -93,13 +95,22 @@ class TrackerNode(Node):
     
     def __init__(self) -> None:
         super().__init__("tracker_node")
+
+        self._supported_tracker_types = {"sort", "ocsort", "bytetrack"}
         
         # Declare tracker type parameter
         self.declare_parameter("tracker_type", "sort")
-        tracker_type = str(self.get_parameter("tracker_type").value)
+        tracker_type = str(self.get_parameter("tracker_type").value).strip().lower()
+        if tracker_type not in self._supported_tracker_types:
+            self.get_logger().warn(
+                f"Unsupported tracker_type '{tracker_type}', defaulting to 'sort'"
+            )
+            tracker_type = "sort"
         
         # Create the appropriate backend
         self.backend = self._create_backend(tracker_type)
+        self._tracker_type_current = tracker_type
+        self._param_callback_handle = self.add_on_set_parameters_callback(self._on_set_parameters)
         
         # Setup ROS communication
         qos = QoSProfile(
@@ -149,7 +160,7 @@ class TrackerNode(Node):
         
         self.get_logger().info(
             "Tracker node ready: "
-            f"type={tracker_type}, min_score={self.min_score}, "
+            f"type={self._tracker_type_current}, min_score={self.min_score}, "
             f"publish_tracks={self.publish_tracks}, "
             f"profiling_enabled={self.profiling_enabled}, "
             f"log_every_n={self.profiling_log_every_n}, "
@@ -158,6 +169,43 @@ class TrackerNode(Node):
             f"gc_probe={self.profiling_gc_probe}"
         )
 
+    def _declare_param_if_missing(self, name: str, default_value):
+        if self.has_parameter(name):
+            return self.get_parameter(name).value
+        return self.declare_parameter(name, default_value).value
+
+    def _on_set_parameters(self, parameters: List[Parameter]) -> SetParametersResult:
+        requested_tracker: str | None = None
+
+        for parameter in parameters:
+            if parameter.name == "tracker_type":
+                requested_tracker = str(parameter.value).strip().lower()
+
+        if requested_tracker is None:
+            return SetParametersResult(successful=True)
+
+        if requested_tracker not in self._supported_tracker_types:
+            return SetParametersResult(
+                successful=False,
+                reason=(
+                    f"unsupported tracker_type '{requested_tracker}', "
+                    "supported: sort, ocsort, bytetrack"
+                ),
+            )
+
+        if requested_tracker == self._tracker_type_current:
+            return SetParametersResult(successful=True)
+
+        try:
+            self.backend = self._create_backend(requested_tracker)
+            self.frame_context.clear()
+            self._tracker_type_current = requested_tracker
+            self.get_logger().info(f"Tracker backend switched at runtime: {requested_tracker}")
+            return SetParametersResult(successful=True)
+        except Exception as exc:
+            self.get_logger().error(f"Failed to switch tracker backend to '{requested_tracker}': {exc}")
+            return SetParametersResult(successful=False, reason=str(exc))
+
     def _on_gc_event(self, phase: str, _info: dict) -> None:
         if phase == "stop":
             self._gc_collections_seen += 1
@@ -165,57 +213,54 @@ class TrackerNode(Node):
     def _create_backend(self, tracker_type: str) -> TrackerBackendType:
         """Create tracker backend based on type."""
         if tracker_type == "sort":
-            self.declare_parameter("iou_threshold", 0.18)
-            self.declare_parameter("max_age", 4)
-            self.declare_parameter("min_hits", 3)
-            self.declare_parameter("centre_gate", 200.0)
-            self.declare_parameter("gate_x", -1.0)
-            self.declare_parameter("gate_y", -1.0)
-
-            gate_x = float(self.get_parameter("gate_x").value)
-            gate_y = float(self.get_parameter("gate_y").value)
+            iou_threshold = float(self._declare_param_if_missing("iou_threshold", 0.18))
+            max_age = int(self._declare_param_if_missing("max_age", 4))
+            min_hits = int(self._declare_param_if_missing("min_hits", 3))
+            centre_gate = float(self._declare_param_if_missing("centre_gate", 200.0))
+            gate_x = float(self._declare_param_if_missing("gate_x", -1.0))
+            gate_y = float(self._declare_param_if_missing("gate_y", -1.0))
             gate_x = None if gate_x <= 0.0 else gate_x
             gate_y = None if gate_y <= 0.0 else gate_y
             
             return SortBackend(
-                iou_threshold=float(self.get_parameter("iou_threshold").value),
-                max_age=int(self.get_parameter("max_age").value),
-                min_hits=int(self.get_parameter("min_hits").value),
-                centre_gate=float(self.get_parameter("centre_gate").value),
+                iou_threshold=iou_threshold,
+                max_age=max_age,
+                min_hits=min_hits,
+                centre_gate=centre_gate,
                 gate_x=gate_x,
                 gate_y=gate_y,
             )
         
         elif tracker_type == "ocsort":
-            self.declare_parameter("iou_threshold", 0.18)
-            self.declare_parameter("max_age", 4)
-            self.declare_parameter("min_hits", 3)
-            self.declare_parameter("centre_gate", 200.0)
-            self.declare_parameter("delta_t", 3)
-            self.declare_parameter("asso_threshold", 0.1)
+            iou_threshold = float(self._declare_param_if_missing("iou_threshold", 0.18))
+            max_age = int(self._declare_param_if_missing("max_age", 4))
+            min_hits = int(self._declare_param_if_missing("min_hits", 3))
+            centre_gate = float(self._declare_param_if_missing("centre_gate", 200.0))
+            delta_t = int(self._declare_param_if_missing("delta_t", 3))
+            asso_threshold = float(self._declare_param_if_missing("asso_threshold", 0.1))
             
             return OCSortBackend(
-                iou_threshold=float(self.get_parameter("iou_threshold").value),
-                max_age=int(self.get_parameter("max_age").value),
-                min_hits=int(self.get_parameter("min_hits").value),
-                centre_gate=float(self.get_parameter("centre_gate").value),
-                delta_t=int(self.get_parameter("delta_t").value),
-                asso_threshold=float(self.get_parameter("asso_threshold").value)
+                iou_threshold=iou_threshold,
+                max_age=max_age,
+                min_hits=min_hits,
+                centre_gate=centre_gate,
+                delta_t=delta_t,
+                asso_threshold=asso_threshold,
             )
         
         elif tracker_type == "bytetrack":
-            self.declare_parameter("track_thresh", 0.5)
-            self.declare_parameter("match_thresh", 0.8)
-            self.declare_parameter("track_buffer", 30)
-            self.declare_parameter("det_thresh", 0.2)
-            self.declare_parameter("second_match_thresh", 0.5)
+            track_thresh = float(self._declare_param_if_missing("track_thresh", 0.5))
+            match_thresh = float(self._declare_param_if_missing("match_thresh", 0.8))
+            track_buffer = int(self._declare_param_if_missing("track_buffer", 30))
+            det_thresh = float(self._declare_param_if_missing("det_thresh", 0.2))
+            second_match_thresh = float(self._declare_param_if_missing("second_match_thresh", 0.5))
             
             return ByteTrackBackend(
-                track_thresh=float(self.get_parameter("track_thresh").value),
-                match_thresh=float(self.get_parameter("match_thresh").value),
-                track_buffer=int(self.get_parameter("track_buffer").value),
-                det_thresh=float(self.get_parameter("det_thresh").value),
-                second_match_thresh=float(self.get_parameter("second_match_thresh").value)
+                track_thresh=track_thresh,
+                match_thresh=match_thresh,
+                track_buffer=track_buffer,
+                det_thresh=det_thresh,
+                second_match_thresh=second_match_thresh,
             )
         
         else:

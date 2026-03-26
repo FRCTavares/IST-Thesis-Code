@@ -13,6 +13,8 @@ from typing import Any
 
 import rclpy
 import websockets
+from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
+from rcl_interfaces.srv import SetParameters
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from std_msgs.msg import Float32
@@ -44,6 +46,7 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("detector_height", 640)
         self.declare_parameter("detector_fps", 30)
         self.declare_parameter("detector_label", "person")
+        self.declare_parameter("tracker_node_name", "tracker_node")
 
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._detections_topic = str(self.get_parameter("detections_topic").value)
@@ -65,12 +68,14 @@ class DashboardBridgeNode(Node):
         self._detector_height = int(self.get_parameter("detector_height").value)
         self._detector_fps = int(self.get_parameter("detector_fps").value)
         self._detector_label = str(self.get_parameter("detector_label").value)
+        self._tracker_node_name = str(self.get_parameter("tracker_node_name").value).strip() or "tracker_node"
 
         self._model_to_hef = {
             "yolov6n": "yolov6n_hailo8.hef",
             "yolov8s": "yolov8s.hef",
             "yolov8m": "yolov8m.hef",
         }
+        self._supported_trackers = {"sort", "ocsort", "bytetrack"}
 
         self._state_lock = threading.Lock()
         self._state: dict[str, Any] = {
@@ -96,6 +101,10 @@ class DashboardBridgeNode(Node):
         self._det_arrival_ns: deque[int] = deque(maxlen=240)
 
         self._stop_event = threading.Event()
+        self._tracker_set_params_client = self.create_client(
+            SetParameters,
+            f"/{self._tracker_node_name}/set_parameters",
+        )
 
         self._loop = asyncio.new_event_loop()
         self._server = None
@@ -175,6 +184,12 @@ class DashboardBridgeNode(Node):
                     self._send_json(200 if result.get("ok") else 500, result)
                     return
 
+                if self.path == "/api/tracker":
+                    tracker = str(payload.get("tracker", "")).strip().lower()
+                    result = node_ref._handle_tracker_switch(tracker)
+                    self._send_json(200 if result.get("ok") else 500, result)
+                    return
+
                 if self.path == "/api/replay":
                     self._send_json(200, {"ok": False, "error": "replay control not implemented in live mode"})
                     return
@@ -238,6 +253,54 @@ nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_
 
         self.get_logger().info(f"Model switch applied: {model} ({hef_name})")
         return {"ok": True, "requested_model": model}
+
+    def _handle_tracker_switch(self, tracker: str) -> dict[str, Any]:
+        if tracker not in self._supported_trackers:
+            return {
+                "ok": False,
+                "error": f"unsupported tracker: {tracker}",
+            }
+
+        if not self._tracker_set_params_client.wait_for_service(timeout_sec=1.0):
+            return {
+                "ok": False,
+                "error": f"tracker parameter service unavailable on /{self._tracker_node_name}/set_parameters",
+            }
+
+        request = SetParameters.Request()
+        request.parameters = [
+            Parameter(
+                name="tracker_type",
+                value=ParameterValue(type=ParameterType.PARAMETER_STRING, string_value=tracker),
+            )
+        ]
+
+        try:
+            future = self._tracker_set_params_client.call_async(request)
+            deadline = time.monotonic() + 3.0
+            while not future.done() and time.monotonic() < deadline:
+                time.sleep(0.01)
+        except Exception as exc:
+            self.get_logger().error(f"Tracker switch execution failed: {exc}")
+            return {"ok": False, "error": f"tracker switch failed: {exc}"}
+
+        if not future.done():
+            return {"ok": False, "error": "tracker switch timed out"}
+
+        result = future.result()
+        if result is None:
+            return {"ok": False, "error": "tracker switch returned no response"}
+
+        if not result.results:
+            return {"ok": False, "error": "tracker switch returned empty result"}
+
+        set_result = result.results[0]
+        if not set_result.successful:
+            reason = set_result.reason or "unknown tracker switch failure"
+            return {"ok": False, "error": reason}
+
+        self.get_logger().info(f"Tracker backend switch applied: {tracker}")
+        return {"ok": True, "requested_tracker": tracker}
 
     def _run_loop(self) -> None:
         asyncio.set_event_loop(self._loop)

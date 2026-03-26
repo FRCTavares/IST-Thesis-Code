@@ -1,20 +1,30 @@
-# Backend Bridge (Planned)
+# Backend Bridge (Planned Extraction)
 
-This folder is reserved for the future dashboard backend bridge.
+This folder is intentionally a placeholder for a future standalone backend service.
 
-Planned responsibilities:
-- Translate ROS 2 telemetry/events into frontend-consumable APIs.
-- Expose HTTP APIs used by the dashboard (`/api/model`, `/api/replay`, and future endpoints).
-- Own WebSocket fan-out and protocol versioning between ROS and the dashboard UI.
+## Current implementation (ROS-native)
 
-Current state:
-- The ROS dashboard bridge node remains in the ROS workspace.
-- The frontend in user-interface can run in `mock`, `offline`, or `backend` mode.
+Today, dashboard bridge functionality runs in the ROS workspace, not in this folder:
 
-Live integration notes (2026-03-25):
-- Active runtime bridge path is still ROS-native (`dashboard_bridge_node` + `web_video_server`), not a separate backend service yet.
+- Telemetry and state are exposed through `dashboard_bridge_node`.
+- MJPEG video is served by `web_video_server`.
+- The dashboard frontend supports `mock`, `offline`, and `backend` data modes.
+
+Current live API endpoints are provided by `dashboard_bridge_node` (port `8090`):
+
+- `POST /api/model`
+- `POST /api/replay` (placeholder behavior in live mode)
+
+Operational notes:
+
 - MJPEG stream compatibility requires `qos_profile=sensor_data` when consuming `/camera/dashboard`.
-- Dashboard overlay geometry depends on bridge normalization dimensions matching inference detection coordinate basis (`640x640` in the current live stack).
-- Runtime control API is currently implemented in `dashboard_bridge_node` (port `8090`) with:
-	- `POST /api/model` (switches detector model by restarting container detection service with selected HEF)
-	- `POST /api/replay` (placeholder response in live mode)
+- Overlay geometry depends on bridge normalization matching inference detection basis (`640x640` in the current stack).
+
+## Planned backend responsibilities
+
+When extracted from ROS, this backend layer should:
+
+- Translate ROS 2 telemetry/events into frontend-oriented APIs.
+- Own HTTP API surface and versioning for dashboard control endpoints.
+- Own WebSocket fan-out and protocol evolution between ROS and dashboard UI.
+- Isolate frontend/backend contracts from ROS node internals.

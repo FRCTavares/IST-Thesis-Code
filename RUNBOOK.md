@@ -14,7 +14,8 @@ npm run dev
 ```
 
 Environment variables are documented in `user-interface/.env.example`.
-Default mode is `mock`, so the dashboard can run without a backend.
+Without env overrides, frontend mode defaults to `backend`.
+For standalone UI development, run with `VITE_DASHBOARD_DATA_MODE=mock`.
 
 **Live camera operational mode:** Use the frozen manual startup sequence documented below.
 
@@ -33,15 +34,18 @@ Default behavior now includes `control_ref_node` with MAVROS mirroring disabled 
 The launcher sets `ROS_DOMAIN_ID` to `42` by default (or uses your exported value if already set).
 
 Optional flags:
+
 - Disable control node: `./tools/start_live_stack.sh --no-control`
 - Enable MAVROS mirror publish in control node: `./tools/start_live_stack.sh --control-mavros`
 
 Interactive stop in same terminal:
+
 - `stop`
 - `quit`
 - `exit`
 
 Fallback stop command:
+
 ```bash
 cd $THESIS_ROOT
 ./tools/stop_live_stack.sh
@@ -52,6 +56,7 @@ cd $THESIS_ROOT
 The manual startup sequence is the current operational standard.
 
 **Terminal 1 — Camera Bringup (init + capture):**
+
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
@@ -60,6 +65,7 @@ ros2 launch thesis_bringup camera_bringup.launch.py
 ```
 
 **Terminal 2 — Container Live Inference Service:**
+
 ```bash
 cd ~/pi-ai-kit-ubuntu
 docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
@@ -79,6 +85,7 @@ $VENV/bin/python /root/thesis_service/detection_zmq.py
 ```
 
 **Terminal 3 — Inference Client:**
+
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
@@ -93,6 +100,7 @@ ros2 run thesis_inference_client inference_client_node --ros-args \
 ```
 
 **Terminal 4 — Tracker:**
+
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
@@ -101,6 +109,7 @@ ros2 run thesis_tracker tracker_node
 ```
 
 **Terminal 5 — Target Selector:**
+
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
@@ -109,6 +118,7 @@ ros2 run thesis_target_selector target_selector_node
 ```
 
 **Terminal 6 — Dashboard Bridge (WebSocket telemetry):**
+
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
@@ -119,6 +129,7 @@ ros2 run thesis_bringup dashboard_bridge_node --ros-args \
 ```
 
 **Terminal 7 — Web Video Service (MJPEG stream):**
+
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
@@ -127,6 +138,7 @@ ros2 run web_video_server web_video_server --ros-args -p port:=8080
 ```
 
 Dashboard endpoints:
+
 - Video: `http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45`
 - Telemetry: `ws://<PI_IP>:8765`
 - Control API: `http://<PI_IP>:8090` (`POST /api/model`, `POST /api/replay`)
@@ -214,6 +226,7 @@ ros2 launch thesis_bringup eval_replay.launch.py \
 ```
 
 Override the date if re-running an old bag:
+
 ```bash
   run_date:=2026-02-27
 ```
@@ -227,6 +240,7 @@ Override the date if re-running an old bag:
 Reads `/timing` (and `/timing_tracker` if present) from a raw or live bag.
 
 Canonical timing outputs are focused on:
+
 - `/timing`: `pre_ms`, `zmq_roundtrip_ms`, `infer_ms`, `e2e_det_ms`, `pub_dt_ms`
 - `/timing_tracker`: `track_ms` (if present)
 - `/timing_target`: `e2e_target_ms` (if present)
@@ -242,16 +256,19 @@ python3 tools/analyse_bag_timing.py \
 ```
 
 **Outputs:**
+
 - `reports/timing/<bag>__timing.md`
 - `figures/timing/<bag>/` (PNG plots)
 
 Canonical figure names from timing analysis include:
+
 - `e2e_det_ms_hist.png`, `e2e_det_ms_cdf.png`
 - `pub_dt_ms_hist.png`, `pub_dt_ms_cdf.png`
 
 **Note:** `/timing_tracker` is profiling-only and will not be present in lean operational bags.
 
 Validate canonical keys in generated reports:
+
 ```bash
 python3 tools/validate_canonical_metrics.py \
   --json reports/timing/live_stats.json \
@@ -272,6 +289,7 @@ python3 tools/analyse_bag_tracking.py \
 Tag is auto-detected from the bag name; pass `--tag` to override.
 
 **Outputs:**
+
 - `reports/tracking/<evalbag>/summary.md`
 - `reports/tracking/<evalbag>/target_lock_timeseries.png`
 - `reports/tracking/<evalbag>/track_ms_cdf.png`
@@ -284,12 +302,14 @@ Tag is auto-detected from the bag name; pass `--tag` to override.
 ## Operational vs Profiling Modes
 
 ### Lean operational mode (live camera)
+
 - **Use for:** Indoor validation, outdoor testing, field operations
 - **Topics recorded:** `/camera/fps`, `/detections`, `/timing`, `/target`
 - **Excluded:** `/tracks`, `/timing_tracker`
 - **Startup:** One-command launcher (`tools/start_live_stack.sh`) or manual 7-terminal sequence
 
 ### Profiling mode (file-based)
+
 - **Use for:** Bottleneck analysis, tracker debugging, performance profiling
 - **Topics recorded:** All topics including `/tracks` and `/timing_tracker`
 - **Note:** Adds subscriber overhead, distorts timing measurements
@@ -317,11 +337,13 @@ Tag is auto-detected from the bag name; pass `--tag` to override.
 Use this when validating inference throughput without tracker/target/control overhead.
 
 Frozen Baseline B (do not change during comparisons):
+
 - `queue_size=4`
 - `num_workers=3`
 - blocking queue worker wakeup (`queue.Queue` + `get(timeout)`), no `sleep(0)` idle loop
 
 **1) Rebuild inference client after code changes**
+
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash
@@ -330,12 +352,14 @@ source install/setup.bash
 ```
 
 **2) Start tuned stack (camera + inference only)**
+
 ```bash
 cd $THESIS_ROOT
 ./tools/start_live_stack.sh --no-tracker --no-target --no-control --no-dashboard --infer-queue-size 4 --infer-workers 3
 ```
 
 **3) Restart container inference service with profiling enabled**
+
 ```bash
 docker exec pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash -lc "
 set -euo pipefail
@@ -357,9 +381,11 @@ tail -n 20 /tmp/detection_zmq_live.log
 ```
 
 Expected log line:
+
 - `ROUTER inference service listening on tcp://0.0.0.0:5556`
 
 **4) ROS graph/session sanity check**
+
 ```bash
 source /opt/ros/jazzy/setup.bash
 source $THESIS_ROOT/ros2_ws/install/setup.bash
@@ -373,6 +399,7 @@ ros2 topic list
 ```
 
 **5) Throughput checks**
+
 ```bash
 ros2 topic hz /camera/image_raw
 ros2 topic hz /detections
@@ -380,16 +407,19 @@ ros2 topic echo /camera/fps --once
 ```
 
 Notes:
+
 - In this Jazzy setup, `ros2 topic hz` has no QoS override flags and can under-report BEST_EFFORT sensor streams (especially `/camera/image_raw`).
 - Treat `/camera/fps` as the authoritative camera source-rate check and use `/detections` rate plus inference log timing for throughput conclusions.
 
 **6) Capture logs for analysis**
+
 ```bash
 tail -n 120 $THESIS_ROOT/log/live_stack/latest/inference.log
 docker exec pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 sh -lc "grep reqrep_prof /tmp/detection_zmq_live.log | tail -n 80"
 ```
 
 Interpretation:
+
 - If `service_ms` stays mostly in low teens but `pub_dt_p95_ms` is high and `empty_polls` grows rapidly, the remaining bottleneck is upstream scheduling/frame delivery (not container inference).
 - If `reqrep_prof` lines are missing in `/tmp/detection_zmq_live.log`, verify the container was started with `HAILO_REQREP_LOG_EVERY` set; until then, use client `rt_ms` trend as a provisional service-health indicator.
 
@@ -398,19 +428,23 @@ Interpretation:
 Goal: isolate camera/image transport and resize cost without changing frozen inference settings.
 
 Test A (current path):
+
 - camera publishes `1920x1080`
 - client resizes to `640x640`
 
 Test B (direct path):
+
 - camera publishes `640x640`
 - client bypasses resize when frame is already `640x640`
 
 Keep fixed in both A and B:
+
 - same container config
 - same inference queue/workers (Baseline B)
 - same runtime scope (camera + inference only for first pass)
 
 Compare these fields over matched windows:
+
 - FPS (`/detections` + sent-delta/window from `inference.log`)
 - `e2e_det_ms`
 - `pre_ms`
@@ -421,6 +455,7 @@ Compare these fields over matched windows:
 ### Full-pipeline retest sequence (after A/B)
 
 1) Full stack functional run first (no bag):
+
 ```bash
 cd $THESIS_ROOT
 ./tools/start_live_stack.sh --infer-queue-size 4 --infer-workers 3
@@ -428,7 +463,8 @@ cd $THESIS_ROOT
 
 Validate topic activity and control-rate usability before recording.
 
-2) Profiling run second (with bag):
+1) Profiling run second (with bag):
+
 ```bash
 cd $THESIS_ROOT/ros2_ws
 source /opt/ros/jazzy/setup.bash

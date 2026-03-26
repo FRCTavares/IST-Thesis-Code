@@ -36,11 +36,13 @@ export interface DashboardTelemetry {
 }
 
 export type DashboardModel = "yolov6n" | "yolov8s" | "yolov8m";
+export type DashboardTracker = "sort" | "ocsort" | "bytetrack";
 
 export interface DashboardControlResponse {
   ok: boolean;
   error?: string;
   requested_model?: DashboardModel;
+  requested_tracker?: DashboardTracker;
   action?: "replay";
 }
 
