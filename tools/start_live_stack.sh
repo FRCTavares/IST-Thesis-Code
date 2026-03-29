@@ -1,6 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# start_live_stack.sh
+#
+# Purpose:
+# - Start the live thesis stack in a deterministic order.
+# - Keep host-side logs in one run folder.
+# - Fail fast on missing dependencies or unhealthy camera/inference startup.
+#
+# Startup phases:
+# 1) Preflight: clear stale processes and validate camera process health.
+# 2) Environment: source ROS overlays and pin ROS_DOMAIN_ID.
+# 3) Container: ensure inference container/service is running.
+# 4) ROS nodes: camera -> inference -> tracker/target/control -> dashboard/video.
+# 5) Runtime shell: keep stack alive and allow `status|clear|stop` commands.
+#
+# Logging policy:
+# - Script/service logs:   $ROS_WS/log/live_stack/<run-id>/
+# - ROS runtime logs:      $ROS_WS/log/runtime/<run-id>/
+#
+# This prevents ROS logs from ending up in ~/.ros/log during live runs.
+
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 ROS_WS="${ROS_WS:-$THESIS_ROOT/ros2_ws}"
 PI_AI_DIR="${PI_AI_DIR:-$HOME/pi-ai-kit-ubuntu}"
@@ -12,15 +32,18 @@ if [[ -z "${PI_IP// }" ]]; then
     PI_IP="127.0.0.1"
 fi
 
-LOG_ROOT="$THESIS_ROOT/log/live_stack"
+LOG_ROOT="$ROS_WS/log/live_stack"
 RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
 RUN_DIR="$LOG_ROOT/$RUN_ID"
 PID_FILE="$RUN_DIR/pids.txt"
 LATEST_LINK="$LOG_ROOT/latest"
+ROS_RUNTIME_LOG_ROOT="$ROS_WS/log/runtime"
+ROS_LOG_DIR="$ROS_RUNTIME_LOG_ROOT/$RUN_ID"
 
 declare -A PROC_PIDS
 
 mkdir -p "$RUN_DIR"
+mkdir -p "$ROS_LOG_DIR"
 ln -sfn "$RUN_DIR" "$LATEST_LINK"
 
 start_ros_bg() {
@@ -120,25 +143,28 @@ print_usage() {
     cat <<'EOF'
 Usage: start_live_stack.sh [options]
 
+Starts the live camera + inference + optional tracking/control/dashboard stack.
+All ROS runtime logs are forced under ros2_ws/log/runtime for this run.
+
 Options:
-  --tracker <sort|ocsort|bytetrack>  Tracker backend (default: sort)
-    --tracker-profile-off               Disable tracker profiling instrumentation (default: already off)
+    --tracker <sort|ocsort|bytetrack>  Tracker backend (default: sort)
+    --tracker-profile-off               Disable tracker profiling instrumentation
     --tracker-profile-log-every <N>     Log tracker profile every N frames (default: 30)
     --tracker-profile-serialize-every <N>
                                                                             Serialize sample every N frames (default: 0 disabled)
-        --tracks-off                         Disable /tracks publishing from tracker
-        --timing-off                         Disable /timing publishing from inference client
-    --camera-width <N>                 Camera publish width passed to camera_bringup (default: 1280)
-    --camera-height <N>                Camera publish height passed to camera_bringup (default: 720)
-    --camera-fps <N>                   Camera publish fps passed to camera_bringup (default: 30)
-    --dashboard-fps <N>                Dashboard image publish fps (default: 30)
-    --camera-no-flip                   Disable camera frame flip
-    --infer-queue-size <N>             Inference client frame queue size (default: 2)
-    --infer-workers <N>                Inference client worker threads (default: 2)
-    --infer-timeout-ms <N>             Inference ZMQ request timeout in ms (default: 200)
-    --infer-retries <N>                Inference ZMQ retries after timeout/error (default: 2)
-    --infer-print-every <N>            Inference periodic stats log interval in frames (default: 240)
-    --infer-timeout-log-every <N>      Inference timeout log interval in events (default: 20)
+    --tracks-off                        Disable /tracks publishing from tracker
+    --timing-off                        Disable /timing publishing from inference client
+    --camera-width <N>                  Camera publish width (default: 1280)
+    --camera-height <N>                 Camera publish height (default: 720)
+    --camera-fps <N>                    Camera publish fps (default: 30)
+    --dashboard-fps <N>                 Dashboard image publish fps (default: 30)
+    --camera-no-flip                    Disable camera frame flip
+    --infer-queue-size <N>              Inference client queue size (default: 2)
+    --infer-workers <N>                 Inference client worker threads (default: 2)
+    --infer-timeout-ms <N>              Inference request timeout ms (default: 200)
+    --infer-retries <N>                 Inference retries after timeout/error (default: 2)
+    --infer-print-every <N>             Inference periodic stats interval (default: 240)
+    --infer-timeout-log-every <N>       Inference timeout log interval (default: 20)
   --no-dashboard                     Disable dashboard bridge
     --no-tracker                       Do not start tracker node
     --no-target                        Do not start target selector node
@@ -446,6 +472,39 @@ wait_for_port() {
     done
 }
 
+wait_for_topic_message() {
+    local topic="$1"
+    local timeout_s="$2"
+    local required="${3:-0}"
+    local qos_profile="${4:-}"
+    local qos_reliability="${5:-}"
+    local qos_durability="${6:-}"
+
+    local -a echo_cmd=(ros2 topic echo "$topic" --once)
+    if [[ -n "$qos_profile" ]]; then
+        echo_cmd+=(--qos-profile "$qos_profile")
+    fi
+    if [[ -n "$qos_reliability" ]]; then
+        echo_cmd+=(--qos-reliability "$qos_reliability")
+    fi
+    if [[ -n "$qos_durability" ]]; then
+        echo_cmd+=(--qos-durability "$qos_durability")
+    fi
+
+    if timeout "${timeout_s}s" "${echo_cmd[@]}" >/dev/null 2>&1; then
+        echo "[ok] topic ${topic} produced a message"
+        return 0
+    fi
+
+    if [[ "$required" == "1" ]]; then
+        echo "[error] timeout waiting for required topic message on ${topic}"
+        return 1
+    fi
+
+    echo "[warn] timeout waiting for topic message on ${topic}; continuing anyway"
+    return 0
+}
+
 STACK_PROC_PATTERN="camera_bringup.launch.py|camera_capture_node|inference_client_node|tracker_node|target_selector_node|control_ref_node|dashboard_bridge_node|web_video_server"
 
 check_stuck_camera_processes() {
@@ -488,57 +547,32 @@ cleanup_existing_stack_processes() {
     return 0
 }
 
-echo "[info] logs: $RUN_DIR"
-echo "[info] tracker: $TRACKER_TYPE"
-if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
-    echo "[info] dashboard bridge: enabled"
-else
-    echo "[info] dashboard bridge: disabled"
-fi
-if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
-    echo "[info] tracker node: enabled"
-    echo "[info] tracker publish_tracks: $TRACKER_PUBLISH_TRACKS_BOOL"
-    if [[ "$TRACKER_PROFILE_ENABLED" -eq 1 ]]; then
-        echo "[info] tracker profiling: enabled (log_every_n=$TRACKER_PROFILE_LOG_EVERY_N, serialize_every_n=$TRACKER_PROFILE_SERIALIZE_EVERY_N)"
-    else
-        echo "[info] tracker profiling: disabled"
-    fi
-else
-    echo "[info] tracker node: disabled"
-fi
-echo "[info] inference publish_timing: $INFER_PUBLISH_TIMING_BOOL"
-echo "[info] camera publish size: ${CAMERA_WIDTH}x${CAMERA_HEIGHT}"
-echo "[info] dashboard fps: $CAMERA_DASHBOARD_FPS"
-echo "[info] inference queue_size: $INFER_QUEUE_SIZE"
-echo "[info] inference workers: $INFER_WORKERS"
-echo "[info] inference timeout ms: $INFER_TIMEOUT_MS"
-echo "[info] inference retries: $INFER_RETRIES"
-echo "[info] inference print every: $INFER_PRINT_EVERY"
-echo "[info] inference timeout log every: $INFER_TIMEOUT_LOG_EVERY"
-if [[ "$ENABLE_TARGET_SELECTOR" -eq 1 ]]; then
-    echo "[info] target selector: enabled"
-else
-    echo "[info] target selector: disabled"
-fi
+tracker_state="off"
+target_state="off"
+control_state="off"
+dashboard_state="off"
+web_video_state="off"
+rosbag_state="off"
+
+if [[ "$ENABLE_TRACKER" -eq 1 ]]; then tracker_state="on"; fi
+if [[ "$ENABLE_TARGET_SELECTOR" -eq 1 ]]; then target_state="on"; fi
 if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
-    echo "[info] control node: enabled"
     if [[ "$CONTROL_MAVROS_BOOL" == "true" ]]; then
-        echo "[info] control MAVROS mirror: enabled"
+        control_state="on+mavros"
     else
-        echo "[info] control MAVROS mirror: disabled (safe default)"
+        control_state="on"
     fi
-else
-    echo "[info] control node: disabled"
 fi
-if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
-    echo "[info] web video server: enabled"
-else
-    echo "[info] web video server: disabled"
-fi
-if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
-    echo "[info] rosbag recording: enabled"
-else
-    echo "[info] rosbag recording: disabled"
+if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then dashboard_state="on"; fi
+if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then web_video_state="on"; fi
+if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="on"; fi
+
+echo "[info] run: $RUN_ID"
+echo "[info] logs: $RUN_DIR"
+echo "[info] cfg: camera=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms"
+echo "[info] nodes: tracker=$tracker_state target=$target_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
+if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
+    echo "[info] tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL profile=$TRACKER_PROFILE_ENABLED"
 fi
 echo "[step] preflight checks"
 if ! check_stuck_camera_processes; then
@@ -550,18 +584,46 @@ fi
 
 echo "[step] sourcing ROS environment"
 cd "$ROS_WS"
+export ROS_LOG_DIR
 set +u
 source /opt/ros/jazzy/setup.bash
-source install/setup.bash
+if [[ -f "install/setup.bash" ]]; then
+    source install/setup.bash
+else
+    echo "[error] missing workspace setup: $ROS_WS/install/setup.bash"
+    echo "[hint] build the ROS workspace first:"
+    echo "       cd $ROS_WS"
+    echo "       source /opt/ros/jazzy/setup.bash"
+    echo "       colcon build --symlink-install"
+    echo "       source install/setup.bash"
+    exit 1
+fi
 set -u
 export ROS_DOMAIN_ID
-echo "[info] ROS_DOMAIN_ID: $ROS_DOMAIN_ID"
+echo "[info] ros: domain=$ROS_DOMAIN_ID log_dir=$ROS_LOG_DIR"
 
 echo "[step] ensuring container is up"
 (
     cd "$PI_AI_DIR"
     docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
 ) >"$RUN_DIR/container_up.log" 2>&1
+
+# If the bind mount is stale (e.g. host dir recreated), detection script can disappear
+# inside an otherwise running container. Recreate once to refresh mounts.
+if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_service/detection_zmq.py >/dev/null 2>&1; then
+    echo "[warn] detection service script missing in container mount; recreating container"
+    (
+        cd "$PI_AI_DIR"
+        docker compose -f docker-compose.yaml up -d --force-recreate hailo-ubuntu-pi
+    ) >>"$RUN_DIR/container_up.log" 2>&1
+
+    if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_service/detection_zmq.py >/dev/null 2>&1; then
+        echo "[error] container mount is still missing /root/thesis_service/detection_zmq.py"
+        echo "[error] check docker-compose bind mount for thesis_service and host path contents"
+        stop_stack
+        exit 1
+    fi
+fi
 
 echo "[step] starting detection service in container"
 docker exec "$CONTAINER_NAME" bash -lc '
@@ -615,6 +677,13 @@ CAMERA_ARGS+=("flip_image:=$CAMERA_FLIP_BOOL")
 start_ros_bg camera ros2 launch thesis_bringup camera_bringup.launch.py "${CAMERA_ARGS[@]}"
 sleep 2
 if ! check_proc_alive camera; then
+    stop_stack
+    exit 1
+fi
+if ! wait_for_topic_message /camera/image_raw 12 1 sensor_data best_effort volatile; then
+    echo "[error] camera node is running but not publishing frames"
+    echo "[hint] check camera cable/sensor state and try restarting stack"
+    echo "[hint] if issue persists, reboot host to reset camera pipeline"
     stop_stack
     exit 1
 fi
@@ -717,18 +786,19 @@ fi
 VIDEO_URL="http://${PI_IP}:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45"
 WS_URL="ws://${PI_IP}:8765"
 
-echo "[done] live stack started"
-echo "[info] PID file: $PID_FILE"
-echo "[info] tail logs: tail -f $RUN_DIR/*.log"
+echo "[done] live stack ready"
+echo "[info] logs: $RUN_DIR"
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 && "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
-    echo "[info] video: $VIDEO_URL"
+    echo "[info] dashboard: video=$VIDEO_URL ws=$WS_URL"
 fi
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
-    echo "[info] telemetry ws: $WS_URL"
+    if [[ "$ENABLE_WEB_VIDEO" -eq 0 ]]; then
+        echo "[info] dashboard: ws=$WS_URL"
+    fi
 else
-    echo "[info] dashboard endpoints: disabled (--no-dashboard)"
+    echo "[info] dashboard: disabled"
 fi
-echo "[info] type stop, quit, or exit to stop everything"
+echo "[info] commands: status | clear | stop"
 
 while true; do
     if ! read -r -p "live-stack> " cmd; then

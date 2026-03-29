@@ -1,40 +1,87 @@
-# ROS build artefacts
+# ------------------------------
+# OS / editor
+# ------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ------------------------------
+# Python
+# ------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+*/venv/
+
+# Packaging/build
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ------------------------------
+# Node / frontend
+# ------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tsbuildinfo
+
+# Common frontend build outputs
+coverage/
+user-interface/dist/
+deprecated/user-interface/dist/
+
+# ------------------------------
+# Logs and runtime files
+# ------------------------------
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# ------------------------------
+# ROS 2 generated folders
+# ------------------------------
 ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
 
-
-# Python cache
-**/__pycache__/
-**/*.pyc
-
-# Bags and generated outputs
-bags/
-figures/
-reports/
-log
-
-# Local logs and dumps
-infer_service/gstshark_*/
-infer_service/Birds/
-infer_service/Birds/**
-infer_service/*.log
-*.log
-
-# OS / editor
-.DS_Store
-.vscode/
-
-# Vendor / external
+# ------------------------------
+# Project-specific generated artifacts
+# ------------------------------
+# Hailo local examples/assets downloaded or generated locally
 hailo-rpi5-examples/
 
-# Frontend workspace
-user-interface/node_modules/
-user-interface/dist/
-
-# Large vendor payloads, keep out of git
+# Inference runtime outputs
+infer_service/gstshark_*/
 infer_service/opt/
-infer_service/*.deb
-infer_service/*.mcap
-infer_service/*.mp4
-infer_service/resources/hefs/
+infer_service/resources/
+
+# Birds experiment workspace (local runs, logs, benchmarks)
+infer_service/Birds/
+
+# Local report outputs
+reports/compare/tmp_*/

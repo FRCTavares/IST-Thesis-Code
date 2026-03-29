@@ -199,7 +199,6 @@ class CameraCaptureNode(Node):
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":0 [{fmt_string}]'",
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":{self._csi_source_pad} [{fmt_string}]'",
             f"media-ctl -d {self._media_dev} -l '\"{self._csi_entity}\":{self._csi_source_pad} -> \"{self._video_entity}\":0 [1]'",
-            f"v4l2-ctl -d {self._device} --set-fmt-video=width={self._width},height={self._height},pixelformat=UYVY",
             f"v4l2-ctl -d {self._sensor_subdev} --set-ctrl=trigger_mode={self._trigger_mode}",
         ]
 
