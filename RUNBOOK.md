@@ -43,6 +43,8 @@ mkdir -p "$ROS_LOG_DIR"
 
 Notes:
 - tools/start_live_stack.sh now automatically forces ROS_LOG_DIR to ros2_ws/log/runtime/<run-id>.
+- tools/start_live_stack.sh run logs are under ros2_ws/log/live_stack/<run-id>.
+- tools/start_ui_stack.sh run logs are under ros2_ws/log/ui_stack/<run-id>.
 - If you see logs in ~/.ros/log during live stack startup, verify you started with tools/start_live_stack.sh and not a manual command in another shell.
 
 ## 2) Live stack (recommended)
@@ -65,6 +67,17 @@ Useful flags:
 Stop:
 - In prompt: stop, quit, or exit
 - Fallback: ./tools/stop_live_stack.sh
+
+Run UI in parallel (second terminal):
+
+```bash
+cd $THESIS_ROOT
+./tools/start_ui_stack.sh --skip-install
+```
+
+Useful UI flags:
+- Mock mode: ./tools/start_ui_stack.sh --mode mock
+- Custom port: ./tools/start_ui_stack.sh --port 5174
 
 ## 3) Manual startup (fallback)
 
@@ -204,3 +217,32 @@ If startup says camera is not publishing:
 - Rerun tools/start_live_stack.sh once.
 - Check cable/sensor state.
 - If camera process is stuck in D state, reboot host.
+
+## 7) Control validation quick checks
+
+Verify control node is running and publishing:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source $THESIS_ROOT/ros2_ws/install/setup.bash
+ros2 node list | rg control_ref_node
+ros2 topic hz /control_ref/cmd_vel
+```
+
+For deterministic sign checks, run an isolated control node on test topics:
+
+```bash
+ros2 run thesis_bringup control_ref_node --ros-args \
+  -r __node:=control_ref_test_node \
+  -p target_topic:=/target_test \
+  -p cmd_topic:=/control_ref_test/cmd_vel \
+  -p enable_mavros:=false
+```
+
+Expected behavior from validated baseline:
+- center target -> vx=0, yaw_z=0
+- left target -> yaw_z < 0
+- right target -> yaw_z > 0
+- far target (smaller h) -> vx > 0
+- near target (larger h) -> vx < 0
+- stale/lost target -> vx=0, yaw_z=0
