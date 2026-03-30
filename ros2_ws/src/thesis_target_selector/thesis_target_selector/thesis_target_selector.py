@@ -8,6 +8,7 @@ from typing import Optional, Tuple, List
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.executors import ExternalShutdownException
 
 from thesis_msgs.msg import Track2DArray, TargetState, Timing
 
@@ -90,7 +91,21 @@ class ThesisTargetSelectorNode(Node):
             qos,
         )
 
+        self.declare_parameter("ambiguity_score_gap_ratio", 0.05)
+        self.declare_parameter("ambiguity_log_every_n", 30)
+        self.declare_parameter("enable_ambiguity_quality_override", False)
+        self.declare_parameter("ambiguity_quality_value", 0.0)
+
+        self.ambiguity_score_gap_ratio = float(self.get_parameter("ambiguity_score_gap_ratio").value)
+        self.ambiguity_log_every_n = int(self.get_parameter("ambiguity_log_every_n").value)
+        self.enable_ambiguity_quality_override = bool(
+            self.get_parameter("enable_ambiguity_quality_override").value
+        )
+        self.ambiguity_quality_value = float(self.get_parameter("ambiguity_quality_value").value)
+
         self.prev_id: Optional[int] = None
+        self._prev_ambiguity = False
+        self._ambiguity_count = 0
         self._warned_sensor_clock_mismatch = False
         self.frame_context: dict[int, tuple[int, int]] = {}
         self.max_context = 1024
@@ -108,6 +123,37 @@ class ThesisTargetSelectorNode(Node):
     def on_tracks(self, msg: Track2DArray) -> None:
         t_target_cb_start_ns = now_ns()
         tracks = list(msg.tracks)
+        prev_id_before = self.prev_id
+
+        ambiguous = False
+        if len(tracks) >= 2:
+            ranked_for_ambiguity = sorted(
+                tracks,
+                key=lambda t: (float(t.score), float(max(0.0, t.w) * max(0.0, t.h))),
+                reverse=True,
+            )
+            top_score = float(ranked_for_ambiguity[0].score)
+            second_score = float(ranked_for_ambiguity[1].score)
+            if top_score > 0.0:
+                gap_ratio = (top_score - second_score) / top_score
+                ambiguous = gap_ratio < self.ambiguity_score_gap_ratio
+
+        if ambiguous:
+            self._ambiguity_count += 1
+            should_log = (
+                not self._prev_ambiguity
+                or (
+                    self.ambiguity_log_every_n > 0
+                    and (self._ambiguity_count % self.ambiguity_log_every_n == 0)
+                )
+            )
+            if should_log:
+                self.get_logger().warning(
+                    f"ambiguity_flag=true frame_id={msg.frame_id} track_count={len(tracks)}"
+                )
+        elif self._prev_ambiguity:
+            self.get_logger().info(f"ambiguity_flag=false frame_id={msg.frame_id}")
+        self._prev_ambiguity = ambiguous
 
         # No confirmed flag in Track2D, so treat all as eligible
         selected = None
@@ -176,7 +222,14 @@ class ThesisTargetSelectorNode(Node):
             self.pub_timing.publish(tmsg)
             return
 
-        self.prev_id = int(selected.id)
+        new_id = int(selected.id)
+        if prev_id_before is None and new_id > 0:
+            self.get_logger().info(f"target_reacquired=true id={new_id} frame_id={msg.frame_id}")
+        elif prev_id_before is not None and prev_id_before != new_id:
+            self.get_logger().info(
+                f"target_switch prev_id={prev_id_before} new_id={new_id} frame_id={msg.frame_id}"
+            )
+        self.prev_id = new_id
 
         out.id = int(selected.id)
         out.cx = float(selected.cx)
@@ -184,7 +237,10 @@ class ThesisTargetSelectorNode(Node):
         out.w = float(selected.w)
         out.h = float(selected.h)
         out.score = float(selected.score)
-        out.quality = 1.0  # deterministic "selected"
+        if ambiguous and self.enable_ambiguity_quality_override:
+            out.quality = float(self.ambiguity_quality_value)
+        else:
+            out.quality = 1.0  # deterministic "selected"
         t_target_cb_end_ns = now_ns()
         out.t_target_cb_end_ns = int(t_target_cb_end_ns)
         self.pub.publish(out)
@@ -214,7 +270,7 @@ def main(args=None) -> None:
     node = ThesisTargetSelectorNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         try:

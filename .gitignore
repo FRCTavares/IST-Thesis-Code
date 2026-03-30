@@ -81,7 +81,7 @@ infer_service/opt/
 infer_service/resources/
 
 # Birds experiment workspace (local runs, logs, benchmarks)
-infer_service/Birds/
+deprecated/Birds
 
 # Local report outputs
 reports/compare/tmp_*/

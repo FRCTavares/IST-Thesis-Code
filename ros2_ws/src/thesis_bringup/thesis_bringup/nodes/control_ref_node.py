@@ -3,6 +3,7 @@ from typing import Optional
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.executors import ExternalShutdownException
 
 from geometry_msgs.msg import TwistStamped
 from thesis_msgs.msg import TargetState
@@ -61,6 +62,10 @@ class ControlRefNode(Node):
         self.declare_parameter('mavros_frame_id', 'base_link')
         self.declare_parameter('invalid_warn_every_n', 30)
         self.declare_parameter('timer_slip_warn_factor', 2.0)
+        self.declare_parameter('enable_ambiguity_hold', False)
+        self.declare_parameter('ambiguity_quality_threshold', 0.5)
+        self.declare_parameter('ambiguity_warn_every_n', 30)
+        self.declare_parameter('saturation_warn_every_n', 90)
 
         target_topic = str(self.get_parameter('target_topic').value)
         cmd_topic = str(self.get_parameter('cmd_topic').value)
@@ -71,6 +76,10 @@ class ControlRefNode(Node):
         self.mavros_frame_id = str(self.get_parameter('mavros_frame_id').value)
         self.invalid_warn_every_n = int(self.get_parameter('invalid_warn_every_n').value)
         self.timer_slip_warn_factor = float(self.get_parameter('timer_slip_warn_factor').value)
+        self.enable_ambiguity_hold = bool(self.get_parameter('enable_ambiguity_hold').value)
+        self.ambiguity_quality_threshold = float(self.get_parameter('ambiguity_quality_threshold').value)
+        self.ambiguity_warn_every_n = int(self.get_parameter('ambiguity_warn_every_n').value)
+        self.saturation_warn_every_n = int(self.get_parameter('saturation_warn_every_n').value)
 
         self.stale_timeout_s = float(self.get_parameter('stale_timeout_s').value)
 
@@ -117,6 +126,10 @@ class ControlRefNode(Node):
         self.last_invalid_reason: Optional[str] = None
         self.invalid_count = 0
         self.valid_prev_tick = False
+        self.last_mode: Optional[str] = None
+        self.saturation_count = 0
+        self._ambiguity_prev = False
+        self._ambiguity_count = 0
 
         target_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
@@ -234,6 +247,34 @@ class ControlRefNode(Node):
         self.prev_yaw_z = 0.0
         self.publish_pair(self.get_clock().now().to_msg(), 0.0, 0.0, 0.0)
 
+    def update_mode(self, mode: str) -> None:
+        if mode != self.last_mode:
+            self.get_logger().info(f'control_mode_transition: {self.last_mode or "INIT"} -> {mode}')
+            self.last_mode = mode
+
+    def is_ambiguous(self, t: TargetState) -> bool:
+        return t.id > 0 and t.quality < self.ambiguity_quality_threshold
+
+    def maybe_warn_saturation(self, vx_cmd: float, vy_cmd: float, yaw_z_cmd: float) -> None:
+        saturated_axes = []
+        if self.max_vx > 0.0 and abs(vx_cmd) >= (0.99 * self.max_vx):
+            saturated_axes.append(f'vx={vx_cmd:.3f}/{self.max_vx:.3f}')
+        if self.max_vy > 0.0 and abs(vy_cmd) >= (0.99 * self.max_vy):
+            saturated_axes.append(f'vy={vy_cmd:.3f}/{self.max_vy:.3f}')
+        if self.max_yaw_z > 0.0 and abs(yaw_z_cmd) >= (0.99 * self.max_yaw_z):
+            saturated_axes.append(f'yaw_z={yaw_z_cmd:.3f}/{self.max_yaw_z:.3f}')
+
+        if not saturated_axes:
+            return
+
+        self.saturation_count += 1
+        should_log = (
+            self.saturation_warn_every_n > 0
+            and (self.saturation_count % self.saturation_warn_every_n == 0)
+        )
+        if should_log:
+            self.get_logger().warn('command_saturation: ' + ' '.join(saturated_axes))
+
     def on_timer(self) -> None:
         self.tick_count += 1
 
@@ -248,6 +289,7 @@ class ControlRefNode(Node):
 
         if self.last_target is None:
             self.valid_prev_tick = False
+            self.update_mode('NO_TARGET')
             self.maybe_warn_invalid_target('no_target_msg', None)
             self.publish_zero()
             return
@@ -257,15 +299,41 @@ class ControlRefNode(Node):
         invalid_reason = self.target_invalid_reason(t)
         if invalid_reason is not None:
             self.valid_prev_tick = False
+            self.update_mode('TARGET_INVALID')
             self.maybe_warn_invalid_target(invalid_reason, t)
             self.publish_zero()
             return
 
+        ambiguous = self.is_ambiguous(t)
+        if ambiguous:
+            self._ambiguity_count += 1
+            should_log = (
+                not self._ambiguity_prev
+                or (
+                    self.ambiguity_warn_every_n > 0
+                    and (self._ambiguity_count % self.ambiguity_warn_every_n == 0)
+                )
+            )
+            if should_log:
+                self.get_logger().warn(
+                    f'ambiguity_flag=true quality={t.quality:.3f} threshold={self.ambiguity_quality_threshold:.3f}'
+                )
+            self._ambiguity_prev = True
+            if self.enable_ambiguity_hold:
+                self.update_mode('AMBIGUITY_HOLD')
+                self.publish_zero()
+                return
+        elif self._ambiguity_prev:
+            self.get_logger().info('ambiguity_flag=false')
+            self._ambiguity_prev = False
+
         if not self.valid_prev_tick and self.last_invalid_reason is not None:
+            self.get_logger().info('target_reacquired=true')
             self.get_logger().info(f'target valid again after: {self.last_invalid_reason}')
         self.last_invalid_reason = None
         self.invalid_count = 0
         self.valid_prev_tick = True
+        self.update_mode('TRACKING')
 
         cx_norm = float(t.cx) / self.img_w
         h_norm = float(t.h) / self.img_h
@@ -291,6 +359,7 @@ class ControlRefNode(Node):
         self.prev_vx = self.slew(vx_cmd, self.prev_vx, self.max_delta_vx)
         self.prev_vy = self.slew(vy_cmd, self.prev_vy, self.max_delta_vy)
         self.prev_yaw_z = self.slew(yaw_z_cmd, self.prev_yaw_z, self.max_delta_yaw_z)
+        self.maybe_warn_saturation(vx_cmd, vy_cmd, yaw_z_cmd)
 
         self.publish_pair(self.get_clock().now().to_msg(), self.prev_vx, self.prev_vy, self.prev_yaw_z)
 
@@ -308,7 +377,7 @@ def main(args=None) -> None:
     node = ControlRefNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         try:
