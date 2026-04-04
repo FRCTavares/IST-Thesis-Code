@@ -37,20 +37,6 @@ cd $THESIS_ROOT
 
 Use workflows in RUNBOOK.md.
 
-## Logging policy (important)
-
-Keep all ROS and colcon logs under ros2_ws:
-
-- colcon logs/build/install are pinned via RUNBOOK setup to ros2_ws/{log,build,install}
-- tools/start_live_stack.sh now forces ROS_LOG_DIR to:
-  - ros2_ws/log/runtime/<run-id>
-- tools/start_live_stack.sh logs are written to:
-  - ros2_ws/log/live_stack/<run-id>
-- tools/start_ui_stack.sh logs are written to:
-  - ros2_ws/log/ui_stack/<run-id>
-
-If you run ROS commands manually, set ROS_LOG_DIR yourself before launching nodes.
-
 ## System architecture
 
 Active flow:

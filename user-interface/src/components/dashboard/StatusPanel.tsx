@@ -1,4 +1,4 @@
-import { Download, Gauge, Wifi, X } from "lucide-react";
+import { Circle, Download, Gauge, Square, Wifi, X } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { PanelShell } from "@/components/dashboard/PanelShell";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
@@ -16,6 +16,11 @@ interface StatusPanelProps {
   activeTracker?: DashboardTracker;
   onModelSwitch?: (model: DashboardModel) => Promise<void>;
   onTrackerSwitch?: (tracker: DashboardTracker) => Promise<void>;
+  onStartRecording?: () => void;
+  onStopRecording?: () => void;
+  isRecording?: boolean;
+  recordedCount?: number;
+  canExport?: boolean;
   onExport?: () => void;
   onCloseSidebar?: () => void;
   isModelSwitching?: boolean;
@@ -32,6 +37,11 @@ export function StatusPanel({
   activeTracker = "sort",
   onModelSwitch,
   onTrackerSwitch,
+  onStartRecording,
+  onStopRecording,
+  isRecording = false,
+  recordedCount = 0,
+  canExport = false,
   onExport,
   onCloseSidebar,
   isModelSwitching = false,
@@ -126,25 +136,39 @@ export function StatusPanel({
           </div>
         )}
 
-        {onExport && (
+        {onExport && onStartRecording && onStopRecording && (
           <div className="border-t border-slate-700/70 pt-4">
             <div className="mb-2 flex items-center justify-between">
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Metrics Recording</div>
-              <StatusBadge tone="info">Quick Actions</StatusBadge>
+              <StatusBadge tone={isRecording ? "warn" : "info"}>{isRecording ? "Recording" : "Idle"}</StatusBadge>
             </div>
             <div className="space-y-3">
               <div className="rounded-md border border-slate-700/70 bg-slate-900/60 p-2.5">
                 <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  Local Data Snapshot
+                  Session Controls
                 </div>
                 <Button
                   size="sm"
+                  onClick={isRecording ? onStopRecording : onStartRecording}
+                  className={isRecording ? "mb-2 w-full justify-start border-red-500/40 bg-red-500/10 text-red-100 hover:bg-red-500/20" : "mb-2 w-full justify-start border-emerald-500/40 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/20"}
+                >
+                  {isRecording ? <Square className="mr-2 h-3.5 w-3.5" /> : <Circle className="mr-2 h-3.5 w-3.5" />}
+                  {isRecording ? "Stop Recording" : "Start Recording"}
+                </Button>
+                <Button
+                  size="sm"
                   onClick={onExport}
-                  className="w-full justify-start border-sky-500/40 bg-sky-500/10 text-sky-100 hover:bg-sky-500/20"
+                  disabled={!canExport}
+                  className={canExport
+                    ? "w-full justify-start border-sky-500/40 bg-sky-500/10 text-sky-100 hover:bg-sky-500/20"
+                    : "w-full justify-start border-slate-700/80 bg-slate-800/60 text-slate-500"
+                  }
+                  title={canExport ? "Export recorded metrics to CSV" : "No recorded metrics available"}
                 >
                   <Download className="mr-2 h-3.5 w-3.5" />
                   Export Metrics CSV
                 </Button>
+                <div className="mt-2 text-[10px] text-slate-500">Recorded samples: {recordedCount}</div>
               </div>
               {controlStatus && (
                 <div className="rounded-md border border-slate-700/70 bg-slate-900/40 px-2.5 py-2 font-mono text-[11px] text-slate-400">

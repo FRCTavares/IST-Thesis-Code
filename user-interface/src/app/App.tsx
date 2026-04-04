@@ -22,8 +22,10 @@ function DashboardPage() {
   const { telemetry, status } = useDashboardRealtime();
   const [activeModel, setActiveModel] = useState<DashboardModel>("yolov6n");
   const [activeTracker, setActiveTracker] = useState<DashboardTracker>("sort");
-  const [controlStatus, setControlStatus] = useState("Export saves rolling telemetry.");
+  const [controlStatus, setControlStatus] = useState("Recording idle. Start recording to collect CSV samples.");
   const [samples, setSamples] = useState<MetricsSnapshot[]>([]);
+  const [recordedSamples, setRecordedSamples] = useState<MetricsSnapshot[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isModelSwitching, setIsModelSwitching] = useState(false);
@@ -43,7 +45,19 @@ function DashboardPage() {
       }
       return next;
     });
-  }, [metricState.snapshot]);
+
+    if (!isRecording) {
+      return;
+    }
+
+    setRecordedSamples((prev: MetricsSnapshot[]) => {
+      const next = [...prev, snapshot];
+      if (next.length > 7200) {
+        next.shift();
+      }
+      return next;
+    });
+  }, [isRecording, metricState.snapshot]);
 
   const handleModelSwitch = async (model: DashboardModel) => {
     setIsModelSwitching(true);
@@ -76,8 +90,24 @@ function DashboardPage() {
   };
 
   const handleExport = () => {
-    exportMetricsCsv(samples, activeModel);
-    setControlStatus(`Exported ${samples.length} samples to CSV.`);
+    if (recordedSamples.length === 0) {
+      setControlStatus("No recorded samples to export. Start recording first.");
+      return;
+    }
+
+    exportMetricsCsv(recordedSamples, activeModel);
+    setControlStatus(`Exported ${recordedSamples.length} recorded samples to CSV.`);
+  };
+
+  const handleStartRecording = () => {
+    setRecordedSamples([]);
+    setIsRecording(true);
+    setControlStatus("Recording started. Capturing live telemetry samples.");
+  };
+
+  const handleStopRecording = () => {
+    setIsRecording(false);
+    setControlStatus(`Recording stopped. Captured ${recordedSamples.length} samples.`);
   };
 
   const wsLabel = dashboardConfig.wsUrl.replace(/^wss?:\/\//, "");
@@ -163,7 +193,7 @@ function DashboardPage() {
           </section>
 
           {!isSidebarCollapsed && (
-            <StatusPanel status={status} mode={dashboardConfig.mode} telemetry={telemetry} snapshot={metricState.snapshot} activeModel={activeModel} activeTracker={activeTracker} onModelSwitch={handleModelSwitch} onTrackerSwitch={handleTrackerSwitch} onExport={handleExport} onCloseSidebar={() => setIsSidebarCollapsed(true)} isModelSwitching={isModelSwitching} isTrackerSwitching={isTrackerSwitching} controlStatus={controlStatus} />
+            <StatusPanel status={status} mode={dashboardConfig.mode} telemetry={telemetry} snapshot={metricState.snapshot} activeModel={activeModel} activeTracker={activeTracker} onModelSwitch={handleModelSwitch} onTrackerSwitch={handleTrackerSwitch} onExport={handleExport} onStartRecording={handleStartRecording} onStopRecording={handleStopRecording} isRecording={isRecording} recordedCount={recordedSamples.length} canExport={recordedSamples.length > 0} onCloseSidebar={() => setIsSidebarCollapsed(true)} isModelSwitching={isModelSwitching} isTrackerSwitching={isTrackerSwitching} controlStatus={controlStatus} />
           )}
         </div>
       ) : null}
@@ -177,12 +207,17 @@ function DashboardPage() {
             onTrackerSwitch={handleTrackerSwitch}
             isModelSwitching={isModelSwitching}
             isTrackerSwitching={isTrackerSwitching}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            isRecording={isRecording}
+            recordedCount={recordedSamples.length}
+            canExport={recordedSamples.length > 0}
             onExport={handleExport}
             controlStatus={controlStatus}
           />
 
           {!isSidebarCollapsed && (
-            <StatusPanel status={status} mode={dashboardConfig.mode} telemetry={telemetry} snapshot={metricState.snapshot} activeModel={activeModel} activeTracker={activeTracker} onModelSwitch={handleModelSwitch} onTrackerSwitch={handleTrackerSwitch} onExport={handleExport} onCloseSidebar={() => setIsSidebarCollapsed(true)} isModelSwitching={isModelSwitching} isTrackerSwitching={isTrackerSwitching} controlStatus={controlStatus} />
+            <StatusPanel status={status} mode={dashboardConfig.mode} telemetry={telemetry} snapshot={metricState.snapshot} activeModel={activeModel} activeTracker={activeTracker} onModelSwitch={handleModelSwitch} onTrackerSwitch={handleTrackerSwitch} onExport={handleExport} onStartRecording={handleStartRecording} onStopRecording={handleStopRecording} isRecording={isRecording} recordedCount={recordedSamples.length} canExport={recordedSamples.length > 0} onCloseSidebar={() => setIsSidebarCollapsed(true)} isModelSwitching={isModelSwitching} isTrackerSwitching={isTrackerSwitching} controlStatus={controlStatus} />
           )}
         </div>
       ) : null}
@@ -197,7 +232,7 @@ function DashboardPage() {
           </section>
 
           {!isSidebarCollapsed && (
-            <StatusPanel status={status} mode={dashboardConfig.mode} telemetry={telemetry} snapshot={metricState.snapshot} activeModel={activeModel} activeTracker={activeTracker} onModelSwitch={handleModelSwitch} onTrackerSwitch={handleTrackerSwitch} onExport={handleExport} onCloseSidebar={() => setIsSidebarCollapsed(true)} isModelSwitching={isModelSwitching} isTrackerSwitching={isTrackerSwitching} controlStatus={controlStatus} />
+            <StatusPanel status={status} mode={dashboardConfig.mode} telemetry={telemetry} snapshot={metricState.snapshot} activeModel={activeModel} activeTracker={activeTracker} onModelSwitch={handleModelSwitch} onTrackerSwitch={handleTrackerSwitch} onExport={handleExport} onStartRecording={handleStartRecording} onStopRecording={handleStopRecording} isRecording={isRecording} recordedCount={recordedSamples.length} canExport={recordedSamples.length > 0} onCloseSidebar={() => setIsSidebarCollapsed(true)} isModelSwitching={isModelSwitching} isTrackerSwitching={isTrackerSwitching} controlStatus={controlStatus} />
           )}
         </div>
       ) : null}

@@ -1,4 +1,4 @@
-import { Activity, Download, Server, Settings2 } from "lucide-react";
+import { Activity, Circle, Download, Server, Settings2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PanelShell } from "@/components/dashboard/PanelShell";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
@@ -7,6 +7,11 @@ import type { DashboardModel, DashboardTracker } from "@/types/dashboard";
 interface ControlPanelProps {
   activeModel: DashboardModel;
   activeTracker: DashboardTracker;
+  onStartRecording: () => void;
+  onStopRecording: () => void;
+  isRecording: boolean;
+  recordedCount: number;
+  canExport: boolean;
   onExport: () => void;
   onModelSwitch: (model: DashboardModel) => Promise<void>;
   onTrackerSwitch: (tracker: DashboardTracker) => Promise<void>;
@@ -18,6 +23,11 @@ interface ControlPanelProps {
 export function ControlPanel({
   activeModel,
   activeTracker,
+  onStartRecording,
+  onStopRecording,
+  isRecording,
+  recordedCount,
+  canExport,
   onExport,
   onModelSwitch,
   onTrackerSwitch,
@@ -86,11 +96,22 @@ export function ControlPanel({
         <div className="rounded-md border border-slate-700/80 bg-slate-900/45 p-2.5">
           <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Actions</div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={onExport}>
+            <Button size="sm" variant={isRecording ? "danger" : "active"} onClick={isRecording ? onStopRecording : onStartRecording}>
+              {isRecording ? <Square className="mr-1.5 h-3.5 w-3.5" /> : <Circle className="mr-1.5 h-3.5 w-3.5" />}
+              {isRecording ? "Stop Recording" : "Start Recording"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={onExport}
+              disabled={!canExport}
+              className={canExport ? undefined : "border-slate-700/80 bg-slate-800/60 text-slate-500"}
+              title={canExport ? "Export recorded metrics to CSV" : "No recorded metrics available"}
+            >
               <Download className="mr-1.5 h-3.5 w-3.5" />
               Export Metrics CSV
             </Button>
           </div>
+          <div className="mt-2 text-[10px] text-slate-500">Recorded samples: {recordedCount}</div>
         </div>
 
         <div className="rounded-md border border-slate-700/80 bg-slate-900/55 p-2.5">

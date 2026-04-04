@@ -12,7 +12,7 @@
 
 ## Week Outputs
 
-- Field validation evidence pack
-- GO/NO-GO decision note
-- Control + MAVROS closure status note
-- Novelty path decision memo (single concrete implementation direction)
+- Novelty wording and hierarchy consistency pass
+- Appearance-route decision closure (Target-Memory Appearance Path secondary support, Full-Scene ReID Baseline comparator, Detector-Feature Reuse Path research reference)
+- Implementation-ready scope for Contribution A and Contribution C
+- Week 15 novelty advancement plan

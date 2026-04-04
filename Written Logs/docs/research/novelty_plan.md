@@ -1,160 +1,107 @@
-# Novelty Plan: Deep Research and Real Implementation
+# Novelty Plan: Supervisor-Aligned Thesis Direction
 
 Date: 2026-03-26
 Owner: Thesis development
 
 ## 1. Supervisor Objective (Frozen)
 
-Develop a computationally efficient, autonomous onboard perception system for a micro aerial robot that can detect, identify, and track objects in real time using onboard vision and low-power embedded compute.
+Develop a computationally efficient, autonomous onboard perception system for a micro aerial robot that can detect, identify, and track people in real time using RGB-only onboard vision and low-power embedded compute.
 
 The thesis must combine:
 
-- state-of-the-art computer vision and deep learning methods
-- robust onboard control and estimation integration
-- reliable operation in real-world, cluttered, dynamic conditions
-
-This novelty plan translates that objective into publishable and implementable work.
+- robust small and distant person perception under onboard constraints
+- control-coupled integration with explicit safety behaviour
+- reliable operation in cluttered outdoor conditions
 
 ## 2. What Counts as Real Novelty in This Thesis
 
-Novelty should not be only adding another model. It should create new technical knowledge for this exact setting:
+Novelty is not adding appearance features on its own. It must generate new technical evidence for this setting:
 
 - micro-UAV
-- strict onboard compute budget
-- control-coupled tracking objective
-- real-world clutter and occlusions
+- strict onboard compute and latency budget
+- selected-target tracking objective
+- small and far person failure modes in real scenes
 
-The strongest novelty for this thesis is to design methods that are aware of both identity reliability and control safety under latency constraints.
+The strongest novelty is improving detector/tracker robustness for tiny and distant people while preserving real-time embedded operation.
 
-## 3. Proposed Novel Contributions
+## 3. Contribution Hierarchy (Frozen)
 
-## Contribution A (Primary)
+## Contribution A (Primary Algorithmic Novelty)
 
-Control-aware target-specific appearance memory for reacquisition.
-
-Core idea:
-
-- maintain appearance memory only for the selected target
-- update memory only in high-confidence windows
-- invoke appearance matching only when motion and IoU are ambiguous
-- output identity confidence that can gate control aggressiveness
-
-Why this is novel for this thesis:
-
-- most MOT systems optimize global tracking quality
-- this thesis optimizes single-target lock continuity for closed-loop control
-- appearance is triggered adaptively, not always-on, reducing onboard cost
-
-Expected benefit:
-
-- lower ID switches on selected target
-- faster and safer reacquisition after short occlusions
-- bounded compute overhead compared with per-detection ReID
-- clear fit to selected-target following instead of full-scene MOT optimization
-
-## Contribution B (Stretch Robustness Extension)
-
-Ambiguity-triggered selective refine for tiny targets.
+Tiny-person-aware detector/tracker improvement for selected-target onboard perception.
 
 Core idea:
 
-- trigger a lightweight refine pass only when target size/confidence indicates high risk
-- local ROI refinement around predicted target state
-- skip refine in normal high-confidence frames
-
-Why this is novel for this thesis:
-
-- compute is spent conditionally based on target risk, not uniformly
-- aligns with low-power edge constraints and control-critical tracking continuity
+- improve detection and association behaviour when the selected person is small or far
+- use risk-aware triggers based on size, confidence, and track stability
+- maintain selected-target continuity without breaking runtime limits
 
 Expected benefit:
 
-- improved recall of small/far targets
-- lower lock drop probability at distance
-- controlled latency increase through trigger budgeting
+- better recall for small and distant people
+- fewer lock drops in far-target segments
+- stronger selected-target continuity under ambiguity
+
+## Contribution B (Secondary Identity Robustness Module)
+
+Target-specific appearance support for ambiguity resolution and reacquisition.
+
+Core idea:
+
+- use the Target-Memory Appearance Path only when motion/IoU cues are ambiguous or after short loss
+- update appearance memory conservatively in high-quality views
+- avoid always-on appearance processing
+
+Role in thesis:
+
+- supports Contribution A
+- does not define the main thesis novelty
 
 ## Contribution C (Primary Systems Novelty)
 
-Identity-confidence-aware control validity policy.
+Control-safe, latency-bounded perception-to-control integration.
 
 Core idea:
 
-- combine target freshness, geometric validity, and identity confidence into one control validity score
-- use score to enforce graded control behavior:
-  - valid and confident: normal bounded control
-  - uncertain identity: conservative gains and tighter saturation
-  - invalid or stale: safe zero/hold
+- combine freshness, geometric validity, and identity confidence into control validity
+- enforce graded control modes under uncertainty and loss
+- keep transition behaviour deterministic and bounded
 
-Why this matters:
+Expected benefit:
 
-- ties perception uncertainty directly to control safety
-- makes the control chain thesis-defensible beyond pure perception metrics
+- safer behaviour during stale, uncertain, or lost-target conditions
+- bounded command behaviour across mode transitions
+- defensible systems contribution beyond tracker metrics alone
 
-Why this is primary (not secondary):
+## 4. Appearance Route Roles (Frozen Naming)
 
-- this is what makes the thesis read as robotics/control rather than MOT-only tracking
-- it turns identity uncertainty into explicit safety-aware control logic
+- Target-Memory Appearance Path: secondary support mechanism for ambiguity and reacquisition
+- Full-Scene ReID Baseline: comparator baseline
+- Detector-Feature Reuse Path: high-risk research reference only
 
-## Supporting Mechanisms (Recommended)
+## 5. Deep Research Work Package
 
-### S1 — Event-triggered appearance extraction/use
+Primary decision question:
 
-Core idea:
+- which detector/tracker changes are most defensible for tiny and distant people under strict embedded latency limits, and where does appearance support add value without dominating scope?
 
-- do not run appearance logic every frame
-- trigger only when ambiguity/risk indicators are active (crossings, close candidates, recent loss, confidence drop)
+For each candidate method or paper family, extract:
 
-Why include it:
-
-- strong embedded efficiency story
-- aligned with low-power runtime constraints
-
-### S2 — View-quality-aware memory updates
-
-Core idea:
-
-- update target memory only when view quality is acceptable (size, confidence, border distance, blur proxy, no active ambiguity)
-
-Why include it:
-
-- prevents memory poisoning from poor visual evidence
-- practical for outdoor UAV conditions
-
-### S3 — Tiny-target gated identity policy (optional)
-
-Core idea:
-
-- when target is too small, down-weight appearance cues
-- pause memory updates when identity evidence is weak
-
-Why include it:
-
-- explicitly handles known UAV failure modes for appearance reliability
-
-## 4. Deep Research Work Package
-
-For each candidate method or paper family, extract only decision-critical fields:
-
-- where appearance enters pipeline
-- descriptor dimension
-- always-on vs ambiguity-only use
-- matching metric
-- compute overhead profile
-- robustness pattern (occlusion, crossings, re-entry)
-- feasibility on embedded onboard stack
+- tiny/small target behaviour
+- far-target robustness pattern
+- recall impact by target size
+- runtime and latency impact
+- control relevance and selected-target continuity relevance
+- appearance support role, if any
 
 Priority reading families:
 
-- DeepSORT-style appearance-assisted online association
-- BoT-SORT-style motion + appearance fusion
-- efficient integrated appearance pipelines such as LITE-style approaches
-- UAV-specific ReID limitations and domain-shift behavior
+- small-object-aware detector/tracker methods under edge constraints
+- UAV RGB-only person perception robustness studies
+- efficient association strategies for ambiguous target crossings
+- DeepSORT/BoT-SORT/LITE-style appearance families as secondary references
 
-Output artifact:
-
-- one comparative matrix with implementation risk and expected gain
-
-## 5. Real Coding Roadmap (Frozen Order)
+## 6. Real Coding Roadmap (Frozen Order)
 
 ## Phase 1: Control Closure and MAVROS Closure
 
@@ -166,252 +113,158 @@ Deliverables:
 
 Acceptance:
 
-- control path is stable and safety behavior is verified for stale/lost target cases
+- control path stable, including stale/lost safe behaviour
 
 ## Phase 2: Instrumentation for Novelty Experiments
 
 Deliverables:
 
-- add explicit identity and reacquisition events to logs
-- add lock continuity and reacquisition timers
-- add confidence/state transition traces for control validity analysis
+- explicit tiny-target and far-target event logging
+- lock continuity and reacquisition timers
+- control-validity transition traces
 
 Acceptance:
 
-- metrics are automatically produced from bag analysis
+- metrics produced automatically from bag analysis
 
-## Phase 3: Contribution A Implementation (Target-Specific Appearance Memory)
+## Phase 3: Contribution A Implementation (Primary)
 
 Implementation tasks:
 
-- add compact embedding extractor path
-- add target-memory bank with conservative update policy
-- add ambiguity detector (motion/IoU conflict zone)
-- add appearance-assisted reassociation only in ambiguity windows
+- add tiny-person-aware detector/tracker improvements
+- define risk triggers from size/confidence/track stability
+- integrate selected-target continuity logic for small/far segments
+- add latency guardrails and watchdog checks
 
 Acceptance:
 
-- measurable ID switch reduction on target of interest
-- no unacceptable latency regression against baseline
+- measurable gains in small/far selected-target robustness
+- no unacceptable runtime regression
 
-Engineering constraints:
-
-- fixed compute budget and bounded per-frame runtime
-- no unbounded queue growth
-
-## Phase 4: Contribution C Integration (Identity-Confidence-Aware Control Validity)
+## Phase 4: Contribution C Integration (Primary Systems)
 
 Implementation tasks:
 
 - compute control validity from freshness + geometry + identity confidence
-- map validity to control mode tiers
-- enforce safe fallback rules and saturation limits
-- add hysteresis to avoid confidence-threshold oscillation bursts
+- map validity to conservative/normal/hold control modes
+- enforce transition hysteresis and saturation limits
 
 Acceptance:
 
-- stale/lost/uncertain conditions produce expected safe behavior
-- no unsafe command bursts across mode transitions
+- deterministic safe behaviour under uncertain perception
+- no unsafe command bursts during transitions
 
-## Phase 5 (Optional): Contribution B Implementation (Selective Tiny-Target Refine)
+## Phase 5: Contribution B Integration (Secondary Support)
 
 Implementation tasks:
 
-- define trigger conditions from target size/confidence/tracker risk
-- run ROI refine path only on trigger
-- fuse refined result into tracker update
-- add trigger-rate and latency accounting
+- integrate Target-Memory Appearance Path for ambiguity and reacquisition windows
+- keep updates quality-gated and event-triggered
+- measure added cost and continuity gain
 
 Acceptance:
 
-- improved tiny-target lock continuity or reacquisition
-- trigger budget stays within defined ceiling
+- improved continuity/reacquisition in ambiguity windows
+- added runtime cost remains bounded
 
-## 6. Evaluation Design
+## 7. Evaluation Design
 
 ## Metrics (Novelty-Critical)
 
-Identity and tracking:
+Small/far target robustness:
+
+- recall by size bins
+- selected-target lock retention in far/tiny segments
+- lock continuity duration
+
+Identity continuity:
 
 - ID switches on selected target
 - reacquisition time after controlled occlusion
-- lock continuity duration
-
-Small-target robustness:
-
-- target recall by size bins
-- lock retention for far/tiny target segments
-- refine trigger precision and duty cycle
+- ambiguity-window recovery rate
 
 System and control:
 
 - end-to-end latency p50, p95, p99
 - frame cadence stability
-- invalid-to-safe command transition time
-- command saturation frequency and burst behavior
+- invalid-to-safe transition time
+- command saturation frequency and burst behaviour
 
 ## Comparative Experiments
 
 Mandatory comparisons:
 
-1. baseline tracker without appearance/refine
+1. baseline tracker without tiny-person-specific improvement
 2. baseline + Contribution A
 3. baseline + Contribution A + Contribution C
-4. baseline + Contribution A + Contribution C + Contribution B (optional stretch)
+4. baseline + Contribution A + Contribution C + Contribution B (secondary module)
+5. baseline + Full-Scene ReID Baseline (comparator where feasible)
 
 For each comparison:
 
-- report accuracy gain
-- report latency/compute cost
+- report robustness gain
+- report runtime and latency cost
 - report control-safety side effects
 
-## 7. Thesis Claims You Can Defend
+## 8. Defensible Thesis Claims
 
-If executed successfully, the thesis can claim:
+If supported by results, claim language should reflect:
 
-1. a control-aware appearance strategy that improves target lock robustness under embedded constraints
-2. an integrated perception-to-control validity policy that improves safety behavior under uncertainty
-3. ambiguity-triggered appearance usage reduces identity cost while preserving embedded runtime
-4. selective tiny-target refine can provide additional robustness when included as stretch
+1. tiny-person-aware detector/tracker improvement increases selected-target robustness for small and distant people under embedded constraints
+2. latency-bounded control-validity integration improves safety behaviour in uncertain perception conditions
+3. target-specific appearance support improves ambiguity resolution and reacquisition as a secondary module
 
-These claims are stronger than generic tracker benchmarking because they are tied to onboard control outcomes.
+## 9. Risk Register and Mitigations
 
-## 8. Risk Register and Mitigations
+Risk 1: tiny-target robustness gain is weak
 
-Risk 1: appearance overhead too high
+- mitigation: tighten risk triggers and tune size-bin-specific thresholds
 
-- mitigation: ambiguity-only invocation and compact descriptor size
+Risk 2: latency tail grows after detector/tracker changes
 
-Risk 2: weak transfer of appearance cues in outdoor UAV views
+- mitigation: strict trigger budget, queue discipline, and runtime watchdog
 
-- mitigation: conservative memory updates and fallback to motion/IoU baseline
+Risk 3: appearance support adds cost without clear gain
 
-Risk 3: selective refine increases latency tail
+- mitigation: keep Contribution B event-triggered and quality-gated only
 
-- mitigation: strict trigger budget and runtime watchdog
+Risk 4: confidence coupling causes control oscillation
 
-Risk 4: perception-confidence coupling causes control oscillation
-
-- mitigation: hysteresis and mode-transition damping in control validity tiers
-
-## 9. Next 3-Block Execution Plan
-
-Block 1 (control closure)
-
-- finish frozen control contract and GO/NO-GO gate
-- complete ground safety validation cases
-
-Block 2 (novelty instrumentation)
-
-- implement identity/reacquisition/confidence transition instrumentation
-- freeze experiment metrics and analysis pipeline
-
-Block 3 (novelty implementation core)
-
-- implement Contribution A with full instrumentation
-- run first baseline-versus-A experiment set
-
-Block 4 (systems novelty integration)
-
-- implement Contribution C confidence-aware control tiers
-- validate conservative/normal/hold behavior and hysteresis
-
-Block 5 (optional stretch)
-
-- implement Contribution B (or lighter quality-gated support only)
-- run extended comparison matrix if time allows
+- mitigation: hysteresis and mode-transition damping in Contribution C policy
 
 ## 10. Priority Ranking (Frozen)
 
 Primary novelty (must deliver):
 
-1. Contribution A: control-aware target-specific appearance memory
-2. Contribution C: identity-confidence-aware control validity policy
+1. Contribution A: tiny-person-aware detector/tracker improvement
+2. Contribution C: control-safe, latency-bounded perception-to-control integration
 
-Secondary novelty (deliver if on-track):
+Secondary novelty (deliver after core is stable):
 
-1. S1 event-triggered appearance use
-2. S2 view-quality-aware memory updates
-
-Stretch novelty (only with time margin):
-
-1. control-driven reacquisition window
-2. multi-timescale target memory
-3. Contribution B selective tiny-target refine
-4. tiny-target gated identity handling as a separate module
+1. Contribution B: target-specific appearance support for ambiguity and reacquisition
+2. event-triggered and view-quality-gated appearance updates
 
 ## 11. Best Thesis Package
 
 Recommended coherent package:
 
-- Novelty A (main algorithmic novelty): control-aware target-specific appearance memory
-- Novelty C (main systems novelty): identity-confidence-aware control validity policy
-- Optional enhancement: event-triggered appearance activation
+- main algorithmic novelty: Contribution A
+- main systems novelty: Contribution C
+- secondary support module: Contribution B via Target-Memory Appearance Path
 
 This package is strong because it is:
 
-- small enough to finish
-- tightly tied to one selected target
-- control-relevant rather than MOT-score-only
-- feasible under onboard runtime constraints
+- centred on small/far person robustness
+- selected-target and control-coupled
+- feasible under embedded runtime constraints
 
-Strong thesis story (freeze wording intent):
+## 12. Final Recommendation
 
-- standard trackers optimize scene-wide association quality
-- this thesis proposes a lightweight selected-target identity mechanism and couples identity confidence to control validity so uncertain reassociation does not propagate overconfident or unsafe control actions
+Freeze this hierarchy and avoid daily scope drift:
 
-## 12. Defensible Thesis Claims
+- Contribution A and Contribution C are primary
+- Contribution B is secondary support
+- Full-Scene ReID Baseline is comparator only
+- Detector-Feature Reuse Path is research reference only
 
-If results support them, use claim language similar to:
-
-1. A lightweight target-specific appearance memory improves selected-target lock continuity and reacquisition under ambiguous association.
-2. Ambiguity-triggered appearance usage reduces the cost of classic appearance-assisted tracking in embedded onboard operation.
-3. Propagating identity confidence into control validity improves safety behavior in the perception-to-control chain.
-
-Note:
-
-- claim 3 is a proposed systems contribution derived from a literature gap; it should be presented as your method, not as a direct copy of prior tracker literature.
-
-## 12.1 Success Criteria to Freeze Now
-
-For Contribution A:
-
-- fewer selected-target ID switches
-- faster reacquisition after short occlusion
-- longer lock continuity
-- acceptable latency increase
-
-For Contribution C:
-
-- identity uncertainty causes safer control behavior
-- stale/lost transitions are clean and deterministic
-- no command bursts during confidence transitions
-- control remains responsive when identity confidence is strong
-
-For combined A + C package:
-
-- better selected-target persistence without breaking onboard runtime constraints
-
-## 13. Out-of-Scope / High-Risk Paths
-
-Avoid in this thesis scope:
-
-- full new tracker from scratch
-- end-to-end transformer tracking redesign
-- always-on ReID for all detections
-- detector-integrated feature extraction as first implementation target
-- large-model retraining-heavy paths
-
-## 14. Final Recommendation
-
-Freeze this hierarchy and avoid reopening novelty scope daily:
-
-- A is the main algorithmic novelty
-- C is the main systems novelty
-- B is stretch-only if core A + C is stable
-
-Why this sequencing is best:
-
-- A gives the clearest identity and reacquisition novelty with realistic onboard feasibility
-- C turns perception novelty into control-safety novelty, strengthening thesis defensibility
-- S1/S2 improve efficiency and robustness without exploding implementation scope
+Supervisor-aligned freeze: the main thesis objective is to improve onboard detector/tracker robustness for small and distant people under embedded runtime constraints. Appearance-based mechanisms are supporting options, not the primary thesis contribution unless later supervisor guidance changes this priority.

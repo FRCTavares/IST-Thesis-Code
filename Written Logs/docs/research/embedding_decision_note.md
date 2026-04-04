@@ -1,158 +1,97 @@
-# Embedding Research Decision Note
+# Appearance Integration Decision Note (Secondary Thesis Design Note)
 
 Date: 2026-03-26
-Scope: research-first with direct implementation targeting
+Scope: appearance integration choices that support, but do not define, thesis novelty
 
-## Thesis Question
+## Thesis Context
 
-Can a lightweight target-specific appearance embedding reduce ID switches and improve reacquisition without violating latency constraints?
+Main thesis question:
 
-## Intended Use of Appearance
+How can an onboard RGB-only perception pipeline for a micro-UAV be improved to maintain robust selected-target tracking of small and distant people in real time under strict embedded compute and latency constraints?
 
-Appearance is secondary, not primary:
+This note is a secondary design note for appearance support routes.
 
-- first use motion and IoU gates
-- invoke appearance only when association is ambiguous
-- prioritize target-lock and reacquisition outcomes over full-scene MOT elegance
+## Role of Appearance in the Thesis
 
-## Candidate Designs
+Appearance is secondary.
 
-Naming convention for this file:
+- use appearance only when it improves ambiguity resolution or reacquisition
+- keep detector/tracker tiny-person robustness as the primary algorithmic axis
+- do not present appearance integration as the main novelty
 
-- `Option O1/O2/O3` = appearance design alternatives
-- `Contribution A/B/C` = thesis contribution hierarchy (defined in novelty plan)
+## Appearance Route Definitions (Frozen)
 
-### Option O1 — Lightweight ReID Branch (Classic)
-
-Design:
-
-- per-detection 8D to 32D embedding descriptor
-- association uses motion gate + IoU gate + cosine distance
-- appearance used only on ambiguity
-
-Pros:
-
-- easy to explain and benchmark
-- strong literature alignment
-
-Risks:
-
-- added per-detection compute overhead
-
-### Option O2 — Detector-Integrated Appearance Features
+### Full-Scene ReID Baseline
 
 Design:
 
-- reuse detector features for appearance cue
-- avoid standalone ReID model pass
+- per-detection descriptor extraction for scene-wide association support
+- compare motion/IoU and appearance cues during association
 
-Pros:
+Role:
 
-- potentially lower incremental overhead
+- comparator baseline for analysis
 
 Risks:
 
-- implementation risk on current onboard/Hailo stack
-- feature access and integration complexity
+- higher per-frame runtime overhead
+- possible latency tail growth under crowded scenes
 
-### Option O3 — Target-Only Appearance Memory
+### Detector-Feature Reuse Path
 
 Design:
 
-- maintain compact appearance memory only for selected target
-- conservative memory update while confidence is high
-- use appearance for reacquisition/ambiguity resolution only
+- reuse detector-side features for lightweight appearance signals
+- reduce dependence on a standalone ReID branch
 
-Pros:
+Role:
 
-- best alignment with target-following control objective
-- likely best compute tradeoff on Pi 5
+- high-risk research reference only
 
 Risks:
 
-- less direct comparability to generic MOT pipelines
+- integration complexity on current stack
+- uncertain feature access and maintainability
 
-## Current Recommendation
+### Target-Memory Appearance Path
 
-Research Option O3 first, then compare to Option O1 baseline in thesis analysis.
+Design:
 
-Rationale:
+- maintain compact appearance memory for the selected target only
+- invoke matching in ambiguity or short-loss windows
+- use conservative, quality-gated memory updates
 
-- objective is stable target-relative following of one chosen person
-- target lock and reacquisition matter more than global MOT ranking
-- computational risk is lower than full per-detection appearance cues
+Role:
 
-## Right Novelty Shape (Frozen)
+- secondary support module after primary tiny-person work is stable
 
-The novelty is not "adding embeddings".
+Risks:
 
-The novelty is how appearance is used in a control-coupled embedded system:
+- added system complexity if invoked too frequently
+- limited benefit if tiny-person detector/tracker errors dominate
 
-- target-specific memory instead of full-scene appearance tracking
-- ambiguity-only/event-triggered usage instead of always-on usage
-- identity confidence propagated into control validity behavior
+## Implementation Priority
 
-## Priority Ranking
+1. first implementation priority is tiny-person detector/tracker robustness work
+2. Target-Memory Appearance Path is optional/secondary support once the main tiny-target path is stable
+3. Full-Scene ReID Baseline is a comparator
+4. Detector-Feature Reuse Path is high-risk reference only
 
-Primary novelty:
+## Decision Guidance
 
-1. target-specific appearance memory
-2. identity-confidence-aware control policy
+Use appearance routes to answer secondary questions:
 
-Secondary novelty:
+- does appearance support reduce selected-target ID switches in ambiguity windows?
+- does it improve reacquisition without violating latency bounds?
+- is added complexity justified after Contribution A and Contribution C evidence is strong?
 
-1. event-triggered appearance extraction/use
-2. view-quality-aware memory updates
+## Evidence Requirements for Appearance Use
 
-Stretch novelty:
+- explicit ambiguity/reacquisition event accounting
+- incremental runtime and latency measurements
+- lock continuity comparison with and without appearance support
+- no unsafe control behaviour introduced by identity-confidence changes
 
-1. control-driven reacquisition window
-2. multi-timescale memory
-3. tiny-target gated identity handling
+## Frozen Wording Guardrail
 
-## Best Thesis Package
-
-- Main algorithmic novelty: control-aware target-specific appearance memory
-- Main systems novelty: identity-confidence-aware control validity policy
-- Optional efficiency enhancement: event-triggered appearance activation
-
-Contribution hierarchy (frozen):
-
-- Contribution A: main algorithmic novelty
-- Contribution C: main systems novelty
-- Contribution B: stretch-only extension
-
-## High-Risk Paths to Avoid
-
-- full new tracker from scratch
-- always-on ReID for all detections
-- detector-integrated feature extraction as first implementation target
-- retraining-heavy large-model path as primary strategy
-
-## Literature Extraction Template
-
-For each paper/tracker family, extract:
-
-- where appearance enters the pipeline
-- descriptor dimension
-- always-on vs ambiguity-only usage
-- matching metric (cosine, L2, etc.)
-- compute cost and runtime implications
-- main robustness gains (occlusion, crossings, re-entry)
-- realism for onboard deployment
-
-## Short Reading Queue
-
-- DeepSORT-style online appearance-assisted tracking
-- BoT-SORT motion + appearance fusion
-- LITE-style efficient integrated appearance extraction
-- one to two UAV-focused ReID constraints papers
-
-## Decision Deliverable for This Block
-
-Produce a 1-page design selection memo containing:
-
-- selected option and why
-- integration point in current tracker/selector path
-- expected latency risk
-- evaluation metrics for thesis (ID switches, reacquisition time, lock continuity, latency impact)
+This document must not be used as the thesis headline document. Primary novelty remains tiny-person-aware detector/tracker robustness plus control-safe, latency-bounded integration.
