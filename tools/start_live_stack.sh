@@ -77,6 +77,22 @@ check_proc_alive() {
     echo "[ok] $name is running (pid=$pid)"
 }
 
+camera_log_has_fatal_error() {
+    local log_file="$RUN_DIR/camera.log"
+
+    if [[ ! -f "$log_file" ]]; then
+        return 1
+    fi
+
+    if rg -q "process has died|Traceback \(most recent call last\)|RuntimeError:" "$log_file"; then
+        echo "[error] camera log reports fatal startup error"
+        tail -n 40 "$log_file" || true
+        return 0
+    fi
+
+    return 1
+}
+
 kill_tree() {
     local pid="$1"
     local sig="${2:-TERM}"
@@ -506,6 +522,7 @@ wait_for_topic_message() {
 }
 
 STACK_PROC_PATTERN="camera_bringup.launch.py|camera_capture_node|inference_client_node|tracker_node|target_selector_node|control_ref_node|dashboard_bridge_node|web_video_server"
+CAMERA_MEDIA_DEV_OVERRIDE=""
 
 check_stuck_camera_processes() {
     local stuck_lines
@@ -547,6 +564,38 @@ cleanup_existing_stack_processes() {
     return 0
 }
 
+detect_camera_media_device() {
+    local media_dev
+    local topology
+
+    CAMERA_MEDIA_DEV_OVERRIDE=""
+
+    for media_dev in /dev/media*; do
+        [[ -e "$media_dev" ]] || continue
+        topology="$(media-ctl -d "$media_dev" -p 2>/dev/null || true)"
+        [[ -n "${topology:-}" ]] || continue
+
+        if grep -qi "driver[[:space:]]*rp1-cfe" <<<"$topology" && grep -qiE "tevs|11-0048|rp1-cfe-csi2_ch[0-9]" <<<"$topology"; then
+            CAMERA_MEDIA_DEV_OVERRIDE="$media_dev"
+            echo "[info] auto-detected camera media graph on $CAMERA_MEDIA_DEV_OVERRIDE"
+            return 0
+        fi
+    done
+
+    echo "[warn] no media device currently exposes TEVS camera entities"
+    echo "[hint] runtime auto-select can only choose among detected camera media graphs"
+    echo "[hint] cam0/cam1 selection comes from boot overlay and requires reboot to change"
+
+    local klog
+    klog="$(journalctl -k -b --no-pager 2>/dev/null | tail -n 500 || true)"
+    if [[ -n "${klog:-}" ]] && grep -qiE "pca953x.*failed writing register|probe.*error -121" <<<"$klog"; then
+        echo "[hint] kernel reports camera control I2C probe failure (pca953x/-121)"
+        echo "[hint] verify camera port (cam0/cam1) and overlay in /boot/firmware/config.txt"
+    fi
+
+    return 1
+}
+
 tracker_state="off"
 target_state="off"
 control_state="off"
@@ -581,6 +630,7 @@ fi
 if ! cleanup_existing_stack_processes; then
     exit 1
 fi
+detect_camera_media_device || true
 
 echo "[step] sourcing ROS environment"
 cd "$ROS_WS"
@@ -673,6 +723,9 @@ CAMERA_ARGS+=("height:=$CAMERA_HEIGHT")
 CAMERA_ARGS+=("fps:=$CAMERA_FPS")
 CAMERA_ARGS+=("dashboard_fps:=$CAMERA_DASHBOARD_FPS")
 CAMERA_ARGS+=("flip_image:=$CAMERA_FLIP_BOOL")
+if [[ -n "${CAMERA_MEDIA_DEV_OVERRIDE:-}" ]]; then
+    CAMERA_ARGS+=("media_dev:=$CAMERA_MEDIA_DEV_OVERRIDE")
+fi
 
 start_ros_bg camera ros2 launch thesis_bringup camera_bringup.launch.py "${CAMERA_ARGS[@]}"
 sleep 2
@@ -681,9 +734,20 @@ if ! check_proc_alive camera; then
     exit 1
 fi
 if ! wait_for_topic_message /camera/image_raw 12 1 sensor_data best_effort volatile; then
+    if ! check_proc_alive camera; then
+        echo "[error] camera process exited during startup; see $RUN_DIR/camera.log"
+        stop_stack
+        exit 1
+    fi
+    if camera_log_has_fatal_error; then
+        echo "[error] camera startup failed; see $RUN_DIR/camera.log"
+        stop_stack
+        exit 1
+    fi
     echo "[error] camera node is running but not publishing frames"
     echo "[hint] check camera cable/sensor state and try restarting stack"
     echo "[hint] if issue persists, reboot host to reset camera pipeline"
+    echo "[hint] if media topology lacks sensor entities, verify /boot/firmware/config.txt overlay port (cam0 vs cam1)"
     stop_stack
     exit 1
 fi

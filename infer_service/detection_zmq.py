@@ -603,7 +603,9 @@ class RosReqRepInferenceService:
         frames = [identity]
         if has_empty:
             frames.append(b"")
-        frames.append(json.dumps(payload).encode("utf-8"))
+        frames.append(
+            json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        )
         self.router.send_multipart(frames)
 
     def _send_error(self, identity: bytes, has_empty: bool, message: str):

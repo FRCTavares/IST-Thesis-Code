@@ -1,7 +1,24 @@
 # Runbook
 
 Practical commands for day-to-day operation.
-All commands run from $THESIS_ROOT unless noted.
+All commands run from `$THESIS_ROOT` unless noted.
+
+Use this file as the command source of truth.
+
+## Scope and assumptions
+
+- Primary platform: Raspberry Pi 5 + Hailo (full live stack).
+- Fallback platform: generic Linux (UI, replay, offline analysis).
+- ROS 2 distro: Jazzy.
+- Workspace root: `$HOME/Desktop/Thesis-Code`.
+
+## Success checks (required)
+
+This runbook is complete when you can do all three:
+
+1. Start live stack end-to-end on target hardware.
+2. Run replay on recorded bags.
+3. Run timing/tracking analyses and produce output reports.
 
 ## 0) One-time shell setup
 
@@ -16,6 +33,49 @@ Optional (recommended in ~/.bashrc):
 export THESIS_ROOT="$HOME/Desktop/Thesis-Code"
 export ROS_DOMAIN_ID=42
 ```
+
+## 0.1) First-run prerequisites
+
+### Required tools (all platforms)
+
+- `bash`, `python3`, `pip`, `git`
+- `npm` (UI)
+- `ros2` + `colcon` (for ROS workflows)
+- `docker` + `docker compose` (for Hailo inference service path)
+
+Quick sanity checks:
+
+```bash
+command -v python3
+command -v npm
+command -v ros2
+command -v colcon
+command -v docker
+docker compose version
+```
+
+### Mandatory external dependency (RPi5 + Hailo path)
+
+This repository expects the Hailo compose environment at `~/pi-ai-kit-ubuntu`.
+
+```bash
+git clone https://github.com/hailo-ai/pi-ai-kit-ubuntu.git ~/pi-ai-kit-ubuntu
+cd ~/pi-ai-kit-ubuntu
+docker compose -f docker-compose.yaml pull
+```
+
+If your team uses a fork, clone that fork into the same path.
+
+### Build ROS workspace once
+
+```bash
+cd "$THESIS_ROOT/ros2_ws"
+source /opt/ros/jazzy/setup.bash
+colcon build --symlink-install
+```
+
+Generic Linux fallback note:
+- If no Hailo hardware is available, skip live-stack sections and use section 5 (replay/analysis) plus UI mock mode via `tools/start_ui_stack.sh --mode mock`.
 
 ## 1) Keep all ROS/colcon logs inside ros2_ws
 
@@ -54,6 +114,14 @@ cd $THESIS_ROOT
 ./tools/start_live_stack.sh
 ```
 
+What this script does:
+
+1. Preflight and stale-process cleanup.
+2. ROS env and log directory setup.
+3. Inference container readiness.
+4. Node startup order: camera -> inference -> tracker/target/control -> dashboard.
+5. Interactive runtime with `status`, `clear`, `stop` commands.
+
 Default:
 - control_ref_node enabled
 - MAVROS mirror disabled (safe default)
@@ -68,6 +136,19 @@ Stop:
 - In prompt: stop, quit, or exit
 - Fallback: ./tools/stop_live_stack.sh
 
+Verification checkpoint (live stack healthy):
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source "$THESIS_ROOT/ros2_ws/install/setup.bash"
+ros2 topic list | rg '/camera/image_raw|/detections|/timing|/target'
+ss -ltnp | rg ':5556|:8080|:8090|:8765'
+```
+
+Expected:
+- Core topics are listed.
+- Required service ports are listening.
+
 Run UI in parallel (second terminal):
 
 ```bash
@@ -78,6 +159,11 @@ cd $THESIS_ROOT
 Useful UI flags:
 - Mock mode: ./tools/start_ui_stack.sh --mode mock
 - Custom port: ./tools/start_ui_stack.sh --port 5174
+
+Verification checkpoint (UI healthy):
+
+- Open `http://127.0.0.1:5173` (or remote host IP and chosen port).
+- Dashboard connects to telemetry websocket and backend API if running in backend mode.
 
 ## 3) Manual startup (fallback)
 
@@ -138,6 +224,14 @@ Dashboard:
 - Telemetry: ws://<PI_IP>:8765
 - Control API: http://<PI_IP>:8090
 
+Manual mode verification:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source "$THESIS_ROOT/ros2_ws/install/setup.bash"
+ros2 node list | rg 'inference_client_node|tracker_node|target_selector_node|dashboard_bridge_node'
+```
+
 ## 4) Record bags
 
 Lean operational bag:
@@ -153,6 +247,8 @@ ros2 bag record --storage mcap \
   /camera/fps /detections /timing /target
 ```
 
+Use for field sessions and timeline metrics with low storage overhead.
+
 Raw profiling bag:
 
 ```bash
@@ -161,6 +257,8 @@ ros2 bag record --storage mcap \
   --topics /detections /timing /tracks /target /timing_tracker
 # rename output folder after stop
 ```
+
+Use for replay/evaluation runs. Save under `bags/raw`.
 
 ## 5) Replay and analysis
 
@@ -172,6 +270,17 @@ ros2 launch thesis_bringup eval_replay.launch.py \
   tracker:=sort
 ```
 
+Replay verification:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source "$THESIS_ROOT/ros2_ws/install/setup.bash"
+ros2 topic hz /timing
+```
+
+Expected:
+- Replay publishes `/timing` steadily during bag playback.
+
 Timing:
 
 ```bash
@@ -180,11 +289,18 @@ python3 tools/analyse_bag_timing.py $THESIS_ROOT/bags/raw/<bag_name>
 python3 tools/analyse_bag_timing.py $THESIS_ROOT/bags/live_camera/<bag_name>
 ```
 
+Expected output:
+- Markdown timing report file.
+- Figure files in the selected figure directory.
+
 Tracking:
 
 ```bash
 python3 tools/analyse_bag_tracking.py $THESIS_ROOT/bags/eval/<eval_bag_name>
 ```
+
+Expected output:
+- `summary.md` and plot files under `reports/tracking/<eval_bag_name>/`.
 
 ## 6) Quick troubleshooting
 
@@ -218,6 +334,20 @@ If startup says camera is not publishing:
 - Check cable/sensor state.
 - If camera process is stuck in D state, reboot host.
 
+Additional common failures:
+
+- Inference client timeout spam:
+  - Check detector service inside container is running.
+  - Confirm `addr:=tcp://127.0.0.1:5556` (or host/IP override) matches service bind.
+- Empty ROS graph:
+  - Verify `ROS_DOMAIN_ID` matches all terminals.
+  - Re-source `/opt/ros/jazzy/setup.bash` and workspace overlay.
+- UI shows no live data:
+  - Confirm API `:8090` and WS `:8765` ports are reachable.
+  - Use UI mock mode to isolate backend vs frontend issues.
+- `ros2 run` cannot find packages:
+  - Rebuild workspace with `colcon build --symlink-install` in `ros2_ws`.
+
 ## 7) Control validation quick checks
 
 Verify control node is running and publishing:
@@ -246,3 +376,19 @@ Expected behavior from validated baseline:
 - far target (smaller h) -> vx > 0
 - near target (larger h) -> vx < 0
 - stale/lost target -> vx=0, yaw_z=0
+
+## 8) Canonical repository paths (for command context)
+
+- ROS packages: `ros2_ws/src/`
+- Inference service code: `infer_service/`
+- Utility scripts: `tools/`
+- Live bags: `bags/live_camera/`
+- Replay source bags: `bags/raw/`
+- Eval output bags: `bags/eval/`
+- Tracking reports: `reports/tracking/`
+
+## 9) Last validated assumptions
+
+- Date: 2026-04-08
+- ROS: Jazzy
+- Target hardware path: RPi5 + Hailo using external `~/pi-ai-kit-ubuntu`

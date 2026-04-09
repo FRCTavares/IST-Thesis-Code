@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import threading
 import time
+import re
 from pathlib import Path
 
 import cv2
@@ -72,6 +73,7 @@ class CameraCaptureNode(Node):
         self._fail_on_media_init_error = bool(self.get_parameter("fail_on_media_init_error").value)
 
         self._media_dev = self._resolve_media_device(self._media_dev)
+        self._device = self._resolve_video_device(self._device)
 
         self._bridge = CvBridge()
         self._latest_frame = None
@@ -124,6 +126,23 @@ class CameraCaptureNode(Node):
             f"width={self._width}, height={self._height}, fps={self._fps}"
         )
 
+    def _probe_media_topology(self, media_dev: str) -> str | None:
+        try:
+            result = subprocess.run(
+                ["media-ctl", "-d", media_dev, "-p"],
+                check=False,
+                text=True,
+                capture_output=True,
+                timeout=self._command_timeout_s,
+            )
+        except Exception:
+            return None
+
+        if result.returncode != 0:
+            return None
+
+        return result.stdout or ""
+
     def _resolve_media_device(self, configured_media_dev: str) -> str:
         candidates = [configured_media_dev]
         for path in sorted(Path("/dev").glob("media*")):
@@ -131,30 +150,28 @@ class CameraCaptureNode(Node):
             if path_str not in candidates:
                 candidates.append(path_str)
 
-        def _matches_camera_topology(media_dev: str) -> bool:
-            try:
-                result = subprocess.run(
-                    ["media-ctl", "-d", media_dev, "-p"],
-                    check=False,
-                    text=True,
-                    capture_output=True,
-                    timeout=self._command_timeout_s,
-                )
-            except Exception:
-                return False
-
-            if result.returncode != 0:
-                return False
-
-            topology = result.stdout or ""
-            required_markers = (self._sensor_entity, self._csi_entity, self._video_entity)
-            return all(marker in topology for marker in required_markers)
+        required_markers = (self._sensor_entity, self._csi_entity, self._video_entity)
 
         for media_dev in candidates:
-            if _matches_camera_topology(media_dev):
+            topology = self._probe_media_topology(media_dev)
+            if topology and all(marker in topology for marker in required_markers):
                 if media_dev != configured_media_dev:
                     self.get_logger().warn(
                         f"Configured media_dev={configured_media_dev} does not match camera topology; "
+                        f"using {media_dev} instead"
+                    )
+                return media_dev
+
+        # Fallback heuristic after crash/re-enumeration: prefer the CSI graph over PISP backends.
+        # This prevents selecting /dev/media0 pispbe when the actual camera graph moved.
+        for media_dev in candidates:
+            topology = self._probe_media_topology(media_dev)
+            if not topology:
+                continue
+            if self._csi_entity in topology and "driver          pispbe" not in topology:
+                if media_dev != configured_media_dev:
+                    self.get_logger().warn(
+                        f"Configured media_dev={configured_media_dev} does not expose CSI topology; "
                         f"using {media_dev} instead"
                     )
                 return media_dev
@@ -163,6 +180,47 @@ class CameraCaptureNode(Node):
             f"Could not auto-detect camera media device; using configured value {configured_media_dev}"
         )
         return configured_media_dev
+
+    def _extract_video_nodes_from_media(self, media_dev: str) -> list[str]:
+        topology = self._probe_media_topology(media_dev)
+        if not topology:
+            return []
+
+        nodes = re.findall(r"device node name\s+(/dev/video\d+)", topology)
+        unique_nodes = []
+        for node in nodes:
+            if node not in unique_nodes:
+                unique_nodes.append(node)
+        return unique_nodes
+
+    def _resolve_video_device(self, configured_device: str) -> str:
+        configured_path = Path(configured_device)
+        if configured_path.exists():
+            return configured_device
+
+        candidates = [Path(p) for p in self._extract_video_nodes_from_media(self._media_dev)]
+        if not candidates:
+            raise RuntimeError(
+                f"Configured camera device {configured_device} not found and media device "
+                f"{self._media_dev} exposes no video nodes. "
+                "Camera sensor/CSI graph is likely not initialized; reboot host to recover."
+            )
+
+        for candidate in candidates:
+            cap = cv2.VideoCapture(str(candidate), cv2.CAP_V4L2)
+            try:
+                if cap.isOpened():
+                    self.get_logger().warn(
+                        f"Configured camera device {configured_device} not found; using {candidate} instead"
+                    )
+                    return str(candidate)
+            finally:
+                cap.release()
+
+        self.get_logger().warn(
+            f"Configured camera device {configured_device} not found and no usable /dev/video* candidate opened"
+        )
+        return configured_device
 
     def _configure_camera(self) -> None:
         self.get_logger().info("Configuring TEVS camera before capture start")
@@ -186,7 +244,10 @@ class CameraCaptureNode(Node):
         if not media_dev.exists():
             raise RuntimeError(f"Media device not found: {media_dev}")
         if not sensor_subdev.exists():
-            raise RuntimeError(f"Sensor subdevice not found: {sensor_subdev}")
+            self.get_logger().warn(
+                f"Sensor subdevice not found: {sensor_subdev}; "
+                "continuing without trigger_mode configuration"
+            )
 
     def _init_media_pipeline(self) -> None:
         fmt_string = (
@@ -199,8 +260,12 @@ class CameraCaptureNode(Node):
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":0 [{fmt_string}]'",
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":{self._csi_source_pad} [{fmt_string}]'",
             f"media-ctl -d {self._media_dev} -l '\"{self._csi_entity}\":{self._csi_source_pad} -> \"{self._video_entity}\":0 [1]'",
-            f"v4l2-ctl -d {self._sensor_subdev} --set-ctrl=trigger_mode={self._trigger_mode}",
         ]
+
+        if Path(self._sensor_subdev).exists():
+            commands.append(
+                f"v4l2-ctl -d {self._sensor_subdev} --set-ctrl=trigger_mode={self._trigger_mode}"
+            )
 
         for cmd in commands:
             self._run_shell(cmd, allow_failure=not self._fail_on_media_init_error)

@@ -7,6 +7,7 @@ import queue
 import threading
 import time
 from collections import deque
+from typing import Tuple
 
 import cv2
 import numpy as np
@@ -86,6 +87,11 @@ class InferenceClientNode(Node):
         self.resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
         self._logged_encoding: str | None = None
         self._logged_own_data = False
+        self._meta_base = {
+            "width": self.img_w,
+            "height": self.img_h,
+            "channels": 3,
+        }
 
         qos_pub = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
@@ -105,7 +111,7 @@ class InferenceClientNode(Node):
 
         self.ctx = zmq.Context.instance()
 
-        self.queue: queue.Queue[dict] = queue.Queue(maxsize=self.queue_size)
+        self.queue: queue.Queue[Tuple[Image, int, int]] = queue.Queue(maxsize=self.queue_size)
         self.state_lock = threading.Lock()
         self.publish_lock = threading.Lock()
         self.stop_event = threading.Event()
@@ -162,11 +168,7 @@ class InferenceClientNode(Node):
     def image_callback(self, msg: Image) -> None:
         t_cam_msg_seen_ns = now_ns()
         src_stamp_ns = stamp_to_ns(msg.header.stamp)
-        frame_ctx = {
-            "msg": msg,
-            "t_cam_msg_seen_ns": t_cam_msg_seen_ns,
-            "src_stamp_ns": src_stamp_ns,
-        }
+        frame_ctx = (msg, t_cam_msg_seen_ns, src_stamp_ns)
 
         dropped_count = 0
         enqueued = False
@@ -206,9 +208,7 @@ class InferenceClientNode(Node):
                     self.empty_polls += 1
                 continue
 
-            image_msg: Image = frame_ctx["msg"]
-            t_cam_msg_seen_ns = int(frame_ctx["t_cam_msg_seen_ns"])
-            src_stamp_ns = int(frame_ctx["src_stamp_ns"])
+            image_msg, t_cam_msg_seen_ns, src_stamp_ns = frame_ctx
 
             t_loop0 = now_ns()
             with self.state_lock:
@@ -294,25 +294,10 @@ class InferenceClientNode(Node):
             t_pack_end_ns = now_ns()
             t_pre_end_ns = now_ns()
 
-            metadata = {
-                "seq": seq,
-                "frame_id": frame_id,
-                "src_stamp_ns": src_stamp_ns,
-                "timestamp_ns": src_stamp_ns,
-                "width": self.img_w,
-                "height": self.img_h,
-                "channels": 3,
-                "dtype": "uint8",
-                "encoding": "rgb8",
-                "request_meta": {
-                    "src_width": int(image_msg.width),
-                    "src_height": int(image_msg.height),
-                    "src_encoding": str(image_msg.encoding),
-                    "infer_width": self.img_w,
-                    "infer_height": self.img_h,
-                    "infer_encoding": "rgb8",
-                },
-            }
+            metadata = self._meta_base.copy()
+            metadata["seq"] = seq
+            metadata["frame_id"] = frame_id
+            metadata["src_stamp_ns"] = src_stamp_ns
 
             t_frame_sent_ns = now_ns()
             with self.state_lock:
