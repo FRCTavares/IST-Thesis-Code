@@ -50,6 +50,8 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastTargetBoxRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [streamSrc, setStreamSrc] = useState("");
 
   const detections = useMemo(() => telemetry?.detections ?? [], [telemetry]);
   const targetTrack = useMemo(() => {
@@ -58,6 +60,51 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
     }
     return telemetry.tracks.find((track) => track.id === telemetry.target) ?? null;
   }, [telemetry]);
+
+  useEffect(() => {
+    const separator = videoUrl.includes("?") ? "&" : "?";
+    setStreamSrc(`${videoUrl}${separator}_t=${Date.now()}`);
+    setVideoLoaded(false);
+    setVideoError(false);
+  }, [videoUrl]);
+
+  useEffect(() => {
+    if (videoLoaded || videoError) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      const image = videoRef.current;
+      if (!image) {
+        return;
+      }
+      if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+        setVideoLoaded(true);
+        setVideoError(false);
+      }
+    }, 250);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [videoLoaded, videoError]);
+
+  useEffect(() => {
+    if (!videoError) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      const separator = videoUrl.includes("?") ? "&" : "?";
+      setStreamSrc(`${videoUrl}${separator}_t=${Date.now()}`);
+      setVideoError(false);
+      setVideoLoaded(false);
+    }, 1500);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [videoError, videoUrl]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -156,28 +203,48 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
   }, [detections, targetTrack, telemetry?.target]);
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-slate-700/80 bg-slate-900">
+    <div className="relative h-full min-h-[320px] w-full overflow-hidden rounded-lg border border-zinc-700/80 bg-zinc-900">
       <img
         ref={videoRef}
         className="h-full w-full object-contain"
-        style={{ visibility: videoLoaded ? 'visible' : 'hidden' }}
-        src={videoUrl}
+        src={streamSrc || videoUrl}
         alt="Dashboard stream"
-        onLoad={() => setVideoLoaded(true)}
-        onError={() => setVideoLoaded(false)}
+        onLoad={() => {
+          setVideoLoaded(true);
+          setVideoError(false);
+        }}
+        onError={() => {
+          setVideoLoaded(false);
+          setVideoError(true);
+        }}
       />
       <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
 
-      {!videoLoaded && telemetry === null && (
+      {videoError && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-zinc-950/60">
+          <div className="text-center">
+            <div className="text-sm font-medium text-zinc-200">Video stream unavailable</div>
+            <div className="mt-1 text-xs text-zinc-500">Check camera endpoint or stream process.</div>
+          </div>
+        </div>
+      )}
+
+      {!videoLoaded && !videoError && (
         <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2">
-          <Loader2 className="h-12 w-12 animate-spin text-sky-400" />
-          <div className="text-xs text-slate-400">Connecting...</div>
+          <Loader2 className="h-12 w-12 animate-spin text-zinc-300" />
+          <div className="text-xs text-zinc-400">Connecting video stream...</div>
         </div>
       )}
 
       {videoLoaded && (
-        <div className="pointer-events-none absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-400/45 text-sky-300">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-500/45 text-zinc-300">
           <Crosshair className="h-7 w-7" />
+        </div>
+      )}
+
+      {videoLoaded && telemetry === null && (
+        <div className="pointer-events-none absolute left-3 top-3 rounded border border-zinc-700/80 bg-zinc-900/85 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-zinc-400">
+          Waiting telemetry overlay
         </div>
       )}
 

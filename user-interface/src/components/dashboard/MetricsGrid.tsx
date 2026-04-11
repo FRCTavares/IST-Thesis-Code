@@ -11,7 +11,6 @@ interface MetricsGridProps {
 
 export function MetricsGrid({ snapshot }: MetricsGridProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const hasSnapshot = Boolean(snapshot);
 
   return (
     <PanelShell
@@ -21,7 +20,7 @@ export function MetricsGrid({ snapshot }: MetricsGridProps) {
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
-          className="inline-flex items-center gap-1 rounded-md border border-slate-700/80 bg-slate-900/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-300 hover:border-slate-500 hover:text-slate-100"
+          className="inline-flex items-center gap-1 rounded-md border border-zinc-700/80 bg-zinc-900/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-300 hover:border-zinc-500 hover:text-zinc-100"
         >
           {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           {collapsed ? "Open" : "Collapse"}
@@ -30,11 +29,6 @@ export function MetricsGrid({ snapshot }: MetricsGridProps) {
     >
       {!collapsed && (
         <>
-          {!hasSnapshot && (
-            <div className="mb-2 rounded-md border border-slate-700/70 bg-slate-900/45 px-2.5 py-2 text-[11px] text-slate-400">
-              No live telemetry yet. Waiting for perception metrics stream.
-            </div>
-          )}
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               label="Video FPS"

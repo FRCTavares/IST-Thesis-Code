@@ -8,9 +8,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "border-slate-700 bg-slate-900/80 text-slate-200 hover:border-slate-500 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/45",
+          "border-zinc-700 bg-zinc-900/80 text-zinc-200 hover:border-zinc-500 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/45",
         active:
-          "border-sky-400/60 bg-sky-500/20 text-sky-200 shadow-[0_0_18px_rgba(56,189,248,0.2)] hover:bg-sky-500/28 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60",
+          "border-zinc-500/70 bg-zinc-700/40 text-zinc-100 shadow-[0_0_14px_rgba(100,116,139,0.2)] hover:bg-zinc-700/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60",
         danger:
           "border-red-500/60 bg-red-500/20 text-red-200 hover:bg-red-500/28 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/55",
       },

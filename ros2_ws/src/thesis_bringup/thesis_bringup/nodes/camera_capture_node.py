@@ -73,6 +73,7 @@ class CameraCaptureNode(Node):
         self._fail_on_media_init_error = bool(self.get_parameter("fail_on_media_init_error").value)
 
         self._media_dev = self._resolve_media_device(self._media_dev)
+        self._sensor_entity = self._resolve_sensor_entity(self._media_dev, self._sensor_entity)
         self._device = self._resolve_video_device(self._device)
 
         self._bridge = CvBridge()
@@ -193,6 +194,53 @@ class CameraCaptureNode(Node):
                 unique_nodes.append(node)
         return unique_nodes
 
+    def _resolve_sensor_entity(self, media_dev: str, configured_sensor_entity: str) -> str:
+        topology = self._probe_media_topology(media_dev)
+        if not topology:
+            return configured_sensor_entity
+
+        if configured_sensor_entity in topology:
+            return configured_sensor_entity
+
+        entity_names = re.findall(r"- entity\s+\d+:\s+([^\n(]+)\s*\(", topology)
+        tevs_entities = [name.strip() for name in entity_names if name.strip().startswith("tevs ")]
+        if tevs_entities:
+            detected = tevs_entities[0]
+            self.get_logger().warn(
+                f"Configured sensor_entity='{configured_sensor_entity}' not present on {media_dev}; "
+                f"using '{detected}' instead"
+            )
+            return detected
+
+        self.get_logger().warn(
+            f"No TEVS sensor entity auto-detected on {media_dev}; using configured value "
+            f"'{configured_sensor_entity}'"
+        )
+        return configured_sensor_entity
+
+    def _detect_sensor_resolution(self) -> tuple[int, int] | None:
+        topology = self._probe_media_topology(self._media_dev)
+        if not topology:
+            return None
+
+        sensor_header = re.search(
+            rf"- entity\s+\d+:\s+{re.escape(self._sensor_entity)}\s*\([\s\S]*?\n\n",
+            topology,
+        )
+        if not sensor_header:
+            return None
+
+        sensor_block = sensor_header.group(0)
+        match = re.search(r"fmt:[^/]+/(\d+)x(\d+)", sensor_block)
+        if not match:
+            return None
+
+        width = int(match.group(1))
+        height = int(match.group(2))
+        if width <= 0 or height <= 0:
+            return None
+        return width, height
+
     def _resolve_video_device(self, configured_device: str) -> str:
         configured_path = Path(configured_device)
         if configured_path.exists():
@@ -250,13 +298,36 @@ class CameraCaptureNode(Node):
             )
 
     def _init_media_pipeline(self) -> None:
+        active_width = self._width
+        active_height = self._height
+
         fmt_string = (
-            f"fmt:UYVY8_1X16/{self._width}x{self._height} "
+            f"fmt:UYVY8_1X16/{active_width}x{active_height} "
             "field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range"
         )
 
+        sensor_cmd = f"media-ctl -d {self._media_dev} -V '\"{self._sensor_entity}\":0 [{fmt_string}]'"
+        sensor_result = self._run_shell(sensor_cmd, allow_failure=not self._fail_on_media_init_error)
+        time.sleep(self._command_delay_s)
+
+        detected_resolution = self._detect_sensor_resolution()
+        if detected_resolution is not None:
+            detected_width, detected_height = detected_resolution
+            if (detected_width, detected_height) != (active_width, active_height):
+                reason = "not accepted" if sensor_result.returncode != 0 else "applied differently"
+                self.get_logger().warn(
+                    "Requested sensor format "
+                    f"{active_width}x{active_height} was {reason}; "
+                    f"using detected sensor format {detected_width}x{detected_height}"
+                )
+                active_width, active_height = detected_width, detected_height
+                self._width, self._height = active_width, active_height
+                fmt_string = (
+                    f"fmt:UYVY8_1X16/{active_width}x{active_height} "
+                    "field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range"
+                )
+
         commands = [
-            f"media-ctl -d {self._media_dev} -V '\"{self._sensor_entity}\":0 [{fmt_string}]'",
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":0 [{fmt_string}]'",
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":{self._csi_source_pad} [{fmt_string}]'",
             f"media-ctl -d {self._media_dev} -l '\"{self._csi_entity}\":{self._csi_source_pad} -> \"{self._video_entity}\":0 [1]'",

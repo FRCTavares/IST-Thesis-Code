@@ -16,7 +16,7 @@ export function PerformanceChart({ samples }: PerformanceChartProps) {
 
   return (
     <PanelShell title="Performance Trends" contentClassName="p-2">
-      <div className="h-56 w-full rounded-md border border-slate-700/70 bg-slate-900/65 p-2">
+      <div className="h-56 w-full rounded-md border border-zinc-700/70 bg-zinc-900/65 p-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid stroke="#334155" strokeDasharray="2 4" vertical={false} />

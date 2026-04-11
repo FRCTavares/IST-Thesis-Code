@@ -36,6 +36,18 @@ export async function requestTrackerSwitch(tracker: DashboardTracker): Promise<D
   }
 }
 
+export async function requestTargetFocus(target: number | null): Promise<DashboardControlResponse> {
+  if (dashboardConfig.mode === "mock" || dashboardConfig.mode === "offline") {
+    return { ok: true, requested_target: target, action: "target" };
+  }
+
+  try {
+    return await postJson<DashboardControlResponse>(`${dashboardConfig.apiBaseUrl}/api/target`, { target });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "target focus request failed" };
+  }
+}
+
 async function postJson<T>(url: string, payload: object): Promise<T> {
   const response = await fetch(url, {
     method: "POST",

@@ -1,4 +1,4 @@
-import { Activity, Circle, Download, Server, Settings2, Square } from "lucide-react";
+import { Crosshair, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PanelShell } from "@/components/dashboard/PanelShell";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
@@ -7,134 +7,144 @@ import type { DashboardModel, DashboardTracker } from "@/types/dashboard";
 interface ControlPanelProps {
   activeModel: DashboardModel;
   activeTracker: DashboardTracker;
-  onStartRecording: () => void;
-  onStopRecording: () => void;
-  isRecording: boolean;
-  recordedCount: number;
-  canExport: boolean;
-  onExport: () => void;
   onModelSwitch: (model: DashboardModel) => Promise<void>;
   onTrackerSwitch: (tracker: DashboardTracker) => Promise<void>;
+  onTargetFocus?: (target: number | null) => Promise<void>;
+  availableTrackIds?: number[];
+  currentTargetId?: number | null;
   isModelSwitching?: boolean;
   isTrackerSwitching?: boolean;
   controlStatus: string;
+  isLinkUp?: boolean;
 }
 
 export function ControlPanel({
   activeModel,
   activeTracker,
-  onStartRecording,
-  onStopRecording,
-  isRecording,
-  recordedCount,
-  canExport,
-  onExport,
   onModelSwitch,
   onTrackerSwitch,
+  onTargetFocus,
+  availableTrackIds = [],
+  currentTargetId = null,
   isModelSwitching = false,
   isTrackerSwitching = false,
   controlStatus,
+  isLinkUp = true,
 }: ControlPanelProps) {
   const models: DashboardModel[] = ["yolov6n", "yolov8s", "yolov8m"];
   const trackers: DashboardTracker[] = ["sort", "ocsort", "bytetrack"];
   const isBusy = isModelSwitching || isTrackerSwitching;
 
   return (
-    <PanelShell title="Control Console" className="h-full">
-      <div className="grid gap-3">
-        <div className="rounded-md border border-slate-700/80 bg-slate-900/45 p-2.5">
-          <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-            <span className="flex items-center gap-1.5"><Settings2 className="h-3.5 w-3.5" />Active Configuration</span>
-            <StatusBadge tone={isBusy ? "warn" : "ok"}>{isBusy ? "Applying" : "Ready"}</StatusBadge>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <StatusBadge tone="info">MODEL {activeModel.toUpperCase()}</StatusBadge>
-            <StatusBadge tone="info">TRACKER {activeTracker.toUpperCase()}</StatusBadge>
-          </div>
+    <PanelShell title="Control Workspace" className="flex h-full flex-col" contentClassName="flex h-full min-h-0 flex-col gap-3">
+      <div className="rounded-md border border-zinc-700/80 bg-zinc-900/45 p-2.5">
+        <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+          <span className="flex items-center gap-1.5"><Settings2 className="h-3.5 w-3.5" />Active Configuration</span>
+          <StatusBadge tone={!isLinkUp ? "error" : isBusy ? "warn" : "ok"}>{!isLinkUp ? "Link Down" : isBusy ? "Applying" : "Ready"}</StatusBadge>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge tone="info">MODEL {activeModel.toUpperCase()}</StatusBadge>
+          <StatusBadge tone="info">TRACKER {activeTracker.toUpperCase()}</StatusBadge>
+          <StatusBadge tone={currentTargetId !== null ? "ok" : "neutral"}>TARGET {currentTargetId !== null ? `#${currentTargetId}` : "AUTO"}</StatusBadge>
+        </div>
+      </div>
 
-        <div className="rounded-md border border-slate-700/80 bg-slate-900/45 p-2.5">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Model</div>
-          <div className="flex flex-wrap gap-2">
+      <div className="grid flex-1 min-h-0 content-start gap-3">
+        <div className="rounded-md border border-zinc-700/80 bg-zinc-900/45 p-2.5">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Detection Model</div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {models.map((model) => (
               <Button
                 key={model}
                 variant={activeModel === model ? "active" : "default"}
-                size="sm"
-                disabled={isBusy}
+                size="default"
+                disabled={isBusy || !isLinkUp}
                 onClick={() => onModelSwitch(model)}
+                className="h-10 justify-center"
               >
                 {model.toUpperCase()}
               </Button>
             ))}
           </div>
-          <div className="mt-2 text-[10px] text-slate-500">
-            {isModelSwitching ? "Switching model and restarting detector..." : "Detector model switch (container restart)"}
-          </div>
         </div>
 
-        <div className="rounded-md border border-slate-700/80 bg-slate-900/45 p-2.5">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Tracker</div>
-          <div className="flex flex-wrap gap-2">
+        <div className="rounded-md border border-zinc-700/80 bg-zinc-900/45 p-2.5">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Tracker Backend</div>
+          <div className="grid grid-cols-3 gap-2">
             {trackers.map((tracker) => (
               <Button
                 key={tracker}
                 variant={activeTracker === tracker ? "active" : "default"}
                 size="sm"
-                disabled={isBusy}
+                disabled={isBusy || !isLinkUp}
                 onClick={() => onTrackerSwitch(tracker)}
+                className="h-9 justify-center"
               >
                 {tracker.toUpperCase()}
               </Button>
             ))}
           </div>
-          <div className="mt-2 text-[10px] text-slate-500">
-            {isTrackerSwitching ? "Switching tracker backend..." : "Runtime tracker backend switch"}
-          </div>
         </div>
 
-        <div className="rounded-md border border-slate-700/80 bg-slate-900/45 p-2.5">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Actions</div>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant={isRecording ? "danger" : "active"} onClick={isRecording ? onStopRecording : onStartRecording}>
-              {isRecording ? <Square className="mr-1.5 h-3.5 w-3.5" /> : <Circle className="mr-1.5 h-3.5 w-3.5" />}
-              {isRecording ? "Stop Recording" : "Start Recording"}
-            </Button>
+        <div className="flex min-h-0 flex-col rounded-md border border-zinc-700/80 bg-zinc-900/45 p-2.5">
+          <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            <Crosshair className="h-3.5 w-3.5" />
+            Focus Target ID
+          </div>
+
+          <div className="mb-2 flex flex-wrap gap-2">
             <Button
               size="sm"
-              onClick={onExport}
-              disabled={!canExport}
-              className={canExport ? undefined : "border-slate-700/80 bg-slate-800/60 text-slate-500"}
-              title={canExport ? "Export recorded metrics to CSV" : "No recorded metrics available"}
+              variant={currentTargetId === null ? "active" : "default"}
+              disabled={!isLinkUp || !onTargetFocus}
+              onClick={() => onTargetFocus?.(null)}
             >
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              Export Metrics CSV
+              AUTO
             </Button>
+            {availableTrackIds.map((id) => (
+              <Button
+                key={id}
+                size="sm"
+                variant={currentTargetId === id ? "active" : "default"}
+                disabled={!isLinkUp || !onTargetFocus}
+                onClick={() => onTargetFocus?.(id)}
+              >
+                #{id}
+              </Button>
+            ))}
           </div>
-          <div className="mt-2 text-[10px] text-slate-500">Recorded samples: {recordedCount}</div>
-        </div>
 
-        <div className="rounded-md border border-slate-700/80 bg-slate-900/55 p-2.5">
-          <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-            <Activity className="h-3.5 w-3.5" />
-            Control Status
-          </div>
-          <div className="font-mono text-[11px] text-slate-300">{controlStatus}</div>
-        </div>
+          <select
+            value={currentTargetId ?? "auto"}
+            onChange={(e) => {
+              const value = e.target.value;
+              onTargetFocus?.(value === "auto" ? null : Number(value));
+            }}
+            disabled={!isLinkUp || !onTargetFocus}
+            className="mb-2 w-full rounded-md border border-zinc-700 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 transition-all disabled:cursor-not-allowed disabled:opacity-55 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+          >
+            <option value="auto">AUTO (no locked target)</option>
+            {availableTrackIds.map((id) => (
+              <option key={id} value={id}>
+                Focus track #{id}
+              </option>
+            ))}
+          </select>
 
-        <div className="rounded-md border border-slate-700/80 bg-slate-900/55 p-2.5 font-mono text-[11px] text-slate-400">
-          <div className="mb-2 flex items-center gap-2 text-slate-200">
-            <Server className="h-3.5 w-3.5" />
-            Backend Contract
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <StatusBadge tone="info">POST /api/model</StatusBadge>
-          </div>
-          <div className="mt-2 text-[10px] uppercase tracking-[0.14em] text-slate-500">WS telemetry: tracks / detections / target / fps / timing / system</div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <StatusBadge tone="info">POST /api/tracker</StatusBadge>
+          <div className="rounded-md border border-zinc-700/70 bg-zinc-900/60 px-2.5 py-2 text-[11px] text-zinc-400">
+            {availableTrackIds.length > 0
+              ? `Available targets: ${availableTrackIds.map((id) => `#${id}`).join(", ")}`
+              : "No active IDs available yet."}
           </div>
         </div>
+      </div>
+
+      <div className="rounded-md border border-zinc-700/80 bg-zinc-900/55 p-2.5">
+        <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+          <Settings2 className="h-3.5 w-3.5" />
+          Control Status
+        </div>
+        <div className="font-mono text-[11px] text-zinc-300">{controlStatus}</div>
       </div>
     </PanelShell>
   );

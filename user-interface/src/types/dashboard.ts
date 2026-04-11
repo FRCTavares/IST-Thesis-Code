@@ -35,6 +35,17 @@ export interface DashboardTelemetry {
   system: DashboardSystemMetrics;
 }
 
+export type DashboardLogLevel = "debug" | "info" | "warn" | "error";
+export type DashboardLogSource = "socket" | "control" | "recording" | "system";
+
+export interface DashboardLogEntry {
+  id: string;
+  timestamp_iso: string;
+  level: DashboardLogLevel;
+  source: DashboardLogSource;
+  message: string;
+}
+
 export type DashboardModel = "yolov6n" | "yolov8s" | "yolov8m";
 export type DashboardTracker = "sort" | "ocsort" | "bytetrack";
 
@@ -43,7 +54,8 @@ export interface DashboardControlResponse {
   error?: string;
   requested_model?: DashboardModel;
   requested_tracker?: DashboardTracker;
-  action?: "replay";
+  requested_target?: number | null;
+  action?: "replay" | "target";
 }
 
 export interface MetricsSnapshot {

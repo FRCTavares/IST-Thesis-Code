@@ -13,8 +13,8 @@ const toneClasses: Record<StatusTone, string> = {
   ok: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300",
   error: "border-red-500/35 bg-red-500/15 text-red-300",
   warn: "border-amber-500/35 bg-amber-500/15 text-amber-300",
-  info: "border-sky-500/35 bg-sky-500/15 text-sky-300",
-  neutral: "border-slate-600/80 bg-slate-700/60 text-slate-300",
+  info: "border-zinc-500/60 bg-zinc-700/35 text-zinc-200",
+  neutral: "border-zinc-600/80 bg-zinc-700/60 text-zinc-300",
 };
 
 export function StatusBadge({ tone = "neutral", className, children }: StatusBadgeProps) {

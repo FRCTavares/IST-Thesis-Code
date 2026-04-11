@@ -175,10 +175,10 @@ Options:
     --camera-fps <N>                    Camera publish fps (default: 30)
     --dashboard-fps <N>                 Dashboard image publish fps (default: 30)
     --camera-no-flip                    Disable camera frame flip
-    --infer-queue-size <N>              Inference client queue size (default: 2)
+    --infer-queue-size <N>              Inference client queue size (default: 1)
     --infer-workers <N>                 Inference client worker threads (default: 2)
-    --infer-timeout-ms <N>              Inference request timeout ms (default: 200)
-    --infer-retries <N>                 Inference retries after timeout/error (default: 2)
+    --infer-timeout-ms <N>              Inference request timeout ms (default: 300)
+    --infer-retries <N>                 Inference retries after timeout/error (default: 0)
     --infer-print-every <N>             Inference periodic stats interval (default: 240)
     --infer-timeout-log-every <N>       Inference timeout log interval (default: 20)
   --no-dashboard                     Disable dashboard bridge
@@ -186,6 +186,7 @@ Options:
     --no-target                        Do not start target selector node
     --no-control                       Do not start control_ref_node
     --control-mavros                   Enable MAVROS mirroring in control_ref_node
+    --control-stale-timeout-s <N>      Control stale target timeout seconds (default: 0.80)
     --no-web-video                     Do not start web_video_server
     --rosbag                           Record timing/tracking/control topics to rosbag
   -h, --help                         Show this help message
@@ -205,10 +206,10 @@ CAMERA_HEIGHT=720
 CAMERA_FPS=30.0
 CAMERA_DASHBOARD_FPS=30.0
 CAMERA_FLIP_BOOL="true"
-INFER_QUEUE_SIZE=2
+INFER_QUEUE_SIZE=1
 INFER_WORKERS=2
-INFER_TIMEOUT_MS=200
-INFER_RETRIES=2
+INFER_TIMEOUT_MS=300
+INFER_RETRIES=0
 INFER_PRINT_EVERY=240
 INFER_TIMEOUT_LOG_EVERY=20
 ENABLE_DASHBOARD_BRIDGE=1
@@ -216,6 +217,7 @@ ENABLE_TRACKER=1
 ENABLE_TARGET_SELECTOR=1
 ENABLE_CONTROL=1
 CONTROL_MAVROS_BOOL="false"
+CONTROL_STALE_TIMEOUT_S=0.80
 ENABLE_WEB_VIDEO=1
 ENABLE_ROSBAG=0
 
@@ -375,6 +377,15 @@ while [[ $# -gt 0 ]]; do
             CONTROL_MAVROS_BOOL="true"
             shift
             ;;
+        --control-stale-timeout-s)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --control-stale-timeout-s requires a value"
+                print_usage
+                exit 1
+            fi
+            CONTROL_STALE_TIMEOUT_S="$2"
+            shift 2
+            ;;
         --no-web-video)
             ENABLE_WEB_VIDEO=0
             shift
@@ -456,6 +467,11 @@ fi
 
 if ! [[ "$INFER_TIMEOUT_LOG_EVERY" =~ ^[0-9]+$ ]]; then
     echo "[error] --infer-timeout-log-every must be a non-negative integer"
+    exit 1
+fi
+
+if ! [[ "$CONTROL_STALE_TIMEOUT_S" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    echo "[error] --control-stale-timeout-s must be a positive number"
     exit 1
 fi
 
@@ -618,7 +634,7 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="on"; fi
 
 echo "[info] run: $RUN_ID"
 echo "[info] logs: $RUN_DIR"
-echo "[info] cfg: camera=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms"
+echo "[info] cfg: camera=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
 echo "[info] nodes: tracker=$tracker_state target=$target_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     echo "[info] tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL profile=$TRACKER_PROFILE_ENABLED"
@@ -801,7 +817,8 @@ if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
     start_ros_bg control ros2 run thesis_bringup control_ref_node --ros-args \
         -p enable_mavros:=$CONTROL_MAVROS_BOOL \
         -p cmd_frame_id:=base_link \
-        -p mavros_frame_id:=base_link
+        -p mavros_frame_id:=base_link \
+        -p stale_timeout_s:=$CONTROL_STALE_TIMEOUT_S
     sleep 1
     if ! check_proc_alive control; then
         stop_stack

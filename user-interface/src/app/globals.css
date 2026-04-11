@@ -10,8 +10,8 @@
   --muted: 222 25% 19%;
   --muted-foreground: 217 16% 65%;
   --border: 219 19% 30%;
-  --accent: 198 89% 48%;
-  --accent-foreground: 222 42% 10%;
+  --accent: 220 10% 38%;
+  --accent-foreground: 210 22% 92%;
   --danger: 0 72% 52%;
 }
 
@@ -24,8 +24,19 @@ body {
   min-height: 100vh;
   color: hsl(var(--foreground));
   font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-  background:
-    radial-gradient(circle at 10% -20%, rgba(30, 64, 175, 0.2), transparent 35%),
-    radial-gradient(circle at 90% 120%, rgba(14, 116, 144, 0.18), transparent 30%),
-    #0a1020;
+  background: #111315;
+}
+
+.ui-density-compact .panel-shell-header {
+  height: 2rem;
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+.ui-density-compact .panel-shell-content {
+  padding: 0.625rem;
+}
+
+.ui-density-cozy .panel-shell-header {
+  height: 2.5rem;
 }
