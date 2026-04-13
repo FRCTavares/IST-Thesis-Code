@@ -15,7 +15,7 @@ If you read only these files, you should be able to run the core workflows.
 Provide an end-to-end experimental stack that can:
 
 1. Ingest camera frames in ROS 2.
-2. Run detector inference through a Hailo-backed service.
+2. Run detector inference through either the legacy Hailo service path or the new single-process perception path.
 3. Track and select a target for control and UI.
 4. Publish telemetry/video/control interfaces for real-time operation.
 5. Record and replay experiments for timing/tracking evaluation.
@@ -69,6 +69,28 @@ export ROS_DOMAIN_ID=42
 ```bash
 cd "$THESIS_ROOT"
 ./tools/start_live_stack.sh
+```
+
+Perception mode options:
+
+```bash
+# Legacy (default): camera + inference_client + container detection_zmq
+./tools/start_live_stack.sh --perception-mode legacy
+
+# Single-process mode (work-in-progress): camera + perception_pipeline_node
+# Note: falls back to a stub backend if host Hailo runtime is unavailable.
+./tools/start_live_stack.sh --perception-mode single-process
+```
+
+Host Hailo helpers:
+
+```bash
+# Install/probe Python wheels for host bindings
+./tools/install_host_hailo_bindings.sh
+
+# Optional no-root local runtime shim for single-process mode
+# (extracts a local tappas runtime under infer_service/opt/tappas_runtime_3_31)
+./tools/setup_local_tappas_runtime.sh
 ```
 
 ### Start UI in a second terminal

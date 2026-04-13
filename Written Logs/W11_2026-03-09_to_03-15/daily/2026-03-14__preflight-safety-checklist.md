@@ -67,9 +67,9 @@
 
 **Multi-person indoor session:**
 ```bash
-# Option 1: Recruit someone to help test
-# Option 2: Play video with multiple people  
-# Option 3: Use objects + yourself
+# Approach A: Recruit someone to help test
+# Approach B: Play video with multiple people  
+# Approach C: Use objects + yourself
 
 # Launch full stack, run 10-15 min
 ros2 bag record --storage mcap \

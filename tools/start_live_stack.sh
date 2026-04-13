@@ -11,8 +11,8 @@ set -euo pipefail
 # Startup phases:
 # 1) Preflight: clear stale processes and validate camera process health.
 # 2) Environment: source ROS overlays and pin ROS_DOMAIN_ID.
-# 3) Container: ensure inference container/service is running.
-# 4) ROS nodes: camera -> inference -> tracker/target/control -> dashboard/video.
+# 3) Container: ensure inference container/service is running (legacy mode only).
+# 4) ROS nodes: camera -> (legacy inference OR single-process perception) -> tracker/target/control -> dashboard/video.
 # 5) Runtime shell: keep stack alive and allow `status|clear|stop` commands.
 #
 # Logging policy:
@@ -143,6 +143,7 @@ stop_stack() {
     pkill -f "camera_bringup.launch.py" >/dev/null 2>&1 || true
     pkill -f "camera_capture_node" >/dev/null 2>&1 || true
     pkill -f "inference_client_node" >/dev/null 2>&1 || true
+    pkill -f "perception_pipeline_node" >/dev/null 2>&1 || true
     pkill -f "tracker_node" >/dev/null 2>&1 || true
     pkill -f "target_selector_node" >/dev/null 2>&1 || true
     pkill -f "control_ref_node" >/dev/null 2>&1 || true
@@ -163,6 +164,8 @@ Starts the live camera + inference + optional tracking/control/dashboard stack.
 All ROS runtime logs are forced under ros2_ws/log/runtime for this run.
 
 Options:
+    --perception-mode <legacy|single-process>
+                                                                            Perception path selection (default: legacy)
     --tracker <sort|ocsort|bytetrack>  Tracker backend (default: sort)
     --tracker-profile-off               Disable tracker profiling instrumentation
     --tracker-profile-log-every <N>     Log tracker profile every N frames (default: 30)
@@ -194,6 +197,7 @@ EOF
 }
 
 TRACKER_TYPE="sort"
+PERCEPTION_MODE="legacy"
 TRACKER_PROFILE_ENABLED=0
 TRACKER_PROFILE_LOG_EVERY_N=30
 TRACKER_PROFILE_SERIALIZE_EVERY_N=0
@@ -223,6 +227,15 @@ ENABLE_ROSBAG=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --perception-mode)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --perception-mode requires a value"
+                print_usage
+                exit 1
+            fi
+            PERCEPTION_MODE="${2,,}"
+            shift 2
+            ;;
         --tracker)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --tracker requires a value"
@@ -406,6 +419,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+case "$PERCEPTION_MODE" in
+    legacy|single-process)
+        ;;
+    *)
+        echo "[error] invalid --perception-mode '$PERCEPTION_MODE' (expected legacy|single-process)"
+        exit 1
+        ;;
+esac
+
 case "$TRACKER_TYPE" in
     sort|ocsort|bytetrack)
         ;;
@@ -537,7 +559,7 @@ wait_for_topic_message() {
     return 0
 }
 
-STACK_PROC_PATTERN="camera_bringup.launch.py|camera_capture_node|inference_client_node|tracker_node|target_selector_node|control_ref_node|dashboard_bridge_node|web_video_server"
+STACK_PROC_PATTERN="camera_bringup.launch.py|camera_capture_node|inference_client_node|perception_pipeline_node|tracker_node|target_selector_node|control_ref_node|dashboard_bridge_node|web_video_server"
 CAMERA_MEDIA_DEV_OVERRIDE=""
 
 check_stuck_camera_processes() {
@@ -634,6 +656,7 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="on"; fi
 
 echo "[info] run: $RUN_ID"
 echo "[info] logs: $RUN_DIR"
+echo "[info] mode: perception=$PERCEPTION_MODE"
 echo "[info] cfg: camera=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
 echo "[info] nodes: tracker=$tracker_state target=$target_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
@@ -668,31 +691,32 @@ set -u
 export ROS_DOMAIN_ID
 echo "[info] ros: domain=$ROS_DOMAIN_ID log_dir=$ROS_LOG_DIR"
 
-echo "[step] ensuring container is up"
-(
-    cd "$PI_AI_DIR"
-    docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
-) >"$RUN_DIR/container_up.log" 2>&1
-
-# If the bind mount is stale (e.g. host dir recreated), detection script can disappear
-# inside an otherwise running container. Recreate once to refresh mounts.
-if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_service/detection_zmq.py >/dev/null 2>&1; then
-    echo "[warn] detection service script missing in container mount; recreating container"
+if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
+    echo "[step] ensuring container is up"
     (
         cd "$PI_AI_DIR"
-        docker compose -f docker-compose.yaml up -d --force-recreate hailo-ubuntu-pi
-    ) >>"$RUN_DIR/container_up.log" 2>&1
+        docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
+    ) >"$RUN_DIR/container_up.log" 2>&1
 
+    # If the bind mount is stale (e.g. host dir recreated), detection script can disappear
+    # inside an otherwise running container. Recreate once to refresh mounts.
     if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_service/detection_zmq.py >/dev/null 2>&1; then
-        echo "[error] container mount is still missing /root/thesis_service/detection_zmq.py"
-        echo "[error] check docker-compose bind mount for thesis_service and host path contents"
-        stop_stack
-        exit 1
-    fi
-fi
+        echo "[warn] detection service script missing in container mount; recreating container"
+        (
+            cd "$PI_AI_DIR"
+            docker compose -f docker-compose.yaml up -d --force-recreate hailo-ubuntu-pi
+        ) >>"$RUN_DIR/container_up.log" 2>&1
 
-echo "[step] starting detection service in container"
-docker exec "$CONTAINER_NAME" bash -lc '
+        if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_service/detection_zmq.py >/dev/null 2>&1; then
+            echo "[error] container mount is still missing /root/thesis_service/detection_zmq.py"
+            echo "[error] check docker-compose bind mount for thesis_service and host path contents"
+            stop_stack
+            exit 1
+        fi
+    fi
+
+    echo "[step] starting detection service in container"
+    docker exec "$CONTAINER_NAME" bash -lc '
 set -euo pipefail
 for pid in $(pgrep -f detection_zmq.py || true); do
     if [ "$pid" != "$$" ]; then
@@ -713,9 +737,15 @@ export HAILO_REQREP_LOG_EVERY=${HAILO_REQREP_LOG_EVERY:-0}
 nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_zmq_live.log 2>&1 &
 ' >"$RUN_DIR/container_infer_start.log" 2>&1
 
-if ! wait_for_port 127.0.0.1 5556 20 1; then
-    stop_stack
-    exit 1
+    if ! wait_for_port 127.0.0.1 5556 20 1; then
+        stop_stack
+        exit 1
+    fi
+else
+    echo "[step] single-process perception mode selected"
+    echo "[info] single-process mode will run in-process perception_pipeline_node"
+    echo "[warn] if host Hailo runtime is unavailable, node will fallback to stub backend"
+    echo "[info] skipping container detection_zmq startup in single-process mode"
 fi
 
 echo "[step] starting ROS nodes"
@@ -768,24 +798,91 @@ if ! wait_for_topic_message /camera/image_raw 12 1 sensor_data best_effort volat
     exit 1
 fi
 
-start_ros_bg inference ros2 run thesis_inference_client inference_client_node --ros-args \
-    -p image_topic:=/camera/image_raw \
-    -p addr:=tcp://127.0.0.1:5556 \
-    -p queue_size:=$INFER_QUEUE_SIZE \
-    -p num_workers:=$INFER_WORKERS \
-    -p request_timeout_ms:=$INFER_TIMEOUT_MS \
-    -p request_retries:=$INFER_RETRIES \
-    -p print_every:=$INFER_PRINT_EVERY \
-    -p timeout_log_every:=$INFER_TIMEOUT_LOG_EVERY \
-    -p img_w:=640 \
-    -p img_h:=640 \
-    -p label:=person \
-    -p min_score:=0.35 \
-    -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL
-sleep 1
-if ! check_proc_alive inference; then
-    stop_stack
-    exit 1
+if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
+    start_ros_bg inference ros2 run thesis_inference_client inference_client_node --ros-args \
+        -p image_topic:=/camera/image_raw \
+        -p addr:=tcp://127.0.0.1:5556 \
+        -p queue_size:=$INFER_QUEUE_SIZE \
+        -p num_workers:=$INFER_WORKERS \
+        -p request_timeout_ms:=$INFER_TIMEOUT_MS \
+        -p request_retries:=$INFER_RETRIES \
+        -p print_every:=$INFER_PRINT_EVERY \
+        -p timeout_log_every:=$INFER_TIMEOUT_LOG_EVERY \
+        -p img_w:=640 \
+        -p img_h:=640 \
+        -p label:=person \
+        -p min_score:=0.35 \
+        -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL
+    sleep 1
+    if ! check_proc_alive inference; then
+        stop_stack
+        exit 1
+    fi
+else
+    # Keep ROS runtime on host Python, but expose required packages for single-process mode:
+    # - system dist-packages for gi/Gst
+    # - project .venv site-packages for hailort/tappas Python bindings
+    PERCEPTION_PYTHONPATH="/usr/lib/python3/dist-packages"
+    PERCEPTION_VENV_SITE_PACKAGES=""
+    if [[ -d "$THESIS_ROOT/.venv/lib" ]]; then
+        PERCEPTION_VENV_SITE_PACKAGES="$(find "$THESIS_ROOT/.venv/lib" -maxdepth 2 -type d -name site-packages | head -n 1 || true)"
+        if [[ -n "${PERCEPTION_VENV_SITE_PACKAGES:-}" ]]; then
+            PERCEPTION_PYTHONPATH="${PERCEPTION_VENV_SITE_PACKAGES}:$PERCEPTION_PYTHONPATH"
+        fi
+    fi
+    if [[ -n "${PYTHONPATH:-}" ]]; then
+        PERCEPTION_PYTHONPATH="${PERCEPTION_PYTHONPATH}:$PYTHONPATH"
+    fi
+
+    # Optional local TAPPAS runtime shim (no root install required).
+    # Expected layout defaults to tools/setup_local_tappas_runtime.sh output.
+    PERCEPTION_RUNTIME_DIR="${PERCEPTION_RUNTIME_DIR:-$THESIS_ROOT/infer_service/opt/tappas_runtime_3_31}"
+    PERCEPTION_RUNTIME_LIB_DIR="${PERCEPTION_RUNTIME_LIB_DIR:-$PERCEPTION_RUNTIME_DIR/usr/lib/aarch64-linux-gnu}"
+    PERCEPTION_RUNTIME_GST_DIR="${PERCEPTION_RUNTIME_GST_DIR:-$PERCEPTION_RUNTIME_LIB_DIR/gstreamer-1.0}"
+    PERCEPTION_RUNTIME_POST_SO="${PERCEPTION_RUNTIME_POST_SO:-$PERCEPTION_RUNTIME_LIB_DIR/hailo/tappas/post_processes/libyolo_hailortpp_post.so}"
+
+    PERCEPTION_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
+    PERCEPTION_GST_PLUGIN_PATH="${GST_PLUGIN_PATH:-}"
+
+    if [[ -d "$PERCEPTION_RUNTIME_LIB_DIR" ]]; then
+        if [[ -n "$PERCEPTION_LD_LIBRARY_PATH" ]]; then
+            PERCEPTION_LD_LIBRARY_PATH="${PERCEPTION_RUNTIME_LIB_DIR}:$PERCEPTION_LD_LIBRARY_PATH"
+        else
+            PERCEPTION_LD_LIBRARY_PATH="$PERCEPTION_RUNTIME_LIB_DIR"
+        fi
+    fi
+
+    if [[ -d "$PERCEPTION_RUNTIME_GST_DIR" ]]; then
+        if [[ -n "$PERCEPTION_GST_PLUGIN_PATH" ]]; then
+            PERCEPTION_GST_PLUGIN_PATH="${PERCEPTION_RUNTIME_GST_DIR}:$PERCEPTION_GST_PLUGIN_PATH"
+        else
+            PERCEPTION_GST_PLUGIN_PATH="$PERCEPTION_RUNTIME_GST_DIR"
+        fi
+    fi
+
+    PERCEPTION_POST_SO_ARGS=()
+    if [[ -f "$PERCEPTION_RUNTIME_POST_SO" ]]; then
+        PERCEPTION_POST_SO_ARGS=(-p "hailo_post_so:=$PERCEPTION_RUNTIME_POST_SO")
+        echo "[info] single-process: using local postprocess lib at $PERCEPTION_RUNTIME_POST_SO"
+    fi
+
+    start_ros_bg perception_pipeline env PYTHONPATH="$PERCEPTION_PYTHONPATH" LD_LIBRARY_PATH="$PERCEPTION_LD_LIBRARY_PATH" GST_PLUGIN_PATH="$PERCEPTION_GST_PLUGIN_PATH" ros2 run thesis_bringup perception_pipeline_node --ros-args \
+        -p image_topic:=/camera/image_raw \
+        -p img_w:=640 \
+        -p img_h:=640 \
+        -p label:=person \
+        -p min_score:=0.35 \
+        -p inference_backend:=hailo_gst \
+        "${PERCEPTION_POST_SO_ARGS[@]}" \
+        -p infer_timeout_ms:=$INFER_TIMEOUT_MS \
+        -p timeout_log_every:=$INFER_TIMEOUT_LOG_EVERY \
+        -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL \
+        -p log_every:=$INFER_PRINT_EVERY
+    sleep 1
+    if ! check_proc_alive perception_pipeline; then
+        stop_stack
+        exit 1
+    fi
 fi
 
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then

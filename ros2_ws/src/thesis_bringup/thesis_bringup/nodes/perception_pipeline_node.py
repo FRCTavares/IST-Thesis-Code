@@ -1,0 +1,813 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import os
+import threading
+import time
+from collections import deque
+from typing import Any
+
+import cv2
+import numpy as np
+import rclpy
+from rclpy.executors import ExternalShutdownException
+from rclpy.node import Node
+from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
+from sensor_msgs.msg import Image
+from thesis_msgs.msg import Timing
+from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
+
+
+def clamp01(x: float) -> float:
+    return 0.0 if x < 0.0 else (1.0 if x > 1.0 else x)
+
+
+def stamp_to_ns(stamp) -> int:
+    return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
+
+
+def now_ns() -> int:
+    return time.monotonic_ns()
+
+
+def _ms(dt_ns: int) -> float:
+    return float(dt_ns) / 1e6
+
+
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
+def _normalize_label(value: str | None) -> str | None:
+    if value is None:
+        return None
+    out = str(value).strip().lower()
+    if not out:
+        return None
+    if out in ("none", "all", "*"):
+        return None
+    return out
+
+
+def _bbox_to_xywh(bbox) -> tuple[float | None, float | None, float | None, float | None]:
+    if hasattr(bbox, "xmin") and hasattr(bbox, "width"):
+        return (
+            float(bbox.xmin()),
+            float(bbox.ymin()),
+            float(bbox.width()),
+            float(bbox.height()),
+        )
+
+    if hasattr(bbox, "get_xmin") and hasattr(bbox, "get_width"):
+        return (
+            float(bbox.get_xmin()),
+            float(bbox.get_ymin()),
+            float(bbox.get_width()),
+            float(bbox.get_height()),
+        )
+
+    return None, None, None, None
+
+
+class StubInferenceEngine:
+    def infer(self, _frame_rgb: np.ndarray, _seq: int, _frame_id: int, _src_stamp_ns: int, _timeout_ms: int) -> dict[str, Any]:
+        t0 = now_ns()
+        return {
+            "detections": [],
+            "timing": {
+                "t_infer_start_ns": t0,
+                "t_infer_end_ns": t0,
+                "t_post_start_ns": t0,
+                "t_post_end_ns": t0,
+            },
+        }
+
+    def close(self) -> None:
+        return
+
+
+class HailoGstInferenceEngine:
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        fps: int,
+        hef_path: str,
+        post_so: str,
+        post_func: str,
+        video_sink: str,
+        label_filter: str | None,
+    ) -> None:
+        import gi
+
+        gi.require_version("Gst", "1.0")
+        from gi.repository import Gst
+
+        import hailo
+
+        self.Gst = Gst
+        self.hailo = hailo
+        self.Gst.init(None)
+
+        self.width = int(width)
+        self.height = int(height)
+        self.fps = max(1, int(fps))
+        self.hef_path = str(hef_path)
+        self.post_so = str(post_so)
+        self.post_func = str(post_func)
+        self.video_sink = str(video_sink)
+        self.label_filter = label_filter
+
+        self.frame_duration_ns = int(1e9 / self.fps)
+        self._closed = False
+        self._cv = threading.Condition()
+        self._pending_meta_by_pts: dict[int, dict[str, Any]] = {}
+        self._results_by_pts: dict[int, dict[str, Any]] = {}
+
+        self.pipeline = None
+        self.appsrc = None
+        self.pre_identity = None
+        self.infer_identity = None
+        self.post_identity = None
+
+        self._build_pipeline()
+
+    def _build_pipeline(self) -> None:
+        pipeline_str = (
+            f"appsrc name=source is-live=true block=false format=time do-timestamp=false "
+            f"caps=video/x-raw,format=RGB,width={self.width},height={self.height},framerate={self.fps}/1 ! "
+            f"queue max-size-buffers=6 leaky=downstream ! "
+            f"videoconvert ! "
+            f"identity name=pre_hailonet_identity silent=true ! "
+            f"hailonet hef-path={self.hef_path} batch-size=1 force-writable=true ! "
+            f"identity name=infer_identity silent=true ! "
+            f"queue max-size-buffers=6 leaky=downstream ! "
+            f"hailofilter function-name={self.post_func} so-path={self.post_so} qos=false ! "
+            f"identity name=post_identity silent=true ! "
+            f"{self.video_sink} sync=false"
+        )
+
+        self.pipeline = self.Gst.parse_launch(pipeline_str)
+        self.appsrc = self.pipeline.get_by_name("source")
+        self.pre_identity = self.pipeline.get_by_name("pre_hailonet_identity")
+        self.infer_identity = self.pipeline.get_by_name("infer_identity")
+        self.post_identity = self.pipeline.get_by_name("post_identity")
+
+        if self.appsrc is None:
+            raise RuntimeError("failed to initialize appsrc")
+        if self.pre_identity is None or self.infer_identity is None or self.post_identity is None:
+            raise RuntimeError("failed to initialize identity probes")
+
+        pre_pad = self.pre_identity.get_static_pad("src")
+        infer_pad = self.infer_identity.get_static_pad("src")
+        post_pad = self.post_identity.get_static_pad("src")
+        if pre_pad is None or infer_pad is None or post_pad is None:
+            raise RuntimeError("failed to retrieve pipeline pads")
+
+        pre_pad.add_probe(self.Gst.PadProbeType.BUFFER, self._on_pre_infer_probe)
+        infer_pad.add_probe(self.Gst.PadProbeType.BUFFER, self._on_infer_probe)
+        post_pad.add_probe(self.Gst.PadProbeType.BUFFER, self._on_post_probe)
+
+        ret = self.pipeline.set_state(self.Gst.State.PLAYING)
+        if ret == self.Gst.StateChangeReturn.FAILURE:
+            raise RuntimeError("failed to set Hailo pipeline to PLAYING")
+
+    def _extract_dets_from_buffer(self, buffer) -> list[dict[str, Any]]:
+        dets: list[dict[str, Any]] = []
+        try:
+            roi = self.hailo.get_roi_from_buffer(buffer)
+            for det in roi.get_objects_typed(self.hailo.HAILO_DETECTION):
+                label = det.get_label() if hasattr(det, "get_label") else None
+
+                if hasattr(det, "get_confidence"):
+                    score = float(det.get_confidence())
+                elif hasattr(det, "get_score"):
+                    score = float(det.get_score())
+                else:
+                    score = None
+
+                bbox = det.get_bbox() if hasattr(det, "get_bbox") else None
+                if bbox is not None:
+                    x, y, w, h = _bbox_to_xywh(bbox)
+                else:
+                    x = y = w = h = None
+
+                dets.append(
+                    {
+                        "label": label,
+                        "score": score,
+                        "x": x,
+                        "y": y,
+                        "w": w,
+                        "h": h,
+                    }
+                )
+        except Exception:
+            return []
+
+        if self.label_filter is None:
+            return dets
+
+        filtered: list[dict[str, Any]] = []
+        for det in dets:
+            det_label = _normalize_label(det.get("label"))
+            if det_label == self.label_filter:
+                filtered.append(det)
+        return filtered
+
+    def _lookup_pending_meta(self, pts: int) -> dict[str, Any] | None:
+        with self._cv:
+            return self._pending_meta_by_pts.get(pts)
+
+    def _on_pre_infer_probe(self, _pad, info):
+        buffer = info.get_buffer()
+        if buffer is None:
+            return self.Gst.PadProbeReturn.OK
+
+        meta = self._lookup_pending_meta(int(buffer.pts))
+        if meta is not None and _safe_int(meta.get("t_infer_start_ns"), 0) == 0:
+            meta["t_infer_start_ns"] = now_ns()
+
+        return self.Gst.PadProbeReturn.OK
+
+    def _on_infer_probe(self, _pad, info):
+        buffer = info.get_buffer()
+        if buffer is None:
+            return self.Gst.PadProbeReturn.OK
+
+        meta = self._lookup_pending_meta(int(buffer.pts))
+        if meta is not None:
+            t_here = now_ns()
+            meta["t_infer_end_ns"] = t_here
+            meta["t_post_start_ns"] = t_here
+
+        return self.Gst.PadProbeReturn.OK
+
+    def _on_post_probe(self, _pad, info):
+        buffer = info.get_buffer()
+        if buffer is None:
+            return self.Gst.PadProbeReturn.OK
+
+        pts = int(buffer.pts)
+        with self._cv:
+            meta = self._pending_meta_by_pts.pop(pts, None)
+        if meta is None:
+            return self.Gst.PadProbeReturn.OK
+
+        t_post_end_ns = now_ns()
+        dets = self._extract_dets_from_buffer(buffer)
+
+        timing = {
+            "t_infer_start_ns": _safe_int(meta.get("t_infer_start_ns"), 0),
+            "t_infer_end_ns": _safe_int(meta.get("t_infer_end_ns"), 0),
+            "t_post_start_ns": _safe_int(meta.get("t_post_start_ns"), 0),
+            "t_post_end_ns": t_post_end_ns,
+        }
+
+        result = {
+            "detections": dets,
+            "timing": timing,
+        }
+
+        with self._cv:
+            self._results_by_pts[pts] = result
+            self._cv.notify_all()
+
+        return self.Gst.PadProbeReturn.OK
+
+    def infer(self, frame_rgb: np.ndarray, seq: int, frame_id: int, src_stamp_ns: int, timeout_ms: int) -> dict[str, Any] | None:
+        if self._closed:
+            return None
+
+        if frame_rgb.dtype != np.uint8:
+            raise RuntimeError("inference frame must be uint8 RGB")
+
+        frame_for_gst = frame_rgb if frame_rgb.flags["C_CONTIGUOUS"] else np.ascontiguousarray(frame_rgb)
+        try:
+            # Gst.Buffer.fill expects a flat byte buffer; 3D memoryviews can fail in PyGObject.
+            frame_bytes = memoryview(frame_for_gst).cast("B")
+        except TypeError:
+            frame_bytes = frame_for_gst.tobytes(order="C")
+
+        buf = self.Gst.Buffer.new_allocate(None, frame_for_gst.nbytes, None)
+        buf.fill(0, frame_bytes)
+
+        pts = int(seq * self.frame_duration_ns)
+        buf.pts = pts
+        buf.dts = self.Gst.CLOCK_TIME_NONE
+        buf.duration = self.frame_duration_ns
+
+        meta = {
+            "seq": int(seq),
+            "frame_id": int(frame_id),
+            "src_stamp_ns": int(src_stamp_ns),
+            "t_infer_start_ns": 0,
+            "t_infer_end_ns": 0,
+            "t_post_start_ns": 0,
+            "t_post_end_ns": 0,
+        }
+
+        with self._cv:
+            self._pending_meta_by_pts[pts] = meta
+
+        ret = self.appsrc.emit("push-buffer", buf)
+        if ret != self.Gst.FlowReturn.OK:
+            with self._cv:
+                self._pending_meta_by_pts.pop(pts, None)
+            raise RuntimeError(f"appsrc push-buffer failed: {ret}")
+
+        deadline = time.monotonic() + (max(1, int(timeout_ms)) / 1000.0)
+        with self._cv:
+            while not self._closed:
+                result = self._results_by_pts.pop(pts, None)
+                if result is not None:
+                    return result
+
+                remaining = deadline - time.monotonic()
+                if remaining <= 0.0:
+                    self._pending_meta_by_pts.pop(pts, None)
+                    return None
+                self._cv.wait(timeout=remaining)
+
+        return None
+
+    def close(self) -> None:
+        with self._cv:
+            self._closed = True
+            self._pending_meta_by_pts.clear()
+            self._results_by_pts.clear()
+            self._cv.notify_all()
+
+        try:
+            if self.pipeline is not None:
+                self.pipeline.set_state(self.Gst.State.NULL)
+        except Exception:
+            pass
+
+
+class PerceptionPipelineNode(Node):
+    """Single-process perception node with optional in-process Hailo backend."""
+
+    def __init__(self) -> None:
+        super().__init__("perception_pipeline_node")
+
+        self.declare_parameter("image_topic", "/camera/image_raw")
+        self.declare_parameter("img_w", 640)
+        self.declare_parameter("img_h", 640)
+        self.declare_parameter("label", "person")
+        self.declare_parameter("min_score", 0.35)
+        self.declare_parameter("publish_timing", True)
+        self.declare_parameter("image_reliability", "best_effort")
+        self.declare_parameter("image_qos_depth", 2)
+        self.declare_parameter("inference_backend", "hailo_gst")
+        self.declare_parameter("allow_stub_fallback", True)
+        self.declare_parameter("infer_timeout_ms", 300)
+        self.declare_parameter("timeout_log_every", 20)
+        self.declare_parameter("log_every", 240)
+
+        thesis_root = os.getenv("THESIS_ROOT", "/home/francisco/Desktop/Thesis-Code")
+        default_hef = f"{thesis_root}/infer_service/resources/hefs/yolov6n_hailo8.hef"
+        self.declare_parameter("hailo_fps", 30)
+        self.declare_parameter("hailo_hef_path", default_hef)
+        self.declare_parameter(
+            "hailo_post_so",
+            "/usr/lib/aarch64-linux-gnu/hailo/tappas/post_processes/libyolo_hailortpp_post.so",
+        )
+        self.declare_parameter("hailo_post_function", "filter")
+        self.declare_parameter("hailo_video_sink", "fakesink")
+
+        self.image_topic = str(self.get_parameter("image_topic").value)
+        self.img_w = int(self.get_parameter("img_w").value)
+        self.img_h = int(self.get_parameter("img_h").value)
+        self.label = str(self.get_parameter("label").value)
+        self.min_score = float(self.get_parameter("min_score").value)
+        self.publish_timing = bool(self.get_parameter("publish_timing").value)
+        self.image_reliability = str(self.get_parameter("image_reliability").value).strip().lower()
+        self.image_qos_depth = max(1, int(self.get_parameter("image_qos_depth").value))
+        self.inference_backend = str(self.get_parameter("inference_backend").value).strip().lower()
+        self.allow_stub_fallback = bool(self.get_parameter("allow_stub_fallback").value)
+        self.infer_timeout_ms = max(1, int(self.get_parameter("infer_timeout_ms").value))
+        self.timeout_log_every = max(1, int(self.get_parameter("timeout_log_every").value))
+        self.log_every = max(0, int(self.get_parameter("log_every").value))
+
+        self.hailo_fps = max(1, int(self.get_parameter("hailo_fps").value))
+        self.hailo_hef_path = str(self.get_parameter("hailo_hef_path").value)
+        self.hailo_post_so = str(self.get_parameter("hailo_post_so").value)
+        self.hailo_post_function = str(self.get_parameter("hailo_post_function").value)
+        self.hailo_video_sink = str(self.get_parameter("hailo_video_sink").value)
+
+        self.label_filter = _normalize_label(self.label)
+
+        self.resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
+        self.rgb_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
+        self._logged_encoding: str | None = None
+        self._logged_own_data = False
+
+        qos_pub = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+        )
+
+        self.pub_dets = self.create_publisher(Detection2DArray, "/detections", qos_pub)
+        self.pub_timing = self.create_publisher(Timing, "/timing", qos_pub)
+
+        image_sub_qos = self._build_image_sub_qos()
+        self.sub_image = self.create_subscription(
+            Image,
+            self.image_topic,
+            self.on_image,
+            image_sub_qos,
+        )
+
+        self.engine = self._build_engine()
+
+        self.seq_counter = 0
+        self.frame_counter = 0
+        self.frames_received = 0
+        self.frames_processed = 0
+        self.frames_timeouts = 0
+        self.last_roundtrip_ms = 0.0
+        self.last_det_pub_ns: int | None = None
+        self.pub_dt_hist_ms: deque[float] = deque(maxlen=600)
+
+        self.get_logger().info(
+            f"image_topic={self.image_topic} "
+            f"infer_size={self.img_w}x{self.img_h} "
+            f"publish_timing={self.publish_timing} "
+            f"inference_backend={self.active_backend} "
+            f"infer_timeout_ms={self.infer_timeout_ms} "
+            f"label={self.label} min_score={self.min_score:.2f} "
+            f"image_reliability={self.image_reliability} "
+            f"image_qos_depth={self.image_qos_depth}"
+        )
+
+    def _build_engine(self):
+        if self.inference_backend in ("stub", "none"):
+            self.active_backend = "stub"
+            self.get_logger().warning("perception backend set to stub (no real inference)")
+            return StubInferenceEngine()
+
+        if self.inference_backend not in ("hailo_gst", "hailo", "gst"):
+            self.active_backend = "stub"
+            self.get_logger().warning(
+                f"unknown inference_backend='{self.inference_backend}', falling back to stub"
+            )
+            return StubInferenceEngine()
+
+        try:
+            engine = HailoGstInferenceEngine(
+                width=self.img_w,
+                height=self.img_h,
+                fps=self.hailo_fps,
+                hef_path=self.hailo_hef_path,
+                post_so=self.hailo_post_so,
+                post_func=self.hailo_post_function,
+                video_sink=self.hailo_video_sink,
+                label_filter=self.label_filter,
+            )
+            self.active_backend = "hailo_gst"
+            self.get_logger().info(
+                f"initialized Hailo GStreamer backend (hef={self.hailo_hef_path}, post_func={self.hailo_post_function})"
+            )
+            return engine
+        except Exception as exc:
+            if not self.allow_stub_fallback:
+                raise
+            self.active_backend = "stub-fallback"
+            self.get_logger().error(
+                f"failed to initialize Hailo backend ({exc}); using stub fallback"
+            )
+            return StubInferenceEngine()
+
+    def _build_image_sub_qos(self) -> QoSProfile:
+        qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=self.image_qos_depth,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+        )
+
+        if self.image_reliability == "reliable":
+            qos.reliability = ReliabilityPolicy.RELIABLE
+        elif self.image_reliability not in ("best_effort", "besteffort"):
+            self.get_logger().warning(
+                f"invalid image_reliability='{self.image_reliability}', using best_effort"
+            )
+
+        return qos
+
+    def on_image(self, msg: Image) -> None:
+        t_loop0 = now_ns()
+        t_cam_msg_seen_ns = t_loop0
+        src_stamp_ns = stamp_to_ns(msg.header.stamp)
+
+        self.frames_received += 1
+
+        t_pre_start_ns = now_ns()
+        t_ros_to_np_start_ns = t_pre_start_ns
+
+        image_height = int(msg.height)
+        image_width = int(msg.width)
+        image_encoding = str(msg.encoding).lower()
+        image_step = int(msg.step)
+
+        if image_encoding not in ("rgb8", "bgr8"):
+            self.get_logger().error(
+                f"unsupported encoding '{msg.encoding}' in perception_pipeline_node; expected rgb8 or bgr8"
+            )
+            return
+
+        expected_step = image_width * 3
+        if image_step != expected_step:
+            self.get_logger().error(
+                f"unsupported image step={image_step} (expected {expected_step} for packed 8UC3)"
+            )
+            return
+
+        expected_bytes = image_height * image_step
+        if len(msg.data) != expected_bytes:
+            self.get_logger().warning(
+                f"image size mismatch: got={len(msg.data)} expected={expected_bytes}; dropping frame"
+            )
+            return
+
+        try:
+            img = np.frombuffer(msg.data, dtype=np.uint8)
+            img = img.reshape(image_height, image_width, 3)
+        except Exception as exc:
+            self.get_logger().warning(f"ROS image to numpy conversion failed: {exc}")
+            return
+        t_ros_to_np_end_ns = now_ns()
+
+        if image_encoding != self._logged_encoding:
+            self._logged_encoding = image_encoding
+            self.get_logger().info(f"inference input encoding={image_encoding}")
+
+        if not self._logged_own_data:
+            self._logged_own_data = True
+            self.get_logger().info(f"numpy_view_owndata={img.flags['OWNDATA']}")
+
+        t_resize_start_ns = now_ns()
+        if image_width == self.img_w and image_height == self.img_h:
+            infer_img = img
+            t_resize_end_ns = t_resize_start_ns
+        else:
+            try:
+                cv2.resize(
+                    img,
+                    (self.img_w, self.img_h),
+                    dst=self.resize_buf,
+                    interpolation=cv2.INTER_LINEAR,
+                )
+            except Exception as exc:
+                self.get_logger().warning(f"resize failed: {exc}")
+                return
+            infer_img = self.resize_buf
+            t_resize_end_ns = now_ns()
+
+        t_color_start_ns = now_ns()
+        if image_encoding == "bgr8":
+            cv2.cvtColor(infer_img, cv2.COLOR_BGR2RGB, dst=self.rgb_buf)
+            infer_img = self.rgb_buf
+            t_color_end_ns = now_ns()
+        else:
+            t_color_end_ns = t_color_start_ns
+
+        t_pre_end_ns = now_ns()
+
+        seq = self.seq_counter
+        frame_id = self.frame_counter
+        self.seq_counter += 1
+        self.frame_counter += 1
+
+        t_engine_start_ns = now_ns()
+        try:
+            result = self.engine.infer(
+                infer_img,
+                seq=seq,
+                frame_id=frame_id,
+                src_stamp_ns=src_stamp_ns,
+                timeout_ms=self.infer_timeout_ms,
+            )
+        except Exception as exc:
+            self.get_logger().warning(f"in-process inference failed: {exc}")
+            result = None
+        t_engine_end_ns = now_ns()
+
+        timeout_hit = result is None
+        if timeout_hit:
+            self.frames_timeouts += 1
+            if (self.frames_timeouts % self.timeout_log_every) == 1:
+                self.get_logger().warning(
+                    f"in-process inference timeout (count={self.frames_timeouts})"
+                )
+            result = {
+                "detections": [],
+                "timing": {
+                    "t_infer_start_ns": t_engine_start_ns,
+                    "t_infer_end_ns": t_engine_end_ns,
+                    "t_post_start_ns": t_engine_end_ns,
+                    "t_post_end_ns": t_engine_end_ns,
+                },
+            }
+
+        timing_reply = result.get("timing", {}) if isinstance(result, dict) else {}
+        t_infer_start_ns = _safe_int(timing_reply.get("t_infer_start_ns"), 0)
+        t_infer_end_ns = _safe_int(timing_reply.get("t_infer_end_ns"), 0)
+        t_post_start_ns = _safe_int(timing_reply.get("t_post_start_ns"), 0)
+        t_post_end_ns = _safe_int(timing_reply.get("t_post_end_ns"), 0)
+
+        if t_infer_start_ns <= 0:
+            t_infer_start_ns = t_engine_start_ns
+        if t_infer_end_ns <= 0:
+            t_infer_end_ns = t_engine_end_ns
+        if t_post_start_ns <= 0:
+            t_post_start_ns = t_infer_end_ns
+        if t_post_end_ns <= 0:
+            t_post_end_ns = t_infer_end_ns
+
+        roundtrip_ms = _ms(t_engine_end_ns - t_engine_start_ns)
+        self.last_roundtrip_ms = roundtrip_ms
+
+        t_det_pub_start_ns = now_ns()
+
+        det_header_frame_id = f"frame_{frame_id}"
+
+        det_arr = Detection2DArray()
+        det_arr.header.stamp = msg.header.stamp
+        det_arr.header.frame_id = det_header_frame_id
+
+        dets = result.get("detections", result.get("dets", [])) if isinstance(result, dict) else []
+        for d in dets:
+            score = float(d.get("score", 0.0))
+            if score < self.min_score:
+                continue
+
+            det_label = str(d.get("label", "")).strip()
+            label_ok = True
+            if self.label:
+                if "label" in d:
+                    label_ok = det_label.lower() == str(self.label).strip().lower()
+                elif "class_id" in d:
+                    label_ok = int(d.get("class_id", -1)) == 0
+            if not label_ok:
+                continue
+
+            if all(k in d for k in ("x", "y", "w", "h")):
+                x = clamp01(float(d.get("x", 0.0)))
+                y = clamp01(float(d.get("y", 0.0)))
+                w = clamp01(float(d.get("w", 0.0)))
+                h = clamp01(float(d.get("h", 0.0)))
+
+                cx_px = (x + 0.5 * w) * self.img_w
+                cy_px = (y + 0.5 * h) * self.img_h
+                w_px = w * self.img_w
+                h_px = h * self.img_h
+            elif all(k in d for k in ("x1", "y1", "x2", "y2")):
+                x1 = float(d.get("x1", 0.0))
+                y1 = float(d.get("y1", 0.0))
+                x2 = float(d.get("x2", 0.0))
+                y2 = float(d.get("y2", 0.0))
+
+                w_px = max(0.0, x2 - x1)
+                h_px = max(0.0, y2 - y1)
+                cx_px = x1 + 0.5 * w_px
+                cy_px = y1 + 0.5 * h_px
+            else:
+                continue
+
+            det = Detection2D()
+            det.bbox.center.position.x = float(cx_px)
+            det.bbox.center.position.y = float(cy_px)
+            det.bbox.size_x = float(w_px)
+            det.bbox.size_y = float(h_px)
+
+            hyp = ObjectHypothesisWithPose()
+            if det_label:
+                hyp.hypothesis.class_id = det_label
+            elif self.label:
+                hyp.hypothesis.class_id = str(self.label)
+            else:
+                hyp.hypothesis.class_id = "person"
+            hyp.hypothesis.score = float(score)
+            det.results.append(hyp)
+
+            det_arr.detections.append(det)
+
+        self.pub_dets.publish(det_arr)
+        t_det_pub_end_ns = now_ns()
+
+        pub_dt_ms = 0.0
+        if self.last_det_pub_ns is not None:
+            pub_dt_ms = _ms(t_det_pub_end_ns - self.last_det_pub_ns)
+            self.pub_dt_hist_ms.append(pub_dt_ms)
+        self.last_det_pub_ns = t_det_pub_end_ns
+
+        if self.publish_timing:
+            tmsg = Timing()
+            tmsg.seq = int(seq)
+            tmsg.frame_id = int(frame_id)
+            tmsg.src_stamp_ns = int(src_stamp_ns)
+            tmsg.t_cam_msg_seen_ns = int(t_cam_msg_seen_ns)
+
+            tmsg.image_width = int(msg.width)
+            tmsg.image_height = int(msg.height)
+            tmsg.image_encoding = str(msg.encoding)
+
+            tmsg.t_pre_start_ns = int(t_pre_start_ns)
+            tmsg.t_pre_end_ns = int(t_pre_end_ns)
+            tmsg.t_det_pub_start_ns = int(t_det_pub_start_ns)
+            tmsg.t_det_pub_end_ns = int(t_det_pub_end_ns)
+
+            tmsg.t_infer_start_ns = int(t_infer_start_ns)
+            tmsg.t_infer_end_ns = int(t_infer_end_ns)
+            tmsg.t_post_start_ns = int(t_post_start_ns)
+            tmsg.t_post_end_ns = int(t_post_end_ns)
+
+            tmsg.ros_wait_ms = _ms(t_pre_start_ns - t_cam_msg_seen_ns)
+            tmsg.pre_ms = _ms(t_pre_end_ns - t_pre_start_ns)
+            tmsg.ros_to_np_ms = _ms(t_ros_to_np_end_ns - t_ros_to_np_start_ns)
+            tmsg.resize_ms = _ms(t_resize_end_ns - t_resize_start_ns)
+            tmsg.color_ms = _ms(t_color_end_ns - t_color_start_ns)
+            tmsg.pack_ms = 0.0
+            tmsg.infer_ms = _ms(t_infer_end_ns - t_infer_start_ns)
+            tmsg.post_ms = _ms(t_post_end_ns - t_post_start_ns)
+
+            tmsg.det_pub_ms = _ms(t_det_pub_end_ns - t_det_pub_start_ns)
+            tmsg.e2e_det_ms = _ms(t_det_pub_end_ns - t_cam_msg_seen_ns)
+
+            t_loop1 = now_ns()
+            tmsg.loop_ms = _ms(t_loop1 - t_loop0)
+            tmsg.pub_dt_ms = float(pub_dt_ms)
+            tmsg.pts_ns = int(src_stamp_ns)
+            tmsg.t_pub_ns = int(t_engine_start_ns)
+            tmsg.lat_ms = tmsg.e2e_det_ms
+
+            self.pub_timing.publish(tmsg)
+
+        self.frames_processed += 1
+        if self.log_every > 0 and (self.frames_processed % self.log_every) == 0:
+            if self.pub_dt_hist_ms:
+                pub_dt_arr = np.array(self.pub_dt_hist_ms, dtype=np.float64)
+                pub_dt_p50 = float(np.percentile(pub_dt_arr, 50))
+                pub_dt_p95 = float(np.percentile(pub_dt_arr, 95))
+            else:
+                pub_dt_p50 = 0.0
+                pub_dt_p95 = 0.0
+
+            self.get_logger().info(
+                "perception_pipeline "
+                f"frames={self.frames_processed} "
+                f"recv={self.frames_received} "
+                f"timeouts={self.frames_timeouts} "
+                f"backend={self.active_backend} "
+                f"dets={len(det_arr.detections)} "
+                f"rt_ms={roundtrip_ms:.2f} "
+                f"pub_dt_ms={pub_dt_ms:.2f} "
+                f"pub_dt_p50_ms={pub_dt_p50:.2f} "
+                f"pub_dt_p95_ms={pub_dt_p95:.2f}"
+            )
+
+    def destroy_node(self):
+        try:
+            self.engine.close()
+        except Exception:
+            pass
+
+        return super().destroy_node()
+
+
+def main(args=None) -> None:
+    from rclpy.executors import MultiThreadedExecutor
+
+    rclpy.init(args=args)
+    node = None
+    executor = MultiThreadedExecutor(num_threads=2)
+
+    try:
+        node = PerceptionPipelineNode()
+        executor.add_node(node)
+        executor.spin()
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        try:
+            if node is not None:
+                executor.remove_node(node)
+                node.destroy_node()
+        except Exception:
+            pass
+
+        try:
+            if rclpy.ok():
+                rclpy.shutdown()
+        except Exception:
+            pass
+
+
+if __name__ == "__main__":
+    main()

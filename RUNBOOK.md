@@ -118,8 +118,8 @@ What this script does:
 
 1. Preflight and stale-process cleanup.
 2. ROS env and log directory setup.
-3. Inference container readiness.
-4. Node startup order: camera -> inference -> tracker/target/control -> dashboard.
+3. Perception path readiness by mode: legacy starts container detection service; single-process starts perception pipeline node.
+4. Node startup order: camera -> (legacy inference OR single-process perception) -> tracker/target/control -> dashboard.
 5. Interactive runtime with `status`, `clear`, `stop` commands.
 
 Default:
@@ -131,6 +131,15 @@ Useful flags:
 - Disable control: ./tools/start_live_stack.sh --no-control
 - Enable MAVROS mirror: ./tools/start_live_stack.sh --control-mavros
 - Camera + inference only: ./tools/start_live_stack.sh --no-tracker --no-target --no-control --no-dashboard
+- Legacy perception path (default): ./tools/start_live_stack.sh --perception-mode legacy
+- Single-process perception mode (in-process backend, stub fallback): ./tools/start_live_stack.sh --perception-mode single-process
+
+If you want to enable host-side Hailo dependencies for single-process mode:
+- Install/probe host Python bindings: ./tools/install_host_hailo_bindings.sh
+- Optional no-root runtime shim: ./tools/setup_local_tappas_runtime.sh
+
+Note:
+- start_live_stack.sh auto-detects local runtime assets from infer_service/opt/tappas_runtime_3_31 when present.
 
 Stop:
 - In prompt: stop, quit, or exit
@@ -147,7 +156,7 @@ ss -ltnp | rg ':5556|:8080|:8090|:8765'
 
 Expected:
 - Core topics are listed.
-- Required service ports are listening.
+- Required service ports are listening. Note: :5556 is only expected in legacy perception mode.
 
 Run UI in parallel (second terminal):
 
