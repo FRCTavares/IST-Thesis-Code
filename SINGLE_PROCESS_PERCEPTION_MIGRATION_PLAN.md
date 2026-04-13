@@ -2,7 +2,7 @@
 
 ## Single-Process Perception Pipeline (No Frame ZMQ)
 
-Date: 2026-04-11
+Date: 2026-04-13 (updated after live validation)
 
 Owner: Thesis-Code runtime pipeline
 
@@ -17,17 +17,38 @@ Expected outcome:
 - higher sustained detection throughput
 - simpler timing model and easier bottleneck attribution
 
-Current evidence from latest run:
+Current evidence from latest validated runs (single-process mode):
 
-- camera stream was not stable at 30 FPS (average around high teens)
-- detector loop showed significant cadence jitter and timeout events
-- per-frame request/reply behavior is currently sensitive to queue backpressure and drop policies
+- camera startup now succeeds in healthy cycles with sensor trigger/rate controls applied
+- internal camera publish cadence recovered near 30 FPS in full stack runs
+- completed 10-minute A/B/C ablation matrix identifies tracker/target/control as dominant bottleneck
+  - A (full stack): `/timing` 8.40 Hz, `e2e_det_ms` p95 124.59, `pub_dt_ms` p95/p99 162.93/267.70
+  - B (no dashboard): `/timing` 8.01 Hz, `e2e_det_ms` p95 127.62, `pub_dt_ms` p95/p99 159.81/229.70
+  - C (no tracker/target/control): `/timing` 10.00 Hz, `e2e_det_ms` p95 94.15, `pub_dt_ms` p95/p99 111.05/120.05
+- latency center improved materially and jitter tails improved when tracker/downstream path is removed
+- TEVS control timeout (`Connection timed out`) is now fail-fast before opening `/dev/video0` to reduce wedge risk
+- D-state camera failures remain reboot-required, with startup preflight detection now in place
 
-Conclusion: the current architecture can hide the real detector cost behind transport and queue dynamics. The single-process perception pipeline is the correct long-term architecture.
+Conclusion: the single-process architecture is implemented, camera throughput recovery is validated, and the next primary optimization target is tracker/downstream path cost and jitter.
+
+## 1.1 Status Snapshot (2026-04-13)
+
+- Done: single-process mode path wired into launcher, rollback flag preserved, camera diagnostics expanded, sensor rate-control tuning integrated.
+- Done: dashboard publishing decoupled from raw publish path with subscriber-aware gating.
+- Done: camera publish cadence in healthy runs is back near 30 FPS (`Camera FPS ... publish=~30`).
+- Done: 10-minute A/B/C ablation matrix completed; tracker/target/control path ranked as top bottleneck.
+- In progress: repeated cold-start reliability to rule out intermittent TEVS control timeout.
+- In progress: raising full-stack `/timing` cadence and reducing `pub_dt_ms` p95/p99 tails with tracker-focused optimization.
+- Pending: long soak stability gate and cutover-default decision.
 
 ## 2. Current State and Problem Statement
 
-Current path:
+Current deployment modes:
+
+1. legacy mode (`--perception-mode legacy`) keeps frame ZMQ request/reply transport for rollback.
+2. single-process mode (`--perception-mode single-process`) runs `perception_pipeline_node` in-process and skips frame ZMQ transport.
+
+Legacy path (kept for rollback):
 
 1. camera node captures frames and publishes ROS images.
 2. inference client receives ROS images, converts/resizes, and sends each frame over ZMQ REQ to container service.
@@ -90,7 +111,7 @@ Out of scope (for first cut):
 
 ## Workstream A: Architecture and Interface Freeze
 
-### A1. Freeze message contracts
+### A1. Freeze message contracts [DONE]
 
 - Keep Detection2DArray fields and frame_id semantics compatible.
 - Keep Timing message fields required by dashboard and reports.
@@ -101,7 +122,7 @@ Done criteria:
 - Interface compatibility table approved.
 - No required changes in tracker/target subscriber code paths.
 
-### A2. Select deployment shape
+### A2. Select deployment shape [DONE]
 
 Two acceptable implementation shapes:
 
@@ -125,7 +146,7 @@ Done criteria:
 
 ## Workstream B: Single-Process Node Implementation
 
-### B1. Create new node skeleton
+### B1. Create new node skeleton [DONE]
 
 Proposed file:
 
@@ -143,7 +164,7 @@ Done criteria:
 
 - node starts and runs with no dependencies on inference_client_node and detection_zmq.py data path.
 
-### B2. Integrate camera handling
+### B2. Integrate camera handling [MOSTLY DONE]
 
 Reuse from existing camera node:
 
@@ -156,7 +177,7 @@ Done criteria:
 
 - camera stability and reopen behavior equivalent to current camera node.
 
-### B3. Integrate Hailo inference in-process
+### B3. Integrate Hailo inference in-process [FUNCTIONAL DONE, PERF TUNING IN PROGRESS]
 
 Requirements:
 
@@ -168,7 +189,7 @@ Done criteria:
 
 - model loads and inference output parity confirmed on static test bag/video.
 
-### B4. Detection mapping parity
+### B4. Detection mapping parity [IN PROGRESS]
 
 Maintain output mapping:
 
@@ -180,7 +201,7 @@ Done criteria:
 
 - tracker node behavior unchanged under same input scenes.
 
-### B5. Timing instrumentation parity
+### B5. Timing instrumentation parity [DONE]
 
 Need timing fields that preserve analysis compatibility:
 
@@ -196,7 +217,7 @@ Done criteria:
 
 ## Workstream C: Startup and Operations Integration
 
-### C1. Add perception mode switch in startup
+### C1. Add perception mode switch in startup [DONE]
 
 Update startup script to support:
 
@@ -215,7 +236,7 @@ Done criteria:
 
 - both modes selectable and logged in run config output.
 
-### C2. Keep rollback path
+### C2. Keep rollback path [DONE]
 
 Rollback rule:
 
@@ -225,7 +246,7 @@ Done criteria:
 
 - documented rollback command tested.
 
-### C3. Update operational docs
+### C3. Update operational docs [IN PROGRESS]
 
 Update:
 
@@ -244,7 +265,7 @@ Done criteria:
 
 ## Workstream D: Validation Matrix
 
-### D1. Functional correctness
+### D1. Functional correctness [IN PROGRESS]
 
 Scenarios:
 
@@ -259,7 +280,7 @@ Checks:
 - tracker IDs stay stable relative to baseline
 - target selector behavior preserved
 
-### D2. Performance validation
+### D2. Performance validation [IN PROGRESS]
 
 Run each mode for at least 10 minutes:
 
@@ -280,7 +301,7 @@ Success thresholds (first cut):
 - det_fps median materially above legacy baseline
 - reduced pub_dt jitter versus legacy mode
 
-### D3. Stability validation
+### D3. Stability validation [PENDING]
 
 Long-run test:
 
@@ -292,7 +313,7 @@ Checks:
 - no progressive fps decay trend
 - no runaway memory growth
 
-### D4. Regression checks
+### D4. Regression checks [IN PROGRESS]
 
 Ensure unchanged behavior for:
 
@@ -302,7 +323,7 @@ Ensure unchanged behavior for:
 
 ## Workstream E: Cutover and Cleanup
 
-### E1. Controlled default switch
+### E1. Controlled default switch [PENDING]
 
 Step plan:
 
@@ -310,14 +331,14 @@ Step plan:
 2. Run repeated validation in single-process mode.
 3. Flip default only after passing gates.
 
-### E2. Legacy path deprecation
+### E2. Legacy path deprecation [PENDING]
 
 After sustained stability:
 
 - mark inference_client_node + detection_zmq frame transport path as deprecated.
 - keep one release window before full removal.
 
-### E3. Final cleanup
+### E3. Final cleanup [PENDING]
 
 Eventually remove:
 
@@ -326,20 +347,27 @@ Eventually remove:
 
 ## 6. File-Level Change Plan
 
-Likely touched files:
+Touched so far (confirmed):
 
-Primary implementation:
+Primary implementation and runtime:
 
-- ros2_ws/src/thesis_bringup/thesis_bringup/nodes/perception_pipeline_node.py (new)
-- ros2_ws/src/thesis_bringup/launch/camera_bringup.launch.py (or new launch path)
+- ros2_ws/src/thesis_bringup/thesis_bringup/nodes/perception_pipeline_node.py
+- ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_capture_node.py
+- ros2_ws/src/thesis_bringup/launch/camera_bringup.launch.py
 
-Startup/orchestration:
+Startup/orchestration and diagnostics:
 
 - tools/start_live_stack.sh
+- tools/probe_camera_modes.sh
+- tools/collect_live_timing_stats.py
 
 Compatibility and control:
 
 - ros2_ws/src/thesis_bringup/thesis_bringup/nodes/dashboard_bridge_node.py
+
+Validation artifacts:
+
+- reports/timing/*.json
 
 Docs:
 
@@ -353,48 +381,58 @@ Possibly deprecated later:
 
 ## 7. Risk Register
 
-Risk 1: camera init logic regressions
+Risk 1: camera process enters kernel D-state (`vb2_fop_release`)
 
-- Impact: startup failures, unstable camera path
-- Mitigation: reuse existing camera media initialization logic with minimal change
+- Impact: process ignores SIGKILL; camera path unrecoverable without reboot
+- Mitigation: preflight D-state detection in launcher and immediate reboot-required guidance
 
-Risk 2: Hailo runtime dependency mismatch in target deployment shape
+Risk 2: intermittent TEVS sensor control timeout during startup
 
-- Impact: blocked implementation
-- Mitigation: decide Shape H vs Shape C in Workstream A before coding deep path
+- Impact: capture path can wedge if startup continues after timeout
+- Mitigation: apply trigger/rate controls separately and fail-fast before opening `/dev/video0`
 
-Risk 3: dashboard/video overhead masking improvements
+Risk 3: subscriber-side image rate under-reports true publish cadence
 
-- Impact: misleading benchmarks
-- Mitigation: always benchmark lean and full modes separately
+- Impact: misleading conclusions from `ros2 topic hz` on image topics
+- Mitigation: use internal camera publish/capture FPS logs as primary source; treat CLI subscriber Hz as secondary
 
-Risk 4: timing schema break
+Risk 4: full-stack perception cadence bottleneck remains after camera recovery
+
+- Impact: `/timing` and detection throughput stay below target despite 30 FPS camera publish
+- Mitigation: profile perception/tracker stages and tune highest-cost stage first
+
+Risk 5: dashboard/video overhead masking improvements
+
+- Impact: misleading benchmark comparisons
+- Mitigation: benchmark lean and full modes separately, then verify both; A/B/C ablation indicates dashboard is not the primary limiter
+
+Risk 6: timing schema break
 
 - Impact: analysis scripts and reports break
 - Mitigation: preserve timing field contract for first cut
 
-Risk 5: rollback not immediate
+Risk 7: rollback path drift
 
-- Impact: operations downtime
-- Mitigation: keep legacy mode behind one startup flag until sign-off
+- Impact: operations downtime during incident response
+- Mitigation: keep legacy mode runnable via one startup flag and test rollback periodically
 
 ## 8. Acceptance Gates
 
-Gate G1: functional parity
+Gate G1: functional parity [PARTIALLY MET]
 
-- tracker/target pipeline behavior accepted in controlled scenes
+- tracker/target/control/dashboard path runs in single-process mode without interface breaks
 
-Gate G2: performance uplift
+Gate G2: performance uplift [IN PROGRESS]
 
-- single-process mode beats legacy in sustained det_fps and jitter metrics
+- camera-side publish cadence target is met in healthy runs; tracker/downstream bottleneck is identified, but full-stack det/timing cadence and jitter-tail targets are not yet met
 
-Gate G3: stability
+Gate G3: stability [IN PROGRESS]
 
-- no crash and no severe decay in 30-minute run
+- short/medium runs are successful; 30-minute soak with startup reliability gate still pending
 
-Gate G4: operational readiness
+Gate G4: operational readiness [PARTIALLY MET]
 
-- startup, docs, and rollback validated by command-line runbook tests
+- startup mode switch and rollback flag exist; docs and repeated rollback validation still pending completion
 
 ## 9. Rollback Plan
 
@@ -407,27 +445,49 @@ Rollback validation:
 
 - verify detections, target, and dashboard telemetry within 2 minutes after switch
 
-## 10. Suggested Execution Order
+## 10. Suggested Execution Order (Remaining)
 
-Day 1:
+Step 1:
 
-- Workstream A complete
-- node scaffold for Workstream B1
+- run startup reliability soak (multiple cold starts, full stack, dashboard enabled)
+- confirm no sensor timeout and no D-state preflight failures
 
-Day 2:
+Step 2:
 
-- Workstream B2/B3 initial implementation
-- first detections out
+- run 10-minute full-stack baseline in single-process mode
+- collect timing artifact and camera internal FPS logs
 
-Day 3:
+Step 3:
 
-- Workstream B4/B5 parity and instrumentation
-- Workstream C startup integration
+- run ablation matrix (10 minutes each, same scene and model):
+  - Run A (baseline): full stack with dashboard on
+  - Run B (dashboard ablation): disable dashboard path (`--no-dashboard`)
+  - Run C (tracker ablation): disable tracker-dependent path (`--no-tracker --no-target --no-control`)
 
-Day 4:
+Step 4:
 
-- Workstream D full benchmark matrix
-- document outcomes and decide cutover readiness
+- compare bottleneck deltas using the same metrics across A/B/C:
+  - `/timing` mean Hz
+  - `e2e_det_ms` p95
+  - `pub_dt_ms` p95 and p99
+- choose next optimization target from the largest improvement:
+  - B >> A => prioritize dashboard path optimization
+  - C >> A => prioritize tracker/downstream path optimization
+  - neither B nor C materially better => prioritize perception node hot path
+
+Status:
+
+- Completed. Result: C >> A and B !> A, so tracker/downstream optimization is the highest-priority path.
+
+Step 5:
+
+- rerun 10-minute validation after each major change
+- keep only changes that improve both center and tail metrics
+
+Step 6:
+
+- execute 30-minute stability run
+- decide cutover readiness against gates G1-G4
 
 ## 11. Definition of Done
 
@@ -442,32 +502,178 @@ Day 4:
 
 Primary objective:
 
-- achieve and sustain 30 FPS end-to-end with dashboard enabled in single-process mode.
+- lock in camera startup/publish stability and increase full-stack perception cadence with dashboard enabled in single-process mode.
 
 Constraints:
 
-- keep single-process perception path enabled (`--perception-mode single-process`).
-- keep dashboard enabled (no `--no-dashboard`).
-- do not use legacy frame ZMQ path as the primary solution.
+- keep single-process perception path enabled (`--perception-mode single-process`)
+- keep dashboard enabled (no `--no-dashboard`)
+- do not use legacy frame ZMQ path as the primary solution
 
-Target metrics (full stack, dashboard on):
+Hard gates for tomorrow (full stack, dashboard on):
 
-- `/camera/image_raw`: mean >= 30 Hz
-- `/detections`: mean >= 30 Hz
-- `/timing`: mean >= 30 Hz
-- `/camera/dashboard`: mean >= 30 Hz
-- no recurring stale-target oscillation caused by timing stalls
+- 5/5 clean startups with no TEVS control timeout and no D-state preflight failure
+- camera internal publish FPS (from camera log) average in [29, 31] during a 10-minute run
+- `/timing` mean >= 8 Hz with no timeout storms
+- `/camera/dashboard` topic stays active and web stream remains reachable for full run duration
+
+Stretch goals:
+
+- `/timing` mean >= 12 Hz
+- `/camera/dashboard` subscriber-observed rate >= 25 Hz
+- `e2e_det_ms` p50 <= 105 ms and `pub_dt_ms` p95 <= 170 ms
+
+Long-term target (unchanged):
+
+- sustain 30 Hz across camera, detections, timing, and dashboard in full mode
 
 Execution plan for tomorrow:
 
-1. Lock the model during the run and avoid unintended heavy model switches.
-2. Establish baseline with dashboard on and web video on, collect 10-minute metrics.
-3. Profile per-node CPU and stage timing to isolate dominant bottleneck.
-4. Apply highest-impact tuning first (camera format/rate path, perception publish cadence, tracker cost, dashboard transport path).
-5. Re-run 10-minute validation after each major change; keep only changes that improve all target metrics.
+1. Run 5 cold-start cycles in full stack and log startup outcomes.
+2. Lock model/tracker configuration and capture a 10-minute baseline artifact (Run A).
+3. Run dashboard ablation for 10 minutes (`--no-dashboard`) (Run B).
+4. Run tracker ablation for 10 minutes (`--no-tracker --no-target --no-control`) (Run C).
+5. Rank bottleneck ownership using A/B/C deltas on `/timing` mean Hz, `e2e_det_ms` p95, `pub_dt_ms` p95/p99.
+6. Apply one high-impact tuning change at a time to the winning bottleneck.
+7. Re-run 10-minute validation after each major change.
+8. Keep only changes that improve both throughput and jitter tails.
 
 Acceptance for tomorrow session:
 
-- all four core topics sustain 30 Hz in full mode with dashboard enabled,
-- no timeout storms in perception logs,
-- no control instability attributable to stale target timing.
+- hard gates all met in at least one 10-minute run
+- no control instability attributable to stale target timing
+- if hard gates fail from sensor timeout, fallback run with rate controls disabled remains operational and documented
+
+## 13. Optimization Playbook (All Levers)
+
+This section enumerates all practical optimization levers, grouped by subsystem.
+The order is prioritized by expected impact based on current ablation evidence.
+
+### 13.1 Tracker and Downstream (Highest Priority)
+
+Goals:
+
+- reduce per-frame tracker and downstream CPU cost
+- reduce long-tail stalls that inflate `pub_dt_ms` p99
+
+Levers:
+
+- simplify tracker association settings (tighten candidate set before expensive matching)
+- reduce optional tracker outputs and per-frame payload size where not required
+- reduce or gate expensive debug/profiling serialization paths in steady-state runs
+- cap per-frame bookkeeping work and avoid repeated allocations in hot loops
+- run tracker publication at a controlled cadence if full-rate publication is not required downstream
+- ensure target selector/control consume only required fields and avoid redundant transforms
+
+Validation signals:
+
+- `/timing` Hz increases toward or above 10 in full stack
+- `pub_dt_ms` p95/p99 decreases materially without detection regressions
+
+### 13.2 Perception Pipeline Hot Path (Second Priority)
+
+Goals:
+
+- minimize preprocessing and postprocessing overhead
+- keep detection cadence stable under load
+
+Levers:
+
+- preallocate reusable numpy buffers for resize/color/packing paths
+- avoid unnecessary conversions and memory copies between ROS image and inference input
+- reduce Python object churn in detection mapping and message creation paths
+- trim log cadence and heavy string formatting in hot loops
+- verify model/input configuration is fixed during experiments to avoid confounded runs
+
+Validation signals:
+
+- lower `pre_ms`/`infer_ms` p95 and reduced variance in `/timing`
+
+### 13.3 Camera Path (Keep Stable, Avoid Regressions)
+
+Goals:
+
+- preserve validated ~30 FPS camera publish and startup reliability
+
+Levers:
+
+- keep current sensor control defaults unless repeated startup timeout appears
+- maintain fail-fast on TEVS timeout and D-state preflight detection
+- keep `device` fallback-to-openable-node behavior to avoid false startup failures
+
+Validation signals:
+
+- camera publish average remains in [29, 31] with stable startup logs
+
+### 13.4 Dashboard and Web Video Path (Lower Priority)
+
+Goals:
+
+- prevent dashboard path from becoming a future limiter
+
+Levers:
+
+- keep subscriber-gated dashboard publish enabled
+- tune dashboard resize quality/size only if dashboard becomes a measured limiter
+- verify web stream settings do not induce extra load during benchmark runs
+
+Validation signals:
+
+- no significant regression in full-stack `/timing` when dashboard is enabled
+
+### 13.5 ROS 2 and Messaging Layer
+
+Goals:
+
+- reduce middleware-induced queueing and callback contention
+
+Levers:
+
+- keep sensor-data QoS where appropriate and avoid depth inflation in hot image topics
+- isolate heavy callbacks into separate callback groups/executors where beneficial
+- minimize oversized message publication frequency when consumers do not need full rate
+
+Validation signals:
+
+- fewer bursty delays and improved tail metrics under identical workload
+
+### 13.6 Host and Runtime Environment
+
+Goals:
+
+- reduce system jitter and thermal-related throttling risk
+
+Levers:
+
+- pin CPU governor/performance settings for benchmark consistency
+- monitor thermal headroom and avoid benchmark runs under throttled states
+- reduce background service noise during measurement windows
+
+Validation signals:
+
+- tighter run-to-run variance across repeated 10-minute tests
+
+## 14. Optimization Experiment Backlog
+
+Run one experiment at a time, then re-run 10-minute validation with the same scene and model.
+
+1. Tracker hot-loop allocation reduction and publish payload trim.
+2. Tracker candidate gating/association simplification.
+3. Target selector/control subscription and compute-path trim.
+4. Perception preprocessing buffer reuse and copy reduction.
+5. Perception postprocess message-object reuse optimizations.
+6. Executor/callback-group isolation for heavy callbacks.
+7. Dashboard transport tuning only if measured as a limiter after tracker optimizations.
+
+Keep-change criteria:
+
+- `/timing` Hz does not regress
+- `e2e_det_ms` p95 decreases or holds
+- `pub_dt_ms` p95 and p99 improve
+- no functional regression in tracker/target/control behavior
+
+Drop-change criteria:
+
+- any throughput loss > 3 percent
+- any significant p99 regression
+- any startup reliability regression or increased timeout incidence

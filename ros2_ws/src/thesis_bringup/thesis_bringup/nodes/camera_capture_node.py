@@ -40,12 +40,22 @@ class CameraCaptureNode(Node):
         self.declare_parameter("csi_source_pad", 4)
         self.declare_parameter("video_entity", "rp1-cfe-csi2_ch0")
         self.declare_parameter("trigger_mode", 0)
+        self.declare_parameter("apply_sensor_rate_controls", True)
+        self.declare_parameter("sensor_max_fps", 30)
+        self.declare_parameter("sensor_ae_exposure_upper", 8333)
+        self.declare_parameter("sensor_ae_exposure_max", 33333)
+        self.declare_parameter("sensor_exposure_mode", 1)
+        self.declare_parameter("sensor_manual_exposure", 8333)
         self.declare_parameter("command_delay_s", 0.10)
         self.declare_parameter("command_timeout_s", 5.0)
         self.declare_parameter("reopen_delay_s", 1.0)
         self.declare_parameter("publish_fps_topic", True)
         self.declare_parameter("flip_image", True)
         self.declare_parameter("fail_on_media_init_error", False)
+        self.declare_parameter("adopt_detected_sensor_resolution", True)
+        self.declare_parameter("dashboard_publish_requires_subscribers", True)
+        self.declare_parameter("capture_fps_topic", "/camera/capture_fps")
+        self.declare_parameter("publish_capture_fps_topic", True)
 
         self._device = self.get_parameter("device").value
         self._media_dev = self.get_parameter("media_dev").value
@@ -65,12 +75,26 @@ class CameraCaptureNode(Node):
         self._csi_source_pad = int(self.get_parameter("csi_source_pad").value)
         self._video_entity = self.get_parameter("video_entity").value
         self._trigger_mode = int(self.get_parameter("trigger_mode").value)
+        self._apply_sensor_rate_controls = bool(self.get_parameter("apply_sensor_rate_controls").value)
+        self._sensor_max_fps = int(self.get_parameter("sensor_max_fps").value)
+        self._sensor_ae_exposure_upper = int(self.get_parameter("sensor_ae_exposure_upper").value)
+        self._sensor_ae_exposure_max = int(self.get_parameter("sensor_ae_exposure_max").value)
+        self._sensor_exposure_mode = int(self.get_parameter("sensor_exposure_mode").value)
+        self._sensor_manual_exposure = int(self.get_parameter("sensor_manual_exposure").value)
         self._command_delay_s = float(self.get_parameter("command_delay_s").value)
         self._command_timeout_s = float(self.get_parameter("command_timeout_s").value)
         self._reopen_delay_s = float(self.get_parameter("reopen_delay_s").value)
         self._publish_fps_topic = bool(self.get_parameter("publish_fps_topic").value)
         self._flip_image = bool(self.get_parameter("flip_image").value)
         self._fail_on_media_init_error = bool(self.get_parameter("fail_on_media_init_error").value)
+        self._adopt_detected_sensor_resolution = bool(
+            self.get_parameter("adopt_detected_sensor_resolution").value
+        )
+        self._dashboard_publish_requires_subscribers = bool(
+            self.get_parameter("dashboard_publish_requires_subscribers").value
+        )
+        self._capture_fps_topic = str(self.get_parameter("capture_fps_topic").value)
+        self._publish_capture_fps_topic = bool(self.get_parameter("publish_capture_fps_topic").value)
 
         self._media_dev = self._resolve_media_device(self._media_dev)
         self._sensor_entity = self._resolve_sensor_entity(self._media_dev, self._sensor_entity)
@@ -80,12 +104,15 @@ class CameraCaptureNode(Node):
         self._latest_frame = None
         self._latest_frame_id = 0
         self._last_published_frame_id = 0
+        self._last_dashboard_published_frame_id = 0
         self._frame_lock = threading.Lock()
         self._new_frame_event = threading.Event()
+        self._dashboard_event = threading.Event()
         self._cap: cv2.VideoCapture | None = None
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._publisher_thread: threading.Thread | None = None
+        self._dashboard_thread: threading.Thread | None = None
 
         image_qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -109,10 +136,18 @@ class CameraCaptureNode(Node):
         if self._publish_fps_topic:
             self._fps_pub = self.create_publisher(Float32, "/camera/fps", 10)
 
-        self._frame_counter = 0
-        self._fps_window_start = time.monotonic()
+        self._capture_fps_pub = None
+        if self._publish_capture_fps_topic:
+            self._capture_fps_pub = self.create_publisher(Float32, self._capture_fps_topic, 10)
+
+        self._capture_frame_counter = 0
+        self._capture_fps_window_start = time.monotonic()
+        self._publish_frame_counter = 0
+        self._publish_fps_window_start = time.monotonic()
+        self._latest_capture_fps = 0.0
+        self._latest_publish_fps = 0.0
         self._last_log_time = 0.0
-        self._last_dashboard_pub_time = 0.0
+        self._image_publish_period = (1.0 / self._fps) if self._fps > 0.0 else 0.0
 
         self._configure_camera()
 
@@ -121,6 +156,9 @@ class CameraCaptureNode(Node):
         self._thread.start()
         self._publisher_thread = threading.Thread(target=self._publisher_loop, daemon=True)
         self._publisher_thread.start()
+        if self._dashboard_pub is not None:
+            self._dashboard_thread = threading.Thread(target=self._dashboard_loop, daemon=True)
+            self._dashboard_thread.start()
 
         self.get_logger().info(
             f"camera_capture_node started, device={self._device}, "
@@ -241,12 +279,29 @@ class CameraCaptureNode(Node):
             return None
         return width, height
 
+    @staticmethod
+    def _can_open_video_device(device_path: str) -> bool:
+        cap = cv2.VideoCapture(device_path, cv2.CAP_V4L2)
+        try:
+            return cap.isOpened()
+        finally:
+            cap.release()
+
     def _resolve_video_device(self, configured_device: str) -> str:
         configured_path = Path(configured_device)
         if configured_path.exists():
-            return configured_device
+            if self._can_open_video_device(configured_device):
+                return configured_device
+            self.get_logger().warn(
+                f"Configured camera device {configured_device} exists but cannot be opened; "
+                "searching fallback video nodes"
+            )
 
         candidates = [Path(p) for p in self._extract_video_nodes_from_media(self._media_dev)]
+        for path in sorted(Path("/dev").glob("video*")):
+            if path not in candidates:
+                candidates.append(path)
+
         if not candidates:
             raise RuntimeError(
                 f"Configured camera device {configured_device} not found and media device "
@@ -255,20 +310,16 @@ class CameraCaptureNode(Node):
             )
 
         for candidate in candidates:
-            cap = cv2.VideoCapture(str(candidate), cv2.CAP_V4L2)
-            try:
-                if cap.isOpened():
-                    self.get_logger().warn(
-                        f"Configured camera device {configured_device} not found; using {candidate} instead"
-                    )
-                    return str(candidate)
-            finally:
-                cap.release()
+            if self._can_open_video_device(str(candidate)):
+                self.get_logger().warn(
+                    f"Configured camera device {configured_device} not usable; using {candidate} instead"
+                )
+                return str(candidate)
 
-        self.get_logger().warn(
-            f"Configured camera device {configured_device} not found and no usable /dev/video* candidate opened"
+        raise RuntimeError(
+            f"Configured camera device {configured_device} is not usable and no fallback /dev/video* "
+            "candidate could be opened"
         )
-        return configured_device
 
     def _configure_camera(self) -> None:
         self.get_logger().info("Configuring TEVS camera before capture start")
@@ -315,17 +366,40 @@ class CameraCaptureNode(Node):
             detected_width, detected_height = detected_resolution
             if (detected_width, detected_height) != (active_width, active_height):
                 reason = "not accepted" if sensor_result.returncode != 0 else "applied differently"
-                self.get_logger().warn(
+                mismatch_msg = (
                     "Requested sensor format "
                     f"{active_width}x{active_height} was {reason}; "
-                    f"using detected sensor format {detected_width}x{detected_height}"
+                    f"sensor reports {detected_width}x{detected_height}"
                 )
-                active_width, active_height = detected_width, detected_height
-                self._width, self._height = active_width, active_height
-                fmt_string = (
-                    f"fmt:UYVY8_1X16/{active_width}x{active_height} "
-                    "field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range"
-                )
+
+                # If the sensor rejects the requested format, keeping the requested
+                # size for CSI/video often leads to a running node with no frames.
+                # In that case, prefer a safe fallback to the detected sensor mode.
+                must_adopt_for_stability = sensor_result.returncode != 0
+                if self._adopt_detected_sensor_resolution or must_adopt_for_stability:
+                    if must_adopt_for_stability and not self._adopt_detected_sensor_resolution:
+                        self.get_logger().warn(
+                            mismatch_msg
+                            + "; overriding adopt_detected_sensor_resolution=false to keep stream alive"
+                        )
+                    self.get_logger().warn(
+                        mismatch_msg + "; adopting detected resolution for capture"
+                    )
+                    active_width, active_height = detected_width, detected_height
+                    self._width, self._height = active_width, active_height
+                    fmt_string = (
+                        f"fmt:UYVY8_1X16/{active_width}x{active_height} "
+                        "field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range"
+                    )
+                else:
+                    if self._fail_on_media_init_error:
+                        raise RuntimeError(
+                            mismatch_msg
+                            + "; set adopt_detected_sensor_resolution=true or fix requested width/height"
+                        )
+                    self.get_logger().error(
+                        mismatch_msg + "; keeping requested resolution for capture configuration"
+                    )
 
         commands = [
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":0 [{fmt_string}]'",
@@ -333,13 +407,61 @@ class CameraCaptureNode(Node):
             f"media-ctl -d {self._media_dev} -l '\"{self._csi_entity}\":{self._csi_source_pad} -> \"{self._video_entity}\":0 [1]'",
         ]
 
+        trigger_cmd = None
+        rate_controls_cmd = None
         if Path(self._sensor_subdev).exists():
-            commands.append(
+            trigger_cmd = (
                 f"v4l2-ctl -d {self._sensor_subdev} --set-ctrl=trigger_mode={self._trigger_mode}"
             )
 
+            if self._apply_sensor_rate_controls:
+                rate_controls = [
+                    f"max_fps={self._sensor_max_fps}",
+                    f"ae_exposure_upper={self._sensor_ae_exposure_upper}",
+                    f"ae_exposure_max={self._sensor_ae_exposure_max}",
+                    f"exposure_mode={self._sensor_exposure_mode}",
+                ]
+                if self._sensor_exposure_mode == 0:
+                    rate_controls.append(f"exposure={self._sensor_manual_exposure}")
+                rate_controls_cmd = (
+                    f"v4l2-ctl -d {self._sensor_subdev} --set-ctrl={','.join(rate_controls)}"
+                )
+
         for cmd in commands:
             self._run_shell(cmd, allow_failure=not self._fail_on_media_init_error)
+            time.sleep(self._command_delay_s)
+
+        if trigger_cmd is not None:
+            self.get_logger().info(f"Applying sensor trigger control: trigger_mode={self._trigger_mode}")
+            self._run_shell(trigger_cmd, allow_failure=not self._fail_on_media_init_error)
+            time.sleep(self._command_delay_s)
+
+        if rate_controls_cmd is not None:
+            self.get_logger().info(
+                "Applying sensor rate controls: "
+                f"max_fps={self._sensor_max_fps}, "
+                f"ae_exposure_upper={self._sensor_ae_exposure_upper}, "
+                f"ae_exposure_max={self._sensor_ae_exposure_max}, "
+                f"exposure_mode={self._sensor_exposure_mode}, "
+                f"manual_exposure={self._sensor_manual_exposure}"
+            )
+            rate_result = self._run_shell(rate_controls_cmd, allow_failure=True)
+            if rate_result.returncode != 0:
+                combined_output = (
+                    f"{rate_result.stdout or ''}\n{rate_result.stderr or ''}"
+                ).lower()
+                if "connection timed out" in combined_output:
+                    raise RuntimeError(
+                        "Sensor rate control timed out while configuring camera; "
+                        "aborting startup to avoid wedged capture path"
+                    )
+
+                self.get_logger().warn(
+                    "Sensor rate control apply failed; continuing with current sensor defaults"
+                )
+                if trigger_cmd is not None:
+                    # Re-apply trigger control to recover a known-good baseline after timeout.
+                    self._run_shell(trigger_cmd, allow_failure=True)
             time.sleep(self._command_delay_s)
 
     def _run_shell(self, cmd: str, allow_failure: bool = False) -> subprocess.CompletedProcess:
@@ -381,6 +503,16 @@ class CameraCaptureNode(Node):
 
         return result
 
+    @staticmethod
+    def _decode_fourcc(raw_fourcc: float) -> str:
+        try:
+            code = int(raw_fourcc)
+        except Exception:
+            return "????"
+
+        chars = [chr((code >> (8 * i)) & 0xFF) for i in range(4)]
+        return "".join(char if 32 <= ord(char) <= 126 else "?" for char in chars)
+
     def _open_camera(self) -> None:
         if self._cap is not None:
             try:
@@ -401,6 +533,32 @@ class CameraCaptureNode(Node):
 
         if len(self._fourcc) == 4:
             cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*self._fourcc))
+
+        actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        actual_fps = float(cap.get(cv2.CAP_PROP_FPS))
+        actual_fourcc = self._decode_fourcc(cap.get(cv2.CAP_PROP_FOURCC))
+
+        self.get_logger().info(
+            "Opened camera actual mode: "
+            f"{actual_width}x{actual_height} @ {actual_fps:.2f} FPS, FOURCC={actual_fourcc}"
+        )
+
+        if actual_width != self._width or actual_height != self._height:
+            self.get_logger().warn(
+                "Requested capture size "
+                f"{self._width}x{self._height} differs from actual {actual_width}x{actual_height}"
+            )
+
+        if self._fps > 0.0 and abs(actual_fps - self._fps) > 1.0:
+            self.get_logger().warn(
+                f"Requested FPS {self._fps:.2f} differs from actual {actual_fps:.2f}"
+            )
+
+        if len(self._fourcc) == 4 and actual_fourcc.upper() != self._fourcc.upper():
+            self.get_logger().warn(
+                f"Requested FOURCC {self._fourcc} differs from actual {actual_fourcc}"
+            )
 
         self._cap = cap
 
@@ -426,15 +584,106 @@ class CameraCaptureNode(Node):
             with self._frame_lock:
                 self._latest_frame = frame
                 self._latest_frame_id += 1
+
+            self._capture_frame_counter += 1
+            self._publish_capture_fps_if_due()
             self._new_frame_event.set()
+            if self._dashboard_pub is not None:
+                self._dashboard_event.set()
 
     def _publisher_loop(self) -> None:
+        next_publish_time = time.monotonic()
+
         while rclpy.ok() and not self._stop_event.is_set():
-            has_new_frame = self._new_frame_event.wait(timeout=0.25)
-            if not has_new_frame:
+            if self._image_publish_period <= 0.0:
+                has_new_frame = self._new_frame_event.wait(timeout=0.25)
+                if not has_new_frame:
+                    continue
+                self._new_frame_event.clear()
+                self._publish_latest_frame()
                 continue
+
+            now = time.monotonic()
+            wait_timeout = max(0.0, next_publish_time - now)
+            self._new_frame_event.wait(timeout=wait_timeout)
             self._new_frame_event.clear()
+
+            now = time.monotonic()
+            if now < next_publish_time:
+                continue
+
             self._publish_latest_frame()
+
+            next_publish_time += self._image_publish_period
+            if (now - next_publish_time) > (self._image_publish_period * 4.0):
+                next_publish_time = now + self._image_publish_period
+
+    def _dashboard_loop(self) -> None:
+        if self._dashboard_pub is None or self._dashboard_fps <= 0.0:
+            return
+
+        period = 1.0 / self._dashboard_fps
+        next_publish_time = time.monotonic()
+
+        while rclpy.ok() and not self._stop_event.is_set():
+            now = time.monotonic()
+            wait_timeout = max(0.0, next_publish_time - now)
+            self._dashboard_event.wait(timeout=wait_timeout)
+            self._dashboard_event.clear()
+
+            now = time.monotonic()
+            if now < next_publish_time:
+                continue
+
+            self._publish_dashboard_latest_frame()
+
+            next_publish_time += period
+            if (now - next_publish_time) > (period * 4.0):
+                next_publish_time = now + period
+
+    def _has_dashboard_subscribers(self) -> bool:
+        if self._dashboard_pub is None:
+            return False
+
+        if not self._dashboard_publish_requires_subscribers:
+            return True
+
+        sub_count = self._dashboard_pub.get_subscription_count()
+        intra_count = 0
+        if hasattr(self._dashboard_pub, "get_intra_process_subscription_count"):
+            intra_count = self._dashboard_pub.get_intra_process_subscription_count()
+        return (sub_count + intra_count) > 0
+
+    def _publish_dashboard_latest_frame(self) -> None:
+        if self._dashboard_pub is None:
+            return
+
+        if not self._has_dashboard_subscribers():
+            return
+
+        with self._frame_lock:
+            frame = self._latest_frame
+            frame_id = self._latest_frame_id
+
+        if frame is None:
+            return
+
+        if frame_id == self._last_dashboard_published_frame_id:
+            return
+
+        dashboard_frame = frame
+        if frame.shape[1] != self._dashboard_width or frame.shape[0] != self._dashboard_height:
+            dashboard_frame = cv2.resize(
+                frame,
+                (self._dashboard_width, self._dashboard_height),
+                interpolation=cv2.INTER_AREA,
+            )
+
+        dashboard_msg = self._bridge.cv2_to_imgmsg(dashboard_frame, encoding="bgr8")
+        dashboard_msg.header.stamp = self.get_clock().now().to_msg()
+        dashboard_msg.header.frame_id = self._frame_id
+        self._dashboard_pub.publish(dashboard_msg)
+        self._last_dashboard_published_frame_id = frame_id
 
     def _publish_latest_frame(self) -> None:
         with self._frame_lock:
@@ -450,53 +699,54 @@ class CameraCaptureNode(Node):
 
         stamp = self.get_clock().now().to_msg()
 
-        if self._dashboard_pub is not None:
-            now = time.monotonic()
-            publish_dashboard = True
-            if self._dashboard_fps > 0.0:
-                period = 1.0 / self._dashboard_fps
-                publish_dashboard = (now - self._last_dashboard_pub_time) >= period
-
-            if publish_dashboard:
-                dashboard_frame = frame
-                if frame.shape[1] != self._dashboard_width or frame.shape[0] != self._dashboard_height:
-                    dashboard_frame = cv2.resize(
-                        frame,
-                        (self._dashboard_width, self._dashboard_height),
-                        interpolation=cv2.INTER_AREA,
-                    )
-                dashboard_msg = self._bridge.cv2_to_imgmsg(dashboard_frame, encoding="bgr8")
-                dashboard_msg.header.stamp = stamp
-                dashboard_msg.header.frame_id = self._frame_id
-                self._dashboard_pub.publish(dashboard_msg)
-                self._last_dashboard_pub_time = now
-
         msg = self._bridge.cv2_to_imgmsg(frame, encoding="bgr8")
         msg.header.stamp = stamp
         msg.header.frame_id = self._frame_id
         self._image_pub.publish(msg)
         self._last_published_frame_id = frame_id
 
-        self._frame_counter += 1
+        self._publish_frame_counter += 1
         self._publish_fps_if_due()
+
+    def _publish_capture_fps_if_due(self) -> None:
+        now = time.monotonic()
+        dt = now - self._capture_fps_window_start
+
+        if dt < 1.0:
+            return
+
+        capture_fps = self._capture_frame_counter / dt if dt > 0.0 else 0.0
+        self._latest_capture_fps = capture_fps
+
+        if self._capture_fps_pub is not None:
+            capture_fps_msg = Float32()
+            capture_fps_msg.data = float(capture_fps)
+            self._capture_fps_pub.publish(capture_fps_msg)
+
+        self._capture_frame_counter = 0
+        self._capture_fps_window_start = now
 
     def _publish_fps_if_due(self) -> None:
         if self._fps_pub is None:
             return
 
         now = time.monotonic()
-        dt = now - self._fps_window_start
+        dt = now - self._publish_fps_window_start
 
         if dt >= 1.0:
-            fps = self._frame_counter / dt if dt > 0.0 else 0.0
+            fps = self._publish_frame_counter / dt if dt > 0.0 else 0.0
+            self._latest_publish_fps = fps
+
             fps_msg = Float32()
             fps_msg.data = float(fps)
             self._fps_pub.publish(fps_msg)
 
-            self.get_logger().info(f"Camera FPS: {fps:.2f}")
+            self.get_logger().info(
+                f"Camera FPS capture={self._latest_capture_fps:.2f} publish={fps:.2f}"
+            )
 
-            self._frame_counter = 0
-            self._fps_window_start = now
+            self._publish_frame_counter = 0
+            self._publish_fps_window_start = now
 
     def _retry_reopen(self) -> None:
         if self._cap is not None:
@@ -520,12 +770,16 @@ class CameraCaptureNode(Node):
     def destroy_node(self):
         self._stop_event.set()
         self._new_frame_event.set()
+        self._dashboard_event.set()
 
         if self._thread is not None and self._thread.is_alive():
             self._thread.join(timeout=2.0)
 
         if self._publisher_thread is not None and self._publisher_thread.is_alive():
             self._publisher_thread.join(timeout=2.0)
+
+        if self._dashboard_thread is not None and self._dashboard_thread.is_alive():
+            self._dashboard_thread.join(timeout=2.0)
 
         if self._cap is not None:
             try:

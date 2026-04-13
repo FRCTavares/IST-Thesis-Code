@@ -178,6 +178,13 @@ Options:
     --camera-fps <N>                    Camera publish fps (default: 30)
     --dashboard-fps <N>                 Dashboard image publish fps (default: 30)
     --camera-no-flip                    Disable camera frame flip
+    --camera-rate-controls-off          Disable sensor FPS/exposure rate control writes
+    --camera-rate-controls-on           Enable sensor FPS/exposure rate control writes
+    --camera-sensor-max-fps <N>         Sensor max_fps control (default: 30)
+    --camera-ae-upper <N>               Sensor ae_exposure_upper control (default: 8333)
+    --camera-ae-max <N>                 Sensor ae_exposure_max control (default: 33333)
+    --camera-exposure-mode <0|1|2>      Sensor exposure mode (0=manual, 1=auto, 2=agc; default: 1)
+    --camera-manual-exposure <N>        Sensor manual exposure when mode=0 (default: 8333)
     --infer-queue-size <N>              Inference client queue size (default: 1)
     --infer-workers <N>                 Inference client worker threads (default: 2)
     --infer-timeout-ms <N>              Inference request timeout ms (default: 300)
@@ -210,6 +217,12 @@ CAMERA_HEIGHT=720
 CAMERA_FPS=30.0
 CAMERA_DASHBOARD_FPS=30.0
 CAMERA_FLIP_BOOL="true"
+CAMERA_APPLY_RATE_CONTROLS_BOOL="true"
+CAMERA_SENSOR_MAX_FPS=30
+CAMERA_SENSOR_AE_UPPER=8333
+CAMERA_SENSOR_AE_MAX=33333
+CAMERA_SENSOR_EXPOSURE_MODE=1
+CAMERA_SENSOR_MANUAL_EXPOSURE=8333
 INFER_QUEUE_SIZE=1
 INFER_WORKERS=2
 INFER_TIMEOUT_MS=300
@@ -319,6 +332,59 @@ while [[ $# -gt 0 ]]; do
         --camera-no-flip)
             CAMERA_FLIP_BOOL="false"
             shift
+            ;;
+        --camera-rate-controls-off)
+            CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
+            shift
+            ;;
+        --camera-rate-controls-on)
+            CAMERA_APPLY_RATE_CONTROLS_BOOL="true"
+            shift
+            ;;
+        --camera-sensor-max-fps)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-sensor-max-fps requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_SENSOR_MAX_FPS="$2"
+            shift 2
+            ;;
+        --camera-ae-upper)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-ae-upper requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_SENSOR_AE_UPPER="$2"
+            shift 2
+            ;;
+        --camera-ae-max)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-ae-max requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_SENSOR_AE_MAX="$2"
+            shift 2
+            ;;
+        --camera-exposure-mode)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-exposure-mode requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_SENSOR_EXPOSURE_MODE="$2"
+            shift 2
+            ;;
+        --camera-manual-exposure)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-manual-exposure requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_SENSOR_MANUAL_EXPOSURE="$2"
+            shift 2
             ;;
         --infer-queue-size)
             if [[ $# -lt 2 ]]; then
@@ -464,6 +530,31 @@ fi
 
 if ! [[ "$CAMERA_DASHBOARD_FPS" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
     echo "[error] --dashboard-fps must be a positive number"
+    exit 1
+fi
+
+if ! [[ "$CAMERA_SENSOR_MAX_FPS" =~ ^[0-9]+$ ]] || [[ "$CAMERA_SENSOR_MAX_FPS" -lt 1 ]]; then
+    echo "[error] --camera-sensor-max-fps must be a positive integer"
+    exit 1
+fi
+
+if ! [[ "$CAMERA_SENSOR_AE_UPPER" =~ ^[0-9]+$ ]] || [[ "$CAMERA_SENSOR_AE_UPPER" -lt 1 ]]; then
+    echo "[error] --camera-ae-upper must be a positive integer"
+    exit 1
+fi
+
+if ! [[ "$CAMERA_SENSOR_AE_MAX" =~ ^[0-9]+$ ]] || [[ "$CAMERA_SENSOR_AE_MAX" -lt 1 ]]; then
+    echo "[error] --camera-ae-max must be a positive integer"
+    exit 1
+fi
+
+if ! [[ "$CAMERA_SENSOR_EXPOSURE_MODE" =~ ^[0-2]$ ]]; then
+    echo "[error] --camera-exposure-mode must be one of 0, 1, 2"
+    exit 1
+fi
+
+if ! [[ "$CAMERA_SENSOR_MANUAL_EXPOSURE" =~ ^[0-9]+$ ]] || [[ "$CAMERA_SENSOR_MANUAL_EXPOSURE" -lt 1 ]]; then
+    echo "[error] --camera-manual-exposure must be a positive integer"
     exit 1
 fi
 
@@ -658,6 +749,7 @@ echo "[info] run: $RUN_ID"
 echo "[info] logs: $RUN_DIR"
 echo "[info] mode: perception=$PERCEPTION_MODE"
 echo "[info] cfg: camera=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
+echo "[info] cfg: camera_rate_controls=${CAMERA_APPLY_RATE_CONTROLS_BOOL} sensor_max_fps=${CAMERA_SENSOR_MAX_FPS} ae_upper=${CAMERA_SENSOR_AE_UPPER} ae_max=${CAMERA_SENSOR_AE_MAX} exposure_mode=${CAMERA_SENSOR_EXPOSURE_MODE}"
 echo "[info] nodes: tracker=$tracker_state target=$target_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     echo "[info] tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL profile=$TRACKER_PROFILE_ENABLED"
@@ -769,6 +861,12 @@ CAMERA_ARGS+=("height:=$CAMERA_HEIGHT")
 CAMERA_ARGS+=("fps:=$CAMERA_FPS")
 CAMERA_ARGS+=("dashboard_fps:=$CAMERA_DASHBOARD_FPS")
 CAMERA_ARGS+=("flip_image:=$CAMERA_FLIP_BOOL")
+CAMERA_ARGS+=("apply_sensor_rate_controls:=$CAMERA_APPLY_RATE_CONTROLS_BOOL")
+CAMERA_ARGS+=("sensor_max_fps:=$CAMERA_SENSOR_MAX_FPS")
+CAMERA_ARGS+=("sensor_ae_exposure_upper:=$CAMERA_SENSOR_AE_UPPER")
+CAMERA_ARGS+=("sensor_ae_exposure_max:=$CAMERA_SENSOR_AE_MAX")
+CAMERA_ARGS+=("sensor_exposure_mode:=$CAMERA_SENSOR_EXPOSURE_MODE")
+CAMERA_ARGS+=("sensor_manual_exposure:=$CAMERA_SENSOR_MANUAL_EXPOSURE")
 if [[ -n "${CAMERA_MEDIA_DEV_OVERRIDE:-}" ]]; then
     CAMERA_ARGS+=("media_dev:=$CAMERA_MEDIA_DEV_OVERRIDE")
 fi
