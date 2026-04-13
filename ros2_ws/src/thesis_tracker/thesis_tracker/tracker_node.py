@@ -2,6 +2,7 @@
 """Unified tracker node supporting multiple tracking backends."""
 from __future__ import annotations
 
+from collections import deque
 import gc
 import time
 from contextlib import contextmanager
@@ -130,12 +131,17 @@ class TrackerNode(Node):
 
         self.frame_context: dict[int, tuple[int, int]] = {}
         self.max_context = 512
+        self._frame_context_order: deque[int] = deque()
         
         # Declare min_score parameter (common filtering)
         self.declare_parameter("min_score", 0.35)
         self.min_score = float(self.get_parameter("min_score").value)
         self.declare_parameter("publish_tracks", True)
         self.publish_tracks = bool(self.get_parameter("publish_tracks").value)
+        self.declare_parameter("publish_tracks_requires_subscribers", False)
+        self.publish_tracks_requires_subscribers = bool(
+            self.get_parameter("publish_tracks_requires_subscribers").value
+        )
 
         # Instrumentation controls
         self.declare_parameter("profiling_enabled", True)
@@ -155,6 +161,11 @@ class TrackerNode(Node):
         self._frame_counter = 0
         self._gc_collections_seen = 0
 
+        if self.profiling_serialize_sample_every_n > 0:
+            self.get_logger().warn(
+                "Tracker serialization profiling is enabled; this can increase latency jitter"
+            )
+
         if self.profiling_gc_probe:
             gc.callbacks.append(self._on_gc_event)
         
@@ -162,6 +173,7 @@ class TrackerNode(Node):
             "Tracker node ready: "
             f"type={self._tracker_type_current}, min_score={self.min_score}, "
             f"publish_tracks={self.publish_tracks}, "
+            f"publish_tracks_requires_subscribers={self.publish_tracks_requires_subscribers}, "
             f"profiling_enabled={self.profiling_enabled}, "
             f"log_every_n={self.profiling_log_every_n}, "
             f"publish_details={self.profiling_publish_details}, "
@@ -199,12 +211,23 @@ class TrackerNode(Node):
         try:
             self.backend = self._create_backend(requested_tracker)
             self.frame_context.clear()
+            self._frame_context_order.clear()
             self._tracker_type_current = requested_tracker
             self.get_logger().info(f"Tracker backend switched at runtime: {requested_tracker}")
             return SetParametersResult(successful=True)
         except Exception as exc:
             self.get_logger().error(f"Failed to switch tracker backend to '{requested_tracker}': {exc}")
             return SetParametersResult(successful=False, reason=str(exc))
+
+    def _has_track_subscribers(self) -> bool:
+        if not self.publish_tracks_requires_subscribers:
+            return True
+
+        sub_count = self.pub.get_subscription_count()
+        intra_count = 0
+        if hasattr(self.pub, "get_intra_process_subscription_count"):
+            intra_count = self.pub.get_intra_process_subscription_count()
+        return (sub_count + intra_count) > 0
 
     def _on_gc_event(self, phase: str, _info: dict) -> None:
         if phase == "stop":
@@ -272,10 +295,13 @@ class TrackerNode(Node):
         if frame_id <= 0:
             return
 
+        if frame_id not in self.frame_context:
+            self._frame_context_order.append(frame_id)
+            if len(self._frame_context_order) > self.max_context:
+                oldest = self._frame_context_order.popleft()
+                self.frame_context.pop(oldest, None)
+
         self.frame_context[frame_id] = (int(msg.src_stamp_ns), int(msg.t_cam_msg_seen_ns))
-        if len(self.frame_context) > self.max_context:
-            oldest = next(iter(self.frame_context))
-            self.frame_context.pop(oldest, None)
     
     def on_detections(self, msg: Detection2DArray) -> None:
         """Process detection message and publish tracks."""
@@ -286,21 +312,35 @@ class TrackerNode(Node):
         gc_count_before = gc.get_count() if self.profiling_gc_probe else (0, 0, 0)
         t_track_cb_start_ns = now_ns()
         frame_id = _parse_frame_id(msg.header.frame_id)
+        should_log_profile = (
+            self.profiling_enabled
+            and self.profiling_log_every_n > 0
+            and (self._frame_counter % self.profiling_log_every_n == 0)
+        )
+        should_sample_serialize = (
+            self.profiling_serialize_sample_every_n > 0
+            and (self._frame_counter % self.profiling_serialize_sample_every_n == 0)
+        )
 
         det_boxes: List[BBox] = []
         det_scores: List[float] = []
+        det_boxes_append = det_boxes.append
+        det_scores_append = det_scores.append
+        min_score = self.min_score
         
         # Parse detections from vision_msgs format
         for det in msg.detections:
             if not det.results:
                 continue
-            
-            # Get best hypothesis
-            best = max(det.results, key=lambda r: float(r.hypothesis.score))
-            score = float(best.hypothesis.score)
+
+            score = -1.0
+            for result in det.results:
+                result_score = float(result.hypothesis.score)
+                if result_score > score:
+                    score = result_score
             
             # Apply min_score filter
-            if score < self.min_score:
+            if score < min_score:
                 continue
             
             # Convert to xyxy format
@@ -310,8 +350,8 @@ class TrackerNode(Node):
             h = float(det.bbox.size_y)
             box = xywh_center_to_xyxy(cx, cy, w, h)
             
-            det_boxes.append(box)
-            det_scores.append(score)
+            det_boxes_append(box)
+            det_scores_append(score)
         
         # Get frame timestamp
         frame_time_ns = int(msg.header.stamp.sec * 1e9 + msg.header.stamp.nanosec)
@@ -319,59 +359,65 @@ class TrackerNode(Node):
         # track_ms is defined as tracker backend compute only.
         with profiler.section("tracker_update"):
             tracks = self.backend.update(det_boxes, det_scores, frame_time_ns)
+
+        should_publish_tracks = self.publish_tracks and self._has_track_subscribers()
+        should_build_track_msg = should_publish_tracks or should_sample_serialize
         
         # Convert tracks to ROS message
-        src_stamp_ns, t_cam_msg_seen_ns = self.frame_context.get(frame_id, (0, 0))
+        src_stamp_ns, t_cam_msg_seen_ns = self.frame_context.pop(frame_id, (0, 0))
         queue_delay_ms = 0.0
         if t_cam_msg_seen_ns > 0:
             queue_delay_ms = float(t_track_cb_start_ns - int(t_cam_msg_seen_ns)) / 1e6
 
-        with profiler.section("build_msg"):
-            out = Track2DArray()
-            out.header = msg.header
-            out.frame_id = int(frame_id)
-            out.src_stamp_ns = int(src_stamp_ns)
-            out.t_cam_msg_seen_ns = int(t_cam_msg_seen_ns)
-            out.t_track_cb_start_ns = int(t_track_cb_start_ns)
-            tracks_ros: List[Track2D] = []
+        out: Track2DArray | None = None
+        tracks_ros: List[Track2D] = []
+        if should_build_track_msg:
+            with profiler.section("build_msg"):
+                out = Track2DArray()
+                out.header = msg.header
+                out.frame_id = int(frame_id)
+                out.src_stamp_ns = int(src_stamp_ns)
+                out.t_cam_msg_seen_ns = int(t_cam_msg_seen_ns)
+                out.t_track_cb_start_ns = int(t_track_cb_start_ns)
 
-            with profiler.section("per_track_loop"):
-                for track in tracks:
-                    tbox = track.bbox_xyxy
-                    cx, cy, w, h = xyxy_to_cxcywh(tbox)
+                with profiler.section("per_track_loop"):
+                    tracks_ros_append = tracks_ros.append
+                    for track in tracks:
+                        x1, y1, x2, y2 = track.bbox_xyxy
+                        w = x2 - x1
+                        h = y2 - y1
+                        cx = x1 + 0.5 * w
+                        cy = y1 + 0.5 * h
 
-                    # Fast path for performance isolation:
-                    # skip per-track best-IoU score recovery in Python.
-                    best_score = float(track.score) if float(track.score) > 0.0 else 1.0
+                        # Fast path for performance isolation:
+                        # skip per-track best-IoU score recovery in Python.
+                        score = float(track.score)
+                        best_score = score if score > 0.0 else 1.0
 
-                    m = Track2D()
-                    m.id = int(track.track_id)
-                    m.cx = float(cx)
-                    m.cy = float(cy)
-                    m.w = float(w)
-                    m.h = float(h)
-                    m.score = float(best_score)
-                    m.label = "person"
-                    tracks_ros.append(m)
+                        m = Track2D()
+                        m.id = int(track.track_id)
+                        m.cx = float(cx)
+                        m.cy = float(cy)
+                        m.w = float(w)
+                        m.h = float(h)
+                        m.score = float(best_score)
+                        m.label = "person"
+                        tracks_ros_append(m)
 
-            out.tracks = tracks_ros
+                out.tracks = tracks_ros
 
         serialize_ms = -1.0
         serialized_size_bytes = -1
-        should_sample_serialize = (
-            self.profiling_serialize_sample_every_n > 0
-            and (self._frame_counter % self.profiling_serialize_sample_every_n == 0)
-        )
-        if should_sample_serialize:
+        if should_sample_serialize and out is not None:
             with profiler.section("serialize_tracks"):
                 wire = serialize_message(out)
             serialize_ms = profiler.ms("serialize_tracks")
             serialized_size_bytes = len(wire)
 
         t_track_cb_end_ns_pre_publish = now_ns()
-        out.t_track_cb_end_ns = int(t_track_cb_end_ns_pre_publish)
         with profiler.section("publish_tracks"):
-            if self.publish_tracks:
+            if should_publish_tracks and out is not None:
+                out.t_track_cb_end_ns = int(t_track_cb_end_ns_pre_publish)
                 self.pub.publish(out)
         t_track_cb_end_ns = now_ns()
 
@@ -394,27 +440,26 @@ class TrackerNode(Node):
         gc_after = self._gc_collections_seen
         gc_count_after = gc.get_count() if self.profiling_gc_probe else (0, 0, 0)
 
-        if self.profiling_enabled and self.profiling_log_every_n > 0:
-            if self._frame_counter % self.profiling_log_every_n == 0:
-                payload_est_bytes = _estimate_track_msg_payload_bytes(tracks_ros)
-                self.get_logger().info(
-                    "tracker_profile "
-                    f"frame={frame_id} "
-                    f"det_count={len(det_boxes)} "
-                    f"track_count={len(tracks_ros)} "
-                    f"queue_delay_ms={queue_delay_ms:.3f} "
-                    f"tracker_update_ms={profiler.ms('tracker_update'):.3f} "
-                    f"per_track_loop_ms={profiler.ms('per_track_loop'):.3f} "
-                    f"build_msg_ms={profiler.ms('build_msg'):.3f} "
-                    f"publish_ms={profiler.ms('publish_tracks'):.3f} "
-                    f"serialize_ms={serialize_ms:.3f} "
-                    f"total_ms={(t_track_cb_end_ns - t_track_cb_start_ns) / 1e6:.3f} "
-                    f"msg_est_bytes={payload_est_bytes} "
-                    f"msg_serialized_bytes={serialized_size_bytes} "
-                    f"gc_collections_delta={gc_after - gc_before} "
-                    f"gc_count_before={gc_count_before} "
-                    f"gc_count_after={gc_count_after}"
-                )
+        if should_log_profile:
+            payload_est_bytes = _estimate_track_msg_payload_bytes(tracks_ros) if tracks_ros else -1
+            self.get_logger().info(
+                "tracker_profile "
+                f"frame={frame_id} "
+                f"det_count={len(det_boxes)} "
+                f"track_count={len(tracks)} "
+                f"queue_delay_ms={queue_delay_ms:.3f} "
+                f"tracker_update_ms={profiler.ms('tracker_update'):.3f} "
+                f"per_track_loop_ms={profiler.ms('per_track_loop'):.3f} "
+                f"build_msg_ms={profiler.ms('build_msg'):.3f} "
+                f"publish_ms={profiler.ms('publish_tracks'):.3f} "
+                f"serialize_ms={serialize_ms:.3f} "
+                f"total_ms={(t_track_cb_end_ns - t_track_cb_start_ns) / 1e6:.3f} "
+                f"msg_est_bytes={payload_est_bytes} "
+                f"msg_serialized_bytes={serialized_size_bytes} "
+                f"gc_collections_delta={gc_after - gc_before} "
+                f"gc_count_before={gc_count_before} "
+                f"gc_count_after={gc_count_after}"
+            )
 
     def destroy_node(self) -> bool:
         if self.profiling_gc_probe:

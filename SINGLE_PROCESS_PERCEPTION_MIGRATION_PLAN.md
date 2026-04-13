@@ -28,8 +28,13 @@ Current evidence from latest validated runs (single-process mode):
 - latency center improved materially and jitter tails improved when tracker/downstream path is removed
 - TEVS control timeout (`Connection timed out`) is now fail-fast before opening `/dev/video0` to reduce wedge risk
 - D-state camera failures remain reboot-required, with startup preflight detection now in place
+- iterative tracker/perception tuning passes improved comparable full-stack performance to:
+  - pass7 (`--perception-hailo-queue-buffers 2`, GC on): `/timing` 9.49 Hz, `e2e_det_ms` p95/p99 106.61/113.13, `pub_dt_ms` p95/p99 170.96/201.42
+  - relative to baseline full-stack: throughput and p99 tails improved strongly; `pub_dt_ms` p95 remains above baseline target
+- pass8 (`--perception-hailo-queue-buffers 1`) produced very large gains (`/timing` 11.20 Hz, `e2e_det_ms` p95 89.13, `pub_dt_ms` p95/p99 94.31/107.35), but log review showed long stretches with zero detections, so this run is treated as provisional pending controlled workload-matched reruns
+- live timing collector now includes detection-stream load stats (`detections_per_msg` and `zero_ratio`) to enforce comparability between runs
 
-Conclusion: the single-process architecture is implemented, camera throughput recovery is validated, and the next primary optimization target is tracker/downstream path cost and jitter.
+Conclusion: the single-process architecture is implemented and materially faster than baseline in comparable runs; next priority is to close the remaining `pub_dt_ms` p95 gap and finalize queue-buffer defaults using workload-matched validation.
 
 ## 1.1 Status Snapshot (2026-04-13)
 
@@ -37,8 +42,10 @@ Conclusion: the single-process architecture is implemented, camera throughput re
 - Done: dashboard publishing decoupled from raw publish path with subscriber-aware gating.
 - Done: camera publish cadence in healthy runs is back near 30 FPS (`Camera FPS ... publish=~30`).
 - Done: 10-minute A/B/C ablation matrix completed; tracker/target/control path ranked as top bottleneck.
-- In progress: repeated cold-start reliability to rule out intermittent TEVS control timeout.
-- In progress: raising full-stack `/timing` cadence and reducing `pub_dt_ms` p95/p99 tails with tracker-focused optimization.
+- Done: tracker and target-selector hot-path trims, tracker publish gating option, SORT low-cardinality association fast path, and perception executor/queue tunables integrated.
+- Done: live timing collector extended with `/detections` load comparability stats.
+- In progress: controlled Hailo queue-buffer decision (`--perception-hailo-queue-buffers 1` vs `2`) with matched detection workload.
+- In progress: reducing full-stack `pub_dt_ms` p95 while preserving current p99 and throughput gains.
 - Pending: long soak stability gate and cutover-default decision.
 
 ## 2. Current State and Problem Statement
@@ -424,7 +431,7 @@ Gate G1: functional parity [PARTIALLY MET]
 
 Gate G2: performance uplift [IN PROGRESS]
 
-- camera-side publish cadence target is met in healthy runs; tracker/downstream bottleneck is identified, but full-stack det/timing cadence and jitter-tail targets are not yet met
+- camera-side publish cadence target is met in healthy runs; comparable full-stack runs now exceed baseline throughput and p99 tails, but `pub_dt_ms` p95 target is not yet consistently met
 
 Gate G3: stability [IN PROGRESS]
 
@@ -502,7 +509,7 @@ Step 6:
 
 Primary objective:
 
-- lock in camera startup/publish stability and increase full-stack perception cadence with dashboard enabled in single-process mode.
+- finalize the single-process full-stack queue-buffer operating point (`--perception-hailo-queue-buffers 1` vs `2`) under workload-matched conditions and lock a default that improves both throughput and jitter tails.
 
 Constraints:
 
@@ -512,16 +519,18 @@ Constraints:
 
 Hard gates for tomorrow (full stack, dashboard on):
 
-- 5/5 clean startups with no TEVS control timeout and no D-state preflight failure
-- camera internal publish FPS (from camera log) average in [29, 31] during a 10-minute run
-- `/timing` mean >= 8 Hz with no timeout storms
-- `/camera/dashboard` topic stays active and web stream remains reachable for full run duration
+- 2 workload-matched 10-minute runs complete (`--perception-hailo-queue-buffers 1` and `2`)
+- detection load comparability holds between the two queue-buffer settings:
+  - `detections_per_msg.mean` within +/-10 percent
+  - `detections_per_msg.zero_ratio` within +/-0.05 absolute
+- no timeout storms in perception logs
+- `/timing` mean >= 9 Hz in both runs
 
 Stretch goals:
 
-- `/timing` mean >= 12 Hz
-- `/camera/dashboard` subscriber-observed rate >= 25 Hz
-- `e2e_det_ms` p50 <= 105 ms and `pub_dt_ms` p95 <= 170 ms
+- `/timing` mean >= 10 Hz in workload-matched run
+- `pub_dt_ms` p95 <= 160 ms and `pub_dt_ms` p99 <= 200 ms
+- `e2e_det_ms` p95 <= 105 ms
 
 Long-term target (unchanged):
 
@@ -529,20 +538,20 @@ Long-term target (unchanged):
 
 Execution plan for tomorrow:
 
-1. Run 5 cold-start cycles in full stack and log startup outcomes.
-2. Lock model/tracker configuration and capture a 10-minute baseline artifact (Run A).
-3. Run dashboard ablation for 10 minutes (`--no-dashboard`) (Run B).
-4. Run tracker ablation for 10 minutes (`--no-tracker --no-target --no-control`) (Run C).
-5. Rank bottleneck ownership using A/B/C deltas on `/timing` mean Hz, `e2e_det_ms` p95, `pub_dt_ms` p95/p99.
-6. Apply one high-impact tuning change at a time to the winning bottleneck.
-7. Re-run 10-minute validation after each major change.
-8. Keep only changes that improve both throughput and jitter tails.
+1. Build once and run controlled test with `--perception-hailo-queue-buffers 1` (GC on).
+2. Capture 10-minute artifact with updated collector (includes detection load stats).
+3. Run controlled test with `--perception-hailo-queue-buffers 2` (GC on) under the same scene/model.
+4. Capture 10-minute artifact and compare queue-buffer settings (`1` vs `2`) with comparability gating.
+5. If comparability gate fails, re-run the weaker side until load-matched.
+6. Select default queue buffer value from load-matched results.
+7. Execute one 30-minute soak using selected default.
+8. Update this plan and runbook with the selected default and measured rationale.
 
 Acceptance for tomorrow session:
 
-- hard gates all met in at least one 10-minute run
+- queue-buffer value decision (`--perception-hailo-queue-buffers 1` vs `2`) finalized with workload-matched evidence
+- selected default passes one 30-minute soak without timeout storms
 - no control instability attributable to stale target timing
-- if hard gates fail from sensor timeout, fallback run with rate controls disabled remains operational and documented
 
 ## 13. Optimization Playbook (All Levers)
 
@@ -657,13 +666,14 @@ Validation signals:
 
 Run one experiment at a time, then re-run 10-minute validation with the same scene and model.
 
-1. Tracker hot-loop allocation reduction and publish payload trim.
-2. Tracker candidate gating/association simplification.
-3. Target selector/control subscription and compute-path trim.
-4. Perception preprocessing buffer reuse and copy reduction.
-5. Perception postprocess message-object reuse optimizations.
-6. Executor/callback-group isolation for heavy callbacks.
-7. Dashboard transport tuning only if measured as a limiter after tracker optimizations.
+1. [DONE] Tracker hot-loop allocation reduction and publish payload trim.
+2. [DONE] Tracker low-cardinality association fast path.
+3. [DONE] Target selector compute-path trim (single-pass ranking + sticky-ID preservation).
+4. [DONE] Perception callback scheduling simplification (single-threaded executor).
+5. [DONE] Detection-load comparability instrumentation in timing collector.
+6. [IN PROGRESS] Hailo queue-buffer tuning with workload-matched `--perception-hailo-queue-buffers 1` vs `2` decision.
+7. [PENDING] 30-minute soak validation on selected queue-buffer default.
+8. [PENDING] Dashboard transport tuning only if measured as a limiter after queue decision.
 
 Keep-change criteria:
 

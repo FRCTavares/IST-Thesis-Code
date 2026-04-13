@@ -209,6 +209,84 @@ def associate(
     if n_dets == 0:
         return [], [], list(range(n_tracks))
 
+    iou_thresh_f = float(iou_thresh)
+    gate_x_f = float(gate_x) if gate_x is not None else None
+    gate_y_f = float(gate_y) if gate_y is not None else None
+
+    # Fast-path common low-cardinality cases to avoid full matrix/Hungarian overhead.
+    if n_tracks == 1 and n_dets == 1:
+        tb = tracks[0].bbox()
+        db = detections[0]
+        if gate_x_f is not None:
+            tcx = (tb[0] + tb[2]) * 0.5
+            dcx = (db[0] + db[2]) * 0.5
+            if abs(tcx - dcx) >= gate_x_f:
+                return [], [0], [0]
+        if gate_y_f is not None:
+            tcy = (tb[1] + tb[3]) * 0.5
+            dcy = (db[1] + db[3]) * 0.5
+            if abs(tcy - dcy) >= gate_y_f:
+                return [], [0], [0]
+
+        if iou(tb, db) >= iou_thresh_f:
+            return [(0, 0)], [], []
+        return [], [0], [0]
+
+    if n_tracks == 1:
+        tb = tracks[0].bbox()
+        tcx = (tb[0] + tb[2]) * 0.5
+        tcy = (tb[1] + tb[3]) * 0.5
+        best_di = -1
+        best_iou = -1.0
+
+        for di, db in enumerate(detections):
+            if gate_x_f is not None:
+                dcx = (db[0] + db[2]) * 0.5
+                if abs(tcx - dcx) >= gate_x_f:
+                    continue
+            if gate_y_f is not None:
+                dcy = (db[1] + db[3]) * 0.5
+                if abs(tcy - dcy) >= gate_y_f:
+                    continue
+
+            iou_v = iou(tb, db)
+            if iou_v > best_iou:
+                best_iou = iou_v
+                best_di = di
+
+        if best_di >= 0 and best_iou >= iou_thresh_f:
+            unmatched_dets = [i for i in range(n_dets) if i != best_di]
+            return [(0, best_di)], unmatched_dets, []
+        return [], list(range(n_dets)), [0]
+
+    if n_dets == 1:
+        db = detections[0]
+        dcx = (db[0] + db[2]) * 0.5
+        dcy = (db[1] + db[3]) * 0.5
+        best_ti = -1
+        best_iou = -1.0
+
+        for ti, track in enumerate(tracks):
+            tb = track.bbox()
+            if gate_x_f is not None:
+                tcx = (tb[0] + tb[2]) * 0.5
+                if abs(tcx - dcx) >= gate_x_f:
+                    continue
+            if gate_y_f is not None:
+                tcy = (tb[1] + tb[3]) * 0.5
+                if abs(tcy - dcy) >= gate_y_f:
+                    continue
+
+            iou_v = iou(tb, db)
+            if iou_v > best_iou:
+                best_iou = iou_v
+                best_ti = ti
+
+        if best_ti >= 0 and best_iou >= iou_thresh_f:
+            unmatched_tracks = [i for i in range(n_tracks) if i != best_ti]
+            return [(best_ti, 0)], [], unmatched_tracks
+        return [], [0], list(range(n_tracks))
+
     track_boxes = np.array([t.bbox() for t in tracks], dtype=np.float32)
     det_boxes = np.array(detections, dtype=np.float32)
 
@@ -233,10 +311,10 @@ def associate(
 
         if gate_x is not None:
             dx = np.abs(track_cx[:, None] - det_cx[None, :])
-            gate_mask &= dx < float(gate_x)
+            gate_mask &= dx < gate_x_f
         if gate_y is not None:
             dy = np.abs(track_cy[:, None] - det_cy[None, :])
-            gate_mask &= dy < float(gate_y)
+            gate_mask &= dy < gate_y_f
 
     # IoU matrix (vectorized, no Python loops)
     ious = iou_batch(track_boxes, det_boxes)
@@ -246,8 +324,8 @@ def associate(
     # Cost matrix (vectorized, no Python loops)
     np.subtract(1.0, ious, out=cost)
 
-    rows_ok = np.any(ious >= float(iou_thresh), axis=1)
-    cols_ok = np.any(ious >= float(iou_thresh), axis=0)
+    rows_ok = np.any(ious >= iou_thresh_f, axis=1)
+    cols_ok = np.any(ious >= iou_thresh_f, axis=0)
     if not rows_ok.any() or not cols_ok.any():
         return [], list(range(n_dets)), list(range(n_tracks))
 
@@ -279,7 +357,7 @@ def associate(
     used_d: set = set()
     matches = []
     for ti, di in pairs:
-        if ious[ti, di] < float(iou_thresh):
+        if ious[ti, di] < iou_thresh_f:
             continue
         used_t.add(ti)
         used_d.add(di)
@@ -417,8 +495,7 @@ class Sort:
         for tr in self.tracks:
             tr.predict()
 
-        track_bboxes = [tr.bbox() for tr in self.tracks]
-        self._ensure_match_buffers(len(track_bboxes), len(dets))
+        self._ensure_match_buffers(len(self.tracks), len(dets))
         t0 = time.perf_counter()
         matches, unmatched_d, unmatched_t = associate(
             self.tracks,

@@ -172,6 +172,8 @@ Options:
     --tracker-profile-serialize-every <N>
                                                                             Serialize sample every N frames (default: 0 disabled)
     --tracks-off                        Disable /tracks publishing from tracker
+    --tracks-require-subscribers        Publish /tracks only when subscribers are present
+    --tracks-ignore-subscribers         Publish /tracks regardless of subscriber count (default)
     --timing-off                        Disable /timing publishing from inference client
     --camera-width <N>                  Camera publish width (default: 1280)
     --camera-height <N>                 Camera publish height (default: 720)
@@ -191,6 +193,11 @@ Options:
     --infer-retries <N>                 Inference retries after timeout/error (default: 0)
     --infer-print-every <N>             Inference periodic stats interval (default: 240)
     --infer-timeout-log-every <N>       Inference timeout log interval (default: 20)
+    --perception-image-qos-depth <N>    Perception image subscription depth (single-process default: 2)
+    --perception-hailo-queue-buffers <N>
+                                                                            Hailo Gst queue max-size-buffers (single-process default: 2)
+    --perception-gc-off                 Disable Python cyclic GC in perception node
+    --perception-gc-on                  Enable Python cyclic GC in perception node (default)
   --no-dashboard                     Disable dashboard bridge
     --no-tracker                       Do not start tracker node
     --no-target                        Do not start target selector node
@@ -211,6 +218,7 @@ TRACKER_PROFILE_SERIALIZE_EVERY_N=0
 TRACKER_PROFILE_PUBLISH_DETAILS=1
 TRACKER_PROFILE_GC_PROBE=1
 TRACKER_PUBLISH_TRACKS_BOOL="true"
+TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL="false"
 INFER_PUBLISH_TIMING_BOOL="true"
 CAMERA_WIDTH=1280
 CAMERA_HEIGHT=720
@@ -229,6 +237,9 @@ INFER_TIMEOUT_MS=300
 INFER_RETRIES=0
 INFER_PRINT_EVERY=240
 INFER_TIMEOUT_LOG_EVERY=20
+PERCEPTION_IMAGE_QOS_DEPTH=2
+PERCEPTION_HAILO_QUEUE_BUFFERS=2
+PERCEPTION_GC_DISABLE_BOOL="false"
 ENABLE_DASHBOARD_BRIDGE=1
 ENABLE_TRACKER=1
 ENABLE_TARGET_SELECTOR=1
@@ -287,6 +298,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --tracks-off)
             TRACKER_PUBLISH_TRACKS_BOOL="false"
+            shift
+            ;;
+        --tracks-require-subscribers)
+            TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL="true"
+            shift
+            ;;
+        --tracks-ignore-subscribers)
+            TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL="false"
             shift
             ;;
         --timing-off)
@@ -440,6 +459,32 @@ while [[ $# -gt 0 ]]; do
             INFER_TIMEOUT_LOG_EVERY="$2"
             shift 2
             ;;
+        --perception-image-qos-depth)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --perception-image-qos-depth requires a value"
+                print_usage
+                exit 1
+            fi
+            PERCEPTION_IMAGE_QOS_DEPTH="$2"
+            shift 2
+            ;;
+        --perception-hailo-queue-buffers)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --perception-hailo-queue-buffers requires a value"
+                print_usage
+                exit 1
+            fi
+            PERCEPTION_HAILO_QUEUE_BUFFERS="$2"
+            shift 2
+            ;;
+        --perception-gc-off)
+            PERCEPTION_GC_DISABLE_BOOL="true"
+            shift
+            ;;
+        --perception-gc-on)
+            PERCEPTION_GC_DISABLE_BOOL="false"
+            shift
+            ;;
         --no-tracker)
             ENABLE_TRACKER=0
             shift
@@ -513,6 +558,10 @@ if ! [[ "$TRACKER_PROFILE_SERIALIZE_EVERY_N" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
+if [[ "$TRACKER_PROFILE_SERIALIZE_EVERY_N" -gt 0 ]]; then
+    echo "[warn] tracker serialization profiling enabled (every ${TRACKER_PROFILE_SERIALIZE_EVERY_N} frames); this can add jitter"
+fi
+
 if ! [[ "$INFER_QUEUE_SIZE" =~ ^[0-9]+$ ]] || [[ "$INFER_QUEUE_SIZE" -lt 1 ]]; then
     echo "[error] --infer-queue-size must be a positive integer"
     exit 1
@@ -580,6 +629,16 @@ fi
 
 if ! [[ "$INFER_TIMEOUT_LOG_EVERY" =~ ^[0-9]+$ ]]; then
     echo "[error] --infer-timeout-log-every must be a non-negative integer"
+    exit 1
+fi
+
+if ! [[ "$PERCEPTION_IMAGE_QOS_DEPTH" =~ ^[0-9]+$ ]] || [[ "$PERCEPTION_IMAGE_QOS_DEPTH" -lt 1 ]]; then
+    echo "[error] --perception-image-qos-depth must be a positive integer"
+    exit 1
+fi
+
+if ! [[ "$PERCEPTION_HAILO_QUEUE_BUFFERS" =~ ^[0-9]+$ ]] || [[ "$PERCEPTION_HAILO_QUEUE_BUFFERS" -lt 1 ]]; then
+    echo "[error] --perception-hailo-queue-buffers must be a positive integer"
     exit 1
 fi
 
@@ -748,11 +807,11 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="on"; fi
 echo "[info] run: $RUN_ID"
 echo "[info] logs: $RUN_DIR"
 echo "[info] mode: perception=$PERCEPTION_MODE"
-echo "[info] cfg: camera=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
+echo "[info] cfg: camera=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} img_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} perception_gc_disable=${PERCEPTION_GC_DISABLE_BOOL} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
 echo "[info] cfg: camera_rate_controls=${CAMERA_APPLY_RATE_CONTROLS_BOOL} sensor_max_fps=${CAMERA_SENSOR_MAX_FPS} ae_upper=${CAMERA_SENSOR_AE_UPPER} ae_max=${CAMERA_SENSOR_AE_MAX} exposure_mode=${CAMERA_SENSOR_EXPOSURE_MODE}"
 echo "[info] nodes: tracker=$tracker_state target=$target_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
-    echo "[info] tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL profile=$TRACKER_PROFILE_ENABLED"
+    echo "[info] tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL tracks_require_subscribers=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL profile=$TRACKER_PROFILE_ENABLED"
 fi
 echo "[step] preflight checks"
 if ! check_stuck_camera_processes; then
@@ -968,6 +1027,9 @@ else
         -p image_topic:=/camera/image_raw \
         -p img_w:=640 \
         -p img_h:=640 \
+        -p image_qos_depth:=$PERCEPTION_IMAGE_QOS_DEPTH \
+        -p hailo_queue_max_buffers:=$PERCEPTION_HAILO_QUEUE_BUFFERS \
+        -p disable_python_gc:=$PERCEPTION_GC_DISABLE_BOOL \
         -p label:=person \
         -p min_score:=0.35 \
         -p inference_backend:=hailo_gst \
@@ -987,6 +1049,7 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     start_ros_bg tracker ros2 run thesis_tracker tracker_node --ros-args \
         -p tracker_type:=$TRACKER_TYPE \
         -p publish_tracks:=$TRACKER_PUBLISH_TRACKS_BOOL \
+        -p publish_tracks_requires_subscribers:=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL \
         -p profiling_enabled:=$([[ "$TRACKER_PROFILE_ENABLED" -eq 1 ]] && echo true || echo false) \
         -p profiling_log_every_n:=$TRACKER_PROFILE_LOG_EVERY_N \
         -p profiling_serialize_sample_every_n:=$TRACKER_PROFILE_SERIALIZE_EVERY_N \

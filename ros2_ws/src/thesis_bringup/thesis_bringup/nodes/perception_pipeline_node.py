@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 import os
 import threading
 import time
@@ -100,6 +101,7 @@ class HailoGstInferenceEngine:
         post_so: str,
         post_func: str,
         video_sink: str,
+        queue_max_buffers: int,
         label_filter: str | None,
     ) -> None:
         import gi
@@ -120,6 +122,7 @@ class HailoGstInferenceEngine:
         self.post_so = str(post_so)
         self.post_func = str(post_func)
         self.video_sink = str(video_sink)
+        self.queue_max_buffers = max(1, int(queue_max_buffers))
         self.label_filter = label_filter
 
         self.frame_duration_ns = int(1e9 / self.fps)
@@ -137,15 +140,16 @@ class HailoGstInferenceEngine:
         self._build_pipeline()
 
     def _build_pipeline(self) -> None:
+        queue_buffers = self.queue_max_buffers
         pipeline_str = (
             f"appsrc name=source is-live=true block=false format=time do-timestamp=false "
             f"caps=video/x-raw,format=RGB,width={self.width},height={self.height},framerate={self.fps}/1 ! "
-            f"queue max-size-buffers=6 leaky=downstream ! "
+            f"queue max-size-buffers={queue_buffers} leaky=downstream ! "
             f"videoconvert ! "
             f"identity name=pre_hailonet_identity silent=true ! "
             f"hailonet hef-path={self.hef_path} batch-size=1 force-writable=true ! "
             f"identity name=infer_identity silent=true ! "
-            f"queue max-size-buffers=6 leaky=downstream ! "
+            f"queue max-size-buffers={queue_buffers} leaky=downstream ! "
             f"hailofilter function-name={self.post_func} so-path={self.post_so} qos=false ! "
             f"identity name=post_identity silent=true ! "
             f"{self.video_sink} sync=false"
@@ -368,6 +372,7 @@ class PerceptionPipelineNode(Node):
         self.declare_parameter("infer_timeout_ms", 300)
         self.declare_parameter("timeout_log_every", 20)
         self.declare_parameter("log_every", 240)
+        self.declare_parameter("disable_python_gc", False)
 
         thesis_root = os.getenv("THESIS_ROOT", "/home/francisco/Desktop/Thesis-Code")
         default_hef = f"{thesis_root}/infer_service/resources/hefs/yolov6n_hailo8.hef"
@@ -379,6 +384,7 @@ class PerceptionPipelineNode(Node):
         )
         self.declare_parameter("hailo_post_function", "filter")
         self.declare_parameter("hailo_video_sink", "fakesink")
+        self.declare_parameter("hailo_queue_max_buffers", 2)
 
         self.image_topic = str(self.get_parameter("image_topic").value)
         self.img_w = int(self.get_parameter("img_w").value)
@@ -393,12 +399,21 @@ class PerceptionPipelineNode(Node):
         self.infer_timeout_ms = max(1, int(self.get_parameter("infer_timeout_ms").value))
         self.timeout_log_every = max(1, int(self.get_parameter("timeout_log_every").value))
         self.log_every = max(0, int(self.get_parameter("log_every").value))
+        self.disable_python_gc = bool(self.get_parameter("disable_python_gc").value)
+
+        self._gc_was_enabled = gc.isenabled()
+        self._gc_disabled_by_node = False
+        if self.disable_python_gc and self._gc_was_enabled:
+            gc.disable()
+            self._gc_disabled_by_node = True
+            self.get_logger().info("perception_pipeline_node disabled Python cyclic GC")
 
         self.hailo_fps = max(1, int(self.get_parameter("hailo_fps").value))
         self.hailo_hef_path = str(self.get_parameter("hailo_hef_path").value)
         self.hailo_post_so = str(self.get_parameter("hailo_post_so").value)
         self.hailo_post_function = str(self.get_parameter("hailo_post_function").value)
         self.hailo_video_sink = str(self.get_parameter("hailo_video_sink").value)
+        self.hailo_queue_max_buffers = max(1, int(self.get_parameter("hailo_queue_max_buffers").value))
 
         self.label_filter = _normalize_label(self.label)
 
@@ -443,7 +458,8 @@ class PerceptionPipelineNode(Node):
             f"infer_timeout_ms={self.infer_timeout_ms} "
             f"label={self.label} min_score={self.min_score:.2f} "
             f"image_reliability={self.image_reliability} "
-            f"image_qos_depth={self.image_qos_depth}"
+            f"image_qos_depth={self.image_qos_depth} "
+            f"disable_python_gc={self.disable_python_gc}"
         )
 
     def _build_engine(self):
@@ -468,11 +484,14 @@ class PerceptionPipelineNode(Node):
                 post_so=self.hailo_post_so,
                 post_func=self.hailo_post_function,
                 video_sink=self.hailo_video_sink,
+                queue_max_buffers=self.hailo_queue_max_buffers,
                 label_filter=self.label_filter,
             )
             self.active_backend = "hailo_gst"
             self.get_logger().info(
-                f"initialized Hailo GStreamer backend (hef={self.hailo_hef_path}, post_func={self.hailo_post_function})"
+                "initialized Hailo GStreamer backend "
+                f"(hef={self.hailo_hef_path}, post_func={self.hailo_post_function}, "
+                f"queue_max_buffers={self.hailo_queue_max_buffers})"
             )
             return engine
         except Exception as exc:
@@ -773,6 +792,12 @@ class PerceptionPipelineNode(Node):
             )
 
     def destroy_node(self):
+        if self._gc_disabled_by_node:
+            try:
+                gc.enable()
+            except Exception:
+                pass
+
         try:
             self.engine.close()
         except Exception:
@@ -782,11 +807,11 @@ class PerceptionPipelineNode(Node):
 
 
 def main(args=None) -> None:
-    from rclpy.executors import MultiThreadedExecutor
+    from rclpy.executors import SingleThreadedExecutor
 
     rclpy.init(args=args)
     node = None
-    executor = MultiThreadedExecutor(num_threads=2)
+    executor = SingleThreadedExecutor()
 
     try:
         node = PerceptionPipelineNode()

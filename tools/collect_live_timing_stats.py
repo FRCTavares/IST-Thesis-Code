@@ -25,6 +25,7 @@ from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 
 from thesis_msgs.msg import Timing
+from vision_msgs.msg import Detection2DArray
 
 from timing_contract import resolve_metric, topic_fields
 
@@ -89,9 +90,13 @@ class Collector(Node):
         }
         self.counts = {"/timing": 0, "/timing_tracker": 0, "/timing_target": 0}
 
+        self.detection_msg_count = 0
+        self.detection_counts: List[float] = []
+
         self.create_subscription(Timing, "/timing", self._on_timing, qos)
         self.create_subscription(Timing, "/timing_tracker", self._on_tracker, qos)
         self.create_subscription(Timing, "/timing_target", self._on_target, qos)
+        self.create_subscription(Detection2DArray, "/detections", self._on_detections, qos)
 
     def _ingest(self, topic: str, msg: Timing, fields: List[str]) -> None:
         self.counts[topic] += 1
@@ -112,6 +117,10 @@ class Collector(Node):
 
     def _on_target(self, msg: Timing) -> None:
         self._ingest("/timing_target", msg, TARGET_FIELDS)
+
+    def _on_detections(self, msg: Detection2DArray) -> None:
+        self.detection_msg_count += 1
+        self.detection_counts.append(float(len(msg.detections)))
 
 
 class StopFlag:
@@ -229,6 +238,22 @@ def main() -> int:
             "/timing_tracker": summarize_fields(node.samples["/timing_tracker"]),
             "/timing_target": summarize_fields(node.samples["/timing_target"]),
         },
+        "detection_stream": {
+            "count": int(node.detection_msg_count),
+            "hz": (float(node.detection_msg_count) / duration_s) if duration_s > 0 else 0.0,
+            "detections_per_msg": {
+                "n": float(len(node.detection_counts)),
+                "p50": percentile(node.detection_counts, 50.0),
+                "p95": percentile(node.detection_counts, 95.0),
+                "p99": percentile(node.detection_counts, 99.0),
+                "mean": (sum(node.detection_counts) / len(node.detection_counts)) if node.detection_counts else float("nan"),
+                "min": min(node.detection_counts) if node.detection_counts else float("nan"),
+                "max": max(node.detection_counts) if node.detection_counts else float("nan"),
+                "zero_ratio": (
+                    sum(1 for x in node.detection_counts if x <= 0.0) / len(node.detection_counts)
+                ) if node.detection_counts else float("nan"),
+            },
+        },
     }
 
     print_section(f"Run: {args.run_label}")
@@ -251,6 +276,15 @@ def main() -> int:
 
     print_section("/timing_target Metrics (ms)")
     print_field_table(summary["metrics"]["/timing_target"])
+
+    print_section("/detections Load")
+    dstream = summary["detection_stream"]
+    dstats = dstream["detections_per_msg"]
+    print(
+        f"/detections: count={dstream['count']} hz={dstream['hz']:.3f} "
+        f"det/msg p50={dstats['p50']:.3f} p95={dstats['p95']:.3f} p99={dstats['p99']:.3f} "
+        f"mean={dstats['mean']:.3f} zero_ratio={dstats['zero_ratio']:.3f}"
+    )
 
     if args.json_out:
         out_dir = os.path.dirname(args.json_out)

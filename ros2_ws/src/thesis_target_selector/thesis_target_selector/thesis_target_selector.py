@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import deque
 import time
 from typing import Optional, Tuple, List
 
@@ -109,31 +110,49 @@ class ThesisTargetSelectorNode(Node):
         self._warned_sensor_clock_mismatch = False
         self.frame_context: dict[int, tuple[int, int]] = {}
         self.max_context = 1024
+        self._frame_context_order: deque[int] = deque()
 
     def on_timing(self, msg: Timing) -> None:
         frame_id = int(msg.frame_id)
         if frame_id <= 0:
             return
 
+        if frame_id not in self.frame_context:
+            self._frame_context_order.append(frame_id)
+            if len(self._frame_context_order) > self.max_context:
+                oldest = self._frame_context_order.popleft()
+                self.frame_context.pop(oldest, None)
+
         self.frame_context[frame_id] = (int(msg.src_stamp_ns), int(msg.t_cam_msg_seen_ns))
-        if len(self.frame_context) > self.max_context:
-            oldest = next(iter(self.frame_context))
-            self.frame_context.pop(oldest, None)
 
     def on_tracks(self, msg: Track2DArray) -> None:
         t_target_cb_start_ns = now_ns()
-        tracks = list(msg.tracks)
+        tracks = msg.tracks
         prev_id_before = self.prev_id
 
+        selected = None
+        best_track = None
+        best_key: tuple[float, float] | None = None
+        second_key: tuple[float, float] | None = None
+
+        for track in tracks:
+            if self.prev_id is not None and int(track.id) == int(self.prev_id):
+                selected = track
+
+            score = float(track.score)
+            area = float(max(0.0, track.w) * max(0.0, track.h))
+            rank_key = (score, area)
+            if best_key is None or rank_key > best_key:
+                second_key = best_key
+                best_key = rank_key
+                best_track = track
+            elif second_key is None or rank_key > second_key:
+                second_key = rank_key
+
         ambiguous = False
-        if len(tracks) >= 2:
-            ranked_for_ambiguity = sorted(
-                tracks,
-                key=lambda t: (float(t.score), float(max(0.0, t.w) * max(0.0, t.h))),
-                reverse=True,
-            )
-            top_score = float(ranked_for_ambiguity[0].score)
-            second_score = float(ranked_for_ambiguity[1].score)
+        if best_key is not None and second_key is not None:
+            top_score = float(best_key[0])
+            second_score = float(second_key[0])
             if top_score > 0.0:
                 gap_ratio = (top_score - second_score) / top_score
                 ambiguous = gap_ratio < self.ambiguity_score_gap_ratio
@@ -155,20 +174,10 @@ class ThesisTargetSelectorNode(Node):
             self.get_logger().info(f"ambiguity_flag=false frame_id={msg.frame_id}")
         self._prev_ambiguity = ambiguous
 
-        # No confirmed flag in Track2D, so treat all as eligible
-        selected = None
-
         # 1) sticky previous id if still present
-        if self.prev_id is not None:
-            for t in tracks:
-                if int(t.id) == int(self.prev_id):
-                    selected = t
-                    break
-
-        # 2) else best by (score desc, area desc)
-        if selected is None and tracks:
-            tracks.sort(key=lambda t: (float(t.score), float(max(0.0, t.w) * max(0.0, t.h))), reverse=True)
-            selected = tracks[0]
+        # 2) otherwise select best by (score desc, area desc)
+        if selected is None:
+            selected = best_track
 
         out = TargetState()
         out.header = msg.header
@@ -178,7 +187,7 @@ class ThesisTargetSelectorNode(Node):
         src_stamp_ns = int(msg.src_stamp_ns)
         t_cam_msg_seen_ns = int(msg.t_cam_msg_seen_ns)
         if (src_stamp_ns <= 0 or t_cam_msg_seen_ns <= 0) and int(msg.frame_id) > 0:
-            cached_src, cached_cam = self.frame_context.get(int(msg.frame_id), (0, 0))
+            cached_src, cached_cam = self.frame_context.pop(int(msg.frame_id), (0, 0))
             if src_stamp_ns <= 0:
                 src_stamp_ns = int(cached_src)
             if t_cam_msg_seen_ns <= 0:
