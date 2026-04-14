@@ -131,8 +131,8 @@ Useful flags:
 - Disable control: ./tools/start_live_stack.sh --no-control
 - Enable MAVROS mirror: ./tools/start_live_stack.sh --control-mavros
 - Camera + inference only: ./tools/start_live_stack.sh --no-tracker --no-target --no-control --no-dashboard
-- Legacy perception path (default): ./tools/start_live_stack.sh --perception-mode legacy
-- Single-process perception mode (in-process backend, stub fallback): ./tools/start_live_stack.sh --perception-mode single-process
+- Legacy perception path: ./tools/start_live_stack.sh --perception-mode legacy
+- Single-process perception mode (default; in-process backend, stub fallback): ./tools/start_live_stack.sh --perception-mode single-process
 
 If you want to enable host-side Hailo dependencies for single-process mode:
 - Install/probe host Python bindings: ./tools/install_host_hailo_bindings.sh
@@ -162,8 +162,13 @@ Run UI in parallel (second terminal):
 
 ```bash
 cd $THESIS_ROOT
-./tools/start_ui_stack.sh --skip-install
+./tools/start_ui_stack.sh
 ```
+
+Notes:
+
+- UI launcher now skips npm install by default.
+- Use `./tools/start_ui_stack.sh --install` when you want to refresh dependencies.
 
 Useful UI flags:
 - Mock mode: ./tools/start_ui_stack.sh --mode mock
@@ -401,3 +406,145 @@ Expected behavior from validated baseline:
 - Date: 2026-04-08
 - ROS: Jazzy
 - Target hardware path: RPi5 + Hailo using external `~/pi-ai-kit-ubuntu`
+
+## 10) Queue-buffer 1-vs-2 decision workflow (single-process)
+
+Use this flow to choose `--perception-hailo-queue-buffers 1` vs `2` with
+workload-matched evidence.
+
+### 10.1) Capture queue=1 run (10 min)
+
+Terminal A:
+
+```bash
+cd $THESIS_ROOT
+./tools/start_live_stack.sh --perception-mode single-process --perception-hailo-queue-buffers 1
+```
+
+Terminal B:
+
+```bash
+cd $THESIS_ROOT
+python3 tools/collect_live_timing_stats.py \
+  --duration 600 \
+  --run-label "q1_$(date +%Y%m%d_%H%M%S)" \
+  --json-out "reports/timing/q1_$(date +%Y%m%d_%H%M%S).json"
+```
+
+Stop the stack after collection completes.
+
+Quick sanity check (new q_wait visibility):
+
+- Verify `/timing.container_queue_ms` appears in the JSON under `metrics['/timing']`.
+- This field tracks pre-infer wait (`t_infer_start_ns - t_pre_end_ns`).
+
+### 10.2) Capture queue=2 run (10 min)
+
+Terminal A:
+
+```bash
+cd $THESIS_ROOT
+./tools/start_live_stack.sh --perception-mode single-process --perception-hailo-queue-buffers 2
+```
+
+Terminal B:
+
+```bash
+cd $THESIS_ROOT
+python3 tools/collect_live_timing_stats.py \
+  --duration 600 \
+  --run-label "q2_$(date +%Y%m%d_%H%M%S)" \
+  --json-out "reports/timing/q2_$(date +%Y%m%d_%H%M%S).json"
+```
+
+Stop the stack after collection completes.
+
+### 10.3) Validate report schema
+
+```bash
+cd $THESIS_ROOT
+python3 tools/validate_canonical_metrics.py \
+  --json reports/timing/<q1_report>.json \
+  --json reports/timing/<q2_report>.json \
+  --require-tracker \
+  --require-target
+```
+
+### 10.4) Decide default with gates
+
+```bash
+cd $THESIS_ROOT
+python3 tools/decide_queue_buffer_default.py \
+  --q1-json reports/timing/<q1_report>.json \
+  --q2-json reports/timing/<q2_report>.json \
+  --baseline-queue 2 \
+  --min-timing-hz 9.0 \
+  --dpm-mean-tolerance 0.10 \
+  --zero-ratio-delta-max 0.05 \
+  --json-out reports/timing/queue_decision_$(date +%Y%m%d_%H%M%S).json
+```
+
+Interpretation:
+
+- exit code `0`: gates passed and default selected.
+- exit code `1`: one or more gates failed (no decision).
+- exit code `2`: input/schema error.
+
+Important:
+
+- For cutover decisions, do not use `--allow-missing-detection-load`.
+- Use `--allow-missing-detection-load` only for smoke-checking older reports
+  that predate `detection_stream` stats.
+- If your shell uses `set -e` and you still want JSON output when gates fail,
+  add `--exit-zero-on-gate-fail`.
+
+### 10.5) Tracker-side optimization variant (when queue gate stalls)
+
+If q1 vs q2 remains blocked by low Hz/comparability, run a tracker-focused pass
+with lower instrumentation overhead and tuned SORT gating.
+
+```bash
+cd $THESIS_ROOT
+./tools/start_live_stack.sh \
+  --perception-mode single-process \
+  --perception-hailo-queue-buffers 2 \
+  --tracker-gc-probe-off \
+  --tracker-iou-threshold 0.22 \
+  --tracker-max-age 3 \
+  --tracker-min-hits 2 \
+  --tracker-centre-gate 320.0
+```
+
+Then collect a standard 10-minute artifact and compare against baseline.
+
+### 10.6) Perception q_wait optimization variant (freshness-first)
+
+Use this when `/timing` throughput is limited by pre-infer wait.
+
+Baseline (async worker enabled, videoconvert enabled):
+
+```bash
+cd $THESIS_ROOT
+./tools/start_live_stack.sh \
+  --perception-mode single-process \
+  --perception-async-latest-frame-on \
+  --perception-hailo-videoconvert-on
+```
+
+Ablation candidate (disable pre-hailonet videoconvert):
+
+```bash
+cd $THESIS_ROOT
+./tools/start_live_stack.sh \
+  --perception-mode single-process \
+  --perception-async-latest-frame-on \
+  --perception-hailo-videoconvert-off
+```
+
+For either run, collect a normal 10-minute timing report and compare:
+
+- `/timing` Hz
+- `container_queue_ms` p50/p95/mean
+- `e2e_det_ms` p95/p99
+- `pub_dt_ms` p95/p99
+- detection workload comparability (`detections_per_msg.mean`, `zero_ratio`)

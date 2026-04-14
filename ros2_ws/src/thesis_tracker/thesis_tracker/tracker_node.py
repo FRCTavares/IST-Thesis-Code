@@ -306,10 +306,6 @@ class TrackerNode(Node):
     def on_detections(self, msg: Detection2DArray) -> None:
         """Process detection message and publish tracks."""
         self._frame_counter += 1
-        profiler = SectionProfiler()
-
-        gc_before = self._gc_collections_seen
-        gc_count_before = gc.get_count() if self.profiling_gc_probe else (0, 0, 0)
         t_track_cb_start_ns = now_ns()
         frame_id = _parse_frame_id(msg.header.frame_id)
         should_log_profile = (
@@ -321,6 +317,10 @@ class TrackerNode(Node):
             self.profiling_serialize_sample_every_n > 0
             and (self._frame_counter % self.profiling_serialize_sample_every_n == 0)
         )
+        profiler = SectionProfiler() if self.profiling_enabled else None
+
+        gc_before = self._gc_collections_seen if (self.profiling_gc_probe and should_log_profile) else 0
+        gc_count_before = gc.get_count() if (self.profiling_gc_probe and should_log_profile) else (0, 0, 0)
 
         det_boxes: List[BBox] = []
         det_scores: List[float] = []
@@ -355,10 +355,16 @@ class TrackerNode(Node):
         
         # Get frame timestamp
         frame_time_ns = int(msg.header.stamp.sec * 1e9 + msg.header.stamp.nanosec)
-        
+
         # track_ms is defined as tracker backend compute only.
-        with profiler.section("tracker_update"):
+        if profiler is not None:
+            with profiler.section("tracker_update"):
+                tracks = self.backend.update(det_boxes, det_scores, frame_time_ns)
+            tracker_update_ms = profiler.ms("tracker_update")
+        else:
+            t_tracker_update_start_ns = now_ns()
             tracks = self.backend.update(det_boxes, det_scores, frame_time_ns)
+            tracker_update_ms = float(now_ns() - t_tracker_update_start_ns) / 1e6
 
         should_publish_tracks = self.publish_tracks and self._has_track_subscribers()
         should_build_track_msg = should_publish_tracks or should_sample_serialize
@@ -372,7 +378,41 @@ class TrackerNode(Node):
         out: Track2DArray | None = None
         tracks_ros: List[Track2D] = []
         if should_build_track_msg:
-            with profiler.section("build_msg"):
+            if profiler is not None:
+                with profiler.section("build_msg"):
+                    out = Track2DArray()
+                    out.header = msg.header
+                    out.frame_id = int(frame_id)
+                    out.src_stamp_ns = int(src_stamp_ns)
+                    out.t_cam_msg_seen_ns = int(t_cam_msg_seen_ns)
+                    out.t_track_cb_start_ns = int(t_track_cb_start_ns)
+
+                    with profiler.section("per_track_loop"):
+                        tracks_ros_append = tracks_ros.append
+                        for track in tracks:
+                            x1, y1, x2, y2 = track.bbox_xyxy
+                            w = x2 - x1
+                            h = y2 - y1
+                            cx = x1 + 0.5 * w
+                            cy = y1 + 0.5 * h
+
+                            # Fast path for performance isolation:
+                            # skip per-track best-IoU score recovery in Python.
+                            score = float(track.score)
+                            best_score = score if score > 0.0 else 1.0
+
+                            m = Track2D()
+                            m.id = int(track.track_id)
+                            m.cx = float(cx)
+                            m.cy = float(cy)
+                            m.w = float(w)
+                            m.h = float(h)
+                            m.score = float(best_score)
+                            m.label = "person"
+                            tracks_ros_append(m)
+
+                    out.tracks = tracks_ros
+            else:
                 out = Track2DArray()
                 out.header = msg.header
                 out.frame_id = int(frame_id)
@@ -380,42 +420,49 @@ class TrackerNode(Node):
                 out.t_cam_msg_seen_ns = int(t_cam_msg_seen_ns)
                 out.t_track_cb_start_ns = int(t_track_cb_start_ns)
 
-                with profiler.section("per_track_loop"):
-                    tracks_ros_append = tracks_ros.append
-                    for track in tracks:
-                        x1, y1, x2, y2 = track.bbox_xyxy
-                        w = x2 - x1
-                        h = y2 - y1
-                        cx = x1 + 0.5 * w
-                        cy = y1 + 0.5 * h
+                tracks_ros_append = tracks_ros.append
+                for track in tracks:
+                    x1, y1, x2, y2 = track.bbox_xyxy
+                    w = x2 - x1
+                    h = y2 - y1
+                    cx = x1 + 0.5 * w
+                    cy = y1 + 0.5 * h
 
-                        # Fast path for performance isolation:
-                        # skip per-track best-IoU score recovery in Python.
-                        score = float(track.score)
-                        best_score = score if score > 0.0 else 1.0
+                    score = float(track.score)
+                    best_score = score if score > 0.0 else 1.0
 
-                        m = Track2D()
-                        m.id = int(track.track_id)
-                        m.cx = float(cx)
-                        m.cy = float(cy)
-                        m.w = float(w)
-                        m.h = float(h)
-                        m.score = float(best_score)
-                        m.label = "person"
-                        tracks_ros_append(m)
+                    m = Track2D()
+                    m.id = int(track.track_id)
+                    m.cx = float(cx)
+                    m.cy = float(cy)
+                    m.w = float(w)
+                    m.h = float(h)
+                    m.score = float(best_score)
+                    m.label = "person"
+                    tracks_ros_append(m)
 
                 out.tracks = tracks_ros
 
         serialize_ms = -1.0
         serialized_size_bytes = -1
         if should_sample_serialize and out is not None:
-            with profiler.section("serialize_tracks"):
+            if profiler is not None:
+                with profiler.section("serialize_tracks"):
+                    wire = serialize_message(out)
+                serialize_ms = profiler.ms("serialize_tracks")
+            else:
+                t_serialize_start_ns = now_ns()
                 wire = serialize_message(out)
-            serialize_ms = profiler.ms("serialize_tracks")
+                serialize_ms = float(now_ns() - t_serialize_start_ns) / 1e6
             serialized_size_bytes = len(wire)
 
         t_track_cb_end_ns_pre_publish = now_ns()
-        with profiler.section("publish_tracks"):
+        if profiler is not None:
+            with profiler.section("publish_tracks"):
+                if should_publish_tracks and out is not None:
+                    out.t_track_cb_end_ns = int(t_track_cb_end_ns_pre_publish)
+                    self.pub.publish(out)
+        else:
             if should_publish_tracks and out is not None:
                 out.t_track_cb_end_ns = int(t_track_cb_end_ns_pre_publish)
                 self.pub.publish(out)
@@ -427,7 +474,7 @@ class TrackerNode(Node):
         tmsg.t_cam_msg_seen_ns = int(t_cam_msg_seen_ns)
         tmsg.t_track_cb_start_ns = int(t_track_cb_start_ns)
         tmsg.t_track_cb_end_ns = int(t_track_cb_end_ns)
-        tmsg.track_ms = profiler.ms("tracker_update")
+        tmsg.track_ms = float(tracker_update_ms)
 
         # Structured detailed breakdown reuses explicit stage fields so downstream
         # tooling can consume one timing stream without extra message types.
@@ -437,8 +484,8 @@ class TrackerNode(Node):
 
         self.pub_timing.publish(tmsg)
 
-        gc_after = self._gc_collections_seen
-        gc_count_after = gc.get_count() if self.profiling_gc_probe else (0, 0, 0)
+        gc_after = self._gc_collections_seen if (self.profiling_gc_probe and should_log_profile) else 0
+        gc_count_after = gc.get_count() if (self.profiling_gc_probe and should_log_profile) else (0, 0, 0)
 
         if should_log_profile:
             payload_est_bytes = _estimate_track_msg_payload_bytes(tracks_ros) if tracks_ros else -1

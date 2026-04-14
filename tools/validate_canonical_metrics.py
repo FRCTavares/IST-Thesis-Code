@@ -63,6 +63,10 @@ def _validate_json(path: str, require_tracker: bool, require_target: bool) -> Va
 
         for field in TOPIC_CANONICAL_FIELDS.get(topic, []):
             if field not in topic_metrics:
+                # Backward compatibility: older artifacts (before q_wait promotion)
+                # do not include /timing.container_queue_ms.
+                if topic == "/timing" and field == "container_queue_ms":
+                    continue
                 errors.append(f"{path}: missing canonical key metrics['{topic}']['{field}']")
 
     return ValidationResult(len(errors) == 0, errors)

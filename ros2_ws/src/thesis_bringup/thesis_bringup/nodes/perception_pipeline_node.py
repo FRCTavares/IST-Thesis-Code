@@ -7,6 +7,7 @@ import os
 import threading
 import time
 from collections import deque
+from dataclasses import dataclass
 from typing import Any
 
 import cv2
@@ -74,6 +75,29 @@ def _bbox_to_xywh(bbox) -> tuple[float | None, float | None, float | None, float
     return None, None, None, None
 
 
+@dataclass
+class PreparedFrame:
+    seq: int
+    frame_id: int
+    src_stamp_ns: int
+    stamp_sec: int
+    stamp_nanosec: int
+    image_width: int
+    image_height: int
+    image_encoding: str
+    t_loop0: int
+    t_cam_msg_seen_ns: int
+    t_pre_start_ns: int
+    t_pre_end_ns: int
+    t_ros_to_np_start_ns: int
+    t_ros_to_np_end_ns: int
+    t_resize_start_ns: int
+    t_resize_end_ns: int
+    t_color_start_ns: int
+    t_color_end_ns: int
+    infer_img: np.ndarray
+
+
 class StubInferenceEngine:
     def infer(self, _frame_rgb: np.ndarray, _seq: int, _frame_id: int, _src_stamp_ns: int, _timeout_ms: int) -> dict[str, Any]:
         t0 = now_ns()
@@ -102,6 +126,7 @@ class HailoGstInferenceEngine:
         post_func: str,
         video_sink: str,
         queue_max_buffers: int,
+        use_videoconvert: bool,
         label_filter: str | None,
     ) -> None:
         import gi
@@ -123,6 +148,7 @@ class HailoGstInferenceEngine:
         self.post_func = str(post_func)
         self.video_sink = str(video_sink)
         self.queue_max_buffers = max(1, int(queue_max_buffers))
+        self.use_videoconvert = bool(use_videoconvert)
         self.label_filter = label_filter
 
         self.frame_duration_ns = int(1e9 / self.fps)
@@ -141,11 +167,12 @@ class HailoGstInferenceEngine:
 
     def _build_pipeline(self) -> None:
         queue_buffers = self.queue_max_buffers
+        convert_stage = "videoconvert ! " if self.use_videoconvert else ""
         pipeline_str = (
             f"appsrc name=source is-live=true block=false format=time do-timestamp=false "
             f"caps=video/x-raw,format=RGB,width={self.width},height={self.height},framerate={self.fps}/1 ! "
             f"queue max-size-buffers={queue_buffers} leaky=downstream ! "
-            f"videoconvert ! "
+            f"{convert_stage}"
             f"identity name=pre_hailonet_identity silent=true ! "
             f"hailonet hef-path={self.hef_path} batch-size=1 force-writable=true ! "
             f"identity name=infer_identity silent=true ! "
@@ -373,6 +400,7 @@ class PerceptionPipelineNode(Node):
         self.declare_parameter("timeout_log_every", 20)
         self.declare_parameter("log_every", 240)
         self.declare_parameter("disable_python_gc", False)
+        self.declare_parameter("async_latest_frame", True)
 
         thesis_root = os.getenv("THESIS_ROOT", "/home/francisco/Desktop/Thesis-Code")
         default_hef = f"{thesis_root}/infer_service/resources/hefs/yolov6n_hailo8.hef"
@@ -385,6 +413,7 @@ class PerceptionPipelineNode(Node):
         self.declare_parameter("hailo_post_function", "filter")
         self.declare_parameter("hailo_video_sink", "fakesink")
         self.declare_parameter("hailo_queue_max_buffers", 2)
+        self.declare_parameter("hailo_use_videoconvert", True)
 
         self.image_topic = str(self.get_parameter("image_topic").value)
         self.img_w = int(self.get_parameter("img_w").value)
@@ -400,6 +429,7 @@ class PerceptionPipelineNode(Node):
         self.timeout_log_every = max(1, int(self.get_parameter("timeout_log_every").value))
         self.log_every = max(0, int(self.get_parameter("log_every").value))
         self.disable_python_gc = bool(self.get_parameter("disable_python_gc").value)
+        self.async_latest_frame = bool(self.get_parameter("async_latest_frame").value)
 
         self._gc_was_enabled = gc.isenabled()
         self._gc_disabled_by_node = False
@@ -414,6 +444,7 @@ class PerceptionPipelineNode(Node):
         self.hailo_post_function = str(self.get_parameter("hailo_post_function").value)
         self.hailo_video_sink = str(self.get_parameter("hailo_video_sink").value)
         self.hailo_queue_max_buffers = max(1, int(self.get_parameter("hailo_queue_max_buffers").value))
+        self.hailo_use_videoconvert = bool(self.get_parameter("hailo_use_videoconvert").value)
 
         self.label_filter = _normalize_label(self.label)
 
@@ -446,9 +477,23 @@ class PerceptionPipelineNode(Node):
         self.frames_received = 0
         self.frames_processed = 0
         self.frames_timeouts = 0
+        self.frames_enqueued = 0
+        self.frames_overwritten = 0
         self.last_roundtrip_ms = 0.0
         self.last_det_pub_ns: int | None = None
         self.pub_dt_hist_ms: deque[float] = deque(maxlen=600)
+
+        self._worker_cv = threading.Condition()
+        self._latest_frame: PreparedFrame | None = None
+        self._worker_stop = False
+        self._worker_thread: threading.Thread | None = None
+        if self.async_latest_frame:
+            self._worker_thread = threading.Thread(
+                target=self._infer_worker_loop,
+                name="perception_infer_worker",
+                daemon=True,
+            )
+            self._worker_thread.start()
 
         self.get_logger().info(
             f"image_topic={self.image_topic} "
@@ -459,7 +504,9 @@ class PerceptionPipelineNode(Node):
             f"label={self.label} min_score={self.min_score:.2f} "
             f"image_reliability={self.image_reliability} "
             f"image_qos_depth={self.image_qos_depth} "
-            f"disable_python_gc={self.disable_python_gc}"
+            f"disable_python_gc={self.disable_python_gc} "
+            f"async_latest_frame={self.async_latest_frame} "
+            f"hailo_use_videoconvert={self.hailo_use_videoconvert}"
         )
 
     def _build_engine(self):
@@ -485,6 +532,7 @@ class PerceptionPipelineNode(Node):
                 post_func=self.hailo_post_function,
                 video_sink=self.hailo_video_sink,
                 queue_max_buffers=self.hailo_queue_max_buffers,
+                use_videoconvert=self.hailo_use_videoconvert,
                 label_filter=self.label_filter,
             )
             self.active_backend = "hailo_gst"
@@ -518,6 +566,251 @@ class PerceptionPipelineNode(Node):
             )
 
         return qos
+
+    def _enqueue_latest_frame(self, frame: PreparedFrame) -> None:
+        with self._worker_cv:
+            if self._latest_frame is not None:
+                self.frames_overwritten += 1
+            self._latest_frame = frame
+            self.frames_enqueued += 1
+            self._worker_cv.notify()
+
+    def _infer_worker_loop(self) -> None:
+        while True:
+            with self._worker_cv:
+                while not self._worker_stop and self._latest_frame is None:
+                    self._worker_cv.wait(timeout=0.2)
+
+                if self._worker_stop:
+                    return
+
+                frame = self._latest_frame
+                self._latest_frame = None
+
+            if frame is None:
+                continue
+
+            try:
+                self._process_prepared_frame(frame)
+            except Exception as exc:
+                self.get_logger().warning(f"async inference worker error: {exc}")
+
+    def _build_detection_array(self, frame: PreparedFrame, result: dict[str, Any]) -> Detection2DArray:
+        det_header_frame_id = f"frame_{frame.frame_id}"
+
+        det_arr = Detection2DArray()
+        det_arr.header.stamp.sec = int(frame.stamp_sec)
+        det_arr.header.stamp.nanosec = int(frame.stamp_nanosec)
+        det_arr.header.frame_id = det_header_frame_id
+
+        dets = result.get("detections", result.get("dets", [])) if isinstance(result, dict) else []
+        for d in dets:
+            score = float(d.get("score", 0.0))
+            if score < self.min_score:
+                continue
+
+            det_label = str(d.get("label", "")).strip()
+            label_ok = True
+            if self.label:
+                if "label" in d:
+                    label_ok = det_label.lower() == str(self.label).strip().lower()
+                elif "class_id" in d:
+                    label_ok = int(d.get("class_id", -1)) == 0
+            if not label_ok:
+                continue
+
+            if all(k in d for k in ("x", "y", "w", "h")):
+                x = clamp01(float(d.get("x", 0.0)))
+                y = clamp01(float(d.get("y", 0.0)))
+                w = clamp01(float(d.get("w", 0.0)))
+                h = clamp01(float(d.get("h", 0.0)))
+
+                cx_px = (x + 0.5 * w) * self.img_w
+                cy_px = (y + 0.5 * h) * self.img_h
+                w_px = w * self.img_w
+                h_px = h * self.img_h
+            elif all(k in d for k in ("x1", "y1", "x2", "y2")):
+                x1 = float(d.get("x1", 0.0))
+                y1 = float(d.get("y1", 0.0))
+                x2 = float(d.get("x2", 0.0))
+                y2 = float(d.get("y2", 0.0))
+
+                w_px = max(0.0, x2 - x1)
+                h_px = max(0.0, y2 - y1)
+                cx_px = x1 + 0.5 * w_px
+                cy_px = y1 + 0.5 * h_px
+            else:
+                continue
+
+            det = Detection2D()
+            det.bbox.center.position.x = float(cx_px)
+            det.bbox.center.position.y = float(cy_px)
+            det.bbox.size_x = float(w_px)
+            det.bbox.size_y = float(h_px)
+
+            hyp = ObjectHypothesisWithPose()
+            if det_label:
+                hyp.hypothesis.class_id = det_label
+            elif self.label:
+                hyp.hypothesis.class_id = str(self.label)
+            else:
+                hyp.hypothesis.class_id = "person"
+            hyp.hypothesis.score = float(score)
+            det.results.append(hyp)
+
+            det_arr.detections.append(det)
+
+        return det_arr
+
+    def _process_prepared_frame(self, frame: PreparedFrame) -> None:
+        t_engine_start_ns = now_ns()
+        try:
+            result = self.engine.infer(
+                frame.infer_img,
+                seq=frame.seq,
+                frame_id=frame.frame_id,
+                src_stamp_ns=frame.src_stamp_ns,
+                timeout_ms=self.infer_timeout_ms,
+            )
+        except Exception as exc:
+            self.get_logger().warning(f"in-process inference failed: {exc}")
+            result = None
+        t_engine_end_ns = now_ns()
+
+        timeout_hit = result is None
+        if timeout_hit:
+            self.frames_timeouts += 1
+            if (self.frames_timeouts % self.timeout_log_every) == 1:
+                self.get_logger().warning(
+                    f"in-process inference timeout (count={self.frames_timeouts})"
+                )
+            result = {
+                "detections": [],
+                "timing": {
+                    "t_infer_start_ns": t_engine_start_ns,
+                    "t_infer_end_ns": t_engine_end_ns,
+                    "t_post_start_ns": t_engine_end_ns,
+                    "t_post_end_ns": t_engine_end_ns,
+                },
+            }
+
+        timing_reply = result.get("timing", {}) if isinstance(result, dict) else {}
+        t_infer_start_ns = _safe_int(timing_reply.get("t_infer_start_ns"), 0)
+        t_infer_end_ns = _safe_int(timing_reply.get("t_infer_end_ns"), 0)
+        t_post_start_ns = _safe_int(timing_reply.get("t_post_start_ns"), 0)
+        t_post_end_ns = _safe_int(timing_reply.get("t_post_end_ns"), 0)
+
+        if t_infer_start_ns <= 0:
+            t_infer_start_ns = t_engine_start_ns
+        if t_infer_end_ns <= 0:
+            t_infer_end_ns = t_engine_end_ns
+        if t_post_start_ns <= 0:
+            t_post_start_ns = t_infer_end_ns
+        if t_post_end_ns <= 0:
+            t_post_end_ns = t_infer_end_ns
+
+        q_wait_ms = _ms(t_infer_start_ns - frame.t_pre_end_ns)
+        if q_wait_ms < 0.0:
+            q_wait_ms = 0.0
+
+        roundtrip_ms = _ms(t_engine_end_ns - t_engine_start_ns)
+        self.last_roundtrip_ms = roundtrip_ms
+
+        t_det_pub_start_ns = now_ns()
+        det_arr = self._build_detection_array(frame, result)
+
+        try:
+            self.pub_dets.publish(det_arr)
+        except Exception as exc:
+            if rclpy.ok():
+                self.get_logger().warning(f"detections publish failed: {exc}")
+            return
+
+        t_det_pub_end_ns = now_ns()
+
+        pub_dt_ms = 0.0
+        if self.last_det_pub_ns is not None:
+            pub_dt_ms = _ms(t_det_pub_end_ns - self.last_det_pub_ns)
+            self.pub_dt_hist_ms.append(pub_dt_ms)
+        self.last_det_pub_ns = t_det_pub_end_ns
+
+        if self.publish_timing:
+            tmsg = Timing()
+            tmsg.seq = int(frame.seq)
+            tmsg.frame_id = int(frame.frame_id)
+            tmsg.src_stamp_ns = int(frame.src_stamp_ns)
+            tmsg.t_cam_msg_seen_ns = int(frame.t_cam_msg_seen_ns)
+
+            tmsg.image_width = int(frame.image_width)
+            tmsg.image_height = int(frame.image_height)
+            tmsg.image_encoding = str(frame.image_encoding)
+
+            tmsg.t_pre_start_ns = int(frame.t_pre_start_ns)
+            tmsg.t_pre_end_ns = int(frame.t_pre_end_ns)
+            tmsg.t_det_pub_start_ns = int(t_det_pub_start_ns)
+            tmsg.t_det_pub_end_ns = int(t_det_pub_end_ns)
+
+            tmsg.t_infer_start_ns = int(t_infer_start_ns)
+            tmsg.t_infer_end_ns = int(t_infer_end_ns)
+            tmsg.t_post_start_ns = int(t_post_start_ns)
+            tmsg.t_post_end_ns = int(t_post_end_ns)
+
+            tmsg.ros_wait_ms = _ms(frame.t_pre_start_ns - frame.t_cam_msg_seen_ns)
+            tmsg.pre_ms = _ms(frame.t_pre_end_ns - frame.t_pre_start_ns)
+            tmsg.ros_to_np_ms = _ms(frame.t_ros_to_np_end_ns - frame.t_ros_to_np_start_ns)
+            tmsg.resize_ms = _ms(frame.t_resize_end_ns - frame.t_resize_start_ns)
+            tmsg.color_ms = _ms(frame.t_color_end_ns - frame.t_color_start_ns)
+            tmsg.pack_ms = 0.0
+            tmsg.container_queue_ms = float(q_wait_ms)
+            tmsg.infer_ms = _ms(t_infer_end_ns - t_infer_start_ns)
+            tmsg.post_ms = _ms(t_post_end_ns - t_post_start_ns)
+
+            tmsg.det_pub_ms = _ms(t_det_pub_end_ns - t_det_pub_start_ns)
+            tmsg.e2e_det_ms = _ms(t_det_pub_end_ns - frame.t_cam_msg_seen_ns)
+
+            t_loop1 = now_ns()
+            tmsg.loop_ms = _ms(t_loop1 - frame.t_loop0)
+            tmsg.pub_dt_ms = float(pub_dt_ms)
+            tmsg.pts_ns = int(frame.src_stamp_ns)
+            tmsg.t_pub_ns = int(t_engine_start_ns)
+            tmsg.lat_ms = tmsg.e2e_det_ms
+
+            try:
+                self.pub_timing.publish(tmsg)
+            except Exception as exc:
+                if rclpy.ok():
+                    self.get_logger().warning(f"timing publish failed: {exc}")
+
+        self.frames_processed += 1
+        if self.log_every > 0 and (self.frames_processed % self.log_every) == 0:
+            if self.pub_dt_hist_ms:
+                pub_dt_arr = np.array(self.pub_dt_hist_ms, dtype=np.float64)
+                pub_dt_p50 = float(np.percentile(pub_dt_arr, 50))
+                pub_dt_p95 = float(np.percentile(pub_dt_arr, 95))
+            else:
+                pub_dt_p50 = 0.0
+                pub_dt_p95 = 0.0
+
+            queue_note = ""
+            if self.async_latest_frame:
+                queue_note = (
+                    f" enq={self.frames_enqueued} overwritten={self.frames_overwritten}"
+                )
+
+            self.get_logger().info(
+                "perception_pipeline "
+                f"frames={self.frames_processed} "
+                f"recv={self.frames_received} "
+                f"timeouts={self.frames_timeouts} "
+                f"backend={self.active_backend} "
+                f"dets={len(det_arr.detections)} "
+                f"rt_ms={roundtrip_ms:.2f} "
+                f"q_wait_ms={q_wait_ms:.2f} "
+                f"pub_dt_ms={pub_dt_ms:.2f} "
+                f"pub_dt_p50_ms={pub_dt_p50:.2f} "
+                f"pub_dt_p95_ms={pub_dt_p95:.2f}"
+                f"{queue_note}"
+            )
 
     def on_image(self, msg: Image) -> None:
         t_loop0 = now_ns()
@@ -603,195 +896,43 @@ class PerceptionPipelineNode(Node):
         self.seq_counter += 1
         self.frame_counter += 1
 
-        t_engine_start_ns = now_ns()
-        try:
-            result = self.engine.infer(
-                infer_img,
-                seq=seq,
-                frame_id=frame_id,
-                src_stamp_ns=src_stamp_ns,
-                timeout_ms=self.infer_timeout_ms,
-            )
-        except Exception as exc:
-            self.get_logger().warning(f"in-process inference failed: {exc}")
-            result = None
-        t_engine_end_ns = now_ns()
+        frame = PreparedFrame(
+            seq=int(seq),
+            frame_id=int(frame_id),
+            src_stamp_ns=int(src_stamp_ns),
+            stamp_sec=int(msg.header.stamp.sec),
+            stamp_nanosec=int(msg.header.stamp.nanosec),
+            image_width=int(msg.width),
+            image_height=int(msg.height),
+            image_encoding=str(msg.encoding),
+            t_loop0=int(t_loop0),
+            t_cam_msg_seen_ns=int(t_cam_msg_seen_ns),
+            t_pre_start_ns=int(t_pre_start_ns),
+            t_pre_end_ns=int(t_pre_end_ns),
+            t_ros_to_np_start_ns=int(t_ros_to_np_start_ns),
+            t_ros_to_np_end_ns=int(t_ros_to_np_end_ns),
+            t_resize_start_ns=int(t_resize_start_ns),
+            t_resize_end_ns=int(t_resize_end_ns),
+            t_color_start_ns=int(t_color_start_ns),
+            t_color_end_ns=int(t_color_end_ns),
+            infer_img=np.ascontiguousarray(infer_img).copy(),
+        )
 
-        timeout_hit = result is None
-        if timeout_hit:
-            self.frames_timeouts += 1
-            if (self.frames_timeouts % self.timeout_log_every) == 1:
-                self.get_logger().warning(
-                    f"in-process inference timeout (count={self.frames_timeouts})"
-                )
-            result = {
-                "detections": [],
-                "timing": {
-                    "t_infer_start_ns": t_engine_start_ns,
-                    "t_infer_end_ns": t_engine_end_ns,
-                    "t_post_start_ns": t_engine_end_ns,
-                    "t_post_end_ns": t_engine_end_ns,
-                },
-            }
+        if self.async_latest_frame:
+            self._enqueue_latest_frame(frame)
+            return
 
-        timing_reply = result.get("timing", {}) if isinstance(result, dict) else {}
-        t_infer_start_ns = _safe_int(timing_reply.get("t_infer_start_ns"), 0)
-        t_infer_end_ns = _safe_int(timing_reply.get("t_infer_end_ns"), 0)
-        t_post_start_ns = _safe_int(timing_reply.get("t_post_start_ns"), 0)
-        t_post_end_ns = _safe_int(timing_reply.get("t_post_end_ns"), 0)
-
-        if t_infer_start_ns <= 0:
-            t_infer_start_ns = t_engine_start_ns
-        if t_infer_end_ns <= 0:
-            t_infer_end_ns = t_engine_end_ns
-        if t_post_start_ns <= 0:
-            t_post_start_ns = t_infer_end_ns
-        if t_post_end_ns <= 0:
-            t_post_end_ns = t_infer_end_ns
-
-        roundtrip_ms = _ms(t_engine_end_ns - t_engine_start_ns)
-        self.last_roundtrip_ms = roundtrip_ms
-
-        t_det_pub_start_ns = now_ns()
-
-        det_header_frame_id = f"frame_{frame_id}"
-
-        det_arr = Detection2DArray()
-        det_arr.header.stamp = msg.header.stamp
-        det_arr.header.frame_id = det_header_frame_id
-
-        dets = result.get("detections", result.get("dets", [])) if isinstance(result, dict) else []
-        for d in dets:
-            score = float(d.get("score", 0.0))
-            if score < self.min_score:
-                continue
-
-            det_label = str(d.get("label", "")).strip()
-            label_ok = True
-            if self.label:
-                if "label" in d:
-                    label_ok = det_label.lower() == str(self.label).strip().lower()
-                elif "class_id" in d:
-                    label_ok = int(d.get("class_id", -1)) == 0
-            if not label_ok:
-                continue
-
-            if all(k in d for k in ("x", "y", "w", "h")):
-                x = clamp01(float(d.get("x", 0.0)))
-                y = clamp01(float(d.get("y", 0.0)))
-                w = clamp01(float(d.get("w", 0.0)))
-                h = clamp01(float(d.get("h", 0.0)))
-
-                cx_px = (x + 0.5 * w) * self.img_w
-                cy_px = (y + 0.5 * h) * self.img_h
-                w_px = w * self.img_w
-                h_px = h * self.img_h
-            elif all(k in d for k in ("x1", "y1", "x2", "y2")):
-                x1 = float(d.get("x1", 0.0))
-                y1 = float(d.get("y1", 0.0))
-                x2 = float(d.get("x2", 0.0))
-                y2 = float(d.get("y2", 0.0))
-
-                w_px = max(0.0, x2 - x1)
-                h_px = max(0.0, y2 - y1)
-                cx_px = x1 + 0.5 * w_px
-                cy_px = y1 + 0.5 * h_px
-            else:
-                continue
-
-            det = Detection2D()
-            det.bbox.center.position.x = float(cx_px)
-            det.bbox.center.position.y = float(cy_px)
-            det.bbox.size_x = float(w_px)
-            det.bbox.size_y = float(h_px)
-
-            hyp = ObjectHypothesisWithPose()
-            if det_label:
-                hyp.hypothesis.class_id = det_label
-            elif self.label:
-                hyp.hypothesis.class_id = str(self.label)
-            else:
-                hyp.hypothesis.class_id = "person"
-            hyp.hypothesis.score = float(score)
-            det.results.append(hyp)
-
-            det_arr.detections.append(det)
-
-        self.pub_dets.publish(det_arr)
-        t_det_pub_end_ns = now_ns()
-
-        pub_dt_ms = 0.0
-        if self.last_det_pub_ns is not None:
-            pub_dt_ms = _ms(t_det_pub_end_ns - self.last_det_pub_ns)
-            self.pub_dt_hist_ms.append(pub_dt_ms)
-        self.last_det_pub_ns = t_det_pub_end_ns
-
-        if self.publish_timing:
-            tmsg = Timing()
-            tmsg.seq = int(seq)
-            tmsg.frame_id = int(frame_id)
-            tmsg.src_stamp_ns = int(src_stamp_ns)
-            tmsg.t_cam_msg_seen_ns = int(t_cam_msg_seen_ns)
-
-            tmsg.image_width = int(msg.width)
-            tmsg.image_height = int(msg.height)
-            tmsg.image_encoding = str(msg.encoding)
-
-            tmsg.t_pre_start_ns = int(t_pre_start_ns)
-            tmsg.t_pre_end_ns = int(t_pre_end_ns)
-            tmsg.t_det_pub_start_ns = int(t_det_pub_start_ns)
-            tmsg.t_det_pub_end_ns = int(t_det_pub_end_ns)
-
-            tmsg.t_infer_start_ns = int(t_infer_start_ns)
-            tmsg.t_infer_end_ns = int(t_infer_end_ns)
-            tmsg.t_post_start_ns = int(t_post_start_ns)
-            tmsg.t_post_end_ns = int(t_post_end_ns)
-
-            tmsg.ros_wait_ms = _ms(t_pre_start_ns - t_cam_msg_seen_ns)
-            tmsg.pre_ms = _ms(t_pre_end_ns - t_pre_start_ns)
-            tmsg.ros_to_np_ms = _ms(t_ros_to_np_end_ns - t_ros_to_np_start_ns)
-            tmsg.resize_ms = _ms(t_resize_end_ns - t_resize_start_ns)
-            tmsg.color_ms = _ms(t_color_end_ns - t_color_start_ns)
-            tmsg.pack_ms = 0.0
-            tmsg.infer_ms = _ms(t_infer_end_ns - t_infer_start_ns)
-            tmsg.post_ms = _ms(t_post_end_ns - t_post_start_ns)
-
-            tmsg.det_pub_ms = _ms(t_det_pub_end_ns - t_det_pub_start_ns)
-            tmsg.e2e_det_ms = _ms(t_det_pub_end_ns - t_cam_msg_seen_ns)
-
-            t_loop1 = now_ns()
-            tmsg.loop_ms = _ms(t_loop1 - t_loop0)
-            tmsg.pub_dt_ms = float(pub_dt_ms)
-            tmsg.pts_ns = int(src_stamp_ns)
-            tmsg.t_pub_ns = int(t_engine_start_ns)
-            tmsg.lat_ms = tmsg.e2e_det_ms
-
-            self.pub_timing.publish(tmsg)
-
-        self.frames_processed += 1
-        if self.log_every > 0 and (self.frames_processed % self.log_every) == 0:
-            if self.pub_dt_hist_ms:
-                pub_dt_arr = np.array(self.pub_dt_hist_ms, dtype=np.float64)
-                pub_dt_p50 = float(np.percentile(pub_dt_arr, 50))
-                pub_dt_p95 = float(np.percentile(pub_dt_arr, 95))
-            else:
-                pub_dt_p50 = 0.0
-                pub_dt_p95 = 0.0
-
-            self.get_logger().info(
-                "perception_pipeline "
-                f"frames={self.frames_processed} "
-                f"recv={self.frames_received} "
-                f"timeouts={self.frames_timeouts} "
-                f"backend={self.active_backend} "
-                f"dets={len(det_arr.detections)} "
-                f"rt_ms={roundtrip_ms:.2f} "
-                f"pub_dt_ms={pub_dt_ms:.2f} "
-                f"pub_dt_p50_ms={pub_dt_p50:.2f} "
-                f"pub_dt_p95_ms={pub_dt_p95:.2f}"
-            )
+        self._process_prepared_frame(frame)
 
     def destroy_node(self):
+        if self.async_latest_frame:
+            with self._worker_cv:
+                self._worker_stop = True
+                self._worker_cv.notify_all()
+
+            if self._worker_thread is not None:
+                self._worker_thread.join(timeout=2.0)
+
         if self._gc_disabled_by_node:
             try:
                 gc.enable()

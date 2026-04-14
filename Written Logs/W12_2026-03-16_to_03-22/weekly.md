@@ -170,7 +170,7 @@ By end of Day 22 (March 22), you should have:
 
 **Issues:**
 - Weather blocked supervised flight attempt.
-- Remaining throughput variability appears upstream of container inference and needs isolated image-path A/B validation.
+- Remaining throughput variability appears upstream of container inference and needs isolated image-path comparison validation (`1920x1080->resize` vs direct `640x640`).
 
 **Day 19 outcome:** aborted flight window (weather NO-GO), but successful ground stabilization with clear next bottleneck hypothesis.
 
@@ -239,7 +239,7 @@ By end of Day 22 (March 22), you should have:
 | Async container refactor | REP -> ROUTER asynchronous in-flight handling | container `service_ms` moved to low-teens | server-side bottleneck removed |
 | Multi-worker + deeper queue | increased client concurrency and queue depth | tuned runs reached ~21.3 FPS | meaningful throughput uplift from baseline |
 | Blocking queue fix | replaced deque polling + `sleep(0)` with blocking timeout wakeup | idle behavior became bounded and less pathological | busy-yield contention removed |
-| Final stable live baseline (Baseline B) | queue=4, workers=3, blocking queue behavior frozen | stable windows observed in high-teens to low-20s FPS range depending on load | next gate is single-variable image-path A/B |
+| Final stable live baseline (Baseline B) | queue=4, workers=3, blocking queue behavior frozen | stable windows observed in high-teens to low-20s FPS range depending on load | next gate is single-variable image-path comparison (`1920x1080->resize` vs direct `640x640`) |
 
 ### MAVROS Integration
 - Connection established: *(yes / no / partial)*
@@ -295,8 +295,8 @@ Documented through Day 19:
 - `ros2 topic hz` under-reports BEST_EFFORT camera stream in this Jazzy setup; camera source-rate validation must rely on `/camera/fps`.
 
 **Mitigation actions:**
-- Freeze Baseline B and enforce one-variable-at-a-time A/B testing.
-- Run image-path A/B (`1920x1080->resize` vs direct `640x640`) before additional tuning.
+- Freeze Baseline B and enforce one-variable-at-a-time paired comparison testing.
+- Run image-path comparison (`1920x1080->resize` vs direct `640x640`) before additional tuning.
 - Re-test full stack without rosbag first, then run separate profiling bag capture.
 
 ---

@@ -1,0 +1,121 @@
+{
+  "run_label": "tracker_tuned_20260414_132155",
+  "duration_s": 600.0399304310004,
+  "topics": {
+    "/timing": {
+      "count": 6144,
+      "hz": 10.239318565994184,
+      "frame_id_min": 45,
+      "frame_id_max": 6188,
+      "frame_id_unique": 6144,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_tracker": {
+      "count": 0,
+      "hz": 0.0,
+      "frame_id_min": null,
+      "frame_id_max": null,
+      "frame_id_unique": 0,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_target": {
+      "count": 0,
+      "hz": 0.0,
+      "frame_id_min": null,
+      "frame_id_max": null,
+      "frame_id_unique": 0,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    }
+  },
+  "metrics": {
+    "/timing": {
+      "pre_ms": {
+        "n": 6144.0,
+        "p50": 3.0799754858016968,
+        "p95": 6.147397947311399,
+        "p99": 8.281294355392445,
+        "mean": 3.467758954871291,
+        "min": 1.693047046661377,
+        "max": 15.574104309082031
+      },
+      "zmq_roundtrip_ms": {
+        "n": 6144.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "infer_ms": {
+        "n": 6144.0,
+        "p50": 6.432839393615723,
+        "p95": 8.790835666656493,
+        "p99": 10.836557273864742,
+        "mean": 6.675392502297957,
+        "min": 4.999792098999023,
+        "max": 22.30421257019043
+      },
+      "e2e_det_ms": {
+        "n": 6144.0,
+        "p50": 87.12612915039062,
+        "p95": 94.83425445556641,
+        "p99": 125.14083335876438,
+        "mean": 88.69548214972019,
+        "min": 81.31270599365234,
+        "max": 273.8955383300781
+      },
+      "pub_dt_ms": {
+        "n": 6144.0,
+        "p50": 92.08462905883789,
+        "p95": 114.88009643554686,
+        "p99": 215.98350296020507,
+        "mean": 97.65760533759992,
+        "min": 85.00615692138672,
+        "max": 1050.0460205078125
+      }
+    },
+    "/timing_tracker": {
+      "track_ms": {
+        "n": 0.0,
+        "p50": NaN,
+        "p95": NaN,
+        "p99": NaN,
+        "mean": NaN,
+        "min": NaN,
+        "max": NaN
+      }
+    },
+    "/timing_target": {
+      "e2e_target_ms": {
+        "n": 0.0,
+        "p50": NaN,
+        "p95": NaN,
+        "p99": NaN,
+        "mean": NaN,
+        "min": NaN,
+        "max": NaN
+      }
+    }
+  },
+  "detection_stream": {
+    "count": 6143,
+    "hz": 10.237652010238,
+    "detections_per_msg": {
+      "n": 6143.0,
+      "p50": 0.0,
+      "p95": 0.0,
+      "p99": 1.0,
+      "mean": 0.039231645775679634,
+      "min": 0.0,
+      "max": 1.0,
+      "zero_ratio": 0.9607683542243204
+    }
+  }
+}

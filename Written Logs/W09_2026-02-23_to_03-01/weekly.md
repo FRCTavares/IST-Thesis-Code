@@ -67,7 +67,7 @@ By end of Day 06 (March 1), you should have:
 ## Remaining Daily Goals
 
 ### Day 27 (02-27): Build the benchmarking harness, not just measure one bag
-**Outcome:** You can run `tracker=A/B/C` on the same recorded detections stream and get a single markdown summary + plots.
+**Outcome:** You can run `tracker=sort|ocsort|bytetrack` on the same recorded detections stream and get a single markdown summary + plots.
 
 **Work blocks:**
 - A) Create replayable evaluation mode (record detections-only bag, write replay runner launch)

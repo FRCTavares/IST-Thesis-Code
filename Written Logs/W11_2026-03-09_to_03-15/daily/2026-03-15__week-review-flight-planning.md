@@ -144,7 +144,7 @@ Key learnings:
 - Safety questions need advance notice
 
 Adjustments for W12:
-- Flexible session goals (options A/B/C)
+- Flexible session goals (options 1/2/3)
 - Conservative first tests
 - Emphasis on learning/debugging over demos
 - _(other adjustments)_

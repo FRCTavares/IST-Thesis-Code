@@ -16,6 +16,7 @@ Date range:
 
 - Initial incident: 2026-04-08
 - Resolution path completed: 2026-04-09
+- Follow-up regression captured: 2026-04-14
 
 Observed sequence:
 
@@ -42,6 +43,17 @@ Two separate root causes existed:
   - no TEVS sensor entities in media topology
   - camera node failed before publishing /camera/image_raw
 
+1. Follow-up failure mode after module recovery (graph present, stream path not healthy)
+
+- TEVS module loaded and graph looked present (`/dev/v4l-subdev*` + `rp1-cfe` nodes existed).
+- Direct stream probe still failed: `VIDIOC_STREAMON returned -1 (Invalid argument)`.
+- Kernel showed capture path/link and control-path instability symptoms:
+  - `rp1-cfe ... csi2_ch0 node link is not enabled`
+  - `i2c_designware ... timeout`
+  - `tevs ... failed to read from register: ret=-110`
+- In bad states, `v4l2-ctl` can block in uninterruptible `D` state (`vb2_fop_release`).
+- Practical implication: topology presence alone is not sufficient; stream-on and control path must also be healthy.
+
 ## Typical Failure Signatures
 
 Launcher/log symptoms:
@@ -49,6 +61,10 @@ Launcher/log symptoms:
 - timeout waiting for /camera/image_raw
 - camera_capture_node traceback showing configured /dev/video0 missing
 - selected media device exposes no video nodes
+- camera init warning/error while applying sensor controls:
+  - `VIDIOC_S_EXT_CTRLS: failed: Connection timed out`
+  - `VIDIOC_S_EXT_CTRLS: failed: Unknown error 220`
+- camera stream probe fails with `VIDIOC_STREAMON returned -1 (Invalid argument)`
 
 System symptoms:
 
@@ -60,6 +76,9 @@ Possible kernel hints:
 
 - rp1-cfe found subdevice tevs@48 in logs, but media graph still incomplete
 - occasional pca953x probe errors on bad boots
+- `rp1-cfe ... csi2_ch0 node link is not enabled`
+- `rp1-cfe ... stream on failed in subdev`
+- `i2c_designware ... timeout` and `tevs ... ret=-110`
 
 ## Recovery Procedure (Confirmed Working)
 
@@ -101,6 +120,25 @@ media-ctl -d /dev/media0 -p
 media-ctl -d /dev/media1 -p
 v4l2-ctl --list-devices
 ```
+
+Step 4b: Verify stream-on path (not only topology)
+
+```bash
+v4l2-ctl -d /dev/video0 --set-fmt-video=width=1280,height=720,pixelformat=UYVY --stream-mmap=4 --stream-count=30 --stream-to=/dev/null --stream-poll
+journalctl -k -b --no-pager | rg -i "tevs|i2c|timeout|rp1-cfe|failed|error" | tail -n 120
+```
+
+Interpretation:
+
+- If stream probe fails with `VIDIOC_STREAMON ... Invalid argument` and kernel reports link-not-enabled:
+  - re-enable capture link and retry once:
+
+```bash
+media-ctl -d /dev/media0 -l '"csi2":4 -> "rp1-cfe-csi2_ch0":0 [1]'
+```
+
+- If kernel reports repeated `i2c_designware` timeout or `tevs ... ret=-110`, or camera tooling is stuck in `D` state:
+  - reboot host before retrying live stack.
 
 Step 5: Start live stack
 
@@ -189,6 +227,16 @@ tail -n 200 "$latest/camera.log"
 tail -n 200 "$latest/inference.log"
 ```
 
+### 6) Startup hardening now in launcher (April 2026 follow-up)
+
+`tools/start_live_stack.sh` now includes additional camera safeguards:
+
+- preflight check blocks startup when `camera_capture_node`, `v4l2-ctl`, or `media-ctl` is stuck in uninterruptible `D` state
+- preflight attempts to enable `"csi2":4 -> "rp1-cfe-csi2_ch0":0` if link is down
+- on startup failure with TEVS sensor-control timeout signatures, launcher retries camera once with `apply_sensor_rate_controls=false`
+- startup diagnostics check kernel patterns for link-not-enabled and I2C timeout signals
+- logging is quieter by default and prints warnings/errors without verbose noise (use `--verbose` for full progress logs)
+
 ## Fast Triage Checklist
 
 Run these first during any future camera incident:
@@ -222,6 +270,10 @@ To reduce lockout risk:
 
 - added camera fatal-log detection and clearer startup diagnostics
 - added preflight media graph auto-detection and actionable hints
+- added preflight D-state detection for `camera_capture_node`, `v4l2-ctl`, and `media-ctl`
+- added preflight CSI capture-link enable attempt (`csi2:4 -> rp1-cfe-csi2_ch0`)
+- added one-shot camera retry with sensor rate controls disabled when TEVS control timeout signatures are detected
+- default console output is now warning/error focused; use `--verbose` for full startup/status logs
 
 1. ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_capture_node.py
 

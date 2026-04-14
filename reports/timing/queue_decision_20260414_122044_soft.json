@@ -1,0 +1,42 @@
+{
+  "q1": {
+    "queue_buffers": 1,
+    "path": "reports/timing/q1_20260414_113923.json",
+    "run_label": "q1_20260414_113923",
+    "timing_hz": 8.075384168621438,
+    "e2e_det_p95": 131.27850341796875,
+    "pub_dt_p95": 177.47100830078125,
+    "pub_dt_p99": 229.36844482421884,
+    "det_per_msg_mean": 1.012174989682212,
+    "det_zero_ratio": 0.0
+  },
+  "q2": {
+    "queue_buffers": 2,
+    "path": "reports/timing/q2_20260414_122044.json",
+    "run_label": "q2_20260414_122044",
+    "timing_hz": 8.415611396559768,
+    "e2e_det_p95": 129.61022338867187,
+    "pub_dt_p95": 180.40110931396487,
+    "pub_dt_p99": 237.6359834289552,
+    "det_per_msg_mean": 0.6972277227722772,
+    "det_zero_ratio": 0.31306930693069307
+  },
+  "baseline_queue": 2,
+  "gates": [
+    {
+      "name": "min_timing_hz",
+      "passed": false,
+      "details": "q1=8.075 Hz, q2=8.416 Hz, required >= 9.000 Hz"
+    },
+    {
+      "name": "detection_load_comparability",
+      "passed": false,
+      "details": "mean_delta=0.4517 (max 0.1000), zero_ratio_delta=0.3131 (max 0.0500)"
+    }
+  ],
+  "all_gates_pass": false,
+  "selected_queue": null,
+  "score": {},
+  "decision_reasons": [],
+  "exit_zero_on_gate_fail": true
+}

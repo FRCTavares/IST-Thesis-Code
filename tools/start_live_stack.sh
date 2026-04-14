@@ -46,6 +46,29 @@ mkdir -p "$RUN_DIR"
 mkdir -p "$ROS_LOG_DIR"
 ln -sfn "$RUN_DIR" "$LATEST_LINK"
 
+VERBOSE="${LIVE_STACK_VERBOSE:-0}"
+if [[ "$VERBOSE" =~ ^(1|true|TRUE|yes|YES)$ ]]; then
+    VERBOSE=1
+else
+    VERBOSE=0
+fi
+
+log_verbose_tag() {
+    local tag="$1"
+    shift
+    if [[ "$VERBOSE" -eq 1 ]]; then
+        echo "[$tag] $*"
+    fi
+}
+
+log_info() { log_verbose_tag info "$@"; }
+log_step() { log_verbose_tag step "$@"; }
+log_ok() { log_verbose_tag ok "$@"; }
+log_start() { log_verbose_tag start "$@"; }
+log_stop() { log_verbose_tag stop "$@"; }
+log_done() { log_verbose_tag done "$@"; }
+log_hint() { log_verbose_tag hint "$@"; }
+
 start_ros_bg() {
     local name="$1"
     shift
@@ -53,7 +76,7 @@ start_ros_bg() {
     local pid=$!
     PROC_PIDS["$name"]="$pid"
     echo "$pid $name" >>"$PID_FILE"
-    echo "[start] $name (pid=$pid)"
+    log_start "$name (pid=$pid)"
 }
 
 check_proc_alive() {
@@ -74,7 +97,7 @@ check_proc_alive() {
         return 1
     fi
 
-    echo "[ok] $name is running (pid=$pid)"
+    log_ok "$name (pid=$pid)"
 }
 
 camera_log_has_fatal_error() {
@@ -120,13 +143,13 @@ stop_stack() {
     fi
     STOP_DONE=1
 
-    echo "[step] stopping live stack"
+    log_step "stopping live stack"
 
     if [[ -f "$PID_FILE" ]]; then
         tac "$PID_FILE" | while read -r pid name; do
             if [[ -n "${pid:-}" ]] && kill -0 "$pid" >/dev/null 2>&1; then
                 kill_tree "$pid" INT
-                echo "[stop] $name (pid=$pid)"
+                log_stop "$name (pid=$pid)"
             fi
         done
 
@@ -151,7 +174,7 @@ stop_stack() {
     pkill -f "web_video_server" >/dev/null 2>&1 || true
 
     docker exec "$CONTAINER_NAME" bash -lc 'pkill -f detection_zmq.py >/dev/null 2>&1 || true' >/dev/null 2>&1 || true
-    echo "[done] live stack stop requested"
+    log_done "live stack stop requested"
 }
 
 trap 'stop_stack; exit 0' INT TERM
@@ -165,12 +188,19 @@ All ROS runtime logs are forced under ros2_ws/log/runtime for this run.
 
 Options:
     --perception-mode <legacy|single-process>
-                                                                            Perception path selection (default: legacy)
+                                                                            Perception path selection (default: single-process)
+    -v, --verbose                     Enable verbose startup/status logs (default: warnings/errors only)
     --tracker <sort|ocsort|bytetrack>  Tracker backend (default: sort)
     --tracker-profile-off               Disable tracker profiling instrumentation
+    --tracker-gc-probe-off              Disable tracker GC probe instrumentation (lower overhead)
+    --tracker-gc-probe-on               Enable tracker GC probe instrumentation
     --tracker-profile-log-every <N>     Log tracker profile every N frames (default: 30)
     --tracker-profile-serialize-every <N>
                                                                             Serialize sample every N frames (default: 0 disabled)
+    --tracker-iou-threshold <F>         SORT/OCSORT IoU threshold (default: 0.18)
+    --tracker-max-age <N>               SORT/OCSORT max track age (default: 4)
+    --tracker-min-hits <N>              SORT/OCSORT min hits before confirm (default: 3)
+    --tracker-centre-gate <F>           SORT/OCSORT centre gating pixels (default: 200)
     --tracks-off                        Disable /tracks publishing from tracker
     --tracks-require-subscribers        Publish /tracks only when subscribers are present
     --tracks-ignore-subscribers         Publish /tracks regardless of subscriber count (default)
@@ -196,6 +226,10 @@ Options:
     --perception-image-qos-depth <N>    Perception image subscription depth (single-process default: 2)
     --perception-hailo-queue-buffers <N>
                                                                             Hailo Gst queue max-size-buffers (single-process default: 2)
+    --perception-async-latest-frame-off  Disable async latest-frame inference worker (single-process)
+    --perception-async-latest-frame-on   Enable async latest-frame inference worker (single-process default)
+    --perception-hailo-videoconvert-off  Disable pre-hailonet videoconvert stage (single-process)
+    --perception-hailo-videoconvert-on   Enable pre-hailonet videoconvert stage (single-process default)
     --perception-gc-off                 Disable Python cyclic GC in perception node
     --perception-gc-on                  Enable Python cyclic GC in perception node (default)
   --no-dashboard                     Disable dashboard bridge
@@ -211,12 +245,16 @@ EOF
 }
 
 TRACKER_TYPE="sort"
-PERCEPTION_MODE="legacy"
+PERCEPTION_MODE="single-process"
 TRACKER_PROFILE_ENABLED=0
 TRACKER_PROFILE_LOG_EVERY_N=30
 TRACKER_PROFILE_SERIALIZE_EVERY_N=0
 TRACKER_PROFILE_PUBLISH_DETAILS=1
-TRACKER_PROFILE_GC_PROBE=1
+TRACKER_PROFILE_GC_PROBE=0
+TRACKER_IOU_THRESHOLD=0.18
+TRACKER_MAX_AGE=4
+TRACKER_MIN_HITS=3
+TRACKER_CENTRE_GATE=200.0
 TRACKER_PUBLISH_TRACKS_BOOL="true"
 TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL="false"
 INFER_PUBLISH_TIMING_BOOL="true"
@@ -239,6 +277,8 @@ INFER_PRINT_EVERY=240
 INFER_TIMEOUT_LOG_EVERY=20
 PERCEPTION_IMAGE_QOS_DEPTH=2
 PERCEPTION_HAILO_QUEUE_BUFFERS=2
+PERCEPTION_ASYNC_LATEST_FRAME_BOOL="true"
+PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL="true"
 PERCEPTION_GC_DISABLE_BOOL="false"
 ENABLE_DASHBOARD_BRIDGE=1
 ENABLE_TRACKER=1
@@ -248,6 +288,15 @@ CONTROL_MAVROS_BOOL="false"
 CONTROL_STALE_TIMEOUT_S=0.80
 ENABLE_WEB_VIDEO=1
 ENABLE_ROSBAG=0
+
+normalize_double_literal() {
+    local value="$1"
+    if [[ "$value" =~ ^-?[0-9]+$ ]]; then
+        echo "${value}.0"
+    else
+        echo "$value"
+    fi
+}
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -269,6 +318,10 @@ while [[ $# -gt 0 ]]; do
             TRACKER_TYPE="${2,,}"
             shift 2
             ;;
+        -v|--verbose)
+            VERBOSE=1
+            shift
+            ;;
         --no-dashboard)
             ENABLE_DASHBOARD_BRIDGE=0
             ENABLE_WEB_VIDEO=0
@@ -276,6 +329,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --tracker-profile-off)
             TRACKER_PROFILE_ENABLED=0
+            shift
+            ;;
+        --tracker-gc-probe-off)
+            TRACKER_PROFILE_GC_PROBE=0
+            shift
+            ;;
+        --tracker-gc-probe-on)
+            TRACKER_PROFILE_GC_PROBE=1
             shift
             ;;
         --tracker-profile-log-every)
@@ -294,6 +355,42 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             TRACKER_PROFILE_SERIALIZE_EVERY_N="$2"
+            shift 2
+            ;;
+        --tracker-iou-threshold)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --tracker-iou-threshold requires a value"
+                print_usage
+                exit 1
+            fi
+            TRACKER_IOU_THRESHOLD="$(normalize_double_literal "$2")"
+            shift 2
+            ;;
+        --tracker-max-age)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --tracker-max-age requires a value"
+                print_usage
+                exit 1
+            fi
+            TRACKER_MAX_AGE="$2"
+            shift 2
+            ;;
+        --tracker-min-hits)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --tracker-min-hits requires a value"
+                print_usage
+                exit 1
+            fi
+            TRACKER_MIN_HITS="$2"
+            shift 2
+            ;;
+        --tracker-centre-gate)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --tracker-centre-gate requires a value"
+                print_usage
+                exit 1
+            fi
+            TRACKER_CENTRE_GATE="$(normalize_double_literal "$2")"
             shift 2
             ;;
         --tracks-off)
@@ -477,6 +574,22 @@ while [[ $# -gt 0 ]]; do
             PERCEPTION_HAILO_QUEUE_BUFFERS="$2"
             shift 2
             ;;
+        --perception-async-latest-frame-off)
+            PERCEPTION_ASYNC_LATEST_FRAME_BOOL="false"
+            shift
+            ;;
+        --perception-async-latest-frame-on)
+            PERCEPTION_ASYNC_LATEST_FRAME_BOOL="true"
+            shift
+            ;;
+        --perception-hailo-videoconvert-off)
+            PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL="false"
+            shift
+            ;;
+        --perception-hailo-videoconvert-on)
+            PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL="true"
+            shift
+            ;;
         --perception-gc-off)
             PERCEPTION_GC_DISABLE_BOOL="true"
             shift
@@ -658,7 +771,7 @@ wait_for_port() {
 
     while true; do
         if (echo >"/dev/tcp/${host}/${port}") >/dev/null 2>&1; then
-            echo "[ok] port ${host}:${port} is reachable"
+            log_ok "port ${host}:${port} is reachable"
             return 0
         fi
 
@@ -696,7 +809,7 @@ wait_for_topic_message() {
     fi
 
     if timeout "${timeout_s}s" "${echo_cmd[@]}" >/dev/null 2>&1; then
-        echo "[ok] topic ${topic} produced a message"
+        log_ok "topic ${topic} produced a message"
         return 0
     fi
 
@@ -714,10 +827,10 @@ CAMERA_MEDIA_DEV_OVERRIDE=""
 
 check_stuck_camera_processes() {
     local stuck_lines
-    stuck_lines="$(ps -eo pid=,stat=,cmd= | grep camera_capture_node | grep -v grep | awk '$2 ~ /^D/ {print}' || true)"
+    stuck_lines="$(ps -eo pid=,stat=,cmd= | awk '$2 ~ /^D/ && $0 ~ /(camera_capture_node|v4l2-ctl|media-ctl)/ {print}' || true)"
 
     if [[ -n "${stuck_lines:-}" ]]; then
-        echo "[error] detected camera process(es) stuck in uninterruptible I/O state (D):"
+        echo "[error] detected camera/V4L2 process(es) stuck in uninterruptible I/O state (D):"
         echo "$stuck_lines"
         echo "[error] this usually means the camera driver path is wedged; reboot is required"
         return 1
@@ -765,23 +878,137 @@ detect_camera_media_device() {
 
         if grep -qi "driver[[:space:]]*rp1-cfe" <<<"$topology" && grep -qiE "tevs|11-0048|rp1-cfe-csi2_ch[0-9]" <<<"$topology"; then
             CAMERA_MEDIA_DEV_OVERRIDE="$media_dev"
-            echo "[info] auto-detected camera media graph on $CAMERA_MEDIA_DEV_OVERRIDE"
+            log_info "auto-detected camera media graph on $CAMERA_MEDIA_DEV_OVERRIDE"
             return 0
         fi
     done
 
     echo "[warn] no media device currently exposes TEVS camera entities"
-    echo "[hint] runtime auto-select can only choose among detected camera media graphs"
-    echo "[hint] cam0/cam1 selection comes from boot overlay and requires reboot to change"
+    log_hint "runtime auto-select can only choose among detected camera media graphs"
+    log_hint "cam0/cam1 selection comes from boot overlay and requires reboot to change"
 
     local klog
     klog="$(journalctl -k -b --no-pager 2>/dev/null | tail -n 500 || true)"
     if [[ -n "${klog:-}" ]] && grep -qiE "pca953x.*failed writing register|probe.*error -121" <<<"$klog"; then
-        echo "[hint] kernel reports camera control I2C probe failure (pca953x/-121)"
-        echo "[hint] verify camera port (cam0/cam1) and overlay in /boot/firmware/config.txt"
+        log_hint "kernel reports camera control I2C probe failure (pca953x/-121)"
+        log_hint "verify camera port (cam0/cam1) and overlay in /boot/firmware/config.txt"
     fi
 
     return 1
+}
+
+preflight_enable_csi_capture_link() {
+    local media_dev="${CAMERA_MEDIA_DEV_OVERRIDE:-/dev/media0}"
+    local topology
+
+    if [[ ! -e "$media_dev" ]]; then
+        return 0
+    fi
+
+    topology="$(media-ctl -d "$media_dev" -p 2>/dev/null || true)"
+    if [[ -z "${topology:-}" ]]; then
+        return 0
+    fi
+
+    if ! grep -q '"rp1-cfe-csi2_ch0"' <<<"$topology"; then
+        return 0
+    fi
+
+    if grep -Eq '"csi2":[[:space:]]*4[[:space:]]*->[[:space:]]*"rp1-cfe-csi2_ch0":0[[:space:]]*\[(ENABLED|1)\]' <<<"$topology"; then
+        log_ok "camera capture link csi2->rp1-cfe-csi2_ch0 already enabled on $media_dev"
+        return 0
+    fi
+
+    if media-ctl -d "$media_dev" -l '"csi2":4 -> "rp1-cfe-csi2_ch0":0 [1]' >/dev/null 2>&1; then
+        log_info "pre-enabled csi2->rp1-cfe-csi2_ch0 on $media_dev"
+        return 0
+    fi
+
+    echo "[warn] failed to pre-enable csi2->rp1-cfe-csi2_ch0 on $media_dev"
+    log_hint "camera node will still attempt media init; inspect $RUN_DIR/camera.log if startup fails"
+    return 0
+}
+
+camera_log_has_sensor_control_error() {
+    local log_file="$RUN_DIR/camera.log"
+
+    if [[ ! -f "$log_file" ]]; then
+        return 1
+    fi
+
+    rg -qi "Sensor rate control timed out|VIDIOC_S_EXT_CTRLS: failed: Connection timed out|VIDIOC_S_EXT_CTRLS: failed: Unknown error 220|max_fps: Connection timed out|max_fps: Unknown error 220" "$log_file"
+}
+
+camera_kernel_has_link_not_enabled() {
+    journalctl -k -b --no-pager 2>/dev/null \
+        | tail -n 240 \
+        | rg -qi "csi2_ch0 node link is not enabled|stream on failed in subdev|Wrong width or height"
+}
+
+camera_kernel_has_i2c_timeout() {
+    journalctl -k -b --no-pager 2>/dev/null \
+        | tail -n 240 \
+        | rg -qi "i2c_designware.*timeout|tevs .*failed to read from register|ret=-110"
+}
+
+stop_camera_process_only() {
+    local pid="${PROC_PIDS[camera]:-}"
+
+    if [[ -z "${pid:-}" ]]; then
+        return 0
+    fi
+
+    if kill -0 "$pid" >/dev/null 2>&1; then
+        kill_tree "$pid" INT
+        sleep 1
+        if kill -0 "$pid" >/dev/null 2>&1; then
+            kill_tree "$pid" TERM
+        fi
+        log_stop "camera (pid=$pid)"
+    fi
+
+    unset 'PROC_PIDS[camera]'
+    return 0
+}
+
+build_camera_args() {
+    CAMERA_ARGS=()
+    if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 0 ]]; then
+        CAMERA_ARGS+=("publish_dashboard_topic:=false")
+    fi
+
+    CAMERA_ARGS+=("width:=$CAMERA_WIDTH")
+    CAMERA_ARGS+=("height:=$CAMERA_HEIGHT")
+    CAMERA_ARGS+=("fps:=$CAMERA_FPS")
+    CAMERA_ARGS+=("dashboard_fps:=$CAMERA_DASHBOARD_FPS")
+    CAMERA_ARGS+=("flip_image:=$CAMERA_FLIP_BOOL")
+    CAMERA_ARGS+=("apply_sensor_rate_controls:=$CAMERA_APPLY_RATE_CONTROLS_BOOL")
+    CAMERA_ARGS+=("sensor_max_fps:=$CAMERA_SENSOR_MAX_FPS")
+    CAMERA_ARGS+=("sensor_ae_exposure_upper:=$CAMERA_SENSOR_AE_UPPER")
+    CAMERA_ARGS+=("sensor_ae_exposure_max:=$CAMERA_SENSOR_AE_MAX")
+    CAMERA_ARGS+=("sensor_exposure_mode:=$CAMERA_SENSOR_EXPOSURE_MODE")
+    CAMERA_ARGS+=("sensor_manual_exposure:=$CAMERA_SENSOR_MANUAL_EXPOSURE")
+    if [[ -n "${CAMERA_MEDIA_DEV_OVERRIDE:-}" ]]; then
+        CAMERA_ARGS+=("media_dev:=$CAMERA_MEDIA_DEV_OVERRIDE")
+    fi
+}
+
+start_camera_with_readiness() {
+    start_ros_bg camera ros2 launch thesis_bringup camera_bringup.launch.py "${CAMERA_ARGS[@]}"
+    sleep 2
+    if ! check_proc_alive camera; then
+        return 2
+    fi
+    if ! wait_for_topic_message /camera/image_raw 12 1 sensor_data best_effort volatile; then
+        if ! check_proc_alive camera; then
+            return 2
+        fi
+        if camera_log_has_fatal_error; then
+            return 3
+        fi
+        return 4
+    fi
+    return 0
 }
 
 tracker_state="off"
@@ -804,16 +1031,16 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then dashboard_state="on"; fi
 if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then web_video_state="on"; fi
 if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="on"; fi
 
-echo "[info] run: $RUN_ID"
-echo "[info] logs: $RUN_DIR"
-echo "[info] mode: perception=$PERCEPTION_MODE"
-echo "[info] cfg: camera=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} img_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} perception_gc_disable=${PERCEPTION_GC_DISABLE_BOOL} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
-echo "[info] cfg: camera_rate_controls=${CAMERA_APPLY_RATE_CONTROLS_BOOL} sensor_max_fps=${CAMERA_SENSOR_MAX_FPS} ae_upper=${CAMERA_SENSOR_AE_UPPER} ae_max=${CAMERA_SENSOR_AE_MAX} exposure_mode=${CAMERA_SENSOR_EXPOSURE_MODE}"
-echo "[info] nodes: tracker=$tracker_state target=$target_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
+log_info "run: $RUN_ID"
+log_info "logs: $RUN_DIR"
+log_info "mode: perception=$PERCEPTION_MODE"
+log_info "cfg: camera=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} img_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_latest_frame=${PERCEPTION_ASYNC_LATEST_FRAME_BOOL} hailo_videoconvert=${PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL} perception_gc_disable=${PERCEPTION_GC_DISABLE_BOOL} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
+log_info "cfg: camera_rate_controls=${CAMERA_APPLY_RATE_CONTROLS_BOOL} sensor_max_fps=${CAMERA_SENSOR_MAX_FPS} ae_upper=${CAMERA_SENSOR_AE_UPPER} ae_max=${CAMERA_SENSOR_AE_MAX} exposure_mode=${CAMERA_SENSOR_EXPOSURE_MODE}"
+log_info "nodes: tracker=$tracker_state target=$target_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
-    echo "[info] tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL tracks_require_subscribers=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL profile=$TRACKER_PROFILE_ENABLED"
+    log_info "tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL tracks_require_subscribers=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL profile=$TRACKER_PROFILE_ENABLED gc_probe=$TRACKER_PROFILE_GC_PROBE iou=$TRACKER_IOU_THRESHOLD max_age=$TRACKER_MAX_AGE min_hits=$TRACKER_MIN_HITS centre_gate=$TRACKER_CENTRE_GATE"
 fi
-echo "[step] preflight checks"
+log_step "preflight checks"
 if ! check_stuck_camera_processes; then
     exit 1
 fi
@@ -821,8 +1048,9 @@ if ! cleanup_existing_stack_processes; then
     exit 1
 fi
 detect_camera_media_device || true
+preflight_enable_csi_capture_link || true
 
-echo "[step] sourcing ROS environment"
+log_step "sourcing ROS environment"
 cd "$ROS_WS"
 export ROS_LOG_DIR
 set +u
@@ -831,19 +1059,19 @@ if [[ -f "install/setup.bash" ]]; then
     source install/setup.bash
 else
     echo "[error] missing workspace setup: $ROS_WS/install/setup.bash"
-    echo "[hint] build the ROS workspace first:"
-    echo "       cd $ROS_WS"
-    echo "       source /opt/ros/jazzy/setup.bash"
-    echo "       colcon build --symlink-install"
-    echo "       source install/setup.bash"
+    log_hint "build the ROS workspace first:"
+    log_hint "       cd $ROS_WS"
+    log_hint "       source /opt/ros/jazzy/setup.bash"
+    log_hint "       colcon build --symlink-install"
+    log_hint "       source install/setup.bash"
     exit 1
 fi
 set -u
 export ROS_DOMAIN_ID
-echo "[info] ros: domain=$ROS_DOMAIN_ID log_dir=$ROS_LOG_DIR"
+log_info "ros: domain=$ROS_DOMAIN_ID log_dir=$ROS_LOG_DIR"
 
 if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
-    echo "[step] ensuring container is up"
+    log_step "ensuring container is up"
     (
         cd "$PI_AI_DIR"
         docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
@@ -866,7 +1094,7 @@ if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
         fi
     fi
 
-    echo "[step] starting detection service in container"
+    log_step "starting detection service in container"
     docker exec "$CONTAINER_NAME" bash -lc '
 set -euo pipefail
 for pid in $(pgrep -f detection_zmq.py || true); do
@@ -893,18 +1121,13 @@ nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_
         exit 1
     fi
 else
-    echo "[step] single-process perception mode selected"
-    echo "[info] single-process mode will run in-process perception_pipeline_node"
-    echo "[warn] if host Hailo runtime is unavailable, node will fallback to stub backend"
-    echo "[info] skipping container detection_zmq startup in single-process mode"
+    log_step "single-process perception mode selected"
+    log_info "single-process mode will run in-process perception_pipeline_node"
+    log_hint "if host Hailo runtime is unavailable, node will fallback to stub backend"
+    log_info "skipping container detection_zmq startup in single-process mode"
 fi
 
-echo "[step] starting ROS nodes"
-CAMERA_ARGS=()
-if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 0 ]]; then
-    CAMERA_ARGS+=("publish_dashboard_topic:=false")
-fi
-
+log_step "starting ROS nodes"
 # rclpy expects camera fps launch parameter as DOUBLE; normalize integer input to float.
 if [[ "$CAMERA_FPS" =~ ^[0-9]+$ ]]; then
     CAMERA_FPS="${CAMERA_FPS}.0"
@@ -915,45 +1138,49 @@ if [[ "$CAMERA_DASHBOARD_FPS" =~ ^[0-9]+$ ]]; then
     CAMERA_DASHBOARD_FPS="${CAMERA_DASHBOARD_FPS}.0"
 fi
 
-CAMERA_ARGS+=("width:=$CAMERA_WIDTH")
-CAMERA_ARGS+=("height:=$CAMERA_HEIGHT")
-CAMERA_ARGS+=("fps:=$CAMERA_FPS")
-CAMERA_ARGS+=("dashboard_fps:=$CAMERA_DASHBOARD_FPS")
-CAMERA_ARGS+=("flip_image:=$CAMERA_FLIP_BOOL")
-CAMERA_ARGS+=("apply_sensor_rate_controls:=$CAMERA_APPLY_RATE_CONTROLS_BOOL")
-CAMERA_ARGS+=("sensor_max_fps:=$CAMERA_SENSOR_MAX_FPS")
-CAMERA_ARGS+=("sensor_ae_exposure_upper:=$CAMERA_SENSOR_AE_UPPER")
-CAMERA_ARGS+=("sensor_ae_exposure_max:=$CAMERA_SENSOR_AE_MAX")
-CAMERA_ARGS+=("sensor_exposure_mode:=$CAMERA_SENSOR_EXPOSURE_MODE")
-CAMERA_ARGS+=("sensor_manual_exposure:=$CAMERA_SENSOR_MANUAL_EXPOSURE")
-if [[ -n "${CAMERA_MEDIA_DEV_OVERRIDE:-}" ]]; then
-    CAMERA_ARGS+=("media_dev:=$CAMERA_MEDIA_DEV_OVERRIDE")
-fi
+camera_retry_applied=0
+while true; do
+    build_camera_args
+    if start_camera_with_readiness; then
+        break
+    fi
 
-start_ros_bg camera ros2 launch thesis_bringup camera_bringup.launch.py "${CAMERA_ARGS[@]}"
-sleep 2
-if ! check_proc_alive camera; then
-    stop_stack
-    exit 1
-fi
-if ! wait_for_topic_message /camera/image_raw 12 1 sensor_data best_effort volatile; then
-    if ! check_proc_alive camera; then
+    camera_start_rc=$?
+    if [[ "$camera_start_rc" -eq 2 ]]; then
         echo "[error] camera process exited during startup; see $RUN_DIR/camera.log"
-        stop_stack
-        exit 1
-    fi
-    if camera_log_has_fatal_error; then
+    elif [[ "$camera_start_rc" -eq 3 ]]; then
         echo "[error] camera startup failed; see $RUN_DIR/camera.log"
-        stop_stack
-        exit 1
+    else
+        echo "[error] camera node is running but not publishing frames"
     fi
-    echo "[error] camera node is running but not publishing frames"
-    echo "[hint] check camera cable/sensor state and try restarting stack"
-    echo "[hint] if issue persists, reboot host to reset camera pipeline"
-    echo "[hint] if media topology lacks sensor entities, verify /boot/firmware/config.txt overlay port (cam0 vs cam1)"
+
+    if [[ "$camera_retry_applied" -eq 0 ]] \
+        && [[ "$CAMERA_APPLY_RATE_CONTROLS_BOOL" == "true" ]] \
+        && camera_log_has_sensor_control_error; then
+        echo "[warn] detected TEVS sensor control timeout/error during camera init"
+        echo "[warn] retrying camera startup once with sensor rate controls disabled"
+        CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
+        camera_retry_applied=1
+        stop_camera_process_only
+        continue
+    fi
+
+    if camera_kernel_has_link_not_enabled; then
+        log_hint "kernel reports camera link/stream state error (csi2_ch0 link or stream-on failed)"
+        log_hint "verify media graph link state and camera format alignment before retry"
+    fi
+
+    if camera_kernel_has_i2c_timeout; then
+        log_hint "kernel reports TEVS/I2C timeout activity; camera pipeline may be wedged"
+        log_hint "reboot host to recover the camera driver path before retrying"
+    fi
+
+    log_hint "check camera cable/sensor state and try restarting stack"
+    log_hint "if issue persists, reboot host to reset camera pipeline"
+    log_hint "if media topology lacks sensor entities, verify /boot/firmware/config.txt overlay port (cam0 vs cam1)"
     stop_stack
     exit 1
-fi
+done
 
 if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
     start_ros_bg inference ros2 run thesis_inference_client inference_client_node --ros-args \
@@ -1020,7 +1247,7 @@ else
     PERCEPTION_POST_SO_ARGS=()
     if [[ -f "$PERCEPTION_RUNTIME_POST_SO" ]]; then
         PERCEPTION_POST_SO_ARGS=(-p "hailo_post_so:=$PERCEPTION_RUNTIME_POST_SO")
-        echo "[info] single-process: using local postprocess lib at $PERCEPTION_RUNTIME_POST_SO"
+        log_info "single-process: using local postprocess lib at $PERCEPTION_RUNTIME_POST_SO"
     fi
 
     start_ros_bg perception_pipeline env PYTHONPATH="$PERCEPTION_PYTHONPATH" LD_LIBRARY_PATH="$PERCEPTION_LD_LIBRARY_PATH" GST_PLUGIN_PATH="$PERCEPTION_GST_PLUGIN_PATH" ros2 run thesis_bringup perception_pipeline_node --ros-args \
@@ -1029,6 +1256,8 @@ else
         -p img_h:=640 \
         -p image_qos_depth:=$PERCEPTION_IMAGE_QOS_DEPTH \
         -p hailo_queue_max_buffers:=$PERCEPTION_HAILO_QUEUE_BUFFERS \
+        -p async_latest_frame:=$PERCEPTION_ASYNC_LATEST_FRAME_BOOL \
+        -p hailo_use_videoconvert:=$PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL \
         -p disable_python_gc:=$PERCEPTION_GC_DISABLE_BOOL \
         -p label:=person \
         -p min_score:=0.35 \
@@ -1048,6 +1277,10 @@ fi
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     start_ros_bg tracker ros2 run thesis_tracker tracker_node --ros-args \
         -p tracker_type:=$TRACKER_TYPE \
+        -p iou_threshold:=$TRACKER_IOU_THRESHOLD \
+        -p max_age:=$TRACKER_MAX_AGE \
+        -p min_hits:=$TRACKER_MIN_HITS \
+        -p centre_gate:=$TRACKER_CENTRE_GATE \
         -p publish_tracks:=$TRACKER_PUBLISH_TRACKS_BOOL \
         -p publish_tracks_requires_subscribers:=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL \
         -p profiling_enabled:=$([[ "$TRACKER_PROFILE_ENABLED" -eq 1 ]] && echo true || echo false) \
@@ -1125,19 +1358,27 @@ fi
 VIDEO_URL="http://${PI_IP}:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45"
 WS_URL="ws://${PI_IP}:8765"
 
-echo "[done] live stack ready"
-echo "[info] logs: $RUN_DIR"
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 && "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
-    echo "[info] dashboard: video=$VIDEO_URL ws=$WS_URL"
+    echo "[ok] Live stack started successfully. Dashboard: $VIDEO_URL | WS: $WS_URL"
+elif [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
+    echo "[ok] Live stack started successfully. WS: $WS_URL"
+else
+    echo "[ok] Live stack started successfully."
+fi
+
+log_done "live stack ready"
+log_info "logs: $RUN_DIR"
+if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 && "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
+    log_info "dashboard: video=$VIDEO_URL ws=$WS_URL"
 fi
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
     if [[ "$ENABLE_WEB_VIDEO" -eq 0 ]]; then
-        echo "[info] dashboard: ws=$WS_URL"
+        log_info "dashboard: ws=$WS_URL"
     fi
 else
-    echo "[info] dashboard: disabled"
+    log_info "dashboard: disabled"
 fi
-echo "[info] commands: status | clear | stop"
+log_info "commands: status | clear | stop"
 
 while true; do
     if ! read -r -p "live-stack> " cmd; then

@@ -21,7 +21,7 @@ Current evidence from latest validated runs (single-process mode):
 
 - camera startup now succeeds in healthy cycles with sensor trigger/rate controls applied
 - internal camera publish cadence recovered near 30 FPS in full stack runs
-- completed 10-minute A/B/C ablation matrix identifies tracker/target/control as dominant bottleneck
+- completed 10-minute three-run ablation matrix (full stack, no dashboard, no tracker/target/control) identifies tracker/target/control as dominant bottleneck
   - A (full stack): `/timing` 8.40 Hz, `e2e_det_ms` p95 124.59, `pub_dt_ms` p95/p99 162.93/267.70
   - B (no dashboard): `/timing` 8.01 Hz, `e2e_det_ms` p95 127.62, `pub_dt_ms` p95/p99 159.81/229.70
   - C (no tracker/target/control): `/timing` 10.00 Hz, `e2e_det_ms` p95 94.15, `pub_dt_ms` p95/p99 111.05/120.05
@@ -41,9 +41,15 @@ Conclusion: the single-process architecture is implemented and materially faster
 - Done: single-process mode path wired into launcher, rollback flag preserved, camera diagnostics expanded, sensor rate-control tuning integrated.
 - Done: dashboard publishing decoupled from raw publish path with subscriber-aware gating.
 - Done: camera publish cadence in healthy runs is back near 30 FPS (`Camera FPS ... publish=~30`).
-- Done: 10-minute A/B/C ablation matrix completed; tracker/target/control path ranked as top bottleneck.
+- Done: 10-minute three-run ablation matrix completed (full stack, no dashboard, no tracker/target/control); tracker/target/control path ranked as top bottleneck.
 - Done: tracker and target-selector hot-path trims, tracker publish gating option, SORT low-cardinality association fast path, and perception executor/queue tunables integrated.
 - Done: live timing collector extended with `/detections` load comparability stats.
+- Done: queue-buffer decision helper added (`tools/decide_queue_buffer_default.py`) with workload-comparability gates (`detections_per_msg.mean` and `zero_ratio`) and explicit pass/fail decision output.
+- Done: tracker callback overhead trimmed when profiling logs are off (avoid per-frame GC-count polling and section-timing overhead in non-profiling runs).
+- Done: launcher now exposes tracker tuning knobs (`--tracker-iou-threshold`, `--tracker-max-age`, `--tracker-min-hits`, `--tracker-centre-gate`) and explicit GC-probe control.
+- Done: `/timing` now publishes pre-infer queue wait as `container_queue_ms` (`t_infer_start_ns - t_pre_end_ns`) and canonical timing contract includes it for standard JSON reports.
+- Done: perception path now supports async latest-frame inference mode (`async_latest_frame=true` default) to decouple image callback from infer wait and prefer freshness over stale frame processing.
+- Done: launcher exposes perception toggles for explicit baseline-vs-candidate comparisons (`--perception-async-latest-frame-{on,off}`, `--perception-hailo-videoconvert-{on,off}`) without code edits.
 - In progress: controlled Hailo queue-buffer decision (`--perception-hailo-queue-buffers 1` vs `2`) with matched detection workload.
 - In progress: reducing full-stack `pub_dt_ms` p95 while preserving current p99 and throughput gains.
 - Pending: long soak stability gate and cutover-default decision.
@@ -367,6 +373,8 @@ Startup/orchestration and diagnostics:
 - tools/start_live_stack.sh
 - tools/probe_camera_modes.sh
 - tools/collect_live_timing_stats.py
+- tools/decide_queue_buffer_default.py
+- ros2_ws/src/thesis_tracker/thesis_tracker/tracker_node.py
 
 Compatibility and control:
 
@@ -411,7 +419,7 @@ Risk 4: full-stack perception cadence bottleneck remains after camera recovery
 Risk 5: dashboard/video overhead masking improvements
 
 - Impact: misleading benchmark comparisons
-- Mitigation: benchmark lean and full modes separately, then verify both; A/B/C ablation indicates dashboard is not the primary limiter
+- Mitigation: benchmark lean and full modes separately, then verify both; three-run ablation indicates dashboard is not the primary limiter
 
 Risk 6: timing schema break
 
@@ -466,25 +474,25 @@ Step 2:
 
 Step 3:
 
-- run ablation matrix (10 minutes each, same scene and model):
-  - Run A (baseline): full stack with dashboard on
-  - Run B (dashboard ablation): disable dashboard path (`--no-dashboard`)
-  - Run C (tracker ablation): disable tracker-dependent path (`--no-tracker --no-target --no-control`)
+- run a three-run ablation set (10 minutes each, same scene and model):
+  - full-stack baseline: full stack with dashboard on
+  - no-dashboard run: disable dashboard path (`--no-dashboard`)
+  - no-tracker/target/control run: disable tracker-dependent path (`--no-tracker --no-target --no-control`)
 
 Step 4:
 
-- compare bottleneck deltas using the same metrics across A/B/C:
+- compare bottleneck deltas using the same metrics across the three runs:
   - `/timing` mean Hz
   - `e2e_det_ms` p95
   - `pub_dt_ms` p95 and p99
 - choose next optimization target from the largest improvement:
-  - B >> A => prioritize dashboard path optimization
-  - C >> A => prioritize tracker/downstream path optimization
-  - neither B nor C materially better => prioritize perception node hot path
+  - if no-dashboard run >> full-stack baseline => prioritize dashboard path optimization
+  - if no-tracker/target/control run >> full-stack baseline => prioritize tracker/downstream path optimization
+  - if neither materially better => prioritize perception node hot path
 
 Status:
 
-- Completed. Result: C >> A and B !> A, so tracker/downstream optimization is the highest-priority path.
+- Completed. Result: no-tracker/target/control run >> full-stack baseline and no-dashboard run !> full-stack baseline, so tracker/downstream optimization is the highest-priority path.
 
 Step 5:
 
@@ -552,6 +560,68 @@ Acceptance for tomorrow session:
 - queue-buffer value decision (`--perception-hailo-queue-buffers 1` vs `2`) finalized with workload-matched evidence
 - selected default passes one 30-minute soak without timeout storms
 - no control instability attributable to stale target timing
+
+### 12.1 Live Progress Update (2026-04-14)
+
+Completed so far (full stack, dashboard on, single-process):
+
+- q1 run completed and stored at `reports/timing/q1_20260414_113923.json`
+- run duration: 600.095 s
+- invariants check passed (`tools/check_live_timing_invariants.py --duration 8.0`)
+- canonical metrics schema validation passed
+
+q1 measured metrics:
+
+- `/timing` mean Hz: 8.075
+- `e2e_det_ms` p95/p99: 131.279 / 140.887
+- `pub_dt_ms` p95/p99: 177.471 / 229.368
+- detection load baseline (`/detections`):
+  - `detections_per_msg.mean`: 1.012
+  - `detections_per_msg.zero_ratio`: 0.000
+
+q2 attempts completed:
+
+- q2 attempt 1: `reports/timing/q2_20260414_120954.json`
+  - `/timing` mean Hz: 7.666
+  - `e2e_det_ms` p95: 133.045
+  - `pub_dt_ms` p95/p99: 203.525 / 256.088
+  - detection load: `detections_per_msg.mean` 1.122, `zero_ratio` 0.000
+  - gate output (`reports/timing/queue_decision_20260414_120954.json`): comparability PASS, min-Hz FAIL
+
+- q2 attempt 2: `reports/timing/q2_20260414_122044.json`
+  - `/timing` mean Hz: 8.416
+  - `e2e_det_ms` p95: 129.610
+  - `pub_dt_ms` p95/p99: 180.401 / 237.636
+  - detection load: `detections_per_msg.mean` 0.697, `zero_ratio` 0.313
+  - gate output (`reports/timing/queue_decision_20260414_122044.json`): min-Hz FAIL, comparability FAIL
+
+Tracker-tuning attempt status:
+
+- baseline tracker-tuning run (`reports/timing/tracker_base_20260414_130952.json`) improved `/timing` to 9.687 Hz but had sparse detection workload (`zero_ratio` 0.805), so evidence is directionally useful but weak for cutover-quality comparisons.
+- first tuned tracker run (`reports/timing/tracker_tuned_20260414_132155.json`) is invalid for tracker analysis:
+  - `/timing_tracker` and `/timing_target` samples are zero
+  - tracker process crashed at startup with parameter type mismatch (`centre_gate` passed as integer literal)
+  - root cause confirmed in tracker log: `InvalidParameterTypeException ... centre_gate ... expecting type 'DOUBLE'`
+  - mitigation applied: launcher now normalizes float-valued tracker args, so integer inputs like `--tracker-centre-gate 320` are converted to `320.0` before ROS launch.
+- second active-workload comparison pair completed after launcher normalization fix:
+  - baseline: `reports/timing/tracker_base_active_20260414_140437.json`
+    - `/timing` 7.793 Hz, `e2e_det_ms` p95/p99 135.688/157.847, `pub_dt_ms` p95/p99 197.648/272.528, `track_ms` p95/p99 15.300/19.613
+  - tuned: `reports/timing/tracker_tuned_active_20260414_142832.json`
+    - `/timing` 7.840 Hz, `e2e_det_ms` p95/p99 135.644/159.082, `pub_dt_ms` p95/p99 192.360/263.403, `track_ms` p95/p99 15.546/19.555
+  - detection workload comparability passed (`detections_per_msg.mean` 1.001 vs 1.000, `zero_ratio` 0.000 vs 0.000)
+  - keep/drop verdict for this tuned set: **drop for now** (mixed outcome: small throughput and `pub_dt_ms` tail gains, but tracker and target tails regressed with no material end-to-end win)
+
+Current gate status:
+
+- hard gate `/timing` mean >= 9 Hz is currently **not met** in both queue-buffer and active tracker-tuning runs
+- workload comparability failed in the best-Hz q2 attempt due high zero-detection ratio
+- queue-buffer default decision remains pending
+
+Immediate next actions:
+
+1. Keep baseline tracker settings (`--tracker-profile-off --tracker-gc-probe-off`) as the active reference and reject the current tuned variant from further rollout.
+2. Run one additional optimization experiment on the perception hot path (pre/post/publication overhead) under the same active scene, then collect a fresh 10-minute report.
+3. Re-attempt queue-buffer default decision only after a workload-matched run pair reaches `/timing` mean >= 9 Hz.
 
 ## 13. Optimization Playbook (All Levers)
 

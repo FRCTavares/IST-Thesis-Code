@@ -15,6 +15,7 @@ CANONICAL_METRICS: List[str] = [
     "e2e_det_ms",
     "e2e_target_ms",
     "infer_ms",
+    "container_queue_ms",
     "zmq_roundtrip_ms",
     "pub_dt_ms",
     "track_ms",
@@ -23,7 +24,7 @@ CANONICAL_METRICS: List[str] = [
 
 # Canonical per-topic fields for collectors and reports.
 TOPIC_CANONICAL_FIELDS: Dict[str, List[str]] = {
-    "/timing": ["pre_ms", "zmq_roundtrip_ms", "infer_ms", "e2e_det_ms", "pub_dt_ms"],
+    "/timing": ["pre_ms", "container_queue_ms", "zmq_roundtrip_ms", "infer_ms", "e2e_det_ms", "pub_dt_ms"],
     "/timing_tracker": ["track_ms"],
     "/timing_target": ["e2e_target_ms"],
 }
@@ -36,6 +37,7 @@ FIELD_FALLBACKS: Dict[str, List[str]] = {
     "decode_ms": ["decode_ms", "json_ms"],
     "e2e_target_ms": ["e2e_target_ms"],
     "infer_ms": ["infer_ms"],
+    "container_queue_ms": ["container_queue_ms", "q_wait_ms"],
     "pub_dt_ms": ["pub_dt_ms"],
     "track_ms": ["track_ms"],
     "pre_ms": ["pre_ms"],

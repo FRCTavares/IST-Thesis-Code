@@ -28,7 +28,7 @@ Use this when you need full end-to-end behavior (camera + inference + tracker + 
 
 1. Read `RUNBOOK.md` sections 0 to 3.
 2. Start stack with `./tools/start_live_stack.sh`.
-3. Start UI with `./tools/start_ui_stack.sh --skip-install`.
+3. Start UI with `./tools/start_ui_stack.sh`.
 
 ### Path B: Generic Linux fallback
 
@@ -43,7 +43,7 @@ npm install
 VITE_DASHBOARD_DATA_MODE=mock npm run dev
 ```
 
-2. Replay and offline analysis: follow `RUNBOOK.md` section 5.
+1. Replay and offline analysis: follow `RUNBOOK.md` section 5.
 
 ## Done criteria (what "runs well" means)
 
@@ -74,10 +74,10 @@ cd "$THESIS_ROOT"
 Perception mode options:
 
 ```bash
-# Legacy (default): camera + inference_client + container detection_zmq
+# Legacy mode: camera + inference_client + container detection_zmq
 ./tools/start_live_stack.sh --perception-mode legacy
 
-# Single-process mode (work-in-progress): camera + perception_pipeline_node
+# Single-process mode (default): camera + perception_pipeline_node
 # Note: falls back to a stub backend if host Hailo runtime is unavailable.
 ./tools/start_live_stack.sh --perception-mode single-process
 ```
@@ -97,7 +97,7 @@ Host Hailo helpers:
 
 ```bash
 cd "$THESIS_ROOT"
-./tools/start_ui_stack.sh --skip-install
+./tools/start_ui_stack.sh
 ```
 
 ### Replay an existing raw bag

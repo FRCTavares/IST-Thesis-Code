@@ -22,11 +22,11 @@
 
 - Deep end-to-end bottleneck analysis across camera -> inference client -> container service -> detections path.
 - Added detailed timing instrumentation and controlled test methodology to isolate where throughput was being lost.
-- Ran multiple controlled A/B tests on stack toggles and client/service behavior.
+- Ran multiple controlled paired-comparison tests on stack toggles and client/service behavior.
 - Identified container request/response architecture as a major limiting factor in earlier runs.
 - Refactored container inference service from synchronous REP pattern to asynchronous ROUTER flow with decoupled receive/process/reply behavior.
 - Increased container buffering and non-blocking appsrc behavior to reduce serialization pressure.
-- Tuned inference client queue/worker behavior and exposed run-time launch flags for rapid A/B testing.
+- Tuned inference client queue/worker behavior and exposed run-time launch flags for rapid paired-comparison testing.
 
 ### Key Code/Runtime Changes Applied
 
@@ -94,7 +94,7 @@
 | Async container refactor | REP -> ROUTER asynchronous in-flight handling | container `service_ms` moved to low-teens | removed server-side serialization bottleneck |
 | Multi-worker + deeper queue | increased client concurrency and queue depth | sustained throughput improved to ~21.3 FPS in tuned runs | reduced starvation relative to baseline |
 | Blocking queue fix | replaced deque polling + `sleep(0)` with blocking queue timeout wakeup | empty-poll behavior became bounded and predictable | removed busy-yield contention pattern |
-| Final stable live baseline (Baseline B) | queue=4, workers=3, blocking queue behavior frozen | stable live windows observed; representative run around high-teens to low-20s FPS depending on load | next decision gate is image-path A/B (single variable) |
+| Final stable live baseline (Baseline B) | queue=4, workers=3, blocking queue behavior frozen | stable live windows observed; representative run around high-teens to low-20s FPS depending on load | next decision gate is image-path comparison (`1920x1080->resize` vs direct `640x640`) |
 
 ### End-of-day freeze and next execution order
 
@@ -103,7 +103,7 @@
 	- `num_workers=3`
 	- blocking queue wakeup behavior retained
 - Next tests must change one variable only:
-	- focused A/B on image path (`1920x1080->resize` vs direct `640x640` publish with resize bypass)
+	- focused image-path comparison (`1920x1080->resize` vs direct `640x640` publish with resize bypass)
 - Full-pipeline re-test order:
 	1) no-rosbag functional run with tracker + target enabled
 	2) separate rosbag profiling run after functional stability is confirmed
@@ -171,14 +171,14 @@ Outcome from session:
 - Structured bottleneck isolation and instrumentation approach.
 - Container service architecture refactor removed previous serialization-heavy behavior.
 - Throughput improved from ~17.3 FPS to ~21.3 FPS in controlled runs.
-- Logging and launch tunables now support fast, repeatable A/B tests.
+- Logging and launch tunables now support fast, repeatable paired-comparison tests.
 
 **What failed or degraded:**
 - Flight attempt could not proceed due to bad weather conditions.
 - Some residual throughput jitter remains upstream (camera/client pacing variance).
 
 **Immediate corrective actions (Friday):**
-- Run focused image-path A/B with frozen Baseline B settings and compare FPS, `lat_ms`, `pre_ms`, `resize_ms`, `pub_dt_p50_ms`, `pub_dt_p95_ms`.
+- Run focused image-path comparison with frozen Baseline B settings and compare FPS, `lat_ms`, `pre_ms`, `resize_ms`, `pub_dt_p50_ms`, `pub_dt_p95_ms`.
 - Re-test full stack (tracker + target) first without rosbag, then repeat as separate profiling run with recording enabled.
 - Stop further micro-tuning unless direct `640x640` path materially improves toward mid/high-20s FPS; otherwise classify next bottleneck as camera/ROS transport overhead.
 
