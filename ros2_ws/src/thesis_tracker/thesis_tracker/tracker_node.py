@@ -142,6 +142,8 @@ class TrackerNode(Node):
         self.publish_tracks_requires_subscribers = bool(
             self.get_parameter("publish_tracks_requires_subscribers").value
         )
+        self.declare_parameter("publish_timing_topic", False)
+        self.publish_timing_topic = bool(self.get_parameter("publish_timing_topic").value)
 
         # Instrumentation controls
         self.declare_parameter("profiling_enabled", True)
@@ -174,6 +176,7 @@ class TrackerNode(Node):
             f"type={self._tracker_type_current}, min_score={self.min_score}, "
             f"publish_tracks={self.publish_tracks}, "
             f"publish_tracks_requires_subscribers={self.publish_tracks_requires_subscribers}, "
+            f"publish_timing_topic={self.publish_timing_topic}, "
             f"profiling_enabled={self.profiling_enabled}, "
             f"log_every_n={self.profiling_log_every_n}, "
             f"publish_details={self.profiling_publish_details}, "
@@ -482,7 +485,8 @@ class TrackerNode(Node):
             tmsg.ros_wait_ms = float(queue_delay_ms)
             # Keep detailed non-canonical profiling local to logs only.
 
-        self.pub_timing.publish(tmsg)
+        if self.publish_timing_topic:
+            self.pub_timing.publish(tmsg)
 
         gc_after = self._gc_collections_seen if (self.profiling_gc_probe and should_log_profile) else 0
         gc_count_after = gc.get_count() if (self.profiling_gc_probe and should_log_profile) else (0, 0, 0)

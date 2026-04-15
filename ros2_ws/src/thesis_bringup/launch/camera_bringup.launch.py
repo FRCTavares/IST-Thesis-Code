@@ -11,6 +11,10 @@ def generate_launch_description() -> LaunchDescription:
 
     width_arg = DeclareLaunchArgument("width", default_value="1280")
     height_arg = DeclareLaunchArgument("height", default_value="720")
+    publish_width_arg = DeclareLaunchArgument("publish_width", default_value="0")
+    publish_height_arg = DeclareLaunchArgument("publish_height", default_value="0")
+    publish_resize_mode_arg = DeclareLaunchArgument("publish_resize_mode", default_value="letterbox")
+    publish_encoding_arg = DeclareLaunchArgument("publish_encoding", default_value="bgr8")
     fps_arg = DeclareLaunchArgument("fps", default_value="30.0")
     flip_image_arg = DeclareLaunchArgument("flip_image", default_value="true")
 
@@ -57,6 +61,10 @@ def generate_launch_description() -> LaunchDescription:
                 "sensor_subdev": LaunchConfiguration("sensor_subdev"),
                 "width": LaunchConfiguration("width"),
                 "height": LaunchConfiguration("height"),
+                "publish_width": LaunchConfiguration("publish_width"),
+                "publish_height": LaunchConfiguration("publish_height"),
+                "publish_resize_mode": LaunchConfiguration("publish_resize_mode"),
+                "publish_encoding": LaunchConfiguration("publish_encoding"),
                 "fps": LaunchConfiguration("fps"),
                 "frame_id": LaunchConfiguration("frame_id"),
                 "fourcc": LaunchConfiguration("fourcc"),
@@ -98,6 +106,10 @@ def generate_launch_description() -> LaunchDescription:
             sensor_subdev_arg,
             width_arg,
             height_arg,
+            publish_width_arg,
+            publish_height_arg,
+            publish_resize_mode_arg,
+            publish_encoding_arg,
             fps_arg,
             frame_id_arg,
             fourcc_arg,

@@ -78,6 +78,57 @@ Completed:
 
 Open next step:
 
-- Re-run queue-depth 1-vs-2 comparison (`hailo_queue_max_buffers` 1 vs 2) under this frozen baseline and only keep variants that improve `container_queue_ms` without reducing `/timing` Hz.
+- Continue backend-path redesign below Python-side policy level (engine ownership/submission path and integration strategy), then revalidate against the frozen baseline.
 
 Outcome: the no-videoconvert candidate is rejected; baseline remains stable and evidence-backed.
+
+## Late Session Update - Branch Closure and Redesign Reality Check
+
+### Frozen safe live baseline (enforced in code + launcher defaults)
+
+- `async_max_inflight=1`
+- `hailo_use_videoconvert=true`
+- `allow_stub_fallback=false`
+- tracker `publish_timing_topic=false`
+- camera publish shape `640x640` (`bgr8`)
+
+### What today proved clearly
+
+1. Preprocessing is no longer the main bottleneck.
+2. `async_max_inflight=2` is bad on this backend path.
+3. First single-owner redesign iteration did not materially beat the frozen baseline.
+
+This is not a good performance result, but it is a good engineering result: uncertainty was reduced with clean, comparable evidence.
+
+### Closed tuning branches
+
+- Rejected: multi-caller in-flight path (`async_max_inflight=2`) on current backend ownership model.
+- Rejected: `hailo_use_videoconvert=false` on current backend path.
+
+### Single-owner redesign smoke validation (45 s)
+
+Run:
+
+- `owner_validate_20260415_230120`
+- timing: `reports/timing/owner_validate_20260415_230120_smoke_45s.json`
+- invariants: `reports/timing/owner_validate_20260415_230120_smoke_45s_invariants.log`
+
+Against frozen baseline (`vc_ablation_20260415_223635_A_on`):
+
+- `/timing` Hz: `9.732 -> 9.655` (not improved)
+- `container_queue_ms` p95: `106.799 -> 107.499` (not improved)
+- `e2e_det_ms` p95: `115.654 -> 117.302` (not improved)
+- `infer_ms` p95: `8.688 -> 8.542` (stable/slightly better)
+- workload comparability: PASS (`detections_per_msg.mean`, `zero_ratio`)
+- invariants: clean
+
+Decision:
+
+- NO-GO for 10-minute confirmation on this iteration.
+
+### Thesis-relevant conclusion for this checkpoint
+
+Safe live baseline remains operational default.
+Preprocessing bottleneck has been reduced.
+Backend-path contention/ownership remains the dominant limiter.
+Next gains require deeper backend-path redesign or different engine integration strategy, not more launch-flag tuning.

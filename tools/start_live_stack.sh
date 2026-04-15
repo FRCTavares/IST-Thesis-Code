@@ -202,11 +202,19 @@ Options:
     --tracker-min-hits <N>              SORT/OCSORT min hits before confirm (default: 3)
     --tracker-centre-gate <F>           SORT/OCSORT centre gating pixels (default: 200)
     --tracks-off                        Disable /tracks publishing from tracker
-    --tracks-require-subscribers        Publish /tracks only when subscribers are present
-    --tracks-ignore-subscribers         Publish /tracks regardless of subscriber count (default)
+    --tracks-require-subscribers        Publish /tracks only when subscribers are present (default)
+    --tracks-ignore-subscribers         Publish /tracks regardless of subscriber count
+    --tracker-timing-off                Disable /timing_tracker publishing (default)
+    --tracker-timing-on                 Enable /timing_tracker publishing
     --timing-off                        Disable /timing publishing from inference client
-    --camera-width <N>                  Camera publish width (default: 1280)
-    --camera-height <N>                 Camera publish height (default: 720)
+    --camera-width <N>                  Camera capture width (default: 1280)
+    --camera-height <N>                 Camera capture height (default: 720)
+    --camera-publish-width <N>          /camera/image_raw width (default: mode-specific)
+    --camera-publish-height <N>         /camera/image_raw height (default: mode-specific)
+    --camera-publish-resize-mode <resize|letterbox>
+                                                                            /camera/image_raw reshape mode (default: letterbox)
+    --camera-publish-encoding <bgr8|rgb8>
+                                                                            /camera/image_raw encoding (default: bgr8)
     --camera-fps <N>                    Camera publish fps (default: 30)
     --dashboard-fps <N>                 Dashboard image publish fps (default: 30)
     --camera-no-flip                    Disable camera frame flip
@@ -226,12 +234,15 @@ Options:
     --perception-image-qos-depth <N>    Perception image subscription depth (single-process default: 2)
     --perception-hailo-queue-buffers <N>
                                                                             Hailo Gst queue max-size-buffers (single-process default: 2)
+    --perception-async-max-inflight <N>  Experimental request for in-flight calls (single-process owner path enforces 1)
     --perception-async-latest-frame-off  Disable async latest-frame inference worker (single-process)
     --perception-async-latest-frame-on   Enable async latest-frame inference worker (single-process default)
     --perception-hailo-videoconvert-off  Disable pre-hailonet videoconvert stage (single-process)
     --perception-hailo-videoconvert-on   Enable pre-hailonet videoconvert stage (single-process default)
     --perception-gc-off                 Disable Python cyclic GC in perception node
     --perception-gc-on                  Enable Python cyclic GC in perception node (default)
+    --perception-no-stub-fallback       Fail fast if Hailo backend initialization fails (default)
+    --perception-allow-stub-fallback    Allow stub fallback when Hailo backend initialization fails
   --no-dashboard                     Disable dashboard bridge
     --no-tracker                       Do not start tracker node
     --no-target                        Do not start target selector node
@@ -256,10 +267,16 @@ TRACKER_MAX_AGE=4
 TRACKER_MIN_HITS=3
 TRACKER_CENTRE_GATE=200.0
 TRACKER_PUBLISH_TRACKS_BOOL="true"
-TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL="false"
+TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL="true"
+TRACKER_PUBLISH_TIMING_BOOL="false"
 INFER_PUBLISH_TIMING_BOOL="true"
 CAMERA_WIDTH=1280
 CAMERA_HEIGHT=720
+CAMERA_PUBLISH_WIDTH=0
+CAMERA_PUBLISH_HEIGHT=0
+CAMERA_PUBLISH_RESIZE_MODE="letterbox"
+CAMERA_PUBLISH_ENCODING="bgr8"
+CAMERA_PUBLISH_SHAPE_EXPLICIT=0
 CAMERA_FPS=30.0
 CAMERA_DASHBOARD_FPS=30.0
 CAMERA_FLIP_BOOL="true"
@@ -278,8 +295,10 @@ INFER_TIMEOUT_LOG_EVERY=20
 PERCEPTION_IMAGE_QOS_DEPTH=2
 PERCEPTION_HAILO_QUEUE_BUFFERS=2
 PERCEPTION_ASYNC_LATEST_FRAME_BOOL="true"
+PERCEPTION_ASYNC_MAX_INFLIGHT=1
 PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL="true"
 PERCEPTION_GC_DISABLE_BOOL="false"
+PERCEPTION_ALLOW_STUB_FALLBACK_BOOL="false"
 ENABLE_DASHBOARD_BRIDGE=1
 ENABLE_TRACKER=1
 ENABLE_TARGET_SELECTOR=1
@@ -405,6 +424,14 @@ while [[ $# -gt 0 ]]; do
             TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL="false"
             shift
             ;;
+        --tracker-timing-off)
+            TRACKER_PUBLISH_TIMING_BOOL="false"
+            shift
+            ;;
+        --tracker-timing-on)
+            TRACKER_PUBLISH_TIMING_BOOL="true"
+            shift
+            ;;
         --timing-off)
             INFER_PUBLISH_TIMING_BOOL="false"
             shift
@@ -425,6 +452,44 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             CAMERA_HEIGHT="$2"
+            shift 2
+            ;;
+        --camera-publish-width)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-publish-width requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_PUBLISH_WIDTH="$2"
+            CAMERA_PUBLISH_SHAPE_EXPLICIT=1
+            shift 2
+            ;;
+        --camera-publish-height)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-publish-height requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_PUBLISH_HEIGHT="$2"
+            CAMERA_PUBLISH_SHAPE_EXPLICIT=1
+            shift 2
+            ;;
+        --camera-publish-resize-mode)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-publish-resize-mode requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_PUBLISH_RESIZE_MODE="${2,,}"
+            shift 2
+            ;;
+        --camera-publish-encoding)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --camera-publish-encoding requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_PUBLISH_ENCODING="${2,,}"
             shift 2
             ;;
         --camera-fps)
@@ -574,6 +639,15 @@ while [[ $# -gt 0 ]]; do
             PERCEPTION_HAILO_QUEUE_BUFFERS="$2"
             shift 2
             ;;
+        --perception-async-max-inflight)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --perception-async-max-inflight requires a value"
+                print_usage
+                exit 1
+            fi
+            PERCEPTION_ASYNC_MAX_INFLIGHT="$2"
+            shift 2
+            ;;
         --perception-async-latest-frame-off)
             PERCEPTION_ASYNC_LATEST_FRAME_BOOL="false"
             shift
@@ -596,6 +670,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --perception-gc-on)
             PERCEPTION_GC_DISABLE_BOOL="false"
+            shift
+            ;;
+        --perception-no-stub-fallback)
+            PERCEPTION_ALLOW_STUB_FALLBACK_BOOL="false"
+            shift
+            ;;
+        --perception-allow-stub-fallback)
+            PERCEPTION_ALLOW_STUB_FALLBACK_BOOL="true"
             shift
             ;;
         --no-tracker)
@@ -652,6 +734,16 @@ case "$PERCEPTION_MODE" in
         ;;
 esac
 
+if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 ]]; then
+    if [[ "$PERCEPTION_MODE" == "single-process" ]]; then
+        CAMERA_PUBLISH_WIDTH=640
+        CAMERA_PUBLISH_HEIGHT=640
+    else
+        CAMERA_PUBLISH_WIDTH="$CAMERA_WIDTH"
+        CAMERA_PUBLISH_HEIGHT="$CAMERA_HEIGHT"
+    fi
+fi
+
 case "$TRACKER_TYPE" in
     sort|ocsort|bytetrack)
         ;;
@@ -689,6 +781,34 @@ if ! [[ "$CAMERA_HEIGHT" =~ ^[0-9]+$ ]] || [[ "$CAMERA_HEIGHT" -lt 1 ]]; then
     echo "[error] --camera-height must be a positive integer"
     exit 1
 fi
+
+if ! [[ "$CAMERA_PUBLISH_WIDTH" =~ ^[0-9]+$ ]] || [[ "$CAMERA_PUBLISH_WIDTH" -lt 1 ]]; then
+    echo "[error] --camera-publish-width must be a positive integer"
+    exit 1
+fi
+
+if ! [[ "$CAMERA_PUBLISH_HEIGHT" =~ ^[0-9]+$ ]] || [[ "$CAMERA_PUBLISH_HEIGHT" -lt 1 ]]; then
+    echo "[error] --camera-publish-height must be a positive integer"
+    exit 1
+fi
+
+case "$CAMERA_PUBLISH_RESIZE_MODE" in
+    resize|letterbox)
+        ;;
+    *)
+        echo "[error] --camera-publish-resize-mode must be one of resize, letterbox"
+        exit 1
+        ;;
+esac
+
+case "$CAMERA_PUBLISH_ENCODING" in
+    bgr8|rgb8)
+        ;;
+    *)
+        echo "[error] --camera-publish-encoding must be one of bgr8, rgb8"
+        exit 1
+        ;;
+esac
 
 if ! [[ "$CAMERA_DASHBOARD_FPS" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
     echo "[error] --dashboard-fps must be a positive number"
@@ -753,6 +873,15 @@ fi
 if ! [[ "$PERCEPTION_HAILO_QUEUE_BUFFERS" =~ ^[0-9]+$ ]] || [[ "$PERCEPTION_HAILO_QUEUE_BUFFERS" -lt 1 ]]; then
     echo "[error] --perception-hailo-queue-buffers must be a positive integer"
     exit 1
+fi
+
+if ! [[ "$PERCEPTION_ASYNC_MAX_INFLIGHT" =~ ^[0-9]+$ ]] || [[ "$PERCEPTION_ASYNC_MAX_INFLIGHT" -lt 1 ]]; then
+    echo "[error] --perception-async-max-inflight must be a positive integer"
+    exit 1
+fi
+
+if [[ "$PERCEPTION_MODE" == "single-process" ]] && [[ "$PERCEPTION_ASYNC_MAX_INFLIGHT" -ne 1 ]]; then
+    echo "[warn] single-process owner path enforces async_max_inflight=1; requested=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
 fi
 
 if ! [[ "$CONTROL_STALE_TIMEOUT_S" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
@@ -979,6 +1108,10 @@ build_camera_args() {
 
     CAMERA_ARGS+=("width:=$CAMERA_WIDTH")
     CAMERA_ARGS+=("height:=$CAMERA_HEIGHT")
+    CAMERA_ARGS+=("publish_width:=$CAMERA_PUBLISH_WIDTH")
+    CAMERA_ARGS+=("publish_height:=$CAMERA_PUBLISH_HEIGHT")
+    CAMERA_ARGS+=("publish_resize_mode:=$CAMERA_PUBLISH_RESIZE_MODE")
+    CAMERA_ARGS+=("publish_encoding:=$CAMERA_PUBLISH_ENCODING")
     CAMERA_ARGS+=("fps:=$CAMERA_FPS")
     CAMERA_ARGS+=("dashboard_fps:=$CAMERA_DASHBOARD_FPS")
     CAMERA_ARGS+=("flip_image:=$CAMERA_FLIP_BOOL")
@@ -1034,11 +1167,11 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="on"; fi
 log_info "run: $RUN_ID"
 log_info "logs: $RUN_DIR"
 log_info "mode: perception=$PERCEPTION_MODE"
-log_info "cfg: camera=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} img_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_latest_frame=${PERCEPTION_ASYNC_LATEST_FRAME_BOOL} hailo_videoconvert=${PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL} perception_gc_disable=${PERCEPTION_GC_DISABLE_BOOL} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
+log_info "cfg: camera_capture=${CAMERA_WIDTH}x${CAMERA_HEIGHT} camera_publish=${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}(${CAMERA_PUBLISH_RESIZE_MODE},${CAMERA_PUBLISH_ENCODING})@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} img_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_latest_frame=${PERCEPTION_ASYNC_LATEST_FRAME_BOOL} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT} hailo_videoconvert=${PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL} perception_gc_disable=${PERCEPTION_GC_DISABLE_BOOL} allow_stub_fallback=${PERCEPTION_ALLOW_STUB_FALLBACK_BOOL} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
 log_info "cfg: camera_rate_controls=${CAMERA_APPLY_RATE_CONTROLS_BOOL} sensor_max_fps=${CAMERA_SENSOR_MAX_FPS} ae_upper=${CAMERA_SENSOR_AE_UPPER} ae_max=${CAMERA_SENSOR_AE_MAX} exposure_mode=${CAMERA_SENSOR_EXPOSURE_MODE}"
 log_info "nodes: tracker=$tracker_state target=$target_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
-    log_info "tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL tracks_require_subscribers=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL profile=$TRACKER_PROFILE_ENABLED gc_probe=$TRACKER_PROFILE_GC_PROBE iou=$TRACKER_IOU_THRESHOLD max_age=$TRACKER_MAX_AGE min_hits=$TRACKER_MIN_HITS centre_gate=$TRACKER_CENTRE_GATE"
+    log_info "tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL tracks_require_subscribers=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL timing_topic=$TRACKER_PUBLISH_TIMING_BOOL profile=$TRACKER_PROFILE_ENABLED gc_probe=$TRACKER_PROFILE_GC_PROBE iou=$TRACKER_IOU_THRESHOLD max_age=$TRACKER_MAX_AGE min_hits=$TRACKER_MIN_HITS centre_gate=$TRACKER_CENTRE_GATE"
 fi
 log_step "preflight checks"
 if ! check_stuck_camera_processes; then
@@ -1123,7 +1256,11 @@ nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_
 else
     log_step "single-process perception mode selected"
     log_info "single-process mode will run in-process perception_pipeline_node"
-    log_hint "if host Hailo runtime is unavailable, node will fallback to stub backend"
+    if [[ "$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL" == "true" ]]; then
+        log_hint "host Hailo init failures will fallback to stub backend (override enabled)"
+    else
+        log_hint "host Hailo init failures are fail-fast by default; use --perception-allow-stub-fallback to override"
+    fi
     log_info "skipping container detection_zmq startup in single-process mode"
 fi
 
@@ -1257,11 +1394,13 @@ else
         -p image_qos_depth:=$PERCEPTION_IMAGE_QOS_DEPTH \
         -p hailo_queue_max_buffers:=$PERCEPTION_HAILO_QUEUE_BUFFERS \
         -p async_latest_frame:=$PERCEPTION_ASYNC_LATEST_FRAME_BOOL \
+        -p async_max_inflight:=$PERCEPTION_ASYNC_MAX_INFLIGHT \
         -p hailo_use_videoconvert:=$PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL \
         -p disable_python_gc:=$PERCEPTION_GC_DISABLE_BOOL \
         -p label:=person \
         -p min_score:=0.35 \
         -p inference_backend:=hailo_gst \
+        -p allow_stub_fallback:=$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL \
         "${PERCEPTION_POST_SO_ARGS[@]}" \
         -p infer_timeout_ms:=$INFER_TIMEOUT_MS \
         -p timeout_log_every:=$INFER_TIMEOUT_LOG_EVERY \
@@ -1283,6 +1422,7 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
         -p centre_gate:=$TRACKER_CENTRE_GATE \
         -p publish_tracks:=$TRACKER_PUBLISH_TRACKS_BOOL \
         -p publish_tracks_requires_subscribers:=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL \
+        -p publish_timing_topic:=$TRACKER_PUBLISH_TIMING_BOOL \
         -p profiling_enabled:=$([[ "$TRACKER_PROFILE_ENABLED" -eq 1 ]] && echo true || echo false) \
         -p profiling_log_every_n:=$TRACKER_PROFILE_LOG_EVERY_N \
         -p profiling_serialize_sample_every_n:=$TRACKER_PROFILE_SERIALIZE_EVERY_N \
@@ -1318,9 +1458,16 @@ if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
 fi
 
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
+    # Container model-switch API is only meaningful in legacy perception mode.
+    DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL="false"
+    if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
+        DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL="true"
+    fi
+
     start_ros_bg dashboard_bridge ros2 run thesis_bringup dashboard_bridge_node --ros-args \
         -p img_w:=640 \
-        -p img_h:=640
+        -p img_h:=640 \
+        -p enable_container_model_switch_api:=$DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL
     sleep 1
     if ! check_proc_alive dashboard_bridge; then
         stop_stack

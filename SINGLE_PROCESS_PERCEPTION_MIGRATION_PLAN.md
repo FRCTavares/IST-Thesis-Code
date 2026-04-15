@@ -6,6 +6,15 @@ Date: 2026-04-13 (updated after live validation)
 
 Owner: Thesis-Code runtime pipeline
 
+## 0. Current Operational Status (2026-04-15)
+
+- Launcher default is single-process mode (`tools/start_live_stack.sh` defaults to `--perception-mode single-process`).
+- Legacy ZMQ mode remains intentionally available as rollback (`--perception-mode legacy`).
+- Queue-buffer operating-point decision and sustained full-stack tail-latency improvements are still active work.
+- Phase-2 test with concurrent in-flight calls on a single engine (`async_max_inflight=2`) failed to improve throughput and significantly worsened latency tails; this path is not viable as a live default.
+- Safe live baseline is now frozen at: `async_max_inflight=1`, `allow_stub_fallback=false`, tracker timing topic off, camera publish `640x640`.
+- This document remains the optimization and validation ledger, while `RUNBOOK.md` is the command source of truth.
+
 ## 1. Executive Summary
 
 Goal: remove per-frame host-to-container ZMQ request/reply transport and move to a single-process perception pipeline where camera capture and Hailo detection run in the same runtime path.
@@ -33,8 +42,13 @@ Current evidence from latest validated runs (single-process mode):
   - relative to baseline full-stack: throughput and p99 tails improved strongly; `pub_dt_ms` p95 remains above baseline target
 - pass8 (`--perception-hailo-queue-buffers 1`) produced very large gains (`/timing` 11.20 Hz, `e2e_det_ms` p95 89.13, `pub_dt_ms` p95/p99 94.31/107.35), but log review showed long stretches with zero detections, so this run is treated as provisional pending controlled workload-matched reruns
 - live timing collector now includes detection-stream load stats (`detections_per_msg` and `zero_ratio`) to enforce comparability between runs
+- phase2-inflight2 validation (`--perception-async-max-inflight 2`, queue buffers 2, videoconvert on) showed no meaningful throughput gain (`/timing` ~9.8 Hz unchanged) and large latency regressions (`container_queue_ms` p95 ~113.68 -> ~197.46, `infer_ms` p95 ~9.62 -> ~108.15, `e2e_det_ms` p95 ~123.88 -> ~304.82), with invariants still clean and zero-detection ratio stable.
+- recovery validation at frozen baseline (`recovery_inflight1_20260415_222443`, `async_max_inflight=1`, videoconvert on) restored latency close to pre-phase2 baseline and far below inflight2 regression (`container_queue_ms` p95 117.14, `infer_ms` p95 11.06, `e2e_det_ms` p95 130.00, `e2e_target_ms` p95 135.84, zero-detection ratio 0.0).
+- recovery run throughput was lower than the earlier inflight1 baseline (`/timing` 8.63 Hz vs 9.80 Hz) and `pub_dt_ms` p95 was higher (181.91 vs 127.50), with modestly higher detection load (`detections_per_msg.mean` 1.07 vs 1.00), so backend-overhead ablations should continue under workload-matched reruns.
+- paired same-session videoconvert ablation (`vc_ablation_20260415_223635`), with all other knobs frozen (`async_max_inflight=1`, fail-fast on, tracker timing off), showed workload comparability and no invariant failures but no material latency win from disabling videoconvert: `container_queue_ms` p95 worsened (106.80 -> 110.15), `e2e_det_ms` p95 worsened (115.65 -> 121.87), cadence dipped slightly (9.73 -> 9.60 Hz), and `pub_dt_ms` tails regressed strongly (p95 118.69 -> 160.00, p99 148.49 -> 196.54).
+- first single-owner redesign smoke run (`owner_validate_20260415_230120`, frozen defaults, 45s) kept workload comparable and invariants clean, with stable `infer_ms` p95 (8.69 -> 8.54), but did not show material latency/cadence gains versus frozen baseline (`/timing` 9.73 -> 9.66, `container_queue_ms` p95 106.80 -> 107.50, `e2e_det_ms` p95 115.65 -> 117.30); 10-minute confirmation was deferred as no-go for this iteration.
 
-Conclusion: the single-process architecture is implemented and materially faster than baseline in comparable runs; next priority is to close the remaining `pub_dt_ms` p95 gap and finalize queue-buffer defaults using workload-matched validation.
+Conclusion: the single-process architecture is implemented and materially faster than legacy in comparable runs, and recovery at `async_max_inflight=1` is now revalidated. The current single-engine backend path still does not tolerate concurrent in-flight Python callers, and paired A/B evidence rejects `hailo_use_videoconvert=false` as a default. Next gains should focus on backend-path redesign rather than repeated launch-flag toggling.
 
 ## 1.1 Status Snapshot (2026-04-13)
 
@@ -50,9 +64,12 @@ Conclusion: the single-process architecture is implemented and materially faster
 - Done: `/timing` now publishes pre-infer queue wait as `container_queue_ms` (`t_infer_start_ns - t_pre_end_ns`) and canonical timing contract includes it for standard JSON reports.
 - Done: perception path now supports async latest-frame inference mode (`async_latest_frame=true` default) to decouple image callback from infer wait and prefer freshness over stale frame processing.
 - Done: launcher exposes perception toggles for explicit baseline-vs-candidate comparisons (`--perception-async-latest-frame-{on,off}`, `--perception-hailo-videoconvert-{on,off}`) without code edits.
+- Done: Phase-2 concurrent-caller experiment at `async_max_inflight=2` is now classified as failed for this backend path; live default is reverted/frozen to `async_max_inflight=1` pending redesign.
+- Done: post-revert recovery validation at frozen baseline completed (`recovery_inflight1_20260415_222443`) with latency metrics returned near pre-phase2 inflight1 levels and invariants clean.
+- Done: paired same-session videoconvert A/B (`vc_ablation_20260415_223635`) completed and rejected videoconvert-off (`hailo_use_videoconvert=false`) as non-beneficial for this backend path.
 - In progress: controlled Hailo queue-buffer decision (`--perception-hailo-queue-buffers 1` vs `2`) with matched detection workload.
-- In progress: reducing full-stack `pub_dt_ms` p95 while preserving current p99 and throughput gains.
-- Pending: long soak stability gate and cutover-default decision.
+- In progress: reducing full-stack `pub_dt_ms` p95 and `container_queue_ms` tails with backend-overhead ablations while preserving detection stability.
+- Pending: long soak stability gate and queue-buffer operating-point decision.
 
 ## 2. Current State and Problem Statement
 
@@ -259,7 +276,7 @@ Done criteria:
 
 - documented rollback command tested.
 
-### C3. Update operational docs [IN PROGRESS]
+### C3. Update operational docs [DONE]
 
 Update:
 
@@ -274,7 +291,7 @@ Content:
 
 Done criteria:
 
-- docs match runtime behavior.
+- docs match runtime behavior and launcher defaults.
 
 ## Workstream D: Validation Matrix
 
@@ -336,13 +353,13 @@ Ensure unchanged behavior for:
 
 ## Workstream E: Cutover and Cleanup
 
-### E1. Controlled default switch [PENDING]
+### E1. Controlled hardening with single-process default [IN PROGRESS]
 
 Step plan:
 
-1. Ship with legacy default.
-2. Run repeated validation in single-process mode.
-3. Flip default only after passing gates.
+1. Keep single-process as launcher default.
+2. Run repeated validation and workload-matched queue-buffer comparisons.
+3. Keep legacy rollback path healthy while hardening single-process operation.
 
 ### E2. Legacy path deprecation [PENDING]
 
@@ -357,6 +374,50 @@ Eventually remove:
 
 - frame ZMQ request/reply transport code
 - unused flags and dead metrics
+
+## Workstream F: Backend Submission Redesign Experiment (Next)
+
+### F1. Single-owner engine submission architecture [NEXT]
+
+Target runtime shape:
+
+1. latest-frame slot (overwrite policy)
+2. one dedicated engine-owner submission thread
+3. appsrc -> hailonet -> post path in the existing Gst backend
+4. async result handling
+5. ROS detections/timing publication
+
+Key rule:
+
+- many producers may overwrite the latest frame before submit, but only one owner submits to the engine.
+
+### F2. Design rules [NEXT]
+
+- one engine instance
+- one submission owner
+- latest-frame overwrite before submit
+- no concurrent caller access to appsrc/engine
+- no backlog growth
+- stale frames dropped before infer, not after
+- compact detections mapped back to ROS contracts
+
+### F3. Closed branches (do not reopen until ownership model changes) [ACTIVE RULE]
+
+- `async_max_inflight=2` branch is closed on current backend path
+- `hailo_use_videoconvert=false` branch is closed on current backend path
+
+### F4. Redesign success criteria [NEXT]
+
+Compare against the frozen baseline only when workload comparability and invariants are satisfied.
+
+Required outcomes:
+
+- `/timing` Hz increases materially
+- `container_queue_ms` p95 decreases materially
+- `e2e_det_ms` p95 decreases materially
+- `infer_ms` remains roughly stable
+- detection workload remains comparable (`detections_per_msg.mean`, `zero_ratio`)
+- invariant checks remain clean
 
 ## 6. File-Level Change Plan
 
@@ -513,7 +574,9 @@ Step 6:
 - runbook and README updated
 - rollback tested and documented
 
-## 12. Tomorrow Focus (2026-04-14)
+## 12. Historical Session Snapshot (2026-04-14)
+
+This section is preserved as a dated execution log from the 2026-04-14 tuning session.
 
 Primary objective:
 

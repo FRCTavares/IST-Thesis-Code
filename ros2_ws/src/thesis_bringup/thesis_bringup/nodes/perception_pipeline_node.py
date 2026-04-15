@@ -13,6 +13,7 @@ from typing import Any
 import cv2
 import numpy as np
 import rclpy
+from rcl_interfaces.msg import SetParametersResult
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
@@ -379,6 +380,28 @@ class HailoGstInferenceEngine:
         except Exception:
             pass
 
+    def reload_hef(self, hef_path: str) -> None:
+        if self._closed:
+            raise RuntimeError("cannot reload HEF on a closed engine")
+
+        new_hef_path = str(hef_path).strip()
+        if not new_hef_path:
+            raise RuntimeError("HEF path cannot be empty")
+
+        with self._cv:
+            self._pending_meta_by_pts.clear()
+            self._results_by_pts.clear()
+            self._cv.notify_all()
+
+        try:
+            if self.pipeline is not None:
+                self.pipeline.set_state(self.Gst.State.NULL)
+        except Exception:
+            pass
+
+        self.hef_path = new_hef_path
+        self._build_pipeline()
+
 
 class PerceptionPipelineNode(Node):
     """Single-process perception node with optional in-process Hailo backend."""
@@ -395,12 +418,13 @@ class PerceptionPipelineNode(Node):
         self.declare_parameter("image_reliability", "best_effort")
         self.declare_parameter("image_qos_depth", 2)
         self.declare_parameter("inference_backend", "hailo_gst")
-        self.declare_parameter("allow_stub_fallback", True)
+        self.declare_parameter("allow_stub_fallback", False)
         self.declare_parameter("infer_timeout_ms", 300)
         self.declare_parameter("timeout_log_every", 20)
         self.declare_parameter("log_every", 240)
         self.declare_parameter("disable_python_gc", False)
         self.declare_parameter("async_latest_frame", True)
+        self.declare_parameter("async_max_inflight", 1)
 
         thesis_root = os.getenv("THESIS_ROOT", "/home/francisco/Desktop/Thesis-Code")
         default_hef = f"{thesis_root}/infer_service/resources/hefs/yolov6n_hailo8.hef"
@@ -430,6 +454,14 @@ class PerceptionPipelineNode(Node):
         self.log_every = max(0, int(self.get_parameter("log_every").value))
         self.disable_python_gc = bool(self.get_parameter("disable_python_gc").value)
         self.async_latest_frame = bool(self.get_parameter("async_latest_frame").value)
+        self.async_max_inflight_requested = max(1, int(self.get_parameter("async_max_inflight").value))
+        # Single-owner engine submission model: only one caller may submit to appsrc/engine.
+        self.async_max_inflight = 1
+        if self.async_max_inflight_requested != 1:
+            self.get_logger().warning(
+                "single-owner backend path enforces async_max_inflight=1; "
+                f"requested={self.async_max_inflight_requested}"
+            )
 
         self._gc_was_enabled = gc.isenabled()
         self._gc_disabled_by_node = False
@@ -447,6 +479,11 @@ class PerceptionPipelineNode(Node):
         self.hailo_use_videoconvert = bool(self.get_parameter("hailo_use_videoconvert").value)
 
         self.label_filter = _normalize_label(self.label)
+
+        self._engine_lock = threading.RLock()
+        self._engine_cv = threading.Condition(self._engine_lock)
+        self._engine_active_calls = 0
+        self._param_cb_handle = self.add_on_set_parameters_callback(self._on_set_parameters)
 
         self.resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
         self.rgb_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
@@ -490,7 +527,7 @@ class PerceptionPipelineNode(Node):
         if self.async_latest_frame:
             self._worker_thread = threading.Thread(
                 target=self._infer_worker_loop,
-                name="perception_infer_worker",
+                name="perception_engine_owner",
                 daemon=True,
             )
             self._worker_thread.start()
@@ -506,8 +543,108 @@ class PerceptionPipelineNode(Node):
             f"image_qos_depth={self.image_qos_depth} "
             f"disable_python_gc={self.disable_python_gc} "
             f"async_latest_frame={self.async_latest_frame} "
+            f"async_max_inflight_requested={self.async_max_inflight_requested} "
+            f"async_max_inflight_effective={self.async_max_inflight} "
             f"hailo_use_videoconvert={self.hailo_use_videoconvert}"
         )
+
+    def _wait_for_engine_idle_locked(self, timeout_s: float) -> bool:
+        deadline = time.monotonic() + max(0.0, float(timeout_s))
+        while self._engine_active_calls > 0:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0.0:
+                return False
+            self._engine_cv.wait(timeout=remaining)
+        return True
+
+    def _make_hailo_engine(self, hef_path: str) -> HailoGstInferenceEngine:
+        return HailoGstInferenceEngine(
+            width=self.img_w,
+            height=self.img_h,
+            fps=self.hailo_fps,
+            hef_path=hef_path,
+            post_so=self.hailo_post_so,
+            post_func=self.hailo_post_function,
+            video_sink=self.hailo_video_sink,
+            queue_max_buffers=self.hailo_queue_max_buffers,
+            use_videoconvert=self.hailo_use_videoconvert,
+            label_filter=self.label_filter,
+        )
+
+    def _switch_hailo_hef(self, new_hef_path: str) -> None:
+        old_hef_path = self.hailo_hef_path
+
+        with self._engine_lock:
+            if not self._wait_for_engine_idle_locked(timeout_s=10.0):
+                raise RuntimeError("engine busy while switching HEF")
+
+            if isinstance(self.engine, HailoGstInferenceEngine):
+                try:
+                    self.engine.reload_hef(new_hef_path)
+                except Exception as exc:
+                    # Best effort rollback to keep inference alive on switch failure.
+                    try:
+                        self.engine.reload_hef(old_hef_path)
+                    except Exception as rollback_exc:
+                        self.get_logger().error(
+                            "model switch rollback failed "
+                            f"(old_hef={old_hef_path}): {rollback_exc}"
+                        )
+                    raise RuntimeError(f"failed to reload HEF: {exc}") from exc
+
+                self.hailo_hef_path = new_hef_path
+                self.active_backend = "hailo_gst"
+                return
+
+            old_engine = self.engine
+            new_engine = self._make_hailo_engine(new_hef_path)
+            self.engine = new_engine
+            self.hailo_hef_path = new_hef_path
+            self.active_backend = "hailo_gst"
+
+            try:
+                old_engine.close()
+            except Exception:
+                pass
+
+    def _on_set_parameters(self, params) -> SetParametersResult:
+        requested_hef_path: str | None = None
+        for param in params:
+            if param.name == "hailo_hef_path":
+                requested_hef_path = str(param.value).strip()
+
+        if requested_hef_path is None:
+            return SetParametersResult(successful=True)
+
+        if self.inference_backend not in ("hailo_gst", "hailo", "gst"):
+            return SetParametersResult(
+                successful=False,
+                reason="model switch requires hailo backend",
+            )
+
+        if not requested_hef_path:
+            return SetParametersResult(
+                successful=False,
+                reason="hailo_hef_path cannot be empty",
+            )
+
+        if not os.path.isfile(requested_hef_path):
+            return SetParametersResult(
+                successful=False,
+                reason=f"HEF file not found: {requested_hef_path}",
+            )
+
+        if requested_hef_path == self.hailo_hef_path:
+            return SetParametersResult(successful=True, reason="HEF unchanged")
+
+        try:
+            self._switch_hailo_hef(requested_hef_path)
+        except Exception as exc:
+            self.get_logger().error(f"model switch rejected: {exc}")
+            return SetParametersResult(successful=False, reason=str(exc))
+
+        self.get_logger().info(f"model switch applied (hef={requested_hef_path})")
+        return SetParametersResult(successful=True, reason="model switch applied")
 
     def _build_engine(self):
         if self.inference_backend in ("stub", "none"):
@@ -523,18 +660,7 @@ class PerceptionPipelineNode(Node):
             return StubInferenceEngine()
 
         try:
-            engine = HailoGstInferenceEngine(
-                width=self.img_w,
-                height=self.img_h,
-                fps=self.hailo_fps,
-                hef_path=self.hailo_hef_path,
-                post_so=self.hailo_post_so,
-                post_func=self.hailo_post_function,
-                video_sink=self.hailo_video_sink,
-                queue_max_buffers=self.hailo_queue_max_buffers,
-                use_videoconvert=self.hailo_use_videoconvert,
-                label_filter=self.label_filter,
-            )
+            engine = self._make_hailo_engine(self.hailo_hef_path)
             self.active_backend = "hailo_gst"
             self.get_logger().info(
                 "initialized Hailo GStreamer backend "
@@ -573,10 +699,11 @@ class PerceptionPipelineNode(Node):
                 self.frames_overwritten += 1
             self._latest_frame = frame
             self.frames_enqueued += 1
-            self._worker_cv.notify()
+            self._worker_cv.notify_all()
 
     def _infer_worker_loop(self) -> None:
         while True:
+            frame: PreparedFrame | None = None
             with self._worker_cv:
                 while not self._worker_stop and self._latest_frame is None:
                     self._worker_cv.wait(timeout=0.2)
@@ -584,8 +711,9 @@ class PerceptionPipelineNode(Node):
                 if self._worker_stop:
                     return
 
-                frame = self._latest_frame
-                self._latest_frame = None
+                if self._latest_frame is not None:
+                    frame = self._latest_frame
+                    self._latest_frame = None
 
             if frame is None:
                 continue
@@ -593,7 +721,9 @@ class PerceptionPipelineNode(Node):
             try:
                 self._process_prepared_frame(frame)
             except Exception as exc:
-                self.get_logger().warning(f"async inference worker error: {exc}")
+                self.get_logger().warning(
+                    f"engine-owner inference worker error: {exc}"
+                )
 
     def _build_detection_array(self, frame: PreparedFrame, result: dict[str, Any]) -> Detection2DArray:
         det_header_frame_id = f"frame_{frame.frame_id}"
@@ -664,8 +794,13 @@ class PerceptionPipelineNode(Node):
 
     def _process_prepared_frame(self, frame: PreparedFrame) -> None:
         t_engine_start_ns = now_ns()
+        engine = None
+        with self._engine_lock:
+            engine = self.engine
+            self._engine_active_calls += 1
+
         try:
-            result = self.engine.infer(
+            result = engine.infer(
                 frame.infer_img,
                 seq=frame.seq,
                 frame_id=frame.frame_id,
@@ -675,6 +810,12 @@ class PerceptionPipelineNode(Node):
         except Exception as exc:
             self.get_logger().warning(f"in-process inference failed: {exc}")
             result = None
+        finally:
+            with self._engine_lock:
+                self._engine_active_calls = max(0, self._engine_active_calls - 1)
+                if self._engine_active_calls == 0:
+                    self._engine_cv.notify_all()
+
         t_engine_end_ns = now_ns()
 
         timeout_hit = result is None
@@ -930,7 +1071,7 @@ class PerceptionPipelineNode(Node):
                 self._worker_stop = True
                 self._worker_cv.notify_all()
 
-            if self._worker_thread is not None:
+            if self._worker_thread is not None and self._worker_thread.is_alive():
                 self._worker_thread.join(timeout=2.0)
 
         if self._gc_disabled_by_node:
@@ -940,7 +1081,12 @@ class PerceptionPipelineNode(Node):
                 pass
 
         try:
-            self.engine.close()
+            with self._engine_lock:
+                if not self._wait_for_engine_idle_locked(timeout_s=5.0):
+                    self.get_logger().warning(
+                        "shutdown waiting for active inference calls timed out"
+                    )
+                self.engine.close()
         except Exception:
             pass
 

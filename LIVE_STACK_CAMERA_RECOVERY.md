@@ -4,11 +4,31 @@
 
 This document captures the April 2026 incident where live stack startup failed due to camera bring-up issues after a crash/reboot cycle.
 
+This guide applies to both perception modes (`single-process` and `legacy`) because camera failure happens before inference path selection.
+
 Use this guide when:
 
 - inference service can run, but camera does not publish /camera/image_raw
 - media graph appears incomplete
 - /dev/video0 or /dev/v4l-subdev* is missing
+
+Related operator docs:
+
+- `RUNBOOK.md` for routine startup commands
+- `README.md` for path selection
+
+## Pre-launch gate (run before starting live stack)
+
+If these checks fail, fix camera bring-up first instead of launching the stack.
+
+```bash
+uname -r
+modinfo tevs || true
+ls -l /dev/v4l-subdev* 2>/dev/null || echo no-subdev
+v4l2-ctl --list-devices
+media-ctl -d /dev/media0 -p
+journalctl -k -b --no-pager | rg -i "tevs|rp1-cfe|pca953x|i2c|fail|error" | tail -n 120
+```
 
 ## Incident Summary
 
@@ -146,6 +166,11 @@ Step 5: Start live stack
 cd /home/francisco/Desktop/Thesis-Code
 ./tools/start_live_stack.sh
 ```
+
+Notes:
+
+- Default startup mode is `single-process`; camera recovery workflow is unchanged.
+- Use `./tools/start_live_stack.sh --perception-mode legacy` only when you explicitly need the rollback path.
 
 ## Expected Healthy State
 

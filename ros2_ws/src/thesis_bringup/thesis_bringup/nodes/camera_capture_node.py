@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 
 import cv2
+import numpy as np
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
@@ -27,6 +28,10 @@ class CameraCaptureNode(Node):
         self.declare_parameter("sensor_subdev", "/dev/v4l-subdev2")
         self.declare_parameter("width", 1280)
         self.declare_parameter("height", 720)
+        self.declare_parameter("publish_width", 0)
+        self.declare_parameter("publish_height", 0)
+        self.declare_parameter("publish_resize_mode", "letterbox")
+        self.declare_parameter("publish_encoding", "bgr8")
         self.declare_parameter("fps", 30.0)
         self.declare_parameter("frame_id", "camera")
         self.declare_parameter("fourcc", "UYVY")
@@ -62,6 +67,10 @@ class CameraCaptureNode(Node):
         self._sensor_subdev = self.get_parameter("sensor_subdev").value
         self._width = int(self.get_parameter("width").value)
         self._height = int(self.get_parameter("height").value)
+        self._publish_width = int(self.get_parameter("publish_width").value)
+        self._publish_height = int(self.get_parameter("publish_height").value)
+        self._publish_resize_mode = str(self.get_parameter("publish_resize_mode").value).strip().lower()
+        self._publish_encoding = str(self.get_parameter("publish_encoding").value).strip().lower()
         self._fps = float(self.get_parameter("fps").value)
         self._frame_id = self.get_parameter("frame_id").value
         self._fourcc = self.get_parameter("fourcc").value
@@ -96,6 +105,24 @@ class CameraCaptureNode(Node):
         self._capture_fps_topic = str(self.get_parameter("capture_fps_topic").value)
         self._publish_capture_fps_topic = bool(self.get_parameter("publish_capture_fps_topic").value)
 
+        self._publish_width_auto = self._publish_width <= 0
+        self._publish_height_auto = self._publish_height <= 0
+
+        if self._publish_width_auto:
+            self._publish_width = self._width
+        if self._publish_height_auto:
+            self._publish_height = self._height
+        if self._publish_resize_mode not in ("resize", "letterbox"):
+            self.get_logger().warn(
+                f"invalid publish_resize_mode='{self._publish_resize_mode}', using letterbox"
+            )
+            self._publish_resize_mode = "letterbox"
+        if self._publish_encoding not in ("bgr8", "rgb8"):
+            self.get_logger().warn(
+                f"invalid publish_encoding='{self._publish_encoding}', using bgr8"
+            )
+            self._publish_encoding = "bgr8"
+
         self._media_dev = self._resolve_media_device(self._media_dev)
         self._sensor_entity = self._resolve_sensor_entity(self._media_dev, self._sensor_entity)
         self._device = self._resolve_video_device(self._device)
@@ -105,6 +132,8 @@ class CameraCaptureNode(Node):
         self._latest_frame_id = 0
         self._last_published_frame_id = 0
         self._last_dashboard_published_frame_id = 0
+        self._latest_capture_stamp_sec = 0
+        self._latest_capture_stamp_nanosec = 0
         self._frame_lock = threading.Lock()
         self._new_frame_event = threading.Event()
         self._dashboard_event = threading.Event()
@@ -113,6 +142,9 @@ class CameraCaptureNode(Node):
         self._thread: threading.Thread | None = None
         self._publisher_thread: threading.Thread | None = None
         self._dashboard_thread: threading.Thread | None = None
+        self._publish_resize_buf: np.ndarray | None = None
+        self._publish_rgb_buf: np.ndarray | None = None
+        self._dashboard_resize_buf: np.ndarray | None = None
 
         image_qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -150,6 +182,10 @@ class CameraCaptureNode(Node):
         self._image_publish_period = (1.0 / self._fps) if self._fps > 0.0 else 0.0
 
         self._configure_camera()
+        if self._publish_width_auto:
+            self._publish_width = self._width
+        if self._publish_height_auto:
+            self._publish_height = self._height
 
         self._open_camera()
         self._thread = threading.Thread(target=self._capture_loop, daemon=True)
@@ -162,7 +198,9 @@ class CameraCaptureNode(Node):
 
         self.get_logger().info(
             f"camera_capture_node started, device={self._device}, "
-            f"width={self._width}, height={self._height}, fps={self._fps}"
+            f"capture={self._width}x{self._height}, "
+            f"publish={self._publish_width}x{self._publish_height} "
+            f"({self._publish_resize_mode}, {self._publish_encoding}), fps={self._fps}"
         )
 
     def _probe_media_topology(self, media_dev: str) -> str | None:
@@ -581,9 +619,13 @@ class CameraCaptureNode(Node):
             if self._flip_image:
                 frame = cv2.flip(frame, -1)
 
+            capture_stamp = self.get_clock().now().to_msg()
+
             with self._frame_lock:
                 self._latest_frame = frame
                 self._latest_frame_id += 1
+                self._latest_capture_stamp_sec = int(capture_stamp.sec)
+                self._latest_capture_stamp_nanosec = int(capture_stamp.nanosec)
 
             self._capture_frame_counter += 1
             self._publish_capture_fps_if_due()
@@ -664,6 +706,8 @@ class CameraCaptureNode(Node):
         with self._frame_lock:
             frame = self._latest_frame
             frame_id = self._latest_frame_id
+            stamp_sec = self._latest_capture_stamp_sec
+            stamp_nanosec = self._latest_capture_stamp_nanosec
 
         if frame is None:
             return
@@ -673,22 +717,71 @@ class CameraCaptureNode(Node):
 
         dashboard_frame = frame
         if frame.shape[1] != self._dashboard_width or frame.shape[0] != self._dashboard_height:
-            dashboard_frame = cv2.resize(
+            if (
+                self._dashboard_resize_buf is None
+                or self._dashboard_resize_buf.shape[0] != self._dashboard_height
+                or self._dashboard_resize_buf.shape[1] != self._dashboard_width
+            ):
+                self._dashboard_resize_buf = np.empty(
+                    (self._dashboard_height, self._dashboard_width, 3), dtype=np.uint8
+                )
+            cv2.resize(
                 frame,
                 (self._dashboard_width, self._dashboard_height),
+                dst=self._dashboard_resize_buf,
                 interpolation=cv2.INTER_AREA,
             )
+            dashboard_frame = self._dashboard_resize_buf
 
         dashboard_msg = self._bridge.cv2_to_imgmsg(dashboard_frame, encoding="bgr8")
-        dashboard_msg.header.stamp = self.get_clock().now().to_msg()
+        dashboard_msg.header.stamp.sec = int(stamp_sec)
+        dashboard_msg.header.stamp.nanosec = int(stamp_nanosec)
         dashboard_msg.header.frame_id = self._frame_id
         self._dashboard_pub.publish(dashboard_msg)
         self._last_dashboard_published_frame_id = frame_id
+
+    def _prepare_publish_frame(self, frame: np.ndarray) -> np.ndarray:
+        target_w = self._publish_width
+        target_h = self._publish_height
+
+        if frame.shape[1] == target_w and frame.shape[0] == target_h:
+            return frame
+
+        if (
+            self._publish_resize_buf is None
+            or self._publish_resize_buf.shape[0] != target_h
+            or self._publish_resize_buf.shape[1] != target_w
+        ):
+            self._publish_resize_buf = np.empty((target_h, target_w, 3), dtype=np.uint8)
+
+        src_h, src_w = frame.shape[:2]
+        if self._publish_resize_mode == "resize":
+            interpolation = cv2.INTER_AREA if (target_w <= src_w and target_h <= src_h) else cv2.INTER_LINEAR
+            cv2.resize(
+                frame,
+                (target_w, target_h),
+                dst=self._publish_resize_buf,
+                interpolation=interpolation,
+            )
+            return self._publish_resize_buf
+
+        self._publish_resize_buf.fill(0)
+        scale = min(target_w / float(src_w), target_h / float(src_h))
+        out_w = max(1, int(round(src_w * scale)))
+        out_h = max(1, int(round(src_h * scale)))
+        off_x = (target_w - out_w) // 2
+        off_y = (target_h - out_h) // 2
+        roi = self._publish_resize_buf[off_y:off_y + out_h, off_x:off_x + out_w]
+        interpolation = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LINEAR
+        cv2.resize(frame, (out_w, out_h), dst=roi, interpolation=interpolation)
+        return self._publish_resize_buf
 
     def _publish_latest_frame(self) -> None:
         with self._frame_lock:
             frame = self._latest_frame
             frame_id = self._latest_frame_id
+            stamp_sec = self._latest_capture_stamp_sec
+            stamp_nanosec = self._latest_capture_stamp_nanosec
 
         if frame is None:
             return
@@ -697,10 +790,17 @@ class CameraCaptureNode(Node):
         if frame_id == self._last_published_frame_id:
             return
 
-        stamp = self.get_clock().now().to_msg()
+        publish_frame = self._prepare_publish_frame(frame)
+        if self._publish_encoding == "rgb8":
+            if self._publish_rgb_buf is None or self._publish_rgb_buf.shape != publish_frame.shape:
+                self._publish_rgb_buf = np.empty_like(publish_frame)
+            cv2.cvtColor(publish_frame, cv2.COLOR_BGR2RGB, dst=self._publish_rgb_buf)
+            msg = self._bridge.cv2_to_imgmsg(self._publish_rgb_buf, encoding="rgb8")
+        else:
+            msg = self._bridge.cv2_to_imgmsg(publish_frame, encoding="bgr8")
 
-        msg = self._bridge.cv2_to_imgmsg(frame, encoding="bgr8")
-        msg.header.stamp = stamp
+        msg.header.stamp.sec = int(stamp_sec)
+        msg.header.stamp.nanosec = int(stamp_nanosec)
         msg.header.frame_id = self._frame_id
         self._image_pub.publish(msg)
         self._last_published_frame_id = frame_id

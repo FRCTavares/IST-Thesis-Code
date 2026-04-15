@@ -5,6 +5,18 @@ All commands run from `$THESIS_ROOT` unless noted.
 
 Use this file as the command source of truth.
 
+## Current runtime defaults
+
+From `tools/start_live_stack.sh`:
+
+- Perception mode default: `single-process`
+- Tracker default: `sort`
+- Camera default: `1280x720@30`
+- Control node: enabled by default
+- MAVROS mirroring: disabled by default
+- Dashboard bridge + web video: enabled by default
+- Legacy detector port `:5556`: expected only in `--perception-mode legacy`
+
 ## Scope and assumptions
 
 - Primary platform: Raspberry Pi 5 + Hailo (full live stack).
@@ -75,6 +87,7 @@ colcon build --symlink-install
 ```
 
 Generic Linux fallback note:
+
 - If no Hailo hardware is available, skip live-stack sections and use section 5 (replay/analysis) plus UI mock mode via `tools/start_ui_stack.sh --mode mock`.
 
 ## 1) Keep all ROS/colcon logs inside ros2_ws
@@ -102,9 +115,10 @@ mkdir -p "$ROS_LOG_DIR"
 ```
 
 Notes:
-- tools/start_live_stack.sh now automatically forces ROS_LOG_DIR to ros2_ws/log/runtime/<run-id>.
-- tools/start_live_stack.sh run logs are under ros2_ws/log/live_stack/<run-id>.
-- tools/start_ui_stack.sh run logs are under ros2_ws/log/ui_stack/<run-id>.
+
+- tools/start_live_stack.sh now automatically forces ROS_LOG_DIR to `ros2_ws/log/runtime/{run-id}`.
+- tools/start_live_stack.sh run logs are under `ros2_ws/log/live_stack/{run-id}`.
+- tools/start_ui_stack.sh run logs are under `ros2_ws/log/ui_stack/{run-id}`.
 - If you see logs in ~/.ros/log during live stack startup, verify you started with tools/start_live_stack.sh and not a manual command in another shell.
 
 ## 2) Live stack (recommended)
@@ -123,27 +137,45 @@ What this script does:
 5. Interactive runtime with `status`, `clear`, `stop` commands.
 
 Default:
+
 - control_ref_node enabled
 - MAVROS mirror disabled (safe default)
 - ROS_DOMAIN_ID defaults to 42 unless already exported
 
 Useful flags:
+
 - Disable control: ./tools/start_live_stack.sh --no-control
 - Enable MAVROS mirror: ./tools/start_live_stack.sh --control-mavros
 - Camera + inference only: ./tools/start_live_stack.sh --no-tracker --no-target --no-control --no-dashboard
 - Legacy perception path: ./tools/start_live_stack.sh --perception-mode legacy
 - Single-process perception mode (default; in-process backend, stub fallback): ./tools/start_live_stack.sh --perception-mode single-process
+- Single-process queue tuning: ./tools/start_live_stack.sh --perception-hailo-queue-buffers 1
+- Freshness-first async worker: ./tools/start_live_stack.sh --perception-async-latest-frame-on
+- Disable pre-hailonet videoconvert stage: ./tools/start_live_stack.sh --perception-hailo-videoconvert-off
+
+Full option list:
+
+```bash
+./tools/start_live_stack.sh --help
+```
 
 If you want to enable host-side Hailo dependencies for single-process mode:
+
 - Install/probe host Python bindings: ./tools/install_host_hailo_bindings.sh
 - Optional no-root runtime shim: ./tools/setup_local_tappas_runtime.sh
 
 Note:
+
 - start_live_stack.sh auto-detects local runtime assets from infer_service/opt/tappas_runtime_3_31 when present.
 
 Stop:
-- In prompt: stop, quit, or exit
-- Fallback: ./tools/stop_live_stack.sh
+
+- In prompt: `stop`, `quit`, or `exit`
+- If the interactive shell is gone, terminate stack processes explicitly:
+
+```bash
+pkill -f 'camera_bringup.launch.py|camera_capture_node|inference_client_node|perception_pipeline_node|tracker_node|target_selector_node|control_ref_node|dashboard_bridge_node|web_video_server' || true
+```
 
 Verification checkpoint (live stack healthy):
 
@@ -155,6 +187,7 @@ ss -ltnp | rg ':5556|:8080|:8090|:8765'
 ```
 
 Expected:
+
 - Core topics are listed.
 - Required service ports are listening. Note: :5556 is only expected in legacy perception mode.
 
@@ -171,6 +204,7 @@ Notes:
 - Use `./tools/start_ui_stack.sh --install` when you want to refresh dependencies.
 
 Useful UI flags:
+
 - Mock mode: ./tools/start_ui_stack.sh --mode mock
 - Custom port: ./tools/start_ui_stack.sh --port 5174
 
@@ -179,7 +213,13 @@ Verification checkpoint (UI healthy):
 - Open `http://127.0.0.1:5173` (or remote host IP and chosen port).
 - Dashboard connects to telemetry websocket and backend API if running in backend mode.
 
-## 3) Manual startup (fallback)
+## 3) Manual startup (legacy ZMQ path, troubleshooting only)
+
+This section reproduces the legacy deployment shape manually.
+
+- Useful for isolating startup faults.
+- Not the recommended day-to-day path.
+- Preferred path remains `./tools/start_live_stack.sh`.
 
 Terminal 1 - Camera:
 
@@ -234,6 +274,7 @@ ros2 run web_video_server web_video_server --ros-args -p port:=8080
 ```
 
 Dashboard:
+
 - Video: http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45
 - Telemetry: ws://<PI_IP>:8765
 - Control API: http://<PI_IP>:8090
@@ -293,6 +334,7 @@ ros2 topic hz /timing
 ```
 
 Expected:
+
 - Replay publishes `/timing` steadily during bag playback.
 
 Timing:
@@ -304,6 +346,7 @@ python3 tools/analyse_bag_timing.py $THESIS_ROOT/bags/live_camera/<bag_name>
 ```
 
 Expected output:
+
 - Markdown timing report file.
 - Figure files in the selected figure directory.
 
@@ -314,6 +357,7 @@ python3 tools/analyse_bag_tracking.py $THESIS_ROOT/bags/eval/<eval_bag_name>
 ```
 
 Expected output:
+
 - `summary.md` and plot files under `reports/tracking/<eval_bag_name>/`.
 
 ## 6) Quick troubleshooting
@@ -344,13 +388,14 @@ ros2 topic list
 ```
 
 If startup says camera is not publishing:
+
 - Rerun tools/start_live_stack.sh once.
 - Check cable/sensor state.
 - If camera process is stuck in D state, reboot host.
 
 Additional common failures:
 
-- Inference client timeout spam:
+- Inference client timeout spam (legacy mode only):
   - Check detector service inside container is running.
   - Confirm `addr:=tcp://127.0.0.1:5556` (or host/IP override) matches service bind.
 - Empty ROS graph:
@@ -384,6 +429,7 @@ ros2 run thesis_bringup control_ref_node --ros-args \
 ```
 
 Expected behavior from validated baseline:
+
 - center target -> vx=0, yaw_z=0
 - left target -> yaw_z < 0
 - right target -> yaw_z > 0
@@ -403,9 +449,10 @@ Expected behavior from validated baseline:
 
 ## 9) Last validated assumptions
 
-- Date: 2026-04-08
+- Date: 2026-04-15
 - ROS: Jazzy
-- Target hardware path: RPi5 + Hailo using external `~/pi-ai-kit-ubuntu`
+- Default live path: single-process perception via `tools/start_live_stack.sh`
+- Legacy fallback path: RPi5 + Hailo using external `~/pi-ai-kit-ubuntu`
 
 ## 10) Queue-buffer 1-vs-2 decision workflow (single-process)
 
