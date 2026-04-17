@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate live timing invariants from /timing, /timing_tracker, /timing_target.
+"""Validate live timing invariants from /timing, /timing_tracker, /timing_target, /detections.
 
 This utility runs for a short duration (or until one message per topic in --once mode),
 checks ordering/sanity invariants, and prints a concise pass/fail report.
@@ -13,17 +13,23 @@ import math
 import signal
 import sys
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, Optional
+from typing import Dict, Iterable, Optional
 
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 
 from thesis_msgs.msg import Timing
+from vision_msgs.msg import Detection2DArray
 
-from timing_contract import resolve_metric, topic_fields
+from timing_contract import (
+    DET_OUT_FPS_WINDOW_SECONDS,
+    FPS_INTERVAL_RELATIVE_DELTA_MAX,
+    resolve_metric,
+    topic_fields,
+)
 
 
 TOPIC_METRIC_FIELDS = {
@@ -119,6 +125,9 @@ class TimingInvariantNode(Node):
             "/timing_target": set(),
         }
         self.e2e_det_by_frame: Dict[int, float] = {}
+        self.detection_msg_count = 0
+        self._det_arrival_ns: deque[int] = deque(maxlen=240)
+        self._det_out_fps_latest: Optional[float] = None
 
         self.zero_counts: Dict[str, Dict[str, int]] = {
             "/timing": defaultdict(int),
@@ -129,6 +138,21 @@ class TimingInvariantNode(Node):
         self.create_subscription(Timing, "/timing", self._on_timing, qos)
         self.create_subscription(Timing, "/timing_tracker", self._on_timing_tracker, qos)
         self.create_subscription(Timing, "/timing_target", self._on_timing_target, qos)
+        self.create_subscription(Detection2DArray, "/detections", self._on_detections, qos)
+
+    def _on_detections(self, _msg: Detection2DArray) -> None:
+        now_ns = time.monotonic_ns()
+        self.detection_msg_count += 1
+        self._det_arrival_ns.append(now_ns)
+
+        cutoff_ns = now_ns - int(DET_OUT_FPS_WINDOW_SECONDS * 1e9)
+        while self._det_arrival_ns and self._det_arrival_ns[0] < cutoff_ns:
+            self._det_arrival_ns.popleft()
+
+        if len(self._det_arrival_ns) >= 2:
+            dt_ns = self._det_arrival_ns[-1] - self._det_arrival_ns[0]
+            if dt_ns > 0:
+                self._det_out_fps_latest = (len(self._det_arrival_ns) - 1) / (dt_ns / 1e9)
 
     def _check_basic_sanity(self, topic: str, msg: Timing) -> None:
         for field in NS_FIELDS:
@@ -226,6 +250,26 @@ class TimingInvariantNode(Node):
             msg,
         )
 
+        if _is_populated_number(float(msg.e2e_det_ms)) and _is_populated_number(float(msg.infer_ms)):
+            self.inv.check(
+                "B.e2e_det_ge_infer",
+                float(msg.e2e_det_ms) >= float(msg.infer_ms),
+                f"{topic}: e2e_det_ms={_fmt_val(float(msg.e2e_det_ms))}, infer_ms={_fmt_val(float(msg.infer_ms))}",
+            )
+
+        if _is_populated_number(float(msg.pub_dt_ms)) and self._det_out_fps_latest is not None and self._det_out_fps_latest > 0.0:
+            pub_dt_ms = float(msg.pub_dt_ms)
+            expected_ms = 1000.0 / float(self._det_out_fps_latest)
+            rel_delta = abs(pub_dt_ms - expected_ms) / max(expected_ms, 1e-9)
+            self.inv.check(
+                "B.pub_dt_vs_det_out_fps_consistent",
+                rel_delta <= FPS_INTERVAL_RELATIVE_DELTA_MAX,
+                (
+                    f"{topic}: pub_dt_ms={_fmt_val(pub_dt_ms)} expected_from_det_out_fps_ms={_fmt_val(expected_ms)} "
+                    f"det_out_fps={_fmt_val(self._det_out_fps_latest)} rel_delta={_fmt_val(rel_delta)}"
+                ),
+            )
+
         self._check_order_chain(
             topic,
             "C.container_chain.req_unpack",
@@ -319,6 +363,9 @@ def print_report(node: TimingInvariantNode) -> None:
     print("samples:")
     for topic in ["/timing", "/timing_tracker", "/timing_target"]:
         print(f"  {topic}: {node.counts[topic]}")
+    print(f"  /detections: {node.detection_msg_count}")
+    if node._det_out_fps_latest is not None:
+        print(f"  det_out_fps_latest_hz: {node._det_out_fps_latest:.3f}")
 
     common_all = (
         node.frame_seen["/timing"]

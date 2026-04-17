@@ -149,6 +149,24 @@ Canonical timing fields are defined in `tools/timing_contract.py`.
 - `/timing_tracker`: `track_ms`
 - `/timing_target`: `e2e_target_ms`
 
+Canonical timing vocabulary used across runtime, analysis, and docs:
+
+- `e2e_det_ms`: camera callback seen -> detection publish completion.
+- `pub_dt_ms`: detection publish cadence interval.
+- `det_out_fps`: detection output rate derived from `/detections` callback cadence.
+- `camera_input_fps`: camera publish FPS from `/camera/fps`.
+- `container_queue_ms`: pre-infer wait before inference starts.
+- `infer_ms`: inference compute stage runtime.
+- `track_ms`: tracker compute stage runtime.
+- `e2e_target_ms`: camera callback seen -> target publish completion.
+
+Clock-domain clarity:
+
+- `src_stamp_ns` belongs to source/sensor time domain and is not guaranteed comparable to host monotonic timing.
+- `pub_dt_ms`, `det_out_fps`, and `camera_input_fps` are cadence-derived metrics, not direct stage timers.
+
+Full old-to-new field mapping, producer/consumer matrix, and deprecation plan: `TIMING_FIELD_AUDIT.md`.
+
 Analysis pipeline:
 
 1. Live sampling: `tools/collect_live_timing_stats.py`

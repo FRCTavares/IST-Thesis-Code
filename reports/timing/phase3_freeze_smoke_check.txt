@@ -1,0 +1,6 @@
+Timing freeze smoke check: PASS
+- bridge_json: reports/timing/phase3_replay_bridge_payload.json
+- producer_msg: reports/timing/phase3_replay_timing_msg.txt
+- verified_bridge_keys: e2e_det_ms, pub_dt_ms, metrics_schema_version
+- verified_producer_keys: infer_ms, container_queue_ms
+- metrics_schema_version: 3

@@ -14,7 +14,7 @@ export function TrackingMetricsGrid({ telemetry }: TrackingMetricsGridProps) {
     const activeTracks = telemetry?.tracks.length ?? 0;
     const totalDetections = telemetry?.detections.length ?? 0;
     const associationRate = totalDetections > 0 ? (activeTracks / totalDetections) * 100 : 0;
-    const trackerFps = telemetry?.det_fps ?? 0;
+    const detectionRateFps = telemetry?.det_out_fps ?? 0;
 
     return (
         <PanelShell
@@ -41,9 +41,9 @@ export function TrackingMetricsGrid({ telemetry }: TrackingMetricsGridProps) {
                             tone="ok"
                         />
                         <MetricCard
-                            label="Tracker FPS"
-                            value={fmt(trackerFps, 1)}
-                            detail={`Track updates per second`}
+                            label="Detection Rate"
+                            value={fmt(detectionRateFps, 1)}
+                            detail={`Detection messages per second`}
                             tone="info"
                         />
                         <MetricCard

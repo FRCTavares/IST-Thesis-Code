@@ -11,6 +11,7 @@ import threading
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
+import math
 
 import rclpy
 import websockets
@@ -21,6 +22,14 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPo
 from std_msgs.msg import Float32
 from vision_msgs.msg import Detection2DArray
 from thesis_msgs.msg import TargetState, Timing, Track2DArray
+
+
+METRICS_SCHEMA_VERSION = 3
+DET_OUT_FPS_WINDOW_SECONDS = 3.0
+METRIC_WARN_THRESHOLDS_MS = {
+    "e2e_det_ms": 120.0,
+    "pub_dt_ms": 120.0,
+}
 
 
 class DashboardBridgeNode(Node):
@@ -41,6 +50,9 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("publish_hz", 30.0)
         self.declare_parameter("img_w", 640)
         self.declare_parameter("img_h", 640)
+        self.declare_parameter("camera_ref_w", 1280)
+        self.declare_parameter("camera_ref_h", 720)
+        self.declare_parameter("camera_publish_resize_mode", "letterbox")
         self.declare_parameter("detector_container_name", "pi-ai-kit-ubuntu-hailo-ubuntu-pi-1")
         self.declare_parameter("detector_bind", "tcp://0.0.0.0:5556")
         self.declare_parameter("detector_width", 640)
@@ -56,6 +68,7 @@ class DashboardBridgeNode(Node):
             f"{thesis_root}/infer_service/resources/hefs",
         )
         self.declare_parameter("tracker_node_name", "tracker_node")
+        self.declare_parameter("camera_node_name", "camera_capture_node")
 
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._detections_topic = str(self.get_parameter("detections_topic").value)
@@ -71,6 +84,16 @@ class DashboardBridgeNode(Node):
         self._publish_hz = float(self.get_parameter("publish_hz").value)
         self._img_w = max(1.0, float(self.get_parameter("img_w").value))
         self._img_h = max(1.0, float(self.get_parameter("img_h").value))
+        self._camera_ref_w = max(1.0, float(self.get_parameter("camera_ref_w").value))
+        self._camera_ref_h = max(1.0, float(self.get_parameter("camera_ref_h").value))
+        self._camera_publish_resize_mode = str(
+            self.get_parameter("camera_publish_resize_mode").value
+        ).strip().lower()
+        if self._camera_publish_resize_mode not in ("resize", "letterbox"):
+            self.get_logger().warn(
+                f"invalid camera_publish_resize_mode='{self._camera_publish_resize_mode}', using letterbox"
+            )
+            self._camera_publish_resize_mode = "letterbox"
         self._detector_container_name = str(self.get_parameter("detector_container_name").value)
         self._detector_bind = str(self.get_parameter("detector_bind").value)
         self._detector_width = int(self.get_parameter("detector_width").value)
@@ -83,6 +106,7 @@ class DashboardBridgeNode(Node):
         self._perception_node_name = str(self.get_parameter("perception_node_name").value).strip() or "perception_pipeline_node"
         self._single_process_hef_dir = str(self.get_parameter("single_process_hef_dir").value)
         self._tracker_node_name = str(self.get_parameter("tracker_node_name").value).strip() or "tracker_node"
+        self._camera_node_name = str(self.get_parameter("camera_node_name").value).strip() or "camera_capture_node"
 
         self._model_to_hef = {
             "yolov6n": "yolov6n_hailo8.hef",
@@ -90,17 +114,45 @@ class DashboardBridgeNode(Node):
             "yolov8m": "yolov8m.hef",
         }
         self._supported_trackers = {"sort", "ocsort", "bytetrack"}
+        self._supported_resolutions = {
+            "640x360": (640, 360),
+            "640x460": (640, 460),
+            "640x640": (640, 640),
+            "1280x720": (1280, 720),
+        }
 
         self._state_lock = threading.Lock()
         self._state: dict[str, Any] = {
             "tracks": [],
             "detections": [],
             "target": None,
+            # Explicit telemetry keys (canonical)
+            "camera_input_fps": None,
+            "det_out_fps": None,
+            "e2e_det_ms": None,
+            "pub_dt_ms": None,
+            "metrics_schema_version": METRICS_SCHEMA_VERSION,
+            "metric_windows": {
+                "det_out_fps_seconds": DET_OUT_FPS_WINDOW_SECONDS,
+            },
+            "metric_thresholds_ms": {
+                **METRIC_WARN_THRESHOLDS_MS,
+                # Deprecated alias; remove after legacy frontend consumers are retired.
+                "det_interval_ms": METRIC_WARN_THRESHOLDS_MS["pub_dt_ms"],
+            },
+            # Deprecated compatibility aliases for existing UI consumers.
+            # Canonical consumers must prefer: camera_input_fps, det_out_fps,
+            # e2e_det_ms, pub_dt_ms.
             "fps": None,
             "video_fps": None,
             "replay_progress": None,
             "det_fps": None,
             "latency_ms": None,
+            "det_interval_ms": None,
+            "inference_resolution": {
+                "width": int(self._img_w),
+                "height": int(self._img_h),
+            },
             "system": {
                 "cpu_percent": None,
                 "mem_percent": None,
@@ -118,6 +170,10 @@ class DashboardBridgeNode(Node):
         self._tracker_set_params_client = self.create_client(
             SetParameters,
             f"/{self._tracker_node_name}/set_parameters",
+        )
+        self._camera_set_params_client = self.create_client(
+            SetParameters,
+            f"/{self._camera_node_name}/set_parameters",
         )
         self._perception_set_params_client = self.create_client(
             SetParameters,
@@ -208,6 +264,12 @@ class DashboardBridgeNode(Node):
                     tracker = str(payload.get("tracker", "")).strip().lower()
                     result = node_ref._handle_tracker_switch(tracker)
                     self._send_json(200 if result.get("ok") else 500, result)
+                    return
+
+                if self.path == "/api/resolution":
+                    resolution = str(payload.get("resolution", "")).strip().lower()
+                    result = node_ref._handle_resolution_switch(resolution)
+                    self._send_json(int(result.get("status_code", 200 if result.get("ok") else 500)), result)
                     return
 
                 if self.path == "/api/replay":
@@ -404,6 +466,80 @@ nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_
         self.get_logger().info(f"Tracker backend switch applied: {tracker}")
         return {"ok": True, "requested_tracker": tracker}
 
+    def _handle_resolution_switch(self, resolution: str) -> dict[str, Any]:
+        dims = self._supported_resolutions.get(resolution)
+        if dims is None:
+            return {
+                "ok": False,
+                "error": f"unsupported resolution: {resolution}",
+                "status_code": 400,
+            }
+
+        if not self._camera_set_params_client.wait_for_service(timeout_sec=1.0):
+            return {
+                "ok": False,
+                "error": (
+                    "camera parameter service unavailable on "
+                    f"/{self._camera_node_name}/set_parameters"
+                ),
+                "status_code": 503,
+            }
+
+        width, height = dims
+        request = SetParameters.Request()
+        request.parameters = [
+            Parameter(
+                name="publish_width",
+                value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=int(width)),
+            ),
+            Parameter(
+                name="publish_height",
+                value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=int(height)),
+            ),
+            Parameter(
+                name="dashboard_width",
+                value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=int(width)),
+            ),
+            Parameter(
+                name="dashboard_height",
+                value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=int(height)),
+            ),
+        ]
+
+        try:
+            future = self._camera_set_params_client.call_async(request)
+            deadline = time.monotonic() + 3.0
+            while not future.done() and time.monotonic() < deadline:
+                time.sleep(0.01)
+        except Exception as exc:
+            self.get_logger().error(f"Resolution switch execution failed: {exc}")
+            return {"ok": False, "error": f"resolution switch failed: {exc}", "status_code": 500}
+
+        if not future.done():
+            return {"ok": False, "error": "resolution switch timed out", "status_code": 504}
+
+        result = future.result()
+        if result is None or not result.results:
+            return {
+                "ok": False,
+                "error": "resolution switch returned empty result",
+                "status_code": 500,
+            }
+
+        for set_result in result.results:
+            if not set_result.successful:
+                reason = set_result.reason or "unknown resolution switch failure"
+                return {"ok": False, "error": reason, "status_code": 500}
+
+        self.get_logger().info(f"Camera resolution switch applied: {resolution}")
+        return {
+            "ok": True,
+            "requested_resolution": resolution,
+            "publish_width": int(width),
+            "publish_height": int(height),
+            "status_code": 200,
+        }
+
     def _run_loop(self) -> None:
         asyncio.set_event_loop(self._loop)
         self._loop.run_forever()
@@ -469,30 +605,99 @@ nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_
 
     def _snapshot_json(self) -> str:
         with self._state_lock:
+            camera_input_fps = self._state["camera_input_fps"]
+            det_out_fps = self._state["det_out_fps"]
+            e2e_det_ms = self._state["e2e_det_ms"]
             snapshot = {
                 "tracks": [dict(t) for t in self._state["tracks"]],
                 "detections": [dict(d) for d in self._state["detections"]],
                 "target": self._state["target"],
-                "fps": self._state["fps"],
-                "video_fps": self._state["video_fps"],
+                "camera_input_fps": camera_input_fps,
+                "det_out_fps": det_out_fps,
+                "e2e_det_ms": e2e_det_ms,
+                "pub_dt_ms": self._state["pub_dt_ms"],
+                "metrics_schema_version": self._state["metrics_schema_version"],
+                "metric_windows": dict(self._state["metric_windows"]),
+                "metric_thresholds_ms": dict(self._state["metric_thresholds_ms"]),
+                # Deprecated compatibility aliases
+                "fps": camera_input_fps,
+                "video_fps": camera_input_fps,
                 "replay_progress": self._state["replay_progress"],
-                "det_fps": self._state["det_fps"],
-                "latency_ms": self._state["latency_ms"],
+                "det_fps": det_out_fps,
+                "latency_ms": e2e_det_ms,
+                "det_interval_ms": self._state["pub_dt_ms"],
+                "inference_resolution": dict(self._state["inference_resolution"]),
                 "system": dict(self._state["system"]),
             }
         return json.dumps(snapshot, separators=(",", ":"))
 
+    @staticmethod
+    def _clamp01(value: float) -> float:
+        if value < 0.0:
+            return 0.0
+        if value > 1.0:
+            return 1.0
+        return value
+
+    def _map_bbox_to_stream_norm(self, cx: float, cy: float, w: float, h: float) -> tuple[float, float, float, float]:
+        inf_w = max(1.0, self._img_w)
+        inf_h = max(1.0, self._img_h)
+        ref_w = max(1.0, self._camera_ref_w)
+        ref_h = max(1.0, self._camera_ref_h)
+
+        if self._camera_publish_resize_mode == "resize":
+            return (
+                self._clamp01(cx / inf_w),
+                self._clamp01(cy / inf_h),
+                self._clamp01(w / inf_w),
+                self._clamp01(h / inf_h),
+            )
+
+        scale = min(inf_w / ref_w, inf_h / ref_h)
+        if not math.isfinite(scale) or scale <= 0.0:
+            return (
+                self._clamp01(cx / inf_w),
+                self._clamp01(cy / inf_h),
+                self._clamp01(w / inf_w),
+                self._clamp01(h / inf_h),
+            )
+
+        out_w = ref_w * scale
+        out_h = ref_h * scale
+        off_x = 0.5 * (inf_w - out_w)
+        off_y = 0.5 * (inf_h - out_h)
+
+        ref_cx = (cx - off_x) / scale
+        ref_cy = (cy - off_y) / scale
+        ref_w_px = w / scale
+        ref_h_px = h / scale
+
+        return (
+            self._clamp01(ref_cx / ref_w),
+            self._clamp01(ref_cy / ref_h),
+            self._clamp01(ref_w_px / ref_w),
+            self._clamp01(ref_h_px / ref_h),
+        )
+
     def _on_tracks(self, msg: Track2DArray) -> None:
-        tracks = [
-            {
-                "id": int(track.id),
-                "x": float(track.cx) / self._img_w,
-                "y": float(track.cy) / self._img_h,
-                "w": float(track.w) / self._img_w,
-                "h": float(track.h) / self._img_h,
-            }
-            for track in msg.tracks
-        ]
+        tracks = []
+        for track in msg.tracks:
+            x, y, w, h = self._map_bbox_to_stream_norm(
+                float(track.cx),
+                float(track.cy),
+                float(track.w),
+                float(track.h),
+            )
+            tracks.append(
+                {
+                    "id": int(track.id),
+                    "x": x,
+                    "y": y,
+                    "w": w,
+                    "h": h,
+                }
+            )
+
         with self._state_lock:
             self._state["tracks"] = tracks
             self._dirty = True
@@ -507,11 +712,12 @@ nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_
         while self._det_arrival_ns and self._det_arrival_ns[0] < cutoff_ns:
             self._det_arrival_ns.popleft()
 
-        det_fps = None
+        det_out_fps = None
         if len(self._det_arrival_ns) >= 2:
             dt_ns = self._det_arrival_ns[-1] - self._det_arrival_ns[0]
             if dt_ns > 0:
-                det_fps = (len(self._det_arrival_ns) - 1) / (dt_ns / 1e9)
+                # Derived from local callback cadence (host monotonic domain).
+                det_out_fps = (len(self._det_arrival_ns) - 1) / (dt_ns / 1e9)
 
         detections = []
         for det in msg.detections:
@@ -526,12 +732,14 @@ nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_
                 det_label = str(det.results[0].hypothesis.class_id)
                 det_score = float(det.results[0].hypothesis.score)
 
+            x, y, w_norm, h_norm = self._map_bbox_to_stream_norm(cx, cy, w, h)
+
             detections.append(
                 {
-                    "x": cx / self._img_w,
-                    "y": cy / self._img_h,
-                    "w": w / self._img_w,
-                    "h": h / self._img_h,
+                    "x": x,
+                    "y": y,
+                    "w": w_norm,
+                    "h": h_norm,
                     "label": det_label,
                     "score": det_score,
                 }
@@ -539,8 +747,10 @@ nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_
 
         with self._state_lock:
             self._state["detections"] = detections
-            if det_fps is not None:
-                self._state["det_fps"] = det_fps
+            if det_out_fps is not None:
+                self._state["det_out_fps"] = det_out_fps
+                # Deprecated compatibility alias.
+                self._state["det_fps"] = det_out_fps
             self._dirty = True
 
     def _on_target(self, msg: TargetState) -> None:
@@ -551,6 +761,8 @@ nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_
     def _on_fps(self, msg: Float32) -> None:
         with self._state_lock:
             value = float(msg.data)
+            self._state["camera_input_fps"] = value
+            # Deprecated compatibility aliases.
             self._state["fps"] = value
             self._state["video_fps"] = value
             self._dirty = True
@@ -563,7 +775,15 @@ nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_
 
     def _on_timing(self, msg: Timing) -> None:
         with self._state_lock:
-            self._state["latency_ms"] = float(msg.e2e_det_ms)
+            e2e_det_ms = float(msg.e2e_det_ms)
+            self._state["e2e_det_ms"] = e2e_det_ms
+            pub_dt_ms = float(msg.pub_dt_ms)
+            # pub_dt_ms is the canonical cadence interval from /timing in host monotonic domain.
+            self._state["pub_dt_ms"] = pub_dt_ms
+
+            # Deprecated compatibility aliases for schema <=2 consumers.
+            self._state["latency_ms"] = e2e_det_ms
+            self._state["det_interval_ms"] = pub_dt_ms
             self._dirty = True
 
     def _sample_system_metrics(self) -> None:

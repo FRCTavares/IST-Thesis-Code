@@ -6,8 +6,8 @@ Reads a rosbag2 directory (MCAP expected) and:
 - Defines base window as [first /timing msg, last /timing msg] using bag timestamps.
 - Computes stats for canonical /timing fields:
     mean, p50, p95, p99, min, max for:
-        pre_ms, zmq_roundtrip_ms, infer_ms, e2e_det_ms, pub_dt_ms
-    where legacy alias fallback is read-only:
+        pre_ms, container_queue_ms, zmq_roundtrip_ms, infer_ms, e2e_det_ms, pub_dt_ms
+    where legacy alias fallback is compatibility-only and deprecated:
         e2e_det_ms <- lat_ms, zmq_roundtrip_ms <- recv_ms
 - Computes achieved Hz for topics using counts within the base window.
 - Computes "active-only" window by excluding restart gaps using pub_dt_ms threshold:
@@ -35,7 +35,7 @@ import os
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from timing_contract import candidates_for
+from timing_contract import METRICS_SCHEMA_VERSION, METRIC_WARN_THRESHOLDS, METRIC_WINDOWS, candidates_for
 
 
 def _percentile(sorted_vals: List[float], q: float) -> float:
@@ -137,6 +137,7 @@ def _read_bag_timing_and_counts(
 
     field_candidates: Dict[str, List[str]] = {
         "pre_ms": candidates_for("pre_ms"),
+        "container_queue_ms": candidates_for("container_queue_ms"),
         "zmq_roundtrip_ms": candidates_for("zmq_roundtrip_ms"),
         "infer_ms": candidates_for("infer_ms"),
         "e2e_det_ms": candidates_for("e2e_det_ms"),
@@ -372,6 +373,13 @@ def _write_markdown(
     bag_name = os.path.basename(os.path.normpath(bag_dir))  
     lines.append(f"# Timing Summary: {bag_name}\n")
     lines.append(f"Bag: `{bag_dir}`\n")
+    lines.append("Timing vocabulary: canonical fields only (`pub_dt_ms` is the cadence metric).\n")
+    lines.append(f"Contract schema: `v{METRICS_SCHEMA_VERSION}`\n")
+    lines.append(f"- metric_windows: `{METRIC_WINDOWS}`\n")
+    lines.append(
+        "- metric_thresholds_ms: "
+        f"`{{'e2e_det_ms': {METRIC_WARN_THRESHOLDS['e2e_det_ms']}, 'pub_dt_ms': {METRIC_WARN_THRESHOLDS['pub_dt_ms']}, 'infer_ms': {METRIC_WARN_THRESHOLDS['infer_ms']}, 'container_queue_ms': {METRIC_WARN_THRESHOLDS['container_queue_ms']}, 'track_ms': {METRIC_WARN_THRESHOLDS['track_ms']}, 'e2e_target_ms': {METRIC_WARN_THRESHOLDS['e2e_target_ms']}}}`\n"
+    )
     lines.append("Base window: first to last `/timing` message (bag timestamps)\n")
     lines.append(f"- start_ns: `{base_start_ns}`\n")
     lines.append(f"- end_ns: `{base_end_ns}`\n")
@@ -380,7 +388,7 @@ def _write_markdown(
     lines.append("## Per-field stats (/timing)\n")
     lines.append("| field | n | mean | p50 | p95 | p99 | min | max |\n")
     lines.append("|---|---:|---:|---:|---:|---:|---:|---:|\n")
-    for field in ["pre_ms", "zmq_roundtrip_ms", "infer_ms", "e2e_det_ms", "pub_dt_ms"]:
+    for field in ["pre_ms", "container_queue_ms", "zmq_roundtrip_ms", "infer_ms", "e2e_det_ms", "pub_dt_ms"]:
         st = timing_stats.get(field, DEFAULT_STATS)
         lines.append(
             f"| {field} | {st.n} | {_fmt(st.mean)} | {_fmt(st.p50)} | {_fmt(st.p95)} | {_fmt(st.p99)} | {_fmt(st.vmin)} | {_fmt(st.vmax)} |\n"
@@ -426,7 +434,7 @@ def _write_markdown(
         lines.append("\n### Per-field stats (/timing), active-only\n")
         lines.append("| field | n | mean | p50 | p95 | p99 | min | max |\n")
         lines.append("|---|---:|---:|---:|---:|---:|---:|---:|\n")
-        for field in ["pre_ms", "zmq_roundtrip_ms", "infer_ms", "e2e_det_ms", "pub_dt_ms"]:
+        for field in ["pre_ms", "container_queue_ms", "zmq_roundtrip_ms", "infer_ms", "e2e_det_ms", "pub_dt_ms"]:
             st = timing_stats_active.get(field, DEFAULT_STATS)
             lines.append(
                 f"| {field} | {st.n} | {_fmt(st.mean)} | {_fmt(st.p50)} | {_fmt(st.p95)} | {_fmt(st.p99)} | {_fmt(st.vmin)} | {_fmt(st.vmax)} |\n"

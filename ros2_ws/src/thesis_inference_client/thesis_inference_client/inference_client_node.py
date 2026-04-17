@@ -499,6 +499,9 @@ class InferenceClientNode(Node):
                 t_msg.det_pub_ms = _ms(t_det_pub_end_ns - t_det_pub_start_ns)
                 t_msg.e2e_det_ms = _ms(t_det_pub_end_ns - t_cam_msg_seen_ns)
 
+                # Deprecated alias write kept for schema <=2 consumers.
+                t_msg.lat_ms = t_msg.e2e_det_ms
+
                 t_loop1 = now_ns()
                 loop_ms = _ms(t_loop1 - t_loop0)
 

@@ -9,9 +9,9 @@ interface PerformanceChartProps {
 export function PerformanceChart({ samples }: PerformanceChartProps) {
   const data = samples.slice(-50).map((sample, index) => ({
     i: index,
-    videoFps: sample.video_fps_10s ?? sample.video_fps_inst,
-    detFps: sample.det_fps_10s ?? sample.det_fps_inst,
-    latency: sample.latency_ms_inst,
+    cameraInputFps: sample.camera_input_fps_roll ?? sample.camera_input_fps_inst,
+    detOutFps: sample.det_out_fps_roll ?? sample.det_out_fps_inst,
+    e2eDetMs: sample.e2e_det_ms_inst,
   }));
 
   return (
@@ -38,17 +38,17 @@ export function PerformanceChart({ samples }: PerformanceChartProps) {
               }}
             />
             <Legend wrapperStyle={{ color: "#94a3b8", fontSize: "11px" }} />
-            <Line yAxisId="left" type="monotone" dataKey="videoFps" stroke="#3b82f6" dot={false} strokeWidth={1.7} name="Video FPS" />
+            <Line yAxisId="left" type="monotone" dataKey="cameraInputFps" stroke="#3b82f6" dot={false} strokeWidth={1.7} name="Camera Input FPS" />
             <Line
               yAxisId="left"
               type="monotone"
-              dataKey="detFps"
+              dataKey="detOutFps"
               stroke="#60a5fa"
               dot={false}
               strokeWidth={1.7}
-              name="Detection FPS"
+              name="Detection Output FPS"
             />
-            <Line yAxisId="right" type="monotone" dataKey="latency" stroke="#f59e0b" dot={false} strokeWidth={1.7} name="Latency ms" />
+            <Line yAxisId="right" type="monotone" dataKey="e2eDetMs" stroke="#f59e0b" dot={false} strokeWidth={1.7} name="Detection E2E ms" />
           </LineChart>
         </ResponsiveContainer>
       </div>

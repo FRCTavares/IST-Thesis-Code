@@ -11,6 +11,10 @@ interface MetricsGridProps {
 
 export function MetricsGrid({ snapshot }: MetricsGridProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const fpsWindowSeconds = snapshot?.fps_window_seconds ?? 3;
+  const fpsWindowLabel = `${fmt(fpsWindowSeconds, 1, "s")} roll`;
+  const health = snapshot?.health_score ?? null;
+  const healthTone = health === null ? "default" : health >= 80 ? "ok" : health >= 60 ? "info" : "warn";
 
   return (
     <PanelShell
@@ -29,29 +33,41 @@ export function MetricsGrid({ snapshot }: MetricsGridProps) {
     >
       {!collapsed && (
         <>
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-6">
             <MetricCard
-              label="Video FPS"
-              value={fmt(snapshot?.video_fps_10s ?? snapshot?.video_fps_inst, 1)}
-              detail={`inst ${fmt(snapshot?.video_fps_inst, 1)} | 10s ${fmt(snapshot?.video_fps_10s, 1)}`}
+              label="Pipeline Health"
+              value={fmt(health, 0, " /100")}
+              detail="combined latency + throughput + cadence"
+              tone={healthTone}
+            />
+            <MetricCard
+              label="Camera Input FPS"
+              value={fmt(snapshot?.camera_input_fps_roll ?? snapshot?.camera_input_fps_inst, 1)}
+              detail={`inst ${fmt(snapshot?.camera_input_fps_inst, 1)} | ${fpsWindowLabel} (camera_input_fps)`}
               tone="info"
             />
             <MetricCard
-              label="Detector FPS"
-              value={fmt(snapshot?.det_fps_10s ?? snapshot?.det_fps_inst, 1)}
-              detail={`inst ${fmt(snapshot?.det_fps_inst, 1)} | 10s ${fmt(snapshot?.det_fps_10s, 1)}`}
+              label="Detection Output FPS"
+              value={fmt(snapshot?.det_out_fps_roll ?? snapshot?.det_out_fps_inst, 1)}
+              detail={`inst ${fmt(snapshot?.det_out_fps_inst, 1)} | ${fpsWindowLabel} (det_out_fps)`}
               tone="info"
             />
             <MetricCard
-              label="Latency"
-              value={fmt(snapshot?.latency_ms_inst, 1, " ms")}
-              detail={`p50 ${fmt(snapshot?.latency_p50_ms, 1)} | p95 ${fmt(snapshot?.latency_p95_ms, 1)}`}
-              tone={(snapshot?.latency_ms_inst ?? 0) > 120 ? "warn" : "default"}
+              label="Detection E2E p95"
+              value={fmt(snapshot?.e2e_det_p95_ms, 1, " ms")}
+              detail={`inst ${fmt(snapshot?.e2e_det_ms_inst, 1, " ms")} | warn>${fmt(snapshot?.e2e_det_warn_ms, 0, " ms")} (e2e_det_ms)`}
+              tone={(snapshot?.e2e_det_p95_ms ?? 0) > (snapshot?.e2e_det_warn_ms ?? 120) ? "warn" : "default"}
+            />
+            <MetricCard
+              label="Detection Cadence p95"
+              value={fmt(snapshot?.pub_dt_p95_ms, 1, " ms")}
+              detail={`inst ${fmt(snapshot?.pub_dt_ms_inst, 1, " ms")} | warn>${fmt(snapshot?.pub_dt_warn_ms, 0, " ms")} (pub_dt_ms)`}
+              tone={(snapshot?.pub_dt_p95_ms ?? 0) > (snapshot?.pub_dt_warn_ms ?? 120) ? "warn" : "default"}
             />
             <MetricCard
               label="Detections"
               value={String(snapshot?.detections_now ?? 0)}
-              detail={`10s avg ${fmt(snapshot?.detections_10s_avg, 1)} | max ${fmt(snapshot?.detections_10s_max, 0)}`}
+              detail={`rolling avg ${fmt(snapshot?.detections_10s_avg, 1)} | max ${fmt(snapshot?.detections_10s_max, 0)}`}
               tone="ok"
             />
           </div>

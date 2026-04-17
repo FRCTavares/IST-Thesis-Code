@@ -116,6 +116,18 @@ camera_log_has_fatal_error() {
     return 1
 }
 
+camera_log_has_frame_activity() {
+    local log_file="$RUN_DIR/camera.log"
+
+    if [[ ! -f "$log_file" ]]; then
+        return 1
+    fi
+
+    # Only accept periodic FPS logs as evidence of real frame flow.
+    # The startup banner alone is not sufficient and can produce false positives.
+    rg -q "Camera FPS capture=" "$log_file"
+}
+
 kill_tree() {
     local pid="$1"
     local sig="${2:-TERM}"
@@ -179,7 +191,7 @@ stop_stack() {
 
 trap 'stop_stack; exit 0' INT TERM
 
-print_usage() {
+print_advanced_usage() {
     cat <<'EOF'
 Usage: start_live_stack.sh [options]
 
@@ -255,8 +267,37 @@ Options:
 EOF
 }
 
+print_usage() {
+    cat <<'EOF'
+Usage: start_live_stack.sh [options]
+
+Day-to-day options:
+    --profile <daily|safe-camera|performance>
+                                      Startup preset (default: daily)
+    --perception-mode <legacy|single-process>
+                                      Perception path selection (default: single-process)
+    --camera-width <N>                Camera capture width (default: profile value)
+    --camera-height <N>               Camera capture height (default: profile value)
+    --camera-rate-controls-off        Disable sensor FPS/exposure control writes
+    --no-tracker                      Do not start tracker node
+    --no-target                       Do not start target selector node
+    --no-control                      Do not start control_ref_node
+    --no-dashboard                    Disable dashboard bridge
+    --no-web-video                    Do not start web_video_server
+    --rosbag                          Record timing/tracking/control topics
+    -v, --verbose                     Enable verbose startup/status logs
+    -h, --help                        Show this concise help
+    --help-advanced                   Show full advanced argument list
+
+Notes:
+    - Script now runs a preflight camera stream probe with auto relink/format sync.
+    - If preflight cannot stream, startup aborts early with actionable guidance.
+EOF
+}
+
 TRACKER_TYPE="sort"
 PERCEPTION_MODE="single-process"
+STARTUP_PROFILE="daily"
 TRACKER_PROFILE_ENABLED=0
 TRACKER_PROFILE_LOG_EVERY_N=30
 TRACKER_PROFILE_SERIALIZE_EVERY_N=0
@@ -308,6 +349,46 @@ CONTROL_STALE_TIMEOUT_S=0.80
 ENABLE_WEB_VIDEO=1
 ENABLE_ROSBAG=0
 
+apply_startup_profile() {
+    local profile="$1"
+    case "$profile" in
+        daily)
+            CAMERA_WIDTH=1280
+            CAMERA_HEIGHT=720
+            CAMERA_APPLY_RATE_CONTROLS_BOOL="true"
+            INFER_QUEUE_SIZE=1
+            INFER_WORKERS=2
+            INFER_TIMEOUT_MS=300
+            INFER_RETRIES=0
+            CONTROL_STALE_TIMEOUT_S=0.80
+            ;;
+        safe-camera)
+            CAMERA_WIDTH=640
+            CAMERA_HEIGHT=480
+            CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
+            INFER_QUEUE_SIZE=1
+            INFER_WORKERS=1
+            INFER_TIMEOUT_MS=300
+            INFER_RETRIES=0
+            CONTROL_STALE_TIMEOUT_S=0.90
+            ;;
+        performance)
+            CAMERA_WIDTH=1280
+            CAMERA_HEIGHT=720
+            CAMERA_APPLY_RATE_CONTROLS_BOOL="true"
+            INFER_QUEUE_SIZE=1
+            INFER_WORKERS=2
+            INFER_TIMEOUT_MS=250
+            INFER_RETRIES=0
+            CONTROL_STALE_TIMEOUT_S=0.70
+            ;;
+        *)
+            echo "[error] invalid --profile '$profile' (expected daily|safe-camera|performance)"
+            exit 1
+            ;;
+    esac
+}
+
 normalize_double_literal() {
     local value="$1"
     if [[ "$value" =~ ^-?[0-9]+$ ]]; then
@@ -319,6 +400,16 @@ normalize_double_literal() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --profile)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --profile requires a value"
+                print_usage
+                exit 1
+            fi
+            STARTUP_PROFILE="${2,,}"
+            apply_startup_profile "$STARTUP_PROFILE"
+            shift 2
+            ;;
         --perception-mode)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --perception-mode requires a value"
@@ -717,6 +808,10 @@ while [[ $# -gt 0 ]]; do
             print_usage
             exit 0
             ;;
+        --help-advanced)
+            print_advanced_usage
+            exit 0
+            ;;
         *)
             echo "[error] unknown argument: $1"
             print_usage
@@ -1026,6 +1121,98 @@ detect_camera_media_device() {
     return 1
 }
 
+detect_tevs_sensor_entity() {
+    local media_dev="${1:-/dev/media0}"
+    local topology
+
+    topology="$(media-ctl -d "$media_dev" -p 2>/dev/null || true)"
+    if [[ -z "${topology:-}" ]]; then
+        return 1
+    fi
+
+    awk '
+        match($0, /- entity[[:space:]]+[0-9]+:[[:space:]]+tevs[^\(]*/) {
+            s = substr($0, RSTART, RLENGTH)
+            sub(/- entity[[:space:]]+[0-9]+:[[:space:]]+/, "", s)
+            gsub(/[[:space:]]+$/, "", s)
+            print s
+            exit
+        }
+    ' <<<"$topology"
+}
+
+configure_camera_stream_path() {
+    local media_dev="$1"
+    local sensor_entity="$2"
+    local width="$3"
+    local height="$4"
+    local fmt="fmt:UYVY8_1X16/${width}x${height} field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range"
+
+    timeout 5s media-ctl -d "$media_dev" -l '"csi2":4 -> "rp1-cfe-csi2_ch0":0 [1]' >/dev/null 2>&1 || return 1
+    timeout 5s media-ctl -d "$media_dev" -V "\"${sensor_entity}\":0 [${fmt}]" >/dev/null 2>&1 || return 1
+    timeout 5s media-ctl -d "$media_dev" -V '"csi2":0 ['"${fmt}"']' >/dev/null 2>&1 || return 1
+    timeout 5s media-ctl -d "$media_dev" -V '"csi2":4 ['"${fmt}"']' >/dev/null 2>&1 || return 1
+    return 0
+}
+
+probe_camera_stream_once() {
+    local width="$1"
+    local height="$2"
+    timeout 8s v4l2-ctl -d /dev/video0 \
+        --set-fmt-video="width=${width},height=${height},pixelformat=UYVY" \
+        --stream-mmap=4 \
+        --stream-count=10 \
+        --stream-to=/dev/null \
+        --stream-poll >/dev/null 2>&1
+}
+
+preflight_validate_camera_stream() {
+    local media_dev="${CAMERA_MEDIA_DEV_OVERRIDE:-/dev/media0}"
+    local sensor_entity
+    local tried_fallback=0
+
+    if [[ ! -e "$media_dev" ]]; then
+        echo "[error] camera media device not found for stream preflight: $media_dev"
+        return 1
+    fi
+
+    sensor_entity="$(detect_tevs_sensor_entity "$media_dev" || true)"
+    if [[ -z "${sensor_entity:-}" ]]; then
+        echo "[error] unable to detect TEVS sensor entity on $media_dev"
+        return 1
+    fi
+
+    if configure_camera_stream_path "$media_dev" "$sensor_entity" "$CAMERA_WIDTH" "$CAMERA_HEIGHT" \
+        && probe_camera_stream_once "$CAMERA_WIDTH" "$CAMERA_HEIGHT"; then
+        log_ok "camera stream preflight passed at ${CAMERA_WIDTH}x${CAMERA_HEIGHT}"
+        return 0
+    fi
+
+    if [[ "$CAMERA_WIDTH" -ne 640 || "$CAMERA_HEIGHT" -ne 480 ]]; then
+        tried_fallback=1
+        if configure_camera_stream_path "$media_dev" "$sensor_entity" 640 480 \
+            && probe_camera_stream_once 640 480; then
+            echo "[warn] camera stream preflight failed at ${CAMERA_WIDTH}x${CAMERA_HEIGHT}; falling back to 640x480"
+            CAMERA_WIDTH=640
+            CAMERA_HEIGHT=480
+            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 && "$PERCEPTION_MODE" == "legacy" ]]; then
+                CAMERA_PUBLISH_WIDTH=640
+                CAMERA_PUBLISH_HEIGHT=480
+            fi
+            CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
+            log_ok "camera stream preflight passed at 640x480"
+            return 0
+        fi
+    fi
+
+    echo "[error] camera stream preflight failed on /dev/video0"
+    if [[ "$tried_fallback" -eq 1 ]]; then
+        echo "[error] attempted both configured mode and 640x480 fallback"
+    fi
+    log_hint "if kernel shows i2c_designware timeout or tevs ret=-110, reboot host before retry"
+    return 1
+}
+
 preflight_enable_csi_capture_link() {
     local media_dev="${CAMERA_MEDIA_DEV_OVERRIDE:-/dev/media0}"
     local topology
@@ -1066,6 +1253,16 @@ camera_log_has_sensor_control_error() {
     fi
 
     rg -qi "Sensor rate control timed out|VIDIOC_S_EXT_CTRLS: failed: Connection timed out|VIDIOC_S_EXT_CTRLS: failed: Unknown error 220|max_fps: Connection timed out|max_fps: Unknown error 220" "$log_file"
+}
+
+camera_log_has_context_invalid_error() {
+    local log_file="$RUN_DIR/camera.log"
+
+    if [[ ! -f "$log_file" ]]; then
+        return 1
+    fi
+
+    rg -qi "context is not valid|ExternalShutdownException|failed to create guard_condition" "$log_file"
 }
 
 camera_kernel_has_link_not_enabled() {
@@ -1132,9 +1329,17 @@ start_camera_with_readiness() {
     if ! check_proc_alive camera; then
         return 2
     fi
-    if ! wait_for_topic_message /camera/image_raw 12 1 sensor_data best_effort volatile; then
+    if ! wait_for_topic_message /camera/image_raw 20 1 sensor_data best_effort volatile; then
         if ! check_proc_alive camera; then
             return 2
+        fi
+        if wait_for_topic_message /camera/capture_fps 8 0; then
+            echo "[warn] /camera/image_raw readiness probe timed out, but /camera/capture_fps is active; continuing"
+            return 0
+        fi
+        if camera_log_has_frame_activity; then
+            echo "[warn] /camera/image_raw readiness probe timed out, but camera log shows active frame pipeline; continuing"
+            return 0
         fi
         if camera_log_has_fatal_error; then
             return 3
@@ -1182,6 +1387,9 @@ if ! cleanup_existing_stack_processes; then
 fi
 detect_camera_media_device || true
 preflight_enable_csi_capture_link || true
+if ! preflight_validate_camera_stream; then
+    exit 1
+fi
 
 log_step "sourcing ROS environment"
 cd "$ROS_WS"
@@ -1276,6 +1484,7 @@ if [[ "$CAMERA_DASHBOARD_FPS" =~ ^[0-9]+$ ]]; then
 fi
 
 camera_retry_applied=0
+camera_safe_retry_applied=0
 while true; do
     build_camera_args
     if start_camera_with_readiness; then
@@ -1300,6 +1509,38 @@ while true; do
         camera_retry_applied=1
         stop_camera_process_only
         continue
+    fi
+
+    if [[ "$camera_safe_retry_applied" -eq 0 ]]; then
+        if [[ "$camera_start_rc" -eq 3 ]] && camera_log_has_context_invalid_error; then
+            echo "[warn] camera startup hit ROS context-invalid shutdown path"
+            echo "[warn] retrying camera startup once in safe mode (640x480, rate controls off)"
+            CAMERA_WIDTH=640
+            CAMERA_HEIGHT=480
+            CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
+            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 && "$PERCEPTION_MODE" == "legacy" ]]; then
+                CAMERA_PUBLISH_WIDTH=640
+                CAMERA_PUBLISH_HEIGHT=480
+            fi
+            camera_safe_retry_applied=1
+            stop_camera_process_only
+            continue
+        fi
+
+        if [[ "$camera_start_rc" -eq 4 ]]; then
+            echo "[warn] camera is running but no frames reached /camera/image_raw"
+            echo "[warn] retrying camera startup once in safe mode (640x480, rate controls off)"
+            CAMERA_WIDTH=640
+            CAMERA_HEIGHT=480
+            CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
+            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 && "$PERCEPTION_MODE" == "legacy" ]]; then
+                CAMERA_PUBLISH_WIDTH=640
+                CAMERA_PUBLISH_HEIGHT=480
+            fi
+            camera_safe_retry_applied=1
+            stop_camera_process_only
+            continue
+        fi
     fi
 
     if camera_kernel_has_link_not_enabled; then
@@ -1467,6 +1708,9 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
     start_ros_bg dashboard_bridge ros2 run thesis_bringup dashboard_bridge_node --ros-args \
         -p img_w:=640 \
         -p img_h:=640 \
+        -p camera_ref_w:=$CAMERA_WIDTH \
+        -p camera_ref_h:=$CAMERA_HEIGHT \
+        -p camera_publish_resize_mode:=$CAMERA_PUBLISH_RESIZE_MODE \
         -p enable_container_model_switch_api:=$DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL
     sleep 1
     if ! check_proc_alive dashboard_bridge; then

@@ -23,15 +23,29 @@ export interface DashboardSystemMetrics {
   temp_c: number | null;
 }
 
+export interface DashboardResolution {
+  width: number;
+  height: number;
+}
+
 export interface DashboardTelemetry {
   tracks: DashboardTrack[];
   detections: DashboardDetection[];
   target: number | null;
-  fps: number | null;
-  video_fps: number | null;
+  camera_input_fps?: number | null;
+  det_out_fps?: number | null;
+  e2e_det_ms?: number | null;
+  pub_dt_ms?: number | null;
+  metrics_schema_version?: number;
+  metric_windows?: {
+    det_out_fps_seconds?: number;
+  };
+  metric_thresholds_ms?: {
+    e2e_det_ms?: number;
+    pub_dt_ms?: number;
+  };
   replay_progress: number | null;
-  det_fps: number | null;
-  latency_ms: number | null;
+  inference_resolution?: DashboardResolution;
   system: DashboardSystemMetrics;
 }
 
@@ -61,13 +75,20 @@ export interface DashboardControlResponse {
 export interface MetricsSnapshot {
   timestamp_iso: string;
   model: DashboardModel;
-  video_fps_inst: number | null;
-  video_fps_10s: number | null;
-  det_fps_inst: number | null;
-  det_fps_10s: number | null;
-  latency_ms_inst: number | null;
-  latency_p50_ms: number | null;
-  latency_p95_ms: number | null;
+  metrics_schema_version: number;
+  fps_window_seconds: number;
+  e2e_det_warn_ms: number;
+  pub_dt_warn_ms: number;
+  pub_dt_ms_inst: number | null;
+  pub_dt_p95_ms: number | null;
+  health_score: number | null;
+  camera_input_fps_inst: number | null;
+  camera_input_fps_roll: number | null;
+  det_out_fps_inst: number | null;
+  det_out_fps_roll: number | null;
+  e2e_det_ms_inst: number | null;
+  e2e_det_p50_ms: number | null;
+  e2e_det_p95_ms: number | null;
   replay_progress: number | null;
   detections_now: number;
   detections_10s_avg: number | null;

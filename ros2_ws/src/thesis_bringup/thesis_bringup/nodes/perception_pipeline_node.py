@@ -850,9 +850,9 @@ class PerceptionPipelineNode(Node):
         if t_post_end_ns <= 0:
             t_post_end_ns = t_infer_end_ns
 
-        q_wait_ms = _ms(t_infer_start_ns - frame.t_pre_end_ns)
-        if q_wait_ms < 0.0:
-            q_wait_ms = 0.0
+        container_queue_ms = _ms(t_infer_start_ns - frame.t_pre_end_ns)
+        if container_queue_ms < 0.0:
+            container_queue_ms = 0.0
 
         roundtrip_ms = _ms(t_engine_end_ns - t_engine_start_ns)
         self.last_roundtrip_ms = roundtrip_ms
@@ -902,7 +902,7 @@ class PerceptionPipelineNode(Node):
             tmsg.resize_ms = _ms(frame.t_resize_end_ns - frame.t_resize_start_ns)
             tmsg.color_ms = _ms(frame.t_color_end_ns - frame.t_color_start_ns)
             tmsg.pack_ms = 0.0
-            tmsg.container_queue_ms = float(q_wait_ms)
+            tmsg.container_queue_ms = float(container_queue_ms)
             tmsg.infer_ms = _ms(t_infer_end_ns - t_infer_start_ns)
             tmsg.post_ms = _ms(t_post_end_ns - t_post_start_ns)
 
@@ -912,6 +912,8 @@ class PerceptionPipelineNode(Node):
             t_loop1 = now_ns()
             tmsg.loop_ms = _ms(t_loop1 - frame.t_loop0)
             tmsg.pub_dt_ms = float(pub_dt_ms)
+
+            # Deprecated alias writes kept for schema <=2 consumers.
             tmsg.pts_ns = int(frame.src_stamp_ns)
             tmsg.t_pub_ns = int(t_engine_start_ns)
             tmsg.lat_ms = tmsg.e2e_det_ms
@@ -946,7 +948,7 @@ class PerceptionPipelineNode(Node):
                 f"backend={self.active_backend} "
                 f"dets={len(det_arr.detections)} "
                 f"rt_ms={roundtrip_ms:.2f} "
-                f"q_wait_ms={q_wait_ms:.2f} "
+                f"container_queue_ms={container_queue_ms:.2f} "
                 f"pub_dt_ms={pub_dt_ms:.2f} "
                 f"pub_dt_p50_ms={pub_dt_p50:.2f} "
                 f"pub_dt_p95_ms={pub_dt_p95:.2f}"

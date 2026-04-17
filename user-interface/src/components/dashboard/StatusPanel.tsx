@@ -32,6 +32,7 @@ interface StatusPanelProps {
   }>;
   onDownloadRecording?: (id: string) => void;
   onDeleteRecording?: (id: string) => void;
+  currentResolutionLabel?: string;
 }
 
 export function StatusPanel({
@@ -55,6 +56,7 @@ export function StatusPanel({
   recordings = [],
   onDownloadRecording,
   onDeleteRecording,
+  currentResolutionLabel,
 }: StatusPanelProps) {
   const hasTelemetry = Boolean(telemetry);
   const statusLower = status.toLowerCase();
@@ -81,6 +83,10 @@ export function StatusPanel({
               <span>{isHealthy ? "Connected" : "Disconnected"}</span>
             </div>
             <StatusBadge tone={isHealthy ? "ok" : "error"}>{isHealthy ? "Link Up" : "Link Down"}</StatusBadge>
+          </div>
+          <div className="mt-2 flex items-center justify-between rounded-md border border-zinc-700/60 bg-zinc-900/55 px-2 py-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Inference Resolution</span>
+            <span className="font-mono text-xs text-zinc-200">{currentResolutionLabel ?? "Unknown"}</span>
           </div>
         </div>
 

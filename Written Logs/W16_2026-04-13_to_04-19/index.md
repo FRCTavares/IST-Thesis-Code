@@ -3,6 +3,8 @@
 ## Daily Files
 
 - [2026-04-15__qwait-remediation-and-ablation-decision.md](daily/2026-04-15__qwait-remediation-and-ablation-decision.md)
+- [2026-04-16__backend-redesign-iteration-plan.md](daily/2026-04-16__backend-redesign-iteration-plan.md)
+- [2026-04-17__timing-contract-hardening-proof-and-freeze.md](daily/2026-04-17__timing-contract-hardening-proof-and-freeze.md)
 
 ## Week Outputs
 

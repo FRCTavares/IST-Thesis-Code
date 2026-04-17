@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Crosshair, Loader2 } from "lucide-react";
 import type { DashboardTelemetry } from "@/types/dashboard";
 import { overlayStyle } from "@/components/dashboard/OverlayBox";
@@ -6,6 +6,7 @@ import { overlayStyle } from "@/components/dashboard/OverlayBox";
 interface VideoOverlayProps {
   telemetry: DashboardTelemetry | null;
   videoUrl: string;
+  onResolutionChange?: (resolution: { width: number; height: number } | null) => void;
 }
 
 interface NormalizedBox {
@@ -45,10 +46,11 @@ function overlapIoU(a: NormalizedBox, b: NormalizedBox): number {
   return union > 0 ? intersection / union : 0;
 }
 
-export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
+export function VideoOverlay({ telemetry, videoUrl, onResolutionChange }: VideoOverlayProps) {
   const videoRef = useRef<HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastTargetBoxRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const lastResolutionRef = useRef<string | null>(null);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [streamSrc, setStreamSrc] = useState("");
@@ -61,12 +63,44 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
     return telemetry.tracks.find((track) => track.id === telemetry.target) ?? null;
   }, [telemetry]);
 
+  const reportResolution = useCallback(
+    (width: number, height: number) => {
+      if (!onResolutionChange) {
+        return;
+      }
+
+      const normalizedWidth = Math.max(1, Math.floor(width));
+      const normalizedHeight = Math.max(1, Math.floor(height));
+      const nextValue = `${normalizedWidth}x${normalizedHeight}`;
+      if (lastResolutionRef.current === nextValue) {
+        return;
+      }
+
+      lastResolutionRef.current = nextValue;
+      onResolutionChange({ width: normalizedWidth, height: normalizedHeight });
+    },
+    [onResolutionChange],
+  );
+
+  const clearResolution = useCallback(() => {
+    if (!onResolutionChange) {
+      return;
+    }
+    if (lastResolutionRef.current === null) {
+      return;
+    }
+
+    lastResolutionRef.current = null;
+    onResolutionChange(null);
+  }, [onResolutionChange]);
+
   useEffect(() => {
     const separator = videoUrl.includes("?") ? "&" : "?";
     setStreamSrc(`${videoUrl}${separator}_t=${Date.now()}`);
     setVideoLoaded(false);
     setVideoError(false);
-  }, [videoUrl]);
+    clearResolution();
+  }, [clearResolution, videoUrl]);
 
   useEffect(() => {
     if (videoLoaded || videoError) {
@@ -79,6 +113,7 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
         return;
       }
       if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+        reportResolution(image.naturalWidth, image.naturalHeight);
         setVideoLoaded(true);
         setVideoError(false);
       }
@@ -87,7 +122,7 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
     return () => {
       window.clearInterval(interval);
     };
-  }, [videoLoaded, videoError]);
+  }, [reportResolution, videoLoaded, videoError]);
 
   useEffect(() => {
     if (!videoError) {
@@ -130,6 +165,9 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
 
       const imgW = Math.max(1, video.naturalWidth || canvas.width);
       const imgH = Math.max(1, video.naturalHeight || canvas.height);
+      if (video.naturalWidth > 0 && video.naturalHeight > 0) {
+        reportResolution(video.naturalWidth, video.naturalHeight);
+      }
       const scale = Math.min(canvas.width / imgW, canvas.height / imgH);
       const drawW = imgW * scale;
       const drawH = imgH * scale;
@@ -200,7 +238,7 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
     return () => {
       window.removeEventListener("resize", resize);
     };
-  }, [detections, targetTrack, telemetry?.target]);
+  }, [detections, reportResolution, targetTrack, telemetry?.target]);
 
   return (
     <div className="relative h-full min-h-[320px] w-full overflow-hidden rounded-lg border border-zinc-700/80 bg-zinc-900">
@@ -210,10 +248,15 @@ export function VideoOverlay({ telemetry, videoUrl }: VideoOverlayProps) {
         src={streamSrc || videoUrl}
         alt="Dashboard stream"
         onLoad={() => {
+          const image = videoRef.current;
+          if (image && image.naturalWidth > 0 && image.naturalHeight > 0) {
+            reportResolution(image.naturalWidth, image.naturalHeight);
+          }
           setVideoLoaded(true);
           setVideoError(false);
         }}
         onError={() => {
+          clearResolution();
           setVideoLoaded(false);
           setVideoError(true);
         }}

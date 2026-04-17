@@ -20,6 +20,19 @@ interface ChartsWorkspaceProps {
 
 type ChartRange = "1m" | "5m" | "15m" | "all";
 
+interface ChartPoint {
+  t: string;
+  cameraInputFps: number | null;
+  detOutFps: number | null;
+  e2eDetMs: number | null;
+  detectionsNow: number | null;
+  detectionsAvg: number | null;
+  replayProgress: number | null;
+  cpuPct: number | null;
+  memPct: number | null;
+  tempC: number | null;
+}
+
 function formatTimeLabel(timestampIso: string): string {
   const date = new Date(timestampIso);
   const hh = String(date.getHours()).padStart(2, "0");
@@ -42,13 +55,13 @@ export function ChartsWorkspace({ samples }: ChartsWorkspaceProps) {
     "15m": 900,
   };
 
-  const rawData = useMemo(() => {
+  const rawData = useMemo<ChartPoint[]>(() => {
     const windowed = range === "all" ? samples.slice(-1800) : samples.slice(-rangeLimits[range]);
     return windowed.map((sample) => ({
       t: formatTimeLabel(sample.timestamp_iso),
-      videoFps: sample.video_fps_10s ?? sample.video_fps_inst,
-      detFps: sample.det_fps_10s ?? sample.det_fps_inst,
-      latencyMs: sample.latency_ms_inst,
+      cameraInputFps: sample.camera_input_fps_roll ?? sample.camera_input_fps_inst,
+      detOutFps: sample.det_out_fps_roll ?? sample.det_out_fps_inst,
+      e2eDetMs: sample.e2e_det_ms_inst,
       detectionsNow: sample.detections_now,
       detectionsAvg: sample.detections_10s_avg,
       replayProgress: sample.replay_progress,
@@ -64,9 +77,9 @@ export function ChartsWorkspace({ samples }: ChartsWorkspaceProps) {
     }
 
     const keys = [
-      "videoFps",
-      "detFps",
-      "latencyMs",
+      "cameraInputFps",
+      "detOutFps",
+      "e2eDetMs",
       "detectionsNow",
       "detectionsAvg",
       "replayProgress",
@@ -94,8 +107,8 @@ export function ChartsWorkspace({ samples }: ChartsWorkspaceProps) {
 
   const summary = [
     { label: "Samples", value: String(chartData.length) },
-    { label: "Video FPS", value: last?.videoFps != null ? String(Math.round(last.videoFps * 10) / 10) : "--" },
-    { label: "Latency", value: last?.latencyMs != null ? `${Math.round(last.latencyMs)} ms` : "--" },
+    { label: "Camera FPS", value: last?.cameraInputFps != null ? String(Math.round(last.cameraInputFps * 10) / 10) : "--" },
+    { label: "E2E Latency", value: last?.e2eDetMs != null ? `${Math.round(last.e2eDetMs)} ms` : "--" },
     { label: "CPU", value: last?.cpuPct != null ? `${Math.round(last.cpuPct)}%` : "--" },
   ];
 
@@ -211,9 +224,9 @@ export function ChartsWorkspace({ samples }: ChartsWorkspaceProps) {
                     }}
                   />
                   {showLegend && <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: "11px" }} />}
-                  <Line yAxisId="left" type="monotone" dataKey="videoFps" stroke="#d4d4d8" dot={false} strokeWidth={1.8} name="Video FPS" />
-                  <Line yAxisId="left" type="monotone" dataKey="detFps" stroke="#a1a1aa" dot={false} strokeWidth={1.8} name="Detection FPS" />
-                  {showLatency && <Line yAxisId="right" type="monotone" dataKey="latencyMs" stroke="#f59e0b" dot={false} strokeWidth={1.8} name="Latency ms" />}
+                  <Line yAxisId="left" type="monotone" dataKey="cameraInputFps" stroke="#d4d4d8" dot={false} strokeWidth={1.8} name="Camera Input FPS" />
+                  <Line yAxisId="left" type="monotone" dataKey="detOutFps" stroke="#a1a1aa" dot={false} strokeWidth={1.8} name="Detection Output FPS" />
+                  {showLatency && <Line yAxisId="right" type="monotone" dataKey="e2eDetMs" stroke="#f59e0b" dot={false} strokeWidth={1.8} name="Detection E2E ms" />}
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -237,7 +250,7 @@ export function ChartsWorkspace({ samples }: ChartsWorkspaceProps) {
                   />
                   {showLegend && <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: "11px" }} />}
                   <Area yAxisId="left" type="monotone" dataKey="detectionsNow" stroke="#d4d4d8" fill="#3f3f46" fillOpacity={0.35} name="Detections Now" />
-                  <Line yAxisId="left" type="monotone" dataKey="detectionsAvg" stroke="#a1a1aa" dot={false} strokeWidth={1.8} name="Detections Avg 10s" />
+                  <Line yAxisId="left" type="monotone" dataKey="detectionsAvg" stroke="#a1a1aa" dot={false} strokeWidth={1.8} name="Detections Avg (rolling)" />
                   {showReplay && <Line yAxisId="right" type="monotone" dataKey="replayProgress" stroke="#f59e0b" dot={false} strokeWidth={1.8} name="Replay %" />}
                 </AreaChart>
               </ResponsiveContainer>

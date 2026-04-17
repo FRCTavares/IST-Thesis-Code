@@ -12,30 +12,32 @@ export function PerceptionTrackingPanel({ snapshot, telemetry }: PerceptionTrack
   const activeTracks = telemetry?.tracks.length ?? 0;
   const detectionsNow = snapshot?.detections_now ?? telemetry?.detections.length ?? 0;
   const target = telemetry?.target;
-  const detectorFps = snapshot?.det_fps_10s ?? snapshot?.det_fps_inst ?? telemetry?.det_fps ?? null;
-  const videoFps = snapshot?.video_fps_10s ?? snapshot?.video_fps_inst ?? telemetry?.video_fps ?? null;
-  const latencyMs = snapshot?.latency_ms_inst ?? telemetry?.latency_ms ?? null;
+  const detectorFps = snapshot?.det_out_fps_roll ?? snapshot?.det_out_fps_inst ?? telemetry?.det_out_fps ?? null;
+  const cameraFps = snapshot?.camera_input_fps_roll ?? snapshot?.camera_input_fps_inst ?? telemetry?.camera_input_fps ?? null;
+  const e2eDetMs = snapshot?.e2e_det_ms_inst ?? telemetry?.e2e_det_ms ?? null;
+  const fpsWindowSeconds = snapshot?.fps_window_seconds ?? 3;
+  const fpsWindowLabel = `${fmt(fpsWindowSeconds, 1, "s")} rolling`;
 
   return (
     <PanelShell title="Perception & Tracking" className="">
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
         <MetricCard
-          label="Detector FPS"
+          label="Detection Output FPS"
           value={fmt(detectorFps, 1)}
-          detail="10s smoothed"
+          detail={`${fpsWindowLabel} (det_out_fps)`}
           tone="info"
         />
         <MetricCard
-          label="Video FPS"
-          value={fmt(videoFps, 1)}
-          detail="10s smoothed"
+          label="Camera Input FPS"
+          value={fmt(cameraFps, 1)}
+          detail={`${fpsWindowLabel} (camera_input_fps)`}
           tone="info"
         />
         <MetricCard
-          label="Latency"
-          value={fmt(latencyMs, 1, " ms")}
-          detail={`p95 ${fmt(snapshot?.latency_p95_ms, 1, " ms")}`}
-          tone={(latencyMs ?? 0) > 120 ? "warn" : "default"}
+          label="Detection E2E"
+          value={fmt(e2eDetMs, 1, " ms")}
+          detail={`p95 ${fmt(snapshot?.e2e_det_p95_ms, 1, " ms")} | key e2e_det_ms`}
+          tone={(snapshot?.e2e_det_p95_ms ?? 0) > (snapshot?.e2e_det_warn_ms ?? 120) ? "warn" : "default"}
         />
         <MetricCard
           label="Active Tracks"
@@ -46,7 +48,7 @@ export function PerceptionTrackingPanel({ snapshot, telemetry }: PerceptionTrack
         <MetricCard
           label="Detections"
           value={String(detectionsNow)}
-          detail={`10s avg ${fmt(snapshot?.detections_10s_avg, 1)}`}
+          detail={`rolling avg ${fmt(snapshot?.detections_10s_avg, 1)}`}
           tone="ok"
         />
         <MetricCard

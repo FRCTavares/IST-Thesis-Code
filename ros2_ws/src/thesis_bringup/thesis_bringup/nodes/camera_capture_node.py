@@ -13,6 +13,7 @@ import cv2
 import numpy as np
 import rclpy
 from cv_bridge import CvBridge
+from rcl_interfaces.msg import SetParametersResult
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import Image
@@ -94,6 +95,7 @@ class CameraCaptureNode(Node):
         self._command_timeout_s = float(self.get_parameter("command_timeout_s").value)
         self._reopen_delay_s = float(self.get_parameter("reopen_delay_s").value)
         self._publish_fps_topic = bool(self.get_parameter("publish_fps_topic").value)
+        # Kept for backward compatibility with existing launch args, but ignored.
         self._flip_image = bool(self.get_parameter("flip_image").value)
         self._fail_on_media_init_error = bool(self.get_parameter("fail_on_media_init_error").value)
         self._adopt_detected_sensor_resolution = bool(
@@ -104,6 +106,11 @@ class CameraCaptureNode(Node):
         )
         self._capture_fps_topic = str(self.get_parameter("capture_fps_topic").value)
         self._publish_capture_fps_topic = bool(self.get_parameter("publish_capture_fps_topic").value)
+
+        if self._flip_image:
+            self.get_logger().warn(
+                "flip_image parameter is deprecated and ignored; camera frames are published unrotated"
+            )
 
         self._publish_width_auto = self._publish_width <= 0
         self._publish_height_auto = self._publish_height <= 0
@@ -180,6 +187,7 @@ class CameraCaptureNode(Node):
         self._latest_publish_fps = 0.0
         self._last_log_time = 0.0
         self._image_publish_period = (1.0 / self._fps) if self._fps > 0.0 else 0.0
+        self.add_on_set_parameters_callback(self._on_set_parameters)
 
         self._configure_camera()
         if self._publish_width_auto:
@@ -202,6 +210,80 @@ class CameraCaptureNode(Node):
             f"publish={self._publish_width}x{self._publish_height} "
             f"({self._publish_resize_mode}, {self._publish_encoding}), fps={self._fps}"
         )
+
+    def _on_set_parameters(self, params) -> SetParametersResult:
+        next_publish_width = self._publish_width
+        next_publish_height = self._publish_height
+        next_dashboard_width = self._dashboard_width
+        next_dashboard_height = self._dashboard_height
+
+        publish_changed = False
+        dashboard_changed = False
+
+        for param in params:
+            if param.name not in {
+                "publish_width",
+                "publish_height",
+                "dashboard_width",
+                "dashboard_height",
+            }:
+                continue
+
+            try:
+                value = int(param.value)
+            except Exception:
+                return SetParametersResult(
+                    successful=False,
+                    reason=f"{param.name} must be an integer",
+                )
+
+            if value <= 0:
+                return SetParametersResult(
+                    successful=False,
+                    reason=f"{param.name} must be > 0",
+                )
+
+            if param.name == "publish_width":
+                next_publish_width = value
+                publish_changed = True
+            elif param.name == "publish_height":
+                next_publish_height = value
+                publish_changed = True
+            elif param.name == "dashboard_width":
+                next_dashboard_width = value
+                dashboard_changed = True
+            elif param.name == "dashboard_height":
+                next_dashboard_height = value
+                dashboard_changed = True
+
+        if not publish_changed and not dashboard_changed:
+            return SetParametersResult(successful=True)
+
+        with self._frame_lock:
+            if publish_changed:
+                self._publish_width = next_publish_width
+                self._publish_height = next_publish_height
+                self._publish_width_auto = False
+                self._publish_height_auto = False
+                self._publish_resize_buf = None
+                self._publish_rgb_buf = None
+                self._last_published_frame_id = 0
+
+            if dashboard_changed:
+                self._dashboard_width = next_dashboard_width
+                self._dashboard_height = next_dashboard_height
+                self._dashboard_resize_buf = None
+                self._last_dashboard_published_frame_id = 0
+
+        self._new_frame_event.set()
+        self._dashboard_event.set()
+
+        self.get_logger().info(
+            "runtime camera resolution update: "
+            f"publish={self._publish_width}x{self._publish_height}, "
+            f"dashboard={self._dashboard_width}x{self._dashboard_height}"
+        )
+        return SetParametersResult(successful=True)
 
     def _probe_media_topology(self, media_dev: str) -> str | None:
         try:
@@ -615,9 +697,6 @@ class CameraCaptureNode(Node):
                     self._last_log_time = now
                 self._retry_reopen()
                 continue
-
-            if self._flip_image:
-                frame = cv2.flip(frame, -1)
 
             capture_stamp = self.get_clock().now().to_msg()
 

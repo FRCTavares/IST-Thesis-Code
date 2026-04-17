@@ -16,6 +16,7 @@ interface ControlPanelProps {
   isTrackerSwitching?: boolean;
   controlStatus: string;
   isLinkUp?: boolean;
+  currentResolutionLabel?: string;
 }
 
 export function ControlPanel({
@@ -30,6 +31,7 @@ export function ControlPanel({
   isTrackerSwitching = false,
   controlStatus,
   isLinkUp = true,
+  currentResolutionLabel,
 }: ControlPanelProps) {
   const models: DashboardModel[] = ["yolov6n", "yolov8s", "yolov8m"];
   const trackers: DashboardTracker[] = ["sort", "ocsort", "bytetrack"];
@@ -45,6 +47,7 @@ export function ControlPanel({
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge tone="info">MODEL {activeModel.toUpperCase()}</StatusBadge>
           <StatusBadge tone="info">TRACKER {activeTracker.toUpperCase()}</StatusBadge>
+          <StatusBadge tone="neutral">INFER {currentResolutionLabel ?? "Unknown"}</StatusBadge>
           <StatusBadge tone={currentTargetId !== null ? "ok" : "neutral"}>TARGET {currentTargetId !== null ? `#${currentTargetId}` : "AUTO"}</StatusBadge>
         </div>
       </div>

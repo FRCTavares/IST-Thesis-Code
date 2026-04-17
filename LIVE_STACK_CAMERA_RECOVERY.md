@@ -157,8 +157,25 @@ Interpretation:
 media-ctl -d /dev/media0 -l '"csi2":4 -> "rp1-cfe-csi2_ch0":0 [1]'
 ```
 
+- If media topology shows `tevs` on UYVY 640x480 but `csi2`/`rp1-cfe-csi2_ch0` pads are not enabled (or still on a different format), force relink and format sync before retrying stream-on:
+
+```bash
+media-ctl -d /dev/media0 -l '"csi2":4 -> "rp1-cfe-csi2_ch0":0 [1]'
+media-ctl -d /dev/media0 -V '"tevs 10-0048":0 [fmt:UYVY8_1X16/640x480 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range]'
+media-ctl -d /dev/media0 -V '"csi2":0 [fmt:UYVY8_1X16/640x480 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range]'
+media-ctl -d /dev/media0 -V '"csi2":4 [fmt:UYVY8_1X16/640x480 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range]'
+v4l2-ctl -d /dev/video0 --set-fmt-video=width=640,height=480,pixelformat=UYVY --stream-mmap=4 --stream-count=30 --stream-to=/dev/null --stream-poll
+```
+
 - If kernel reports repeated `i2c_designware` timeout or `tevs ... ret=-110`, or camera tooling is stuck in `D` state:
   - reboot host before retrying live stack.
+
+Why 1280x720 often fails first:
+
+- after a bad boot/crash, TEVS frequently comes up in a safe 640x480 mode
+- CSI capture link may be present but disabled (`[]`), so stream-on returns `Invalid argument`
+- forcing 1280x720 while I2C control path is unstable can trigger `ret=-110` and `stream on failed in subdev`
+- once 640x480 stream is healthy again, you can test returning to 1280x720
 
 Step 5: Start live stack
 
@@ -166,6 +183,14 @@ Step 5: Start live stack
 cd /home/francisco/Desktop/Thesis-Code
 ./tools/start_live_stack.sh
 ```
+
+If recovering from this specific 640x480/link-disabled failure, prefer first launch with conservative camera controls:
+
+```bash
+./tools/start_live_stack.sh --perception-mode legacy --camera-rate-controls-off --camera-width 640 --camera-height 480
+```
+
+After confirming stable `/camera/image_raw`, test 1280x720 again.
 
 Notes:
 

@@ -360,6 +360,50 @@ Expected output:
 
 - `summary.md` and plot files under `reports/tracking/<eval_bag_name>/`.
 
+## 5.1) Timing vocabulary (canonical)
+
+Use these names in runtime analysis, reports, and UI interpretation:
+
+- `e2e_det_ms`: Detection end-to-end latency from camera callback seen to detection publish completion.
+- `pub_dt_ms`: Detection publish cadence interval (ms between consecutive `/timing` publishes).
+- `det_out_fps`: Detection output rate derived from `/detections` callback cadence.
+- `camera_input_fps`: Camera publish FPS from `/camera/fps`.
+- `container_queue_ms`: Pre-infer wait before inference starts.
+- `infer_ms`: Inference compute duration.
+- `track_ms`: Tracker backend compute duration.
+- `e2e_target_ms`: End-to-end latency to target publish completion.
+
+Clock-domain note:
+
+- `src_stamp_ns` is source/sensor clock metadata and may not be directly comparable to host monotonic timing without synchronization.
+- `pub_dt_ms`, `det_out_fps`, and `camera_input_fps` are cadence-derived metrics.
+
+Full old-to-new mapping, producers/consumers, and deprecation status is in `TIMING_FIELD_AUDIT.md`.
+
+Freeze note:
+
+- Timing schema v3 is frozen for the thesis baseline.
+- Canonical timing names must not change unless metric semantics change.
+- Remaining aliases are deprecated compatibility/history only.
+
+## 5.2) Operator Metric Priority (Thesis)
+
+Top 5 during live runs:
+
+1. `e2e_det_ms` p95: end-to-end detection responsiveness.
+2. `pub_dt_ms` p95: cadence stability and freshness.
+3. `det_out_fps`: effective perception output rate.
+4. `container_queue_ms` p95: bottleneck visibility before inference.
+5. `camera_input_fps`: camera feed health relative to detector throughput.
+
+Top 5 during offline analysis:
+
+1. `e2e_det_ms` p95/p99: latency tail behavior.
+2. `pub_dt_ms` p95/p99: cadence jitter and restart-gap impact.
+3. `container_queue_ms` distribution: queue pressure/bottleneck location.
+4. `infer_ms` distribution: compute cost stability.
+5. `e2e_target_ms` p95 (when target stream present): downstream control readiness latency.
+
 ## 6) Quick troubleshooting
 
 Camera check:
@@ -480,7 +524,7 @@ python3 tools/collect_live_timing_stats.py \
 
 Stop the stack after collection completes.
 
-Quick sanity check (new q_wait visibility):
+Quick sanity check (container queue visibility):
 
 - Verify `/timing.container_queue_ms` appears in the JSON under `metrics['/timing']`.
 - This field tracks pre-infer wait (`t_infer_start_ns - t_pre_end_ns`).
@@ -564,7 +608,7 @@ cd $THESIS_ROOT
 
 Then collect a standard 10-minute artifact and compare against baseline.
 
-### 10.6) Perception q_wait optimization variant (freshness-first)
+### 10.6) Perception container_queue optimization variant (freshness-first)
 
 Use this when `/timing` throughput is limited by pre-infer wait.
 

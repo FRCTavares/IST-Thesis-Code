@@ -15,6 +15,8 @@ import sys
 from dataclasses import dataclass, asdict
 from typing import Dict, List, Optional, Tuple
 
+from timing_contract import METRICS_SCHEMA_VERSION, METRIC_WINDOWS
+
 
 EPS = 1e-9
 
@@ -84,6 +86,30 @@ def _extract_optional_detection_stats(payload: Dict[str, object]) -> Tuple[Optio
 
 def _extract_run_metrics(path: str, queue_buffers: int) -> RunMetrics:
     payload = _load_json(path)
+
+    contract = _dict_get(payload, "contract", "contract")
+    if not isinstance(contract, dict):
+        raise ValueError("contract is not an object")
+
+    schema_version = int(_dict_get(contract, "metrics_schema_version", "contract.metrics_schema_version"))
+    if schema_version < METRICS_SCHEMA_VERSION:
+        raise ValueError(
+            f"contract.metrics_schema_version={schema_version} is older than required {METRICS_SCHEMA_VERSION}"
+        )
+
+    metric_windows = _dict_get(contract, "metric_windows", "contract.metric_windows")
+    if not isinstance(metric_windows, dict):
+        raise ValueError("contract.metric_windows is not an object")
+    for key in METRIC_WINDOWS:
+        if key not in metric_windows:
+            raise ValueError(f"missing contract.metric_windows['{key}']")
+
+    thresholds = _dict_get(contract, "metric_thresholds_ms", "contract.metric_thresholds_ms")
+    if not isinstance(thresholds, dict):
+        raise ValueError("contract.metric_thresholds_ms is not an object")
+    for key in ("e2e_det_ms", "pub_dt_ms"):
+        if key not in thresholds:
+            raise ValueError(f"missing contract.metric_thresholds_ms['{key}']")
 
     run_label_obj = payload.get("run_label", os.path.basename(path))
     run_label = str(run_label_obj)

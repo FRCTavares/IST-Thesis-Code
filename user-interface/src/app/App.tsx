@@ -40,6 +40,11 @@ interface SavedRecording {
   samples: MetricsSnapshot[];
 }
 
+interface StreamResolution {
+  width: number;
+  height: number;
+}
+
 function inferLogLevel(message: string): DashboardLogLevel {
   const text = message.toLowerCase();
   if (/(error|failed|fail|cannot|down|invalid)/.test(text)) {
@@ -77,6 +82,7 @@ function DashboardPage() {
   const [uiDensity, setUiDensity] = useState<UiDensity>("cozy");
   const [defaultTab, setDefaultTab] = useState<DashboardTab>("overview");
   const [logBufferLimit, setLogBufferLimit] = useState(DEFAULT_LOG_BUFFER_LIMIT);
+  const [streamResolution, setStreamResolution] = useState<StreamResolution | null>(null);
 
   const lastSocketStatusRef = useRef<string | null>(null);
   const lastControlStatusRef = useRef<string | null>(null);
@@ -86,6 +92,10 @@ function DashboardPage() {
   const explicitlyDisconnected = /(disconnected|retry|error|fail|closed|closing|connecting)/.test(statusLower);
   const explicitlyConnected = /(connected|live|open)/.test(statusLower);
   const isLinkUp = hasTelemetry || (explicitlyConnected && !explicitlyDisconnected);
+  const streamResolutionLabel = streamResolution ? `${streamResolution.width}x${streamResolution.height}` : "Unknown";
+  const inferenceResolutionLabel = telemetry?.inference_resolution
+    ? `${telemetry.inference_resolution.width}x${telemetry.inference_resolution.height}`
+    : streamResolutionLabel;
 
   const metricState = useDashboardMetrics(telemetry, activeModel);
 
@@ -329,6 +339,7 @@ function DashboardPage() {
     setSamples([]);
     setRecordedSamples([]);
     setSavedRecordings([]);
+    setStreamResolution(null);
     setActiveTab(defaultTab);
     setIsSidebarCollapsed(false);
     setIsSettingsOpen(false);
@@ -473,57 +484,58 @@ function DashboardPage() {
           )}
 
           {activeTab === "overview" ? (
-        <div className={`grid grid-cols-1 gap-3 transition-[grid-template-columns] duration-300 ease-in-out ${isSidebarCollapsed ? "lg:grid-cols-1" : "lg:grid-cols-[2.2fr_1fr]"} lg:min-h-[calc(100vh-2rem)] lg:items-stretch`}>
-          <section className="grid h-full grid-rows-[minmax(0,1fr)_auto_auto] gap-3">
-            <PanelShell title="Live Camera Feed" className="flex h-full flex-col" contentClassName="min-h-0 flex-1 p-2.5">
-              <VideoOverlay telemetry={telemetry} videoUrl={dashboardConfig.videoUrl} />
-            </PanelShell>
-            <PerceptionTrackingPanel snapshot={metricState.snapshot} telemetry={telemetry} />
-            <SystemMetricsGrid snapshot={metricState.snapshot} />
-          </section>
+            <div className={`grid grid-cols-1 gap-3 transition-[grid-template-columns] duration-300 ease-in-out ${isSidebarCollapsed ? "lg:grid-cols-1" : "lg:grid-cols-[2.2fr_1fr]"} lg:min-h-[calc(100vh-2rem)] lg:items-stretch`}>
+              <section className="grid h-full grid-rows-[minmax(0,1fr)_auto_auto] gap-3">
+                <PanelShell title="Live Camera Feed" className="flex h-full flex-col" contentClassName="min-h-0 flex-1 p-2.5">
+                  <VideoOverlay telemetry={telemetry} videoUrl={dashboardConfig.videoUrl} onResolutionChange={setStreamResolution} />
+                </PanelShell>
+                <PerceptionTrackingPanel snapshot={metricState.snapshot} telemetry={telemetry} />
+                <SystemMetricsGrid snapshot={metricState.snapshot} />
+              </section>
 
-          {!isSidebarCollapsed && (
-            <StatusPanel status={status} mode={dashboardConfig.mode} telemetry={telemetry} snapshot={metricState.snapshot} activeModel={activeModel} activeTracker={activeTracker} onModelSwitch={handleModelSwitch} onTrackerSwitch={handleTrackerSwitch} onStartRecording={handleStartRecording} onStopRecording={handleStopRecording} isRecording={isRecording} recordedCount={recordedSamples.length} onCloseSidebar={() => setIsSidebarCollapsed(true)} isModelSwitching={isModelSwitching} isTrackerSwitching={isTrackerSwitching} controlStatus={controlStatus} recordings={savedRecordings.map((entry) => ({ id: entry.id, createdAtIso: entry.createdAtIso, model: entry.model, tracker: entry.tracker, sampleCount: entry.samples.length }))} onDownloadRecording={handleDownloadRecording} onDeleteRecording={handleDeleteRecording} isLinkUp={isLinkUp} />
-          )}
-        </div>
+              {!isSidebarCollapsed && (
+                <StatusPanel status={status} mode={dashboardConfig.mode} telemetry={telemetry} snapshot={metricState.snapshot} activeModel={activeModel} activeTracker={activeTracker} onModelSwitch={handleModelSwitch} onTrackerSwitch={handleTrackerSwitch} onStartRecording={handleStartRecording} onStopRecording={handleStopRecording} isRecording={isRecording} recordedCount={recordedSamples.length} onCloseSidebar={() => setIsSidebarCollapsed(true)} isModelSwitching={isModelSwitching} isTrackerSwitching={isTrackerSwitching} controlStatus={controlStatus} recordings={savedRecordings.map((entry) => ({ id: entry.id, createdAtIso: entry.createdAtIso, model: entry.model, tracker: entry.tracker, sampleCount: entry.samples.length }))} onDownloadRecording={handleDownloadRecording} onDeleteRecording={handleDeleteRecording} isLinkUp={isLinkUp} currentResolutionLabel={inferenceResolutionLabel} />
+              )}
+            </div>
           ) : null}
 
           {activeTab === "control" ? (
-        <div className="grid grid-cols-1 gap-3 lg:min-h-[calc(100vh-2rem)] lg:items-stretch">
-          <ControlPanel
-            activeModel={activeModel}
-            activeTracker={activeTracker}
-            onModelSwitch={handleModelSwitch}
-            onTrackerSwitch={handleTrackerSwitch}
-            onTargetFocus={handleTargetFocus}
-            availableTrackIds={telemetry?.tracks.map((track) => track.id) ?? []}
-            currentTargetId={telemetry?.target ?? null}
-            isModelSwitching={isModelSwitching}
-            isTrackerSwitching={isTrackerSwitching}
-            controlStatus={controlStatus}
-            isLinkUp={isLinkUp}
-          />
-        </div>
+            <div className="grid grid-cols-1 gap-3 lg:min-h-[calc(100vh-2rem)] lg:items-stretch">
+              <ControlPanel
+                activeModel={activeModel}
+                activeTracker={activeTracker}
+                onModelSwitch={handleModelSwitch}
+                onTrackerSwitch={handleTrackerSwitch}
+                onTargetFocus={handleTargetFocus}
+                availableTrackIds={telemetry?.tracks.map((track) => track.id) ?? []}
+                currentTargetId={telemetry?.target ?? null}
+                isModelSwitching={isModelSwitching}
+                isTrackerSwitching={isTrackerSwitching}
+                controlStatus={controlStatus}
+                isLinkUp={isLinkUp}
+                currentResolutionLabel={inferenceResolutionLabel}
+              />
+            </div>
           ) : null}
 
           {activeTab === "charts" ? (
-        <div className="grid grid-cols-1 gap-3">
-          <ChartsWorkspace samples={samples} />
-        </div>
+            <div className="grid grid-cols-1 gap-3">
+              <ChartsWorkspace samples={samples} />
+            </div>
           ) : null}
 
           {activeTab === "logging" ? (
-        <div className="grid grid-cols-1 gap-3 lg:min-h-[calc(100vh-2rem)] lg:items-stretch">
-          <LoggingPanel
-            entries={logEntries}
-            isPaused={isLogIntakePaused}
-            bufferLimit={logBufferLimit}
-            onTogglePaused={() => setIsLogIntakePaused((prev) => !prev)}
-            onClearLogs={handleClearLogs}
-            onExportJson={handleExportLogsJson}
-            onExportCsv={handleExportLogsCsv}
-          />
-        </div>
+            <div className="grid grid-cols-1 gap-3 lg:min-h-[calc(100vh-2rem)] lg:items-stretch">
+              <LoggingPanel
+                entries={logEntries}
+                isPaused={isLogIntakePaused}
+                bufferLimit={logBufferLimit}
+                onTogglePaused={() => setIsLogIntakePaused((prev) => !prev)}
+                onClearLogs={handleClearLogs}
+                onExportJson={handleExportLogsJson}
+                onExportCsv={handleExportLogsCsv}
+              />
+            </div>
           ) : null}
         </div>
       </main>
