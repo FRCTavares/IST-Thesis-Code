@@ -142,8 +142,8 @@ ros2 launch thesis_bringup camera_bringup.launch.py
 docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash
 
 # Inside container:
-VENV=/root/hailo-rpi5-examples/venv_hailo_rpi_examples
-export PYTHONPATH=/root/hailo-rpi5-examples:${PYTHONPATH:-}
+VENV=/root/thesis_deprecated/hailo-rpi5-examples/venv_hailo_rpi_examples
+export PYTHONPATH=/root/thesis_deprecated/hailo-rpi5-examples:${PYTHONPATH:-}
 cd /root/thesis_service
 
 export HAILO_FRAME_SOURCE=ros
@@ -153,7 +153,7 @@ export HAILO_INFER_HEIGHT=640
 export HAILO_VIDEO_SINK=fakesink
 export HAILO_POST_FUNC=filter
 
-$VENV/bin/python /root/thesis_service/detection_zmq.py
+$VENV/bin/python /root/thesis_deprecated/infer_service/detection_zmq.py
 ```
 
 ### Terminal 3 — Inference Client
@@ -405,7 +405,7 @@ ln -sf /lib/libhailort.so.4.20.0 /lib/libhailort.so.4.17.0 && ldconfig
 apt-get install -y pkg-config hailo-tappas-core
 
 # Download HEFs and resources (if missing)
-cd /root/hailo-rpi5-examples && ./download_resources.sh --all
+cd /root/thesis_deprecated/hailo-rpi5-examples && ./download_resources.sh --all
 
 # Symlink YOLO postprocess SO (if missing)
 ln -sf /usr/lib/aarch64-linux-gnu/hailo/tappas/post_processes/libyolo_hailortpp_post.so \
@@ -469,7 +469,7 @@ PY
 
 ```bash
 # Inside container: direct pipeline (no ZMQ, no ROS overhead)
-cd /root/hailo-rpi5-examples && source ./setup_env.sh
+cd /root/thesis_deprecated/hailo-rpi5-examples && source ./setup_env.sh
 timeout 10s python3 -m basic_pipelines.detection_simple \
   --input /usr/local/hailo/resources/videos/example_640.mp4 \
   --hef-path /usr/local/hailo/resources/models/hailo8/yolov6n.hef \

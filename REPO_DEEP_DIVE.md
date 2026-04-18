@@ -124,14 +124,15 @@ Root-level purpose map:
   - Weekly and daily engineering logs.
 - `deprecated/`
   - Archived experiments not in active path.
-- `hailo-rpi5-examples/`
+- `deprecated/hailo-rpi5-examples/`
   - Upstream/vendor resources.
 
 ## 5) External dependency model
 
-The legacy container path depends on an external compose environment at:
+The legacy container path depends on a compose environment at:
 
-- `~/pi-ai-kit-ubuntu`
+- `$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu` (primary)
+- `~/pi-ai-kit-ubuntu` (legacy fallback)
 
 Contract for legacy mode:
 

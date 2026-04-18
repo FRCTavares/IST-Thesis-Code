@@ -73,6 +73,8 @@ ros2_ws/log/
 # Project-specific generated artifacts
 # ------------------------------
 # Hailo local examples/assets downloaded or generated locally
+# preferred location is deprecated/hailo-rpi5-examples/
+deprecated/hailo-rpi5-examples/
 hailo-rpi5-examples/
 
 # Inference runtime outputs

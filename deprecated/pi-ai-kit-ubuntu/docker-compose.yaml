@@ -1,0 +1,31 @@
+services:
+  hailo-ubuntu-pi:
+    build: .
+    environment:
+      - DISPLAY=${DISPLAY}
+      - XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
+      - UDEV=1
+      - HAILO_VIDEO_SOURCE=/root/thesis_service/example_640_x10_safe.mp4
+      - HAILO_LOOP_VIDEO=0
+      - HAILO_VIDEO_SINK=fakesink
+      - HAILO_ARCH=hailo8
+      - HAILO_HEF_PATH=/root/thesis_service/resources/hefs/yolov6n_hailo8.hef
+      - HAILO_POST_SO=/usr/lib/aarch64-linux-gnu/hailo/tappas/post_processes/libyolo_hailortpp_post.so
+    devices:
+      - /dev/hailo0:/dev/hailo0
+      - /dev/dri:/dev/dri
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev:/dev
+      - /lib/firmware:/lib/firmware
+      - /run/udev:/run/udev:ro
+      - /home/francisco/Desktop/Thesis-Code/infer_service:/root/thesis_service
+      - /home/francisco/Desktop/Thesis-Code/deprecated:/root/thesis_deprecated:ro
+      - /home/francisco/Desktop/Thesis-Code/deprecated/hailo-rpi5-examples:/root/hailo-rpi5-examples
+    privileged: true
+    network_mode: host
+    ipc: host
+    tty: true
+    stdin_open: true
+    group_add:
+      - "44"

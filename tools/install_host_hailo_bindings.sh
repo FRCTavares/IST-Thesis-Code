@@ -9,7 +9,11 @@ VENV_PATH="${VENV_PATH:-$THESIS_ROOT/.venv}"
 BASE_URL="${BASE_URL:-https://dev-public.hailo.ai/2025_07}"
 HAILORT_VERSION="${HAILORT_VERSION:-4.23.0}"
 TAPPAS_CORE_VERSION="${TAPPAS_CORE_VERSION:-5.1.0}"
-DOWNLOAD_DIR="${DOWNLOAD_DIR:-$THESIS_ROOT/hailo-rpi5-examples/hailo_temp_resources}"
+HAILO_EXAMPLES_DIR="${HAILO_EXAMPLES_DIR:-$THESIS_ROOT/deprecated/hailo-rpi5-examples}"
+if [[ ! -d "$HAILO_EXAMPLES_DIR" && -d "$THESIS_ROOT/hailo-rpi5-examples" ]]; then
+    HAILO_EXAMPLES_DIR="$THESIS_ROOT/hailo-rpi5-examples"
+fi
+DOWNLOAD_DIR="${DOWNLOAD_DIR:-$HAILO_EXAMPLES_DIR/hailo_temp_resources}"
 HAILORT_WHEEL_SRC="${HAILORT_WHEEL_SRC:-}"
 TAPPAS_WHEEL_SRC="${TAPPAS_WHEEL_SRC:-}"
 SKIP_SYSTEM_CHECK=0
@@ -32,7 +36,7 @@ Options:
   -h, --help                     Show help
 
 Environment overrides:
-    VENV_PATH, BASE_URL, HAILORT_VERSION, TAPPAS_CORE_VERSION, DOWNLOAD_DIR,
+    VENV_PATH, BASE_URL, HAILORT_VERSION, TAPPAS_CORE_VERSION, HAILO_EXAMPLES_DIR, DOWNLOAD_DIR,
     HAILORT_WHEEL_SRC, TAPPAS_WHEEL_SRC
 
 Recommended pair for Hailo-8 on Ubuntu 24.04:

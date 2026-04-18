@@ -41,7 +41,7 @@ Focus: finish the timing refactor cycle with strict contract hardening, end-to-e
 - Strengthened contract validators and live invariant checks to catch suspicious/impossible combinations (example: `e2e_det_ms < infer_ms`).
 - Synced offline analysis wording and canonical metric expectations, including queue-wait visibility in reports.
 - Added freeze smoke validation script:
-  - `tools/smoke_check_timing_freeze.py`
+  - `deprecated/tools/timing/smoke_check_timing_freeze.py`
 
 ### 4) Frontend telemetry and dashboard migration completion
 

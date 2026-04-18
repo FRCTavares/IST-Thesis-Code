@@ -14,4 +14,4 @@ def traced_print(*args, **kwargs):
 builtins.print = traced_print
 
 import runpy
-runpy.run_path("/root/thesis_service/detection_zmq.py", run_name="__main__")
+runpy.run_path("/root/thesis_deprecated/infer_service/detection_zmq.py", run_name="__main__")

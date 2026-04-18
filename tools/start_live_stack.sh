@@ -23,7 +23,12 @@ set -euo pipefail
 
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 ROS_WS="${ROS_WS:-$THESIS_ROOT/ros2_ws}"
-PI_AI_DIR="${PI_AI_DIR:-$HOME/pi-ai-kit-ubuntu}"
+PI_AI_DIR_DEFAULT="$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
+if [[ -d "$PI_AI_DIR_DEFAULT" ]]; then
+    PI_AI_DIR="${PI_AI_DIR:-$PI_AI_DIR_DEFAULT}"
+else
+    PI_AI_DIR="${PI_AI_DIR:-$HOME/pi-ai-kit-ubuntu}"
+fi
 CONTAINER_NAME="${CONTAINER_NAME:-pi-ai-kit-ubuntu-hailo-ubuntu-pi-1}"
 PI_IP="${PI_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
 ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
@@ -1412,6 +1417,13 @@ export ROS_DOMAIN_ID
 log_info "ros: domain=$ROS_DOMAIN_ID log_dir=$ROS_LOG_DIR"
 
 if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
+    if [[ ! -f "$PI_AI_DIR/docker-compose.yaml" ]]; then
+        echo "[error] legacy compose file not found: $PI_AI_DIR/docker-compose.yaml"
+        echo "[hint] set PI_AI_DIR or place compose project at $THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
+        stop_stack
+        exit 1
+    fi
+
     log_step "ensuring container is up"
     (
         cd "$PI_AI_DIR"
@@ -1420,16 +1432,16 @@ if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
 
     # If the bind mount is stale (e.g. host dir recreated), detection script can disappear
     # inside an otherwise running container. Recreate once to refresh mounts.
-    if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_service/detection_zmq.py >/dev/null 2>&1; then
+    if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_deprecated/infer_service/detection_zmq.py >/dev/null 2>&1; then
         echo "[warn] detection service script missing in container mount; recreating container"
         (
             cd "$PI_AI_DIR"
             docker compose -f docker-compose.yaml up -d --force-recreate hailo-ubuntu-pi
         ) >>"$RUN_DIR/container_up.log" 2>&1
 
-        if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_service/detection_zmq.py >/dev/null 2>&1; then
-            echo "[error] container mount is still missing /root/thesis_service/detection_zmq.py"
-            echo "[error] check docker-compose bind mount for thesis_service and host path contents"
+        if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_deprecated/infer_service/detection_zmq.py >/dev/null 2>&1; then
+            echo "[error] container mount is still missing /root/thesis_deprecated/infer_service/detection_zmq.py"
+            echo "[error] check docker-compose bind mount for thesis_deprecated and host path contents"
             stop_stack
             exit 1
         fi
@@ -1443,8 +1455,17 @@ for pid in $(pgrep -f detection_zmq.py || true); do
         kill "$pid" >/dev/null 2>&1 || true
     fi
 done
-VENV=/root/hailo-rpi5-examples/venv_hailo_rpi_examples
-export PYTHONPATH=/root/hailo-rpi5-examples:${PYTHONPATH:-}
+HAILO_EXAMPLES_DIR=/root/thesis_deprecated/hailo-rpi5-examples
+if [ ! -d "$HAILO_EXAMPLES_DIR" ]; then
+    HAILO_EXAMPLES_DIR=/root/hailo-rpi5-examples
+fi
+VENV="$HAILO_EXAMPLES_DIR/venv_hailo_rpi_examples"
+export PYTHONPATH="$HAILO_EXAMPLES_DIR:${PYTHONPATH:-}"
+DETECTION_ENTRY=/root/thesis_deprecated/infer_service/detection_zmq.py
+if [ ! -f "$DETECTION_ENTRY" ]; then
+    echo "missing detection entrypoint: $DETECTION_ENTRY" >&2
+    exit 1
+fi
 cd /root/thesis_service
 export HAILO_FRAME_SOURCE=ros
 export HAILO_REQREP_BIND=tcp://0.0.0.0:5556
@@ -1454,7 +1475,7 @@ export HAILO_VIDEO_SINK=fakesink
 export HAILO_POST_FUNC=filter
 export HAILO_DET_LABEL=person
 export HAILO_REQREP_LOG_EVERY=${HAILO_REQREP_LOG_EVERY:-0}
-nohup "$VENV/bin/python" /root/thesis_service/detection_zmq.py > /tmp/detection_zmq_live.log 2>&1 &
+nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
 ' >"$RUN_DIR/container_infer_start.log" 2>&1
 
     if ! wait_for_port 127.0.0.1 5556 20 1; then

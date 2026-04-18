@@ -68,11 +68,11 @@ docker compose version
 
 ### Mandatory external dependency (RPi5 + Hailo path)
 
-This repository expects the Hailo compose environment at `~/pi-ai-kit-ubuntu`.
+This repository expects the Hailo compose environment at `$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu` (legacy fallback: `~/pi-ai-kit-ubuntu`).
 
 ```bash
-git clone https://github.com/hailo-ai/pi-ai-kit-ubuntu.git ~/pi-ai-kit-ubuntu
-cd ~/pi-ai-kit-ubuntu
+git clone https://github.com/hailo-ai/pi-ai-kit-ubuntu.git "$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
+cd "$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
 docker compose -f docker-compose.yaml pull
 ```
 
@@ -235,13 +235,13 @@ ros2 launch thesis_bringup camera_bringup.launch.py
 Terminal 2 - Inference service in container:
 
 ```bash
-cd ~/pi-ai-kit-ubuntu
+cd "$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
 docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
 
 docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash
 # inside container
-VENV=/root/hailo-rpi5-examples/venv_hailo_rpi_examples
-export PYTHONPATH=/root/hailo-rpi5-examples:${PYTHONPATH:-}
+VENV=/root/thesis_deprecated/hailo-rpi5-examples/venv_hailo_rpi_examples
+export PYTHONPATH=/root/thesis_deprecated/hailo-rpi5-examples:${PYTHONPATH:-}
 cd /root/thesis_service
 export HAILO_FRAME_SOURCE=ros
 export HAILO_REQREP_BIND=tcp://0.0.0.0:5556
@@ -249,7 +249,7 @@ export HAILO_INFER_WIDTH=640
 export HAILO_INFER_HEIGHT=640
 export HAILO_VIDEO_SINK=fakesink
 export HAILO_POST_FUNC=filter
-$VENV/bin/python /root/thesis_service/detection_zmq.py
+$VENV/bin/python /root/thesis_deprecated/infer_service/detection_zmq.py
 ```
 
 Terminal 3+ - Remaining nodes:
