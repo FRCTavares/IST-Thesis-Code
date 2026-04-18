@@ -105,6 +105,32 @@ check_proc_alive() {
     log_ok "$name (pid=$pid)"
 }
 
+print_startup_success_summary() {
+    local infer_w infer_h capture_size publish_size infer_size detector_summary tracker_summary
+
+    infer_w="${HAILO_INFER_WIDTH:-640}"
+    infer_h="${HAILO_INFER_HEIGHT:-640}"
+    capture_size="${CAMERA_WIDTH}x${CAMERA_HEIGHT}"
+    publish_size="${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}"
+    infer_size="${infer_w}x${infer_h}"
+
+    if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
+        detector_summary="mode=legacy queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} timeout_ms=${INFER_TIMEOUT_MS} retries=${INFER_RETRIES}"
+    else
+        detector_summary="mode=single-process frame_queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} image_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
+    fi
+
+    if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
+        tracker_summary="enabled type=${TRACKER_TYPE} iou=${TRACKER_IOU_THRESHOLD} max_age=${TRACKER_MAX_AGE} min_hits=${TRACKER_MIN_HITS} centre_gate=${TRACKER_CENTRE_GATE}"
+    else
+        tracker_summary="disabled"
+    fi
+
+    echo "[ok] startup summary: capture=${capture_size} publish=${publish_size} hailo_infer=${infer_size}"
+    echo "[ok] detector: ${detector_summary}"
+    echo "[ok] tracker: ${tracker_summary}"
+}
+
 camera_log_has_fatal_error() {
     local log_file="$RUN_DIR/camera.log"
 
@@ -196,6 +222,18 @@ stop_stack() {
 
 trap 'stop_stack; exit 0' INT TERM
 
+print_resolution_presets() {
+    cat <<'EOF'
+Available resolution presets:
+    vga      640x480
+    hd       1280x720
+    fhd      1920x1080
+
+Custom format:
+    WIDTHxHEIGHT (example: 1024x576)
+EOF
+}
+
 print_advanced_usage() {
     cat <<'EOF'
 Usage: start_live_stack.sh [options]
@@ -224,10 +262,12 @@ Options:
     --tracker-timing-off                Disable /timing_tracker publishing (default)
     --tracker-timing-on                 Enable /timing_tracker publishing
     --timing-off                        Disable /timing publishing from inference client
+    --resolution <preset|WIDTHxHEIGHT>  Quick camera capture resolution selector
+    --list-resolutions                  Print resolution presets and exit
     --camera-width <N>                  Camera capture width (default: 1280)
     --camera-height <N>                 Camera capture height (default: 720)
-    --camera-publish-width <N>          /camera/image_raw width (default: mode-specific)
-    --camera-publish-height <N>         /camera/image_raw height (default: mode-specific)
+    --camera-publish-width <N>          /camera/image_raw width (default: camera-width)
+    --camera-publish-height <N>         /camera/image_raw height (default: camera-height)
     --camera-publish-resize-mode <resize|letterbox>
                                                                             /camera/image_raw reshape mode (default: letterbox)
     --camera-publish-encoding <bgr8|rgb8>
@@ -242,18 +282,16 @@ Options:
     --camera-ae-max <N>                 Sensor ae_exposure_max control (default: 33333)
     --camera-exposure-mode <0|1|2>      Sensor exposure mode (0=manual, 1=auto, 2=agc; default: 1)
     --camera-manual-exposure <N>        Sensor manual exposure when mode=0 (default: 8333)
-    --infer-queue-size <N>              Inference client queue size (default: 1)
-    --infer-workers <N>                 Inference client worker threads (default: 2)
+    --infer-queue-size <N>              Inference queue size (legacy client + single-process ingress, default: 1)
+    --infer-workers <N>                 Legacy client workers / single-process preprocess workers (default: 2)
     --infer-timeout-ms <N>              Inference request timeout ms (default: 300)
     --infer-retries <N>                 Inference retries after timeout/error (default: 0)
     --infer-print-every <N>             Inference periodic stats interval (default: 240)
     --infer-timeout-log-every <N>       Inference timeout log interval (default: 20)
     --perception-image-qos-depth <N>    Perception image subscription depth (single-process default: 2)
     --perception-hailo-queue-buffers <N>
-                                                                            Hailo Gst queue max-size-buffers (single-process default: 2)
+                                                                            Hailo Gst queue max-size-buffers (single-process default: 6)
     --perception-async-max-inflight <N>  Experimental request for in-flight calls (single-process owner path enforces 1)
-    --perception-async-latest-frame-off  Disable async latest-frame inference worker (single-process)
-    --perception-async-latest-frame-on   Enable async latest-frame inference worker (single-process default)
     --perception-hailo-videoconvert-off  Disable pre-hailonet videoconvert stage (single-process)
     --perception-hailo-videoconvert-on   Enable pre-hailonet videoconvert stage (single-process default)
     --perception-gc-off                 Disable Python cyclic GC in perception node
@@ -281,6 +319,9 @@ Day-to-day options:
                                       Startup preset (default: daily)
     --perception-mode <legacy|single-process>
                                       Perception path selection (default: single-process)
+    --resolution <preset|WIDTHxHEIGHT>
+                                      Quick camera capture resolution selector
+    --list-resolutions                 Print available resolution presets and exit
     --camera-width <N>                Camera capture width (default: profile value)
     --camera-height <N>               Camera capture height (default: profile value)
     --camera-rate-controls-off        Disable sensor FPS/exposure control writes
@@ -297,6 +338,8 @@ Day-to-day options:
 Notes:
     - Script now runs a preflight camera stream probe with auto relink/format sync.
     - If preflight cannot stream, startup aborts early with actionable guidance.
+    - Available resolution presets:
+      vga=640x480, hd=1280x720, fhd=1920x1080
 EOF
 }
 
@@ -339,8 +382,7 @@ INFER_RETRIES=0
 INFER_PRINT_EVERY=240
 INFER_TIMEOUT_LOG_EVERY=20
 PERCEPTION_IMAGE_QOS_DEPTH=2
-PERCEPTION_HAILO_QUEUE_BUFFERS=2
-PERCEPTION_ASYNC_LATEST_FRAME_BOOL="true"
+PERCEPTION_HAILO_QUEUE_BUFFERS=6
 PERCEPTION_ASYNC_MAX_INFLIGHT=1
 PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL="true"
 PERCEPTION_GC_DISABLE_BOOL="false"
@@ -403,6 +445,37 @@ normalize_double_literal() {
     fi
 }
 
+apply_resolution_selector() {
+    local raw_selector="$1"
+    local selector="${raw_selector,,}"
+
+    case "$selector" in
+        vga|480p)
+            CAMERA_WIDTH=640
+            CAMERA_HEIGHT=480
+            ;;
+        hd|720p)
+            CAMERA_WIDTH=1280
+            CAMERA_HEIGHT=720
+            ;;
+        fhd|1080p|fullhd)
+            CAMERA_WIDTH=1920
+            CAMERA_HEIGHT=1080
+            ;;
+        *)
+            if [[ "$raw_selector" =~ ^([0-9]+)[xX]([0-9]+)$ ]]; then
+                CAMERA_WIDTH="${BASH_REMATCH[1]}"
+                CAMERA_HEIGHT="${BASH_REMATCH[2]}"
+            else
+                echo "[error] invalid --resolution '$raw_selector' (expected vga|hd|fhd|WIDTHxHEIGHT)"
+                return 1
+            fi
+            ;;
+    esac
+
+    return 0
+}
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --profile)
@@ -423,6 +496,22 @@ while [[ $# -gt 0 ]]; do
             fi
             PERCEPTION_MODE="${2,,}"
             shift 2
+            ;;
+        --resolution|--res)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --resolution requires a value"
+                print_usage
+                exit 1
+            fi
+            if ! apply_resolution_selector "$2"; then
+                print_resolution_presets
+                exit 1
+            fi
+            shift 2
+            ;;
+        --list-resolutions)
+            print_resolution_presets
+            exit 0
             ;;
         --tracker)
             if [[ $# -lt 2 ]]; then
@@ -744,13 +833,9 @@ while [[ $# -gt 0 ]]; do
             PERCEPTION_ASYNC_MAX_INFLIGHT="$2"
             shift 2
             ;;
-        --perception-async-latest-frame-off)
-            PERCEPTION_ASYNC_LATEST_FRAME_BOOL="false"
-            shift
-            ;;
-        --perception-async-latest-frame-on)
-            PERCEPTION_ASYNC_LATEST_FRAME_BOOL="true"
-            shift
+        --perception-async-latest-frame-off|--perception-async-latest-frame-on)
+            echo "[error] $1 has been removed; single-process always uses queue+worker mode"
+            exit 1
             ;;
         --perception-hailo-videoconvert-off)
             PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL="false"
@@ -835,13 +920,8 @@ case "$PERCEPTION_MODE" in
 esac
 
 if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 ]]; then
-    if [[ "$PERCEPTION_MODE" == "single-process" ]]; then
-        CAMERA_PUBLISH_WIDTH=640
-        CAMERA_PUBLISH_HEIGHT=640
-    else
-        CAMERA_PUBLISH_WIDTH="$CAMERA_WIDTH"
-        CAMERA_PUBLISH_HEIGHT="$CAMERA_HEIGHT"
-    fi
+    CAMERA_PUBLISH_WIDTH="$CAMERA_WIDTH"
+    CAMERA_PUBLISH_HEIGHT="$CAMERA_HEIGHT"
 fi
 
 case "$TRACKER_TYPE" in
@@ -1200,7 +1280,7 @@ preflight_validate_camera_stream() {
             echo "[warn] camera stream preflight failed at ${CAMERA_WIDTH}x${CAMERA_HEIGHT}; falling back to 640x480"
             CAMERA_WIDTH=640
             CAMERA_HEIGHT=480
-            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 && "$PERCEPTION_MODE" == "legacy" ]]; then
+            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 ]]; then
                 CAMERA_PUBLISH_WIDTH=640
                 CAMERA_PUBLISH_HEIGHT=480
             fi
@@ -1377,7 +1457,7 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="on"; fi
 log_info "run: $RUN_ID"
 log_info "logs: $RUN_DIR"
 log_info "mode: perception=$PERCEPTION_MODE"
-log_info "cfg: camera_capture=${CAMERA_WIDTH}x${CAMERA_HEIGHT} camera_publish=${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}(${CAMERA_PUBLISH_RESIZE_MODE},${CAMERA_PUBLISH_ENCODING})@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} img_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_latest_frame=${PERCEPTION_ASYNC_LATEST_FRAME_BOOL} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT} hailo_videoconvert=${PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL} perception_gc_disable=${PERCEPTION_GC_DISABLE_BOOL} allow_stub_fallback=${PERCEPTION_ALLOW_STUB_FALLBACK_BOOL} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
+log_info "cfg: camera_capture=${CAMERA_WIDTH}x${CAMERA_HEIGHT} camera_publish=${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}(${CAMERA_PUBLISH_RESIZE_MODE},${CAMERA_PUBLISH_ENCODING})@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} img_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT} hailo_videoconvert=${PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL} perception_gc_disable=${PERCEPTION_GC_DISABLE_BOOL} allow_stub_fallback=${PERCEPTION_ALLOW_STUB_FALLBACK_BOOL} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
 log_info "cfg: camera_rate_controls=${CAMERA_APPLY_RATE_CONTROLS_BOOL} sensor_max_fps=${CAMERA_SENSOR_MAX_FPS} ae_upper=${CAMERA_SENSOR_AE_UPPER} ae_max=${CAMERA_SENSOR_AE_MAX} exposure_mode=${CAMERA_SENSOR_EXPOSURE_MODE}"
 log_info "nodes: tracker=$tracker_state target=$target_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
@@ -1539,7 +1619,7 @@ while true; do
             CAMERA_WIDTH=640
             CAMERA_HEIGHT=480
             CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
-            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 && "$PERCEPTION_MODE" == "legacy" ]]; then
+            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 ]]; then
                 CAMERA_PUBLISH_WIDTH=640
                 CAMERA_PUBLISH_HEIGHT=480
             fi
@@ -1554,7 +1634,7 @@ while true; do
             CAMERA_WIDTH=640
             CAMERA_HEIGHT=480
             CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
-            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 && "$PERCEPTION_MODE" == "legacy" ]]; then
+            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 ]]; then
                 CAMERA_PUBLISH_WIDTH=640
                 CAMERA_PUBLISH_HEIGHT=480
             fi
@@ -1653,9 +1733,10 @@ else
         -p image_topic:=/camera/image_raw \
         -p img_w:=640 \
         -p img_h:=640 \
+        -p frame_queue_size:=$INFER_QUEUE_SIZE \
+        -p num_workers:=$INFER_WORKERS \
         -p image_qos_depth:=$PERCEPTION_IMAGE_QOS_DEPTH \
         -p hailo_queue_max_buffers:=$PERCEPTION_HAILO_QUEUE_BUFFERS \
-        -p async_latest_frame:=$PERCEPTION_ASYNC_LATEST_FRAME_BOOL \
         -p async_max_inflight:=$PERCEPTION_ASYNC_MAX_INFLIGHT \
         -p hailo_use_videoconvert:=$PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL \
         -p disable_python_gc:=$PERCEPTION_GC_DISABLE_BOOL \
@@ -1777,6 +1858,7 @@ elif [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
 else
     echo "[ok] Live stack started successfully."
 fi
+print_startup_success_summary
 
 log_done "live stack ready"
 log_info "logs: $RUN_DIR"

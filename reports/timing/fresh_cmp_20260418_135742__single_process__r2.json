@@ -1,0 +1,161 @@
+{
+  "run_label": "fresh_cmp_20260418_135742__single_process__r2",
+  "duration_s": 180.01510987300026,
+  "contract": {
+    "metrics_schema_version": 3,
+    "metric_windows": {
+      "det_out_fps_seconds": 3.0
+    },
+    "metric_thresholds_ms": {
+      "e2e_det_ms": 120.0,
+      "pub_dt_ms": 120.0,
+      "infer_ms": 20.0,
+      "container_queue_ms": 100.0,
+      "track_ms": 25.0,
+      "e2e_target_ms": 150.0
+    }
+  },
+  "topics": {
+    "/timing": {
+      "count": 2048,
+      "hz": 11.376822764738213,
+      "frame_id_min": 492,
+      "frame_id_max": 2539,
+      "frame_id_unique": 2048,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_tracker": {
+      "count": 0,
+      "hz": 0.0,
+      "frame_id_min": null,
+      "frame_id_max": null,
+      "frame_id_unique": 0,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_target": {
+      "count": 0,
+      "hz": 0.0,
+      "frame_id_min": null,
+      "frame_id_max": null,
+      "frame_id_unique": 0,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    }
+  },
+  "metrics": {
+    "/timing": {
+      "pre_ms": {
+        "n": 2048.0,
+        "p50": 0.550310492515564,
+        "p95": 1.4531344473361938,
+        "p99": 2.3792748093605027,
+        "mean": 0.671983256645035,
+        "min": 0.3981519937515259,
+        "max": 4.1948161125183105
+      },
+      "container_queue_ms": {
+        "n": 2048.0,
+        "p50": 78.05230712890625,
+        "p95": 80.66622772216797,
+        "p99": 82.29085327148437,
+        "mean": 78.16287555545568,
+        "min": 74.29427337646484,
+        "max": 87.97395324707031
+      },
+      "zmq_roundtrip_ms": {
+        "n": 2048.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "infer_ms": {
+        "n": 2048.0,
+        "p50": 5.224138975143433,
+        "p95": 6.308098196983337,
+        "p99": 6.972402143478393,
+        "mean": 5.414652110775933,
+        "min": 5.006193161010742,
+        "max": 14.770687103271484
+      },
+      "e2e_det_ms": {
+        "n": 2048.0,
+        "p50": 91.42340850830078,
+        "p95": 94.55063018798828,
+        "p99": 95.99326416015626,
+        "mean": 91.21950612962246,
+        "min": 82.27656555175781,
+        "max": 167.48536682128906
+      },
+      "pub_dt_ms": {
+        "n": 2048.0,
+        "p50": 85.0855827331543,
+        "p95": 88.8147891998291,
+        "p99": 137.98529357910155,
+        "mean": 86.66342860087752,
+        "min": 80.71160888671875,
+        "max": 263.65887451171875
+      }
+    },
+    "/timing_tracker": {
+      "track_ms": {
+        "n": 0.0,
+        "p50": NaN,
+        "p95": NaN,
+        "p99": NaN,
+        "mean": NaN,
+        "min": NaN,
+        "max": NaN
+      }
+    },
+    "/timing_target": {
+      "e2e_target_ms": {
+        "n": 0.0,
+        "p50": NaN,
+        "p95": NaN,
+        "p99": NaN,
+        "mean": NaN,
+        "min": NaN,
+        "max": NaN
+      }
+    }
+  },
+  "detection_stream": {
+    "count": 2049,
+    "hz": 11.382377853978808,
+    "detections_per_msg": {
+      "n": 2049.0,
+      "p50": 1.0,
+      "p95": 1.0,
+      "p99": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0,
+      "zero_ratio": 0.0
+    }
+  },
+  "cadence_consistency": {
+    "det_out_fps_hz": 11.382377853978808,
+    "pub_dt_p50_ms": 85.0855827331543,
+    "fps_from_pub_dt_p50": 11.752872435935515,
+    "relative_delta": 0.03152374740526286,
+    "within_tolerance": true,
+    "relative_delta_max": 0.35
+  },
+  "health": {
+    "score": 91.37555534362794,
+    "latency_component": 83.63291320800782,
+    "cadence_component": 93.7037220001221,
+    "throughput_component": 100.0,
+    "throughput_ratio": 1.00048828125,
+    "e2e_det_p95_ms": 94.55063018798828,
+    "pub_dt_p95_ms": 88.8147891998291
+  }
+}

@@ -10,7 +10,6 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-import cv2
 import numpy as np
 import rclpy
 from rcl_interfaces.msg import SetParametersResult
@@ -18,6 +17,7 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import Image
+from thesis_inference_client.preprocessing import preprocess_image_message
 from thesis_msgs.msg import Timing
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 
@@ -97,6 +97,17 @@ class PreparedFrame:
     t_color_start_ns: int
     t_color_end_ns: int
     infer_img: np.ndarray
+
+
+@dataclass
+class RawFrame:
+    seq: int
+    frame_id: int
+    src_stamp_ns: int
+    stamp_sec: int
+    stamp_nanosec: int
+    t_cam_msg_seen_ns: int
+    image_msg: Image
 
 
 class StubInferenceEngine:
@@ -425,6 +436,8 @@ class PerceptionPipelineNode(Node):
         self.declare_parameter("disable_python_gc", False)
         self.declare_parameter("async_latest_frame", True)
         self.declare_parameter("async_max_inflight", 1)
+        self.declare_parameter("frame_queue_size", 1)
+        self.declare_parameter("num_workers", 2)
 
         thesis_root = os.getenv("THESIS_ROOT", "/home/francisco/Desktop/Thesis-Code")
         default_hef = f"{thesis_root}/infer_service/resources/hefs/yolov6n_hailo8.hef"
@@ -436,7 +449,7 @@ class PerceptionPipelineNode(Node):
         )
         self.declare_parameter("hailo_post_function", "filter")
         self.declare_parameter("hailo_video_sink", "fakesink")
-        self.declare_parameter("hailo_queue_max_buffers", 2)
+        self.declare_parameter("hailo_queue_max_buffers", 6)
         self.declare_parameter("hailo_use_videoconvert", True)
 
         self.image_topic = str(self.get_parameter("image_topic").value)
@@ -453,8 +466,17 @@ class PerceptionPipelineNode(Node):
         self.timeout_log_every = max(1, int(self.get_parameter("timeout_log_every").value))
         self.log_every = max(0, int(self.get_parameter("log_every").value))
         self.disable_python_gc = bool(self.get_parameter("disable_python_gc").value)
-        self.async_latest_frame = bool(self.get_parameter("async_latest_frame").value)
+        self.async_latest_frame_requested = bool(self.get_parameter("async_latest_frame").value)
         self.async_max_inflight_requested = max(1, int(self.get_parameter("async_max_inflight").value))
+        self.frame_queue_size = max(1, int(self.get_parameter("frame_queue_size").value))
+        self.num_workers = max(1, int(self.get_parameter("num_workers").value))
+        # Old callback-thread inference path has been removed; queue+worker is mandatory.
+        self.async_latest_frame = True
+        if not self.async_latest_frame_requested:
+            self.get_logger().warning(
+                "legacy async_latest_frame=false path has been removed; "
+                "forcing queue+worker mode"
+            )
         # Single-owner engine submission model: only one caller may submit to appsrc/engine.
         self.async_max_inflight = 1
         if self.async_max_inflight_requested != 1:
@@ -485,10 +507,12 @@ class PerceptionPipelineNode(Node):
         self._engine_active_calls = 0
         self._param_cb_handle = self.add_on_set_parameters_callback(self._on_set_parameters)
 
-        self.resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
-        self.rgb_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
+        # Legacy-like flow for single-owner engine: preprocess and infer in the same worker.
+        # This avoids a second staging queue where frames can accumulate before inference starts.
+        self.prepared_queue_size = 0
         self._logged_encoding: str | None = None
         self._logged_own_data = False
+        self._preprocess_log_lock = threading.Lock()
 
         qos_pub = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
@@ -516,21 +540,33 @@ class PerceptionPipelineNode(Node):
         self.frames_timeouts = 0
         self.frames_enqueued = 0
         self.frames_overwritten = 0
+        self.frames_prepared_enqueued = 0
+        self.frames_prepared_overwritten = 0
         self.last_roundtrip_ms = 0.0
         self.last_det_pub_ns: int | None = None
         self.pub_dt_hist_ms: deque[float] = deque(maxlen=600)
 
         self._worker_cv = threading.Condition()
-        self._latest_frame: PreparedFrame | None = None
+        self._queued_frames: deque[RawFrame] = deque()
+        # Retained for compatibility with helper methods from the old staged path.
+        self._prepared_cv = threading.Condition()
+        self._prepared_frames: deque[PreparedFrame] = deque()
+        self._preprocess_workers: list[threading.Thread] = []
         self._worker_stop = False
-        self._worker_thread: threading.Thread | None = None
-        if self.async_latest_frame:
-            self._worker_thread = threading.Thread(
-                target=self._infer_worker_loop,
-                name="perception_engine_owner",
-                daemon=True,
+
+        if self.num_workers != 1:
+            self.get_logger().warning(
+                "single-owner backend path executes one inline worker; "
+                f"requested num_workers={self.num_workers}"
             )
-            self._worker_thread.start()
+
+        self._infer_worker_thread: threading.Thread | None = None
+        self._infer_worker_thread = threading.Thread(
+            target=self._infer_worker_loop,
+            name="perception_engine_owner",
+            daemon=True,
+        )
+        self._infer_worker_thread.start()
 
         self.get_logger().info(
             f"image_topic={self.image_topic} "
@@ -542,7 +578,10 @@ class PerceptionPipelineNode(Node):
             f"image_reliability={self.image_reliability} "
             f"image_qos_depth={self.image_qos_depth} "
             f"disable_python_gc={self.disable_python_gc} "
-            f"async_latest_frame={self.async_latest_frame} "
+            "ingress_mode=inline_worker_owner "
+            f"frame_queue_size={self.frame_queue_size} "
+            f"prepared_queue_size={self.prepared_queue_size} "
+            f"num_workers={self.num_workers} "
             f"async_max_inflight_requested={self.async_max_inflight_requested} "
             f"async_max_inflight_effective={self.async_max_inflight} "
             f"hailo_use_videoconvert={self.hailo_use_videoconvert}"
@@ -693,28 +732,174 @@ class PerceptionPipelineNode(Node):
 
         return qos
 
-    def _enqueue_latest_frame(self, frame: PreparedFrame) -> None:
-        with self._worker_cv:
-            if self._latest_frame is not None:
-                self.frames_overwritten += 1
-            self._latest_frame = frame
-            self.frames_enqueued += 1
-            self._worker_cv.notify_all()
+    def _enqueue_raw_frame(self, frame: RawFrame) -> None:
+        dropped_count = 0
+        enqueued = False
 
-    def _infer_worker_loop(self) -> None:
+        with self._worker_cv:
+            # Keep freshest-frame behavior: if full, evict one oldest frame and retry once.
+            for _ in range(2):
+                if len(self._queued_frames) < self.frame_queue_size:
+                    self._queued_frames.append(frame)
+                    enqueued = True
+                    break
+
+                if self._queued_frames:
+                    self._queued_frames.popleft()
+                    dropped_count += 1
+
+            if not enqueued:
+                dropped_count += 1
+
+            self.frames_overwritten += dropped_count
+            if enqueued:
+                self.frames_enqueued += 1
+                self._worker_cv.notify()
+
+    def _prepare_frame(
+        self,
+        raw: RawFrame,
+        resize_buf: np.ndarray,
+        rgb_buf: np.ndarray,
+    ) -> PreparedFrame | None:
+        t_loop0 = now_ns()
+        preprocessed, prep_level, prep_msg = preprocess_image_message(
+            image_msg=raw.image_msg,
+            infer_w=self.img_w,
+            infer_h=self.img_h,
+            resize_buf=resize_buf,
+            rgb_buf=rgb_buf,
+            now_ns=now_ns,
+            consumer_name="perception_pipeline_node",
+            pre_start_ns=t_loop0,
+        )
+        if preprocessed is None:
+            if prep_level == "warning":
+                self.get_logger().warning(str(prep_msg))
+            else:
+                self.get_logger().error(str(prep_msg))
+            return None
+
+        with self._preprocess_log_lock:
+            if preprocessed.image_encoding != self._logged_encoding:
+                self._logged_encoding = preprocessed.image_encoding
+                self.get_logger().info(
+                    f"inference input encoding={preprocessed.image_encoding}"
+                )
+
+            if not self._logged_own_data:
+                self._logged_own_data = True
+                self.get_logger().info(
+                    f"numpy_view_owndata={preprocessed.numpy_owndata}"
+                )
+
+        return PreparedFrame(
+            seq=int(raw.seq),
+            frame_id=int(raw.frame_id),
+            src_stamp_ns=int(raw.src_stamp_ns),
+            stamp_sec=int(raw.stamp_sec),
+            stamp_nanosec=int(raw.stamp_nanosec),
+            image_width=int(preprocessed.image_width),
+            image_height=int(preprocessed.image_height),
+            image_encoding=str(preprocessed.image_encoding),
+            t_loop0=int(t_loop0),
+            t_cam_msg_seen_ns=int(raw.t_cam_msg_seen_ns),
+            t_pre_start_ns=int(preprocessed.t_pre_start_ns),
+            t_pre_end_ns=int(preprocessed.t_pre_end_ns),
+            t_ros_to_np_start_ns=int(preprocessed.t_ros_to_np_start_ns),
+            t_ros_to_np_end_ns=int(preprocessed.t_ros_to_np_end_ns),
+            t_resize_start_ns=int(preprocessed.t_resize_start_ns),
+            t_resize_end_ns=int(preprocessed.t_resize_end_ns),
+            t_color_start_ns=int(preprocessed.t_color_start_ns),
+            t_color_end_ns=int(preprocessed.t_color_end_ns),
+            infer_img=np.ascontiguousarray(preprocessed.infer_img).copy(),
+        )
+
+    def _enqueue_prepared_frame(self, frame: PreparedFrame) -> None:
+        dropped_count = 0
+        enqueued = False
+
+        with self._prepared_cv:
+            # Keep freshest-frame behavior on prepared queue as well.
+            for _ in range(2):
+                if len(self._prepared_frames) < self.prepared_queue_size:
+                    self._prepared_frames.append(frame)
+                    enqueued = True
+                    break
+
+                if self._prepared_frames:
+                    self._prepared_frames.popleft()
+                    dropped_count += 1
+
+            if not enqueued:
+                dropped_count += 1
+
+            self.frames_prepared_overwritten += dropped_count
+            if enqueued:
+                self.frames_prepared_enqueued += 1
+                self._prepared_cv.notify()
+
+    def _preprocess_worker_loop(self, _worker_id: int) -> None:
+        worker_resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
+        worker_rgb_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
+
         while True:
-            frame: PreparedFrame | None = None
+            raw_frame: RawFrame | None = None
             with self._worker_cv:
-                while not self._worker_stop and self._latest_frame is None:
+                while not self._worker_stop and not self._queued_frames:
                     self._worker_cv.wait(timeout=0.2)
 
                 if self._worker_stop:
                     return
 
-                if self._latest_frame is not None:
-                    frame = self._latest_frame
-                    self._latest_frame = None
+                if self._queued_frames:
+                    raw_frame = self._queued_frames.popleft()
 
+            if raw_frame is None:
+                continue
+
+            frame = self._prepare_frame(
+                raw_frame,
+                resize_buf=worker_resize_buf,
+                rgb_buf=worker_rgb_buf,
+            )
+            if frame is None:
+                continue
+
+            self._enqueue_prepared_frame(frame)
+
+    def _infer_worker_loop(self) -> None:
+        worker_resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
+        worker_rgb_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
+
+        while True:
+            raw_frame: RawFrame | None = None
+            with self._worker_cv:
+                while not self._worker_stop and not self._queued_frames:
+                    self._worker_cv.wait(timeout=0.2)
+
+                if self._worker_stop:
+                    return
+
+                if self._queued_frames:
+                    raw_frame = self._queued_frames.popleft()
+
+            if raw_frame is None:
+                continue
+
+            # Keep inference sequence tied to processed frames (legacy parity).
+            # If sequence advances on received-but-dropped frames, appsrc PTS jumps
+            # can introduce artificial wait before pre_hailonet probe timestamps.
+            raw_frame.seq = int(self.seq_counter)
+            raw_frame.frame_id = int(self.frame_counter)
+            self.seq_counter += 1
+            self.frame_counter += 1
+
+            frame = self._prepare_frame(
+                raw_frame,
+                resize_buf=worker_resize_buf,
+                rgb_buf=worker_rgb_buf,
+            )
             if frame is None:
                 continue
 
@@ -934,11 +1119,10 @@ class PerceptionPipelineNode(Node):
                 pub_dt_p50 = 0.0
                 pub_dt_p95 = 0.0
 
-            queue_note = ""
-            if self.async_latest_frame:
-                queue_note = (
-                    f" enq={self.frames_enqueued} overwritten={self.frames_overwritten}"
-                )
+            queue_note = (
+                f" raw_enq={self.frames_enqueued} raw_overwritten={self.frames_overwritten}"
+                f" prepared_enq={self.frames_prepared_enqueued} prepared_overwritten={self.frames_prepared_overwritten}"
+            )
 
             self.get_logger().info(
                 "perception_pipeline "
@@ -956,125 +1140,31 @@ class PerceptionPipelineNode(Node):
             )
 
     def on_image(self, msg: Image) -> None:
-        t_loop0 = now_ns()
-        t_cam_msg_seen_ns = t_loop0
+        t_cam_msg_seen_ns = now_ns()
         src_stamp_ns = stamp_to_ns(msg.header.stamp)
 
         self.frames_received += 1
 
-        t_pre_start_ns = now_ns()
-        t_ros_to_np_start_ns = t_pre_start_ns
-
-        image_height = int(msg.height)
-        image_width = int(msg.width)
-        image_encoding = str(msg.encoding).lower()
-        image_step = int(msg.step)
-
-        if image_encoding not in ("rgb8", "bgr8"):
-            self.get_logger().error(
-                f"unsupported encoding '{msg.encoding}' in perception_pipeline_node; expected rgb8 or bgr8"
-            )
-            return
-
-        expected_step = image_width * 3
-        if image_step != expected_step:
-            self.get_logger().error(
-                f"unsupported image step={image_step} (expected {expected_step} for packed 8UC3)"
-            )
-            return
-
-        expected_bytes = image_height * image_step
-        if len(msg.data) != expected_bytes:
-            self.get_logger().warning(
-                f"image size mismatch: got={len(msg.data)} expected={expected_bytes}; dropping frame"
-            )
-            return
-
-        try:
-            img = np.frombuffer(msg.data, dtype=np.uint8)
-            img = img.reshape(image_height, image_width, 3)
-        except Exception as exc:
-            self.get_logger().warning(f"ROS image to numpy conversion failed: {exc}")
-            return
-        t_ros_to_np_end_ns = now_ns()
-
-        if image_encoding != self._logged_encoding:
-            self._logged_encoding = image_encoding
-            self.get_logger().info(f"inference input encoding={image_encoding}")
-
-        if not self._logged_own_data:
-            self._logged_own_data = True
-            self.get_logger().info(f"numpy_view_owndata={img.flags['OWNDATA']}")
-
-        t_resize_start_ns = now_ns()
-        if image_width == self.img_w and image_height == self.img_h:
-            infer_img = img
-            t_resize_end_ns = t_resize_start_ns
-        else:
-            try:
-                cv2.resize(
-                    img,
-                    (self.img_w, self.img_h),
-                    dst=self.resize_buf,
-                    interpolation=cv2.INTER_LINEAR,
-                )
-            except Exception as exc:
-                self.get_logger().warning(f"resize failed: {exc}")
-                return
-            infer_img = self.resize_buf
-            t_resize_end_ns = now_ns()
-
-        t_color_start_ns = now_ns()
-        if image_encoding == "bgr8":
-            cv2.cvtColor(infer_img, cv2.COLOR_BGR2RGB, dst=self.rgb_buf)
-            infer_img = self.rgb_buf
-            t_color_end_ns = now_ns()
-        else:
-            t_color_end_ns = t_color_start_ns
-
-        t_pre_end_ns = now_ns()
-
-        seq = self.seq_counter
-        frame_id = self.frame_counter
-        self.seq_counter += 1
-        self.frame_counter += 1
-
-        frame = PreparedFrame(
-            seq=int(seq),
-            frame_id=int(frame_id),
+        raw_frame = RawFrame(
+            # Assigned on dequeue in _infer_worker_loop.
+            seq=0,
+            frame_id=0,
             src_stamp_ns=int(src_stamp_ns),
             stamp_sec=int(msg.header.stamp.sec),
             stamp_nanosec=int(msg.header.stamp.nanosec),
-            image_width=int(msg.width),
-            image_height=int(msg.height),
-            image_encoding=str(msg.encoding),
-            t_loop0=int(t_loop0),
             t_cam_msg_seen_ns=int(t_cam_msg_seen_ns),
-            t_pre_start_ns=int(t_pre_start_ns),
-            t_pre_end_ns=int(t_pre_end_ns),
-            t_ros_to_np_start_ns=int(t_ros_to_np_start_ns),
-            t_ros_to_np_end_ns=int(t_ros_to_np_end_ns),
-            t_resize_start_ns=int(t_resize_start_ns),
-            t_resize_end_ns=int(t_resize_end_ns),
-            t_color_start_ns=int(t_color_start_ns),
-            t_color_end_ns=int(t_color_end_ns),
-            infer_img=np.ascontiguousarray(infer_img).copy(),
+            image_msg=msg,
         )
 
-        if self.async_latest_frame:
-            self._enqueue_latest_frame(frame)
-            return
-
-        self._process_prepared_frame(frame)
+        self._enqueue_raw_frame(raw_frame)
 
     def destroy_node(self):
-        if self.async_latest_frame:
-            with self._worker_cv:
-                self._worker_stop = True
-                self._worker_cv.notify_all()
+        with self._worker_cv:
+            self._worker_stop = True
+            self._worker_cv.notify_all()
 
-            if self._worker_thread is not None and self._worker_thread.is_alive():
-                self._worker_thread.join(timeout=2.0)
+        if self._infer_worker_thread is not None and self._infer_worker_thread.is_alive():
+            self._infer_worker_thread.join(timeout=2.0)
 
         if self._gc_disabled_by_node:
             try:

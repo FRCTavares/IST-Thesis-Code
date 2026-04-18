@@ -253,7 +253,16 @@ fi
 
 LOCAL_URL="http://127.0.0.1:${UI_PORT}"
 REMOTE_URL="http://${PI_IP}:${UI_PORT}"
-echo "[ok] UI started successfully. URLs: ${LOCAL_URL} | ${REMOTE_URL} (api=${API_BASE_URL} ws=${WS_URL})"
+echo "[ok] UI started successfully"
+echo "[ok] Dashboard URLs"
+echo "  local : ${LOCAL_URL}"
+echo "  remote: ${REMOTE_URL}"
+echo "[ok] Backend Endpoints"
+echo "  api   : ${API_BASE_URL}"
+echo "  ws    : ${WS_URL}"
+echo "[ok] Logs"
+echo "  run   : ${RUN_DIR}"
+echo "  ui    : ${RUN_DIR}/ui.log"
 
 TAIL_PID=""
 if [[ "$VERBOSE" -eq 1 ]]; then

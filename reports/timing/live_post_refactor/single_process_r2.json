@@ -1,0 +1,161 @@
+{
+  "run_label": "single_process_r2",
+  "duration_s": 120.0635299400019,
+  "contract": {
+    "metrics_schema_version": 3,
+    "metric_windows": {
+      "det_out_fps_seconds": 3.0
+    },
+    "metric_thresholds_ms": {
+      "e2e_det_ms": 120.0,
+      "pub_dt_ms": 120.0,
+      "infer_ms": 20.0,
+      "container_queue_ms": 100.0,
+      "track_ms": 25.0,
+      "e2e_target_ms": 150.0
+    }
+  },
+  "topics": {
+    "/timing": {
+      "count": 1155,
+      "hz": 9.619907065677447,
+      "frame_id_min": 572,
+      "frame_id_max": 1996,
+      "frame_id_unique": 1155,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 225,
+      "frame_id_missing_estimate": 270
+    },
+    "/timing_tracker": {
+      "count": 0,
+      "hz": 0.0,
+      "frame_id_min": null,
+      "frame_id_max": null,
+      "frame_id_unique": 0,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_target": {
+      "count": 1155,
+      "hz": 9.619907065677447,
+      "frame_id_min": 572,
+      "frame_id_max": 1996,
+      "frame_id_unique": 1155,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 225,
+      "frame_id_missing_estimate": 270
+    }
+  },
+  "metrics": {
+    "/timing": {
+      "pre_ms": {
+        "n": 1155.0,
+        "p50": 4.216069221496582,
+        "p95": 95.8370292663574,
+        "p99": 104.59470626831055,
+        "mean": 18.550554358288323,
+        "min": 1.6681610345840454,
+        "max": 115.03240203857422
+      },
+      "container_queue_ms": {
+        "n": 1155.0,
+        "p50": 106.67117309570312,
+        "p95": 206.11407165527342,
+        "p99": 217.71208099365236,
+        "mean": 136.74125660817862,
+        "min": 76.04995727539062,
+        "max": 268.38763427734375
+      },
+      "zmq_roundtrip_ms": {
+        "n": 1155.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "infer_ms": {
+        "n": 1155.0,
+        "p50": 6.5539398193359375,
+        "p95": 11.13643417358398,
+        "p99": 14.629409255981447,
+        "mean": 7.103927039274406,
+        "min": 4.974278926849365,
+        "max": 19.42135238647461
+      },
+      "e2e_det_ms": {
+        "n": 1155.0,
+        "p50": 190.87252807617188,
+        "p95": 230.34103393554682,
+        "p99": 297.7606964111328,
+        "mean": 165.65444493149266,
+        "min": 86.61717987060547,
+        "max": 319.69097900390625
+      },
+      "pub_dt_ms": {
+        "n": 1155.0,
+        "p50": 99.62285614013672,
+        "p95": 138.23608856201167,
+        "p99": 205.8009265136719,
+        "mean": 104.06248249532857,
+        "min": 81.46329498291016,
+        "max": 232.00189208984375
+      }
+    },
+    "/timing_tracker": {
+      "track_ms": {
+        "n": 0.0,
+        "p50": NaN,
+        "p95": NaN,
+        "p99": NaN,
+        "mean": NaN,
+        "min": NaN,
+        "max": NaN
+      }
+    },
+    "/timing_target": {
+      "e2e_target_ms": {
+        "n": 1155.0,
+        "p50": 194.87168884277344,
+        "p95": 239.31700134277344,
+        "p99": 304.96957214355473,
+        "mean": 165.72908009450674,
+        "min": 0.0,
+        "max": 332.8774719238281
+      }
+    }
+  },
+  "detection_stream": {
+    "count": 1154,
+    "hz": 9.61157814181106,
+    "detections_per_msg": {
+      "n": 1154.0,
+      "p50": 1.0,
+      "p95": 2.0,
+      "p99": 2.0,
+      "mean": 1.1334488734835355,
+      "min": 0.0,
+      "max": 3.0,
+      "zero_ratio": 0.005199306759098787
+    }
+  },
+  "cadence_consistency": {
+    "det_out_fps_hz": 9.61157814181106,
+    "pub_dt_p50_ms": 99.62285614013672,
+    "fps_from_pub_dt_p50": 10.037857161948134,
+    "relative_delta": 0.042467133498674106,
+    "within_tolerance": true,
+    "relative_delta_max": 0.35
+  },
+  "health": {
+    "score": 46.68055877685548,
+    "latency_component": 0.0,
+    "cadence_component": 58.40279388427737,
+    "throughput_component": 100.0,
+    "throughput_ratio": 0.9991341991341992,
+    "e2e_det_p95_ms": 230.34103393554682,
+    "pub_dt_p95_ms": 138.23608856201167
+  }
+}

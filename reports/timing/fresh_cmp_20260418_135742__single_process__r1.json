@@ -1,0 +1,161 @@
+{
+  "run_label": "fresh_cmp_20260418_135742__single_process__r1",
+  "duration_s": 180.07801304299937,
+  "contract": {
+    "metrics_schema_version": 3,
+    "metric_windows": {
+      "det_out_fps_seconds": 3.0
+    },
+    "metric_thresholds_ms": {
+      "e2e_det_ms": 120.0,
+      "pub_dt_ms": 120.0,
+      "infer_ms": 20.0,
+      "container_queue_ms": 100.0,
+      "track_ms": 25.0,
+      "e2e_target_ms": 150.0
+    }
+  },
+  "topics": {
+    "/timing": {
+      "count": 2085,
+      "hz": 11.578315224425204,
+      "frame_id_min": 379,
+      "frame_id_max": 2463,
+      "frame_id_unique": 2085,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_tracker": {
+      "count": 0,
+      "hz": 0.0,
+      "frame_id_min": null,
+      "frame_id_max": null,
+      "frame_id_unique": 0,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_target": {
+      "count": 0,
+      "hz": 0.0,
+      "frame_id_min": null,
+      "frame_id_max": null,
+      "frame_id_unique": 0,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    }
+  },
+  "metrics": {
+    "/timing": {
+      "pre_ms": {
+        "n": 2085.0,
+        "p50": 0.5234119892120361,
+        "p95": 1.5468879699707023,
+        "p99": 2.549506988525385,
+        "mean": 0.6529701854542291,
+        "min": 0.3229660093784332,
+        "max": 6.409687042236328
+      },
+      "container_queue_ms": {
+        "n": 2085.0,
+        "p50": 78.26012420654297,
+        "p95": 80.94693908691406,
+        "p99": 82.50581787109375,
+        "mean": 78.47146634986932,
+        "min": 74.6169662475586,
+        "max": 126.70111846923828
+      },
+      "zmq_roundtrip_ms": {
+        "n": 2085.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "infer_ms": {
+        "n": 2085.0,
+        "p50": 5.184491157531738,
+        "p95": 6.232081794738769,
+        "p99": 7.047167568206776,
+        "mean": 5.383839658924716,
+        "min": 5.009045124053955,
+        "max": 13.67199420928955
+      },
+      "e2e_det_ms": {
+        "n": 2085.0,
+        "p50": 91.60111236572266,
+        "p95": 94.77611846923828,
+        "p99": 97.40722473144531,
+        "mean": 91.55623473023338,
+        "min": 82.35031127929688,
+        "max": 268.90472412109375
+      },
+      "pub_dt_ms": {
+        "n": 2085.0,
+        "p50": 85.2189712524414,
+        "p95": 88.32483673095703,
+        "p99": 91.20863891601562,
+        "mean": 85.59698837975517,
+        "min": 81.26678466796875,
+        "max": 164.9771270751953
+      }
+    },
+    "/timing_tracker": {
+      "track_ms": {
+        "n": 0.0,
+        "p50": NaN,
+        "p95": NaN,
+        "p99": NaN,
+        "mean": NaN,
+        "min": NaN,
+        "max": NaN
+      }
+    },
+    "/timing_target": {
+      "e2e_target_ms": {
+        "n": 0.0,
+        "p50": NaN,
+        "p95": NaN,
+        "p99": NaN,
+        "mean": NaN,
+        "min": NaN,
+        "max": NaN
+      }
+    }
+  },
+  "detection_stream": {
+    "count": 2086,
+    "hz": 11.583868373213896,
+    "detections_per_msg": {
+      "n": 2086.0,
+      "p50": 1.0,
+      "p95": 1.0,
+      "p99": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0,
+      "zero_ratio": 0.0
+    }
+  },
+  "cadence_consistency": {
+    "det_out_fps_hz": 11.583868373213896,
+    "pub_dt_p50_ms": 85.2189712524414,
+    "fps_from_pub_dt_p50": 11.734476317928461,
+    "relative_delta": 0.012834654111019814,
+    "within_tolerance": true,
+    "relative_delta_max": 0.35
+  },
+  "health": {
+    "score": 91.3779020690918,
+    "latency_component": 83.48258768717449,
+    "cadence_component": 94.0536880493164,
+    "throughput_component": 100.0,
+    "throughput_ratio": 1.0004796163069545,
+    "e2e_det_p95_ms": 94.77611846923828,
+    "pub_dt_p95_ms": 88.32483673095703
+  }
+}

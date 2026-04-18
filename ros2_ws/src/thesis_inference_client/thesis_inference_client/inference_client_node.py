@@ -9,7 +9,6 @@ import time
 from collections import deque
 from typing import Tuple
 
-import cv2
 import numpy as np
 import rclpy
 import zmq
@@ -18,6 +17,8 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import Image
 from vision_msgs.msg import Detection2DArray, Detection2D, ObjectHypothesisWithPose
 from thesis_msgs.msg import Timing
+
+from thesis_inference_client.preprocessing import preprocess_image_message
 
 
 def clamp01(x: float) -> float:
@@ -84,7 +85,6 @@ class InferenceClientNode(Node):
         self.image_reliability = str(self.get_parameter("image_reliability").value).strip().lower()
         self.image_qos_depth = max(1, int(self.get_parameter("image_qos_depth").value))
 
-        self.resize_buf = np.empty((self.img_h, self.img_w, 3), dtype=np.uint8)
         self._logged_encoding: str | None = None
         self._logged_own_data = False
         self._meta_base = {
@@ -218,81 +218,34 @@ class InferenceClientNode(Node):
                 self.frame_counter += 1
 
             t_pre_start_ns = now_ns()
-            t_ros_to_np_start_ns = t_pre_start_ns
-
-            image_height = int(image_msg.height)
-            image_width = int(image_msg.width)
-            image_encoding = str(image_msg.encoding).lower()
-            image_step = int(image_msg.step)
-
-            if image_encoding not in ("rgb8", "bgr8"):
-                self.get_logger().error(
-                    f"unsupported encoding '{image_msg.encoding}' in inference_client; "
-                    f"expected rgb8 or bgr8. Fix camera node encoding and restart."
-                )
+            preprocessed, prep_level, prep_msg = preprocess_image_message(
+                image_msg=image_msg,
+                infer_w=self.img_w,
+                infer_h=self.img_h,
+                resize_buf=worker_resize_buf,
+                rgb_buf=worker_rgb_buf,
+                now_ns=now_ns,
+                consumer_name="inference_client",
+                pre_start_ns=t_pre_start_ns,
+            )
+            if preprocessed is None:
+                if prep_level == "warning":
+                    self.get_logger().warning(str(prep_msg))
+                else:
+                    self.get_logger().error(str(prep_msg))
                 continue
 
-            expected_step = image_width * 3
-            if image_step != expected_step:
-                self.get_logger().error(
-                    f"unsupported image step={image_step} (expected {expected_step} for packed 8UC3). "
-                    f"Fix camera node to publish tightly packed RGB/BGR images."
-                )
-                continue
-
-            expected_bytes = image_height * image_step
-            if len(image_msg.data) != expected_bytes:
-                self.get_logger().warning(
-                    f"image size mismatch: got={len(image_msg.data)} expected={expected_bytes}; dropping frame"
-                )
-                continue
-
-            try:
-                img = np.frombuffer(image_msg.data, dtype=np.uint8)
-                img = img.reshape(image_height, image_width, 3)
-            except Exception as exc:
-                self.get_logger().warning(f"ROS image to numpy conversion failed: {exc}")
-                continue
-            t_ros_to_np_end_ns = now_ns()
-
-            if image_encoding != self._logged_encoding:
-                self._logged_encoding = image_encoding
-                self.get_logger().info(f"inference input encoding={image_encoding}")
+            if preprocessed.image_encoding != self._logged_encoding:
+                self._logged_encoding = preprocessed.image_encoding
+                self.get_logger().info(f"inference input encoding={preprocessed.image_encoding}")
 
             if not self._logged_own_data:
                 self._logged_own_data = True
-                self.get_logger().info(f"numpy_view_owndata={img.flags['OWNDATA']}")
-
-            t_resize_start_ns = now_ns()
-            if image_width == self.img_w and image_height == self.img_h:
-                infer_img = img
-                t_resize_end_ns = t_resize_start_ns
-            else:
-                try:
-                    cv2.resize(
-                        img,
-                        (self.img_w, self.img_h),
-                        dst=worker_resize_buf,
-                        interpolation=cv2.INTER_LINEAR,
-                    )
-                except Exception as exc:
-                    self.get_logger().warning(f"resize failed: {exc}")
-                    continue
-                infer_img = worker_resize_buf
-                t_resize_end_ns = now_ns()
-
-            t_color_start_ns = now_ns()
-            if image_encoding == "bgr8":
-                cv2.cvtColor(infer_img, cv2.COLOR_BGR2RGB, dst=worker_rgb_buf)
-                infer_img = worker_rgb_buf
-                t_color_end_ns = now_ns()
-            else:
-                t_color_end_ns = t_color_start_ns
+                self.get_logger().info(f"numpy_view_owndata={preprocessed.numpy_owndata}")
 
             t_pack_start_ns = now_ns()
-            frame_payload = memoryview(infer_img)
+            frame_payload = memoryview(preprocessed.infer_img)
             t_pack_end_ns = now_ns()
-            t_pre_end_ns = now_ns()
 
             metadata = self._meta_base.copy()
             metadata["seq"] = seq
@@ -444,12 +397,12 @@ class InferenceClientNode(Node):
             t_msg.frame_id = frame_id
             t_msg.src_stamp_ns = src_stamp_ns
             t_msg.t_cam_msg_seen_ns = t_cam_msg_seen_ns
-            t_msg.image_width = int(image_msg.width)
-            t_msg.image_height = int(image_msg.height)
-            t_msg.image_encoding = str(image_msg.encoding)
+            t_msg.image_width = int(preprocessed.image_width)
+            t_msg.image_height = int(preprocessed.image_height)
+            t_msg.image_encoding = str(preprocessed.image_encoding)
 
-            t_msg.t_pre_start_ns = t_pre_start_ns
-            t_msg.t_pre_end_ns = t_pre_end_ns
+            t_msg.t_pre_start_ns = int(preprocessed.t_pre_start_ns)
+            t_msg.t_pre_end_ns = int(preprocessed.t_pre_end_ns)
             t_msg.t_zmq_send_start_ns = t_zmq_send_start_ns
             t_msg.t_zmq_send_end_ns = t_zmq_send_end_ns
             t_msg.t_zmq_recv_start_ns = t_zmq_recv_start_ns
@@ -467,11 +420,11 @@ class InferenceClientNode(Node):
             t_msg.t_post_end_ns = t_post_end_ns
             t_msg.t_reply_send_ns = t_reply_send_ns
 
-            t_msg.ros_wait_ms = _ms(t_pre_start_ns - t_cam_msg_seen_ns)
-            t_msg.pre_ms = _ms(t_pre_end_ns - t_pre_start_ns)
-            t_msg.ros_to_np_ms = _ms(t_ros_to_np_end_ns - t_ros_to_np_start_ns)
-            t_msg.resize_ms = _ms(t_resize_end_ns - t_resize_start_ns)
-            t_msg.color_ms = _ms(t_color_end_ns - t_color_start_ns)
+            t_msg.ros_wait_ms = _ms(preprocessed.t_pre_start_ns - t_cam_msg_seen_ns)
+            t_msg.pre_ms = _ms(preprocessed.t_pre_end_ns - preprocessed.t_pre_start_ns)
+            t_msg.ros_to_np_ms = _ms(preprocessed.t_ros_to_np_end_ns - preprocessed.t_ros_to_np_start_ns)
+            t_msg.resize_ms = _ms(preprocessed.t_resize_end_ns - preprocessed.t_resize_start_ns)
+            t_msg.color_ms = _ms(preprocessed.t_color_end_ns - preprocessed.t_color_start_ns)
             t_msg.pack_ms = _ms(t_pack_end_ns - t_pack_start_ns)
             t_msg.zmq_req_send_ms = _ms(t_zmq_send_end_ns - t_zmq_send_start_ns)
             t_msg.zmq_wait_reply_ms = _ms(t_zmq_recv_end_ns - t_zmq_recv_start_ns)
