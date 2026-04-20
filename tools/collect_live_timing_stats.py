@@ -27,14 +27,24 @@ from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from thesis_msgs.msg import Timing
 from vision_msgs.msg import Detection2DArray
 
-from timing_contract import (
-    FPS_INTERVAL_RELATIVE_DELTA_MAX,
-    METRICS_SCHEMA_VERSION,
-    METRIC_WARN_THRESHOLDS,
-    METRIC_WINDOWS,
-    resolve_metric,
-    topic_fields,
-)
+try:
+    from timing_contract import (
+        FPS_INTERVAL_RELATIVE_DELTA_MAX,
+        METRICS_SCHEMA_VERSION,
+        METRIC_WARN_THRESHOLDS,
+        METRIC_WINDOWS,
+        resolve_metric,
+        topic_fields,
+    )
+except ImportError:
+    from tools.timing_contract import (
+        FPS_INTERVAL_RELATIVE_DELTA_MAX,
+        METRICS_SCHEMA_VERSION,
+        METRIC_WARN_THRESHOLDS,
+        METRIC_WINDOWS,
+        resolve_metric,
+        topic_fields,
+    )
 
 
 TIMING_FIELDS = list(topic_fields("/timing"))

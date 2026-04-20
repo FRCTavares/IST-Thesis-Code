@@ -1,0 +1,161 @@
+{
+  "run_label": "diag_short",
+  "duration_s": 5.003420785000344,
+  "contract": {
+    "metrics_schema_version": 3,
+    "metric_windows": {
+      "det_out_fps_seconds": 3.0
+    },
+    "metric_thresholds_ms": {
+      "e2e_det_ms": 120.0,
+      "pub_dt_ms": 120.0,
+      "infer_ms": 20.0,
+      "container_queue_ms": 100.0,
+      "track_ms": 25.0,
+      "e2e_target_ms": 150.0
+    }
+  },
+  "topics": {
+    "/timing": {
+      "count": 29,
+      "hz": 5.796034602354158,
+      "frame_id_min": 3504,
+      "frame_id_max": 3532,
+      "frame_id_unique": 29,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_tracker": {
+      "count": 0,
+      "hz": 0.0,
+      "frame_id_min": null,
+      "frame_id_max": null,
+      "frame_id_unique": 0,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_target": {
+      "count": 34,
+      "hz": 6.795350913104875,
+      "frame_id_min": 3499,
+      "frame_id_max": 3532,
+      "frame_id_unique": 34,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    }
+  },
+  "metrics": {
+    "/timing": {
+      "pre_ms": {
+        "n": 29.0,
+        "p50": 3.462441921234131,
+        "p95": 8.240199470520015,
+        "p99": 10.986412277221676,
+        "mean": 3.975655407741152,
+        "min": 1.8588429689407349,
+        "max": 11.735158920288086
+      },
+      "container_queue_ms": {
+        "n": 29.0,
+        "p50": 89.93510437011719,
+        "p95": 102.80885162353516,
+        "p99": 105.34914276123047,
+        "mean": 90.67249666411301,
+        "min": 79.57366943359375,
+        "max": 105.81542205810547
+      },
+      "zmq_roundtrip_ms": {
+        "n": 29.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "infer_ms": {
+        "n": 29.0,
+        "p50": 5.461935043334961,
+        "p95": 9.190914535522454,
+        "p99": 10.884183845520019,
+        "mean": 6.034528600758519,
+        "min": 4.974538803100586,
+        "max": 11.07746410369873
+      },
+      "e2e_det_ms": {
+        "n": 29.0,
+        "p50": 106.39181518554688,
+        "p95": 119.69316864013672,
+        "p99": 120.13345245361327,
+        "mean": 106.74034302810142,
+        "min": 91.86091613769531,
+        "max": 120.17137908935547
+      },
+      "pub_dt_ms": {
+        "n": 29.0,
+        "p50": 104.63664245605469,
+        "p95": 197.0442016601562,
+        "p99": 208.92020507812498,
+        "mean": 120.79761978675579,
+        "min": 90.35972595214844,
+        "max": 211.82974243164062
+      }
+    },
+    "/timing_tracker": {
+      "track_ms": {
+        "n": 0.0,
+        "p50": NaN,
+        "p95": NaN,
+        "p99": NaN,
+        "mean": NaN,
+        "min": NaN,
+        "max": NaN
+      }
+    },
+    "/timing_target": {
+      "e2e_target_ms": {
+        "n": 34.0,
+        "p50": 112.38134765625,
+        "p95": 131.13789443969728,
+        "p99": 132.50613540649414,
+        "mean": 111.63993588615867,
+        "min": 0.0,
+        "max": 132.56216430664062
+      }
+    }
+  },
+  "detection_stream": {
+    "count": 30,
+    "hz": 5.995897864504302,
+    "detections_per_msg": {
+      "n": 30.0,
+      "p50": 1.0,
+      "p95": 1.0,
+      "p99": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0,
+      "zero_ratio": 0.0
+    }
+  },
+  "cadence_consistency": {
+    "det_out_fps_hz": 5.995897864504302,
+    "pub_dt_p50_ms": 104.63664245605469,
+    "fps_from_pub_dt_p50": 9.556881571577376,
+    "relative_delta": 0.37260937894884144,
+    "within_tolerance": false,
+    "relative_delta_max": 0.35
+  },
+  "health": {
+    "score": 68.37144917079381,
+    "latency_component": 66.87122090657553,
+    "cadence_component": 16.39699881417414,
+    "throughput_component": 100.0,
+    "throughput_ratio": 1.0344827586206897,
+    "e2e_det_p95_ms": 119.69316864013672,
+    "pub_dt_p95_ms": 197.0442016601562
+  }
+}

@@ -117,7 +117,7 @@ print_startup_success_summary() {
     if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
         detector_summary="mode=legacy queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} timeout_ms=${INFER_TIMEOUT_MS} retries=${INFER_RETRIES}"
     else
-        detector_summary="mode=single-process frame_queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} image_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
+        detector_summary="mode=single-process backend=${PERCEPTION_INFERENCE_BACKEND} frame_queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} image_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
     fi
 
     if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
@@ -291,6 +291,8 @@ Options:
     --perception-image-qos-depth <N>    Perception image subscription depth (single-process default: 2)
     --perception-hailo-queue-buffers <N>
                                                                             Hailo Gst queue max-size-buffers (single-process default: 6)
+    --perception-inference-backend <name>
+                                                                            Inference backend (single-process default: hailo_direct)
     --perception-async-max-inflight <N>  Experimental request for in-flight calls (single-process owner path enforces 1)
     --perception-hailo-videoconvert-off  Disable pre-hailonet videoconvert stage (single-process)
     --perception-hailo-videoconvert-on   Enable pre-hailonet videoconvert stage (single-process default)
@@ -325,6 +327,8 @@ Day-to-day options:
     --camera-width <N>                Camera capture width (default: profile value)
     --camera-height <N>               Camera capture height (default: profile value)
     --camera-rate-controls-off        Disable sensor FPS/exposure control writes
+    --perception-inference-backend <name>
+                                      Perception backend (default: hailo_direct)
     --no-tracker                      Do not start tracker node
     --no-target                       Do not start target selector node
     --no-control                      Do not start control_ref_node
@@ -387,6 +391,7 @@ PERCEPTION_ASYNC_MAX_INFLIGHT=1
 PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL="true"
 PERCEPTION_GC_DISABLE_BOOL="false"
 PERCEPTION_ALLOW_STUB_FALLBACK_BOOL="false"
+PERCEPTION_INFERENCE_BACKEND="hailo_direct"
 ENABLE_DASHBOARD_BRIDGE=1
 ENABLE_TRACKER=1
 ENABLE_TARGET_SELECTOR=1
@@ -824,6 +829,15 @@ while [[ $# -gt 0 ]]; do
             PERCEPTION_HAILO_QUEUE_BUFFERS="$2"
             shift 2
             ;;
+        --perception-inference-backend)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --perception-inference-backend requires a value"
+                print_usage
+                exit 1
+            fi
+            PERCEPTION_INFERENCE_BACKEND="${2,,}"
+            shift 2
+            ;;
         --perception-async-max-inflight)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --perception-async-max-inflight requires a value"
@@ -915,6 +929,16 @@ case "$PERCEPTION_MODE" in
         ;;
     *)
         echo "[error] invalid --perception-mode '$PERCEPTION_MODE' (expected legacy|single-process)"
+        exit 1
+        ;;
+esac
+
+case "$PERCEPTION_INFERENCE_BACKEND" in
+    hailo|hailo_direct|direct|hailort|hailo_gst|gst|stub|none)
+        ;;
+    *)
+        echo "[error] invalid --perception-inference-backend '$PERCEPTION_INFERENCE_BACKEND'"
+        echo "        expected one of: hailo_direct, hailo_gst, hailo, gst, direct, hailort, stub, none"
         exit 1
         ;;
 esac
@@ -1742,7 +1766,7 @@ else
         -p disable_python_gc:=$PERCEPTION_GC_DISABLE_BOOL \
         -p label:=person \
         -p min_score:=0.35 \
-        -p inference_backend:=hailo_gst \
+        -p inference_backend:=$PERCEPTION_INFERENCE_BACKEND \
         -p allow_stub_fallback:=$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL \
         "${PERCEPTION_POST_SO_ARGS[@]}" \
         -p infer_timeout_ms:=$INFER_TIMEOUT_MS \

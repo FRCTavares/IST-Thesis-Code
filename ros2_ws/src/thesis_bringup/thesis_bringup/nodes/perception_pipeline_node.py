@@ -76,6 +76,90 @@ def _bbox_to_xywh(bbox) -> tuple[float | None, float | None, float | None, float
     return None, None, None, None
 
 
+_COCO80_LABELS: tuple[str, ...] = (
+    "person",
+    "bicycle",
+    "car",
+    "motorcycle",
+    "airplane",
+    "bus",
+    "train",
+    "truck",
+    "boat",
+    "traffic light",
+    "fire hydrant",
+    "stop sign",
+    "parking meter",
+    "bench",
+    "bird",
+    "cat",
+    "dog",
+    "horse",
+    "sheep",
+    "cow",
+    "elephant",
+    "bear",
+    "zebra",
+    "giraffe",
+    "backpack",
+    "umbrella",
+    "handbag",
+    "tie",
+    "suitcase",
+    "frisbee",
+    "skis",
+    "snowboard",
+    "sports ball",
+    "kite",
+    "baseball bat",
+    "baseball glove",
+    "skateboard",
+    "surfboard",
+    "tennis racket",
+    "bottle",
+    "wine glass",
+    "cup",
+    "fork",
+    "knife",
+    "spoon",
+    "bowl",
+    "banana",
+    "apple",
+    "sandwich",
+    "orange",
+    "broccoli",
+    "carrot",
+    "hot dog",
+    "pizza",
+    "donut",
+    "cake",
+    "chair",
+    "couch",
+    "potted plant",
+    "bed",
+    "dining table",
+    "toilet",
+    "tv",
+    "laptop",
+    "mouse",
+    "remote",
+    "keyboard",
+    "cell phone",
+    "microwave",
+    "oven",
+    "toaster",
+    "sink",
+    "refrigerator",
+    "book",
+    "clock",
+    "vase",
+    "scissors",
+    "teddy bear",
+    "hair drier",
+    "toothbrush",
+)
+
+
 @dataclass
 class PreparedFrame:
     seq: int
@@ -182,6 +266,7 @@ class HailoGstInferenceEngine:
         convert_stage = "videoconvert ! " if self.use_videoconvert else ""
         pipeline_str = (
             f"appsrc name=source is-live=true block=false format=time do-timestamp=false "
+            f"max-buffers=1 leaky-type=downstream "
             f"caps=video/x-raw,format=RGB,width={self.width},height={self.height},framerate={self.fps}/1 ! "
             f"queue max-size-buffers={queue_buffers} leaky=downstream ! "
             f"{convert_stage}"
@@ -340,6 +425,7 @@ class HailoGstInferenceEngine:
         buf.fill(0, frame_bytes)
 
         pts = int(seq * self.frame_duration_ns)
+
         buf.pts = pts
         buf.dts = self.Gst.CLOCK_TIME_NONE
         buf.duration = self.frame_duration_ns
@@ -414,6 +500,287 @@ class HailoGstInferenceEngine:
         self._build_pipeline()
 
 
+class HailoDirectInferenceEngine:
+    """In-process pyHailoRT backend with persistent configured network."""
+
+    def __init__(
+        self,
+        hef_path: str,
+        infer_timeout_ms: int,
+        label_filter: str | None,
+    ) -> None:
+        from hailo_platform import HEF, InferVStreams, InputVStreamParams, OutputVStreamParams, VDevice
+
+        self.HEF = HEF
+        self.InferVStreams = InferVStreams
+        self.InputVStreamParams = InputVStreamParams
+        self.OutputVStreamParams = OutputVStreamParams
+        self.VDevice = VDevice
+
+        self.hef_path = str(hef_path)
+        self.infer_timeout_ms = max(1, int(infer_timeout_ms))
+        self.label_filter = label_filter
+
+        self._lock = threading.RLock()
+        self._closed = False
+
+        self._vdevice = None
+        self._network_group = None
+        self._hef = None
+        self._infer_ctx = None
+        self._infer_pipeline = None
+        self._activation_ctx = None
+
+        self._input_name = ""
+        self._input_shape: tuple[int, int, int] = (0, 0, 0)
+        self._output_names: list[str] = []
+
+        with self._lock:
+            self._open_runtime_locked()
+
+    def _open_runtime_locked(self) -> None:
+        hef = self.HEF(self.hef_path)
+        vdevice = self.VDevice()
+        configured_networks = vdevice.configure(hef)
+        if not configured_networks:
+            vdevice.release()
+            raise RuntimeError("no configured Hailo network groups available")
+
+        network_group = configured_networks[0]
+        input_infos = network_group.get_input_vstream_infos()
+        if len(input_infos) != 1:
+            vdevice.release()
+            raise RuntimeError(
+                f"direct backend requires exactly one input vstream (got={len(input_infos)})"
+            )
+
+        input_info = input_infos[0]
+        input_shape = tuple(int(v) for v in tuple(input_info.shape))
+        if len(input_shape) != 3:
+            vdevice.release()
+            raise RuntimeError(
+                f"unexpected input shape for direct backend: {input_shape}"
+            )
+
+        output_infos = network_group.get_output_vstream_infos()
+        output_names = [str(info.name) for info in output_infos]
+
+        input_params = self.InputVStreamParams.make(
+            network_group,
+            timeout_ms=self.infer_timeout_ms,
+            queue_size=1,
+        )
+        output_params = self.OutputVStreamParams.make(
+            network_group,
+            timeout_ms=self.infer_timeout_ms,
+            queue_size=1,
+        )
+
+        infer_ctx = self.InferVStreams(network_group, input_params, output_params)
+        infer_pipeline = None
+        activation_ctx = None
+
+        try:
+            infer_pipeline = infer_ctx.__enter__()
+            activation_ctx = network_group.activate(network_group.create_params())
+            activation_ctx.__enter__()
+        except Exception:
+            try:
+                infer_ctx.__exit__(None, None, None)
+            except Exception:
+                pass
+            vdevice.release()
+            raise
+
+        self._hef = hef
+        self._vdevice = vdevice
+        self._network_group = network_group
+        self._infer_ctx = infer_ctx
+        self._infer_pipeline = infer_pipeline
+        self._activation_ctx = activation_ctx
+        self._input_name = str(input_info.name)
+        self._input_shape = (input_shape[0], input_shape[1], input_shape[2])
+        self._output_names = output_names
+
+    def _close_runtime_locked(self) -> None:
+        if self._activation_ctx is not None:
+            try:
+                self._activation_ctx.__exit__(None, None, None)
+            except Exception:
+                pass
+            self._activation_ctx = None
+
+        if self._infer_ctx is not None:
+            try:
+                self._infer_ctx.__exit__(None, None, None)
+            except Exception:
+                pass
+            self._infer_ctx = None
+
+        if self._vdevice is not None:
+            try:
+                self._vdevice.release()
+            except Exception:
+                pass
+
+        self._vdevice = None
+        self._network_group = None
+        self._hef = None
+        self._infer_pipeline = None
+        self._input_name = ""
+        self._input_shape = (0, 0, 0)
+        self._output_names = []
+
+    def _decode_class_rows(self, class_id: int, class_rows: Any) -> list[dict[str, Any]]:
+        rows = np.asarray(class_rows)
+        if rows.size == 0:
+            return []
+
+        if rows.ndim == 1:
+            rows = rows.reshape(1, -1)
+        elif rows.ndim > 2:
+            rows = rows.reshape(-1, rows.shape[-1])
+
+        mapped_label: str | None = None
+        if 0 <= class_id < len(_COCO80_LABELS):
+            mapped_label = _COCO80_LABELS[class_id]
+
+        if self.label_filter is not None and mapped_label is not None:
+            if _normalize_label(mapped_label) != self.label_filter:
+                return []
+
+        out: list[dict[str, Any]] = []
+        for row in rows:
+            if len(row) < 5:
+                continue
+
+            y_min = float(row[0])
+            x_min = float(row[1])
+            y_max = float(row[2])
+            x_max = float(row[3])
+            score = float(row[4])
+
+            if not np.isfinite(score) or score <= 0.0:
+                continue
+
+            w = max(0.0, x_max - x_min)
+            h = max(0.0, y_max - y_min)
+            if w <= 0.0 or h <= 0.0:
+                continue
+
+            det: dict[str, Any] = {
+                "class_id": int(class_id),
+                "score": score,
+                "x": float(x_min),
+                "y": float(y_min),
+                "w": float(w),
+                "h": float(h),
+            }
+            if mapped_label is not None:
+                det["label"] = mapped_label
+            out.append(det)
+
+        return out
+
+    def _decode_output(self, value: Any) -> list[dict[str, Any]]:
+        if isinstance(value, list):
+            if not value:
+                return []
+            # pyHailoRT NMS-by-class output shape for batch=1 is [batch][class][det,5].
+            batch0 = value[0]
+            if not isinstance(batch0, list):
+                return []
+
+            dets: list[dict[str, Any]] = []
+            for class_id, class_rows in enumerate(batch0):
+                dets.extend(self._decode_class_rows(class_id, class_rows))
+            return dets
+
+        if isinstance(value, np.ndarray):
+            if value.ndim == 4 and value.shape[0] >= 1 and value.shape[2] >= 5:
+                # TensorFlow-style NMS: [batch, class, bbox_params, dets].
+                dets: list[dict[str, Any]] = []
+                classes = value[0]
+                for class_id in range(classes.shape[0]):
+                    class_matrix = classes[class_id]
+                    if class_matrix.ndim != 2 or class_matrix.shape[0] < 5:
+                        continue
+                    dets.extend(self._decode_class_rows(class_id, class_matrix.T))
+                return dets
+
+        return []
+
+    def infer(
+        self,
+        frame_rgb: np.ndarray,
+        _seq: int,
+        _frame_id: int,
+        _src_stamp_ns: int,
+        _timeout_ms: int,
+    ) -> dict[str, Any] | None:
+        with self._lock:
+            if self._closed:
+                return None
+
+            if frame_rgb.dtype != np.uint8:
+                raise RuntimeError("inference frame must be uint8 RGB")
+            if frame_rgb.ndim != 3:
+                raise RuntimeError(f"inference frame must be HWC RGB, got ndim={frame_rgb.ndim}")
+            if tuple(int(v) for v in frame_rgb.shape) != self._input_shape:
+                raise RuntimeError(
+                    f"inference frame shape mismatch (got={frame_rgb.shape}, expected={self._input_shape})"
+                )
+
+            frame_view = frame_rgb if frame_rgb.flags["C_CONTIGUOUS"] else np.ascontiguousarray(frame_rgb)
+            batch = np.expand_dims(frame_view, axis=0)
+
+            t_infer_start_ns = now_ns()
+            try:
+                outputs = self._infer_pipeline.infer({self._input_name: batch})
+            except Exception as exc:
+                if "timeout" in str(exc).lower():
+                    return None
+                raise
+            t_infer_end_ns = now_ns()
+
+            t_post_start_ns = t_infer_end_ns
+            dets: list[dict[str, Any]] = []
+            for output_name in self._output_names:
+                if output_name in outputs:
+                    dets.extend(self._decode_output(outputs[output_name]))
+            t_post_end_ns = now_ns()
+
+            return {
+                "detections": dets,
+                "timing": {
+                    "t_infer_start_ns": int(t_infer_start_ns),
+                    "t_infer_end_ns": int(t_infer_end_ns),
+                    "t_post_start_ns": int(t_post_start_ns),
+                    "t_post_end_ns": int(t_post_end_ns),
+                },
+            }
+
+    def close(self) -> None:
+        with self._lock:
+            if self._closed:
+                return
+            self._closed = True
+            self._close_runtime_locked()
+
+    def reload_hef(self, hef_path: str) -> None:
+        new_hef_path = str(hef_path).strip()
+        if not new_hef_path:
+            raise RuntimeError("HEF path cannot be empty")
+
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("cannot reload HEF on a closed engine")
+
+            self._close_runtime_locked()
+            self.hef_path = new_hef_path
+            self._open_runtime_locked()
+
+
 class PerceptionPipelineNode(Node):
     """Single-process perception node with optional in-process Hailo backend."""
 
@@ -428,7 +795,7 @@ class PerceptionPipelineNode(Node):
         self.declare_parameter("publish_timing", True)
         self.declare_parameter("image_reliability", "best_effort")
         self.declare_parameter("image_qos_depth", 2)
-        self.declare_parameter("inference_backend", "hailo_gst")
+        self.declare_parameter("inference_backend", "hailo_direct")
         self.declare_parameter("allow_stub_fallback", False)
         self.declare_parameter("infer_timeout_ms", 300)
         self.declare_parameter("timeout_log_every", 20)
@@ -596,6 +963,21 @@ class PerceptionPipelineNode(Node):
             self._engine_cv.wait(timeout=remaining)
         return True
 
+    @staticmethod
+    def _is_hailo_backend_name(backend_name: str) -> bool:
+        return backend_name in (
+            "hailo",
+            "hailo_direct",
+            "direct",
+            "hailort",
+            "hailo_gst",
+            "gst",
+        )
+
+    @staticmethod
+    def _backend_wants_direct(backend_name: str) -> bool:
+        return backend_name in ("hailo", "hailo_direct", "direct", "hailort")
+
     def _make_hailo_engine(self, hef_path: str) -> HailoGstInferenceEngine:
         return HailoGstInferenceEngine(
             width=self.img_w,
@@ -610,6 +992,13 @@ class PerceptionPipelineNode(Node):
             label_filter=self.label_filter,
         )
 
+    def _make_hailo_direct_engine(self, hef_path: str) -> HailoDirectInferenceEngine:
+        return HailoDirectInferenceEngine(
+            hef_path=hef_path,
+            infer_timeout_ms=self.infer_timeout_ms,
+            label_filter=self.label_filter,
+        )
+
     def _switch_hailo_hef(self, new_hef_path: str) -> None:
         old_hef_path = self.hailo_hef_path
 
@@ -617,7 +1006,7 @@ class PerceptionPipelineNode(Node):
             if not self._wait_for_engine_idle_locked(timeout_s=10.0):
                 raise RuntimeError("engine busy while switching HEF")
 
-            if isinstance(self.engine, HailoGstInferenceEngine):
+            if isinstance(self.engine, (HailoGstInferenceEngine, HailoDirectInferenceEngine)):
                 try:
                     self.engine.reload_hef(new_hef_path)
                 except Exception as exc:
@@ -632,14 +1021,23 @@ class PerceptionPipelineNode(Node):
                     raise RuntimeError(f"failed to reload HEF: {exc}") from exc
 
                 self.hailo_hef_path = new_hef_path
-                self.active_backend = "hailo_gst"
+                if isinstance(self.engine, HailoDirectInferenceEngine):
+                    self.active_backend = "hailo_direct"
+                else:
+                    self.active_backend = "hailo_gst"
                 return
 
             old_engine = self.engine
-            new_engine = self._make_hailo_engine(new_hef_path)
+            if self._backend_wants_direct(self.inference_backend):
+                new_engine = self._make_hailo_direct_engine(new_hef_path)
+                new_active_backend = "hailo_direct"
+            else:
+                new_engine = self._make_hailo_engine(new_hef_path)
+                new_active_backend = "hailo_gst"
+
             self.engine = new_engine
             self.hailo_hef_path = new_hef_path
-            self.active_backend = "hailo_gst"
+            self.active_backend = new_active_backend
 
             try:
                 old_engine.close()
@@ -655,7 +1053,7 @@ class PerceptionPipelineNode(Node):
         if requested_hef_path is None:
             return SetParametersResult(successful=True)
 
-        if self.inference_backend not in ("hailo_gst", "hailo", "gst"):
+        if not self._is_hailo_backend_name(self.inference_backend):
             return SetParametersResult(
                 successful=False,
                 reason="model switch requires hailo backend",
@@ -691,7 +1089,7 @@ class PerceptionPipelineNode(Node):
             self.get_logger().warning("perception backend set to stub (no real inference)")
             return StubInferenceEngine()
 
-        if self.inference_backend not in ("hailo_gst", "hailo", "gst"):
+        if not self._is_hailo_backend_name(self.inference_backend):
             self.active_backend = "stub"
             self.get_logger().warning(
                 f"unknown inference_backend='{self.inference_backend}', falling back to stub"
@@ -699,6 +1097,15 @@ class PerceptionPipelineNode(Node):
             return StubInferenceEngine()
 
         try:
+            if self._backend_wants_direct(self.inference_backend):
+                engine = self._make_hailo_direct_engine(self.hailo_hef_path)
+                self.active_backend = "hailo_direct"
+                self.get_logger().info(
+                    "initialized Hailo direct backend "
+                    f"(hef={self.hailo_hef_path}, infer_timeout_ms={self.infer_timeout_ms})"
+                )
+                return engine
+
             engine = self._make_hailo_engine(self.hailo_hef_path)
             self.active_backend = "hailo_gst"
             self.get_logger().info(

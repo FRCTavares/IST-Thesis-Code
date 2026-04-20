@@ -35,7 +35,10 @@ import os
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from timing_contract import METRICS_SCHEMA_VERSION, METRIC_WARN_THRESHOLDS, METRIC_WINDOWS, candidates_for
+try:
+    from timing_contract import METRICS_SCHEMA_VERSION, METRIC_WARN_THRESHOLDS, METRIC_WINDOWS, candidates_for
+except ImportError:
+    from tools.timing_contract import METRICS_SCHEMA_VERSION, METRIC_WARN_THRESHOLDS, METRIC_WINDOWS, candidates_for
 
 
 def _percentile(sorted_vals: List[float], q: float) -> float:
