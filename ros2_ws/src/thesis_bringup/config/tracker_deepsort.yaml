@@ -1,0 +1,23 @@
+# DeepSORT Phase 2 configuration
+# Lightweight appearance prototype using image crops and color histograms.
+
+tracker_node:
+  ros__parameters:
+    tracker_type: "deepsort"
+
+    # Common parameters
+    min_score: 0.35
+
+    # Phase 1 DeepSORT parameters
+    max_age: 30
+    n_init: 3
+    match_thresh: 0.25
+    centre_gate: 200.0
+    image_topic: "/camera/image_raw"
+    appearance_enabled: true
+    appearance_max_frame_age_ms: 120.0
+    appearance_hist_bins: 8
+    appearance_weight: 0.35
+    appearance_max_distance: 0.6
+    appearance_min_crop_size: 12
+    appearance_update_alpha: 0.2

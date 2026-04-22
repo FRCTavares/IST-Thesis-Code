@@ -15,6 +15,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from rclpy.serialization import serialize_message
 
+from sensor_msgs.msg import Image
 from vision_msgs.msg import Detection2DArray
 from thesis_msgs.msg import Track2D, Track2DArray, Timing
 
@@ -22,9 +23,10 @@ from .backends import BBox, TrackOutput
 from .backends.sort_backend import SortBackend
 from .backends.ocsort_backend import OCSortBackend
 from .backends.bytetrack_backend import ByteTrackBackend
+from .backends.deepsort_backend import DeepSortBackend
 
 # Type alias for tracker backends
-TrackerBackendType = Union[SortBackend, OCSortBackend, ByteTrackBackend]
+TrackerBackendType = Union[SortBackend, OCSortBackend, ByteTrackBackend, DeepSortBackend]
 
 
 def xywh_center_to_xyxy(cx: float, cy: float, w: float, h: float) -> BBox:
@@ -97,7 +99,7 @@ class TrackerNode(Node):
     def __init__(self) -> None:
         super().__init__("tracker_node")
 
-        self._supported_tracker_types = {"sort", "ocsort", "bytetrack"}
+        self._supported_tracker_types = {"sort", "ocsort", "bytetrack", "deepsort"}
         
         # Declare tracker type parameter
         self.declare_parameter("tracker_type", "sort")
@@ -122,6 +124,11 @@ class TrackerNode(Node):
         
         self.sub = self.create_subscription(
             Detection2DArray, "/detections", self.on_detections, qos
+        )
+        self.declare_parameter("image_topic", "/camera/image_raw")
+        self.image_topic = str(self.get_parameter("image_topic").value)
+        self.sub_image = self.create_subscription(
+            Image, self.image_topic, self.on_image, qos
         )
         self.sub_timing = self.create_subscription(
             Timing, "/timing", self.on_timing, qos
@@ -174,6 +181,7 @@ class TrackerNode(Node):
         self.get_logger().info(
             "Tracker node ready: "
             f"type={self._tracker_type_current}, min_score={self.min_score}, "
+            f"image_topic={self.image_topic}, "
             f"publish_tracks={self.publish_tracks}, "
             f"publish_tracks_requires_subscribers={self.publish_tracks_requires_subscribers}, "
             f"publish_timing_topic={self.publish_timing_topic}, "
@@ -204,7 +212,7 @@ class TrackerNode(Node):
                 successful=False,
                 reason=(
                     f"unsupported tracker_type '{requested_tracker}', "
-                    "supported: sort, ocsort, bytetrack"
+                    "supported: sort, ocsort, bytetrack, deepsort"
                 ),
             )
 
@@ -288,10 +296,50 @@ class TrackerNode(Node):
                 det_thresh=det_thresh,
                 second_match_thresh=second_match_thresh,
             )
-        
+
+        elif tracker_type == "deepsort":
+            max_age = int(self._declare_param_if_missing("max_age", 30))
+            n_init = int(self._declare_param_if_missing("n_init", 3))
+            match_thresh = float(self._declare_param_if_missing("match_thresh", 0.25))
+            centre_gate = float(self._declare_param_if_missing("centre_gate", 200.0))
+            appearance_enabled = bool(self._declare_param_if_missing("appearance_enabled", True))
+            appearance_max_frame_age_ms = float(
+                self._declare_param_if_missing("appearance_max_frame_age_ms", 120.0)
+            )
+            appearance_hist_bins = int(self._declare_param_if_missing("appearance_hist_bins", 8))
+            appearance_weight = float(self._declare_param_if_missing("appearance_weight", 0.35))
+            appearance_max_distance = float(
+                self._declare_param_if_missing("appearance_max_distance", 0.6)
+            )
+            appearance_min_crop_size = int(
+                self._declare_param_if_missing("appearance_min_crop_size", 12)
+            )
+            appearance_update_alpha = float(
+                self._declare_param_if_missing("appearance_update_alpha", 0.2)
+            )
+
+            return DeepSortBackend(
+                max_age=max_age,
+                n_init=n_init,
+                match_thresh=match_thresh,
+                centre_gate=centre_gate,
+                appearance_enabled=appearance_enabled,
+                appearance_max_frame_age_ms=appearance_max_frame_age_ms,
+                appearance_hist_bins=appearance_hist_bins,
+                appearance_weight=appearance_weight,
+                appearance_max_distance=appearance_max_distance,
+                appearance_min_crop_size=appearance_min_crop_size,
+                appearance_update_alpha=appearance_update_alpha,
+            )
+
         else:
             self.get_logger().error(f"Unknown tracker_type: {tracker_type}, defaulting to SORT")
             return SortBackend()
+
+    def on_image(self, msg: Image) -> None:
+        """Forward the latest camera image only to the DeepSORT backend."""
+        if isinstance(self.backend, DeepSortBackend):
+            self.backend.update_latest_image(msg)
 
     def on_timing(self, msg: Timing) -> None:
         frame_id = int(msg.frame_id)

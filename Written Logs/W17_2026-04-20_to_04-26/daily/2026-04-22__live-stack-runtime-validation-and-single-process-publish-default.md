@@ -259,6 +259,155 @@ Conclusion:
 - the improved throughput is now the startup default for single-process mode
 - the fix is minimal, local, and evidence-backed
 
+## Additional Work Completed Later on 2026-04-22
+
+### 10) Phase 1 deepsort backend skeleton added
+
+Added a new `deepsort` tracker backend path while keeping external ROS contracts unchanged:
+
+- `/detections`
+- `/tracks`
+- `/target`
+
+Scope completed in Phase 1:
+
+- added a structurally separate `deepsort` backend implementation under `thesis_tracker/backends`
+- extended tracker selection wiring so `--tracker deepsort` is accepted
+- added `tracker_deepsort.yaml`
+- kept `sort`, `ocsort`, and `bytetrack` behavior unchanged
+- kept detector/perception schemas unchanged
+
+Phase 1 implementation was intentionally minimal:
+
+- no learned appearance embedding
+- no detector schema changes
+- no dashboard/UI changes
+- no broad tracker architecture rewrite
+
+Build and basic boot validation passed:
+
+- `colcon build --packages-select thesis_tracker thesis_bringup`
+- `ros2 run thesis_tracker tracker_node --ros-args -p tracker_type:=deepsort`
+
+### 11) Phase 1 behavioral sanity check
+
+Ran a first replay comparison of:
+
+- `tracker:=sort`
+- `tracker:=deepsort`
+
+Main result:
+
+- the selected replay path was sufficient to confirm that `deepsort` boots and runs in the replay flow
+- however, the replay bag did not contain the right evidence to evaluate appearance or identity-retention benefit
+- `/target` remained empty in the later live comparisons because target selection is now explicitly user-driven through dashboard/API focus and no focus was set during those bags
+
+Conclusion:
+
+- Phase 1 was sane enough to continue
+- `/target`-based metrics are no longer an appropriate primary comparison signal unless a focus target is explicitly selected during recording
+
+### 12) Phase 2 lightweight appearance prototype implemented
+
+Implemented the first cheap appearance metric inside the new `deepsort` backend only.
+
+Phase 2 design:
+
+- tracker subscribes to the latest `/camera/image_raw`
+- each detection crop gets a lightweight normalized colour histogram descriptor
+- association blends geometric cost with appearance distance when appearance data is available
+- descriptor updates remain local to the `deepsort` backend
+
+Important constraints preserved:
+
+- no change to `/detections`, `/tracks`, or `/target` message contracts
+- no change to detector/perception output schemas
+- no change to the current dashboard-driven target selection architecture
+- no change to `sort`, `ocsort`, or `bytetrack`
+- no learned embedding model yet
+
+Phase 2 build and direct boot validation passed:
+
+- `colcon build --packages-select thesis_tracker thesis_bringup`
+- direct `tracker_node` boot with `tracker_type:=deepsort`
+
+### 13) Live Phase 2 runtime validation and blocker diagnosis
+
+Initial live validation hit camera startup instability:
+
+- TEVS sensor rate control timed out during camera init
+- `start_live_stack.sh` recovery logic retried with sensor rate controls disabled
+- one run stalled/froze and required manual cleanup
+- after reboot, camera recovery and safe-camera startup restored healthy runtime flow
+
+Post-reboot live checks confirmed:
+
+- `/camera/image_raw` was healthy at roughly `27-28 Hz`
+- `/detections` was healthy at roughly `27 Hz`
+- `/tracks` was live for `deepsort`
+
+Representative live `deepsort` track echo confirmed the backend was publishing valid tracked persons.
+
+### 14) Track-level comparison outcome from saved live bags
+
+Because `/target` remained empty in the saved live comparison bags, comparison had to be done through `/tracks` and `/timing_tracker` instead of `/target`.
+
+Observed live-bag results:
+
+- `deepsort` runtime cost was materially higher than `sort`
+- `deepsort` and `sort` bags did not contain enough sustained two-person overlap to support a real identity-retention claim
+
+Track-level export findings from the saved bags:
+
+- `deepsort`
+  - `9801` `/tracks` messages
+  - `3` unique track IDs
+  - only `1` multi-track overlap segment
+  - overlap duration effectively `0.000 s`
+- `sort`
+  - `7574` `/tracks` messages
+  - `6` unique track IDs
+  - `4` multi-track overlap segments
+  - longest overlap only `0.097 s`
+
+Interpretation:
+
+- these bags are not decisive for appearance benefit
+- there was not enough sustained ambiguous multi-person interaction
+- the current evidence does not yet justify claiming that the histogram appearance cue improved identity continuity
+
+### 15) Decision at end of day
+
+Decision:
+
+- do not make further code changes tonight
+- keep the current Phase 2 implementation as the working branch
+- evaluate tomorrow using a short, deliberately ambiguous two-person live bag
+
+Planned next-step capture:
+
+- two people
+- strongly different clothing colours
+- controlled crossing at image centre
+- short partial occlusion
+- `20-30 s` capture
+- compare `sort` vs `deepsort` directly through `/tracks`
+
+Current uncommitted worktree at end of day:
+
+- `ros2_ws/src/thesis_tracker/package.xml`
+- `ros2_ws/src/thesis_tracker/thesis_tracker/tracker_node.py`
+- `ros2_ws/src/thesis_tracker/thesis_tracker/backends/deepsort_backend.py`
+- `ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml`
+- `tools/start_live_stack.sh`
+
+End-of-day technical conclusion:
+
+- Phase 1 and Phase 2 implementation work completed
+- live execution path works
+- runtime overhead is clearly higher than `sort`
+- appearance benefit is still unproven and needs one controlled ambiguity bag before deciding whether to optimize or rethink the approach
+
 ## Deliverables Produced
 
 - [x] Full live validation of target API path after `thesis_target_selector` removal.

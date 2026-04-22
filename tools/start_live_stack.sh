@@ -247,7 +247,7 @@ Options:
     --perception-mode <legacy|single-process>
                                                                             Perception path selection (default: single-process)
     -v, --verbose                     Enable verbose startup/status logs (default: warnings/errors only)
-    --tracker <sort|ocsort|bytetrack>  Tracker backend (default: sort)
+    --tracker <sort|ocsort|bytetrack|deepsort>  Tracker backend (default: sort)
     --tracker-profile-off               Disable tracker profiling instrumentation
     --tracker-gc-probe-off              Disable tracker GC probe instrumentation (lower overhead)
     --tracker-gc-probe-on               Enable tracker GC probe instrumentation
@@ -958,10 +958,10 @@ if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 ]]; then
 fi
 
 case "$TRACKER_TYPE" in
-    sort|ocsort|bytetrack)
+    sort|ocsort|bytetrack|deepsort)
         ;;
     *)
-        echo "[error] invalid tracker '$TRACKER_TYPE' (expected sort|ocsort|bytetrack)"
+        echo "[error] invalid tracker '$TRACKER_TYPE' (expected sort|ocsort|bytetrack|deepsort)"
         exit 1
         ;;
 esac
