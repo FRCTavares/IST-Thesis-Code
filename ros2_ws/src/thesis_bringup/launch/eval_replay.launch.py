@@ -43,11 +43,20 @@ def _setup(context, *args, **kwargs):
         parameters=[config_file],
     )
 
-    selector = Node(
-        package="thesis_target_selector",
-        executable="target_selector_node",
-        name="thesis_target_selector_node",
+    target_bridge = Node(
+        package="thesis_bringup",
+        executable="dashboard_bridge_node",
+        name="dashboard_bridge_node",
         output="screen",
+        parameters=[
+            {
+                "ws_host": "127.0.0.1",
+                "ws_port": 0,
+                "api_host": "127.0.0.1",
+                "api_port": 0,
+                "publish_hz": 30.0,
+            }
+        ],
     )
 
     record = ExecuteProcess(
@@ -55,7 +64,7 @@ def _setup(context, *args, **kwargs):
         "ros2", "bag", "record",
         "--storage", "mcap",
         "-o", out_dir,
-        "--topics", "/tracks", "/target", "/timing_tracker",
+        "--topics", "/tracks", "/target", "/timing_tracker", "/timing_target",
         ],
         output="screen",
     )
@@ -76,7 +85,7 @@ def _setup(context, *args, **kwargs):
     )
 
     # Order: start nodes, start recorder, then play bag
-    return [tracker, selector, record, echo, play, auto_shutdown]
+    return [tracker, target_bridge, record, echo, play, auto_shutdown]
 
 
 def generate_launch_description():

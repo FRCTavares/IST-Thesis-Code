@@ -5,6 +5,23 @@ All commands run from `$THESIS_ROOT` unless noted.
 
 Use this file as the command source of truth.
 
+## Fast path (daily operation)
+
+```bash
+export THESIS_ROOT="$HOME/Desktop/Thesis-Code"
+export ROS_DOMAIN_ID=42
+
+cd "$THESIS_ROOT/ros2_ws"
+source /opt/ros/jazzy/setup.bash
+colcon build --symlink-install
+
+cd "$THESIS_ROOT"
+./tools/start_live_stack.sh --profile daily
+./tools/start_ui_stack.sh
+```
+
+If startup fails, inspect `ros2_ws/log/live_stack/latest/` first before manual restarts.
+
 ## Current runtime defaults
 
 From `tools/start_live_stack.sh`:
@@ -68,7 +85,8 @@ docker compose version
 
 ### Mandatory external dependency (RPi5 + Hailo path)
 
-This repository expects the Hailo compose environment at `$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu` (legacy fallback: `~/pi-ai-kit-ubuntu`).
+This repository expects the Hailo compose environment at `$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu`.
+`tools/start_live_stack.sh` still supports `~/pi-ai-kit-ubuntu` as compatibility fallback on older hosts.
 
 ```bash
 git clone https://github.com/hailo-ai/pi-ai-kit-ubuntu.git "$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
@@ -133,7 +151,7 @@ What this script does:
 1. Preflight and stale-process cleanup.
 2. ROS env and log directory setup.
 3. Perception path readiness by mode: legacy starts container detection service; single-process starts perception pipeline node.
-4. Node startup order: camera -> (legacy inference OR single-process perception) -> tracker/target/control -> dashboard.
+4. Node startup order: camera -> (legacy inference OR single-process perception) -> tracker -> dashboard -> control.
 5. Interactive runtime with `status`, `clear`, `stop` commands.
 
 Default:
@@ -150,8 +168,13 @@ Useful flags:
 - Legacy perception path: ./tools/start_live_stack.sh --perception-mode legacy
 - Single-process perception mode (default; in-process backend, stub fallback): ./tools/start_live_stack.sh --perception-mode single-process
 - Single-process queue tuning: ./tools/start_live_stack.sh --perception-hailo-queue-buffers 1
-- Freshness-first async worker: ./tools/start_live_stack.sh --perception-async-latest-frame-on
 - Disable pre-hailonet videoconvert stage: ./tools/start_live_stack.sh --perception-hailo-videoconvert-off
+- Allow stub fallback if host Hailo init fails: ./tools/start_live_stack.sh --perception-allow-stub-fallback
+- Tighten image subscription queue depth: ./tools/start_live_stack.sh --perception-image-qos-depth 1
+
+Deprecated launcher flags:
+
+- `--perception-async-latest-frame-on/off` was removed; queue+worker mode is now always used in single-process mode.
 
 Full option list:
 
@@ -174,7 +197,7 @@ Stop:
 - If the interactive shell is gone, terminate stack processes explicitly:
 
 ```bash
-pkill -f 'camera_bringup.launch.py|camera_capture_node|inference_client_node|perception_pipeline_node|tracker_node|target_selector_node|control_ref_node|dashboard_bridge_node|web_video_server' || true
+pkill -f 'camera_bringup.launch.py|camera_capture_node|inference_client_node|detector_node|perception_pipeline_node|tracker_node|control_ref_node|dashboard_bridge_node|web_video_server' || true
 ```
 
 Verification checkpoint (live stack healthy):
@@ -268,10 +291,16 @@ ros2 run thesis_inference_client inference_client_node --ros-args \
   -p min_score:=0.35
 
 ros2 run thesis_tracker tracker_node
-ros2 run thesis_target_selector target_selector_node
 ros2 run thesis_bringup dashboard_bridge_node --ros-args -p img_w:=640 -p img_h:=640
 ros2 run web_video_server web_video_server --ros-args -p port:=8080
 ```
+
+Targeting note:
+
+- Target selection is now strictly user-driven through `dashboard_bridge_node`.
+- `POST /api/target` is the only supported way to select a target.
+- There is no automatic target-selection fallback in the live stack, replay flows, or first ROS 2 slice.
+- When no target is explicitly selected, `/target` publishes the empty target state (`id=0`, zero geometry, zero score/quality).
 
 Dashboard:
 
@@ -284,7 +313,7 @@ Manual mode verification:
 ```bash
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
-ros2 node list | rg 'inference_client_node|tracker_node|target_selector_node|dashboard_bridge_node'
+ros2 node list | rg 'inference_client_node|detector_node|tracker_node|dashboard_bridge_node'
 ```
 
 ## 4) Record bags
@@ -299,7 +328,7 @@ export RMW_FASTRTPS_USE_SHM=0
 
 ros2 bag record --storage mcap \
   -o ../bags/live_camera/YYYY-MM-DD__<session_description> \
-  /camera/fps /detections /timing /target
+  /camera/fps /detections /timing /target /timing_target
 ```
 
 Use for field sessions and timeline metrics with low storage overhead.
@@ -309,7 +338,7 @@ Raw profiling bag:
 ```bash
 cd $THESIS_ROOT/bags/raw
 ros2 bag record --storage mcap \
-  --topics /detections /timing /tracks /target /timing_tracker
+  --topics /detections /timing /tracks /target /timing_tracker /timing_target
 # rename output folder after stop
 ```
 
@@ -451,6 +480,18 @@ Additional common failures:
 - `ros2 run` cannot find packages:
   - Rebuild workspace with `colcon build --symlink-install` in `ros2_ws`.
 
+Live log triage quick commands:
+
+```bash
+cd "$THESIS_ROOT"
+ls -1 ros2_ws/log/live_stack/latest
+tail -n 80 ros2_ws/log/live_stack/latest/camera.log
+tail -n 80 ros2_ws/log/live_stack/latest/perception_pipeline.log
+tail -n 80 ros2_ws/log/live_stack/latest/inference.log
+```
+
+Note: `perception_pipeline.log` exists in single-process mode; `inference.log` exists in legacy mode.
+
 ## 7) Control validation quick checks
 
 Verify control node is running and publishing:
@@ -496,7 +537,7 @@ Expected behavior from validated baseline:
 - Date: 2026-04-15
 - ROS: Jazzy
 - Default live path: single-process perception via `tools/start_live_stack.sh`
-- Legacy fallback path: RPi5 + Hailo using external `~/pi-ai-kit-ubuntu`
+- Legacy compose path: `$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu` (with `~/pi-ai-kit-ubuntu` compatibility fallback)
 
 ## 10) Queue-buffer 1-vs-2 decision workflow (single-process)
 
@@ -608,17 +649,16 @@ cd $THESIS_ROOT
 
 Then collect a standard 10-minute artifact and compare against baseline.
 
-### 10.6) Perception container_queue optimization variant (freshness-first)
+### 10.6) Perception container_queue optimization variant (videoconvert ablation)
 
 Use this when `/timing` throughput is limited by pre-infer wait.
 
-Baseline (async worker enabled, videoconvert enabled):
+Baseline (videoconvert enabled):
 
 ```bash
 cd $THESIS_ROOT
 ./tools/start_live_stack.sh \
   --perception-mode single-process \
-  --perception-async-latest-frame-on \
   --perception-hailo-videoconvert-on
 ```
 
@@ -628,7 +668,6 @@ Ablation candidate (disable pre-hailonet videoconvert):
 cd $THESIS_ROOT
 ./tools/start_live_stack.sh \
   --perception-mode single-process \
-  --perception-async-latest-frame-on \
   --perception-hailo-videoconvert-off
 ```
 

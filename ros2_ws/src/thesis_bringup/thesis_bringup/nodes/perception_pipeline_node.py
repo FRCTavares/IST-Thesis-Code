@@ -1392,12 +1392,14 @@ class PerceptionPipelineNode(Node):
             self._engine_active_calls += 1
 
         try:
+            # Use positional args so engine backends remain compatible even if parameter
+            # names differ (e.g., seq vs _seq in older implementations).
             result = engine.infer(
                 frame.infer_img,
-                seq=frame.seq,
-                frame_id=frame.frame_id,
-                src_stamp_ns=frame.src_stamp_ns,
-                timeout_ms=self.infer_timeout_ms,
+                frame.seq,
+                frame.frame_id,
+                frame.src_stamp_ns,
+                self.infer_timeout_ms,
             )
         except Exception as exc:
             self.get_logger().warning(f"in-process inference failed: {exc}")

@@ -129,13 +129,21 @@ def _launch_setup(context, *args, **kwargs):
         )
     )
 
-    # Target selector (unchanged)
+    # Target publisher: user-selected focus from dashboard bridge API.
+    # No target is selected by default in this replay flow.
     actions.append(
         Node(
-            package="thesis_target_selector",
-            executable="target_selector_node",
-            name="target_selector_node",
+            package="thesis_bringup",
+            executable="dashboard_bridge_node",
+            name="dashboard_bridge_node",
             output="screen",
+            parameters=[{
+                "ws_host": "127.0.0.1",
+                "ws_port": 0,
+                "api_host": "127.0.0.1",
+                "api_port": 0,
+                "publish_hz": 30.0,
+            }],
         )
     )
 
@@ -149,7 +157,7 @@ def _launch_setup(context, *args, **kwargs):
                 "-o", str(outdir),
                 "--max-bag-duration", str(record_duration_s),
                 "--topics",
-                "/tracks", "/target", "/timing_tracker",
+                "/tracks", "/target", "/timing_tracker", "/timing_target",
             ],
             output="screen",
         )

@@ -1,6 +1,6 @@
 # Thesis Workspace
 
-ROS 2 workspace for live camera perception, tracking/targeting, optional control output, dashboard operation, and reproducible replay/analysis.
+ROS 2 workspace for live camera perception, tracking, user-driven target selection, optional control output, dashboard operation, and reproducible replay/analysis.
 
 ## Documentation map
 
@@ -19,13 +19,42 @@ Root documentation is split by purpose:
 - Default control/dashboard stack is enabled in live startup unless explicitly disabled.
 - Live logs are centralized under `ros2_ws/log/live_stack/<run-id>` and ROS runtime logs under `ros2_ws/log/runtime/<run-id>`.
 
+## Live stack operator cheat sheet
+
+Most live sessions start with one of these:
+
+```bash
+cd "$THESIS_ROOT"
+
+# Baseline daily profile (default)
+./tools/start_live_stack.sh --profile daily
+
+# Conservative camera-first profile (uses 640x480 defaults)
+./tools/start_live_stack.sh --profile safe-camera
+
+# Slightly tighter latency defaults
+./tools/start_live_stack.sh --profile performance
+```
+
+While the script is running, use the built-in prompt commands:
+
+- `status` to print tracked process IDs.
+- `clear` to clear terminal noise.
+- `stop` (or `exit`) for ordered shutdown.
+
+If you need full option coverage (including tracker/perception tuning):
+
+```bash
+./tools/start_live_stack.sh --help-advanced
+```
+
 ## Project objective
 
 Provide an end-to-end experimental stack that can:
 
 1. Ingest camera frames in ROS 2.
 2. Run detector inference through either single-process Hailo pipeline (default) or legacy ZMQ service path.
-3. Track and select a target for control and UI.
+3. Track candidates and expose explicit user-driven target selection for control and UI.
 4. Publish telemetry/video/control interfaces for real-time operation.
 5. Record and replay experiments for timing/tracking evaluation.
 
@@ -81,7 +110,7 @@ colcon build --symlink-install
 
 ```bash
 cd "$THESIS_ROOT"
-./tools/start_live_stack.sh
+./tools/start_live_stack.sh --profile daily
 ```
 
 ### 4) Start UI (second terminal)
@@ -102,6 +131,14 @@ ss -ltnp | rg ':5556|:8080|:8090|:8765'
 
 Note: `:5556` is expected only in legacy mode.
 
+## Fast failure triage
+
+If live startup aborts, check in this order:
+
+1. Launcher logs in `ros2_ws/log/live_stack/latest/` (camera/inference process logs are split per component).
+2. Camera-specific recovery actions in `LIVE_STACK_CAMERA_RECOVERY.md`.
+3. Full troubleshooting and manual fallback steps in `RUNBOOK.md` section 6.
+
 ## Common workflows
 
 ### Replay an existing raw bag
@@ -114,6 +151,13 @@ ros2 launch thesis_bringup eval_replay.launch.py \
   bag:=$THESIS_ROOT/bags/raw/<bag_name> \
   tracker:=sort
 ```
+
+Replay note:
+
+- Target selection is now strictly user-driven through `dashboard_bridge_node`.
+- `POST /api/target` is the only supported way to select a target.
+- There is no automatic target-selection fallback in replay flows.
+- When no target is explicitly selected, `/target` publishes the empty target state.
 
 ### Run timing analysis
 

@@ -9,10 +9,10 @@ def generate_launch_description():
     bringup_share = get_package_share_directory("thesis_bringup")
     tracker_config = os.path.join(bringup_share, "config", "tracker_sort.yaml")
     
-    inference = Node(
+    detector = Node(
         package="thesis_inference_client",
-        executable="inference_client_node",
-        name="inference_client_node",
+        executable="detector_node",
+        name="detector_node",
         output="screen",
         parameters=[
             {
@@ -35,11 +35,21 @@ def generate_launch_description():
         parameters=[tracker_config],
     )
 
-    selector = Node(
-        package="thesis_target_selector",
-        executable="target_selector_node",
-        name="thesis_target_selector_node",
+    target_bridge = Node(
+        package="thesis_bringup",
+        executable="dashboard_bridge_node",
+        name="dashboard_bridge_node",
         output="screen",
+        parameters=[
+            {
+                "ws_host": "127.0.0.1",
+                "ws_port": 0,
+                "api_host": "127.0.0.1",
+                "api_port": 0,
+                "publish_hz": 30.0,
+            }
+        ],
     )
 
-    return LaunchDescription([inference, tracker, selector])
+    # This slice exposes bridge-owned target publication, but no target is selected by default.
+    return LaunchDescription([detector, tracker, target_bridge])

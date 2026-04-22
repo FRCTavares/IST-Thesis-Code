@@ -42,6 +42,7 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("fps_topic", "/camera/fps")
         self.declare_parameter("replay_progress_topic", "/camera/replay_progress")
         self.declare_parameter("timing_topic", "/timing")
+        self.declare_parameter("timing_target_topic", "/timing_target")
 
         self.declare_parameter("ws_host", "0.0.0.0")
         self.declare_parameter("ws_port", 8765)
@@ -68,7 +69,6 @@ class DashboardBridgeNode(Node):
             f"{thesis_root}/infer_service/resources/hefs",
         )
         self.declare_parameter("tracker_node_name", "tracker_node")
-        self.declare_parameter("camera_node_name", "camera_capture_node")
 
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._detections_topic = str(self.get_parameter("detections_topic").value)
@@ -76,6 +76,7 @@ class DashboardBridgeNode(Node):
         self._fps_topic = str(self.get_parameter("fps_topic").value)
         self._replay_progress_topic = str(self.get_parameter("replay_progress_topic").value)
         self._timing_topic = str(self.get_parameter("timing_topic").value)
+        self._timing_target_topic = str(self.get_parameter("timing_target_topic").value)
 
         self._ws_host = str(self.get_parameter("ws_host").value)
         self._ws_port = int(self.get_parameter("ws_port").value)
@@ -106,7 +107,6 @@ class DashboardBridgeNode(Node):
         self._perception_node_name = str(self.get_parameter("perception_node_name").value).strip() or "perception_pipeline_node"
         self._single_process_hef_dir = str(self.get_parameter("single_process_hef_dir").value)
         self._tracker_node_name = str(self.get_parameter("tracker_node_name").value).strip() or "tracker_node"
-        self._camera_node_name = str(self.get_parameter("camera_node_name").value).strip() or "camera_capture_node"
 
         self._model_to_hef = {
             "yolov6n": "yolov6n_hailo8.hef",
@@ -114,18 +114,15 @@ class DashboardBridgeNode(Node):
             "yolov8m": "yolov8m.hef",
         }
         self._supported_trackers = {"sort", "ocsort", "bytetrack"}
-        self._supported_resolutions = {
-            "640x360": (640, 360),
-            "640x460": (640, 460),
-            "640x640": (640, 640),
-            "1280x720": (1280, 720),
-        }
+        self._target_focus_id: int | None = None
 
         self._state_lock = threading.Lock()
         self._state: dict[str, Any] = {
             "tracks": [],
             "detections": [],
             "target": None,
+            "target_requested": None,
+            "target_active": None,
             # Explicit telemetry keys (canonical)
             "camera_input_fps": None,
             "det_out_fps": None,
@@ -137,18 +134,8 @@ class DashboardBridgeNode(Node):
             },
             "metric_thresholds_ms": {
                 **METRIC_WARN_THRESHOLDS_MS,
-                # Deprecated alias; remove after legacy frontend consumers are retired.
-                "det_interval_ms": METRIC_WARN_THRESHOLDS_MS["pub_dt_ms"],
             },
-            # Deprecated compatibility aliases for existing UI consumers.
-            # Canonical consumers must prefer: camera_input_fps, det_out_fps,
-            # e2e_det_ms, pub_dt_ms.
-            "fps": None,
-            "video_fps": None,
             "replay_progress": None,
-            "det_fps": None,
-            "latency_ms": None,
-            "det_interval_ms": None,
             "inference_resolution": {
                 "width": int(self._img_w),
                 "height": int(self._img_h),
@@ -166,14 +153,9 @@ class DashboardBridgeNode(Node):
         self._last_cpu_idle = None
         self._det_arrival_ns: deque[int] = deque(maxlen=240)
 
-        self._stop_event = threading.Event()
         self._tracker_set_params_client = self.create_client(
             SetParameters,
             f"/{self._tracker_node_name}/set_parameters",
-        )
-        self._camera_set_params_client = self.create_client(
-            SetParameters,
-            f"/{self._camera_node_name}/set_parameters",
         )
         self._perception_set_params_client = self.create_client(
             SetParameters,
@@ -201,9 +183,11 @@ class DashboardBridgeNode(Node):
             depth=1,
         )
 
+        self._target_pub = self.create_publisher(TargetState, self._target_topic, qos)
+        self._timing_target_pub = self.create_publisher(Timing, self._timing_target_topic, qos)
+
         self._tracks_sub = self.create_subscription(Track2DArray, self._tracks_topic, self._on_tracks, qos)
         self._detections_sub = self.create_subscription(Detection2DArray, self._detections_topic, self._on_detections, qos)
-        self._target_sub = self.create_subscription(TargetState, self._target_topic, self._on_target, qos)
         self._fps_sub = self.create_subscription(Float32, self._fps_topic, self._on_fps, qos)
         self._replay_progress_sub = self.create_subscription(Float32, self._replay_progress_topic, self._on_replay_progress, qos)
         self._timing_sub = self.create_subscription(Timing, self._timing_topic, self._on_timing, qos)
@@ -214,6 +198,7 @@ class DashboardBridgeNode(Node):
             "dashboard_bridge_node started: "
             f"tracks={self._tracks_topic}, detections={self._detections_topic}, target={self._target_topic}, "
             f"fps={self._fps_topic}, replay_progress={self._replay_progress_topic}, timing={self._timing_topic}, "
+            f"timing_target={self._timing_target_topic}, "
             f"ws=ws://{self._ws_host}:{self._ws_port}, api=http://{self._api_host}:{self._api_port}, "
             f"container_model_switch_api={'enabled' if self._enable_container_model_switch_api else 'disabled'}, "
             f"single_process_hef_dir={self._single_process_hef_dir}"
@@ -266,14 +251,9 @@ class DashboardBridgeNode(Node):
                     self._send_json(200 if result.get("ok") else 500, result)
                     return
 
-                if self.path == "/api/resolution":
-                    resolution = str(payload.get("resolution", "")).strip().lower()
-                    result = node_ref._handle_resolution_switch(resolution)
+                if self.path == "/api/target":
+                    result = node_ref._handle_target_focus(payload.get("target"))
                     self._send_json(int(result.get("status_code", 200 if result.get("ok") else 500)), result)
-                    return
-
-                if self.path == "/api/replay":
-                    self._send_json(200, {"ok": False, "error": "replay control not implemented in live mode"})
                     return
 
                 self._send_json(404, {"ok": False, "error": "unknown endpoint"})
@@ -475,79 +455,153 @@ nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
         self.get_logger().info(f"Tracker backend switch applied: {tracker}")
         return {"ok": True, "requested_tracker": tracker}
 
-    def _handle_resolution_switch(self, resolution: str) -> dict[str, Any]:
-        dims = self._supported_resolutions.get(resolution)
-        if dims is None:
-            return {
-                "ok": False,
-                "error": f"unsupported resolution: {resolution}",
-                "status_code": 400,
-            }
+    def _handle_target_focus(self, target_value: Any) -> dict[str, Any]:
+        target_id, error = self._parse_target_focus_id(target_value)
+        if error is not None:
+            return {"ok": False, "error": error, "status_code": 400}
 
-        if not self._camera_set_params_client.wait_for_service(timeout_sec=1.0):
-            return {
-                "ok": False,
-                "error": (
-                    "camera parameter service unavailable on "
-                    f"/{self._camera_node_name}/set_parameters"
-                ),
-                "status_code": 503,
-            }
+        with self._state_lock:
+            self._target_focus_id = target_id
+            # Reflect requested target immediately in telemetry before next /tracks callback.
+            self._state["target"] = int(target_id) if target_id is not None else 0
+            self._state["target_requested"] = int(target_id) if target_id is not None else None
+            self._state["target_active"] = int(target_id) if target_id is not None else 0
+            self._dirty = True
 
-        width, height = dims
-        request = SetParameters.Request()
-        request.parameters = [
-            Parameter(
-                name="publish_width",
-                value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=int(width)),
-            ),
-            Parameter(
-                name="publish_height",
-                value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=int(height)),
-            ),
-            Parameter(
-                name="dashboard_width",
-                value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=int(width)),
-            ),
-            Parameter(
-                name="dashboard_height",
-                value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=int(height)),
-            ),
-        ]
+        # Publish an immediate clear to avoid stale control references until the next /tracks frame.
+        self._publish_immediate_target_reset()
 
-        try:
-            future = self._camera_set_params_client.call_async(request)
-            deadline = time.monotonic() + 3.0
-            while not future.done() and time.monotonic() < deadline:
-                time.sleep(0.01)
-        except Exception as exc:
-            self.get_logger().error(f"Resolution switch execution failed: {exc}")
-            return {"ok": False, "error": f"resolution switch failed: {exc}", "status_code": 500}
-
-        if not future.done():
-            return {"ok": False, "error": "resolution switch timed out", "status_code": 504}
-
-        result = future.result()
-        if result is None or not result.results:
-            return {
-                "ok": False,
-                "error": "resolution switch returned empty result",
-                "status_code": 500,
-            }
-
-        for set_result in result.results:
-            if not set_result.successful:
-                reason = set_result.reason or "unknown resolution switch failure"
-                return {"ok": False, "error": reason, "status_code": 500}
-
-        self.get_logger().info(f"Camera resolution switch applied: {resolution}")
+        requested_label = "AUTO" if target_id is None else str(target_id)
+        self.get_logger().info(f"Target focus updated: {requested_label}")
         return {
             "ok": True,
-            "requested_resolution": resolution,
-            "publish_width": int(width),
-            "publish_height": int(height),
+            "requested_target": target_id,
+            "action": "target",
             "status_code": 200,
         }
+
+    @staticmethod
+    def _parse_target_focus_id(target_value: Any) -> tuple[int | None, str | None]:
+        if target_value is None:
+            return None, None
+
+        if isinstance(target_value, bool):
+            return None, "target must be an integer id or null"
+
+        if isinstance(target_value, int):
+            target_id = int(target_value)
+        elif isinstance(target_value, float):
+            if not target_value.is_integer():
+                return None, "target must be an integer id or null"
+            target_id = int(target_value)
+        elif isinstance(target_value, str):
+            text = target_value.strip().lower()
+            if text in {"", "null", "none", "auto"}:
+                return None, None
+            try:
+                target_id = int(text)
+            except Exception:
+                return None, "target must be an integer id or null"
+        else:
+            return None, "target must be an integer id or null"
+
+        if target_id == 0:
+            return None, None
+        if target_id < 0:
+            return None, "target must be >= 1 or null"
+        return target_id, None
+
+    @staticmethod
+    def _sensor_to_target_ms_if_comparable(src_stamp_ns: int, t_target_cb_end_ns: int) -> float | None:
+        if src_stamp_ns <= 0:
+            return None
+
+        delta_ns = int(t_target_cb_end_ns) - int(src_stamp_ns)
+        if 0 <= delta_ns <= 60_000_000_000:
+            return float(delta_ns) / 1e6
+        return None
+
+    def _publish_immediate_target_reset(self) -> None:
+        now_ns = time.monotonic_ns()
+
+        target_msg = TargetState()
+        target_msg.frame_id = 0
+        target_msg.src_stamp_ns = 0
+        target_msg.t_cam_msg_seen_ns = 0
+        target_msg.t_target_cb_start_ns = int(now_ns)
+        target_msg.t_target_cb_end_ns = int(now_ns)
+        target_msg.id = 0
+        target_msg.cx = 0.0
+        target_msg.cy = 0.0
+        target_msg.w = 0.0
+        target_msg.h = 0.0
+        target_msg.score = 0.0
+        target_msg.quality = 0.0
+        self._target_pub.publish(target_msg)
+
+        timing_msg = Timing()
+        timing_msg.frame_id = 0
+        timing_msg.t_target_cb_start_ns = int(now_ns)
+        timing_msg.t_target_cb_end_ns = int(now_ns)
+        timing_msg.target_ms = 0.0
+        self._timing_target_pub.publish(timing_msg)
+
+    def _publish_target_from_tracks(self, msg: Track2DArray) -> TargetState:
+        with self._state_lock:
+            focus_id = self._target_focus_id
+
+        selected_track = None
+        if focus_id is not None:
+            for track in msg.tracks:
+                if int(track.id) == int(focus_id):
+                    selected_track = track
+                    break
+
+        t_target_cb_start_ns = time.monotonic_ns()
+
+        target_msg = TargetState()
+        target_msg.header = msg.header
+        target_msg.frame_id = int(msg.frame_id)
+        target_msg.src_stamp_ns = int(msg.src_stamp_ns)
+        target_msg.t_cam_msg_seen_ns = int(msg.t_cam_msg_seen_ns)
+        target_msg.t_target_cb_start_ns = int(t_target_cb_start_ns)
+
+        if selected_track is None:
+            target_msg.id = 0
+            target_msg.cx = 0.0
+            target_msg.cy = 0.0
+            target_msg.w = 0.0
+            target_msg.h = 0.0
+            target_msg.score = 0.0
+            target_msg.quality = 0.0
+        else:
+            target_msg.id = int(selected_track.id)
+            target_msg.cx = float(selected_track.cx)
+            target_msg.cy = float(selected_track.cy)
+            target_msg.w = float(selected_track.w)
+            target_msg.h = float(selected_track.h)
+            target_msg.score = float(selected_track.score)
+            target_msg.quality = 1.0
+
+        t_target_cb_end_ns = time.monotonic_ns()
+        target_msg.t_target_cb_end_ns = int(t_target_cb_end_ns)
+        self._target_pub.publish(target_msg)
+
+        timing_msg = Timing()
+        timing_msg.frame_id = int(msg.frame_id)
+        timing_msg.src_stamp_ns = int(msg.src_stamp_ns)
+        timing_msg.t_cam_msg_seen_ns = int(msg.t_cam_msg_seen_ns)
+        timing_msg.t_target_cb_start_ns = int(t_target_cb_start_ns)
+        timing_msg.t_target_cb_end_ns = int(t_target_cb_end_ns)
+        timing_msg.target_ms = float((t_target_cb_end_ns - t_target_cb_start_ns) / 1e6)
+        if timing_msg.t_cam_msg_seen_ns > 0 and t_target_cb_end_ns >= timing_msg.t_cam_msg_seen_ns:
+            timing_msg.e2e_target_ms = float((t_target_cb_end_ns - timing_msg.t_cam_msg_seen_ns) / 1e6)
+        sensor_ms = self._sensor_to_target_ms_if_comparable(int(msg.src_stamp_ns), t_target_cb_end_ns)
+        if sensor_ms is not None:
+            timing_msg.sensor_to_target_ms = sensor_ms
+        self._timing_target_pub.publish(timing_msg)
+
+        return target_msg
 
     def _run_loop(self) -> None:
         asyncio.set_event_loop(self._loop)
@@ -621,6 +675,8 @@ nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
                 "tracks": [dict(t) for t in self._state["tracks"]],
                 "detections": [dict(d) for d in self._state["detections"]],
                 "target": self._state["target"],
+                "target_requested": self._state["target_requested"],
+                "target_active": self._state["target_active"],
                 "camera_input_fps": camera_input_fps,
                 "det_out_fps": det_out_fps,
                 "e2e_det_ms": e2e_det_ms,
@@ -628,13 +684,7 @@ nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
                 "metrics_schema_version": self._state["metrics_schema_version"],
                 "metric_windows": dict(self._state["metric_windows"]),
                 "metric_thresholds_ms": dict(self._state["metric_thresholds_ms"]),
-                # Deprecated compatibility aliases
-                "fps": camera_input_fps,
-                "video_fps": camera_input_fps,
                 "replay_progress": self._state["replay_progress"],
-                "det_fps": det_out_fps,
-                "latency_ms": e2e_det_ms,
-                "det_interval_ms": self._state["pub_dt_ms"],
                 "inference_resolution": dict(self._state["inference_resolution"]),
                 "system": dict(self._state["system"]),
             }
@@ -707,8 +757,12 @@ nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
                 }
             )
 
+        target_msg = self._publish_target_from_tracks(msg)
+
         with self._state_lock:
             self._state["tracks"] = tracks
+            self._state["target"] = int(target_msg.id)
+            self._state["target_active"] = int(target_msg.id)
             self._dirty = True
 
     def _on_detections(self, msg: Detection2DArray) -> None:
@@ -758,22 +812,12 @@ nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
             self._state["detections"] = detections
             if det_out_fps is not None:
                 self._state["det_out_fps"] = det_out_fps
-                # Deprecated compatibility alias.
-                self._state["det_fps"] = det_out_fps
-            self._dirty = True
-
-    def _on_target(self, msg: TargetState) -> None:
-        with self._state_lock:
-            self._state["target"] = int(msg.id)
             self._dirty = True
 
     def _on_fps(self, msg: Float32) -> None:
         with self._state_lock:
             value = float(msg.data)
             self._state["camera_input_fps"] = value
-            # Deprecated compatibility aliases.
-            self._state["fps"] = value
-            self._state["video_fps"] = value
             self._dirty = True
 
     def _on_replay_progress(self, msg: Float32) -> None:
@@ -789,10 +833,6 @@ nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
             pub_dt_ms = float(msg.pub_dt_ms)
             # pub_dt_ms is the canonical cadence interval from /timing in host monotonic domain.
             self._state["pub_dt_ms"] = pub_dt_ms
-
-            # Deprecated compatibility aliases for schema <=2 consumers.
-            self._state["latency_ms"] = e2e_det_ms
-            self._state["det_interval_ms"] = pub_dt_ms
             self._dirty = True
 
     def _sample_system_metrics(self) -> None:
@@ -901,8 +941,6 @@ nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
             self._server = None
 
     def destroy_node(self):
-        self._stop_event.set()
-
         if self._api_server is not None:
             try:
                 self._api_server.shutdown()

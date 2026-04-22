@@ -12,7 +12,7 @@ set -euo pipefail
 # 1) Preflight: clear stale processes and validate camera process health.
 # 2) Environment: source ROS overlays and pin ROS_DOMAIN_ID.
 # 3) Container: ensure inference container/service is running (legacy mode only).
-# 4) ROS nodes: camera -> (legacy inference OR single-process perception) -> tracker/target/control -> dashboard/video.
+# 4) ROS nodes: camera -> (legacy inference OR single-process perception) -> tracker/control/dashboard -> video.
 # 5) Runtime shell: keep stack alive and allow `status|clear|stop` commands.
 #
 # Logging policy:
@@ -23,6 +23,7 @@ set -euo pipefail
 
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 ROS_WS="${ROS_WS:-$THESIS_ROOT/ros2_ws}"
+# Legacy compose runtime is now stored under deprecated/. Keep HOME fallback for older hosts.
 PI_AI_DIR_DEFAULT="$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
 if [[ -d "$PI_AI_DIR_DEFAULT" ]]; then
     PI_AI_DIR="${PI_AI_DIR:-$PI_AI_DIR_DEFAULT}"
@@ -58,6 +59,7 @@ else
     VERBOSE=0
 fi
 
+# Verbose logs are intentionally opt-in to keep live startup output signal-dense.
 log_verbose_tag() {
     local tag="$1"
     shift
@@ -74,6 +76,7 @@ log_stop() { log_verbose_tag stop "$@"; }
 log_done() { log_verbose_tag done "$@"; }
 log_hint() { log_verbose_tag hint "$@"; }
 
+# Start a ROS process in the background, track pid, and redirect logs to this run directory.
 start_ros_bg() {
     local name="$1"
     shift
@@ -208,10 +211,9 @@ stop_stack() {
     # Force-clean known host-side processes in case ros2 launch left children behind.
     pkill -f "camera_bringup.launch.py" >/dev/null 2>&1 || true
     pkill -f "camera_capture_node" >/dev/null 2>&1 || true
-    pkill -f "inference_client_node" >/dev/null 2>&1 || true
+    pkill -f "inference_client_node|detector_node" >/dev/null 2>&1 || true
     pkill -f "perception_pipeline_node" >/dev/null 2>&1 || true
     pkill -f "tracker_node" >/dev/null 2>&1 || true
-    pkill -f "target_selector_node" >/dev/null 2>&1 || true
     pkill -f "control_ref_node" >/dev/null 2>&1 || true
     pkill -f "dashboard_bridge_node" >/dev/null 2>&1 || true
     pkill -f "web_video_server" >/dev/null 2>&1 || true
@@ -302,7 +304,7 @@ Options:
     --perception-allow-stub-fallback    Allow stub fallback when Hailo backend initialization fails
   --no-dashboard                     Disable dashboard bridge
     --no-tracker                       Do not start tracker node
-    --no-target                        Do not start target selector node
+    --no-target                        Deprecated alias; target selection is now handled by dashboard bridge API
     --no-control                       Do not start control_ref_node
     --control-mavros                   Enable MAVROS mirroring in control_ref_node
     --control-stale-timeout-s <N>      Control stale target timeout seconds (default: 0.80)
@@ -330,7 +332,7 @@ Day-to-day options:
     --perception-inference-backend <name>
                                       Perception backend (default: hailo_direct)
     --no-tracker                      Do not start tracker node
-    --no-target                       Do not start target selector node
+    --no-target                       Deprecated alias; target selection is now handled by dashboard bridge API
     --no-control                      Do not start control_ref_node
     --no-dashboard                    Disable dashboard bridge
     --no-web-video                    Do not start web_video_server
@@ -394,13 +396,13 @@ PERCEPTION_ALLOW_STUB_FALLBACK_BOOL="false"
 PERCEPTION_INFERENCE_BACKEND="hailo_direct"
 ENABLE_DASHBOARD_BRIDGE=1
 ENABLE_TRACKER=1
-ENABLE_TARGET_SELECTOR=1
 ENABLE_CONTROL=1
 CONTROL_MAVROS_BOOL="false"
 CONTROL_STALE_TIMEOUT_S=0.80
 ENABLE_WEB_VIDEO=1
 ENABLE_ROSBAG=0
 
+# Profiles tune camera + inference defaults for known operator intents.
 apply_startup_profile() {
     local profile="$1"
     case "$profile" in
@@ -481,6 +483,7 @@ apply_resolution_selector() {
     return 0
 }
 
+# Parse CLI overrides. Validation happens in the next block so parse logic stays linear.
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --profile)
@@ -880,7 +883,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --no-target)
-            ENABLE_TARGET_SELECTOR=0
+            echo "[warn] --no-target is deprecated; target selection now lives in dashboard_bridge_node /api/target"
             shift
             ;;
         --no-control)
@@ -924,6 +927,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Validate resolved configuration before we touch hardware/container state.
 case "$PERCEPTION_MODE" in
     legacy|single-process)
         ;;
@@ -944,8 +948,13 @@ case "$PERCEPTION_INFERENCE_BACKEND" in
 esac
 
 if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 ]]; then
-    CAMERA_PUBLISH_WIDTH="$CAMERA_WIDTH"
-    CAMERA_PUBLISH_HEIGHT="$CAMERA_HEIGHT"
+    if [[ "$PERCEPTION_MODE" == "single-process" ]]; then
+        CAMERA_PUBLISH_WIDTH=640
+        CAMERA_PUBLISH_HEIGHT=640
+    else
+        CAMERA_PUBLISH_WIDTH="$CAMERA_WIDTH"
+        CAMERA_PUBLISH_HEIGHT="$CAMERA_HEIGHT"
+    fi
 fi
 
 case "$TRACKER_TYPE" in
@@ -1093,6 +1102,12 @@ if ! [[ "$CONTROL_STALE_TIMEOUT_S" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
     exit 1
 fi
 
+if [[ "$ENABLE_CONTROL" -eq 1 && "$ENABLE_DASHBOARD_BRIDGE" -eq 0 ]]; then
+    echo "[warn] control requires /target from dashboard_bridge_node after target_selector removal; disabling control"
+    ENABLE_CONTROL=0
+fi
+
+# Readiness helpers used by startup phases.
 wait_for_port() {
     local host="$1"
     local port="$2"
@@ -1155,9 +1170,10 @@ wait_for_topic_message() {
     return 0
 }
 
-STACK_PROC_PATTERN="camera_bringup.launch.py|camera_capture_node|inference_client_node|perception_pipeline_node|tracker_node|target_selector_node|control_ref_node|dashboard_bridge_node|web_video_server"
+STACK_PROC_PATTERN="camera_bringup.launch.py|camera_capture_node|inference_client_node|detector_node|perception_pipeline_node|tracker_node|control_ref_node|dashboard_bridge_node|web_video_server"
 CAMERA_MEDIA_DEV_OVERRIDE=""
 
+# Preflight helpers keep startup deterministic and fail early on known bad host states.
 check_stuck_camera_processes() {
     local stuck_lines
     stuck_lines="$(ps -eo pid=,stat=,cmd= | awk '$2 ~ /^D/ && $0 ~ /(camera_capture_node|v4l2-ctl|media-ctl)/ {print}' || true)"
@@ -1433,6 +1449,11 @@ build_camera_args() {
 }
 
 start_camera_with_readiness() {
+    # Return codes:
+    #   0 -> healthy startup with frame activity
+    #   2 -> process died during startup
+    #   3 -> fatal startup error detected in logs
+    #   4 -> process alive but no frame evidence within readiness window
     start_ros_bg camera ros2 launch thesis_bringup camera_bringup.launch.py "${CAMERA_ARGS[@]}"
     sleep 2
     if ! check_proc_alive camera; then
@@ -1459,14 +1480,12 @@ start_camera_with_readiness() {
 }
 
 tracker_state="off"
-target_state="off"
 control_state="off"
 dashboard_state="off"
 web_video_state="off"
 rosbag_state="off"
 
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then tracker_state="on"; fi
-if [[ "$ENABLE_TARGET_SELECTOR" -eq 1 ]]; then target_state="on"; fi
 if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
     if [[ "$CONTROL_MAVROS_BOOL" == "true" ]]; then
         control_state="on+mavros"
@@ -1478,12 +1497,13 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then dashboard_state="on"; fi
 if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then web_video_state="on"; fi
 if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="on"; fi
 
+# Phase 1: host preflight + camera stream sanity checks.
 log_info "run: $RUN_ID"
 log_info "logs: $RUN_DIR"
 log_info "mode: perception=$PERCEPTION_MODE"
 log_info "cfg: camera_capture=${CAMERA_WIDTH}x${CAMERA_HEIGHT} camera_publish=${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}(${CAMERA_PUBLISH_RESIZE_MODE},${CAMERA_PUBLISH_ENCODING})@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} img_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT} hailo_videoconvert=${PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL} perception_gc_disable=${PERCEPTION_GC_DISABLE_BOOL} allow_stub_fallback=${PERCEPTION_ALLOW_STUB_FALLBACK_BOOL} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
 log_info "cfg: camera_rate_controls=${CAMERA_APPLY_RATE_CONTROLS_BOOL} sensor_max_fps=${CAMERA_SENSOR_MAX_FPS} ae_upper=${CAMERA_SENSOR_AE_UPPER} ae_max=${CAMERA_SENSOR_AE_MAX} exposure_mode=${CAMERA_SENSOR_EXPOSURE_MODE}"
-log_info "nodes: tracker=$tracker_state target=$target_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
+log_info "nodes: tracker=$tracker_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     log_info "tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL tracks_require_subscribers=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL timing_topic=$TRACKER_PUBLISH_TIMING_BOOL profile=$TRACKER_PROFILE_ENABLED gc_probe=$TRACKER_PROFILE_GC_PROBE iou=$TRACKER_IOU_THRESHOLD max_age=$TRACKER_MAX_AGE min_hits=$TRACKER_MIN_HITS centre_gate=$TRACKER_CENTRE_GATE"
 fi
@@ -1500,6 +1520,7 @@ if ! preflight_validate_camera_stream; then
     exit 1
 fi
 
+# Phase 2: source ROS overlays after preflight succeeds.
 log_step "sourcing ROS environment"
 cd "$ROS_WS"
 export ROS_LOG_DIR
@@ -1520,6 +1541,7 @@ set -u
 export ROS_DOMAIN_ID
 log_info "ros: domain=$ROS_DOMAIN_ID log_dir=$ROS_LOG_DIR"
 
+# Phase 3: mode-specific perception readiness (container legacy path or host single-process path).
 if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
     if [[ ! -f "$PI_AI_DIR/docker-compose.yaml" ]]; then
         echo "[error] legacy compose file not found: $PI_AI_DIR/docker-compose.yaml"
@@ -1608,6 +1630,7 @@ if [[ "$CAMERA_DASHBOARD_FPS" =~ ^[0-9]+$ ]]; then
     CAMERA_DASHBOARD_FPS="${CAMERA_DASHBOARD_FPS}.0"
 fi
 
+# Camera is the first ROS dependency in the chain. Retry once for two known failure classes.
 camera_retry_applied=0
 camera_safe_retry_applied=0
 while true; do
@@ -1686,7 +1709,7 @@ while true; do
 done
 
 if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
-    start_ros_bg inference ros2 run thesis_inference_client inference_client_node --ros-args \
+    start_ros_bg detector ros2 run thesis_inference_client detector_node --ros-args \
         -p image_topic:=/camera/image_raw \
         -p addr:=tcp://127.0.0.1:5556 \
         -p queue_size:=$INFER_QUEUE_SIZE \
@@ -1701,7 +1724,7 @@ if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
         -p min_score:=0.35 \
         -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL
     sleep 1
-    if ! check_proc_alive inference; then
+    if ! check_proc_alive detector; then
         stop_stack
         exit 1
     fi
@@ -1780,6 +1803,7 @@ else
     fi
 fi
 
+# Phase 4: bring up downstream nodes after camera + perception are healthy.
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     start_ros_bg tracker ros2 run thesis_tracker tracker_node --ros-args \
         -p tracker_type:=$TRACKER_TYPE \
@@ -1797,28 +1821,6 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
         -p profiling_gc_probe:=$([[ "$TRACKER_PROFILE_GC_PROBE" -eq 1 ]] && echo true || echo false)
     sleep 1
     if ! check_proc_alive tracker; then
-        stop_stack
-        exit 1
-    fi
-fi
-
-if [[ "$ENABLE_TARGET_SELECTOR" -eq 1 ]]; then
-    start_ros_bg target_selector ros2 run thesis_target_selector target_selector_node
-    sleep 1
-    if ! check_proc_alive target_selector; then
-        stop_stack
-        exit 1
-    fi
-fi
-
-if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
-    start_ros_bg control ros2 run thesis_bringup control_ref_node --ros-args \
-        -p enable_mavros:=$CONTROL_MAVROS_BOOL \
-        -p cmd_frame_id:=base_link \
-        -p mavros_frame_id:=base_link \
-        -p stale_timeout_s:=$CONTROL_STALE_TIMEOUT_S
-    sleep 1
-    if ! check_proc_alive control; then
         stop_stack
         exit 1
     fi
@@ -1861,6 +1863,19 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
     fi
 fi
 
+if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
+    start_ros_bg control ros2 run thesis_bringup control_ref_node --ros-args \
+        -p enable_mavros:=$CONTROL_MAVROS_BOOL \
+        -p cmd_frame_id:=base_link \
+        -p mavros_frame_id:=base_link \
+        -p stale_timeout_s:=$CONTROL_STALE_TIMEOUT_S
+    sleep 1
+    if ! check_proc_alive control; then
+        stop_stack
+        exit 1
+    fi
+fi
+
 if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     start_ros_bg rosbag ros2 bag record \
         /timing /timing_tracker /timing_target /detections /tracks /target /control_ref/cmd_vel \
@@ -1898,6 +1913,7 @@ else
 fi
 log_info "commands: status | clear | stop"
 
+# Runtime control loop keeps operators in one shell for quick status/stop commands.
 while true; do
     if ! read -r -p "live-stack> " cmd; then
         cmd="exit"

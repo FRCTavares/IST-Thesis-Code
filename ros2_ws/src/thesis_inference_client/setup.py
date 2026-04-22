@@ -24,6 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'detector_node = thesis_inference_client.inference_client_node:main',
             'inference_client_node = thesis_inference_client.inference_client_node:main',
         ],
     },

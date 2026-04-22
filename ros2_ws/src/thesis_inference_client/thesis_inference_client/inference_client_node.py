@@ -47,7 +47,7 @@ def _safe_int(value, default: int = 0) -> int:
 
 class InferenceClientNode(Node):
     def __init__(self):
-        super().__init__("inference_client_node")
+        super().__init__("detector_node")
 
         self.declare_parameter("image_topic", "/camera/image_raw")
         self.declare_parameter("addr", "tcp://127.0.0.1:5556")
@@ -225,7 +225,7 @@ class InferenceClientNode(Node):
                 resize_buf=worker_resize_buf,
                 rgb_buf=worker_rgb_buf,
                 now_ns=now_ns,
-                consumer_name="inference_client",
+                consumer_name="detector",
                 pre_start_ns=t_pre_start_ns,
             )
             if preprocessed is None:
@@ -237,7 +237,7 @@ class InferenceClientNode(Node):
 
             if preprocessed.image_encoding != self._logged_encoding:
                 self._logged_encoding = preprocessed.image_encoding
-                self.get_logger().info(f"inference input encoding={preprocessed.image_encoding}")
+                self.get_logger().info(f"detector input encoding={preprocessed.image_encoding}")
 
             if not self._logged_own_data:
                 self._logged_own_data = True

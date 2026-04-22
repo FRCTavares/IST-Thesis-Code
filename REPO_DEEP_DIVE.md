@@ -26,32 +26,39 @@ Live runtime supports two perception shapes.
 1. Camera publishes `/camera/image_raw`.
 2. `perception_pipeline_node` subscribes directly and performs preprocessing + Hailo inference in-process.
 3. Node publishes `/detections` and `/timing`.
-4. Tracker, target selector, control, and dashboard consume downstream outputs.
+4. Tracker publishes candidate tracks; `dashboard_bridge_node` owns explicit target publication for control and dashboard consumers.
 
 Conceptual chain:
 
-`camera -> /camera/image_raw -> perception_pipeline_node -> /detections -> tracker -> /tracks -> target_selector -> /target -> control/dashboard`
+`camera -> /camera/image_raw -> perception_pipeline_node -> /detections -> tracker -> /tracks -> dashboard_bridge_node -> /target -> control/dashboard`
 
 ### Shape Z (rollback): legacy ZMQ path
 
 1. Camera publishes `/camera/image_raw`.
 2. `inference_client_node` sends frames over ZMQ req/rep to container `detection_zmq.py` service.
 3. Inference client publishes `/detections` and `/timing`.
-4. Downstream nodes are unchanged.
+4. Downstream target publication still flows through `dashboard_bridge_node`.
 
 Conceptual chain:
 
-`camera -> /camera/image_raw -> inference_client_node (ZMQ req/rep) -> detection_zmq -> /detections -> tracker -> /tracks -> target_selector -> /target`
+`camera -> /camera/image_raw -> inference_client_node (ZMQ req/rep) -> detection_zmq -> /detections -> tracker -> /tracks -> dashboard_bridge_node -> /target`
 
 ### Replay path (evaluation)
 
 1. `eval_replay.launch.py` plays a recorded bag.
-2. Tracker + target selector process replayed messages.
+2. Tracker + `dashboard_bridge_node` process replayed messages.
 3. Replay output is recorded to `bags/eval` for offline analysis.
 
 Conceptual chain:
 
-`bags/raw -> eval_replay.launch.py -> /tracks + /target + /timing_tracker -> bags/eval -> analysis scripts -> reports`
+`bags/raw -> eval_replay.launch.py -> /tracks + /target + /timing_tracker + /timing_target -> bags/eval -> analysis scripts -> reports`
+
+Replay/eval note:
+
+- Target selection is now strictly user-driven through `dashboard_bridge_node`.
+- `POST /api/target` is the only supported way to select a target.
+- There is no automatic target-selection fallback in replay or evaluation flows.
+- When no target is explicitly selected, `/target` publishes the empty target state.
 
 ## 3) Component responsibilities
 
@@ -65,8 +72,6 @@ Conceptual chain:
   - Used only in `--perception-mode legacy`.
 - `thesis_tracker`
   - Tracking backend abstraction (`sort`, `ocsort`, `bytetrack`) and `/tracks` publication.
-- `thesis_target_selector`
-  - Chooses target from tracks and publishes `/target`.
 - `thesis_msgs`
   - Shared message contracts (`Timing`, track/target messages).
 
@@ -101,6 +106,24 @@ Conceptual chain:
   - `decide_queue_buffer_default.py`
   - `timing_contract.py`
 
+### Startup orchestration contract (`tools/start_live_stack.sh`)
+
+`start_live_stack.sh` is the operational contract for live sessions and is organized as deterministic phases:
+
+- Host preflight: stale-process cleanup, camera media graph checks, and stream probe.
+- Environment setup: ROS overlay sourcing + run-scoped log routing.
+- Perception readiness by mode:
+  - `legacy`: compose container + `detection_zmq.py` req/rep readiness (`:5556`).
+  - `single-process`: host `perception_pipeline_node` startup (optional local tappas runtime assets).
+- Downstream graph startup: tracker/dashboard/control/web video.
+- Runtime shell loop with `status`, `clear`, `stop` commands.
+
+Notable reliability behavior:
+
+- Camera startup has bounded retries for known TEVS failure signatures.
+- Single-process mode is fail-fast on host Hailo init unless stub fallback is explicitly enabled.
+- Per-run logs are split by process under `ros2_ws/log/live_stack/<run-id>/`.
+
 ## 4) Repository folder taxonomy
 
 Root-level purpose map:
@@ -123,7 +146,7 @@ Root-level purpose map:
 - `Written Logs/`
   - Weekly and daily engineering logs.
 - `deprecated/`
-  - Archived experiments not in active path.
+  - Archived experiments not in active path (legacy scripts, historical traces, superseded artifacts).
 - `deprecated/hailo-rpi5-examples/`
   - Upstream/vendor resources.
 
@@ -160,6 +183,7 @@ Canonical timing vocabulary used across runtime, analysis, and docs:
 - `infer_ms`: inference compute stage runtime.
 - `track_ms`: tracker compute stage runtime.
 - `e2e_target_ms`: camera callback seen -> target publish completion.
+- `/timing_target` remains meaningful even when no target is selected because the bridge still publishes explicit empty-target outputs.
 
 Clock-domain clarity:
 
@@ -185,6 +209,16 @@ Common endpoints:
 - Control API: `:8090`
 - Dashboard WebSocket: `:8765`
 - Frontend dev server: `:5173` (default)
+
+### Failure domains and first evidence
+
+When live runtime fails, check evidence in this order:
+
+1. `ros2_ws/log/live_stack/latest/` process logs (`camera.log`, `perception_pipeline.log`, `inference.log`, etc.).
+2. Kernel camera state (`journalctl -k -b`) for CSI/I2C faults.
+3. ROS graph/transport checks (`ros2 node list`, `ros2 topic list`, port checks).
+
+This sequence reduces false debugging paths by separating camera-driver faults from graph-level faults.
 
 ## 8) Why this structure works
 

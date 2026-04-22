@@ -32,6 +32,8 @@ export interface DashboardTelemetry {
   tracks: DashboardTrack[];
   detections: DashboardDetection[];
   target: number | null;
+  target_requested?: number | null;
+  target_active?: number | null;
   camera_input_fps?: number | null;
   det_out_fps?: number | null;
   e2e_det_ms?: number | null;
