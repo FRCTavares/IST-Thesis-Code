@@ -81,6 +81,7 @@ hailo-rpi5-examples/
 infer_service/gstshark_*/
 infer_service/opt/
 infer_service/resources/
+models/reid/*.pb
 
 # Birds experiment workspace (local runs, logs, benchmarks)
 deprecated/Birds
