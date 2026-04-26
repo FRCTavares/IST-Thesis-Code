@@ -23,7 +23,7 @@ Options:
     --perception-mode <legacy|single-process>
                                                                             Perception path selection (default: single-process)
     -v, --verbose                     Enable verbose startup/status logs (default: warnings/errors only)
-    --tracker <sort|ocsort|bytetrack|deepsort>  Tracker backend (default: sort)
+    --tracker <sort|ocsort|bytetrack|deepsort>  Tracker backend (default: ocsort)
     --tracker-profile-off               Disable tracker profiling instrumentation
     --tracker-gc-probe-off              Disable tracker GC probe instrumentation (lower overhead)
     --tracker-gc-probe-on               Enable tracker GC probe instrumentation

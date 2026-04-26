@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TRACKER_TYPE="sort"
+TRACKER_TYPE="ocsort"
 PERCEPTION_MODE="single-process"
 STARTUP_PROFILE="daily"
 TRACKER_PROFILE_ENABLED=0

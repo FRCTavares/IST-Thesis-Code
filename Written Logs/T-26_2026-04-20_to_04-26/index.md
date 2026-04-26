@@ -5,6 +5,7 @@
 - [2026-04-20__single-process-queue-gap-closure-plan.md](daily/2026-04-20__single-process-queue-gap-closure-plan.md)
 - [2026-04-22__live-stack-runtime-validation-and-single-process-publish-default.md](daily/2026-04-22__live-stack-runtime-validation-and-single-process-publish-default.md)
 - [2026-04-26__detector-model-sweep.md](daily/2026-04-26__detector-model-sweep.md)
+- [2026-04-26__tracker-benchmark-ocsort-vs-bytetrack.md](daily/2026-04-26__tracker-benchmark-ocsort-vs-bytetrack.md)
 
 ## Week Outputs
 

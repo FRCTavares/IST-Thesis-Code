@@ -27,7 +27,7 @@ If startup fails, inspect `ros2_ws/log/live_stack/latest/` first before manual r
 From `tools/start_live_stack.sh`:
 
 - Perception mode default: `single-process`
-- Tracker default: `sort`
+- Tracker default: `ocsort`
 - Camera default: `1280x720@30`
 - Published perception image default in single-process mode: `640x640` letterboxed from capture
 - Camera sensor trigger/rate-control writes: disabled by default for reliability
@@ -178,6 +178,16 @@ Useful flags:
 - Disable pre-hailonet videoconvert stage: ./tools/start_live_stack.sh --perception-hailo-videoconvert-off
 - Allow stub fallback if host Hailo init fails: ./tools/start_live_stack.sh --perception-allow-stub-fallback
 - Tighten image subscription queue depth: ./tools/start_live_stack.sh --perception-image-qos-depth 1
+
+### Tracker modes
+
+The live stack supports multiple tracker backends:
+
+```bash
+./tools/start_live_stack.sh --profile daily --tracker sort
+./tools/start_live_stack.sh --profile daily --tracker ocsort
+./tools/start_live_stack.sh --profile daily --tracker bytetrack
+./tools/start_live_stack.sh --profile daily --tracker deepsort
 
 Deprecated launcher flags:
 
