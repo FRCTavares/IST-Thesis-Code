@@ -1,5 +1,8 @@
-# DeepSORT Phase 2 configuration
-# Lightweight appearance prototype using image crops and color histograms.
+# DeepSORT configuration.
+# The backend now follows the DeepSORT association structure:
+# 8D Kalman state, Mahalanobis gating, matching cascade, cosine gallery metric,
+# and IoU fallback. Appearance features are still local crop histograms until a
+# pretrained ReID CNN is added.
 
 tracker_node:
   ros__parameters:
@@ -8,16 +11,22 @@ tracker_node:
     # Common parameters
     min_score: 0.35
 
-    # Phase 1 DeepSORT parameters
+    # DeepSORT lifecycle and association parameters
     max_age: 30
     n_init: 3
-    match_thresh: 0.25
+    match_thresh: 0.25          # legacy min-IoU alias; max_iou_distance is authoritative
+    max_iou_distance: 0.75      # IoU fallback cost threshold (1 - IoU)
+    max_cosine_distance: 0.2    # nearest-neighbor appearance threshold
+    nn_budget: 100              # gallery descriptors per confirmed track
+    only_position_gating: false
     centre_gate: 200.0
+
+    # Local appearance descriptor fallback
     image_topic: "/camera/image_raw"
     appearance_enabled: true
     appearance_max_frame_age_ms: 120.0
     appearance_hist_bins: 8
-    appearance_weight: 0.35
-    appearance_max_distance: 0.6
+    appearance_weight: 0.0      # DeepSORT paper default for camera motion: appearance cost only
+    appearance_max_distance: 0.2 # backward-compatible alias for max_cosine_distance
     appearance_min_crop_size: 12
-    appearance_update_alpha: 0.2
+    appearance_update_alpha: 0.2 # kept for compatibility; gallery updates are stored directly

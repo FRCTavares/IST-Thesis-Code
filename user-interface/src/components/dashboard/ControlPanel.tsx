@@ -6,6 +6,7 @@ import type { DashboardModel, DashboardTracker } from "@/types/dashboard";
 
 interface ControlPanelProps {
   activeModel: DashboardModel;
+  availableModels: DashboardModel[];
   activeTracker: DashboardTracker;
   onModelSwitch: (model: DashboardModel) => Promise<void>;
   onTrackerSwitch: (tracker: DashboardTracker) => Promise<void>;
@@ -21,6 +22,7 @@ interface ControlPanelProps {
 
 export function ControlPanel({
   activeModel,
+  availableModels,
   activeTracker,
   onModelSwitch,
   onTrackerSwitch,
@@ -33,7 +35,6 @@ export function ControlPanel({
   isLinkUp = true,
   currentResolutionLabel,
 }: ControlPanelProps) {
-  const models: DashboardModel[] = ["yolov6n", "yolov8s", "yolov8m"];
   const trackers: DashboardTracker[] = ["sort", "ocsort", "bytetrack"];
   const isBusy = isModelSwitching || isTrackerSwitching;
 
@@ -56,7 +57,7 @@ export function ControlPanel({
         <div className="rounded-md border border-zinc-700/80 bg-zinc-900/45 p-2.5">
           <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Detection Model</div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {models.map((model) => (
+            {availableModels.map((model) => (
               <Button
                 key={model}
                 variant={activeModel === model ? "active" : "default"}

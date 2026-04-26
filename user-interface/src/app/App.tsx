@@ -15,11 +15,12 @@ import type {
   DashboardLogLevel,
   DashboardLogSource,
   DashboardModel,
+  DashboardSupportedModel,
   DashboardTracker,
   MetricsSnapshot,
 } from "@/types/dashboard";
 import { useDashboardMetrics } from "@/features/dashboard/hooks/useDashboardMetrics";
-import { requestModelSwitch, requestTargetFocus, requestTrackerSwitch } from "@/features/dashboard/services/dashboardApi";
+import { fetchSupportedModels, requestModelSwitch, requestTargetFocus, requestTrackerSwitch } from "@/features/dashboard/services/dashboardApi";
 import { exportMetricsCsv } from "@/features/dashboard/utils/csv";
 
 type DashboardTab = "overview" | "control" | "charts" | "logging";
@@ -31,6 +32,7 @@ const DASHBOARD_LOGS_PAUSED_STORAGE_KEY = "dashboard.log.paused.v1";
 const DASHBOARD_UI_DENSITY_STORAGE_KEY = "dashboard.ui.density.v1";
 const DASHBOARD_DEFAULT_TAB_STORAGE_KEY = "dashboard.ui.defaultTab.v1";
 const DASHBOARD_LOG_BUFFER_STORAGE_KEY = "dashboard.log.bufferLimit.v1";
+const FALLBACK_MODELS: DashboardModel[] = ["yolov6n", "yolov8s", "yolov8m"];
 
 interface SavedRecording {
   id: string;
@@ -66,6 +68,7 @@ function isDashboardTab(value: string): value is DashboardTab {
 function DashboardPage() {
   const { telemetry, status } = useDashboardRealtime();
   const [activeModel, setActiveModel] = useState<DashboardModel>("yolov6n");
+  const [availableModels, setAvailableModels] = useState<DashboardModel[]>(FALLBACK_MODELS);
   const [activeTracker, setActiveTracker] = useState<DashboardTracker>("sort");
   const [controlStatus, setControlStatus] = useState("Recording idle. Start recording to collect CSV samples.");
   const [samples, setSamples] = useState<MetricsSnapshot[]>([]);
@@ -98,6 +101,31 @@ function DashboardPage() {
     : streamResolutionLabel;
 
   const metricState = useDashboardMetrics(telemetry, activeModel);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      const response = await fetchSupportedModels();
+      if (cancelled || !response.ok || !response.models) {
+        return;
+      }
+
+      const available = response.models
+        .filter((model: DashboardSupportedModel) => model.available)
+        .map((model: DashboardSupportedModel) => model.key);
+      if (available.length === 0) {
+        return;
+      }
+
+      setAvailableModels(available);
+      setActiveModel((current) => (available.includes(current) ? current : available[0]));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -494,7 +522,7 @@ function DashboardPage() {
               </section>
 
               {!isSidebarCollapsed && (
-                <StatusPanel status={status} mode={dashboardConfig.mode} telemetry={telemetry} snapshot={metricState.snapshot} activeModel={activeModel} activeTracker={activeTracker} onModelSwitch={handleModelSwitch} onTrackerSwitch={handleTrackerSwitch} onStartRecording={handleStartRecording} onStopRecording={handleStopRecording} isRecording={isRecording} recordedCount={recordedSamples.length} onCloseSidebar={() => setIsSidebarCollapsed(true)} isModelSwitching={isModelSwitching} isTrackerSwitching={isTrackerSwitching} controlStatus={controlStatus} recordings={savedRecordings.map((entry) => ({ id: entry.id, createdAtIso: entry.createdAtIso, model: entry.model, tracker: entry.tracker, sampleCount: entry.samples.length }))} onDownloadRecording={handleDownloadRecording} onDeleteRecording={handleDeleteRecording} isLinkUp={isLinkUp} currentResolutionLabel={inferenceResolutionLabel} />
+                <StatusPanel status={status} mode={dashboardConfig.mode} telemetry={telemetry} snapshot={metricState.snapshot} activeModel={activeModel} availableModels={availableModels} activeTracker={activeTracker} onModelSwitch={handleModelSwitch} onTrackerSwitch={handleTrackerSwitch} onStartRecording={handleStartRecording} onStopRecording={handleStopRecording} isRecording={isRecording} recordedCount={recordedSamples.length} onCloseSidebar={() => setIsSidebarCollapsed(true)} isModelSwitching={isModelSwitching} isTrackerSwitching={isTrackerSwitching} controlStatus={controlStatus} recordings={savedRecordings.map((entry) => ({ id: entry.id, createdAtIso: entry.createdAtIso, model: entry.model, tracker: entry.tracker, sampleCount: entry.samples.length }))} onDownloadRecording={handleDownloadRecording} onDeleteRecording={handleDeleteRecording} isLinkUp={isLinkUp} currentResolutionLabel={inferenceResolutionLabel} />
               )}
             </div>
           ) : null}
@@ -503,6 +531,7 @@ function DashboardPage() {
             <div className="grid grid-cols-1 gap-3 lg:min-h-[calc(100vh-2rem)] lg:items-stretch">
               <ControlPanel
                 activeModel={activeModel}
+                availableModels={availableModels}
                 activeTracker={activeTracker}
                 onModelSwitch={handleModelSwitch}
                 onTrackerSwitch={handleTrackerSwitch}

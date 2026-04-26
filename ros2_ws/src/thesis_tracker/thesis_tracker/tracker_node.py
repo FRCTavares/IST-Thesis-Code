@@ -23,7 +23,7 @@ from .backends import BBox, TrackOutput
 from .backends.sort_backend import SortBackend
 from .backends.ocsort_backend import OCSortBackend
 from .backends.bytetrack_backend import ByteTrackBackend
-from .backends.deepsort_backend import DeepSortBackend
+from .backends.deepsort_core_backend import DeepSortBackend
 
 # Type alias for tracker backends
 TrackerBackendType = Union[SortBackend, OCSortBackend, ByteTrackBackend, DeepSortBackend]
@@ -301,15 +301,22 @@ class TrackerNode(Node):
             max_age = int(self._declare_param_if_missing("max_age", 30))
             n_init = int(self._declare_param_if_missing("n_init", 3))
             match_thresh = float(self._declare_param_if_missing("match_thresh", 0.25))
+            max_iou_distance = float(
+                self._declare_param_if_missing("max_iou_distance", 1.0 - match_thresh)
+            )
             centre_gate = float(self._declare_param_if_missing("centre_gate", 200.0))
             appearance_enabled = bool(self._declare_param_if_missing("appearance_enabled", True))
             appearance_max_frame_age_ms = float(
                 self._declare_param_if_missing("appearance_max_frame_age_ms", 120.0)
             )
             appearance_hist_bins = int(self._declare_param_if_missing("appearance_hist_bins", 8))
-            appearance_weight = float(self._declare_param_if_missing("appearance_weight", 0.35))
+            appearance_weight = float(self._declare_param_if_missing("appearance_weight", 0.0))
+            max_cosine_distance = float(
+                self._declare_param_if_missing("max_cosine_distance", 0.2)
+            )
+            # Backward-compatible alias from the earlier histogram prototype.
             appearance_max_distance = float(
-                self._declare_param_if_missing("appearance_max_distance", 0.6)
+                self._declare_param_if_missing("appearance_max_distance", max_cosine_distance)
             )
             appearance_min_crop_size = int(
                 self._declare_param_if_missing("appearance_min_crop_size", 12)
@@ -317,11 +324,16 @@ class TrackerNode(Node):
             appearance_update_alpha = float(
                 self._declare_param_if_missing("appearance_update_alpha", 0.2)
             )
+            nn_budget = int(self._declare_param_if_missing("nn_budget", 100))
+            only_position_gating = bool(
+                self._declare_param_if_missing("only_position_gating", False)
+            )
 
             return DeepSortBackend(
                 max_age=max_age,
                 n_init=n_init,
                 match_thresh=match_thresh,
+                max_iou_distance=max_iou_distance,
                 centre_gate=centre_gate,
                 appearance_enabled=appearance_enabled,
                 appearance_max_frame_age_ms=appearance_max_frame_age_ms,
@@ -330,6 +342,8 @@ class TrackerNode(Node):
                 appearance_max_distance=appearance_max_distance,
                 appearance_min_crop_size=appearance_min_crop_size,
                 appearance_update_alpha=appearance_update_alpha,
+                nn_budget=nn_budget,
+                only_position_gating=only_position_gating,
             )
 
         else:

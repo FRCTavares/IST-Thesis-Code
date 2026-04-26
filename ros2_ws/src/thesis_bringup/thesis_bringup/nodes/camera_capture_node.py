@@ -7,6 +7,7 @@ import subprocess
 import threading
 import time
 import re
+import os
 from pathlib import Path
 
 import cv2
@@ -14,6 +15,7 @@ import numpy as np
 import rclpy
 from cv_bridge import CvBridge
 from rcl_interfaces.msg import SetParametersResult
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import Image
@@ -46,6 +48,7 @@ class CameraCaptureNode(Node):
         self.declare_parameter("csi_source_pad", 4)
         self.declare_parameter("video_entity", "rp1-cfe-csi2_ch0")
         self.declare_parameter("trigger_mode", 0)
+        self.declare_parameter("apply_sensor_trigger_control", False)
         self.declare_parameter("apply_sensor_rate_controls", True)
         self.declare_parameter("sensor_max_fps", 30)
         self.declare_parameter("sensor_ae_exposure_upper", 8333)
@@ -55,6 +58,8 @@ class CameraCaptureNode(Node):
         self.declare_parameter("command_delay_s", 0.10)
         self.declare_parameter("command_timeout_s", 5.0)
         self.declare_parameter("reopen_delay_s", 1.0)
+        self.declare_parameter("startup_frame_timeout_s", 20.0)
+        self.declare_parameter("stall_timeout_s", 4.0)
         self.declare_parameter("publish_fps_topic", True)
         self.declare_parameter("flip_image", True)
         self.declare_parameter("fail_on_media_init_error", False)
@@ -85,6 +90,9 @@ class CameraCaptureNode(Node):
         self._csi_source_pad = int(self.get_parameter("csi_source_pad").value)
         self._video_entity = self.get_parameter("video_entity").value
         self._trigger_mode = int(self.get_parameter("trigger_mode").value)
+        self._apply_sensor_trigger_control = bool(
+            self.get_parameter("apply_sensor_trigger_control").value
+        )
         self._apply_sensor_rate_controls = bool(self.get_parameter("apply_sensor_rate_controls").value)
         self._sensor_max_fps = int(self.get_parameter("sensor_max_fps").value)
         self._sensor_ae_exposure_upper = int(self.get_parameter("sensor_ae_exposure_upper").value)
@@ -94,6 +102,10 @@ class CameraCaptureNode(Node):
         self._command_delay_s = float(self.get_parameter("command_delay_s").value)
         self._command_timeout_s = float(self.get_parameter("command_timeout_s").value)
         self._reopen_delay_s = float(self.get_parameter("reopen_delay_s").value)
+        self._startup_frame_timeout_s = max(
+            1.0, float(self.get_parameter("startup_frame_timeout_s").value)
+        )
+        self._stall_timeout_s = max(1.0, float(self.get_parameter("stall_timeout_s").value))
         self._publish_fps_topic = bool(self.get_parameter("publish_fps_topic").value)
         # Kept for backward compatibility with existing launch args, but ignored.
         self._flip_image = bool(self.get_parameter("flip_image").value)
@@ -186,8 +198,14 @@ class CameraCaptureNode(Node):
         self._latest_capture_fps = 0.0
         self._latest_publish_fps = 0.0
         self._last_log_time = 0.0
+        self._start_monotonic = time.monotonic()
+        self._last_frame_monotonic = 0.0
+        self._watchdog_exit_started = False
         self._image_publish_period = (1.0 / self._fps) if self._fps > 0.0 else 0.0
         self.add_on_set_parameters_callback(self._on_set_parameters)
+
+        self._watchdog_thread = threading.Thread(target=self._watchdog_loop, daemon=True)
+        self._watchdog_thread.start()
 
         self._configure_camera()
         if self._publish_width_auto:
@@ -399,21 +417,27 @@ class CameraCaptureNode(Node):
             return None
         return width, height
 
-    @staticmethod
-    def _can_open_video_device(device_path: str) -> bool:
-        cap = cv2.VideoCapture(device_path, cv2.CAP_V4L2)
+    def _can_probe_video_device(self, device_path: str) -> bool:
         try:
-            return cap.isOpened()
-        finally:
-            cap.release()
+            result = subprocess.run(
+                ["v4l2-ctl", "-d", device_path, "--all"],
+                check=False,
+                text=True,
+                capture_output=True,
+                timeout=self._command_timeout_s,
+            )
+        except Exception:
+            return False
+
+        return result.returncode == 0
 
     def _resolve_video_device(self, configured_device: str) -> str:
         configured_path = Path(configured_device)
         if configured_path.exists():
-            if self._can_open_video_device(configured_device):
+            if self._can_probe_video_device(configured_device):
                 return configured_device
             self.get_logger().warn(
-                f"Configured camera device {configured_device} exists but cannot be opened; "
+                f"Configured camera device {configured_device} exists but failed V4L2 probe; "
                 "searching fallback video nodes"
             )
 
@@ -430,7 +454,7 @@ class CameraCaptureNode(Node):
             )
 
         for candidate in candidates:
-            if self._can_open_video_device(str(candidate)):
+            if self._can_probe_video_device(str(candidate)):
                 self.get_logger().warn(
                     f"Configured camera device {configured_device} not usable; using {candidate} instead"
                 )
@@ -551,10 +575,12 @@ class CameraCaptureNode(Node):
             self._run_shell(cmd, allow_failure=not self._fail_on_media_init_error)
             time.sleep(self._command_delay_s)
 
-        if trigger_cmd is not None:
+        if trigger_cmd is not None and self._apply_sensor_trigger_control:
             self.get_logger().info(f"Applying sensor trigger control: trigger_mode={self._trigger_mode}")
             self._run_shell(trigger_cmd, allow_failure=not self._fail_on_media_init_error)
             time.sleep(self._command_delay_s)
+        elif trigger_cmd is not None:
+            self.get_logger().info("Skipping sensor trigger control write")
 
         if rate_controls_cmd is not None:
             self.get_logger().info(
@@ -579,7 +605,7 @@ class CameraCaptureNode(Node):
                 self.get_logger().warn(
                     "Sensor rate control apply failed; continuing with current sensor defaults"
                 )
-                if trigger_cmd is not None:
+                if trigger_cmd is not None and self._apply_sensor_trigger_control:
                     # Re-apply trigger control to recover a known-good baseline after timeout.
                     self._run_shell(trigger_cmd, allow_failure=True)
             time.sleep(self._command_delay_s)
@@ -641,7 +667,12 @@ class CameraCaptureNode(Node):
                 pass
 
         self.get_logger().info(f"Opening camera: {self._device}")
-        cap = cv2.VideoCapture(self._device, cv2.CAP_V4L2)
+        cap = cv2.VideoCapture()
+        if hasattr(cv2, "CAP_PROP_OPEN_TIMEOUT_MSEC"):
+            cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, int(self._command_timeout_s * 1000.0))
+        if hasattr(cv2, "CAP_PROP_READ_TIMEOUT_MSEC"):
+            cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, int(self._stall_timeout_s * 1000.0))
+        cap.open(self._device, cv2.CAP_V4L2)
 
         if not cap.isOpened():
             raise RuntimeError(f"Failed to open camera device: {self._device}")
@@ -682,6 +713,47 @@ class CameraCaptureNode(Node):
 
         self._cap = cap
 
+    def _watchdog_loop(self) -> None:
+        while not self._stop_event.wait(timeout=0.5):
+            now = time.monotonic()
+
+            with self._frame_lock:
+                last_frame_time = self._last_frame_monotonic
+
+            if last_frame_time <= 0.0:
+                if now - self._start_monotonic > self._startup_frame_timeout_s:
+                    self._exit_for_camera_watchdog(
+                        "camera startup timed out before first frame "
+                        f"({self._startup_frame_timeout_s:.1f}s)"
+                    )
+                    return
+                continue
+
+            if now - last_frame_time > self._stall_timeout_s:
+                self._exit_for_camera_watchdog(
+                    "camera frame stream stalled "
+                    f"({now - last_frame_time:.1f}s without frames)"
+                )
+                return
+
+    def _exit_for_camera_watchdog(self, reason: str) -> None:
+        if self._watchdog_exit_started:
+            return
+        self._watchdog_exit_started = True
+        try:
+            self.get_logger().error(
+                reason
+                + "; exiting camera node so live stack can fail fast instead of hanging"
+            )
+        except Exception:
+            pass
+        try:
+            if self._cap is not None:
+                self._cap.release()
+        except Exception:
+            pass
+        os._exit(12)
+
     def _capture_loop(self) -> None:
         while rclpy.ok() and not self._stop_event.is_set():
             if self._cap is None or not self._cap.isOpened():
@@ -703,6 +775,7 @@ class CameraCaptureNode(Node):
             with self._frame_lock:
                 self._latest_frame = frame
                 self._latest_frame_id += 1
+                self._last_frame_monotonic = time.monotonic()
                 self._latest_capture_stamp_sec = int(capture_stamp.sec)
                 self._latest_capture_stamp_nanosec = int(capture_stamp.nanosec)
 
@@ -769,10 +842,19 @@ class CameraCaptureNode(Node):
         if not self._dashboard_publish_requires_subscribers:
             return True
 
-        sub_count = self._dashboard_pub.get_subscription_count()
-        intra_count = 0
-        if hasattr(self._dashboard_pub, "get_intra_process_subscription_count"):
-            intra_count = self._dashboard_pub.get_intra_process_subscription_count()
+        if self._stop_event.is_set() or not rclpy.ok():
+            return False
+
+        try:
+            sub_count = self._dashboard_pub.get_subscription_count()
+            intra_count = 0
+            if hasattr(self._dashboard_pub, "get_intra_process_subscription_count"):
+                intra_count = self._dashboard_pub.get_intra_process_subscription_count()
+        except Exception as exc:
+            if self._stop_event.is_set() or not rclpy.ok():
+                return False
+            raise exc
+
         return (sub_count + intra_count) > 0
 
     def _publish_dashboard_latest_frame(self) -> None:
@@ -816,7 +898,8 @@ class CameraCaptureNode(Node):
         dashboard_msg.header.stamp.sec = int(stamp_sec)
         dashboard_msg.header.stamp.nanosec = int(stamp_nanosec)
         dashboard_msg.header.frame_id = self._frame_id
-        self._dashboard_pub.publish(dashboard_msg)
+        if not self._try_publish(self._dashboard_pub, dashboard_msg):
+            return
         self._last_dashboard_published_frame_id = frame_id
 
     def _prepare_publish_frame(self, frame: np.ndarray) -> np.ndarray:
@@ -881,7 +964,8 @@ class CameraCaptureNode(Node):
         msg.header.stamp.sec = int(stamp_sec)
         msg.header.stamp.nanosec = int(stamp_nanosec)
         msg.header.frame_id = self._frame_id
-        self._image_pub.publish(msg)
+        if not self._try_publish(self._image_pub, msg):
+            return
         self._last_published_frame_id = frame_id
 
         self._publish_frame_counter += 1
@@ -900,7 +984,7 @@ class CameraCaptureNode(Node):
         if self._capture_fps_pub is not None:
             capture_fps_msg = Float32()
             capture_fps_msg.data = float(capture_fps)
-            self._capture_fps_pub.publish(capture_fps_msg)
+            self._try_publish(self._capture_fps_pub, capture_fps_msg)
 
         self._capture_frame_counter = 0
         self._capture_fps_window_start = now
@@ -918,7 +1002,8 @@ class CameraCaptureNode(Node):
 
             fps_msg = Float32()
             fps_msg.data = float(fps)
-            self._fps_pub.publish(fps_msg)
+            if not self._try_publish(self._fps_pub, fps_msg):
+                return
 
             self.get_logger().info(
                 f"Camera FPS capture={self._latest_capture_fps:.2f} publish={fps:.2f}"
@@ -926,6 +1011,18 @@ class CameraCaptureNode(Node):
 
             self._publish_frame_counter = 0
             self._publish_fps_window_start = now
+
+    def _try_publish(self, publisher, msg) -> bool:
+        if self._stop_event.is_set() or not rclpy.ok():
+            return False
+
+        try:
+            publisher.publish(msg)
+            return True
+        except Exception as exc:
+            if self._stop_event.is_set() or not rclpy.ok():
+                return False
+            raise exc
 
     def _retry_reopen(self) -> None:
         if self._cap is not None:
@@ -976,7 +1073,7 @@ def main(args=None) -> None:
 
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         try:

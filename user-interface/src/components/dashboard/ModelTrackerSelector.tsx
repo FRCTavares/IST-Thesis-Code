@@ -3,6 +3,7 @@ import type { DashboardModel, DashboardTracker } from "@/types/dashboard";
 
 interface ModelTrackerSelectorProps {
     activeModel: DashboardModel;
+    availableModels: DashboardModel[];
     activeTracker: DashboardTracker;
     onModelSwitch: (model: DashboardModel) => Promise<void>;
     onTrackerSwitch: (tracker: DashboardTracker) => Promise<void>;
@@ -12,11 +13,11 @@ interface ModelTrackerSelectorProps {
     disabled?: boolean;
 }
 
-const MODELS: DashboardModel[] = ["yolov6n", "yolov8s", "yolov8m"];
 const TRACKERS: DashboardTracker[] = ["sort", "ocsort", "bytetrack"];
 
 export function ModelTrackerSelector({
     activeModel,
+    availableModels,
     activeTracker,
     onModelSwitch,
     onTrackerSwitch,
@@ -71,7 +72,7 @@ export function ModelTrackerSelector({
                     disabled={disabled || isBusy || isLoading}
                     className="w-full rounded-md border border-zinc-700 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 transition-all disabled:cursor-not-allowed disabled:opacity-55 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
                 >
-                    {MODELS.map((model) => (
+                    {availableModels.map((model) => (
                         <option key={model} value={model}>
                             {model.toUpperCase()}
                         </option>

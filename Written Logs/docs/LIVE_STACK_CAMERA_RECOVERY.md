@@ -184,10 +184,10 @@ cd /home/francisco/Desktop/Thesis-Code
 ./tools/start_live_stack.sh
 ```
 
-If recovering from this specific 640x480/link-disabled failure, prefer first launch with conservative camera controls:
+If recovering from this specific 640x480/link-disabled failure, prefer first launch with the conservative camera profile:
 
 ```bash
-./tools/start_live_stack.sh --perception-mode legacy --camera-rate-controls-off --camera-width 640 --camera-height 480
+./tools/start_live_stack.sh --profile safe-camera
 ```
 
 After confirming stable `/camera/image_raw`, test 1280x720 again.
@@ -283,9 +283,12 @@ tail -n 200 "$latest/inference.log"
 
 - preflight check blocks startup when `camera_capture_node`, `v4l2-ctl`, or `media-ctl` is stuck in uninterruptible `D` state
 - preflight attempts to enable `"csi2":4 -> "rp1-cfe-csi2_ch0":0` if link is down
-- on startup failure with TEVS sensor-control timeout signatures, launcher retries camera once with `apply_sensor_rate_controls=false`
+- daily startup avoids active `/dev/video0` stream probing by default; use `--camera-preflight-stream-probe-on` only for deeper diagnostics
+- sensor trigger and rate/exposure control writes are disabled by default; use `--camera-trigger-control-on` or `--camera-rate-controls-on` only when explicitly needed
+- on startup failure with TEVS sensor-control timeout signatures, launcher can still retry camera with `apply_sensor_rate_controls=false`
 - startup diagnostics check kernel patterns for link-not-enabled and I2C timeout signals
 - logging is quieter by default and prints warnings/errors without verbose noise (use `--verbose` for full progress logs)
+- camera/preflight helper logic now lives in `tools/lib/live_camera.sh`; the entrypoint remains `tools/start_live_stack.sh`
 
 ## Fast Triage Checklist
 
@@ -318,20 +321,24 @@ To reduce lockout risk:
 
 1. tools/start_live_stack.sh
 
+- split camera/preflight logic into `tools/lib/live_camera.sh`
 - added camera fatal-log detection and clearer startup diagnostics
 - added preflight media graph auto-detection and actionable hints
 - added preflight D-state detection for `camera_capture_node`, `v4l2-ctl`, and `media-ctl`
 - added preflight CSI capture-link enable attempt (`csi2:4 -> rp1-cfe-csi2_ch0`)
-- added one-shot camera retry with sensor rate controls disabled when TEVS control timeout signatures are detected
-- default console output is now warning/error focused; use `--verbose` for full startup/status logs
+- made active stream probing opt-in via `--camera-preflight-stream-probe-on`
+- made sensor trigger/rate-control writes opt-in for daily robustness
+- default console output is warning/error focused; use `--verbose` for full startup/status logs
 
 1. ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_capture_node.py
 
 - improved media-device resolution to avoid false fallback onto pispbe-only nodes
 - fail-fast when selected media graph exposes no video nodes
+- added startup/stall watchdogs so no-frame states fail fast
 
 ## Related Files
 
 - live_stack_incident_2026-04-08.txt
 - tools/start_live_stack.sh
+- tools/lib/live_camera.sh
 - ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_capture_node.py

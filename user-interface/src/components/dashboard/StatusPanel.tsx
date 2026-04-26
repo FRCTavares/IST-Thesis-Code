@@ -11,6 +11,7 @@ interface StatusPanelProps {
   telemetry: DashboardTelemetry | null;
   snapshot: MetricsSnapshot | null;
   activeModel?: DashboardModel;
+  availableModels?: DashboardModel[];
   activeTracker?: DashboardTracker;
   onModelSwitch?: (model: DashboardModel) => Promise<void>;
   onTrackerSwitch?: (tracker: DashboardTracker) => Promise<void>;
@@ -41,6 +42,7 @@ export function StatusPanel({
   telemetry,
   snapshot: _snapshot,
   activeModel = "yolov6n",
+  availableModels = ["yolov6n", "yolov8s", "yolov8m"],
   activeTracker = "sort",
   onModelSwitch,
   onTrackerSwitch,
@@ -95,6 +97,7 @@ export function StatusPanel({
             <div className="mb-2 flex items-center text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Detection & Tracking</div>
             <ModelTrackerSelector
               activeModel={activeModel}
+              availableModels={availableModels}
               activeTracker={activeTracker}
               onModelSwitch={onModelSwitch}
               onTrackerSwitch={onTrackerSwitch}

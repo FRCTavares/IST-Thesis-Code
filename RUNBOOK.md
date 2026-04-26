@@ -29,6 +29,9 @@ From `tools/start_live_stack.sh`:
 - Perception mode default: `single-process`
 - Tracker default: `sort`
 - Camera default: `1280x720@30`
+- Published perception image default in single-process mode: `640x640` letterboxed from capture
+- Camera sensor trigger/rate-control writes: disabled by default for reliability
+- Active `/dev/video0` preflight stream probe: disabled by default; media graph preflight still runs
 - Control node: enabled by default
 - MAVROS mirroring: disabled by default
 - Dashboard bridge + web video: enabled by default
@@ -165,6 +168,10 @@ Useful flags:
 - Disable control: ./tools/start_live_stack.sh --no-control
 - Enable MAVROS mirror: ./tools/start_live_stack.sh --control-mavros
 - Camera + inference only: ./tools/start_live_stack.sh --no-tracker --no-target --no-control --no-dashboard
+- Safer camera fallback profile: ./tools/start_live_stack.sh --profile safe-camera
+- Enable deeper active stream probe when diagnosing camera faults: ./tools/start_live_stack.sh --camera-preflight-stream-probe-on
+- Enable sensor FPS/exposure writes only when explicitly needed: ./tools/start_live_stack.sh --camera-rate-controls-on
+- Enable sensor trigger_mode writes only when explicitly needed: ./tools/start_live_stack.sh --camera-trigger-control-on
 - Legacy perception path: ./tools/start_live_stack.sh --perception-mode legacy
 - Single-process perception mode (default; in-process backend, stub fallback): ./tools/start_live_stack.sh --perception-mode single-process
 - Single-process queue tuning: ./tools/start_live_stack.sh --perception-hailo-queue-buffers 1
@@ -180,6 +187,7 @@ Full option list:
 
 ```bash
 ./tools/start_live_stack.sh --help
+./tools/start_live_stack.sh --help-advanced
 ```
 
 If you want to enable host-side Hailo dependencies for single-process mode:
@@ -463,8 +471,17 @@ ros2 topic list
 If startup says camera is not publishing:
 
 - Rerun tools/start_live_stack.sh once.
+- Try conservative camera mode: `./tools/start_live_stack.sh --profile safe-camera`
 - Check cable/sensor state.
-- If camera process is stuck in D state, reboot host.
+- If camera tooling/processes are stuck in uninterruptible `D` state, reboot host. Userspace cannot reliably kill that state.
+- Use the active stream probe only for diagnosis: `./tools/start_live_stack.sh --camera-preflight-stream-probe-on`
+
+Camera-startup notes:
+
+- The normal launcher preflights the media graph and capture link, but avoids an active `/dev/video0` stream probe by default because that path can wedge bad camera-driver states.
+- Sensor `trigger_mode` and rate/exposure control writes are opt-in. This keeps daily startup from poking the TEVS I2C control path unless you explicitly request it.
+- The camera node has startup/stall watchdogs; if no frames arrive, it exits so the live stack fails fast instead of continuing in a half-alive state.
+- Camera helpers live in `tools/lib/live_camera.sh`; CLI/default/help helpers live in `tools/lib/live_cli.sh`, `tools/lib/live_defaults.sh`, and `tools/lib/live_usage.sh`.
 
 Additional common failures:
 

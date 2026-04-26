@@ -35,6 +35,9 @@ def generate_launch_description() -> LaunchDescription:
     csi_source_pad_arg = DeclareLaunchArgument("csi_source_pad", default_value="4")
     video_entity_arg = DeclareLaunchArgument("video_entity", default_value="rp1-cfe-csi2_ch0")
     trigger_mode_arg = DeclareLaunchArgument("trigger_mode", default_value="0")
+    apply_sensor_trigger_control_arg = DeclareLaunchArgument(
+        "apply_sensor_trigger_control", default_value="false"
+    )
     apply_sensor_rate_controls_arg = DeclareLaunchArgument(
         "apply_sensor_rate_controls", default_value="true"
     )
@@ -45,6 +48,8 @@ def generate_launch_description() -> LaunchDescription:
     sensor_manual_exposure_arg = DeclareLaunchArgument("sensor_manual_exposure", default_value="8333")
     command_delay_arg = DeclareLaunchArgument("command_delay_s", default_value="0.10")
     command_timeout_arg = DeclareLaunchArgument("command_timeout_s", default_value="5.0")
+    startup_frame_timeout_arg = DeclareLaunchArgument("startup_frame_timeout_s", default_value="20.0")
+    stall_timeout_arg = DeclareLaunchArgument("stall_timeout_s", default_value="4.0")
     adopt_detected_sensor_resolution_arg = DeclareLaunchArgument(
         "adopt_detected_sensor_resolution", default_value="true"
     )
@@ -83,6 +88,7 @@ def generate_launch_description() -> LaunchDescription:
                 "csi_source_pad": LaunchConfiguration("csi_source_pad"),
                 "video_entity": LaunchConfiguration("video_entity"),
                 "trigger_mode": LaunchConfiguration("trigger_mode"),
+                "apply_sensor_trigger_control": LaunchConfiguration("apply_sensor_trigger_control"),
                 "apply_sensor_rate_controls": LaunchConfiguration("apply_sensor_rate_controls"),
                 "sensor_max_fps": LaunchConfiguration("sensor_max_fps"),
                 "sensor_ae_exposure_upper": LaunchConfiguration("sensor_ae_exposure_upper"),
@@ -91,6 +97,8 @@ def generate_launch_description() -> LaunchDescription:
                 "sensor_manual_exposure": LaunchConfiguration("sensor_manual_exposure"),
                 "command_delay_s": LaunchConfiguration("command_delay_s"),
                 "command_timeout_s": LaunchConfiguration("command_timeout_s"),
+                "startup_frame_timeout_s": LaunchConfiguration("startup_frame_timeout_s"),
+                "stall_timeout_s": LaunchConfiguration("stall_timeout_s"),
                 "flip_image": LaunchConfiguration("flip_image"),
                 "adopt_detected_sensor_resolution": LaunchConfiguration(
                     "adopt_detected_sensor_resolution"
@@ -126,6 +134,7 @@ def generate_launch_description() -> LaunchDescription:
             csi_source_pad_arg,
             video_entity_arg,
             trigger_mode_arg,
+            apply_sensor_trigger_control_arg,
             apply_sensor_rate_controls_arg,
             sensor_max_fps_arg,
             sensor_ae_exposure_upper_arg,
@@ -134,6 +143,8 @@ def generate_launch_description() -> LaunchDescription:
             sensor_manual_exposure_arg,
             command_delay_arg,
             command_timeout_arg,
+            startup_frame_timeout_arg,
+            stall_timeout_arg,
             adopt_detected_sensor_resolution_arg,
             flip_image_arg,
             camera_capture,

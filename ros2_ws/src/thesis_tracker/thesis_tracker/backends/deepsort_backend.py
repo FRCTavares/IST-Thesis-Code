@@ -1,8 +1,8 @@
-"""Minimal DeepSORT-style backend without appearance features.
+"""Legacy DeepSORT prototype kept for history.
 
-Phase 1 keeps this backend structurally separate from SORT/OC-SORT/ByteTrack
-while remaining runnable. Association is IoU-only for now; appearance matching
-can be layered in later without changing the backend interface.
+The active tracker node imports :mod:`deepsort_core_backend`, which implements
+the DeepSORT association structure. This older module is intentionally not used
+by runtime wiring.
 """
 from __future__ import annotations
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 import json
 import os
 import subprocess
@@ -30,6 +31,24 @@ METRIC_WARN_THRESHOLDS_MS = {
     "e2e_det_ms": 120.0,
     "pub_dt_ms": 120.0,
 }
+
+
+@dataclass(frozen=True)
+class SupportedModel:
+    key: str
+    hef_file: str
+
+
+SUPPORTED_MODELS: tuple[SupportedModel, ...] = (
+    SupportedModel("yolov6n", "yolov6n_hailo8.hef"),
+    SupportedModel("yolov8s", "yolov8s.hef"),
+    SupportedModel("yolov8m", "yolov8m.hef"),
+    SupportedModel("yolov8x", "yolov8x.hef"),
+    SupportedModel("yolov10b", "yolov10b.hef"),
+    SupportedModel("yolov10x", "yolov10x.hef"),
+    SupportedModel("yolov11l", "yolov11l.hef"),
+    SupportedModel("yolov11x", "yolov11x.hef"),
+)
 
 
 class DashboardBridgeNode(Node):
@@ -108,11 +127,8 @@ class DashboardBridgeNode(Node):
         self._single_process_hef_dir = str(self.get_parameter("single_process_hef_dir").value)
         self._tracker_node_name = str(self.get_parameter("tracker_node_name").value).strip() or "tracker_node"
 
-        self._model_to_hef = {
-            "yolov6n": "yolov6n_hailo8.hef",
-            "yolov8s": "yolov8s.hef",
-            "yolov8m": "yolov8m.hef",
-        }
+        self._supported_models = SUPPORTED_MODELS
+        self._model_to_hef = {model.key: model.hef_file for model in self._supported_models}
         self._supported_trackers = {"sort", "ocsort", "bytetrack"}
         self._target_focus_id: int | None = None
 
@@ -222,9 +238,16 @@ class DashboardBridgeNode(Node):
             def do_OPTIONS(self) -> None:
                 self.send_response(204)
                 self.send_header("Access-Control-Allow-Origin", "*")
-                self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+                self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
                 self.send_header("Access-Control-Allow-Headers", "Content-Type")
                 self.end_headers()
+
+            def do_GET(self) -> None:
+                if self.path == "/api/models":
+                    self._send_json(200, node_ref._handle_models_list())
+                    return
+
+                self._send_json(404, {"ok": False, "error": "unknown endpoint"})
 
             def do_POST(self) -> None:
                 try:
@@ -266,6 +289,24 @@ class DashboardBridgeNode(Node):
             self._api_server.serve_forever()
         except Exception as exc:
             self.get_logger().error(f"Control API server failed: {exc}")
+
+    def _handle_models_list(self) -> dict[str, Any]:
+        models = []
+        for model in self._supported_models:
+            hef_path = os.path.join(self._single_process_hef_dir, model.hef_file)
+            models.append(
+                {
+                    "key": model.key,
+                    "hef_file": model.hef_file,
+                    "hef_path": hef_path,
+                    "available": os.path.isfile(hef_path),
+                }
+            )
+
+        return {
+            "ok": True,
+            "models": models,
+        }
 
     def _handle_model_switch(self, model: str) -> dict[str, Any]:
         if model not in self._model_to_hef:

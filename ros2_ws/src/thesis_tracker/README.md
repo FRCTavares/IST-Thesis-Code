@@ -36,6 +36,10 @@ The tracker supports multiple backends selectable via ROS parameter `tracker_typ
 - `sort` - Simple Online and Realtime Tracking (baseline)
 - `ocsort` - Observation-Centric SORT (occlusion handling)
 - `bytetrack` - ByteTrack (low-confidence detection rescue)
+- `deepsort` - DeepSORT association core with 8D Kalman state, Mahalanobis
+  gating, matching cascade, cosine gallery metric, and IoU fallback. The current
+  appearance descriptor is a local crop histogram fallback; a pretrained ReID
+  CNN is still required for paper-faithful deep appearance features.
 
 See `config/` for per-tracker parameter files.
 

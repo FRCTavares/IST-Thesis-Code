@@ -62,8 +62,15 @@ export interface DashboardLogEntry {
   message: string;
 }
 
-export type DashboardModel = "yolov6n" | "yolov8s" | "yolov8m";
+export type DashboardModel = string;
 export type DashboardTracker = "sort" | "ocsort" | "bytetrack";
+
+export interface DashboardSupportedModel {
+  key: DashboardModel;
+  hef_file: string;
+  hef_path: string;
+  available: boolean;
+}
 
 export interface DashboardControlResponse {
   ok: boolean;
@@ -72,6 +79,12 @@ export interface DashboardControlResponse {
   requested_tracker?: DashboardTracker;
   requested_target?: number | null;
   action?: "replay" | "target";
+}
+
+export interface DashboardModelsResponse {
+  ok: boolean;
+  error?: string;
+  models?: DashboardSupportedModel[];
 }
 
 export interface MetricsSnapshot {
