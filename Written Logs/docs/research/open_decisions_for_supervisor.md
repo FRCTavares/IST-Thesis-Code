@@ -19,5 +19,5 @@ Capture unresolved decisions that affect scope and evidence expectations.
 
 ## Decision Deadlines
 
-- Supervisor decisions needed before implementation freeze for Week 15 deliverables.
+- Supervisor decisions needed before implementation freeze for T-28 deliverables.
 - Any change that re-prioritises appearance over tiny/far robustness requires explicit supervisory approval.
