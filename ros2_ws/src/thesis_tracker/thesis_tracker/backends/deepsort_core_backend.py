@@ -1,4 +1,4 @@
- """DeepSORT backend with matching cascade, Mahalanobis gating, and appearance gallery.
+"""DeepSORT backend with matching cascade, Mahalanobis gating, and appearance gallery.
 
 This follows the structure of nwojke/deep_sort while fitting the local tracker
 backend interface. A real ReID CNN can be plugged in later; until then, the
@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 import math
 from typing import Callable, List
+from pathlib import Path
 
 import numpy as np
 
@@ -356,7 +357,107 @@ def _matching_cascade(
     unmatched_tracks = [idx for idx in track_indices if idx not in matched_tracks]
     return matches, unmatched_tracks, unmatched_detections
 
+class MarsSmall128Extractor:
+    """Optional TensorFlow extractor for DeepSORT mars-small128.pb."""
 
+    def __init__(self, model_path: str, batch_size: int = 32) -> None:
+        self.model_path = str(model_path)
+        self.batch_size = max(1, int(batch_size))
+
+        if not Path(self.model_path).is_file():
+            raise FileNotFoundError(f"ReID model not found: {self.model_path}")
+
+        try:
+            import tensorflow.compat.v1 as tf
+            tf.disable_v2_behavior()
+        except Exception as exc:
+            raise RuntimeError(f"TensorFlow is not available: {exc}") from exc
+
+        self.tf = tf
+        self.graph = tf.Graph()
+
+        with self.graph.as_default():
+            graph_def = tf.GraphDef()
+
+            with tf.gfile.GFile(self.model_path, "rb") as f:
+                graph_def.ParseFromString(f.read())
+
+            tf.import_graph_def(graph_def, name="net")
+
+            self.input_var = self.graph.get_tensor_by_name("net/images:0")
+            self.output_var = self.graph.get_tensor_by_name("net/features:0")
+
+            input_shape = self.input_var.get_shape().as_list()
+            self.image_shape = input_shape[1:4]
+
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+            self.session = tf.Session(graph=self.graph, config=config)
+
+    def _extract_patch(self, image: np.ndarray, bbox: BBox) -> np.ndarray | None:
+        image_h, image_w = image.shape[:2]
+        x1, y1, x2, y2 = bbox
+
+        xi1 = int(max(0, min(image_w, math.floor(float(x1)))))
+        yi1 = int(max(0, min(image_h, math.floor(float(y1)))))
+        xi2 = int(max(0, min(image_w, math.ceil(float(x2)))))
+        yi2 = int(max(0, min(image_h, math.ceil(float(y2)))))
+
+        if xi2 <= xi1 or yi2 <= yi1:
+            return None
+
+        crop = image[yi1:yi2, xi1:xi2]
+        if crop.size == 0:
+            return None
+
+        try:
+            import cv2
+        except Exception as exc:
+            raise RuntimeError(f"OpenCV is required for ReID crop resize: {exc}") from exc
+
+        target_h = int(self.image_shape[0])
+        target_w = int(self.image_shape[1])
+
+        patch = cv2.resize(crop, (target_w, target_h))
+        return patch.astype(np.uint8, copy=False)
+
+    def encode(self, image: np.ndarray, boxes: list[BBox]) -> list[np.ndarray | None]:
+        patches: list[np.ndarray] = []
+        valid_indices: list[int] = []
+
+        for idx, box in enumerate(boxes):
+            patch = self._extract_patch(image, box)
+            if patch is None:
+                continue
+
+            patches.append(patch)
+            valid_indices.append(idx)
+
+        outputs: list[np.ndarray | None] = [None] * len(boxes)
+
+        if not patches:
+            return outputs
+
+        for start in range(0, len(patches), self.batch_size):
+            batch = np.asarray(
+                patches[start:start + self.batch_size],
+                dtype=np.uint8,
+            )
+
+            features = self.session.run(
+                self.output_var,
+                feed_dict={self.input_var: batch},
+            )
+
+            features = np.asarray(features, dtype=np.float32)
+            norms = np.linalg.norm(features, axis=1, keepdims=True)
+            features = features / np.maximum(norms, 1e-12)
+
+            for local_idx, feature in enumerate(features):
+                global_idx = valid_indices[start + local_idx]
+                outputs[global_idx] = feature.astype(np.float32, copy=True)
+
+        return outputs
 class DeepSortBackend:
     """DeepSORT tracker backend using local crop features as the appearance descriptor."""
 
@@ -376,6 +477,9 @@ class DeepSortBackend:
         nn_budget: int = 100,
         max_iou_distance: float | None = None,
         only_position_gating: bool = False,
+        reid_model_path: str = "",
+        reid_batch_size: int = 32,
+        reid_fallback_to_histogram: bool = True,
     ) -> None:
         self.max_age = int(max_age)
         self.n_init = int(n_init)
@@ -406,6 +510,24 @@ class DeepSortBackend:
         self._tracks: list[DeepSortTrack] = []
         self._latest_image: np.ndarray | None = None
         self._latest_image_stamp_ns: int = 0
+
+        self.reid_model_path = str(reid_model_path)
+        self.reid_fallback_to_histogram = bool(reid_fallback_to_histogram)
+        self.reid_extractor: MarsSmall128Extractor | None = None
+
+        if self.reid_model_path:
+            try:
+                self.reid_extractor = MarsSmall128Extractor(
+                    self.reid_model_path,
+                    batch_size=reid_batch_size,
+                )
+                print(f"[DeepSORT] Loaded MARS ReID model: {self.reid_model_path}", flush=True)
+            except Exception as exc:
+                self.reid_extractor = None
+                print(f"[DeepSORT] Failed to load MARS ReID model: {exc}", flush=True)
+
+                if not self.reid_fallback_to_histogram:
+                    raise
 
     def reset(self) -> None:
         self._tracks.clear()
@@ -479,14 +601,43 @@ class DeepSortBackend:
         scores: list[float],
         frame_time_ns: int,
     ) -> list[DeepSortDetection]:
-        return [
-            DeepSortDetection(
-                bbox_xyxy=bbox,
-                score=float(scores[idx]) if idx < len(scores) else 0.0,
-                feature=self._compute_descriptor(bbox, frame_time_ns),
+        features: list[np.ndarray | None]
+
+        can_use_reid = (
+            self.appearance_enabled
+            and self.reid_extractor is not None
+            and self._latest_image is not None
+        )
+
+        if can_use_reid:
+            if self.appearance_max_frame_age_ns > 0 and self._latest_image_stamp_ns > 0:
+                frame_age_ns = abs(int(frame_time_ns) - self._latest_image_stamp_ns)
+
+                if frame_age_ns > self.appearance_max_frame_age_ns:
+                    can_use_reid = False
+
+        if can_use_reid:
+            features = self.reid_extractor.encode(self._latest_image, dets_xyxy)
+        else:
+            features = [None] * len(dets_xyxy)
+
+        detections: list[DeepSortDetection] = []
+
+        for idx, bbox in enumerate(dets_xyxy):
+            feature = features[idx]
+
+            if feature is None and self.reid_fallback_to_histogram:
+                feature = self._compute_descriptor(bbox, frame_time_ns)
+
+            detections.append(
+                DeepSortDetection(
+                    bbox_xyxy=bbox,
+                    score=float(scores[idx]) if idx < len(scores) else 0.0,
+                    feature=feature,
+                )
             )
-            for idx, bbox in enumerate(dets_xyxy)
-        ]
+
+        return detections
 
     def _gate_cost_matrix(
         self,

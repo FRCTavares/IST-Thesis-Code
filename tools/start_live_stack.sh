@@ -593,8 +593,24 @@ fi
 
 # Phase 4: bring up downstream nodes after camera + perception are healthy.
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
-    start_ros_bg tracker ros2 run thesis_tracker tracker_node --ros-args \
+    TRACKER_PYTHONPATH="${PYTHONPATH:-}"
+    TRACKER_VENV_SITE_PACKAGES=""
+
+    if [[ -d "$THESIS_ROOT/.venv/lib" ]]; then
+        TRACKER_VENV_SITE_PACKAGES="$(
+            find "$THESIS_ROOT/.venv/lib" -maxdepth 2 -type d -name site-packages | head -n 1 || true
+        )"
+
+        if [[ -n "${TRACKER_VENV_SITE_PACKAGES:-}" ]]; then
+            TRACKER_PYTHONPATH="${TRACKER_VENV_SITE_PACKAGES}:$TRACKER_PYTHONPATH"
+        fi
+    fi
+
+    start_ros_bg tracker env PYTHONPATH="$TRACKER_PYTHONPATH" ros2 run thesis_tracker tracker_node --ros-args \
         -p tracker_type:=$TRACKER_TYPE \
+        -p reid_model_path:="${REID_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}" \
+        -p reid_batch_size:=32 \
+        -p reid_fallback_to_histogram:=true \
         -p iou_threshold:=$TRACKER_IOU_THRESHOLD \
         -p max_age:=$TRACKER_MAX_AGE \
         -p min_hits:=$TRACKER_MIN_HITS \
@@ -607,6 +623,7 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
         -p profiling_serialize_sample_every_n:=$TRACKER_PROFILE_SERIALIZE_EVERY_N \
         -p profiling_publish_details:=$([[ "$TRACKER_PROFILE_PUBLISH_DETAILS" -eq 1 ]] && echo true || echo false) \
         -p profiling_gc_probe:=$([[ "$TRACKER_PROFILE_GC_PROBE" -eq 1 ]] && echo true || echo false)
+
     sleep 1
     if ! check_proc_alive tracker; then
         stop_stack

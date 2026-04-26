@@ -328,6 +328,11 @@ class TrackerNode(Node):
             only_position_gating = bool(
                 self._declare_param_if_missing("only_position_gating", False)
             )
+            reid_model_path = str(self._declare_param_if_missing("reid_model_path", ""))
+            reid_batch_size = int(self._declare_param_if_missing("reid_batch_size", 32))
+            reid_fallback_to_histogram = bool(
+                self._declare_param_if_missing("reid_fallback_to_histogram", True)
+            )
 
             return DeepSortBackend(
                 max_age=max_age,
@@ -344,6 +349,9 @@ class TrackerNode(Node):
                 appearance_update_alpha=appearance_update_alpha,
                 nn_budget=nn_budget,
                 only_position_gating=only_position_gating,
+                reid_model_path=reid_model_path,
+                reid_batch_size=reid_batch_size,
+                reid_fallback_to_histogram=reid_fallback_to_histogram,
             )
 
         else:
