@@ -231,14 +231,33 @@ class TrackerNode(Node):
             return SetParametersResult(successful=False, reason=str(exc))
 
     def _has_track_subscribers(self) -> bool:
+        """Check /tracks subscribers without crashing during shutdown/reconfiguration."""
         if not self.publish_tracks_requires_subscribers:
             return True
 
-        sub_count = self.pub.get_subscription_count()
-        intra_count = 0
-        if hasattr(self.pub, "get_intra_process_subscription_count"):
-            intra_count = self.pub.get_intra_process_subscription_count()
-        return (sub_count + intra_count) > 0
+        try:
+            if not rclpy.ok():
+                return False
+
+            sub_count = self.pub.get_subscription_count()
+
+            intra_count = 0
+            if hasattr(self.pub, "get_intra_process_subscription_count"):
+                intra_count = self.pub.get_intra_process_subscription_count()
+
+            return (sub_count + intra_count) > 0
+
+        except Exception as exc:
+            msg = str(exc).lower()
+
+            # Expected during process shutdown or runtime graph reconfiguration.
+            if "context is invalid" in msg or "publisher's context is invalid" in msg:
+                return False
+
+            self.get_logger().warn(
+                f"failed to query /tracks subscriber count; suppressing publish this frame: {exc}"
+            )
+            return False
 
     def _on_gc_event(self, phase: str, _info: dict) -> None:
         if phase == "stop":
