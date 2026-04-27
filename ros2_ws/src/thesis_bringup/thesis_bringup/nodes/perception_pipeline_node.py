@@ -807,7 +807,7 @@ class PerceptionPipelineNode(Node):
         self.declare_parameter("num_workers", 2)
 
         thesis_root = os.getenv("THESIS_ROOT", "/home/francisco/Desktop/Thesis-Code")
-        default_hef = f"{thesis_root}/infer_service/resources/hefs/yolov6n_hailo8.hef"
+        default_hef = f"{thesis_root}/models/hef/yolov6n.hef"
         self.declare_parameter("hailo_fps", 30)
         self.declare_parameter("hailo_hef_path", default_hef)
         self.declare_parameter(

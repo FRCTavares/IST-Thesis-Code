@@ -40,7 +40,7 @@ class SupportedModel:
 
 
 SUPPORTED_MODELS: tuple[SupportedModel, ...] = (
-    SupportedModel("yolov6n", "yolov6n_hailo8.hef"),
+    SupportedModel("yolov6n", "yolov6n.hef"),
     SupportedModel("yolov8s", "yolov8s.hef"),
     SupportedModel("yolov8m", "yolov8m.hef"),
     SupportedModel("yolov8x", "yolov8x.hef"),
@@ -85,7 +85,7 @@ class DashboardBridgeNode(Node):
         thesis_root = os.getenv("THESIS_ROOT", "/home/francisco/Desktop/Thesis-Code")
         self.declare_parameter(
             "single_process_hef_dir",
-            f"{thesis_root}/infer_service/resources/hefs",
+            f"{thesis_root}/models/hef",
         )
         self.declare_parameter("tracker_node_name", "tracker_node")
 

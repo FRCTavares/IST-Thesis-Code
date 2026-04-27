@@ -1,4 +1,9 @@
-# Daily Plan - 2026-04-27 (Day 27) - Weekly Kickoff And Priority Lock
+# Daily Plan - 2026-04-27 (Day 27) - 
+
+
+I deteled the infer_service folder by mistake, and I cant get the content back. Its wird because the stack says it started and is running successfully but there are no detections or camera image.
+The .hef models were deleted so I downloaded new ones and put them on the new hef folder, under models fodler.
+
 
 ## Context Carry-Over
 
