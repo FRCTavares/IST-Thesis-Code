@@ -78,9 +78,9 @@ deprecated/hailo-rpi5-examples/
 hailo-rpi5-examples/
 
 # Inference runtime outputs
-infer_service/gstshark_*/
-infer_service/opt/
-infer_service/resources/
+# infer_service/gstshark_*/
+# infer_service/opt/
+# infer_service/resources/
 models/reid/*.pb
 
 # Birds experiment workspace (local runs, logs, benchmarks)
@@ -88,3 +88,12 @@ deprecated/Birds
 
 # Local report outputs
 reports/compare/tmp_*/
+# Live benchmark raw outputs
+reports/timing/live_matrix_*/
+!reports/timing/live_matrix_*/summary.csv
+!reports/timing/live_matrix_*/summary_ranked.md
+
+# Live benchmark raw outputs
+reports/timing/live_matrix_*/
+!reports/timing/live_matrix_*/summary.csv
+!reports/timing/live_matrix_*/summary_ranked.md
