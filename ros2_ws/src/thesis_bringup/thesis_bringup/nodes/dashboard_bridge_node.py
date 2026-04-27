@@ -40,12 +40,20 @@ class SupportedModel:
 
 
 SUPPORTED_MODELS: tuple[SupportedModel, ...] = (
+    SupportedModel("yolov5m", "yolov5m.hef"),
     SupportedModel("yolov6n", "yolov6n.hef"),
+    SupportedModel("yolov8n", "yolov8n.hef"),
     SupportedModel("yolov8s", "yolov8s.hef"),
     SupportedModel("yolov8m", "yolov8m.hef"),
+    SupportedModel("yolov8l", "yolov8l.hef"),
     SupportedModel("yolov8x", "yolov8x.hef"),
+    SupportedModel("yolov10n", "yolov10n.hef"),
+    SupportedModel("yolov10s", "yolov10s.hef"),
     SupportedModel("yolov10b", "yolov10b.hef"),
     SupportedModel("yolov10x", "yolov10x.hef"),
+    SupportedModel("yolov11n", "yolov11n.hef"),
+    SupportedModel("yolov11s", "yolov11s.hef"),
+    SupportedModel("yolov11m", "yolov11m.hef"),
     SupportedModel("yolov11l", "yolov11l.hef"),
     SupportedModel("yolov11x", "yolov11x.hef"),
 )
@@ -129,7 +137,7 @@ class DashboardBridgeNode(Node):
 
         self._supported_models = SUPPORTED_MODELS
         self._model_to_hef = {model.key: model.hef_file for model in self._supported_models}
-        self._supported_trackers = {"sort", "ocsort", "bytetrack"}
+        self._supported_trackers = {"sort", "ocsort", "bytetrack", "deepsort"}
         self._target_focus_id: int | None = None
 
         self._state_lock = threading.Lock()

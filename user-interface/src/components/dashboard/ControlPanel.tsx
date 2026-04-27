@@ -35,7 +35,7 @@ export function ControlPanel({
   isLinkUp = true,
   currentResolutionLabel,
 }: ControlPanelProps) {
-  const trackers: DashboardTracker[] = ["sort", "ocsort", "bytetrack"];
+  const trackers: DashboardTracker[] = ["sort", "ocsort", "bytetrack", "deepsort"];
   const isBusy = isModelSwitching || isTrackerSwitching;
 
   return (

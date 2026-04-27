@@ -13,7 +13,7 @@ interface ModelTrackerSelectorProps {
     disabled?: boolean;
 }
 
-const TRACKERS: DashboardTracker[] = ["sort", "ocsort", "bytetrack"];
+const TRACKERS: DashboardTracker[] = ["sort", "ocsort", "bytetrack", "deepsort"];
 
 export function ModelTrackerSelector({
     activeModel,

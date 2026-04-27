@@ -63,7 +63,7 @@ export interface DashboardLogEntry {
 }
 
 export type DashboardModel = string;
-export type DashboardTracker = "sort" | "ocsort" | "bytetrack";
+export type DashboardTracker = "sort" | "ocsort" | "bytetrack" | "deepsort";
 
 export interface DashboardSupportedModel {
   key: DashboardModel;

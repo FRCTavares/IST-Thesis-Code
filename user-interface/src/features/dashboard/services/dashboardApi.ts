@@ -1,7 +1,7 @@
 import { dashboardConfig } from "@/services/config";
 import type { DashboardControlResponse, DashboardModel, DashboardModelsResponse, DashboardTracker } from "@/types/dashboard";
 
-const VALID_TRACKERS = new Set<DashboardTracker>(["sort", "ocsort", "bytetrack"]);
+const VALID_TRACKERS = new Set<DashboardTracker>(["sort", "ocsort", "bytetrack", "deepsort"]);
 
 export async function requestModelSwitch(model: DashboardModel): Promise<DashboardControlResponse> {
   if (!model.trim()) {
