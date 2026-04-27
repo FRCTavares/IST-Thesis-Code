@@ -40,9 +40,22 @@ export async function fetchSupportedModels(): Promise<DashboardModelsResponse> {
     return {
       ok: true,
       models: [
-        { key: "yolov6n", hef_file: "yolov6n_hailo8.hef", hef_path: "", available: true },
+        { key: "yolov5m", hef_file: "yolov5m.hef", hef_path: "", available: true },
+        { key: "yolov6n", hef_file: "yolov6n.hef", hef_path: "", available: true },
+        { key: "yolov8n", hef_file: "yolov8n.hef", hef_path: "", available: true },
         { key: "yolov8s", hef_file: "yolov8s.hef", hef_path: "", available: true },
         { key: "yolov8m", hef_file: "yolov8m.hef", hef_path: "", available: true },
+        { key: "yolov8l", hef_file: "yolov8l.hef", hef_path: "", available: true },
+        { key: "yolov8x", hef_file: "yolov8x.hef", hef_path: "", available: true },
+        { key: "yolov10n", hef_file: "yolov10n.hef", hef_path: "", available: true },
+        { key: "yolov10s", hef_file: "yolov10s.hef", hef_path: "", available: true },
+        { key: "yolov10b", hef_file: "yolov10b.hef", hef_path: "", available: true },
+        { key: "yolov10x", hef_file: "yolov10x.hef", hef_path: "", available: true },
+        { key: "yolov11n", hef_file: "yolov11n.hef", hef_path: "", available: true },
+        { key: "yolov11s", hef_file: "yolov11s.hef", hef_path: "", available: true },
+        { key: "yolov11m", hef_file: "yolov11m.hef", hef_path: "", available: true },
+        { key: "yolov11l", hef_file: "yolov11l.hef", hef_path: "", available: true },
+        { key: "yolov11x", hef_file: "yolov11x.hef", hef_path: "", available: true },
       ],
     };
   }

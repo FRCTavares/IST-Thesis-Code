@@ -42,7 +42,7 @@ export function StatusPanel({
   telemetry,
   snapshot: _snapshot,
   activeModel = "yolov6n",
-  availableModels = ["yolov6n", "yolov8s", "yolov8m"],
+  availableModels = ["yolov6n"],
   activeTracker = "sort",
   onModelSwitch,
   onTrackerSwitch,
@@ -101,6 +101,8 @@ export function StatusPanel({
               activeTracker={activeTracker}
               onModelSwitch={onModelSwitch}
               onTrackerSwitch={onTrackerSwitch}
+              tracks={telemetry?.tracks ?? []}
+              activeTargetId={telemetry?.target && telemetry.target > 0 ? telemetry.target : null}
               isLoading={isModelSwitching}
               isTrackerLoading={isTrackerSwitching}
               disabled={!isHealthy}
