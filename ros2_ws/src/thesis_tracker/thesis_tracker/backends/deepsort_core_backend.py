@@ -465,69 +465,41 @@ class DeepSortBackend:
         self,
         max_age: int = 30,
         n_init: int = 3,
-        match_thresh: float = 0.25,
-        centre_gate: float = 200.0,
-        appearance_enabled: bool = True,
-        appearance_max_frame_age_ms: float = 120.0,
-        appearance_hist_bins: int = 8,
-        appearance_weight: float = 0.0,
-        appearance_max_distance: float = 0.2,
-        appearance_min_crop_size: int = 12,
-        appearance_update_alpha: float = 0.2,
+        max_cosine_distance: float = 0.2,
         nn_budget: int = 100,
-        max_iou_distance: float | None = None,
+        max_iou_distance: float = 0.7,
         only_position_gating: bool = False,
-        reid_model_path: str = "",
+        reid_model_path: str = "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb",
         reid_batch_size: int = 32,
-        reid_fallback_to_histogram: bool = True,
     ) -> None:
         self.max_age = int(max_age)
         self.n_init = int(n_init)
-        self.match_thresh = float(match_thresh)
-        self.max_iou_distance = (
-            float(max_iou_distance)
-            if max_iou_distance is not None
-            else float(np.clip(1.0 - self.match_thresh, 0.0, 1.0))
-        )
-        self.centre_gate = float(centre_gate)
-        self.appearance_enabled = bool(appearance_enabled)
-        self.appearance_max_frame_age_ns = int(max(0.0, appearance_max_frame_age_ms) * 1e6)
-        self.appearance_hist_bins = max(2, int(appearance_hist_bins))
-        self.appearance_min_crop_size = max(1, int(appearance_min_crop_size))
-        self.appearance_update_alpha = float(np.clip(appearance_update_alpha, 0.0, 1.0))
+        self.max_iou_distance = float(max_iou_distance)
         self.only_position_gating = bool(only_position_gating)
 
-        # DeepSORT's published setting uses lambda=0 for substantial camera motion.
-        # Keep the parameter for experiments, but default to appearance-only cost
-        # with Mahalanobis gating and IoU fallback.
-        self.appearance_weight = float(np.clip(appearance_weight, 0.0, 1.0))
         self.metric = NearestNeighborCosineMetric(
-            matching_threshold=float(appearance_max_distance),
+            matching_threshold=float(max_cosine_distance),
             budget=int(nn_budget),
         )
+
         self.kf = DeepSortKalmanFilter()
         self._next_id = 1
         self._tracks: list[DeepSortTrack] = []
         self._latest_image: np.ndarray | None = None
         self._latest_image_stamp_ns: int = 0
 
+        if not reid_model_path:
+            raise ValueError(
+                "Faithful DeepSORT requires reid_model_path pointing to mars-small128.pb"
+            )
+
         self.reid_model_path = str(reid_model_path)
-        self.reid_fallback_to_histogram = bool(reid_fallback_to_histogram)
-        self.reid_extractor: MarsSmall128Extractor | None = None
+        self.reid_extractor = MarsSmall128Extractor(
+            self.reid_model_path,
+            batch_size=reid_batch_size,
+        )
 
-        if self.reid_model_path:
-            try:
-                self.reid_extractor = MarsSmall128Extractor(
-                    self.reid_model_path,
-                    batch_size=reid_batch_size,
-                )
-                print(f"[DeepSORT] Loaded MARS ReID model: {self.reid_model_path}", flush=True)
-            except Exception as exc:
-                self.reid_extractor = None
-                print(f"[DeepSORT] Failed to load MARS ReID model: {exc}", flush=True)
-
-                if not self.reid_fallback_to_histogram:
-                    raise
+        print(f"[DeepSORT] Loaded MARS ReID model: {self.reid_model_path}", flush=True)
 
     def reset(self) -> None:
         self._tracks.clear()
@@ -545,6 +517,7 @@ class DeepSortBackend:
         image_width = int(image_msg.width)
         image_step = int(image_msg.step)
         expected_step = image_width * 3
+
         if image_height <= 0 or image_width <= 0 or image_step != expected_step:
             return
 
@@ -553,47 +526,24 @@ class DeepSortBackend:
             return
 
         try:
-            img = np.frombuffer(image_msg.data, dtype=np.uint8).reshape(image_height, image_width, 3)
+            img = np.frombuffer(image_msg.data, dtype=np.uint8).reshape(
+                image_height,
+                image_width,
+                3,
+            )
         except Exception:
             return
 
+        # MARS model path follows the original OpenCV-based DeepSORT pipeline.
+        # If ROS gives RGB, convert to BGR before crop extraction.
+        if image_encoding == "rgb8":
+            img = img[:, :, ::-1]
+
         self._latest_image = np.ascontiguousarray(img.copy())
-        self._latest_image_stamp_ns = int(image_msg.header.stamp.sec) * 1_000_000_000 + int(
-            image_msg.header.stamp.nanosec
+        self._latest_image_stamp_ns = (
+            int(image_msg.header.stamp.sec) * 1_000_000_000
+            + int(image_msg.header.stamp.nanosec)
         )
-
-    def _compute_descriptor(self, bbox: BBox, frame_time_ns: int) -> np.ndarray | None:
-        if not self.appearance_enabled or self._latest_image is None:
-            return None
-
-        if self.appearance_max_frame_age_ns > 0 and self._latest_image_stamp_ns > 0:
-            if abs(int(frame_time_ns) - self._latest_image_stamp_ns) > self.appearance_max_frame_age_ns:
-                return None
-
-        image = self._latest_image
-        image_h, image_w = image.shape[:2]
-        x1, y1, x2, y2 = bbox
-        xi1 = int(max(0, min(image_w, math.floor(float(x1)))))
-        yi1 = int(max(0, min(image_h, math.floor(float(y1)))))
-        xi2 = int(max(0, min(image_w, math.ceil(float(x2)))))
-        yi2 = int(max(0, min(image_h, math.ceil(float(y2)))))
-        if xi2 - xi1 < self.appearance_min_crop_size or yi2 - yi1 < self.appearance_min_crop_size:
-            return None
-
-        crop = image[yi1:yi2, xi1:xi2]
-        if crop.size == 0:
-            return None
-
-        hist_parts: list[np.ndarray] = []
-        for channel in range(3):
-            hist, _ = np.histogram(crop[:, :, channel], bins=self.appearance_hist_bins, range=(0, 256))
-            hist_parts.append(hist.astype(np.float32, copy=False))
-
-        descriptor = np.concatenate(hist_parts, axis=0).astype(np.float32, copy=False)
-        norm = float(np.linalg.norm(descriptor))
-        if norm <= 0.0:
-            return None
-        return descriptor / norm
 
     def _make_detections(
         self,
@@ -601,33 +551,22 @@ class DeepSortBackend:
         scores: list[float],
         frame_time_ns: int,
     ) -> list[DeepSortDetection]:
-        features: list[np.ndarray | None]
+        del frame_time_ns
 
-        can_use_reid = (
-            self.appearance_enabled
-            and self.reid_extractor is not None
-            and self._latest_image is not None
-        )
+        if self._latest_image is None:
+            return []
 
-        if can_use_reid:
-            if self.appearance_max_frame_age_ns > 0 and self._latest_image_stamp_ns > 0:
-                frame_age_ns = abs(int(frame_time_ns) - self._latest_image_stamp_ns)
-
-                if frame_age_ns > self.appearance_max_frame_age_ns:
-                    can_use_reid = False
-
-        if can_use_reid:
-            features = self.reid_extractor.encode(self._latest_image, dets_xyxy)
-        else:
-            features = [None] * len(dets_xyxy)
+        features = self.reid_extractor.encode(self._latest_image, dets_xyxy)
 
         detections: list[DeepSortDetection] = []
 
         for idx, bbox in enumerate(dets_xyxy):
             feature = features[idx]
 
-            if feature is None and self.reid_fallback_to_histogram:
-                feature = self._compute_descriptor(bbox, frame_time_ns)
+            # Faithful DeepSORT requires a valid deep appearance feature.
+            # If the crop is invalid, skip the detection.
+            if feature is None:
+                continue
 
             detections.append(
                 DeepSortDetection(
@@ -669,28 +608,26 @@ class DeepSortBackend:
         detection_indices: list[int],
     ) -> np.ndarray:
         del tracks
-        features = [
-            detections[i].feature for i in detection_indices
-            if detections[i].feature is not None
-        ]
-        if len(features) != len(detection_indices):
-            return np.full((len(track_indices), len(detection_indices)), INFTY_COST, dtype=np.float32)
 
-        targets = np.asarray([self._tracks[i].track_id for i in track_indices], dtype=np.int32)
-        appearance_cost = self.metric.distance(np.asarray(features, dtype=np.float32), targets)
+        features = np.asarray(
+            [detections[i].feature for i in detection_indices],
+            dtype=np.float32,
+        )
 
-        if self.appearance_weight > 0.0:
-            track_boxes = np.asarray([self._tracks[i].to_xyxy() for i in track_indices], dtype=np.float32)
-            det_boxes = np.asarray([detections[i].bbox_xyxy for i in detection_indices], dtype=np.float32)
-            geom_cost = 1.0 - sort_tracker.iou_batch(track_boxes, det_boxes)
-            cost = ((1.0 - self.appearance_weight) * appearance_cost) + (
-                self.appearance_weight * geom_cost
-            )
-        else:
-            cost = appearance_cost
+        targets = np.asarray(
+            [self._tracks[i].track_id for i in track_indices],
+            dtype=np.int32,
+        )
 
-        return self._gate_cost_matrix(cost, detections, track_indices, detection_indices)
+        cost = self.metric.distance(features, targets)
 
+        return self._gate_cost_matrix(
+            cost,
+            detections,
+            track_indices,
+            detection_indices,
+        )
+    
     def _iou_cost(
         self,
         tracks: list[DeepSortTrack],

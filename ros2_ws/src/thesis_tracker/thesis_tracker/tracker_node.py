@@ -285,92 +285,86 @@ class TrackerNode(Node):
             )
         
         elif tracker_type == "ocsort":
-            iou_threshold = float(self._declare_param_if_missing("iou_threshold", 0.18))
-            max_age = int(self._declare_param_if_missing("max_age", 4))
+            # Reference-aligned OC-SORT defaults.
+            # For live control, override max_age/min_hits from launcher if needed.
+            iou_threshold = float(self._declare_param_if_missing("iou_threshold", 0.3))
+            max_age = int(self._declare_param_if_missing("max_age", 30))
             min_hits = int(self._declare_param_if_missing("min_hits", 3))
-            centre_gate = float(self._declare_param_if_missing("centre_gate", 200.0))
+            det_thresh = float(self._declare_param_if_missing("det_thresh", 0.35))
             delta_t = int(self._declare_param_if_missing("delta_t", 3))
-            asso_threshold = float(self._declare_param_if_missing("asso_threshold", 0.1))
-            
+            inertia = float(self._declare_param_if_missing("inertia", 0.2))
+            use_byte = bool(self._declare_param_if_missing("use_byte", False))
+
             return OCSortBackend(
                 iou_threshold=iou_threshold,
                 max_age=max_age,
                 min_hits=min_hits,
-                centre_gate=centre_gate,
+                det_thresh=det_thresh,
                 delta_t=delta_t,
-                asso_threshold=asso_threshold,
+                inertia=inertia,
+                use_byte=use_byte,
             )
         
         elif tracker_type == "bytetrack":
             track_thresh = float(self._declare_param_if_missing("track_thresh", 0.5))
             match_thresh = float(self._declare_param_if_missing("match_thresh", 0.8))
             track_buffer = int(self._declare_param_if_missing("track_buffer", 30))
-            det_thresh = float(self._declare_param_if_missing("det_thresh", 0.2))
-            second_match_thresh = float(self._declare_param_if_missing("second_match_thresh", 0.5))
-            
+            frame_rate = int(self._declare_param_if_missing("frame_rate", 30))
+            low_thresh = float(self._declare_param_if_missing("low_thresh", 0.1))
+            new_track_thresh = float(
+                self._declare_param_if_missing("new_track_thresh", track_thresh + 0.1)
+            )
+            second_match_thresh = float(
+                self._declare_param_if_missing("second_match_thresh", 0.5)
+            )
+            unconfirmed_match_thresh = float(
+                self._declare_param_if_missing("unconfirmed_match_thresh", 0.7)
+            )
+            fuse_scores = bool(self._declare_param_if_missing("fuse_scores", True))
+            mot20 = bool(self._declare_param_if_missing("mot20", False))
+
             return ByteTrackBackend(
                 track_thresh=track_thresh,
                 match_thresh=match_thresh,
                 track_buffer=track_buffer,
-                det_thresh=det_thresh,
+                frame_rate=frame_rate,
+                low_thresh=low_thresh,
+                new_track_thresh=new_track_thresh,
                 second_match_thresh=second_match_thresh,
+                unconfirmed_match_thresh=unconfirmed_match_thresh,
+                fuse_scores=fuse_scores,
+                mot20=mot20,
             )
 
         elif tracker_type == "deepsort":
             max_age = int(self._declare_param_if_missing("max_age", 30))
             n_init = int(self._declare_param_if_missing("n_init", 3))
-            match_thresh = float(self._declare_param_if_missing("match_thresh", 0.25))
-            max_iou_distance = float(
-                self._declare_param_if_missing("max_iou_distance", 1.0 - match_thresh)
-            )
-            centre_gate = float(self._declare_param_if_missing("centre_gate", 200.0))
-            appearance_enabled = bool(self._declare_param_if_missing("appearance_enabled", True))
-            appearance_max_frame_age_ms = float(
-                self._declare_param_if_missing("appearance_max_frame_age_ms", 120.0)
-            )
-            appearance_hist_bins = int(self._declare_param_if_missing("appearance_hist_bins", 8))
-            appearance_weight = float(self._declare_param_if_missing("appearance_weight", 0.0))
             max_cosine_distance = float(
                 self._declare_param_if_missing("max_cosine_distance", 0.2)
             )
-            # Backward-compatible alias from the earlier histogram prototype.
-            appearance_max_distance = float(
-                self._declare_param_if_missing("appearance_max_distance", max_cosine_distance)
-            )
-            appearance_min_crop_size = int(
-                self._declare_param_if_missing("appearance_min_crop_size", 12)
-            )
-            appearance_update_alpha = float(
-                self._declare_param_if_missing("appearance_update_alpha", 0.2)
-            )
             nn_budget = int(self._declare_param_if_missing("nn_budget", 100))
+            max_iou_distance = float(
+                self._declare_param_if_missing("max_iou_distance", 0.7)
+            )
             only_position_gating = bool(
                 self._declare_param_if_missing("only_position_gating", False)
             )
-            reid_model_path = str(self._declare_param_if_missing("reid_model_path", ""))
-            reid_batch_size = int(self._declare_param_if_missing("reid_batch_size", 32))
-            reid_fallback_to_histogram = bool(
-                self._declare_param_if_missing("reid_fallback_to_histogram", True)
+            reid_model_path = str(
+                self._declare_param_if_missing("reid_model_path", "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb")
+            )
+            reid_batch_size = int(
+                self._declare_param_if_missing("reid_batch_size", 32)
             )
 
             return DeepSortBackend(
                 max_age=max_age,
                 n_init=n_init,
-                match_thresh=match_thresh,
-                max_iou_distance=max_iou_distance,
-                centre_gate=centre_gate,
-                appearance_enabled=appearance_enabled,
-                appearance_max_frame_age_ms=appearance_max_frame_age_ms,
-                appearance_hist_bins=appearance_hist_bins,
-                appearance_weight=appearance_weight,
-                appearance_max_distance=appearance_max_distance,
-                appearance_min_crop_size=appearance_min_crop_size,
-                appearance_update_alpha=appearance_update_alpha,
+                max_cosine_distance=max_cosine_distance,
                 nn_budget=nn_budget,
+                max_iou_distance=max_iou_distance,
                 only_position_gating=only_position_gating,
                 reid_model_path=reid_model_path,
                 reid_batch_size=reid_batch_size,
-                reid_fallback_to_histogram=reid_fallback_to_histogram,
             )
 
         else:

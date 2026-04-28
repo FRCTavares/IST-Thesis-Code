@@ -33,6 +33,7 @@ fi
 CONTAINER_NAME="${CONTAINER_NAME:-pi-ai-kit-ubuntu-hailo-ubuntu-pi-1}"
 PI_IP="${PI_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
 ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
+REID_MODEL_PATH="${REID_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}"
 
 if [[ -z "${PI_IP// }" ]]; then
     PI_IP="127.0.0.1"
@@ -124,7 +125,11 @@ print_startup_success_summary() {
     fi
 
     if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
-        tracker_summary="enabled type=${TRACKER_TYPE} iou=${TRACKER_IOU_THRESHOLD} max_age=${TRACKER_MAX_AGE} min_hits=${TRACKER_MIN_HITS} centre_gate=${TRACKER_CENTRE_GATE}"
+        if [[ "$TRACKER_TYPE" == "deepsort" ]]; then
+            tracker_summary="enabled type=${TRACKER_TYPE} max_age=${TRACKER_MAX_AGE} min_hits=${TRACKER_MIN_HITS} reid_model=${REID_MODEL_PATH}"
+        else
+            tracker_summary="enabled type=${TRACKER_TYPE} iou=${TRACKER_IOU_THRESHOLD} max_age=${TRACKER_MAX_AGE} min_hits=${TRACKER_MIN_HITS} centre_gate=${TRACKER_CENTRE_GATE}"
+        fi    
     else
         tracker_summary="disabled"
     fi
@@ -201,6 +206,12 @@ source "$THESIS_ROOT/tools/lib/live_defaults.sh"
 
 source "$THESIS_ROOT/tools/lib/live_cli.sh"
 parse_and_validate_live_stack_args "$@"
+
+if [[ "${TRACKER_TYPE:-}" == "deepsort" && ! -f "$REID_MODEL_PATH" ]]; then
+    echo "[error] DeepSORT ReID model not found: $REID_MODEL_PATH"
+    echo "[hint] set REID_MODEL_PATH=/path/to/mars-small128.pb"
+    exit 1
+fi
 
 # Readiness helpers used by startup phases.
 wait_for_port() {
@@ -377,7 +388,11 @@ log_info "cfg: camera_capture=${CAMERA_WIDTH}x${CAMERA_HEIGHT} camera_publish=${
 log_info "cfg: camera_trigger_control=${CAMERA_APPLY_TRIGGER_CONTROL_BOOL} camera_rate_controls=${CAMERA_APPLY_RATE_CONTROLS_BOOL} preflight_stream_probe=${CAMERA_PREFLIGHT_STREAM_PROBE_BOOL} sensor_max_fps=${CAMERA_SENSOR_MAX_FPS} ae_upper=${CAMERA_SENSOR_AE_UPPER} ae_max=${CAMERA_SENSOR_AE_MAX} exposure_mode=${CAMERA_SENSOR_EXPOSURE_MODE}"
 log_info "nodes: tracker=$tracker_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
-    log_info "tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL tracks_require_subscribers=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL timing_topic=$TRACKER_PUBLISH_TIMING_BOOL profile=$TRACKER_PROFILE_ENABLED gc_probe=$TRACKER_PROFILE_GC_PROBE iou=$TRACKER_IOU_THRESHOLD max_age=$TRACKER_MAX_AGE min_hits=$TRACKER_MIN_HITS centre_gate=$TRACKER_CENTRE_GATE"
+    if [[ "$TRACKER_TYPE" == "deepsort" ]]; then
+        log_info "tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL tracks_require_subscribers=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL timing_topic=$TRACKER_PUBLISH_TIMING_BOOL profile=$TRACKER_PROFILE_ENABLED gc_probe=$TRACKER_PROFILE_GC_PROBE max_age=$TRACKER_MAX_AGE min_hits=$TRACKER_MIN_HITS reid_model=$REID_MODEL_PATH"
+    else
+        log_info "tracker: type=$TRACKER_TYPE tracks=$TRACKER_PUBLISH_TRACKS_BOOL tracks_require_subscribers=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL timing_topic=$TRACKER_PUBLISH_TIMING_BOOL profile=$TRACKER_PROFILE_ENABLED gc_probe=$TRACKER_PROFILE_GC_PROBE iou=$TRACKER_IOU_THRESHOLD max_age=$TRACKER_MAX_AGE min_hits=$TRACKER_MIN_HITS centre_gate=$TRACKER_CENTRE_GATE"
+    fi
 fi
 log_step "preflight checks"
 if ! check_stuck_camera_processes; then
@@ -686,15 +701,22 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
         )"
 
         if [[ -n "${TRACKER_VENV_SITE_PACKAGES:-}" ]]; then
-            TRACKER_PYTHONPATH="${TRACKER_VENV_SITE_PACKAGES}:$TRACKER_PYTHONPATH"
+            if [[ -n "$TRACKER_PYTHONPATH" ]]; then
+                TRACKER_PYTHONPATH="${TRACKER_VENV_SITE_PACKAGES}:$TRACKER_PYTHONPATH"
+            else
+                TRACKER_PYTHONPATH="$TRACKER_VENV_SITE_PACKAGES"
+            fi
         fi
     fi
 
     start_ros_bg tracker env PYTHONPATH="$TRACKER_PYTHONPATH" ros2 run thesis_tracker tracker_node --ros-args \
         -p tracker_type:=$TRACKER_TYPE \
-        -p reid_model_path:="${REID_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}" \
+        -p reid_model_path:="$REID_MODEL_PATH" \
         -p reid_batch_size:=32 \
-        -p reid_fallback_to_histogram:=true \
+        -p max_cosine_distance:=0.2 \
+        -p max_iou_distance:=0.7 \
+        -p nn_budget:=100 \
+        -p only_position_gating:=false \
         -p iou_threshold:=$TRACKER_IOU_THRESHOLD \
         -p max_age:=$TRACKER_MAX_AGE \
         -p min_hits:=$TRACKER_MIN_HITS \
