@@ -256,7 +256,7 @@ def main() -> int:
 
                 cmd = [
                     sys.executable,
-                    "tools/collect_live_timing_stats.py",
+                    "tools/analysis/collect_live_timing_stats.py",
                     "--duration",
                     str(args.duration),
                     "--run-label",

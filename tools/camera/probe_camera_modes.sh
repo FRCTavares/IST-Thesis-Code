@@ -20,7 +20,7 @@ MODES=(
 
 usage() {
   cat <<'EOF'
-Usage: tools/probe_camera_modes.sh [options]
+Usage: tools/camera/probe_camera_modes.sh [options]
 
 Options:
   --device <path>             Video device path (default: /dev/video0)
@@ -31,9 +31,9 @@ Options:
   -h, --help                  Show this help
 
 Examples:
-  tools/probe_camera_modes.sh
-  tools/probe_camera_modes.sh --device /dev/video24 --count 120
-  tools/probe_camera_modes.sh --mode 1280x720:UYVY --mode 640x480:UYVY
+  tools/camera/probe_camera_modes.sh
+  tools/camera/probe_camera_modes.sh --device /dev/video24 --count 120
+  tools/camera/probe_camera_modes.sh --mode 1280x720:UYVY --mode 640x480:UYVY
 EOF
 }
 

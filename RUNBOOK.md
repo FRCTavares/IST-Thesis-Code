@@ -5,23 +5,6 @@ All commands run from `$THESIS_ROOT` unless noted.
 
 Use this file as the command source of truth.
 
-## Fast path (daily operation)
-
-```bash
-export THESIS_ROOT="$HOME/Desktop/Thesis-Code"
-export ROS_DOMAIN_ID=42
-
-cd "$THESIS_ROOT/ros2_ws"
-source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install
-
-cd "$THESIS_ROOT"
-./tools/start_live_stack.sh --profile daily
-./tools/start_ui_stack.sh
-```
-
-If startup fails, inspect `ros2_ws/log/live_stack/latest/` first before manual restarts.
-
 ## Current runtime defaults
 
 From `tools/start_live_stack.sh`:
@@ -35,6 +18,7 @@ From `tools/start_live_stack.sh`:
 - Control node: enabled by default
 - MAVROS mirroring: disabled by default
 - Dashboard bridge + web video: enabled by default
+- Video bag recording: disabled by default, enabled with `--record-video`
 - Legacy detector port `:5556`: expected only in `--perception-mode legacy`
 
 ## Scope and assumptions
@@ -44,105 +28,16 @@ From `tools/start_live_stack.sh`:
 - ROS 2 distro: Jazzy.
 - Workspace root: `$HOME/Desktop/Thesis-Code`.
 
-## Success checks (required)
+## 1) One-time shell setup
 
-This runbook is complete when you can do all three:
-
-1. Start live stack end-to-end on target hardware.
-2. Run replay on recorded bags.
-3. Run timing/tracking analyses and produce output reports.
-
-## 0) One-time shell setup
+In ~/.bashrc set:
 
 ```bash
 export THESIS_ROOT="$HOME/Desktop/Thesis-Code"
 export ROS_DOMAIN_ID=42
 ```
 
-Optional (recommended in ~/.bashrc):
-
-```bash
-export THESIS_ROOT="$HOME/Desktop/Thesis-Code"
-export ROS_DOMAIN_ID=42
-```
-
-## 0.1) First-run prerequisites
-
-### Required tools (all platforms)
-
-- `bash`, `python3`, `pip`, `git`
-- `npm` (UI)
-- `ros2` + `colcon` (for ROS workflows)
-- `docker` + `docker compose` (for Hailo inference service path)
-
-Quick sanity checks:
-
-```bash
-command -v python3
-command -v npm
-command -v ros2
-command -v colcon
-command -v docker
-docker compose version
-```
-
-### Mandatory external dependency (RPi5 + Hailo path)
-
-This repository expects the Hailo compose environment at `$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu`.
-`tools/start_live_stack.sh` still supports `~/pi-ai-kit-ubuntu` as compatibility fallback on older hosts.
-
-```bash
-git clone https://github.com/hailo-ai/pi-ai-kit-ubuntu.git "$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
-cd "$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
-docker compose -f docker-compose.yaml pull
-```
-
-If your team uses a fork, clone that fork into the same path.
-
-### Build ROS workspace once
-
-```bash
-cd "$THESIS_ROOT/ros2_ws"
-source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install
-```
-
-Generic Linux fallback note:
-
-- If no Hailo hardware is available, skip live-stack sections and use section 5 (replay/analysis) plus UI mock mode via `tools/start_ui_stack.sh --mode mock`.
-
-## 1) Keep all ROS/colcon logs inside ros2_ws
-
-Use this once per machine/user to force colcon artifacts under ros2_ws:
-
-```bash
-export WS=$THESIS_ROOT/ros2_ws
-mkdir -p "${COLCON_HOME:-$HOME/.colcon}"
-cat > "${COLCON_HOME:-$HOME/.colcon}/defaults.yaml" <<EOF
-build:
-  base-paths:
-    - $WS/src
-  build-base: $WS/build
-  install-base: $WS/install
-log-base: $WS/log
-EOF
-```
-
-For runtime ROS logs in manual sessions, set:
-
-```bash
-export ROS_LOG_DIR=$THESIS_ROOT/ros2_ws/log/runtime/manual_$(date +%Y-%m-%d__%H-%M-%S)
-mkdir -p "$ROS_LOG_DIR"
-```
-
-Notes:
-
-- tools/start_live_stack.sh now automatically forces ROS_LOG_DIR to `ros2_ws/log/runtime/{run-id}`.
-- tools/start_live_stack.sh run logs are under `ros2_ws/log/live_stack/{run-id}`.
-- tools/start_ui_stack.sh run logs are under `ros2_ws/log/ui_stack/{run-id}`.
-- If you see logs in ~/.ros/log during live stack startup, verify you started with tools/start_live_stack.sh and not a manual command in another shell.
-
-## 2) Live stack (recommended)
+## 2) Live stack
 
 ```bash
 cd $THESIS_ROOT
@@ -165,19 +60,23 @@ Default:
 
 Useful flags:
 
-- Disable control: ./tools/start_live_stack.sh --no-control
-- Enable MAVROS mirror: ./tools/start_live_stack.sh --control-mavros
-- Camera + inference only: ./tools/start_live_stack.sh --no-tracker --no-target --no-control --no-dashboard
-- Safer camera fallback profile: ./tools/start_live_stack.sh --profile safe-camera
-- Enable deeper active stream probe when diagnosing camera faults: ./tools/start_live_stack.sh --camera-preflight-stream-probe-on
-- Enable sensor FPS/exposure writes only when explicitly needed: ./tools/start_live_stack.sh --camera-rate-controls-on
-- Enable sensor trigger_mode writes only when explicitly needed: ./tools/start_live_stack.sh --camera-trigger-control-on
-- Legacy perception path: ./tools/start_live_stack.sh --perception-mode legacy
-- Single-process perception mode (default; in-process backend, stub fallback): ./tools/start_live_stack.sh --perception-mode single-process
-- Single-process queue tuning: ./tools/start_live_stack.sh --perception-hailo-queue-buffers 1
-- Disable pre-hailonet videoconvert stage: ./tools/start_live_stack.sh --perception-hailo-videoconvert-off
-- Allow stub fallback if host Hailo init fails: ./tools/start_live_stack.sh --perception-allow-stub-fallback
-- Tighten image subscription queue depth: ./tools/start_live_stack.sh --perception-image-qos-depth 1
+Useful flags:
+
+- Disable control: `./tools/start_live_stack.sh --no-control`
+- Enable MAVROS mirror: `./tools/start_live_stack.sh --control-mavros`
+- Camera + inference only: `./tools/start_live_stack.sh --no-tracker --no-target --no-control --no-dashboard`
+- Safer camera fallback profile: `./tools/start_live_stack.sh --profile safe-camera`
+- Enable deeper active stream probe when diagnosing camera faults: `./tools/start_live_stack.sh --camera-preflight-stream-probe-on`
+- Enable sensor FPS/exposure writes only when explicitly needed: `./tools/start_live_stack.sh --camera-rate-controls-on`
+- Enable sensor trigger_mode writes only when explicitly needed: `./tools/start_live_stack.sh --camera-trigger-control-on`
+- Legacy perception path: `./tools/start_live_stack.sh --perception-mode legacy`
+- Single-process perception mode: `./tools/start_live_stack.sh --perception-mode single-process`
+- Single-process queue tuning: `./tools/start_live_stack.sh --perception-hailo-queue-buffers 1`
+- Disable pre-hailonet videoconvert stage: `./tools/start_live_stack.sh --perception-hailo-videoconvert-off`
+- Allow stub fallback if host Hailo init fails: `./tools/start_live_stack.sh --perception-allow-stub-fallback`
+- Tighten image subscription queue depth: `./tools/start_live_stack.sh --perception-image-qos-depth 1`
+- Record flight video bag: `./tools/start_live_stack.sh --record-video --bag-tag flight_01`
+- Record flight video bag with MAVROS context: `./tools/start_live_stack.sh --record-video --record-mavros --bag-tag outdoor_01`
 
 ### Tracker modes
 
@@ -202,8 +101,8 @@ Full option list:
 
 If you want to enable host-side Hailo dependencies for single-process mode:
 
-- Install/probe host Python bindings: ./tools/install_host_hailo_bindings.sh
-- Optional no-root runtime shim: ./tools/setup_local_tappas_runtime.sh
+- Install/probe host Python bindings: ./tools/setup/install_host_hailo_bindings.sh
+- Optional no-root runtime shim: ./tools/setup/setup_local_tappas_runtime.sh
 
 Note:
 
@@ -254,7 +153,7 @@ Verification checkpoint (UI healthy):
 - Open `http://127.0.0.1:5173` (or remote host IP and chosen port).
 - Dashboard connects to telemetry websocket and backend API if running in backend mode.
 
-## 3) Manual startup (legacy ZMQ path, troubleshooting only)
+## 3) Manual startup (legacy ZMQ path, troubleshooting only) OLD
 
 This section reproduces the legacy deployment shape manually.
 
@@ -334,33 +233,54 @@ source "$THESIS_ROOT/ros2_ws/install/setup.bash"
 ros2 node list | rg 'inference_client_node|detector_node|tracker_node|dashboard_bridge_node'
 ```
 
-## 4) Record bags
+## 4) Record flight video bags
 
-Lean operational bag:
+The recommended flight recording path is integrated into `tools/start_live_stack.sh`.
 
-```bash
-cd $THESIS_ROOT/ros2_ws
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-export RMW_FASTRTPS_USE_SHM=0
+Use `--record-video` to record the dashboard image stream plus the perception, tracking, target, timing, and control topics required for later analysis and offline overlay rendering.
 
-ros2 bag record --storage mcap \
-  -o ../bags/live_camera/YYYY-MM-DD__<session_description> \
-  /camera/fps /detections /timing /target /timing_target
-```
-
-Use for field sessions and timeline metrics with low storage overhead.
-
-Raw profiling bag:
+### 4.1) Standard flight video bag
 
 ```bash
-cd $THESIS_ROOT/bags/raw
-ros2 bag record --storage mcap \
-  --topics /detections /timing /tracks /target /timing_tracker /timing_target
-# rename output folder after stop
+cd "$THESIS_ROOT"
+./tools/start_live_stack.sh --profile daily --record-video --bag-tag flight_01
 ```
 
-Use for replay/evaluation runs. Save under `bags/raw`.
+This records to:
+bags/live_camera/YYYY-MM-DD__HH-MM-SS__video__flight_01/
+
+Recorded topics:
+/camera/dashboard
+/camera/fps
+/detections
+/tracks
+/target
+/timing
+/timing_tracker
+/timing_target
+/control_ref/cmd_vel
+
+Notes:
+
+- /camera/dashboard is recorded instead of /camera/image_raw to keep field bags smaller.
+- /timing_tracker is enabled automatically when --record-video is used.
+- A flight_metadata.txt file is written next to the bag with run configuration, tracker type, perception mode, camera settings, and recorded topics.
+
+### 4.2) Flight video bag with MAVROS context
+
+Use this when flying with the autopilot connected and you want basic flight-state context:
+
+```bash
+cd "$THESIS_ROOT"
+./tools/start_live_stack.sh --profile daily --record-video --record-mavros --bag-tag outdoor_01
+```
+
+Additional MAVROS topics:
+
+/mavros/state
+/mavros/local_position/pose
+/mavros/local_position/velocity_local
+/mavros/setpoint_velocity/cmd_vel_unstamped
 
 ## 5) Replay and analysis
 
@@ -387,9 +307,9 @@ Expected:
 Timing:
 
 ```bash
-python3 tools/analyse_bag_timing.py $THESIS_ROOT/bags/raw/<bag_name>
+python3 tools/analysis/analyse_bag_timing.py $THESIS_ROOT/bags/raw/<bag_name>
 # or
-python3 tools/analyse_bag_timing.py $THESIS_ROOT/bags/live_camera/<bag_name>
+python3 tools/analysis/analyse_bag_timing.py $THESIS_ROOT/bags/live_camera/<bag_name>
 ```
 
 Expected output:
@@ -400,14 +320,14 @@ Expected output:
 Tracking:
 
 ```bash
-python3 tools/analyse_bag_tracking.py $THESIS_ROOT/bags/eval/<eval_bag_name>
+python3 tools/analysis/analyse_bag_tracking.py $THESIS_ROOT/bags/eval/<eval_bag_name>
 ```
 
 Expected output:
 
 - `summary.md` and plot files under `reports/tracking/<eval_bag_name>/`.
 
-## 5.1) Timing vocabulary (canonical)
+### 5.1) Timing vocabulary (canonical)
 
 Use these names in runtime analysis, reports, and UI interpretation:
 
@@ -433,7 +353,7 @@ Freeze note:
 - Canonical timing names must not change unless metric semantics change.
 - Remaining aliases are deprecated compatibility/history only.
 
-## 5.2) Operator Metric Priority (Thesis)
+### 5.2) Operator Metric Priority (Thesis)
 
 Top 5 during live runs:
 
@@ -552,7 +472,6 @@ Expected behavior from validated baseline:
 ## 8) Canonical repository paths (for command context)
 
 - ROS packages: `ros2_ws/src/`
-- Inference service code: `infer_service/`
 - Utility scripts: `tools/`
 - Live bags: `bags/live_camera/`
 - Replay source bags: `bags/raw/`
@@ -561,147 +480,7 @@ Expected behavior from validated baseline:
 
 ## 9) Last validated assumptions
 
-- Date: 2026-04-15
+- Date: 2026-04-28
 - ROS: Jazzy
 - Default live path: single-process perception via `tools/start_live_stack.sh`
 - Legacy compose path: `$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu` (with `~/pi-ai-kit-ubuntu` compatibility fallback)
-
-## 10) Queue-buffer 1-vs-2 decision workflow (single-process)
-
-Use this flow to choose `--perception-hailo-queue-buffers 1` vs `2` with
-workload-matched evidence.
-
-### 10.1) Capture queue=1 run (10 min)
-
-Terminal A:
-
-```bash
-cd $THESIS_ROOT
-./tools/start_live_stack.sh --perception-mode single-process --perception-hailo-queue-buffers 1
-```
-
-Terminal B:
-
-```bash
-cd $THESIS_ROOT
-python3 tools/collect_live_timing_stats.py \
-  --duration 600 \
-  --run-label "q1_$(date +%Y%m%d_%H%M%S)" \
-  --json-out "reports/timing/q1_$(date +%Y%m%d_%H%M%S).json"
-```
-
-Stop the stack after collection completes.
-
-Quick sanity check (container queue visibility):
-
-- Verify `/timing.container_queue_ms` appears in the JSON under `metrics['/timing']`.
-- This field tracks pre-infer wait (`t_infer_start_ns - t_pre_end_ns`).
-
-### 10.2) Capture queue=2 run (10 min)
-
-Terminal A:
-
-```bash
-cd $THESIS_ROOT
-./tools/start_live_stack.sh --perception-mode single-process --perception-hailo-queue-buffers 2
-```
-
-Terminal B:
-
-```bash
-cd $THESIS_ROOT
-python3 tools/collect_live_timing_stats.py \
-  --duration 600 \
-  --run-label "q2_$(date +%Y%m%d_%H%M%S)" \
-  --json-out "reports/timing/q2_$(date +%Y%m%d_%H%M%S).json"
-```
-
-Stop the stack after collection completes.
-
-### 10.3) Validate report schema
-
-```bash
-cd $THESIS_ROOT
-python3 tools/validate_canonical_metrics.py \
-  --json reports/timing/<q1_report>.json \
-  --json reports/timing/<q2_report>.json \
-  --require-tracker \
-  --require-target
-```
-
-### 10.4) Decide default with gates
-
-```bash
-cd $THESIS_ROOT
-python3 tools/decide_queue_buffer_default.py \
-  --q1-json reports/timing/<q1_report>.json \
-  --q2-json reports/timing/<q2_report>.json \
-  --baseline-queue 2 \
-  --min-timing-hz 9.0 \
-  --dpm-mean-tolerance 0.10 \
-  --zero-ratio-delta-max 0.05 \
-  --json-out reports/timing/queue_decision_$(date +%Y%m%d_%H%M%S).json
-```
-
-Interpretation:
-
-- exit code `0`: gates passed and default selected.
-- exit code `1`: one or more gates failed (no decision).
-- exit code `2`: input/schema error.
-
-Important:
-
-- For cutover decisions, do not use `--allow-missing-detection-load`.
-- Use `--allow-missing-detection-load` only for smoke-checking older reports
-  that predate `detection_stream` stats.
-- If your shell uses `set -e` and you still want JSON output when gates fail,
-  add `--exit-zero-on-gate-fail`.
-
-### 10.5) Tracker-side optimization variant (when queue gate stalls)
-
-If q1 vs q2 remains blocked by low Hz/comparability, run a tracker-focused pass
-with lower instrumentation overhead and tuned SORT gating.
-
-```bash
-cd $THESIS_ROOT
-./tools/start_live_stack.sh \
-  --perception-mode single-process \
-  --perception-hailo-queue-buffers 2 \
-  --tracker-gc-probe-off \
-  --tracker-iou-threshold 0.22 \
-  --tracker-max-age 3 \
-  --tracker-min-hits 2 \
-  --tracker-centre-gate 320.0
-```
-
-Then collect a standard 10-minute artifact and compare against baseline.
-
-### 10.6) Perception container_queue optimization variant (videoconvert ablation)
-
-Use this when `/timing` throughput is limited by pre-infer wait.
-
-Baseline (videoconvert enabled):
-
-```bash
-cd $THESIS_ROOT
-./tools/start_live_stack.sh \
-  --perception-mode single-process \
-  --perception-hailo-videoconvert-on
-```
-
-Ablation candidate (disable pre-hailonet videoconvert):
-
-```bash
-cd $THESIS_ROOT
-./tools/start_live_stack.sh \
-  --perception-mode single-process \
-  --perception-hailo-videoconvert-off
-```
-
-For either run, collect a normal 10-minute timing report and compare:
-
-- `/timing` Hz
-- `container_queue_ms` p50/p95/mean
-- `e2e_det_ms` p95/p99
-- `pub_dt_ms` p95/p99
-- detection workload comparability (`detections_per_msg.mean`, `zero_ratio`)

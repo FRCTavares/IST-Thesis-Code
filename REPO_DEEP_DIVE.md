@@ -1,5 +1,7 @@
 # Repository Deep Dive
 
+Last reviewed: 2026-04-28
+
 This document explains what this repository is for, how its parts interact, and how to reason about the folder layout.
 
 Use this file for architecture understanding.
@@ -150,6 +152,15 @@ Root-level purpose map:
 - `deprecated/hailo-rpi5-examples/`
   - Upstream/vendor resources.
 
+### Key locations and model artifacts
+
+- `models/hef/` — compiled Hailo engine files used by single-process inference when present.
+- `models/reid/` — re-identification models used by tracker evaluation flows.
+- `bags/raw/` — source recordings used for replay and evaluation.
+- `bags/eval/` — replay outputs and derived artifacts used by analysis scripts.
+
+If you need to add new model artifacts, prefer a clear subfolder under `models/` and add a short README describing provenance and expected runtime (device/format).
+
 ## 5) External dependency model
 
 The legacy container path depends on a compose environment at:
@@ -194,11 +205,11 @@ Full old-to-new field mapping, producer/consumer matrix, and deprecation plan: `
 
 Analysis pipeline:
 
-1. Live sampling: `tools/collect_live_timing_stats.py`
-2. Invariant checks: `tools/check_live_timing_invariants.py`
-3. Schema/key checks: `tools/validate_canonical_metrics.py`
-4. Queue-buffer decision gate: `tools/decide_queue_buffer_default.py`
-5. Offline bag analytics: `tools/analyse_bag_timing.py` and `tools/analyse_bag_tracking.py`
+1. Live sampling: `tools/analysis/collect_live_timing_stats.py`
+2. Invariant checks: `tools/analysis/check_live_timing_invariants.py`
+3. Schema/key checks: `tools/validation/validate_canonical_metrics.py`
+4. Queue-buffer decision gate: `tools/validation/decide_queue_buffer_default.py`
+5. Offline bag analytics: `tools/analysis/analyse_bag_timing.py` and `tools/analysis/analyse_bag_tracking.py`
 
 ## 7) Operational interfaces and ports
 
@@ -256,3 +267,9 @@ If camera diagnostics or migration gates change materially, update these as well
 
 1. `LIVE_STACK_CAMERA_RECOVERY.md`
 2. `SINGLE_PROCESS_PERCEPTION_MIGRATION_PLAN.md`
+
+Contributing checklist (quick):
+
+1. Run the relevant live-start script locally and confirm the affected topics are published.
+2. Update `README.md` and `REPO_DEEP_DIVE.md` with any changed flags, ports, or topic names.
+3. Add a small runnable example for UI changes under `user-interface/` and ensure `npm ci` passes.

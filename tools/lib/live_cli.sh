@@ -441,8 +441,45 @@ while [[ $# -gt 0 ]]; do
             ENABLE_WEB_VIDEO=0
             shift
             ;;
-        --rosbag)
+        --record-video)
             ENABLE_ROSBAG=1
+            TRACKER_PUBLISH_TIMING_BOOL="true"
+            shift
+            ;;
+        --no-record-video)
+            ENABLE_ROSBAG=0
+            shift
+            ;;
+        --bag-tag)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --bag-tag requires a value"
+                print_usage
+                exit 1
+            fi
+            BAG_TAG="$2"
+            shift 2
+            ;;
+        --bag-out-root)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --bag-out-root requires a value"
+                print_usage
+                exit 1
+            fi
+            BAG_OUT_ROOT="$2"
+            shift 2
+            ;;
+        --record-mavros)
+            RECORD_MAVROS=1
+            shift
+            ;;
+        --no-record-mavros)
+            RECORD_MAVROS=0
+            shift
+            ;;
+        --rosbag)
+            echo "[warn] --rosbag is deprecated; use --record-video"
+            ENABLE_ROSBAG=1
+            TRACKER_PUBLISH_TIMING_BOOL="true"
             shift
             ;;
         -h|--help)
@@ -639,6 +676,16 @@ fi
 if [[ "$ENABLE_CONTROL" -eq 1 && "$ENABLE_DASHBOARD_BRIDGE" -eq 0 ]]; then
     echo "[warn] control requires /target from dashboard_bridge_node after target_selector removal; disabling control"
     ENABLE_CONTROL=0
+fi
+
+if ! [[ "$ENABLE_ROSBAG" =~ ^[01]$ ]]; then
+    echo "[error] ENABLE_ROSBAG must be 0 or 1"
+    exit 1
+fi
+
+if ! [[ "$RECORD_MAVROS" =~ ^[01]$ ]]; then
+    echo "[error] RECORD_MAVROS must be 0 or 1"
+    exit 1
 fi
 
 }

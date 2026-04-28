@@ -265,6 +265,90 @@ wait_for_topic_message() {
     return 0
 }
 
+make_safe_name() {
+    printf "%s" "$1" | tr ' /:' '___' | tr -cd 'A-Za-z0-9_.-'
+}
+
+write_video_bag_metadata() {
+    local metadata_file="$1"
+    shift
+    local -a topics=("$@")
+
+    {
+        echo "run_id=$RUN_ID"
+        echo "bag_name=${VIDEO_BAG_NAME:-}"
+        echo "bag_tag=${BAG_TAG:-}"
+        echo "date=$(date -Iseconds)"
+        echo "thesis_root=$THESIS_ROOT"
+        echo "ros_ws=$ROS_WS"
+        echo "ros_domain_id=$ROS_DOMAIN_ID"
+        echo "perception_mode=$PERCEPTION_MODE"
+        echo "perception_backend=${PERCEPTION_INFERENCE_BACKEND:-}"
+        echo "tracker_enabled=$ENABLE_TRACKER"
+        echo "tracker_type=${TRACKER_TYPE:-}"
+        echo "camera_capture=${CAMERA_WIDTH}x${CAMERA_HEIGHT}@${CAMERA_FPS}"
+        echo "camera_publish=${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}"
+        echo "camera_publish_resize_mode=${CAMERA_PUBLISH_RESIZE_MODE:-}"
+        echo "camera_publish_encoding=${CAMERA_PUBLISH_ENCODING:-}"
+        echo "control_enabled=$ENABLE_CONTROL"
+        echo "mavros_mirror_enabled=${CONTROL_MAVROS_BOOL:-false}"
+        echo "record_mavros=$RECORD_MAVROS"
+        echo "bag_out_dir=${VIDEO_BAG_OUT_DIR:-}"
+        echo "log_run_dir=$RUN_DIR"
+        echo ""
+        echo "recorded_topics:"
+        for topic in "${topics[@]}"; do
+            echo "- $topic"
+        done
+    } > "$metadata_file"
+}
+
+post_target_selection() {
+    local target_value="$1"
+
+    python3 - "$target_value" <<'PY'
+import json
+import sys
+import urllib.error
+import urllib.request
+
+target_raw = sys.argv[1]
+
+try:
+    target = int(target_raw)
+except ValueError:
+    print(f"[error] invalid target id: {target_raw}")
+    sys.exit(2)
+
+payload = json.dumps({"target": target}).encode("utf-8")
+request = urllib.request.Request(
+    "http://127.0.0.1:8090/api/target",
+    data=payload,
+    headers={"Content-Type": "application/json"},
+    method="POST",
+)
+
+try:
+    with urllib.request.urlopen(request, timeout=2.0) as response:
+        body = response.read().decode("utf-8", errors="replace")
+        if body:
+            print(body)
+        else:
+            print(f"[ok] target request sent: {target}")
+except urllib.error.HTTPError as exc:
+    body = exc.read().decode("utf-8", errors="replace")
+    print(f"[error] target API returned HTTP {exc.code}: {body}")
+    sys.exit(1)
+except Exception as exc:
+    print(f"[error] target API request failed: {exc}")
+    sys.exit(1)
+PY
+}
+
+print_current_track_ids() {
+    python3 "$THESIS_ROOT/tools/live/print_track_ids.py" --timeout 4.0
+}
+
 source "$THESIS_ROOT/tools/lib/live_camera.sh"
 
 tracker_state="off"
@@ -283,7 +367,7 @@ if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
 fi
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then dashboard_state="on"; fi
 if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then web_video_state="on"; fi
-if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="on"; fi
+if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="video"; fi
 
 # Phase 1: host preflight + camera stream sanity checks.
 log_info "run: $RUN_ID"
@@ -533,7 +617,7 @@ else
     fi
 
     # Optional local TAPPAS runtime shim (no root install required).
-    # Expected layout defaults to tools/setup_local_tappas_runtime.sh output.
+    # Expected layout defaults to tools/setup/setup_local_tappas_runtime.sh output.
     PERCEPTION_RUNTIME_DIR="${PERCEPTION_RUNTIME_DIR:-$THESIS_ROOT/infer_service/opt/tappas_runtime_3_31}"
     PERCEPTION_RUNTIME_LIB_DIR="${PERCEPTION_RUNTIME_LIB_DIR:-$PERCEPTION_RUNTIME_DIR/usr/lib/aarch64-linux-gnu}"
     PERCEPTION_RUNTIME_GST_DIR="${PERCEPTION_RUNTIME_GST_DIR:-$PERCEPTION_RUNTIME_LIB_DIR/gstreamer-1.0}"
@@ -682,13 +766,74 @@ if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
 fi
 
 if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
+    mkdir -p "$BAG_OUT_ROOT"
+
+    BAG_TAG_SAFE=""
+    if [[ -n "${BAG_TAG:-}" ]]; then
+        BAG_TAG_SAFE="$(make_safe_name "$BAG_TAG")"
+    fi
+
+    if [[ -n "$BAG_TAG_SAFE" ]]; then
+        VIDEO_BAG_NAME="${RUN_ID}__video__${BAG_TAG_SAFE}"
+    else
+        VIDEO_BAG_NAME="${RUN_ID}__video"
+    fi
+
+    VIDEO_BAG_OUT_DIR="$BAG_OUT_ROOT/$VIDEO_BAG_NAME"
+
+    VIDEO_BAG_TOPICS=(
+        /camera/dashboard
+        /camera/fps
+        /detections
+        /tracks
+        /target
+        /timing
+        /timing_tracker
+        /timing_target
+        /control_ref/cmd_vel
+    )
+
+    if [[ "$RECORD_MAVROS" -eq 1 ]]; then
+        VIDEO_BAG_TOPICS+=(
+            /mavros/state
+            /mavros/local_position/pose
+            /mavros/local_position/velocity_local
+            /mavros/setpoint_velocity/cmd_vel_unstamped
+        )
+    fi
+
+    echo "[ok] video bag recording enabled"
+    echo "[ok] video bag output: $VIDEO_BAG_OUT_DIR"
+    echo "[ok] video bag topics:"
+    for topic in "${VIDEO_BAG_TOPICS[@]}"; do
+        echo "     $topic"
+    done
+
+    export RMW_FASTRTPS_USE_SHM=0
+
     start_ros_bg rosbag ros2 bag record \
-        /timing /timing_tracker /timing_target /detections /tracks /target /control_ref/cmd_vel \
-        -o "$RUN_DIR/rosbag2"
+        --storage mcap \
+        -o "$VIDEO_BAG_OUT_DIR" \
+        "${VIDEO_BAG_TOPICS[@]}"
+
     sleep 1
     if ! check_proc_alive rosbag; then
         stop_stack
         exit 1
+    fi
+
+    for _ in {1..20}; do
+        if [[ -d "$VIDEO_BAG_OUT_DIR" ]]; then
+            break
+        fi
+        sleep 0.1
+    done
+
+    if [[ -d "$VIDEO_BAG_OUT_DIR" ]]; then
+        write_video_bag_metadata "$VIDEO_BAG_OUT_DIR/flight_metadata.txt" "${VIDEO_BAG_TOPICS[@]}"
+        echo "[ok] video bag metadata: $VIDEO_BAG_OUT_DIR/flight_metadata.txt"
+    else
+        echo "[warn] video bag output directory not visible yet; metadata was not written"
     fi
 fi
 
@@ -716,7 +861,7 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
 else
     log_info "dashboard: disabled"
 fi
-log_info "commands: status | clear | stop"
+log_info "commands: status | ids | target <id> | clear-target | clear | stop"
 
 # Runtime control loop keeps operators in one shell for quick status/stop commands.
 while true; do
@@ -740,9 +885,24 @@ while true; do
                 echo "[warn] no pid file found"
             fi
             ;;
+        ids|tracks)
+            print_current_track_ids
+            ;;
+        target\ *)
+            target_id="${cmd#target }"
+            target_id="${target_id//[[:space:]]/}"
+            if [[ -z "$target_id" ]]; then
+                echo "[error] usage: target <track_id>"
+            else
+                post_target_selection "$target_id"
+            fi
+            ;;
+        clear-target|target-clear)
+            post_target_selection 0
+            ;;
         *)
             echo "[info] unknown command: $cmd"
-            echo "[info] valid commands: status, clear, stop, quit, exit"
+            echo "[info] valid commands: status, ids, target <id>, clear-target, clear, stop, quit, exit"
             ;;
     esac
 done

@@ -1,5 +1,7 @@
 # Thesis Workspace
 
+Last reviewed: 2026-04-28
+
 ROS 2 workspace for live camera perception, tracking, user-driven target selection, optional control output, dashboard operation, and reproducible replay/analysis.
 
 ## Documentation map
@@ -98,6 +100,24 @@ export THESIS_ROOT="$HOME/Desktop/Thesis-Code"
 export ROS_DOMAIN_ID=42
 ```
 
+Optional: create a Python virtual environment for tools and analysis scripts
+
+```bash
+cd "$THESIS_ROOT"
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+# Install any repo-specific Python deps if provided
+# e.g. pip install -r tools/requirements.txt
+```
+
+Frontend dependencies (for `user-interface`)
+
+```bash
+cd "$THESIS_ROOT/user-interface"
+npm ci
+```
+
 ### 2) Build ROS workspace once
 
 ```bash
@@ -163,14 +183,14 @@ Replay note:
 
 ```bash
 cd "$THESIS_ROOT"
-python3 tools/analyse_bag_timing.py "$THESIS_ROOT/bags/raw/<bag_name>"
+python3 tools/analysis/analyse_bag_timing.py "$THESIS_ROOT/bags/raw/<bag_name>"
 ```
 
 ### Run tracking analysis
 
 ```bash
 cd "$THESIS_ROOT"
-python3 tools/analyse_bag_tracking.py "$THESIS_ROOT/bags/eval/<eval_bag_name>"
+python3 tools/analysis/analyse_bag_tracking.py "$THESIS_ROOT/bags/eval/<eval_bag_name>"
 ```
 
 ## Done criteria

@@ -55,7 +55,12 @@ ENABLE_CONTROL=1
 CONTROL_MAVROS_BOOL="false"
 CONTROL_STALE_TIMEOUT_S=0.80
 ENABLE_WEB_VIDEO=1
+# Video bag recording, disabled by default.
+# Enabled with: --record-video
 ENABLE_ROSBAG=0
+BAG_TAG=""
+BAG_OUT_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/bags/live_camera"
+RECORD_MAVROS=0
 
 apply_startup_profile() {
     local profile="$1"

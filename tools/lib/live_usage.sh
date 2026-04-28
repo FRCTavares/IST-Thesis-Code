@@ -89,7 +89,20 @@ Options:
     --control-mavros                    Enable MAVROS mirroring in control_ref_node
     --control-stale-timeout-s <N>       Control stale target timeout seconds (default: 0.80)
     --no-web-video                      Do not start web_video_server
-    --rosbag                            Record timing/tracking/control topics to rosbag
+    --record-video                      Record dashboard video + perception/tracking/target/timing/control topics
+    --no-record-video                   Disable video bag recording
+    --bag-tag <NAME>                    Add a safe tag to the bag folder name
+    --bag-out-root <PATH>               Override bag output root, default: $THESIS_ROOT/bags/live_camera
+    --record-mavros                     Add lightweight MAVROS state/control topics to video bag
+    --no-record-mavros                  Do not add MAVROS topics to video bag
+    --rosbag                            Deprecated alias for --record-video
+    Runtime prompt commands:
+    status          Print tracked process IDs
+    ids             Print currently visible track IDs from /tracks
+    target <id>     Select a track ID as the active target through /api/target
+    clear-target    Clear the selected target
+    clear           Clear terminal
+    stop            Stop the live stack
     -h, --help                          Show this help message
 EOF
 }
@@ -120,7 +133,17 @@ Day-to-day options:
     --no-control                      Do not start control_ref_node
     --no-dashboard                    Disable dashboard bridge
     --no-web-video                    Do not start web_video_server
-    --rosbag                          Record timing/tracking/control topics
+    --record-video                    Record dashboard video + perception/tracking/target/timing/control topics
+    --bag-tag <NAME>                  Add a safe tag to the bag folder name
+    --record-mavros                   Add lightweight MAVROS state/control topics
+    --rosbag                          Deprecated alias for --record-video
+    Runtime prompt commands:
+    status          Print tracked process IDs
+    ids             Print currently visible track IDs from /tracks
+    target <id>     Select a track ID as the active target through /api/target
+    clear-target    Clear the selected target
+    clear           Clear terminal
+    stop            Stop the live stack
     -v, --verbose                     Enable verbose startup/status logs
     -h, --help                        Show this concise help
     --help-advanced                   Show full advanced argument list

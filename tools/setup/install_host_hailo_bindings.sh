@@ -158,7 +158,7 @@ if [[ "$SKIP_SYSTEM_CHECK" -eq 0 ]]; then
     else
         echo "[warn] host library missing: libgsthailometa.so"
         echo "[hint] install matching deb packages (hailort + hailo-tappas-core) before running single-process mode"
-        echo "[hint] no-root fallback: ./tools/setup_local_tappas_runtime.sh"
+        echo "[hint] no-root fallback: ./tools/setup/setup_local_tappas_runtime.sh"
     fi
 fi
 

@@ -36,8 +36,6 @@ dist/
 .eggs/
 pip-wheel-metadata/
 
-# Jupyter
-.ipynb_checkpoints/
 
 # ------------------------------
 # Node / frontend
@@ -83,8 +81,18 @@ hailo-rpi5-examples/
 # infer_service/resources/
 models/reid/*.pb
 
+# ROS bag recordings, generated during live/replay/flight experiments
+bags/live_camera/
+bags/raw/
+bags/eval/
+bags/archive/
+
+# Rendered bag videos and generated media outputs
+reports/videos/
+reports/flight_summaries/
+
 # Birds experiment workspace (local runs, logs, benchmarks)
-deprecated/Birds
+deprecated/
 
 # Local report outputs
 reports/compare/tmp_*/
@@ -93,7 +101,3 @@ reports/timing/live_matrix_*/
 !reports/timing/live_matrix_*/summary.csv
 !reports/timing/live_matrix_*/summary_ranked.md
 
-# Live benchmark raw outputs
-reports/timing/live_matrix_*/
-!reports/timing/live_matrix_*/summary.csv
-!reports/timing/live_matrix_*/summary_ranked.md
