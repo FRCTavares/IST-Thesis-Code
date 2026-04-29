@@ -10,7 +10,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 
-def read_mot(path: Path) -> dict[int, list[tuple[int, np.ndarray]]]:
+def read_mot(path: Path, max_frame: int = 0) -> dict[int, list[tuple[int, np.ndarray]]]:
     by_frame = defaultdict(list)
 
     for line in path.read_text().splitlines():
@@ -19,6 +19,9 @@ def read_mot(path: Path) -> dict[int, list[tuple[int, np.ndarray]]]:
 
         p = line.split(",")
         frame = int(float(p[0]))
+        if max_frame > 0 and frame > max_frame:
+            continue
+
         obj_id = int(float(p[1]))
         x, y, w, h = map(float, p[2:6])
 
@@ -72,9 +75,9 @@ def match_frame(gt_rows, pred_rows, iou_thr: float):
     return matches
 
 
-def evaluate_pair(gt_file: Path, pred_file: Path, iou_thr: float) -> dict:
-    gt = read_mot(gt_file)
-    pred = read_mot(pred_file)
+def evaluate_pair(gt_file: Path, pred_file: Path, iou_thr: float, max_frame: int = 0) -> dict:
+    gt = read_mot(gt_file, max_frame=max_frame)
+    pred = read_mot(pred_file, max_frame=max_frame)
 
     total_gt = total_pred = tp = fp = fn = 0
     iou_sum = 0.0
@@ -161,6 +164,7 @@ def main() -> int:
     ap.add_argument("--pred-root", default="datasets/processed/visdrone2019-mot/person_val_mot/predictions/perfect")
     ap.add_argument("--out-dir", default="reports/tracking/visdrone_person_mot_eval_perfect")
     ap.add_argument("--iou-threshold", type=float, default=0.5)
+    ap.add_argument("--max-frame", type=int, default=0)
     args = ap.parse_args()
 
     gt_root = Path(args.gt_root)
@@ -182,7 +186,7 @@ def main() -> int:
             skipped.append(name)
             continue
 
-        r = evaluate_pair(gt_file, pred_file, args.iou_threshold)
+        r = evaluate_pair(gt_file, pred_file, args.iou_threshold, max_frame=args.max_frame)
         r["sequence"] = name
         rows.append(r)
 
@@ -221,6 +225,7 @@ def main() -> int:
         f"- GT root: `{gt_root}`",
         f"- Prediction root: `{pred_root}`",
         f"- IoU threshold: {args.iou_threshold}",
+        f"- Max frame: {args.max_frame if args.max_frame > 0 else 'all'}",
         "",
         "| Sequence | GT | Pred | FP | FN | IDSW | Frag | MOTA | IDF1 | MOTP IoU |",
         "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",

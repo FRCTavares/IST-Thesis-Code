@@ -114,3 +114,9 @@ reports/dataset_checks/visdrone_gt_preview/
 
 # Generated tracker matrix artefacts
 reports/tracking/visdrone_gt_tracker_matrix_*/
+
+# Generated detector-tracker matrix artefacts
+reports/tracking/visdrone_detector_tracker_matrix_*/
+
+# Generated detector preview artefacts
+reports/dataset_checks/hailo_visdrone_yolov6n_preview.jpg
