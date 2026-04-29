@@ -101,3 +101,10 @@ reports/timing/live_matrix_*/
 !reports/timing/live_matrix_*/summary.csv
 !reports/timing/live_matrix_*/summary_ranked.md
 
+
+# ------------------------------
+# Datasets
+# ------------------------------
+datasets/external/
+datasets/processed/
+!datasets/.gitkeep
