@@ -108,3 +108,6 @@ reports/timing/live_matrix_*/
 datasets/external/
 datasets/processed/
 !datasets/.gitkeep
+
+# Dataset visual previews
+reports/dataset_checks/visdrone_gt_preview/
