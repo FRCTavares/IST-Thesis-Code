@@ -85,6 +85,17 @@ def make_tracker(name: str):
             use_byte=False,
         )
 
+    if name == "ocsort_benchmark":
+        return OCSortBackend(
+            iou_threshold=0.30,
+            max_age=30,
+            min_hits=3,
+            det_thresh=0.35,
+            delta_t=3,
+            inertia=0.2,
+            use_byte=False,
+        )
+
     if name == "bytetrack_default":
         return ByteTrackBackend(
             track_thresh=0.5,

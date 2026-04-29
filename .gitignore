@@ -120,3 +120,6 @@ reports/tracking/visdrone_detector_tracker_matrix_*/
 
 # Generated detector preview artefacts
 reports/dataset_checks/hailo_visdrone_yolov6n_preview.jpg
+
+# Generated full detector sweep artefacts
+reports/tracking/visdrone_full_detector_sweep_*/
