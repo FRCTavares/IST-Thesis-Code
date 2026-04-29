@@ -111,3 +111,6 @@ datasets/processed/
 
 # Dataset visual previews
 reports/dataset_checks/visdrone_gt_preview/
+
+# Generated tracker matrix artefacts
+reports/tracking/visdrone_gt_tracker_matrix_*/

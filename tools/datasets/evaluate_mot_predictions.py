@@ -171,10 +171,16 @@ def main() -> int:
     rows = []
     totals = defaultdict(float)
 
+    skipped = []
+
     for seq_dir in sorted(p for p in gt_root.iterdir() if p.is_dir()):
         name = seq_dir.name
         gt_file = seq_dir / "gt" / "gt.txt"
         pred_file = pred_root / f"{name}.txt"
+
+        if not pred_file.exists():
+            skipped.append(name)
+            continue
 
         r = evaluate_pair(gt_file, pred_file, args.iou_threshold)
         r["sequence"] = name
@@ -183,6 +189,9 @@ def main() -> int:
         for k, v in r.items():
             if k != "sequence":
                 totals[k] += v
+
+    if not rows:
+        raise FileNotFoundError(f"No prediction files found under {pred_root}")
 
     overall = dict(totals)
     overall["sequence"] = "OVERALL"
