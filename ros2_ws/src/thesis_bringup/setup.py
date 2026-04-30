@@ -34,6 +34,7 @@ setup(
             "video_file_publisher_node = thesis_bringup.nodes.video_file_publisher_node:main",
             "dashboard_bridge_node = thesis_bringup.nodes.dashboard_bridge_node:main",
             'control_ref_node = thesis_bringup.nodes.control_ref_node:main',
+            "mavros_imu_monitor_node = thesis_bringup.nodes.mavros_imu_monitor_node:main",
         ],
     },
 )
