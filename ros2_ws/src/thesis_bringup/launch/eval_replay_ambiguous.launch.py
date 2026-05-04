@@ -7,7 +7,7 @@ run tracker + target selector, and record outputs into a new eval bag.
 
 Usage:
   ros2 launch thesis_bringup eval_replay_ambiguous.launch.py \
-    bag:=$THESIS_ROOT/bags/raw/2026-02-28__slice__smoke2 \
+    bag:=$THESIS_ROOT/artifacts/bags/raw/2026-02-28__slice__smoke2 \
     tracker:=ocsort window_start_s:=5.0 window_len_s:=10.0 swap_y:=false
 """
 

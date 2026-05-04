@@ -61,17 +61,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Inspect VisDrone2019-MOT split structure and annotations.")
     parser.add_argument(
         "--root",
-        default="datasets/external/visdrone2019-mot/extracted/VisDrone2019-MOT-val",
+        default="data/datasets/external/visdrone2019-mot/extracted/VisDrone2019-MOT-val",
         help="Path to extracted VisDrone2019-MOT split root.",
     )
     parser.add_argument(
         "--out-dir",
-        default="reports/dataset_checks",
+        default="artifacts/reports/dataset_checks",
         help="Output directory for inspection reports.",
     )
     parser.add_argument(
         "--processed-dir",
-        default="datasets/processed/visdrone2019-mot",
+        default="data/datasets/processed/visdrone2019-mot",
         help="Output directory for generated manifests.",
     )
     args = parser.parse_args()

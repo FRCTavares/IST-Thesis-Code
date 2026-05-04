@@ -160,9 +160,9 @@ def evaluate_pair(gt_file: Path, pred_file: Path, iou_thr: float, max_frame: int
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--gt-root", default="datasets/processed/visdrone2019-mot/person_val_mot/gt")
-    ap.add_argument("--pred-root", default="datasets/processed/visdrone2019-mot/person_val_mot/predictions/perfect")
-    ap.add_argument("--out-dir", default="reports/tracking/visdrone_person_mot_eval_perfect")
+    ap.add_argument("--gt-root", default="data/datasets/processed/visdrone2019-mot/person_val_mot/gt")
+    ap.add_argument("--pred-root", default="data/datasets/processed/visdrone2019-mot/person_val_mot/predictions/perfect")
+    ap.add_argument("--out-dir", default="artifacts/reports/tracking/visdrone_person_mot_eval_perfect")
     ap.add_argument("--iou-threshold", type=float, default=0.5)
     ap.add_argument("--max-frame", type=int, default=0)
     args = ap.parse_args()

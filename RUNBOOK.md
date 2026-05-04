@@ -247,7 +247,7 @@ cd "$THESIS_ROOT"
 ```
 
 This records to:
-bags/live_camera/YYYY-MM-DD__HH-MM-SS__video__flight_01/
+artifacts/bags/live_camera/YYYY-MM-DD__HH-MM-SS__video__flight_01/
 
 Recorded topics:
 /camera/dashboard
@@ -288,7 +288,7 @@ Eval replay:
 
 ```bash
 ros2 launch thesis_bringup eval_replay.launch.py \
-  bag:=$THESIS_ROOT/bags/raw/<bag_name> \
+  bag:=$THESIS_ROOT/artifacts/bags/raw/<bag_name> \
   tracker:=sort
 ```
 
@@ -307,9 +307,9 @@ Expected:
 Timing:
 
 ```bash
-python3 tools/analysis/analyse_bag_timing.py $THESIS_ROOT/bags/raw/<bag_name>
+python3 tools/analysis/analyse_bag_timing.py $THESIS_ROOT/artifacts/bags/raw/<bag_name>
 # or
-python3 tools/analysis/analyse_bag_timing.py $THESIS_ROOT/bags/live_camera/<bag_name>
+python3 tools/analysis/analyse_bag_timing.py $THESIS_ROOT/artifacts/bags/live_camera/<bag_name>
 ```
 
 Expected output:
@@ -320,12 +320,12 @@ Expected output:
 Tracking:
 
 ```bash
-python3 tools/analysis/analyse_bag_tracking.py $THESIS_ROOT/bags/eval/<eval_bag_name>
+python3 tools/analysis/analyse_bag_tracking.py $THESIS_ROOT/artifacts/bags/eval/<eval_bag_name>
 ```
 
 Expected output:
 
-- `summary.md` and plot files under `reports/tracking/<eval_bag_name>/`.
+- `summary.md` and plot files under `artifacts/reports/tracking/<eval_bag_name>/`.
 
 ### 5.1) Timing vocabulary (canonical)
 
@@ -473,10 +473,10 @@ Expected behavior from validated baseline:
 
 - ROS packages: `ros2_ws/src/`
 - Utility scripts: `tools/`
-- Live bags: `bags/live_camera/`
-- Replay source bags: `bags/raw/`
-- Eval output bags: `bags/eval/`
-- Tracking reports: `reports/tracking/`
+- Live bags: `artifacts/bags/live_camera/`
+- Replay source bags: `artifacts/bags/raw/`
+- Eval output bags: `artifacts/bags/eval/`
+- Tracking reports: `artifacts/reports/tracking/`
 
 ## 9) Last validated assumptions
 

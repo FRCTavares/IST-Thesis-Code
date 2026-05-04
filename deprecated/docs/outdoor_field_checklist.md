@@ -81,7 +81,7 @@ YYYY-MM-DD__outdoor__scenario<N>__<descriptor>
 
 **Storage location:**
 ```
-$THESIS_ROOT/bags/live_camera/YYYY-MM-DD__outdoor__scenario<N>__<descriptor>/
+$THESIS_ROOT/artifacts/bags/live_camera/YYYY-MM-DD__outdoor__scenario<N>__<descriptor>/
 ```
 
 ---

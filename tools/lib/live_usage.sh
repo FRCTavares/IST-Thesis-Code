@@ -92,7 +92,7 @@ Options:
     --record-video                      Record dashboard video + perception/tracking/target/timing/control topics
     --no-record-video                   Disable video bag recording
     --bag-tag <NAME>                    Add a safe tag to the bag folder name
-    --bag-out-root <PATH>               Override bag output root, default: $THESIS_ROOT/bags/live_camera
+    --bag-out-root <PATH>               Override bag output root, default: $THESIS_ROOT/artifacts/bags/live_camera
     --record-mavros                     Add lightweight MAVROS state/control topics to video bag
     --no-record-mavros                  Do not add MAVROS topics to video bag
     --rosbag                            Deprecated alias for --record-video

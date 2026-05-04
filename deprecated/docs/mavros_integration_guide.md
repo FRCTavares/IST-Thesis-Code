@@ -175,7 +175,7 @@ self.publish_pair(self.get_clock().now().to_msg(), self.prev_vx, self.prev_vy, s
 - `cmd_topic` and `mavros_topic` stay separate so replay and field monitoring are unambiguous
 
 **Offline validation (Day 13 — PASS):**
-- Bag: `bags/tmp/2026-03-13__cmd_mirror_check` (297 s, 86 754 debug / 86 753 mirror messages)
+- Bag: `artifacts/bags/tmp/2026-03-13__cmd_mirror_check` (297 s, 86 754 debug / 86 753 mirror messages)
 - Script: `tools/compare_cmd_mirror_bag.py` — multiset comparison of `(stamp, payload)` keys
 - Result: multisets match; one extra zero-velocity debug message at startup (expected)
 - Run with: `python3 tools/compare_cmd_mirror_bag.py`

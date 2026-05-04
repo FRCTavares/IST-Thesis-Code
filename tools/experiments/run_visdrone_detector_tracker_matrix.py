@@ -298,9 +298,9 @@ def track_sequence(det_path: Path, n_frames: int, tracker_name: str, pred_path: 
 def run_eval(pred_root: Path, eval_out: Path, iou_threshold: float, max_frame: int = 0) -> None:
     cmd = [
         sys.executable,
-        str(REPO / "tools/datasets/evaluate_mot_predictions.py"),
+        str(REPO / "tools/data/datasets/evaluate_mot_predictions.py"),
         "--gt-root",
-        str(REPO / "datasets/processed/visdrone2019-mot/person_val_mot/gt"),
+        str(REPO / "data/datasets/processed/visdrone2019-mot/person_val_mot/gt"),
         "--pred-root",
         str(pred_root),
         "--out-dir",
@@ -329,7 +329,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "--root",
-        default="datasets/external/visdrone2019-mot/extracted/VisDrone2019-MOT-val",
+        default="data/datasets/external/visdrone2019-mot/extracted/VisDrone2019-MOT-val",
     )
     ap.add_argument("--hef", default="models/hef/yolov6n.hef")
     ap.add_argument("--model-name", default="yolov6n")
@@ -341,7 +341,7 @@ def main() -> int:
     ap.add_argument("--iou-threshold", type=float, default=0.5)
     ap.add_argument(
         "--out-root",
-        default=f"reports/tracking/visdrone_detector_tracker_matrix_{time.strftime('%Y%m%d_%H%M%S')}",
+        default=f"artifacts/reports/tracking/visdrone_detector_tracker_matrix_{time.strftime('%Y%m%d_%H%M%S')}",
     )
     args = ap.parse_args()
 

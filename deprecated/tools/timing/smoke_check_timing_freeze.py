@@ -55,12 +55,12 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Smoke check canonical timing freeze keys in proof artifacts")
     p.add_argument(
         "--bridge-json",
-        default="reports/timing/phase3_replay_bridge_payload.json",
+        default="artifacts/reports/timing/phase3_replay_bridge_payload.json",
         help="Bridge payload JSON artifact path",
     )
     p.add_argument(
         "--producer-msg",
-        default="reports/timing/phase3_replay_timing_msg.txt",
+        default="artifacts/reports/timing/phase3_replay_timing_msg.txt",
         help="Producer /timing message text artifact path",
     )
     p.add_argument(

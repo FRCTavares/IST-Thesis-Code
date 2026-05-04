@@ -93,13 +93,13 @@ ros2 launch thesis_bringup first_ros2_slice.launch.py
 
 # Tracker evaluation replay (swap tracker algorithm)
 ros2 launch thesis_bringup eval_replay.launch.py \
-  bag:=bags/raw/eval_bag tracker:=sort
+  bag:=artifacts/bags/raw/eval_bag tracker:=sort
 ```
 
 ### Record File-Based Bag
 
 ```bash
-cd ~/Desktop/Thesis-Code/bags/raw
+cd ~/Desktop/Thesis-Code/artifacts/bags/raw
 export RMW_FASTRTPS_USE_SHM=0
 
 ros2 bag record --storage mcap \
@@ -269,7 +269,7 @@ source install/setup.bash
 export RMW_FASTRTPS_USE_SHM=0
 
 ros2 bag record --storage mcap \
-  -o ../bags/live_camera/2026-03-10__stability_10min \
+  -o ../artifacts/bags/live_camera/2026-03-10__stability_10min \
   /camera/fps \
   /detections \
   /timing \
@@ -284,8 +284,8 @@ ros2 bag record --storage mcap \
 ### Bag Inspection
 
 ```bash
-ros2 bag info bags/raw/2026-02-26__slice__primary
-ros2 bag info bags/live_camera/2026-03-10__stability_10min
+ros2 bag info artifacts/bags/raw/2026-02-26__slice__primary
+ros2 bag info artifacts/bags/live_camera/2026-03-10__stability_10min
 ```
 
 ---
@@ -296,23 +296,23 @@ ros2 bag info bags/live_camera/2026-03-10__stability_10min
 cd ~/Desktop/Thesis-Code
 
 # Normal timing analysis (canonical fields from /timing + track_ms from /timing_tracker)
-python3 tools/analyse_bag_timing.py bags/live_camera/2026-03-10__stability_10min \
-  --out reports/timing/W11_2026-03-10__stability_10min.md \
-  --figdir figures/timing/
+python3 tools/analyse_bag_timing.py artifacts/bags/live_camera/2026-03-10__stability_10min \
+  --out artifacts/reports/timing/W11_2026-03-10__stability_10min.md \
+  --figdir artifacts/figures/timing/
 
 # Validate canonical metric keys in generated outputs
 python3 tools/validate_canonical_metrics.py \
-  --json reports/timing/live_stats.json \
-  --markdown reports/timing/W11_2026-03-10__stability_10min.md
+  --json artifacts/reports/timing/live_stats.json \
+  --markdown artifacts/reports/timing/W11_2026-03-10__stability_10min.md
 
 # Gap-filtered analysis (exclude restarts, only active runs)
-python3 tools/analyse_bag_timing.py bags/raw/2026-02-25__slice__primary \
+python3 tools/analyse_bag_timing.py artifacts/bags/raw/2026-02-25__slice__primary \
   --gap-ms 100 \
-  --out reports/timing/2026-02-26__timing_summary_active_only.md
+  --out artifacts/reports/timing/2026-02-26__timing_summary_active_only.md
 
 # Tracker metrics analysis (HOTA, IDF1, MOTA from ground truth comparison)
 python3 tools/analyse_bag_tracking.py \
-  bags/eval/2026-02-27__eval__2026-02-25__slice__primary__sort \
+  artifacts/bags/eval/2026-02-27__eval__2026-02-25__slice__primary__sort \
   --tag sort
 ```
 
@@ -329,7 +329,7 @@ vcgencmd get_throttled
 # 0x0 = no throttling, any other value = throttling occurred
 
 # Continuous temperature logging (every 30s for 10 minutes)
-cd ~/Desktop/Thesis-Code/reports/system
+cd ~/Desktop/Thesis-Code/artifacts/reports/system
 for i in {1..20}; do
   echo "$(date +%s) $(vcgencmd measure_temp | cut -d= -f2)" | tee -a thermal_log_$(date +%Y%m%d).txt
   sleep 30

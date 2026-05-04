@@ -168,7 +168,7 @@ cd "$THESIS_ROOT/ros2_ws"
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 launch thesis_bringup eval_replay.launch.py \
-  bag:=$THESIS_ROOT/bags/raw/<bag_name> \
+  bag:=$THESIS_ROOT/artifacts/bags/raw/<bag_name> \
   tracker:=sort
 ```
 
@@ -183,14 +183,14 @@ Replay note:
 
 ```bash
 cd "$THESIS_ROOT"
-python3 tools/analysis/analyse_bag_timing.py "$THESIS_ROOT/bags/raw/<bag_name>"
+python3 tools/analysis/analyse_bag_timing.py "$THESIS_ROOT/artifacts/bags/raw/<bag_name>"
 ```
 
 ### Run tracking analysis
 
 ```bash
 cd "$THESIS_ROOT"
-python3 tools/analysis/analyse_bag_tracking.py "$THESIS_ROOT/bags/eval/<eval_bag_name>"
+python3 tools/analysis/analyse_bag_tracking.py "$THESIS_ROOT/artifacts/bags/eval/<eval_bag_name>"
 ```
 
 ## Done criteria

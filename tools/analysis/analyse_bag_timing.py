@@ -493,11 +493,11 @@ def _write_markdown(
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("bag", help="Path to rosbag2 directory (e.g. bags/raw/2026-02-25__slice__primary)")
+    ap.add_argument("bag", help="Path to rosbag2 directory (e.g. artifacts/bags/raw/2026-02-25__slice__primary)")
 
     # Optional outputs, auto-filled if not given
-    ap.add_argument("--out", default="", help="Output markdown path (default: reports/timing/<bag>__timing.md)")
-    ap.add_argument("--figdir", default="", help="Directory to save figures (default: figures/timing/<bag>/)")
+    ap.add_argument("--out", default="", help="Output markdown path (default: artifacts/reports/timing/<bag>__timing.md)")
+    ap.add_argument("--figdir", default="", help="Directory to save figures (default: artifacts/figures/timing/<bag>/)")
 
     ap.add_argument("--timing-topic", default="/timing")
     ap.add_argument(

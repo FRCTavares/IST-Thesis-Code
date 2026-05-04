@@ -49,11 +49,11 @@ Conceptual chain:
 
 1. `eval_replay.launch.py` plays a recorded bag.
 2. Tracker + `dashboard_bridge_node` process replayed messages.
-3. Replay output is recorded to `bags/eval` for offline analysis.
+3. Replay output is recorded to `artifacts/bags/eval` for offline analysis.
 
 Conceptual chain:
 
-`bags/raw -> eval_replay.launch.py -> /tracks + /target + /timing_tracker + /timing_target -> bags/eval -> analysis scripts -> reports`
+`artifacts/bags/raw -> eval_replay.launch.py -> /tracks + /target + /timing_tracker + /timing_target -> artifacts/bags/eval -> analysis scripts -> reports`
 
 Replay/eval note:
 
@@ -138,14 +138,14 @@ Root-level purpose map:
   - Dashboard app and frontend build configuration.
 - `tools/`
   - Operational scripts and analysis utilities.
-- `bags/`
+- `artifacts/bags/`
   - Experiment data:
-    - `bags/live_camera/`: lean operational recordings.
-    - `bags/raw/`: replay source bags.
-    - `bags/eval/`: replay outputs and artifacts.
-- `reports/`
+    - `artifacts/bags/live_camera/`: lean operational recordings.
+    - `artifacts/bags/raw/`: replay source bags.
+    - `artifacts/bags/eval/`: replay outputs and artifacts.
+- `artifacts/reports/`
   - Analysis outputs (timing/tracking/compare).
-- `Written Logs/`
+- `docs/written_logs/`
   - Weekly and daily engineering logs.
 - `deprecated/`
   - Archived experiments not in active path (legacy scripts, historical traces, superseded artifacts).
@@ -156,8 +156,8 @@ Root-level purpose map:
 
 - `models/hef/` — compiled Hailo engine files used by single-process inference when present.
 - `models/reid/` — re-identification models used by tracker evaluation flows.
-- `bags/raw/` — source recordings used for replay and evaluation.
-- `bags/eval/` — replay outputs and derived artifacts used by analysis scripts.
+- `artifacts/bags/raw/` — source recordings used for replay and evaluation.
+- `artifacts/bags/eval/` — replay outputs and derived artifacts used by analysis scripts.
 
 If you need to add new model artifacts, prefer a clear subfolder under `models/` and add a short README describing provenance and expected runtime (device/format).
 

@@ -2,9 +2,9 @@ import json
 import os
 
 files = {
-    "direct": "reports/timing/live_post_refactor/single_process_inline_owner_seqfix_q1_vc0_direct_r1.json",
-    "appsrccap": "reports/timing/live_post_refactor/single_process_inline_owner_seqfix_q1_vc0_appsrccap_r2.json",
-    "legacy": "reports/timing/live_post_refactor/legacy_r3.json"
+    "direct": "artifacts/reports/timing/live_post_refactor/single_process_inline_owner_seqfix_q1_vc0_direct_r1.json",
+    "appsrccap": "artifacts/reports/timing/live_post_refactor/single_process_inline_owner_seqfix_q1_vc0_appsrccap_r2.json",
+    "legacy": "artifacts/reports/timing/live_post_refactor/legacy_r3.json"
 }
 
 def get_timing_val(data, metric, key):

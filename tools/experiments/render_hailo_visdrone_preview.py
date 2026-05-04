@@ -56,14 +56,14 @@ def main() -> int:
     ap.add_argument(
         "--image",
         default=(
-            "datasets/external/visdrone2019-mot/extracted/"
+            "data/datasets/external/visdrone2019-mot/extracted/"
             "VisDrone2019-MOT-val/sequences/uav0000086_00000_v/0000001.jpg"
         ),
     )
     ap.add_argument("--hef", default="models/hef/yolov6n.hef")
     ap.add_argument("--size", type=int, default=640)
     ap.add_argument("--score", type=float, default=0.25)
-    ap.add_argument("--out", default="reports/dataset_checks/hailo_visdrone_yolov6n_preview.jpg")
+    ap.add_argument("--out", default="artifacts/reports/dataset_checks/hailo_visdrone_yolov6n_preview.jpg")
     args = ap.parse_args()
 
     image_path = Path(args.image)

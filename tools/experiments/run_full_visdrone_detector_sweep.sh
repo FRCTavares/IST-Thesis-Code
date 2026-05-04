@@ -5,7 +5,7 @@ cd "${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}"
 source .venv/bin/activate
 
 RUN_ID="$(date +%Y%m%d_%H%M%S)"
-OUT_BASE="reports/tracking/visdrone_full_detector_sweep_${RUN_ID}"
+OUT_BASE="artifacts/reports/tracking/visdrone_full_detector_sweep_${RUN_ID}"
 LOG="${OUT_BASE}/run.log"
 SUMMARY="${OUT_BASE}/summary.csv"
 
@@ -58,7 +58,7 @@ from pathlib import Path
 import csv
 import re
 
-out_base = sorted(Path("reports/tracking").glob("visdrone_full_detector_sweep_*"))[-1]
+out_base = sorted(Path("artifacts/reports/tracking").glob("visdrone_full_detector_sweep_*"))[-1]
 rows = []
 
 for run_dir in sorted(out_base.iterdir()):

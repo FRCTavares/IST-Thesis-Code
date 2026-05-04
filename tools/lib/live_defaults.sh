@@ -59,7 +59,7 @@ ENABLE_WEB_VIDEO=1
 # Enabled with: --record-video
 ENABLE_ROSBAG=0
 BAG_TAG=""
-BAG_OUT_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/bags/live_camera"
+BAG_OUT_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/artifacts/bags/live_camera"
 RECORD_MAVROS=0
 
 apply_startup_profile() {

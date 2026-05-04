@@ -20,7 +20,7 @@ def main() -> int:
     ap.add_argument(
         "--image",
         default=(
-            "datasets/external/visdrone2019-mot/extracted/"
+            "data/datasets/external/visdrone2019-mot/extracted/"
             "VisDrone2019-MOT-val/sequences/uav0000086_00000_v/0000001.jpg"
         ),
     )

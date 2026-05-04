@@ -57,11 +57,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Render VisDrone MOT GT preview frames.")
     parser.add_argument(
         "--root",
-        default="datasets/external/visdrone2019-mot/extracted/VisDrone2019-MOT-val",
+        default="data/datasets/external/visdrone2019-mot/extracted/VisDrone2019-MOT-val",
     )
     parser.add_argument("--sequence", default="uav0000086_00000_v")
     parser.add_argument("--frames", default="1,50,100,200,300")
-    parser.add_argument("--out-dir", default="reports/dataset_checks/visdrone_gt_preview")
+    parser.add_argument("--out-dir", default="artifacts/reports/dataset_checks/visdrone_gt_preview")
     args = parser.parse_args()
 
     root = Path(args.root)

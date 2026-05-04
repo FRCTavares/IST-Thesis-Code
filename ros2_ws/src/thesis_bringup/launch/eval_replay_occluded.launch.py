@@ -7,12 +7,12 @@ run tracker + target selector, and record outputs into a new eval bag.
 
 Usage example:
   ros2 launch thesis_bringup eval_replay_occluded.launch.py \
-    bag:=/home/francisco/Desktop/Thesis-Code/bags/raw/2026-02-28__slice__smoke2 \
+    bag:=/home/francisco/Desktop/Thesis-Code/artifacts/bags/raw/2026-02-28__slice__smoke2 \
     tracker:=ocsort \
     occl_mode:=periodic_blackout period_s:=3.0 drop_s:=0.5
 
 Notes:
-- This launch creates a unique output directory under $THESIS_ROOT/bags/eval/
+- This launch creates a unique output directory under $THESIS_ROOT/artifacts/bags/eval/
   using a collision suffix __rN if needed.
 - Recorder auto-stops using --max-bag-duration (record_duration_s). Keep using
   `timeout -s SIGINT ...` outside if you prefer your proven recipe.
@@ -182,7 +182,7 @@ def generate_launch_description() -> LaunchDescription:
     return LaunchDescription([
         DeclareLaunchArgument(
             "bag",
-            description="Path to raw bag directory (e.g., $THESIS_ROOT/bags/raw/2026-02-28__slice__smoke2)",
+            description="Path to raw bag directory (e.g., $THESIS_ROOT/artifacts/bags/raw/2026-02-28__slice__smoke2)",
         ),
         DeclareLaunchArgument(
             "tracker",

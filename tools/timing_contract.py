@@ -2,7 +2,7 @@
 """Shared canonical timing metric contract.
 
 Canonical outputs should use only the fields listed here. Legacy aliases are
-accepted only as input fallback for historical bags/messages.
+accepted only as input fallback for historical artifacts/bags/messages.
 
 Legacy alias removal plan:
 - Keep legacy aliases read-only until all producers emit metrics_schema_version >= 3

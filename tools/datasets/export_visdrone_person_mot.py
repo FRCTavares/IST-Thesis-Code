@@ -72,12 +72,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Export VisDrone2019-MOT person GT to MOTChallenge-style format.")
     parser.add_argument(
         "--root",
-        default="datasets/external/visdrone2019-mot/extracted/VisDrone2019-MOT-val",
+        default="data/datasets/external/visdrone2019-mot/extracted/VisDrone2019-MOT-val",
         help="Extracted VisDrone2019-MOT split root.",
     )
     parser.add_argument(
         "--out-root",
-        default="datasets/processed/visdrone2019-mot/person_val_mot",
+        default="data/datasets/processed/visdrone2019-mot/person_val_mot",
         help="Output root for converted MOT files.",
     )
     args = parser.parse_args()
@@ -90,7 +90,7 @@ def main() -> int:
 
     gt_root = out_root / "gt"
     perfect_pred_root = out_root / "predictions" / "perfect"
-    report_dir = Path("reports/dataset_checks")
+    report_dir = Path("artifacts/reports/dataset_checks")
     report_dir.mkdir(parents=True, exist_ok=True)
 
     gt_root.mkdir(parents=True, exist_ok=True)
