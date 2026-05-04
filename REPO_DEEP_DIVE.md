@@ -1,6 +1,6 @@
 # Repository Deep Dive
 
-Last reviewed: 2026-04-28
+Last reviewed: 2026-05-04
 
 This document explains what this repository is for, how its parts interact, and how to reason about the folder layout.
 
@@ -26,9 +26,10 @@ Live runtime supports two perception shapes.
 ### Shape S (default): single-process perception
 
 1. Camera publishes `/camera/image_raw`.
-2. `perception_pipeline_node` subscribes directly and performs preprocessing + Hailo inference in-process.
-3. Node publishes `/detections` and `/timing`.
-4. Tracker publishes candidate tracks; `dashboard_bridge_node` owns explicit target publication for control and dashboard consumers.
+2. `perception_pipeline_node` subscribes directly and performs preprocessing plus Hailo inference in-process.
+3. The node publishes `/detections` and `/timing`.
+4. `thesis_tracker` publishes `/tracks`.
+5. `dashboard_bridge_node` owns explicit target publication for control and dashboard consumers.
 
 Conceptual chain:
 
@@ -49,11 +50,11 @@ Conceptual chain:
 
 1. `eval_replay.launch.py` plays a recorded bag.
 2. Tracker + `dashboard_bridge_node` process replayed messages.
-3. Replay output is recorded to `artifacts/bags/eval` for offline analysis.
+3. Replay outputs are recorded to `artifacts/bags/eval/` for offline analysis.
 
 Conceptual chain:
 
-`artifacts/bags/raw -> eval_replay.launch.py -> /tracks + /target + /timing_tracker + /timing_target -> artifacts/bags/eval -> analysis scripts -> reports`
+`artifacts/bags/live_camera -> eval_replay.launch.py -> /tracks + /target + /timing_tracker + /timing_target -> artifacts/bags/eval -> analysis scripts -> reports`
 
 Replay/eval note:
 
@@ -73,7 +74,7 @@ Replay/eval note:
   - Legacy bridge from ROS image topic to container detector service via ZMQ.
   - Used only in `--perception-mode legacy`.
 - `thesis_tracker`
-  - Tracking backend abstraction (`sort`, `ocsort`, `bytetrack`) and `/tracks` publication.
+  - Tracking backend abstraction (`sort`, `ocsort`, `bytetrack`, `deepsort`) and `/tracks` publication.
 - `thesis_msgs`
   - Shared message contracts (`Timing`, track/target messages).
 
@@ -112,13 +113,13 @@ Replay/eval note:
 
 `start_live_stack.sh` is the operational contract for live sessions and is organized as deterministic phases:
 
-- Host preflight: stale-process cleanup, camera media graph checks, and stream probe.
+- Host preflight: stale-process cleanup, camera media graph checks, and an optional stream probe only when requested.
 - Environment setup: ROS overlay sourcing + run-scoped log routing.
 - Perception readiness by mode:
-  - `legacy`: compose container + `detection_zmq.py` req/rep readiness (`:5556`).
+  - `legacy`: compose container plus `detection_zmq.py` req/rep readiness (`:5556`).
   - `single-process`: host `perception_pipeline_node` startup (optional local tappas runtime assets).
-- Downstream graph startup: tracker/dashboard/control/web video.
-- Runtime shell loop with `status`, `clear`, `stop` commands.
+- Downstream graph startup: tracker, dashboard bridge, web video, and control.
+- Runtime shell loop with `status`, `ids`, `target <id>`, `clear-target`, `clear`, and `stop` commands.
 
 Notable reliability behavior:
 
@@ -138,14 +139,17 @@ Root-level purpose map:
   - Dashboard app and frontend build configuration.
 - `tools/`
   - Operational scripts and analysis utilities.
-- `artifacts/bags/`
-  - Experiment data:
-    - `artifacts/bags/live_camera/`: lean operational recordings.
-    - `artifacts/bags/raw/`: replay source bags.
-    - `artifacts/bags/eval/`: replay outputs and artifacts.
+- `artifacts/bags/live_camera/`
+  - Live recordings produced by the live stack.
+- `artifacts/bags/eval/`
+  - Replay outputs and evaluation artifacts.
 - `artifacts/reports/`
-  - Analysis outputs (timing/tracking/compare).
-- `docs/written_logs/`
+  - Archived historical analysis outputs.
+- `reports/`
+  - Current default output root for timing and tracking analyses.
+- `figures/`
+  - Current default figure output root for timing analyses.
+- `docs/Daily-Logs/`
   - Weekly and daily engineering logs.
 - `deprecated/`
   - Archived experiments not in active path (legacy scripts, historical traces, superseded artifacts).
@@ -156,8 +160,8 @@ Root-level purpose map:
 
 - `models/hef/` — compiled Hailo engine files used by single-process inference when present.
 - `models/reid/` — re-identification models used by tracker evaluation flows.
-- `artifacts/bags/raw/` — source recordings used for replay and evaluation.
-- `artifacts/bags/eval/` — replay outputs and derived artifacts used by analysis scripts.
+- `artifacts/bags/live_camera/` - source recordings from live sessions.
+- `artifacts/bags/eval/` - replay outputs and derived artifacts used by analysis scripts.
 
 If you need to add new model artifacts, prefer a clear subfolder under `models/` and add a short README describing provenance and expected runtime (device/format).
 
@@ -198,7 +202,7 @@ Canonical timing vocabulary used across runtime, analysis, and docs:
 
 Clock-domain clarity:
 
-- `src_stamp_ns` belongs to source/sensor time domain and is not guaranteed comparable to host monotonic timing.
+- `src_stamp_ns` belongs to source or sensor time and is not guaranteed comparable to host monotonic timing.
 - `pub_dt_ms`, `det_out_fps`, and `camera_input_fps` are cadence-derived metrics, not direct stage timers.
 
 Full old-to-new field mapping, producer/consumer matrix, and deprecation plan: `TIMING_FIELD_AUDIT.md`.
@@ -210,6 +214,12 @@ Analysis pipeline:
 3. Schema/key checks: `tools/validation/validate_canonical_metrics.py`
 4. Queue-buffer decision gate: `tools/validation/decide_queue_buffer_default.py`
 5. Offline bag analytics: `tools/analysis/analyse_bag_timing.py` and `tools/analysis/analyse_bag_tracking.py`
+
+Default output locations:
+
+- Timing reports: `reports/timing/`
+- Timing figures: `figures/timing/`
+- Tracking reports: `reports/tracking/`
 
 ## 7) Operational interfaces and ports
 
@@ -225,9 +235,9 @@ Common endpoints:
 
 When live runtime fails, check evidence in this order:
 
-1. `ros2_ws/log/live_stack/latest/` process logs (`camera.log`, `perception_pipeline.log`, `inference.log`, etc.).
-2. Kernel camera state (`journalctl -k -b`) for CSI/I2C faults.
-3. ROS graph/transport checks (`ros2 node list`, `ros2 topic list`, port checks).
+1. `ros2_ws/log/live_stack/latest/` process logs such as `camera.log`, `perception_pipeline.log`, and `inference.log`.
+2. Kernel camera state (`journalctl -k -b`) for CSI or I2C faults.
+3. ROS graph and transport checks (`ros2 node list`, `ros2 topic list`, port checks).
 
 This sequence reduces false debugging paths by separating camera-driver faults from graph-level faults.
 
@@ -239,7 +249,7 @@ The repository separates concerns by responsibility rather than a single rigid d
 2. Single-process mode minimizes inference transport latency for live operation.
 3. Legacy container mode remains available as rollback path.
 4. UI remains independently runnable in `user-interface`.
-5. Analysis/validation stays scriptable and reproducible in `tools` + `reports`.
+5. Analysis and validation stay scriptable and reproducible in `tools` plus the report roots.
 
 This supports both day-to-day live operation and controlled scientific evaluation.
 
@@ -255,7 +265,7 @@ Then inspect package-level source files for the subsystem you modify.
 
 ## 10) Drift warning and update policy
 
-Validated against repository state on 2026-04-15.
+Validated against repository state on 2026-05-04.
 
 If startup flags, topic names, ports, or timing contracts change, update these root docs together:
 

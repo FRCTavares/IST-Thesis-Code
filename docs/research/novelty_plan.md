@@ -1,270 +1,430 @@
-# Novelty Plan: Supervisor-Aligned Thesis Direction
+# Novelty Plan: Selected-Target Perception for RGB-Only Micro-UAV Following
 
-Date: 2026-03-26
+Date: 2026-05-04
 Owner: Thesis development
 
-## 1. Supervisor Objective (Frozen)
+## Table of Contents
 
-Develop a computationally efficient, autonomous onboard perception system for a micro aerial robot that can detect, identify, and track people in real time using RGB-only onboard vision and low-power embedded compute.
+- [Thesis Objective](#1-thesis-objective)
+- [Core Problem](#2-core-problem)
+- [Selected-Target Memory Layer](#4-primary-novelty-selected-target-memory-layer)
+- [Selective ROI Re-Detection](#5-smallfar-target-extension-selective-roi-re-detection)
+- [Control Validity Policy](#7-control-safe-perception-integration)
 
-The thesis must combine:
 
-- robust small and distant person perception under onboard constraints
-- control-coupled integration with explicit safety behaviour
-- reliable operation in cluttered outdoor conditions
+## 1. Thesis Objective
 
-## 2. What Counts as Real Novelty in This Thesis
+Develop a latency-bounded onboard RGB-only perception system that allows a micro-UAV to follow one selected person under embedded compute constraints.
 
-Novelty is not adding appearance features on its own. It must generate new technical evidence for this setting:
+The UAV may use Pixhawk GPS/IMU for vehicle state estimation and pilot-supervised control, but target detection, identity maintenance, and reacquisition are handled using onboard RGB perception.
 
-- micro-UAV
-- strict onboard compute and latency budget
-- selected-target tracking objective
-- small and far person failure modes in real scenes
+## 2. Core Problem
 
-The strongest novelty is improving detector/tracker robustness for tiny and distant people while preserving real-time embedded operation.
+The thesis is not generic multi-object tracking.
 
-## 3. Contribution Hierarchy (Frozen)
+Generic MOT asks:
 
-## Contribution A (Primary Algorithmic Novelty)
+> Can all identities be maintained across the video?
 
-Tiny-person-aware detector/tracker improvement for selected-target onboard perception.
+This thesis asks:
+
+> Can one selected person be maintained as a reliable control target when detections are noisy, intermittent, small, or temporarily lost?
+
+The controller should not blindly follow a raw tracker ID. It should follow a selected-target state with explicit confidence and validity.
+
+## 3. Current Evidence
+
+Current results show:
+
+- Hailo makes onboard detection feasible at low latency.
+- The Raspberry Pi CPU can then focus on tracking, target consistency, logging, and control logic.
+- Tracker-only performance is much stronger with clean detections.
+- Real detector outputs cause missed detections, fragmented tracks, and ID switches.
+- Larger detectors can improve perception, but often increase latency too much for strict onboard control.
+
+Therefore, the main contribution should not be only:
+
+> use YOLO + tracker on UAV
+
+The contribution should be:
+
+> convert noisy detector-tracker outputs into a control-valid selected-target representation under onboard latency constraints.
+
+## 4. Primary Novelty: Selected-Target Memory Layer
+
+## Contribution A: Selected-Target Memory
 
 Core idea:
 
-- improve detection and association behaviour when the selected person is small or far
-- use risk-aware triggers based on size, confidence, and track stability
-- maintain selected-target continuity without breaking runtime limits
+Add a lightweight layer above the detector and tracker that maintains the selected person as a persistent target state instead of directly trusting the raw tracker ID.
+
+The layer should:
+
+- initialise from an operator-selected track
+- maintain a target memory using motion, bbox overlap, scale, and confidence
+- handle short detection gaps
+- recover through tracker ID changes when evidence is consistent
+- output clear states such as:
+  - NO_TARGET
+  - LOCKED
+  - UNCERTAIN
+  - LOST
+  - REACQUIRED
+
+This is target-specific, not full-scene MOT.
+
+Operator commands have priority:
+
+```text
+operator command > selected-target memory > raw tracker ID
+
+If the operator selects another detected person, the current memory is reset and initialised from the new target.
+
+5. Small/Far Target Extension: Selective ROI Re-Detection
+Contribution B: Selective Target Re-Detection
+
+Core idea:
+
+When the selected target becomes small, uncertain, or close to being lost, spend extra computation only around the predicted target region.
+
+Instead of increasing full-frame resolution, the system should:
+
+predict likely target region
+-> crop ROI around that region
+-> resize ROI to detector input size
+-> run detector again on the crop
+-> map detection back to full image
+-> update selected-target memory
 
 Expected benefit:
 
-- better recall for small and distant people
-- fewer lock drops in far-target segments
-- stronger selected-target continuity under ambiguity
+improve detection of small/far selected targets
+reduce lock drops when the target is near the detector limit
+keep latency bounded by avoiding full-frame high-resolution inference
 
-## Contribution B (Secondary Identity Robustness Module)
+Trigger conditions:
 
-Target-specific appearance support for ambiguity resolution and reacquisition.
+target bbox height below threshold
+confidence drops
+target predicted but not detected
+selected-target state becomes UNCERTAIN or LOST
+target close to image edge
+tracker close to losing target
 
-Core idea:
+This is a safer detector-side contribution than immediately designing a full detector from scratch.
 
-- use the Target-Memory Appearance Path only when motion/IoU cues are ambiguous or after short loss
-- update appearance memory conservatively in high-quality views
-- avoid always-on appearance processing
+6. Optional Identity Support: Target-Only Appearance
+Contribution C: Event-Triggered Appearance Support
 
-Role in thesis:
-
-- supports Contribution A
-- does not define the main thesis novelty
-
-## Contribution C (Primary Systems Novelty)
-
-Control-safe, latency-bounded perception-to-control integration.
+Appearance is not the main starting point.
 
 Core idea:
 
-- combine freshness, geometric validity, and identity confidence into control validity
-- enforce graded control modes under uncertainty and loss
-- keep transition behaviour deterministic and bounded
+Use appearance only for the selected target and only when needed.
+
+Use cases:
+
+ambiguous association
+tracker ID switch
+short occlusion
+reacquisition after loss
+two nearby candidate people
+
+Avoid:
+
+full-scene ReID every frame
+DeepSORT-style always-on appearance for all objects
+
+Possible descriptors:
+
+colour histogram baseline
+small crop descriptor
+compact learned embedding
+Hailo-deployed embedding only if needed
+
+Update policy:
+
+update only when LOCKED and high confidence
+freeze during UNCERTAIN
+freeze during LOST
+avoid updates from tiny, blurry, clipped, or low-confidence crops
+7. Control-Safe Perception Integration
+Contribution D: Control Validity Policy
+
+Control should use the selected-target state, not raw detections or raw tracker IDs.
+
+Basic policy:
+
+`LOCKED`     -> normal target-relative command
+`UNCERTAIN`  -> slow down / yaw-only / hold
+`LOST`       -> hover or constrained search
+`REACQUIRED` -> confirm before full control resumes
+`NO_TARGET`  -> no following command
+
+This is not a new controller contribution. It is perception-aware control validity.
 
 Expected benefit:
 
-- safer behaviour during stale, uncertain, or lost-target conditions
-- bounded command behaviour across mode transitions
-- defensible systems contribution beyond tracker metrics alone
+avoid aggressive commands during identity uncertainty
+avoid following the wrong person after an ID switch
+make failure modes explicit and safe
+8. Difference from DeepSORT
 
-## 4. Appearance Route Roles (Frozen Naming)
+DeepSORT improves global MOT by using appearance features for all tracked objects.
 
-- Target-Memory Appearance Path: secondary support mechanism for ambiguity and reacquisition
-- Full-Scene ReID Baseline: comparator baseline
-- Detector-Feature Reuse Path: high-risk research reference only
+This thesis is different because it focuses on:
 
-## 5. Deep Research Work Package
+one selected target, not all identities
+explicit operator target selection
+control-validity states
+event-triggered recovery logic
+bounded onboard latency
+selective computation only when the selected target is at risk
 
-Primary decision question:
+The goal is not to beat DeepSORT as a generic MOT method.
 
-- which detector/tracker changes are most defensible for tiny and distant people under strict embedded latency limits, and where does appearance support add value without dominating scope?
+The goal is to produce a reliable selected-target representation for micro-UAV following.
 
-For each candidate method or paper family, extract:
+9. Research Questions
 
-- tiny/small target behaviour
-- far-target robustness pattern
-- recall impact by target size
-- runtime and latency impact
-- control relevance and selected-target continuity relevance
-- appearance support role, if any
+RQ1:
+Can a selected-target memory layer reduce target switches compared with raw tracker ID following?
 
-Priority reading families:
+RQ2:
+Can selected-target memory improve lock duration and short-term reacquisition under detector flicker?
 
-- small-object-aware detector/tracker methods under edge constraints
-- UAV RGB-only person perception robustness studies
-- efficient association strategies for ambiguous target crossings
-- DeepSORT/BoT-SORT/LITE-style appearance families as secondary references
+RQ3:
+Can selective ROI re-detection improve small/far target continuity without full-frame high-resolution inference?
 
-## 6. Real Coding Roadmap (Frozen Order)
+RQ4:
+Can target-only appearance, used only during ambiguity or reacquisition, improve identity stability with limited overhead?
 
-## Phase 1: Control Closure and MAVROS Closure
+RQ5:
+Can explicit target-validity states make pilot-supervised target-relative control safer under uncertain perception?
 
-Deliverables:
-
-- frozen control contract and frame semantics
-- completed ground validation campaign
-- GO / NO-GO gate decision process ready
-
-Acceptance:
-
-- control path stable, including stale/lost safe behaviour
-
-## Phase 2: Instrumentation for Novelty Experiments
+10. Implementation Roadmap
+Phase 1: Baseline Stability
 
 Deliverables:
 
-- explicit tiny-target and far-target event logging
-- lock continuity and reacquisition timers
-- control-validity transition traces
+live yolov6n + ByteTrack or OC-SORT baseline
+verified low-score detection handling for ByteTrack
+live logging of detections, tracks, target state, timing
 
 Acceptance:
 
-- metrics produced automatically from bag analysis
+stable live perception and tracking at acceptable FPS
+no unbounded queue growth
+timing messages and bag analysis working
+Phase 2: Selected-Target Memory V0
 
-## Phase 3: Contribution A Implementation (Primary)
+Deliverables:
 
-Implementation tasks:
+design document
+pure Python implementation
+synthetic validation tests
+offline tests on bags
 
-- add tiny-person-aware detector/tracker improvements
-- define risk triggers from size/confidence/track stability
-- integrate selected-target continuity logic for small/far segments
-- add latency guardrails and watchdog checks
+Minimum functions:
 
-Acceptance:
-
-- measurable gains in small/far selected-target robustness
-- no unacceptable runtime regression
-
-## Phase 4: Contribution C Integration (Primary Systems)
-
-Implementation tasks:
-
-- compute control validity from freshness + geometry + identity confidence
-- map validity to conservative/normal/hold control modes
-- enforce transition hysteresis and saturation limits
+bbox_iou
+centre_distance
+scale_similarity
+score_candidate
+update_memory
+state transition logic
 
 Acceptance:
 
-- deterministic safe behaviour under uncertain perception
-- no unsafe command bursts during transitions
+fewer selected-target switches in simple ID-change cases
+short detection gaps handled without wrong-target jumps
+negligible runtime overhead
+Phase 3: Control Validity Integration
 
-## Phase 5: Contribution B Integration (Secondary Support)
+Deliverables:
 
-Implementation tasks:
-
-- integrate Target-Memory Appearance Path for ambiguity and reacquisition windows
-- keep updates quality-gated and event-triggered
-- measure added cost and continuity gain
+target state published to control path
+control validity policy
+safe behaviour for UNCERTAIN, LOST, and NO_TARGET
 
 Acceptance:
 
-- improved continuity/reacquisition in ambiguity windows
-- added runtime cost remains bounded
+no aggressive commands when target state is invalid or uncertain
+deterministic state transitions
+Phase 4: Selective ROI Re-Detection
 
-## 7. Evaluation Design
+Deliverables:
 
-## Metrics (Novelty-Critical)
+ROI prediction from selected-target memory
+crop, resize, re-detect, remap pipeline
+trigger policy
+latency measurement
+
+Acceptance:
+
+improved continuity for small/far target cases
+trigger rate and latency overhead reported
+p95/p99 latency remains acceptable
+Phase 5: Target-Only Appearance Support
+
+Deliverables:
+
+simple appearance baseline
+event-triggered appearance matching
+quality-gated memory updates
+
+Acceptance:
+
+improved ambiguity or reacquisition behaviour
+overhead remains bounded
+failure cases reported honestly
+11. Evaluation Metrics
+
+Selected-target identity:
+
+selected-target switches
+wrong-target lock count
+false reacquisition count
+selected-target continuity
+
+Continuity:
+
+lock duration
+lost duration
+fragmentation
+time in LOCKED / UNCERTAIN / LOST / REACQUIRED
+
+Reacquisition:
+
+time-to-reacquire
+reacquisition success rate
+false reacquisition rate
 
 Small/far target robustness:
 
-- recall by size bins
-- selected-target lock retention in far/tiny segments
-- lock continuity duration
+recall by bbox height bins
+lock retention in small-target segments
+ROI re-detection trigger rate
+ROI re-detection success rate
 
-Identity continuity:
+Control relevance:
 
-- ID switches on selected target
-- reacquisition time after controlled occlusion
-- ambiguity-window recovery rate
+valid target time
+stale target time
+image centre error
+commands published during invalid target states
+control mode transitions
 
-System and control:
+System:
 
-- end-to-end latency p50, p95, p99
-- frame cadence stability
-- invalid-to-safe transition time
-- command saturation frequency and burst behaviour
-
-## Comparative Experiments
+FPS
+end-to-end target latency mean/p50/p95/p99
+inference latency mean/p50/p95/p99
+tracker latency mean/p50/p95/p99
+selected-target memory overhead mean/p50/p95/p99
+ROI re-detection overhead mean/p50/p95/p99
+12. Comparative Experiments
 
 Mandatory comparisons:
 
-1. baseline tracker without tiny-person-specific improvement
-2. baseline + Contribution A
-3. baseline + Contribution A + Contribution C
-4. baseline + Contribution A + Contribution C + Contribution B (secondary module)
-5. baseline + Full-Scene ReID Baseline (comparator where feasible)
+detector + tracker baseline
+detector + tracker + selected-target memory
+detector + tracker + selected-target memory + control validity
+detector + tracker + selected-target memory + selective ROI re-detection
+detector + tracker + selected-target memory + target-only appearance
+DeepSORT or appearance-based tracker as comparator if feasible
 
 For each comparison:
 
-- report robustness gain
-- report runtime and latency cost
-- report control-safety side effects
+report selected-target robustness
+report runtime and latency cost
+report control-relevance effects
+report failure cases
+13. Defensible Thesis Claims
 
-## 8. Defensible Thesis Claims
+Possible claims, if supported by results:
 
-If supported by results, claim language should reflect:
+A selected-target memory layer improves control-target continuity compared with raw tracker ID following.
+Explicit target-validity states reduce unsafe or unstable control behaviour during perception uncertainty.
+Selective ROI re-detection improves small/far selected-target continuity while keeping computation bounded.
+Target-only appearance support improves ambiguity and reacquisition cases with lower overhead than full-scene appearance tracking.
 
-1. tiny-person-aware detector/tracker improvement increases selected-target robustness for small and distant people under embedded constraints
-2. latency-bounded control-validity integration improves safety behaviour in uncertain perception conditions
-3. target-specific appearance support improves ambiguity resolution and reacquisition as a secondary module
+Do not claim:
 
-## 9. Risk Register and Mitigations
+universal UAV person following
+full solution to long-term re-identification
+detector failures are fully solved
+generic MOT replacement
+14. Risk Register
 
-Risk 1: tiny-target robustness gain is weak
+Risk 1: selected-target memory does not improve difficult cases
 
-- mitigation: tighten risk triggers and tune size-bin-specific thresholds
+Mitigation:
 
-Risk 2: latency tail grows after detector/tracker changes
+focus claim on short detection gaps, ID switches, and bounded reacquisition
+report failure cases honestly
 
-- mitigation: strict trigger budget, queue discipline, and runtime watchdog
+Risk 2: detector misses are too long for memory to recover
 
-Risk 3: appearance support adds cost without clear gain
+Mitigation:
 
-- mitigation: keep Contribution B event-triggered and quality-gated only
+transition to LOST
+require operator confirmation or constrained search
+use selective ROI re-detection only while prediction is still meaningful
 
-Risk 4: confidence coupling causes control oscillation
+Risk 3: ROI re-detection increases latency too much
 
-- mitigation: hysteresis and mode-transition damping in Contribution C policy
+Mitigation:
 
-## 10. Priority Ranking (Frozen)
+event-trigger only
+limit trigger rate
+measure p95/p99 overhead
+disable if latency budget is exceeded
 
-Primary novelty (must deliver):
+Risk 4: appearance support adds cost without benefit
 
-1. Contribution A: tiny-person-aware detector/tracker improvement
-2. Contribution C: control-safe, latency-bounded perception-to-control integration
+Mitigation:
 
-Secondary novelty (deliver after core is stable):
+keep target-only and event-triggered
+compare against no-appearance baseline
+use simple descriptor first
 
-1. Contribution B: target-specific appearance support for ambiguity and reacquisition
-2. event-triggered and view-quality-gated appearance updates
+Risk 5: control reacts to uncertain identity
 
-## 11. Best Thesis Package
+Mitigation:
 
-Recommended coherent package:
+explicit validity states
+hysteresis
+conservative control in UNCERTAIN and LOST
+15. Priority Ranking
 
-- main algorithmic novelty: Contribution A
-- main systems novelty: Contribution C
-- secondary support module: Contribution B via Target-Memory Appearance Path
+Primary:
 
-This package is strong because it is:
+Selected-target memory layer
+Control-validity states
+Selective ROI re-detection for small/far selected target
 
-- centred on small/far person robustness
-- selected-target and control-coupled
-- feasible under embedded runtime constraints
+Secondary:
 
-## 12. Final Recommendation
+Target-only appearance support
+Full-scene ReID baseline as comparator only
 
-Freeze this hierarchy and avoid daily scope drift:
+Not primary:
 
-- Contribution A and Contribution C are primary
-- Contribution B is secondary support
-- Full-Scene ReID Baseline is comparator only
-- Detector-Feature Reuse Path is research reference only
+full new detector from scratch
+always-on ReID
+generic MOT improvement without control relevance
+16. Final Positioning
 
-Supervisor-aligned freeze: the main thesis objective is to improve onboard detector/tracker robustness for small and distant people under embedded runtime constraints. Appearance-based mechanisms are supporting options, not the primary thesis contribution unless later supervisor guidance changes this priority.
+This thesis does not propose a generic replacement for modern MOT.
+
+It proposes a selected-target perception layer that converts noisy detector-tracker outputs into a control-valid target representation for RGB-only micro-UAV following under onboard latency constraints.
+
+The strongest package is:
+
+Hailo detector
+-> ByteTrack / OC-SORT
+-> selected-target memory
+-> control-validity states
+-> selective ROI re-detection when target is small or uncertain
+-> optional target-only appearance for ambiguity

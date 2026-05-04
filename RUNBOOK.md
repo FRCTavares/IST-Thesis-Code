@@ -11,13 +11,14 @@ From `tools/start_live_stack.sh`:
 
 - Perception mode default: `single-process`
 - Tracker default: `ocsort`
+- Startup profile default: `daily`
 - Camera default: `1280x720@30`
 - Published perception image default in single-process mode: `640x640` letterboxed from capture
 - Camera sensor trigger/rate-control writes: disabled by default for reliability
 - Active `/dev/video0` preflight stream probe: disabled by default; media graph preflight still runs
 - Control node: enabled by default
 - MAVROS mirroring: disabled by default
-- Dashboard bridge + web video: enabled by default
+- Dashboard bridge and web video: enabled by default
 - Video bag recording: disabled by default, enabled with `--record-video`
 - Legacy detector port `:5556`: expected only in `--perception-mode legacy`
 
@@ -49,8 +50,8 @@ What this script does:
 1. Preflight and stale-process cleanup.
 2. ROS env and log directory setup.
 3. Perception path readiness by mode: legacy starts container detection service; single-process starts perception pipeline node.
-4. Node startup order: camera -> (legacy inference OR single-process perception) -> tracker -> dashboard -> control.
-5. Interactive runtime with `status`, `clear`, `stop` commands.
+4. Node startup order: camera -> (legacy inference OR single-process perception) -> tracker -> dashboard bridge -> control.
+5. Interactive runtime with `status`, `ids`, `target <id>`, `clear-target`, `clear`, and `stop` commands.
 
 Default:
 
@@ -60,23 +61,31 @@ Default:
 
 Useful flags:
 
-Useful flags:
+- `./tools/start_live_stack.sh --profile safe-camera`
+- `./tools/start_live_stack.sh --profile performance`
+- `./tools/start_live_stack.sh --perception-mode legacy`
+- `./tools/start_live_stack.sh --perception-mode single-process`
+- `./tools/start_live_stack.sh --tracker sort`
+- `./tools/start_live_stack.sh --tracker bytetrack`
+- `./tools/start_live_stack.sh --no-control`
+- `./tools/start_live_stack.sh --control-mavros`
+- `./tools/start_live_stack.sh --no-dashboard`
+- `./tools/start_live_stack.sh --no-web-video`
+- `./tools/start_live_stack.sh --camera-preflight-stream-probe-on`
+- `./tools/start_live_stack.sh --camera-rate-controls-on`
+- `./tools/start_live_stack.sh --camera-trigger-control-on`
+- `./tools/start_live_stack.sh --perception-hailo-queue-buffers 1`
+- `./tools/start_live_stack.sh --perception-image-qos-depth 1`
+- `./tools/start_live_stack.sh --perception-hailo-videoconvert-off`
+- `./tools/start_live_stack.sh --perception-allow-stub-fallback`
+- `./tools/start_live_stack.sh --record-video --bag-tag flight_01`
+- `./tools/start_live_stack.sh --record-video --record-mavros --bag-tag outdoor_01`
 
-- Disable control: `./tools/start_live_stack.sh --no-control`
-- Enable MAVROS mirror: `./tools/start_live_stack.sh --control-mavros`
-- Camera + inference only: `./tools/start_live_stack.sh --no-tracker --no-target --no-control --no-dashboard`
-- Safer camera fallback profile: `./tools/start_live_stack.sh --profile safe-camera`
-- Enable deeper active stream probe when diagnosing camera faults: `./tools/start_live_stack.sh --camera-preflight-stream-probe-on`
-- Enable sensor FPS/exposure writes only when explicitly needed: `./tools/start_live_stack.sh --camera-rate-controls-on`
-- Enable sensor trigger_mode writes only when explicitly needed: `./tools/start_live_stack.sh --camera-trigger-control-on`
-- Legacy perception path: `./tools/start_live_stack.sh --perception-mode legacy`
-- Single-process perception mode: `./tools/start_live_stack.sh --perception-mode single-process`
-- Single-process queue tuning: `./tools/start_live_stack.sh --perception-hailo-queue-buffers 1`
-- Disable pre-hailonet videoconvert stage: `./tools/start_live_stack.sh --perception-hailo-videoconvert-off`
-- Allow stub fallback if host Hailo init fails: `./tools/start_live_stack.sh --perception-allow-stub-fallback`
-- Tighten image subscription queue depth: `./tools/start_live_stack.sh --perception-image-qos-depth 1`
-- Record flight video bag: `./tools/start_live_stack.sh --record-video --bag-tag flight_01`
-- Record flight video bag with MAVROS context: `./tools/start_live_stack.sh --record-video --record-mavros --bag-tag outdoor_01`
+Deprecated or removed launcher flags:
+
+- `--perception-async-latest-frame-on/off` was removed; queue plus worker mode is always used in single-process mode.
+- `--no-target` is a deprecated alias; target selection now lives in `dashboard_bridge_node`.
+- `--rosbag` is a deprecated alias for `--record-video`.
 
 ### Tracker modes
 
@@ -87,10 +96,7 @@ The live stack supports multiple tracker backends:
 ./tools/start_live_stack.sh --profile daily --tracker ocsort
 ./tools/start_live_stack.sh --profile daily --tracker bytetrack
 ./tools/start_live_stack.sh --profile daily --tracker deepsort
-
-Deprecated launcher flags:
-
-- `--perception-async-latest-frame-on/off` was removed; queue+worker mode is now always used in single-process mode.
+```
 
 Full option list:
 
@@ -101,8 +107,8 @@ Full option list:
 
 If you want to enable host-side Hailo dependencies for single-process mode:
 
-- Install/probe host Python bindings: ./tools/setup/install_host_hailo_bindings.sh
-- Optional no-root runtime shim: ./tools/setup/setup_local_tappas_runtime.sh
+- Install or probe host Python bindings: `./tools/setup/install_host_hailo_bindings.sh`
+- Optional no-root runtime shim: `./tools/setup/setup_local_tappas_runtime.sh`
 
 Note:
 
@@ -117,13 +123,13 @@ Stop:
 pkill -f 'camera_bringup.launch.py|camera_capture_node|inference_client_node|detector_node|perception_pipeline_node|tracker_node|control_ref_node|dashboard_bridge_node|web_video_server' || true
 ```
 
-Verification checkpoint (live stack healthy):
+Verification checkpoint for a healthy live stack:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
-ros2 topic list | rg '/camera/image_raw|/detections|/timing|/target'
-ss -ltnp | rg ':5556|:8080|:8090|:8765'
+ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/detections|/timing|/target'
+ss -ltnp | rg ':5556|:8080|:8090|:8765|:5173'
 ```
 
 Expected:
@@ -140,23 +146,25 @@ cd $THESIS_ROOT
 
 Notes:
 
-- UI launcher now skips npm install by default.
+- The UI launcher skips `npm install` by default.
 - Use `./tools/start_ui_stack.sh --install` when you want to refresh dependencies.
 
 Useful UI flags:
 
-- Mock mode: ./tools/start_ui_stack.sh --mode mock
-- Custom port: ./tools/start_ui_stack.sh --port 5174
+- `./tools/start_ui_stack.sh --mode backend`
+- `./tools/start_ui_stack.sh --mode mock`
+- `./tools/start_ui_stack.sh --mode offline`
+- `./tools/start_ui_stack.sh --port 5174`
+- `./tools/start_ui_stack.sh --host 0.0.0.0`
 
-Verification checkpoint (UI healthy):
+Verification checkpoint for the UI:
 
-- Open `http://127.0.0.1:5173` (or remote host IP and chosen port).
-- Dashboard connects to telemetry websocket and backend API if running in backend mode.
+- Open `http://127.0.0.1:5173` or the remote host IP and chosen port.
+- Dashboard connects to the telemetry WebSocket and backend API when running in backend mode.
 
-## 3) Manual startup (legacy ZMQ path, troubleshooting only) OLD
+## 3) Manual startup (legacy ZMQ path, troubleshooting only)
 
 This section reproduces the legacy deployment shape manually.
-
 - Useful for isolating startup faults.
 - Not the recommended day-to-day path.
 - Preferred path remains `./tools/start_live_stack.sh`.
@@ -214,10 +222,10 @@ ros2 run web_video_server web_video_server --ros-args -p port:=8080
 
 Targeting note:
 
-- Target selection is now strictly user-driven through `dashboard_bridge_node`.
+- Target selection is user-driven through `dashboard_bridge_node`.
 - `POST /api/target` is the only supported way to select a target.
 - There is no automatic target-selection fallback in the live stack, replay flows, or first ROS 2 slice.
-- When no target is explicitly selected, `/target` publishes the empty target state (`id=0`, zero geometry, zero score/quality).
+- When no target is explicitly selected, `/target` publishes the empty target state (`id=0`, zero geometry, zero score or quality).
 
 Dashboard:
 
@@ -247,7 +255,8 @@ cd "$THESIS_ROOT"
 ```
 
 This records to:
-artifacts/bags/live_camera/YYYY-MM-DD__HH-MM-SS__video__flight_01/
+
+`artifacts/bags/live_camera/YYYY-MM-DD__HH-MM-SS__video__flight_01/`
 
 Recorded topics:
 /camera/dashboard
@@ -284,11 +293,11 @@ Additional MAVROS topics:
 
 ## 5) Replay and analysis
 
-Eval replay:
+Replay an existing bag:
 
 ```bash
 ros2 launch thesis_bringup eval_replay.launch.py \
-  bag:=$THESIS_ROOT/artifacts/bags/raw/<bag_name> \
+  bag:=$THESIS_ROOT/artifacts/bags/live_camera/<bag_name> \
   tracker:=sort
 ```
 
@@ -307,25 +316,23 @@ Expected:
 Timing:
 
 ```bash
-python3 tools/analysis/analyse_bag_timing.py $THESIS_ROOT/artifacts/bags/raw/<bag_name>
-# or
-python3 tools/analysis/analyse_bag_timing.py $THESIS_ROOT/artifacts/bags/live_camera/<bag_name>
+python3 tools/analysis/analyse_bag_timing.py "$THESIS_ROOT/artifacts/bags/live_camera/<bag_name>"
 ```
 
 Expected output:
 
-- Markdown timing report file.
-- Figure files in the selected figure directory.
+- Markdown timing report in `reports/timing/` by default.
+- Figure files in `figures/timing/` by default.
 
 Tracking:
 
 ```bash
-python3 tools/analysis/analyse_bag_tracking.py $THESIS_ROOT/artifacts/bags/eval/<eval_bag_name>
+python3 tools/analysis/analyse_bag_tracking.py "$THESIS_ROOT/artifacts/bags/eval/<eval_bag_name>"
 ```
 
 Expected output:
 
-- `summary.md` and plot files under `artifacts/reports/tracking/<eval_bag_name>/`.
+- `summary.md` and plot files under `reports/tracking/<eval_bag_name>/` by default.
 
 ### 5.1) Timing vocabulary (canonical)
 
@@ -342,7 +349,7 @@ Use these names in runtime analysis, reports, and UI interpretation:
 
 Clock-domain note:
 
-- `src_stamp_ns` is source/sensor clock metadata and may not be directly comparable to host monotonic timing without synchronization.
+- `src_stamp_ns` is source or sensor clock metadata and may not be directly comparable to host monotonic timing without synchronization.
 - `pub_dt_ms`, `det_out_fps`, and `camera_input_fps` are cadence-derived metrics.
 
 Full old-to-new mapping, producers/consumers, and deprecation status is in `TIMING_FIELD_AUDIT.md`.
@@ -369,7 +376,7 @@ Top 5 during offline analysis:
 2. `pub_dt_ms` p95/p99: cadence jitter and restart-gap impact.
 3. `container_queue_ms` distribution: queue pressure/bottleneck location.
 4. `infer_ms` distribution: compute cost stability.
-5. `e2e_target_ms` p95 (when target stream present): downstream control readiness latency.
+5. `e2e_target_ms` p95 when target stream is present: downstream control readiness latency.
 
 ## 6) Quick troubleshooting
 
@@ -382,7 +389,7 @@ ros2 topic echo /camera/fps --once
 Ports check:
 
 ```bash
-ss -ltnp | rg ':5556|:8080|:8090|:8765'
+ss -ltnp | rg ':5556|:8080|:8090|:8765|:5173'
 ```
 
 ROS graph refresh:
@@ -425,7 +432,7 @@ Additional common failures:
   - Confirm API `:8090` and WS `:8765` ports are reachable.
   - Use UI mock mode to isolate backend vs frontend issues.
 - `ros2 run` cannot find packages:
-  - Rebuild workspace with `colcon build --symlink-install` in `ros2_ws`.
+  - Rebuild the workspace with `colcon build --symlink-install` in `ros2_ws`.
 
 Live log triage quick commands:
 
@@ -474,13 +481,14 @@ Expected behavior from validated baseline:
 - ROS packages: `ros2_ws/src/`
 - Utility scripts: `tools/`
 - Live bags: `artifacts/bags/live_camera/`
-- Replay source bags: `artifacts/bags/raw/`
 - Eval output bags: `artifacts/bags/eval/`
-- Tracking reports: `artifacts/reports/tracking/`
+- Timing reports: `reports/timing/`
+- Timing figures: `figures/timing/`
+- Tracking reports: `reports/tracking/`
 
 ## 9) Last validated assumptions
 
-- Date: 2026-04-28
+- Date: 2026-05-04
 - ROS: Jazzy
 - Default live path: single-process perception via `tools/start_live_stack.sh`
 - Legacy compose path: `$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu` (with `~/pi-ai-kit-ubuntu` compatibility fallback)

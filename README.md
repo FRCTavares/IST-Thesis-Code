@@ -1,6 +1,6 @@
 # Thesis Workspace
 
-Last reviewed: 2026-04-28
+Last reviewed: 2026-05-04
 
 ROS 2 workspace for live camera perception, tracking, user-driven target selection, optional control output, dashboard operation, and reproducible replay/analysis.
 
@@ -14,12 +14,12 @@ Root documentation is split by purpose:
 - `LIVE_STACK_CAMERA_RECOVERY.md`: camera failure triage/recovery for RPi5 + TEVS incidents.
 - `SINGLE_PROCESS_PERCEPTION_MIGRATION_PLAN.md`: migration history, performance gates, and optimization backlog.
 
-## Runtime snapshot (2026-04-15)
+## Runtime snapshot
 
-- Default live perception mode is `single-process` (`./tools/start_live_stack.sh`).
-- Legacy ZMQ path (`--perception-mode legacy`) remains available as rollback/troubleshooting mode.
-- Default control/dashboard stack is enabled in live startup unless explicitly disabled.
-- Live logs are centralized under `ros2_ws/log/live_stack/<run-id>` and ROS runtime logs under `ros2_ws/log/runtime/<run-id>`.
+- Default live perception mode is `single-process` via `./tools/start_live_stack.sh`.
+- Legacy frame-ZMQ mode remains available as `--perception-mode legacy` for rollback and debugging.
+- Target selection is user-driven through `dashboard_bridge_node` and `POST /api/target`.
+- Live logs are centralized under `ros2_ws/log/live_stack/<run-id>` and UI logs under `ros2_ws/log/ui_stack/<run-id>`.
 
 ## Live stack operator cheat sheet
 
@@ -41,10 +41,13 @@ cd "$THESIS_ROOT"
 While the script is running, use the built-in prompt commands:
 
 - `status` to print tracked process IDs.
+- `ids` to show visible track IDs.
+- `target <id>` to select an active target.
+- `clear-target` to clear the selection.
 - `clear` to clear terminal noise.
 - `stop` (or `exit`) for ordered shutdown.
 
-If you need full option coverage (including tracker/perception tuning):
+If you need full option coverage, including tracker and perception tuning:
 
 ```bash
 ./tools/start_live_stack.sh --help-advanced
@@ -55,7 +58,7 @@ If you need full option coverage (including tracker/perception tuning):
 Provide an end-to-end experimental stack that can:
 
 1. Ingest camera frames in ROS 2.
-2. Run detector inference through either single-process Hailo pipeline (default) or legacy ZMQ service path.
+2. Run detector inference through either the default single-process Hailo pipeline or the legacy ZMQ rollback path.
 3. Track candidates and expose explicit user-driven target selection for control and UI.
 4. Publish telemetry/video/control interfaces for real-time operation.
 5. Record and replay experiments for timing/tracking evaluation.
@@ -66,7 +69,7 @@ Provide an end-to-end experimental stack that can:
 
 Use when you need full end-to-end behavior (camera + perception + tracker + target + control + dashboard).
 
-1. Follow `RUNBOOK.md` sections 0 through 3.
+1. Follow `RUNBOOK.md` sections 1 through 3.
 2. Start stack with `./tools/start_live_stack.sh`.
 3. Start UI with `./tools/start_ui_stack.sh`.
 
@@ -80,7 +83,8 @@ cd "$THESIS_ROOT"
 ./tools/start_ui_stack.sh --mode mock
 ```
 
-Replay/analysis commands are in `RUNBOOK.md` section 5.
+Use `--mode offline` when you want a single local snapshot without any backend connection.
+Replay and analysis commands are in `RUNBOOK.md`.
 
 ### Path C: Legacy perception rollback
 
@@ -146,7 +150,7 @@ cd "$THESIS_ROOT"
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
 ros2 topic list | rg '/camera/image_raw|/detections|/timing|/target'
-ss -ltnp | rg ':5556|:8080|:8090|:8765'
+ss -ltnp | rg ':5556|:8080|:8090|:8765|:5173'
 ```
 
 Note: `:5556` is expected only in legacy mode.
@@ -161,14 +165,14 @@ If live startup aborts, check in this order:
 
 ## Common workflows
 
-### Replay an existing raw bag
+### Replay an existing bag
 
 ```bash
 cd "$THESIS_ROOT/ros2_ws"
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 launch thesis_bringup eval_replay.launch.py \
-  bag:=$THESIS_ROOT/artifacts/bags/raw/<bag_name> \
+  bag:=$THESIS_ROOT/artifacts/bags/live_camera/<bag_name> \
   tracker:=sort
 ```
 
@@ -183,7 +187,7 @@ Replay note:
 
 ```bash
 cd "$THESIS_ROOT"
-python3 tools/analysis/analyse_bag_timing.py "$THESIS_ROOT/artifacts/bags/raw/<bag_name>"
+python3 tools/analysis/analyse_bag_timing.py "$THESIS_ROOT/artifacts/bags/live_camera/<bag_name>"
 ```
 
 ### Run tracking analysis
@@ -199,7 +203,7 @@ Repository operation is considered healthy when all three are true:
 
 1. Live stack starts end-to-end on target hardware.
 2. Replay runs on recorded bags and publishes expected topics.
-3. Timing/tracking analyses complete and generate report artifacts.
+3. Timing and tracking analyses complete and generate report artifacts.
 
 ## Where to read next
 
