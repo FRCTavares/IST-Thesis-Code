@@ -809,6 +809,8 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         /detections
         /tracks
         /target
+        /target_memory
+        /target_memory/status
         /timing
         /timing_tracker
         /timing_target

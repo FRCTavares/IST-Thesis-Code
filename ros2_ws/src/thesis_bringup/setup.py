@@ -35,6 +35,7 @@ setup(
             "dashboard_bridge_node = thesis_bringup.nodes.dashboard_bridge_node:main",
             'control_ref_node = thesis_bringup.nodes.control_ref_node:main',
             "mavros_imu_monitor_node = thesis_bringup.nodes.mavros_imu_monitor_node:main",
+            "target_memory_node = thesis_bringup.nodes.target_memory_node:main",
         ],
     },
 )
