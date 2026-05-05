@@ -154,6 +154,70 @@ def percentile(xs: list[float], p: float) -> float:
     return xs[f] * (c - k) + xs[c] * (k - f)
 
 
+def _sample_durations(rows: list[dict[str, Any]]) -> list[float]:
+    """Return per-row durations using next timestamp, with median dt for the final row."""
+    if len(rows) < 2:
+        return [0.0 for _ in rows]
+
+    dts = [
+        max(0.0, float(rows[i + 1]["t"]) - float(rows[i]["t"]))
+        for i in range(len(rows) - 1)
+    ]
+    valid = sorted(dt for dt in dts if dt > 0.0)
+    fallback = valid[len(valid) // 2] if valid else 0.0
+    return dts + [fallback]
+
+
+def total_duration(rows: list[dict[str, Any]]) -> float:
+    return sum(_sample_durations(rows))
+
+
+def valid_duration(rows: list[dict[str, Any]]) -> float:
+    dts = _sample_durations(rows)
+    return sum(dt for dt, row in zip(dts, rows) if bool(row.get("valid", False)))
+
+
+def duration_by_key(rows: list[dict[str, Any]], key: str) -> dict[str, float]:
+    dts = _sample_durations(rows)
+    out: dict[str, float] = {}
+    for dt, row in zip(dts, rows):
+        value = str(row.get(key, ""))
+        out[value] = out.get(value, 0.0) + dt
+    return out
+
+
+def first_transition_duration(
+    rows: list[dict[str, Any]],
+    from_state: str,
+    to_state: str,
+) -> float:
+    """Return first duration from entering from_state to entering to_state."""
+    enter_t = None
+    prev = None
+    for row in rows:
+        state = str(row.get("state", ""))
+        t = float(row["t"])
+
+        if state == from_state and prev != from_state:
+            enter_t = t
+
+        if enter_t is not None and state == to_state and prev != to_state:
+            return max(0.0, t - enter_t)
+
+        prev = state
+
+    return math.nan
+
+
+def append_duration_table(lines: list[str], durations: dict[str, float]) -> None:
+    total = sum(durations.values())
+    lines.append("| value | duration [s] | percentage |")
+    lines.append("|---|---:|---:|")
+    for key, value in sorted(durations.items(), key=lambda kv: kv[0]):
+        pct = 100.0 * value / total if total > 0 else 0.0
+        lines.append(f"| {key} | {value:.3f} | {pct:.1f}% |")
+
+
 def save_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     if not rows:
         return
@@ -258,6 +322,17 @@ def write_summary(
     raw_post_valid = sum(1 for r in raw_post if r["valid"])
     tim_post_valid = sum(1 for r in tim_post if r["valid"])
 
+    state_durations = duration_by_key(status, "state")
+    mode_durations = duration_by_key(status, "control_mode")
+
+    raw_post_total_s = total_duration(raw_post)
+    tim_post_total_s = total_duration(tim_post)
+    raw_post_valid_s = valid_duration(raw_post)
+    tim_post_valid_s = valid_duration(tim_post)
+
+    uncertain_to_reacquired_s = first_transition_duration(status, "UNCERTAIN", "REACQUIRED")
+    lost_to_reacquired_s = first_transition_duration(status, "LOST", "REACQUIRED")
+
     lines = []
     lines.append("# TIM-V0 Bag Analysis")
     lines.append("")
@@ -279,6 +354,8 @@ def write_summary(
         lines.append(f"- Post-selection window starts at t={post_start_t:.2f}s")
         lines.append(f"- Raw valid samples after TIM selection: {raw_post_valid}/{len(raw_post)}" if raw_post else "- Raw post-selection samples: none")
         lines.append(f"- TIM valid samples after TIM selection: {tim_post_valid}/{len(tim_post)}" if tim_post else "- TIM post-selection samples: none")
+        lines.append(f"- Raw valid duration after TIM selection: {raw_post_valid_s:.3f}/{raw_post_total_s:.3f} s" if raw_post else "- Raw post-selection duration: none")
+        lines.append(f"- TIM valid duration after TIM selection: {tim_post_valid_s:.3f}/{tim_post_total_s:.3f} s" if tim_post else "- TIM post-selection duration: none")
     lines.append("")
     lines.append("## State counts")
     lines.append("")
@@ -289,6 +366,28 @@ def write_summary(
     lines.append("")
     for k, v in mode_counts.items():
         lines.append(f"- {k}: {v}")
+    lines.append("")
+
+    lines.append("## State durations")
+    lines.append("")
+    append_duration_table(lines, state_durations)
+    lines.append("")
+
+    lines.append("## Control mode durations")
+    lines.append("")
+    append_duration_table(lines, mode_durations)
+    lines.append("")
+
+    lines.append("## Transition timing")
+    lines.append("")
+    if math.isnan(uncertain_to_reacquired_s):
+        lines.append("- First UNCERTAIN -> REACQUIRED duration: n/a")
+    else:
+        lines.append(f"- First UNCERTAIN -> REACQUIRED duration: {uncertain_to_reacquired_s:.3f} s")
+    if math.isnan(lost_to_reacquired_s):
+        lines.append("- First LOST -> REACQUIRED duration: n/a")
+    else:
+        lines.append(f"- First LOST -> REACQUIRED duration: {lost_to_reacquired_s:.3f} s")
     lines.append("")
     lines.append("## Reacquisition")
     lines.append("")
