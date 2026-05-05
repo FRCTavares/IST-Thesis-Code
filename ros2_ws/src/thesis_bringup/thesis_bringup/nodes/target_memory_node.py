@@ -265,7 +265,16 @@ class TargetMemoryNode(Node):
         target_msg.t_target_cb_start_ns = int(t_start_ns)
         target_msg.t_target_cb_end_ns = int(t_end_ns)
 
-        if out.bbox is None or out.target_track_id is None:
+        # Conservative TargetState contract:
+        # /target_memory is safe for controller-style consumers.
+        # If TIM does not currently consider the target visible/control-valid,
+        # publish an empty TargetState. Detailed memory state remains available
+        # on /target_memory/status.
+        if (
+            out.bbox is None
+            or out.target_track_id is None
+            or (self._zero_id_when_not_visible and not out.visible)
+        ):
             target_msg.id = 0
             target_msg.cx = 0.0
             target_msg.cy = 0.0
@@ -275,10 +284,7 @@ class TargetMemoryNode(Node):
             target_msg.quality = 0.0
             return target_msg
 
-        if self._zero_id_when_not_visible and not out.visible:
-            target_msg.id = 0
-        else:
-            target_msg.id = int(out.target_track_id)
+        target_msg.id = int(out.target_track_id)
 
         cx, cy, w, h = self._bbox_to_msg_geometry(out.bbox)
         target_msg.cx = float(cx)
