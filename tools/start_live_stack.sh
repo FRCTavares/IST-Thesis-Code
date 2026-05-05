@@ -193,6 +193,7 @@ stop_stack() {
     pkill -f "tracker_node" >/dev/null 2>&1 || true
     pkill -f "control_ref_node" >/dev/null 2>&1 || true
     pkill -f "dashboard_bridge_node" >/dev/null 2>&1 || true
+    pkill -f "target_memory_node" >/dev/null 2>&1 || true
     pkill -f "web_video_server" >/dev/null 2>&1 || true
 
     docker exec "$CONTAINER_NAME" bash -lc 'pkill -f detection_zmq.py >/dev/null 2>&1 || true' >/dev/null 2>&1 || true
@@ -760,6 +761,17 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         stop_stack
         exit 1
     fi
+    # TIM-V0 selected-target memory.
+    # Mirrors positive dashboard /target selections and publishes:
+    #   /target_memory
+    #   /target_memory/status
+    start_ros_bg target_memory ros2 run thesis_bringup target_memory_node
+    sleep 1
+    if ! check_proc_alive target_memory; then
+        stop_stack
+        exit 1
+    fi
+
     if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
         start_ros_bg web_video ros2 run web_video_server web_video_server --ros-args -p port:=8080
         sleep 1
