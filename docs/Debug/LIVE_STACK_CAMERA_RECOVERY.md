@@ -2,35 +2,63 @@
 
 ## Scope
 
-This document captures the April 2026 incident where live stack startup failed due to camera bring-up issues after a crash/reboot cycle.
+This document captures known camera bring-up incidents where live stack startup fails before inference because the TEVS/RPi CSI camera path is unhealthy.
 
 This guide applies to both perception modes (`single-process` and `legacy`) because camera failure happens before inference path selection.
 
 Use this guide when:
 
-- inference service can run, but camera does not publish /camera/image_raw
+- inference service can run, but camera does not publish `/camera/image_raw`
 - media graph appears incomplete
-- /dev/video0 or /dev/v4l-subdev* is missing
+- `/dev/video0` or `/dev/v4l-subdev*` is missing
+- `media-ctl` shows `rp1-cfe` with only `csi2` and `pisp-fe`
+- camera tools such as `v4l2-ctl` block or enter uninterruptible `D` state
 
 Related operator docs:
 
 - `RUNBOOK.md` for routine startup commands
+- `HAILO_RECOVERY.md` for Hailo/AI HAT driver recovery
 - `README.md` for path selection
 
-## Pre-launch gate (run before starting live stack)
+---
 
-If these checks fail, fix camera bring-up first instead of launching the stack.
+## Pre-launch Gate
+
+Run before starting the live stack after any reboot, kernel update, crash, CSI cable change, or camera incident:
 
 ```bash
 uname -r
-modinfo tevs || true
+modinfo tevs | head || true
+lsmod | rg '^tevs' || echo 'tevs not loaded'
 ls -l /dev/v4l-subdev* 2>/dev/null || echo no-subdev
 v4l2-ctl --list-devices
-media-ctl -d /dev/media0 -p
-journalctl -k -b --no-pager | rg -i "tevs|rp1-cfe|pca953x|i2c|fail|error" | tail -n 120
+
+for m in /dev/media*; do
+  echo "===== $m ====="
+  media-ctl -d "$m" -p | rg -i "tevs|rp1-cfe|csi2|pisp-fe|csi2_ch0|entity|video|ENABLED" | head -160
+done
+
+journalctl -k -b --no-pager | rg -i "tevs|rp1-cfe|pca953x|i2c|stream|timeout|fail|error" | tail -n 120
 ```
 
+Gate to proceed:
+
+- `/dev/v4l-subdev*` exists
+- `v4l2-ctl --list-devices` shows `rp1-cfe` with `/dev/video0...`
+- a media graph contains a TEVS entity, for example `tevs 10-0048`
+- `csi2` is linked to TEVS
+- the capture node `/dev/video0` exists
+
+Important:
+
+- Do not assume `rp1-cfe` is always `/dev/media0`.
+- After reboot, media indexes can change. Inspect all `/dev/media*` devices.
+
+---
+
 ## Incident Summary
+
+### April 2026 Incident
 
 Date range:
 
@@ -40,305 +68,325 @@ Date range:
 
 Observed sequence:
 
-1. Inference readiness failed first (port 5556 timeout) due to Hailo module mismatch.
+1. Inference readiness failed first due to Hailo module mismatch.
 2. After Hailo recovery, camera still failed.
 3. Camera node exited because selected media graph exposed no camera video nodes.
 
-## Final Root Cause
+Root causes:
 
-Two separate root causes existed:
+1. Hailo module mismatch after kernel update.
+2. TEVS camera driver missing for the current kernel.
+3. Follow-up failure where topology was present but stream path was unhealthy.
 
-1. Hailo module mismatch (fixed first)
+### May 2026 Kernel 6.8.0-1053 Follow-up
 
-- Kernel moved to 6.8.0-1051-raspi.
-- Hailo module initially existed only for older kernel.
+Observed after reboot/update:
 
-1. TEVS camera driver missing for current kernel (primary camera blocker)
+```text
+uname -r -> 6.8.0-1053-raspi
+modinfo tevs -> Module tevs not found
+/dev/v4l-subdev* -> missing
+v4l2-ctl --list-devices -> no /dev/video0
+media graph -> rp1-cfe only had csi2 + pisp-fe, no TEVS entity
+```
 
-- Running kernel: 6.8.0-1051-raspi.
-- tevs.ko existed for 6.8.0-1048 and 6.8.0-1050, but not 6.8.0-1051.
-- Overlay declared TEVS node, but no driver binding occurred.
-- Result:
-  - no /dev/v4l-subdev*
-  - no TEVS sensor entities in media topology
-  - camera node failed before publishing /camera/image_raw
+Root cause:
 
-1. Follow-up failure mode after module recovery (graph present, stream path not healthy)
+- Kernel updated to `6.8.0-1053-raspi`.
+- TEVS out-of-tree module was not built/installed for the new kernel.
+- Kernel headers were initially missing.
 
-- TEVS module loaded and graph looked present (`/dev/v4l-subdev*` + `rp1-cfe` nodes existed).
-- Direct stream probe still failed: `VIDIOC_STREAMON returned -1 (Invalid argument)`.
-- Kernel showed capture path/link and control-path instability symptoms:
-  - `rp1-cfe ... csi2_ch0 node link is not enabled`
-  - `i2c_designware ... timeout`
-  - `tevs ... failed to read from register: ret=-110`
-- In bad states, `v4l2-ctl` can block in uninterruptible `D` state (`vb2_fop_release`).
-- Practical implication: topology presence alone is not sufficient; stream-on and control path must also be healthy.
+Recovery:
+
+```bash
+sudo apt update
+sudo apt install -y linux-headers-$(uname -r)
+
+cd /home/francisco/tevs-oot
+make clean
+make -j$(nproc)
+
+sudo mkdir -p /lib/modules/$(uname -r)/extra
+sudo cp /home/francisco/tevs-oot/tevs.ko /lib/modules/$(uname -r)/extra/tevs.ko
+sudo depmod -a
+
+sudo modprobe -r tevs 2>/dev/null || true
+sudo modprobe tevs
+```
+
+Final healthy state:
+
+```text
+/dev/v4l-subdev0..2 exist
+rp1-cfe exposes /dev/video0..7
+media graph includes tevs 10-0048
+csi2 -> rp1-cfe-csi2_ch0 link enabled
+```
+
+---
 
 ## Typical Failure Signatures
 
 Launcher/log symptoms:
 
-- timeout waiting for /camera/image_raw
-- camera_capture_node traceback showing configured /dev/video0 missing
-- selected media device exposes no video nodes
-- camera init warning/error while applying sensor controls:
-  - `VIDIOC_S_EXT_CTRLS: failed: Connection timed out`
-  - `VIDIOC_S_EXT_CTRLS: failed: Unknown error 220`
-- camera stream probe fails with `VIDIOC_STREAMON returned -1 (Invalid argument)`
+- timeout waiting for `/camera/image_raw`
+- camera node alive but no `/camera/image_raw`
+- camera node logs stop after TEVS entity detection
+- selected media device exposes no camera video nodes
+- `VIDIOC_STREAMON returned -1 (Invalid argument)`
+- `VIDIOC_S_EXT_CTRLS: failed: Connection timed out`
+- `VIDIOC_S_EXT_CTRLS: failed: Unknown error 220`
 
 System symptoms:
 
-- ls -l /dev/v4l-subdev* returns none
-- media-ctl output contains rp1-cfe csi2 + pisp-fe only
-- pispbe/rpivid nodes exist, but no active TEVS capture path
+- `ls -l /dev/v4l-subdev*` returns none
+- `/dev/video0` missing
+- media graph contains `rp1-cfe` with only `csi2` and `pisp-fe`
+- `pispbe` and `rpivid` nodes exist, but no active TEVS capture path
+- `v4l2-ctl` or camera tools stuck in `D` state
 
-Possible kernel hints:
+Kernel hints:
 
-- rp1-cfe found subdevice tevs@48 in logs, but media graph still incomplete
-- occasional pca953x probe errors on bad boots
+- `rp1-cfe ... found subdevice ... tevs@48`, but media graph still incomplete
 - `rp1-cfe ... csi2_ch0 node link is not enabled`
 - `rp1-cfe ... stream on failed in subdev`
-- `i2c_designware ... timeout` and `tevs ... ret=-110`
+- `i2c_designware ... timeout`
+- `tevs ... failed to read from register: ret=-110`
+- `pca953x` probe or power warnings on bad boots
 
-## Recovery Procedure (Confirmed Working)
+---
 
-Prerequisites:
+## Recovery Procedure
 
-- current kernel headers installed
-- local TEVS out-of-tree source available at /home/francisco/tevs-oot
+### Step 1: Stop stale camera processes
 
-Step 1: Build module for current kernel
+```bash
+cd "$THESIS_ROOT"
+
+pkill -INT -f 'start_live_stack.sh|camera_capture_node|ros2 launch thesis_bringup camera_bringup.launch.py' || true
+sleep 3
+pkill -TERM -f 'start_live_stack.sh|camera_capture_node|ros2 launch thesis_bringup camera_bringup.launch.py' || true
+sleep 3
+pkill -KILL -f 'start_live_stack.sh|camera_capture_node|ros2 launch thesis_bringup camera_bringup.launch.py' || true
+
+ps -eo pid,stat,cmd | rg 'start_live_stack|camera_capture_node|camera_bringup|v4l2|media-ctl' || true
+```
+
+If any process is in `D` state, userspace cannot kill it. Reboot immediately:
+
+```bash
+sudo reboot
+```
+
+### Step 2: Check module and graph
+
+```bash
+uname -r
+modinfo tevs | head || true
+lsmod | rg '^tevs' || echo 'tevs not loaded'
+ls -l /dev/v4l-subdev* 2>/dev/null || echo no-subdev
+v4l2-ctl --list-devices
+
+for m in /dev/media*; do
+  echo "===== $m ====="
+  media-ctl -d "$m" -p | rg -i "tevs|rp1-cfe|csi2|pisp-fe|csi2_ch0|entity|video|ENABLED" | head -160
+done
+```
+
+### Step 3: Rebuild TEVS for current kernel if missing
+
+If `modinfo tevs` fails or `/dev/v4l-subdev*` is missing:
+
+```bash
+ls -ld /lib/modules/$(uname -r)/build || echo missing-headers
+```
+
+If headers are missing:
+
+```bash
+sudo apt update
+sudo apt install -y linux-headers-$(uname -r)
+```
+
+Then rebuild:
 
 ```bash
 cd /home/francisco/tevs-oot
 make clean
 make -j$(nproc)
-```
 
-Step 2: Install module into current kernel module tree
-
-```bash
 sudo mkdir -p /lib/modules/$(uname -r)/extra
 sudo cp /home/francisco/tevs-oot/tevs.ko /lib/modules/$(uname -r)/extra/tevs.ko
 sudo depmod -a
-```
 
-Step 3: Reload and verify module
-
-```bash
 sudo modprobe -r tevs 2>/dev/null || true
 sudo modprobe tevs
+
+modinfo tevs | head
 lsmod | rg '^tevs' || echo 'tevs not loaded'
 ```
 
-Step 4: Verify camera graph and devices
+### Step 4: Enable capture link if graph is present but link is disabled
+
+First find which media device is `rp1-cfe`:
 
 ```bash
-uname -r
-ls -l /dev/v4l-subdev*
-media-ctl -d /dev/media0 -p
-media-ctl -d /dev/media1 -p
 v4l2-ctl --list-devices
 ```
 
-Step 4b: Verify stream-on path (not only topology)
+Then inspect it, replacing `/dev/media0` with the actual `rp1-cfe` media device if needed:
 
 ```bash
-v4l2-ctl -d /dev/video0 --set-fmt-video=width=1280,height=720,pixelformat=UYVY --stream-mmap=4 --stream-count=30 --stream-to=/dev/null --stream-poll
-journalctl -k -b --no-pager | rg -i "tevs|i2c|timeout|rp1-cfe|failed|error" | tail -n 120
+media-ctl -d /dev/media0 -p | rg -i 'tevs|csi2_ch0|ENABLED|device node'
 ```
 
-Interpretation:
-
-- If stream probe fails with `VIDIOC_STREAMON ... Invalid argument` and kernel reports link-not-enabled:
-  - re-enable capture link and retry once:
+If the capture link is disabled:
 
 ```bash
 media-ctl -d /dev/media0 -l '"csi2":4 -> "rp1-cfe-csi2_ch0":0 [1]'
 ```
 
-- If media topology shows `tevs` on UYVY 640x480 but `csi2`/`rp1-cfe-csi2_ch0` pads are not enabled (or still on a different format), force relink and format sync before retrying stream-on:
+Verify:
 
 ```bash
-media-ctl -d /dev/media0 -l '"csi2":4 -> "rp1-cfe-csi2_ch0":0 [1]'
-media-ctl -d /dev/media0 -V '"tevs 10-0048":0 [fmt:UYVY8_1X16/640x480 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range]'
-media-ctl -d /dev/media0 -V '"csi2":0 [fmt:UYVY8_1X16/640x480 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range]'
-media-ctl -d /dev/media0 -V '"csi2":4 [fmt:UYVY8_1X16/640x480 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range]'
-v4l2-ctl -d /dev/video0 --set-fmt-video=width=640,height=480,pixelformat=UYVY --stream-mmap=4 --stream-count=30 --stream-to=/dev/null --stream-poll
+media-ctl -d /dev/media0 -p | rg -i 'tevs|csi2_ch0|ENABLED|device node'
 ```
 
-- If kernel reports repeated `i2c_designware` timeout or `tevs ... ret=-110`, or camera tooling is stuck in `D` state:
-  - reboot host before retrying live stack.
+### Step 5: Use direct stream probes sparingly
 
-Why 1280x720 often fails first:
+Direct stream probes can wedge the camera path. Use them only when necessary and only after graph health is confirmed.
 
-- after a bad boot/crash, TEVS frequently comes up in a safe 640x480 mode
-- CSI capture link may be present but disabled (`[]`), so stream-on returns `Invalid argument`
-- forcing 1280x720 while I2C control path is unstable can trigger `ret=-110` and `stream on failed in subdev`
-- once 640x480 stream is healthy again, you can test returning to 1280x720
-
-Step 5: Start live stack
+Conservative probe:
 
 ```bash
-cd /home/francisco/Desktop/Thesis-Code
-./tools/start_live_stack.sh
+v4l2-ctl -d /dev/video0 \
+  --set-fmt-video=width=640,height=480,pixelformat=UYVY \
+  --stream-mmap=4 \
+  --stream-count=30 \
+  --stream-to=/dev/null \
+  --stream-poll
 ```
 
-If recovering from this specific 640x480/link-disabled failure, prefer first launch with the conservative camera profile:
+If this hangs or creates a `D`-state process, reboot. Do not keep retrying.
+
+### Step 6: Start live stack conservatively
+
+After module and graph are healthy:
 
 ```bash
-./tools/start_live_stack.sh --profile safe-camera
+cd "$THESIS_ROOT"
+
+./tools/start_live_stack.sh \
+  --profile safe-camera \
+  --record-video \
+  --bag-tag camera_recovery_smoke_01
 ```
 
-After confirming stable `/camera/image_raw`, test 1280x720 again.
+After safe-camera works, test daily profile.
 
-Notes:
-
-- Default startup mode is `single-process`; camera recovery workflow is unchanged.
-- Use `./tools/start_live_stack.sh --perception-mode legacy` only when you explicitly need the rollback path.
+---
 
 ## Expected Healthy State
 
 A successful recovery should show:
 
-- /dev/v4l-subdev* exists
-- media topology includes TEVS sensor entities and capture path
-- start_live_stack passes camera readiness check
-- /camera/image_raw publishes
+- `modinfo tevs` works for current kernel
+- `tevs` appears in `lsmod`
+- `/dev/v4l-subdev*` exists
+- `v4l2-ctl --list-devices` shows `rp1-cfe` with `/dev/video0...`
+- media topology includes TEVS sensor entity and enabled CSI link
+- `start_live_stack.sh` starts camera and publishes `/camera/image_raw`
+- `/camera/dashboard` and `/camera/fps` publish during live stack
 
-## Persistent Prevention (So It Does Not Recur)
+---
 
-Use this section after any reboot, kernel update, or CSI cable move.
+## ROS-Level Debugging
 
-### 1) Keep overlay port aligned with physical connector
+Check graph:
 
-For the current setup where the camera cable is on J3:
+```bash
+source /opt/ros/jazzy/setup.bash
+source "$THESIS_ROOT/ros2_ws/install/setup.bash"
 
-- set `dtoverlay=tevs-rpi22,cam0`
-- keep `camera_auto_detect=0`
+ros2 node list | rg 'camera|perception|tracker|target_memory'
+ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/camera/fps|/camera/capture_fps'
+ros2 topic info -v /camera/image_raw
+ros2 topic info -v /camera/dashboard
+```
 
-If the cable is moved again between J3/J4, update cam0/cam1 to match the physical port and reboot.
+For this ROS 2 setup, use simple `hz` commands:
 
-### 2) Reboot-health validation before launching stack
+```bash
+ros2 topic hz /camera/dashboard
+ros2 topic hz /camera/image_raw
+```
 
-Run this quick check after every reboot and before `start_live_stack`:
+Do not use `--qos-reliability` with `ros2 topic hz` unless confirmed supported by the local CLI version.
+
+Inspect logs:
+
+```bash
+cd "$THESIS_ROOT"
+
+ls -1 ros2_ws/log/live_stack/latest
+tail -n 160 ros2_ws/log/live_stack/latest/camera.log
+journalctl -k -b --no-pager | rg -i 'tevs|rp1-cfe|i2c|timeout|stream|failed|error' | tail -120
+```
+
+---
+
+## Prevention
+
+After every kernel update or reboot:
 
 ```bash
 uname -r
-modinfo tevs || true
+modinfo tevs | head || true
+lsmod | rg '^tevs' || echo 'tevs not loaded'
 ls -l /dev/v4l-subdev* 2>/dev/null || echo no-subdev
 v4l2-ctl --list-devices
-media-ctl -d /dev/media0 -p
-journalctl -k -b --no-pager | rg -i "tevs|rp1-cfe|pca953x|i2c|fail|error" | tail -n 120
 ```
 
-Gate to proceed:
+If `modinfo tevs` fails, rebuild TEVS before launching the stack.
 
-- `/dev/v4l-subdev*` exists
-- `v4l2-ctl --list-devices` shows `rp1-cfe` with `/dev/video0...`
-- `media-ctl -d /dev/media0 -p` includes TEVS entity linked into `csi2`
+Keep overlay and physical connector aligned:
 
-If any gate fails, do not start the stack yet; fix camera bring-up first.
+- For current setup with camera cable on J3: `dtoverlay=tevs-rpi22,cam0`
+- Keep `camera_auto_detect=0`
+- If the cable moves between J3/J4, update `cam0/cam1` and reboot.
 
-### 3) Keep runtime resilient defaults (already applied)
+Avoid active stream probes by default. The launcher already avoids aggressive probing unless explicitly requested.
 
-`tools/start_live_stack.sh` defaults were tuned to reduce startup and runtime regressions:
-
-- `infer-queue-size=1` (fresh-frame behavior)
-- `infer-workers=2`
-- `infer-timeout-ms=300`
-- `infer-retries=0` (avoid long retry stalls)
-- `control-stale-timeout-s=0.80`
-
-These defaults improve robustness against transient inference jitter that previously caused repeated stale-target drops.
-
-### 4) Camera node robustness that should remain enabled
-
-In `camera_capture_node.py`:
-
-- media device auto-detection prefers CSI graphs over pispbe-only graphs
-- sensor entity auto-detection handles bus re-enumeration (e.g., `tevs 10-0048` vs `tevs 11-0048`)
-- media init reconciles to detected sensor resolution when requested format is not truly applied
-
-This avoids the "node alive but no `/camera/image_raw` frames" state after reboot/re-enumeration.
-
-### 5) Fast restart sequence when stack was previously healthy
-
-```bash
-cd /home/francisco/Desktop/Thesis-Code
-./tools/start_live_stack.sh
-```
-
-If startup prints camera timeout again, collect these immediately:
-
-```bash
-latest=$(ls -1dt ros2_ws/log/live_stack/2026-* | head -n1)
-tail -n 200 "$latest/camera.log"
-tail -n 200 "$latest/inference.log"
-```
-
-### 6) Startup hardening now in launcher (April 2026 follow-up)
-
-`tools/start_live_stack.sh` now includes additional camera safeguards:
-
-- preflight check blocks startup when `camera_capture_node`, `v4l2-ctl`, or `media-ctl` is stuck in uninterruptible `D` state
-- preflight attempts to enable `"csi2":4 -> "rp1-cfe-csi2_ch0":0` if link is down
-- daily startup avoids active `/dev/video0` stream probing by default; use `--camera-preflight-stream-probe-on` only for deeper diagnostics
-- sensor trigger and rate/exposure control writes are disabled by default; use `--camera-trigger-control-on` or `--camera-rate-controls-on` only when explicitly needed
-- on startup failure with TEVS sensor-control timeout signatures, launcher can still retry camera with `apply_sensor_rate_controls=false`
-- startup diagnostics check kernel patterns for link-not-enabled and I2C timeout signals
-- logging is quieter by default and prints warnings/errors without verbose noise (use `--verbose` for full progress logs)
-- camera/preflight helper logic now lives in `tools/lib/live_camera.sh`; the entrypoint remains `tools/start_live_stack.sh`
+---
 
 ## Fast Triage Checklist
 
-Run these first during any future camera incident:
-
 ```bash
 uname -r
-modinfo tevs || true
+modinfo tevs | head || true
+lsmod | rg '^tevs' || echo 'tevs not loaded'
 ls -l /dev/v4l-subdev* 2>/dev/null || echo no-subdev
-media-ctl -d /dev/media0 -p
 v4l2-ctl --list-devices
-journalctl -k -b --no-pager | rg -i "tevs|rp1-cfe|pca953x|i2c|fail|error"
+for m in /dev/media*; do echo "===== $m ====="; media-ctl -d "$m" -p | rg -i 'tevs|rp1-cfe|csi2|csi2_ch0|ENABLED|video' | head -120; done
+journalctl -k -b --no-pager | rg -i 'tevs|rp1-cfe|pca953x|i2c|stream|timeout|fail|error' | tail -120
+ps -eo pid,stat,cmd | rg 'camera_capture_node|v4l2|media-ctl' || true
 ```
 
 Decision logic:
 
-- If tevs module missing for current kernel: rebuild/install tevs first.
-- If tevs loaded but graph still incomplete: inspect kernel logs and CSI/overlay path.
-- If graph is complete but no frames: inspect camera node launch parameters and runtime logs.
+- `tevs` module missing for current kernel: install headers and rebuild TEVS.
+- TEVS loaded but graph incomplete: inspect overlay/CSI path and kernel logs.
+- Graph complete but stream path fails: enable capture link and retry once.
+- `v4l2-ctl` or camera process in `D` state: reboot.
+- Camera is healthy but `/detections` is missing: switch to `HAILO_RECOVERY.md`.
 
-## Safety Guardrails
-
-To reduce lockout risk:
-
-- Avoid risky remote edits to boot kernel/initramfs lines in /boot/firmware/config.txt as first response.
-- Prefer rebuilding and loading the required module for the current kernel.
-- Only change boot config with local physical fallback available.
-
-## Code Hardening Added During Incident
-
-1. tools/start_live_stack.sh
-
-- split camera/preflight logic into `tools/lib/live_camera.sh`
-- added camera fatal-log detection and clearer startup diagnostics
-- added preflight media graph auto-detection and actionable hints
-- added preflight D-state detection for `camera_capture_node`, `v4l2-ctl`, and `media-ctl`
-- added preflight CSI capture-link enable attempt (`csi2:4 -> rp1-cfe-csi2_ch0`)
-- made active stream probing opt-in via `--camera-preflight-stream-probe-on`
-- made sensor trigger/rate-control writes opt-in for daily robustness
-- default console output is warning/error focused; use `--verbose` for full startup/status logs
-
-1. ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_capture_node.py
-
-- improved media-device resolution to avoid false fallback onto pispbe-only nodes
-- fail-fast when selected media graph exposes no video nodes
-- added startup/stall watchdogs so no-frame states fail fast
+---
 
 ## Related Files
 
-- live_stack_incident_2026-04-08.txt
-- tools/start_live_stack.sh
-- tools/lib/live_camera.sh
-- ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_capture_node.py
+- `/home/francisco/tevs-oot`
+- `tools/start_live_stack.sh`
+- `tools/lib/live_camera.sh`
+- `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_capture_node.py`
+- `ros2_ws/log/live_stack/latest/camera.log`
+- `HAILO_RECOVERY.md`
