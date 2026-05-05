@@ -97,6 +97,13 @@ deprecated/
 
 # Local report outputs
 artifacts/reports/compare/tmp_*/
+
+# ------------------------------
+# Generated analysis outputs
+# ------------------------------
+reports/
+figures/
+
 # Live benchmark raw outputs
 artifacts/reports/timing/live_matrix_*/
 !artifacts/reports/timing/live_matrix_*/summary.csv
