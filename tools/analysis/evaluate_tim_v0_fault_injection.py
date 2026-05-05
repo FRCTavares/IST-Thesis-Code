@@ -170,15 +170,29 @@ def run_tim(rows, selected_id: int):
         else:
             result = tim.update(candidates)
 
+        best = result.best_score
+
         out.append({
             "t": row["t"],
+            "frame_id": row["frame_id"],
             "state": result.state.value,
             "mode": result.control_mode.value,
             "valid": result.visible and result.target_track_id is not None,
             "id": int(result.target_track_id) if result.visible and result.target_track_id is not None else 0,
+            "target_track_id": int(result.target_track_id) if result.target_track_id is not None else 0,
             "quality": float(result.quality),
             "reacquired": bool(result.reacquired),
             "reason": result.reason,
+            "frames_since_seen": int(result.frames_since_seen),
+            "num_candidates": len(candidates),
+            "best_track_id": int(best.track_id) if best is not None else 0,
+            "best_total": float(best.total) if best is not None else float("nan"),
+            "best_iou": float(best.iou) if best is not None else float("nan"),
+            "best_distance": float(best.distance) if best is not None else float("nan"),
+            "best_scale": float(best.scale) if best is not None else float("nan"),
+            "best_confidence": float(best.confidence) if best is not None else float("nan"),
+            "best_id_bonus": float(best.id_bonus) if best is not None else float("nan"),
+            "best_ambiguous": bool(best.ambiguous) if best is not None else False,
         })
 
     return out

@@ -60,6 +60,20 @@ def run_case(
 
     reacq = first_reacq_after(tim, fault_end_s)
 
+    post_end = [r for r in tim if float(r["t"]) >= fault_end_s]
+    last_post = post_end[-1] if post_end else (tim[-1] if tim else {})
+    best_post = None
+    if post_end:
+        valid_best_rows = [
+            r for r in post_end
+            if not math.isnan(float(r.get("best_total", math.nan)))
+        ]
+        if valid_best_rows:
+            best_post = max(valid_best_rows, key=lambda r: float(r.get("best_total", math.nan)))
+
+    if best_post is None:
+        best_post = {}
+
     if reacq is None:
         reacq_time_s = math.nan
         reacq_id = 0
@@ -89,6 +103,29 @@ def run_case(
         "reacq_id": reacq_id,
         "reacq_quality": reacq_quality,
         "reacq_reason": reacq_reason,
+
+        # Failure/debug diagnostics. Useful when reacquired == False.
+        "final_state": str(last_post.get("state", "")),
+        "final_reason": str(last_post.get("reason", "")),
+        "final_quality": float(last_post.get("quality", math.nan)),
+        "final_frames_since_seen": int(last_post.get("frames_since_seen", 0)),
+        "final_num_candidates": int(last_post.get("num_candidates", 0)),
+        "final_best_track_id": int(last_post.get("best_track_id", 0)),
+        "final_best_total": float(last_post.get("best_total", math.nan)),
+        "final_best_iou": float(last_post.get("best_iou", math.nan)),
+        "final_best_distance": float(last_post.get("best_distance", math.nan)),
+        "final_best_scale": float(last_post.get("best_scale", math.nan)),
+        "final_best_confidence": float(last_post.get("best_confidence", math.nan)),
+        "final_best_ambiguous": bool(last_post.get("best_ambiguous", False)),
+
+        "max_best_track_id_after_reappearance": int(best_post.get("best_track_id", 0)),
+        "max_best_total_after_reappearance": float(best_post.get("best_total", math.nan)),
+        "max_best_iou_after_reappearance": float(best_post.get("best_iou", math.nan)),
+        "max_best_distance_after_reappearance": float(best_post.get("best_distance", math.nan)),
+        "max_best_scale_after_reappearance": float(best_post.get("best_scale", math.nan)),
+        "max_best_confidence_after_reappearance": float(best_post.get("best_confidence", math.nan)),
+        "max_best_reason_after_reappearance": str(best_post.get("reason", "")),
+        "max_best_state_after_reappearance": str(best_post.get("state", "")),
     }
 
 
@@ -173,6 +210,27 @@ def write_summary(path: Path, bag: Path, rows: list[dict[str, Any]]) -> None:
         lines.append(f"- Mean reacquisition time: {sum(reacq_times) / len(reacq_times):.3f} s")
         lines.append(f"- Max reacquisition time: {max(reacq_times):.3f} s")
     lines.append("")
+    lines.append("## Failed cases")
+    lines.append("")
+    failed = [r for r in rows if not bool(r["reacquired"])]
+    if not failed:
+        lines.append("- None.")
+    else:
+        lines.append("| gap start | duration | final state | final reason | final q | final best | max post best | max post reason |")
+        lines.append("|---:|---:|---|---|---:|---:|---:|---|")
+        for r in failed:
+            lines.append(
+                f"| {r['gap_start_s']:.2f} "
+                f"| {r['gap_duration_s']:.2f} "
+                f"| {r['final_state']} "
+                f"| {r['final_reason']} "
+                f"| {r['final_quality']:.3f} "
+                f"| {r['final_best_total']:.3f} "
+                f"| {r['max_best_total_after_reappearance']:.3f} "
+                f"| {r['max_best_reason_after_reappearance']} |"
+            )
+    lines.append("")
+
     lines.append("## Cases")
     lines.append("")
     lines.append("| gap start | duration | raw valid | TIM valid | gain | reacquired | reacq time | reacq ID |")
