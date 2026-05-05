@@ -761,15 +761,17 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         stop_stack
         exit 1
     fi
-    # TIM-V0 selected-target memory.
-    # Mirrors positive dashboard /target selections and publishes:
-    #   /target_memory
-    #   /target_memory/status
-    start_ros_bg target_memory ros2 run thesis_bringup target_memory_node
-    sleep 1
-    if ! check_proc_alive target_memory; then
-        stop_stack
-        exit 1
+    if [[ "${ENABLE_TARGET_MEMORY:-1}" -eq 1 ]]; then
+        # TIM-V0 selected-target memory.
+        # Mirrors positive dashboard /target selections and publishes:
+        #   /target_memory
+        #   /target_memory/status
+        start_ros_bg target_memory ros2 run thesis_bringup target_memory_node
+        sleep 1
+        if ! check_proc_alive target_memory; then
+            stop_stack
+            exit 1
+        fi
     fi
 
     if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
@@ -821,8 +823,16 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         /detections
         /tracks
         /target
-        /target_memory
-        /target_memory/status
+    )
+
+    if [[ "${ENABLE_TARGET_MEMORY:-1}" -eq 1 ]]; then
+        VIDEO_BAG_TOPICS+=(
+            /target_memory
+            /target_memory/status
+        )
+    fi
+
+    VIDEO_BAG_TOPICS+=(
         /timing
         /timing_tracker
         /timing_target

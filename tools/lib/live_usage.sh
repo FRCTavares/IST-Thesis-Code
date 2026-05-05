@@ -82,7 +82,7 @@ Options:
     --perception-gc-on                  Enable Python cyclic GC in perception node (default)
     --perception-no-stub-fallback       Fail fast if Hailo backend initialization fails (default)
     --perception-allow-stub-fallback    Allow stub fallback when Hailo backend initialization fails
-    --no-dashboard                      Disable dashboard bridge
+    --target-memory                    Enable TIM-V0 selected-target memory, default\n    --no-target-memory                 Disable TIM-V0 selected-target memory\n    --no-dashboard                      Disable dashboard bridge
     --no-tracker                        Do not start tracker node
     --no-target                         Deprecated alias; target selection is now handled by dashboard bridge API
     --no-control                        Do not start control_ref_node

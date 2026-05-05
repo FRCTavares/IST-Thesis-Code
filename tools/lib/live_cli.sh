@@ -52,6 +52,14 @@ while [[ $# -gt 0 ]]; do
             VERBOSE=1
             shift
             ;;
+        --target-memory)
+            ENABLE_TARGET_MEMORY=1
+            shift
+            ;;
+        --no-target-memory)
+            ENABLE_TARGET_MEMORY=0
+            shift
+            ;;
         --no-dashboard)
             ENABLE_DASHBOARD_BRIDGE=0
             ENABLE_WEB_VIDEO=0
