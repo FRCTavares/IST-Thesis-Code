@@ -15,6 +15,8 @@
 - Post-selection window starts at t=21.76s
 - Raw valid samples after TIM selection: 162/168
 - TIM valid samples after TIM selection: 162/168
+- Raw valid duration after TIM selection: 15.362/15.796 s
+- TIM valid duration after TIM selection: 15.371/15.802 s
 
 ## State counts
 
@@ -29,6 +31,29 @@
 - NORMAL: 162
 - YAW_ONLY: 6
 - CONFIRM: 1
+
+## State durations
+
+| value | duration [s] | percentage |
+|---|---:|---:|
+| LOCKED | 15.644 | 41.2% |
+| NO_TARGET | 21.735 | 57.3% |
+| REACQUIRED | 0.127 | 0.3% |
+| UNCERTAIN | 0.432 | 1.1% |
+
+## Control mode durations
+
+| value | duration [s] | percentage |
+|---|---:|---:|
+| CONFIRM | 0.127 | 0.3% |
+| NORMAL | 15.644 | 41.2% |
+| NO_CONTROL | 21.735 | 57.3% |
+| YAW_ONLY | 0.432 | 1.1% |
+
+## Transition timing
+
+- First UNCERTAIN -> REACQUIRED duration: 0.432 s
+- First LOST -> REACQUIRED duration: n/a
 
 ## Reacquisition
 
