@@ -735,6 +735,66 @@ appearance could help decide if candidate is still the selected person
 
 ---
 
+
+---
+
+## Live UI Validation: TIM-V0 Dashboard Panel
+
+A practical live UI validation run was completed after adding TIM-V0 target-memory telemetry to the dashboard.
+
+Evidence bag:
+
+- `2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01`
+
+The dashboard now exposes:
+
+- TIM state
+- control mode
+- raw selected target ID
+- TIM target ID
+- target-memory quality
+- TIM latency
+- matching reason
+
+The run showed a clear raw-ID failure and TIM recovery case. During the test, the raw selected target became invalid, while TIM-V0 remained locked on the selected physical target under a new tracker ID.
+
+Summary:
+
+| Metric | Raw `/target` | TIM `/target_memory` |
+|---|---:|---:|
+| Valid samples | 931/1580 | 1375/1546 |
+| Post-selection valid samples | 929/1379 | 1374/1377 |
+| Post-selection valid duration | 57.069/83.014 s | 82.771/82.950 s |
+
+TIM-V0 recovered approximately `25.702 s` of valid target output compared with the raw selected-ID baseline.
+
+Observed TIM transitions:
+
+- `NO_TARGET -> LOCKED`
+- `LOCKED -> UNCERTAIN -> REACQUIRED -> LOCKED`
+- `LOCKED -> UNCERTAIN -> REACQUIRED -> LOCKED`
+
+Reacquisition events:
+
+| Time [s] | Reacquired track ID | Quality | Reason |
+|---:|---:|---:|---|
+| 72.38 | 4 | 0.735 | reacquired_candidate |
+| 78.10 | 4 | 0.876 | reacquired_candidate |
+
+Latency:
+
+| Metric | Value |
+|---|---:|
+| mean | 0.1313 ms |
+| p50 | 0.0943 ms |
+| p95 | 0.2117 ms |
+| p99 | 0.5654 ms |
+| max | 6.1227 ms |
+
+Interpretation:
+
+This run confirms that TIM-V0 is not only working in offline fault injection. It is also visible and useful in the live UI. The raw target can become invalid or stale, while TIM-V0 keeps a control-valid selected target through short tracking interruptions and tracker ID reassignment.
+
 ## 24. V0 Conclusion
 
 TIM-V0 is a valid baseline novelty layer for selected-target UAV following.
