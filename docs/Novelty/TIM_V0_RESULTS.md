@@ -633,7 +633,48 @@ This is an expected conservative failure mode. TIM-V0 avoids reacquiring weak ca
 
 ---
 
-## 20. Main Claims Supported by V0
+## 20. Threshold Sensitivity Analysis
+
+A lost-state threshold sensitivity sweep was added after the initial TIM-V0 fault-injection evaluation.
+
+Script:
+
+- `tools/analysis/sweep_tim_v0_fault_thresholds.py`
+
+Sweep configuration:
+
+- selected ID: `1`
+- replacement ID: `3`
+- gap starts: `24, 26, 28, 30, 32 s`
+- gap durations: `1, 2, 3 s`
+- thresholds: `0.35, 0.38, 0.40, 0.42, 0.45, 0.50, 0.60`
+- cases per threshold: `15`
+
+Result:
+
+| accept_score_lost | reacquired | mean gain | max gain | min gain | mean reacq time [s] | max reacq time [s] | failed |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.35 | 15/15 | 0.719 | 0.891 | 0.456 | 0.164 | 0.794 | 0 |
+| 0.38 | 15/15 | 0.719 | 0.891 | 0.456 | 0.164 | 0.794 | 0 |
+| 0.40 | 15/15 | 0.713 | 0.891 | 0.456 | 0.274 | 1.794 | 0 |
+| 0.42 | 14/15 | 0.681 | 0.882 | 0.000 | 0.362 | 1.794 | 1 |
+| 0.45 | 13/15 | 0.636 | 0.882 | 0.000 | 0.381 | 1.794 | 2 |
+| 0.50 | 13/15 | 0.635 | 0.882 | 0.000 | 0.400 | 1.917 | 2 |
+| 0.60 | 13/15 | 0.635 | 0.882 | 0.000 | 0.400 | 1.917 | 2 |
+
+Interpretation:
+
+Lowering the lost-state acceptance threshold improves recovery in weak geometric cases. Thresholds at or below `0.40` recovered all 15 injected ID-switch cases. However, this requires accepting weaker geometric evidence after target loss.
+
+The default value `accept_score_lost = 0.60` is therefore not a maximum-recovery setting. It is a conservative safety-oriented setting that rejects weak reacquisition candidates after loss.
+
+This supports the intended TIM-V0 design philosophy: prefer safe rejection over risky reacquisition when evidence is weak.
+
+This sweep should not be interpreted as a full safety proof. It is a deterministic threshold sensitivity analysis. A true wrong-reacquisition metric requires annotated natural multi-person data.
+
+---
+
+## 21. Main Claims Supported by V0
 
 Supported claims:
 
@@ -652,7 +693,7 @@ Not yet supported:
 
 ---
 
-## 21. Current Limitations
+## 22. Current Limitations
 
 TIM-V0 depends on geometric consistency. It can fail when:
 
@@ -667,7 +708,7 @@ The batch failures show this clearly. In late-gap cases, the best candidate scor
 
 ---
 
-## 22. Motivation for TIM-V1
+## 23. Motivation for TIM-V1
 
 TIM-V1 should add a lightweight appearance cue, but only when needed.
 
@@ -694,7 +735,7 @@ appearance could help decide if candidate is still the selected person
 
 ---
 
-## 23. V0 Conclusion
+## 24. V0 Conclusion
 
 TIM-V0 is a valid baseline novelty layer for selected-target UAV following.
 
