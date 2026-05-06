@@ -265,7 +265,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("bag", type=Path)
     parser.add_argument("--selected-id", type=int, default=1)
-    parser.add_argument("--new-id", type=int, default=3)
+    parser.add_argument("--new-id", "--replacement-id", dest="new_id", type=int, default=3)
     parser.add_argument("--gap-starts", type=str, default="24,26,28,30,32")
     parser.add_argument("--gap-durations", type=str, default="1,2,3")
     parser.add_argument("--out-root", type=Path, default=Path("reports/tim_v0_fault_injection_batch"))
