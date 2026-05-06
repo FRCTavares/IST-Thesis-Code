@@ -41,6 +41,7 @@ def run_case(
     new_id: int,
     gap_start_s: float,
     gap_duration_s: float,
+    accept_score_lost: float = 0.60,
 ) -> dict[str, Any]:
     injected = mod.inject_fault(
         rows,
@@ -51,7 +52,7 @@ def run_case(
     )
 
     raw = mod.run_raw_selector(injected, selected_id=selected_id)
-    tim = mod.run_tim(injected, selected_id=selected_id)
+    tim = mod.run_tim(injected, selected_id=selected_id, accept_score_lost=accept_score_lost)
 
     fault_end_s = gap_start_s + gap_duration_s
 
@@ -266,6 +267,7 @@ def main() -> None:
     parser.add_argument("bag", type=Path)
     parser.add_argument("--selected-id", type=int, default=1)
     parser.add_argument("--new-id", "--replacement-id", dest="new_id", type=int, default=3)
+    parser.add_argument("--accept-score-lost", type=float, default=0.60)
     parser.add_argument("--gap-starts", type=str, default="24,26,28,30,32")
     parser.add_argument("--gap-durations", type=str, default="1,2,3")
     parser.add_argument("--out-root", type=Path, default=Path("reports/tim_v0_fault_injection_batch"))
@@ -301,6 +303,7 @@ def main() -> None:
                     new_id=args.new_id,
                     gap_start_s=start,
                     gap_duration_s=duration,
+                    accept_score_lost=args.accept_score_lost,
                 )
             )
 

@@ -141,12 +141,12 @@ def run_raw_selector(rows, selected_id: int):
     return out
 
 
-def run_tim(rows, selected_id: int):
+def run_tim(rows, selected_id: int, accept_score_lost: float = 0.60):
     cfg = TargetMemoryConfig(
         image_width=640.0,
         image_height=640.0,
         accept_score_locked=0.52,
-        accept_score_lost=0.60,
+        accept_score_lost=accept_score_lost,
         ambiguity_margin=0.07,
         max_uncertain_frames=6,
         max_lost_frames=30,
