@@ -57,10 +57,30 @@ export function VideoOverlay({ telemetry, videoUrl, onResolutionChange }: VideoO
 
   const detections = useMemo(() => telemetry?.detections ?? [], [telemetry]);
   const targetTrack = useMemo(() => {
-    if (!telemetry || telemetry.target === null || telemetry.target === undefined) {
+    if (!telemetry) {
       return null;
     }
-    return telemetry.tracks.find((track) => track.id === telemetry.target) ?? null;
+
+    const tim = telemetry.target_memory;
+    const timTargetId =
+      typeof tim?.target_track_id === "number" &&
+      tim.target_track_id > 0 &&
+      tim.state !== "NO_TARGET" &&
+      tim.control_mode !== "NO_CONTROL"
+        ? tim.target_track_id
+        : null;
+
+    const targetId =
+      timTargetId ??
+      (telemetry.target !== null && telemetry.target !== undefined && telemetry.target > 0
+        ? telemetry.target
+        : null);
+
+    if (targetId === null) {
+      return null;
+    }
+
+    return telemetry.tracks.find((track) => track.id === targetId) ?? null;
   }, [telemetry]);
 
   const reportResolution = useCallback(
@@ -211,7 +231,13 @@ export function VideoOverlay({ telemetry, videoUrl, onResolutionChange }: VideoO
         context.lineWidth = 2.5;
         context.strokeRect(x, y, w, h);
 
-        const label = `TARGET ${targetTrack.id}`;
+        const tim = telemetry?.target_memory;
+        const usingTim =
+          typeof tim?.target_track_id === "number" &&
+          tim.target_track_id === targetTrack.id &&
+          tim.state !== "NO_TARGET" &&
+          tim.control_mode !== "NO_CONTROL";
+        const label = `${usingTim ? "TIM TARGET" : "TARGET"} ${targetTrack.id}`;
         context.font = "12px IBM Plex Mono, monospace";
         const textW = Math.ceil(context.measureText(label).width) + 10;
         context.fillStyle = style.fill;

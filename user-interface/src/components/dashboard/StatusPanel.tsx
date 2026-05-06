@@ -36,6 +36,72 @@ interface StatusPanelProps {
   currentResolutionLabel?: string;
 }
 
+
+function TimStatusPanel({ telemetry }: { telemetry: DashboardTelemetry | null }) {
+  const tim = telemetry?.target_memory ?? null;
+  const rawTarget = telemetry?.target ?? null;
+  const timState = String(tim?.state ?? "NO_DATA");
+  const controlMode = String(tim?.control_mode ?? "--");
+  const timTarget = typeof tim?.target_track_id === "number" ? tim.target_track_id : null;
+  const quality = typeof tim?.quality === "number" ? tim.quality : null;
+  const latMs = typeof tim?.lat_ms === "number" ? tim.lat_ms : null;
+  const reason = typeof tim?.reason === "string" ? tim.reason : "--";
+  const mismatch =
+    rawTarget !== null &&
+    rawTarget !== undefined &&
+    rawTarget > 0 &&
+    timTarget !== null &&
+    timTarget > 0 &&
+    rawTarget !== timTarget;
+
+  return (
+    <PanelShell title="TIM-V0 Target Memory">
+      <div className="space-y-3 text-xs">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-2">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">TIM state</div>
+            <div className="mt-1 font-mono text-sm text-zinc-100">{timState}</div>
+          </div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-2">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">Control mode</div>
+            <div className="mt-1 font-mono text-sm text-zinc-100">{controlMode}</div>
+          </div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-2">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">Raw target</div>
+            <div className="mt-1 font-mono text-sm text-zinc-100">{rawTarget && rawTarget > 0 ? `#${rawTarget}` : "--"}</div>
+          </div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-2">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">TIM target</div>
+            <div className="mt-1 font-mono text-sm text-zinc-100">{timTarget && timTarget > 0 ? `#${timTarget}` : "--"}</div>
+          </div>
+        </div>
+
+        {mismatch ? (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-amber-200">
+            Raw target and TIM target differ. TIM may have recovered the selected person under a new tracker ID.
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <div className="text-zinc-500">quality</div>
+            <div className="font-mono text-zinc-200">{quality === null ? "--" : quality.toFixed(3)}</div>
+          </div>
+          <div>
+            <div className="text-zinc-500">latency</div>
+            <div className="font-mono text-zinc-200">{latMs === null ? "--" : `${latMs.toFixed(3)} ms`}</div>
+          </div>
+        </div>
+
+        <div>
+          <div className="text-zinc-500">reason</div>
+          <div className="break-words font-mono text-zinc-300">{reason}</div>
+        </div>
+      </div>
+    </PanelShell>
+  );
+}
+
 export function StatusPanel({
   status,
   mode: _mode,
@@ -107,6 +173,8 @@ export function StatusPanel({
               isTrackerLoading={isTrackerSwitching}
               disabled={!isHealthy}
             />
+
+      <TimStatusPanel telemetry={telemetry} />
           </div>
         )}
 

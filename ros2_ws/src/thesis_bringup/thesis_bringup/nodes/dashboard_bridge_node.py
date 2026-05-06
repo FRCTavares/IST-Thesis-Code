@@ -22,6 +22,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from std_msgs.msg import Float32
 from vision_msgs.msg import Detection2DArray
+from std_msgs.msg import String
 from thesis_msgs.msg import TargetState, Timing, Track2DArray
 
 
@@ -66,6 +67,7 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("tracks_topic", "/tracks")
         self.declare_parameter("detections_topic", "/detections")
         self.declare_parameter("target_topic", "/target")
+        self.declare_parameter("target_memory_status_topic", "/target_memory/status")
         self.declare_parameter("fps_topic", "/camera/fps")
         self.declare_parameter("replay_progress_topic", "/camera/replay_progress")
         self.declare_parameter("timing_topic", "/timing")
@@ -100,6 +102,7 @@ class DashboardBridgeNode(Node):
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._detections_topic = str(self.get_parameter("detections_topic").value)
         self._target_topic = str(self.get_parameter("target_topic").value)
+        self._target_memory_status_topic = str(self.get_parameter("target_memory_status_topic").value)
         self._fps_topic = str(self.get_parameter("fps_topic").value)
         self._replay_progress_topic = str(self.get_parameter("replay_progress_topic").value)
         self._timing_topic = str(self.get_parameter("timing_topic").value)
@@ -147,6 +150,7 @@ class DashboardBridgeNode(Node):
             "target": None,
             "target_requested": None,
             "target_active": None,
+            "target_memory": None,
             # Explicit telemetry keys (canonical)
             "camera_input_fps": None,
             "det_out_fps": None,
@@ -211,6 +215,7 @@ class DashboardBridgeNode(Node):
         self._timing_target_pub = self.create_publisher(Timing, self._timing_target_topic, qos)
 
         self._tracks_sub = self.create_subscription(Track2DArray, self._tracks_topic, self._on_tracks, qos)
+        self._target_memory_status_sub = self.create_subscription(String, self._target_memory_status_topic, self._on_target_memory_status, qos)
         self._detections_sub = self.create_subscription(Detection2DArray, self._detections_topic, self._on_detections, qos)
         self._fps_sub = self.create_subscription(Float32, self._fps_topic, self._on_fps, qos)
         self._replay_progress_sub = self.create_subscription(Float32, self._replay_progress_topic, self._on_replay_progress, qos)
@@ -726,6 +731,7 @@ nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
                 "target": self._state["target"],
                 "target_requested": self._state["target_requested"],
                 "target_active": self._state["target_active"],
+                "target_memory": self._state.get("target_memory"),
                 "camera_input_fps": camera_input_fps,
                 "det_out_fps": det_out_fps,
                 "e2e_det_ms": e2e_det_ms,
@@ -786,6 +792,16 @@ nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
             self._clamp01(ref_w_px / ref_w),
             self._clamp01(ref_h_px / ref_h),
         )
+
+    def _on_target_memory_status(self, msg: String) -> None:
+        try:
+            payload = json.loads(msg.data)
+        except Exception:
+            payload = {"raw": msg.data, "parse_error": True}
+
+        with self._state_lock:
+            self._state["target_memory"] = payload
+            self._dirty = True
 
     def _on_tracks(self, msg: Track2DArray) -> None:
         tracks = []

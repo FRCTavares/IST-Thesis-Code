@@ -28,12 +28,36 @@ export interface DashboardResolution {
   height: number;
 }
 
+
+export interface TargetMemoryStatus {
+  state?: string;
+  control_mode?: string;
+  target_track_id?: number | null;
+  quality?: number;
+  reason?: string;
+  lat_ms?: number;
+  frames_since_seen?: number;
+  num_tracks?: number;
+  reacquired?: boolean;
+  best?: {
+    track_id?: number;
+    total?: number;
+    iou?: number;
+    distance?: number;
+    scale?: number;
+    confidence?: number;
+    ambiguous?: boolean;
+  } | null;
+  [key: string]: unknown;
+}
+
 export interface DashboardTelemetry {
   tracks: DashboardTrack[];
   detections: DashboardDetection[];
   target: number | null;
   target_requested?: number | null;
   target_active?: number | null;
+  target_memory?: TargetMemoryStatus | null;
   camera_input_fps?: number | null;
   det_out_fps?: number | null;
   e2e_det_ms?: number | null;
