@@ -735,7 +735,6 @@ appearance could help decide if candidate is still the selected person
 
 ---
 
-
 ---
 
 ## Live UI Validation: TIM-V0 Dashboard Panel
@@ -821,3 +820,29 @@ mean reacquisition time: 0.400 s
 TIM-V0 is therefore sufficient as the thesis V0 selected-target memory baseline.
 
 The next stage should be TIM-V1, focused on adding a lightweight target-only appearance cue for ambiguous or low-geometric-score reacquisition cases.
+
+## TIM-V0 Freeze Status
+
+TIM-V0 is frozen as the geometry-only selected-target memory baseline.
+
+Frozen features:
+
+- raw `/target` mirroring
+- selected-target memory
+- IoU, distance, scale, confidence, same-ID bonus, ambiguity penalty
+- explicit states: `NO_TARGET`, `LOCKED`, `UNCERTAIN`, `LOST`, `REACQUIRED`
+- conservative `/target_memory` output
+- `/target_memory/status` diagnostics
+- live-stack flags: `--target-memory`, `--no-target-memory`
+- bag recording of TIM topics
+- deterministic ID-switch fault injection evaluation
+
+Known limitations:
+
+- no appearance cue
+- no wrong-target annotation yet
+- no natural multi-person benchmark yet
+- weak geometry after long loss can prevent reacquisition
+
+Next stage:
+TIM-V1 should add lightweight target-only appearance only for ambiguity and lost-target recovery.
