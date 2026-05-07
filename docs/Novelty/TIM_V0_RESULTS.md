@@ -840,7 +840,7 @@ Frozen features:
 Known limitations:
 
 - no appearance cue
-- no wrong-target annotation yet
+- limited wrong-target annotation so far, only two interval-level bags
 - no natural multi-person benchmark yet
 - weak geometry after long loss can prevent reacquisition
 
@@ -851,16 +851,18 @@ TIM-V1 should add lightweight target-only appearance only for ambiguity and lost
 
 After supervisor feedback, TIM-V0 evaluation was extended beyond valid target duration.
 
-The key issue is that valid target duration alone is insufficient. For target-relative UAV control, a valid output is useful only if it corresponds to the selected person. A method that keeps publishing a target can still be unsafe if that target is a distractor.
+The central issue is:
 
-The evaluation protocol now separates:
+> correct target > any target.
+
+For target-relative UAV control, a valid output is useful only if it corresponds to the selected person. A method that keeps publishing a target can still be unsafe if that target is a distractor. Therefore, wrong-target duration is now treated as a first-class metric.
+
+The updated evaluation separates:
 
 - valid and correct target output
 - valid but wrong target output
 - invalid output while the selected target is visible
 - safe invalid output when the selected target is not visible
-
-This makes wrong-target duration a first-class metric.
 
 Added artefacts:
 
@@ -869,49 +871,24 @@ Added artefacts:
 - `tools/analysis/evaluate_tim_target_correctness.py`
 - interval-level annotation CSVs under `docs/Novelty/annotations/`
 
-First interval-level result on `2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01`:
+### First target-correctness results
 
-| Metric | Raw `/target` | TIM `/target_memory` |
-|---|---:|---:|
-| correct duration [s] | 57.100 | 82.990 |
-| wrong duration [s] | 0.000 | 0.000 |
-| lost duration [s] | 25.990 | 0.100 |
-| correct ratio | 0.687 | 0.999 |
-| wrong ratio | 0.000 | 0.000 |
-| lost ratio | 0.313 | 0.001 |
+| Bag | Stream | Correct ratio | Wrong ratio | Lost ratio | Main interpretation |
+|---|---|---:|---:|---:|---|
+| `2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01` | Raw `/target` | 0.687 | 0.000 | 0.313 | Raw loses the target after the ID change. |
+| `2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01` | TIM `/target_memory` | 0.999 | 0.000 | 0.001 | TIM preserves target correctness after reacquisition. |
+| `2026-05-05__09-55-39__video__tim_v0_occlusion_01` | Raw `/target` | 0.998 | 0.000 | 0.002 | Raw target stream is already strong in this bag. |
+| `2026-05-05__09-55-39__video__tim_v0_occlusion_01` | TIM `/target_memory` | 0.675 | 0.000 | 0.325 | TIM is conservative or delayed before accepting the target. |
 
-This first result shows that TIM-V0 improves selected-target continuity without introducing wrong-target output in this bag. Future TIM-V0, TIM-V1, and TIM-V2 comparisons should report correct-target duration, wrong-target duration, lost-target duration, and target-absent-but-output-valid duration separately for raw `/target` and TIM `/target_memory`.
+These first results show that TIM-V0 is not simply better or worse than the raw target stream. Its behaviour depends on the scenario:
 
-This keeps the thesis focus on selected-target identity correctness rather than generic target availability.
-
-### Second interval-level correctness result
-
-A second bag was annotated and evaluated to check that the target-correctness evaluator can expose both improvements and regressions.
-
-Bag:
-
-- `2026-05-05__09-55-39__video__tim_v0_occlusion_01`
-
-Result:
-
-| Metric | Raw `/target` | TIM `/target_memory` |
-|---|---:|---:|
-| correct duration [s] | 23.960 | 16.210 |
-| wrong duration [s] | 0.000 | 0.000 |
-| lost duration [s] | 0.050 | 7.800 |
-| target absent but output [s] | 0.050 | 0.050 |
-| correct ratio | 0.998 | 0.675 |
-| wrong ratio | 0.000 | 0.000 |
-| lost ratio | 0.002 | 0.325 |
-
-This result shows that TIM-V0 is not universally better than the raw target stream. In this bag, TIM-V0 is conservative or delayed: raw `/target` begins outputting the correct ID earlier, while TIM only begins outputting the target later.
-
-This is useful because the new evaluator exposes the actual trade-off:
-
-- TIM-V0 can improve continuity after ID changes, as shown in the first bag.
-- TIM-V0 can also lose useful valid-correct time when its acceptance policy is too conservative.
+- In the first bag, TIM-V0 improves continuity after an ID change while keeping wrong-target duration at zero.
+- In the second bag, TIM-V0 loses useful correct-target time because its acceptance policy is too conservative.
 - In both analysed bags, wrong-target duration remains zero.
 
-The next development target is therefore not simply "more valid output", but:
+The next development target is therefore:
 
 > increase correct-target duration while keeping wrong-target duration near zero.
+
+This keeps the thesis focused on selected-target identity correctness rather than generic target availability.
+
