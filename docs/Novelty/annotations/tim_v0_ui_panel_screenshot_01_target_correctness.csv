@@ -1,0 +1,7 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01,0.0,15.1,NO_TARGET_SELECTED,false,,,pre_selection,before operator target selection
+2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01,15.1,72.25,CORRECT_TARGET,true,1,,clean_tracking,selected target visible and tracked as id 1
+2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01,72.25,72.36,TARGET_NOT_VISIBLE,false,,,brief_gap_or_occlusion,raw target drops and TIM transitions through no output
+2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01,72.36,78.02,CORRECT_TARGET,true,4,,tim_reacquisition,TIM reacquires selected target as id 4 while raw remains lost
+2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01,78.02,78.09,TARGET_NOT_VISIBLE,false,,,brief_gap_or_occlusion,TIM has short no-output gap
+2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01,78.09,98.37,CORRECT_TARGET,true,4,,tim_reacquisition_continued,TIM keeps selected target as id 4 while raw remains lost

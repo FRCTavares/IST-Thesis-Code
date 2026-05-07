@@ -1,0 +1,6 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+example_bag,0.0,5.0,NO_TARGET_SELECTED,false,,,pre_selection,before target selected
+example_bag,5.0,15.0,CORRECT_TARGET,true,1,,clean_tracking,target selected and visible
+example_bag,15.0,18.0,TARGET_NOT_VISIBLE,false,,,occlusion,target fully occluded
+example_bag,18.0,25.0,CORRECT_TARGET,true,4,,id_switch,target returned under new tracker id
+example_bag,25.0,30.0,WRONG_TARGET,true,4,2,distractor,target output follows distractor

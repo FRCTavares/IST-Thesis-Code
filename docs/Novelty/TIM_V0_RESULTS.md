@@ -846,3 +846,40 @@ Known limitations:
 
 Next stage:
 TIM-V1 should add lightweight target-only appearance only for ambiguity and lost-target recovery.
+
+## Evaluation Protocol Upgrade After Supervisor Feedback
+
+After supervisor feedback, TIM-V0 evaluation was extended beyond valid target duration.
+
+The key issue is that valid target duration alone is insufficient. For target-relative UAV control, a valid output is useful only if it corresponds to the selected person. A method that keeps publishing a target can still be unsafe if that target is a distractor.
+
+The evaluation protocol now separates:
+
+- valid and correct target output
+- valid but wrong target output
+- invalid output while the selected target is visible
+- safe invalid output when the selected target is not visible
+
+This makes wrong-target duration a first-class metric.
+
+Added artefacts:
+
+- `docs/Novelty/TIM_EVALUATION_PROTOCOL.md`
+- `tools/analysis/templates/target_correctness_annotations_template.csv`
+- `tools/analysis/evaluate_tim_target_correctness.py`
+- interval-level annotation CSVs under `docs/Novelty/annotations/`
+
+First interval-level result on `2026-05-06__12-11-17__video__tim_v0_ui_panel_screenshot_01`:
+
+| Metric | Raw `/target` | TIM `/target_memory` |
+|---|---:|---:|
+| correct duration [s] | 57.100 | 82.990 |
+| wrong duration [s] | 0.000 | 0.000 |
+| lost duration [s] | 25.990 | 0.100 |
+| correct ratio | 0.687 | 0.999 |
+| wrong ratio | 0.000 | 0.000 |
+| lost ratio | 0.313 | 0.001 |
+
+This first result shows that TIM-V0 improves selected-target continuity without introducing wrong-target output in this bag. Future TIM-V0, TIM-V1, and TIM-V2 comparisons should report correct-target duration, wrong-target duration, lost-target duration, and target-absent-but-output-valid duration separately for raw `/target` and TIM `/target_memory`.
+
+This keeps the thesis focus on selected-target identity correctness rather than generic target availability.
