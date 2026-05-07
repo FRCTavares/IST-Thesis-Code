@@ -883,3 +883,35 @@ First interval-level result on `2026-05-06__12-11-17__video__tim_v0_ui_panel_scr
 This first result shows that TIM-V0 improves selected-target continuity without introducing wrong-target output in this bag. Future TIM-V0, TIM-V1, and TIM-V2 comparisons should report correct-target duration, wrong-target duration, lost-target duration, and target-absent-but-output-valid duration separately for raw `/target` and TIM `/target_memory`.
 
 This keeps the thesis focus on selected-target identity correctness rather than generic target availability.
+
+### Second interval-level correctness result
+
+A second bag was annotated and evaluated to check that the target-correctness evaluator can expose both improvements and regressions.
+
+Bag:
+
+- `2026-05-05__09-55-39__video__tim_v0_occlusion_01`
+
+Result:
+
+| Metric | Raw `/target` | TIM `/target_memory` |
+|---|---:|---:|
+| correct duration [s] | 23.960 | 16.210 |
+| wrong duration [s] | 0.000 | 0.000 |
+| lost duration [s] | 0.050 | 7.800 |
+| target absent but output [s] | 0.050 | 0.050 |
+| correct ratio | 0.998 | 0.675 |
+| wrong ratio | 0.000 | 0.000 |
+| lost ratio | 0.002 | 0.325 |
+
+This result shows that TIM-V0 is not universally better than the raw target stream. In this bag, TIM-V0 is conservative or delayed: raw `/target` begins outputting the correct ID earlier, while TIM only begins outputting the target later.
+
+This is useful because the new evaluator exposes the actual trade-off:
+
+- TIM-V0 can improve continuity after ID changes, as shown in the first bag.
+- TIM-V0 can also lose useful valid-correct time when its acceptance policy is too conservative.
+- In both analysed bags, wrong-target duration remains zero.
+
+The next development target is therefore not simply "more valid output", but:
+
+> increase correct-target duration while keeping wrong-target duration near zero.
