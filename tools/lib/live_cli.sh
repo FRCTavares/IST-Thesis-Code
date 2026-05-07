@@ -458,6 +458,15 @@ while [[ $# -gt 0 ]]; do
             ENABLE_ROSBAG=0
             shift
             ;;
+        --record-dataset)
+            ENABLE_DATASET_BAG=1
+            TRACKER_PUBLISH_TIMING_BOOL="true"
+            shift
+            ;;
+        --no-record-dataset)
+            ENABLE_DATASET_BAG=0
+            shift
+            ;;
         --bag-tag)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --bag-tag requires a value"
@@ -688,6 +697,11 @@ fi
 
 if ! [[ "$ENABLE_ROSBAG" =~ ^[01]$ ]]; then
     echo "[error] ENABLE_ROSBAG must be 0 or 1"
+    exit 1
+fi
+
+if ! [[ "$ENABLE_DATASET_BAG" =~ ^[01]$ ]]; then
+    echo "[error] ENABLE_DATASET_BAG must be 0 or 1"
     exit 1
 fi
 

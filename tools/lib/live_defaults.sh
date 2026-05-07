@@ -59,8 +59,14 @@ ENABLE_WEB_VIDEO=1
 # Video bag recording, disabled by default.
 # Enabled with: --record-video
 ENABLE_ROSBAG=0
+
+# Enabled with: --record-dataset
+# Dataset mode records raw camera imagery plus perception/TIM telemetry for offline replay.
+ENABLE_DATASET_BAG=0
+
 BAG_TAG=""
 BAG_OUT_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/artifacts/bags/live_camera"
+DATASET_BAG_OUT_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/artifacts/bags/datasets"
 RECORD_MAVROS=0
 
 apply_startup_profile() {

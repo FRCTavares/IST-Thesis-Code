@@ -289,6 +289,7 @@ write_video_bag_metadata() {
     {
         echo "run_id=$RUN_ID"
         echo "bag_name=${VIDEO_BAG_NAME:-}"
+        echo "dataset_bag_name=${DATASET_BAG_NAME:-}"
         echo "bag_tag=${BAG_TAG:-}"
         echo "date=$(date -Iseconds)"
         echo "thesis_root=$THESIS_ROOT"
@@ -306,6 +307,7 @@ write_video_bag_metadata() {
         echo "mavros_mirror_enabled=${CONTROL_MAVROS_BOOL:-false}"
         echo "record_mavros=$RECORD_MAVROS"
         echo "bag_out_dir=${VIDEO_BAG_OUT_DIR:-}"
+        echo "dataset_bag_out_dir=${DATASET_BAG_OUT_DIR:-}"
         echo "log_run_dir=$RUN_DIR"
         echo ""
         echo "recorded_topics:"
@@ -380,6 +382,13 @@ fi
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then dashboard_state="on"; fi
 if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then web_video_state="on"; fi
 if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="video"; fi
+if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
+    if [[ "$rosbag_state" == "off" ]]; then
+        rosbag_state="dataset"
+    else
+        rosbag_state="${rosbag_state}+dataset"
+    fi
+fi
 
 # Phase 1: host preflight + camera stream sanity checks.
 log_info "run: $RUN_ID"
@@ -880,6 +889,72 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         echo "[ok] video bag metadata: $VIDEO_BAG_OUT_DIR/flight_metadata.txt"
     else
         echo "[warn] video bag output directory not visible yet; metadata was not written"
+    fi
+fi
+
+
+if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
+    mkdir -p "$DATASET_BAG_OUT_ROOT"
+
+    BAG_TAG_SAFE=""
+    if [[ -n "${BAG_TAG:-}" ]]; then
+        BAG_TAG_SAFE="$(make_safe_name "$BAG_TAG")"
+    fi
+
+    if [[ -n "$BAG_TAG_SAFE" ]]; then
+        DATASET_BAG_NAME="${RUN_ID}__dataset__${BAG_TAG_SAFE}"
+    else
+        DATASET_BAG_NAME="${RUN_ID}__dataset"
+    fi
+
+    DATASET_BAG_OUT_DIR="$DATASET_BAG_OUT_ROOT/$DATASET_BAG_NAME"
+
+    DATASET_BAG_TOPICS=(
+        /camera/image_raw
+        /camera/fps
+        /camera/camera_info
+        /detections
+        /tracks
+        /target
+        /target_memory
+        /target_memory/status
+        /timing
+        /timing_tracker
+        /timing_target
+    )
+
+    echo "[ok] dataset bag recording enabled"
+    echo "[ok] dataset bag output: $DATASET_BAG_OUT_DIR"
+    echo "[ok] dataset bag topics:"
+    for topic in "${DATASET_BAG_TOPICS[@]}"; do
+        echo "     $topic"
+    done
+
+    export RMW_FASTRTPS_USE_SHM=0
+
+    start_ros_bg dataset_rosbag ros2 bag record \
+        --storage mcap \
+        -o "$DATASET_BAG_OUT_DIR" \
+        "${DATASET_BAG_TOPICS[@]}"
+
+    sleep 1
+    if ! check_proc_alive dataset_rosbag; then
+        stop_stack
+        exit 1
+    fi
+
+    for _ in {1..20}; do
+        if [[ -d "$DATASET_BAG_OUT_DIR" ]]; then
+            break
+        fi
+        sleep 0.1
+    done
+
+    if [[ -d "$DATASET_BAG_OUT_DIR" ]]; then
+        write_video_bag_metadata "$DATASET_BAG_OUT_DIR/dataset_metadata.txt" "${DATASET_BAG_TOPICS[@]}"
+        echo "[ok] dataset bag metadata: $DATASET_BAG_OUT_DIR/dataset_metadata.txt"
+    else
+        echo "[warn] dataset bag output directory not visible yet; metadata not written"
     fi
 fi
 

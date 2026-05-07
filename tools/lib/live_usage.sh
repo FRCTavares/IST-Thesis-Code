@@ -91,6 +91,8 @@ Options:
     --no-web-video                      Do not start web_video_server
     --record-video                      Record dashboard video + perception/tracking/target/timing/control topics
     --no-record-video                   Disable video bag recording
+    --record-dataset                    Record raw camera imagery + perception/TIM telemetry for offline replay
+    --no-record-dataset                 Disable dataset bag recording
     --bag-tag <NAME>                    Add a safe tag to the bag folder name
     --bag-out-root <PATH>               Override bag output root, default: $THESIS_ROOT/artifacts/bags/live_camera
     --record-mavros                     Add lightweight MAVROS state/control topics to video bag
@@ -134,6 +136,8 @@ Day-to-day options:
     --no-dashboard                    Disable dashboard bridge
     --no-web-video                    Do not start web_video_server
     --record-video                    Record dashboard video + perception/tracking/target/timing/control topics
+    --record-dataset                  Record raw camera imagery + perception/TIM telemetry for offline replay
+    --no-record-dataset               Disable dataset bag recording
     --bag-tag <NAME>                  Add a safe tag to the bag folder name
     --record-mavros                   Add lightweight MAVROS state/control topics
     --rosbag                          Deprecated alias for --record-video
