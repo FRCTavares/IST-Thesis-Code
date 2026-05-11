@@ -271,3 +271,40 @@ Additional full-length status sample:
     {"appearance_candidates": 1, "appearance_enabled": true, "appearance_features_valid": 1, "appearance_image_age_ms": 4.221505, "appearance_skip_reason": "ok", "best": null, "control_mode": "NO_CONTROL", "frame_id": 1644, "frames_since_seen": 0, "lat_ms": 0.919801, "num_tracks": 1, "quality": 0.0, "reacquired": false, "reason": "no_operator_selected_target", "state": "NO_TARGET", "target_track_id": null, "visible": false}
 
 This confirms live feature extraction before operator target selection. The NO_TARGET state is expected because no track had been selected during the sample.
+
+---
+
+## TIM-V1H bag analysis exports appearance diagnostics
+
+Updated the TIM bag analyser to export TIM-V1 appearance diagnostic fields from `/target_memory/status`.
+
+Added exported fields:
+
+- `appearance_enabled`
+- `appearance_candidates`
+- `appearance_features_valid`
+- `appearance_image_age_ms`
+- `appearance_skip_reason`
+- `best_appearance`
+- `best_appearance_used`
+
+Re-ran analysis on:
+
+    artifacts/bags/live_camera/2026-05-11__10-18-33__video__tim_v1g_target_selected_smoke
+
+Updated report:
+
+    reports/tim_v0/2026-05-11__10-18-33__video__tim_v1g_target_selected_smoke
+
+Bag-level TIM-V1 appearance evidence:
+
+- status rows: 1415
+- selected-target status rows: 1273
+- rows with valid appearance features: 1412
+- rows with `best_appearance_used=true`: 0
+- appearance image age mean: 41.62 ms
+- appearance image age p95: 122.13 ms
+
+Interpretation:
+
+The recorded target-selected live run confirms that TIM-V1 appearance extraction was active and valid for almost the entire bag. `best_appearance_used=true` remained zero because this was a stable single-person smoke run, not an ambiguity or reacquisition scenario.
