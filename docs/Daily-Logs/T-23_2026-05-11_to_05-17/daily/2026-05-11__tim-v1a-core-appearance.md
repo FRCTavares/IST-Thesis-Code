@@ -248,3 +248,20 @@ Validation:
 Interpretation:
 
 TIM-V1 now has deterministic proof that the ROS wrapper can extract appearance from images, pass it into the ROS-free TIM core, and affect candidate association under controlled conditions.
+
+---
+
+## TIM-V1F live appearance diagnostics validated
+
+Ran the live stack with TIM appearance enabled and checked `/target_memory/status`.
+
+Observed diagnostic fields:
+
+- `appearance_enabled`: true
+- `appearance_candidates`: 1
+- `appearance_features_valid`: 1
+- `appearance_image_age_ms`: approximately 34 ms
+
+Interpretation:
+
+The live TIM appearance extraction path is not only launching, it is successfully extracting at least one valid image-derived appearance feature from a live candidate track. This confirms that `/camera/dashboard` images are reaching `target_memory_node`, crop extraction is working, and features are being attached to candidates before TIM matching.
