@@ -427,3 +427,81 @@ TIM-V1I occlusion report result:
 Interpretation:
 
 TIM-V1 now has a dedicated report for appearance extraction behaviour. The occlusion smoke bag confirms that appearance extraction was active and valid for most of the run, with bounded image age and low TIM latency. Appearance-assisted matching was not triggered, which is expected because this was not a two-person ambiguity case.
+
+---
+
+## TIM-V1J two-person ambiguity bag
+
+Recorded a two-person live run with TIM appearance enabled.
+
+Command:
+
+    ./tools/start_live_stack.sh --profile safe-camera --target-memory --target-memory-appearance --target-memory-appearance-image-topic /camera/dashboard --record-video --bag-tag tim_v1j_two_person_ambiguity
+
+Bag:
+
+    artifacts/bags/live_camera/2026-05-11__10-44-58__video__tim_v1j_two_person_ambiguity
+
+Reports:
+
+    reports/tim_v0/2026-05-11__10-44-58__video__tim_v1j_two_person_ambiguity
+    reports/tim_v1_appearance/2026-05-11__10-44-58__video__tim_v1j_two_person_ambiguity
+
+General TIM results:
+
+- Raw /target samples: 1193
+- TIM /target_memory samples: 1200
+- TIM status samples: 1199
+- Post-selection window starts at t=5.26 s
+- Raw valid duration after selection: 34.484 / 67.880 s
+- TIM valid duration after selection: 56.105 / 67.878 s
+- LOCKED duration: 55.962 s
+- UNCERTAIN duration: 0.616 s
+- LOST duration: 11.125 s
+- REACQUIRED events: 2
+- First UNCERTAIN -> REACQUIRED duration: 1.071 s
+- First LOST -> REACQUIRED duration: 0.706 s
+- TIM latency mean: 1.315 ms
+- TIM latency p95: 4.196 ms
+- TIM latency p99: 8.213 ms
+
+Appearance diagnostics:
+
+- Appearance enabled rows: 1199
+- Rows with valid appearance features: 1197
+- Rows with best_appearance_used=true: 84
+- Image age mean: 32.130 ms
+- Image age p50: 18.517 ms
+- Image age p95: 108.146 ms
+- Image age p99: 177.309 ms
+- Appearance skip reasons:
+  - ok: 1197
+  - stale_image: 2
+- Appearance-used by state:
+  - LOCKED: 2
+  - UNCERTAIN: 3
+  - LOST: 77
+  - REACQUIRED: 2
+
+Multi-person evidence:
+
+- Rows with >=2 tracks: 656
+- Rows with >=2 valid appearance features: 595
+- Rows with 3 tracks: 45
+- Rows with 4 tracks: 3
+
+First appearance-used sample:
+
+- t=39.833 s
+- state: UNCERTAIN
+- target_track_id: 1
+- num_tracks: 1
+- appearance_features_valid: 1
+- best_track_id: 2
+- best_total: 0.491
+- best_appearance: 0.440
+- reason: best_below_threshold:0.491<0.520
+
+Interpretation:
+
+This is the first real two-person TIM-V1 evidence bag. It confirms that image-derived appearance features were extracted during a multi-person run and that the TIM-V1 appearance cue actively affected association decisions. TIM produced valid target output for substantially longer than raw /target after selection, and reacquired after tracker identity changes. Correctness is not yet proven because this bag still needs manual annotation of correct/wrong/lost target intervals.
