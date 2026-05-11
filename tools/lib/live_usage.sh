@@ -82,7 +82,17 @@ Options:
     --perception-gc-on                  Enable Python cyclic GC in perception node (default)
     --perception-no-stub-fallback       Fail fast if Hailo backend initialization fails (default)
     --perception-allow-stub-fallback    Allow stub fallback when Hailo backend initialization fails
-    --target-memory                    Enable TIM-V0 selected-target memory, default\n    --no-target-memory                 Disable TIM-V0 selected-target memory\n    --no-dashboard                      Disable dashboard bridge
+    --target-memory                    Enable TIM selected-target memory, default
+    --no-target-memory                 Disable TIM selected-target memory
+    --target-memory-appearance         Enable TIM-V1B image appearance extraction
+    --no-target-memory-appearance      Disable TIM-V1B image appearance extraction, default
+    --target-memory-appearance-image-topic <topic>
+                                          Image topic for TIM appearance, default: /camera/dashboard
+    --target-memory-appearance-min-bbox-height <px>
+                                          Minimum bbox height for appearance crops, default: 30.0
+    --target-memory-appearance-max-image-age-ms <ms>
+                                          Maximum latest-image age for appearance features, default: 250.0
+    --no-dashboard                      Disable dashboard bridge
     --no-tracker                        Do not start tracker node
     --no-target                         Deprecated alias; target selection is now handled by dashboard bridge API
     --no-control                        Do not start control_ref_node
@@ -131,6 +141,7 @@ Day-to-day options:
     --perception-inference-backend <name>
                                       Perception backend (default: hailo_direct)
     --no-tracker                      Do not start tracker node
+    --target-memory-appearance        Enable TIM-V1B image appearance extraction
     --no-target                       Deprecated alias; target selection is now handled by dashboard bridge API
     --no-control                      Do not start control_ref_node
     --no-dashboard                    Disable dashboard bridge

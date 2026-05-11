@@ -771,11 +771,15 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         exit 1
     fi
     if [[ "${ENABLE_TARGET_MEMORY:-1}" -eq 1 ]]; then
-        # TIM-V0 selected-target memory.
+        # TIM selected-target memory.
         # Mirrors positive dashboard /target selections and publishes:
         #   /target_memory
         #   /target_memory/status
-        start_ros_bg target_memory ros2 run thesis_bringup target_memory_node
+        start_ros_bg target_memory ros2 run thesis_bringup target_memory_node --ros-args \
+            -p appearance_enabled:=$TARGET_MEMORY_APPEARANCE_BOOL \
+            -p appearance_image_topic:="$TARGET_MEMORY_APPEARANCE_IMAGE_TOPIC" \
+            -p appearance_min_bbox_height:=$TARGET_MEMORY_APPEARANCE_MIN_BBOX_HEIGHT \
+            -p appearance_max_image_age_ms:=$TARGET_MEMORY_APPEARANCE_MAX_IMAGE_AGE_MS
         sleep 1
         if ! check_proc_alive target_memory; then
             stop_stack

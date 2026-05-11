@@ -60,6 +60,42 @@ while [[ $# -gt 0 ]]; do
             ENABLE_TARGET_MEMORY=0
             shift
             ;;
+        --target-memory-appearance)
+            ENABLE_TARGET_MEMORY=1
+            TARGET_MEMORY_APPEARANCE_BOOL="true"
+            shift
+            ;;
+        --no-target-memory-appearance)
+            TARGET_MEMORY_APPEARANCE_BOOL="false"
+            shift
+            ;;
+        --target-memory-appearance-image-topic)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --target-memory-appearance-image-topic requires a value"
+                print_usage
+                exit 1
+            fi
+            TARGET_MEMORY_APPEARANCE_IMAGE_TOPIC="$2"
+            shift 2
+            ;;
+        --target-memory-appearance-min-bbox-height)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --target-memory-appearance-min-bbox-height requires a value"
+                print_usage
+                exit 1
+            fi
+            TARGET_MEMORY_APPEARANCE_MIN_BBOX_HEIGHT="$(normalize_double_literal "$2")"
+            shift 2
+            ;;
+        --target-memory-appearance-max-image-age-ms)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --target-memory-appearance-max-image-age-ms requires a value"
+                print_usage
+                exit 1
+            fi
+            TARGET_MEMORY_APPEARANCE_MAX_IMAGE_AGE_MS="$(normalize_double_literal "$2")"
+            shift 2
+            ;;
         --no-dashboard)
             ENABLE_DASHBOARD_BRIDGE=0
             ENABLE_WEB_VIDEO=0
