@@ -5,13 +5,19 @@ import time
 from typing import Optional
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 
+from sensor_msgs.msg import Image
 from std_msgs.msg import Empty, String, UInt32
 
 from thesis_msgs.msg import TargetState, Track2DArray
 
+from thesis_bringup.appearance_memory import (
+    AppearanceConfig,
+    extract_hsv_upper_lower_feature,
+)
 from thesis_bringup.target_memory import (
     BBox,
     CandidateTrack,
@@ -72,6 +78,19 @@ class TargetMemoryNode(Node):
         self.declare_parameter("max_lost_frames", 30)
         self.declare_parameter("min_candidate_score", 0.10)
 
+        # TIM-V1B appearance extraction.
+        # Disabled by default to preserve TIM-V0 live behaviour.
+        self.declare_parameter("appearance_enabled", False)
+        self.declare_parameter("appearance_image_topic", "/camera/dashboard")
+        self.declare_parameter("appearance_h_bins", 16)
+        self.declare_parameter("appearance_s_bins", 8)
+        self.declare_parameter("appearance_min_bbox_height", 30.0)
+        self.declare_parameter("appearance_max_image_age_ms", 250.0)
+        self.declare_parameter("appearance_weight", 0.12)
+        self.declare_parameter("appearance_min_similarity", 0.35)
+        self.declare_parameter("appearance_update_alpha", 0.10)
+        self.declare_parameter("appearance_ambiguous_only", True)
+
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._target_topic = str(self.get_parameter("target_topic").value)
         self._status_topic = str(self.get_parameter("status_topic").value)
@@ -86,6 +105,20 @@ class TargetMemoryNode(Node):
         self._auto_select_largest = bool(self.get_parameter("auto_select_largest").value)
         self._zero_id_when_not_visible = bool(self.get_parameter("zero_id_when_not_visible").value)
 
+        self._appearance_enabled = bool(self.get_parameter("appearance_enabled").value)
+        self._appearance_image_topic = str(self.get_parameter("appearance_image_topic").value)
+        self._appearance_max_image_age_ms = float(self.get_parameter("appearance_max_image_age_ms").value)
+        self._appearance_cfg = AppearanceConfig(
+            h_bins=int(self.get_parameter("appearance_h_bins").value),
+            s_bins=int(self.get_parameter("appearance_s_bins").value),
+            min_bbox_height=float(self.get_parameter("appearance_min_bbox_height").value),
+        )
+        self._latest_image_bgr = None
+        self._latest_image_seen_ns: Optional[int] = None
+        self._cv_bridge = None
+        self._image_sub = None
+        self._image_error_warned = False
+
         initial_id = int(self.get_parameter("selected_track_id").value)
         self._pending_select_id: Optional[int] = initial_id if initial_id > 0 else None
         self._last_mirrored_target_id: Optional[int] = None
@@ -99,6 +132,11 @@ class TargetMemoryNode(Node):
             max_uncertain_frames=int(self.get_parameter("max_uncertain_frames").value),
             max_lost_frames=int(self.get_parameter("max_lost_frames").value),
             min_candidate_score=float(self.get_parameter("min_candidate_score").value),
+            appearance_enabled=self._appearance_enabled,
+            appearance_weight=float(self.get_parameter("appearance_weight").value),
+            appearance_min_similarity=float(self.get_parameter("appearance_min_similarity").value),
+            appearance_update_alpha=float(self.get_parameter("appearance_update_alpha").value),
+            appearance_ambiguous_only=bool(self.get_parameter("appearance_ambiguous_only").value),
         )
         self._tim = TargetIdentityMemory(cfg)
 
@@ -139,18 +177,46 @@ class TargetMemoryNode(Node):
                 qos,
             )
 
+        if self._appearance_enabled:
+            from cv_bridge import CvBridge
+
+            self._cv_bridge = CvBridge()
+            self._image_sub = self.create_subscription(
+                Image,
+                self._appearance_image_topic,
+                self._on_image,
+                qos,
+            )
+
         self.get_logger().info(
-            "TIM-V0 node ready: "
+            "TIM node ready: "
             f"tracks={self._tracks_topic}, target={self._target_topic}, "
             f"select={self._select_topic}, clear={self._clear_topic}, "
             f"normalised_tracks={self._tracks_are_normalized}, "
-            f"mirror_raw_target_selection={self._mirror_raw_target_selection}"
+            f"mirror_raw_target_selection={self._mirror_raw_target_selection}, "
+            f"appearance_enabled={self._appearance_enabled}, "
+            f"appearance_image_topic={self._appearance_image_topic}"
         )
 
         if self._pending_select_id is not None:
             self.get_logger().info(
                 f"Waiting to initialise TIM from track id {self._pending_select_id}"
             )
+
+    def _on_image(self, msg: Image) -> None:
+        if not self._appearance_enabled or self._cv_bridge is None:
+            return
+
+        try:
+            self._latest_image_bgr = self._cv_bridge.imgmsg_to_cv2(
+                msg,
+                desired_encoding="bgr8",
+            )
+            self._latest_image_seen_ns = time.monotonic_ns()
+        except Exception as exc:
+            if not self._image_error_warned:
+                self.get_logger().warn(f"TIM appearance image conversion failed: {exc}")
+                self._image_error_warned = True
 
     def _on_raw_target(self, msg: TargetState) -> None:
         """Mirror positive dashboard /target selections into TIM.
@@ -195,6 +261,7 @@ class TargetMemoryNode(Node):
         t_start_ns = time.monotonic_ns()
 
         candidates = [self._candidate_from_track(t) for t in msg.tracks]
+        candidates = self._attach_appearance_features(candidates)
 
         selected_candidate = None
         if self._pending_select_id is not None:
@@ -249,6 +316,37 @@ class TargetMemoryNode(Node):
             bbox=bbox,
             score=float(track.score),
         )
+
+    def _attach_appearance_features(self, candidates: list[CandidateTrack]) -> list[CandidateTrack]:
+        if not self._appearance_enabled:
+            return candidates
+
+        if self._latest_image_bgr is None or self._latest_image_seen_ns is None:
+            return candidates
+
+        age_ms = float(time.monotonic_ns() - self._latest_image_seen_ns) / 1e6
+        if age_ms > self._appearance_max_image_age_ms:
+            return candidates
+
+        enriched: list[CandidateTrack] = []
+        for candidate in candidates:
+            appearance = extract_hsv_upper_lower_feature(
+                self._latest_image_bgr,
+                candidate.bbox,
+                self._appearance_cfg,
+            )
+            enriched.append(
+                CandidateTrack(
+                    track_id=candidate.track_id,
+                    bbox=candidate.bbox,
+                    score=candidate.score,
+                    age=candidate.age,
+                    last_seen=candidate.last_seen,
+                    appearance=appearance,
+                )
+            )
+
+        return enriched
 
     def _target_msg_from_output(
         self,
@@ -347,6 +445,8 @@ class TargetMemoryNode(Node):
                     "scale": float(best.scale),
                     "confidence": float(best.confidence),
                     "id_bonus": float(best.id_bonus),
+                    "appearance": float(best.appearance),
+                    "appearance_used": bool(best.appearance_used),
                     "ambiguous": bool(best.ambiguous),
                 },
             },
@@ -397,7 +497,7 @@ def main(args=None) -> None:
     node = TargetMemoryNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         node.destroy_node()
