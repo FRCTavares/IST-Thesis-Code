@@ -135,3 +135,43 @@ TIM-V1B now connects the ROS wrapper to image-based appearance features while ke
 Next step:
 
 Run a live or replay smoke test with `appearance_enabled:=true` and confirm that `/target_memory/status` reports non-zero appearance values when a selected target is visible.
+
+---
+
+## TIM-V1D live-stack appearance flags added
+
+Added live-stack CLI support for TIM-V1B appearance extraction.
+
+Changed files:
+
+- tools/lib/live_defaults.sh
+- tools/lib/live_cli.sh
+- tools/lib/live_usage.sh
+- tools/start_live_stack.sh
+
+New flags:
+
+- `--target-memory-appearance`
+- `--no-target-memory-appearance`
+- `--target-memory-appearance-image-topic <topic>`
+- `--target-memory-appearance-min-bbox-height <px>`
+- `--target-memory-appearance-max-image-age-ms <ms>`
+
+Default behaviour:
+
+- TIM remains enabled by default.
+- TIM appearance remains disabled by default.
+- Normal live-stack behaviour is preserved unless `--target-memory-appearance` is explicitly used.
+
+Validation:
+
+- `./tools/start_live_stack.sh --help`
+- `./tools/start_live_stack.sh --help-advanced`
+- `bash -n tools/start_live_stack.sh`
+- `bash -n tools/lib/live_cli.sh`
+- `bash -n tools/lib/live_defaults.sh`
+- `bash -n tools/lib/live_usage.sh`
+
+Interpretation:
+
+The live stack can now start TIM with image-based appearance extraction through an explicit opt-in flag, without changing the default runtime path.
