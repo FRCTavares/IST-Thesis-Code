@@ -120,12 +120,19 @@ def read_bag(bag_path: Path) -> dict[str, list[dict[str, Any]]]:
                 "lat_ms": safe_float(payload.get("lat_ms")),
                 "frames_since_seen": int(payload.get("frames_since_seen", 0)),
                 "num_tracks": int(payload.get("num_tracks", 0)),
+                "appearance_enabled": bool(payload.get("appearance_enabled", False)),
+                "appearance_candidates": int(payload.get("appearance_candidates", 0) or 0),
+                "appearance_features_valid": int(payload.get("appearance_features_valid", 0) or 0),
+                "appearance_image_age_ms": safe_float(payload.get("appearance_image_age_ms")),
+                "appearance_skip_reason": str(payload.get("appearance_skip_reason", "")),
                 "best_total": safe_float(best.get("total")),
                 "best_iou": safe_float(best.get("iou")),
                 "best_distance": safe_float(best.get("distance")),
                 "best_scale": safe_float(best.get("scale")),
                 "best_confidence": safe_float(best.get("confidence")),
                 "best_track_id": best.get("track_id", None),
+                "best_appearance": safe_float(best.get("appearance")),
+                "best_appearance_used": bool(best.get("appearance_used", False)),
             })
 
     return data
