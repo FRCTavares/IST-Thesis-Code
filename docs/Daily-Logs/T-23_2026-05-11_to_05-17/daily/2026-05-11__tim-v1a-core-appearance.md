@@ -645,3 +645,50 @@ Representative rejected appearance-assisted candidates:
 Interpretation:
 
 This harder run successfully produced an appearance-critical ambiguity condition. Appearance was used heavily, but the current conservative LOST-state threshold rejected many candidates even when appearance similarity was moderate. The run shows that TIM-V1 appearance affects candidate scoring, but reacquisition is still dominated by the acceptance policy. This motivates a threshold/reacquisition sweep rather than further appearance plumbing.
+
+---
+
+## TIM-V1M offline LOST-threshold sweep
+
+Implemented an offline TIM-V1 threshold sweep script:
+
+- `tools/analysis/sweep_tim_v1_thresholds_offline.py`
+
+Purpose:
+
+Avoid unreliable interactive ROS replay and test TIM thresholds deterministically from the recorded bag.
+
+Bag:
+
+- `artifacts/bags/live_camera/2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing`
+
+Annotation file:
+
+- `docs/annotations/tim_v1m_appearance_critical_crossing/target_correctness_annotations.csv`
+
+Manual review facts used:
+
+- ID 1: selected person before occlusion
+- ID 9: selected person during the hard re-entry interval
+- ID 10: selected person after reacquisition
+- ID 11: selected person later
+- ID 6: distractor
+
+Sweep parameter:
+
+- `accept_score_lost`: 0.60, 0.55, 0.50, 0.45
+
+Result:
+
+| accept_score_lost | correct ratio | wrong ratio | lost ratio | correct [s] | wrong [s] | lost [s] |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0.60 | 0.292 | 0.001 | 0.707 | 15.200 | 0.050 | 36.780 |
+| 0.55 | 0.574 | 0.000 | 0.426 | 29.850 | 0.000 | 22.180 |
+| 0.50 | 0.749 | 0.000 | 0.251 | 38.980 | 0.000 | 13.050 |
+| 0.45 | 0.574 | 0.163 | 0.263 | 29.850 | 8.500 | 13.680 |
+
+Interpretation:
+
+The default lost-state threshold of 0.60 is too conservative for this hard re-entry scenario. Lowering it to 0.55 improves reacquisition without introducing wrong-target duration in this first-pass annotation. Lowering it to 0.50 gives the best result in this run, increasing correct ratio to 0.749 while keeping wrong ratio at 0.000. Lowering further to 0.45 is too permissive and introduces a wrong-target ratio of 0.163.
+
+This result supports tuning `accept_score_lost` around 0.50-0.55 for TIM-V1, but the annotation should be reviewed again before changing the default.
