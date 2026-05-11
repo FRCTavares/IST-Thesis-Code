@@ -341,7 +341,7 @@ def write_summary(
     lost_to_reacquired_s = first_transition_duration(status, "LOST", "REACQUIRED")
 
     lines = []
-    lines.append("# TIM-V0 Bag Analysis")
+    lines.append("# TIM Bag Analysis")
     lines.append("")
     lines.append(f"- Bag: `{bag_path}`")
     lines.append(f"- Raw `/target` samples: {len(raw)}")
@@ -421,7 +421,7 @@ def write_summary(
     lines.append("## Interpretation template")
     lines.append("")
     lines.append(
-        "TIM-V0 adds a selected-target memory layer above tracker outputs. "
+        "TIM adds a selected-target memory layer above tracker outputs. "
         "In normal tracking it should match the raw selected target with negligible latency. "
         "During temporary loss it exposes UNCERTAIN/LOST states and conservative control modes. "
         "When the tracker reassigns the person to a new track ID, TIM can transition through "
@@ -434,7 +434,7 @@ def write_summary(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("bag", type=Path)
-    parser.add_argument("--out-root", type=Path, default=Path("reports/tim_v0"))
+    parser.add_argument("--out-root", type=Path, default=Path("reports/tim_v0"))  # historical default; report content is TIM-version neutral
     args = parser.parse_args()
 
     bag_path = args.bag.resolve()
