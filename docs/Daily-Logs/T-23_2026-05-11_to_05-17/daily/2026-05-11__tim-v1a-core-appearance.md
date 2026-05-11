@@ -577,3 +577,71 @@ Appearance diagnostics:
 Interpretation:
 
 On this bag, the main improvement over raw `/target` comes from selected-target memory itself. Appearance was active and influenced candidate scores in 82 rows, but it did not change the final selected-target correctness metrics compared with appearance disabled. This is an important ablation result because it avoids overclaiming the contribution of appearance. TIM-V1 appearance adds measurable overhead, but the replay p95 latency remains below 2 ms.
+
+---
+
+## TIM-V1M appearance-critical crossing run
+
+Recorded a harder two-person crossing/re-entry scenario designed to stress geometry and give appearance a stronger role.
+
+Command:
+
+    ./tools/start_live_stack.sh --profile safe-camera --target-memory --target-memory-appearance --target-memory-appearance-image-topic /camera/dashboard --record-video --bag-tag tim_v1m_appearance_critical_crossing
+
+Bag:
+
+    artifacts/bags/live_camera/2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing
+
+Reports:
+
+    reports/tim_v0/2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing
+    reports/tim_v1_appearance/2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing
+
+General TIM results:
+
+- Raw /target samples: 1269
+- TIM /target_memory samples: 1269
+- TIM status samples: 1269
+- Post-selection window starts at t=20.40 s
+- Raw valid duration after selection: 15.240 / 52.347 s
+- TIM valid duration after selection: 15.264 / 52.350 s
+- LOCKED duration: 15.315 s
+- UNCERTAIN duration: 0.584 s
+- LOST duration: 36.502 s
+- REACQUIRED events: 1
+- First LOST -> REACQUIRED duration: 20.152 s
+- TIM latency mean: 1.711 ms
+- TIM latency p95: 5.092 ms
+- TIM latency p99: 8.859 ms
+
+Appearance diagnostics:
+
+- Appearance enabled rows: 1269
+- Rows with valid appearance features: 1262
+- Rows with best_appearance_used=true: 541
+- Image age mean: 39.384 ms
+- Image age p50: 24.507 ms
+- Image age p95: 127.396 ms
+- Image age p99: 204.796 ms
+- Appearance skip reasons:
+  - ok: 1262
+  - stale_image: 7
+- Appearance-used by state:
+  - LOST: 533
+  - UNCERTAIN: 7
+  - REACQUIRED: 1
+
+Multi-person evidence:
+
+- Rows with >=2 tracks: 1154
+- Rows with >=2 valid appearance features: 1150
+- Rows with 3 tracks: 92
+
+Representative rejected appearance-assisted candidates:
+
+- t=36.355 s, state=LOST, best_track_id=9, best_total=0.560, best_appearance=0.451, reason=best_below_threshold:0.560<0.600
+- t=36.386 s, state=LOST, best_track_id=9, best_total=0.570, best_appearance=0.495, reason=best_below_threshold:0.570<0.600
+
+Interpretation:
+
+This harder run successfully produced an appearance-critical ambiguity condition. Appearance was used heavily, but the current conservative LOST-state threshold rejected many candidates even when appearance similarity was moderate. The run shows that TIM-V1 appearance affects candidate scoring, but reacquisition is still dominated by the acceptance policy. This motivates a threshold/reacquisition sweep rather than further appearance plumbing.
