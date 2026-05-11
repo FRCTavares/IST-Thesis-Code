@@ -308,3 +308,21 @@ Bag-level TIM-V1 appearance evidence:
 Interpretation:
 
 The recorded target-selected live run confirms that TIM-V1 appearance extraction was active and valid for almost the entire bag. `best_appearance_used=true` remained zero because this was a stable single-person smoke run, not an ambiguity or reacquisition scenario.
+
+---
+
+## TIM bag analysis wording made version-neutral
+
+Updated `tools/analysis/analyse_tim_v0_bag.py` so the generated report title and interpretation no longer describe the analysis as TIM-V0-only.
+
+Reason:
+
+- The analyser now exports TIM-V1 appearance diagnostics.
+- The historical output folder remains `reports/tim_v0/` for compatibility.
+- The generated report content is now TIM-version neutral.
+
+Validation:
+
+- `python3 -m py_compile tools/analysis/analyse_tim_v0_bag.py`
+- Re-ran the analyser on the TIM-V1G target-selected smoke bag.
+- Confirmed the generated report title is now `TIM Bag Analysis`.
