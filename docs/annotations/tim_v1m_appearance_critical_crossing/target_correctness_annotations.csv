@@ -1,0 +1,6 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,0.00,20.40,NO_TARGET_SELECTED,false,,,pre_selection,before operator target selection
+2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,20.40,35.71,CORRECT_TARGET,true,1,6,clean_tracking,selected person visible with original tracker id
+2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,35.71,56.11,CORRECT_TARGET,true,9,6,occlusion_reentry,selected person mostly occluded but manually verified as track id 9 when visible; distractor is id 6
+2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,56.11,62.00,CORRECT_TARGET,true,10,6,reacquired_id_switch,selected person manually verified as track id 10
+2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,62.00,72.43,CORRECT_TARGET,true,11,6,reacquired_id_switch,selected person manually verified as track id 11
