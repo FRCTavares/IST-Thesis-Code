@@ -119,6 +119,11 @@ class TargetMemoryNode(Node):
         self._image_sub = None
         self._image_error_warned = False
 
+        self._last_appearance_candidates = 0
+        self._last_appearance_features_valid = 0
+        self._last_appearance_image_age_ms: Optional[float] = None
+        self._last_appearance_skip_reason = "disabled"
+
         initial_id = int(self.get_parameter("selected_track_id").value)
         self._pending_select_id: Optional[int] = initial_id if initial_id > 0 else None
         self._last_mirrored_target_id: Optional[int] = None
@@ -318,23 +323,37 @@ class TargetMemoryNode(Node):
         )
 
     def _attach_appearance_features(self, candidates: list[CandidateTrack]) -> list[CandidateTrack]:
+        self._last_appearance_candidates = len(candidates)
+        self._last_appearance_features_valid = 0
+        self._last_appearance_image_age_ms = None
+
         if not self._appearance_enabled:
+            self._last_appearance_skip_reason = "disabled"
             return candidates
 
         if self._latest_image_bgr is None or self._latest_image_seen_ns is None:
+            self._last_appearance_skip_reason = "no_image"
             return candidates
 
         age_ms = float(time.monotonic_ns() - self._latest_image_seen_ns) / 1e6
+        self._last_appearance_image_age_ms = age_ms
+
         if age_ms > self._appearance_max_image_age_ms:
+            self._last_appearance_skip_reason = "stale_image"
             return candidates
 
         enriched: list[CandidateTrack] = []
+        valid_features = 0
+
         for candidate in candidates:
             appearance = extract_hsv_upper_lower_feature(
                 self._latest_image_bgr,
                 candidate.bbox,
                 self._appearance_cfg,
             )
+            if appearance is not None:
+                valid_features += 1
+
             enriched.append(
                 CandidateTrack(
                     track_id=candidate.track_id,
@@ -345,6 +364,9 @@ class TargetMemoryNode(Node):
                     appearance=appearance,
                 )
             )
+
+        self._last_appearance_features_valid = valid_features
+        self._last_appearance_skip_reason = "ok"
 
         return enriched
 
@@ -435,6 +457,11 @@ class TargetMemoryNode(Node):
                 "reason": str(out.reason),
                 "lat_ms": float(t_end_ns - t_start_ns) / 1e6,
                 "num_tracks": len(tracks_msg.tracks),
+                "appearance_enabled": bool(self._appearance_enabled),
+                "appearance_candidates": int(self._last_appearance_candidates),
+                "appearance_features_valid": int(self._last_appearance_features_valid),
+                "appearance_image_age_ms": self._last_appearance_image_age_ms,
+                "appearance_skip_reason": str(self._last_appearance_skip_reason),
                 "best": None
                 if best is None
                 else {

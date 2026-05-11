@@ -15,6 +15,10 @@ def make_node_without_ros_init():
     node._latest_image_bgr = None
     node._latest_image_seen_ns = None
     node._appearance_max_image_age_ms = 250.0
+    node._last_appearance_candidates = 0
+    node._last_appearance_features_valid = 0
+    node._last_appearance_image_age_ms = None
+    node._last_appearance_skip_reason = "disabled"
     return node
 
 
@@ -26,6 +30,11 @@ def test_attach_appearance_returns_same_candidates_when_disabled():
 
     assert out is candidates
     assert out[0].appearance is None
+
+
+    assert node._last_appearance_candidates == 1
+    assert node._last_appearance_features_valid == 0
+    assert node._last_appearance_skip_reason == "disabled"
 
 
 def test_attach_appearance_returns_same_candidates_without_image():
@@ -59,6 +68,12 @@ def test_attach_appearance_adds_feature_for_fresh_image():
     assert out[0].appearance is not None
     assert out[0].appearance.shape == (16 * 8 * 2,)
     assert np.isclose(np.linalg.norm(out[0].appearance), 1.0)
+
+
+    assert node._last_appearance_candidates == 1
+    assert node._last_appearance_features_valid == 1
+    assert node._last_appearance_image_age_ms is not None
+    assert node._last_appearance_skip_reason == "ok"
 
 
 def test_attach_appearance_rejects_stale_image():
