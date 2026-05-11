@@ -505,3 +505,39 @@ First appearance-used sample:
 Interpretation:
 
 This is the first real two-person TIM-V1 evidence bag. It confirms that image-derived appearance features were extracted during a multi-person run and that the TIM-V1 appearance cue actively affected association decisions. TIM produced valid target output for substantially longer than raw /target after selection, and reacquired after tracker identity changes. Correctness is not yet proven because this bag still needs manual annotation of correct/wrong/lost target intervals.
+
+---
+
+## TIM-V1N manual target-correctness evaluation
+
+Created first-pass manual correctness annotations for the TIM-V1J two-person ambiguity bag.
+
+Annotation file:
+
+- `docs/annotations/tim_v1j_two_person_ambiguity/target_correctness_annotations.csv`
+
+Manual review notes:
+
+- `docs/annotations/tim_v1j_two_person_ambiguity/manual_review_notes.md`
+
+Evaluator command:
+
+    python3 tools/analysis/evaluate_tim_target_correctness.py artifacts/bags/live_camera/2026-05-11__10-44-58__video__tim_v1j_two_person_ambiguity --annotations docs/annotations/tim_v1j_two_person_ambiguity/target_correctness_annotations.csv --out-dir reports/target_correctness/tim_v1j_two_person_ambiguity --step-s 0.05
+
+Result:
+
+| Metric | Raw /target | TIM /target_memory |
+|---|---:|---:|
+| correct duration [s] | 33.350 | 54.670 |
+| wrong duration [s] | 0.000 | 0.290 |
+| lost duration [s] | 23.670 | 2.060 |
+| target absent but output [s] | 0.000 | 0.000 |
+| target not visible [s] | 5.600 | 5.600 |
+| visible target duration [s] | 57.020 | 57.020 |
+| correct ratio | 0.585 | 0.959 |
+| wrong ratio | 0.000 | 0.005 |
+| lost ratio | 0.415 | 0.036 |
+
+Interpretation:
+
+This is the first manually annotated selected-target correctness result for TIM-V1. On this two-person ambiguity run, TIM improves correct target duration from 33.350 s to 54.670 s and correct ratio from 0.585 to 0.959. TIM reduces lost duration from 23.670 s to 2.060 s. A small wrong-target duration of 0.290 s appears in TIM, corresponding to a wrong ratio of 0.005. This is an important thesis result because it shows a measurable improvement over raw tracker-ID target selection while also exposing the residual risk of brief wrong-target output.
