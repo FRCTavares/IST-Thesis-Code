@@ -1,19 +1,27 @@
 """Selected-target memory for RGB-only micro-UAV following.
 
-TIM-V0 is intentionally lightweight:
-- no learned appearance
+TIM converts noisy tracker outputs into one selected, control-valid target state.
+
+TIM-V0 is the geometry-only baseline:
+- IoU, distance, scale, confidence, and tracker-ID continuity
 - no detector feedback
 - no ROS dependency
 - deterministic update rules
 
-It converts noisy tracker outputs into one selected, control-valid target state.
+TIM-V1A adds an optional lightweight appearance cue:
+- disabled by default
+- used only as a gated tie-breaker
+- cannot rescue geometrically implausible candidates
+- appearance memory freezes during uncertain/lost/reacquired states
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
 from math import exp, log, sqrt
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+
+from thesis_bringup.appearance_memory import cosine_similarity, update_feature_memory
 
 BBox = Tuple[float, float, float, float]  # x1, y1, x2, y2, in pixels
 
@@ -40,7 +48,7 @@ class ControlMode(str, Enum):
 
 @dataclass(frozen=True)
 class CandidateTrack:
-    """Minimal tracker output consumed by TIM-V0.
+    """Minimal tracker output consumed by TIM.
 
     This deliberately avoids ROS message types so the same code can be tested
     offline and then used inside a ROS node wrapper.
@@ -51,6 +59,7 @@ class CandidateTrack:
     score: float = 1.0
     age: int = 0
     last_seen: int = 0
+    appearance: Optional[Any] = None
 
 
 @dataclass(frozen=True)
@@ -62,12 +71,14 @@ class CandidateScore:
     scale: float
     confidence: float
     id_bonus: float
+    appearance: float = 0.0
+    appearance_used: bool = False
     ambiguous: bool = False
 
 
 @dataclass
 class TargetMemoryConfig:
-    """TIM-V0 configuration.
+    """TIM configuration.
 
     Defaults are conservative for 640x640-ish imagery. Tune with bag replay,
     not by guessing from one live session.
@@ -104,10 +115,18 @@ class TargetMemoryConfig:
     allow_id_switch_recovery: bool = True
     same_id_accept_relief: float = 0.08
 
+    # TIM-V1A optional appearance cue.
+    # Disabled by default so TIM-V0 behaviour remains unchanged.
+    appearance_enabled: bool = False
+    appearance_weight: float = 0.12
+    appearance_min_similarity: float = 0.35
+    appearance_update_alpha: float = 0.10
+    appearance_ambiguous_only: bool = True
+
 
 @dataclass
 class TargetMemoryOutput:
-    """Output published by TIM-V0 or converted into a ROS /target message."""
+    """Output published by TIM or converted into a ROS /target message."""
 
     state: TargetState
     control_mode: ControlMode
@@ -149,6 +168,7 @@ class _Memory:
     quality: float = 0.0
     frames_since_seen: int = 0
     confirmed_after_reacquire: int = 0
+    appearance: Optional[Any] = None
 
 
 def clamp01(x: float) -> float:
@@ -298,6 +318,7 @@ class TargetIdentityMemory:
             quality=clamp01(track.score),
             frames_since_seen=0,
             confirmed_after_reacquire=0,
+            appearance=update_feature_memory(None, track.appearance, alpha=1.0),
         )
         return self._make_output(reason="operator_select", visible=True, reacquired=False)
 
@@ -311,7 +332,19 @@ class TargetIdentityMemory:
         if not candidates:
             return self._miss(reason="no_candidates")
 
-        scores = [score_candidate(self._m.bbox, c, self._m.track_id, self.cfg) for c in candidates]
+        base_scores = [score_candidate(self._m.bbox, c, self._m.track_id, self.cfg) for c in candidates]
+        base_sorted = sorted(base_scores, key=lambda s: s.total, reverse=True)
+        base_best = base_sorted[0]
+        base_second = base_sorted[1] if len(base_sorted) > 1 else None
+        base_same_id = self._m.track_id is not None and base_best.track_id == self._m.track_id
+        base_ambiguous = self._is_ambiguous(base_best, base_second, same_id=base_same_id)
+
+        use_appearance = self._should_use_appearance(base_ambiguous=base_ambiguous)
+
+        scores = [
+            self._score_candidate(self._m.bbox, c, use_appearance=use_appearance)
+            for c in candidates
+        ]
         scores_sorted = sorted(scores, key=lambda s: s.total, reverse=True)
         best = scores_sorted[0]
         second = scores_sorted[1] if len(scores_sorted) > 1 else None
@@ -328,6 +361,8 @@ class TargetIdentityMemory:
             scale=best.scale,
             confidence=best.confidence,
             id_bonus=best.id_bonus,
+            appearance=best.appearance,
+            appearance_used=best.appearance_used,
             ambiguous=ambiguous,
         )
         scores_sorted[0] = best
@@ -358,6 +393,56 @@ class TargetIdentityMemory:
             )
 
         return self._accept(best_candidate, best_score=best, all_scores=scores_sorted)
+
+    def _should_use_appearance(self, *, base_ambiguous: bool) -> bool:
+        if not self.cfg.appearance_enabled:
+            return False
+        if self._m.appearance is None:
+            return False
+        if self._m.state in {TargetState.UNCERTAIN, TargetState.LOST, TargetState.REACQUIRED}:
+            return True
+        if not self.cfg.appearance_ambiguous_only:
+            return True
+        return bool(base_ambiguous)
+
+    def _score_candidate(
+        self,
+        reference_bbox: BBox,
+        candidate: CandidateTrack,
+        *,
+        use_appearance: bool,
+    ) -> CandidateScore:
+        base = score_candidate(reference_bbox, candidate, self._m.track_id, self.cfg)
+
+        appearance_score = 0.0
+        appearance_used = False
+        total = base.total
+
+        # Appearance is only a tie-breaker inside a geometrically plausible region.
+        # It must not rescue candidates that are far from the predicted target memory.
+        geometry_allows_appearance = (
+            base.iou > 0.0
+            or (base.distance >= 0.25 and base.scale >= 0.35)
+        )
+
+        if use_appearance and candidate.appearance is not None and geometry_allows_appearance:
+            appearance_score = clamp01(cosine_similarity(self._m.appearance, candidate.appearance))
+            if appearance_score >= self.cfg.appearance_min_similarity:
+                total = clamp01(total + self.cfg.appearance_weight * appearance_score)
+                appearance_used = True
+
+        return CandidateScore(
+            track_id=base.track_id,
+            total=total,
+            iou=base.iou,
+            distance=base.distance,
+            scale=base.scale,
+            confidence=base.confidence,
+            id_bonus=base.id_bonus,
+            appearance=appearance_score,
+            appearance_used=appearance_used,
+            ambiguous=base.ambiguous,
+        )
 
     def _is_ambiguous(
         self,
@@ -402,6 +487,16 @@ class TargetIdentityMemory:
         self._m.bbox = candidate.bbox
         self._m.quality = clamp01(0.65 * best_score.total + 0.35 * candidate.score)
         self._m.frames_since_seen = 0
+
+        # TIM-V1A memory update policy:
+        # update only after a confirmed LOCKED state.
+        # freeze during UNCERTAIN, LOST, and REACQUIRED.
+        if new_state == TargetState.LOCKED:
+            self._m.appearance = update_feature_memory(
+                self._m.appearance,
+                candidate.appearance,
+                alpha=self.cfg.appearance_update_alpha,
+            )
 
         return self._make_output(
             reason="accepted_candidate" if not reacquired else "reacquired_candidate",
