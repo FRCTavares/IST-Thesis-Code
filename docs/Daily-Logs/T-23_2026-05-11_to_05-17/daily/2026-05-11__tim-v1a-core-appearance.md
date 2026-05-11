@@ -541,3 +541,39 @@ Result:
 Interpretation:
 
 This is the first manually annotated selected-target correctness result for TIM-V1. On this two-person ambiguity run, TIM improves correct target duration from 33.350 s to 54.670 s and correct ratio from 0.585 to 0.959. TIM reduces lost duration from 23.670 s to 2.060 s. A small wrong-target duration of 0.290 s appears in TIM, corresponding to a wrong ratio of 0.005. This is an important thesis result because it shows a measurable improvement over raw tracker-ID target selection while also exposing the residual risk of brief wrong-target output.
+
+---
+
+## TIM-V1L appearance ablation on the same two-person bag
+
+Replayed the TIM-V1J two-person ambiguity bag twice:
+
+1. appearance disabled
+2. appearance enabled
+
+Replay bags:
+
+- `artifacts/bags/eval/tim_v1j_replay_appearance_off`
+- `artifacts/bags/eval/tim_v1j_replay_appearance_on`
+
+Correctness results:
+
+| Replay | Correct ratio | Wrong ratio | Lost ratio |
+|---|---:|---:|---:|
+| Appearance OFF | 0.956 | 0.008 | 0.036 |
+| Appearance ON | 0.956 | 0.008 | 0.036 |
+
+Appearance diagnostics:
+
+| Metric | OFF | ON |
+|---|---:|---:|
+| appearance enabled rows | 0 | 1201 |
+| valid appearance rows | 0 | 1170 |
+| appearance used rows | 0 | 82 |
+| rows with >=2 tracks | 659 | 659 |
+| rows with >=2 valid appearance features | 0 | 593 |
+| TIM latency p95 | 0.216 ms | 1.984 ms |
+
+Interpretation:
+
+On this bag, the main improvement over raw `/target` comes from selected-target memory itself. Appearance was active and influenced candidate scores in 82 rows, but it did not change the final selected-target correctness metrics compared with appearance disabled. This is an important ablation result because it avoids overclaiming the contribution of appearance. TIM-V1 appearance adds measurable overhead, but the replay p95 latency remains below 2 ms.
