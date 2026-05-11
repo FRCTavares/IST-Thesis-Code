@@ -326,3 +326,52 @@ Validation:
 - `python3 -m py_compile tools/analysis/analyse_tim_v0_bag.py`
 - Re-ran the analyser on the TIM-V1G target-selected smoke bag.
 - Confirmed the generated report title is now `TIM Bag Analysis`.
+
+---
+
+## TIM-V1I controlled occlusion smoke bag
+
+Recorded a short target-selected live run with TIM appearance enabled and a brief disturbance/occlusion.
+
+Command:
+
+    ./tools/start_live_stack.sh --profile safe-camera --target-memory --target-memory-appearance --target-memory-appearance-image-topic /camera/dashboard --record-video --bag-tag tim_v1i_occlusion_smoke
+
+Bag:
+
+    artifacts/bags/live_camera/2026-05-11__10-35-24__video__tim_v1i_occlusion_smoke
+
+Report:
+
+    reports/tim_v0/2026-05-11__10-35-24__video__tim_v1i_occlusion_smoke
+
+Summary:
+
+- Raw /target samples: 1181
+- TIM /target_memory samples: 1187
+- TIM status samples: 1186
+- Post-selection window starts at t=10.54 s
+- TIM valid duration after selection: 60.877 / 61.997 s
+- LOCKED duration: 60.996 s
+- UNCERTAIN duration: 0.458 s
+- LOST duration: 0.664 s
+- REACQUIRED events: 1
+- First UNCERTAIN -> REACQUIRED duration: 1.122 s
+- First LOST -> REACQUIRED duration: 0.664 s
+- TIM latency mean: 1.142 ms
+- TIM latency p95: 4.247 ms
+- TIM latency p99: 7.144 ms
+
+Appearance diagnostics:
+
+- status rows: 1186
+- selected-target status rows: 1043
+- positive /target_memory rows: 1025
+- valid appearance feature rows: 948
+- appearance_used rows: 0
+- appearance image age mean: 42.10 ms
+- appearance image age p95: 128.50 ms
+
+Interpretation:
+
+This run provides the first controlled TIM-V1 occlusion/reacquisition evidence. TIM transitioned through UNCERTAIN and LOST during the disturbance, reacquired the target after 0.664 s, and returned to LOCKED. Appearance features were extracted for most of the run, but appearance-assisted matching was not triggered because this scenario did not include a two-person ambiguity.
