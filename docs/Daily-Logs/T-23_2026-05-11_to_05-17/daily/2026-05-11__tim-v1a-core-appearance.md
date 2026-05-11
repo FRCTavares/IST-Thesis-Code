@@ -175,3 +175,42 @@ Validation:
 Interpretation:
 
 The live stack can now start TIM with image-based appearance extraction through an explicit opt-in flag, without changing the default runtime path.
+
+---
+
+## TIM-V1D live validation
+
+Started the live stack with TIM appearance enabled:
+
+    ./tools/start_live_stack.sh --profile safe-camera --target-memory --target-memory-appearance --target-memory-appearance-image-topic /camera/dashboard
+
+Startup result:
+
+- Live stack started successfully.
+- Capture: 640x480.
+- Published perception image: 640x640.
+- Detector: single-process Hailo direct backend.
+- Tracker: OC-SORT.
+- A `/camera/image_raw` readiness warning appeared, but the launcher continued because camera FPS was active.
+
+TIM node validation:
+
+- `target_memory_node` launched successfully.
+- `appearance_enabled=True`.
+- `appearance_image_topic=/camera/dashboard`.
+- `/target_memory/status` published JSON diagnostics with appearance fields.
+
+Observed topic rates:
+
+- `/camera/dashboard`: approximately 12 Hz during the check.
+- `/tracks`: approximately 16 Hz during the check.
+- `/target_memory/status`: approximately 16 to 17 Hz during the check.
+
+Observed status sample:
+
+- `appearance`: 0.0
+- `appearance_used`: false
+
+Interpretation:
+
+The live TIM-V1B path is wired correctly and does not crash. Appearance use may remain false during normal stable tracking because the appearance cue is intentionally gated and mainly used for ambiguity, loss, and reacquisition. Further validation requires a selected target plus an ambiguity or ID-switch scenario.
