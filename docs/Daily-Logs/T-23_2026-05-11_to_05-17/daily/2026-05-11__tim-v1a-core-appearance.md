@@ -214,3 +214,37 @@ Observed status sample:
 Interpretation:
 
 The live TIM-V1B path is wired correctly and does not crash. Appearance use may remain false during normal stable tracking because the appearance cue is intentionally gated and mainly used for ambiguity, loss, and reacquisition. Further validation requires a selected target plus an ambiguity or ID-switch scenario.
+
+---
+
+## TIM-V1E deterministic image-derived appearance proof
+
+Added a deterministic test proving that image-derived appearance features can influence TIM matching.
+
+Test added:
+
+- `test_image_derived_appearance_can_change_tim_match_decision`
+
+Scenario:
+
+- Frame 0: operator selects a red target.
+- The node helper extracts the red appearance feature from the synthetic image.
+- Frame 1: two candidates appear:
+  - a geometrically closer blue candidate
+  - a shifted red candidate
+- TIM uses the image-derived appearance feature and selects the red candidate.
+
+Important observation:
+
+- The first version of the test failed because TIM made the red candidate the best candidate, but still rejected the switch as ambiguous.
+- This was correct behaviour.
+- The test was adjusted with a smaller `ambiguity_margin` so it isolates the image-derived appearance matching path.
+
+Validation:
+
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest src/thesis_bringup/test/test_appearance_memory.py src/thesis_bringup/test/test_target_memory_synthetic.py src/thesis_bringup/test/test_target_memory_appearance.py src/thesis_bringup/test/test_target_memory_node_appearance.py -q`
+- Result: 31 passed
+
+Interpretation:
+
+TIM-V1 now has deterministic proof that the ROS wrapper can extract appearance from images, pass it into the ROS-free TIM core, and affect candidate association under controlled conditions.
