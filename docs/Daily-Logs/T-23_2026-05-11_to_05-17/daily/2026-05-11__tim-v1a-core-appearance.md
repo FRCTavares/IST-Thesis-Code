@@ -265,3 +265,9 @@ Observed diagnostic fields:
 Interpretation:
 
 The live TIM appearance extraction path is not only launching, it is successfully extracting at least one valid image-derived appearance feature from a live candidate track. This confirms that `/camera/dashboard` images are reaching `target_memory_node`, crop extraction is working, and features are being attached to candidates before TIM matching.
+
+Additional full-length status sample:
+
+    {"appearance_candidates": 1, "appearance_enabled": true, "appearance_features_valid": 1, "appearance_image_age_ms": 4.221505, "appearance_skip_reason": "ok", "best": null, "control_mode": "NO_CONTROL", "frame_id": 1644, "frames_since_seen": 0, "lat_ms": 0.919801, "num_tracks": 1, "quality": 0.0, "reacquired": false, "reason": "no_operator_selected_target", "state": "NO_TARGET", "target_track_id": null, "visible": false}
+
+This confirms live feature extraction before operator target selection. The NO_TARGET state is expected because no track had been selected during the sample.
