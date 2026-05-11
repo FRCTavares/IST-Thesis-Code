@@ -692,3 +692,66 @@ Interpretation:
 The default lost-state threshold of 0.60 is too conservative for this hard re-entry scenario. Lowering it to 0.55 improves reacquisition without introducing wrong-target duration in this first-pass annotation. Lowering it to 0.50 gives the best result in this run, increasing correct ratio to 0.749 while keeping wrong ratio at 0.000. Lowering further to 0.45 is too permissive and introduces a wrong-target ratio of 0.163.
 
 This result supports tuning `accept_score_lost` around 0.50-0.55 for TIM-V1, but the annotation should be reviewed again before changing the default.
+
+---
+
+## End-of-day summary
+
+Today was a major TIM-V1 implementation and evidence day.
+
+Completed implementation:
+
+- TIM-V1A: optional appearance cue integrated into the ROS-free TargetIdentityMemory core.
+- TIM-V1B: image-based appearance extraction integrated into target_memory_node.py.
+- TIM-V1C: node-level appearance extraction tests added.
+- TIM-V1D: live-stack flags added for enabling TIM appearance.
+- TIM-V1E: deterministic image-derived appearance matching proof added.
+- TIM-V1F: live diagnostics added for appearance extraction.
+- TIM-V1H: TIM bag analysis exports appearance diagnostic fields.
+- TIM-V1K: dedicated TIM-V1 appearance diagnostics report added.
+- TIM-V1 threshold sweep script started for offline analysis.
+
+Completed evidence:
+
+- TIM-V1G target-selected smoke bag.
+- TIM-V1I controlled occlusion smoke bag.
+- TIM-V1J two-person ambiguity bag.
+- TIM-V1M appearance-critical crossing bag.
+- TIM-V1N first-pass manual target-correctness evaluation.
+
+Most important quantitative result:
+
+- On TIM-V1J two-person ambiguity run:
+  - Raw /target correct ratio: 0.585
+  - TIM /target_memory correct ratio: 0.959
+  - Raw lost ratio: 0.415
+  - TIM lost ratio: 0.036
+  - TIM wrong ratio: 0.005
+
+Most important ablation result:
+
+- On replayed TIM-V1J:
+  - appearance disabled and enabled produced the same final correctness metrics
+  - appearance was active and used, but did not change the final selected-target correctness for that bag
+  - conclusion: the main improvement on TIM-V1J comes from selected-target memory, while appearance still needs harder cases to show unique benefit
+
+Most important failure/tuning result:
+
+- TIM-V1M showed that appearance often selected the correct candidate, but the LOST-state threshold rejected it.
+- Manual review confirmed:
+  - ID 1 was the selected person before occlusion
+  - ID 9 was the selected person during hard re-entry
+  - ID 10 and ID 11 were also the selected person later
+  - ID 6 was the distractor
+- Offline sweep using first-pass annotation suggested:
+  - accept_score_lost = 0.60 is too conservative
+  - accept_score_lost = 0.50 gave the best result in the first-pass TIM-V1M annotation
+  - accept_score_lost = 0.45 became too permissive and introduced wrong-target duration
+
+Current interpretation:
+
+TIM-V1 is now implemented, live-stack integrated, tested, recorded, and evaluated on real bags. The main thesis claim is no longer only theoretical. The strongest current claim is that selected-target memory substantially improves control-relevant target continuity compared with raw tracker-ID selection. The appearance cue is implemented and active, but its unique contribution needs more controlled evaluation. The next technical lever is the reacquisition acceptance policy, especially accept_score_lost.
+
+Open caution:
+
+The TIM-V1M threshold sweep uses a first-pass annotation. The exact correctness ratios should not be treated as final until the intervals are reviewed again.
