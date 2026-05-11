@@ -96,3 +96,42 @@ Implement TIM-V1B:
 - extract per-track appearance features from the latest image
 - keep the feature path disabled by default
 - preserve TIM-V0 live behaviour unless explicitly enabled
+
+---
+
+## TIM-V1B ROS wrapper appearance extraction added
+
+Integrated optional image-based appearance extraction into `target_memory_node.py`.
+
+Changed file:
+
+- ros2_ws/src/thesis_bringup/thesis_bringup/nodes/target_memory_node.py
+
+Main changes:
+
+- Added `appearance_enabled` parameter, disabled by default.
+- Added optional image subscription only when appearance is enabled.
+- Default appearance image topic is `/camera/dashboard`.
+- Converts latest image to BGR using `cv_bridge`.
+- Extracts HSV upper/lower appearance features for each candidate track.
+- Passes extracted features into `CandidateTrack(..., appearance=feature)`.
+- Adds appearance diagnostics to `/target_memory/status`.
+- Preserves TIM-V0 live behaviour when `appearance_enabled:=false`.
+
+Validation:
+
+- `colcon build --symlink-install --packages-select thesis_bringup`
+- `timeout 5s ros2 run thesis_bringup target_memory_node --ros-args -p appearance_enabled:=false`
+  - result: node started cleanly, timeout exit code 124
+- `timeout 5s ros2 run thesis_bringup target_memory_node --ros-args -p appearance_enabled:=true -p appearance_image_topic:=/camera/dashboard`
+  - result: node started cleanly, timeout exit code 124
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest src/thesis_bringup/test/test_appearance_memory.py src/thesis_bringup/test/test_target_memory_synthetic.py src/thesis_bringup/test/test_target_memory_appearance.py -q`
+  - result: 25 passed
+
+Interpretation:
+
+TIM-V1B now connects the ROS wrapper to image-based appearance features while keeping the feature path opt-in. This gives a safe live integration path for TIM-V1 without changing the default live-stack behaviour.
+
+Next step:
+
+Run a live or replay smoke test with `appearance_enabled:=true` and confirm that `/target_memory/status` reports non-zero appearance values when a selected target is visible.
