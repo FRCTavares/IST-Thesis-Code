@@ -256,3 +256,36 @@ Interpretation:
 Conclusion:
 
 This is the first useful TIM-V0 versus TIM-V1 evidence. It supports the claim that appearance can improve reacquisition on the hard crossing bag, but only with an appropriate LOST-state acceptance threshold.
+
+---
+
+## TIM-V1P descriptor improvement tested and rejected
+
+Tested a refined handcrafted HSV appearance descriptor with:
+
+- inner bbox crop shrink
+- saturation/value masking
+- reduced background contamination
+
+The change passed unit tests, but the TIM-V1M ablation did not improve the useful operating point.
+
+At `accept_score_lost=0.50`:
+
+| Method | Correct ratio | Wrong ratio | Lost ratio |
+|---|---:|---:|---:|
+| TIM-V1 old | 0.788 | 0.000 | 0.212 |
+| TIM-V1P new | 0.788 | 0.000 | 0.212 |
+
+At `accept_score_lost=0.45`:
+
+| Method | Correct ratio | Wrong ratio | Lost ratio |
+|---|---:|---:|---:|
+| TIM-V1 old | 0.603 | 0.170 | 0.227 |
+| TIM-V1P new | 0.603 | 0.353 | 0.044 |
+
+Decision:
+
+- Do not keep TIM-V1P as default.
+- Revert the descriptor implementation changes.
+- Keep the original TIM-V1 descriptor.
+- Next improvement should focus on appearance reliability/gating rather than stronger colour matching.
