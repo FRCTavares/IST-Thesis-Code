@@ -289,3 +289,32 @@ Decision:
 - Revert the descriptor implementation changes.
 - Keep the original TIM-V1 descriptor.
 - Next improvement should focus on appearance reliability/gating rather than stronger colour matching.
+
+---
+
+## TIM-V1R simple LOST confirmation tested and rejected
+
+Tested a simple LOST-state reacquisition confirmation rule:
+
+- candidate must pass the LOST threshold for 3 consecutive LOST-state updates before reacquisition.
+
+Result on TIM-V1M:
+
+| Method | accept_score_lost | Correct ratio | Wrong ratio | Lost ratio |
+|---|---:|---:|---:|---:|
+| TIM-V1 confirm1 | 0.50 | 0.788 | 0.000 | 0.212 |
+| TIM-V1R confirm3 | 0.50 | 0.784 | 0.000 | 0.216 |
+| TIM-V1 confirm1 | 0.45 | 0.603 | 0.170 | 0.227 |
+| TIM-V1R confirm3 | 0.45 | 0.603 | 0.279 | 0.118 |
+
+Interpretation:
+
+- The 3-frame confirmation rule did not improve the useful threshold.
+- It made the permissive threshold less safe.
+- It also made `accept_score_lost=0.55` too conservative.
+
+Decision:
+
+- Do not keep simple LOST confirmation as the next TIM-V1 improvement.
+- The distractor is persistent, so a simple consecutive-frame rule is insufficient.
+- Future improvement should use appearance margin, second-best margin, or candidate-hypothesis evidence.
