@@ -318,3 +318,21 @@ Decision:
 - Do not keep simple LOST confirmation as the next TIM-V1 improvement.
 - The distractor is persistent, so a simple consecutive-frame rule is insufficient.
 - Future improvement should use appearance margin, second-best margin, or candidate-hypothesis evidence.
+
+---
+
+## Final TIM-V1 interpretation for supervisor update
+
+Current strongest conclusions:
+
+1. TIM selected-target memory clearly improves over raw tracker-ID target following.
+2. TIM-V1J showed that TIM-V0 and TIM-V1 can perform identically when geometry-only memory is already sufficient.
+3. TIM-V1M showed that appearance can improve over TIM-V0 in the hard crossing case at `accept_score_lost=0.50`.
+4. At `accept_score_lost=0.50`, TIM-V1 improved correct ratio from 0.603 to 0.788 and reduced lost ratio from 0.397 to 0.212 while keeping wrong ratio at 0.000.
+5. At `accept_score_lost=0.45`, TIM-V1 became unsafe, increasing wrong ratio to 0.170.
+6. TIM-V1P, a stronger HSV descriptor variant, was rejected because it worsened wrong-target risk at permissive thresholds.
+7. TIM-V1R, a simple 3-frame LOST confirmation rule, was rejected because the distractor was persistent and the rule did not improve safety.
+
+Final interpretation:
+
+TIM-V1 is not universally better than TIM-V0, but it improves the hard re-entry case when the LOST-state threshold is in a useful range. The main remaining problem is safe appearance-gated reacquisition, not simply stronger appearance matching.
