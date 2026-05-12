@@ -216,3 +216,43 @@ TIM-V1M is now a useful threshold-stress case. It shows both sides of the trade-
 - conservative thresholds delay reacquisition of the true target,
 - permissive thresholds can lock onto the distractor.
 
+
+---
+
+## TIM-V1M appearance ON/OFF ablation completed
+
+Extended the offline TIM-V1 threshold sweep script with:
+
+- `--appearance-enabled`
+- `--no-appearance`
+
+This allows a direct TIM-V0-style geometry-only comparison against TIM-V1 appearance-assisted matching on the same recorded bag and annotation.
+
+Ran the ablation on:
+
+- `2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing`
+
+Main result:
+
+| Method | accept_score_lost | Correct ratio | Wrong ratio | Lost ratio |
+|---|---:|---:|---:|---:|
+| TIM-V0, appearance OFF | 0.60 | 0.308 | 0.000 | 0.692 |
+| TIM-V0, appearance OFF | 0.55 | 0.308 | 0.000 | 0.692 |
+| TIM-V0, appearance OFF | 0.50 | 0.603 | 0.000 | 0.397 |
+| TIM-V0, appearance OFF | 0.45 | 0.603 | 0.000 | 0.397 |
+| TIM-V1, appearance ON | 0.60 | 0.308 | 0.000 | 0.692 |
+| TIM-V1, appearance ON | 0.55 | 0.603 | 0.000 | 0.397 |
+| TIM-V1, appearance ON | 0.50 | 0.788 | 0.000 | 0.212 |
+| TIM-V1, appearance ON | 0.45 | 0.603 | 0.170 | 0.227 |
+
+Interpretation:
+
+- TIM-V1 appearance improves over TIM-V0 at `accept_score_lost=0.50`.
+- Correct ratio improves from 0.603 to 0.788.
+- Lost ratio decreases from 0.397 to 0.212.
+- Wrong ratio remains 0.000 at 0.50.
+- At 0.45, TIM-V1 becomes too permissive and introduces wrong-target duration.
+
+Conclusion:
+
+This is the first useful TIM-V0 versus TIM-V1 evidence. It supports the claim that appearance can improve reacquisition on the hard crossing bag, but only with an appropriate LOST-state acceptance threshold.

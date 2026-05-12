@@ -261,11 +261,12 @@ def run_threshold_case(
     annotations: list[AnnotationInterval],
     step_s: float,
     appearance_min_bbox_height: float,
+    appearance_enabled: bool,
 ) -> tuple[list[OutputSample], dict[str, float]]:
     cfg = TargetMemoryConfig(
         image_width=image_width,
         image_height=image_height,
-        appearance_enabled=True,
+        appearance_enabled=appearance_enabled,
         appearance_weight=0.12,
         appearance_min_similarity=0.35,
         appearance_update_alpha=0.10,
@@ -334,7 +335,7 @@ def run_threshold_case(
                 and ((t_s - latest_image_t_s) * 1000.0) <= 250.0
             )
 
-            if age_ok:
+            if age_ok and appearance_enabled:
                 candidates, valid_features = add_appearance(candidates, latest_image, app_cfg)
             else:
                 valid_features = 0
@@ -423,6 +424,19 @@ def main() -> None:
     parser.add_argument("--image-width", type=float, default=640.0)
     parser.add_argument("--image-height", type=float, default=640.0)
     parser.add_argument("--appearance-min-bbox-height", type=float, default=30.0)
+    parser.add_argument(
+        "--appearance-enabled",
+        dest="appearance_enabled",
+        action="store_true",
+        default=True,
+        help="Enable TIM-V1 appearance cue during offline sweep. Default: enabled.",
+    )
+    parser.add_argument(
+        "--no-appearance",
+        dest="appearance_enabled",
+        action="store_false",
+        help="Disable TIM-V1 appearance cue, producing a TIM-V0-style geometry-only sweep.",
+    )
     args = parser.parse_args()
 
     annotations = load_annotations(args.annotations)
@@ -442,6 +456,7 @@ def main() -> None:
             annotations=annotations,
             step_s=args.step_s,
             appearance_min_bbox_height=args.appearance_min_bbox_height,
+            appearance_enabled=args.appearance_enabled,
         )
 
         tag = f"lost_{threshold:.2f}".replace(".", "_")
