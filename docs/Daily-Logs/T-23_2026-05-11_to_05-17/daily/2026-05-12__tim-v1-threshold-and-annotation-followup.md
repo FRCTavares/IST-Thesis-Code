@@ -169,3 +169,50 @@ Good:
 Stop condition:
 
 Do not start TIM-V2 or ROI refine yet. Finish TIM-V1 evaluation first.
+---
+
+## TIM-V1M annotation refined and threshold sweep rerun
+
+Refined the manual correctness annotation for:
+
+- `2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing`
+
+Main correction:
+
+- The previous annotation treated a long interval as mostly occluded/ambiguous.
+- Manual video review confirmed that from approximately 56.11 s onward, the selected target is clearly visible as ID 11 while the distractor remains ID 6.
+- Therefore, accepting ID 6 during this interval is a wrong-target failure, not a hidden-target case.
+
+Final manual ID mapping:
+
+- ID 1: selected target before crossing.
+- ID 6: distractor.
+- ID 9: selected target after first re-entry.
+- ID 10: selected target after second re-entry.
+- ID 11: selected target in the final visible interval.
+
+Reran the offline `accept_score_lost` sweep.
+
+Result:
+
+| accept_score_lost | correct ratio | wrong ratio | lost ratio | correct [s] | wrong [s] | lost [s] |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0.60 | 0.308 | 0.000 | 0.692 | 15.200 | 0.000 | 34.130 |
+| 0.55 | 0.603 | 0.000 | 0.397 | 29.750 | 0.000 | 19.580 |
+| 0.50 | 0.788 | 0.000 | 0.212 | 38.870 | 0.000 | 10.460 |
+| 0.45 | 0.603 | 0.170 | 0.227 | 29.750 | 8.400 | 11.180 |
+
+Interpretation:
+
+- The default `accept_score_lost=0.60` is too conservative for this hard re-entry case.
+- `0.50` gives the best result on this bag.
+- `0.45` is too permissive and introduces clear wrong-target duration.
+- This supports a candidate tuning range around `0.50-0.55`, but the live default should not be changed based on a single bag.
+
+Conclusion:
+
+TIM-V1M is now a useful threshold-stress case. It shows both sides of the trade-off:
+
+- conservative thresholds delay reacquisition of the true target,
+- permissive thresholds can lock onto the distractor.
+
