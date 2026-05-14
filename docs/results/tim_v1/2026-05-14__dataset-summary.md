@@ -55,3 +55,24 @@ LOST rows: 31.
 REACQUIRED rows: 43.  
 Appearance used: 28 rows.  
 This is useful as a stress/diagnostic bag, but not as a clean controlled scenario.
+
+## Offline replay validation: two-person no-crossing
+
+The original `tim_v1_two_person_no_crossing_raw` bag did not contain a live target selection. It was replayed using only clean input topics (`/camera/image_raw` and `/detections`), then target ID 1 was selected during replay and a new eval bag was recorded:
+
+- `artifacts/bags/eval/tim_v1_two_person_no_crossing_clean_replay_id1`
+
+Result:
+
+- Raw valid duration after selection: 115.395 / 115.395 s
+- TIM valid duration after selection: 115.395 / 115.395 s
+- TIM state sequence: `NO_TARGET -> LOCKED`
+- Reacquisition events: 0
+- TIM latency p95: 1.0675 ms
+- Appearance enabled: yes
+- Valid appearance rows: 291 / 590
+- Appearance-used rows: 0
+
+Interpretation:
+
+This confirms that offline raw-only replay with manual target selection works. It also provides a clean two-person no-crossing stability baseline: TIM remains stable in the presence of a distractor, and appearance is not used because there is no ambiguous association.
