@@ -10,26 +10,21 @@ reports/videos/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw_
 
 reports/videos/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_on__target_1/tim_target_memory_overlay.mp4
 
-## Manual observations
+## Manual interval review
 
-- From 4.81 to 49.61 s, the selected person is ID 1 and the distractor is ID 2. TIM is correct.
-- Around 49.61 s, ID 1 crosses in front of ID 2 and TIM briefly stops or changes for less than one second.
-- Around 50.01 s, TIM returns to ID 1, which is correct.
-- Around 59.40 s, ID 1 is still the selected target and crosses behind ID 2. TIM remains correct.
-- Around 69.32-101.20 s, the selected target changes from ID 1 to IDs 98 and 115, but TIM keeps following ID 1, which by then corresponds to the distractor. This is a wrong-target interval.
-- Around 101.20 s, TIM recovers from the distractor back to the selected target.
-- Around 110.84-116.31 s, the selected target is initially ID 144 and later ID 163. TIM is initially correct but then switches back to ID 1, which is the distractor.
-- Around 116.31 s, TIM switches to ID 163, which is the selected target. The distractor later becomes ID 173.
-
-Detection/track availability observation:
-
-- During the wrong intervals, the true selected person had detector boxes and track boxes.
-- Therefore, the failure is not only detector absence. The true target was available as a candidate, but TIM still preferred the geometrically smooth distractor.
+- 0.00-5.00 s: selected person is visible as ID 1, but no target has been selected yet.
+- 5.00-68.00 s: selected person is ID 1 and TIM follows ID 1 correctly.
+- 68.00-99.00 s: selected person changes to ID 96 and then ID 113, but TIM keeps following ID 1, which is now the distractor. This is a wrong-target interval.
+- 99.00-109.00 s: selected person is ID 142 and TIM follows ID 142 correctly.
+- 109.00-110.00 s: transition interval between IDs 142 and 161.
+- 110.00-115.00 s: selected person is ID 161, but TIM follows distractor ID 1. This is a wrong-target interval.
+- 115.00-116.00 s: transition interval before recovery.
+- 116.00-end: selected person is ID 161 and TIM follows ID 161 correctly. The distractor later becomes ID 173.
 
 ## Interpretation
 
-This bag is important because TIM remains mostly valid but is not always correct. It exposes the difference between target validity and selected-person correctness.
+This bag clearly separates target validity from target correctness.
 
-The main failure mode is safe reacquisition under close crossings: TIM can switch to a persistent distractor when the selected target changes tracker ID.
+TIM remains mostly valid, but it still follows the wrong person during close crossing and ID-change intervals. The main wrong-target intervals are 68.00-99.00 s and 110.00-115.00 s.
 
-This supports the need for safer appearance-gated reacquisition or candidate hypothesis logic.
+The failure mode is that the persistent distractor keeps strong geometric continuity, while the selected person changes tracker ID.
