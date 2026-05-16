@@ -476,6 +476,21 @@ class TargetMemoryNode(Node):
                     "appearance_used": bool(best.appearance_used),
                     "ambiguous": bool(best.ambiguous),
                 },
+                "all_scores": [
+                    {
+                        "track_id": int(score.track_id),
+                        "total": float(score.total),
+                        "iou": float(score.iou),
+                        "distance": float(score.distance),
+                        "scale": float(score.scale),
+                        "confidence": float(score.confidence),
+                        "id_bonus": float(score.id_bonus),
+                        "appearance": float(score.appearance),
+                        "appearance_used": bool(score.appearance_used),
+                        "ambiguous": bool(score.ambiguous),
+                    }
+                    for score in out.all_scores
+                ],
             },
             sort_keys=True,
         )
