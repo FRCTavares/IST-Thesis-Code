@@ -23,12 +23,15 @@ for tracker in "${TRACKERS[@]}"; do
     echo "RUN tracker=$tracker tim=$tim_mode target=$TARGET_ID"
     echo "============================================================"
 
-    "$THESIS_ROOT/tools/experiments/run_one_clean_tim_replay.sh" \
+    if ! "$THESIS_ROOT/tools/experiments/run_one_clean_tim_replay.sh" \
       "$BAG_PATH" \
       "$TARGET_ID" \
       "$tracker" \
       "$tim_mode" \
       "$RATE" \
-      120
+      120; then
+      echo "[warn] matrix run failed: tracker=$tracker tim=$tim_mode target=$TARGET_ID"
+      echo "[warn] continuing with next configuration"
+    fi
   done
 done
