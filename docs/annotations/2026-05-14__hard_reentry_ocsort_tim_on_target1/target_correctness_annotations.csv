@@ -1,9 +1,9 @@
 bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
 2026-05-14__hard_reentry_ocsort_tim_on_target1,0.00,4.81,NO_TARGET_SELECTED,false,,,pre_selection,before target selection
 2026-05-14__hard_reentry_ocsort_tim_on_target1,4.81,49.61,CORRECT_TARGET,true,1,2,clean_tracking,selected person visible as id 1; distractor id 2
-2026-05-14__hard_reentry_ocsort_tim_on_target1,49.61,50.01,CORRECT_TARGET,true,1,2,crossing_short_uncertain,id 1 crosses in front of id 2; TIM stops or changes briefly for less than one second
+2026-05-14__hard_reentry_ocsort_tim_on_target1,49.61,50.01,CORRECT_TARGET,true,1,2,crossing_short_uncertain,id 1 crosses in front of id 2; TIM briefly stops or changes for less than one second
 2026-05-14__hard_reentry_ocsort_tim_on_target1,50.01,69.32,CORRECT_TARGET,true,1,2,tracking_after_crossing,target remains id 1; distractor remains id 2
-2026-05-14__hard_reentry_ocsort_tim_on_target1,69.32,101.20,CORRECT_TARGET,true,96,1,wrong_target_interval,target becomes id 96 but TIM switches to distractor id 1 after fake crossing
-2026-05-14__hard_reentry_ocsort_tim_on_target1,101.20,110.84,CORRECT_TARGET,true,142,1,recovered_target,target switches from distractor id 1 back to selected person id 142
-2026-05-14__hard_reentry_ocsort_tim_on_target1,110.84,116.31,CORRECT_TARGET,true,161,1,wrong_target_interval,target becomes id 161 but TIM switches back to distractor id 1
-2026-05-14__hard_reentry_ocsort_tim_on_target1,116.31,129.72,CORRECT_TARGET,true,161,173,recovered_target,target switches correctly to id 161; distractor becomes id 173
+2026-05-14__hard_reentry_ocsort_tim_on_target1,69.32,101.20,CORRECT_TARGET,true,98|115,1,wrong_target_interval,true target changes from id 1 to ids 98 and 115; TIM follows distractor id 1
+2026-05-14__hard_reentry_ocsort_tim_on_target1,101.20,110.84,CORRECT_TARGET,true,115,1,recovered_target,TIM recovers to the selected target after wrong-target interval
+2026-05-14__hard_reentry_ocsort_tim_on_target1,110.84,116.31,CORRECT_TARGET,true,144|163,1,partial_wrong_target_interval,true target is id 144 then id 163; TIM initially correct then switches to distractor id 1
+2026-05-14__hard_reentry_ocsort_tim_on_target1,116.31,129.72,CORRECT_TARGET,true,163,1|173,recovered_target,TIM recovers to id 163; distractor later becomes id 173
