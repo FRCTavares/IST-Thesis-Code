@@ -126,6 +126,14 @@ class TargetMemoryConfig:
     appearance_update_alpha: float = 0.10
     appearance_ambiguous_only: bool = True
 
+    # TIM-V1 experimental safety gate.
+    # When enabled, a strong appearance challenger can force UNCERTAIN
+    # instead of allowing geometry to keep a wrong LOCKED target.
+    appearance_challenge_enabled: bool = False
+    appearance_challenge_min_similarity: float = 0.50
+    appearance_challenge_margin: float = 0.20
+    appearance_challenge_min_total: float = 0.45
+
 
 @dataclass
 class TargetMemoryOutput:
@@ -398,7 +406,54 @@ class TargetIdentityMemory:
                 all_scores=scores_sorted,
             )
 
+        if self._appearance_challenge_should_hold(best, scores_sorted, same_id=same_id):
+            return self._miss(
+                reason="appearance_challenge_uncertain",
+                best_score=best,
+                all_scores=scores_sorted,
+            )
+
         return self._accept(best_candidate, best_score=best, all_scores=scores_sorted)
+
+    def _appearance_challenge_should_hold(
+        self,
+        best: CandidateScore,
+        scores_sorted: List[CandidateScore],
+        *,
+        same_id: bool,
+    ) -> bool:
+        if not self.cfg.appearance_challenge_enabled:
+            return False
+
+        if self._m.state not in {TargetState.LOCKED, TargetState.REACQUIRED}:
+            return False
+
+        if not same_id:
+            return False
+
+        if self._m.track_id is None:
+            return False
+
+        challengers = [s for s in scores_sorted if int(s.track_id) != int(self._m.track_id)]
+
+        if not challengers:
+            return False
+
+        challenger = max(challengers, key=lambda s: float(s.appearance_raw))
+
+        if not challenger.geometry_allows_appearance:
+            return False
+
+        if challenger.total < self.cfg.appearance_challenge_min_total:
+            return False
+
+        if challenger.appearance_raw < self.cfg.appearance_challenge_min_similarity:
+            return False
+
+        if (challenger.appearance_raw - best.appearance_raw) < self.cfg.appearance_challenge_margin:
+            return False
+
+        return True
 
     def _should_use_appearance(self, *, base_ambiguous: bool) -> bool:
         if not self.cfg.appearance_enabled:
@@ -433,9 +488,9 @@ class TargetIdentityMemory:
             or (base.distance >= 0.25 and base.scale >= 0.35)
         )
 
-        if use_appearance and candidate.appearance is not None and geometry_allows_appearance:
+        if candidate.appearance is not None and geometry_allows_appearance and self._m.appearance is not None:
             appearance_raw = clamp01(cosine_similarity(self._m.appearance, candidate.appearance))
-            if appearance_raw >= self.cfg.appearance_min_similarity:
+            if use_appearance and appearance_raw >= self.cfg.appearance_min_similarity:
                 appearance_score = appearance_raw
                 appearance_gate_passed = True
                 total = clamp01(total + self.cfg.appearance_weight * appearance_score)

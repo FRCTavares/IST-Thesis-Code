@@ -99,6 +99,10 @@ if [[ "$TIM_MODE" == "on" ]]; then
     -p mirror_raw_target_selection:=true \
     -p appearance_enabled:=true \
     -p appearance_image_topic:=/camera/image_raw \
+    -p appearance_challenge_enabled:=${TIM_APPEARANCE_CHALLENGE_ENABLED:-false} \
+    -p appearance_challenge_min_similarity:=${TIM_APPEARANCE_CHALLENGE_MIN_SIMILARITY:-0.50} \
+    -p appearance_challenge_margin:=${TIM_APPEARANCE_CHALLENGE_MARGIN:-0.20} \
+    -p appearance_challenge_min_total:=${TIM_APPEARANCE_CHALLENGE_MIN_TOTAL:-0.45} \
     >"$LOG_DIR/target_memory.log" 2>&1 &
 elif [[ "$TIM_MODE" == "off" ]]; then
   echo "[info] TIM disabled"

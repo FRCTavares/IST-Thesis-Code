@@ -90,6 +90,10 @@ class TargetMemoryNode(Node):
         self.declare_parameter("appearance_min_similarity", 0.35)
         self.declare_parameter("appearance_update_alpha", 0.10)
         self.declare_parameter("appearance_ambiguous_only", True)
+        self.declare_parameter("appearance_challenge_enabled", False)
+        self.declare_parameter("appearance_challenge_min_similarity", 0.50)
+        self.declare_parameter("appearance_challenge_margin", 0.20)
+        self.declare_parameter("appearance_challenge_min_total", 0.45)
 
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._target_topic = str(self.get_parameter("target_topic").value)
@@ -142,6 +146,10 @@ class TargetMemoryNode(Node):
             appearance_min_similarity=float(self.get_parameter("appearance_min_similarity").value),
             appearance_update_alpha=float(self.get_parameter("appearance_update_alpha").value),
             appearance_ambiguous_only=bool(self.get_parameter("appearance_ambiguous_only").value),
+            appearance_challenge_enabled=bool(self.get_parameter("appearance_challenge_enabled").value),
+            appearance_challenge_min_similarity=float(self.get_parameter("appearance_challenge_min_similarity").value),
+            appearance_challenge_margin=float(self.get_parameter("appearance_challenge_margin").value),
+            appearance_challenge_min_total=float(self.get_parameter("appearance_challenge_min_total").value),
         )
         self._tim = TargetIdentityMemory(cfg)
 
