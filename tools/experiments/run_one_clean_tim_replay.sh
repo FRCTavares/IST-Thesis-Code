@@ -198,12 +198,38 @@ verify_target() {
   return 0
 }
 
-wait_for_target_track "$TARGET_ID" "$TARGET_WAIT_TIMEOUT"
+if [[ "${TARGET_ID,,}" == "largest" ]]; then
+  echo "[info] waiting for tracks to choose largest target"
+  for i in $(seq 1 "$TARGET_WAIT_TIMEOUT"); do
+    if timeout 2s ros2 topic echo /tracks --once >"$LOG_DIR/tracks_once.txt" 2>/dev/null; then
+      CHOSEN_ID="$(python3 "$THESIS_ROOT/tools/experiments/select_largest_track_id.py" "$LOG_DIR/tracks_once.txt" 2>"$LOG_DIR/select_largest_error.log" || true)"
+      if [[ -n "${CHOSEN_ID:-}" ]]; then
+        echo "$CHOSEN_ID" > "$LOG_DIR/chosen_target_id.txt"
+        TARGET_ID="$CHOSEN_ID"
+        echo "[ok] largest target resolved to id: $TARGET_ID"
+        break
+      fi
+    fi
+    sleep 1
+  done
+
+  if [[ "${TARGET_ID,,}" == "largest" ]]; then
+    echo "[error] could not resolve largest target id"
+    cat "$LOG_DIR/select_largest_error.log" 2>/dev/null || true
+    exit 4
+  fi
+else
+  wait_for_target_track "$TARGET_ID" "$TARGET_WAIT_TIMEOUT"
+fi
+
+# Let tracker/dashboard/TIM see a few more frames before selection.
 sleep 2
+
 select_target "$TARGET_ID"
 
+# Retry selection if TIM/raw target did not lock.
 if ! verify_target "$TARGET_ID"; then
-  echo "[warn] retrying selection"
+  echo "[warn] first selection verification failed; retrying target selection"
   select_target "$TARGET_ID"
   sleep 2
   verify_target "$TARGET_ID"

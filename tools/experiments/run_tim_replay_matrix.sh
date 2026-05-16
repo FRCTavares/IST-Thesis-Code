@@ -13,7 +13,7 @@ RATE="${3:-0.5}"
 
 THESIS_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}"
 
-TRACKERS=(sort ocsort bytetrack)
+TRACKERS=(sort ocsort bytetrack deepsort)
 TIM_MODES=(off on)
 
 for tracker in "${TRACKERS[@]}"; do
