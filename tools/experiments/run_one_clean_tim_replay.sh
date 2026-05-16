@@ -51,7 +51,21 @@ echo "[info] stopping old replay processes"
 pkill -f "ros2 bag play|ros2 bag record|tracker_node|dashboard_bridge_node|target_memory_node" || true
 sleep 2
 
-rm -rf "$OUT_BAG"
+if [[ -e "$OUT_BAG" ]]; then
+  BASE_OUT="$OUT_BAG"
+  i=1
+  while [[ -e "${BASE_OUT}__r${i}" ]]; do
+    i=$((i + 1))
+  done
+  OUT_BAG="${BASE_OUT}__r${i}"
+  RUN_NAME="$(basename "$OUT_BAG")"
+  REPORT_DIR="$THESIS_ROOT/reports/tim_v0/$RUN_NAME"
+  LOG_DIR="$THESIS_ROOT/ros2_ws/log/eval_matrix/$RUN_NAME"
+  mkdir -p "$LOG_DIR"
+  echo "[warn] output exists, using OUT_BAG=$OUT_BAG"
+  echo "[warn] updated RUN_NAME=$RUN_NAME"
+fi
+
 mkdir -p "$THESIS_ROOT/artifacts/bags/eval_matrix"
 
 TRACKER_CONFIG="$THESIS_ROOT/ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tracker_${TRACKER}.yaml"
