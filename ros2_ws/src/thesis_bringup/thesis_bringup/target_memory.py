@@ -126,6 +126,10 @@ class TargetMemoryConfig:
     appearance_update_alpha: float = 0.10
     appearance_ambiguous_only: bool = True
 
+    # Freeze appearance memory updates after risky reacquisition / ID switch.
+    # Default 0 preserves previous behaviour.
+    appearance_update_cooldown_after_reacquire_frames: int = 0
+
     # TIM-V1 experimental safety gate.
     # When enabled, a strong appearance challenger can force UNCERTAIN
     # instead of allowing geometry to keep a wrong LOCKED target.
@@ -301,6 +305,7 @@ class TargetIdentityMemory:
     def __init__(self, cfg: Optional[TargetMemoryConfig] = None) -> None:
         self.cfg = cfg or TargetMemoryConfig()
         self._m = _Memory()
+        self._appearance_update_cooldown_frames_remaining = 0
 
     @property
     def state(self) -> TargetState:
@@ -316,6 +321,7 @@ class TargetIdentityMemory:
 
     def clear(self) -> TargetMemoryOutput:
         self._m = _Memory()
+        self._appearance_update_cooldown_frames_remaining = 0
         return self._make_output(reason="operator_clear", visible=False, reacquired=False)
 
     def select(self, track: CandidateTrack) -> TargetMemoryOutput:
@@ -331,6 +337,7 @@ class TargetIdentityMemory:
             confirmed_after_reacquire=0,
             appearance=update_feature_memory(None, track.appearance, alpha=1.0),
         )
+        self._appearance_update_cooldown_frames_remaining = 0
         return self._make_output(reason="operator_select", visible=True, reacquired=False)
 
     def update(self, candidates: Sequence[CandidateTrack]) -> TargetMemoryOutput:
@@ -539,6 +546,12 @@ class TargetIdentityMemory:
 
         reacquired = bool(id_changed or was_lostish)
 
+        if reacquired:
+            self._appearance_update_cooldown_frames_remaining = max(
+                self._appearance_update_cooldown_frames_remaining,
+                max(0, int(self.cfg.appearance_update_cooldown_after_reacquire_frames)),
+            )
+
         if previous_state == TargetState.REACQUIRED:
             self._m.confirmed_after_reacquire += 1
         elif reacquired:
@@ -559,12 +572,20 @@ class TargetIdentityMemory:
         # TIM-V1A memory update policy:
         # update only after a confirmed LOCKED state.
         # freeze during UNCERTAIN, LOST, and REACQUIRED.
-        if new_state == TargetState.LOCKED:
+        # Optional cooldown prevents learning a newly reacquired wrong target.
+        can_update_appearance = (
+            new_state == TargetState.LOCKED
+            and self._appearance_update_cooldown_frames_remaining <= 0
+        )
+
+        if can_update_appearance:
             self._m.appearance = update_feature_memory(
                 self._m.appearance,
                 candidate.appearance,
                 alpha=self.cfg.appearance_update_alpha,
             )
+        elif self._appearance_update_cooldown_frames_remaining > 0:
+            self._appearance_update_cooldown_frames_remaining -= 1
 
         return self._make_output(
             reason="accepted_candidate" if not reacquired else "reacquired_candidate",

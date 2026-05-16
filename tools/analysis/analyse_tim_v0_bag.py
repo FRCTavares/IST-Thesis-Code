@@ -125,6 +125,7 @@ def read_bag(bag_path: Path) -> dict[str, list[dict[str, Any]]]:
                 "appearance_features_valid": int(payload.get("appearance_features_valid", 0) or 0),
                 "appearance_image_age_ms": safe_float(payload.get("appearance_image_age_ms")),
                 "appearance_skip_reason": str(payload.get("appearance_skip_reason", "")),
+                "appearance_update_cooldown_remaining": int(payload.get("appearance_update_cooldown_remaining", 0) or 0),
                 "best_total": safe_float(best.get("total")),
                 "best_iou": safe_float(best.get("iou")),
                 "best_distance": safe_float(best.get("distance")),

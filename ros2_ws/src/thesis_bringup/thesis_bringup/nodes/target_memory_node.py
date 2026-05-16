@@ -90,6 +90,7 @@ class TargetMemoryNode(Node):
         self.declare_parameter("appearance_min_similarity", 0.35)
         self.declare_parameter("appearance_update_alpha", 0.10)
         self.declare_parameter("appearance_ambiguous_only", True)
+        self.declare_parameter("appearance_update_cooldown_after_reacquire_frames", 0)
         self.declare_parameter("appearance_challenge_enabled", False)
         self.declare_parameter("appearance_challenge_min_similarity", 0.50)
         self.declare_parameter("appearance_challenge_margin", 0.20)
@@ -146,6 +147,7 @@ class TargetMemoryNode(Node):
             appearance_min_similarity=float(self.get_parameter("appearance_min_similarity").value),
             appearance_update_alpha=float(self.get_parameter("appearance_update_alpha").value),
             appearance_ambiguous_only=bool(self.get_parameter("appearance_ambiguous_only").value),
+            appearance_update_cooldown_after_reacquire_frames=int(self.get_parameter("appearance_update_cooldown_after_reacquire_frames").value),
             appearance_challenge_enabled=bool(self.get_parameter("appearance_challenge_enabled").value),
             appearance_challenge_min_similarity=float(self.get_parameter("appearance_challenge_min_similarity").value),
             appearance_challenge_margin=float(self.get_parameter("appearance_challenge_margin").value),
@@ -470,6 +472,7 @@ class TargetMemoryNode(Node):
                 "appearance_features_valid": int(self._last_appearance_features_valid),
                 "appearance_image_age_ms": self._last_appearance_image_age_ms,
                 "appearance_skip_reason": str(self._last_appearance_skip_reason),
+                "appearance_update_cooldown_remaining": int(getattr(self._tim, "_appearance_update_cooldown_frames_remaining", 0)),
                 "best": None
                 if best is None
                 else {
