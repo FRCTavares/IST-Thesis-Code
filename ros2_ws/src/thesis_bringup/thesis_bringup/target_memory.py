@@ -73,6 +73,9 @@ class CandidateScore:
     id_bonus: float
     appearance: float = 0.0
     appearance_used: bool = False
+    appearance_raw: float = 0.0
+    appearance_gate_passed: bool = False
+    geometry_allows_appearance: bool = False
     ambiguous: bool = False
 
 
@@ -363,6 +366,9 @@ class TargetIdentityMemory:
             id_bonus=best.id_bonus,
             appearance=best.appearance,
             appearance_used=best.appearance_used,
+            appearance_raw=best.appearance_raw,
+            appearance_gate_passed=best.appearance_gate_passed,
+            geometry_allows_appearance=best.geometry_allows_appearance,
             ambiguous=ambiguous,
         )
         scores_sorted[0] = best
@@ -415,7 +421,9 @@ class TargetIdentityMemory:
         base = score_candidate(reference_bbox, candidate, self._m.track_id, self.cfg)
 
         appearance_score = 0.0
+        appearance_raw = 0.0
         appearance_used = False
+        appearance_gate_passed = False
         total = base.total
 
         # Appearance is only a tie-breaker inside a geometrically plausible region.
@@ -426,8 +434,10 @@ class TargetIdentityMemory:
         )
 
         if use_appearance and candidate.appearance is not None and geometry_allows_appearance:
-            appearance_score = clamp01(cosine_similarity(self._m.appearance, candidate.appearance))
-            if appearance_score >= self.cfg.appearance_min_similarity:
+            appearance_raw = clamp01(cosine_similarity(self._m.appearance, candidate.appearance))
+            if appearance_raw >= self.cfg.appearance_min_similarity:
+                appearance_score = appearance_raw
+                appearance_gate_passed = True
                 total = clamp01(total + self.cfg.appearance_weight * appearance_score)
                 appearance_used = True
 
@@ -441,6 +451,9 @@ class TargetIdentityMemory:
             id_bonus=base.id_bonus,
             appearance=appearance_score,
             appearance_used=appearance_used,
+            appearance_raw=appearance_raw,
+            appearance_gate_passed=appearance_gate_passed,
+            geometry_allows_appearance=geometry_allows_appearance,
             ambiguous=base.ambiguous,
         )
 

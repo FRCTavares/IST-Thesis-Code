@@ -474,6 +474,9 @@ class TargetMemoryNode(Node):
                     "id_bonus": float(best.id_bonus),
                     "appearance": float(best.appearance),
                     "appearance_used": bool(best.appearance_used),
+                    "appearance_raw": float(best.appearance_raw),
+                    "appearance_gate_passed": bool(best.appearance_gate_passed),
+                    "geometry_allows_appearance": bool(best.geometry_allows_appearance),
                     "ambiguous": bool(best.ambiguous),
                 },
                 "all_scores": [
@@ -487,6 +490,9 @@ class TargetMemoryNode(Node):
                         "id_bonus": float(score.id_bonus),
                         "appearance": float(score.appearance),
                         "appearance_used": bool(score.appearance_used),
+                        "appearance_raw": float(score.appearance_raw),
+                        "appearance_gate_passed": bool(score.appearance_gate_passed),
+                        "geometry_allows_appearance": bool(score.geometry_allows_appearance),
                         "ambiguous": bool(score.ambiguous),
                     }
                     for score in out.all_scores

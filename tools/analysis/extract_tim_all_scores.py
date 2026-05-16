@@ -78,6 +78,9 @@ def main() -> None:
                     "id_bonus": score.get("id_bonus"),
                     "appearance": score.get("appearance"),
                     "appearance_used": score.get("appearance_used"),
+                    "appearance_raw": score.get("appearance_raw"),
+                    "appearance_gate_passed": score.get("appearance_gate_passed"),
+                    "geometry_allows_appearance": score.get("geometry_allows_appearance"),
                     "ambiguous": score.get("ambiguous"),
                 }
             )
@@ -102,6 +105,9 @@ def main() -> None:
         "id_bonus",
         "appearance",
         "appearance_used",
+        "appearance_raw",
+        "appearance_gate_passed",
+        "geometry_allows_appearance",
         "ambiguous",
     ]
 
