@@ -21,13 +21,26 @@ def as_bool(x) -> bool:
     return str(x).strip().lower() in {"true", "1", "yes", "y"}
 
 
+def safe_float(x, default=0.0) -> float:
+    try:
+        if x in ("", None):
+            return default
+        return float(x)
+    except Exception:
+        return default
+
+
 def geom(r) -> float:
     return (
-        0.34 * float(r["iou"])
-        + 0.26 * float(r["distance"])
-        + 0.18 * float(r["scale"])
-        + 0.14 * float(r["confidence"])
+        0.34 * safe_float(r.get("iou"))
+        + 0.26 * safe_float(r.get("distance"))
+        + 0.18 * safe_float(r.get("scale"))
+        + 0.14 * safe_float(r.get("confidence"))
     )
+
+
+def evidence(r, app_weight: float) -> float:
+    return geom(r) + app_weight * safe_float(r.get("appearance_raw"))
 
 
 def load_annotations(path: Path):
@@ -74,6 +87,7 @@ def simulate(
     runner_max_gap: float,
     runner_confirm_frames: int,
     reacquire_confirm_frames: int,
+    app_weight: float,
 ):
     selected_id = 0
     runner_id = 0
@@ -96,7 +110,7 @@ def simulate(
             candidates[tid] = {
                 "id": tid,
                 "rank": int(float(r["rank"])),
-                "geom": geom(r),
+                "geom": evidence(r, app_weight),
                 "total": float(r["total"]),
             }
 
@@ -206,6 +220,7 @@ def main():
     ap.add_argument("--runner-max-gap", type=float, default=0.45)
     ap.add_argument("--runner-confirm-frames", type=int, default=10)
     ap.add_argument("--reacquire-confirm-frames", type=int, default=2)
+    ap.add_argument("--app-weight", type=float, default=0.0)
     args = ap.parse_args()
 
     anns = load_annotations(args.annotations)
@@ -218,6 +233,7 @@ def main():
         runner_max_gap=args.runner_max_gap,
         runner_confirm_frames=args.runner_confirm_frames,
         reacquire_confirm_frames=args.reacquire_confirm_frames,
+        app_weight=args.app_weight,
     )
 
     metrics = summarise(outputs)
@@ -236,6 +252,7 @@ def main():
             "runner_max_gap",
             "runner_confirm_frames",
             "reacquire_confirm_frames",
+            "app_weight",
             "correct_ratio",
             "wrong_ratio",
             "lost_ratio",
@@ -252,6 +269,7 @@ def main():
                 "runner_max_gap": args.runner_max_gap,
                 "runner_confirm_frames": args.runner_confirm_frames,
                 "reacquire_confirm_frames": args.reacquire_confirm_frames,
+                "app_weight": args.app_weight,
                 **metrics,
             }
         )
