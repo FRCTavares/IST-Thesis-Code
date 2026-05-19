@@ -17,6 +17,7 @@ def _setup(context, *args, **kwargs):
     run_date = LaunchConfiguration("run_date").perform(context)
     target_id = LaunchConfiguration("target_id").perform(context)
     appearance_enabled = LaunchConfiguration("appearance_enabled").perform(context)
+    select_delay_s = float(LaunchConfiguration("select_delay_s").perform(context))
 
     bag_base = os.path.basename(os.path.normpath(bag))
     out_dir = os.path.join(
@@ -63,7 +64,7 @@ def _setup(context, *args, **kwargs):
     )
 
     select_target = TimerAction(
-        period=2.0,
+        period=select_delay_s,
         actions=[
             ExecuteProcess(
                 cmd=[
@@ -129,6 +130,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument("rate", default_value="1.0"),
             DeclareLaunchArgument("target_id", default_value="1"),
+            DeclareLaunchArgument("select_delay_s", default_value="2.0"),
             DeclareLaunchArgument("appearance_enabled", default_value="true"),
             DeclareLaunchArgument(
                 "run_date",

@@ -39,8 +39,12 @@ def geom(r) -> float:
     )
 
 
-def app(r) -> float:
-    return safe_float(r.get("appearance_raw"))
+def app(r, source: str = "appearance_raw") -> float:
+    if source == "appearance_raw":
+        return safe_float(r.get("appearance_raw"))
+    if source == "frozen_hsv":
+        return safe_float(r.get("frozen_hsv_similarity"))
+    raise ValueError(f"unknown appearance source: {source}")
 
 
 def total(r) -> float:
@@ -84,7 +88,7 @@ def load_scores(path: Path):
     return by_frame
 
 
-def candidate_dict(rows):
+def candidate_dict(rows, appearance_source: str):
     out = {}
     for r in rows:
         tid = int(float(r["score_track_id"]))
@@ -93,7 +97,7 @@ def candidate_dict(rows):
             "rank": int(float(r["rank"])),
             "total": total(r),
             "geom": geom(r),
-            "app": app(r),
+            "app": app(r, appearance_source),
         }
     return out
 
@@ -122,6 +126,7 @@ def simulate(
     lost_app_margin: float,
     lost_confirm_frames: int,
     missing_ttl_frames: int,
+    appearance_source: str,
 ):
     selected_id = 0
     missing_count = 0
@@ -138,7 +143,7 @@ def simulate(
         if ann is None or ann.event_type == "pre_selection" or ann.target_label == "NO_TARGET_SELECTED":
             continue
 
-        cands = candidate_dict(rows)
+        cands = candidate_dict(rows, appearance_source)
 
         # Current selected target maintenance.
         if selected_id > 0:
@@ -238,6 +243,7 @@ def main():
     ap.add_argument("--lost-app-margin", type=float, default=0.05)
     ap.add_argument("--lost-confirm-frames", type=int, default=2)
     ap.add_argument("--missing-ttl-frames", type=int, default=3)
+    ap.add_argument("--appearance-source", choices=["appearance_raw", "frozen_hsv"], default="appearance_raw")
 
     args = ap.parse_args()
 
@@ -255,6 +261,7 @@ def main():
         lost_app_margin=args.lost_app_margin,
         lost_confirm_frames=args.lost_confirm_frames,
         missing_ttl_frames=args.missing_ttl_frames,
+        appearance_source=args.appearance_source,
     )
 
     metrics = summarise(outputs)
@@ -277,6 +284,7 @@ def main():
             "lost_app_margin",
             "lost_confirm_frames",
             "missing_ttl_frames",
+            "appearance_source",
             "correct_ratio",
             "wrong_ratio",
             "lost_ratio",
@@ -297,6 +305,7 @@ def main():
                 "lost_app_margin": args.lost_app_margin,
                 "lost_confirm_frames": args.lost_confirm_frames,
                 "missing_ttl_frames": args.missing_ttl_frames,
+                "appearance_source": args.appearance_source,
                 **metrics,
             }
         )
