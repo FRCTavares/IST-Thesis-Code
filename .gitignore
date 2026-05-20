@@ -173,3 +173,6 @@ datasets/tim_embedding_filtered/
 # TIM-V2E generated model checkpoints
 reports/tim_v2_embedding/**/*.pt
 models/tim_embedding/**/*.pt
+
+# TIM-V2E generated overlay videos
+reports/tim_v2_embedding/videos/
