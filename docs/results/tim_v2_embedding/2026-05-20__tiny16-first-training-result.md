@@ -57,7 +57,7 @@ Event-level test separation:
 
 ## Comparison against hand-crafted descriptors
 
-The learned 16D prototype strongly outperforms the hand-crafted descriptors on the key critical-crossing failure interval.
+The learned 16D prototype strongly outperforms the hand-crafted descriptors on the key critical-crossing failure intervals.
 
 For `visible_but_wrong_best_candidate`:
 
@@ -75,6 +75,14 @@ For `reentry_id_switch`:
 | HSV-GRAD16 | -0.055 |
 | Tiny16 learned embedding | +1.772 |
 
+For `wrong_target_interval`:
+
+| Descriptor | Gap |
+|---|---:|
+| HSV16 | +0.039 |
+| HSV-GRAD16 | +0.019 |
+| Tiny16 learned embedding | +1.717 |
+
 ## Interpretation
 
 This is the first strong evidence that learned identity evidence can solve cases where colour/gradient descriptors fail.
@@ -87,7 +95,7 @@ Continue the learned embedding path.
 
 Next step:
 
+- export per-sample similarity scores,
+- compare learned similarity inside the same audit framework as HSV16 and HSV-GRAD16,
 - replace or supplement binary classification with a metric-learning objective,
-- export train/test similarity CSVs,
-- compare learned embedding directly inside the same audit framework used for HSV16 and HSV-GRAD16,
 - only then consider TIM integration.
