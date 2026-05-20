@@ -96,6 +96,16 @@ class TargetMemoryNode(Node):
         self.declare_parameter("appearance_challenge_margin", 0.20)
         self.declare_parameter("appearance_challenge_min_total", 0.45)
 
+        # TIM-V2K rank-aware LOST/UNCERTAIN reacquisition.
+        # Disabled by default to preserve TIM-V1 behaviour.
+        self.declare_parameter("rank_aware_reacquisition_enabled", False)
+        self.declare_parameter("rank_aware_lost_min_total", 0.40)
+        self.declare_parameter("rank_aware_lost_min_geom", 0.10)
+        self.declare_parameter("rank_aware_lost_min_app", 0.05)
+        self.declare_parameter("rank_aware_lost_app_margin", 0.03)
+        self.declare_parameter("rank_aware_confirm_frames", 1)
+        self.declare_parameter("rank_aware_missing_ttl_frames", 8)
+
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._target_topic = str(self.get_parameter("target_topic").value)
         self._status_topic = str(self.get_parameter("status_topic").value)
@@ -152,6 +162,13 @@ class TargetMemoryNode(Node):
             appearance_challenge_min_similarity=float(self.get_parameter("appearance_challenge_min_similarity").value),
             appearance_challenge_margin=float(self.get_parameter("appearance_challenge_margin").value),
             appearance_challenge_min_total=float(self.get_parameter("appearance_challenge_min_total").value),
+            rank_aware_reacquisition_enabled=bool(self.get_parameter("rank_aware_reacquisition_enabled").value),
+            rank_aware_lost_min_total=float(self.get_parameter("rank_aware_lost_min_total").value),
+            rank_aware_lost_min_geom=float(self.get_parameter("rank_aware_lost_min_geom").value),
+            rank_aware_lost_min_app=float(self.get_parameter("rank_aware_lost_min_app").value),
+            rank_aware_lost_app_margin=float(self.get_parameter("rank_aware_lost_app_margin").value),
+            rank_aware_confirm_frames=int(self.get_parameter("rank_aware_confirm_frames").value),
+            rank_aware_missing_ttl_frames=int(self.get_parameter("rank_aware_missing_ttl_frames").value),
         )
         self._tim = TargetIdentityMemory(cfg)
 
