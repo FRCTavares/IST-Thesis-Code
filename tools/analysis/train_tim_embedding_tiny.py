@@ -395,6 +395,13 @@ def main() -> int:
         device=device,
         output_csv=args.output_dir / "test_similarity_scores.csv",
     )
+    export_similarity_scores(
+        model=model,
+        memory_samples=train_samples,
+        eval_samples=all_samples,
+        device=device,
+        output_csv=args.output_dir / "all_similarity_scores.csv",
+    )
 
     torch.save(
         {
@@ -411,6 +418,7 @@ def main() -> int:
     print(f"[ok] wrote {args.output_dir / 'tim_v2e_tiny_embedding.pt'}")
     print(f"[ok] wrote {args.output_dir / 'summary.md'}")
     print(f"[ok] wrote {args.output_dir / 'test_similarity_scores.csv'}")
+    print(f"[ok] wrote {args.output_dir / 'all_similarity_scores.csv'}")
     return 0
 
 
