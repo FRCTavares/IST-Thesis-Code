@@ -62,7 +62,7 @@ def test_rank_aware_disabled_preserves_rank0_lost_reacquisition():
             # Rank-0 by geometry/total, wrong appearance.
             tr(6, (103, 103, 163, 243), 0.95, appearance=distractor),
             # Better appearance, but farther/lower total.
-            tr(11, (220, 100, 280, 240), 0.95, appearance=target),
+            tr(11, (130, 100, 190, 240), 0.95, appearance=target),
         ]
     )
 
@@ -88,7 +88,7 @@ def test_rank_aware_lost_reacquisition_can_choose_rank1_by_appearance():
             # Rank-0 by geometry/total, wrong appearance.
             tr(6, (103, 103, 163, 243), 0.95, appearance=distractor),
             # Rank-1 by geometry/total, correct appearance.
-            tr(11, (220, 100, 280, 240), 0.95, appearance=target),
+            tr(11, (130, 100, 190, 240), 0.95, appearance=target),
         ]
     )
 
@@ -115,7 +115,7 @@ def test_rank_aware_reacquisition_respects_confirmation_frames():
 
     candidates = [
         tr(6, (103, 103, 163, 243), 0.95, appearance=distractor),
-        tr(11, (220, 100, 280, 240), 0.95, appearance=target),
+        tr(11, (130, 100, 190, 240), 0.95, appearance=target),
     ]
 
     first = tim.update(candidates)

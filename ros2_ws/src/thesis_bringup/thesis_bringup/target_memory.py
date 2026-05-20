@@ -458,19 +458,13 @@ class TargetIdentityMemory:
         return self._accept(best_candidate, best_score=best, all_scores=scores_sorted)
 
     def _rank_aware_app_raw(self, candidate: CandidateTrack, score: CandidateScore) -> float:
-        """Appearance similarity for rank-aware reacquisition.
+        """Appearance evidence for rank-aware reacquisition.
 
-        This intentionally bypasses the normal geometry gate during LOST/UNCERTAIN
-        reacquisition, because hard re-entry is exactly where geometry can be
-        misleading.
+        TIM-V2K intentionally uses the same gated appearance_raw exported in
+        diagnostics so live behaviour matches the offline simulator. Geometry
+        bypass is a separate future experiment, not the V2K default.
         """
-        if score.appearance_raw > 0.0:
-            return float(score.appearance_raw)
-
-        if candidate.appearance is None or self._m.appearance is None:
-            return 0.0
-
-        return clamp01(cosine_similarity(self._m.appearance, candidate.appearance))
+        return float(score.appearance_raw)
 
     def _rank_aware_reacquisition_candidate(
         self,
@@ -539,7 +533,7 @@ class TargetIdentityMemory:
         if pending:
             return None, True
 
-        # Return a copy with the bypassed appearance evidence exposed in diagnostics.
+        # Return a copy with rank-aware appearance evidence exposed in diagnostics.
         best = CandidateScore(
             track_id=best.track_id,
             total=best.total,
