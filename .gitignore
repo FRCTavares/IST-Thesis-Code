@@ -166,3 +166,6 @@ artifacts/log/**
 
 # TIM-V2E generated embedding crop datasets
 datasets/tim_embedding/
+
+# TIM-V2E generated filtered embedding crop datasets
+datasets/tim_embedding_filtered/

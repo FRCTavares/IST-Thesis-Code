@@ -166,6 +166,86 @@ def correct_ids_at(t: float, correct_id: int, aliases: list[AliasInterval]) -> s
     return ids
 
 
+def parse_event_filter(text: str) -> set[str]:
+    return {x.strip() for x in str(text or "").split(",") if x.strip()}
+
+
+def event_allowed(event_type: str, include_events: set[str], exclude_events: set[str]) -> bool:
+    if include_events and event_type not in include_events:
+        return False
+    if exclude_events and event_type in exclude_events:
+        return False
+    return True
+
+
+def clipped_fraction(
+    bbox: BBox,
+    img_w: int,
+    img_h: int,
+    pad_x_frac: float,
+    pad_y_frac: float,
+) -> float:
+    x1, y1, x2, y2 = bbox
+    w = max(0.0, x2 - x1)
+    h = max(0.0, y2 - y1)
+
+    raw_x1 = x1 - pad_x_frac * w
+    raw_x2 = x2 + pad_x_frac * w
+    raw_y1 = y1 - pad_y_frac * h
+    raw_y2 = y2 + pad_y_frac * h
+
+    raw_w = max(1e-6, raw_x2 - raw_x1)
+    raw_h = max(1e-6, raw_y2 - raw_y1)
+    raw_area = raw_w * raw_h
+
+    clip_x1 = max(0.0, min(float(img_w), raw_x1))
+    clip_x2 = max(0.0, min(float(img_w), raw_x2))
+    clip_y1 = max(0.0, min(float(img_h), raw_y1))
+    clip_y2 = max(0.0, min(float(img_h), raw_y2))
+    clip_area = max(0.0, clip_x2 - clip_x1) * max(0.0, clip_y2 - clip_y1)
+
+    return max(0.0, min(1.0, 1.0 - clip_area / raw_area))
+
+
+def detect_split(event_type: str, train_events: set[str], test_events: set[str]) -> str:
+    if event_type in train_events:
+        return "train"
+    if event_type in test_events:
+        return "test"
+    return "unspecified"
+
+
+def detect_crop_quality(
+    bbox: BBox,
+    img_w: int,
+    img_h: int,
+    min_bbox_h: float,
+    max_clipped_frac: float,
+    pad_x_frac: float,
+    pad_y_frac: float,
+) -> tuple[bool, str, float]:
+    x1, y1, x2, y2 = bbox
+    bbox_h = float(y2 - y1)
+    bbox_w = float(x2 - x1)
+
+    if bbox_h < min_bbox_h:
+        return False, "tiny_bbox", bbox_h
+    if bbox_w <= 4.0:
+        return False, "too_narrow", bbox_h
+
+    clipped = clipped_fraction(
+        bbox,
+        img_w=img_w,
+        img_h=img_h,
+        pad_x_frac=pad_x_frac,
+        pad_y_frac=pad_y_frac,
+    )
+    if clipped > max_clipped_frac:
+        return False, f"clipped_{clipped:.3f}", bbox_h
+
+    return True, "", bbox_h
+
+
 def detect_storage_id(bag_path: Path) -> str:
     metadata_path = bag_path / "metadata.yaml"
     if metadata_path.exists():
@@ -315,6 +395,11 @@ def read_bag_and_export(
     crop_h: int,
     include_other: bool,
     max_per_role_event: int,
+    include_events: set[str],
+    exclude_events: set[str],
+    train_events: set[str],
+    test_events: set[str],
+    max_clipped_frac: float,
 ) -> int:
     import cv2
 
@@ -344,6 +429,7 @@ def read_bag_and_export(
     images: list[ImageRow] = []
     rows_out: list[dict[str, Any]] = []
     counts: dict[tuple[str, str], int] = {}
+    skip_counts: dict[str, int] = {}
 
     while reader.has_next():
         topic, data, t_ns = reader.read_next()
@@ -376,6 +462,9 @@ def read_bag_and_export(
                 continue
             if ann.target_label == "NO_TARGET_SELECTED":
                 continue
+            if not event_allowed(ann.event_type, include_events, exclude_events):
+                skip_counts["event_filtered"] = skip_counts.get("event_filtered", 0) + 1
+                continue
 
             image, image_dt = nearest_image(images, t_s, max_dt=max_image_dt)
             if image is None:
@@ -398,8 +487,17 @@ def read_bag_and_export(
                     continue
 
                 x1, y1, x2, y2 = bbox
-                bbox_h = float(y2 - y1)
-                if bbox_h < min_bbox_h:
+                quality_ok, quality_reason, bbox_h = detect_crop_quality(
+                    bbox,
+                    img_w=img_w,
+                    img_h=img_h,
+                    min_bbox_h=min_bbox_h,
+                    max_clipped_frac=max_clipped_frac,
+                    pad_x_frac=pad_x_frac,
+                    pad_y_frac=pad_y_frac,
+                )
+                if not quality_ok:
+                    skip_counts[quality_reason] = skip_counts.get(quality_reason, 0) + 1
                     continue
 
                 if tid in correct_ids:
@@ -451,6 +549,7 @@ def read_bag_and_export(
                         "role": role,
                         "identity_label": identity_label,
                         "event_type": ann.event_type,
+                        "split": detect_split(ann.event_type, train_events, test_events),
                         "target_visible": str(ann.target_visible).lower(),
                         "bbox_x1": f"{x1:.3f}",
                         "bbox_y1": f"{y1:.3f}",
@@ -471,6 +570,7 @@ def read_bag_and_export(
             "role",
             "identity_label",
             "event_type",
+            "split",
             "target_visible",
             "bbox_x1",
             "bbox_y1",
@@ -487,9 +587,11 @@ def read_bag_and_export(
     summary_path = output_dir / "summary.md"
     role_counts: dict[str, int] = {}
     event_counts: dict[str, int] = {}
+    split_counts: dict[str, int] = {}
     for r in rows_out:
         role_counts[str(r["role"])] = role_counts.get(str(r["role"]), 0) + 1
         event_counts[str(r["event_type"])] = event_counts.get(str(r["event_type"]), 0) + 1
+        split_counts[str(r["split"])] = split_counts.get(str(r["split"]), 0) + 1
 
     lines = [
         "# TIM-V2E embedding crop dataset",
@@ -500,6 +602,9 @@ def read_bag_and_export(
         f"- Samples: {len(rows_out)}",
         f"- Crop size: {crop_w}x{crop_h}",
         f"- Min bbox height: {min_bbox_h}",
+        f"- Max clipped fraction: {max_clipped_frac}",
+        f"- Include events: `{','.join(sorted(include_events)) if include_events else 'all'}`",
+        f"- Exclude events: `{','.join(sorted(exclude_events)) if exclude_events else 'none'}`",
         "",
         "## Role counts",
         "",
@@ -509,9 +614,18 @@ def read_bag_and_export(
     for k, v in sorted(role_counts.items()):
         lines.append(f"| {k} | {v} |")
 
+    lines.extend(["", "## Split counts", "", "| Split | Count |", "|---|---:|"])
+    for k, v in sorted(split_counts.items()):
+        lines.append(f"| {k} | {v} |")
+
     lines.extend(["", "## Event counts", "", "| Event | Count |", "|---|---:|"])
     for k, v in sorted(event_counts.items()):
         lines.append(f"| {k} | {v} |")
+
+    if skip_counts:
+        lines.extend(["", "## Skipped crop/message counts", "", "| Reason | Count |", "|---|---:|"])
+        for k, v in sorted(skip_counts.items(), key=lambda kv: kv[1], reverse=True):
+            lines.append(f"| {k} | {v} |")
 
     lines.append("")
     summary_path.write_text("\n".join(lines), encoding="utf-8")
@@ -538,6 +652,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--crop-h", type=int, default=128)
     p.add_argument("--include-other", action="store_true")
     p.add_argument("--max-per-role-event", type=int, default=0)
+    p.add_argument("--include-events", default="", help="Comma-separated event types to include. Empty means all.")
+    p.add_argument("--exclude-events", default="full_occlusion", help="Comma-separated event types to exclude.")
+    p.add_argument("--train-events", default="clean_tracking,correct_tracking,hard_reentry,recovered_target")
+    p.add_argument("--test-events", default="visible_but_wrong_best_candidate,reentry_id_switch,wrong_target_interval,transition_uncertain,late_reentry")
+    p.add_argument("--max-clipped-frac", type=float, default=0.35)
     return p.parse_args()
 
 
@@ -563,6 +682,11 @@ def main() -> int:
         crop_h=args.crop_h,
         include_other=args.include_other,
         max_per_role_event=args.max_per_role_event,
+        include_events=parse_event_filter(args.include_events),
+        exclude_events=parse_event_filter(args.exclude_events),
+        train_events=parse_event_filter(args.train_events),
+        test_events=parse_event_filter(args.test_events),
+        max_clipped_frac=args.max_clipped_frac,
     )
 
     if n <= 0:
