@@ -36,11 +36,6 @@ Similarity source:
 
 ## Critical crossing result
 
-Output:
-
-- `reports/tim_v2_embedding/v2e_learned_suppression_critical_crossing_thr0/summary.md`
-- `reports/tim_v2_embedding/v2e_learned_suppression_critical_crossing_thr0/timeline.csv`
-
 Global result:
 
 | Metric | Raw | Policy |
@@ -64,11 +59,6 @@ Event-level result:
 | visible_but_wrong_best_candidate | 11.387 | 11.205 | 0.182 |
 
 ## Hard re-entry result
-
-Output:
-
-- `reports/tim_v2_embedding/v2e_learned_suppression_hard_reentry_thr0/summary.md`
-- `reports/tim_v2_embedding/v2e_learned_suppression_hard_reentry_thr0/timeline.csv`
 
 Global result:
 
