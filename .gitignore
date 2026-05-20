@@ -163,3 +163,6 @@ artifacts/logs/**
 
 # Also ignore migrated colcon/root log folder
 artifacts/log/**
+
+# TIM-V2E generated embedding crop datasets
+datasets/tim_embedding/
