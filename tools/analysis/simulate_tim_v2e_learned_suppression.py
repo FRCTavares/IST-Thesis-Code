@@ -65,7 +65,10 @@ class Output:
     raw_selected: int
     selected_after_policy: int
     selected_similarity: float
+    reacquired_track_id: int
+    reacquired_similarity: float
     suppressed: bool
+    reacquired: bool
     correct_id: int
     event_type: str
     label_raw: str
@@ -202,6 +205,29 @@ def nearest_similarity(
     return best.sim
 
 
+def candidate_sims_for_frame(
+    rows: List[ScoreRow],
+    sim_by_track: Dict[int, List[SimRow]],
+    t: float,
+    max_dt: float,
+) -> List[Tuple[int, float]]:
+    out: List[Tuple[int, float]] = []
+    seen = set()
+
+    for r in rows:
+        tid = int(r.score_track_id)
+        if tid <= 0 or tid in seen:
+            continue
+        seen.add(tid)
+
+        sim = nearest_similarity(sim_by_track, tid, t, max_dt)
+        if math.isfinite(sim):
+            out.append((tid, sim))
+
+    out.sort(key=lambda x: x[1], reverse=True)
+    return out
+
+
 def eval_label(selected: int, ann: Optional[Annotation]) -> Tuple[str, int, str]:
     if ann is None:
         return "unannotated", 0, ""
@@ -230,8 +256,15 @@ def simulate(
     sim_threshold: float,
     max_sim_dt: float,
     require_similarity: bool,
+    enable_reacquire: bool,
+    candidate_high_threshold: float,
+    reacquire_confirm_frames: int,
 ) -> List[Output]:
     outputs: List[Output] = []
+
+    pending_reacquire_id = 0
+    pending_reacquire_count = 0
+    pending_reacquire_sim = float("nan")
 
     for frame_id, rows in scores_by_frame.items():
         if not rows:
@@ -251,16 +284,55 @@ def simulate(
         ) if raw_selected > 0 else float("nan")
 
         suppressed = False
+        reacquired = False
+        reacquired_track_id = 0
+        reacquired_similarity = float("nan")
         selected_after = raw_selected
 
+        selected_is_low = False
         if raw_selected > 0:
             if math.isfinite(selected_sim):
-                if selected_sim < sim_threshold:
-                    selected_after = 0
-                    suppressed = True
-            elif require_similarity:
-                selected_after = 0
-                suppressed = True
+                selected_is_low = selected_sim < sim_threshold
+            else:
+                selected_is_low = bool(require_similarity)
+
+        if raw_selected > 0 and selected_is_low:
+            selected_after = 0
+            suppressed = True
+
+        if enable_reacquire and selected_after == 0:
+            candidates = [
+                (tid, sim)
+                for tid, sim in candidate_sims_for_frame(rows, sim_by_track, t, max_sim_dt)
+                if sim >= candidate_high_threshold
+            ]
+
+            if candidates:
+                best_tid, best_sim = candidates[0]
+
+                if best_tid == pending_reacquire_id:
+                    pending_reacquire_count += 1
+                else:
+                    pending_reacquire_id = best_tid
+                    pending_reacquire_count = 1
+
+                pending_reacquire_sim = best_sim
+
+                if pending_reacquire_count >= max(1, reacquire_confirm_frames):
+                    selected_after = best_tid
+                    reacquired = True
+                    reacquired_track_id = best_tid
+                    reacquired_similarity = best_sim
+                    suppressed = False
+            else:
+                pending_reacquire_id = 0
+                pending_reacquire_count = 0
+                pending_reacquire_sim = float("nan")
+        else:
+            # Reset confirmation while raw/current selected remains accepted.
+            pending_reacquire_id = 0
+            pending_reacquire_count = 0
+            pending_reacquire_sim = float("nan")
 
         policy_label, _correct_id2, _event_type2 = eval_label(selected_after, ann)
 
@@ -271,7 +343,10 @@ def simulate(
                 raw_selected=raw_selected,
                 selected_after_policy=selected_after,
                 selected_similarity=selected_sim,
+                reacquired_track_id=reacquired_track_id,
+                reacquired_similarity=reacquired_similarity,
                 suppressed=suppressed,
+                reacquired=reacquired,
                 correct_id=correct_id,
                 event_type=event_type,
                 label_raw=raw_label,
@@ -280,7 +355,6 @@ def simulate(
         )
 
     return outputs
-
 
 def estimate_dt(outputs: List[Output]) -> float:
     ts = sorted({o.t for o in outputs})
@@ -327,6 +401,8 @@ def summarise(outputs: List[Output]) -> dict:
         "policy_lost_s": pol_lost * dt,
         "suppressed_frames": sum(1 for o in outputs if o.suppressed),
         "suppressed_s": sum(1 for o in outputs if o.suppressed) * dt,
+        "reacquired_frames": sum(1 for o in outputs if o.reacquired),
+        "reacquired_s": sum(1 for o in outputs if o.reacquired) * dt,
     }
 
 
@@ -351,6 +427,7 @@ def event_summary(outputs: List[Output]) -> List[dict]:
                 "policy_wrong_s": sum(1 for o in ev_rows if o.label_policy == "wrong") * dt,
                 "policy_lost_s": sum(1 for o in ev_rows if o.label_policy == "lost") * dt,
                 "suppressed_s": sum(1 for o in ev_rows if o.suppressed) * dt,
+                "reacquired_s": sum(1 for o in ev_rows if o.reacquired) * dt,
             }
         )
 
@@ -365,7 +442,10 @@ def write_timeline(path: Path, outputs: List[Output]) -> None:
             "raw_selected",
             "selected_after_policy",
             "selected_similarity",
+            "reacquired_track_id",
+            "reacquired_similarity",
             "suppressed",
+            "reacquired",
             "correct_id",
             "event_type",
             "label_raw",
@@ -382,7 +462,10 @@ def write_timeline(path: Path, outputs: List[Output]) -> None:
                     "raw_selected": o.raw_selected,
                     "selected_after_policy": o.selected_after_policy,
                     "selected_similarity": f"{o.selected_similarity:.6f}" if math.isfinite(o.selected_similarity) else "",
+                    "reacquired_track_id": o.reacquired_track_id,
+                    "reacquired_similarity": f"{o.reacquired_similarity:.6f}" if math.isfinite(o.reacquired_similarity) else "",
                     "suppressed": str(o.suppressed).lower(),
+                    "reacquired": str(o.reacquired).lower(),
                     "correct_id": o.correct_id,
                     "event_type": o.event_type,
                     "label_raw": o.label_raw,
@@ -397,15 +480,19 @@ def write_summary(path: Path, metrics: dict, events: List[dict], args) -> None:
     lines.append("")
     lines.append("## Policy")
     lines.append("")
-    lines.append("- Conservative suppression only")
-    lines.append("- No switching")
+    lines.append("- Conservative suppression")
+    lines.append("- Optional confirmed learned reacquisition")
     lines.append("- If selected track similarity is below threshold, output LOST")
+    lines.append("- If enabled, reacquire only after a high-similarity candidate is confirmed")
     lines.append("")
     lines.append("## Parameters")
     lines.append("")
     lines.append(f"- similarity threshold: {args.sim_threshold}")
     lines.append(f"- max similarity time delta: {args.max_sim_dt}")
     lines.append(f"- require similarity: {args.require_similarity}")
+    lines.append(f"- enable reacquire: {args.enable_reacquire}")
+    lines.append(f"- candidate high threshold: {args.candidate_high_threshold}")
+    lines.append(f"- reacquire confirm frames: {args.reacquire_confirm_frames}")
     lines.append("")
     lines.append("## Global result")
     lines.append("")
@@ -417,11 +504,13 @@ def write_summary(path: Path, metrics: dict, events: List[dict], args) -> None:
     lines.append("")
     lines.append(f"- suppressed_s: {metrics['suppressed_s']:.3f}")
     lines.append(f"- suppressed_frames: {metrics['suppressed_frames']}")
+    lines.append(f"- reacquired_s: {metrics['reacquired_s']:.3f}")
+    lines.append(f"- reacquired_frames: {metrics['reacquired_frames']}")
     lines.append("")
     lines.append("## Event result")
     lines.append("")
-    lines.append("| Event | Raw correct_s | Raw wrong_s | Raw lost_s | Policy correct_s | Policy wrong_s | Policy lost_s | Suppressed_s |")
-    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
+    lines.append("| Event | Raw correct_s | Raw wrong_s | Raw lost_s | Policy correct_s | Policy wrong_s | Policy lost_s | Suppressed_s | Reacquired_s |")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
 
     for r in events:
         lines.append(
@@ -444,6 +533,9 @@ def parse_args():
     p.add_argument("--sim-threshold", type=float, default=0.0)
     p.add_argument("--max-sim-dt", type=float, default=0.08)
     p.add_argument("--require-similarity", action="store_true")
+    p.add_argument("--enable-reacquire", action="store_true")
+    p.add_argument("--candidate-high-threshold", type=float, default=0.3)
+    p.add_argument("--reacquire-confirm-frames", type=int, default=3)
     return p.parse_args()
 
 
@@ -462,6 +554,9 @@ def main() -> int:
         sim_threshold=args.sim_threshold,
         max_sim_dt=args.max_sim_dt,
         require_similarity=args.require_similarity,
+        enable_reacquire=args.enable_reacquire,
+        candidate_high_threshold=args.candidate_high_threshold,
+        reacquire_confirm_frames=args.reacquire_confirm_frames,
     )
 
     metrics = summarise(outputs)
