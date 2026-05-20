@@ -33,6 +33,9 @@ class Sample:
     identity: str
     event: str
     split: str
+    t: float = 0.0
+    frame_id: int = 0
+    track_id: int = 0
 
 
 def load_samples(roots: list[Path]) -> list[Sample]:
@@ -56,6 +59,9 @@ def load_samples(roots: list[Path]) -> list[Sample]:
                         identity=r["identity_label"],
                         event=r["event_type"],
                         split=r.get("split", "unspecified"),
+                        t=float(r.get("t", 0.0) or 0.0),
+                        frame_id=int(float(r.get("frame_id", 0) or 0)),
+                        track_id=int(float(r.get("track_id", 0) or 0)),
                     )
                 )
     return samples
@@ -145,20 +151,22 @@ def embed_samples(model: nn.Module, samples: list[Sample], device: torch.device)
     zs = []
     ys = []
     events = []
+    paths = []
 
     model.eval()
     with torch.no_grad():
-        for x, y, _role, event, _path in dl:
+        for x, y, _role, event, path in dl:
             x = x.to(device)
             z, _ = model(x)
             zs.append(z.cpu())
             ys.append(y)
             events.extend(list(event))
+            paths.extend(list(path))
 
     if not zs:
-        return None, None, []
+        return None, None, [], []
 
-    return torch.cat(zs, dim=0), torch.cat(ys, dim=0).numpy(), events
+    return torch.cat(zs, dim=0), torch.cat(ys, dim=0).numpy(), events, paths
 
 
 def pairwise_metrics(
@@ -171,8 +179,8 @@ def pairwise_metrics(
     if not memory_correct:
         return {}
 
-    z_mem, y_mem, _events_mem = embed_samples(model, memory_correct, device)
-    z_eval, y_eval, events = embed_samples(model, eval_samples, device)
+    z_mem, y_mem, _events_mem, _paths_mem = embed_samples(model, memory_correct, device)
+    z_eval, y_eval, events, _paths_eval = embed_samples(model, eval_samples, device)
 
     if z_mem is None or z_eval is None or y_eval is None:
         return {}
@@ -214,6 +222,64 @@ def pairwise_metrics(
 
     out["events"] = event_out
     return out
+
+
+def export_similarity_scores(
+    model: nn.Module,
+    memory_samples: list[Sample],
+    eval_samples: list[Sample],
+    device: torch.device,
+    output_csv: Path,
+) -> None:
+    memory_correct = [s for s in memory_samples if s.role == "correct"]
+    if not memory_correct:
+        raise RuntimeError("No correct memory samples available.")
+
+    z_mem, _y_mem, _events_mem, _paths_mem = embed_samples(model, memory_correct, device)
+    z_eval, y_eval, events, paths = embed_samples(model, eval_samples, device)
+
+    if z_mem is None or z_eval is None or y_eval is None:
+        raise RuntimeError("Could not embed memory/eval samples.")
+
+    mem = F.normalize(z_mem.mean(dim=0, keepdim=True), p=2, dim=1)
+    sims = (z_eval @ mem.T).squeeze(1).numpy()
+
+    by_path = {str(s.path): s for s in eval_samples}
+
+    with output_csv.open("w", newline="") as f:
+        fieldnames = [
+            "crop_path",
+            "t",
+            "frame_id",
+            "track_id",
+            "role",
+            "identity_label",
+            "event_type",
+            "split",
+            "target_label",
+            "similarity_to_train_memory",
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for path, y, ev, sim in zip(paths, y_eval, events, sims):
+            sample = by_path.get(str(path))
+            if sample is None:
+                continue
+            writer.writerow(
+                {
+                    "crop_path": str(sample.path),
+                    "t": f"{sample.t:.6f}",
+                    "frame_id": int(sample.frame_id),
+                    "track_id": int(sample.track_id),
+                    "role": sample.role,
+                    "identity_label": sample.identity,
+                    "event_type": ev,
+                    "split": sample.split,
+                    "target_label": "correct" if int(y) == 1 else "distractor",
+                    "similarity_to_train_memory": f"{float(sim):.6f}",
+                }
+            )
 
 
 def write_report(path: Path, metrics: dict, args, train_n: int, test_n: int) -> None:
@@ -322,6 +388,13 @@ def main() -> int:
         print(f"[epoch {epoch:03d}] loss={np.mean(losses):.4f} acc={np.mean(accs):.3f}")
 
     metrics = pairwise_metrics(model, train_samples, test_samples, device)
+    export_similarity_scores(
+        model=model,
+        memory_samples=train_samples,
+        eval_samples=test_samples,
+        device=device,
+        output_csv=args.output_dir / "test_similarity_scores.csv",
+    )
 
     torch.save(
         {
@@ -337,6 +410,7 @@ def main() -> int:
 
     print(f"[ok] wrote {args.output_dir / 'tim_v2e_tiny_embedding.pt'}")
     print(f"[ok] wrote {args.output_dir / 'summary.md'}")
+    print(f"[ok] wrote {args.output_dir / 'test_similarity_scores.csv'}")
     return 0
 
 
