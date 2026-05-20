@@ -95,27 +95,3 @@ Do not integrate `hsv_grad16` into TIM.
 The hand-crafted descriptor path is not strong enough. The next technical step should be a lightweight learned 8-16D embedding, evaluated offline before live integration.
 
 This result strengthens the argument that TIM-V2E needs learned identity evidence rather than more threshold tuning on hand-crafted colour/gradient cues.
-
-Hard re-entry:
-
-| Event | HSV16 gap | HSV-GRAD16 gap | Interpretation |
-|---|---:|---:|---|
-| wrong_target_interval | +0.039 | +0.019 | worse |
-
-## Interpretation
-
-Adding a coarse gradient descriptor improves some critical-crossing separation, especially reducing the negative gap in `reentry_id_switch`.
-
-However, it still fails the key ambiguous interval:
-
-- `visible_but_wrong_best_candidate`: gap only +0.008
-
-It also weakens the hard re-entry result compared with hue-only HSV.
-
-## Decision
-
-Do not integrate `hsv_grad16` into TIM.
-
-The hand-crafted descriptor path is not strong enough. The next technical step should be a lightweight learned 8-16D embedding, evaluated offline before live integration.
-
-This result strengthens the argument that TIM-V2E needs learned identity evidence rather than more threshold tuning on hand-crafted colour/gradient cues.
