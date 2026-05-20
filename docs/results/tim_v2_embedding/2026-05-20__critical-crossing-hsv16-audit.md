@@ -52,7 +52,7 @@ Event-level result:
 
 ## Interpretation
 
-Hue-only HSV has weak identity signal.
+Hue-only HSV has weak and inconsistent identity signal.
 
 It gives a small positive gap during `hard_reentry`, but it fails badly during `reentry_id_switch` and gives almost no separation during `visible_but_wrong_best_candidate`.
 
