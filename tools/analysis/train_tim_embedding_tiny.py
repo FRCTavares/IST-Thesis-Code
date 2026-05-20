@@ -33,6 +33,7 @@ class Sample:
     identity: str
     event: str
     split: str
+    dataset_root: str = ""
     t: float = 0.0
     frame_id: int = 0
     track_id: int = 0
@@ -59,6 +60,7 @@ def load_samples(roots: list[Path]) -> list[Sample]:
                         identity=r["identity_label"],
                         event=r["event_type"],
                         split=r.get("split", "unspecified"),
+                        dataset_root=str(root),
                         t=float(r.get("t", 0.0) or 0.0),
                         frame_id=int(float(r.get("frame_id", 0) or 0)),
                         track_id=int(float(r.get("track_id", 0) or 0)),
@@ -248,6 +250,7 @@ def export_similarity_scores(
 
     with output_csv.open("w", newline="") as f:
         fieldnames = [
+            "dataset_root",
             "crop_path",
             "t",
             "frame_id",
@@ -268,6 +271,7 @@ def export_similarity_scores(
                 continue
             writer.writerow(
                 {
+                    "dataset_root": sample.dataset_root,
                     "crop_path": str(sample.path),
                     "t": f"{sample.t:.6f}",
                     "frame_id": int(sample.frame_id),

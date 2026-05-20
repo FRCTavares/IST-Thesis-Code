@@ -152,7 +152,7 @@ def load_annotations(path: Path) -> List[Annotation]:
     return rows
 
 
-def load_similarity(path: Path) -> Dict[int, List[SimRow]]:
+def load_similarity(path: Path, source_contains: str = "") -> Dict[int, List[SimRow]]:
     by_track: Dict[int, List[SimRow]] = {}
 
     with path.open("r", newline="") as file:
@@ -162,7 +162,13 @@ def load_similarity(path: Path) -> Dict[int, List[SimRow]]:
         if missing:
             raise SystemExit(f"Similarity CSV missing columns: {sorted(missing)}")
 
+        has_dataset_root = "dataset_root" in set(reader.fieldnames or [])
+
         for r in reader:
+            if source_contains and has_dataset_root:
+                if source_contains not in str(r.get("dataset_root", "")):
+                    continue
+
             row = SimRow(
                 t=f(r["t"]),
                 frame_id=i(r["frame_id"]),
@@ -489,6 +495,7 @@ def write_summary(path: Path, metrics: dict, events: List[dict], args) -> None:
     lines.append("")
     lines.append(f"- similarity threshold: {args.sim_threshold}")
     lines.append(f"- max similarity time delta: {args.max_sim_dt}")
+    lines.append(f"- similarity source contains: `{args.similarity_source_contains}`")
     lines.append(f"- require similarity: {args.require_similarity}")
     lines.append(f"- enable reacquire: {args.enable_reacquire}")
     lines.append(f"- candidate high threshold: {args.candidate_high_threshold}")
@@ -529,6 +536,7 @@ def parse_args():
     p.add_argument("--scores", type=Path, required=True)
     p.add_argument("--annotations", type=Path, required=True)
     p.add_argument("--similarity", type=Path, required=True)
+    p.add_argument("--similarity-source-contains", default="")
     p.add_argument("--output-dir", type=Path, required=True)
     p.add_argument("--sim-threshold", type=float, default=0.0)
     p.add_argument("--max-sim-dt", type=float, default=0.08)
@@ -545,7 +553,7 @@ def main() -> int:
 
     scores = load_scores(args.scores)
     annotations = load_annotations(args.annotations)
-    sim = load_similarity(args.similarity)
+    sim = load_similarity(args.similarity, source_contains=args.similarity_source_contains)
 
     outputs = simulate(
         scores_by_frame=scores,
