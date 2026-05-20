@@ -169,3 +169,7 @@ datasets/tim_embedding/
 
 # TIM-V2E generated filtered embedding crop datasets
 datasets/tim_embedding_filtered/
+
+# TIM-V2E generated model checkpoints
+reports/tim_v2_embedding/**/*.pt
+models/tim_embedding/**/*.pt
