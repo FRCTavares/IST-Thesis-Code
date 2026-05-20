@@ -138,6 +138,16 @@ class TargetMemoryConfig:
     appearance_challenge_margin: float = 0.20
     appearance_challenge_min_total: float = 0.45
 
+    # TIM-V2K experimental rank-aware LOST/UNCERTAIN reacquisition.
+    # Disabled by default to preserve TIM-V1 behaviour.
+    rank_aware_reacquisition_enabled: bool = False
+    rank_aware_lost_min_total: float = 0.40
+    rank_aware_lost_min_geom: float = 0.10
+    rank_aware_lost_min_app: float = 0.05
+    rank_aware_lost_app_margin: float = 0.03
+    rank_aware_confirm_frames: int = 1
+    rank_aware_missing_ttl_frames: int = 8
+
 
 @dataclass
 class TargetMemoryOutput:
@@ -306,6 +316,8 @@ class TargetIdentityMemory:
         self.cfg = cfg or TargetMemoryConfig()
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
+        self._rank_reacq_candidate_id: Optional[int] = None
+        self._rank_reacq_confirm_count = 0
 
     @property
     def state(self) -> TargetState:
@@ -322,6 +334,8 @@ class TargetIdentityMemory:
     def clear(self) -> TargetMemoryOutput:
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
+        self._rank_reacq_candidate_id = None
+        self._rank_reacq_confirm_count = 0
         return self._make_output(reason="operator_clear", visible=False, reacquired=False)
 
     def select(self, track: CandidateTrack) -> TargetMemoryOutput:
@@ -338,6 +352,8 @@ class TargetIdentityMemory:
             appearance=update_feature_memory(None, track.appearance, alpha=1.0),
         )
         self._appearance_update_cooldown_frames_remaining = 0
+        self._rank_reacq_candidate_id = None
+        self._rank_reacq_confirm_count = 0
         return self._make_output(reason="operator_select", visible=True, reacquired=False)
 
     def update(self, candidates: Sequence[CandidateTrack]) -> TargetMemoryOutput:
@@ -388,6 +404,25 @@ class TargetIdentityMemory:
         )
         scores_sorted[0] = best
 
+        rank_aware_best, rank_aware_pending = self._rank_aware_reacquisition_candidate(
+            scores_sorted,
+            candidates,
+        )
+        if rank_aware_best is not None:
+            rank_candidate = next(c for c in candidates if c.track_id == rank_aware_best.track_id)
+            return self._accept(
+                rank_candidate,
+                best_score=rank_aware_best,
+                all_scores=scores_sorted,
+            )
+
+        if rank_aware_pending:
+            return self._miss(
+                reason="rank_aware_reacquisition_pending",
+                best_score=best,
+                all_scores=scores_sorted,
+            )
+
         threshold = self.cfg.accept_score_lost if self._m.state == TargetState.LOST else self.cfg.accept_score_locked
         if same_id:
             threshold = max(0.0, threshold - self.cfg.same_id_accept_relief)
@@ -421,6 +456,106 @@ class TargetIdentityMemory:
             )
 
         return self._accept(best_candidate, best_score=best, all_scores=scores_sorted)
+
+    def _rank_aware_app_raw(self, candidate: CandidateTrack, score: CandidateScore) -> float:
+        """Appearance similarity for rank-aware reacquisition.
+
+        This intentionally bypasses the normal geometry gate during LOST/UNCERTAIN
+        reacquisition, because hard re-entry is exactly where geometry can be
+        misleading.
+        """
+        if score.appearance_raw > 0.0:
+            return float(score.appearance_raw)
+
+        if candidate.appearance is None or self._m.appearance is None:
+            return 0.0
+
+        return clamp01(cosine_similarity(self._m.appearance, candidate.appearance))
+
+    def _rank_aware_reacquisition_candidate(
+        self,
+        scores_sorted: List[CandidateScore],
+        candidates: Sequence[CandidateTrack],
+    ) -> tuple[Optional[CandidateScore], bool]:
+        if not self.cfg.rank_aware_reacquisition_enabled:
+            return None, False
+
+        if self._m.state not in {TargetState.UNCERTAIN, TargetState.LOST}:
+            self._rank_reacq_candidate_id = None
+            self._rank_reacq_confirm_count = 0
+            return None, False
+
+        by_id = {int(c.track_id): c for c in candidates}
+        enriched: list[tuple[CandidateScore, float]] = []
+
+        for score in scores_sorted:
+            candidate = by_id.get(int(score.track_id))
+            if candidate is None:
+                continue
+
+            app_raw = self._rank_aware_app_raw(candidate, score)
+
+            if (
+                score.total >= self.cfg.rank_aware_lost_min_total
+                and score.distance >= self.cfg.rank_aware_lost_min_geom
+                and app_raw >= self.cfg.rank_aware_lost_min_app
+            ):
+                enriched.append((score, app_raw))
+
+        if not enriched:
+            self._rank_reacq_candidate_id = None
+            self._rank_reacq_confirm_count = 0
+            return None, False
+
+        best, best_app = max(
+            enriched,
+            key=lambda item: (
+                float(item[1]),
+                float(item[0].distance),
+                float(item[0].scale),
+                float(item[0].total),
+            ),
+        )
+
+        other_apps = [
+            app
+            for score, app in enriched
+            if int(score.track_id) != int(best.track_id)
+        ]
+        best_other_app = max(other_apps, default=0.0)
+
+        if (float(best_app) - best_other_app) < self.cfg.rank_aware_lost_app_margin:
+            self._rank_reacq_candidate_id = None
+            self._rank_reacq_confirm_count = 0
+            return None, False
+
+        if self._rank_reacq_candidate_id == best.track_id:
+            self._rank_reacq_confirm_count += 1
+        else:
+            self._rank_reacq_candidate_id = best.track_id
+            self._rank_reacq_confirm_count = 1
+
+        pending = self._rank_reacq_confirm_count < max(1, int(self.cfg.rank_aware_confirm_frames))
+        if pending:
+            return None, True
+
+        # Return a copy with the bypassed appearance evidence exposed in diagnostics.
+        best = CandidateScore(
+            track_id=best.track_id,
+            total=best.total,
+            iou=best.iou,
+            distance=best.distance,
+            scale=best.scale,
+            confidence=best.confidence,
+            id_bonus=best.id_bonus,
+            appearance=best_app,
+            appearance_used=True,
+            appearance_raw=best_app,
+            appearance_gate_passed=True,
+            geometry_allows_appearance=best.geometry_allows_appearance,
+            ambiguous=best.ambiguous,
+        )
+        return best, False
 
     def _appearance_challenge_should_hold(
         self,
@@ -545,6 +680,9 @@ class TargetIdentityMemory:
         was_lostish = previous_state in {TargetState.UNCERTAIN, TargetState.LOST}
 
         reacquired = bool(id_changed or was_lostish)
+
+        self._rank_reacq_candidate_id = None
+        self._rank_reacq_confirm_count = 0
 
         if reacquired:
             self._appearance_update_cooldown_frames_remaining = max(
