@@ -420,9 +420,10 @@ def expand_and_clip_bbox(
     return xi1, yi1, xi2, yi2
 
 
-def hsv16_descriptor(
+def compute_descriptor(
     image_bgr: np.ndarray,
     bbox: BBox,
+    descriptor: str,
     min_bbox_h: float,
     pad_x_frac: float,
     pad_y_frac: float,
@@ -447,23 +448,61 @@ def hsv16_descriptor(
     if crop.size == 0:
         return None, "empty_crop", bbox_h
 
-    # Resize for deterministic descriptor scale.
     crop = cv2.resize(crop, (64, 128), interpolation=cv2.INTER_AREA)
     hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
 
     upper = hsv[:70, :, :]
     lower = hsv[58:, :, :]
 
-    # 8 bins hue upper + 8 bins hue lower = 16D.
-    # Hue range in OpenCV is [0, 180).
+    # 16D hue-only baseline: 8 hue bins upper + 8 hue bins lower.
     hist_u, _ = np.histogram(upper[:, :, 0], bins=8, range=(0, 180), density=False)
     hist_l, _ = np.histogram(lower[:, :, 0], bins=8, range=(0, 180), density=False)
+    hsv16 = np.concatenate([hist_u.astype(np.float32), hist_l.astype(np.float32)])
 
-    feat = np.concatenate([hist_u.astype(np.float32), hist_l.astype(np.float32)])
+    if descriptor == "hsv16":
+        feat = hsv16
+
+    elif descriptor == "hsv_grad16":
+        # 8D colour + 8D coarse texture/shape.
+        # Colour: 4 hue bins upper + 4 hue bins lower.
+        hist_u4, _ = np.histogram(upper[:, :, 0], bins=4, range=(0, 180), density=False)
+        hist_l4, _ = np.histogram(lower[:, :, 0], bins=4, range=(0, 180), density=False)
+        colour8 = np.concatenate([hist_u4.astype(np.float32), hist_l4.astype(np.float32)])
+
+        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+        gx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
+        gy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
+        mag = cv2.magnitude(gx, gy)
+        ang = cv2.phase(gx, gy, angleInDegrees=True)
+
+        # Unsigned orientation: [0, 180).
+        ang = np.mod(ang, 180.0)
+        grad8, _ = np.histogram(
+            ang,
+            bins=8,
+            range=(0, 180),
+            weights=mag,
+            density=False,
+        )
+
+        # Normalise colour and gradient blocks separately, then concatenate.
+        colour8 = colour8.astype(np.float32)
+        grad8 = grad8.astype(np.float32)
+        c_norm = float(np.linalg.norm(colour8))
+        g_norm = float(np.linalg.norm(grad8))
+        if c_norm > 1e-8:
+            colour8 /= c_norm
+        if g_norm > 1e-8:
+            grad8 /= g_norm
+        feat = np.concatenate([colour8, grad8]).astype(np.float32)
+
+    else:
+        return None, f"unknown_descriptor_{descriptor}", bbox_h
+
     norm = float(np.linalg.norm(feat))
     if norm <= 1e-8:
         return None, "zero_descriptor", bbox_h
-    feat /= norm
+    feat = feat.astype(np.float32) / norm
     return feat, "", bbox_h
 
 
@@ -513,6 +552,7 @@ def build_memory_descriptor(
     annotations: List[AnnotationInterval],
     aliases: List[AliasInterval],
     template_event_types: set[str],
+    descriptor: str,
     max_image_dt: float,
     min_bbox_h: float,
     pad_x_frac: float,
@@ -538,9 +578,10 @@ def build_memory_descriptor(
         for tr in rows:
             if tr.track_id not in correct_ids:
                 continue
-            feat, reason, _bbox_h = hsv16_descriptor(
+            feat, reason, _bbox_h = compute_descriptor(
                 image,
                 tr.bbox,
+                descriptor=descriptor,
                 min_bbox_h=min_bbox_h,
                 pad_x_frac=pad_x_frac,
                 pad_y_frac=pad_y_frac,
@@ -557,6 +598,7 @@ def evaluate_descriptors(
     annotations: List[AnnotationInterval],
     aliases: List[AliasInterval],
     memory: Optional[np.ndarray],
+    descriptor: str,
     max_image_dt: float,
     min_bbox_h: float,
     pad_x_frac: float,
@@ -600,9 +642,10 @@ def evaluate_descriptors(
                 )
                 continue
 
-            feat, reason, bbox_h = hsv16_descriptor(
+            feat, reason, bbox_h = compute_descriptor(
                 image,
                 tr.bbox,
+                descriptor=descriptor,
                 min_bbox_h=min_bbox_h,
                 pad_x_frac=pad_x_frac,
                 pad_y_frac=pad_y_frac,
@@ -657,7 +700,7 @@ def write_descriptor_rows(path: Path, rows: List[DescriptorRow]) -> None:
             )
 
 
-def summarise(rows: List[DescriptorRow], memory_count: int) -> str:
+def summarise(rows: List[DescriptorRow], memory_count: int, descriptor: str) -> str:
     valid = [r for r in rows if r.descriptor_valid]
     correct = [r.similarity_to_memory for r in valid if r.role == "correct"]
     distractor = [r.similarity_to_memory for r in valid if r.role == "distractor"]
@@ -672,7 +715,7 @@ def summarise(rows: List[DescriptorRow], memory_count: int) -> str:
     lines.append("")
     lines.append("## Descriptor")
     lines.append("")
-    lines.append("- Descriptor: `hsv16`")
+    lines.append(f"- Descriptor: `{descriptor}`")
     lines.append("- Memory: mean descriptor from clean/correct visible intervals")
     lines.append(f"- Memory samples: {memory_count}")
     lines.append("")
@@ -734,9 +777,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--bag", type=Path, required=True)
     p.add_argument("--annotations", type=Path, required=True)
     p.add_argument("--aliases", type=Path, default=None)
-    p.add_argument("--all-scores-csv", type=Path, default=None, help="Accepted for run metadata; not required by hsv16 audit yet.")
+    p.add_argument("--all-scores-csv", type=Path, default=None, help="Accepted for run metadata; not required by descriptor audit yet.")
     p.add_argument("--output-dir", type=Path, required=True)
-    p.add_argument("--descriptor", choices=["hsv16"], default="hsv16")
+    p.add_argument("--descriptor", choices=["hsv16", "hsv_grad16"], default="hsv16")
     p.add_argument("--image-topic", default="/camera/dashboard")
     p.add_argument("--tracks-topic", default="/tracks")
     p.add_argument("--max-image-dt", type=float, default=0.08)
@@ -778,6 +821,7 @@ def main() -> int:
         annotations=annotations,
         aliases=aliases,
         template_event_types=template_event_types,
+        descriptor=args.descriptor,
         max_image_dt=args.max_image_dt,
         min_bbox_h=args.min_bbox_h,
         pad_x_frac=args.pad_x_frac,
@@ -796,6 +840,7 @@ def main() -> int:
         annotations=annotations,
         aliases=aliases,
         memory=memory,
+        descriptor=args.descriptor,
         max_image_dt=args.max_image_dt,
         min_bbox_h=args.min_bbox_h,
         pad_x_frac=args.pad_x_frac,
@@ -806,7 +851,7 @@ def main() -> int:
     summary_md = args.output_dir / "summary.md"
 
     write_descriptor_rows(desc_csv, rows)
-    summary_md.write_text(summarise(rows, memory_count), encoding="utf-8")
+    summary_md.write_text(summarise(rows, memory_count, args.descriptor), encoding="utf-8")
 
     print(f"[ok] wrote {desc_csv}")
     print(f"[ok] wrote {summary_md}")
