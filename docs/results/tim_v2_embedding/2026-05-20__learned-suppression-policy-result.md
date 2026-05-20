@@ -36,8 +36,6 @@ Similarity source:
 
 ## Critical crossing result
 
-Global result:
-
 | Metric | Raw | Policy |
 |---|---:|---:|
 | correct_s | 12.116 | 12.116 |
@@ -59,8 +57,6 @@ Event-level result:
 | visible_but_wrong_best_candidate | 11.387 | 11.205 | 0.182 |
 
 ## Hard re-entry result
-
-Global result:
 
 | Metric | Raw | Policy |
 |---|---:|---:|
