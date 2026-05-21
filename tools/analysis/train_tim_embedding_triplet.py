@@ -97,9 +97,17 @@ def read_crop(path: Path, augment: bool) -> torch.Tensor:
 
 
 class TripletCropDataset(Dataset):
-    def __init__(self, samples: list[Sample], augment: bool = True):
+    def __init__(
+        self,
+        samples: list[Sample],
+        augment: bool = True,
+        negative_mode: str = "same_event",
+        negative_time_window_s: float = 1.0,
+    ):
         self.samples = samples
         self.augment = augment
+        self.negative_mode = negative_mode
+        self.negative_time_window_s = float(negative_time_window_s)
 
         self.correct = [s for s in samples if s.role == "correct"]
         self.distractor = [s for s in samples if s.role == "distractor"]
@@ -120,16 +128,45 @@ class TripletCropDataset(Dataset):
     def __len__(self) -> int:
         return max(1, len(self.correct))
 
+    def _sample_positive(self, anchor: Sample) -> Sample:
+        # Prefer positives not from the exact same frame.
+        pool = [
+            s for s in self.correct
+            if s.path != anchor.path and abs(float(s.t) - float(anchor.t)) > 0.5
+        ]
+        if not pool:
+            pool = [s for s in self.correct if s.path != anchor.path] or self.correct
+        return random.choice(pool)
+
+    def _sample_negative(self, anchor: Sample) -> Sample:
+        if self.negative_mode == "same_time_window":
+            pool = [
+                s for s in self.distractor
+                if s.dataset_root == anchor.dataset_root
+                and abs(float(s.t) - float(anchor.t)) <= self.negative_time_window_s
+            ]
+            if pool:
+                return random.choice(pool)
+
+        if self.negative_mode in {"same_time_window", "same_event"}:
+            pool = [
+                s for s in self.distractor_by_event.get(anchor.event, [])
+                if s.dataset_root == anchor.dataset_root
+            ]
+            if pool:
+                return random.choice(pool)
+
+        if self.negative_mode == "same_dataset":
+            pool = [s for s in self.distractor if s.dataset_root == anchor.dataset_root]
+            if pool:
+                return random.choice(pool)
+
+        return random.choice(self.distractor)
+
     def __getitem__(self, idx: int):
         anchor = self.correct[idx % len(self.correct)]
-
-        pos_pool = [s for s in self.correct if s.path != anchor.path]
-        if not pos_pool:
-            pos_pool = self.correct
-        positive = random.choice(pos_pool)
-
-        neg_pool = self.distractor_by_event.get(anchor.event) or self.distractor
-        negative = random.choice(neg_pool)
+        positive = self._sample_positive(anchor)
+        negative = self._sample_negative(anchor)
 
         xa = read_crop(anchor.path, self.augment)
         xp = read_crop(positive.path, self.augment)
@@ -320,6 +357,8 @@ def write_report(path: Path, metrics: dict, args, train_n: int, test_n: int) -> 
     lines.append(f"- Batch size: {args.batch_size}")
     lines.append(f"- LR: {args.lr}")
     lines.append(f"- Margin: {args.margin}")
+    lines.append(f"- Negative mode: {args.negative_mode}")
+    lines.append(f"- Negative time window: {args.negative_time_window_s}")
     lines.append(f"- Train samples: {train_n}")
     lines.append(f"- Test samples: {test_n}")
     lines.append(f"- Memory correct samples: {metrics.get('memory_correct_n', 0)}")
@@ -357,6 +396,8 @@ def parse_args():
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--margin", type=float, default=0.4)
+    p.add_argument("--negative-mode", choices=["same_event", "same_time_window", "same_dataset", "random"], default="same_event")
+    p.add_argument("--negative-time-window-s", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=7)
     return p.parse_args()
 
@@ -383,7 +424,12 @@ def main() -> int:
     device = torch.device("cpu")
     model = TinyEmbeddingNet(emb_dim=args.emb_dim).to(device)
 
-    train_ds = TripletCropDataset(train_samples, augment=True)
+    train_ds = TripletCropDataset(
+        train_samples,
+        augment=True,
+        negative_mode=args.negative_mode,
+        negative_time_window_s=args.negative_time_window_s,
+    )
     train_dl = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
