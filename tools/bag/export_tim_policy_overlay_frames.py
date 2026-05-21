@@ -1,22 +1,15 @@
 #!/usr/bin/env python3
 """
-Render TIM policy overlay video from:
-- ROS 2 bag image topic
-- /tracks topic
-- policy timeline.csv
+Export TIM policy overlay review frames directly from a ROS 2 bag.
 
-Overlay:
-- all tracks: thin boxes
-- raw selected: orange
-- policy selected: green
-- suppressed/LOST: red status text
+This is like render_tim_policy_overlay_video.py, but writes JPG frames at a fixed
+time step so they are easier to inspect in Finder/Preview.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
-import math
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
@@ -114,7 +107,6 @@ def map_track_box_to_image(
     x1, y1, x2, y2 = box
 
     if letterbox_to_image:
-        # Undo standard letterbox from source image -> square/tracker image.
         scale = min(track_coord_w / float(img_w), track_coord_h / float(img_h))
         new_w = float(img_w) * scale
         new_h = float(img_h) * scale
@@ -126,7 +118,6 @@ def map_track_box_to_image(
         y1 = (y1 - pad_y) / scale
         y2 = (y2 - pad_y) / scale
     else:
-        # Direct scale from tracker coordinate frame to displayed image frame.
         sx = float(img_w) / max(1e-6, float(track_coord_w))
         sy = float(img_h) / max(1e-6, float(track_coord_h))
         x1 *= sx
@@ -237,12 +228,13 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--bag", type=Path, required=True)
     p.add_argument("--timeline", type=Path, required=True)
-    p.add_argument("--output", type=Path, required=True)
-    p.add_argument("--image-topic", default="/camera/image_raw")
+    p.add_argument("--output-dir", type=Path, required=True)
+    p.add_argument("--image-topic", default="/camera/dashboard")
     p.add_argument("--tracks-topic", default="/tracks")
-    p.add_argument("--fps", type=float, default=20.0)
+    p.add_argument("--every-s", type=float, default=0.5)
+    p.add_argument("--start-s", type=float, default=0.0)
+    p.add_argument("--end-s", type=float, default=0.0)
     p.add_argument("--max-timeline-dt", type=float, default=0.12)
-    p.add_argument("--max-frames", type=int, default=0)
     p.add_argument("--track-coord-w", type=float, default=640.0)
     p.add_argument("--track-coord-h", type=float, default=640.0)
     p.add_argument("--track-letterbox-to-image", action="store_true")
@@ -251,7 +243,7 @@ def parse_args():
 
 def main() -> int:
     args = parse_args()
-    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
 
     timeline = load_timeline(args.timeline)
 
@@ -273,8 +265,9 @@ def main() -> int:
 
     first_t_ns = None
     latest_tracks: dict[int, BBox] = {}
-    writer = None
-    rendered = 0
+    latest_shape = (640, 640)
+    next_save_t = args.start_s
+    saved = 0
 
     while reader.has_next():
         topic, data, t_ns = reader.read_next()
@@ -283,11 +276,12 @@ def main() -> int:
             first_t_ns = int(t_ns)
         t_s = (int(t_ns) - first_t_ns) / 1e9
 
+        if args.end_s > 0 and t_s > args.end_s:
+            break
+
         if topic == args.tracks_topic:
             msg = deserialize_message(data, tracks_type)
-            # bbox conversion needs image shape; fallback 640 square until first image
-            img_w = getattr(main, "_img_w", 640)
-            img_h = getattr(main, "_img_h", 640)
+            img_w, img_h = latest_shape
 
             latest_tracks = {}
             for tr in list(getattr(msg, "tracks", [])):
@@ -304,21 +298,18 @@ def main() -> int:
                     latest_tracks[tid] = box
 
         elif topic == args.image_topic:
+            if t_s + 1e-9 < args.start_s:
+                continue
+            if t_s + 1e-9 < next_save_t:
+                continue
+
             msg = deserialize_message(data, image_type)
             img = image_msg_to_bgr(msg)
             img_h, img_w = img.shape[:2]
-            setattr(main, "_img_w", img_w)
-            setattr(main, "_img_h", img_h)
+            latest_shape = (img_w, img_h)
 
             tl = timeline_at(timeline, t_s, args.max_timeline_dt)
 
-            if writer is None:
-                fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-                writer = cv2.VideoWriter(str(args.output), fourcc, args.fps, (img_w, img_h))
-                if not writer.isOpened():
-                    raise RuntimeError(f"Could not open video writer: {args.output}")
-
-            # all tracks, grey
             for tid, box in latest_tracks.items():
                 draw_box(img, box, (160, 160, 160), f"ID {tid}", thickness=1)
 
@@ -344,20 +335,16 @@ def main() -> int:
             cv2.rectangle(img, (0, 0), (img_w, 34), (0, 0, 0), -1)
             cv2.putText(img, status, (8, 23), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2, cv2.LINE_AA)
 
-            writer.write(img)
-            rendered += 1
+            out = args.output_dir / f"frame_{saved:05d}__bag_t_{t_s:08.3f}s.jpg"
+            cv2.imwrite(str(out), img)
+            saved += 1
+            next_save_t += args.every_s
 
-            if rendered % 100 == 0:
-                print(f"[info] rendered {rendered} frames")
+            if saved % 50 == 0:
+                print(f"[info] saved={saved}")
 
-            if args.max_frames > 0 and rendered >= args.max_frames:
-                break
-
-    if writer is not None:
-        writer.release()
-
-    print(f"[ok] rendered={rendered}")
-    print(f"[ok] output={args.output}")
+    print(f"[ok] saved={saved}")
+    print(f"[ok] output_dir={args.output_dir}")
     return 0
 
 
