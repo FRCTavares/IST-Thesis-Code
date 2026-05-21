@@ -37,7 +37,7 @@ Global test separation:
 
 Event-level comparison:
 
-| Event | first triplet gap | hard-negative gap |
+| Event | first triplet gap | hard-negative triplet gap |
 |---|---:|---:|
 | reentry_id_switch | +0.489 | +0.664 |
 | transition_uncertain | +0.005 | -0.058 |
@@ -78,4 +78,4 @@ For now:
 
 - binary Tiny16 remains the strongest operational prototype but has overfitting risk,
 - triplet Tiny16 is more thesis-aligned but not policy-useful yet,
-- the next training direction should be hybrid classification + metric loss or supervised contrastive learning with harder same-frame negatives.
+- the next training direction should be hybrid classification + triplet/supervised-contrastive loss or better hard-negative mining.
