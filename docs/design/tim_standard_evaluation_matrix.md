@@ -89,3 +89,38 @@ Current offline candidate:
 - confirmation frames 3.
 
 This candidate must be tested on more bags before live integration.
+
+## Generalisation requirement
+
+TIM is useful only if it improves selected-target control safety beyond the two development bags.
+
+Future evaluations must cover:
+
+1. clean two-person no crossing,
+2. hard re-entry ID switch,
+3. critical crossing,
+4. short occlusion,
+5. target leaves/re-enters,
+6. similar-clothing distractor if available,
+7. longer-distance or small-target case.
+
+## Reporting rule
+
+No future TIM claim should be accepted without:
+
+- Raw baseline,
+- TIM variant result,
+- correctness table,
+- visual evidence,
+- short interpretation.
+
+## Flight-safety rule
+
+Live flight should only use documented, explicitly enabled TIM behaviour.
+
+Experimental learned TIM-V2E models remain offline-only until:
+
+1. runtime implementation exists behind explicit flags,
+2. default live behaviour remains unchanged,
+3. crop extraction and end-to-end callback latency are measured,
+4. held-out bag evaluation is complete.
