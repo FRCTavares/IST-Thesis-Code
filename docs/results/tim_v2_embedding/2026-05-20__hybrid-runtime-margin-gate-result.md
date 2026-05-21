@@ -32,12 +32,6 @@ Runtime gate:
 
 ## Critical crossing result
 
-Output:
-
-- `reports/tim_v2_embedding/v2e_hybrid_critical_crossing_runtime_margin010_thr0_high03_c3/summary.md`
-
-Global result:
-
 | Metric | Raw | Policy | Delta |
 |---|---:|---:|---:|
 | correct_s | 12.116 | 29.971 | +17.855 |
@@ -51,22 +45,7 @@ Policy activity:
 - reacquired_s: 18.857
 - reacquired_frames: 414
 
-Event-level result:
-
-| Event | Raw wrong_s | Policy correct_s | Policy wrong_s | Policy lost_s |
-|---|---:|---:|---:|---:|
-| hard_reentry | 12.344 | 11.387 | 0.000 | 0.957 |
-| late_reentry | 1.458 | 0.319 | 0.000 | 1.139 |
-| reentry_id_switch | 2.551 | 2.004 | 0.000 | 0.547 |
-| visible_but_wrong_best_candidate | 11.387 | 5.147 | 0.046 | 6.195 |
-
 ## Hard re-entry result
-
-Output:
-
-- `reports/tim_v2_embedding/v2e_hybrid_hard_reentry_runtime_margin010_thr0_high03_c3/summary.md`
-
-Global result:
 
 | Metric | Raw | Policy | Delta |
 |---|---:|---:|---:|
@@ -80,15 +59,6 @@ Policy activity:
 - suppressed_frames: 125
 - reacquired_s: 4.708
 - reacquired_frames: 39
-
-Event-level result:
-
-| Event | Raw wrong_s | Policy correct_s | Policy wrong_s | Policy lost_s |
-|---|---:|---:|---:|---:|
-| correct_tracking | 0.604 | 48.892 | 0.241 | 1.086 |
-| recovered_target | 2.052 | 18.470 | 0.966 | 1.449 |
-| transition_uncertain | 0.483 | 0.483 | 0.241 | 0.241 |
-| wrong_target_interval | 32.474 | 4.708 | 15.452 | 12.314 |
 
 ## Interpretation
 
