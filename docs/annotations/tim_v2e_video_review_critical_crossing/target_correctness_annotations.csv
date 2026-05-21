@@ -1,0 +1,7 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+2026-05-11__critical_crossing_video_review,0.00,20.55,NO_TARGET_SELECTED,true,1,6,pre_selection,target visible but no selected target output yet
+2026-05-11__critical_crossing_video_review,20.55,35.02,CORRECT_TARGET,true,1,6,correct_raw_correct_v2e,raw and TIM-V2E follow the correct selected person id 1
+2026-05-11__critical_crossing_video_review,35.02,49.02,CORRECT_TARGET,true,9,6,lost_both_target_visible,true target visible as id 9 after crossing/re-entry; raw and TIM-V2E appear lost
+2026-05-11__critical_crossing_video_review,49.02,55.19,CORRECT_TARGET,true,10,6,lost_both_target_visible,true target visible as id 10; raw and TIM-V2E appear lost
+2026-05-11__critical_crossing_video_review,55.19,67.12,CORRECT_TARGET,true,11,6,lost_both_target_visible,true target visible as id 11; raw and TIM-V2E appear lost
+2026-05-11__critical_crossing_video_review,67.12,73.02,CORRECT_TARGET,true,11,"6,15",lost_both_target_visible,true target visible as id 11 with distractors id 6 and id 15; raw and TIM-V2E appear lost
