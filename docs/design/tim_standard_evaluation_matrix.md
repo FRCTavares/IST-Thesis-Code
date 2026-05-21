@@ -124,3 +124,68 @@ Experimental learned TIM-V2E models remain offline-only until:
 2. default live behaviour remains unchanged,
 3. crop extraction and end-to-end callback latency are measured,
 4. held-out bag evaluation is complete.
+
+## Next candidate work after initial standard comparisons
+
+Date: 2026-05-21
+
+The current standard comparison evidence supports TIM-V2E as the best available wrong-target suppression candidate, but not yet as a complete reacquisition solution.
+
+### Current scenario status
+
+| Scenario | Current use | Interpretation |
+|---|---|---|
+| Hard re-entry | Positive evidence | TIM-V2E reduces wrong-person following, with more LOST time |
+| Critical crossing | Mixed evidence / limitation | TIM-V2E suppresses wrong target in automatic evaluation, but manual review still shows difficult reacquisition |
+
+### Next method candidate
+
+The next method candidate should be TIM-V2F Conservative Reacquisition Memory.
+
+Objective:
+
+- preserve TIM-V2E wrong-target suppression,
+- reduce LOST time after occlusion,
+- avoid increasing wrong-target duration,
+- keep the method offline-only until validated on more bags.
+
+Main mechanisms to test:
+
+1. frozen pre-loss appearance template,
+2. CANDIDATE/probation state before REACQUIRED,
+3. asymmetric stay-locked versus reacquire thresholds,
+4. no memory update while ambiguous,
+5. optional small template memory bank.
+
+### Evaluation rule
+
+A candidate policy is only better if:
+
+| Metric | Rule |
+|---|---|
+| wrong_s | must not increase meaningfully |
+| correct_s | should increase |
+| lost_s | should decrease |
+| video review | must remain visually explainable |
+| control interpretation | LOST/CANDIDATE must be safer than wrong-person output |
+
+### Next scenario coverage needed
+
+Before live integration, add at least one scenario from each group:
+
+| Group | Purpose |
+|---|---|
+| Clean single-person | Verify no unnecessary suppression |
+| Two-person no crossing | Verify no over-conservative behaviour |
+| Hard re-entry | Measure wrong-target suppression |
+| Critical crossing | Measure reacquisition limits |
+| Long occlusion | Verify conservative LOST behaviour |
+| Similar clothing distractor | Stress appearance ambiguity |
+| Small/far person | Stress tiny-person handling |
+
+### Current live-integration decision
+
+Do not integrate TIM-V2E or TIM-V2F live yet.
+
+The next safe step is offline policy simulation plus standard comparison reports. Live integration should wait until a policy reduces LOST or improves reacquisition without increasing wrong_s across multiple scenarios.
+

@@ -43,3 +43,37 @@ TIM-V2E currently supports a narrow claim:
 Intermediate HSV, triplet, suppression-only, source-filtering, and dataset-building notes are preserved under:
 
 - `deprecated/docs/results/tim_v2_embedding/`
+
+## Next work after standard matrix checkpoint
+
+Date: 2026-05-21
+
+Current verdict:
+
+- TIM-V2E hybrid runtime margin gate is the current best wrong-target suppression candidate.
+- It should be claimed as a wrong-target suppression layer, not as a fully solved reacquisition system.
+- TIM-V2E remains offline-only and should not be live-integrated yet.
+
+Next method candidate:
+
+- TIM-V2F Conservative Reacquisition Memory.
+
+Main mechanisms to test:
+
+1. frozen pre-loss appearance template,
+2. CANDIDATE/probation state before REACQUIRED,
+3. asymmetric stay-locked versus reacquire thresholds,
+4. no memory update while ambiguous,
+5. optional small template memory bank.
+
+Acceptance rule:
+
+- wrong_s must not meaningfully increase,
+- correct_s should increase,
+- lost_s should decrease,
+- overlay/video review must remain explainable.
+
+Detailed next-work plan is maintained in:
+
+- `docs/design/tim_standard_evaluation_matrix.md`
+

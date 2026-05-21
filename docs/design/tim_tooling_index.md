@@ -25,6 +25,9 @@ Use these for Raw vs TIM selected-target correctness:
 - `tools/analysis/extract_tim_all_scores.py`
 - `tools/analysis/evaluate_tim_policy_timeline.py`
 - `tools/analysis/diagnose_tim_wrong_intervals.py`
+- `tools/analysis/run_tim_standard_comparison.py`
+
+`run_tim_standard_comparison.py` is the standard scenario-summary wrapper. It reads existing annotations, policy `summary.md`, and policy `timeline.csv`, then writes generated local output under `reports/tim_standard_matrix/<scenario>/`. It does not run ROS, replay bags, or touch live defaults.
 
 ## TIM-V2E learned appearance tools
 
@@ -80,6 +83,7 @@ Do not commit generated files from:
 
 - `datasets/tim_embedding/`
 - `datasets/tim_embedding_filtered/`
+- `reports/tim_standard_matrix/`
 - `reports/tim_v2_embedding/`
 - `reports/tim_v0/`
 - `reports/tim_v2*_sweep*/`
