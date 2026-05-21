@@ -238,6 +238,16 @@ def candidate_sims_for_frame(
     return out
 
 
+def top2_margin(rows: List[ScoreRow]) -> float:
+    if len(rows) < 2:
+        return float("inf")
+    a = rows[0].total
+    b = rows[1].total
+    if not math.isfinite(a) or not math.isfinite(b):
+        return float("inf")
+    return float(a - b)
+
+
 def eval_label(selected: int, ann: Optional[Annotation]) -> Tuple[str, int, str]:
     if ann is None:
         return "unannotated", 0, ""
@@ -267,6 +277,8 @@ def simulate(
     max_sim_dt: float,
     require_similarity: bool,
     require_similarity_events: set[str],
+    runtime_gate: bool,
+    margin_gate_threshold: float,
     enable_reacquire: bool,
     candidate_high_threshold: float,
     reacquire_confirm_frames: int,
@@ -300,9 +312,14 @@ def simulate(
         reacquired_similarity = float("nan")
         selected_after = raw_selected
 
+        margin = top2_margin(rows)
+
         require_sim_now = bool(require_similarity)
         if require_similarity_events and event_type not in require_similarity_events:
             require_sim_now = False
+
+        if runtime_gate:
+            require_sim_now = bool(require_similarity) and margin < margin_gate_threshold
 
         selected_is_low = False
         if raw_selected > 0:
@@ -507,6 +524,8 @@ def write_summary(path: Path, metrics: dict, events: List[dict], args) -> None:
     lines.append(f"- similarity source contains: `{args.similarity_source_contains}`")
     lines.append(f"- require similarity: {args.require_similarity}")
     lines.append(f"- require similarity events: `{args.require_similarity_events}`")
+    lines.append(f"- runtime gate: {args.runtime_gate}")
+    lines.append(f"- margin gate threshold: {args.margin_gate_threshold}")
     lines.append(f"- enable reacquire: {args.enable_reacquire}")
     lines.append(f"- candidate high threshold: {args.candidate_high_threshold}")
     lines.append(f"- reacquire confirm frames: {args.reacquire_confirm_frames}")
@@ -556,6 +575,8 @@ def parse_args():
         default="",
         help="Comma-separated annotation event types where missing similarity should suppress current target. Empty means all events.",
     )
+    p.add_argument("--runtime-gate", action="store_true")
+    p.add_argument("--margin-gate-threshold", type=float, default=0.10)
     p.add_argument("--enable-reacquire", action="store_true")
     p.add_argument("--candidate-high-threshold", type=float, default=0.3)
     p.add_argument("--reacquire-confirm-frames", type=int, default=3)
@@ -578,6 +599,8 @@ def main() -> int:
         max_sim_dt=args.max_sim_dt,
         require_similarity=args.require_similarity,
         require_similarity_events=parse_event_set(args.require_similarity_events),
+        runtime_gate=args.runtime_gate,
+        margin_gate_threshold=args.margin_gate_threshold,
         enable_reacquire=args.enable_reacquire,
         candidate_high_threshold=args.candidate_high_threshold,
         reacquire_confirm_frames=args.reacquire_confirm_frames,
