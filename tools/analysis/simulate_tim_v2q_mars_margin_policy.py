@@ -146,6 +146,183 @@ def apply_margin_policy(timeline_rows, scores_by_frame, sims, margin, min_candid
     return out_rows, switches
 
 
+
+def apply_stable_margin_policy(
+    timeline_rows,
+    scores_by_frame,
+    sims,
+    margin,
+    min_candidate_total,
+    max_sim_dt,
+    confirm_frames,
+    raw_switch_margin,
+    allow_raw_switch_without_current_sim,
+    max_mars_total_gap,
+):
+    """Stateful V2Q policy.
+
+    Difference from apply_margin_policy:
+    - keeps the previous selected ID instead of blindly following raw_selected every frame;
+    - only switches to a MARS candidate after confirm_frames consecutive support;
+    - only accepts a raw-selected ID switch if the previous selected ID has no usable similarity,
+      or if raw has enough similarity advantage over the previous selected ID.
+
+    This is still offline/probe logic, not live TIM behaviour.
+    """
+    out_rows = []
+    switches = 0
+    confirmed_margin_switches = 0
+    raw_guard_switches = 0
+    raw_rejected_switches = 0
+
+    stable_selected = None
+    pending_candidate = None
+    pending_count = 0
+
+    for row in timeline_rows:
+        frame_id = as_int(row.get("frame_id"))
+        t = as_float(row.get("t"))
+        raw_selected = as_int(row.get("raw_selected"))
+        correct_id = as_int(row.get("correct_id"))
+        event_type = str(row.get("event_type", ""))
+
+        if stable_selected is None:
+            stable_selected = raw_selected
+
+        selected_before = stable_selected
+        selected = stable_selected
+        reason = "stable_keep"
+
+        current_sim = None
+        raw_sim = None
+        best = None
+
+        if t is not None and stable_selected > 0:
+            current_sim = nearest_similarity(sims, t, stable_selected, max_sim_dt)
+
+        if t is not None and raw_selected > 0:
+            raw_sim = nearest_similarity(sims, t, raw_selected, max_sim_dt)
+
+        # Raw switch guard:
+        # Do not blindly follow raw ID changes. They are the main source of correct->wrong jumps.
+        if raw_selected > 0 and raw_selected != stable_selected:
+            if current_sim is None and allow_raw_switch_without_current_sim:
+                selected = raw_selected
+                stable_selected = raw_selected
+                reason = "raw_switch_no_current_similarity"
+                raw_guard_switches += 1
+            elif current_sim is None:
+                selected = stable_selected
+                reason = "raw_switch_rejected_no_current_similarity"
+                raw_rejected_switches += 1
+            elif raw_sim is not None and (raw_sim - current_sim) >= raw_switch_margin:
+                selected = raw_selected
+                stable_selected = raw_selected
+                reason = "raw_switch_similarity_guard"
+                raw_guard_switches += 1
+            else:
+                selected = stable_selected
+                reason = "raw_switch_rejected"
+                raw_rejected_switches += 1
+        else:
+            selected = stable_selected
+
+        # MARS relative-margin candidate search against the current stable selection.
+        # Candidate validity guard:
+        # MARS may prefer the wrong person in ambiguous re-entry frames. Therefore,
+        # a MARS switch is only allowed when the candidate is also geometrically
+        # plausible according to TIM's score table. If the current selected track
+        # is present with a much stronger TIM total score, the appearance cue is
+        # not allowed to override it.
+        current_sim = None
+        current_total = None
+        for score_candidate in scores_by_frame.get(frame_id, []):
+            if int(score_candidate["track_id"]) == stable_selected:
+                current_total = float(score_candidate["total"])
+                break
+
+        if t is not None and stable_selected > 0:
+            current_sim = nearest_similarity(sims, t, stable_selected, max_sim_dt)
+
+        if t is not None and current_sim is not None:
+            for candidate in scores_by_frame.get(frame_id, []):
+                candidate_id = int(candidate["track_id"])
+                candidate_total = float(candidate["total"])
+
+                if candidate_id == stable_selected:
+                    continue
+                if candidate_total < min_candidate_total:
+                    continue
+                if current_total is not None and candidate_total < (current_total - max_mars_total_gap):
+                    continue
+
+                candidate_sim = nearest_similarity(sims, t, candidate_id, max_sim_dt)
+                if candidate_sim is None:
+                    continue
+
+                advantage = candidate_sim - current_sim
+                if advantage < margin:
+                    continue
+
+                if best is None or candidate_sim > best["candidate_sim"]:
+                    best = {
+                        "track_id": candidate_id,
+                        "candidate_sim": candidate_sim,
+                        "advantage": advantage,
+                        "total": candidate_total,
+                        "current_total": current_total,
+                    }
+
+        if best is not None:
+            candidate_id = int(best["track_id"])
+            if pending_candidate == candidate_id:
+                pending_count += 1
+            else:
+                pending_candidate = candidate_id
+                pending_count = 1
+
+            if pending_count >= confirm_frames:
+                stable_selected = candidate_id
+                selected = stable_selected
+                reason = "mars_margin_confirmed_switch"
+                confirmed_margin_switches += 1
+                pending_candidate = None
+                pending_count = 0
+            else:
+                selected = stable_selected
+                reason = "mars_margin_pending"
+        else:
+            pending_candidate = None
+            pending_count = 0
+            selected = stable_selected
+
+        if selected != selected_before:
+            switches += 1
+
+        label = label_selection(event_type, selected, correct_id)
+
+        out = dict(row)
+        out["v2q_selected"] = str(selected)
+        out["v2q_label"] = label
+        out["v2q_reason"] = reason
+        out["v2q_current_sim"] = "" if current_sim is None else "{:.6f}".format(current_sim)
+        out["v2q_raw_sim"] = "" if raw_sim is None else "{:.6f}".format(raw_sim)
+        out["v2q_best_candidate"] = "0" if best is None else str(best["track_id"])
+        out["v2q_best_sim"] = "" if best is None else "{:.6f}".format(best["candidate_sim"])
+        out["v2q_margin"] = "" if best is None else "{:.6f}".format(best["advantage"])
+        out["v2q_pending_candidate"] = "0" if pending_candidate is None else str(pending_candidate)
+        out["v2q_pending_count"] = str(pending_count)
+        out_rows.append(out)
+
+    stats = {
+        "switches": switches,
+        "confirmed_margin_switches": confirmed_margin_switches,
+        "raw_guard_switches": raw_guard_switches,
+        "raw_rejected_switches": raw_rejected_switches,
+    }
+    return out_rows, stats
+
+
 def compute_durations(rows: list[dict[str, str]], label_column: str):
     correct = 0.0
     wrong = 0.0
@@ -217,6 +394,20 @@ def parse_args():
     parser.add_argument("--margin", type=float, default=0.08)
     parser.add_argument("--min-candidate-total", type=float, default=0.30)
     parser.add_argument("--max-sim-dt", type=float, default=0.50)
+    parser.add_argument("--stable", action="store_true", help="Use stateful anti-raw-switch and confirmed MARS policy")
+    parser.add_argument("--confirm-frames", type=int, default=3)
+    parser.add_argument("--raw-switch-margin", type=float, default=0.20)
+    parser.add_argument(
+        "--allow-raw-switch-without-current-sim",
+        action="store_true",
+        help="Allow raw ID changes when the current stable ID has no nearby similarity sample",
+    )
+    parser.add_argument(
+        "--max-mars-total-gap",
+        type=float,
+        default=0.20,
+        help="Reject MARS switches when candidate TIM total is more than this below current selected TIM total",
+    )
     return parser.parse_args()
 
 
@@ -230,14 +421,30 @@ def main() -> int:
     sims = build_similarity_lookup(similarity_rows)
     scores_by_frame = build_scores_by_frame(score_rows)
 
-    rows, switches = apply_margin_policy(
-        timeline_rows=timeline_rows,
-        scores_by_frame=scores_by_frame,
-        sims=sims,
-        margin=args.margin,
-        min_candidate_total=args.min_candidate_total,
-        max_sim_dt=args.max_sim_dt,
-    )
+    if args.stable:
+        rows, stats = apply_stable_margin_policy(
+            timeline_rows=timeline_rows,
+            scores_by_frame=scores_by_frame,
+            sims=sims,
+            margin=args.margin,
+            min_candidate_total=args.min_candidate_total,
+            max_sim_dt=args.max_sim_dt,
+            confirm_frames=args.confirm_frames,
+            raw_switch_margin=args.raw_switch_margin,
+            allow_raw_switch_without_current_sim=args.allow_raw_switch_without_current_sim,
+            max_mars_total_gap=args.max_mars_total_gap,
+        )
+        switches = stats["switches"]
+    else:
+        rows, switches = apply_margin_policy(
+            timeline_rows=timeline_rows,
+            scores_by_frame=scores_by_frame,
+            sims=sims,
+            margin=args.margin,
+            min_candidate_total=args.min_candidate_total,
+            max_sim_dt=args.max_sim_dt,
+        )
+        stats = {"switches": switches}
 
     summary = write_outputs(
         output_dir=args.output_dir,
@@ -247,6 +454,15 @@ def main() -> int:
         min_candidate_total=args.min_candidate_total,
         max_sim_dt=args.max_sim_dt,
     )
+
+    if args.stable:
+        with (args.output_dir / "stable_policy_stats.txt").open("w", encoding="utf-8") as f:
+            for k, v in stats.items():
+                f.write(f"{k}: {v}\n")
+            f.write(f"confirm_frames: {args.confirm_frames}\n")
+            f.write(f"raw_switch_margin: {args.raw_switch_margin}\n")
+            f.write(f"allow_raw_switch_without_current_sim: {args.allow_raw_switch_without_current_sim}\n")
+            f.write(f"max_mars_total_gap: {args.max_mars_total_gap}\n")
 
     print(summary.read_text(encoding="utf-8"))
     print("[ok] wrote", summary)
