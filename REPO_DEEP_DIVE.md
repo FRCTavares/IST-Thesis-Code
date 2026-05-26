@@ -1,6 +1,6 @@
 # Repository Deep Dive
 
-Last reviewed: 2026-05-04
+Last reviewed: 2026-05-26
 
 This document explains what this repository is for, how its parts interact, and how to reason about the folder layout.
 
@@ -10,14 +10,15 @@ Use `README.md` for onboarding and path selection.
 
 ## 1) System objective
 
-The repository implements an experimental ROS 2 pipeline that converts live camera frames into actionable target state for dashboard/control, while preserving repeatability through bag replay and offline analysis.
+The repository implements an experimental ROS 2 pipeline that converts live camera frames into actionable target state for dashboard/control, with an active focus on selected-target identity maintenance through TIM, while preserving repeatability through bag replay and offline analysis.
 
 Primary goals:
 
 1. Real-time perception to target-state pipeline.
-2. Deterministic and measurable timing behavior.
-3. Reproducible experiment workflow (record -> replay -> analyze).
-4. Operational dashboard visibility for human-in-the-loop work.
+2. Selected-target identity maintenance under occlusion, hard crossings, detector misses, tracker ID switches, and distractors.
+3. Deterministic and measurable timing behavior.
+4. Reproducible experiment workflow (record -> replay -> analyze).
+5. Operational dashboard visibility for human-in-the-loop work.
 
 ## 2) Deployment shapes and data flow
 
@@ -34,6 +35,10 @@ Live runtime supports two perception shapes.
 Conceptual chain:
 
 `camera -> /camera/image_raw -> perception_pipeline_node -> /detections -> tracker -> /tracks -> dashboard_bridge_node -> /target -> control/dashboard`
+
+When target memory is enabled, TIM consumes tracker output and selected-target context to publish a conservative selected-target output:
+
+`/tracks + selected target -> TIM -> /target_memory + /target_memory/status`
 
 ### Shape Z (rollback): legacy ZMQ path
 
@@ -63,6 +68,24 @@ Replay/eval note:
 - There is no automatic target-selection fallback in replay or evaluation flows.
 - When no target is explicitly selected, `/target` publishes the empty target state.
 
+### TIM path
+
+TIM is a selected-target memory layer, not a replacement for global multi-object tracking.
+
+Its role is to decide whether the current tracker output still corresponds to the operator-selected target. It must be conservative when identity evidence is ambiguous.
+
+Important output topics:
+
+- `/target`: raw selected tracker target from the dashboard bridge.
+- `/target_memory`: TIM-filtered selected target, used only when TIM is valid and control-safe.
+- `/target_memory/status`: TIM diagnostics, including state, scores, reasons, and validity flags.
+
+Core evaluation principle:
+
+- correct selected target is good,
+- wrong selected target is dangerous,
+- lost target is safer than wrong target when identity is uncertain.
+
 ## 3) Component responsibilities
 
 ### ROS packages (`ros2_ws/src`)
@@ -75,6 +98,7 @@ Replay/eval note:
   - Used only in `--perception-mode legacy`.
 - `thesis_tracker`
   - Tracking backend abstraction (`sort`, `ocsort`, `bytetrack`, `deepsort`) and `/tracks` publication.
+  - DeepSORT uses the MARS ReID model when configured with `models/reid/mars-small128.pb`.
 - `thesis_msgs`
   - Shared message contracts (`Timing`, track/target messages).
 
@@ -120,6 +144,23 @@ Replay/eval note:
   - `single-process`: host `perception_pipeline_node` startup (optional local tappas runtime assets).
 - Downstream graph startup: tracker, dashboard bridge, web video, and control.
 - Runtime shell loop with `status`, `ids`, `target <id>`, `clear-target`, `clear`, and `stop` commands.
+
+### Tracker baselines and TIM framing
+
+The active tracker baselines are:
+
+- SORT
+- OCSORT
+- ByteTrack
+- DeepSORT MARS
+
+DeepSORT MARS is the current strong appearance-based baseline. It performs full multi-object tracking with learned ReID features. TIM instead targets a narrower selected-target problem: maintaining the operator-selected person while avoiding wrong-target output.
+
+This distinction matters for claims:
+
+- TIM should not be presented as a generic DeepSORT replacement.
+- TIM should be evaluated as a lightweight selected-target memory layer.
+- The fair comparison is selected-target correctness, wrong-target duration, lost duration, target-not-visible intervals, and runtime cost.
 
 Notable reliability behavior:
 
@@ -221,6 +262,31 @@ Default output locations:
 - Timing figures: `figures/timing/`
 - Tracking reports: `reports/tracking/`
 
+## 6.1) Selected-target correctness evaluation
+
+TIM evaluation uses interval annotations to classify the output stream over time.
+
+Core categories:
+
+- correct output: system publishes the selected visual target,
+- wrong output: system publishes a distractor,
+- lost output: selected target is visible but system publishes no valid target,
+- target not visible: selected target cannot be reliably identified in the frame.
+
+Current hard re-entry comparison:
+
+| Method | Correct duration [s] | Wrong duration [s] | Lost duration [s] | Correct ratio | Wrong ratio | Lost ratio |
+|---|---:|---:|---:|---:|---:|---:|
+| Raw OCSORT `/target` | 66.400 | 40.450 | 21.200 | 0.519 | 0.316 | 0.166 |
+| OCSORT + TIM `/target_memory` | 91.350 | 35.550 | 1.150 | 0.713 | 0.278 | 0.009 |
+| Raw DeepSORT MARS `/target` | 87.600 | 9.150 | 31.350 | 0.684 | 0.071 | 0.245 |
+
+Interpretation:
+
+- OCSORT + TIM improves continuity and correct duration but still has too much wrong-target duration.
+- DeepSORT MARS is not perfectly identity-stable, but it is much safer against wrong-target output.
+- TIM Final should reduce wrong-target duration towards DeepSORT MARS while keeping runtime cost closer to OCSORT/TIM.
+
 ## 7) Operational interfaces and ports
 
 Common endpoints:
@@ -267,7 +333,7 @@ Then inspect package-level source files for the subsystem you modify.
 
 Validated against repository state on 2026-05-04.
 
-If startup flags, topic names, ports, or timing contracts change, update these root docs together:
+If startup flags, topic names, ports, tracker baselines, TIM topics, evaluation metrics, or timing contracts change, update these root docs together:
 
 1. `README.md`
 2. `RUNBOOK.md`

@@ -1,8 +1,8 @@
 # Thesis Workspace
 
-Last reviewed: 2026-05-04
+Last reviewed: 2026-05-26
 
-ROS 2 workspace for live camera perception, tracking, user-driven target selection, optional control output, dashboard operation, and reproducible replay/analysis.
+ROS 2 workspace for live camera perception, tracking, selected-target identity memory, user-driven target selection, optional control output, dashboard operation, and reproducible replay/analysis.
 
 ## Documentation map
 
@@ -20,6 +20,31 @@ Root documentation is split by purpose:
 - Legacy frame-ZMQ mode remains available as `--perception-mode legacy` for rollback and debugging.
 - Target selection is user-driven through `dashboard_bridge_node` and `POST /api/target`.
 - Live logs are centralized under `ros2_ws/log/live_stack/<run-id>` and UI logs under `ros2_ws/log/ui_stack/<run-id>`.
+
+## Current thesis status
+
+The active thesis focus is selected-target identity maintenance for micro-UAV following. The system must keep the operator-selected person, not merely any visible track, through occlusion, hard crossings, detector misses, tracker ID switches, and distractors.
+
+Current TIM framing:
+
+- TIM-V0 is the frozen geometry-only selected-target memory baseline.
+- TIM-V1 added optional lightweight appearance support.
+- TIM Final is being driven by target-correctness evaluation rather than valid-output duration alone.
+- DeepSORT MARS is now used as a strong appearance-based baseline.
+
+Current hard re-entry comparison:
+
+| Method | Correct ratio | Wrong ratio | Lost ratio |
+|---|---:|---:|---:|
+| Raw OCSORT `/target` | 0.519 | 0.316 | 0.166 |
+| OCSORT + TIM `/target_memory` | 0.713 | 0.278 | 0.009 |
+| Raw DeepSORT MARS `/target` | 0.684 | 0.071 | 0.245 |
+
+Interpretation:
+
+- OCSORT + TIM improves correct duration and nearly eliminates lost duration.
+- DeepSORT MARS is much safer against wrong-target output.
+- TIM Final must reduce wrong-target duration while keeping runtime cost closer to OCSORT/TIM than to DeepSORT MARS.
 
 ## Live stack operator cheat sheet
 
@@ -60,8 +85,9 @@ Provide an end-to-end experimental stack that can:
 1. Ingest camera frames in ROS 2.
 2. Run detector inference through either the default single-process Hailo pipeline or the legacy ZMQ rollback path.
 3. Track candidates and expose explicit user-driven target selection for control and UI.
-4. Publish telemetry/video/control interfaces for real-time operation.
-5. Record and replay experiments for timing/tracking evaluation.
+4. Maintain selected-target identity through TIM and publish `/target_memory` when target memory is enabled.
+5. Publish telemetry/video/control interfaces for real-time operation.
+6. Record and replay experiments for target-correctness, timing, and tracking evaluation.
 
 ## Choose your path
 
@@ -149,7 +175,7 @@ cd "$THESIS_ROOT"
 ```bash
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
-ros2 topic list | rg '/camera/image_raw|/detections|/timing|/target'
+ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/detections|/tracks|/target|/target_memory|/timing'
 ss -ltnp | rg ':5556|:8080|:8090|:8765|:5173'
 ```
 
