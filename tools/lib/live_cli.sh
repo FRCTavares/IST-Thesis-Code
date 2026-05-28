@@ -53,20 +53,16 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --target-memory)
-            ENABLE_TARGET_MEMORY=1
-            shift
-            ;;
-        --no-target-memory)
-            ENABLE_TARGET_MEMORY=0
-            shift
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --target-memory requires a value: off|hsv|mars|both"
+                print_usage
+                exit 1
+            fi
+            TARGET_MEMORY_MODE="${2,,}"
+            shift 2
             ;;
         --target-memory-appearance)
-            ENABLE_TARGET_MEMORY=1
             TARGET_MEMORY_APPEARANCE_BOOL="true"
-            shift
-            ;;
-        --no-target-memory-appearance)
-            TARGET_MEMORY_APPEARANCE_BOOL="false"
             shift
             ;;
         --target-memory-appearance-image-topic)
@@ -94,6 +90,51 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             TARGET_MEMORY_APPEARANCE_MAX_IMAGE_AGE_MS="$(normalize_double_literal "$2")"
+            shift 2
+            ;;
+        --target-memory-mars-image-topic)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --target-memory-mars-image-topic requires a value"
+                print_usage
+                exit 1
+            fi
+            TARGET_MEMORY_MARS_IMAGE_TOPIC="$2"
+            shift 2
+            ;;
+        --target-memory-mars-model-path)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --target-memory-mars-model-path requires a value"
+                print_usage
+                exit 1
+            fi
+            TARGET_MEMORY_MARS_MODEL_PATH="$2"
+            shift 2
+            ;;
+        --target-memory-mars-batch-size)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --target-memory-mars-batch-size requires a value"
+                print_usage
+                exit 1
+            fi
+            TARGET_MEMORY_MARS_BATCH_SIZE="$2"
+            shift 2
+            ;;
+        --target-memory-mars-appearance-weight)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --target-memory-mars-appearance-weight requires a value"
+                print_usage
+                exit 1
+            fi
+            TARGET_MEMORY_MARS_APPEARANCE_WEIGHT="$(normalize_double_literal "$2")"
+            shift 2
+            ;;
+        --target-memory-mars-min-similarity)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --target-memory-mars-min-similarity requires a value"
+                print_usage
+                exit 1
+            fi
+            TARGET_MEMORY_MARS_APPEARANCE_MIN_SIMILARITY="$(normalize_double_literal "$2")"
             shift 2
             ;;
         --no-dashboard)
@@ -723,6 +764,39 @@ fi
 
 if ! [[ "$CONTROL_STALE_TIMEOUT_S" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
     echo "[error] --control-stale-timeout-s must be a positive number"
+    exit 1
+fi
+
+case "${TARGET_MEMORY_MODE:-hsv}" in
+    off|hsv|mars|both)
+        ;;
+    *)
+        echo "[error] invalid --target-memory '${TARGET_MEMORY_MODE}' (expected off|hsv|mars|both)"
+        exit 1
+        ;;
+esac
+
+RUN_TARGET_MEMORY_HSV=0
+RUN_TARGET_MEMORY_MARS=0
+
+case "${TARGET_MEMORY_MODE:-hsv}" in
+    hsv)
+        RUN_TARGET_MEMORY_HSV=1
+        ;;
+    mars)
+        RUN_TARGET_MEMORY_MARS=1
+        ;;
+    both)
+        RUN_TARGET_MEMORY_HSV=1
+        RUN_TARGET_MEMORY_MARS=1
+        ;;
+    off)
+        ;;
+esac
+
+if [[ "$RUN_TARGET_MEMORY_MARS" -eq 1 && ! -f "$TARGET_MEMORY_MARS_MODEL_PATH" ]]; then
+    echo "[error] TIM-MARS model not found: $TARGET_MEMORY_MARS_MODEL_PATH"
+    echo "[hint] use --target-memory-mars-model-path /path/to/mars-small128.pb"
     exit 1
 fi
 

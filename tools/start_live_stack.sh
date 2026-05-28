@@ -137,6 +137,7 @@ print_startup_success_summary() {
     echo "[ok] startup summary: capture=${capture_size} publish=${publish_size} hailo_infer=${infer_size}"
     echo "[ok] detector: ${detector_summary}"
     echo "[ok] tracker: ${tracker_summary}"
+    echo "[ok] target memory: mode=${TARGET_MEMORY_MODE:-hsv} hsv=${RUN_TARGET_MEMORY_HSV:-0} mars=${RUN_TARGET_MEMORY_MARS:-0}"
 }
 
 kill_tree() {
@@ -194,6 +195,7 @@ stop_stack() {
     pkill -f "control_ref_node" >/dev/null 2>&1 || true
     pkill -f "dashboard_bridge_node" >/dev/null 2>&1 || true
     pkill -f "target_memory_node" >/dev/null 2>&1 || true
+    pkill -f "target_memory_mars_node" >/dev/null 2>&1 || true
     pkill -f "web_video_server" >/dev/null 2>&1 || true
 
     docker exec "$CONTAINER_NAME" bash -lc 'pkill -f detection_zmq.py >/dev/null 2>&1 || true' >/dev/null 2>&1 || true
@@ -770,11 +772,7 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         stop_stack
         exit 1
     fi
-    if [[ "${ENABLE_TARGET_MEMORY:-1}" -eq 1 ]]; then
-        # TIM selected-target memory.
-        # Mirrors positive dashboard /target selections and publishes:
-        #   /target_memory
-        #   /target_memory/status
+    if [[ "${RUN_TARGET_MEMORY_HSV:-0}" -eq 1 ]]; then
         start_ros_bg target_memory ros2 run thesis_bringup target_memory_node --ros-args \
             -p appearance_enabled:=$TARGET_MEMORY_APPEARANCE_BOOL \
             -p appearance_image_topic:="$TARGET_MEMORY_APPEARANCE_IMAGE_TOPIC" \
@@ -782,6 +780,27 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
             -p appearance_max_image_age_ms:=$TARGET_MEMORY_APPEARANCE_MAX_IMAGE_AGE_MS
         sleep 1
         if ! check_proc_alive target_memory; then
+            stop_stack
+            exit 1
+        fi
+    fi
+
+    if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
+        start_ros_bg target_memory_mars ros2 run thesis_bringup target_memory_mars_node --ros-args \
+            -p target_topic:=/target_memory_mars \
+            -p status_topic:=/target_memory_mars/status \
+            -p select_topic:=/target_memory_mars/select \
+            -p appearance_enabled:=true \
+            -p appearance_image_topic:="$TARGET_MEMORY_MARS_IMAGE_TOPIC" \
+            -p mars_model_path:="$TARGET_MEMORY_MARS_MODEL_PATH" \
+            -p mars_batch_size:=$TARGET_MEMORY_MARS_BATCH_SIZE \
+            -p appearance_weight:=$TARGET_MEMORY_MARS_APPEARANCE_WEIGHT \
+            -p appearance_min_similarity:=$TARGET_MEMORY_MARS_APPEARANCE_MIN_SIMILARITY \
+            -p rank_aware_reacquisition_enabled:=$TARGET_MEMORY_MARS_RANK_AWARE_BOOL \
+            -p rank_aware_confirm_frames:=$TARGET_MEMORY_MARS_RANK_AWARE_CONFIRM_FRAMES \
+            -p rank_aware_missing_ttl_frames:=$TARGET_MEMORY_MARS_RANK_AWARE_MISSING_TTL_FRAMES
+        sleep 1
+        if ! check_proc_alive target_memory_mars; then
             stop_stack
             exit 1
         fi
@@ -838,10 +857,16 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         /target
     )
 
-    if [[ "${ENABLE_TARGET_MEMORY:-1}" -eq 1 ]]; then
+    if [[ "${RUN_TARGET_MEMORY_HSV:-0}" -eq 1 ]]; then
         VIDEO_BAG_TOPICS+=(
             /target_memory
             /target_memory/status
+        )
+    fi
+    if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
+        VIDEO_BAG_TOPICS+=(
+            /target_memory_mars
+            /target_memory_mars/status
         )
     fi
 
@@ -920,12 +945,23 @@ if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
         /detections
         /tracks
         /target
-        /target_memory
-        /target_memory/status
         /timing
         /timing_tracker
         /timing_target
     )
+
+    if [[ "${RUN_TARGET_MEMORY_HSV:-0}" -eq 1 ]]; then
+        DATASET_BAG_TOPICS+=(
+            /target_memory
+            /target_memory/status
+        )
+    fi
+    if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
+        DATASET_BAG_TOPICS+=(
+            /target_memory_mars
+            /target_memory_mars/status
+        )
+    fi
 
     echo "[ok] dataset bag recording enabled"
     echo "[ok] dataset bag output: $DATASET_BAG_OUT_DIR"

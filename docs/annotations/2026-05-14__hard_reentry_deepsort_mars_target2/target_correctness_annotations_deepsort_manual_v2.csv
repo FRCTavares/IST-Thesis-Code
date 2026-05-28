@@ -1,0 +1,14 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+2026-05-14__hard_reentry_deepsort_mars_target2,0.00,5.80,NO_TARGET_SELECTED,true,2,1,pre_selection,target visible but no target selected yet; DeepSORT black-shirt target is ID 2 and checkered distractor is ID 1
+2026-05-14__hard_reentry_deepsort_mars_target2,5.80,54.40,CORRECT_TARGET,true,2,1,correct_tracking,selected black-shirt target is DeepSORT ID 2
+2026-05-14__hard_reentry_deepsort_mars_target2,54.40,55.10,CORRECT_TARGET,true,,1,transition_uncertain,crossing interval with intermittent selected-person detection
+2026-05-14__hard_reentry_deepsort_mars_target2,55.10,73.90,CORRECT_TARGET,true,2,1,correct_tracking,selected black-shirt target remains DeepSORT ID 2
+2026-05-14__hard_reentry_deepsort_mars_target2,73.90,75.90,CORRECT_TARGET,true,,1,transition_uncertain,short uncertain transition before hard crossing
+2026-05-14__hard_reentry_deepsort_mars_target2,75.90,86.00,CORRECT_TARGET,true,2,1,manual_review_corrected,selected black-shirt target remains DeepSORT ID 2
+2026-05-14__hard_reentry_deepsort_mars_target2,86.00,87.80,CORRECT_TARGET,false,,1,target_not_visible,brief interval where selected target is not reliably identifiable
+2026-05-14__hard_reentry_deepsort_mars_target2,87.80,105.10,CORRECT_TARGET,true,2,1,manual_review_corrected,selected black-shirt target is DeepSORT ID 2 before later ID swap
+2026-05-14__hard_reentry_deepsort_mars_target2,105.10,106.40,CORRECT_TARGET,false,,1,target_not_visible,crossing/occlusion; selected person not reliably identifiable
+2026-05-14__hard_reentry_deepsort_mars_target2,106.40,112.80,CORRECT_TARGET,true,1,2,manual_review_corrected,"after swap,  selected black-shirt target is DeepSORT ID 1 and checkered distractor is ID 2"
+2026-05-14__hard_reentry_deepsort_mars_target2,112.80,116.50,CORRECT_TARGET,true,2,1,manual_review_corrected,DeepSORT swaps back; selected black-shirt target becomes ID 2 and checkered distractor becomes ID 1
+2026-05-14__hard_reentry_deepsort_mars_target2,116.50,128.00,CORRECT_TARGET,true,2,1,manual_video_audit_corrected,selected black-shirt target remains DeepSORT ID 2 until source_t 64s / eval_t 128s
+2026-05-14__hard_reentry_deepsort_mars_target2,128.00,136.80,CORRECT_TARGET,true,1,2,manual_video_audit_corrected,"manual final-video audit: from source_t 64s to 67s, true selected black-shirt target is DeepSORT ID 1; ID 2 is wrong"

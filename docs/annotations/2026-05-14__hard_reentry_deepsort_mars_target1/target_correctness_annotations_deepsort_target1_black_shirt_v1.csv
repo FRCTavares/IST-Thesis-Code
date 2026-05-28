@@ -1,0 +1,4 @@
+start_s,end_s,target_visible,correct_id,distractor_ids,event_type,notes
+0.00,11.60,true,1,"","visible","Black-shirt selected target visible, DeepSORT ID 1"
+11.60,14.70,false,0,"","target_not_visible","Black-shirt selected target temporarily not visible"
+14.70,136.80,true,1,"","visible","Black-shirt selected target visible, DeepSORT ID 1"

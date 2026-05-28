@@ -1,0 +1,5 @@
+bag_name,target_label,start_s,end_s,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1__r1,black_shirt_target,0.00,11.60,true,1,2,visible,"Black-shirt selected target visible as DeepSORT ID 1; distractor is ID 2"
+2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1__r1,black_shirt_target,11.60,14.70,false,0,2,target_not_visible,"Black-shirt selected target temporarily not visible"
+2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1__r1,black_shirt_target,14.70,60.50,true,1,2,visible,"Black-shirt selected target visible as DeepSORT ID 1; distractor remains ID 2"
+2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1__r1,black_shirt_target,60.50,136.80,true,70,2,id_switch,"Black-shirt selected target reappears as DeepSORT ID 70; distractor remains ID 2"

@@ -3,7 +3,7 @@ set -eo pipefail
 
 if [[ $# -lt 4 ]]; then
   echo "Usage:"
-  echo "  $0 <bag_path> <target_id> <tracker> <tim_mode:on|off> [rate] [target_wait_timeout_s]"
+  echo "  $0 <bag_path> <target_id> <tracker> <tim_mode:off|hsv|mars|both|on> [rate] [target_wait_timeout_s]"
   exit 1
 fi
 
@@ -36,6 +36,40 @@ echo "[info] TRACKER=$TRACKER"
 echo "[info] TIM_MODE=$TIM_MODE"
 echo "[info] RATE=$RATE"
 
+# Backward compatibility: old "on" means TIM-HSV.
+if [[ "$TIM_MODE" == "on" ]]; then
+  TIM_MODE="hsv"
+fi
+
+RUN_TIM_HSV=false
+RUN_TIM_MARS=false
+
+case "$TIM_MODE" in
+  off)
+    ;;
+  hsv)
+    RUN_TIM_HSV=true
+    ;;
+  mars)
+    RUN_TIM_MARS=true
+    ;;
+  both)
+    RUN_TIM_HSV=true
+    RUN_TIM_MARS=true
+    ;;
+  *)
+    echo "[error] tim_mode must be one of: off, hsv, mars, both, on"
+    exit 3
+    ;;
+esac
+
+echo "[info] NORMALISED_TIM_MODE=$TIM_MODE"
+echo "[info] RUN_TIM_HSV=$RUN_TIM_HSV"
+echo "[info] RUN_TIM_MARS=$RUN_TIM_MARS"
+
+TIM_STARTUP_SELECTED_ONLY="${TIM_STARTUP_SELECTED_ONLY:-false}"
+echo "[info] TIM_STARTUP_SELECTED_ONLY=$TIM_STARTUP_SELECTED_ONLY"
+
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
 export ROS_DOMAIN_ID
@@ -43,12 +77,12 @@ export ROS_DOMAIN_ID
 cleanup() {
   echo "[info] cleaning up background processes"
   jobs -pr | xargs -r kill || true
-  pkill -f "ros2 bag play|ros2 bag record|tracker_node|dashboard_bridge_node|target_memory_node" || true
+  pkill -f "ros2 bag play|ros2 bag record|tracker_node|dashboard_bridge_node|target_memory_node|target_memory_mars_node" || true
 }
 trap cleanup EXIT
 
 echo "[info] stopping old replay processes"
-pkill -f "ros2 bag play|ros2 bag record|tracker_node|dashboard_bridge_node|target_memory_node" || true
+pkill -f "ros2 bag play|ros2 bag record|tracker_node|dashboard_bridge_node|target_memory_node|target_memory_mars_node" || true
 sleep 2
 
 if [[ -e "$OUT_BAG" ]]; then
@@ -88,15 +122,16 @@ ros2 run thesis_bringup dashboard_bridge_node --ros-args \
   -p publish_hz:=30.0 \
   >"$LOG_DIR/dashboard_bridge.log" 2>&1 &
 
-if [[ "$TIM_MODE" == "on" ]]; then
-  echo "[info] starting TIM with appearance"
+if [[ "$RUN_TIM_HSV" == "true" ]]; then
+  echo "[info] starting TIM-HSV"
   ros2 run thesis_bringup target_memory_node --ros-args \
     -p tracks_topic:=/tracks \
     -p raw_target_topic:=/target \
     -p target_topic:=/target_memory \
     -p status_topic:=/target_memory/status \
     -p select_topic:=/target_memory/select \
-    -p mirror_raw_target_selection:=true \
+    -p selected_track_id:=${TARGET_ID} \
+    -p mirror_raw_target_selection:=$([[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]] && echo false || echo true) \
     -p appearance_enabled:=true \
     -p appearance_image_topic:=/camera/image_raw \
     -p appearance_update_cooldown_after_reacquire_frames:=${TIM_APPEARANCE_UPDATE_COOLDOWN_FRAMES:-0} \
@@ -104,12 +139,34 @@ if [[ "$TIM_MODE" == "on" ]]; then
     -p appearance_challenge_min_similarity:=${TIM_APPEARANCE_CHALLENGE_MIN_SIMILARITY:-0.50} \
     -p appearance_challenge_margin:=${TIM_APPEARANCE_CHALLENGE_MARGIN:-0.20} \
     -p appearance_challenge_min_total:=${TIM_APPEARANCE_CHALLENGE_MIN_TOTAL:-0.45} \
-    >"$LOG_DIR/target_memory.log" 2>&1 &
-elif [[ "$TIM_MODE" == "off" ]]; then
+    >"$LOG_DIR/target_memory_hsv.log" 2>&1 &
+fi
+
+if [[ "$RUN_TIM_MARS" == "true" ]]; then
+  echo "[info] starting TIM-MARS"
+  ros2 run thesis_bringup target_memory_mars_node --ros-args \
+    -p tracks_topic:=/tracks \
+    -p raw_target_topic:=/target \
+    -p target_topic:=/target_memory_mars \
+    -p status_topic:=/target_memory_mars/status \
+    -p select_topic:=/target_memory_mars/select \
+    -p selected_track_id:=${TARGET_ID} \
+    -p mirror_raw_target_selection:=$([[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]] && echo false || echo true) \
+    -p appearance_enabled:=true \
+    -p appearance_image_topic:=/camera/image_raw \
+    -p mars_model_path:="${MARS_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}" \
+    -p mars_batch_size:=${MARS_BATCH_SIZE:-32} \
+    -p appearance_weight:=${MARS_APPEARANCE_WEIGHT:-0.12} \
+    -p appearance_min_similarity:=${MARS_APPEARANCE_MIN_SIMILARITY:-0.35} \
+    -p appearance_update_cooldown_after_reacquire_frames:=${MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES:-0} \
+    -p rank_aware_reacquisition_enabled:=${MARS_RANK_AWARE_REACQUISITION_ENABLED:-true} \
+    -p rank_aware_confirm_frames:=${MARS_RANK_AWARE_CONFIRM_FRAMES:-1} \
+    -p rank_aware_missing_ttl_frames:=${MARS_RANK_AWARE_MISSING_TTL_FRAMES:-8} \
+    >"$LOG_DIR/target_memory_mars.log" 2>&1 &
+fi
+
+if [[ "$RUN_TIM_HSV" != "true" && "$RUN_TIM_MARS" != "true" ]]; then
   echo "[info] TIM disabled"
-else
-  echo "[error] tim_mode must be on or off"
-  exit 3
 fi
 
 sleep 3
@@ -119,8 +176,11 @@ ros2 node list | sort | tee "$LOG_DIR/nodes_before_play.txt" || true
 
 echo "[info] starting recorder"
 TOPICS=(/camera/image_raw /detections /tracks /target /timing_tracker /timing_target)
-if [[ "$TIM_MODE" == "on" ]]; then
+if [[ "$RUN_TIM_HSV" == "true" ]]; then
   TOPICS+=(/target_memory /target_memory/status)
+fi
+if [[ "$RUN_TIM_MARS" == "true" ]]; then
+  TOPICS+=(/target_memory_mars /target_memory_mars/status)
 fi
 
 ros2 bag record -s mcap -o "$OUT_BAG" --topics "${TOPICS[@]}" \
@@ -173,13 +233,27 @@ select_target() {
     -d "{\"target\": ${target_id}}" | tee "$LOG_DIR/target_api_response.json" || true
   echo
 
-  if [[ "$TIM_MODE" == "on" ]]; then
-    echo "[info] selecting target via TIM select topic: $target_id"
+  if [[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]]; then
+    echo "[info] skipping TIM select topics because TIM_STARTUP_SELECTED_ONLY=true"
+    return 0
+  fi
+
+  if [[ "$RUN_TIM_HSV" == "true" ]]; then
+    echo "[info] selecting target via TIM-HSV select topic: $target_id"
     ros2 topic pub --once \
       --qos-reliability best_effort \
       /target_memory/select \
       std_msgs/msg/UInt32 \
-      "{data: ${target_id}}" >"$LOG_DIR/tim_select.log" 2>&1 || true
+      "{data: ${target_id}}" >"$LOG_DIR/tim_hsv_select.log" 2>&1 || true
+  fi
+
+  if [[ "$RUN_TIM_MARS" == "true" ]]; then
+    echo "[info] selecting target via TIM-MARS select topic: $target_id"
+    ros2 topic pub --once \
+      --qos-reliability best_effort \
+      /target_memory_mars/select \
+      std_msgs/msg/UInt32 \
+      "{data: ${target_id}}" >"$LOG_DIR/tim_mars_select.log" 2>&1 || true
   fi
 }
 
@@ -197,21 +271,30 @@ verify_target() {
     sleep 1
   done
 
-  if [[ "$TIM_MODE" == "on" ]]; then
+  if [[ "$RUN_TIM_HSV" == "true" ]]; then
     echo "[info] verifying /target_memory id $target_id"
     for _ in {1..30}; do
-      if timeout 2s ros2 topic echo /target_memory --once >"$LOG_DIR/target_memory_once.txt" 2>/dev/null; then
-        if grep -q "id: ${target_id}" "$LOG_DIR/target_memory_once.txt"; then
+      if timeout 2s ros2 topic echo /target_memory --once >"$LOG_DIR/target_memory_hsv_once.txt" 2>/dev/null; then
+        if grep -q "id: ${target_id}" "$LOG_DIR/target_memory_hsv_once.txt"; then
           echo "[ok] /target_memory has id $target_id"
-          return 0
+          break
         fi
       fi
       sleep 1
     done
+  fi
 
-    echo "[error] /target_memory did not lock id $target_id"
-    tail -n 80 "$LOG_DIR/target_memory.log" || true
-    return 1
+  if [[ "$RUN_TIM_MARS" == "true" ]]; then
+    echo "[info] verifying /target_memory_mars id $target_id"
+    for _ in {1..30}; do
+      if timeout 2s ros2 topic echo /target_memory_mars --once >"$LOG_DIR/target_memory_mars_once.txt" 2>/dev/null; then
+        if grep -q "id: ${target_id}" "$LOG_DIR/target_memory_mars_once.txt"; then
+          echo "[ok] /target_memory_mars has id $target_id"
+          break
+        fi
+      fi
+      sleep 1
+    done
   fi
 
   return 0

@@ -1,0 +1,13 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+2026-05-14__hard_reentry_ocsort_tim_on_target1,0.00,5.80,NO_TARGET_SELECTED,true,1,2,pre_selection,target visible but no target selected yet
+2026-05-14__hard_reentry_ocsort_tim_on_target1,5.80,54.40,CORRECT_TARGET,true,1,2,correct_tracking,selected black-shirt target visible as id 1
+2026-05-14__hard_reentry_ocsort_tim_on_target1,54.40,55.10,CORRECT_TARGET,true,,2,transition_uncertain,crossing interval with intermittent selected-person detection
+2026-05-14__hard_reentry_ocsort_tim_on_target1,55.10,73.90,CORRECT_TARGET,true,1,2;96,correct_tracking,selected black-shirt target remains correct as id 1; review event 01 confirms TIM switch away is wrong
+2026-05-14__hard_reentry_ocsort_tim_on_target1,73.90,75.90,CORRECT_TARGET,true,,1,transition_uncertain,short uncertain transition before black-shirt target receives new tracker id
+2026-05-14__hard_reentry_ocsort_tim_on_target1,75.90,86.00,CORRECT_TARGET,true,96,1,manual_review_corrected,selected black-shirt target is visible as id 96; review event 02 confirms TIM remains on wrong checkered-shirt distractor
+2026-05-14__hard_reentry_ocsort_tim_on_target1,86.00,87.80,CORRECT_TARGET,false,,1,target_not_visible,brief interval where selected target is not reliably identifiable
+2026-05-14__hard_reentry_ocsort_tim_on_target1,87.80,105.10,CORRECT_TARGET,true,113,1;142,manual_review_corrected,selected black-shirt target is visible as id 113 through review event 03; TIM is wrong until recovering near review event 04
+2026-05-14__hard_reentry_ocsort_tim_on_target1,105.10,106.40,CORRECT_TARGET,false,,1,target_not_visible,crossing/occlusion; selected person not reliably identifiable
+2026-05-14__hard_reentry_ocsort_tim_on_target1,106.40,111.75,CORRECT_TARGET,true,142,1;161,manual_review_corrected,selected black-shirt target is visible as id 142; TIM is correct before the next wrong switch
+2026-05-14__hard_reentry_ocsort_tim_on_target1,111.75,116.50,CORRECT_TARGET,true,161,1;142,manual_review_corrected,selected black-shirt target changes to id 161; review event 05 confirms TIM switches wrongly to the checkered-shirt distractor
+2026-05-14__hard_reentry_ocsort_tim_on_target1,116.50,136.80,CORRECT_TARGET,true,161,1;173,recovered_target,selected black-shirt target remains visible as id 161; review event 06 confirms TIM recovers correctly

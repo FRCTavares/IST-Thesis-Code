@@ -36,6 +36,7 @@ setup(
             'control_ref_node = thesis_bringup.nodes.control_ref_node:main',
             "mavros_imu_monitor_node = thesis_bringup.nodes.mavros_imu_monitor_node:main",
             "target_memory_node = thesis_bringup.nodes.target_memory_node:main",
+            "target_memory_mars_node = thesis_bringup.nodes.target_memory_mars_node:main",
         ],
     },
 )

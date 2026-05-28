@@ -82,16 +82,25 @@ Options:
     --perception-gc-on                  Enable Python cyclic GC in perception node (default)
     --perception-no-stub-fallback       Fail fast if Hailo backend initialization fails (default)
     --perception-allow-stub-fallback    Allow stub fallback when Hailo backend initialization fails
-    --target-memory                    Enable TIM selected-target memory, default
-    --no-target-memory                 Disable TIM selected-target memory
-    --target-memory-appearance         Enable TIM-V1B image appearance extraction
-    --no-target-memory-appearance      Disable TIM-V1B image appearance extraction, default
+    --target-memory <off|hsv|mars|both>
+                                          Select TIM mode, default: hsv
+    --target-memory-appearance         Enable TIM-HSV image appearance extraction
     --target-memory-appearance-image-topic <topic>
                                           Image topic for TIM appearance, default: /camera/dashboard
     --target-memory-appearance-min-bbox-height <px>
                                           Minimum bbox height for appearance crops, default: 30.0
     --target-memory-appearance-max-image-age-ms <ms>
-                                          Maximum latest-image age for appearance features, default: 250.0
+                                          Maximum latest-image age for HSV appearance features, default: 250.0
+    --target-memory-mars-image-topic <topic>
+                                          Image topic for TIM-MARS, default: /camera/dashboard
+    --target-memory-mars-model-path <path>
+                                          MARS-small128 .pb path
+    --target-memory-mars-batch-size <N>
+                                          TIM-MARS ReID batch size, default: 32
+    --target-memory-mars-appearance-weight <F>
+                                          TIM-MARS appearance weight, default: 0.12
+    --target-memory-mars-min-similarity <F>
+                                          TIM-MARS minimum appearance similarity, default: 0.35
     --no-dashboard                      Disable dashboard bridge
     --no-tracker                        Do not start tracker node
     --no-target                         Deprecated alias; target selection is now handled by dashboard bridge API
@@ -141,7 +150,9 @@ Day-to-day options:
     --perception-inference-backend <name>
                                       Perception backend (default: hailo_direct)
     --no-tracker                      Do not start tracker node
-    --target-memory-appearance        Enable TIM-V1B image appearance extraction
+    --target-memory <off|hsv|mars|both>
+                                      Select TIM mode, default: hsv
+    --target-memory-appearance        Enable TIM-HSV image appearance extraction
     --no-target                       Deprecated alias; target selection is now handled by dashboard bridge API
     --no-control                      Do not start control_ref_node
     --no-dashboard                    Disable dashboard bridge
