@@ -833,6 +833,124 @@ if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
     fi
 fi
 
+# Start MAVROS telemetry when --record-mavros is enabled.
+# This keeps --record-mavros self-contained:
+# launch MAVROS, wait for FCU connection, request streams, then start bag recording.
+if [[ "$RECORD_MAVROS" -eq 1 ]]; then
+    MAVROS_START_TS="$(date +%s)"
+
+    mavros_elapsed() {
+        local now
+        now="$(date +%s)"
+        printf "%02ds" "$((now - MAVROS_START_TS))"
+    }
+
+    mavros_log() {
+        local level="$1"
+        shift
+        echo "[$level] [mavros $(mavros_elapsed)] $*"
+    }
+
+    MAVROS_FCU_URL="${MAVROS_FCU_URL:-udp://:14550@}"
+    MAVROS_TGT_SYSTEM="${MAVROS_TGT_SYSTEM:-9}"
+    MAVROS_TGT_COMPONENT="${MAVROS_TGT_COMPONENT:-1}"
+    MAVROS_STREAM_RATE="${MAVROS_STREAM_RATE:-50}"
+
+    mavros_log info "--record-mavros enabled: starting MAVROS telemetry"
+    mavros_log info "config: fcu_url=${MAVROS_FCU_URL} target=${MAVROS_TGT_SYSTEM}.${MAVROS_TGT_COMPONENT} stream_rate=${MAVROS_STREAM_RATE}Hz"
+
+    if timeout 3 ros2 topic echo /mavros/state --once 2>/dev/null | grep -q "connected: true"; then
+        mavros_log ok "MAVROS already connected"
+    else
+        mavros_log info "launching MAVROS node"
+        start_ros_bg mavros ros2 launch mavros apm.launch \
+            fcu_url:="$MAVROS_FCU_URL" \
+            tgt_system:="$MAVROS_TGT_SYSTEM" \
+            tgt_component:="$MAVROS_TGT_COMPONENT"
+
+        mavros_log info "waiting for MAVROS connection on /mavros/state, timeout 60s"
+        MAVROS_CONNECTED=0
+
+        for i in {1..60}; do
+            if timeout 3 ros2 topic echo /mavros/state --once 2>/dev/null | grep -q "connected: true"; then
+                MAVROS_CONNECTED=1
+                break
+            fi
+
+            if (( i % 5 == 0 )); then
+                mavros_log info "still waiting for MAVROS connection, ${i}/60s"
+            fi
+
+            sleep 1
+        done
+
+        if [[ "$MAVROS_CONNECTED" -ne 1 ]]; then
+            mavros_log error "MAVROS did not report connected: true on /mavros/state"
+            stop_stack
+            exit 1
+        fi
+
+        mavros_log ok "MAVROS connected"
+    fi
+
+    mavros_log info "waiting for /mavros/set_stream_rate service, timeout 10s"
+    MAVROS_STREAM_SERVICE_READY=0
+
+    for i in {1..20}; do
+        if ros2 service list 2>/dev/null | grep -qx "/mavros/set_stream_rate"; then
+            MAVROS_STREAM_SERVICE_READY=1
+            break
+        fi
+
+        if (( i % 5 == 0 )); then
+            mavros_log info "still waiting for stream-rate service, attempt ${i}/20"
+        fi
+
+        sleep 0.5
+    done
+
+    if [[ "$MAVROS_STREAM_SERVICE_READY" -ne 1 ]]; then
+        mavros_log error "/mavros/set_stream_rate service not available"
+        stop_stack
+        exit 1
+    fi
+
+    mavros_log ok "stream-rate service available"
+    mavros_log info "requesting MAVROS streams at ${MAVROS_STREAM_RATE} Hz"
+
+    if ! ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate \
+        "{stream_id: 0, message_rate: ${MAVROS_STREAM_RATE}, on_off: true}"; then
+        mavros_log error "failed to request MAVROS stream rate"
+        stop_stack
+        exit 1
+    fi
+
+    mavros_log info "checking /mavros/imu/data_raw, timeout 10s"
+    MAVROS_IMU_READY=0
+
+    for i in {1..20}; do
+        if timeout 2 ros2 topic echo /mavros/imu/data_raw --once 2>/dev/null | grep -q "header:"; then
+            MAVROS_IMU_READY=1
+            break
+        fi
+
+        if (( i % 5 == 0 )); then
+            mavros_log info "still waiting for raw IMU sample, attempt ${i}/20"
+        fi
+
+        sleep 0.5
+    done
+
+    if [[ "$MAVROS_IMU_READY" -ne 1 ]]; then
+        mavros_log warn "/mavros/imu/data_raw did not publish during startup check"
+        mavros_log warn "bag recording will still include MAVROS topics, but IMU stream may be missing"
+    else
+        mavros_log ok "MAVROS raw IMU stream detected"
+    fi
+
+    mavros_log ok "MAVROS telemetry setup finished"
+fi
+
 if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     mkdir -p "$BAG_OUT_ROOT"
 
@@ -880,6 +998,11 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     if [[ "$RECORD_MAVROS" -eq 1 ]]; then
         VIDEO_BAG_TOPICS+=(
             /mavros/state
+            /mavros/imu/data_raw
+            /mavros/imu/data
+            /mavros/imu/mag
+            /mavros/imu/static_pressure
+            /mavros/imu/temperature_imu
             /mavros/local_position/pose
             /mavros/local_position/velocity_local
             /mavros/setpoint_velocity/cmd_vel_unstamped
