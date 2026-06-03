@@ -134,11 +134,24 @@ if [[ "$RUN_TIM_HSV" == "true" ]]; then
     -p mirror_raw_target_selection:=$([[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]] && echo false || echo true) \
     -p appearance_enabled:=true \
     -p appearance_image_topic:=/camera/image_raw \
+    -p accept_score_locked:=${TIM_ACCEPT_SCORE_LOCKED:-0.52} \
+    -p accept_score_lost:=${TIM_ACCEPT_SCORE_LOST:-0.60} \
+    -p ambiguity_margin:=${TIM_AMBIGUITY_MARGIN:-0.07} \
+    -p appearance_weight:=${TIM_APPEARANCE_WEIGHT:-0.12} \
+    -p appearance_min_similarity:=${TIM_APPEARANCE_MIN_SIMILARITY:-0.35} \
+    -p appearance_ambiguous_only:=${TIM_APPEARANCE_AMBIGUOUS_ONLY:-true} \
     -p appearance_update_cooldown_after_reacquire_frames:=${TIM_APPEARANCE_UPDATE_COOLDOWN_FRAMES:-0} \
     -p appearance_challenge_enabled:=${TIM_APPEARANCE_CHALLENGE_ENABLED:-false} \
     -p appearance_challenge_min_similarity:=${TIM_APPEARANCE_CHALLENGE_MIN_SIMILARITY:-0.50} \
     -p appearance_challenge_margin:=${TIM_APPEARANCE_CHALLENGE_MARGIN:-0.20} \
     -p appearance_challenge_min_total:=${TIM_APPEARANCE_CHALLENGE_MIN_TOTAL:-0.45} \
+    -p rank_aware_reacquisition_enabled:=${TIM_RANK_AWARE_REACQUISITION_ENABLED:-false} \
+    -p rank_aware_lost_min_total:=${TIM_RANK_AWARE_LOST_MIN_TOTAL:-0.40} \
+    -p rank_aware_lost_min_geom:=${TIM_RANK_AWARE_LOST_MIN_GEOM:-0.10} \
+    -p rank_aware_lost_min_app:=${TIM_RANK_AWARE_LOST_MIN_APP:-0.05} \
+    -p rank_aware_lost_app_margin:=${TIM_RANK_AWARE_LOST_APP_MARGIN:-0.03} \
+    -p rank_aware_confirm_frames:=${TIM_RANK_AWARE_CONFIRM_FRAMES:-1} \
+    -p rank_aware_missing_ttl_frames:=${TIM_RANK_AWARE_MISSING_TTL_FRAMES:-8} \
     >"$LOG_DIR/target_memory_hsv.log" 2>&1 &
 fi
 
@@ -158,7 +171,15 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p mars_batch_size:=${MARS_BATCH_SIZE:-32} \
     -p appearance_weight:=${MARS_APPEARANCE_WEIGHT:-0.12} \
     -p appearance_min_similarity:=${MARS_APPEARANCE_MIN_SIMILARITY:-0.35} \
+    -p appearance_ambiguous_only:=${MARS_APPEARANCE_AMBIGUOUS_ONLY:-true} \
     -p appearance_update_cooldown_after_reacquire_frames:=${MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES:-0} \
+    -p appearance_challenge_enabled:=${MARS_APPEARANCE_CHALLENGE_ENABLED:-false} \
+    -p appearance_challenge_min_similarity:=${MARS_APPEARANCE_CHALLENGE_MIN_SIMILARITY:-0.50} \
+    -p appearance_challenge_margin:=${MARS_APPEARANCE_CHALLENGE_MARGIN:-0.20} \
+    -p appearance_challenge_min_total:=${MARS_APPEARANCE_CHALLENGE_MIN_TOTAL:-0.45} \
+    -p appearance_conservative_enabled:=${MARS_APPEARANCE_CONSERVATIVE_ENABLED:-false} \
+    -p appearance_conservative_min_similarity:=${MARS_APPEARANCE_CONSERVATIVE_MIN_SIMILARITY:-0.65} \
+    -p appearance_conservative_margin:=${MARS_APPEARANCE_CONSERVATIVE_MARGIN:-0.25} \
     -p rank_aware_reacquisition_enabled:=${MARS_RANK_AWARE_REACQUISITION_ENABLED:-true} \
     -p rank_aware_confirm_frames:=${MARS_RANK_AWARE_CONFIRM_FRAMES:-1} \
     -p rank_aware_missing_ttl_frames:=${MARS_RANK_AWARE_MISSING_TTL_FRAMES:-8} \

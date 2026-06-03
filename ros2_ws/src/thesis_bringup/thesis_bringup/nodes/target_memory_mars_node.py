@@ -92,6 +92,9 @@ class TargetMemoryMarsNode(Node):
         self.declare_parameter("appearance_challenge_min_similarity", 0.50)
         self.declare_parameter("appearance_challenge_margin", 0.20)
         self.declare_parameter("appearance_challenge_min_total", 0.45)
+        self.declare_parameter("appearance_conservative_enabled", False)
+        self.declare_parameter("appearance_conservative_min_similarity", 0.65)
+        self.declare_parameter("appearance_conservative_margin", 0.25)
 
         # TIM-MARS backend.
         self.declare_parameter("mars_model_path", "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb")
@@ -161,6 +164,9 @@ class TargetMemoryMarsNode(Node):
             appearance_challenge_min_similarity=float(self.get_parameter("appearance_challenge_min_similarity").value),
             appearance_challenge_margin=float(self.get_parameter("appearance_challenge_margin").value),
             appearance_challenge_min_total=float(self.get_parameter("appearance_challenge_min_total").value),
+            appearance_conservative_enabled=bool(self.get_parameter("appearance_conservative_enabled").value),
+            appearance_conservative_min_similarity=float(self.get_parameter("appearance_conservative_min_similarity").value),
+            appearance_conservative_margin=float(self.get_parameter("appearance_conservative_margin").value),
             rank_aware_reacquisition_enabled=bool(self.get_parameter("rank_aware_reacquisition_enabled").value),
             rank_aware_lost_min_total=float(self.get_parameter("rank_aware_lost_min_total").value),
             rank_aware_lost_min_geom=float(self.get_parameter("rank_aware_lost_min_geom").value),

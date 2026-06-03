@@ -138,6 +138,12 @@ class TargetMemoryConfig:
     appearance_challenge_margin: float = 0.20
     appearance_challenge_min_total: float = 0.45
 
+    # TIM-MARS conservative output filter.
+    # When enabled, a candidate must have strong and separated appearance evidence.
+    appearance_conservative_enabled: bool = False
+    appearance_conservative_min_similarity: float = 0.65
+    appearance_conservative_margin: float = 0.25
+
     # TIM-V2K experimental rank-aware LOST/UNCERTAIN reacquisition.
     # Disabled by default to preserve TIM-V1 behaviour.
     rank_aware_reacquisition_enabled: bool = False
@@ -688,6 +694,34 @@ class TargetIdentityMemory:
             self._m.confirmed_after_reacquire += 1
         elif reacquired:
             self._m.confirmed_after_reacquire = 0
+
+        if self.cfg.appearance_conservative_enabled and best_score.appearance_used:
+            appearance_scores = sorted(
+                [
+                    s.appearance_raw
+                    for s in all_scores
+                    if s.appearance_used and s.geometry_allows_appearance
+                ],
+                reverse=True,
+            )
+            selected_app = best_score.appearance_raw
+            second_app = appearance_scores[1] if len(appearance_scores) > 1 else 0.0
+            app_margin = selected_app - second_app
+
+            if (
+                selected_app < self.cfg.appearance_conservative_min_similarity
+                or app_margin < self.cfg.appearance_conservative_margin
+            ):
+                return self._miss(
+                    reason=(
+                        "appearance_conservative_reject:"
+                        f" selected_app={selected_app:.3f}"
+                        f" second_app={second_app:.3f}"
+                        f" margin={app_margin:.3f}"
+                    ),
+                    best_score=best_score,
+                    all_scores=all_scores,
+                )
 
         if reacquired and self._m.confirmed_after_reacquire < self.cfg.min_confirm_frames_after_reacquire:
             new_state = TargetState.REACQUIRED
