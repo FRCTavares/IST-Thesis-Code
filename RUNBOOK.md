@@ -20,7 +20,6 @@ From `tools/start_live_stack.sh`:
 - MAVROS mirroring: disabled by default
 - Dashboard bridge and web video: enabled by default
 - Video bag recording: disabled by default, enabled with `--record-video`
-- Legacy detector port `:5556`: expected only in `--perception-mode legacy`
 
 ## Scope and assumptions
 
@@ -49,8 +48,8 @@ What this script does:
 
 1. Preflight and stale-process cleanup.
 2. ROS env and log directory setup.
-3. Perception path readiness by mode: legacy starts container detection service; single-process starts perception pipeline node.
-4. Node startup order: camera -> (legacy inference OR single-process perception) -> tracker -> dashboard bridge -> control.
+3. Perception readiness: host single-process perception starts `perception_pipeline_node`.
+4. Node startup order: camera -> single-process perception -> tracker -> dashboard bridge -> control.
 5. Interactive runtime with `status`, `ids`, `target <id>`, `clear-target`, `clear`, and `stop` commands.
 
 Default:
@@ -63,7 +62,7 @@ Useful flags:
 
 - `./tools/start_live_stack.sh --profile safe-camera`
 - `./tools/start_live_stack.sh --profile performance`
-- `./tools/start_live_stack.sh --perception-mode legacy`
+- `./tools/start_live_stack.sh`
 - `./tools/start_live_stack.sh --perception-mode single-process`
 - `./tools/start_live_stack.sh --tracker sort`
 - `./tools/start_live_stack.sh --tracker bytetrack`
@@ -129,13 +128,13 @@ Verification checkpoint for a healthy live stack:
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
 ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/detections|/timing|/target'
-ss -ltnp | rg ':5556|:8080|:8090|:8765|:5173'
+ss -ltnp | rg ':8080|:8090|:8765|:5173'
 ```
 
 Expected:
 
 - Core topics are listed.
-- Required service ports are listening. Note: :5556 is only expected in legacy perception mode.
+- Required service ports are listening for dashboard video, API, WebSocket, and UI services.
 
 Run UI in parallel (second terminal):
 
@@ -163,8 +162,6 @@ Verification checkpoint for the UI:
 - Dashboard connects to the telemetry WebSocket and backend API when running in backend mode.
 
 ## 3) Manual startup
-
-The legacy ZMQ container path was removed from the active thesis repository after the 2026-06-04 cleanup.
 
 Supported live runtime:
 
@@ -322,7 +319,7 @@ ros2 topic echo /camera/fps --once
 Ports check:
 
 ```bash
-ss -ltnp | rg ':5556|:8080|:8090|:8765|:5173'
+ss -ltnp | rg ':8080|:8090|:8765|:5173'
 ```
 
 ROS graph refresh:
@@ -355,9 +352,9 @@ Camera-startup notes:
 
 Additional common failures:
 
-- Inference client timeout spam (legacy mode only):
-  - Check detector service inside container is running.
-  - Confirm `addr:=tcp://127.0.0.1:5556` (or host/IP override) matches service bind.
+- Perception pipeline startup failure:
+  - Check `perception_pipeline.log` in the latest live-stack log directory.
+  - Confirm Hailo host dependencies and local runtime assets are available when using the Hailo backend.
 - Empty ROS graph:
   - Verify `ROS_DOMAIN_ID` matches all terminals.
   - Re-source `/opt/ros/jazzy/setup.bash` and workspace overlay.
@@ -377,7 +374,7 @@ tail -n 80 ros2_ws/log/live_stack/latest/perception_pipeline.log
 tail -n 80 ros2_ws/log/live_stack/latest/inference.log
 ```
 
-Note: `perception_pipeline.log` exists in single-process mode; `inference.log` exists in legacy mode.
+Note: `perception_pipeline.log` is the active perception log.
 
 ## 7) Control validation quick checks
 
@@ -421,7 +418,7 @@ Expected behavior from validated baseline:
 
 ## 9) Last validated assumptions
 
-- Date: 2026-05-04
+- Date: 2026-06-04
 - ROS: Jazzy
 - Default live path: single-process perception via `tools/start_live_stack.sh`
-- Legacy compose path: removed. The active runtime is the host/single-process live stack.
+- Active runtime: host/single-process live stack via `tools/start_live_stack.sh`.

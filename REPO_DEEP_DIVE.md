@@ -40,16 +40,13 @@ When target memory is enabled, TIM consumes tracker output and selected-target c
 
 `/tracks + selected target -> TIM -> /target_memory + /target_memory/status`
 
-### Shape Z (rollback): legacy ZMQ path
+### Removed path: legacy ZMQ/container perception
 
-1. Camera publishes `/camera/image_raw`.
-2. `perception_pipeline_node` runs the active host/single-process perception path.
-3. Inference client publishes `/detections` and `/timing`.
-4. Downstream target publication still flows through `dashboard_bridge_node`.
+The legacy ZMQ/container perception path was removed from the active runtime after the 2026-06-04 cleanup.
 
-Conceptual chain:
+It is no longer a rollback path. The supported live path is:
 
-`camera -> /camera/image_raw -> inference_client_node (ZMQ req/rep) -> detection_zmq -> /detections -> tracker -> /tracks -> dashboard_bridge_node -> /target`
+`camera -> /camera/image_raw -> perception_pipeline_node -> /detections -> tracker -> /tracks -> dashboard_bridge_node -> /target`
 
 ### Replay path (evaluation)
 
@@ -94,8 +91,8 @@ Core evaluation principle:
   - Launch composition and primary runtime nodes.
   - Owns `camera_capture_node`, `perception_pipeline_node`, `dashboard_bridge_node`, `control_ref_node`, and launch entrypoints.
 - `thesis_inference_client`
-  - Legacy bridge from ROS image topic to container detector service via ZMQ.
-  - Used only in `--perception-mode legacy`.
+  - Historical bridge package for the removed ZMQ/container path.
+  - Not part of the active live runtime.
 - `thesis_tracker`
   - Tracking backend abstraction (`sort`, `ocsort`, `bytetrack`, `deepsort`) and `/tracks` publication.
   - DeepSORT uses the MARS ReID model when configured with `models/reid/mars-small128.pb`.
@@ -104,10 +101,7 @@ Core evaluation principle:
 
 ### Inference service (`infer_service`)
 
-- Legacy ZMQ detector path removed from the active runtime.
-  - Legacy detector service process (container-side).
-- `zmq_pub.py`
-  - Utility helper for ZMQ-facing workflows.
+- Historical ZMQ-facing helpers are retained only where still useful for offline/debug workflows.
 - `opt/tappas_runtime_3_31`
   - Optional local runtime assets used by single-process mode when available.
 
@@ -139,9 +133,9 @@ Core evaluation principle:
 
 - Host preflight: stale-process cleanup, camera media graph checks, and an optional stream probe only when requested.
 - Environment setup: ROS overlay sourcing + run-scoped log routing.
-- Perception readiness by mode:
-  - Legacy compose/container mode removed from the active runtime.
-  - `single-process`: host `perception_pipeline_node` startup (optional local tappas runtime assets).
+- Perception readiness:
+  - Host `perception_pipeline_node` startup using the single-process path.
+  - Optional local TAPPAS runtime assets are used when present.
 - Downstream graph startup: tracker, dashboard bridge, web video, and control.
 - Runtime shell loop with `status`, `ids`, `target <id>`, `clear-target`, `clear`, and `stop` commands.
 
@@ -287,7 +281,6 @@ Interpretation:
 
 Common endpoints:
 
-- Legacy detector req/rep: `:5556` (legacy mode only)
 - Web video server: `:8080`
 - Control API: `:8090`
 - Dashboard WebSocket: `:8765`
@@ -309,7 +302,7 @@ The repository separates concerns by responsibility rather than a single rigid d
 
 1. ROS-critical orchestration and runtime nodes stay in `ros2_ws`.
 2. Single-process mode minimizes inference transport latency for live operation.
-3. Legacy container mode remains available as rollback path.
+3. Removed legacy runtime paths are kept out of the operational workflow.
 4. UI remains independently runnable in `user-interface`.
 5. Analysis and validation stay scriptable and reproducible in `tools` plus the report roots.
 
