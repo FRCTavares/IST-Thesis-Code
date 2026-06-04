@@ -11,13 +11,12 @@ Root documentation is split by purpose:
 - `README.md` (this file): orientation, quick paths, and navigation.
 - `RUNBOOK.md`: command source of truth for setup, live operation, replay, analysis, and troubleshooting.
 - `REPO_DEEP_DIVE.md`: architecture, boundaries, package responsibilities, and repository layout.
-- `LIVE_STACK_CAMERA_RECOVERY.md`: camera failure triage/recovery for RPi5 + TEVS incidents.
-- `SINGLE_PROCESS_PERCEPTION_MIGRATION_PLAN.md`: migration history, performance gates, and optimization backlog.
+- `docs/Debug/LIVE_STACK_CAMERA_RECOVERY.md`: camera failure triage/recovery for RPi5 + TEVS incidents.
 
 ## Runtime snapshot
 
 - Default live perception mode is `single-process` via `./tools/start_live_stack.sh`.
-- Legacy frame-ZMQ mode remains available as `--perception-mode legacy` for rollback and debugging.
+- Legacy frame-ZMQ mode has been removed. The active runtime uses host/single-process perception.
 - Target selection is user-driven through `dashboard_bridge_node` and `POST /api/target`.
 - Live logs are centralized under `ros2_ws/log/live_stack/<run-id>` and UI logs under `ros2_ws/log/ui_stack/<run-id>`.
 
@@ -83,7 +82,7 @@ If you need full option coverage, including tracker and perception tuning:
 Provide an end-to-end experimental stack that can:
 
 1. Ingest camera frames in ROS 2.
-2. Run detector inference through either the default single-process Hailo pipeline or the legacy ZMQ rollback path.
+2. Run detector inference through the host/single-process Hailo pipeline.
 3. Track candidates and expose explicit user-driven target selection for control and UI.
 4. Maintain selected-target identity through TIM and publish `/target_memory` when target memory is enabled.
 5. Publish telemetry/video/control interfaces for real-time operation.
@@ -112,14 +111,6 @@ cd "$THESIS_ROOT"
 Use `--mode offline` when you want a single local snapshot without any backend connection.
 Replay and analysis commands are in `RUNBOOK.md`.
 
-### Path C: Legacy perception rollback
-
-Use only when you need the historical frame-ZMQ path:
-
-```bash
-cd "$THESIS_ROOT"
-./tools/start_live_stack.sh --perception-mode legacy
-```
 
 ## Quick start
 
@@ -176,17 +167,17 @@ cd "$THESIS_ROOT"
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
 ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/detections|/tracks|/target|/target_memory|/timing'
-ss -ltnp | rg ':5556|:8080|:8090|:8765|:5173'
+ss -ltnp | rg ':8080|:8090|:8765|:5173'
 ```
 
-Note: `:5556` is expected only in legacy mode.
+Note: the active live stack uses dashboard/API/WebSocket ports only; the old detector req/rep port is not required.
 
 ## Fast failure triage
 
 If live startup aborts, check in this order:
 
-1. Launcher logs in `ros2_ws/log/live_stack/latest/` (camera/inference process logs are split per component).
-2. Camera-specific recovery actions in `LIVE_STACK_CAMERA_RECOVERY.md`.
+1. Launcher logs in `ros2_ws/log/live_stack/latest/` (camera, perception, tracker, dashboard, and control logs are split per component).
+2. Camera-specific recovery actions in `docs/Debug/LIVE_STACK_CAMERA_RECOVERY.md`.
 3. Full troubleshooting and manual fallback steps in `RUNBOOK.md` section 6.
 
 ## Common workflows
@@ -235,5 +226,4 @@ Repository operation is considered healthy when all three are true:
 
 - `RUNBOOK.md` for exact commands and troubleshooting.
 - `REPO_DEEP_DIVE.md` for architecture and boundaries.
-- `LIVE_STACK_CAMERA_RECOVERY.md` for camera incident response.
-- `SINGLE_PROCESS_PERCEPTION_MIGRATION_PLAN.md` for migration/performance context.
+- `docs/Debug/LIVE_STACK_CAMERA_RECOVERY.md` for camera incident response.

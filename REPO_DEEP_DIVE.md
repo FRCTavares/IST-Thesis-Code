@@ -314,7 +314,6 @@ This supports both day-to-day live operation and controlled scientific evaluatio
 2. `RUNBOOK.md`
 3. `REPO_DEEP_DIVE.md`
 4. `LIVE_STACK_CAMERA_RECOVERY.md` (hardware incidents)
-5. `SINGLE_PROCESS_PERCEPTION_MIGRATION_PLAN.md` (performance context)
 
 Then inspect package-level source files for the subsystem you modify.
 
@@ -331,7 +330,6 @@ If startup flags, topic names, ports, tracker baselines, TIM topics, evaluation 
 If camera diagnostics or migration gates change materially, update these as well:
 
 1. `LIVE_STACK_CAMERA_RECOVERY.md`
-2. `SINGLE_PROCESS_PERCEPTION_MIGRATION_PLAN.md`
 
 Contributing checklist (quick):
 
