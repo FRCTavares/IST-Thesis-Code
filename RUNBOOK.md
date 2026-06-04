@@ -162,84 +162,17 @@ Verification checkpoint for the UI:
 - Open `http://127.0.0.1:5173` or the remote host IP and chosen port.
 - Dashboard connects to the telemetry WebSocket and backend API when running in backend mode.
 
-## 3) Manual startup (legacy ZMQ path, troubleshooting only)
+## 3) Manual startup
 
-This section reproduces the legacy deployment shape manually.
-- Useful for isolating startup faults.
-- Not the recommended day-to-day path.
-- Preferred path remains `./tools/start_live_stack.sh`.
+The legacy ZMQ container path was removed from the active thesis repository after the 2026-06-04 cleanup.
 
-Terminal 1 - Camera:
+Supported live runtime:
 
-```bash
-cd $THESIS_ROOT/ros2_ws
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-export ROS_LOG_DIR=$THESIS_ROOT/ros2_ws/log/runtime/manual_camera_$(date +%Y-%m-%d__%H-%M-%S)
-mkdir -p "$ROS_LOG_DIR"
-ros2 launch thesis_bringup camera_bringup.launch.py
-```
+    ./tools/start_live_stack.sh
 
-Terminal 2 - Inference service in container:
+Outdoor recording command:
 
-```bash
-cd "$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
-docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
-
-docker exec -it pi-ai-kit-ubuntu-hailo-ubuntu-pi-1 bash
-# inside container
-VENV=/root/thesis_deprecated/hailo-rpi5-examples/venv_hailo_rpi_examples
-export PYTHONPATH=/root/thesis_deprecated/hailo-rpi5-examples:${PYTHONPATH:-}
-cd /root/thesis_service
-export HAILO_FRAME_SOURCE=ros
-export HAILO_REQREP_BIND=tcp://0.0.0.0:5556
-export HAILO_INFER_WIDTH=640
-export HAILO_INFER_HEIGHT=640
-export HAILO_VIDEO_SINK=fakesink
-export HAILO_POST_FUNC=filter
-$VENV/bin/python /root/thesis_deprecated/infer_service/detection_zmq.py
-```
-
-Terminal 3+ - Remaining nodes:
-
-```bash
-cd $THESIS_ROOT/ros2_ws
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-
-ros2 run thesis_inference_client inference_client_node --ros-args \
-  -p image_topic:=/camera/image_raw \
-  -p addr:=tcp://127.0.0.1:5556 \
-  -p queue_size:=1 \
-  -p img_w:=640 \
-  -p img_h:=640 \
-  -p min_score:=0.35
-
-ros2 run thesis_tracker tracker_node
-ros2 run thesis_bringup dashboard_bridge_node --ros-args -p img_w:=640 -p img_h:=640
-ros2 run web_video_server web_video_server --ros-args -p port:=8080
-```
-
-Targeting note:
-
-- Target selection is user-driven through `dashboard_bridge_node`.
-- `POST /api/target` is the only supported way to select a target.
-- There is no automatic target-selection fallback in the live stack, replay flows, or first ROS 2 slice.
-- When no target is explicitly selected, `/target` publishes the empty target state (`id=0`, zero geometry, zero score or quality).
-
-Dashboard:
-
-- Video: http://<PI_IP>:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45
-- Telemetry: ws://<PI_IP>:8765
-- Control API: http://<PI_IP>:8090
-
-Manual mode verification:
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source "$THESIS_ROOT/ros2_ws/install/setup.bash"
-ros2 node list | rg 'inference_client_node|detector_node|tracker_node|dashboard_bridge_node'
-```
+    ./tools/start_live_stack.sh --record-video --record-mavros --bag-tag outdoor_01
 
 ## 4) Record flight video bags
 
@@ -491,4 +424,4 @@ Expected behavior from validated baseline:
 - Date: 2026-05-04
 - ROS: Jazzy
 - Default live path: single-process perception via `tools/start_live_stack.sh`
-- Legacy compose path: `$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu` (with `~/pi-ai-kit-ubuntu` compatibility fallback)
+- Legacy compose path: removed. The active runtime is the host/single-process live stack.

@@ -15,6 +15,7 @@ from typing import Any
 import math
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 import websockets
 from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
 from rcl_interfaces.srv import SetParameters
@@ -401,35 +402,10 @@ class DashboardBridgeNode(Node):
 
         hef_path = f"/root/thesis_service/resources/hefs/{hef_name}"
 
-        cmd = f"""
-set -euo pipefail
-for pid in $(pgrep -f 'detection_zmq.py' || true); do
-  if [ "$pid" != "$$" ]; then
-    kill "$pid" >/dev/null 2>&1 || true
-  fi
-done
-HAILO_EXAMPLES_DIR=/root/thesis_deprecated/hailo-rpi5-examples
-if [ ! -d "$HAILO_EXAMPLES_DIR" ]; then
-    HAILO_EXAMPLES_DIR=/root/hailo-rpi5-examples
-fi
-VENV="$HAILO_EXAMPLES_DIR/venv_hailo_rpi_examples"
-export PYTHONPATH="$HAILO_EXAMPLES_DIR:${{PYTHONPATH:-}}"
-DETECTION_ENTRY=/root/thesis_deprecated/infer_service/detection_zmq.py
-if [ ! -f "$DETECTION_ENTRY" ]; then
-    echo "missing detection entrypoint: $DETECTION_ENTRY" >&2
-    exit 1
-fi
-cd /root/thesis_service
-export HAILO_FRAME_SOURCE=ros
-export HAILO_REQREP_BIND={self._detector_bind}
-export HAILO_INFER_WIDTH={self._detector_width}
-export HAILO_INFER_HEIGHT={self._detector_height}
-export HAILO_INFER_FPS={self._detector_fps}
-export HAILO_VIDEO_SINK=fakesink
-export HAILO_POST_FUNC=filter
-export HAILO_DET_LABEL={self._detector_label}
-export HAILO_HEF_PATH={hef_path}
-nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
+        cmd = """
+echo "legacy container model switching was removed from the active thesis repository" >&2
+echo "use the host/single-process runtime launched by tools/start_live_stack.sh" >&2
+exit 1
 """
 
         try:
@@ -457,7 +433,7 @@ nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
         return {
             "ok": True,
             "requested_model": model,
-            "mode": "legacy-container",
+            "mode": "legacy-container-removed",
             "status_code": 200,
         }
 
@@ -1036,6 +1012,8 @@ def main(args=None) -> None:
 
     try:
         rclpy.spin(node)
+    except ExternalShutdownException:
+        pass
     except KeyboardInterrupt:
         pass
     finally:

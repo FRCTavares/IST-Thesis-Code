@@ -11,8 +11,8 @@ set -euo pipefail
 # Startup phases:
 # 1) Preflight: clear stale processes and validate camera process health.
 # 2) Environment: source ROS overlays and pin ROS_DOMAIN_ID.
-# 3) Container: ensure inference container/service is running (legacy mode only).
-# 4) ROS nodes: camera -> (legacy inference OR single-process perception) -> tracker/control/dashboard -> video.
+# 3) Perception readiness: validate host/single-process perception configuration.
+# 4) ROS nodes: camera -> single-process perception -> tracker/control/dashboard -> video.
 # 5) Runtime shell: keep stack alive and allow `status|clear|stop` commands.
 #
 # Logging policy:
@@ -23,14 +23,7 @@ set -euo pipefail
 
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 ROS_WS="${ROS_WS:-$THESIS_ROOT/ros2_ws}"
-# Legacy compose runtime is now stored under deprecated/. Keep HOME fallback for older hosts.
-PI_AI_DIR_DEFAULT="$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
-if [[ -d "$PI_AI_DIR_DEFAULT" ]]; then
-    PI_AI_DIR="${PI_AI_DIR:-$PI_AI_DIR_DEFAULT}"
-else
-    PI_AI_DIR="${PI_AI_DIR:-$HOME/pi-ai-kit-ubuntu}"
-fi
-CONTAINER_NAME="${CONTAINER_NAME:-pi-ai-kit-ubuntu-hailo-ubuntu-pi-1}"
+# Current supported runtime is the host/single-process live stack.
 PI_IP="${PI_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
 ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 REID_MODEL_PATH="${REID_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}"
@@ -118,11 +111,7 @@ print_startup_success_summary() {
     publish_size="${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}"
     infer_size="${infer_w}x${infer_h}"
 
-    if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
-        detector_summary="mode=legacy queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} timeout_ms=${INFER_TIMEOUT_MS} retries=${INFER_RETRIES}"
-    else
-        detector_summary="mode=single-process backend=${PERCEPTION_INFERENCE_BACKEND} frame_queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} image_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
-    fi
+    detector_summary="mode=single-process backend=${PERCEPTION_INFERENCE_BACKEND} frame_queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} image_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
 
     if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
         if [[ "$TRACKER_TYPE" == "deepsort" ]]; then
@@ -198,7 +187,6 @@ stop_stack() {
     pkill -f "target_memory_mars_node" >/dev/null 2>&1 || true
     pkill -f "web_video_server" >/dev/null 2>&1 || true
 
-    docker exec "$CONTAINER_NAME" bash -lc 'pkill -f detection_zmq.py >/dev/null 2>&1 || true' >/dev/null 2>&1 || true
     log_done "live stack stop requested"
 }
 
@@ -440,84 +428,21 @@ set -u
 export ROS_DOMAIN_ID
 log_info "ros: domain=$ROS_DOMAIN_ID log_dir=$ROS_LOG_DIR"
 
-# Phase 3: mode-specific perception readiness (container legacy path or host single-process path).
-if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
-    if [[ ! -f "$PI_AI_DIR/docker-compose.yaml" ]]; then
-        echo "[error] legacy compose file not found: $PI_AI_DIR/docker-compose.yaml"
-        echo "[hint] set PI_AI_DIR or place compose project at $THESIS_ROOT/deprecated/pi-ai-kit-ubuntu"
-        stop_stack
-        exit 1
-    fi
-
-    log_step "ensuring container is up"
-    (
-        cd "$PI_AI_DIR"
-        docker compose -f docker-compose.yaml up -d hailo-ubuntu-pi
-    ) >"$RUN_DIR/container_up.log" 2>&1
-
-    # If the bind mount is stale (e.g. host dir recreated), detection script can disappear
-    # inside an otherwise running container. Recreate once to refresh mounts.
-    if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_deprecated/infer_service/detection_zmq.py >/dev/null 2>&1; then
-        echo "[warn] detection service script missing in container mount; recreating container"
-        (
-            cd "$PI_AI_DIR"
-            docker compose -f docker-compose.yaml up -d --force-recreate hailo-ubuntu-pi
-        ) >>"$RUN_DIR/container_up.log" 2>&1
-
-        if ! docker exec "$CONTAINER_NAME" test -f /root/thesis_deprecated/infer_service/detection_zmq.py >/dev/null 2>&1; then
-            echo "[error] container mount is still missing /root/thesis_deprecated/infer_service/detection_zmq.py"
-            echo "[error] check docker-compose bind mount for thesis_deprecated and host path contents"
-            stop_stack
-            exit 1
-        fi
-    fi
-
-    log_step "starting detection service in container"
-    docker exec "$CONTAINER_NAME" bash -lc '
-set -euo pipefail
-for pid in $(pgrep -f detection_zmq.py || true); do
-    if [ "$pid" != "$$" ]; then
-        kill "$pid" >/dev/null 2>&1 || true
-    fi
-done
-HAILO_EXAMPLES_DIR=/root/thesis_deprecated/hailo-rpi5-examples
-if [ ! -d "$HAILO_EXAMPLES_DIR" ]; then
-    HAILO_EXAMPLES_DIR=/root/hailo-rpi5-examples
-fi
-VENV="$HAILO_EXAMPLES_DIR/venv_hailo_rpi_examples"
-export PYTHONPATH="$HAILO_EXAMPLES_DIR:${PYTHONPATH:-}"
-DETECTION_ENTRY=/root/thesis_deprecated/infer_service/detection_zmq.py
-if [ ! -f "$DETECTION_ENTRY" ]; then
-    echo "missing detection entrypoint: $DETECTION_ENTRY" >&2
+# Phase 3: host/single-process perception readiness.
+if [[ "$PERCEPTION_MODE" != "single-process" ]]; then
+    echo "[error] unsupported perception mode: $PERCEPTION_MODE"
+    echo "[error] only single-process mode is supported in the active thesis repo."
+    stop_stack
     exit 1
 fi
-cd /root/thesis_service
-export HAILO_FRAME_SOURCE=ros
-export HAILO_REQREP_BIND=tcp://0.0.0.0:5556
-export HAILO_INFER_WIDTH=640
-export HAILO_INFER_HEIGHT=640
-export HAILO_VIDEO_SINK=fakesink
-export HAILO_POST_FUNC=filter
-export HAILO_DET_LABEL=person
-export HAILO_REQREP_LOG_EVERY=${HAILO_REQREP_LOG_EVERY:-0}
-nohup "$VENV/bin/python" "$DETECTION_ENTRY" > /tmp/detection_zmq_live.log 2>&1 &
-' >"$RUN_DIR/container_infer_start.log" 2>&1
 
-    if ! wait_for_port 127.0.0.1 5556 20 1; then
-        stop_stack
-        exit 1
-    fi
+log_step "single-process perception mode selected"
+log_info "single-process mode will run in-process perception_pipeline_node"
+if [[ "$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL" == "true" ]]; then
+    log_hint "host Hailo init failures will fallback to stub backend (override enabled)"
 else
-    log_step "single-process perception mode selected"
-    log_info "single-process mode will run in-process perception_pipeline_node"
-    if [[ "$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL" == "true" ]]; then
-        log_hint "host Hailo init failures will fallback to stub backend (override enabled)"
-    else
-        log_hint "host Hailo init failures are fail-fast by default; use --perception-allow-stub-fallback to override"
-    fi
-    log_info "skipping container detection_zmq startup in single-process mode"
+    log_hint "host Hailo init failures are fail-fast by default; use --perception-allow-stub-fallback to override"
 fi
-
 log_step "starting ROS nodes"
 # rclpy expects camera fps launch parameter as DOUBLE; normalize integer input to float.
 if [[ "$CAMERA_FPS" =~ ^[0-9]+$ ]]; then
@@ -607,99 +532,77 @@ while true; do
     exit 1
 done
 
-if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
-    start_ros_bg detector ros2 run thesis_inference_client detector_node --ros-args \
-        -p image_topic:=/camera/image_raw \
-        -p addr:=tcp://127.0.0.1:5556 \
-        -p queue_size:=$INFER_QUEUE_SIZE \
-        -p num_workers:=$INFER_WORKERS \
-        -p request_timeout_ms:=$INFER_TIMEOUT_MS \
-        -p request_retries:=$INFER_RETRIES \
-        -p print_every:=$INFER_PRINT_EVERY \
-        -p timeout_log_every:=$INFER_TIMEOUT_LOG_EVERY \
-        -p img_w:=640 \
-        -p img_h:=640 \
-        -p label:=person \
-        -p min_score:=0.35 \
-        -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL
-    sleep 1
-    if ! check_proc_alive detector; then
-        stop_stack
-        exit 1
+# Keep ROS runtime on host Python, but expose required packages for single-process mode:
+# - system dist-packages for gi/Gst
+# - project .venv site-packages for hailort/tappas Python bindings
+PERCEPTION_PYTHONPATH="/usr/lib/python3/dist-packages"
+PERCEPTION_VENV_SITE_PACKAGES=""
+if [[ -d "$THESIS_ROOT/.venv/lib" ]]; then
+    PERCEPTION_VENV_SITE_PACKAGES="$(find "$THESIS_ROOT/.venv/lib" -maxdepth 2 -type d -name site-packages | head -n 1 || true)"
+    if [[ -n "${PERCEPTION_VENV_SITE_PACKAGES:-}" ]]; then
+        PERCEPTION_PYTHONPATH="${PERCEPTION_VENV_SITE_PACKAGES}:$PERCEPTION_PYTHONPATH"
     fi
-else
-    # Keep ROS runtime on host Python, but expose required packages for single-process mode:
-    # - system dist-packages for gi/Gst
-    # - project .venv site-packages for hailort/tappas Python bindings
-    PERCEPTION_PYTHONPATH="/usr/lib/python3/dist-packages"
-    PERCEPTION_VENV_SITE_PACKAGES=""
-    if [[ -d "$THESIS_ROOT/.venv/lib" ]]; then
-        PERCEPTION_VENV_SITE_PACKAGES="$(find "$THESIS_ROOT/.venv/lib" -maxdepth 2 -type d -name site-packages | head -n 1 || true)"
-        if [[ -n "${PERCEPTION_VENV_SITE_PACKAGES:-}" ]]; then
-            PERCEPTION_PYTHONPATH="${PERCEPTION_VENV_SITE_PACKAGES}:$PERCEPTION_PYTHONPATH"
-        fi
-    fi
-    if [[ -n "${PYTHONPATH:-}" ]]; then
-        PERCEPTION_PYTHONPATH="${PERCEPTION_PYTHONPATH}:$PYTHONPATH"
-    fi
+fi
+if [[ -n "${PYTHONPATH:-}" ]]; then
+    PERCEPTION_PYTHONPATH="${PERCEPTION_PYTHONPATH}:$PYTHONPATH"
+fi
 
-    # Optional local TAPPAS runtime shim (no root install required).
-    # Expected layout defaults to tools/setup/setup_local_tappas_runtime.sh output.
-    PERCEPTION_RUNTIME_DIR="${PERCEPTION_RUNTIME_DIR:-$THESIS_ROOT/infer_service/opt/tappas_runtime_3_31}"
-    PERCEPTION_RUNTIME_LIB_DIR="${PERCEPTION_RUNTIME_LIB_DIR:-$PERCEPTION_RUNTIME_DIR/usr/lib/aarch64-linux-gnu}"
-    PERCEPTION_RUNTIME_GST_DIR="${PERCEPTION_RUNTIME_GST_DIR:-$PERCEPTION_RUNTIME_LIB_DIR/gstreamer-1.0}"
-    PERCEPTION_RUNTIME_POST_SO="${PERCEPTION_RUNTIME_POST_SO:-$PERCEPTION_RUNTIME_LIB_DIR/hailo/tappas/post_processes/libyolo_hailortpp_post.so}"
+# Optional local TAPPAS runtime shim (no root install required).
+# Expected layout defaults to tools/setup/setup_local_tappas_runtime.sh output.
+PERCEPTION_RUNTIME_DIR="${PERCEPTION_RUNTIME_DIR:-$THESIS_ROOT/infer_service/opt/tappas_runtime_3_31}"
+PERCEPTION_RUNTIME_LIB_DIR="${PERCEPTION_RUNTIME_LIB_DIR:-$PERCEPTION_RUNTIME_DIR/usr/lib/aarch64-linux-gnu}"
+PERCEPTION_RUNTIME_GST_DIR="${PERCEPTION_RUNTIME_GST_DIR:-$PERCEPTION_RUNTIME_LIB_DIR/gstreamer-1.0}"
+PERCEPTION_RUNTIME_POST_SO="${PERCEPTION_RUNTIME_POST_SO:-$PERCEPTION_RUNTIME_LIB_DIR/hailo/tappas/post_processes/libyolo_hailortpp_post.so}"
 
-    PERCEPTION_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
-    PERCEPTION_GST_PLUGIN_PATH="${GST_PLUGIN_PATH:-}"
+PERCEPTION_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
+PERCEPTION_GST_PLUGIN_PATH="${GST_PLUGIN_PATH:-}"
 
-    if [[ -d "$PERCEPTION_RUNTIME_LIB_DIR" ]]; then
-        if [[ -n "$PERCEPTION_LD_LIBRARY_PATH" ]]; then
-            PERCEPTION_LD_LIBRARY_PATH="${PERCEPTION_RUNTIME_LIB_DIR}:$PERCEPTION_LD_LIBRARY_PATH"
-        else
-            PERCEPTION_LD_LIBRARY_PATH="$PERCEPTION_RUNTIME_LIB_DIR"
-        fi
+if [[ -d "$PERCEPTION_RUNTIME_LIB_DIR" ]]; then
+    if [[ -n "$PERCEPTION_LD_LIBRARY_PATH" ]]; then
+        PERCEPTION_LD_LIBRARY_PATH="${PERCEPTION_RUNTIME_LIB_DIR}:$PERCEPTION_LD_LIBRARY_PATH"
+    else
+        PERCEPTION_LD_LIBRARY_PATH="$PERCEPTION_RUNTIME_LIB_DIR"
     fi
+fi
 
-    if [[ -d "$PERCEPTION_RUNTIME_GST_DIR" ]]; then
-        if [[ -n "$PERCEPTION_GST_PLUGIN_PATH" ]]; then
-            PERCEPTION_GST_PLUGIN_PATH="${PERCEPTION_RUNTIME_GST_DIR}:$PERCEPTION_GST_PLUGIN_PATH"
-        else
-            PERCEPTION_GST_PLUGIN_PATH="$PERCEPTION_RUNTIME_GST_DIR"
-        fi
+if [[ -d "$PERCEPTION_RUNTIME_GST_DIR" ]]; then
+    if [[ -n "$PERCEPTION_GST_PLUGIN_PATH" ]]; then
+        PERCEPTION_GST_PLUGIN_PATH="${PERCEPTION_RUNTIME_GST_DIR}:$PERCEPTION_GST_PLUGIN_PATH"
+    else
+        PERCEPTION_GST_PLUGIN_PATH="$PERCEPTION_RUNTIME_GST_DIR"
     fi
+fi
 
-    PERCEPTION_POST_SO_ARGS=()
-    if [[ -f "$PERCEPTION_RUNTIME_POST_SO" ]]; then
-        PERCEPTION_POST_SO_ARGS=(-p "hailo_post_so:=$PERCEPTION_RUNTIME_POST_SO")
-        log_info "single-process: using local postprocess lib at $PERCEPTION_RUNTIME_POST_SO"
-    fi
+PERCEPTION_POST_SO_ARGS=()
+if [[ -f "$PERCEPTION_RUNTIME_POST_SO" ]]; then
+    PERCEPTION_POST_SO_ARGS=(-p "hailo_post_so:=$PERCEPTION_RUNTIME_POST_SO")
+    log_info "single-process: using local postprocess lib at $PERCEPTION_RUNTIME_POST_SO"
+fi
 
-    start_ros_bg perception_pipeline env PYTHONPATH="$PERCEPTION_PYTHONPATH" LD_LIBRARY_PATH="$PERCEPTION_LD_LIBRARY_PATH" GST_PLUGIN_PATH="$PERCEPTION_GST_PLUGIN_PATH" ros2 run thesis_bringup perception_pipeline_node --ros-args \
-        -p image_topic:=/camera/image_raw \
-        -p img_w:=640 \
-        -p img_h:=640 \
-        -p frame_queue_size:=$INFER_QUEUE_SIZE \
-        -p num_workers:=$INFER_WORKERS \
-        -p image_qos_depth:=$PERCEPTION_IMAGE_QOS_DEPTH \
-        -p hailo_queue_max_buffers:=$PERCEPTION_HAILO_QUEUE_BUFFERS \
-        -p async_max_inflight:=$PERCEPTION_ASYNC_MAX_INFLIGHT \
-        -p hailo_use_videoconvert:=$PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL \
-        -p disable_python_gc:=$PERCEPTION_GC_DISABLE_BOOL \
-        -p label:=person \
-        -p min_score:=0.35 \
-        -p inference_backend:=$PERCEPTION_INFERENCE_BACKEND \
-        -p allow_stub_fallback:=$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL \
-        "${PERCEPTION_POST_SO_ARGS[@]}" \
-        -p infer_timeout_ms:=$INFER_TIMEOUT_MS \
-        -p timeout_log_every:=$INFER_TIMEOUT_LOG_EVERY \
-        -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL \
-        -p log_every:=$INFER_PRINT_EVERY
-    sleep 1
-    if ! check_proc_alive perception_pipeline; then
-        stop_stack
-        exit 1
-    fi
+start_ros_bg perception_pipeline env PYTHONPATH="$PERCEPTION_PYTHONPATH" LD_LIBRARY_PATH="$PERCEPTION_LD_LIBRARY_PATH" GST_PLUGIN_PATH="$PERCEPTION_GST_PLUGIN_PATH" ros2 run thesis_bringup perception_pipeline_node --ros-args \
+    -p image_topic:=/camera/image_raw \
+    -p img_w:=640 \
+    -p img_h:=640 \
+    -p frame_queue_size:=$INFER_QUEUE_SIZE \
+    -p num_workers:=$INFER_WORKERS \
+    -p image_qos_depth:=$PERCEPTION_IMAGE_QOS_DEPTH \
+    -p hailo_queue_max_buffers:=$PERCEPTION_HAILO_QUEUE_BUFFERS \
+    -p async_max_inflight:=$PERCEPTION_ASYNC_MAX_INFLIGHT \
+    -p hailo_use_videoconvert:=$PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL \
+    -p disable_python_gc:=$PERCEPTION_GC_DISABLE_BOOL \
+    -p label:=person \
+    -p min_score:=0.35 \
+    -p inference_backend:=$PERCEPTION_INFERENCE_BACKEND \
+    -p allow_stub_fallback:=$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL \
+    "${PERCEPTION_POST_SO_ARGS[@]}" \
+    -p infer_timeout_ms:=$INFER_TIMEOUT_MS \
+    -p timeout_log_every:=$INFER_TIMEOUT_LOG_EVERY \
+    -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL \
+    -p log_every:=$INFER_PRINT_EVERY
+sleep 1
+if ! check_proc_alive perception_pipeline; then
+    stop_stack
+    exit 1
 fi
 
 # Phase 4: bring up downstream nodes after camera + perception are healthy.
@@ -750,11 +653,7 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
 fi
 
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
-    # Container model-switch API is only meaningful in legacy perception mode.
     DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL="false"
-    if [[ "$PERCEPTION_MODE" == "legacy" ]]; then
-        DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL="true"
-    fi
 
     start_ros_bg dashboard_bridge ros2 run thesis_bringup dashboard_bridge_node --ros-args \
         -p img_w:=640 \

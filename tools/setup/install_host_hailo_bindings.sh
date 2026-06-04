@@ -9,7 +9,7 @@ VENV_PATH="${VENV_PATH:-$THESIS_ROOT/.venv}"
 BASE_URL="${BASE_URL:-https://dev-public.hailo.ai/2025_07}"
 HAILORT_VERSION="${HAILORT_VERSION:-4.23.0}"
 TAPPAS_CORE_VERSION="${TAPPAS_CORE_VERSION:-5.1.0}"
-HAILO_EXAMPLES_DIR="${HAILO_EXAMPLES_DIR:-$THESIS_ROOT/deprecated/hailo-rpi5-examples}"
+HAILO_EXAMPLES_DIR="${HAILO_EXAMPLES_DIR:-$HOME/hailo-rpi5-examples}"
 if [[ ! -d "$HAILO_EXAMPLES_DIR" && -d "$THESIS_ROOT/hailo-rpi5-examples" ]]; then
     HAILO_EXAMPLES_DIR="$THESIS_ROOT/hailo-rpi5-examples"
 fi

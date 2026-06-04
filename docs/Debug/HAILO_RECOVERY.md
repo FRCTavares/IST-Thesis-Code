@@ -173,7 +173,7 @@ hailortcli scan -> Device: 0000:01:00.0
 ```bash
 cd "$THESIS_ROOT"
 
-pkill -f 'perception_pipeline_node|detection_zmq.py|inference_client_node|detector_node|hailo|ros2 bag record' || true
+pkill -f 'perception_pipeline_node|inference_client_node|detector_node|hailo|ros2 bag record' || true
 ```
 
 Check containers:

@@ -43,7 +43,7 @@ When target memory is enabled, TIM consumes tracker output and selected-target c
 ### Shape Z (rollback): legacy ZMQ path
 
 1. Camera publishes `/camera/image_raw`.
-2. `inference_client_node` sends frames over ZMQ req/rep to container `detection_zmq.py` service.
+2. `perception_pipeline_node` runs the active host/single-process perception path.
 3. Inference client publishes `/detections` and `/timing`.
 4. Downstream target publication still flows through `dashboard_bridge_node`.
 
@@ -104,7 +104,7 @@ Core evaluation principle:
 
 ### Inference service (`infer_service`)
 
-- `detection_zmq.py`
+- Legacy ZMQ detector path removed from the active runtime.
   - Legacy detector service process (container-side).
 - `zmq_pub.py`
   - Utility helper for ZMQ-facing workflows.
@@ -140,7 +140,7 @@ Core evaluation principle:
 - Host preflight: stale-process cleanup, camera media graph checks, and an optional stream probe only when requested.
 - Environment setup: ROS overlay sourcing + run-scoped log routing.
 - Perception readiness by mode:
-  - `legacy`: compose container plus `detection_zmq.py` req/rep readiness (`:5556`).
+  - Legacy compose/container mode removed from the active runtime.
   - `single-process`: host `perception_pipeline_node` startup (optional local tappas runtime assets).
 - Downstream graph startup: tracker, dashboard bridge, web video, and control.
 - Runtime shell loop with `status`, `ids`, `target <id>`, `clear-target`, `clear`, and `stop` commands.
@@ -194,7 +194,7 @@ Root-level purpose map:
   - Weekly and daily engineering logs.
 - `deprecated/`
   - Archived experiments not in active path (legacy scripts, historical traces, superseded artifacts).
-- `deprecated/hailo-rpi5-examples/`
+- `hailo-rpi5-examples/` is expected outside the active repo, usually under `$HOME/hailo-rpi5-examples`.
   - Upstream/vendor resources.
 
 ### Key locations and model artifacts
@@ -208,18 +208,14 @@ If you need to add new model artifacts, prefer a clear subfolder under `models/`
 
 ## 5) External dependency model
 
-The legacy container path depends on a compose environment at:
+The active runtime no longer depends on the legacy compose/container path.
 
-- `$THESIS_ROOT/deprecated/pi-ai-kit-ubuntu` (primary)
-- `~/pi-ai-kit-ubuntu` (legacy fallback)
+Current runtime contract:
 
-Contract for legacy mode:
-
-1. Container starts and runs `detection_zmq.py`.
-2. Service binds req/rep endpoint expected by inference client (`tcp://0.0.0.0:5556` inside container).
-3. Hailo runtime dependencies exist in the container venv.
-
-Single-process mode does not require per-frame ZMQ transport, but can still consume local runtime assets under `infer_service/opt/tappas_runtime_3_31` when present.
+1. `tools/start_live_stack.sh` starts the host/single-process perception path.
+2. `perception_pipeline_node` runs the active Hailo-backed perception pipeline.
+3. ROS nodes publish detections, tracks, target memory, dashboard video, timing, and optional bag recordings.
+4. Hailo example resources, when needed by setup scripts, are expected outside the active repository, usually under `$HOME/hailo-rpi5-examples`.
 
 ## 6) Timing contract and analysis model
 

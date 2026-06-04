@@ -594,10 +594,10 @@ done
 
 # Validate resolved configuration before we touch hardware/container state.
 case "$PERCEPTION_MODE" in
-    legacy|single-process)
+    single-process)
         ;;
     *)
-        echo "[error] invalid --perception-mode '$PERCEPTION_MODE' (expected legacy|single-process)"
+        echo "[error] invalid --perception-mode '$PERCEPTION_MODE' (expected single-process)"
         exit 1
         ;;
 esac

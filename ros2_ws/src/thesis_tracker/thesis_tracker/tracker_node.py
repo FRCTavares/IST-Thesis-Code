@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from typing import List, Tuple, Union
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rcl_interfaces.msg import SetParametersResult
 from rclpy.parameter import Parameter
 from rclpy.node import Node
@@ -615,6 +616,8 @@ def main(args=None) -> None:
     
     try:
         executor.spin()
+    except ExternalShutdownException:
+        pass
     except KeyboardInterrupt:
         pass
     finally:

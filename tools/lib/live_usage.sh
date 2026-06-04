@@ -20,8 +20,8 @@ Starts the live camera + inference + optional tracking/control/dashboard stack.
 All ROS runtime logs are forced under ros2_ws/log/runtime for this run.
 
 Options:
-    --perception-mode <legacy|single-process>
-                                                                            Perception path selection (default: single-process)
+    --perception-mode <single-process>
+                                                                            Perception path selection. Only single-process is supported.
     -v, --verbose                     Enable verbose startup/status logs (default: warnings/errors only)
     --tracker <sort|ocsort|bytetrack|deepsort>  Tracker backend (default: ocsort)
     --tracker-profile-off               Disable tracker profiling instrumentation
@@ -135,8 +135,8 @@ Usage: start_live_stack.sh [options]
 Day-to-day options:
     --profile <daily|safe-camera|performance>
                                       Startup preset (default: daily)
-    --perception-mode <legacy|single-process>
-                                      Perception path selection (default: single-process)
+    --perception-mode <single-process>
+                                      Perception path selection. Only single-process is supported.
     --resolution <preset|WIDTHxHEIGHT>
                                       Quick camera capture resolution selector
     --list-resolutions                 Print available resolution presets and exit
