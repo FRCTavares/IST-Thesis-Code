@@ -178,6 +178,7 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p appearance_challenge_margin:=${MARS_APPEARANCE_CHALLENGE_MARGIN:-0.20} \
     -p appearance_challenge_min_total:=${MARS_APPEARANCE_CHALLENGE_MIN_TOTAL:-0.45} \
     -p appearance_conservative_enabled:=${MARS_APPEARANCE_CONSERVATIVE_ENABLED:-false} \
+    -p appearance_conservative_require_appearance:=${MARS_APPEARANCE_CONSERVATIVE_REQUIRE_APPEARANCE:-false} \
     -p appearance_conservative_min_similarity:=${MARS_APPEARANCE_CONSERVATIVE_MIN_SIMILARITY:-0.65} \
     -p appearance_conservative_margin:=${MARS_APPEARANCE_CONSERVATIVE_MARGIN:-0.25} \
     -p rank_aware_reacquisition_enabled:=${MARS_RANK_AWARE_REACQUISITION_ENABLED:-true} \

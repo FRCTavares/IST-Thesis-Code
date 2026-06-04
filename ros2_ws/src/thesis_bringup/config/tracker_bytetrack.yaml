@@ -6,11 +6,12 @@ tracker_node:
     tracker_type: "bytetrack"
     
     # Common parameters
-    min_score: 0.35  
-    
+    min_score: 0.2
     # ByteTrack-specific parameters
-    track_thresh: 0.5         # High confidence threshold for primary matching
-    match_thresh: 0.25        # Minimum IoU threshold for first-stage matching
-    track_buffer: 30          # Maximum frames to keep lost tracks for recovery
-    det_thresh: 0.2           # Low confidence threshold (below this, ignore detection)
-    second_match_thresh: 0.2  # Minimum IoU threshold for second-stage matching with low-conf dets
+    track_thresh: 0.5
+    match_thresh: 0.8
+    track_buffer: 30
+    det_thresh: 0.2
+    second_match_thresh: 0.5
+    new_track_thresh: 0.6
+    unconfirmed_match_thresh: 0.7

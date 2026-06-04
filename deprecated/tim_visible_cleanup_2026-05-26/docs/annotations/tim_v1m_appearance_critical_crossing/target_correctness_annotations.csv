@@ -1,9 +1,0 @@
-bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
-2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,0.00,20.40,NO_TARGET_SELECTED,false,,,pre_selection,before operator target selection
-2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,20.40,35.71,CORRECT_TARGET,true,1,6,clean_tracking,selected person clearly visible with original tracker id 1
-2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,35.71,36.36,CORRECT_TARGET,false,,6,full_occlusion,distractor id 6 completely occludes the selected target; selected target later reappears with new id 9
-2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,36.36,50.97,CORRECT_TARGET,true,9,6,hard_reentry,selected person clearly visible as id 9; same person as previous id 1
-2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,50.97,53.02,CORRECT_TARGET,false,,6,full_occlusion,distractor id 6 completely occludes selected target id 9
-2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,53.02,56.11,CORRECT_TARGET,true,10,6,reentry_id_switch,selected person visible as id 10; same person as previous ids 1 and 9
-2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,56.11,70.55,CORRECT_TARGET,true,11,6,visible_but_wrong_best_candidate,selected person clearly visible as id 11; distractor remains id 6 and is often the best TIM candidate
-2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing,70.55,72.43,CORRECT_TARGET,true,11,6,late_reentry,selected person clearly visible as id 11

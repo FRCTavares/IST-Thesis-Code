@@ -1,9 +1,0 @@
-bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
-2026-05-14__hard_reentry_ocsort_tim_on_target1_r4_cooldown,0.00,4.74,NO_TARGET_SELECTED,true,1,,pre_selection,target visible but no target selected yet
-2026-05-14__hard_reentry_ocsort_tim_on_target1_r4_cooldown,4.74,50.28,CORRECT_TARGET,true,1,2,correct_tracking,selected person id 1; TIM follows id 1 correctly
-2026-05-14__hard_reentry_ocsort_tim_on_target1_r4_cooldown,50.28,50.67,CORRECT_TARGET,true,1,2,brief_lost,selected person still id 1; TIM outputs no target briefly
-2026-05-14__hard_reentry_ocsort_tim_on_target1_r4_cooldown,50.67,69.99,CORRECT_TARGET,true,1,2,correct_tracking,selected person id 1; TIM follows id 1 correctly
-2026-05-14__hard_reentry_ocsort_tim_on_target1_r4_cooldown,69.99,101.87,CORRECT_TARGET,true,94,1,wrong_target_interval,selected person becomes id 94; TIM follows distractor id 1
-2026-05-14__hard_reentry_ocsort_tim_on_target1_r4_cooldown,101.87,111.51,CORRECT_TARGET,true,140,1,recovered_target,TIM follows selected person id 140 correctly; raw target is wrong here
-2026-05-14__hard_reentry_ocsort_tim_on_target1_r4_cooldown,111.51,116.98,CORRECT_TARGET,true,159,1,wrong_target_interval,selected person is id 159; TIM follows distractor id 1
-2026-05-14__hard_reentry_ocsort_tim_on_target1_r4_cooldown,116.98,135.22,CORRECT_TARGET,true,159,1,recovered_target,TIM recovers to selected person id 159

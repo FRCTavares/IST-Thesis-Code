@@ -1,3 +1,0 @@
-start_s,end_s,primary_correct_id,alias_correct_ids,reason
-56.11,70.55,11,18,ID 18 appears to be a near-duplicate/fragment of the same selected person as ID 11 based on near-identical crop boxes and high frozen upper-body HSV similarity.
-70.55,72.43,11,18,ID 18 may persist as same-person duplicate near late re-entry; verify visually before final thesis use.
