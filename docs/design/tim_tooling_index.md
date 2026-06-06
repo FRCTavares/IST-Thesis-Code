@@ -1,100 +1,135 @@
-# TIM Tooling Index
+# TIM tooling index
 
-Date: 2026-05-20
+Date: 2026-06-06
 
 ## Purpose
 
-Make TIM tooling easier to navigate after TIM-V2E exploration.
+Map the active TIM-MARS tools, runtime nodes, annotations, and result locations.
 
-## Live path
+This file describes the current active TIM-MARS workflow. Older exploratory TIM notes are archived.
 
-Use for flight/live operation:
+## Runtime nodes
 
-- `tools/start_live_stack.sh`
+Current selected-target memory implementation:
+
 - `ros2_ws/src/thesis_bringup/thesis_bringup/target_memory.py`
+- `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/target_memory_mars_node.py`
+
+Related older HSV memory node:
+
 - `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/target_memory_node.py`
-- `ros2_ws/src/thesis_bringup/thesis_bringup/appearance_memory.py`
 
-Do not run training or policy simulation tools during flight.
+Tracker node:
 
-## Core correctness evaluation
+- `ros2_ws/src/thesis_tracker/thesis_tracker/tracker_node.py`
 
-Use these for Raw vs TIM selected-target correctness:
+## Tracker configs
+
+Active tracker configs are under:
+
+- `ros2_ws/src/thesis_bringup/config/`
+
+Important current config:
+
+- `ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml`
+
+The ByteTrack config must preserve low-score recovery support:
+
+- `min_score: 0.2`
+- `track_thresh: 0.5`
+- `match_thresh: 0.8`
+- `track_buffer: 30`
+- `det_thresh: 0.2`
+- `second_match_thresh: 0.5`
+- `new_track_thresh: 0.6`
+- `unconfirmed_match_thresh: 0.7`
+
+## Replay and evaluation scripts
+
+Use for clean replay generation:
+
+- `tools/experiments/run_one_clean_tim_replay.sh`
+
+Use for selected-target correctness evaluation:
 
 - `tools/analysis/evaluate_tim_target_correctness.py`
+
+Use for ReID and status diagnostics:
+
+- `tools/analysis/extract_tim_mars_reid_similarity.py`
 - `tools/analysis/extract_tim_all_scores.py`
-- `tools/analysis/evaluate_tim_policy_timeline.py`
-- `tools/analysis/diagnose_tim_wrong_intervals.py`
-- `tools/analysis/run_tim_standard_comparison.py`
 
-`run_tim_standard_comparison.py` is the standard scenario-summary wrapper. It reads existing annotations, policy `summary.md`, and policy `timeline.csv`, then writes generated local output under `reports/tim_standard_matrix/<scenario>/`. It does not run ROS, replay bags, or touch live defaults.
+## Visual audit tools
 
-## TIM-V2E learned appearance tools
+Use for status and overlay review:
 
-Use these for current TIM-V2E offline work:
+- `tools/bag/render_eval_native_status_audit.py`
+- `tools/bag/render_source14hz_status_audit_video.py`
+- `tools/bag/render_annotation_target_source_images_video.py`
+- `tools/bag/render_bag_overlay_video.py`
+- `tools/visualization/render_all_tracks_id_video.py`
 
-- `tools/analysis/evaluate_tim_identity_descriptor.py`
-- `tools/analysis/build_tim_embedding_dataset.py`
-- `tools/analysis/train_tim_embedding_tiny.py`
-- `tools/analysis/train_tim_embedding_triplet.py`
-- `tools/analysis/train_tim_embedding_hybrid.py`
-- `tools/analysis/simulate_tim_v2e_learned_suppression.py`
-- `tools/analysis/benchmark_tim_embedding_latency.py`
+For the current source-image status audit renderer, use:
 
-Current best model family:
+- `--eval-time-scale 2.0`
 
-- `train_tim_embedding_hybrid.py`
+## Active annotations
 
-Current best offline policy simulator:
+Trusted hard re-entry annotations:
 
-- `simulate_tim_v2e_learned_suppression.py`
+- `docs/annotations/hard_reentry/bytetrack_tim_mars_final.csv`
+- `docs/annotations/hard_reentry/deepsort_mars_target1_final.csv`
+- `docs/annotations/hard_reentry/ocsort_tim_mars_r1.csv`
 
-Current best offline policy:
+Archived annotations:
 
-- Tiny16 hybrid embedding,
-- runtime margin gate,
-- margin threshold 0.10,
-- current similarity threshold 0.0,
-- candidate similarity threshold 0.3,
-- confirmation frames 3.
+- `docs/archive/annotations/`
 
-## Visual review tools
+## Active result docs
 
-Use these for overlay videos and review frames:
+Current selected-target tracking result source:
 
-- `tools/bag/render_tim_policy_overlay_video.py`
-- `tools/bag/export_tim_policy_overlay_frames.py`
-- `tools/analysis/evaluate_tim_v2e_video_review_annotations.py`
+- `docs/results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`
 
-## Historical TIM-V2 policy experiments
+Current compute/throughput result source:
 
-Keep for traceability, but do not use as current best path unless explicitly revisiting old hypotheses:
+- `docs/results/selected_target_tracking/hard_reentry_compute_throughput_summary.md`
 
-- `tools/analysis/simulate_tim_hypothesis_policy.py`
-- `tools/analysis/simulate_tim_v2f_runner_up_policy.py`
-- `tools/analysis/simulate_tim_v2h_appearance_gate_policy.py`
-- `tools/analysis/simulate_tim_v2i_lost_reacquire_policy.py`
-- `tools/analysis/simulate_tim_v2m_locked_suppression.py`
-- `tools/analysis/simulate_tim_v2m_armed_locked_suppression.py`
+Generated final reports:
+
+- `reports/final_selected_target_tracking/bytetrack_tim_mars/summary.md`
+- `reports/final_selected_target_tracking/deepsort_mars/summary.md`
+- `reports/final_selected_target_tracking/ocsort_tim_mars/summary.md`
+
+Reports are generated artefacts and are not committed by default.
+
+## Active replay bags
+
+Current hard re-entry bags:
+
+- ByteTrack + TIM-MARS: `artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1__r4`
+- DeepSORT-MARS + TIM-MARS: `artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_mars__target_1`
+- OCSORT + TIM-MARS: `artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1`
+
+Bags are generated artefacts and should not be committed.
 
 ## Generated folders
 
 Do not commit generated files from:
 
-- `datasets/tim_embedding/`
-- `datasets/tim_embedding_filtered/`
-- `reports/tim_standard_matrix/`
-- `reports/tim_v2_embedding/`
-- `reports/tim_v0/`
-- `reports/tim_v2*_sweep*/`
+- `reports/`
+- `artifacts/bags/`
+- `ros2_ws/log/`
+- generated videos
 
-Only commit curated summaries under `docs/results/...`.
+Only commit curated summaries and design notes under `docs/`.
 
-## Rule for future experiments
+## Rule for future TIM experiments
 
 Every future TIM experiment should produce:
 
-1. metrics,
-2. visual evidence,
-3. short interpretation,
-4. clear comparison with Raw.
+1. metrics;
+2. visual evidence;
+3. short interpretation;
+4. clear comparison with raw tracker output;
+5. explicit safety interpretation under the rule that wrong target is worse than LOST.

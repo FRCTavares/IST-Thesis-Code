@@ -1,77 +1,137 @@
 # Flight TIM Checklist
 
-Date: 2026-05-20
+Date: 2026-06-06
 
-## Flight-safe default
+## Purpose
 
-Use the normal live launcher:
+Checklist for using selected-target memory during live or flight-oriented tests.
 
-    cd "$THESIS_ROOT"
-    ./tools/start_live_stack.sh --profile daily
+Current active selected-target memory direction:
 
-Default live behaviour must stay conservative.
+- TIM-MARS
+- output topic: `/target_memory_mars`
+- diagnostic topic: `/target_memory_mars/status`
 
-TIM-V2E learned embedding is offline-only and must not be loaded during flight unless explicitly implemented and enabled later.
+## Safety rule
+
+Wrong target is worse than LOST.
+
+During flight-oriented tests, the system must prefer LOST or no control-valid target over following the wrong person.
 
 ## Before flight
 
-Check repo state:
+Verify the active stack:
 
-    git status --short
+- live stack starts cleanly;
+- camera publishes frames;
+- detector publishes `/detections`;
+- tracker publishes `/tracks`;
+- selected target output is available;
+- dashboard target selection works;
+- control node does not command motion without a valid target.
 
-Expected:
+## Target selection
 
-- clean working tree,
-- no generated datasets/videos/checkpoints staged.
+Target selection must be explicit.
 
-Check live stack help:
+Do not rely on automatic target selection for flight tests.
 
-    ./tools/start_live_stack.sh --help | head -n 80
+Use dashboard or API selection, then verify:
 
-Check camera/perception topics after startup:
+- selected target ID is visible in `/tracks`;
+- `/target` updates;
+- `/target_memory_mars` updates;
+- `/target_memory_mars/status` reports a sensible state.
 
-    source /opt/ros/jazzy/setup.bash
-    source "$THESIS_ROOT/ros2_ws/install/setup.bash"
-    ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/detections|/tracks|/target|/target_memory'
+## TIM-MARS checks
 
-## During flight
+Before using TIM-MARS in a flight-oriented test, confirm:
 
-Use only:
+- `/target_memory_mars` is publishing;
+- `/target_memory_mars/status` is publishing;
+- the selected target does not jump to an obvious distractor during a static check;
+- LOST is produced when evidence is insufficient;
+- wrong-target output is not treated as acceptable continuity.
 
-- raw `/target` for baseline comparison,
-- `/target_memory` for TIM output,
-- `/target_memory/status` for diagnostics.
+## Conservative appearance policy
 
-Do not run training, sweeps, or embedding dataset scripts during flight.
+Current hard re-entry evaluation policy uses conservative appearance filtering.
 
-## After flight
+Important parameter:
 
-Record:
+- `appearance_conservative_require_appearance=false`
 
-- bag name,
-- tracker,
-- TIM flags,
-- camera mode,
-- detector model,
-- target selection time/id,
-- notes on occlusion/crossing/re-entry.
+Meaning:
 
-Then run offline evaluation separately.
+- apply conservative appearance checks when appearance is available;
+- do not force LOST only because appearance is temporarily unavailable;
+- use strict appearance-required mode only for diagnostics.
 
-## TIM-V2E status
+## Control interpretation
 
-Current TIM-V2E learned appearance is offline-only.
+Recommended control interpretation:
 
-Best offline candidate:
+| TIM state | Control behaviour |
+|---|---|
+| LOCKED | normal target-following allowed |
+| REACQUIRED | cautious following or confirmation |
+| UNCERTAIN | slow down, hold, or yaw-only behaviour |
+| LOST | stop target-following / hover |
+| NO_TARGET | no target-following |
 
-- Tiny16 hybrid embedding,
-- runtime top-2 margin gate,
-- missing/low similarity suppression,
-- confirmed high-similarity reacquisition.
+The exact controller behaviour must remain conservative until validated outdoors.
 
-Do not enable live until:
+## Do not use during flight
 
-1. runtime implementation exists behind explicit flags,
-2. default behaviour remains unchanged,
-3. crop extraction and callback latency are measured,
-4. held-out bag evaluation is complete.
+Do not use during flight unless explicitly implemented, documented, and enabled:
+
+- archived TIM variants;
+- offline policy simulators;
+- unvalidated learned models;
+- generated experimental timelines;
+- manual-review-only annotations.
+
+## Logging requirement
+
+For flight-oriented TIM tests, record at minimum:
+
+- `/camera/dashboard` or `/camera/image_raw`
+- `/detections`
+- `/tracks`
+- `/target`
+- `/target_memory_mars`
+- `/target_memory_mars/status`
+- `/timing`
+- `/timing_tracker`
+- `/timing_target`
+- `/control_ref/cmd_vel`
+
+With MAVROS context, also record:
+
+- `/mavros/state`
+- `/mavros/local_position/pose`
+- `/mavros/local_position/velocity_local`
+- `/mavros/imu/data_raw`
+
+## Post-flight review
+
+After each test:
+
+1. inspect target status transitions;
+2. inspect wrong-target intervals;
+3. verify LOST intervals are safe;
+4. render visual audit clips if any target handover occurs;
+5. write a short result note under `docs/results/` only if the test changes the thesis interpretation.
+
+## Current result reference
+
+Current selected-target tracking result source:
+
+- `docs/results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`
+
+Current TIM-MARS design references:
+
+- `docs/design/selected_target_memory.md`
+- `docs/design/tim_mars_design.md`
+- `docs/design/tim_evaluation_protocol.md`
+- `docs/design/tim_tooling_index.md`

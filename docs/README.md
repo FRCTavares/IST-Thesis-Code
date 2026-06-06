@@ -1,29 +1,41 @@
-# Thesis documentation index
+# Thesis Documentation
 
-This folder contains active thesis documentation, evidence records, and archived notes.
+This folder contains the active thesis documentation, trusted result summaries, evaluation annotations, and archived historical material.
 
-## Active operational docs
+## Folder map
 
-- `../README.md` - repository overview and quick start.
-- `../RUNBOOK.md` - current command source of truth.
-- `../REPO_DEEP_DIVE.md` - repository architecture and active runtime model.
-- `FLIGHT_TIM_CHECKLIST.md` - flight/TIM checklist.
-- `design/tim_tooling_index.md` - TIM tooling map.
-- `design/tim_standard_evaluation_matrix.md` - standard TIM evaluation matrix.
+- `design/` - active design notes, evaluation protocols, and tooling maps.
+- `results/` - current result summaries that should be used for thesis writing, supervisor updates, and final interpretation.
+- `annotations/` - trusted annotation files used by current evaluations.
+- `Control-Pixhawk-MAVROS/` - current control and MAVROS integration notes.
+- `Debug/` - current hardware and runtime recovery notes.
+- `Daily-Logs/` - chronological engineering logs.
+- `reports/` - longer written reports.
+- `archive/` - superseded notes, intermediate evaluations, old annotation versions, and historical material.
 
-## Current result summaries
+## Current selected-target tracking results
 
-- `results/tim_v2_mars/2026-06-04__multi-tracker-hard-reentry-summary.md`
-- `results/flight_stack/2026-06-02__mavros_imu_recording_in_live_stack.md`
-- `reports/2026-05__thesis-progress-report.md`
+Use these as the active result sources:
 
-## Evidence folders
+- `results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`
+- `results/selected_target_tracking/hard_reentry_compute_throughput_summary.md`
 
-- `annotations/` - manual correctness annotations.
-- `results/` - result summaries.
-- `Daily-Logs/` - engineering logs.
-- `Debug/` - operational recovery notes.
+The multi-tracker hard-reentry summary is the main source of truth for the TIM-MARS selected-target evaluation.
 
-## Archived notes
+It supersedes earlier TIM-V2, TIM-V2Q, active-MARS, conservative-MARS, and early DeepSORT comparison notes now stored under `archive/results/`.
 
-- `archive/` - older novelty, experiment, integration, and superseded design notes kept for traceability.
+## Current trusted hard-reentry annotations
+
+Use these active annotation files:
+
+- `annotations/hard_reentry/bytetrack_tim_mars_final.csv`
+- `annotations/hard_reentry/deepsort_mars_target1_final.csv`
+- `annotations/hard_reentry/ocsort_tim_mars_r1.csv`
+
+Older manual-review and intermediate annotation versions are kept under `archive/annotations/`.
+
+## Archive policy
+
+Move a document to `archive/` when it is useful for traceability but no longer represents the current interpretation, current workflow, or trusted evaluation input.
+
+Do not delete historical notes unless they are generated artefacts or clearly accidental duplicates.

@@ -12,7 +12,7 @@ This run verifies the first real active TIM-MARS evaluation where MARS ReID appe
 
 ## Annotation
 
-`docs/annotations/2026-05-14__hard_reentry_ocsort_mars_r1_active_scaled4/target_correctness_annotations.csv`
+`docs/annotations/hard_reentry/ocsort_tim_mars_r1.csv`
 
 The annotation was derived from the previous 67.84 s hard re-entry annotation and scaled by 4.0 because this r1 bag has a 271.36 s timeline.
 
