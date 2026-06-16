@@ -183,7 +183,6 @@ stop_stack() {
     pkill -f "tracker_node" >/dev/null 2>&1 || true
     pkill -f "control_ref_node" >/dev/null 2>&1 || true
     pkill -f "dashboard_bridge_node" >/dev/null 2>&1 || true
-    pkill -f "target_memory_node" >/dev/null 2>&1 || true
     pkill -f "target_memory_mars_node" >/dev/null 2>&1 || true
     pkill -f "web_video_server" >/dev/null 2>&1 || true
 
@@ -671,18 +670,6 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         stop_stack
         exit 1
     fi
-    if [[ "${RUN_TARGET_MEMORY_HSV:-0}" -eq 1 ]]; then
-        start_ros_bg target_memory ros2 run thesis_bringup target_memory_node --ros-args \
-            -p appearance_enabled:=$TARGET_MEMORY_APPEARANCE_BOOL \
-            -p appearance_image_topic:="$TARGET_MEMORY_APPEARANCE_IMAGE_TOPIC" \
-            -p appearance_min_bbox_height:=$TARGET_MEMORY_APPEARANCE_MIN_BBOX_HEIGHT \
-            -p appearance_max_image_age_ms:=$TARGET_MEMORY_APPEARANCE_MAX_IMAGE_AGE_MS
-        sleep 1
-        if ! check_proc_alive target_memory; then
-            stop_stack
-            exit 1
-        fi
-    fi
 
     if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
         start_ros_bg target_memory_mars ros2 run thesis_bringup target_memory_mars_node --ros-args \
@@ -876,8 +863,6 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
 
     if [[ "${RUN_TARGET_MEMORY_HSV:-0}" -eq 1 ]]; then
         VIDEO_BAG_TOPICS+=(
-            /target_memory
-            /target_memory/status
         )
     fi
     if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
@@ -974,8 +959,6 @@ if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
 
     if [[ "${RUN_TARGET_MEMORY_HSV:-0}" -eq 1 ]]; then
         DATASET_BAG_TOPICS+=(
-            /target_memory
-            /target_memory/status
         )
     fi
     if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then

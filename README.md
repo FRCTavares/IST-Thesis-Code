@@ -36,7 +36,7 @@ Current hard re-entry comparison:
 | Method | Correct ratio | Wrong ratio | Lost ratio |
 |---|---:|---:|---:|
 | Raw OCSORT `/target` | 0.519 | 0.316 | 0.166 |
-| OCSORT + TIM `/target_memory` | 0.713 | 0.278 | 0.009 |
+| OCSORT + TIM `/target_memory_mars` | 0.713 | 0.278 | 0.009 |
 | Raw DeepSORT MARS `/target` | 0.684 | 0.071 | 0.245 |
 
 Interpretation:
@@ -84,7 +84,7 @@ Provide an end-to-end experimental stack that can:
 1. Ingest camera frames in ROS 2.
 2. Run detector inference through the host/single-process Hailo pipeline.
 3. Track candidates and expose explicit user-driven target selection for control and UI.
-4. Maintain selected-target identity through TIM and publish `/target_memory` when target memory is enabled.
+4. Maintain selected-target identity through TIM and publish `/target_memory_mars` when TIM-MARS is enabled.
 5. Publish telemetry/video/control interfaces for real-time operation.
 6. Record and replay experiments for target-correctness, timing, and tracking evaluation.
 
@@ -166,7 +166,7 @@ cd "$THESIS_ROOT"
 ```bash
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
-ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/detections|/tracks|/target|/target_memory|/timing'
+ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/detections|/tracks|/target|/target_memory_mars|/timing'
 ss -ltnp | rg ':8080|:8090|:8765|:5173'
 ```
 

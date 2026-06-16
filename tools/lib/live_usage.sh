@@ -84,7 +84,7 @@ Options:
     --perception-allow-stub-fallback    Allow stub fallback when Hailo backend initialization fails
     --target-memory <off|hsv|mars|both>
                                           Select TIM mode, default: hsv
-    --target-memory-appearance         Enable TIM-HSV image appearance extraction
+    --target-memory-appearance         Enable TIM-MARS appearance extraction
     --target-memory-appearance-image-topic <topic>
                                           Image topic for TIM appearance, default: /camera/dashboard
     --target-memory-appearance-min-bbox-height <px>
@@ -152,7 +152,7 @@ Day-to-day options:
     --no-tracker                      Do not start tracker node
     --target-memory <off|hsv|mars|both>
                                       Select TIM mode, default: hsv
-    --target-memory-appearance        Enable TIM-HSV image appearance extraction
+    --target-memory-appearance        Enable TIM-MARS appearance extraction
     --no-target                       Deprecated alias; target selection is now handled by dashboard bridge API
     --no-control                      Do not start control_ref_node
     --no-dashboard                    Disable dashboard bridge

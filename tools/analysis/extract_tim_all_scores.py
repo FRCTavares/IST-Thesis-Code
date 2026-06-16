@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract TIM all_scores from /target_memory/status into a flat CSV."""
+"""Extract TIM-MARS all_scores from /target_memory_mars/status into a flat CSV."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from rosidl_runtime_py.utilities import get_message
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("bag", type=Path)
-    parser.add_argument("--topic", default="/target_memory/status")
+    parser.add_argument("--topic", default="/target_memory_mars/status")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
 

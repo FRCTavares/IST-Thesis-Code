@@ -17,7 +17,6 @@ Current selected-target memory implementation:
 
 Related older HSV memory node:
 
-- `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/target_memory_node.py`
 
 Tracker node:
 

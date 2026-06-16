@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Evaluate selected-target correctness for raw /target vs TIM /target_memory.
+"""Evaluate selected-target correctness for raw /target vs TIM-MARS /target_memory_mars.
 
 First version:
 - interval-based annotation
 - track-ID based correctness
-- compares raw /target and TIM /target_memory
+- compares raw /target and TIM-MARS /target_memory_mars
 - computes correct / wrong / lost durations
 """
 
@@ -20,7 +20,7 @@ from typing import Dict, Iterable, List, Optional
 
 
 TARGET_TOPIC_RAW = "/target"
-TARGET_TOPIC_TIM = "/target_memory"
+TARGET_TOPIC_TIM = "/target_memory_mars"
 
 
 @dataclass
@@ -393,7 +393,7 @@ def write_summary_md(
     lines.append("")
     lines.append("## Main comparison")
     lines.append("")
-    lines.append("| Metric | Raw /target | TIM /target_memory |")
+    lines.append("| Metric | Raw /target | TIM-MARS /target_memory_mars |")
     lines.append("|---|---:|---:|")
 
     for label, key in metrics:
@@ -422,7 +422,7 @@ def default_report_dir(bag_path: Path) -> Path:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Evaluate selected-target correctness for raw /target and TIM /target_memory."
+        description="Evaluate selected-target correctness for raw /target and TIM-MARS /target_memory_mars."
     )
     parser.add_argument("bag_path", type=Path)
     parser.add_argument("--annotations", required=True, type=Path)

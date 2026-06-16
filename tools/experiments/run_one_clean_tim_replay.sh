@@ -3,7 +3,7 @@ set -eo pipefail
 
 if [[ $# -lt 4 ]]; then
   echo "Usage:"
-  echo "  $0 <bag_path> <target_id> <tracker> <tim_mode:off|hsv|mars|both|on> [rate] [target_wait_timeout_s]"
+  echo "  $0 <bag_path> <target_id> <tracker> <tim_mode:off|mars|on> [rate] [target_wait_timeout_s]"
   exit 1
 fi
 
@@ -21,7 +21,7 @@ BAG_PATH="$(realpath "$BAG_PATH")"
 BAG_BASE="$(basename "$BAG_PATH")"
 RUN_NAME="${BAG_BASE}__tracker_${TRACKER}__tim_${TIM_MODE}__target_${TARGET_ID}"
 OUT_BAG="$THESIS_ROOT/artifacts/bags/eval_matrix/$RUN_NAME"
-REPORT_DIR="$THESIS_ROOT/reports/tim_v0/$RUN_NAME"
+REPORT_DIR="$THESIS_ROOT/reports/tim_mars_replay/$RUN_NAME"
 LOG_DIR="$THESIS_ROOT/ros2_ws/log/eval_matrix/$RUN_NAME"
 
 mkdir -p "$LOG_DIR"
@@ -36,35 +36,30 @@ echo "[info] TRACKER=$TRACKER"
 echo "[info] TIM_MODE=$TIM_MODE"
 echo "[info] RATE=$RATE"
 
-# Backward compatibility: old "on" means TIM-HSV.
+# Backward compatibility: old "on" now maps to TIM-MARS.
 if [[ "$TIM_MODE" == "on" ]]; then
-  TIM_MODE="hsv"
+  TIM_MODE="mars"
 fi
 
-RUN_TIM_HSV=false
 RUN_TIM_MARS=false
 
 case "$TIM_MODE" in
   off)
     ;;
-  hsv)
-    RUN_TIM_HSV=true
-    ;;
   mars)
     RUN_TIM_MARS=true
     ;;
-  both)
-    RUN_TIM_HSV=true
-    RUN_TIM_MARS=true
+  hsv|both)
+    echo "[error] TIM-HSV/V0 modes were removed. Use tim_mode=mars or off."
+    exit 3
     ;;
   *)
-    echo "[error] tim_mode must be one of: off, hsv, mars, both, on"
+    echo "[error] tim_mode must be one of: off, mars, on"
     exit 3
     ;;
 esac
 
 echo "[info] NORMALISED_TIM_MODE=$TIM_MODE"
-echo "[info] RUN_TIM_HSV=$RUN_TIM_HSV"
 echo "[info] RUN_TIM_MARS=$RUN_TIM_MARS"
 
 TIM_STARTUP_SELECTED_ONLY="${TIM_STARTUP_SELECTED_ONLY:-false}"
@@ -77,12 +72,12 @@ export ROS_DOMAIN_ID
 cleanup() {
   echo "[info] cleaning up background processes"
   jobs -pr | xargs -r kill || true
-  pkill -f "ros2 bag play|ros2 bag record|tracker_node|dashboard_bridge_node|target_memory_node|target_memory_mars_node" || true
+  pkill -f "ros2 bag play|ros2 bag record|tracker_node|dashboard_bridge_node|target_memory_mars_node" || true
 }
 trap cleanup EXIT
 
 echo "[info] stopping old replay processes"
-pkill -f "ros2 bag play|ros2 bag record|tracker_node|dashboard_bridge_node|target_memory_node|target_memory_mars_node" || true
+pkill -f "ros2 bag play|ros2 bag record|tracker_node|dashboard_bridge_node|target_memory_mars_node" || true
 sleep 2
 
 if [[ -e "$OUT_BAG" ]]; then
@@ -93,7 +88,7 @@ if [[ -e "$OUT_BAG" ]]; then
   done
   OUT_BAG="${BASE_OUT}__r${i}"
   RUN_NAME="$(basename "$OUT_BAG")"
-  REPORT_DIR="$THESIS_ROOT/reports/tim_v0/$RUN_NAME"
+  REPORT_DIR="$THESIS_ROOT/reports/tim_mars_replay/$RUN_NAME"
   LOG_DIR="$THESIS_ROOT/ros2_ws/log/eval_matrix/$RUN_NAME"
   mkdir -p "$LOG_DIR"
   echo "[warn] output exists, using OUT_BAG=$OUT_BAG"
@@ -122,38 +117,6 @@ ros2 run thesis_bringup dashboard_bridge_node --ros-args \
   -p publish_hz:=30.0 \
   >"$LOG_DIR/dashboard_bridge.log" 2>&1 &
 
-if [[ "$RUN_TIM_HSV" == "true" ]]; then
-  echo "[info] starting TIM-HSV"
-  ros2 run thesis_bringup target_memory_node --ros-args \
-    -p tracks_topic:=/tracks \
-    -p raw_target_topic:=/target \
-    -p target_topic:=/target_memory \
-    -p status_topic:=/target_memory/status \
-    -p select_topic:=/target_memory/select \
-    -p selected_track_id:=${TARGET_ID} \
-    -p mirror_raw_target_selection:=$([[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]] && echo false || echo true) \
-    -p appearance_enabled:=true \
-    -p appearance_image_topic:=/camera/image_raw \
-    -p accept_score_locked:=${TIM_ACCEPT_SCORE_LOCKED:-0.52} \
-    -p accept_score_lost:=${TIM_ACCEPT_SCORE_LOST:-0.60} \
-    -p ambiguity_margin:=${TIM_AMBIGUITY_MARGIN:-0.07} \
-    -p appearance_weight:=${TIM_APPEARANCE_WEIGHT:-0.12} \
-    -p appearance_min_similarity:=${TIM_APPEARANCE_MIN_SIMILARITY:-0.35} \
-    -p appearance_ambiguous_only:=${TIM_APPEARANCE_AMBIGUOUS_ONLY:-true} \
-    -p appearance_update_cooldown_after_reacquire_frames:=${TIM_APPEARANCE_UPDATE_COOLDOWN_FRAMES:-0} \
-    -p appearance_challenge_enabled:=${TIM_APPEARANCE_CHALLENGE_ENABLED:-false} \
-    -p appearance_challenge_min_similarity:=${TIM_APPEARANCE_CHALLENGE_MIN_SIMILARITY:-0.50} \
-    -p appearance_challenge_margin:=${TIM_APPEARANCE_CHALLENGE_MARGIN:-0.20} \
-    -p appearance_challenge_min_total:=${TIM_APPEARANCE_CHALLENGE_MIN_TOTAL:-0.45} \
-    -p rank_aware_reacquisition_enabled:=${TIM_RANK_AWARE_REACQUISITION_ENABLED:-false} \
-    -p rank_aware_lost_min_total:=${TIM_RANK_AWARE_LOST_MIN_TOTAL:-0.40} \
-    -p rank_aware_lost_min_geom:=${TIM_RANK_AWARE_LOST_MIN_GEOM:-0.10} \
-    -p rank_aware_lost_min_app:=${TIM_RANK_AWARE_LOST_MIN_APP:-0.05} \
-    -p rank_aware_lost_app_margin:=${TIM_RANK_AWARE_LOST_APP_MARGIN:-0.03} \
-    -p rank_aware_confirm_frames:=${TIM_RANK_AWARE_CONFIRM_FRAMES:-1} \
-    -p rank_aware_missing_ttl_frames:=${TIM_RANK_AWARE_MISSING_TTL_FRAMES:-8} \
-    >"$LOG_DIR/target_memory_hsv.log" 2>&1 &
-fi
 
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
   echo "[info] starting TIM-MARS"
@@ -187,7 +150,7 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     >"$LOG_DIR/target_memory_mars.log" 2>&1 &
 fi
 
-if [[ "$RUN_TIM_HSV" != "true" && "$RUN_TIM_MARS" != "true" ]]; then
+if [[ "$RUN_TIM_MARS" != "true" ]]; then
   echo "[info] TIM disabled"
 fi
 
@@ -198,9 +161,6 @@ ros2 node list | sort | tee "$LOG_DIR/nodes_before_play.txt" || true
 
 echo "[info] starting recorder"
 TOPICS=(/camera/image_raw /detections /tracks /target /timing_tracker /timing_target)
-if [[ "$RUN_TIM_HSV" == "true" ]]; then
-  TOPICS+=(/target_memory /target_memory/status)
-fi
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
   TOPICS+=(/target_memory_mars /target_memory_mars/status)
 fi
@@ -256,17 +216,8 @@ select_target() {
   echo
 
   if [[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]]; then
-    echo "[info] skipping TIM select topics because TIM_STARTUP_SELECTED_ONLY=true"
+    echo "[info] skipping TIM select topic because TIM_STARTUP_SELECTED_ONLY=true"
     return 0
-  fi
-
-  if [[ "$RUN_TIM_HSV" == "true" ]]; then
-    echo "[info] selecting target via TIM-HSV select topic: $target_id"
-    ros2 topic pub --once \
-      --qos-reliability best_effort \
-      /target_memory/select \
-      std_msgs/msg/UInt32 \
-      "{data: ${target_id}}" >"$LOG_DIR/tim_hsv_select.log" 2>&1 || true
   fi
 
   if [[ "$RUN_TIM_MARS" == "true" ]]; then
@@ -292,19 +243,6 @@ verify_target() {
     fi
     sleep 1
   done
-
-  if [[ "$RUN_TIM_HSV" == "true" ]]; then
-    echo "[info] verifying /target_memory id $target_id"
-    for _ in {1..30}; do
-      if timeout 2s ros2 topic echo /target_memory --once >"$LOG_DIR/target_memory_hsv_once.txt" 2>/dev/null; then
-        if grep -q "id: ${target_id}" "$LOG_DIR/target_memory_hsv_once.txt"; then
-          echo "[ok] /target_memory has id $target_id"
-          break
-        fi
-      fi
-      sleep 1
-    done
-  fi
 
   if [[ "$RUN_TIM_MARS" == "true" ]]; then
     echo "[info] verifying /target_memory_mars id $target_id"
@@ -381,13 +319,6 @@ fi
 wait "$REC_PID" || true
 
 echo "[info] analysing eval bag"
-python3 "$THESIS_ROOT/tools/analysis/analyse_tim_v0_bag.py" "$OUT_BAG" || true
-
-if [[ "$TIM_MODE" == "on" && -f "$REPORT_DIR/target_memory_status.csv" ]]; then
-  python3 "$THESIS_ROOT/tools/analysis/analyse_tim_v1_appearance.py" \
-    "$REPORT_DIR/target_memory_status.csv" \
-    --out-root "$THESIS_ROOT/reports/tim_v1_appearance" || true
-fi
 
 echo "[ok] done"
 echo "[ok] eval bag: $OUT_BAG"

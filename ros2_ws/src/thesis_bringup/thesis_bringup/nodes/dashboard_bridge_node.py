@@ -68,7 +68,7 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("tracks_topic", "/tracks")
         self.declare_parameter("detections_topic", "/detections")
         self.declare_parameter("target_topic", "/target")
-        self.declare_parameter("target_memory_status_topic", "/target_memory/status")
+        self.declare_parameter("target_memory_status_topic", "/target_memory_mars/status")
         self.declare_parameter("fps_topic", "/camera/fps")
         self.declare_parameter("replay_progress_topic", "/camera/replay_progress")
         self.declare_parameter("timing_topic", "/timing")

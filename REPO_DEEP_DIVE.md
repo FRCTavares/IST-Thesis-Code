@@ -38,7 +38,7 @@ Conceptual chain:
 
 When target memory is enabled, TIM consumes tracker output and selected-target context to publish a conservative selected-target output:
 
-`/tracks + selected target -> TIM -> /target_memory + /target_memory/status`
+`/tracks + selected target -> TIM -> /target_memory_mars + /target_memory_mars_mars/status`
 
 ### Removed path: legacy ZMQ/container perception
 
@@ -74,8 +74,8 @@ Its role is to decide whether the current tracker output still corresponds to th
 Important output topics:
 
 - `/target`: raw selected tracker target from the dashboard bridge.
-- `/target_memory`: TIM-filtered selected target, used only when TIM is valid and control-safe.
-- `/target_memory/status`: TIM diagnostics, including state, scores, reasons, and validity flags.
+- `/target_memory_mars`: TIM-filtered selected target, used only when TIM is valid and control-safe.
+- `/target_memory_mars_mars/status`: TIM diagnostics, including state, scores, reasons, and validity flags.
 
 Core evaluation principle:
 
@@ -268,7 +268,7 @@ Current hard re-entry comparison:
 | Method | Correct duration [s] | Wrong duration [s] | Lost duration [s] | Correct ratio | Wrong ratio | Lost ratio |
 |---|---:|---:|---:|---:|---:|---:|
 | Raw OCSORT `/target` | 66.400 | 40.450 | 21.200 | 0.519 | 0.316 | 0.166 |
-| OCSORT + TIM `/target_memory` | 91.350 | 35.550 | 1.150 | 0.713 | 0.278 | 0.009 |
+| OCSORT + TIM `/target_memory_mars` | 91.350 | 35.550 | 1.150 | 0.713 | 0.278 | 0.009 |
 | Raw DeepSORT MARS `/target` | 87.600 | 9.150 | 31.350 | 0.684 | 0.071 | 0.245 |
 
 Interpretation:
