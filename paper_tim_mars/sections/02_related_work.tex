@@ -1,0 +1,17 @@
+\section{Related Work}
+
+\subsection{Vision-Based UAV Person Following}
+
+Vision-based UAV person following commonly relies on object detection, tracking, and visual servoing or target-relative control. In constrained cases, a detector alone can provide a target location for control. In multi-person scenes, however, the system must also maintain the identity of the selected person. This makes the problem different from generic person detection, because the selected identity must remain stable under occlusion, crossing, and re-entry.
+
+\subsection{Multi-Object Tracking}
+
+Multi-object tracking methods associate detections over time and produce track identities. SORT provides a lightweight online baseline based on Kalman filtering and frame-to-frame association~\cite{bewley2016sort}. DeepSORT extends this idea with an appearance association metric~\cite{wojke2017deepsort}. ByteTrack improves association by using both high-confidence and low-confidence detections~\cite{zhang2022bytetrack}, while OCSORT improves robustness by rethinking the observation and motion update strategy~\cite{cao2023ocsort}. These trackers are usually evaluated with generic tracking metrics. For target-following control, however, the relevant question is narrower: whether the selected person remains the correct control target.
+
+\subsection{Appearance-Based Re-Identification}
+
+Appearance-based re-identification methods use visual descriptors to compare identities across frames. MARS provides a large-scale video benchmark for person re-identification and motivates compact appearance embeddings for identity comparison over time~\cite{zheng2016mars}. In this work, appearance is used as supporting evidence inside a selected-target memory layer rather than as a standalone tracking method.
+
+\subsection{Control-Oriented Target Robustness}
+
+For closed-loop UAV following, identity errors have different consequences from temporary target loss. A lost target can trigger conservative behaviour, while a wrong target may lead to unsafe following. This motivates evaluating selected-target tracking with separate correct, wrong, and lost durations instead of relying only on generic tracking accuracy or output availability.

@@ -1,0 +1,57 @@
+\section{System Overview}
+
+The perception stack is organised as a detector-tracker-memory-control pipeline. TIM-MARS is inserted above the base tracker and below the controller. It does not replace the tracker; it converts raw selected-track output into a control-facing selected-target state.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+    node distance=4.5mm,
+    block/.style={draw, rounded corners, align=center, minimum width=22mm, minimum height=7mm, font=\footnotesize},
+    topic/.style={draw, align=center, minimum width=22mm, minimum height=6mm, font=\scriptsize, fill=gray!10},
+    arrow/.style={-Latex, thick}
+]
+\node[block] (cam) {RGB camera};
+\node[block, right=of cam] (det) {Person\\detector};
+\node[topic, right=of det] (detections) {\texttt{/detections}};
+\node[block, right=of detections] (tracker) {MOT\\tracker};
+\node[topic, below=of tracker] (tracks) {\texttt{/tracks}};
+\node[topic, right=of tracker] (rawtarget) {Raw selected\\\texttt{/target}};
+\node[block, right=of rawtarget] (tim) {TIM-MARS\\memory};
+\node[topic, right=of tim] (memtarget) {Control target\\\texttt{/target\_memory\_mars}};
+\node[block, right=of memtarget] (ctrl) {UAV\\controller};
+
+\draw[arrow] (cam) -- (det);
+\draw[arrow] (det) -- (detections);
+\draw[arrow] (detections) -- (tracker);
+\draw[arrow] (tracker) -- (rawtarget);
+\draw[arrow] (tracker) -- (tracks);
+\draw[arrow] (tracks.east) -| (tim.south);
+\draw[arrow] (rawtarget) -- (tim);
+\draw[arrow] (cam.south) |- (tim.south);
+\draw[arrow] (tim) -- (memtarget);
+\draw[arrow] (memtarget) -- (ctrl);
+\end{tikzpicture}
+\caption{TIM-MARS is a selected-target memory layer above the tracker. It filters the raw selected target into a control-facing target state.}
+\label{fig:pipeline}
+\end{figure*}
+
+The relevant ROS~2 topics are summarised in Table~\ref{tab:topics}.
+
+\begin{table}[t]
+\centering
+\caption{Main runtime topics used by TIM-MARS.}
+\label{tab:topics}
+\begin{tabular}{ll}
+\toprule
+Topic & Role \\
+\midrule
+\texttt{/detections} & detector output \\
+\texttt{/tracks} & base tracker candidates \\
+\texttt{/target} & raw selected target \\
+\texttt{/target\_memory\_mars} & memory-filtered selected target \\
+\texttt{/target\_memory\_mars/status} & diagnostic memory state \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This structure makes the tracker interchangeable. The same selected-target memory layer can be evaluated with ByteTrack, OCSORT, or DeepSORT-MARS.

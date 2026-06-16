@@ -1,0 +1,17 @@
+\begin{table*}[t]
+\centering
+\caption{Post-detection replay runtime for the final methods. Hailo inference is excluded; the same recorded detections are replayed for each method.}
+\label{tab:final_compute_runtime}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Method & Output & Tracks & CPU & User CPU & Sys. CPU & Wall & Peak RSS \\
+ & samples & samples & (\%) & (s) & (s) & time & (MB) \\
+\midrule
+Raw ByteTrack & 949 & 948 & 6 & 13.74 & 5.57 & 5:07.90 & 585.5 \\
+ByteTrack $+$ TIM-MARS & 952 & 952 & 10 & 23.55 & 7.63 & 5:08.80 & 584.7 \\
+Raw DeepSORT-MARS & 952 & 951 & 8 & 18.38 & 6.51 & 5:08.52 & 585.7 \\
+Raw OCSORT & 953 & 952 & 7 & 17.33 & 5.84 & 5:07.89 & 585.6 \\
+OCSORT $+$ TIM-MARS & 950 & 950 & 9 & 21.11 & 7.73 & 5:11.11 & 586.0 \\
+\bottomrule
+\end{tabular}
+\end{table*}

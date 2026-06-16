@@ -1,0 +1,94 @@
+\section{TIM-MARS Algorithm}
+
+Algorithm~\ref{alg:tim_mars} summarises the implementation-level update used by TIM-MARS.
+
+\begin{algorithm}[t]
+\caption{TIM-MARS selected-target memory update}
+\label{alg:tim_mars}
+\begin{algorithmic}[1]
+\REQUIRE tracker candidates $\mathcal{C}_t$, previous memory $m_{t-1}$
+\ENSURE output target $y_t$, state $s_t$
+\STATE discard candidates with $q_t^i < \tau_q$
+\IF{$\mathcal{C}_t' = \emptyset$}
+    \STATE update missing-frame counter
+    \STATE $s_t \leftarrow \mathrm{UNCERTAIN}$ or $\mathrm{LOST}$
+    \STATE $y_t \leftarrow \emptyset$
+    \RETURN
+\ENDIF
+\FORALL{$c_t^i \in \mathcal{C}_t'$}
+    \STATE compute $I_i$, $D_i$, $Z_i$, $Q_i$, and $B_i$
+    \STATE compute base score $S_i^0$
+\ENDFOR
+\STATE compute base ambiguity margin $\Delta_t^0$
+\STATE decide whether appearance should be used
+\FORALL{$c_t^i \in \mathcal{C}_t'$}
+    \IF{appearance is available and geometry allows appearance}
+        \STATE compute raw MARS similarity $A_i$
+        \IF{appearance is enabled and $A_i \geq \tau_A$}
+            \STATE $S_i \leftarrow \mathrm{clip}(S_i^0+w_AA_i,0,1)$
+        \ELSE
+            \STATE $S_i \leftarrow S_i^0$
+        \ENDIF
+    \ELSE
+        \STATE $S_i \leftarrow S_i^0$
+    \ENDIF
+\ENDFOR
+\STATE $c_t^\star \leftarrow \arg\max_{c_t^i \in \mathcal{C}_t'} S_i$
+\STATE choose threshold $\tau_s$ from previous state
+\IF{$id(c_t^\star) = id_{t-1}^\star$}
+    \STATE relax threshold by $\delta_{id}$
+\ENDIF
+\IF{$S_t^\star < \tau_s$}
+    \STATE $s_t \leftarrow \mathrm{UNCERTAIN}$ or $\mathrm{LOST}$
+    \STATE $y_t \leftarrow \emptyset$
+    \RETURN
+\ENDIF
+\IF{conservative appearance filtering is enabled}
+    \IF{appearance was not used and appearance is required}
+        \STATE $s_t \leftarrow \mathrm{UNCERTAIN}$ or $\mathrm{LOST}$
+        \STATE $y_t \leftarrow \emptyset$
+        \RETURN
+    \ENDIF
+    \IF{appearance was used and $(A^\star < \tau_C$ or $\Delta_A < \tau_M)$}
+        \STATE $s_t \leftarrow \mathrm{UNCERTAIN}$ or $\mathrm{LOST}$
+        \STATE $y_t \leftarrow \emptyset$
+        \RETURN
+    \ENDIF
+\ENDIF
+\IF{previous state was $\mathrm{UNCERTAIN}$ or $\mathrm{LOST}$}
+    \STATE $s_t \leftarrow \mathrm{REACQUIRED}$
+\ELSE
+    \STATE $s_t \leftarrow \mathrm{LOCKED}$
+\ENDIF
+\STATE update selected-target memory
+\STATE update appearance memory only in confirmed LOCKED state
+\STATE $y_t \leftarrow b_t^\star$
+\end{algorithmic}
+\end{algorithm}
+
+Figure~\ref{fig:state_machine} shows the state-machine interpretation.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+    node distance=8mm,
+    state/.style={draw, rounded corners, align=center, minimum width=20mm, minimum height=7mm, font=\footnotesize},
+    arrow/.style={-Latex, thick, font=\scriptsize}
+]
+\node[state] (no) {NO\\TARGET};
+\node[state, right=of no] (locked) {LOCKED};
+\node[state, below=of locked] (uncertain) {UNCERTAIN};
+\node[state, left=of uncertain] (lost) {LOST};
+\node[state, right=of uncertain] (reacq) {REACQUIRED};
+
+\draw[arrow] (no) -- node[above] {select} (locked);
+\draw[arrow] (locked) -- node[right] {weak or ambiguous} (uncertain);
+\draw[arrow] (uncertain) -- node[above] {timeout} (lost);
+\draw[arrow] (lost) -- node[below] {candidate accepted} (reacq);
+\draw[arrow] (reacq) -- node[right] {confirmed} (locked);
+\draw[arrow] (locked) edge[loop above] node {accepted} (locked);
+\draw[arrow] (lost) edge[loop left] node {no safe candidate} (lost);
+\end{tikzpicture}
+\caption{TIM-MARS state-machine interpretation. Ambiguous candidates are rejected into UNCERTAIN or LOST instead of being published as control-valid targets.}
+\label{fig:state_machine}
+\end{figure}

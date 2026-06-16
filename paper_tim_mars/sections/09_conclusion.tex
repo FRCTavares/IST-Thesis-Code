@@ -1,0 +1,9 @@
+\section{Conclusion}
+
+This paper presented TIM-MARS, a selected-target memory layer for vision-based UAV person following. Rather than replacing the multi-object tracker, TIM-MARS operates above it and publishes a control-facing target state using geometric continuity, tracker state, and MARS appearance evidence.
+
+On the evaluated hard re-entry sequence, ByteTrack + TIM-MARS provided the strongest selected-target result, increasing correct-target output from 68.7\% to 96.9\% and reducing wrong-target output from 11.5\% to 1.5\%. The replay-level runtime results show that this improvement comes with modest post-detection overhead: CPU share increased from 6\% to 10\% relative to raw ByteTrack, while wall time and peak memory remained nearly unchanged.
+
+The results also show that TIM-MARS is not universally beneficial. Raw DeepSORT-MARS already achieved 0.0\% wrong-target output on this sequence, and adding TIM-MARS introduced wrong-target output. This supports the main conclusion of the paper: selected-target memory is most useful when the base tracker has recoverable identity instability, and it must be evaluated with control-oriented correct, wrong, and lost output durations.
+
+Future work will validate the method across more sequences and full onboard Hailo-based flight experiments, including closed-loop behaviours that treat wrong-target output as less safe than temporary target loss.

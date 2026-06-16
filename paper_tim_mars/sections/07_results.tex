@@ -1,0 +1,21 @@
+\section{Results}
+
+Table~\ref{tab:hard_reentry_results} reports selected-target correctness as percentages of the visible-target interval. Figure~\ref{fig:result_ratios} visualises the same comparison, and Figure~\ref{fig:qualitative_hard_reentry} shows a qualitative hard re-entry example.
+
+\input{tables/hard_reentry_results}
+\input{figures/result_ratios_tikz}
+\input{figures/qualitative_hard_reentry}
+
+ByteTrack benefits most from TIM-MARS. Correct selected-target output increases from 68.7\% to 96.9\%, while wrong-target output decreases from 11.5\% to 1.5\%. Lost-target output also decreases from 19.8\% to 1.6\%. This indicates that the base tracker had recoverable identity instability and that TIM-MARS improved both safety and continuity.
+
+DeepSORT-MARS is already a strong raw baseline, with 92.8\% correct output and 0.0\% wrong output. Adding TIM-MARS reduces lost output from 7.2\% to 2.6\%, but introduces 5.1\% wrong output. Under the adopted safety rule, this is not a strict improvement.
+
+OCSORT also benefits from TIM-MARS in terms of safety. Wrong-target output decreases from 35.6\% to 11.9\%, while correct output increases from 48.7\% to 67.2\%. Lost output increases from 15.7\% to 20.9\%. This is a valid safety trade-off, but remains weaker than the ByteTrack TIM-MARS result.
+
+\subsection{Post-Detection Runtime}
+
+Table~\ref{tab:final_compute_runtime} reports the final replay-level runtime comparison. This benchmark isolates the post-detection ROS stack: the same recorded \texttt{/detections} topic is replayed for each method, and Hailo inference is not included.
+
+\input{tables/final_compute_runtime}
+
+ByteTrack + TIM-MARS increases replay-level CPU share from 6\% to 10\% relative to raw ByteTrack, while wall time and peak memory remain nearly unchanged. Compared with raw DeepSORT-MARS, ByteTrack + TIM-MARS uses slightly more CPU in this replay setup, but achieves the strongest selected-target correctness on the evaluated hard re-entry sequence. The appropriate conclusion is therefore not that TIM-MARS is cheaper than DeepSORT-MARS, but that it provides the best robustness result with modest post-detection overhead.

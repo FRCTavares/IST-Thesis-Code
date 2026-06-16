@@ -258,27 +258,44 @@ def latest_at(events, idx, t_s):
 def draw_panel(img, title, status, colour, source_t_s, eval_t_s, selected_id, correct_id, selected_box, correct_box):
     out = img.copy()
 
-    # Header background.
-    cv2.rectangle(out, (0, 0), (out.shape[1], 118), (0, 0, 0), -1)
+    # Paper-clean rendering:
+    # keep compact correctness status and box labels,
+    # remove long diagnostic header and timestamps.
 
-    cv2.putText(out, title, (18, 34), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2, cv2.LINE_AA)
-
-    cv2.putText(out, status, (18, 78), cv2.FONT_HERSHEY_SIMPLEX, 1.15, colour, 3, cv2.LINE_AA)
-
-    info = f"selected={selected_id} correct={correct_id} source_t={source_t_s:5.2f}s eval_t={eval_t_s:6.2f}s"
-    cv2.putText(out, info, (18, 108), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (230, 230, 230), 1, cv2.LINE_AA)
+    # Compact status label.
+    status_bg = (0, 0, 0)
+    cv2.rectangle(out, (12, 12), (245, 58), status_bg, -1)
+    cv2.putText(out, status, (24, 47), cv2.FONT_HERSHEY_SIMPLEX, 1.05, colour, 3, cv2.LINE_AA)
 
     # Correct reference box, thin cyan.
     if correct_box is not None:
         x1, y1, x2, y2 = correct_box
         cv2.rectangle(out, (x1, y1), (x2, y2), (255, 255, 0), 2)
-        cv2.putText(out, f"REF {correct_id}", (x1, max(135, y1 - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (255, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(
+            out,
+            f"REF {correct_id}",
+            (x1, max(24, y1 - 6)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            (255, 255, 0),
+            2,
+            cv2.LINE_AA,
+        )
 
     # Method selected box, thick status colour.
     if selected_box is not None:
         x1, y1, x2, y2 = selected_box
         cv2.rectangle(out, (x1, y1), (x2, y2), colour, 4)
-        cv2.putText(out, f"OUT {selected_id}", (x1, min(out.shape[0] - 12, y2 + 22)), cv2.FONT_HERSHEY_SIMPLEX, 0.58, colour, 2, cv2.LINE_AA)
+        cv2.putText(
+            out,
+            f"OUT {selected_id}",
+            (x1, min(out.shape[0] - 12, y2 + 24)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.60,
+            colour,
+            2,
+            cv2.LINE_AA,
+        )
 
     return out
 

@@ -1,0 +1,18 @@
+\section{Introduction}
+
+Vision-based person following is a core capability for micro aerial robots operating in human-centred environments. A typical perception stack detects people, tracks them over time, and forwards a selected target to a downstream controller. However, reliable control requires more than maintaining generic multi-object tracks. The system must preserve the identity of one selected person, especially after occlusion, crossing events, and target re-entry.
+
+This distinction matters because a tracker may produce visually plausible outputs while assigning the selected target to the wrong person. For a following UAV, this is a safety-relevant failure. A lost target can be handled by slowing down, hovering, or stopping target-following behaviour. A wrong target can instead command the robot toward the wrong person. Therefore, this work adopts the control-oriented rule that wrong target is worse than lost target.
+
+This paper presents TIM-MARS, a selected-target memory layer for robust UAV person following. TIM-MARS operates above an existing detector and multi-object tracker. It does not attempt to replace the tracker. Instead, it filters the raw selected-target output using temporal memory, geometric consistency, and MARS re-identification appearance evidence. The result is a control-facing target state that can remain locked, become uncertain, be declared lost, or be reacquired.
+
+The main contributions are:
+
+\begin{itemize}
+    \item a selected-target memory formulation focused on control safety rather than generic tracking accuracy;
+    \item a lightweight TIM-MARS layer combining tracker state, geometry, and MARS appearance embeddings;
+    \item a selected-target correctness evaluation that separates correct, wrong, and lost output duration;
+    \item an experimental comparison across ByteTrack, OCSORT, and DeepSORT-MARS on a hard re-entry sequence.
+\end{itemize}
+
+The results show that TIM-MARS is most useful when the base tracker has recoverable identity instability. In the evaluated hard re-entry sequence, ByteTrack with TIM-MARS achieves the strongest result, reducing wrong-target output while increasing correct-target duration.
