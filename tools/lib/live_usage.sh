@@ -82,8 +82,8 @@ Options:
     --perception-gc-on                  Enable Python cyclic GC in perception node (default)
     --perception-no-stub-fallback       Fail fast if Hailo backend initialization fails (default)
     --perception-allow-stub-fallback    Allow stub fallback when Hailo backend initialization fails
-    --target-memory <off|hsv|mars|both>
-                                          Select TIM mode, default: hsv
+    --target-memory <off|mars>
+                                          Select TIM mode, default: mars
     --target-memory-appearance         Enable TIM-MARS appearance extraction
     --target-memory-appearance-image-topic <topic>
                                           Image topic for TIM appearance, default: /camera/dashboard
@@ -150,8 +150,8 @@ Day-to-day options:
     --perception-inference-backend <name>
                                       Perception backend (default: hailo_direct)
     --no-tracker                      Do not start tracker node
-    --target-memory <off|hsv|mars|both>
-                                      Select TIM mode, default: hsv
+    --target-memory <off|mars>
+                                      Select TIM mode, default: mars
     --target-memory-appearance        Enable TIM-MARS appearance extraction
     --no-target                       Deprecated alias; target selection is now handled by dashboard bridge API
     --no-control                      Do not start control_ref_node

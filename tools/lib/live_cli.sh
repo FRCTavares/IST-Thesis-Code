@@ -54,7 +54,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --target-memory)
             if [[ $# -lt 2 ]]; then
-                echo "[error] --target-memory requires a value: off|hsv|mars|both"
+                echo "[error] --target-memory requires a value: off|mars"
                 print_usage
                 exit 1
             fi
@@ -767,30 +767,27 @@ if ! [[ "$CONTROL_STALE_TIMEOUT_S" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
     exit 1
 fi
 
-case "${TARGET_MEMORY_MODE:-hsv}" in
-    off|hsv|mars|both)
+case "${TARGET_MEMORY_MODE:-mars}" in
+    off|mars)
+        ;;
+    hsv|both)
+        echo "[error] TIM-HSV/V0 target-memory modes were removed. Use --target-memory mars or off."
+        exit 2
         ;;
     *)
-        echo "[error] invalid --target-memory '${TARGET_MEMORY_MODE}' (expected off|hsv|mars|both)"
-        exit 1
+        echo "[error] invalid --target-memory '${TARGET_MEMORY_MODE}' (expected off|mars)"
+        exit 2
         ;;
 esac
 
 RUN_TARGET_MEMORY_HSV=0
 RUN_TARGET_MEMORY_MARS=0
 
-case "${TARGET_MEMORY_MODE:-hsv}" in
-    hsv)
-        RUN_TARGET_MEMORY_HSV=1
+case "${TARGET_MEMORY_MODE:-mars}" in
+    off)
         ;;
     mars)
         RUN_TARGET_MEMORY_MARS=1
-        ;;
-    both)
-        RUN_TARGET_MEMORY_HSV=1
-        RUN_TARGET_MEMORY_MARS=1
-        ;;
-    off)
         ;;
 esac
 

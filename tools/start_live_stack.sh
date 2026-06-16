@@ -126,7 +126,7 @@ print_startup_success_summary() {
     echo "[ok] startup summary: capture=${capture_size} publish=${publish_size} hailo_infer=${infer_size}"
     echo "[ok] detector: ${detector_summary}"
     echo "[ok] tracker: ${tracker_summary}"
-    echo "[ok] target memory: mode=${TARGET_MEMORY_MODE:-hsv} hsv=${RUN_TARGET_MEMORY_HSV:-0} mars=${RUN_TARGET_MEMORY_MARS:-0}"
+    echo "[ok] target memory: mode=${TARGET_MEMORY_MODE:-mars} hsv=${RUN_TARGET_MEMORY_HSV:-0} mars=${RUN_TARGET_MEMORY_MARS:-0}"
 }
 
 kill_tree() {

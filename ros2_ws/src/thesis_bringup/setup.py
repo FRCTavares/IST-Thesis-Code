@@ -29,6 +29,7 @@ setup(
         "console_scripts": [
             "camera_capture_node = thesis_bringup.nodes.camera_capture_node:main",
             "perception_pipeline_node = thesis_bringup.nodes.perception_pipeline_node:main",
+            "perception_camera_node = thesis_bringup.nodes.perception_camera_node:main",
             "video_file_publisher_node = thesis_bringup.nodes.video_file_publisher_node:main",
             "dashboard_bridge_node = thesis_bringup.nodes.dashboard_bridge_node:main",
             'control_ref_node = thesis_bringup.nodes.control_ref_node:main',

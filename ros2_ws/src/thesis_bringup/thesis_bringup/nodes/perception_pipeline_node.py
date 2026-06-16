@@ -784,8 +784,13 @@ class HailoDirectInferenceEngine:
 class PerceptionPipelineNode(Node):
     """Single-process perception node with optional in-process Hailo backend."""
 
-    def __init__(self) -> None:
-        super().__init__("perception_pipeline_node")
+    def __init__(
+        self,
+        *,
+        node_name: str = "perception_pipeline_node",
+        create_image_subscription: bool = True,
+    ) -> None:
+        super().__init__(node_name)
 
         self.declare_parameter("image_topic", "/camera/image_raw")
         self.declare_parameter("img_w", 640)
@@ -890,13 +895,15 @@ class PerceptionPipelineNode(Node):
         self.pub_dets = self.create_publisher(Detection2DArray, "/detections", qos_pub)
         self.pub_timing = self.create_publisher(Timing, "/timing", qos_pub)
 
-        image_sub_qos = self._build_image_sub_qos()
-        self.sub_image = self.create_subscription(
-            Image,
-            self.image_topic,
-            self.on_image,
-            image_sub_qos,
-        )
+        self.sub_image = None
+        if create_image_subscription:
+            image_sub_qos = self._build_image_sub_qos()
+            self.sub_image = self.create_subscription(
+                Image,
+                self.image_topic,
+                self.on_image,
+                image_sub_qos,
+            )
 
         self.engine = self._build_engine()
 

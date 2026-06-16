@@ -83,6 +83,8 @@ class TargetMemoryMarsNode(Node):
         self.declare_parameter("appearance_s_bins", 8)
         self.declare_parameter("appearance_min_bbox_height", 30.0)
         self.declare_parameter("appearance_max_image_age_ms", 250.0)
+        self.declare_parameter("appearance_compute_min_interval_ms", 250.0)
+        self.declare_parameter("appearance_cache_ttl_ms", 750.0)
         self.declare_parameter("appearance_weight", 0.12)
         self.declare_parameter("appearance_min_similarity", 0.35)
         self.declare_parameter("appearance_update_alpha", 0.10)
@@ -128,6 +130,14 @@ class TargetMemoryMarsNode(Node):
         self._appearance_enabled = bool(self.get_parameter("appearance_enabled").value)
         self._appearance_image_topic = str(self.get_parameter("appearance_image_topic").value)
         self._appearance_max_image_age_ms = float(self.get_parameter("appearance_max_image_age_ms").value)
+        self._appearance_compute_min_interval_ms = max(
+            0.0,
+            float(self.get_parameter("appearance_compute_min_interval_ms").value),
+        )
+        self._appearance_cache_ttl_ms = max(
+            0.0,
+            float(self.get_parameter("appearance_cache_ttl_ms").value),
+        )
         self._mars_model_path = str(self.get_parameter("mars_model_path").value)
         self._mars_batch_size = int(self.get_parameter("mars_batch_size").value)
         self._mars_backend = None
@@ -141,6 +151,12 @@ class TargetMemoryMarsNode(Node):
         self._last_appearance_features_valid = 0
         self._last_appearance_image_age_ms: Optional[float] = None
         self._last_appearance_skip_reason = "disabled"
+
+        self._latest_image_seq = 0
+        self._last_mars_compute_ns = 0
+        self._last_mars_image_seq = -1
+        self._appearance_cache_by_track_id: dict[int, object] = {}
+        self._appearance_cache_seen_ns: dict[int, int] = {}
 
         initial_id = int(self.get_parameter("selected_track_id").value)
         self._pending_select_id: Optional[int] = initial_id if initial_id > 0 else None
@@ -259,6 +275,7 @@ class TargetMemoryMarsNode(Node):
                 desired_encoding="bgr8",
             )
             self._latest_image_seen_ns = time.monotonic_ns()
+            self._latest_image_seq += 1
         except Exception as exc:
             if not self._image_error_warned:
                 self.get_logger().warn(f"TIM appearance image conversion failed: {exc}")
@@ -372,20 +389,39 @@ class TargetMemoryMarsNode(Node):
             self._last_appearance_skip_reason = "disabled"
             return candidates
 
-        if self._latest_image_bgr is None or self._latest_image_seen_ns is None:
-            self._last_appearance_skip_reason = "no_image"
+        if not candidates:
+            self._last_appearance_skip_reason = "no_candidates"
             return candidates
 
-        age_ms = float(time.monotonic_ns() - self._latest_image_seen_ns) / 1e6
+        now_ns = time.monotonic_ns()
+
+        if self._latest_image_bgr is None or self._latest_image_seen_ns is None:
+            self._last_appearance_skip_reason = "no_image"
+            return self._attach_cached_appearance_features(candidates, now_ns)
+
+        age_ms = float(now_ns - self._latest_image_seen_ns) / 1e6
         self._last_appearance_image_age_ms = age_ms
 
         if age_ms > self._appearance_max_image_age_ms:
             self._last_appearance_skip_reason = "stale_image"
-            return candidates
+            return self._attach_cached_appearance_features(candidates, now_ns)
 
         if self._mars_backend is None:
             self._last_appearance_skip_reason = "no_mars_backend"
-            return candidates
+            return self._attach_cached_appearance_features(candidates, now_ns)
+
+        elapsed_ms = float(now_ns - self._last_mars_compute_ns) / 1e6
+        image_already_encoded = self._last_mars_image_seq == self._latest_image_seq
+        interval_too_short = (
+            self._last_mars_compute_ns > 0
+            and elapsed_ms < self._appearance_compute_min_interval_ms
+        )
+
+        if image_already_encoded or interval_too_short:
+            self._last_appearance_skip_reason = (
+                "cached_same_image" if image_already_encoded else "cached_interval"
+            )
+            return self._attach_cached_appearance_features(candidates, now_ns)
 
         boxes = [candidate.bbox for candidate in candidates]
         try:
@@ -393,14 +429,53 @@ class TargetMemoryMarsNode(Node):
         except Exception as exc:
             self._last_appearance_skip_reason = f"mars_error:{type(exc).__name__}"
             self.get_logger().warn(f"TIM-MARS embedding extraction failed: {exc}")
-            return candidates
+            return self._attach_cached_appearance_features(candidates, now_ns)
 
+        self._last_mars_compute_ns = now_ns
+        self._last_mars_image_seq = self._latest_image_seq
+
+        valid_features = 0
+        for candidate, appearance in zip(candidates, appearances):
+            if appearance is None:
+                continue
+            valid_features += 1
+            track_id = int(candidate.track_id)
+            self._appearance_cache_by_track_id[track_id] = appearance
+            self._appearance_cache_seen_ns[track_id] = now_ns
+
+        self._last_appearance_features_valid = valid_features
+        self._last_appearance_skip_reason = "ok"
+
+        return self._attach_cached_appearance_features(candidates, now_ns)
+
+    def _attach_cached_appearance_features(
+        self,
+        candidates: list[CandidateTrack],
+        now_ns: int,
+    ) -> list[CandidateTrack]:
         enriched: list[CandidateTrack] = []
         valid_features = 0
 
-        for candidate, appearance in zip(candidates, appearances):
-            if appearance is not None:
-                valid_features += 1
+        active_track_ids = {int(candidate.track_id) for candidate in candidates}
+
+        for track_id in list(self._appearance_cache_by_track_id.keys()):
+            if track_id not in active_track_ids:
+                self._appearance_cache_by_track_id.pop(track_id, None)
+                self._appearance_cache_seen_ns.pop(track_id, None)
+
+        for candidate in candidates:
+            track_id = int(candidate.track_id)
+            appearance = self._appearance_cache_by_track_id.get(track_id)
+            seen_ns = self._appearance_cache_seen_ns.get(track_id)
+
+            if appearance is not None and seen_ns is not None:
+                cache_age_ms = float(now_ns - seen_ns) / 1e6
+                if cache_age_ms <= self._appearance_cache_ttl_ms:
+                    valid_features += 1
+                else:
+                    appearance = None
+                    self._appearance_cache_by_track_id.pop(track_id, None)
+                    self._appearance_cache_seen_ns.pop(track_id, None)
 
             enriched.append(
                 CandidateTrack(
@@ -413,8 +488,10 @@ class TargetMemoryMarsNode(Node):
                 )
             )
 
-        self._last_appearance_features_valid = valid_features
-        self._last_appearance_skip_reason = "ok"
+        self._last_appearance_features_valid = max(
+            int(self._last_appearance_features_valid),
+            int(valid_features),
+        )
 
         return enriched
 
@@ -510,6 +587,9 @@ class TargetMemoryMarsNode(Node):
                 "appearance_features_valid": int(self._last_appearance_features_valid),
                 "appearance_image_age_ms": self._last_appearance_image_age_ms,
                 "appearance_skip_reason": str(self._last_appearance_skip_reason),
+                "appearance_compute_min_interval_ms": float(self._appearance_compute_min_interval_ms),
+                "appearance_cache_ttl_ms": float(self._appearance_cache_ttl_ms),
+                "appearance_cache_size": int(len(self._appearance_cache_by_track_id)),
                 "appearance_update_cooldown_remaining": int(getattr(self._tim, "_appearance_update_cooldown_frames_remaining", 0)),
                 "best": None
                 if best is None
