@@ -62,9 +62,10 @@ Use for ReID and status diagnostics:
 
 Use for status and overlay review:
 
-- `tools/bag/render_eval_native_status_audit.py`
-- `tools/bag/render_source14hz_status_audit_video.py`
-- `tools/bag/render_annotation_target_source_images_video.py`
+- `tools/visualization/video.py`
+  - canonical header-time TIM-MARS visual validation renderer
+  - official command: `python3 tools/visualization/video.py tim-header-all`
+  - replaces the deprecated TIM-specific bag renderers under `deprecated/tools/bag_tim_video_renderers_2026-06-17/`
 - `tools/bag/render_bag_overlay_video.py`
 - `tools/visualization/render_all_tracks_id_video.py`
 
