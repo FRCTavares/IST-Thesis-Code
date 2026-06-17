@@ -3,7 +3,7 @@
 # Camera and host-preflight helpers for tools/start_live_stack.sh.
 # This file expects the entrypoint to define logging/process helpers and live-stack config vars.
 
-STACK_PROC_PATTERN="camera_bringup.launch.py|camera_capture_node|inference_client_node|detector_node|perception_pipeline_node|tracker_node|control_ref_node|dashboard_bridge_node|web_video_server"
+STACK_PROC_PATTERN="camera_bringup.launch.py|inference_client_node|detector_node|perception_camera_node|tracker_node|control_ref_node|dashboard_bridge_node|web_video_server"
 CAMERA_MEDIA_DEV_OVERRIDE=""
 
 camera_log_has_fatal_error() {
@@ -36,7 +36,7 @@ camera_log_has_frame_activity() {
 
 check_stuck_camera_processes() {
     local stuck_lines
-    stuck_lines="$(ps -eo pid=,stat=,cmd= | awk '$2 ~ /^D/ && $0 ~ /(camera_capture_node|v4l2-ctl|media-ctl)/ {print}' || true)"
+    stuck_lines="$(ps -eo pid=,stat=,cmd= | awk '$2 ~ /^D/ && $0 ~ /(v4l2-ctl|media-ctl)/ {print}' || true)"
 
     if [[ -n "${stuck_lines:-}" ]]; then
         echo "[error] detected camera/V4L2 process(es) stuck in uninterruptible I/O state (D):"
@@ -351,16 +351,16 @@ start_camera_with_readiness() {
     if ! check_proc_alive camera; then
         return 2
     fi
-    if ! wait_for_topic_message /camera/image_raw 20 1 sensor_data best_effort volatile; then
+    if ! wait_for_topic_message /detections 20 1 sensor_data best_effort volatile; then
         if ! check_proc_alive camera; then
             return 2
         fi
-        if wait_for_topic_message /camera/capture_fps 8 0; then
-            echo "[warn] /camera/image_raw readiness probe timed out, but /camera/capture_fps is active; continuing"
+        if wait_for_topic_message /detections 8 0; then
+            echo "[warn] /detections readiness probe timed out, but /detections is active; continuing"
             return 0
         fi
         if camera_log_has_frame_activity; then
-            echo "[warn] /camera/image_raw readiness probe timed out, but camera log shows active frame pipeline; continuing"
+            echo "[warn] /detections readiness probe timed out, but integrated perception log shows active detection pipeline; continuing"
             return 0
         fi
         if camera_log_has_fatal_error; then

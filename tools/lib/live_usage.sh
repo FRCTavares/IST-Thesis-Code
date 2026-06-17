@@ -20,8 +20,8 @@ Starts the live camera + inference + optional tracking/control/dashboard stack.
 All ROS runtime logs are forced under ros2_ws/log/runtime for this run.
 
 Options:
-    --perception-mode <single-process>
-                                                                            Perception path selection. Only single-process is supported.
+    --perception-mode <integrated-camera>
+                                                                            Perception path selection. Only integrated-camera is supported.
     -v, --verbose                     Enable verbose startup/status logs (default: warnings/errors only)
     --tracker <sort|ocsort|bytetrack|deepsort>  Tracker backend (default: ocsort)
     --tracker-profile-off               Disable tracker profiling instrumentation
@@ -44,12 +44,8 @@ Options:
     --list-resolutions                  Print resolution presets and exit
     --camera-width <N>                  Camera capture width (default: 1280)
     --camera-height <N>                 Camera capture height (default: 720)
-    --camera-publish-width <N>          /camera/image_raw width (default: camera-width)
-    --camera-publish-height <N>         /camera/image_raw height (default: camera-height)
     --camera-publish-resize-mode <resize|letterbox>
-                                                                            /camera/image_raw reshape mode (default: letterbox)
     --camera-publish-encoding <bgr8|rgb8>
-                                                                            /camera/image_raw encoding (default: bgr8)
     --camera-fps <N>                    Camera publish fps (default: 30)
     --dashboard-fps <N>                 Dashboard image publish fps (default: 30)
     --camera-no-flip                    Disable camera frame flip
@@ -64,20 +60,20 @@ Options:
     --camera-ae-max <N>                 Sensor ae_exposure_max control (default: 33333)
     --camera-exposure-mode <0|1|2>      Sensor exposure mode (0=manual, 1=auto, 2=agc; default: 1)
     --camera-manual-exposure <N>        Sensor manual exposure when mode=0 (default: 8333)
-    --infer-queue-size <N>              Inference queue size (legacy client + single-process ingress, default: 1)
-    --infer-workers <N>                 Legacy client workers / single-process preprocess workers (default: 2)
+    --infer-queue-size <N>              Inference queue size (removed client + integrated-camera ingress, default: 1)
+    --infer-workers <N>                 Legacy client workers / integrated-camera preprocess workers (default: 2)
     --infer-timeout-ms <N>              Inference request timeout ms (default: 300)
     --infer-retries <N>                 Inference retries after timeout/error (default: 0)
     --infer-print-every <N>             Inference periodic stats interval (default: 240)
     --infer-timeout-log-every <N>       Inference timeout log interval (default: 20)
-    --perception-image-qos-depth <N>    Perception image subscription depth (single-process default: 2)
+    --perception-image-qos-depth <N>    Perception image subscription depth (integrated-camera default: 2)
     --perception-hailo-queue-buffers <N>
-                                                                            Hailo Gst queue max-size-buffers (single-process default: 6)
+                                                                            Hailo Gst queue max-size-buffers (integrated-camera default: 6)
     --perception-inference-backend <name>
-                                                                            Inference backend (single-process default: hailo_direct)
-    --perception-async-max-inflight <N>  Experimental request for in-flight calls (single-process owner path enforces 1)
-    --perception-hailo-videoconvert-off  Disable pre-hailonet videoconvert stage (single-process)
-    --perception-hailo-videoconvert-on   Enable pre-hailonet videoconvert stage (single-process default)
+                                                                            Inference backend (integrated-camera default: hailo_direct)
+    --perception-async-max-inflight <N>  Experimental request for in-flight calls (integrated-camera owner path enforces 1)
+    --perception-hailo-videoconvert-off  Disable pre-hailonet videoconvert stage (integrated-camera)
+    --perception-hailo-videoconvert-on   Enable pre-hailonet videoconvert stage (integrated-camera default)
     --perception-gc-off                 Disable Python cyclic GC in perception node
     --perception-gc-on                  Enable Python cyclic GC in perception node (default)
     --perception-no-stub-fallback       Fail fast if Hailo backend initialization fails (default)
@@ -135,8 +131,8 @@ Usage: start_live_stack.sh [options]
 Day-to-day options:
     --profile <daily|safe-camera|performance>
                                       Startup preset (default: daily)
-    --perception-mode <single-process>
-                                      Perception path selection. Only single-process is supported.
+    --perception-mode <integrated-camera>
+                                      Perception path selection. Only integrated-camera is supported.
     --resolution <preset|WIDTHxHEIGHT>
                                       Quick camera capture resolution selector
     --list-resolutions                 Print available resolution presets and exit

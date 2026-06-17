@@ -470,7 +470,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --perception-async-latest-frame-off|--perception-async-latest-frame-on)
-            echo "[error] $1 has been removed; single-process always uses queue+worker mode"
+            echo "[error] $1 has been removed; integrated-camera always uses queue+worker mode"
             exit 1
             ;;
         --perception-hailo-videoconvert-off)
@@ -594,10 +594,15 @@ done
 
 # Validate resolved configuration before we touch hardware/container state.
 case "$PERCEPTION_MODE" in
-    single-process)
+    integrated-camera)
+        ;;
+    single-process|legacy)
+        echo "[error] removed perception mode: $PERCEPTION_MODE"
+        echo "[error] live operation now supports only integrated-camera"
+        exit 1
         ;;
     *)
-        echo "[error] invalid --perception-mode '$PERCEPTION_MODE' (expected single-process)"
+        echo "[error] invalid --perception-mode '$PERCEPTION_MODE' (expected integrated-camera)"
         exit 1
         ;;
 esac
@@ -613,13 +618,8 @@ case "$PERCEPTION_INFERENCE_BACKEND" in
 esac
 
 if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 ]]; then
-    if [[ "$PERCEPTION_MODE" == "single-process" ]]; then
-        CAMERA_PUBLISH_WIDTH=640
-        CAMERA_PUBLISH_HEIGHT=640
-    else
-        CAMERA_PUBLISH_WIDTH="$CAMERA_WIDTH"
-        CAMERA_PUBLISH_HEIGHT="$CAMERA_HEIGHT"
-    fi
+    CAMERA_PUBLISH_WIDTH="$CAMERA_WIDTH"
+    CAMERA_PUBLISH_HEIGHT="$CAMERA_HEIGHT"
 fi
 
 case "$TRACKER_TYPE" in
@@ -758,8 +758,8 @@ if ! [[ "$PERCEPTION_ASYNC_MAX_INFLIGHT" =~ ^[0-9]+$ ]] || [[ "$PERCEPTION_ASYNC
     exit 1
 fi
 
-if [[ "$PERCEPTION_MODE" == "single-process" ]] && [[ "$PERCEPTION_ASYNC_MAX_INFLIGHT" -ne 1 ]]; then
-    echo "[warn] single-process owner path enforces async_max_inflight=1; requested=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
+if [[ "$PERCEPTION_ASYNC_MAX_INFLIGHT" -ne 1 ]]; then
+    echo "[warn] integrated-camera owner path enforces async_max_inflight=1; requested=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
 fi
 
 if ! [[ "$CONTROL_STALE_TIMEOUT_S" =~ ^[0-9]+([.][0-9]+)?$ ]]; then

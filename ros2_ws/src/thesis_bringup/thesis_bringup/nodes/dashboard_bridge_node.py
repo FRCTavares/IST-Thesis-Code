@@ -92,10 +92,10 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("detector_label", "person")
         # Legacy-only control path: restart container detector with a different HEF.
         self.declare_parameter("enable_container_model_switch_api", False)
-        self.declare_parameter("perception_node_name", "perception_pipeline_node")
+        self.declare_parameter("perception_node_name", "perception_camera_node")
         thesis_root = os.getenv("THESIS_ROOT", "/home/francisco/Desktop/Thesis-Code")
         self.declare_parameter(
-            "single_process_hef_dir",
+            "integrated_camera_hef_dir",
             f"{thesis_root}/models/hef",
         )
         self.declare_parameter("tracker_node_name", "tracker_node")
@@ -135,8 +135,8 @@ class DashboardBridgeNode(Node):
         self._enable_container_model_switch_api = bool(
             self.get_parameter("enable_container_model_switch_api").value
         )
-        self._perception_node_name = str(self.get_parameter("perception_node_name").value).strip() or "perception_pipeline_node"
-        self._single_process_hef_dir = str(self.get_parameter("single_process_hef_dir").value)
+        self._perception_node_name = str(self.get_parameter("perception_node_name").value).strip() or "perception_camera_node"
+        self._integrated_camera_hef_dir = str(self.get_parameter("integrated_camera_hef_dir").value)
         self._tracker_node_name = str(self.get_parameter("tracker_node_name").value).strip() or "tracker_node"
 
         self._supported_models = SUPPORTED_MODELS
@@ -231,7 +231,7 @@ class DashboardBridgeNode(Node):
             f"timing_target={self._timing_target_topic}, "
             f"ws=ws://{self._ws_host}:{self._ws_port}, api=http://{self._api_host}:{self._api_port}, "
             f"container_model_switch_api={'enabled' if self._enable_container_model_switch_api else 'disabled'}, "
-            f"single_process_hef_dir={self._single_process_hef_dir}"
+            f"integrated_camera_hef_dir={self._integrated_camera_hef_dir}"
         )
 
     def _run_api_server(self) -> None:
@@ -307,7 +307,7 @@ class DashboardBridgeNode(Node):
     def _handle_models_list(self) -> dict[str, Any]:
         models = []
         for model in self._supported_models:
-            hef_path = os.path.join(self._single_process_hef_dir, model.hef_file)
+            hef_path = os.path.join(self._integrated_camera_hef_dir, model.hef_file)
             models.append(
                 {
                     "key": model.key,
@@ -326,10 +326,10 @@ class DashboardBridgeNode(Node):
         if model not in self._model_to_hef:
             return {"ok": False, "error": f"unsupported model: {model}", "status_code": 400}
 
-        # Prefer single-process model switch when the perception node is available.
-        single_process_result = self._handle_single_process_model_switch(model)
-        if single_process_result is not None:
-            return single_process_result
+        # Prefer integrated-camera model switch when the perception node is available.
+        integrated_camera_result = self._handle_integrated_camera_model_switch(model)
+        if integrated_camera_result is not None:
+            return integrated_camera_result
 
         if self._enable_container_model_switch_api:
             return self._handle_container_model_switch(model)
@@ -343,12 +343,12 @@ class DashboardBridgeNode(Node):
             "status_code": 503,
         }
 
-    def _handle_single_process_model_switch(self, model: str) -> dict[str, Any] | None:
+    def _handle_integrated_camera_model_switch(self, model: str) -> dict[str, Any] | None:
         if not self._perception_set_params_client.wait_for_service(timeout_sec=0.25):
             return None
 
         hef_name = self._model_to_hef[model]
-        hef_path = os.path.join(self._single_process_hef_dir, hef_name)
+        hef_path = os.path.join(self._integrated_camera_hef_dir, hef_name)
         if not os.path.isfile(hef_path):
             return {
                 "ok": False,
@@ -370,7 +370,7 @@ class DashboardBridgeNode(Node):
             while not future.done() and time.monotonic() < deadline:
                 time.sleep(0.01)
         except Exception as exc:
-            self.get_logger().error(f"Single-process model switch execution failed: {exc}")
+            self.get_logger().error(f"Integrated-camera model switch execution failed: {exc}")
             return {"ok": False, "error": f"model switch failed: {exc}", "status_code": 500}
 
         if not future.done():
@@ -388,12 +388,12 @@ class DashboardBridgeNode(Node):
             reason = set_result.reason or "unknown model switch failure"
             return {"ok": False, "error": reason, "status_code": 500}
 
-        self.get_logger().info(f"Single-process model switch applied: {model} ({hef_name})")
+        self.get_logger().info(f"Integrated-camera model switch applied: {model} ({hef_name})")
         return {
             "ok": True,
             "requested_model": model,
             "hef_path": hef_path,
-            "mode": "single-process",
+            "mode": "integrated-camera",
             "status_code": 200,
         }
 
@@ -403,8 +403,8 @@ class DashboardBridgeNode(Node):
         hef_path = f"/root/thesis_service/resources/hefs/{hef_name}"
 
         cmd = """
-echo "legacy container model switching was removed from the active thesis repository" >&2
-echo "use the host/single-process runtime launched by tools/start_live_stack.sh" >&2
+echo "container model switching is not supported in the integrated-camera thesis repository" >&2
+echo "use perception_camera_node launched by tools/start_live_stack.sh" >&2
 exit 1
 """
 
@@ -433,7 +433,7 @@ exit 1
         return {
             "ok": True,
             "requested_model": model,
-            "mode": "legacy-container-removed",
+            "mode": "container-switching-removed",
             "status_code": 200,
         }
 

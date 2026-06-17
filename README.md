@@ -15,8 +15,8 @@ Root documentation is split by purpose:
 
 ## Runtime snapshot
 
-- Default live perception mode is `single-process` via `./tools/start_live_stack.sh`.
-- Legacy frame-ZMQ mode has been removed. The active runtime uses host/single-process perception.
+- Default and only live perception mode is `integrated-camera` via `./tools/start_live_stack.sh`.
+- The old external detector path has been removed. The active runtime uses integrated camera perception.
 - Target selection is user-driven through `dashboard_bridge_node` and `POST /api/target`.
 - Live logs are centralized under `ros2_ws/log/live_stack/<run-id>` and UI logs under `ros2_ws/log/ui_stack/<run-id>`.
 
@@ -82,7 +82,7 @@ If you need full option coverage, including tracker and perception tuning:
 Provide an end-to-end experimental stack that can:
 
 1. Ingest camera frames in ROS 2.
-2. Run detector inference through the host/single-process Hailo pipeline.
+2. Run detector inference through the integrated camera Hailo pipeline.
 3. Track candidates and expose explicit user-driven target selection for control and UI.
 4. Maintain selected-target identity through TIM and publish `/target_memory_mars` when TIM-MARS is enabled.
 5. Publish telemetry/video/control interfaces for real-time operation.
@@ -166,7 +166,7 @@ cd "$THESIS_ROOT"
 ```bash
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
-ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/detections|/tracks|/target|/target_memory_mars|/timing'
+ros2 topic list | rg '/camera/dashboard|/detections|/tracks|/target|/target_memory_mars|/timing'
 ss -ltnp | rg ':8080|:8090|:8765|:5173'
 ```
 

@@ -11,8 +11,8 @@ set -euo pipefail
 # Startup phases:
 # 1) Preflight: clear stale processes and validate camera process health.
 # 2) Environment: source ROS overlays and pin ROS_DOMAIN_ID.
-# 3) Perception readiness: validate host/single-process perception configuration.
-# 4) ROS nodes: camera -> single-process perception -> tracker/control/dashboard -> video.
+# 3) Perception readiness: validate integrated camera perception configuration.
+# 4) ROS nodes: camera -> integrated-camera perception -> tracker/control/dashboard -> video.
 # 5) Runtime shell: keep stack alive and allow `status|clear|stop` commands.
 #
 # Logging policy:
@@ -23,7 +23,7 @@ set -euo pipefail
 
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 ROS_WS="${ROS_WS:-$THESIS_ROOT/ros2_ws}"
-# Current supported runtime is the host/single-process live stack.
+# Current supported runtime is the integrated camera live stack.
 PI_IP="${PI_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
 ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 REID_MODEL_PATH="${REID_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}"
@@ -111,7 +111,7 @@ print_startup_success_summary() {
     publish_size="${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}"
     infer_size="${infer_w}x${infer_h}"
 
-    detector_summary="mode=single-process backend=${PERCEPTION_INFERENCE_BACKEND} frame_queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} image_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
+    detector_summary="mode=integrated-camera backend=${PERCEPTION_INFERENCE_BACKEND} frame_queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} image_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
 
     if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
         if [[ "$TRACKER_TYPE" == "deepsort" ]]; then
@@ -126,7 +126,7 @@ print_startup_success_summary() {
     echo "[ok] startup summary: capture=${capture_size} publish=${publish_size} hailo_infer=${infer_size}"
     echo "[ok] detector: ${detector_summary}"
     echo "[ok] tracker: ${tracker_summary}"
-    echo "[ok] target memory: mode=${TARGET_MEMORY_MODE:-mars} hsv=${RUN_TARGET_MEMORY_HSV:-0} mars=${RUN_TARGET_MEMORY_MARS:-0}"
+    echo "[ok] target memory: mode=${TARGET_MEMORY_MODE:-mars} mars=${RUN_TARGET_MEMORY_MARS:-0}"
 }
 
 kill_tree() {
@@ -177,9 +177,8 @@ stop_stack() {
 
     # Force-clean known host-side processes in case ros2 launch left children behind.
     pkill -f "camera_bringup.launch.py" >/dev/null 2>&1 || true
-    pkill -f "camera_capture_node" >/dev/null 2>&1 || true
     pkill -f "inference_client_node|detector_node" >/dev/null 2>&1 || true
-    pkill -f "perception_pipeline_node" >/dev/null 2>&1 || true
+    pkill -f "perception_camera_node" >/dev/null 2>&1 || true
     pkill -f "tracker_node" >/dev/null 2>&1 || true
     pkill -f "control_ref_node" >/dev/null 2>&1 || true
     pkill -f "dashboard_bridge_node" >/dev/null 2>&1 || true
@@ -427,22 +426,19 @@ set -u
 export ROS_DOMAIN_ID
 log_info "ros: domain=$ROS_DOMAIN_ID log_dir=$ROS_LOG_DIR"
 
-# Phase 3: host/single-process perception readiness.
-if [[ "$PERCEPTION_MODE" != "single-process" ]]; then
-    echo "[error] unsupported perception mode: $PERCEPTION_MODE"
-    echo "[error] only single-process mode is supported in the active thesis repo."
-    stop_stack
-    exit 1
-fi
+# Phase 3: integrated camera + perception readiness.
+log_step "integrated camera perception mode selected"
+log_info "integrated mode will run perception_camera_node only"
+log_info "full-rate raw image publishing is disabled in live operation"
 
-log_step "single-process perception mode selected"
-log_info "single-process mode will run in-process perception_pipeline_node"
 if [[ "$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL" == "true" ]]; then
     log_hint "host Hailo init failures will fallback to stub backend (override enabled)"
 else
     log_hint "host Hailo init failures are fail-fast by default; use --perception-allow-stub-fallback to override"
 fi
+
 log_step "starting ROS nodes"
+
 # rclpy expects camera fps launch parameter as DOUBLE; normalize integer input to float.
 if [[ "$CAMERA_FPS" =~ ^[0-9]+$ ]]; then
     CAMERA_FPS="${CAMERA_FPS}.0"
@@ -453,85 +449,7 @@ if [[ "$CAMERA_DASHBOARD_FPS" =~ ^[0-9]+$ ]]; then
     CAMERA_DASHBOARD_FPS="${CAMERA_DASHBOARD_FPS}.0"
 fi
 
-# Camera is the first ROS dependency in the chain. Retry once for two known failure classes.
-camera_retry_applied=0
-camera_safe_retry_applied=0
-while true; do
-    build_camera_args
-    if start_camera_with_readiness; then
-        break
-    fi
-
-    camera_start_rc=$?
-    if [[ "$camera_start_rc" -eq 2 ]]; then
-        echo "[error] camera process exited during startup; see $RUN_DIR/camera.log"
-    elif [[ "$camera_start_rc" -eq 3 ]]; then
-        echo "[error] camera startup failed; see $RUN_DIR/camera.log"
-    else
-        echo "[error] camera node is running but not publishing frames"
-    fi
-
-    if [[ "$camera_retry_applied" -eq 0 ]] \
-        && [[ "$CAMERA_APPLY_RATE_CONTROLS_BOOL" == "true" ]] \
-        && camera_log_has_sensor_control_error; then
-        echo "[warn] detected TEVS sensor control timeout/error during camera init"
-        echo "[warn] retrying camera startup once with sensor rate controls disabled"
-        CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
-        camera_retry_applied=1
-        stop_camera_process_only
-        continue
-    fi
-
-    if [[ "$camera_safe_retry_applied" -eq 0 ]]; then
-        if [[ "$camera_start_rc" -eq 3 ]] && camera_log_has_context_invalid_error; then
-            echo "[warn] camera startup hit ROS context-invalid shutdown path"
-            echo "[warn] retrying camera startup once in safe mode (640x480, rate controls off)"
-            CAMERA_WIDTH=640
-            CAMERA_HEIGHT=480
-            CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
-            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 ]]; then
-                CAMERA_PUBLISH_WIDTH=640
-                CAMERA_PUBLISH_HEIGHT=480
-            fi
-            camera_safe_retry_applied=1
-            stop_camera_process_only
-            continue
-        fi
-
-        if [[ "$camera_start_rc" -eq 4 ]]; then
-            echo "[warn] camera is running but no frames reached /camera/image_raw"
-            echo "[warn] retrying camera startup once in safe mode (640x480, rate controls off)"
-            CAMERA_WIDTH=640
-            CAMERA_HEIGHT=480
-            CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
-            if [[ "$CAMERA_PUBLISH_SHAPE_EXPLICIT" -eq 0 ]]; then
-                CAMERA_PUBLISH_WIDTH=640
-                CAMERA_PUBLISH_HEIGHT=480
-            fi
-            camera_safe_retry_applied=1
-            stop_camera_process_only
-            continue
-        fi
-    fi
-
-    if camera_kernel_has_link_not_enabled; then
-        log_hint "kernel reports camera link/stream state error (csi2_ch0 link or stream-on failed)"
-        log_hint "verify media graph link state and camera format alignment before retry"
-    fi
-
-    if camera_kernel_has_i2c_timeout; then
-        log_hint "kernel reports TEVS/I2C timeout activity; camera pipeline may be wedged"
-        log_hint "reboot host to recover the camera driver path before retrying"
-    fi
-
-    log_hint "check camera cable/sensor state and try restarting stack"
-    log_hint "if issue persists, reboot host to reset camera pipeline"
-    log_hint "if media topology lacks sensor entities, verify /boot/firmware/config.txt overlay port (cam0 vs cam1)"
-    stop_stack
-    exit 1
-done
-
-# Keep ROS runtime on host Python, but expose required packages for single-process mode:
+# Keep ROS runtime on host Python, but expose required packages for integrated Hailo mode:
 # - system dist-packages for gi/Gst
 # - project .venv site-packages for hailort/tappas Python bindings
 PERCEPTION_PYTHONPATH="/usr/lib/python3/dist-packages"
@@ -547,7 +465,6 @@ if [[ -n "${PYTHONPATH:-}" ]]; then
 fi
 
 # Optional local TAPPAS runtime shim (no root install required).
-# Expected layout defaults to tools/setup/setup_local_tappas_runtime.sh output.
 PERCEPTION_RUNTIME_DIR="${PERCEPTION_RUNTIME_DIR:-$THESIS_ROOT/infer_service/opt/tappas_runtime_3_31}"
 PERCEPTION_RUNTIME_LIB_DIR="${PERCEPTION_RUNTIME_LIB_DIR:-$PERCEPTION_RUNTIME_DIR/usr/lib/aarch64-linux-gnu}"
 PERCEPTION_RUNTIME_GST_DIR="${PERCEPTION_RUNTIME_GST_DIR:-$PERCEPTION_RUNTIME_LIB_DIR/gstreamer-1.0}"
@@ -575,34 +492,72 @@ fi
 PERCEPTION_POST_SO_ARGS=()
 if [[ -f "$PERCEPTION_RUNTIME_POST_SO" ]]; then
     PERCEPTION_POST_SO_ARGS=(-p "hailo_post_so:=$PERCEPTION_RUNTIME_POST_SO")
-    log_info "single-process: using local postprocess lib at $PERCEPTION_RUNTIME_POST_SO"
+    log_info "integrated-camera: using local postprocess lib at $PERCEPTION_RUNTIME_POST_SO"
 fi
 
-start_ros_bg perception_pipeline env PYTHONPATH="$PERCEPTION_PYTHONPATH" LD_LIBRARY_PATH="$PERCEPTION_LD_LIBRARY_PATH" GST_PLUGIN_PATH="$PERCEPTION_GST_PLUGIN_PATH" ros2 run thesis_bringup perception_pipeline_node --ros-args \
-    -p image_topic:=/camera/image_raw \
-    -p img_w:=640 \
-    -p img_h:=640 \
-    -p frame_queue_size:=$INFER_QUEUE_SIZE \
-    -p num_workers:=$INFER_WORKERS \
-    -p image_qos_depth:=$PERCEPTION_IMAGE_QOS_DEPTH \
-    -p hailo_queue_max_buffers:=$PERCEPTION_HAILO_QUEUE_BUFFERS \
-    -p async_max_inflight:=$PERCEPTION_ASYNC_MAX_INFLIGHT \
-    -p hailo_use_videoconvert:=$PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL \
-    -p disable_python_gc:=$PERCEPTION_GC_DISABLE_BOOL \
-    -p label:=person \
-    -p min_score:=0.35 \
-    -p inference_backend:=$PERCEPTION_INFERENCE_BACKEND \
-    -p allow_stub_fallback:=$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL \
-    "${PERCEPTION_POST_SO_ARGS[@]}" \
-    -p infer_timeout_ms:=$INFER_TIMEOUT_MS \
-    -p timeout_log_every:=$INFER_TIMEOUT_LOG_EVERY \
-    -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL \
-    -p log_every:=$INFER_PRINT_EVERY
-sleep 1
-if ! check_proc_alive perception_pipeline; then
+camera_retry_applied=0
+while true; do
+    start_ros_bg perception_camera env PYTHONPATH="$PERCEPTION_PYTHONPATH" LD_LIBRARY_PATH="$PERCEPTION_LD_LIBRARY_PATH" GST_PLUGIN_PATH="$PERCEPTION_GST_PLUGIN_PATH" ros2 run thesis_bringup perception_camera_node --ros-args \
+        -p width:=$CAMERA_WIDTH \
+        -p height:=$CAMERA_HEIGHT \
+        -p fps:=$CAMERA_FPS \
+        -p img_w:=640 \
+        -p img_h:=640 \
+        -p frame_queue_size:=$INFER_QUEUE_SIZE \
+        -p num_workers:=$INFER_WORKERS \
+        -p image_qos_depth:=$PERCEPTION_IMAGE_QOS_DEPTH \
+        -p hailo_queue_max_buffers:=$PERCEPTION_HAILO_QUEUE_BUFFERS \
+        -p async_max_inflight:=$PERCEPTION_ASYNC_MAX_INFLIGHT \
+        -p hailo_use_videoconvert:=$PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL \
+        -p disable_python_gc:=$PERCEPTION_GC_DISABLE_BOOL \
+        -p label:=person \
+        -p min_score:=0.35 \
+        -p inference_backend:=$PERCEPTION_INFERENCE_BACKEND \
+        -p allow_stub_fallback:=$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL \
+        "${PERCEPTION_POST_SO_ARGS[@]}" \
+        -p infer_timeout_ms:=$INFER_TIMEOUT_MS \
+        -p timeout_log_every:=$INFER_TIMEOUT_LOG_EVERY \
+        -p publish_timing:=$INFER_PUBLISH_TIMING_BOOL \
+        -p log_every:=$INFER_PRINT_EVERY \
+        -p publish_dashboard_topic:=true \
+        -p dashboard_topic:=/camera/dashboard \
+        -p dashboard_fps:=$CAMERA_DASHBOARD_FPS \
+        -p startup_frame_timeout_s:=$CAMERA_STARTUP_FRAME_TIMEOUT_S \
+        -p stall_timeout_s:=$CAMERA_STALL_TIMEOUT_S
+
+    sleep 2
+
+    if check_proc_alive perception_camera; then
+        break
+    fi
+
+    echo "[error] integrated perception camera exited during startup; see $RUN_DIR/perception_camera.log"
+
+    if [[ "$camera_retry_applied" -eq 0 ]] && grep -Eqi "sensor control|i2c|timeout|context invalid|read failed|startup/read timeout" "$RUN_DIR/perception_camera.log" 2>/dev/null; then
+        echo "[warn] retrying integrated camera once in safe mode (640x480, rate controls off)"
+        CAMERA_WIDTH=640
+        CAMERA_HEIGHT=480
+        CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
+        camera_retry_applied=1
+        stop_proc perception_camera || true
+        continue
+    fi
+
+    if camera_kernel_has_link_not_enabled; then
+        log_hint "kernel reports camera link/stream state error (csi2_ch0 link or stream-on failed)"
+        log_hint "verify media graph link state and camera format alignment before retry"
+    fi
+
+    if camera_kernel_has_i2c_timeout; then
+        log_hint "kernel reports TEVS/I2C timeout activity; camera pipeline may be wedged"
+        log_hint "reboot host to recover the camera driver path before retrying"
+    fi
+
+    log_hint "check camera cable/sensor state and try restarting stack"
+    log_hint "if issue persists, reboot host to reset camera pipeline"
     stop_stack
     exit 1
-fi
+done
 
 # Phase 4: bring up downstream nodes after camera + perception are healthy.
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
@@ -861,10 +816,6 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         /target
     )
 
-    if [[ "${RUN_TARGET_MEMORY_HSV:-0}" -eq 1 ]]; then
-        VIDEO_BAG_TOPICS+=(
-        )
-    fi
     if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
         VIDEO_BAG_TOPICS+=(
             /target_memory_mars
@@ -946,7 +897,6 @@ if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
     DATASET_BAG_OUT_DIR="$DATASET_BAG_OUT_ROOT/$DATASET_BAG_NAME"
 
     DATASET_BAG_TOPICS=(
-        /camera/image_raw
         /camera/fps
         /camera/camera_info
         /detections
@@ -957,10 +907,6 @@ if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
         /timing_target
     )
 
-    if [[ "${RUN_TARGET_MEMORY_HSV:-0}" -eq 1 ]]; then
-        DATASET_BAG_TOPICS+=(
-        )
-    fi
     if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
         DATASET_BAG_TOPICS+=(
             /target_memory_mars

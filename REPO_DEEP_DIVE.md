@@ -24,29 +24,29 @@ Primary goals:
 
 Live runtime supports two perception shapes.
 
-### Shape S (default): single-process perception
+### Shape I (default): integrated camera perception
 
-1. Camera publishes `/camera/image_raw`.
-2. `perception_pipeline_node` subscribes directly and performs preprocessing plus Hailo inference in-process.
-3. The node publishes `/detections` and `/timing`.
+1. `perception_camera_node` captures frames directly from the camera.
+2. The same node performs preprocessing plus Hailo inference in-process.
+3. The node publishes `/detections`, `/timing`, and low-rate `/camera/dashboard`.
 4. `thesis_tracker` publishes `/tracks`.
 5. `dashboard_bridge_node` owns explicit target publication for control and dashboard consumers.
 
 Conceptual chain:
 
-`camera -> /camera/image_raw -> perception_pipeline_node -> /detections -> tracker -> /tracks -> dashboard_bridge_node -> /target -> control/dashboard`
+`perception_camera_node -> /detections + /timing + /camera/dashboard -> tracker -> /tracks -> dashboard_bridge_node -> /target -> control/dashboard`
 
 When target memory is enabled, TIM consumes tracker output and selected-target context to publish a conservative selected-target output:
 
-`/tracks + selected target -> TIM -> /target_memory_mars + /target_memory_mars_mars/status`
+`/tracks + selected target -> TIM -> /target_memory_mars + /target_memory_mars/status`
 
-### Removed path: legacy ZMQ/container perception
+### Removed path: removed ZMQ/container perception
 
-The legacy ZMQ/container perception path was removed from the active runtime after the 2026-06-04 cleanup.
+The removed ZMQ/container perception path was removed from the active runtime after the 2026-06-04 cleanup.
 
 It is no longer a rollback path. The supported live path is:
 
-`camera -> /camera/image_raw -> perception_pipeline_node -> /detections -> tracker -> /tracks -> dashboard_bridge_node -> /target`
+`perception_camera_node -> /detections + /timing + /camera/dashboard -> tracker -> /tracks -> dashboard_bridge_node -> /target`
 
 ### Replay path (evaluation)
 
@@ -75,7 +75,7 @@ Important output topics:
 
 - `/target`: raw selected tracker target from the dashboard bridge.
 - `/target_memory_mars`: TIM-filtered selected target, used only when TIM is valid and control-safe.
-- `/target_memory_mars_mars/status`: TIM diagnostics, including state, scores, reasons, and validity flags.
+- `/target_memory_mars/status`: TIM diagnostics, including state, scores, reasons, and validity flags.
 
 Core evaluation principle:
 
@@ -89,7 +89,7 @@ Core evaluation principle:
 
 - `thesis_bringup`
   - Launch composition and primary runtime nodes.
-  - Owns `camera_capture_node`, `perception_pipeline_node`, `dashboard_bridge_node`, `control_ref_node`, and launch entrypoints.
+  - Owns `perception_camera_node`, `dashboard_bridge_node`, `target_memory_mars_node`, `control_ref_node`, and launch entrypoints.
 - `thesis_inference_client`
   - Historical bridge package for the removed ZMQ/container path.
   - Not part of the active live runtime.
@@ -103,7 +103,7 @@ Core evaluation principle:
 
 - Historical ZMQ-facing helpers are retained only where still useful for offline/debug workflows.
 - `opt/tappas_runtime_3_31`
-  - Optional local runtime assets used by single-process mode when available.
+  - Optional local runtime assets used by the integrated camera path when available.
 
 ### Frontend (`user-interface`)
 
@@ -134,7 +134,7 @@ Core evaluation principle:
 - Host preflight: stale-process cleanup, camera media graph checks, and an optional stream probe only when requested.
 - Environment setup: ROS overlay sourcing + run-scoped log routing.
 - Perception readiness:
-  - Host `perception_pipeline_node` startup using the single-process path.
+  - Host `perception_camera_node` startup using the integrated camera path.
   - Optional local TAPPAS runtime assets are used when present.
 - Downstream graph startup: tracker, dashboard bridge, web video, and control.
 - Runtime shell loop with `status`, `ids`, `target <id>`, `clear-target`, `clear`, and `stop` commands.
@@ -159,7 +159,7 @@ This distinction matters for claims:
 Notable reliability behavior:
 
 - Camera startup has bounded retries for known TEVS failure signatures.
-- Single-process mode is fail-fast on host Hailo init unless stub fallback is explicitly enabled.
+- Integrated-camera mode is fail-fast on host Hailo init unless stub fallback is explicitly enabled.
 - Per-run logs are split by process under `ros2_ws/log/live_stack/<run-id>/`.
 
 ## 4) Repository folder taxonomy
@@ -187,13 +187,13 @@ Root-level purpose map:
 - `docs/Daily-Logs/`
   - Weekly and daily engineering logs.
 - `deprecated/`
-  - Archived experiments not in active path (legacy scripts, historical traces, superseded artifacts).
+  - Archived experiments not in active path (removed scripts, historical traces, superseded artifacts).
 - `hailo-rpi5-examples/` is expected outside the active repo, usually under `$HOME/hailo-rpi5-examples`.
   - Upstream/vendor resources.
 
 ### Key locations and model artifacts
 
-- `models/hef/` — compiled Hailo engine files used by single-process inference when present.
+- `models/hef/` — compiled Hailo engine files used by integrated camera inference when present.
 - `models/reid/` — re-identification models used by tracker evaluation flows.
 - `artifacts/bags/live_camera/` - source recordings from live sessions.
 - `artifacts/bags/eval/` - replay outputs and derived artifacts used by analysis scripts.
@@ -202,12 +202,12 @@ If you need to add new model artifacts, prefer a clear subfolder under `models/`
 
 ## 5) External dependency model
 
-The active runtime no longer depends on the legacy compose/container path.
+The active runtime no longer depends on the removed compose/container path.
 
 Current runtime contract:
 
-1. `tools/start_live_stack.sh` starts the host/single-process perception path.
-2. `perception_pipeline_node` runs the active Hailo-backed perception pipeline.
+1. `tools/start_live_stack.sh` starts the integrated camera perception path.
+2. `perception_camera_node` runs camera capture, Hailo inference, `/detections`, `/timing`, and `/camera/dashboard`.
 3. ROS nodes publish detections, tracks, target memory, dashboard video, timing, and optional bag recordings.
 4. Hailo example resources, when needed by setup scripts, are expected outside the active repository, usually under `$HOME/hailo-rpi5-examples`.
 
@@ -301,8 +301,8 @@ This sequence reduces false debugging paths by separating camera-driver faults f
 The repository separates concerns by responsibility rather than a single rigid deployment boundary:
 
 1. ROS-critical orchestration and runtime nodes stay in `ros2_ws`.
-2. Single-process mode minimizes inference transport latency for live operation.
-3. Removed legacy runtime paths are kept out of the operational workflow.
+2. Integrated-camera mode minimizes inference transport latency for live operation.
+3. Removed removed runtime paths are kept out of the operational workflow.
 4. UI remains independently runnable in `user-interface`.
 5. Analysis and validation stay scriptable and reproducible in `tools` plus the report roots.
 

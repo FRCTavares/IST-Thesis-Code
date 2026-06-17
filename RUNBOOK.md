@@ -9,11 +9,11 @@ Use this file as the command source of truth.
 
 From `tools/start_live_stack.sh`:
 
-- Perception mode default: `single-process`
+- Perception mode: `integrated-camera` only
 - Tracker default: `ocsort`
 - Startup profile default: `daily`
 - Camera default: `1280x720@30`
-- Published perception image default in single-process mode: `640x640` letterboxed from capture
+- Live inference runs inside `perception_camera_node`; no full-rate raw image topic is published in live operation.
 - Camera sensor trigger/rate-control writes: disabled by default for reliability
 - Active `/dev/video0` preflight stream probe: disabled by default; media graph preflight still runs
 - Control node: enabled by default
@@ -48,8 +48,8 @@ What this script does:
 
 1. Preflight and stale-process cleanup.
 2. ROS env and log directory setup.
-3. Perception readiness: host single-process perception starts `perception_pipeline_node`.
-4. Node startup order: camera -> single-process perception -> tracker -> dashboard bridge -> control.
+3. Perception readiness: integrated camera perception starts `perception_camera_node`.
+4. Node startup order: `perception_camera_node` -> tracker -> dashboard bridge -> TIM-MARS -> control.
 5. Interactive runtime with `status`, `ids`, `target <id>`, `clear-target`, `clear`, and `stop` commands.
 
 Default:
@@ -63,7 +63,7 @@ Useful flags:
 - `./tools/start_live_stack.sh --profile safe-camera`
 - `./tools/start_live_stack.sh --profile performance`
 - `./tools/start_live_stack.sh`
-- `./tools/start_live_stack.sh --perception-mode single-process`
+- `./tools/start_live_stack.sh --perception-mode integrated-camera`
 - `./tools/start_live_stack.sh --tracker sort`
 - `./tools/start_live_stack.sh --tracker bytetrack`
 - `./tools/start_live_stack.sh --no-control`
@@ -82,7 +82,7 @@ Useful flags:
 
 Deprecated or removed launcher flags:
 
-- `--perception-async-latest-frame-on/off` was removed; queue plus worker mode is always used in single-process mode.
+- `--perception-async-latest-frame-on/off` was removed; queue plus worker mode is always used.
 - `--no-target` is a deprecated alias; target selection now lives in `dashboard_bridge_node`.
 - `--rosbag` is a deprecated alias for `--record-video`.
 
@@ -104,7 +104,7 @@ Full option list:
 ./tools/start_live_stack.sh --help-advanced
 ```
 
-If you want to enable host-side Hailo dependencies for single-process mode:
+If you want to enable host-side Hailo dependencies:
 
 - Install or probe host Python bindings: `./tools/setup/install_host_hailo_bindings.sh`
 - Optional no-root runtime shim: `./tools/setup/setup_local_tappas_runtime.sh`
@@ -119,7 +119,7 @@ Stop:
 - If the interactive shell is gone, terminate stack processes explicitly:
 
 ```bash
-pkill -f 'camera_bringup.launch.py|camera_capture_node|inference_client_node|detector_node|perception_pipeline_node|tracker_node|control_ref_node|dashboard_bridge_node|web_video_server' || true
+pkill -f 'perception_camera_node|tracker_node|target_memory_mars_node|control_ref_node|dashboard_bridge_node|web_video_server' || true
 ```
 
 Verification checkpoint for a healthy live stack:
@@ -127,7 +127,7 @@ Verification checkpoint for a healthy live stack:
 ```bash
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
-ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/detections|/timing|/target'
+ros2 topic list | rg '/camera/dashboard|/detections|/timing|/target|/target_memory_mars'
 ss -ltnp | rg ':8080|:8090|:8765|:5173'
 ```
 
@@ -201,7 +201,7 @@ Recorded topics:
 
 Notes:
 
-- /camera/dashboard is recorded instead of /camera/image_raw to keep field bags smaller.
+- /camera/dashboard is recorded to keep field bags small; the live integrated path does not publish full-rate raw images.
 - /timing_tracker is enabled automatically when --record-video is used.
 - A flight_metadata.txt file is written next to the bag with run configuration, tracker type, perception mode, camera settings, and recorded topics.
 
@@ -420,5 +420,5 @@ Expected behavior from validated baseline:
 
 - Date: 2026-06-04
 - ROS: Jazzy
-- Default live path: single-process perception via `tools/start_live_stack.sh`
-- Active runtime: host/single-process live stack via `tools/start_live_stack.sh`.
+- Default live path: integrated camera perception via `tools/start_live_stack.sh`
+- Active runtime: integrated camera live stack via `tools/start_live_stack.sh`.
