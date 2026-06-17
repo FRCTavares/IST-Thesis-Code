@@ -52,6 +52,15 @@ while [[ $# -gt 0 ]]; do
             VERBOSE=1
             shift
             ;;
+        --mem)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --mem requires a value: off|mars"
+                print_usage
+                exit 1
+            fi
+            TARGET_MEMORY_MODE="${2,,}"
+            shift 2
+            ;;
         --target-memory)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --target-memory requires a value: off|mars"
@@ -60,6 +69,10 @@ while [[ $# -gt 0 ]]; do
             fi
             TARGET_MEMORY_MODE="${2,,}"
             shift 2
+            ;;
+        --no-appearance)
+            TARGET_MEMORY_APPEARANCE_BOOL="false"
+            shift
             ;;
         --target-memory-appearance)
             TARGET_MEMORY_APPEARANCE_BOOL="true"
@@ -297,6 +310,15 @@ while [[ $# -gt 0 ]]; do
             CAMERA_FPS="$2"
             shift 2
             ;;
+        --dash)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --dash requires a value"
+                print_usage
+                exit 1
+            fi
+            CAMERA_DASHBOARD_FPS="$(normalize_double_literal "$2")"
+            shift 2
+            ;;
         --dashboard-fps)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --dashboard-fps requires a value"
@@ -526,9 +548,16 @@ while [[ $# -gt 0 ]]; do
             ENABLE_WEB_VIDEO=0
             shift
             ;;
+        --record)
+            ENABLE_ROSBAG=1
+            TRACKER_PUBLISH_TIMING_BOOL="true"
+            TARGET_TIMING_ENABLED=1
+            shift
+            ;;
         --record-video)
             ENABLE_ROSBAG=1
             TRACKER_PUBLISH_TIMING_BOOL="true"
+            TARGET_TIMING_ENABLED=1
             shift
             ;;
         --no-record-video)
@@ -543,6 +572,15 @@ while [[ $# -gt 0 ]]; do
         --no-record-dataset)
             ENABLE_DATASET_BAG=0
             shift
+            ;;
+        --tag)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --tag requires a value"
+                print_usage
+                exit 1
+            fi
+            BAG_TAG="$2"
+            shift 2
             ;;
         --bag-tag)
             if [[ $# -lt 2 ]]; then

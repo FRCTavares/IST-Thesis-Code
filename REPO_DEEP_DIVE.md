@@ -17,30 +17,53 @@ Primary goals:
 1. Real-time perception to target-state pipeline.
 2. Selected-target identity maintenance under occlusion, hard crossings, detector misses, tracker ID switches, and distractors.
 3. Deterministic and measurable timing behavior.
-4. Reproducible experiment workflow (record -> replay -> analyze).
+4. Reproducible experiment workflow (record -> replay -> analyse).
 5. Operational dashboard visibility for human-in-the-loop work.
 
 ## 2) Deployment shapes and data flow
 
-Live runtime supports two perception shapes.
+Live runtime now supports one active perception shape. The old external detector path is kept only as historical context.
 
 ### Shape I (default): integrated camera perception
 
 1. `perception_camera_node` captures frames directly from the camera.
-2. The same node performs preprocessing plus Hailo inference in-process.
-3. The node publishes `/detections`, `/timing`, and low-rate `/camera/dashboard`.
-4. `thesis_tracker` publishes `/tracks`.
-5. `dashboard_bridge_node` owns explicit target publication for control and dashboard consumers.
+2. The same node performs preprocessing and Hailo inference in-process.
+3. The node publishes `/detections`, `/timing`, and `/camera/dashboard`.
+4. `tracker_node` publishes `/tracks`.
+5. `dashboard_bridge_node` owns explicit target publication for dashboard and control consumers.
+6. `target_memory_mars_node` publishes `/target_memory_mars`.
+7. `control_ref_node` publishes `/control_ref/cmd_vel`.
 
-Conceptual chain:
+Runtime shape:
 
-`perception_camera_node -> /detections + /timing + /camera/dashboard -> tracker -> /tracks -> dashboard_bridge_node -> /target -> control/dashboard`
+    perception_camera_node
+        -> /detections + /timing + /camera/dashboard
+        -> tracker_node
+        -> /tracks
+        -> dashboard_bridge_node
+        -> /target
+        -> target_memory_mars_node
+        -> /target_memory_mars
+        -> control_ref_node
 
-When target memory is enabled, TIM consumes tracker output and selected-target context to publish a conservative selected-target output:
+Default live command:
 
-`/tracks + selected target -> TIM -> /target_memory_mars + /target_memory_mars/status`
+    ./tools/start_live_stack.sh
 
-### Removed path: removed ZMQ/container perception
+Recording command:
+
+    ./tools/start_live_stack.sh --record --tag <name>
+
+Validated 2026-06-17 full-stack recording result:
+
+- `/detections`: 29.92 Hz
+- `/tracks`: 29.91 Hz
+- `/target`: 29.89 Hz
+- `/target_memory_mars`: 29.34 Hz
+- `/control_ref/cmd_vel`: 29.91 Hz
+- thermal status: `throttled=0x0`
+
+### Removed path: external detector perception
 
 The removed ZMQ/container perception path was removed from the active runtime after the 2026-06-04 cleanup.
 
@@ -290,7 +313,7 @@ Common endpoints:
 
 When live runtime fails, check evidence in this order:
 
-1. `ros2_ws/log/live_stack/latest/` process logs such as `camera.log`, `perception_pipeline.log`, and `inference.log`.
+1. `ros2_ws/log/live_stack/latest/` process logs such as `camera.log`, `perception_camera.log`, and `inference.log`.
 2. Kernel camera state (`journalctl -k -b`) for CSI or I2C faults.
 3. ROS graph and transport checks (`ros2 node list`, `ros2 topic list`, port checks).
 

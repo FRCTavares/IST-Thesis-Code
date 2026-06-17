@@ -15,8 +15,9 @@ Root documentation is split by purpose:
 
 ## Runtime snapshot
 
-- Default and only live perception mode is `integrated-camera` via `./tools/start_live_stack.sh`.
-- The old external detector path has been removed. The active runtime uses integrated camera perception.
+- Default live command: `./tools/start_live_stack.sh`.
+- Default live stack: integrated camera perception, VGA capture, 640x640 Hailo inference, ByteTrack, TIM-MARS appearance, dashboard target 30 FPS, control enabled, web video enabled.
+- Recording command: `./tools/start_live_stack.sh --record --tag <name>`.
 - Target selection is user-driven through `dashboard_bridge_node` and `POST /api/target`.
 - Live logs are centralized under `ros2_ws/log/live_stack/<run-id>` and UI logs under `ros2_ws/log/ui_stack/<run-id>`.
 
@@ -47,35 +48,35 @@ Interpretation:
 
 ## Live stack operator cheat sheet
 
-Most live sessions start with one of these:
+Default live stack:
 
-```bash
-cd "$THESIS_ROOT"
+    ./tools/start_live_stack.sh
 
-# Baseline daily profile (default)
-./tools/start_live_stack.sh --profile daily
+Record a live bag:
 
-# Conservative camera-first profile (uses 640x480 defaults)
-./tools/start_live_stack.sh --profile safe-camera
+    ./tools/start_live_stack.sh --record --tag demo1
 
-# Slightly tighter latency defaults
-./tools/start_live_stack.sh --profile performance
-```
+Reduce dashboard load:
 
-While the script is running, use the built-in prompt commands:
+    ./tools/start_live_stack.sh --dash 10
 
-- `status` to print tracked process IDs.
-- `ids` to show visible track IDs.
-- `target <id>` to select an active target.
-- `clear-target` to clear the selection.
-- `clear` to clear terminal noise.
-- `stop` (or `exit`) for ordered shutdown.
+Use a lighter debug tracker:
 
-If you need full option coverage, including tracker and perception tuning:
+    ./tools/start_live_stack.sh --tracker sort --mem off
 
-```bash
-./tools/start_live_stack.sh --help-advanced
-```
+Show advanced tuning options:
+
+    ./tools/start_live_stack.sh --help-advanced
+
+Validated full-stack recording result from 2026-06-17:
+
+- `/detections`: 29.92 Hz
+- `/tracks`: 29.91 Hz
+- `/target`: 29.89 Hz
+- `/target_memory_mars`: 29.34 Hz
+- `/control_ref/cmd_vel`: 29.91 Hz
+- `/camera/dashboard`: 8.19 Hz recorded
+- thermal status: `throttled=0x0`
 
 ## Project objective
 
@@ -151,7 +152,7 @@ colcon build --symlink-install
 
 ```bash
 cd "$THESIS_ROOT"
-./tools/start_live_stack.sh --profile daily
+./tools/start_live_stack.sh
 ```
 
 ### 4) Start UI (second terminal)

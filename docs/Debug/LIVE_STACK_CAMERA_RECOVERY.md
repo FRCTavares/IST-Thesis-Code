@@ -4,11 +4,11 @@
 
 This document captures known camera bring-up incidents where live stack startup fails before inference because the TEVS/RPi CSI camera path is unhealthy.
 
-This guide applies to both perception modes (`single-process` and `legacy`) because camera failure happens before inference path selection.
+This guide applies to the integrated camera live stack because camera failure happens before inference starts.
 
 Use this guide when:
 
-- inference service can run, but camera does not publish `/camera/image_raw`
+- live stack starts, but no `/camera/dashboard` stream appears
 - media graph appears incomplete
 - `/dev/video0` or `/dev/v4l-subdev*` is missing
 - `media-ctl` shows `rp1-cfe` with only `csi2` and `pisp-fe`
@@ -129,8 +129,8 @@ csi2 -> rp1-cfe-csi2_ch0 link enabled
 
 Launcher/log symptoms:
 
-- timeout waiting for `/camera/image_raw`
-- camera node alive but no `/camera/image_raw`
+- timeout waiting for `/camera/dashboard`
+- camera node alive but no `/camera/dashboard`
 - camera node logs stop after TEVS entity detection
 - selected media device exposes no camera video nodes
 - `VIDIOC_STREAMON returned -1 (Invalid argument)`
@@ -163,13 +163,13 @@ Kernel hints:
 ```bash
 cd "$THESIS_ROOT"
 
-pkill -INT -f 'start_live_stack.sh|camera_capture_node|ros2 launch thesis_bringup camera_bringup.launch.py' || true
+pkill -INT -f 'start_live_stack.sh|perception_camera_node|ros2 launch thesis_bringup camera_bringup.launch.py' || true
 sleep 3
-pkill -TERM -f 'start_live_stack.sh|camera_capture_node|ros2 launch thesis_bringup camera_bringup.launch.py' || true
+pkill -TERM -f 'start_live_stack.sh|perception_camera_node|ros2 launch thesis_bringup camera_bringup.launch.py' || true
 sleep 3
-pkill -KILL -f 'start_live_stack.sh|camera_capture_node|ros2 launch thesis_bringup camera_bringup.launch.py' || true
+pkill -KILL -f 'start_live_stack.sh|perception_camera_node|ros2 launch thesis_bringup camera_bringup.launch.py' || true
 
-ps -eo pid,stat,cmd | rg 'start_live_stack|camera_capture_node|camera_bringup|v4l2|media-ctl' || true
+ps -eo pid,stat,cmd | rg 'start_live_stack|perception_camera_node|camera_bringup|v4l2|media-ctl' || true
 ```
 
 If any process is in `D` state, userspace cannot kill it. Reboot immediately:
@@ -277,12 +277,11 @@ After module and graph are healthy:
 cd "$THESIS_ROOT"
 
 ./tools/start_live_stack.sh \
-  --profile safe-camera \
-  --record-video \
-  --bag-tag camera_recovery_smoke_01
+  --record \
+  --tag camera_recovery_smoke_01
 ```
 
-After safe-camera works, test daily profile.
+After the default stack works, optionally test higher-load options such as `--res hd` or `--dash 30`.
 
 ---
 
@@ -295,7 +294,7 @@ A successful recovery should show:
 - `/dev/v4l-subdev*` exists
 - `v4l2-ctl --list-devices` shows `rp1-cfe` with `/dev/video0...`
 - media topology includes TEVS sensor entity and enabled CSI link
-- `start_live_stack.sh` starts camera and publishes `/camera/image_raw`
+- `start_live_stack.sh` starts camera and publishes `/camera/dashboard`
 - `/camera/dashboard` and `/camera/fps` publish during live stack
 
 ---
@@ -309,8 +308,7 @@ source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
 
 ros2 node list | rg 'camera|perception|tracker|target_memory'
-ros2 topic list | rg '/camera/image_raw|/camera/dashboard|/camera/fps|/camera/capture_fps'
-ros2 topic info -v /camera/image_raw
+ros2 topic list | rg '/camera/dashboard|/camera/fps|/camera/capture_fps'
 ros2 topic info -v /camera/dashboard
 ```
 
@@ -318,7 +316,6 @@ For this ROS 2 setup, use simple `hz` commands:
 
 ```bash
 ros2 topic hz /camera/dashboard
-ros2 topic hz /camera/image_raw
 ```
 
 Do not use `--qos-reliability` with `ros2 topic hz` unless confirmed supported by the local CLI version.
@@ -369,7 +366,7 @@ ls -l /dev/v4l-subdev* 2>/dev/null || echo no-subdev
 v4l2-ctl --list-devices
 for m in /dev/media*; do echo "===== $m ====="; media-ctl -d "$m" -p | rg -i 'tevs|rp1-cfe|csi2|csi2_ch0|ENABLED|video' | head -120; done
 journalctl -k -b --no-pager | rg -i 'tevs|rp1-cfe|pca953x|i2c|stream|timeout|fail|error' | tail -120
-ps -eo pid,stat,cmd | rg 'camera_capture_node|v4l2|media-ctl' || true
+ps -eo pid,stat,cmd | rg 'perception_camera_node|v4l2|media-ctl' || true
 ```
 
 Decision logic:
@@ -387,6 +384,6 @@ Decision logic:
 - `/home/francisco/tevs-oot`
 - `tools/start_live_stack.sh`
 - `tools/lib/live_camera.sh`
-- `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/camera_capture_node.py`
+- `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/perception_camera_node.py`
 - `ros2_ws/log/live_stack/latest/camera.log`
 - `HAILO_RECOVERY.md`

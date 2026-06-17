@@ -9,17 +9,20 @@ Use this file as the command source of truth.
 
 From `tools/start_live_stack.sh`:
 
-- Perception mode: `integrated-camera` only
-- Tracker default: `ocsort`
-- Startup profile default: `daily`
-- Camera default: `1280x720@30`
-- Live inference runs inside `perception_camera_node`; no full-rate raw image topic is published in live operation.
-- Camera sensor trigger/rate-control writes: disabled by default for reliability
-- Active `/dev/video0` preflight stream probe: disabled by default; media graph preflight still runs
-- Control node: enabled by default
-- MAVROS mirroring: disabled by default
-- Dashboard bridge and web video: enabled by default
-- Video bag recording: disabled by default, enabled with `--record-video`
+- Default command: `./tools/start_live_stack.sh`
+- Perception mode: integrated camera only
+- Camera capture: 640x480
+- Hailo inference: 640x640
+- Tracker default: ByteTrack
+- Target memory default: TIM-MARS
+- TIM-MARS appearance: enabled
+- Dashboard target: 30 FPS
+- Control node: enabled
+- Web video: enabled
+- Recording: disabled by default, enabled with `--record`
+- Bag tag option: `--tag <name>`
+
+The 2026-06-17 validated full-stack recording held the critical topics at approximately 30 Hz with `throttled=0x0`.
 
 ## Scope and assumptions
 
@@ -39,62 +42,46 @@ export ROS_DOMAIN_ID=42
 
 ## 2) Live stack
 
-```bash
-cd $THESIS_ROOT
-./tools/start_live_stack.sh
-```
+Start the validated live stack:
 
-What this script does:
+    ./tools/start_live_stack.sh
 
-1. Preflight and stale-process cleanup.
-2. ROS env and log directory setup.
-3. Perception readiness: integrated camera perception starts `perception_camera_node`.
-4. Node startup order: `perception_camera_node` -> tracker -> dashboard bridge -> TIM-MARS -> control.
-5. Interactive runtime with `status`, `ids`, `target <id>`, `clear-target`, `clear`, and `stop` commands.
+Start the validated live stack and record:
 
-Default:
+    ./tools/start_live_stack.sh --record --tag flight_01
 
-- control_ref_node enabled
-- MAVROS mirror disabled (safe default)
-- ROS_DOMAIN_ID defaults to 42 unless already exported
+Useful short options:
 
-Useful flags:
+    ./tools/start_live_stack.sh --dash 10
+    ./tools/start_live_stack.sh --tracker sort --mem off
+    ./tools/start_live_stack.sh --no-control
+    ./tools/start_live_stack.sh --no-dashboard
+    ./tools/start_live_stack.sh --help-advanced
 
-- `./tools/start_live_stack.sh --profile safe-camera`
-- `./tools/start_live_stack.sh --profile performance`
-- `./tools/start_live_stack.sh`
-- `./tools/start_live_stack.sh --perception-mode integrated-camera`
-- `./tools/start_live_stack.sh --tracker sort`
-- `./tools/start_live_stack.sh --tracker bytetrack`
-- `./tools/start_live_stack.sh --no-control`
-- `./tools/start_live_stack.sh --control-mavros`
-- `./tools/start_live_stack.sh --no-dashboard`
-- `./tools/start_live_stack.sh --no-web-video`
-- `./tools/start_live_stack.sh --camera-preflight-stream-probe-on`
-- `./tools/start_live_stack.sh --camera-rate-controls-on`
-- `./tools/start_live_stack.sh --camera-trigger-control-on`
-- `./tools/start_live_stack.sh --perception-hailo-queue-buffers 1`
-- `./tools/start_live_stack.sh --perception-image-qos-depth 1`
-- `./tools/start_live_stack.sh --perception-hailo-videoconvert-off`
-- `./tools/start_live_stack.sh --perception-allow-stub-fallback`
-- `./tools/start_live_stack.sh --record-video --bag-tag flight_01`
-- `./tools/start_live_stack.sh --record-video --record-mavros --bag-tag outdoor_01`
+Startup order:
 
-Deprecated or removed launcher flags:
+1. Preflight and camera health checks.
+2. `perception_camera_node` captures frames, runs Hailo inference, and publishes `/detections`, `/timing`, and `/camera/dashboard`.
+3. `tracker_node` publishes `/tracks`.
+4. `dashboard_bridge_node` publishes `/target`.
+5. `target_memory_mars_node` publishes `/target_memory_mars`.
+6. `control_ref_node` publishes `/control_ref/cmd_vel`.
 
-- `--perception-async-latest-frame-on/off` was removed; queue plus worker mode is always used.
-- `--no-target` is a deprecated alias; target selection now lives in `dashboard_bridge_node`.
-- `--rosbag` is a deprecated alias for `--record-video`.
+Removed runtime paths:
+
+- no split camera-to-perception node chain;
+- no separate live perception pipeline executable;
+- no full-rate live raw image transport.
 
 ### Tracker modes
 
 The live stack supports multiple tracker backends:
 
 ```bash
-./tools/start_live_stack.sh --profile daily --tracker sort
-./tools/start_live_stack.sh --profile daily --tracker ocsort
-./tools/start_live_stack.sh --profile daily --tracker bytetrack
-./tools/start_live_stack.sh --profile daily --tracker deepsort
+./tools/start_live_stack.sh --tracker sort
+./tools/start_live_stack.sh --tracker ocsort
+./tools/start_live_stack.sh --tracker bytetrack
+./tools/start_live_stack.sh --tracker deepsort
 ```
 
 Full option list:
@@ -169,19 +156,19 @@ Supported live runtime:
 
 Outdoor recording command:
 
-    ./tools/start_live_stack.sh --record-video --record-mavros --bag-tag outdoor_01
+    ./tools/start_live_stack.sh --record --record-mavros --tag outdoor_01
 
 ## 4) Record flight video bags
 
 The recommended flight recording path is integrated into `tools/start_live_stack.sh`.
 
-Use `--record-video` to record the dashboard image stream plus the perception, tracking, target, timing, and control topics required for later analysis and offline overlay rendering.
+Use `--record` to record the dashboard image stream plus the perception, tracking, target, timing, and control topics required for later analysis and offline overlay rendering.
 
 ### 4.1) Standard flight video bag
 
 ```bash
 cd "$THESIS_ROOT"
-./tools/start_live_stack.sh --profile daily --record-video --bag-tag flight_01
+./tools/start_live_stack.sh --record --tag flight_01
 ```
 
 This records to:
@@ -202,7 +189,7 @@ Recorded topics:
 Notes:
 
 - /camera/dashboard is recorded to keep field bags small; the live integrated path does not publish full-rate raw images.
-- /timing_tracker is enabled automatically when --record-video is used.
+- /timing_tracker is enabled automatically when --record is used.
 - A flight_metadata.txt file is written next to the bag with run configuration, tracker type, perception mode, camera settings, and recorded topics.
 
 ### 4.2) Flight video bag with MAVROS context
@@ -211,7 +198,7 @@ Use this when flying with the autopilot connected and you want basic flight-stat
 
 ```bash
 cd "$THESIS_ROOT"
-./tools/start_live_stack.sh --profile daily --record-video --record-mavros --bag-tag outdoor_01
+./tools/start_live_stack.sh --record --record-mavros --tag outdoor_01
 ```
 
 Additional MAVROS topics:
@@ -353,7 +340,7 @@ Camera-startup notes:
 Additional common failures:
 
 - Perception pipeline startup failure:
-  - Check `perception_pipeline.log` in the latest live-stack log directory.
+  - Check `perception_camera.log` in the latest live-stack log directory.
   - Confirm Hailo host dependencies and local runtime assets are available when using the Hailo backend.
 - Empty ROS graph:
   - Verify `ROS_DOMAIN_ID` matches all terminals.
@@ -370,11 +357,11 @@ Live log triage quick commands:
 cd "$THESIS_ROOT"
 ls -1 ros2_ws/log/live_stack/latest
 tail -n 80 ros2_ws/log/live_stack/latest/camera.log
-tail -n 80 ros2_ws/log/live_stack/latest/perception_pipeline.log
+tail -n 80 ros2_ws/log/live_stack/latest/perception_camera.log
 tail -n 80 ros2_ws/log/live_stack/latest/inference.log
 ```
 
-Note: `perception_pipeline.log` is the active perception log.
+Note: `perception_camera.log` is the active perception log.
 
 ## 7) Control validation quick checks
 

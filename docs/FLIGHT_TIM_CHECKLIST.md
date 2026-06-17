@@ -95,7 +95,7 @@ Do not use during flight unless explicitly implemented, documented, and enabled:
 
 For flight-oriented TIM tests, record at minimum:
 
-- `/camera/dashboard` or `/camera/image_raw`
+- `/camera/dashboard`
 - `/detections`
 - `/tracks`
 - `/target`

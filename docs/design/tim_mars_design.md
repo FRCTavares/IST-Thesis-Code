@@ -14,7 +14,7 @@ TIM-MARS consumes:
 
 - `/tracks`
 - `/target`
-- `/camera/image_raw`
+- `/camera/dashboard`
 
 TIM-MARS publishes:
 

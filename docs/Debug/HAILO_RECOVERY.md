@@ -6,11 +6,11 @@ This document captures Hailo AI HAT / Hailo PCI recovery procedures for the thes
 
 Use this guide when:
 
-- `perception_pipeline_node` exits before publishing `/detections`
+- `perception_camera_node` exits before publishing `/detections`
 - `/detections` has subscribers but no publisher
 - `hailortcli scan` reports no Hailo devices
 - `/dev/hailo0` is missing
-- `perception_pipeline.log` contains `HAILO_OUT_OF_PHYSICAL_DEVICES`
+- `perception_camera.log` contains `HAILO_OUT_OF_PHYSICAL_DEVICES`
 - the kernel was updated and `hailo_pci` is no longer available
 
 Related operator docs:
@@ -50,7 +50,7 @@ If any of those fail, fix Hailo before launching the live stack.
 
 ### 1. Hailo physical device unavailable
 
-`ros2_ws/log/live_stack/latest/perception_pipeline.log`:
+`ros2_ws/log/live_stack/latest/perception_camera.log`:
 
 ```text
 [HailoRT] [error] CHECK failed - Failed to create vdevice. there are not enough free devices. requested: 1, found: 0
@@ -173,7 +173,7 @@ hailortcli scan -> Device: 0000:01:00.0
 ```bash
 cd "$THESIS_ROOT"
 
-pkill -f 'perception_pipeline_node|inference_client_node|detector_node|hailo|ros2 bag record' || true
+pkill -f 'perception_camera_node|inference_client_node|detector_node|hailo|ros2 bag record' || true
 ```
 
 Check containers:
@@ -275,16 +275,15 @@ Hailo Devices:
 
 ```bash
 cd "$THESIS_ROOT"
-./tools/start_live_stack.sh --profile daily
+./tools/start_live_stack.sh 
 ```
 
 For a recordable smoke test:
 
 ```bash
 ./tools/start_live_stack.sh \
-  --profile daily \
-  --record-video \
-  --bag-tag hailo_recovery_smoke_01
+  --record \
+  --tag hailo_recovery_smoke_01
 ```
 
 ---
@@ -298,14 +297,14 @@ source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
 
 ros2 node list | rg 'camera|perception|tracker|target_memory'
-ros2 topic list | rg '/camera/image_raw|/detections|/tracks|/timing'
+ros2 topic list | rg '/camera/dashboard|/detections|/tracks|/timing'
 ros2 topic info -v /detections
 ```
 
 Healthy perception:
 
 ```text
-/perception_pipeline_node exists
+/perception_camera_node exists
 /detections Publisher count: 1
 /tracks receives messages
 ```
@@ -313,7 +312,7 @@ Healthy perception:
 Broken Hailo/perception:
 
 ```text
-/perception_pipeline_node missing
+/perception_camera_node missing
 /detections Publisher count: 0
 ```
 
@@ -322,10 +321,10 @@ Broken Hailo/perception:
 ```bash
 cd "$THESIS_ROOT"
 
-tail -n 160 ros2_ws/log/live_stack/latest/perception_pipeline.log
+tail -n 160 ros2_ws/log/live_stack/latest/perception_camera.log
 
 grep -R "ERROR\|Traceback\|Exception\|Hailo\|hef\|failed\|No such file" -n \
-  ros2_ws/log/live_stack/latest/perception_pipeline.log
+  ros2_ws/log/live_stack/latest/perception_camera.log
 ```
 
 ---
@@ -350,7 +349,7 @@ Decision logic:
 - `/dev/hailo0` exists but Hailo is busy: kill stale process using `/dev/hailo0`.
 - `/dev/hailo0` missing and `modprobe hailo_pci` fails: install headers and rebuild DKMS.
 - DKMS installed but `hailortcli scan` still fails: reload `hailo_pci`, check PCI visibility, or reboot.
-- Hailo works but `/detections` missing: inspect `perception_pipeline.log` for HEF/runtime errors.
+- Hailo works but `/detections` missing: inspect the live-stack camera/perception logs for HEF/runtime errors.
 
 ---
 
@@ -378,7 +377,7 @@ Avoid copying Hailo modules from older kernels unless you explicitly verify comp
 - `/home/francisco/hailort-drivers/`
 - `tools/setup/install_host_hailo_bindings.sh`
 - `tools/start_live_stack.sh`
-- `ros2_ws/log/live_stack/latest/perception_pipeline.log`
+- `ros2_ws/log/live_stack/latest/perception_camera.log`
 
 Useful commands:
 
