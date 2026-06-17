@@ -10,7 +10,7 @@ usage() {
   cat <<'EOF'
 Usage:
   ./tools/thesis_eval.sh official-tim-vs-raw
-  ./tools/thesis_eval.sh target-correctness BAG ANNOTATIONS OUT_DIR
+  ./tools/thesis_eval.sh target-correctness BAG ANNOTATIONS OUT_DIR [evaluator options]
 
 Commands:
   official-tim-vs-raw
@@ -20,7 +20,7 @@ Commands:
       Run the selected-target correctness evaluator on one bag.
 
 Outputs:
-  reports/official_tim_vs_raw_2026-06-17/
+  reports/official_tim_vs_raw_header_time_2026-06-17/
 EOF
 }
 
@@ -28,54 +28,62 @@ run_target_correctness() {
   local bag="$1"
   local ann="$2"
   local out="$3"
+  shift 3
 
   python3 tools/analysis/evaluate_tim_target_correctness.py \
     "$bag" \
     --annotations "$ann" \
-    --out-dir "$out"
+    --out-dir "$out" \
+    "$@"
 }
 
 run_official_tim_vs_raw() {
-  local out_root="reports/official_tim_vs_raw_2026-06-17"
+  local out_root="reports/official_tim_vs_raw_header_time_2026-06-17"
   local base="artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1"
 
   mkdir -p "$out_root"
 
   run_target_correctness \
     "${base}__tracker_bytetrack__tim_off__target_1__r2" \
-    "docs/annotations/hard_reentry/bytetrack_tim_mars_final.csv" \
-    "$out_root/bytetrack_raw"
+    "docs/annotations/hard_reentry_header_time/bytetrack_tim_mars_final_header_time.csv" \
+    "$out_root/bytetrack_raw" \
+    --timebase header
 
   run_target_correctness \
     "${base}__tracker_bytetrack__tim_mars__target_1__r4" \
-    "docs/annotations/hard_reentry/bytetrack_tim_mars_final.csv" \
-    "$out_root/bytetrack_tim_mars"
+    "docs/annotations/hard_reentry_header_time/bytetrack_tim_mars_final_header_time.csv" \
+    "$out_root/bytetrack_tim_mars" \
+    --timebase header
 
   run_target_correctness \
     "${base}__tracker_ocsort__tim_off__target_1" \
-    "docs/annotations/hard_reentry/ocsort_tim_mars_r1.csv" \
-    "$out_root/ocsort_raw"
+    "docs/annotations/hard_reentry_header_time/ocsort_tim_mars_r1_header_time.csv" \
+    "$out_root/ocsort_raw" \
+    --timebase header
 
   run_target_correctness \
     "${base}__tracker_ocsort__tim_mars__target_1__r1" \
-    "docs/annotations/hard_reentry/ocsort_tim_mars_r1.csv" \
-    "$out_root/ocsort_tim_mars"
+    "docs/annotations/hard_reentry_header_time/ocsort_tim_mars_r1_header_time.csv" \
+    "$out_root/ocsort_tim_mars" \
+    --timebase header
 
   run_target_correctness \
     "${base}__tracker_deepsort__tim_off__target_1" \
-    "docs/annotations/hard_reentry/deepsort_mars_target1_final.csv" \
-    "$out_root/deepsort_raw"
+    "docs/annotations/hard_reentry_header_time/deepsort_mars_target1_final_header_time.csv" \
+    "$out_root/deepsort_raw" \
+    --timebase header
 
   run_target_correctness \
     "${base}__tracker_deepsort__tim_mars__target_1" \
-    "docs/annotations/hard_reentry/deepsort_mars_target1_final.csv" \
-    "$out_root/deepsort_tim_mars"
+    "docs/annotations/hard_reentry_header_time/deepsort_mars_target1_final_header_time.csv" \
+    "$out_root/deepsort_tim_mars" \
+    --timebase header
 
   python3 - <<'PY'
 from pathlib import Path
 import csv
 
-out_root = Path("reports/official_tim_vs_raw_2026-06-17")
+out_root = Path("reports/official_tim_vs_raw_header_time_2026-06-17")
 
 cases = [
     ("ByteTrack", "Raw", "bytetrack_raw", "raw_target"),
@@ -182,11 +190,11 @@ case "$cmd" in
     ;;
 
   target-correctness)
-    if [[ $# -ne 4 ]]; then
+    if [[ $# -lt 4 ]]; then
       usage
       exit 2
     fi
-    run_target_correctness "$2" "$3" "$4"
+    run_target_correctness "$2" "$3" "$4" "${@:5}"
     ;;
 
   help|-h|--help)

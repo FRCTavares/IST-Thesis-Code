@@ -191,9 +191,26 @@ def detect_storage_id(bag_path: Path) -> str:
     return "sqlite3"
 
 
+def header_time_ns(msg: object) -> Optional[int]:
+    if not hasattr(msg, "header"):
+        return None
+
+    header = getattr(msg, "header")
+    if not hasattr(header, "stamp"):
+        return None
+
+    stamp = getattr(header, "stamp")
+
+    try:
+        return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
+    except Exception:
+        return None
+
+
 def read_target_samples_from_bag(
     bag_path: Path,
     topics: Iterable[str],
+    timebase: str,
 ) -> Dict[str, List[TargetSample]]:
     (
         SequentialReader,
@@ -231,8 +248,11 @@ def read_target_samples_from_bag(
         for topic in available
     }
 
+    if timebase not in {"bag", "header"}:
+        raise ValueError(f"Unsupported timebase: {timebase}")
+
     samples: Dict[str, List[TargetSample]] = {topic: [] for topic in requested}
-    first_t_ns: Optional[int] = None
+    first_time_ns: Optional[int] = None
 
     while reader.has_next():
         topic, data, t_ns = reader.read_next()
@@ -240,12 +260,20 @@ def read_target_samples_from_bag(
         if topic not in available:
             continue
 
-        if first_t_ns is None:
-            first_t_ns = t_ns
-
         msg = deserialize_message(data, msg_types[topic])
+
+        if timebase == "header":
+            msg_time_ns = header_time_ns(msg)
+            if msg_time_ns is None:
+                continue
+        else:
+            msg_time_ns = t_ns
+
+        if first_time_ns is None:
+            first_time_ns = msg_time_ns
+
         track_id = find_track_id_field(msg)
-        t_s = (t_ns - first_t_ns) * 1e-9
+        t_s = (msg_time_ns - first_time_ns) * 1e-9
 
         samples[topic].append(TargetSample(t_s=t_s, track_id=track_id))
 
@@ -365,6 +393,7 @@ def write_summary_md(
     path: Path,
     bag_path: Path,
     annotation_path: Path,
+    timebase: str,
     rows: List[Dict[str, str]],
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -390,6 +419,7 @@ def write_summary_md(
     lines.append("")
     lines.append(f"- Bag: `{bag_path}`")
     lines.append(f"- Annotations: `{annotation_path}`")
+    lines.append(f"- Timebase: `{timebase}`")
     lines.append("")
     lines.append("## Main comparison")
     lines.append("")
@@ -430,6 +460,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--step-s", type=float, default=0.05)
     parser.add_argument("--raw-topic", default=TARGET_TOPIC_RAW)
     parser.add_argument("--tim-topic", default=TARGET_TOPIC_TIM)
+    parser.add_argument(
+        "--timebase",
+        choices=["bag", "header"],
+        default="bag",
+        help="Timestamp source for evaluation time. Use header for replay bags whose bag time is stretched.",
+    )
     return parser.parse_args()
 
 
@@ -441,6 +477,7 @@ def main() -> int:
     samples = read_target_samples_from_bag(
         args.bag_path,
         topics=[args.raw_topic, args.tim_topic],
+        timebase=args.timebase,
     )
 
     raw_stats = evaluate_stream(
@@ -463,7 +500,7 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     write_summary_csv(out_dir / "summary.csv", rows)
-    write_summary_md(out_dir / "summary.md", args.bag_path, args.annotations, rows)
+    write_summary_md(out_dir / "summary.md", args.bag_path, args.annotations, args.timebase, rows)
 
     print(f"Wrote: {out_dir / 'summary.md'}")
     print(f"Wrote: {out_dir / 'summary.csv'}")

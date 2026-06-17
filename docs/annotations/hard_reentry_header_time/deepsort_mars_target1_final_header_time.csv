@@ -1,0 +1,2 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+deepsort_mars_target1_scaled4,0.0,67.6,black_shirt,True,1,2,visible_id_interval,DeepSORT MARS audit showed no target ID switch; black-shirt target remains ID 1; checkered distractor ID 2 | converted_to_header_time scale=0.249843 old_span=270.570 header_span=67.600

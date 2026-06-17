@@ -69,12 +69,12 @@ These reports are generated artefacts and are not committed by default because `
 
 | Tracker | Variant | Correct [s] | Wrong [s] | Lost [s] | Correct ratio | Wrong ratio | Lost ratio |
 |---|---|---:|---:|---:|---:|---:|---:|
-| ByteTrack | Raw `/target` | 185.790 | 31.100 | 53.680 | 0.687 | 0.115 | 0.198 |
-| ByteTrack | TIM-MARS `/target_memory_mars` | 262.310 | 4.010 | 4.250 | 0.969 | 0.015 | 0.016 |
-| DeepSORT-MARS | Raw `/target` | 251.220 | 0.000 | 19.350 | 0.928 | 0.000 | 0.072 |
-| DeepSORT-MARS | TIM-MARS `/target_memory_mars` | 249.820 | 13.750 | 7.000 | 0.923 | 0.051 | 0.026 |
-| OCSORT | Raw `/target` | 132.150 | 96.700 | 42.510 | 0.487 | 0.356 | 0.157 |
-| OCSORT | TIM-MARS `/target_memory_mars` | 182.250 | 32.400 | 56.710 | 0.672 | 0.119 | 0.209 |
+| ByteTrack | Raw `/target` | 47.045 | 7.800 | 12.755 | 0.696 | 0.115 | 0.189 |
+| ByteTrack | TIM-MARS `/target_memory_mars` | 65.570 | 0.850 | 1.180 | 0.970 | 0.013 | 0.017 |
+| DeepSORT-MARS | Raw `/target` | 61.050 | 0.000 | 6.550 | 0.903 | 0.000 | 0.097 |
+| DeepSORT-MARS | TIM-MARS `/target_memory_mars` | 62.850 | 3.300 | 1.450 | 0.930 | 0.049 | 0.021 |
+| OCSORT | Raw `/target` | 31.130 | 24.367 | 12.103 | 0.460 | 0.360 | 0.179 |
+| OCSORT | TIM-MARS `/target_memory_mars` | 30.630 | 21.006 | 15.965 | 0.453 | 0.311 | 0.236 |
 
 ## ByteTrack configuration fix
 
@@ -142,9 +142,9 @@ ByteTrack fixed + TIM-MARS non-strict conservative is the best current result.
 
 Compared with raw ByteTrack:
 
-- correct duration increases from 185.790 s to 262.310 s;
-- wrong duration decreases from 31.100 s to 4.010 s;
-- lost duration decreases from 53.680 s to 4.250 s.
+- correct duration increases from 47.045 s to 65.570 s;
+- wrong duration decreases from 7.800 s to 0.850 s;
+- lost duration decreases from 12.755 s to 1.180 s.
 
 This is the strongest evidence that TIM-MARS is useful when the base tracker has recoverable identity instability.
 
@@ -156,7 +156,7 @@ Raw DeepSORT-MARS is already a very strong baseline:
 - wrong ratio = 0.000;
 - lost ratio = 0.072.
 
-Adding TIM-MARS reduces LOST from 19.350 s to 7.000 s, but introduces 13.750 s of wrong output.
+Adding TIM-MARS reduces LOST from 6.550 s to 1.450 s, but introduces 3.300 s of wrong output.
 
 Under the safety rule that wrong target is worse than LOST, DeepSORT-MARS + TIM-MARS is not a strict improvement over raw DeepSORT-MARS. It is a continuity-versus-safety trade-off.
 
@@ -166,11 +166,11 @@ OCSORT + TIM-MARS is defensible but not best.
 
 Compared with raw OCSORT:
 
-- correct duration increases from 132.150 s to 182.250 s;
-- wrong duration decreases from 96.700 s to 32.400 s;
-- lost duration increases from 42.510 s to 56.710 s.
+- correct duration decreases from 31.130 s to 30.630 s;
+- wrong duration decreases from 24.367 s to 21.006 s;
+- lost duration increases from 12.103 s to 15.965 s.
 
-This is a valid safety trade-off because wrong-target output is strongly reduced. However, ByteTrack + TIM-MARS is much stronger on this sequence.
+This is a weak trade-off: wrong-target output is reduced, but lost-target duration increases by a comparable amount. ByteTrack + TIM-MARS is much stronger on this sequence.
 
 ## Current tracker verdict
 

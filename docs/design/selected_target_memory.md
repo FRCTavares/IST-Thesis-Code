@@ -104,9 +104,9 @@ The current main result source is:
 
 On the hard re-entry sequence, ByteTrack + TIM-MARS is currently the best result:
 
-- correct ratio = 0.969;
-- wrong ratio = 0.015;
-- lost ratio = 0.016.
+- correct ratio = 0.970;
+- wrong ratio = 0.013;
+- lost ratio = 0.017.
 
 ## Limitations
 
