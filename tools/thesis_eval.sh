@@ -10,11 +10,15 @@ usage() {
   cat <<'EOF'
 Usage:
   ./tools/thesis_eval.sh official-tim-vs-raw
+  ./tools/thesis_eval.sh visual-validation-header-time
   ./tools/thesis_eval.sh target-correctness BAG ANNOTATIONS OUT_DIR [evaluator options]
 
 Commands:
   official-tim-vs-raw
       Run the official hard-reentry raw-vs-TIM-MARS selected-target evaluation.
+
+  visual-validation-header-time
+      Render the official header-time raw-vs-TIM-MARS validation videos.
 
   target-correctness BAG ANNOTATIONS OUT_DIR
       Run the selected-target correctness evaluator on one bag.
@@ -199,6 +203,10 @@ case "$cmd" in
 
   help|-h|--help)
     usage
+    ;;
+
+  visual-validation-header-time)
+    python3 tools/visualization/video.py tim-header-all
     ;;
 
   *)

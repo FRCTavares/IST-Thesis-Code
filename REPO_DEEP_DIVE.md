@@ -146,8 +146,8 @@ Core evaluation principle:
   - `analyse_bag_tracking.py`
   - `collect_live_timing_stats.py`
   - `check_live_timing_invariants.py`
-  - `validate_canonical_metrics.py`
-  - `decide_queue_buffer_default.py`
+  - Deprecated on 2026-06-17 during tool cleanup.
+  - Historical validation helpers were removed because they were not part of the current official evaluation path.
   - `timing_contract.py`
 
 ### Startup orchestration contract (`tools/start_live_stack.sh`)
@@ -265,8 +265,8 @@ Analysis pipeline:
 
 1. Live sampling: `tools/analysis/collect_live_timing_stats.py`
 2. Invariant checks: `tools/analysis/check_live_timing_invariants.py`
-3. Schema/key checks: `tools/validation/validate_canonical_metrics.py`
-4. Queue-buffer decision gate: `tools/validation/decide_queue_buffer_default.py`
+3. Schema/key checks are now covered by the active official evaluation scripts.
+4. Queue-buffer policy is documented in the current live-stack configuration instead of a standalone validation helper.
 5. Offline bag analytics: `tools/analysis/analyse_bag_timing.py` and `tools/analysis/analyse_bag_tracking.py`
 
 Default output locations:
