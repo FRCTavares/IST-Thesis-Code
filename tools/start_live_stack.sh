@@ -111,7 +111,7 @@ print_startup_success_summary() {
     publish_size="${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}"
     infer_size="${infer_w}x${infer_h}"
 
-    detector_summary="mode=integrated-camera backend=${PERCEPTION_INFERENCE_BACKEND} frame_queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} image_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
+    detector_summary="mode=integrated-camera backend=${PERCEPTION_INFERENCE_BACKEND} model=${PERCEPTION_DETECTOR_MODEL} hef=${PERCEPTION_HAILO_HEF_PATH} frame_queue=${INFER_QUEUE_SIZE} workers=${INFER_WORKERS} image_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT}"
 
     if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
         if [[ "$TRACKER_TYPE" == "deepsort" ]]; then
@@ -382,7 +382,7 @@ fi
 log_info "run: $RUN_ID"
 log_info "logs: $RUN_DIR"
 log_info "mode: perception=$PERCEPTION_MODE"
-log_info "cfg: camera_capture=${CAMERA_WIDTH}x${CAMERA_HEIGHT} camera_publish=${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}(${CAMERA_PUBLISH_RESIZE_MODE},${CAMERA_PUBLISH_ENCODING})@${CAMERA_FPS} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/r${INFER_RETRIES} img_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT} hailo_videoconvert=${PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL} perception_gc_disable=${PERCEPTION_GC_DISABLE_BOOL} allow_stub_fallback=${PERCEPTION_ALLOW_STUB_FALLBACK_BOOL} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
+log_info "cfg: camera_capture=${CAMERA_WIDTH}x${CAMERA_HEIGHT} camera_publish=${CAMERA_PUBLISH_WIDTH}x${CAMERA_PUBLISH_HEIGHT}(${CAMERA_PUBLISH_RESIZE_MODE},${CAMERA_PUBLISH_ENCODING})@${CAMERA_FPS} detector_model=${PERCEPTION_DETECTOR_MODEL} detector_hef=${PERCEPTION_HAILO_HEF_PATH} infer=q${INFER_QUEUE_SIZE}/w${INFER_WORKERS}/t${INFER_TIMEOUT_MS}ms/retries=${INFER_RETRIES} img_qos_depth=${PERCEPTION_IMAGE_QOS_DEPTH} hailo_queue_buffers=${PERCEPTION_HAILO_QUEUE_BUFFERS} async_max_inflight=${PERCEPTION_ASYNC_MAX_INFLIGHT} hailo_videoconvert=${PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL} perception_gc_disable=${PERCEPTION_GC_DISABLE_BOOL} allow_stub_fallback=${PERCEPTION_ALLOW_STUB_FALLBACK_BOOL} control_stale=${CONTROL_STALE_TIMEOUT_S}s"
 log_info "cfg: camera_trigger_control=${CAMERA_APPLY_TRIGGER_CONTROL_BOOL} camera_rate_controls=${CAMERA_APPLY_RATE_CONTROLS_BOOL} preflight_stream_probe=${CAMERA_PREFLIGHT_STREAM_PROBE_BOOL} sensor_max_fps=${CAMERA_SENSOR_MAX_FPS} ae_upper=${CAMERA_SENSOR_AE_UPPER} ae_max=${CAMERA_SENSOR_AE_MAX} exposure_mode=${CAMERA_SENSOR_EXPOSURE_MODE}"
 log_info "nodes: tracker=$tracker_state control=$control_state dashboard=$dashboard_state web_video=$web_video_state rosbag=$rosbag_state"
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
@@ -513,6 +513,7 @@ while true; do
         -p label:=person \
         -p min_score:=0.35 \
         -p inference_backend:=$PERCEPTION_INFERENCE_BACKEND \
+        -p hailo_hef_path:="$PERCEPTION_HAILO_HEF_PATH" \
         -p allow_stub_fallback:=$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL \
         "${PERCEPTION_POST_SO_ARGS[@]}" \
         -p infer_timeout_ms:=$INFER_TIMEOUT_MS \

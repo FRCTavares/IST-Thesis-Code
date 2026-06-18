@@ -10,6 +10,7 @@ Root documentation is split by purpose:
 
 - `README.md` (this file): orientation, quick paths, and navigation.
 - `RUNBOOK.md`: command source of truth for setup, live operation, replay, analysis, and troubleshooting.
+- `docs/field_plans/2026-06-19__tim-mars-validation-recording-plan.md`: field recording plan for the expanded TIM-MARS validation set.
 - `REPO_DEEP_DIVE.md`: architecture, boundaries, package responsibilities, and repository layout.
 - `docs/Debug/LIVE_STACK_CAMERA_RECOVERY.md`: camera failure triage/recovery for RPi5 + TEVS incidents.
 

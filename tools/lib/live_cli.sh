@@ -473,6 +473,26 @@ while [[ $# -gt 0 ]]; do
             PERCEPTION_HAILO_QUEUE_BUFFERS="$2"
             shift 2
             ;;
+        --detector-model)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --detector-model requires a value"
+                print_usage
+                exit 1
+            fi
+            PERCEPTION_DETECTOR_MODEL="${2,,}"
+            PERCEPTION_HAILO_HEF_PATH="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/models/hef/${PERCEPTION_DETECTOR_MODEL}.hef"
+            shift 2
+            ;;
+        --detector-hef-path)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --detector-hef-path requires a value"
+                print_usage
+                exit 1
+            fi
+            PERCEPTION_DETECTOR_MODEL="custom"
+            PERCEPTION_HAILO_HEF_PATH="$2"
+            shift 2
+            ;;
         --perception-inference-backend)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --perception-inference-backend requires a value"
@@ -788,6 +808,17 @@ fi
 
 if ! [[ "$PERCEPTION_HAILO_QUEUE_BUFFERS" =~ ^[0-9]+$ ]] || [[ "$PERCEPTION_HAILO_QUEUE_BUFFERS" -lt 1 ]]; then
     echo "[error] --perception-hailo-queue-buffers must be a positive integer"
+    exit 1
+fi
+
+if [[ -z "${PERCEPTION_HAILO_HEF_PATH:-}" ]]; then
+    echo "[error] detector HEF path is empty"
+    exit 1
+fi
+
+if [[ ! -f "$PERCEPTION_HAILO_HEF_PATH" ]]; then
+    echo "[error] detector HEF not found: $PERCEPTION_HAILO_HEF_PATH"
+    echo "[hint] use --detector-model yolov6n or --detector-hef-path /path/to/model.hef"
     exit 1
 fi
 

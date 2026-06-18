@@ -66,6 +66,8 @@ Options:
     --infer-retries <N>                 Inference retries after timeout/error (default: 0)
     --infer-print-every <N>             Inference periodic stats interval (default: 240)
     --infer-timeout-log-every <N>       Inference timeout log interval (default: 20)
+    --detector-model <name>             Detector HEF model key, e.g. yolov6n, yolov8n, yolov8s, yolov10n, yolov11n
+    --detector-hef-path <path>          Explicit detector HEF path, overrides --detector-model
     --perception-image-qos-depth <N>    Perception image subscription depth (integrated-camera default: 2)
     --perception-hailo-queue-buffers <N>
                                                                             Hailo Gst queue max-size-buffers (integrated-camera default: 6)
@@ -138,6 +140,8 @@ Common options:
     --record                 Record video/perception/tracking/control bag
     --tag NAME               Add a tag to the recorded bag folder
     --dash N                 Set dashboard target FPS
+    --detector-model NAME    Detector HEF model, e.g. yolov6n, yolov8n, yolov8s
+    --detector-hef-path PATH Explicit detector HEF path
     --tracker NAME           sort | ocsort | bytetrack | deepsort
     --mem MODE               off | mars
     --no-appearance          Disable TIM-MARS appearance extraction
