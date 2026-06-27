@@ -75,11 +75,11 @@ It is no longer a rollback path. The supported live path is:
 
 1. `eval_replay.launch.py` plays a recorded bag.
 2. Tracker + `dashboard_bridge_node` process replayed messages.
-3. Replay outputs are recorded to `artifacts/bags/eval/` for offline analysis.
+3. Replay outputs are recorded to `bags/eval/` for offline analysis.
 
 Conceptual chain:
 
-`artifacts/bags/live_camera -> eval_replay.launch.py -> /tracks + /target + /timing_tracker + /timing_target -> artifacts/bags/eval -> analysis scripts -> reports`
+`bags/live_camera -> eval_replay.launch.py -> /tracks + /target + /timing_tracker + /timing_target -> bags/eval -> analysis scripts -> reports`
 
 Replay/eval note:
 
@@ -197,11 +197,11 @@ Root-level purpose map:
   - Dashboard app and frontend build configuration.
 - `tools/`
   - Operational scripts and analysis utilities.
-- `artifacts/bags/live_camera/`
+- `bags/live_camera/`
   - Live recordings produced by the live stack.
-- `artifacts/bags/eval/`
+- `bags/eval/`
   - Replay outputs and evaluation artifacts.
-- `artifacts/reports/`
+- `reports/`
   - Archived historical analysis outputs.
 - `reports/`
   - Current default output root for timing and tracking analyses.
@@ -218,8 +218,8 @@ Root-level purpose map:
 
 - `models/hef/` — compiled Hailo engine files used by integrated camera inference when present.
 - `models/reid/` — re-identification models used by tracker evaluation flows.
-- `artifacts/bags/live_camera/` - source recordings from live sessions.
-- `artifacts/bags/eval/` - replay outputs and derived artifacts used by analysis scripts.
+- `bags/live_camera/` - source recordings from live sessions.
+- `bags/eval/` - replay outputs and derived artifacts used by analysis scripts.
 
 If you need to add new model artifacts, prefer a clear subfolder under `models/` and add a short README describing provenance and expected runtime (device/format).
 

@@ -4,7 +4,7 @@ The bag root is organised by role, not by experiment name.
 
 Folder layout:
 
-    artifacts/bags/
+    bags/
       source/
         curated/        selected source bags used often
         archive/        older/raw/full historical recordings

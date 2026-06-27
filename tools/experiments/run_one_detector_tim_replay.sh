@@ -6,7 +6,7 @@ if [[ $# -lt 5 ]]; then
   echo "  $0 <bag_path> <detector_model> <target_id|largest> <tracker> <tim_mode:off|mars> [rate] [target_wait_timeout_s]"
   echo
   echo "Example:"
-  echo "  $0 artifacts/bags/datasets/... yolov8s largest bytetrack mars 0.5 90"
+  echo "  $0 bags/datasets/... yolov8s largest bytetrack mars 0.5 90"
   exit 1
 fi
 
@@ -27,7 +27,7 @@ BAG_BASE="$(basename "$BAG_PATH")"
 HEF_PATH="$THESIS_ROOT/models/hef/${DETECTOR_MODEL}.hef"
 
 RUN_NAME="${BAG_BASE}__detector_${DETECTOR_MODEL}__tracker_${TRACKER}__tim_${TIM_MODE}__target_${TARGET_ID}"
-OUT_ROOT="${OUT_ROOT:-$THESIS_ROOT/artifacts/bags/replay/full_pipeline_from_image_raw}"
+OUT_ROOT="${OUT_ROOT:-$THESIS_ROOT/bags/replay/full_pipeline_from_image_raw}"
 REPORT_ROOT="${REPORT_ROOT:-$THESIS_ROOT/reports/full_pipeline_from_image_raw}"
 LOG_ROOT="${LOG_ROOT:-$THESIS_ROOT/ros2_ws/log/full_pipeline_from_image_raw}"
 OUT_BAG="$OUT_ROOT/$RUN_NAME"

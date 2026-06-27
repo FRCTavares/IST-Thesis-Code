@@ -383,7 +383,7 @@ After each bag, check topics and counts.
     source /opt/ros/jazzy/setup.bash
     source ros2_ws/install/setup.bash
 
-    LATEST="$(find artifacts/bags/live_camera -maxdepth 1 -type d | sort | tail -1)"
+    LATEST="$(find bags/live_camera -maxdepth 1 -type d | sort | tail -1)"
 
     echo "LATEST=$LATEST"
     ros2 bag info "$LATEST"
@@ -408,11 +408,11 @@ Run after all recordings:
     source ros2_ws/install/setup.bash
 
     echo "=== 2026-06-19 bags ==="
-    find artifacts/bags/live_camera -maxdepth 1 -type d -name '2026-06-19*' | sort
+    find bags/live_camera -maxdepth 1 -type d -name '2026-06-19*' | sort
 
     echo
     echo "=== bag topic summaries ==="
-    for b in $(find artifacts/bags/live_camera -maxdepth 1 -type d -name '2026-06-19*' | sort); do
+    for b in $(find bags/live_camera -maxdepth 1 -type d -name '2026-06-19*' | sort); do
       echo
       echo "===== $b ====="
       ros2 bag info "$b" | rg "Duration|Messages|Topic: /camera/image_raw|Topic: /detections|Topic: /tracks|Topic: /target |Topic: /target_memory_mars|Topic: /timing"
@@ -456,7 +456,7 @@ Example:
     source /opt/ros/jazzy/setup.bash
     source ros2_ws/install/setup.bash
 
-    RAW_BAG="artifacts/bags/live_camera/2026-06-19__seq02__two_person_hard_reentry__yolov8s_bytetrack_tim_mars"
+    RAW_BAG="bags/live_camera/2026-06-19__seq02__two_person_hard_reentry__yolov8s_bytetrack_tim_mars"
 
     RECORDER_STOP_TIMEOUT=120 tools/experiments/run_one_detector_tim_replay.sh \
       "$RAW_BAG" \
@@ -477,7 +477,7 @@ Run this only after confirming the bag is useful and target ID is known.
     source /opt/ros/jazzy/setup.bash
     source ros2_ws/install/setup.bash
 
-    RAW_BAG="artifacts/bags/live_camera/REPLACE_WITH_BAG"
+    RAW_BAG="bags/live_camera/REPLACE_WITH_BAG"
     TARGET_ID="REPLACE_WITH_TARGET_ID"
     TRACKER="bytetrack"
     RATE="0.5"
@@ -505,7 +505,7 @@ After offline replay, check header-time coverage.
     source ros2_ws/install/setup.bash
 
     echo "=== replay bag counts ==="
-    for b in $(find artifacts/bags/detector_eval_matrix -maxdepth 1 -type d -name '*tracker_bytetrack*' | sort); do
+    for b in $(find bags/detector_eval_matrix -maxdepth 1 -type d -name '*tracker_bytetrack*' | sort); do
       echo
       echo "===== $b ====="
       ros2 bag info "$b" | rg "Duration|Messages|Topic: /camera/image_raw|Topic: /detections|Topic: /tracks|Topic: /target |Topic: /target_memory_mars"
@@ -618,7 +618,7 @@ Reject and redo if:
 
 Do not commit:
 
-- artifacts/bags/
+- bags/
 - reports/
 - generated videos
 - ros2_ws/log/

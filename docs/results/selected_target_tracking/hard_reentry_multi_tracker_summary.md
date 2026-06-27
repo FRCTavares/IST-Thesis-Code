@@ -6,7 +6,7 @@ Date: 2026-06-06
 
 Source sequence:
 
-`artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1`
+`bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1`
 
 Scenario:
 
@@ -61,9 +61,9 @@ These reports are generated artefacts and are not committed by default because `
 
 | Tracker | Bag |
 |---|---|
-| ByteTrack + TIM-MARS | `artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1__r4` |
-| DeepSORT-MARS + TIM-MARS | `artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_mars__target_1` |
-| OCSORT + TIM-MARS | `artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1` |
+| ByteTrack + TIM-MARS | `bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1__r4` |
+| DeepSORT-MARS + TIM-MARS | `bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_mars__target_1` |
+| OCSORT + TIM-MARS | `bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1` |
 
 ## Final results
 

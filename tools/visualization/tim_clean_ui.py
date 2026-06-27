@@ -1867,10 +1867,10 @@ def clean_static_ui():
         ]
 
         visible_bag_prefixes = (
-            "artifacts/bags/source/curated/",
-            "artifacts/bags/annotation_inputs/",
-            "artifacts/bags/review/tim_queues/TIM_EVAL_QUEUE/",
-            "artifacts/bags/reference/tim_good/",
+            "bags/source/curated/",
+            "bags/annotation_inputs/",
+            "bags/review/tim_queues/TIM_EVAL_QUEUE/",
+            "bags/reference/tim_good/",
         )
         inventory_bags = [
             b for b in inventory_bags

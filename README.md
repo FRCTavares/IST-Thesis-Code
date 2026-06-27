@@ -173,7 +173,7 @@ cd "$THESIS_ROOT"
 
 This records to:
 
-`artifacts/bags/live_camera/YYYY-MM-DD__HH-MM-SS__video__flight_01/`
+`bags/live_camera/YYYY-MM-DD__HH-MM-SS__video__flight_01/`
 
 Recorded topics:
 /camera/dashboard
@@ -214,7 +214,7 @@ Replay an existing bag:
 
 ```bash
 ros2 launch thesis_bringup eval_replay.launch.py \
-  bag:=$THESIS_ROOT/artifacts/bags/live_camera/<bag_name> \
+  bag:=$THESIS_ROOT/bags/live_camera/<bag_name> \
   tracker:=sort
 ```
 
@@ -233,7 +233,7 @@ Expected:
 Timing:
 
 ```bash
-python3 tools/analysis/analyse_bag_timing.py "$THESIS_ROOT/artifacts/bags/live_camera/<bag_name>"
+python3 tools/analysis/analyse_bag_timing.py "$THESIS_ROOT/bags/live_camera/<bag_name>"
 ```
 
 Expected output:
@@ -244,7 +244,7 @@ Expected output:
 Tracking:
 
 ```bash
-python3 tools/analysis/analyse_bag_tracking.py "$THESIS_ROOT/artifacts/bags/eval/<eval_bag_name>"
+python3 tools/analysis/analyse_bag_tracking.py "$THESIS_ROOT/bags/eval/<eval_bag_name>"
 ```
 
 Expected output:
@@ -397,8 +397,8 @@ Expected behavior from validated baseline:
 
 - ROS packages: `ros2_ws/src/`
 - Utility scripts: `tools/`
-- Live bags: `artifacts/bags/live_camera/`
-- Eval output bags: `artifacts/bags/eval/`
+- Live bags: `bags/live_camera/`
+- Eval output bags: `bags/eval/`
 - Timing reports: `reports/timing/`
 - Timing figures: `figures/timing/`
 - Tracking reports: `reports/tracking/`

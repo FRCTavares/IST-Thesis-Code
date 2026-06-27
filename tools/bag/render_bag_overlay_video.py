@@ -445,7 +445,7 @@ def main() -> None:
     if not bag_path.exists():
         raise FileNotFoundError(f"Bag not found: {bag_path}")
 
-    output = Path(args.output).expanduser() if args.output else Path("artifacts/reports/videos") / f"{bag_path.name}__overlay.mp4"
+    output = Path(args.output).expanduser() if args.output else Path("reports/videos") / f"{bag_path.name}__overlay.mp4"
     output.parent.mkdir(parents=True, exist_ok=True)
 
     fps = args.fps if args.fps > 0 else infer_fps(bag_path, args.image_topic, args.default_fps)

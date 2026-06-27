@@ -101,7 +101,6 @@ artifacts/reports/compare/tmp_*/
 # ------------------------------
 # Generated analysis outputs
 # ------------------------------
-reports/
 figures/
 
 # Live benchmark raw outputs
@@ -135,7 +134,6 @@ artifacts/reports/tracking/visdrone_full_detector_sweep_*/
 # ------------------------------
 # Thesis generated artifacts
 # ------------------------------
-artifacts/bags/
 artifacts/reports/
 artifacts/figures/
 artifacts/videos/
@@ -193,3 +191,13 @@ live-ui/node_modules/
 live-ui/dist/
 user-interface/node_modules/
 user-interface/dist/
+
+# Local ROS 2 bag data
+
+# Local ROS 2 bag data
+/bags/*
+!/bags/README.md
+
+# Generated local reports
+/reports/*
+!/reports/README.md

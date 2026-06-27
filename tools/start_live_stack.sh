@@ -1009,7 +1009,7 @@ if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
     echo "[field] requesting MAVLink streams"
     bash -lc 'cd ~/Desktop/MAVROS_PIXHAWK6X && ./request_pixhawk_streams.sh' || true
 
-    MAVROS_BAG_ROOT="$THESIS_ROOT/artifacts/bags/mavros"
+    MAVROS_BAG_ROOT="$THESIS_ROOT/bags/mavros"
     mkdir -p "$MAVROS_BAG_ROOT"
     MAVROS_BAG_OUT_DIR="$MAVROS_BAG_ROOT/$(basename "$VIDEO_BAG_OUT_DIR")__mavros"
 
@@ -1039,8 +1039,8 @@ else
 fi
 
 if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
-    SOURCE_ROOT="$THESIS_ROOT/artifacts/bags/source_video"
-    MAVROS_BAG_ROOT="$THESIS_ROOT/artifacts/bags/mavros"
+    SOURCE_ROOT="$THESIS_ROOT/bags/source_video"
+    MAVROS_BAG_ROOT="$THESIS_ROOT/bags/mavros"
     mkdir -p "$SOURCE_ROOT" "$MAVROS_BAG_ROOT"
 
     SOURCE_TAG_SAFE="${BAG_TAG:-source_record}"

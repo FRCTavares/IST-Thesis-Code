@@ -1,16 +1,5 @@
 generated_by: tools/catalogue/build_tim_eval_catalogue.py
 bags:
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1
-  label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1
-  case: hard_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '1'
-  replay: ''
-  source: ui_replay
-  path: artifacts/bags/replay/ui_replays/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r1
   label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1 | r1
   case: hard_reentry
@@ -19,7 +8,7 @@ bags:
   target: '1'
   replay: r1
   source: ui_replay
-  path: artifacts/bags/replay/ui_replays/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
+  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_45_45_video_2026_06_19_official_seq01_clean_four_person_yolov8s_bytetrack_tim_mars
@@ -30,7 +19,7 @@ bags:
   target: ''
   replay: ''
   source: official
-  path: artifacts/bags/live_camera/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
+  path: bags/source/archive/official_field_2026-06-19/seq01_clean_four_person/full_pipeline/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0
@@ -41,7 +30,7 @@ bags:
   target: '0'
   replay: ''
   source: official
-  path: artifacts/bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
+  path: bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r1
@@ -52,7 +41,7 @@ bags:
   target: '0'
   replay: r1
   source: official
-  path: artifacts/bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r1
+  path: bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r1
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r2
@@ -63,7 +52,7 @@ bags:
   target: '0'
   replay: r2
   source: official
-  path: artifacts/bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r2
+  path: bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r2
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r3
@@ -74,7 +63,7 @@ bags:
   target: '0'
   replay: ''
   source: official
-  path: artifacts/bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r3
+  path: bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r3
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r4
@@ -85,7 +74,7 @@ bags:
   target: '0'
   replay: ''
   source: official
-  path: artifacts/bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r4
+  path: bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r4
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_50_03_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars
@@ -96,7 +85,7 @@ bags:
   target: ''
   replay: ''
   source: official
-  path: artifacts/bags/live_camera/2026-06-19__12-50-03__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars
+  path: bags/source/archive/official_field_2026-06-19/seq02_target_reentry/full_pipeline/2026-06-19__12-50-03__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars
@@ -107,7 +96,7 @@ bags:
   target: ''
   replay: ''
   source: official
-  path: artifacts/bags/live_camera/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars
+  path: bags/source/archive/official_field_2026-06-19/seq02_target_reentry/full_pipeline/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_57_48_video_2026_06_19_official_seq03_four_person_crossing_ambiguity_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0
@@ -118,7 +107,7 @@ bags:
   target: '0'
   replay: ''
   source: official
-  path: artifacts/bags/replay/eval_matrix/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
+  path: bags/replay/eval_matrix/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_57_48_video_2026_06_19_official_seq03_four_person_crossing_ambiguity_yolov8s_bytetrack_tim_mars
@@ -129,7 +118,7 @@ bags:
   target: ''
   replay: ''
   source: official
-  path: artifacts/bags/live_camera/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars
+  path: bags/source/archive/official_field_2026-06-19/seq03_crossing_ambiguity/full_pipeline/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0
@@ -140,7 +129,7 @@ bags:
   target: '0'
   replay: ''
   source: official
-  path: artifacts/bags/replay/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
+  path: bags/replay/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_1
@@ -151,7 +140,7 @@ bags:
   target: '1'
   replay: ''
   source: official
-  path: artifacts/bags/replay/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1
+  path: bags/replay/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_1_r1
@@ -162,7 +151,7 @@ bags:
   target: '1'
   replay: r1
   source: official
-  path: artifacts/bags/replay/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1__r1
+  path: bags/replay/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1__r1
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars
@@ -173,7 +162,7 @@ bags:
   target: ''
   replay: ''
   source: official
-  path: artifacts/bags/live_camera/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars
+  path: bags/source/archive/official_field_2026-06-19/seq04_occlusion_no_exit/full_pipeline/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_seq02_long_strict_tim_mars
@@ -184,7 +173,7 @@ bags:
   target: ''
   replay: ''
   source: strict_tim_replay
-  path: artifacts/bags/strict_tim_replay/2026-06-19__seq02_long__strict_tim_mars
+  path: bags/replay/strict_tim_replay/2026-06-19__seq02_long__strict_tim_mars
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_seq02_long_medium_tim_mars_medium
@@ -195,7 +184,7 @@ bags:
   target: ''
   replay: ''
   source: strict_tim_replay
-  path: artifacts/bags/strict_tim_replay/2026-06-19__seq02_long_medium__tim_mars_medium
+  path: bags/replay/strict_tim_replay/2026-06-19__seq02_long_medium__tim_mars_medium
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_seq02_long_strict_aligned_tim_mars
@@ -206,30 +195,8 @@ bags:
   target: ''
   replay: ''
   source: strict_tim_replay
-  path: artifacts/bags/strict_tim_replay/2026-06-19__seq02_long_strict_aligned__tim_mars
+  path: bags/replay/strict_tim_replay/2026-06-19__seq02_long_strict_aligned__tim_mars
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_off_target_1
-  label: Hard re-entry / ID switch | ByteTrack | Raw | target 1
-  case: hard_reentry
-  tracker: bytetrack
-  method: raw
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_off__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_off_target_1_r2
-  label: Hard re-entry / ID switch | ByteTrack | Raw | target 1 | r2
-  case: hard_reentry
-  tracker: bytetrack
-  method: raw
-  target: '1'
-  replay: r2
-  source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_off__target_1__r2
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1
   label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1
@@ -239,7 +206,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1
+  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r1
@@ -250,7 +217,7 @@ bags:
   target: '1'
   replay: r1
   source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
+  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r2
@@ -261,7 +228,7 @@ bags:
   target: '1'
   replay: r2
   source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r2
+  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r2
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r3
@@ -272,29 +239,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r3
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_mars_target_1
-  label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1
-  case: hard_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_mars_target_1_r4
-  label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1
-  case: hard_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1__r4
+  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r3
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_deepsort_tim_mars_target_1
@@ -305,7 +250,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_mars__target_1
+  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_mars__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1
@@ -316,29 +261,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_deepsort_tim_off_target_1
-  label: Hard re-entry / ID switch | OCSORT | Raw | target 1
-  case: hard_reentry
-  tracker: ocsort
-  method: raw
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_off__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_ocsort_tim_off_target_1
-  label: Hard re-entry / ID switch | OCSORT | Raw | target 1
-  case: hard_reentry
-  tracker: ocsort
-  method: raw
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_off__target_1
+  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1
@@ -349,7 +272,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1
+  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1_r1
@@ -360,7 +283,7 @@ bags:
   target: '1'
   replay: r1
   source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r1
+  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1_r2
@@ -371,40 +294,7 @@ bags:
   target: '1'
   replay: r2
   source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r2
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_deepsort_tim_mars_target_1
-  label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1
-  case: hard_reentry
-  tracker: ocsort
-  method: tim_mars
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_ocsort_tim_mars_target_1
-  label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1
-  case: hard_reentry
-  tracker: ocsort
-  method: tim_mars
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_ocsort_tim_mars_target_1_r1
-  label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1 | r1
-  case: hard_reentry
-  tracker: ocsort
-  method: tim_mars
-  target: '1'
-  replay: r1
-  source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1__r1
+  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r2
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_06_19_10_27_03_video_2026_06_19_seq01_clean_two_person_yolov8s_bytetrack_tim_mars
@@ -415,7 +305,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-27-03__video__2026-06-19__seq01__clean_two_person__yolov8s_bytetrack_tim_mars
+  path: bags/source/archive/lab_old/full_pipeline/2026-06-19__10-27-03__video__2026-06-19__seq01__clean_two_person__yolov8s_bytetrack_tim_mars
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_11_58_02_video_2026_06_19_seq01_clean_four_person_yolov8s_bytetrack_tim_mars
@@ -426,7 +316,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-06-19__11-58-02__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
+  path: bags/source/archive/lab_old/full_pipeline/2026-06-19__11-58-02__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_11_59_23_video_2026_06_19_seq01_clean_four_person_yolov8s_bytetrack_tim_mars
@@ -437,119 +327,9 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-06-19__11-59-23__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
+  path: bags/source/archive/lab_old/full_pipeline/2026-06-19__11-59-23__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
   valid_for_evaluation: true
-- id: 2026_06_19_09_59_34_video_2026_06_19_test_static_yolov8s_bytetrack_tim_mars
-  label: Unknown case | ByteTrack | TIM-MARS
-  case: unknown
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__09-59-34__video__2026-06-19__test_static_yolov8s_bytetrack_tim_mars
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_08_22_video_2026_06_19_test_static_yolov8s_bytetrack_tim_mars
-  label: Unknown case | ByteTrack | TIM-MARS
-  case: unknown
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-08-22__video__2026-06-19__test_static_yolov8s_bytetrack_tim_mars
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_57_43_video_2026_06_19_full_system_test_yolov8s_bytetrack_tim_mars
-  label: Unknown case | ByteTrack | TIM-MARS
-  case: unknown
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-57-43__video__2026-06-19__full_system_test__yolov8s_bytetrack_tim_mars
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_59_47_video_2026_06_19_full_system_test_yolov8s_bytetrack_tim_mars
-  label: Unknown case | ByteTrack | TIM-MARS
-  case: unknown
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-59-47__video__2026-06-19__full_system_test__yolov8s_bytetrack_tim_mars
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_11_11_25_video_2026_06_19_full_system_test_yolov8s_bytetrack_tim_mars
-  label: Unknown case | ByteTrack | TIM-MARS
-  case: unknown
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__11-11-25__video__2026-06-19__full_system_test__yolov8s_bytetrack_tim_mars
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_11_19_22_video_2026_06_19_field_script_test_yolov8s_bytetrack_tim_mars
-  label: Unknown case | ByteTrack | TIM-MARS
-  case: unknown
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__11-19-22__video__2026-06-19__field_script_test__yolov8s_bytetrack_tim_mars
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_11_21_16_video_2026_06_19_field_script_test_yolov8s_bytetrack_tim_mars
-  label: Unknown case | ByteTrack | TIM-MARS
-  case: unknown
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__11-21-16__video__2026-06-19__field_script_test__yolov8s_bytetrack_tim_mars
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_11_21_16_video_2026_06_19_field_script_test_yolov8s_bytetrack_tim_mars_image_raw
-  label: Unknown case | ByteTrack | TIM-MARS
-  case: unknown
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__11-21-16__video__2026-06-19__field_script_test__yolov8s_bytetrack_tim_mars__image_raw
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_11_31_58_video_2026_06_19_field_script_test_yolov8s_bytetrack_tim_mars
-  label: Unknown case | ByteTrack | TIM-MARS
-  case: unknown
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__11-31-58__video__2026-06-19__field_script_test__yolov8s_bytetrack_tim_mars
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_11_31_58_video_2026_06_19_field_script_test_yolov8s_bytetrack_tim_mars_image_raw
-  label: Unknown case | ByteTrack | TIM-MARS
-  case: unknown
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__11-31-58__video__2026-06-19__field_script_test__yolov8s_bytetrack_tim_mars__image_raw
-  recommended_annotation: ''
-  valid_for_evaluation: false
 - id: 2026_05_14_10_59_01_dataset_tim_v1_two_person_no_crossing_raw_tracker_ocsort_tim_off_target_1
   label: Unknown case | OCSORT | Raw | target 1
   case: unknown
@@ -558,7 +338,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/replay/eval_matrix/2026-05-14__10-59-01__dataset__tim_v1_two_person_no_crossing_raw__tracker_ocsort__tim_off__target_1
+  path: bags/replay/eval_matrix/2026-05-14__10-59-01__dataset__tim_v1_two_person_no_crossing_raw__tracker_ocsort__tim_off__target_1
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_04_29_10_26_03_video_clean_walk_yolov6n_ocsort
@@ -569,7 +349,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-04-29__10-26-03__video__clean_walk_yolov6n_ocsort
+  path: bags/source/archive/lab_old/full_pipeline/2026-04-29__10-26-03__video__clean_walk_yolov6n_ocsort
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_04_29_10_28_08_video_single_person_occlusion_yolov6n_ocsort
@@ -580,7 +360,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-04-29__10-28-08__video__single_person_occlusion_yolov6n_ocsort
+  path: bags/source/archive/lab_old/full_pipeline/2026-04-29__10-28-08__video__single_person_occlusion_yolov6n_ocsort
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_04_29_10_30_08_video_fov_exit_reentry_yolov6n_ocsort
@@ -591,128 +371,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-04-29__10-30-08__video__fov_exit_reentry_yolov6n_ocsort
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_10_30_video_2026_06_19_test_image_raw_recording_yolov8s
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-10-30__video__2026-06-19__test_image_raw_recording_yolov8s
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_13_56_video_2026_06_19_test_image_raw_one_command
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-13-56__video__2026-06-19__test_image_raw_one_command
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_15_17_video_2026_06_19_test_image_raw_qos
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-15-17__video__2026-06-19__test_image_raw_qos
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_20_18_video_2026_06_19_test_raw_second_recorder_v2
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-20-18__video__2026-06-19__test_raw_second_recorder_v2
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_20_18_video_2026_06_19_test_raw_second_recorder_v2_image_raw
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-20-18__video__2026-06-19__test_raw_second_recorder_v2__image_raw
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_22_52_video_2026_06_19_test_raw_second_recorder_v2
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-22-52__video__2026-06-19__test_raw_second_recorder_v2
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_23_46_video_2026_06_19_test_delayed_raw_recorder
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-23-46__video__2026-06-19__test_delayed_raw_recorder
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_25_09_video_2026_06_19_test_delayed_raw_recorder_v2
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-25-09__video__2026-06-19__test_delayed_raw_recorder_v2
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_29_00_video_2026_06_19_test_image_raw_publisher
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-29-00__video__2026-06-19__test_image_raw_publisher
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_10_29_52_video_2026_06_19_test_image_raw_publisher
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__10-29-52__video__2026-06-19__test_image_raw_publisher
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_19_11_45_29_video_2026_06_19_field_script_test_no_raw
-  label: Unknown case | Raw
-  case: unknown
-  tracker: unknown
-  method: raw
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-19__11-45-29__video__2026-06-19__field_script_test_no_raw
+  path: bags/source/archive/lab_old/full_pipeline/2026-04-29__10-30-08__video__fov_exit_reentry_yolov6n_ocsort
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_06_17_11_19_06_video_two_person_tim_mars
@@ -723,7 +382,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-06-17__11-19-06__video__two_person_tim_mars
+  path: bags/source/archive/lab_old/full_pipeline/2026-06-17__11-19-06__video__two_person_tim_mars
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_03_29_control_validation_clean
@@ -734,7 +393,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-03-29__control_validation_clean
+  path: bags/source/archive/lab_old/full_pipeline/2026-03-29__control_validation_clean
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_04_30_10_52_20_video_flight_01
@@ -745,7 +404,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-04-30__10-52-20__video__flight_01
+  path: bags/source/archive/lab_old/full_pipeline/2026-04-30__10-52-20__video__flight_01
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_04_30_12_29_33_video_oficial_flight_01
@@ -756,7 +415,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-04-30__12-29-33__video__oficial_flight_01
+  path: bags/source/archive/lab_old/full_pipeline/2026-04-30__12-29-33__video__oficial_flight_01
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_04_30_12_42_17_video_oficial_flight_02
@@ -767,29 +426,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-04-30__12-42-17__video__oficial_flight_02
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_05_11_10_18_33_video_tim_v1g_target_selected_smoke
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-05-11__10-18-33__video__tim_v1g_target_selected_smoke
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_05_11_10_35_24_video_tim_v1i_occlusion_smoke
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-05-11__10-35-24__video__tim_v1i_occlusion_smoke
+  path: bags/source/archive/lab_old/full_pipeline/2026-04-30__12-42-17__video__oficial_flight_02
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_05_11_10_44_58_video_tim_v1j_two_person_ambiguity
@@ -800,7 +437,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-05-11__10-44-58__video__tim_v1j_two_person_ambiguity
+  path: bags/source/archive/lab_old/full_pipeline/2026-05-11__10-44-58__video__tim_v1j_two_person_ambiguity
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_05_11_11_30_18_video_tim_v1m_appearance_critical_crossing
@@ -811,7 +448,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-05-11__11-30-18__video__tim_v1m_appearance_critical_crossing
+  path: bags/source/archive/lab_old/full_pipeline/2026-05-11__11-30-18__video__tim_v1m_appearance_critical_crossing
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_05_11_11_31_27_video_tim_v1m_appearance_critical_crossing
@@ -822,84 +459,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_02_11_19_36_video_mavros_start_test_01
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-02__11-19-36__video__mavros_start_test_01
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_02_11_23_27_video_mavros_start_test_03
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-02__11-23-27__video__mavros_start_test_03
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_02_11_26_01_video_mavros_progress_test_01
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-02__11-26-01__video__mavros_progress_test_01
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_02_11_28_31_video_mavros_progress_test_02
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-02__11-28-31__video__mavros_progress_test_02
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_04_22_48_21_video_structure_cleanup_test_01
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-04__22-48-21__video__structure_cleanup_test_01
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_04_22_50_58_video_structure_cleanup_test_02
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-04__22-50-58__video__structure_cleanup_test_02
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_04_22_59_33_video_structure_cleanup_test_03
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: artifacts/bags/live_camera/2026-06-04__22-59-33__video__structure_cleanup_test_03
+  path: bags/source/archive/lab_old/full_pipeline/2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_06_17_12_34_54_video_integrated_vga_dash30_full
@@ -910,7 +470,7 @@ bags:
   target: ''
   replay: ''
   source: bag
-  path: artifacts/bags/live_camera/2026-06-17__12-34-54__video__integrated_vga_dash30_full
+  path: bags/source/archive/lab_old/full_pipeline/2026-06-17__12-34-54__video__integrated_vga_dash30_full
   recommended_annotation: ''
   valid_for_evaluation: false
 annotations:
