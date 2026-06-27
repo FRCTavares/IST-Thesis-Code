@@ -136,8 +136,8 @@ def _safe_annotation_relpath(path_text: str) -> Path:
         raise ValueError("Annotation path cannot contain '..'")
     if rel.suffix.lower() != ".csv":
         raise ValueError("Annotation path must end with .csv")
-    if not str(rel).startswith("docs/annotations/"):
-        raise ValueError("Annotation path must be under docs/annotations/")
+    if not str(rel).startswith("docs/data/annotations/"):
+        raise ValueError("Annotation path must be under docs/data/annotations/")
     return rel
 
 
@@ -685,7 +685,7 @@ button:active {{
 
   <div class="annotationControls">
     <label>output CSV
-      <input id="annOutPath" value="docs/annotations/ui_created/new_annotation.csv">
+      <input id="annOutPath" value="docs/data/annotations/ui_created/new_annotation.csv">
     </label>
     <label>start s
       <input id="annStart" type="number" step="0.001" value="0.000">
@@ -2176,7 +2176,7 @@ button:active {{
 
   <div class="annotationControls">
     <label>output CSV
-      <input id="annOutPath" value="docs/annotations/ui_created/new_annotation.csv">
+      <input id="annOutPath" value="docs/data/annotations/ui_created/new_annotation.csv">
     </label>
     <label>start s
       <input id="annStart" type="number" step="0.001" value="0.000">
@@ -2752,8 +2752,8 @@ async function annSave() {{
     return;
   }}
 
-  if (!out.startsWith("docs/annotations/")) {{
-    alert("Output path must be under docs/annotations/");
+  if (!out.startsWith("docs/data/annotations/")) {{
+    alert("Output path must be under docs/data/annotations/");
     return;
   }}
 

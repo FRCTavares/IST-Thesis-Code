@@ -41,7 +41,7 @@ Clean manual review file:
 
 Corrected annotation:
 
-    docs/annotations/2026-05-14__hard_reentry_ocsort_tim_on_target1/target_correctness_annotations_manual_review_v2.csv
+    docs/data/annotations/2026-05-14__hard_reentry_ocsort_tim_on_target1/target_correctness_annotations_manual_review_v2.csv
 
 ## Bag-level raw vs TIM evaluation
 
@@ -49,7 +49,7 @@ Command:
 
     python3 tools/analysis/evaluate_tim_target_correctness.py \
       artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_on__target_1 \
-      --annotations docs/annotations/2026-05-14__hard_reentry_ocsort_tim_on_target1/target_correctness_annotations_manual_review_v2.csv \
+      --annotations docs/data/annotations/2026-05-14__hard_reentry_ocsort_tim_on_target1/target_correctness_annotations_manual_review_v2.csv \
       --out-dir reports/tim_v2q_manual_review_v2_eval/raw_vs_tim \
       --step-s 0.05
 

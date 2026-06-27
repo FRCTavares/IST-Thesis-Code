@@ -89,7 +89,7 @@ def find_metadata_bags(base: Path) -> list[str]:
 
 
 def find_annotations(base: Path) -> list[str]:
-    root = base / "docs/annotations"
+    root = base / "docs/data/annotations"
     if not root.exists():
         return []
     return sorted(str(p) for p in root.rglob("*.csv"))
