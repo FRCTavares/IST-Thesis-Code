@@ -1667,7 +1667,7 @@ window.addEventListener("DOMContentLoaded", async function() {
 
 
 def _load_bag_inventory_for_ui() -> list[dict]:
-    inv = REPO_ROOT / "docs" / "catalogue" / "bag_inventory.yaml"
+    inv = REPO_ROOT / "docs" / "data" / "catalogue" / "bag_inventory.yaml"
     if not inv.exists():
         return []
 
