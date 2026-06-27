@@ -8,7 +8,7 @@ bags:
   target: '1'
   replay: ''
   source: ui_replay
-  path: artifacts/bags/ui_replays/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1
+  path: artifacts/bags/derived/ui_replays/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r1
@@ -19,7 +19,7 @@ bags:
   target: '1'
   replay: r1
   source: ui_replay
-  path: artifacts/bags/ui_replays/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
+  path: artifacts/bags/derived/ui_replays/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_45_45_video_2026_06_19_official_seq01_clean_four_person_yolov8s_bytetrack_tim_mars
@@ -41,7 +41,7 @@ bags:
   target: '0'
   replay: ''
   source: official
-  path: artifacts/bags/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
+  path: artifacts/bags/derived/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r1
@@ -52,7 +52,7 @@ bags:
   target: '0'
   replay: r1
   source: official
-  path: artifacts/bags/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r1
+  path: artifacts/bags/derived/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r1
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r2
@@ -63,7 +63,7 @@ bags:
   target: '0'
   replay: r2
   source: official
-  path: artifacts/bags/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r2
+  path: artifacts/bags/derived/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r2
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r3
@@ -74,7 +74,7 @@ bags:
   target: '0'
   replay: ''
   source: official
-  path: artifacts/bags/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r3
+  path: artifacts/bags/derived/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r3
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r4
@@ -85,7 +85,7 @@ bags:
   target: '0'
   replay: ''
   source: official
-  path: artifacts/bags/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r4
+  path: artifacts/bags/derived/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r4
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_50_03_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars
@@ -118,7 +118,7 @@ bags:
   target: '0'
   replay: ''
   source: official
-  path: artifacts/bags/eval_matrix/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
+  path: artifacts/bags/derived/eval_matrix/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_57_48_video_2026_06_19_official_seq03_four_person_crossing_ambiguity_yolov8s_bytetrack_tim_mars
@@ -140,7 +140,7 @@ bags:
   target: '0'
   replay: ''
   source: official
-  path: artifacts/bags/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
+  path: artifacts/bags/derived/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_1
@@ -151,7 +151,7 @@ bags:
   target: '1'
   replay: ''
   source: official
-  path: artifacts/bags/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_1_r1
@@ -162,7 +162,7 @@ bags:
   target: '1'
   replay: r1
   source: official
-  path: artifacts/bags/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1__r1
+  path: artifacts/bags/derived/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1__r1
   recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars
@@ -217,7 +217,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_off__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_off__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_off_target_1_r2
@@ -228,7 +228,7 @@ bags:
   target: '1'
   replay: r2
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_off__target_1__r2
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_off__target_1__r2
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1
@@ -239,7 +239,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r1
@@ -250,7 +250,7 @@ bags:
   target: '1'
   replay: r1
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r2
@@ -261,7 +261,7 @@ bags:
   target: '1'
   replay: r2
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r2
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r2
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r3
@@ -272,7 +272,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r3
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r3
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_mars_target_1
@@ -283,7 +283,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_mars_target_1_r4
@@ -294,7 +294,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1__r4
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1__r4
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_deepsort_tim_mars_target_1
@@ -305,7 +305,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_mars__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_mars__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1
@@ -316,7 +316,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_deepsort_tim_off_target_1
@@ -327,7 +327,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_off__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_off__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_ocsort_tim_off_target_1
@@ -338,7 +338,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_off__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_off__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1
@@ -349,7 +349,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1_r1
@@ -360,7 +360,7 @@ bags:
   target: '1'
   replay: r1
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1_r2
@@ -371,7 +371,7 @@ bags:
   target: '1'
   replay: r2
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r2
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r2
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_deepsort_tim_mars_target_1
@@ -382,7 +382,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_mars__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_mars__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_ocsort_tim_mars_target_1
@@ -393,7 +393,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_ocsort_tim_mars_target_1_r1
@@ -404,7 +404,7 @@ bags:
   target: '1'
   replay: r1
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1__r1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1__r1
   recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_06_19_10_27_03_video_2026_06_19_seq01_clean_two_person_yolov8s_bytetrack_tim_mars
@@ -558,7 +558,7 @@ bags:
   target: '1'
   replay: ''
   source: eval_matrix
-  path: artifacts/bags/eval_matrix/2026-05-14__10-59-01__dataset__tim_v1_two_person_no_crossing_raw__tracker_ocsort__tim_off__target_1
+  path: artifacts/bags/derived/eval_matrix/2026-05-14__10-59-01__dataset__tim_v1_two_person_no_crossing_raw__tracker_ocsort__tim_off__target_1
   recommended_annotation: ''
   valid_for_evaluation: false
 - id: 2026_04_29_10_26_03_video_clean_walk_yolov6n_ocsort

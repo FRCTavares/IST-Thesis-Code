@@ -43,7 +43,7 @@ run_target_correctness() {
 
 run_official_tim_vs_raw() {
   local out_root="reports/official_tim_vs_raw_header_time_2026-06-17"
-  local base="artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1"
+  local base="artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1"
 
   mkdir -p "$out_root"
 
