@@ -1,5 +1,0 @@
-bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
-2026-05-05__09-55-39__video__tim_v0_occlusion_01,0.0,14.01,NO_TARGET_SELECTED,false,,,pre_selection,before raw target selection
-2026-05-05__09-55-39__video__tim_v0_occlusion_01,14.01,33.36,CORRECT_TARGET,true,1,,clean_tracking,selected target visible as id 1
-2026-05-05__09-55-39__video__tim_v0_occlusion_01,33.36,33.79,TARGET_NOT_VISIBLE,false,,,brief_occlusion,target absent or briefly occluded
-2026-05-05__09-55-39__video__tim_v0_occlusion_01,33.79,38.45,CORRECT_TARGET,true,1,,recovered_same_id,target visible again as id 1
