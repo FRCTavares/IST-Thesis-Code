@@ -21,7 +21,7 @@ from enum import Enum
 from math import exp, log, sqrt
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
-from thesis_bringup.appearance_memory import cosine_similarity, update_feature_memory
+from thesis_bringup.tim_mars.appearance_memory import cosine_similarity, update_feature_memory
 
 BBox = Tuple[float, float, float, float]  # x1, y1, x2, y2, in pixels
 

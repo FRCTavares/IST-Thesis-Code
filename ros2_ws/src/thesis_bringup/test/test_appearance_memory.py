@@ -1,6 +1,6 @@
 import numpy as np
 
-from thesis_bringup.appearance_memory import (
+from thesis_bringup.tim_mars.appearance_memory import (
     AppearanceConfig,
     bbox_cxcywh_to_xyxy,
     clip_xyxy_bbox,

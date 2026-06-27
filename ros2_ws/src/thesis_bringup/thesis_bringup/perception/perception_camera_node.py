@@ -15,7 +15,7 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import Image
 
-from thesis_bringup.nodes.perception_pipeline_node import PerceptionPipelineNode
+from thesis_bringup.perception.perception_pipeline_node import PerceptionPipelineNode
 
 
 class PerceptionCameraNode(PerceptionPipelineNode):

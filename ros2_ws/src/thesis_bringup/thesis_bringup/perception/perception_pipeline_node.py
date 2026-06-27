@@ -17,7 +17,7 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import Image
-from thesis_bringup.preprocessing import preprocess_image_message
+from thesis_bringup.perception.preprocessing import preprocess_image_message
 from thesis_msgs.msg import Timing
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 

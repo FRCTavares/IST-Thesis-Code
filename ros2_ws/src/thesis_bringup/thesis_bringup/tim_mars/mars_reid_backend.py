@@ -12,7 +12,7 @@ from typing import Optional
 
 import numpy as np
 
-from thesis_bringup.target_memory import BBox
+from thesis_bringup.tim_mars.target_memory import BBox
 from thesis_tracker.backends.deepsort_core_backend import MarsSmall128Extractor
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 
-from thesis_bringup.appearance_memory import cosine_similarity
-from thesis_bringup.target_memory import (
+from thesis_bringup.tim_mars.appearance_memory import cosine_similarity
+from thesis_bringup.tim_mars.target_memory import (
     CandidateTrack,
     TargetIdentityMemory,
     TargetMemoryConfig,

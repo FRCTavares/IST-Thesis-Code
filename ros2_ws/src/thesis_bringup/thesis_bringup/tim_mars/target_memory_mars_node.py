@@ -14,8 +14,8 @@ from std_msgs.msg import Empty, String, UInt32
 
 from thesis_msgs.msg import TargetState, Track2DArray
 
-from thesis_bringup.mars_reid_backend import MarsReIdBackend
-from thesis_bringup.target_memory import (
+from thesis_bringup.tim_mars.mars_reid_backend import MarsReIdBackend
+from thesis_bringup.tim_mars.target_memory import (
     BBox,
     CandidateTrack,
     TargetIdentityMemory,

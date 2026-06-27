@@ -1,4 +1,4 @@
-from thesis_bringup.target_memory import (
+from thesis_bringup.tim_mars.target_memory import (
     CandidateTrack,
     ControlMode,
     TargetIdentityMemory,
