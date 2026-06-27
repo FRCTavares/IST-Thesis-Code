@@ -48,7 +48,7 @@ Corrected annotation:
 Command:
 
     python3 tools/analysis/evaluate_tim_target_correctness.py \
-      artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_on__target_1 \
+      artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_on__target_1 \
       --annotations docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv \
       --out-dir reports/tim_v2q_manual_review_v2_eval/raw_vs_tim \
       --step-s 0.05

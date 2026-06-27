@@ -8,7 +8,7 @@ This run evaluates a conservative TIM-MARS output filter. The goal is to reduce 
 
 ## Bag
 
-`artifacts/bags/derived/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1__r3`
+`artifacts/bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1__r3`
 
 ## Annotation
 

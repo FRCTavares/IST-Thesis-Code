@@ -71,9 +71,9 @@ def bag_has_topic(bag: Path, topic_name: str) -> bool:
 
 def find_metadata_bags(base: Path) -> list[str]:
     roots = [
-        base / "artifacts/bags/derived/ui_replays",
-        base / "artifacts/bags/derived/eval_matrix",
-        base / "artifacts/bags/derived/conservative_safety_eval",
+        base / "artifacts/bags/replay/ui_replays",
+        base / "artifacts/bags/replay/eval_matrix",
+        base / "artifacts/bags/replay/conservative_safety_eval",
         base / "artifacts/bags/live_camera",
         base / "artifacts/bags/datasets",
         base / "artifacts/bags/source_video",
@@ -542,7 +542,7 @@ def run_replay_job(req: ReplayRequest):
         "TIM_STARTUP_SELECTED_ONLY": "true",
 
         # Keep UI-generated bags separate from official eval_matrix outputs.
-        "TIM_REPLAY_OUT_ROOT": str(ROOT / "artifacts/bags/derived/ui_replays"),
+        "TIM_REPLAY_OUT_ROOT": str(ROOT / "artifacts/bags/replay/ui_replays"),
         "TIM_REPLAY_LOG_ROOT": str(ROOT / "ros2_ws/log/ui_replays"),
         "TIM_REPLAY_REPORT_ROOT": str(ROOT / "reports/ui_replays"),
 
@@ -1061,10 +1061,10 @@ function emergencyBagInfo(path) {
   const lower = path.toLowerCase();
 
   let prefix = "bag";
-  if (lower.includes("/artifacts/bags/derived/ui_replays/")) prefix = "ui";
+  if (lower.includes("/artifacts/bags/replay/ui_replays/")) prefix = "ui";
   else if (lower.includes("/artifacts/bags/datasets/")) prefix = "dataset";
-  else if (lower.includes("/artifacts/bags/derived/conservative_safety_eval/")) prefix = "safe";
-  else if (lower.includes("/artifacts/bags/derived/eval_matrix/")) prefix = "eval";
+  else if (lower.includes("/artifacts/bags/replay/conservative_safety_eval/")) prefix = "safe";
+  else if (lower.includes("/artifacts/bags/replay/eval_matrix/")) prefix = "eval";
   else if (lower.includes("/artifacts/bags/live_camera/")) prefix = "live";
   else if (lower.includes("/artifacts/bags/source_video/")) prefix = "source";
 

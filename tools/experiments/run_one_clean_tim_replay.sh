@@ -20,7 +20,7 @@ ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 BAG_PATH="$(realpath "$BAG_PATH")"
 BAG_BASE="$(basename "$BAG_PATH")"
 RUN_NAME="${BAG_BASE}__tracker_${TRACKER}__tim_${TIM_MODE}__target_${TARGET_ID}"
-OUT_ROOT="${TIM_REPLAY_OUT_ROOT:-$THESIS_ROOT/artifacts/bags/derived/eval_matrix}"
+OUT_ROOT="${TIM_REPLAY_OUT_ROOT:-$THESIS_ROOT/artifacts/bags/replay/eval_matrix}"
 REPORT_ROOT="${TIM_REPLAY_REPORT_ROOT:-$THESIS_ROOT/reports/tim_mars_replay}"
 LOG_ROOT="${TIM_REPLAY_LOG_ROOT:-$THESIS_ROOT/ros2_ws/log/eval_matrix}"
 
