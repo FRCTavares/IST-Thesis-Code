@@ -74,6 +74,13 @@ class TargetMemoryMarsNode(Node):
         self.declare_parameter("max_uncertain_frames", 6)
         self.declare_parameter("max_lost_frames", 30)
         self.declare_parameter("min_candidate_score", 0.10)
+        self.declare_parameter("allow_id_switch_recovery", True)
+        self.declare_parameter("id_switch_spatial_gate_enabled", False)
+        self.declare_parameter("id_switch_min_iou", 0.05)
+        self.declare_parameter("id_switch_min_distance", 0.35)
+        self.declare_parameter("id_switch_min_scale", 0.35)
+        self.declare_parameter("hold_last_on_reject_enabled", False)
+        self.declare_parameter("hold_last_on_reject_frames", 0)
 
         # TIM-V1B appearance extraction.
         # Disabled by default to preserve TIM-V0 live behaviour.
@@ -94,6 +101,19 @@ class TargetMemoryMarsNode(Node):
         self.declare_parameter("appearance_challenge_min_similarity", 0.50)
         self.declare_parameter("appearance_challenge_margin", 0.20)
         self.declare_parameter("appearance_challenge_min_total", 0.45)
+        self.declare_parameter("same_id_appearance_ambiguity_enabled", False)
+        self.declare_parameter("same_id_appearance_ambiguity_min_similarity", 0.70)
+        self.declare_parameter("same_id_appearance_ambiguity_margin", 0.05)
+        self.declare_parameter("same_id_appearance_ambiguity_min_challenger_total", 0.35)
+        self.declare_parameter("same_id_appearance_ambiguity_min_challenger_distance", 0.20)
+        self.declare_parameter("same_id_appearance_ambiguity_min_challenger_scale", 0.30)
+        self.declare_parameter("hard_negative_memory_enabled", False)
+        self.declare_parameter("hard_negative_max_entries", 8)
+        self.declare_parameter("hard_negative_update_alpha", 0.20)
+        self.declare_parameter("hard_negative_min_candidate_similarity", 0.70)
+        self.declare_parameter("hard_negative_reject_similarity", 0.80)
+        self.declare_parameter("hard_negative_reject_margin", 0.08)
+        self.declare_parameter("hard_negative_min_geometry", 0.20)
         self.declare_parameter("appearance_conservative_enabled", False)
         self.declare_parameter("appearance_conservative_require_appearance", False)
         self.declare_parameter("appearance_conservative_min_similarity", 0.65)
@@ -112,6 +132,46 @@ class TargetMemoryMarsNode(Node):
         self.declare_parameter("rank_aware_lost_app_margin", 0.03)
         self.declare_parameter("rank_aware_confirm_frames", 1)
         self.declare_parameter("rank_aware_missing_ttl_frames", 8)
+
+        # TIM-V4A active appearance-first reselection.
+        self.declare_parameter("active_reselection_enabled", False)
+        self.declare_parameter("active_reselection_min_total", 0.20)
+        self.declare_parameter("active_reselection_min_geometry", 0.05)
+        self.declare_parameter("active_reselection_min_app", 0.82)
+        self.declare_parameter("active_reselection_app_margin", 0.10)
+        self.declare_parameter("active_reselection_confirm_frames", 2)
+        self.declare_parameter("active_reselection_reject_hard_negative", True)
+
+        # TIM-V3A absence-aware new-ID recovery gate.
+        self.declare_parameter("absence_recovery_enabled", False)
+        self.declare_parameter("absence_after_missed_frames", 6)
+        self.declare_parameter("absence_new_id_requires_appearance", True)
+        self.declare_parameter("absence_min_total", 0.45)
+        self.declare_parameter("absence_min_distance", 0.25)
+        self.declare_parameter("absence_min_scale", 0.35)
+        self.declare_parameter("absence_min_similarity", 0.65)
+        self.declare_parameter("absence_appearance_margin", 0.20)
+        self.declare_parameter("absence_confirm_frames", 3)
+        self.declare_parameter("tim_policy", "legacy")
+        self.declare_parameter("v4a_same_id_ambiguity_freezes_memory", True)
+        self.declare_parameter("v4a_same_id_min_geometry_to_publish", 0.45)
+        self.declare_parameter("old_id_distrust_enabled", False)
+        self.declare_parameter("old_id_distrust_min_challenger_app", 0.55)
+        self.declare_parameter("old_id_distrust_min_challenger_geometry", 0.05)
+        self.declare_parameter("old_id_distrust_min_old_id_app_margin", 0.15)
+        self.declare_parameter("old_id_distrust_min_candidates", 2)
+        self.declare_parameter("old_id_distrust_after_missed_frames", 3)
+        self.declare_parameter("old_id_distrust_max_total_gap", 0.12)
+        self.declare_parameter("old_id_handoff_enabled", False)
+        self.declare_parameter("old_id_handoff_min_app", 0.84)
+        self.declare_parameter("old_id_handoff_min_geometry", 0.90)
+        self.declare_parameter("old_id_handoff_min_total", 0.55)
+        self.declare_parameter("old_id_handoff_max_total_gap", 0.12)
+        self.declare_parameter("old_id_handoff_confirm_frames", 3)
+        self.declare_parameter("old_id_handoff_reject_hard_negative", False)
+        self.declare_parameter("old_id_reacquire_block_enabled", False)
+        self.declare_parameter("old_id_reacquire_block_frames", 60)
+        self.declare_parameter("old_id_reacquire_block_after_missed_frames", 3)
 
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._target_topic = str(self.get_parameter("target_topic").value)
@@ -171,6 +231,13 @@ class TargetMemoryMarsNode(Node):
             max_uncertain_frames=int(self.get_parameter("max_uncertain_frames").value),
             max_lost_frames=int(self.get_parameter("max_lost_frames").value),
             min_candidate_score=float(self.get_parameter("min_candidate_score").value),
+            allow_id_switch_recovery=bool(self.get_parameter("allow_id_switch_recovery").value),
+            id_switch_spatial_gate_enabled=bool(self.get_parameter("id_switch_spatial_gate_enabled").value),
+            id_switch_min_iou=float(self.get_parameter("id_switch_min_iou").value),
+            id_switch_min_distance=float(self.get_parameter("id_switch_min_distance").value),
+            id_switch_min_scale=float(self.get_parameter("id_switch_min_scale").value),
+            hold_last_on_reject_enabled=bool(self.get_parameter("hold_last_on_reject_enabled").value),
+            hold_last_on_reject_frames=int(self.get_parameter("hold_last_on_reject_frames").value),
             appearance_enabled=self._appearance_enabled,
             appearance_weight=float(self.get_parameter("appearance_weight").value),
             appearance_min_similarity=float(self.get_parameter("appearance_min_similarity").value),
@@ -181,6 +248,19 @@ class TargetMemoryMarsNode(Node):
             appearance_challenge_min_similarity=float(self.get_parameter("appearance_challenge_min_similarity").value),
             appearance_challenge_margin=float(self.get_parameter("appearance_challenge_margin").value),
             appearance_challenge_min_total=float(self.get_parameter("appearance_challenge_min_total").value),
+            same_id_appearance_ambiguity_enabled=bool(self.get_parameter("same_id_appearance_ambiguity_enabled").value),
+            same_id_appearance_ambiguity_min_similarity=float(self.get_parameter("same_id_appearance_ambiguity_min_similarity").value),
+            same_id_appearance_ambiguity_margin=float(self.get_parameter("same_id_appearance_ambiguity_margin").value),
+            same_id_appearance_ambiguity_min_challenger_total=float(self.get_parameter("same_id_appearance_ambiguity_min_challenger_total").value),
+            same_id_appearance_ambiguity_min_challenger_distance=float(self.get_parameter("same_id_appearance_ambiguity_min_challenger_distance").value),
+            same_id_appearance_ambiguity_min_challenger_scale=float(self.get_parameter("same_id_appearance_ambiguity_min_challenger_scale").value),
+            hard_negative_memory_enabled=bool(self.get_parameter("hard_negative_memory_enabled").value),
+            hard_negative_max_entries=int(self.get_parameter("hard_negative_max_entries").value),
+            hard_negative_update_alpha=float(self.get_parameter("hard_negative_update_alpha").value),
+            hard_negative_min_candidate_similarity=float(self.get_parameter("hard_negative_min_candidate_similarity").value),
+            hard_negative_reject_similarity=float(self.get_parameter("hard_negative_reject_similarity").value),
+            hard_negative_reject_margin=float(self.get_parameter("hard_negative_reject_margin").value),
+            hard_negative_min_geometry=float(self.get_parameter("hard_negative_min_geometry").value),
             appearance_conservative_enabled=bool(self.get_parameter("appearance_conservative_enabled").value),
             appearance_conservative_require_appearance=bool(self.get_parameter("appearance_conservative_require_appearance").value),
             appearance_conservative_min_similarity=float(self.get_parameter("appearance_conservative_min_similarity").value),
@@ -192,8 +272,71 @@ class TargetMemoryMarsNode(Node):
             rank_aware_lost_app_margin=float(self.get_parameter("rank_aware_lost_app_margin").value),
             rank_aware_confirm_frames=int(self.get_parameter("rank_aware_confirm_frames").value),
             rank_aware_missing_ttl_frames=int(self.get_parameter("rank_aware_missing_ttl_frames").value),
+            active_reselection_enabled=bool(self.get_parameter("active_reselection_enabled").value),
+            active_reselection_min_total=float(self.get_parameter("active_reselection_min_total").value),
+            active_reselection_min_geometry=float(self.get_parameter("active_reselection_min_geometry").value),
+            active_reselection_min_app=float(self.get_parameter("active_reselection_min_app").value),
+            active_reselection_app_margin=float(self.get_parameter("active_reselection_app_margin").value),
+            active_reselection_confirm_frames=int(self.get_parameter("active_reselection_confirm_frames").value),
+            active_reselection_reject_hard_negative=bool(self.get_parameter("active_reselection_reject_hard_negative").value),
+            absence_recovery_enabled=bool(self.get_parameter("absence_recovery_enabled").value),
+            absence_after_missed_frames=int(self.get_parameter("absence_after_missed_frames").value),
+            absence_new_id_requires_appearance=bool(self.get_parameter("absence_new_id_requires_appearance").value),
+            absence_min_total=float(self.get_parameter("absence_min_total").value),
+            absence_min_distance=float(self.get_parameter("absence_min_distance").value),
+            absence_min_scale=float(self.get_parameter("absence_min_scale").value),
+            absence_min_similarity=float(self.get_parameter("absence_min_similarity").value),
+            absence_appearance_margin=float(self.get_parameter("absence_appearance_margin").value),
+            absence_confirm_frames=int(self.get_parameter("absence_confirm_frames").value),
+            tim_policy=str(self.get_parameter("tim_policy").value),
+            v4a_same_id_ambiguity_freezes_memory=bool(self.get_parameter("v4a_same_id_ambiguity_freezes_memory").value),
+            v4a_same_id_min_geometry_to_publish=float(self.get_parameter("v4a_same_id_min_geometry_to_publish").value),
+            old_id_distrust_enabled=bool(self.get_parameter("old_id_distrust_enabled").value),
+            old_id_distrust_min_challenger_app=float(self.get_parameter("old_id_distrust_min_challenger_app").value),
+            old_id_distrust_min_challenger_geometry=float(self.get_parameter("old_id_distrust_min_challenger_geometry").value),
+            old_id_distrust_min_old_id_app_margin=float(self.get_parameter("old_id_distrust_min_old_id_app_margin").value),
+            old_id_distrust_min_candidates=int(self.get_parameter("old_id_distrust_min_candidates").value),
+            old_id_distrust_after_missed_frames=int(self.get_parameter("old_id_distrust_after_missed_frames").value),
+            old_id_distrust_max_total_gap=float(self.get_parameter("old_id_distrust_max_total_gap").value),
+            old_id_handoff_enabled=bool(self.get_parameter("old_id_handoff_enabled").value),
+            old_id_handoff_min_app=float(self.get_parameter("old_id_handoff_min_app").value),
+            old_id_handoff_min_geometry=float(self.get_parameter("old_id_handoff_min_geometry").value),
+            old_id_handoff_min_total=float(self.get_parameter("old_id_handoff_min_total").value),
+            old_id_handoff_max_total_gap=float(self.get_parameter("old_id_handoff_max_total_gap").value),
+            old_id_handoff_confirm_frames=int(self.get_parameter("old_id_handoff_confirm_frames").value),
+            old_id_handoff_reject_hard_negative=bool(self.get_parameter("old_id_handoff_reject_hard_negative").value),
+            old_id_reacquire_block_enabled=bool(self.get_parameter("old_id_reacquire_block_enabled").value),
+            old_id_reacquire_block_frames=int(self.get_parameter("old_id_reacquire_block_frames").value),
+            old_id_reacquire_block_after_missed_frames=int(self.get_parameter("old_id_reacquire_block_after_missed_frames").value),
         )
         self._tim = TargetIdentityMemory(cfg)
+
+        self.get_logger().info(
+            "TIM-MARS config: "
+            f"allow_id_switch_recovery={cfg.allow_id_switch_recovery} "
+            f"id_switch_spatial_gate_enabled={cfg.id_switch_spatial_gate_enabled} "
+            f"rank_aware_reacquisition_enabled={cfg.rank_aware_reacquisition_enabled} "
+            f"rank_aware_lost_min_app={cfg.rank_aware_lost_min_app:.3f} "
+            f"rank_aware_lost_app_margin={cfg.rank_aware_lost_app_margin:.3f} "
+            f"active_reselection_enabled={cfg.active_reselection_enabled} "
+            f"active_reselection_min_app={cfg.active_reselection_min_app:.3f} "
+            f"active_reselection_app_margin={cfg.active_reselection_app_margin:.3f} "
+            f"active_reselection_confirm_frames={cfg.active_reselection_confirm_frames} "
+            f"absence_recovery_enabled={cfg.absence_recovery_enabled} "
+            f"absence_after_missed_frames={cfg.absence_after_missed_frames} "
+            f"absence_min_similarity={cfg.absence_min_similarity:.3f} "
+            f"absence_appearance_margin={cfg.absence_appearance_margin:.3f} "
+            f"absence_confirm_frames={cfg.absence_confirm_frames} "
+            f"same_id_appearance_ambiguity_enabled={cfg.same_id_appearance_ambiguity_enabled} "
+            f"same_id_appearance_ambiguity_margin={cfg.same_id_appearance_ambiguity_margin:.3f} "
+            f"hard_negative_memory_enabled={cfg.hard_negative_memory_enabled} "
+            f"hard_negative_max_entries={cfg.hard_negative_max_entries} "
+            f"hard_negative_reject_similarity={cfg.hard_negative_reject_similarity:.3f} "
+            f"hard_negative_reject_margin={cfg.hard_negative_reject_margin:.3f} "
+            f"old_id_distrust_enabled={cfg.old_id_distrust_enabled} "
+            f"old_id_distrust_min_challenger_app={cfg.old_id_distrust_min_challenger_app:.3f} "
+            f"old_id_distrust_min_old_id_app_margin={cfg.old_id_distrust_min_old_id_app_margin:.3f}"
+        )
 
         qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
@@ -518,7 +661,7 @@ class TargetMemoryMarsNode(Node):
         if (
             out.bbox is None
             or out.target_track_id is None
-            or (self._zero_id_when_not_visible and not out.visible)
+            or (self._zero_id_when_not_visible and not out.control_valid)
         ):
             target_msg.id = 0
             target_msg.cx = 0.0
@@ -539,7 +682,7 @@ class TargetMemoryMarsNode(Node):
 
         # Existing TargetState has no explicit state/control field.
         # Use score for current visibility and quality for TIM confidence.
-        target_msg.score = float(out.best_score.confidence) if out.visible and out.best_score else 0.0
+        target_msg.score = float(out.best_score.confidence) if out.control_valid and out.best_score else 0.0
         target_msg.quality = float(out.quality)
         return target_msg
 
@@ -555,6 +698,15 @@ class TargetMemoryMarsNode(Node):
                 "quality": float(out.quality),
                 "frames_since_seen": int(out.frames_since_seen),
                 "reason": str(out.reason),
+                "memory_update_frozen": bool(out.memory_update_frozen),
+                "memory_update_freeze_reason": str(out.memory_update_freeze_reason),
+                "same_id_appearance_ambiguity": bool(out.same_id_appearance_ambiguity),
+                "appearance_margin_best_vs_second": float(out.appearance_margin_best_vs_second),
+                "geometry_strength": float(out.geometry_strength),
+                "risk_hard_negative": bool(out.risk_hard_negative),
+                "risk_absence": bool(out.risk_absence),
+                "risk_scene_ambiguity": bool(out.risk_scene_ambiguity),
+                "v4a_publish_allowed": bool(out.v4a_publish_allowed),
             },
             sort_keys=True,
         )
@@ -580,6 +732,15 @@ class TargetMemoryMarsNode(Node):
                 "quality": float(out.quality),
                 "frames_since_seen": int(out.frames_since_seen),
                 "reason": str(out.reason),
+                "memory_update_frozen": bool(out.memory_update_frozen),
+                "memory_update_freeze_reason": str(out.memory_update_freeze_reason),
+                "same_id_appearance_ambiguity": bool(out.same_id_appearance_ambiguity),
+                "appearance_margin_best_vs_second": float(out.appearance_margin_best_vs_second),
+                "geometry_strength": float(out.geometry_strength),
+                "risk_hard_negative": bool(out.risk_hard_negative),
+                "risk_absence": bool(out.risk_absence),
+                "risk_scene_ambiguity": bool(out.risk_scene_ambiguity),
+                "v4a_publish_allowed": bool(out.v4a_publish_allowed),
                 "lat_ms": float(t_end_ns - t_start_ns) / 1e6,
                 "num_tracks": len(tracks_msg.tracks),
                 "appearance_enabled": bool(self._appearance_enabled),
@@ -606,6 +767,9 @@ class TargetMemoryMarsNode(Node):
                     "appearance_raw": float(best.appearance_raw),
                     "appearance_gate_passed": bool(best.appearance_gate_passed),
                     "geometry_allows_appearance": bool(best.geometry_allows_appearance),
+                    "hard_negative_similarity": float(best.hard_negative_similarity),
+                    "hard_negative_margin": float(best.hard_negative_margin),
+                    "hard_negative_reject": bool(best.hard_negative_reject),
                     "ambiguous": bool(best.ambiguous),
                 },
                 "all_scores": [
@@ -622,6 +786,9 @@ class TargetMemoryMarsNode(Node):
                         "appearance_raw": float(score.appearance_raw),
                         "appearance_gate_passed": bool(score.appearance_gate_passed),
                         "geometry_allows_appearance": bool(score.geometry_allows_appearance),
+                        "hard_negative_similarity": float(score.hard_negative_similarity),
+                        "hard_negative_margin": float(score.hard_negative_margin),
+                        "hard_negative_reject": bool(score.hard_negative_reject),
                         "ambiguous": bool(score.ambiguous),
                     }
                     for score in out.all_scores

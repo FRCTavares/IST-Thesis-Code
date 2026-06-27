@@ -1,0 +1,5 @@
+Kept dataset bags after 2026-06-04 cleanup:
+- tim_v1_two_person_no_crossing_raw
+- tim_v1_hard_reentry_id_switch_raw
+
+Other dataset bags were deleted as older smoke/test/side datasets.

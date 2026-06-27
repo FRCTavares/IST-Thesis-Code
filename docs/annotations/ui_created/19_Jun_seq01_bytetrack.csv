@@ -1,0 +1,2 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw__detector_yolov8s__tracker_bytetrack__tim_off__target_largest,0.000,122.340,CORRECT_TARGET,true,1,,manual_interval,created in TIM clean UI

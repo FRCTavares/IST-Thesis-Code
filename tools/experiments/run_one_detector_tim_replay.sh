@@ -27,9 +27,12 @@ BAG_BASE="$(basename "$BAG_PATH")"
 HEF_PATH="$THESIS_ROOT/models/hef/${DETECTOR_MODEL}.hef"
 
 RUN_NAME="${BAG_BASE}__detector_${DETECTOR_MODEL}__tracker_${TRACKER}__tim_${TIM_MODE}__target_${TARGET_ID}"
-OUT_BAG="$THESIS_ROOT/artifacts/bags/detector_eval_matrix/$RUN_NAME"
-REPORT_DIR="$THESIS_ROOT/reports/detector_eval_matrix/$RUN_NAME"
-LOG_DIR="$THESIS_ROOT/ros2_ws/log/detector_eval_matrix/$RUN_NAME"
+OUT_ROOT="${OUT_ROOT:-$THESIS_ROOT/artifacts/bags/derived/full_pipeline_from_image_raw}"
+REPORT_ROOT="${REPORT_ROOT:-$THESIS_ROOT/reports/full_pipeline_from_image_raw}"
+LOG_ROOT="${LOG_ROOT:-$THESIS_ROOT/ros2_ws/log/full_pipeline_from_image_raw}"
+OUT_BAG="$OUT_ROOT/$RUN_NAME"
+REPORT_DIR="$REPORT_ROOT/$RUN_NAME"
+LOG_DIR="$LOG_ROOT/$RUN_NAME"
 
 if [[ ! -f "$HEF_PATH" ]]; then
   echo "[error] detector HEF not found: $HEF_PATH"
@@ -46,7 +49,7 @@ if [[ "$TIM_MODE" == "mars" ]]; then
   RUN_TIM_MARS=true
 fi
 
-mkdir -p "$LOG_DIR" "$THESIS_ROOT/artifacts/bags/detector_eval_matrix"
+mkdir -p "$LOG_DIR" "$OUT_ROOT"
 
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
@@ -83,8 +86,8 @@ if [[ -e "$OUT_BAG" ]]; then
   done
   OUT_BAG="${BASE_OUT}__r${i}"
   RUN_NAME="$(basename "$OUT_BAG")"
-  REPORT_DIR="$THESIS_ROOT/reports/detector_eval_matrix/$RUN_NAME"
-  LOG_DIR="$THESIS_ROOT/ros2_ws/log/detector_eval_matrix/$RUN_NAME"
+  REPORT_DIR="$REPORT_ROOT/$RUN_NAME"
+  LOG_DIR="$LOG_ROOT/$RUN_NAME"
   mkdir -p "$LOG_DIR"
   echo "[warn] output exists, using OUT_BAG=$OUT_BAG"
 fi
@@ -144,11 +147,42 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p appearance_weight:=${MARS_APPEARANCE_WEIGHT:-0.12} \
     -p appearance_min_similarity:=${MARS_APPEARANCE_MIN_SIMILARITY:-0.35} \
     -p appearance_ambiguous_only:=${MARS_APPEARANCE_AMBIGUOUS_ONLY:-true} \
+    -p same_id_appearance_ambiguity_enabled:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_ENABLED:-false} \
+    -p same_id_appearance_ambiguity_min_similarity:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_SIMILARITY:-0.70} \
+    -p same_id_appearance_ambiguity_margin:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MARGIN:-0.05} \
+    -p same_id_appearance_ambiguity_min_challenger_total:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_CHALLENGER_TOTAL:-0.35} \
+    -p same_id_appearance_ambiguity_min_challenger_distance:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_CHALLENGER_DISTANCE:-0.20} \
+    -p same_id_appearance_ambiguity_min_challenger_scale:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_CHALLENGER_SCALE:-0.30} \
+    -p hard_negative_memory_enabled:=${MARS_HARD_NEGATIVE_MEMORY_ENABLED:-false} \
+    -p hard_negative_max_entries:=${MARS_HARD_NEGATIVE_MAX_ENTRIES:-8} \
+    -p hard_negative_update_alpha:=${MARS_HARD_NEGATIVE_UPDATE_ALPHA:-0.20} \
+    -p hard_negative_min_candidate_similarity:=${MARS_HARD_NEGATIVE_MIN_CANDIDATE_SIMILARITY:-0.70} \
+    -p hard_negative_reject_similarity:=${MARS_HARD_NEGATIVE_REJECT_SIMILARITY:-0.80} \
+    -p hard_negative_reject_margin:=${MARS_HARD_NEGATIVE_REJECT_MARGIN:-0.08} \
+    -p hard_negative_min_geometry:=${MARS_HARD_NEGATIVE_MIN_GEOMETRY:-0.20} \
     -p appearance_conservative_enabled:=${MARS_APPEARANCE_CONSERVATIVE_ENABLED:-false} \
     -p appearance_conservative_require_appearance:=${MARS_APPEARANCE_CONSERVATIVE_REQUIRE_APPEARANCE:-false} \
+    -p appearance_conservative_min_similarity:=${MARS_APPEARANCE_CONSERVATIVE_MIN_SIMILARITY:-0.65} \
+    -p appearance_conservative_margin:=${MARS_APPEARANCE_CONSERVATIVE_MARGIN:-0.25} \
     -p rank_aware_reacquisition_enabled:=${MARS_RANK_AWARE_REACQUISITION_ENABLED:-true} \
+    -p rank_aware_lost_min_total:=${MARS_RANK_AWARE_LOST_MIN_TOTAL:-0.40} \
+    -p rank_aware_lost_min_geom:=${MARS_RANK_AWARE_LOST_MIN_GEOM:-0.10} \
+    -p rank_aware_lost_min_app:=${MARS_RANK_AWARE_LOST_MIN_APP:-0.05} \
+    -p rank_aware_lost_app_margin:=${MARS_RANK_AWARE_LOST_APP_MARGIN:-0.03} \
     -p rank_aware_confirm_frames:=${MARS_RANK_AWARE_CONFIRM_FRAMES:-1} \
     -p rank_aware_missing_ttl_frames:=${MARS_RANK_AWARE_MISSING_TTL_FRAMES:-8} \
+    -p absence_recovery_enabled:=${MARS_ABSENCE_RECOVERY_ENABLED:-false} \
+    -p absence_after_missed_frames:=${MARS_ABSENCE_AFTER_MISSED_FRAMES:-6} \
+    -p absence_new_id_requires_appearance:=${MARS_ABSENCE_NEW_ID_REQUIRES_APPEARANCE:-true} \
+    -p absence_min_total:=${MARS_ABSENCE_MIN_TOTAL:-0.45} \
+    -p absence_min_distance:=${MARS_ABSENCE_MIN_DISTANCE:-0.25} \
+    -p absence_min_scale:=${MARS_ABSENCE_MIN_SCALE:-0.35} \
+    -p absence_min_similarity:=${MARS_ABSENCE_MIN_SIMILARITY:-0.65} \
+    -p absence_appearance_margin:=${MARS_ABSENCE_APPEARANCE_MARGIN:-0.20} \
+    -p absence_confirm_frames:=${MARS_ABSENCE_CONFIRM_FRAMES:-3} \
+    -p tim_policy:=${MARS_TIM_POLICY:-legacy} \
+    -p v4a_same_id_ambiguity_freezes_memory:=${MARS_V4A_SAME_ID_AMBIGUITY_FREEZES_MEMORY:-true} \
+    -p v4a_same_id_min_geometry_to_publish:=${MARS_V4A_SAME_ID_MIN_GEOMETRY_TO_PUBLISH:-0.45} \
     >"$LOG_DIR/target_memory_mars.log" 2>&1 &
 fi
 

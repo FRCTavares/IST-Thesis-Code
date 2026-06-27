@@ -81,6 +81,96 @@ def test_id_switch_recovery_uses_memory_not_raw_tracker_id():
     assert out2.target_track_id == 12
 
 
+def test_id_switch_recovery_disabled_rejects_different_id():
+    tim = TargetIdentityMemory(cfg(allow_id_switch_recovery=False))
+    tim.select(tr(5, (100, 100, 150, 220), 0.90))
+
+    out = tim.update([tr(12, (104, 102, 154, 222), 0.88)])
+
+    assert out.state == TargetState.UNCERTAIN
+    assert out.target_track_id == 5
+    assert not out.visible
+    assert out.control_mode == ControlMode.YAW_ONLY
+    assert not out.control_valid
+    assert out.reason == "id_switch_recovery_disabled"
+
+
+def test_hold_last_on_rejected_id_switch_keeps_last_bbox_temporarily():
+    tim = TargetIdentityMemory(
+        cfg(
+            allow_id_switch_recovery=False,
+            hold_last_on_reject_enabled=True,
+            hold_last_on_reject_frames=2,
+        )
+    )
+    tim.select(tr(5, (100, 100, 150, 220), 0.90))
+
+    out = tim.update([tr(12, (104, 102, 154, 222), 0.88)])
+
+    assert out.state == TargetState.UNCERTAIN
+    assert out.target_track_id == 5
+    assert out.bbox == (100, 100, 150, 220)
+    assert out.visible
+    assert out.control_mode == ControlMode.YAW_ONLY
+    assert not out.control_valid
+    assert out.reason == "hold_last:id_switch_recovery_disabled"
+
+
+def test_hold_last_on_rejected_id_switch_expires():
+    tim = TargetIdentityMemory(
+        cfg(
+            allow_id_switch_recovery=False,
+            max_uncertain_frames=1,
+            hold_last_on_reject_enabled=True,
+            hold_last_on_reject_frames=1,
+        )
+    )
+    tim.select(tr(5, (100, 100, 150, 220), 0.90))
+
+    first = tim.update([tr(12, (104, 102, 154, 222), 0.88)])
+    second = tim.update([tr(12, (104, 102, 154, 222), 0.88)])
+
+    assert first.visible
+    assert not first.control_valid
+    assert first.reason == "hold_last:id_switch_recovery_disabled"
+
+    assert second.state == TargetState.LOST
+    assert second.target_track_id == 5
+    assert not second.visible
+    assert not second.control_valid
+    assert second.reason == "id_switch_recovery_disabled"
+
+
+def test_id_switch_recovery_disabled_still_accepts_same_id():
+    tim = TargetIdentityMemory(cfg(allow_id_switch_recovery=False))
+    tim.select(tr(5, (100, 100, 150, 220), 0.90))
+
+    out = tim.update([tr(5, (104, 102, 154, 222), 0.88)])
+
+    assert out.state == TargetState.LOCKED
+    assert out.target_track_id == 5
+    assert out.visible
+    assert out.control_valid
+    assert out.reason == "accepted_candidate"
+
+
+def test_id_switch_recovery_disabled_rejects_wrong_id_after_lost():
+    tim = TargetIdentityMemory(cfg(allow_id_switch_recovery=False, max_uncertain_frames=1))
+    tim.select(tr(5, (100, 100, 150, 220), 0.90))
+
+    tim.update([])
+    lost = tim.update([])
+    assert lost.state == TargetState.LOST
+
+    out = tim.update([tr(36, (103, 101, 153, 221), 0.90)])
+
+    assert out.state == TargetState.LOST
+    assert out.target_track_id == 5
+    assert not out.visible
+    assert not out.control_valid
+    assert out.reason == "id_switch_recovery_disabled"
+
+
 def test_short_missing_period_becomes_uncertain_then_lost():
     tim = TargetIdentityMemory(cfg(max_uncertain_frames=2))
     tim.select(tr(5, (100, 100, 150, 220), 0.9))

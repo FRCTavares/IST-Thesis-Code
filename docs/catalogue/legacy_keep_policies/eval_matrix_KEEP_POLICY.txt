@@ -1,0 +1,8 @@
+Kept eval_matrix bags after 2026-06-04 cleanup:
+- hard-reentry source OCSORT bag
+- two-person no-crossing OCSORT baseline
+- ByteTrack raw fixed r2
+- ByteTrack TIM-MARS r4 final
+- DeepSORT TIM-MARS final
+
+Other replay candidates were deleted as generated/intermediate artefacts.

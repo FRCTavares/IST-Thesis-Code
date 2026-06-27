@@ -1,7 +1,0 @@
-bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
-2026-05-14__hard_reentry_ocsort_mars_r4_real_ros,0.0,136.0,CORRECT_TARGET,True,1,2,correct_tracking,black-shirt selected target is OCSORT id 1
-2026-05-14__hard_reentry_ocsort_mars_r4_real_ros,136.0,156.0,CORRECT_TARGET,True,98,1,id_handover,black-shirt selected target changes to OCSORT id 98
-2026-05-14__hard_reentry_ocsort_mars_r4_real_ros,156.0,194.0,CORRECT_TARGET,True,115,1,id_handover,black-shirt selected target changes to OCSORT id 115
-2026-05-14__hard_reentry_ocsort_mars_r4_real_ros,194.0,218.0,CORRECT_TARGET,True,144,1,id_handover,black-shirt selected target changes to OCSORT id 144
-2026-05-14__hard_reentry_ocsort_mars_r4_real_ros,218.0,230.0,CORRECT_TARGET,True,163,1,id_handover,black-shirt selected target changes to OCSORT id 163
-2026-05-14__hard_reentry_ocsort_mars_r4_real_ros,230.0,271.36,CORRECT_TARGET,True,163,175,correct_tracking,black-shirt selected target remains OCSORT id 163

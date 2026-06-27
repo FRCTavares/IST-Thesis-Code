@@ -593,6 +593,33 @@ while [[ $# -gt 0 ]]; do
             ENABLE_DATASET_BAG=0
             shift
             ;;
+        --field-record)
+            ENABLE_ROSBAG=1
+            TRACKER_PUBLISH_TIMING_BOOL="true"
+            TARGET_TIMING_ENABLED=1
+            FIELD_RAW_IMAGE_RECORD=0
+            FIELD_MAVROS_RECORD=1
+            shift
+            ;;
+        --source-record)
+            SOURCE_RECORD_MODE=1
+            SOURCE_RAW_IMAGE_RECORD=1
+            SOURCE_MAVROS_RECORD=1
+
+            # Source capture must be camera-only plus MAVROS.
+            ENABLE_ROSBAG=0
+            ENABLE_DATASET_BAG=0
+            ENABLE_CONTROL=0
+            ENABLE_DASHBOARD_BRIDGE=0
+            ENABLE_WEB_VIDEO=0
+
+            # Do not run tracker or TIM-MARS during source capture.
+            ENABLE_TRACKER=0
+            TARGET_MEMORY_MODE="off"
+            RUN_TARGET_MEMORY_MARS=0
+
+            shift
+            ;;
         --tag)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --tag requires a value"

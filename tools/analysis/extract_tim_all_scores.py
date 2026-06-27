@@ -51,16 +51,28 @@ def main() -> None:
             continue
 
         t_s = (stamp_ns - t0_ns) / 1e9
-
         best = payload.get("best") or {}
 
         base = {
             "t": t_s,
             "frame_id": payload.get("frame_id"),
             "state": payload.get("state"),
+            "control_mode": payload.get("control_mode"),
             "target_track_id": payload.get("target_track_id"),
             "visible": payload.get("visible"),
+            "reacquired": payload.get("reacquired"),
+            "quality": payload.get("quality"),
+            "frames_since_seen": payload.get("frames_since_seen"),
             "reason": payload.get("reason"),
+            "memory_update_frozen": payload.get("memory_update_frozen"),
+            "memory_update_freeze_reason": payload.get("memory_update_freeze_reason"),
+            "same_id_appearance_ambiguity": payload.get("same_id_appearance_ambiguity"),
+            "appearance_margin_best_vs_second": payload.get("appearance_margin_best_vs_second"),
+            "geometry_strength": payload.get("geometry_strength"),
+            "risk_hard_negative": payload.get("risk_hard_negative"),
+            "risk_absence": payload.get("risk_absence"),
+            "risk_scene_ambiguity": payload.get("risk_scene_ambiguity"),
+            "v4a_publish_allowed": payload.get("v4a_publish_allowed"),
             "best_track_id": best.get("track_id"),
         }
 
@@ -81,6 +93,9 @@ def main() -> None:
                     "appearance_raw": score.get("appearance_raw"),
                     "appearance_gate_passed": score.get("appearance_gate_passed"),
                     "geometry_allows_appearance": score.get("geometry_allows_appearance"),
+                    "hard_negative_similarity": score.get("hard_negative_similarity"),
+                    "hard_negative_margin": score.get("hard_negative_margin"),
+                    "hard_negative_reject": score.get("hard_negative_reject"),
                     "ambiguous": score.get("ambiguous"),
                 }
             )
@@ -88,27 +103,17 @@ def main() -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
 
     fieldnames = [
-        "t",
-        "frame_id",
-        "state",
-        "target_track_id",
-        "visible",
-        "reason",
-        "best_track_id",
-        "rank",
-        "score_track_id",
-        "total",
-        "iou",
-        "distance",
-        "scale",
-        "confidence",
-        "id_bonus",
-        "appearance",
-        "appearance_used",
-        "appearance_raw",
-        "appearance_gate_passed",
-        "geometry_allows_appearance",
-        "ambiguous",
+        "t", "frame_id", "state", "control_mode", "target_track_id", "visible",
+        "reacquired", "quality", "frames_since_seen", "reason",
+        "memory_update_frozen", "memory_update_freeze_reason",
+        "same_id_appearance_ambiguity", "appearance_margin_best_vs_second",
+        "geometry_strength", "risk_hard_negative", "risk_absence",
+        "risk_scene_ambiguity", "v4a_publish_allowed", "best_track_id",
+        "rank", "score_track_id", "total", "iou", "distance", "scale",
+        "confidence", "id_bonus", "appearance", "appearance_used",
+        "appearance_raw", "appearance_gate_passed", "geometry_allows_appearance",
+        "hard_negative_similarity", "hard_negative_margin",
+        "hard_negative_reject", "ambiguous",
     ]
 
     with args.out.open("w", newline="", encoding="utf-8") as f:

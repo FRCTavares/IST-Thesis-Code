@@ -1,0 +1,2 @@
+This folder contains live outdoor drone recordings.
+Do not delete during cleanup unless the contents have been manually backed up and confirmed obsolete.

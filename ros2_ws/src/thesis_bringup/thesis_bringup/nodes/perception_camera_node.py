@@ -130,6 +130,11 @@ class PerceptionCameraNode(PerceptionPipelineNode):
             else None
         )
 
+        # Publish the live camera frame stream for recording and replay.
+        # The integrated perception path normally only publishes semantic outputs
+        # plus /camera/dashboard; /camera/image_raw is required for field bags.
+        self._image_raw_pub = self.create_publisher(Image, "/camera/image_raw", dashboard_qos)
+
         self._cap = None
         self._camera_stop = threading.Event()
         self._camera_thread: threading.Thread | None = None
@@ -393,6 +398,7 @@ class PerceptionCameraNode(PerceptionPipelineNode):
             self._camera_frame_id += 1
 
             msg = self._frame_to_msg(frame)
+            self._image_raw_pub.publish(msg)
             self._maybe_publish_dashboard_frame(msg, now_monotonic=time.monotonic())
             self.on_image(msg)
 

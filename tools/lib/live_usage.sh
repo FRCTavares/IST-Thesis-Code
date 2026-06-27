@@ -138,6 +138,8 @@ Default live stack:
 
 Common options:
     --record                 Record video/perception/tracking/control bag
+    --field-record           Record full live pipeline and MAVROS telemetry, no raw image
+    --source-record          Record source dataset only: /camera/image_raw and MAVROS telemetry
     --tag NAME               Add a tag to the recorded bag folder
     --dash N                 Set dashboard target FPS
     --detector-model NAME    Detector HEF model, e.g. yolov6n, yolov8n, yolov8s

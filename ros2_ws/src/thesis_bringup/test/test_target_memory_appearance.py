@@ -159,3 +159,146 @@ def test_appearance_memory_updates_only_when_locked():
     assert out.state == TargetState.LOCKED
     assert not np.allclose(before, after)
     assert cosine_similarity(after, updated_feat) > cosine_similarity(before, updated_feat)
+
+def test_positive_appearance_bootstraps_after_selection_without_feature():
+    target_feat = feat([1.0, 0.0, 0.0])
+    other_feat = feat([0.0, 1.0, 0.0])
+
+    tim = TargetIdentityMemory(
+        cfg(
+            appearance_enabled=True,
+            appearance_weight=0.50,
+            appearance_min_similarity=0.30,
+            appearance_ambiguous_only=False,
+        )
+    )
+
+    # Operator selection happened before MARS produced an embedding.
+    tim.select(tr(5, (100, 100, 150, 220), 0.9, appearance=None))
+    assert tim._m.appearance is None
+
+    out = tim.update(
+        [
+            tr(5, (102, 100, 152, 220), 0.90, appearance=target_feat),
+            tr(6, (118, 100, 168, 220), 0.90, appearance=other_feat),
+        ]
+    )
+
+    assert tim._m.appearance is not None
+    assert out.best_score is not None
+    assert out.best_score.appearance_raw > 0.90
+
+def test_same_id_appearance_ambiguity_suppresses_drift_in_legacy_policy():
+    target_feat = feat([1.0, 0.0, 0.0])
+    challenger_feat = feat([0.999, 0.035, 0.0])
+
+    tim = TargetIdentityMemory(
+        cfg(
+            appearance_enabled=True,
+            appearance_weight=0.50,
+            appearance_min_similarity=0.30,
+            appearance_ambiguous_only=False,
+            same_id_appearance_ambiguity_enabled=True,
+            same_id_appearance_ambiguity_min_similarity=0.70,
+            same_id_appearance_ambiguity_margin=0.05,
+            same_id_appearance_ambiguity_min_challenger_total=0.35,
+            same_id_appearance_ambiguity_min_challenger_distance=0.20,
+            same_id_appearance_ambiguity_min_challenger_scale=0.30,
+        )
+    )
+
+    tim.select(tr(1, (100, 100, 160, 240), 0.90, appearance=target_feat))
+
+    out = tim.update(
+        [
+            tr(1, (102, 102, 162, 242), 0.90, appearance=target_feat),
+            tr(2, (128, 102, 188, 242), 0.90, appearance=challenger_feat),
+        ]
+    )
+
+    assert out.reason == "same_id_appearance_ambiguity"
+    assert not out.control_valid
+    assert out.target_track_id == 1
+
+
+def test_v4a_same_id_appearance_ambiguity_publishes_but_freezes_memory():
+    target_feat = feat([1.0, 0.0, 0.0])
+    challenger_feat = feat([0.999, 0.035, 0.0])
+
+    tim = TargetIdentityMemory(
+        cfg(
+            appearance_enabled=True,
+            appearance_weight=0.50,
+            appearance_min_similarity=0.30,
+            appearance_ambiguous_only=False,
+            same_id_appearance_ambiguity_enabled=True,
+            same_id_appearance_ambiguity_min_similarity=0.70,
+            same_id_appearance_ambiguity_margin=0.05,
+            same_id_appearance_ambiguity_min_challenger_total=0.35,
+            same_id_appearance_ambiguity_min_challenger_distance=0.20,
+            same_id_appearance_ambiguity_min_challenger_scale=0.30,
+            tim_policy="v4a_risk",
+            v4a_same_id_ambiguity_freezes_memory=True,
+            v4a_same_id_min_geometry_to_publish=0.30,
+        )
+    )
+
+    tim.select(tr(1, (100, 100, 160, 240), 0.90, appearance=target_feat))
+
+    out = tim.update(
+        [
+            tr(1, (102, 102, 162, 242), 0.90, appearance=target_feat),
+            tr(2, (128, 102, 188, 242), 0.90, appearance=challenger_feat),
+        ]
+    )
+
+    assert out.reason == "accepted_candidate"
+    assert out.control_valid
+    assert out.target_track_id == 1
+    assert out.same_id_appearance_ambiguity
+    assert out.memory_update_frozen
+    assert out.memory_update_freeze_reason == "same_id_appearance_ambiguity"
+
+def test_hard_negative_memory_rejects_negative_like_candidate():
+    target_feat = feat([1.0, 0.0, 0.0])
+    negative_feat = feat([0.6, 0.8, 0.0])
+
+    tim = TargetIdentityMemory(
+        cfg(
+            appearance_enabled=True,
+            appearance_weight=0.50,
+            appearance_min_similarity=0.30,
+            appearance_ambiguous_only=False,
+            hard_negative_memory_enabled=True,
+            hard_negative_min_candidate_similarity=0.50,
+            hard_negative_reject_similarity=0.80,
+            hard_negative_reject_margin=0.08,
+            hard_negative_min_geometry=0.20,
+        )
+    )
+
+    tim.select(tr(1, (100, 100, 160, 240), 0.90, appearance=target_feat))
+
+    # Trusted lock with a nearby non-selected candidate, learns negative memory.
+    tim.update(
+        [
+            tr(1, (102, 100, 162, 240), 0.90, appearance=target_feat),
+            tr(2, (125, 100, 185, 240), 0.90, appearance=negative_feat),
+        ]
+    )
+
+    assert len(tim._hard_negative_memory) >= 1
+
+    # The selected tracker ID now looks like the learned negative.
+    # This models same-ID tracker drift after a crossing.
+    out = tim.update(
+        [
+            tr(1, (104, 100, 164, 240), 0.90, appearance=negative_feat),
+        ]
+    )
+
+    assert out.best_score is not None
+    assert out.best_score.hard_negative_similarity > 0.95
+    assert out.best_score.hard_negative_reject
+    assert out.reason.startswith("hard_negative_reject")
+    assert not out.control_valid

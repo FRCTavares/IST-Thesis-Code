@@ -118,7 +118,7 @@ print_startup_success_summary() {
             tracker_summary="enabled type=${TRACKER_TYPE} max_age=${TRACKER_MAX_AGE} min_hits=${TRACKER_MIN_HITS} reid_model=${REID_MODEL_PATH}"
         else
             tracker_summary="enabled type=${TRACKER_TYPE} iou=${TRACKER_IOU_THRESHOLD} max_age=${TRACKER_MAX_AGE} min_hits=${TRACKER_MIN_HITS} centre_gate=${TRACKER_CENTRE_GATE}"
-        fi    
+        fi
     else
         tracker_summary="disabled"
     fi
@@ -212,7 +212,9 @@ wait_for_port() {
     local start_ts
     start_ts="$(date +%s)"
 
-    while true; do
+
+
+while true; do
         if (echo >"/dev/tcp/${host}/${port}") >/dev/null 2>&1; then
             log_ok "port ${host}:${port} is reachable"
             return 0
@@ -496,6 +498,8 @@ if [[ -f "$PERCEPTION_RUNTIME_POST_SO" ]]; then
 fi
 
 camera_retry_applied=0
+
+
 while true; do
     start_ros_bg perception_camera env PYTHONPATH="$PERCEPTION_PYTHONPATH" LD_LIBRARY_PATH="$PERCEPTION_LD_LIBRARY_PATH" GST_PLUGIN_PATH="$PERCEPTION_GST_PLUGIN_PATH" ros2 run thesis_bringup perception_camera_node --ros-args \
         -p width:=$CAMERA_WIDTH \
@@ -854,10 +858,20 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
 
     export RMW_FASTRTPS_USE_SHM=0
 
-    start_ros_bg rosbag ros2 bag record \
-        --storage mcap \
-        -o "$VIDEO_BAG_OUT_DIR" \
-        "${VIDEO_BAG_TOPICS[@]}"
+    QOS_OVERRIDE_FILE="/etc/thesis/live_record_qos_overrides.yaml"
+
+    if [[ -f "$QOS_OVERRIDE_FILE" ]]; then
+        start_ros_bg rosbag ros2 bag record \
+            --storage mcap \
+            --qos-profile-overrides-path "$QOS_OVERRIDE_FILE" \
+            -o "$VIDEO_BAG_OUT_DIR" \
+            "${VIDEO_BAG_TOPICS[@]}"
+    else
+        start_ros_bg rosbag ros2 bag record \
+            --storage mcap \
+            -o "$VIDEO_BAG_OUT_DIR" \
+            "${VIDEO_BAG_TOPICS[@]}"
+    fi
 
     sleep 1
     if ! check_proc_alive rosbag; then
@@ -962,6 +976,55 @@ else
 fi
 print_startup_success_summary
 
+if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
+    RAW_IMAGE_BAG_OUT_DIR="${VIDEO_BAG_OUT_DIR}__image_raw"
+    echo "[field] starting raw image recorder: $RAW_IMAGE_BAG_OUT_DIR"
+
+    sleep 3
+
+    start_ros_bg raw_image_bag ros2 bag record \
+        --storage mcap \
+        -o "$RAW_IMAGE_BAG_OUT_DIR" \
+        --topics /camera/image_raw
+
+    sleep 1
+    if ! check_proc_alive raw_image_bag; then
+        echo "[error] raw image recorder failed"
+        stop_stack
+        exit 1
+    fi
+fi
+
+if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
+    echo "[field] activating pixhawk-apm Ethernet profile"
+    sudo nmcli connection up pixhawk-apm || true
+
+    echo "[field] starting MAVROS Pixhawk 6X Ethernet link"
+    export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
+
+    start_ros_bg mavros_pixhawk bash -lc 'cd ~/Desktop/MAVROS_PIXHAWK6X && ./start_pixhawk_mavros.sh'
+
+    sleep 8
+
+    echo "[field] requesting MAVLink streams"
+    bash -lc 'cd ~/Desktop/MAVROS_PIXHAWK6X && ./request_pixhawk_streams.sh' || true
+
+    MAVROS_BAG_ROOT="$THESIS_ROOT/artifacts/bags/mavros"
+    mkdir -p "$MAVROS_BAG_ROOT"
+    MAVROS_BAG_OUT_DIR="$MAVROS_BAG_ROOT/$(basename "$VIDEO_BAG_OUT_DIR")__mavros"
+
+    echo "[field] starting MAVROS recorder: $MAVROS_BAG_OUT_DIR"
+
+    start_ros_bg mavros_bag bash -lc "source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID=42 && ros2 bag record --storage mcap -o '$MAVROS_BAG_OUT_DIR' --topics /mavros/imu/data_raw /mavros/imu/data /mavros/imu/mag /mavros/imu/static_pressure /mavros/imu/temperature_imu /mavros/rc/in /mavros/rc/out /mavros/battery /mavros/global_position/global /mavros/global_position/rel_alt /mavros/global_position/local /mavros/local_position/pose /mavros/local_position/velocity_local /mavros/state /mavros/extended_state"
+
+    sleep 1
+    if ! check_proc_alive mavros_bag; then
+        echo "[error] MAVROS recorder failed"
+        stop_stack
+        exit 1
+    fi
+fi
+
 log_done "live stack ready"
 log_info "logs: $RUN_DIR"
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 && "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
@@ -974,9 +1037,67 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
 else
     log_info "dashboard: disabled"
 fi
+
+if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
+    SOURCE_ROOT="$THESIS_ROOT/artifacts/bags/source_video"
+    MAVROS_BAG_ROOT="$THESIS_ROOT/artifacts/bags/mavros"
+    mkdir -p "$SOURCE_ROOT" "$MAVROS_BAG_ROOT"
+
+    SOURCE_TAG_SAFE="${BAG_TAG:-source_record}"
+    SOURCE_RUN_ID="${RUN_ID:-$(date +%F__%H-%M-%S)}"
+
+    SOURCE_RAW_BAG_OUT_DIR="$SOURCE_ROOT/${SOURCE_RUN_ID}__source__${SOURCE_TAG_SAFE}__image_raw"
+    SOURCE_MAVROS_BAG_OUT_DIR="$MAVROS_BAG_ROOT/${SOURCE_RUN_ID}__source__${SOURCE_TAG_SAFE}__mavros"
+
+    if [[ "${SOURCE_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
+        echo "[source] starting source raw image recorder: $SOURCE_RAW_BAG_OUT_DIR"
+        sleep 3
+
+        start_ros_bg source_raw_image_bag ros2 bag record \
+            --storage mcap \
+            -o "$SOURCE_RAW_BAG_OUT_DIR" \
+            --topics /camera/image_raw
+
+        sleep 1
+        if ! check_proc_alive source_raw_image_bag; then
+            echo "[error] source raw image recorder failed"
+            stop_stack
+            exit 1
+        fi
+    fi
+
+    if [[ "${SOURCE_MAVROS_RECORD:-0}" -eq 1 ]]; then
+        echo "[source] activating pixhawk-apm Ethernet profile"
+        sudo nmcli connection up pixhawk-apm || true
+
+        echo "[source] starting MAVROS Pixhawk 6X Ethernet link"
+        export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
+
+        start_ros_bg source_mavros_pixhawk bash -lc 'cd ~/Desktop/MAVROS_PIXHAWK6X && ./start_pixhawk_mavros.sh'
+
+        sleep 8
+
+        echo "[source] requesting MAVLink streams"
+        bash -lc 'cd ~/Desktop/MAVROS_PIXHAWK6X && ./request_pixhawk_streams.sh' || true
+
+        echo "[source] starting MAVROS recorder: $SOURCE_MAVROS_BAG_OUT_DIR"
+
+        start_ros_bg source_mavros_bag bash -lc "source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID=42 && ros2 bag record --storage mcap -o '$SOURCE_MAVROS_BAG_OUT_DIR' --topics /mavros/imu/data_raw /mavros/imu/data /mavros/imu/mag /mavros/imu/static_pressure /mavros/imu/temperature_imu /mavros/rc/in /mavros/rc/out /mavros/battery /mavros/global_position/global /mavros/global_position/rel_alt /mavros/global_position/local /mavros/local_position/pose /mavros/local_position/velocity_local /mavros/state /mavros/extended_state"
+
+        sleep 1
+        if ! check_proc_alive source_mavros_bag; then
+            echo "[error] source MAVROS recorder failed"
+            stop_stack
+            exit 1
+        fi
+    fi
+fi
+
 log_info "commands: status | ids | target <id> | clear-target | clear | stop"
 
 # Runtime control loop keeps operators in one shell for quick status/stop commands.
+
+
 while true; do
     if ! read -r -p "live-stack> " cmd; then
         cmd="exit"
