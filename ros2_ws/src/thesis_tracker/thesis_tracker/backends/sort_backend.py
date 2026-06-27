@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List
 
 from . import BBox, TrackOutput
-from ..sort_tracker import Sort
+from thesis_tracker.core.sort_tracker import Sort
 
 
 class SortBackend:

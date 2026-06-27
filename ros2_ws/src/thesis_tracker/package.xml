@@ -3,9 +3,9 @@
 <package format="3">
   <name>thesis_tracker</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Multi-backend ROS 2 person tracker for the thesis perception pipeline.</description>
   <maintainer email="francisco.carreira.tavares@gmail.com">francisco</maintainer>
-  <license>TODO: License declaration</license>
+  <license>MIT</license>
 
   <depend>rclpy</depend>
   <depend>rcl_interfaces</depend>

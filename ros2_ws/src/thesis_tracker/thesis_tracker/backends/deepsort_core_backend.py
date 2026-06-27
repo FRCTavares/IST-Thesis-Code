@@ -17,7 +17,7 @@ import numpy as np
 from sensor_msgs.msg import Image
 
 from . import BBox, TrackOutput
-from .. import sort_tracker
+from thesis_tracker.core import sort_tracker
 
 
 CHI2INV95 = {

@@ -21,8 +21,8 @@ from typing import ClassVar, List, Optional, Tuple
 import numpy as np
 
 from . import BBox, TrackOutput
-from .. import sort_tracker
-from ..sort_tracker import iou_batch
+from thesis_tracker.core import sort_tracker
+from thesis_tracker.core.sort_tracker import iou_batch
 
 
 class TrackState(IntEnum):

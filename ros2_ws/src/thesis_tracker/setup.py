@@ -15,8 +15,8 @@ setup(
     zip_safe=True,
     maintainer='francisco',
     maintainer_email='francisco.carreira.tavares@gmail.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='Multi-backend ROS 2 person tracker for the thesis perception pipeline',
+    license='MIT',
     extras_require={
         'test': [
             'pytest',
@@ -24,8 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'tracker_node = thesis_tracker.tracker_node:main',
-            'thesis_tracker_node = thesis_tracker.thesis_tracker:main',  # Keep old node for compatibility
+            'tracker_node = thesis_tracker.nodes.tracker_node:main',
         ],
     },
 )

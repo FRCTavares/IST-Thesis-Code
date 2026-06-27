@@ -20,7 +20,7 @@ Related older HSV memory node:
 
 Tracker node:
 
-- `ros2_ws/src/thesis_tracker/thesis_tracker/tracker_node.py`
+- `ros2_ws/src/thesis_tracker/thesis_tracker/nodes/tracker_node.py`
 
 ## Tracker configs
 

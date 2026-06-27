@@ -33,7 +33,7 @@ import numpy as np
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from ros2_ws.src.thesis_tracker.thesis_tracker.backends.deepsort_core_backend import MarsSmall128Extractor
+from thesis_tracker.backends.deepsort_core_backend import MarsSmall128Extractor
 
 
 @dataclass
