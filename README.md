@@ -1,4 +1,4 @@
-# Runbook
+# README
 
 Practical commands for day-to-day operation.
 All commands run from `$THESIS_ROOT` unless noted.
