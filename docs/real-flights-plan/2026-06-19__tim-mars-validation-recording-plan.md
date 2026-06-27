@@ -515,7 +515,7 @@ After offline replay, check header-time coverage.
 
 For each accepted sequence, create one annotation CSV under:
 
-docs/data/annotations/2026-06-19/
+docs/data/annotations/june_hard_sequences/
 
 Use the existing template:
 

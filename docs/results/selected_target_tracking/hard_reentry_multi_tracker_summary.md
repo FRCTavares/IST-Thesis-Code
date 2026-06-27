@@ -41,9 +41,9 @@ A useful configuration must reduce wrong-target output without destroying correc
 
 Active hard-reentry annotation files:
 
-- ByteTrack final: `docs/data/annotations/hard_reentry/bytetrack_tim_mars_final.csv`
-- DeepSORT-MARS target 1 final: `docs/data/annotations/hard_reentry/deepsort_mars_target1_final.csv`
-- OCSORT TIM-MARS R1: `docs/data/annotations/hard_reentry/ocsort_tim_mars_r1.csv`
+- ByteTrack final: `docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv`
+- DeepSORT-MARS target 1 final: `docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv`
+- OCSORT TIM-MARS R1: `docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv`
 
 Older manual-review and intermediate annotation versions are archived under `docs/archive/annotations/`.
 

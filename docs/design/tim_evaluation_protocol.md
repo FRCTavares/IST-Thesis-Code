@@ -56,9 +56,9 @@ Each major result must include:
 
 Hard re-entry active annotations:
 
-- `docs/data/annotations/hard_reentry/bytetrack_tim_mars_final.csv`
-- `docs/data/annotations/hard_reentry/deepsort_mars_target1_final.csv`
-- `docs/data/annotations/hard_reentry/ocsort_tim_mars_r1.csv`
+- `docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv`
+- `docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv`
+- `docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv`
 
 Older annotations are archived under:
 

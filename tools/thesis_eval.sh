@@ -49,37 +49,37 @@ run_official_tim_vs_raw() {
 
   run_target_correctness \
     "${base}__tracker_bytetrack__tim_off__target_1__r2" \
-    "docs/data/annotations/hard_reentry_header_time/bytetrack_tim_mars_final_header_time.csv" \
+    "docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv" \
     "$out_root/bytetrack_raw" \
     --timebase header
 
   run_target_correctness \
     "${base}__tracker_bytetrack__tim_mars__target_1__r4" \
-    "docs/data/annotations/hard_reentry_header_time/bytetrack_tim_mars_final_header_time.csv" \
+    "docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv" \
     "$out_root/bytetrack_tim_mars" \
     --timebase header
 
   run_target_correctness \
     "${base}__tracker_ocsort__tim_off__target_1" \
-    "docs/data/annotations/hard_reentry_header_time/ocsort_tim_mars_r1_header_time.csv" \
+    "docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv" \
     "$out_root/ocsort_raw" \
     --timebase header
 
   run_target_correctness \
     "${base}__tracker_ocsort__tim_mars__target_1__r1" \
-    "docs/data/annotations/hard_reentry_header_time/ocsort_tim_mars_r1_header_time.csv" \
+    "docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv" \
     "$out_root/ocsort_tim_mars" \
     --timebase header
 
   run_target_correctness \
     "${base}__tracker_deepsort__tim_off__target_1" \
-    "docs/data/annotations/hard_reentry_header_time/deepsort_mars_target1_final_header_time.csv" \
+    "docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv" \
     "$out_root/deepsort_raw" \
     --timebase header
 
   run_target_correctness \
     "${base}__tracker_deepsort__tim_mars__target_1" \
-    "docs/data/annotations/hard_reentry_header_time/deepsort_mars_target1_final_header_time.csv" \
+    "docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv" \
     "$out_root/deepsort_tim_mars" \
     --timebase header
 

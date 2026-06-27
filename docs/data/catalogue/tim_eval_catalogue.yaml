@@ -9,7 +9,7 @@ bags:
   replay: ''
   source: ui_replay
   path: artifacts/bags/ui_replays/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r1
   label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1 | r1
@@ -20,7 +20,7 @@ bags:
   replay: r1
   source: ui_replay
   path: artifacts/bags/ui_replays/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_45_45_video_2026_06_19_official_seq01_clean_four_person_yolov8s_bytetrack_tim_mars
   label: SEQ01 clean four-person | ByteTrack | TIM-MARS
@@ -31,7 +31,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/live_camera/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq01_clean_four_person_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0
   label: SEQ02 target re-entry | ByteTrack | TIM-MARS | target 0
@@ -42,7 +42,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r1
   label: SEQ02 target re-entry | ByteTrack | TIM-MARS | target 0 | r1
@@ -53,7 +53,7 @@ bags:
   replay: r1
   source: official
   path: artifacts/bags/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r1
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r2
   label: SEQ02 target re-entry | ByteTrack | TIM-MARS | target 0 | r2
@@ -64,7 +64,7 @@ bags:
   replay: r2
   source: official
   path: artifacts/bags/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r2
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r3
   label: SEQ02 target re-entry | ByteTrack | TIM-MARS | target 0
@@ -75,7 +75,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r3
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r4
   label: SEQ02 target re-entry | ByteTrack | TIM-MARS | target 0
@@ -86,7 +86,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r4
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_50_03_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars
   label: SEQ02 target re-entry | ByteTrack | TIM-MARS
@@ -97,7 +97,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/live_camera/2026-06-19__12-50-03__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars
   label: SEQ02 target re-entry | ByteTrack | TIM-MARS
@@ -108,7 +108,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/live_camera/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_57_48_video_2026_06_19_official_seq03_four_person_crossing_ambiguity_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0
   label: SEQ03 crossing ambiguity | ByteTrack | TIM-MARS | target 0
@@ -119,7 +119,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/eval_matrix/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq03_crossing_ambiguity_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_12_57_48_video_2026_06_19_official_seq03_four_person_crossing_ambiguity_yolov8s_bytetrack_tim_mars
   label: SEQ03 crossing ambiguity | ByteTrack | TIM-MARS
@@ -130,7 +130,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/live_camera/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq03_crossing_ambiguity_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0
   label: SEQ04 occlusion no-exit | ByteTrack | TIM-MARS | target 0
@@ -141,7 +141,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq04_occlusion_no_exit_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_1
   label: SEQ04 occlusion no-exit | ByteTrack | TIM-MARS | target 1
@@ -152,7 +152,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq04_occlusion_no_exit_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_1_r1
   label: SEQ04 occlusion no-exit | ByteTrack | TIM-MARS | target 1 | r1
@@ -163,7 +163,7 @@ bags:
   replay: r1
   source: official
   path: artifacts/bags/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1__r1
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq04_occlusion_no_exit_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars
   label: SEQ04 occlusion no-exit | ByteTrack | TIM-MARS
@@ -174,7 +174,7 @@ bags:
   replay: ''
   source: official
   path: artifacts/bags/live_camera/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq04_occlusion_no_exit_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_seq02_long_strict_tim_mars
   label: SEQ02 target re-entry | TIM-MARS
@@ -185,7 +185,7 @@ bags:
   replay: ''
   source: strict_tim_replay
   path: artifacts/bags/strict_tim_replay/2026-06-19__seq02_long__strict_tim_mars
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_seq02_long_medium_tim_mars_medium
   label: SEQ02 target re-entry | TIM-MARS
@@ -196,7 +196,7 @@ bags:
   replay: ''
   source: strict_tim_replay
   path: artifacts/bags/strict_tim_replay/2026-06-19__seq02_long_medium__tim_mars_medium
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_seq02_long_strict_aligned_tim_mars
   label: SEQ02 target re-entry | TIM-MARS
@@ -207,7 +207,7 @@ bags:
   replay: ''
   source: strict_tim_replay
   path: artifacts/bags/strict_tim_replay/2026-06-19__seq02_long_strict_aligned__tim_mars
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_off_target_1
   label: Hard re-entry / ID switch | ByteTrack | Raw | target 1
@@ -218,7 +218,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_off__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_off_target_1_r2
   label: Hard re-entry / ID switch | ByteTrack | Raw | target 1 | r2
@@ -229,7 +229,7 @@ bags:
   replay: r2
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_off__target_1__r2
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1
   label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1
@@ -240,7 +240,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r1
   label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1 | r1
@@ -251,7 +251,7 @@ bags:
   replay: r1
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r2
   label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1 | r2
@@ -262,7 +262,7 @@ bags:
   replay: r2
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r2
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r3
   label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1
@@ -273,7 +273,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r3
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_mars_target_1
   label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1
@@ -284,7 +284,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_bytetrack_tim_mars_target_1_r4
   label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1
@@ -295,7 +295,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_bytetrack__tim_mars__target_1__r4
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_deepsort_tim_mars_target_1
   label: Hard re-entry / ID switch | DeepSORT | TIM-MARS | target 1
@@ -306,7 +306,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1
   label: Hard re-entry / ID switch | OCSORT | Raw | target 1
@@ -317,7 +317,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_deepsort_tim_off_target_1
   label: Hard re-entry / ID switch | OCSORT | Raw | target 1
@@ -328,7 +328,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_off__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_ocsort_tim_off_target_1
   label: Hard re-entry / ID switch | OCSORT | Raw | target 1
@@ -339,7 +339,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_off__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1
   label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1
@@ -350,7 +350,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1_r1
   label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1 | r1
@@ -361,7 +361,7 @@ bags:
   replay: r1
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1_r2
   label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1 | r2
@@ -372,7 +372,7 @@ bags:
   replay: r2
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r2
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_deepsort_tim_mars_target_1
   label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1
@@ -383,7 +383,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_deepsort__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_ocsort_tim_mars_target_1
   label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1
@@ -394,7 +394,7 @@ bags:
   replay: ''
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1_tracker_ocsort_tim_mars_target_1_r1
   label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1 | r1
@@ -405,7 +405,7 @@ bags:
   replay: r1
   source: eval_matrix
   path: artifacts/bags/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1__tracker_ocsort__tim_mars__target_1__r1
-  recommended_annotation: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
   valid_for_evaluation: true
 - id: 2026_06_19_10_27_03_video_2026_06_19_seq01_clean_two_person_yolov8s_bytetrack_tim_mars
   label: SEQ01 clean four-person | ByteTrack | TIM-MARS
@@ -416,7 +416,7 @@ bags:
   replay: ''
   source: bag
   path: artifacts/bags/live_camera/2026-06-19__10-27-03__video__2026-06-19__seq01__clean_two_person__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq01_clean_four_person_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_11_58_02_video_2026_06_19_seq01_clean_four_person_yolov8s_bytetrack_tim_mars
   label: SEQ01 clean four-person | ByteTrack | TIM-MARS
@@ -427,7 +427,7 @@ bags:
   replay: ''
   source: bag
   path: artifacts/bags/live_camera/2026-06-19__11-58-02__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq01_clean_four_person_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_11_59_23_video_2026_06_19_seq01_clean_four_person_yolov8s_bytetrack_tim_mars
   label: SEQ01 clean four-person | ByteTrack | TIM-MARS
@@ -438,7 +438,7 @@ bags:
   replay: ''
   source: bag
   path: artifacts/bags/live_camera/2026-06-19__11-59-23__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/official_field_2026-06-19/seq01_clean_four_person_manual_track_time.csv
+  recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
   valid_for_evaluation: true
 - id: 2026_06_19_09_59_34_video_2026_06_19_test_static_yolov8s_bytetrack_tim_mars
   label: Unknown case | ByteTrack | TIM-MARS
@@ -923,7 +923,7 @@ annotations:
   - 1
   - 40
   preferred: false
-  path: docs/data/annotations/hard_reentry/bytetrack_tim_mars_final.csv
+  path: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
 - id: docs_annotations_hard_reentry_deepsort_mars_target1_final
   label: Hard re-entry / ID switch | DeepSORT | manual | IDs 1
   case: hard_reentry
@@ -932,7 +932,7 @@ annotations:
   target_ids:
   - 1
   preferred: false
-  path: docs/data/annotations/hard_reentry/deepsort_mars_target1_final.csv
+  path: docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv
 - id: docs_annotations_hard_reentry_ocsort_tim_mars_r1
   label: Hard re-entry / ID switch | OCSORT | manual | IDs 1 -> 98 -> 115 -> 144 ->
     163
@@ -946,7 +946,7 @@ annotations:
   - 144
   - 163
   preferred: false
-  path: docs/data/annotations/hard_reentry/ocsort_tim_mars_r1.csv
+  path: docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv
 - id: docs_annotations_hard_reentry_header_time_bytetrack_tim_mars_final_header_time
   label: Hard re-entry / ID switch | ByteTrack | header-time | IDs 1 -> 40
   case: hard_reentry
@@ -956,7 +956,7 @@ annotations:
   - 1
   - 40
   preferred: false
-  path: docs/data/annotations/hard_reentry_header_time/bytetrack_tim_mars_final_header_time.csv
+  path: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
 - id: docs_annotations_hard_reentry_header_time_deepsort_mars_target1_final_header_time
   label: Hard re-entry / ID switch | DeepSORT | header-time | IDs 1
   case: hard_reentry
@@ -965,7 +965,7 @@ annotations:
   target_ids:
   - 1
   preferred: false
-  path: docs/data/annotations/hard_reentry_header_time/deepsort_mars_target1_final_header_time.csv
+  path: docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv
 - id: docs_annotations_hard_reentry_header_time_fresh_replay_corrected_bytetrack_tim_mars_r1_header_time_corrected
   label: Hard re-entry / ID switch | ByteTrack | header-time | corrected | IDs 1 ->
     42
@@ -976,7 +976,7 @@ annotations:
   - 1
   - 42
   preferred: false
-  path: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r1_header_time_corrected.csv
+  path: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
 - id: docs_annotations_hard_reentry_header_time_fresh_replay_corrected_bytetrack_tim_mars_r2_header_time_corrected
   label: Hard re-entry / ID switch | ByteTrack | header-time | corrected | IDs 1 ->
     42
@@ -987,7 +987,7 @@ annotations:
   - 1
   - 42
   preferred: true
-  path: docs/data/annotations/hard_reentry_header_time/fresh_replay_corrected/bytetrack_tim_mars_r2_header_time_corrected.csv
+  path: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
 - id: docs_annotations_hard_reentry_header_time_ocsort_tim_mars_r1_header_time
   label: Hard re-entry / ID switch | OCSORT | header-time | IDs 1 -> 98 -> 115 ->
     144 -> 163
@@ -1001,7 +1001,7 @@ annotations:
   - 144
   - 163
   preferred: false
-  path: docs/data/annotations/hard_reentry_header_time/ocsort_tim_mars_r1_header_time.csv
+  path: docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv
 - id: docs_annotations_official_field_2026_06_19_seq01_clean_four_person_manual
   label: SEQ01 clean four-person | manual | IDs 1
   case: seq01_clean_four_person
@@ -1010,7 +1010,7 @@ annotations:
   target_ids:
   - 1
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq01_clean_four_person_manual.csv
+  path: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq01_clean_four_person_manual_ros_time
   label: SEQ01 clean four-person | ros-time | IDs 1
   case: seq01_clean_four_person
@@ -1019,7 +1019,7 @@ annotations:
   target_ids:
   - 1
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq01_clean_four_person_manual_ros_time.csv
+  path: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq01_clean_four_person_manual_track_time
   label: SEQ01 clean four-person | track-time | IDs 1
   case: seq01_clean_four_person
@@ -1028,7 +1028,7 @@ annotations:
   target_ids:
   - 1
   preferred: true
-  path: docs/data/annotations/official_field_2026-06-19/seq01_clean_four_person_manual_track_time.csv
+  path: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq02_long_memory_only_no_switch
   label: SEQ02 target re-entry | manual | IDs 11
   case: seq02_target_reentry
@@ -1037,7 +1037,7 @@ annotations:
   target_ids:
   - 11
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq02_long_memory_only_no_switch.csv
+  path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq02_target_reentry_manual
   label: SEQ02 target re-entry | manual | IDs 11
   case: seq02_target_reentry
@@ -1046,7 +1046,7 @@ annotations:
   target_ids:
   - 11
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual.csv
+  path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq02_target_reentry_manual_ros_time
   label: SEQ02 target re-entry | ros-time | IDs 11
   case: seq02_target_reentry
@@ -1055,7 +1055,7 @@ annotations:
   target_ids:
   - 11
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_ros_time.csv
+  path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq02_target_reentry_manual_track_time
   label: SEQ02 target re-entry | track-time | IDs 11
   case: seq02_target_reentry
@@ -1064,7 +1064,7 @@ annotations:
   target_ids:
   - 11
   preferred: true
-  path: docs/data/annotations/official_field_2026-06-19/seq02_target_reentry_manual_track_time.csv
+  path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq03_crossing_ambiguity
   label: SEQ03 crossing ambiguity | manual | IDs 2
   case: seq03_crossing_ambiguity
@@ -1073,7 +1073,7 @@ annotations:
   target_ids:
   - 2
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq03_crossing_ambiguity.csv
+  path: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq03_crossing_ambiguity_manual
   label: SEQ03 crossing ambiguity | manual | IDs 2 -> 8 -> 12 -> 13
   case: seq03_crossing_ambiguity
@@ -1085,7 +1085,7 @@ annotations:
   - 12
   - 13
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq03_crossing_ambiguity_manual.csv
+  path: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq03_crossing_ambiguity_manual_ros_time
   label: SEQ03 crossing ambiguity | ros-time | IDs 2 -> 8 -> 12 -> 13
   case: seq03_crossing_ambiguity
@@ -1097,7 +1097,7 @@ annotations:
   - 12
   - 13
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq03_crossing_ambiguity_manual_ros_time.csv
+  path: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq03_crossing_ambiguity_manual_track_time
   label: SEQ03 crossing ambiguity | track-time | IDs 2 -> 8 -> 12 -> 13
   case: seq03_crossing_ambiguity
@@ -1109,7 +1109,7 @@ annotations:
   - 12
   - 13
   preferred: true
-  path: docs/data/annotations/official_field_2026-06-19/seq03_crossing_ambiguity_manual_track_time.csv
+  path: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq04_occlusion_no_exit
   label: SEQ04 occlusion no-exit | manual | IDs 1
   case: seq04_occlusion_no_exit
@@ -1118,7 +1118,7 @@ annotations:
   target_ids:
   - 1
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq04_occlusion_no_exit.csv
+  path: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq04_occlusion_no_exit_manual
   label: SEQ04 occlusion no-exit | manual | IDs 1 -> 21 -> 26 -> 31 -> 32 -> 35 ->
     36
@@ -1134,7 +1134,7 @@ annotations:
   - 35
   - 36
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq04_occlusion_no_exit_manual.csv
+  path: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq04_occlusion_no_exit_manual_ros_time
   label: SEQ04 occlusion no-exit | ros-time | IDs 1 -> 21 -> 26 -> 31 -> 32 -> 35
     -> 36
@@ -1150,7 +1150,7 @@ annotations:
   - 35
   - 36
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/seq04_occlusion_no_exit_manual_ros_time.csv
+  path: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_seq04_occlusion_no_exit_manual_track_time
   label: SEQ04 occlusion no-exit | track-time | IDs 1 -> 21 -> 26
   case: seq04_occlusion_no_exit
@@ -1161,7 +1161,7 @@ annotations:
   - 21
   - 26
   preferred: true
-  path: docs/data/annotations/official_field_2026-06-19/seq04_occlusion_no_exit_manual_track_time.csv
+  path: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_target_id_only_manual_seq01_clean_four_person
   label: SEQ01 clean four-person | manual | IDs 1
   case: seq01_clean_four_person
@@ -1170,7 +1170,7 @@ annotations:
   target_ids:
   - 1
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/target_id_only_manual/SEQ01_clean_four_person.csv
+  path: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_target_id_only_manual_seq02_target_reentry
   label: SEQ02 target re-entry | manual | IDs 11
   case: seq02_target_reentry
@@ -1179,7 +1179,7 @@ annotations:
   target_ids:
   - 11
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/target_id_only_manual/SEQ02_target_reentry.csv
+  path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_target_id_only_manual_seq03_crossing_ambiguity
   label: SEQ03 crossing ambiguity | manual | IDs 2 -> 8 -> 12 -> 13
   case: seq03_crossing_ambiguity
@@ -1191,7 +1191,7 @@ annotations:
   - 12
   - 13
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/target_id_only_manual/SEQ03_crossing_ambiguity.csv
+  path: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
 - id: docs_annotations_official_field_2026_06_19_target_id_only_manual_seq04_occlusion_no_exit
   label: SEQ04 occlusion no-exit | manual | IDs 1 -> 21 -> 26 -> 31 -> 32 -> 35 ->
     36
@@ -1207,4 +1207,4 @@ annotations:
   - 35
   - 36
   preferred: false
-  path: docs/data/annotations/official_field_2026-06-19/target_id_only_manual/SEQ04_occlusion_no_exit.csv
+  path: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv

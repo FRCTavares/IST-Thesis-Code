@@ -12,7 +12,7 @@ This run evaluates a conservative TIM-MARS output filter. The goal is to reduce 
 
 ## Annotation
 
-`docs/data/annotations/hard_reentry/ocsort_tim_mars_r1.csv`
+`docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv`
 
 ## Parameters
 
