@@ -176,3 +176,20 @@ models/tim_embedding/**/*.pt
 
 # TIM-V2E generated overlay videos
 reports/tim_v2_embedding/videos/
+
+# Local TIM audit UI state
+tools/visualization/.tim_audit_favourites.json
+
+# Local Python environments
+.venv-tim-ui/
+.venv/
+
+# Local build/runtime logs
+log/
+ros2_ws/log/
+
+# Frontend local dependencies/build outputs
+live-ui/node_modules/
+live-ui/dist/
+user-interface/node_modules/
+user-interface/dist/
