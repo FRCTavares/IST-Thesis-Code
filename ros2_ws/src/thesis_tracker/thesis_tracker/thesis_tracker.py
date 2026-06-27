@@ -34,7 +34,7 @@ def xyxy_to_cxcywh(b: BBox) -> Tuple[float, float, float, float]:
 
 
 def _parse_frame_id(frame_id_str: str) -> int:
-    # inference_client_node uses "frame_<int>"
+    # Legacy detector messages used "frame_<int>"
     try:
         if frame_id_str.startswith("frame_"):
             return int(frame_id_str.split("_", 1)[1])

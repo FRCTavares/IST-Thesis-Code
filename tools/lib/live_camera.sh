@@ -3,7 +3,7 @@
 # Camera and host-preflight helpers for tools/start_live_stack.sh.
 # This file expects the entrypoint to define logging/process helpers and live-stack config vars.
 
-STACK_PROC_PATTERN="camera_bringup.launch.py|inference_client_node|detector_node|perception_camera_node|tracker_node|control_ref_node|dashboard_bridge_node|web_video_server"
+STACK_PROC_PATTERN="camera_bringup.launch.py|perception_pipeline_node|perception_camera_node|tracker_node|control_ref_node|dashboard_bridge_node|web_video_server"
 CAMERA_MEDIA_DEV_OVERRIDE=""
 
 camera_log_has_fatal_error() {

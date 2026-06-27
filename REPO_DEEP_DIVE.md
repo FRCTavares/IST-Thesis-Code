@@ -113,7 +113,6 @@ Core evaluation principle:
 - `thesis_bringup`
   - Launch composition and primary runtime nodes.
   - Owns `perception_camera_node`, `dashboard_bridge_node`, `target_memory_mars_node`, `control_ref_node`, and launch entrypoints.
-- `thesis_inference_client`
   - Historical bridge package for the removed ZMQ/container path.
   - Not part of the active live runtime.
 - `thesis_tracker`

@@ -177,7 +177,7 @@ stop_stack() {
 
     # Force-clean known host-side processes in case ros2 launch left children behind.
     pkill -f "camera_bringup.launch.py" >/dev/null 2>&1 || true
-    pkill -f "inference_client_node|detector_node" >/dev/null 2>&1 || true
+    pkill -f "perception_pipeline_node|perception_camera_node" >/dev/null 2>&1 || true
     pkill -f "perception_camera_node" >/dev/null 2>&1 || true
     pkill -f "tracker_node" >/dev/null 2>&1 || true
     pkill -f "control_ref_node" >/dev/null 2>&1 || true
