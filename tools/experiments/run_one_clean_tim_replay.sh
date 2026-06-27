@@ -131,7 +131,7 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p status_topic:=/target_memory_mars/status \
     -p select_topic:=/target_memory_mars/select \
     -p selected_track_id:=${TARGET_ID} \
-    -p mirror_raw_target_selection:=$([[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]] && echo false || echo true) \
+    -p mirror_raw_target_selection:=${MARS_MIRROR_RAW_TARGET_SELECTION:-$([[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]] && echo false || echo true)} \
     -p allow_id_switch_recovery:=${MARS_ALLOW_ID_SWITCH_RECOVERY:-true} \
     -p id_switch_spatial_gate_enabled:=${MARS_ID_SWITCH_SPATIAL_GATE_ENABLED:-false} \
     -p id_switch_min_iou:=${MARS_ID_SWITCH_MIN_IOU:-0.05} \
