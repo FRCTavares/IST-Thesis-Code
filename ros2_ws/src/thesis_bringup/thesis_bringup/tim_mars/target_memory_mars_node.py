@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import time
 from typing import Optional
 
@@ -15,6 +14,11 @@ from std_msgs.msg import Empty, String, UInt32
 from thesis_msgs.msg import TargetState, Track2DArray
 
 from thesis_bringup.tim_mars.mars_reid_backend import MarsReIdBackend
+from thesis_bringup.tim_mars.ros_messages import (
+    status_json_from_output,
+    status_only_json,
+    target_msg_from_output,
+)
 from thesis_bringup.tim_mars.ros_params import (
     build_target_memory_config,
     declare_tim_mars_parameters,
@@ -426,78 +430,18 @@ class TargetMemoryMarsNode(Node):
 
         return enriched
 
-    def _target_msg_from_output(
-        self,
-        tracks_msg: Track2DArray,
-        out: TargetMemoryOutput,
-        t_start_ns: int,
-        t_end_ns: int,
-    ) -> TargetState:
-        target_msg = TargetState()
-        target_msg.header = tracks_msg.header
-        target_msg.frame_id = int(tracks_msg.frame_id)
-        target_msg.src_stamp_ns = int(tracks_msg.src_stamp_ns)
-        target_msg.t_cam_msg_seen_ns = int(tracks_msg.t_cam_msg_seen_ns)
-        target_msg.t_target_cb_start_ns = int(t_start_ns)
-        target_msg.t_target_cb_end_ns = int(t_end_ns)
-
-        # Conservative TargetState contract:
-        # /target_memory_mars is safe for controller-style consumers.
-        # If TIM does not currently consider the target visible/control-valid,
-        # publish an empty TargetState. Detailed memory state remains available
-        # on /target_memory_mars/status.
-        if (
-            out.bbox is None
-            or out.target_track_id is None
-            or (self._zero_id_when_not_visible and not out.control_valid)
-        ):
-            target_msg.id = 0
-            target_msg.cx = 0.0
-            target_msg.cy = 0.0
-            target_msg.w = 0.0
-            target_msg.h = 0.0
-            target_msg.score = 0.0
-            target_msg.quality = 0.0
-            return target_msg
-
-        target_msg.id = int(out.target_track_id)
-
-        cx, cy, w, h = self._bbox_to_msg_geometry(out.bbox)
-        target_msg.cx = float(cx)
-        target_msg.cy = float(cy)
-        target_msg.w = float(w)
-        target_msg.h = float(h)
-
-        # Existing TargetState has no explicit state/control field.
-        # Use score for current visibility and quality for TIM confidence.
-        target_msg.score = float(out.best_score.confidence) if out.control_valid and out.best_score else 0.0
-        target_msg.quality = float(out.quality)
-        return target_msg
+    def _target_msg_from_output(self, out: TargetMemoryOutput) -> TargetState:
+        return target_msg_from_output(
+            out,
+            image_width=self._image_width,
+            image_height=self._image_height,
+            tracks_are_normalized=self._tracks_are_normalized,
+            zero_id_when_not_visible=self._zero_id_when_not_visible,
+        )
 
     def _publish_status_only(self, out: TargetMemoryOutput) -> None:
         msg = String()
-        msg.data = json.dumps(
-            {
-                "state": str(out.state.value),
-                "control_mode": str(out.control_mode.value),
-                "target_track_id": out.target_track_id,
-                "visible": bool(out.visible),
-                "reacquired": bool(out.reacquired),
-                "quality": float(out.quality),
-                "frames_since_seen": int(out.frames_since_seen),
-                "reason": str(out.reason),
-                "memory_update_frozen": bool(out.memory_update_frozen),
-                "memory_update_freeze_reason": str(out.memory_update_freeze_reason),
-                "same_id_appearance_ambiguity": bool(out.same_id_appearance_ambiguity),
-                "appearance_margin_best_vs_second": float(out.appearance_margin_best_vs_second),
-                "geometry_strength": float(out.geometry_strength),
-                "risk_hard_negative": bool(out.risk_hard_negative),
-                "risk_absence": bool(out.risk_absence),
-                "risk_scene_ambiguity": bool(out.risk_scene_ambiguity),
-                "v4a_publish_allowed": bool(out.v4a_publish_allowed),
-            },
-            sort_keys=True,
-        )
+        msg.data = status_only_json(out)
         self._status_pub.publish(msg)
 
     def _publish_status(
@@ -507,82 +451,23 @@ class TargetMemoryMarsNode(Node):
         t_start_ns: int,
         t_end_ns: int,
     ) -> None:
-        best = out.best_score
         msg = String()
-        msg.data = json.dumps(
-            {
-                "frame_id": int(tracks_msg.frame_id),
-                "state": str(out.state.value),
-                "control_mode": str(out.control_mode.value),
-                "target_track_id": out.target_track_id,
-                "visible": bool(out.visible),
-                "reacquired": bool(out.reacquired),
-                "quality": float(out.quality),
-                "frames_since_seen": int(out.frames_since_seen),
-                "reason": str(out.reason),
-                "memory_update_frozen": bool(out.memory_update_frozen),
-                "memory_update_freeze_reason": str(out.memory_update_freeze_reason),
-                "same_id_appearance_ambiguity": bool(out.same_id_appearance_ambiguity),
-                "appearance_margin_best_vs_second": float(out.appearance_margin_best_vs_second),
-                "geometry_strength": float(out.geometry_strength),
-                "risk_hard_negative": bool(out.risk_hard_negative),
-                "risk_absence": bool(out.risk_absence),
-                "risk_scene_ambiguity": bool(out.risk_scene_ambiguity),
-                "v4a_publish_allowed": bool(out.v4a_publish_allowed),
-                "lat_ms": float(t_end_ns - t_start_ns) / 1e6,
-                "num_tracks": len(tracks_msg.tracks),
-                "appearance_enabled": bool(self._appearance_enabled),
-                "appearance_candidates": int(self._last_appearance_candidates),
-                "appearance_features_valid": int(self._last_appearance_features_valid),
-                "appearance_image_age_ms": self._last_appearance_image_age_ms,
-                "appearance_skip_reason": str(self._last_appearance_skip_reason),
-                "appearance_compute_min_interval_ms": float(self._appearance_compute_min_interval_ms),
-                "appearance_cache_ttl_ms": float(self._appearance_cache_ttl_ms),
-                "appearance_cache_size": int(len(self._appearance_cache_by_track_id)),
-                "appearance_update_cooldown_remaining": int(getattr(self._tim, "_appearance_update_cooldown_frames_remaining", 0)),
-                "best": None
-                if best is None
-                else {
-                    "track_id": int(best.track_id),
-                    "total": float(best.total),
-                    "iou": float(best.iou),
-                    "distance": float(best.distance),
-                    "scale": float(best.scale),
-                    "confidence": float(best.confidence),
-                    "id_bonus": float(best.id_bonus),
-                    "appearance": float(best.appearance),
-                    "appearance_used": bool(best.appearance_used),
-                    "appearance_raw": float(best.appearance_raw),
-                    "appearance_gate_passed": bool(best.appearance_gate_passed),
-                    "geometry_allows_appearance": bool(best.geometry_allows_appearance),
-                    "hard_negative_similarity": float(best.hard_negative_similarity),
-                    "hard_negative_margin": float(best.hard_negative_margin),
-                    "hard_negative_reject": bool(best.hard_negative_reject),
-                    "ambiguous": bool(best.ambiguous),
-                },
-                "all_scores": [
-                    {
-                        "track_id": int(score.track_id),
-                        "total": float(score.total),
-                        "iou": float(score.iou),
-                        "distance": float(score.distance),
-                        "scale": float(score.scale),
-                        "confidence": float(score.confidence),
-                        "id_bonus": float(score.id_bonus),
-                        "appearance": float(score.appearance),
-                        "appearance_used": bool(score.appearance_used),
-                        "appearance_raw": float(score.appearance_raw),
-                        "appearance_gate_passed": bool(score.appearance_gate_passed),
-                        "geometry_allows_appearance": bool(score.geometry_allows_appearance),
-                        "hard_negative_similarity": float(score.hard_negative_similarity),
-                        "hard_negative_margin": float(score.hard_negative_margin),
-                        "hard_negative_reject": bool(score.hard_negative_reject),
-                        "ambiguous": bool(score.ambiguous),
-                    }
-                    for score in out.all_scores
-                ],
-            },
-            sort_keys=True,
+        msg.data = status_json_from_output(
+            out,
+            frame_id=int(tracks_msg.frame_id),
+            lat_ms=float(t_end_ns - t_start_ns) / 1e6,
+            num_tracks=len(tracks_msg.tracks),
+            appearance_enabled=self._appearance_enabled,
+            appearance_candidates=self._last_appearance_candidates,
+            appearance_features_valid=self._last_appearance_features_valid,
+            appearance_image_age_ms=self._last_appearance_image_age_ms,
+            appearance_skip_reason=self._last_appearance_skip_reason,
+            appearance_compute_min_interval_ms=self._appearance_compute_min_interval_ms,
+            appearance_cache_ttl_ms=self._appearance_cache_ttl_ms,
+            appearance_cache_size=len(self._appearance_cache_by_track_id),
+            appearance_update_cooldown_remaining=int(
+                getattr(self._tim, "_appearance_update_cooldown_frames_remaining", 0)
+            ),
         )
         self._status_pub.publish(msg)
 
