@@ -206,7 +206,7 @@ case "$cmd" in
     ;;
 
   visual-validation-header-time)
-    python3 tools/visualization/video.py tim-header-all
+    python3 tools/bag_annotation_ui/video.py tim-header-all
     ;;
 
   *)

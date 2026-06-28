@@ -62,12 +62,12 @@ Use for ReID and status diagnostics:
 
 Use for status and overlay review:
 
-- `tools/visualization/video.py`
+- `tools/bag_annotation_ui/video.py`
   - canonical header-time TIM-MARS visual validation renderer
-  - official command: `python3 tools/visualization/video.py tim-header-all`
+  - official command: `python3 tools/bag_annotation_ui/video.py tim-header-all`
   - replaces the deprecated TIM-specific bag renderers under `deprecated/tools/bag_tim_video_renderers_2026-06-17/`
 - `tools/bag/render_bag_overlay_video.py`
-- `tools/visualization/render_all_tracks_id_video.py`
+- `tools/bag_annotation_ui/render_all_tracks_id_video.py`
 
 For the current source-image status audit renderer, use:
 

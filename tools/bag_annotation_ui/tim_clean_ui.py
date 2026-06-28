@@ -9,11 +9,12 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from tim_ui_discovery import discover_annotations as shared_discover_annotations, discover_bags as shared_discover_bags
 import uvicorn
 
 # Import the original backend module, then copy its registered API routes.
 # This keeps /clean isolated from the broken old HTML page.
-import tim_audit_ui as backend
+import tim_ui_backend as backend
 
 app = FastAPI(title="TIM-MARS Clean UI")
 
@@ -1720,6 +1721,16 @@ def _ui_bag_label_from_inventory(item: dict) -> str:
     return " | ".join(bits) + f" :: {name}"
 
 
+
+
+
+
+
+
+
+
+
+
 @app.get("/clean-static", response_class=HTMLResponse)
 def clean_static_ui():
     bag_roots = [
@@ -1906,12 +1917,14 @@ def clean_static_ui():
         for b in bags
     )
 
+    bags = shared_discover_bags(REPO_ROOT)
     bags_json = json.dumps(bags)
     annotation_options = "\n".join(
         f'<option value="{html_lib.escape(a)}" title="{html_lib.escape(a)}">{html_lib.escape(annotation_label(a))}</option>'
         for a in annotations
     )
 
+    annotations = shared_discover_annotations(REPO_ROOT)
     annotations_json = json.dumps(annotations)
 
     html = f"""<!doctype html>
