@@ -471,22 +471,6 @@ class TargetMemoryMarsNode(Node):
         )
         self._status_pub.publish(msg)
 
-    def _bbox_to_msg_geometry(self, bbox: BBox) -> tuple[float, float, float, float]:
-        x1, y1, x2, y2 = bbox
-        cx = 0.5 * (x1 + x2)
-        cy = 0.5 * (y1 + y2)
-        w = max(0.0, x2 - x1)
-        h = max(0.0, y2 - y1)
-
-        if self._tracks_are_normalized:
-            return (
-                cx / self._image_width,
-                cy / self._image_height,
-                w / self._image_width,
-                h / self._image_height,
-            )
-
-        return cx, cy, w, h
 
     def _clip_bbox(self, bbox: BBox) -> BBox:
         x1, y1, x2, y2 = bbox
