@@ -70,9 +70,6 @@ def declare_tim_mars_parameters(node: Any) -> None:
     # Appearance extraction / ReID.
     node.declare_parameter("appearance_enabled", True)
     node.declare_parameter("appearance_image_topic", "/camera/dashboard")
-    node.declare_parameter("appearance_h_bins", 16)
-    node.declare_parameter("appearance_s_bins", 8)
-    node.declare_parameter("appearance_min_bbox_height", 30.0)
     node.declare_parameter("appearance_max_image_age_ms", 250.0)
     node.declare_parameter("appearance_compute_min_interval_ms", 250.0)
     node.declare_parameter("appearance_cache_ttl_ms", 750.0)
