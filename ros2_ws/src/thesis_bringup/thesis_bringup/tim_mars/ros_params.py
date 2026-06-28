@@ -109,7 +109,7 @@ def declare_tim_mars_parameters(node: Any) -> None:
     )
     node.declare_parameter("mars_batch_size", 32)
 
-    node.declare_parameter("rank_aware_reacquisition_enabled", False)
+    node.declare_parameter("rank_aware_reacquisition_enabled", True)
     node.declare_parameter("rank_aware_lost_min_total", 0.40)
     node.declare_parameter("rank_aware_lost_min_geom", 0.10)
     node.declare_parameter("rank_aware_lost_min_app", 0.05)

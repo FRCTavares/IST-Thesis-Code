@@ -30,7 +30,7 @@ def test_tim_mars_ros_params_declares_expected_interface():
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
-    assert node.values["rank_aware_reacquisition_enabled"] is False
+    assert node.values["rank_aware_reacquisition_enabled"] is True
     assert node.values["absence_recovery_enabled"] is False
 
 
