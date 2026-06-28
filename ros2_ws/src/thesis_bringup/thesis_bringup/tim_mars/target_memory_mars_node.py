@@ -13,6 +13,12 @@ from std_msgs.msg import Empty, String, UInt32
 
 from thesis_msgs.msg import TargetState, Track2DArray
 
+from thesis_bringup.tim_mars.appearance_attachment import (
+    AppearanceAttachmentConfig,
+    AppearanceAttachmentInput,
+    AppearanceAttachmentState,
+    attach_appearance_features,
+)
 from thesis_bringup.tim_mars.mars_reid_backend import MarsReIdBackend
 from thesis_bringup.tim_mars.ros_messages import (
     status_json_from_output,
@@ -91,10 +97,13 @@ class TargetMemoryMarsNode(Node):
         self._last_appearance_skip_reason = "disabled"
 
         self._latest_image_seq = 0
-        self._last_mars_compute_ns = 0
-        self._last_mars_image_seq = -1
-        self._appearance_cache_by_track_id: dict[int, object] = {}
-        self._appearance_cache_seen_ns: dict[int, int] = {}
+        self._appearance_attachment_config = AppearanceAttachmentConfig(
+            enabled=self._appearance_enabled,
+            max_image_age_ms=self._appearance_max_image_age_ms,
+            compute_min_interval_ms=self._appearance_compute_min_interval_ms,
+            cache_ttl_ms=self._appearance_cache_ttl_ms,
+        )
+        self._appearance_attachment_state = AppearanceAttachmentState()
 
         initial_id = params.selected_track_id
         self._pending_select_id: Optional[int] = initial_id if initial_id > 0 else None
@@ -316,119 +325,31 @@ class TargetMemoryMarsNode(Node):
         )
 
     def _attach_appearance_features(self, candidates: list[CandidateTrack]) -> list[CandidateTrack]:
-        self._last_appearance_candidates = len(candidates)
-        self._last_appearance_features_valid = 0
-        self._last_appearance_image_age_ms = None
-
-        if not self._appearance_enabled:
-            self._last_appearance_skip_reason = "disabled"
-            return candidates
-
-        if not candidates:
-            self._last_appearance_skip_reason = "no_candidates"
-            return candidates
-
-        now_ns = time.monotonic_ns()
-
-        if self._latest_image_bgr is None or self._latest_image_seen_ns is None:
-            self._last_appearance_skip_reason = "no_image"
-            return self._attach_cached_appearance_features(candidates, now_ns)
-
-        age_ms = float(now_ns - self._latest_image_seen_ns) / 1e6
-        self._last_appearance_image_age_ms = age_ms
-
-        if age_ms > self._appearance_max_image_age_ms:
-            self._last_appearance_skip_reason = "stale_image"
-            return self._attach_cached_appearance_features(candidates, now_ns)
-
-        if self._mars_backend is None:
-            self._last_appearance_skip_reason = "no_mars_backend"
-            return self._attach_cached_appearance_features(candidates, now_ns)
-
-        elapsed_ms = float(now_ns - self._last_mars_compute_ns) / 1e6
-        image_already_encoded = self._last_mars_image_seq == self._latest_image_seq
-        interval_too_short = (
-            self._last_mars_compute_ns > 0
-            and elapsed_ms < self._appearance_compute_min_interval_ms
+        result = attach_appearance_features(
+            config=self._appearance_attachment_config,
+            state=self._appearance_attachment_state,
+            data=AppearanceAttachmentInput(
+                candidates=candidates,
+                now_ns=time.monotonic_ns(),
+                latest_image_bgr=self._latest_image_bgr,
+                latest_image_seen_ns=self._latest_image_seen_ns,
+                latest_image_seq=self._latest_image_seq,
+                mars_backend=self._mars_backend,
+            ),
         )
 
-        if image_already_encoded or interval_too_short:
-            self._last_appearance_skip_reason = (
-                "cached_same_image" if image_already_encoded else "cached_interval"
-            )
-            return self._attach_cached_appearance_features(candidates, now_ns)
+        self._appearance_attachment_state = result.state
+        self._last_appearance_candidates = result.diagnostics.candidates
+        self._last_appearance_features_valid = result.diagnostics.features_valid
+        self._last_appearance_image_age_ms = result.diagnostics.image_age_ms
+        self._last_appearance_skip_reason = result.diagnostics.skip_reason
 
-        boxes = [candidate.bbox for candidate in candidates]
-        try:
-            appearances = self._mars_backend.encode(self._latest_image_bgr, boxes)
-        except Exception as exc:
-            self._last_appearance_skip_reason = f"mars_error:{type(exc).__name__}"
-            self.get_logger().warn(f"TIM-MARS embedding extraction failed: {exc}")
-            return self._attach_cached_appearance_features(candidates, now_ns)
-
-        self._last_mars_compute_ns = now_ns
-        self._last_mars_image_seq = self._latest_image_seq
-
-        valid_features = 0
-        for candidate, appearance in zip(candidates, appearances):
-            if appearance is None:
-                continue
-            valid_features += 1
-            track_id = int(candidate.track_id)
-            self._appearance_cache_by_track_id[track_id] = appearance
-            self._appearance_cache_seen_ns[track_id] = now_ns
-
-        self._last_appearance_features_valid = valid_features
-        self._last_appearance_skip_reason = "ok"
-
-        return self._attach_cached_appearance_features(candidates, now_ns)
-
-    def _attach_cached_appearance_features(
-        self,
-        candidates: list[CandidateTrack],
-        now_ns: int,
-    ) -> list[CandidateTrack]:
-        enriched: list[CandidateTrack] = []
-        valid_features = 0
-
-        active_track_ids = {int(candidate.track_id) for candidate in candidates}
-
-        for track_id in list(self._appearance_cache_by_track_id.keys()):
-            if track_id not in active_track_ids:
-                self._appearance_cache_by_track_id.pop(track_id, None)
-                self._appearance_cache_seen_ns.pop(track_id, None)
-
-        for candidate in candidates:
-            track_id = int(candidate.track_id)
-            appearance = self._appearance_cache_by_track_id.get(track_id)
-            seen_ns = self._appearance_cache_seen_ns.get(track_id)
-
-            if appearance is not None and seen_ns is not None:
-                cache_age_ms = float(now_ns - seen_ns) / 1e6
-                if cache_age_ms <= self._appearance_cache_ttl_ms:
-                    valid_features += 1
-                else:
-                    appearance = None
-                    self._appearance_cache_by_track_id.pop(track_id, None)
-                    self._appearance_cache_seen_ns.pop(track_id, None)
-
-            enriched.append(
-                CandidateTrack(
-                    track_id=candidate.track_id,
-                    bbox=candidate.bbox,
-                    score=candidate.score,
-                    age=candidate.age,
-                    last_seen=candidate.last_seen,
-                    appearance=appearance,
-                )
+        if result.diagnostics.warning is not None:
+            self.get_logger().warn(
+                f"TIM-MARS embedding extraction failed: {result.diagnostics.warning}"
             )
 
-        self._last_appearance_features_valid = max(
-            int(self._last_appearance_features_valid),
-            int(valid_features),
-        )
-
-        return enriched
+        return result.candidates
 
     def _target_msg_from_output(self, out: TargetMemoryOutput) -> TargetState:
         return target_msg_from_output(
@@ -464,7 +385,7 @@ class TargetMemoryMarsNode(Node):
             appearance_skip_reason=self._last_appearance_skip_reason,
             appearance_compute_min_interval_ms=self._appearance_compute_min_interval_ms,
             appearance_cache_ttl_ms=self._appearance_cache_ttl_ms,
-            appearance_cache_size=len(self._appearance_cache_by_track_id),
+            appearance_cache_size=len(self._appearance_attachment_state.cache_by_track_id),
             appearance_update_cooldown_remaining=int(
                 getattr(self._tim, "_appearance_update_cooldown_frames_remaining", 0)
             ),
