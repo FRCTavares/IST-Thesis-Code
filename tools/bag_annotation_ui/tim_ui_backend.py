@@ -468,21 +468,21 @@ class ReplayRequest(BaseModel):
     tim_mode: str = "mars"
     rate: float = 1.0
 
-    absence_recovery_enabled: bool = True
-    absence_after_missed_frames: int = 4
-    absence_min_total: float = 0.60
-    absence_min_distance: float = 0.35
-    absence_min_scale: float = 0.45
-    absence_min_similarity: float = 0.70
-    absence_appearance_margin: float = 0.25
-    absence_confirm_frames: int = 4
+    absence_recovery_enabled: bool = False
+    absence_after_missed_frames: int = 6
+    absence_min_total: float = 0.45
+    absence_min_distance: float = 0.25
+    absence_min_scale: float = 0.35
+    absence_min_similarity: float = 0.65
+    absence_appearance_margin: float = 0.20
+    absence_confirm_frames: int = 3
 
     rank_aware_reacquisition_enabled: bool = True
-    rank_aware_confirm_frames: int = 4
-    rank_aware_lost_min_total: float = 0.60
-    rank_aware_lost_min_geom: float = 0.25
-    rank_aware_lost_min_app: float = 0.10
-    rank_aware_lost_app_margin: float = 0.10
+    rank_aware_confirm_frames: int = 1
+    rank_aware_lost_min_total: float = 0.40
+    rank_aware_lost_min_geom: float = 0.10
+    rank_aware_lost_min_app: float = 0.05
+    rank_aware_lost_app_margin: float = 0.03
 
     appearance_update_cooldown_frames: int = 8
 

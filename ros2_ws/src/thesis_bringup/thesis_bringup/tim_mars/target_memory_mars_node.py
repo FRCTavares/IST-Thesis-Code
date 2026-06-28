@@ -15,11 +15,15 @@ from std_msgs.msg import Empty, String, UInt32
 from thesis_msgs.msg import TargetState, Track2DArray
 
 from thesis_bringup.tim_mars.mars_reid_backend import MarsReIdBackend
+from thesis_bringup.tim_mars.ros_params import (
+    build_target_memory_config,
+    declare_tim_mars_parameters,
+    read_tim_mars_ros_params,
+)
 from thesis_bringup.tim_mars.target_memory import (
     BBox,
     CandidateTrack,
     TargetIdentityMemory,
-    TargetMemoryConfig,
     TargetMemoryOutput,
     TargetState as TimState,
 )
@@ -45,161 +49,31 @@ class TargetMemoryMarsNode(Node):
     def __init__(self) -> None:
         super().__init__("target_memory_mars_node")
 
-        self.declare_parameter("tracks_topic", "/tracks")
-        self.declare_parameter("target_topic", "/target_memory_mars")
-        self.declare_parameter("status_topic", "/target_memory_mars/status")
-        self.declare_parameter("select_topic", "/target_memory_mars/select")
-        self.declare_parameter("clear_topic", "/target_memory_mars/clear")
-        self.declare_parameter("mirror_target_topic", "/target")
-        self.declare_parameter("mirror_raw_target_selection", True)
+        declare_tim_mars_parameters(self)
+        params = read_tim_mars_ros_params(self)
 
-        self.declare_parameter("image_width", 640.0)
-        self.declare_parameter("image_height", 640.0)
-        self.declare_parameter("tracks_are_normalized", False)
+        self._tracks_topic = params.tracks_topic
+        self._target_topic = params.target_topic
+        self._status_topic = params.status_topic
+        self._select_topic = params.select_topic
+        self._clear_topic = params.clear_topic
+        self._mirror_target_topic = params.mirror_target_topic
+        self._mirror_raw_target_selection = params.mirror_raw_target_selection
 
-        # Optional startup selection. 0 means wait for operator command.
-        self.declare_parameter("selected_track_id", 0)
+        self._image_width = params.image_width
+        self._image_height = params.image_height
+        self._tracks_are_normalized = params.tracks_are_normalized
+        self._auto_select_largest = params.auto_select_largest
+        self._zero_id_when_not_visible = params.zero_id_when_not_visible
 
-        # For bench/debug only. Keep false for thesis semantics.
-        self.declare_parameter("auto_select_largest", False)
+        self._appearance_enabled = params.appearance_enabled
+        self._appearance_image_topic = params.appearance_image_topic
+        self._appearance_max_image_age_ms = params.appearance_max_image_age_ms
+        self._appearance_compute_min_interval_ms = params.appearance_compute_min_interval_ms
+        self._appearance_cache_ttl_ms = params.appearance_cache_ttl_ms
+        self._mars_model_path = params.mars_model_path
+        self._mars_batch_size = params.mars_batch_size
 
-        # When true, id is forced to 0 unless TIM says target is currently visible.
-        # Keep false while comparing /target_memory_mars against /target.
-        self.declare_parameter("zero_id_when_not_visible", True)
-
-        # TIM gates.
-        self.declare_parameter("accept_score_locked", 0.52)
-        self.declare_parameter("accept_score_lost", 0.60)
-        self.declare_parameter("ambiguity_margin", 0.07)
-        self.declare_parameter("max_uncertain_frames", 6)
-        self.declare_parameter("max_lost_frames", 30)
-        self.declare_parameter("min_candidate_score", 0.10)
-        self.declare_parameter("allow_id_switch_recovery", True)
-        self.declare_parameter("id_switch_spatial_gate_enabled", False)
-        self.declare_parameter("id_switch_min_iou", 0.05)
-        self.declare_parameter("id_switch_min_distance", 0.35)
-        self.declare_parameter("id_switch_min_scale", 0.35)
-        self.declare_parameter("hold_last_on_reject_enabled", False)
-        self.declare_parameter("hold_last_on_reject_frames", 0)
-
-        # TIM-V1B appearance extraction.
-        # Disabled by default to preserve TIM-V0 live behaviour.
-        self.declare_parameter("appearance_enabled", True)
-        self.declare_parameter("appearance_image_topic", "/camera/dashboard")
-        self.declare_parameter("appearance_h_bins", 16)
-        self.declare_parameter("appearance_s_bins", 8)
-        self.declare_parameter("appearance_min_bbox_height", 30.0)
-        self.declare_parameter("appearance_max_image_age_ms", 250.0)
-        self.declare_parameter("appearance_compute_min_interval_ms", 250.0)
-        self.declare_parameter("appearance_cache_ttl_ms", 750.0)
-        self.declare_parameter("appearance_weight", 0.12)
-        self.declare_parameter("appearance_min_similarity", 0.35)
-        self.declare_parameter("appearance_update_alpha", 0.10)
-        self.declare_parameter("appearance_ambiguous_only", True)
-        self.declare_parameter("appearance_update_cooldown_after_reacquire_frames", 0)
-        self.declare_parameter("appearance_challenge_enabled", False)
-        self.declare_parameter("appearance_challenge_min_similarity", 0.50)
-        self.declare_parameter("appearance_challenge_margin", 0.20)
-        self.declare_parameter("appearance_challenge_min_total", 0.45)
-        self.declare_parameter("same_id_appearance_ambiguity_enabled", False)
-        self.declare_parameter("same_id_appearance_ambiguity_min_similarity", 0.70)
-        self.declare_parameter("same_id_appearance_ambiguity_margin", 0.05)
-        self.declare_parameter("same_id_appearance_ambiguity_min_challenger_total", 0.35)
-        self.declare_parameter("same_id_appearance_ambiguity_min_challenger_distance", 0.20)
-        self.declare_parameter("same_id_appearance_ambiguity_min_challenger_scale", 0.30)
-        self.declare_parameter("hard_negative_memory_enabled", False)
-        self.declare_parameter("hard_negative_max_entries", 8)
-        self.declare_parameter("hard_negative_update_alpha", 0.20)
-        self.declare_parameter("hard_negative_min_candidate_similarity", 0.70)
-        self.declare_parameter("hard_negative_reject_similarity", 0.80)
-        self.declare_parameter("hard_negative_reject_margin", 0.08)
-        self.declare_parameter("hard_negative_min_geometry", 0.20)
-        self.declare_parameter("appearance_conservative_enabled", False)
-        self.declare_parameter("appearance_conservative_require_appearance", False)
-        self.declare_parameter("appearance_conservative_min_similarity", 0.65)
-        self.declare_parameter("appearance_conservative_margin", 0.25)
-
-        # TIM-MARS backend.
-        self.declare_parameter("mars_model_path", "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb")
-        self.declare_parameter("mars_batch_size", 32)
-
-        # TIM-V2K rank-aware LOST/UNCERTAIN reacquisition.
-        # Disabled by default to preserve TIM-V1 behaviour.
-        self.declare_parameter("rank_aware_reacquisition_enabled", False)
-        self.declare_parameter("rank_aware_lost_min_total", 0.40)
-        self.declare_parameter("rank_aware_lost_min_geom", 0.10)
-        self.declare_parameter("rank_aware_lost_min_app", 0.05)
-        self.declare_parameter("rank_aware_lost_app_margin", 0.03)
-        self.declare_parameter("rank_aware_confirm_frames", 1)
-        self.declare_parameter("rank_aware_missing_ttl_frames", 8)
-
-        # TIM-V4A active appearance-first reselection.
-        self.declare_parameter("active_reselection_enabled", False)
-        self.declare_parameter("active_reselection_min_total", 0.20)
-        self.declare_parameter("active_reselection_min_geometry", 0.05)
-        self.declare_parameter("active_reselection_min_app", 0.82)
-        self.declare_parameter("active_reselection_app_margin", 0.10)
-        self.declare_parameter("active_reselection_confirm_frames", 2)
-        self.declare_parameter("active_reselection_reject_hard_negative", True)
-
-        # TIM-V3A absence-aware new-ID recovery gate.
-        self.declare_parameter("absence_recovery_enabled", False)
-        self.declare_parameter("absence_after_missed_frames", 6)
-        self.declare_parameter("absence_new_id_requires_appearance", True)
-        self.declare_parameter("absence_min_total", 0.45)
-        self.declare_parameter("absence_min_distance", 0.25)
-        self.declare_parameter("absence_min_scale", 0.35)
-        self.declare_parameter("absence_min_similarity", 0.65)
-        self.declare_parameter("absence_appearance_margin", 0.20)
-        self.declare_parameter("absence_confirm_frames", 3)
-        self.declare_parameter("tim_policy", "legacy")
-        self.declare_parameter("v4a_same_id_ambiguity_freezes_memory", True)
-        self.declare_parameter("v4a_same_id_min_geometry_to_publish", 0.45)
-        self.declare_parameter("old_id_distrust_enabled", False)
-        self.declare_parameter("old_id_distrust_min_challenger_app", 0.55)
-        self.declare_parameter("old_id_distrust_min_challenger_geometry", 0.05)
-        self.declare_parameter("old_id_distrust_min_old_id_app_margin", 0.15)
-        self.declare_parameter("old_id_distrust_min_candidates", 2)
-        self.declare_parameter("old_id_distrust_after_missed_frames", 3)
-        self.declare_parameter("old_id_distrust_max_total_gap", 0.12)
-        self.declare_parameter("old_id_handoff_enabled", False)
-        self.declare_parameter("old_id_handoff_min_app", 0.84)
-        self.declare_parameter("old_id_handoff_min_geometry", 0.90)
-        self.declare_parameter("old_id_handoff_min_total", 0.55)
-        self.declare_parameter("old_id_handoff_max_total_gap", 0.12)
-        self.declare_parameter("old_id_handoff_confirm_frames", 3)
-        self.declare_parameter("old_id_handoff_reject_hard_negative", False)
-        self.declare_parameter("old_id_reacquire_block_enabled", False)
-        self.declare_parameter("old_id_reacquire_block_frames", 60)
-        self.declare_parameter("old_id_reacquire_block_after_missed_frames", 3)
-
-        self._tracks_topic = str(self.get_parameter("tracks_topic").value)
-        self._target_topic = str(self.get_parameter("target_topic").value)
-        self._status_topic = str(self.get_parameter("status_topic").value)
-        self._select_topic = str(self.get_parameter("select_topic").value)
-        self._clear_topic = str(self.get_parameter("clear_topic").value)
-        self._mirror_target_topic = str(self.get_parameter("mirror_target_topic").value)
-        self._mirror_raw_target_selection = bool(self.get_parameter("mirror_raw_target_selection").value)
-
-        self._image_width = float(self.get_parameter("image_width").value)
-        self._image_height = float(self.get_parameter("image_height").value)
-        self._tracks_are_normalized = bool(self.get_parameter("tracks_are_normalized").value)
-        self._auto_select_largest = bool(self.get_parameter("auto_select_largest").value)
-        self._zero_id_when_not_visible = bool(self.get_parameter("zero_id_when_not_visible").value)
-
-        self._appearance_enabled = bool(self.get_parameter("appearance_enabled").value)
-        self._appearance_image_topic = str(self.get_parameter("appearance_image_topic").value)
-        self._appearance_max_image_age_ms = float(self.get_parameter("appearance_max_image_age_ms").value)
-        self._appearance_compute_min_interval_ms = max(
-            0.0,
-            float(self.get_parameter("appearance_compute_min_interval_ms").value),
-        )
-        self._appearance_cache_ttl_ms = max(
-            0.0,
-            float(self.get_parameter("appearance_cache_ttl_ms").value),
-        )
-        self._mars_model_path = str(self.get_parameter("mars_model_path").value)
-        self._mars_batch_size = int(self.get_parameter("mars_batch_size").value)
         self._mars_backend = None
         self._latest_image_bgr = None
         self._latest_image_seen_ns: Optional[int] = None
@@ -218,97 +92,11 @@ class TargetMemoryMarsNode(Node):
         self._appearance_cache_by_track_id: dict[int, object] = {}
         self._appearance_cache_seen_ns: dict[int, int] = {}
 
-        initial_id = int(self.get_parameter("selected_track_id").value)
+        initial_id = params.selected_track_id
         self._pending_select_id: Optional[int] = initial_id if initial_id > 0 else None
         self._last_mirrored_target_id: Optional[int] = None
 
-        cfg = TargetMemoryConfig(
-            image_width=self._image_width,
-            image_height=self._image_height,
-            accept_score_locked=float(self.get_parameter("accept_score_locked").value),
-            accept_score_lost=float(self.get_parameter("accept_score_lost").value),
-            ambiguity_margin=float(self.get_parameter("ambiguity_margin").value),
-            max_uncertain_frames=int(self.get_parameter("max_uncertain_frames").value),
-            max_lost_frames=int(self.get_parameter("max_lost_frames").value),
-            min_candidate_score=float(self.get_parameter("min_candidate_score").value),
-            allow_id_switch_recovery=bool(self.get_parameter("allow_id_switch_recovery").value),
-            id_switch_spatial_gate_enabled=bool(self.get_parameter("id_switch_spatial_gate_enabled").value),
-            id_switch_min_iou=float(self.get_parameter("id_switch_min_iou").value),
-            id_switch_min_distance=float(self.get_parameter("id_switch_min_distance").value),
-            id_switch_min_scale=float(self.get_parameter("id_switch_min_scale").value),
-            hold_last_on_reject_enabled=bool(self.get_parameter("hold_last_on_reject_enabled").value),
-            hold_last_on_reject_frames=int(self.get_parameter("hold_last_on_reject_frames").value),
-            appearance_enabled=self._appearance_enabled,
-            appearance_weight=float(self.get_parameter("appearance_weight").value),
-            appearance_min_similarity=float(self.get_parameter("appearance_min_similarity").value),
-            appearance_update_alpha=float(self.get_parameter("appearance_update_alpha").value),
-            appearance_ambiguous_only=bool(self.get_parameter("appearance_ambiguous_only").value),
-            appearance_update_cooldown_after_reacquire_frames=int(self.get_parameter("appearance_update_cooldown_after_reacquire_frames").value),
-            appearance_challenge_enabled=bool(self.get_parameter("appearance_challenge_enabled").value),
-            appearance_challenge_min_similarity=float(self.get_parameter("appearance_challenge_min_similarity").value),
-            appearance_challenge_margin=float(self.get_parameter("appearance_challenge_margin").value),
-            appearance_challenge_min_total=float(self.get_parameter("appearance_challenge_min_total").value),
-            same_id_appearance_ambiguity_enabled=bool(self.get_parameter("same_id_appearance_ambiguity_enabled").value),
-            same_id_appearance_ambiguity_min_similarity=float(self.get_parameter("same_id_appearance_ambiguity_min_similarity").value),
-            same_id_appearance_ambiguity_margin=float(self.get_parameter("same_id_appearance_ambiguity_margin").value),
-            same_id_appearance_ambiguity_min_challenger_total=float(self.get_parameter("same_id_appearance_ambiguity_min_challenger_total").value),
-            same_id_appearance_ambiguity_min_challenger_distance=float(self.get_parameter("same_id_appearance_ambiguity_min_challenger_distance").value),
-            same_id_appearance_ambiguity_min_challenger_scale=float(self.get_parameter("same_id_appearance_ambiguity_min_challenger_scale").value),
-            hard_negative_memory_enabled=bool(self.get_parameter("hard_negative_memory_enabled").value),
-            hard_negative_max_entries=int(self.get_parameter("hard_negative_max_entries").value),
-            hard_negative_update_alpha=float(self.get_parameter("hard_negative_update_alpha").value),
-            hard_negative_min_candidate_similarity=float(self.get_parameter("hard_negative_min_candidate_similarity").value),
-            hard_negative_reject_similarity=float(self.get_parameter("hard_negative_reject_similarity").value),
-            hard_negative_reject_margin=float(self.get_parameter("hard_negative_reject_margin").value),
-            hard_negative_min_geometry=float(self.get_parameter("hard_negative_min_geometry").value),
-            appearance_conservative_enabled=bool(self.get_parameter("appearance_conservative_enabled").value),
-            appearance_conservative_require_appearance=bool(self.get_parameter("appearance_conservative_require_appearance").value),
-            appearance_conservative_min_similarity=float(self.get_parameter("appearance_conservative_min_similarity").value),
-            appearance_conservative_margin=float(self.get_parameter("appearance_conservative_margin").value),
-            rank_aware_reacquisition_enabled=bool(self.get_parameter("rank_aware_reacquisition_enabled").value),
-            rank_aware_lost_min_total=float(self.get_parameter("rank_aware_lost_min_total").value),
-            rank_aware_lost_min_geom=float(self.get_parameter("rank_aware_lost_min_geom").value),
-            rank_aware_lost_min_app=float(self.get_parameter("rank_aware_lost_min_app").value),
-            rank_aware_lost_app_margin=float(self.get_parameter("rank_aware_lost_app_margin").value),
-            rank_aware_confirm_frames=int(self.get_parameter("rank_aware_confirm_frames").value),
-            rank_aware_missing_ttl_frames=int(self.get_parameter("rank_aware_missing_ttl_frames").value),
-            active_reselection_enabled=bool(self.get_parameter("active_reselection_enabled").value),
-            active_reselection_min_total=float(self.get_parameter("active_reselection_min_total").value),
-            active_reselection_min_geometry=float(self.get_parameter("active_reselection_min_geometry").value),
-            active_reselection_min_app=float(self.get_parameter("active_reselection_min_app").value),
-            active_reselection_app_margin=float(self.get_parameter("active_reselection_app_margin").value),
-            active_reselection_confirm_frames=int(self.get_parameter("active_reselection_confirm_frames").value),
-            active_reselection_reject_hard_negative=bool(self.get_parameter("active_reselection_reject_hard_negative").value),
-            absence_recovery_enabled=bool(self.get_parameter("absence_recovery_enabled").value),
-            absence_after_missed_frames=int(self.get_parameter("absence_after_missed_frames").value),
-            absence_new_id_requires_appearance=bool(self.get_parameter("absence_new_id_requires_appearance").value),
-            absence_min_total=float(self.get_parameter("absence_min_total").value),
-            absence_min_distance=float(self.get_parameter("absence_min_distance").value),
-            absence_min_scale=float(self.get_parameter("absence_min_scale").value),
-            absence_min_similarity=float(self.get_parameter("absence_min_similarity").value),
-            absence_appearance_margin=float(self.get_parameter("absence_appearance_margin").value),
-            absence_confirm_frames=int(self.get_parameter("absence_confirm_frames").value),
-            tim_policy=str(self.get_parameter("tim_policy").value),
-            v4a_same_id_ambiguity_freezes_memory=bool(self.get_parameter("v4a_same_id_ambiguity_freezes_memory").value),
-            v4a_same_id_min_geometry_to_publish=float(self.get_parameter("v4a_same_id_min_geometry_to_publish").value),
-            old_id_distrust_enabled=bool(self.get_parameter("old_id_distrust_enabled").value),
-            old_id_distrust_min_challenger_app=float(self.get_parameter("old_id_distrust_min_challenger_app").value),
-            old_id_distrust_min_challenger_geometry=float(self.get_parameter("old_id_distrust_min_challenger_geometry").value),
-            old_id_distrust_min_old_id_app_margin=float(self.get_parameter("old_id_distrust_min_old_id_app_margin").value),
-            old_id_distrust_min_candidates=int(self.get_parameter("old_id_distrust_min_candidates").value),
-            old_id_distrust_after_missed_frames=int(self.get_parameter("old_id_distrust_after_missed_frames").value),
-            old_id_distrust_max_total_gap=float(self.get_parameter("old_id_distrust_max_total_gap").value),
-            old_id_handoff_enabled=bool(self.get_parameter("old_id_handoff_enabled").value),
-            old_id_handoff_min_app=float(self.get_parameter("old_id_handoff_min_app").value),
-            old_id_handoff_min_geometry=float(self.get_parameter("old_id_handoff_min_geometry").value),
-            old_id_handoff_min_total=float(self.get_parameter("old_id_handoff_min_total").value),
-            old_id_handoff_max_total_gap=float(self.get_parameter("old_id_handoff_max_total_gap").value),
-            old_id_handoff_confirm_frames=int(self.get_parameter("old_id_handoff_confirm_frames").value),
-            old_id_handoff_reject_hard_negative=bool(self.get_parameter("old_id_handoff_reject_hard_negative").value),
-            old_id_reacquire_block_enabled=bool(self.get_parameter("old_id_reacquire_block_enabled").value),
-            old_id_reacquire_block_frames=int(self.get_parameter("old_id_reacquire_block_frames").value),
-            old_id_reacquire_block_after_missed_frames=int(self.get_parameter("old_id_reacquire_block_after_missed_frames").value),
-        )
+        cfg = build_target_memory_config(self, params)
         self._tim = TargetIdentityMemory(cfg)
 
         self.get_logger().info(

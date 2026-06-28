@@ -1388,17 +1388,17 @@ async function runTim() {
     tracker: document.getElementById("tracker").value,
     tim_mode: "mars",
     rate: parseFloat(document.getElementById("rate").value || "1.0"),
-    absence_min_total: 0.60,
-    absence_min_distance: 0.35,
-    absence_min_scale: 0.45,
-    absence_min_similarity: 0.70,
-    absence_appearance_margin: 0.25,
-    absence_confirm_frames: 4,
-    rank_aware_lost_min_total: 0.60,
-    rank_aware_lost_min_geom: 0.25,
-    rank_aware_lost_min_app: 0.10,
-    rank_aware_lost_app_margin: 0.10,
-    rank_aware_confirm_frames: 4
+    absence_min_total: 0.45,
+    absence_min_distance: 0.25,
+    absence_min_scale: 0.35,
+    absence_min_similarity: 0.65,
+    absence_appearance_margin: 0.20,
+    absence_confirm_frames: 3,
+    rank_aware_lost_min_total: 0.40,
+    rank_aware_lost_min_geom: 0.10,
+    rank_aware_lost_min_app: 0.05,
+    rank_aware_lost_app_margin: 0.03,
+    rank_aware_confirm_frames: 1
   };
   const res = await fetch("/api/replay", {
     method: "POST",
