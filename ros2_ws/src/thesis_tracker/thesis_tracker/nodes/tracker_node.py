@@ -20,11 +20,11 @@ from sensor_msgs.msg import Image
 from vision_msgs.msg import Detection2DArray
 from thesis_msgs.msg import Track2D, Track2DArray, Timing
 
-from .backends import BBox, TrackOutput
-from .backends.sort_backend import SortBackend
-from .backends.ocsort_backend import OCSortBackend
-from .backends.bytetrack_backend import ByteTrackBackend
-from .backends.deepsort_core_backend import DeepSortBackend
+from thesis_tracker.backends import BBox, TrackOutput
+from thesis_tracker.backends.sort_backend import SortBackend
+from thesis_tracker.backends.ocsort_backend import OCSortBackend
+from thesis_tracker.backends.bytetrack_backend import ByteTrackBackend
+from thesis_tracker.backends.deepsort_core_backend import DeepSortBackend
 
 # Type alias for tracker backends
 TrackerBackendType = Union[SortBackend, OCSortBackend, ByteTrackBackend, DeepSortBackend]
