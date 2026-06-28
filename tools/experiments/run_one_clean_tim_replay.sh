@@ -184,16 +184,6 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p appearance_min_similarity:=${MARS_APPEARANCE_MIN_SIMILARITY:-0.35} \
     -p appearance_ambiguous_only:=${MARS_APPEARANCE_AMBIGUOUS_ONLY:-true} \
     -p appearance_update_cooldown_after_reacquire_frames:=${MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES:-0} \
-    -p appearance_challenge_enabled:=${MARS_APPEARANCE_CHALLENGE_ENABLED:-false} \
-    -p appearance_challenge_min_similarity:=${MARS_APPEARANCE_CHALLENGE_MIN_SIMILARITY:-0.50} \
-    -p appearance_challenge_margin:=${MARS_APPEARANCE_CHALLENGE_MARGIN:-0.20} \
-    -p appearance_challenge_min_total:=${MARS_APPEARANCE_CHALLENGE_MIN_TOTAL:-0.45} \
-    -p same_id_appearance_ambiguity_enabled:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_ENABLED:-false} \
-    -p same_id_appearance_ambiguity_min_similarity:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_SIMILARITY:-0.70} \
-    -p same_id_appearance_ambiguity_margin:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MARGIN:-0.05} \
-    -p same_id_appearance_ambiguity_min_challenger_total:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_CHALLENGER_TOTAL:-0.35} \
-    -p same_id_appearance_ambiguity_min_challenger_distance:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_CHALLENGER_DISTANCE:-0.20} \
-    -p same_id_appearance_ambiguity_min_challenger_scale:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_CHALLENGER_SCALE:-0.30} \
     -p hard_negative_memory_enabled:=${MARS_HARD_NEGATIVE_MEMORY_ENABLED:-false} \
     -p hard_negative_max_entries:=${MARS_HARD_NEGATIVE_MAX_ENTRIES:-8} \
     -p hard_negative_update_alpha:=${MARS_HARD_NEGATIVE_UPDATE_ALPHA:-0.20} \
@@ -221,26 +211,6 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p absence_min_similarity:=${MARS_ABSENCE_MIN_SIMILARITY:-0.65} \
     -p absence_appearance_margin:=${MARS_ABSENCE_APPEARANCE_MARGIN:-0.20} \
     -p absence_confirm_frames:=${MARS_ABSENCE_CONFIRM_FRAMES:-3} \
-    -p tim_policy:=${MARS_TIM_POLICY:-legacy} \
-    -p v4a_same_id_ambiguity_freezes_memory:=${MARS_V4A_SAME_ID_AMBIGUITY_FREEZES_MEMORY:-true} \
-    -p v4a_same_id_min_geometry_to_publish:=${MARS_V4A_SAME_ID_MIN_GEOMETRY_TO_PUBLISH:-0.45} \
-    -p old_id_distrust_enabled:=${MARS_OLD_ID_DISTRUST_ENABLED:-false} \
-    -p old_id_distrust_min_challenger_app:=${MARS_OLD_ID_DISTRUST_MIN_CHALLENGER_APP:-0.55} \
-    -p old_id_distrust_min_challenger_geometry:=${MARS_OLD_ID_DISTRUST_MIN_CHALLENGER_GEOMETRY:-0.05} \
-    -p old_id_distrust_min_old_id_app_margin:=${MARS_OLD_ID_DISTRUST_MIN_OLD_ID_APP_MARGIN:-0.15} \
-    -p old_id_distrust_min_candidates:=${MARS_OLD_ID_DISTRUST_MIN_CANDIDATES:-2} \
-    -p old_id_distrust_after_missed_frames:=${MARS_OLD_ID_DISTRUST_AFTER_MISSED_FRAMES:-3} \
-    -p old_id_distrust_max_total_gap:=${MARS_OLD_ID_DISTRUST_MAX_TOTAL_GAP:-0.12} \
-    -p old_id_handoff_enabled:=${MARS_OLD_ID_HANDOFF_ENABLED:-false} \
-    -p old_id_handoff_min_app:=${MARS_OLD_ID_HANDOFF_MIN_APP:-0.84} \
-    -p old_id_handoff_min_geometry:=${MARS_OLD_ID_HANDOFF_MIN_GEOMETRY:-0.90} \
-    -p old_id_handoff_min_total:=${MARS_OLD_ID_HANDOFF_MIN_TOTAL:-0.55} \
-    -p old_id_handoff_max_total_gap:=${MARS_OLD_ID_HANDOFF_MAX_TOTAL_GAP:-0.12} \
-    -p old_id_handoff_confirm_frames:=${MARS_OLD_ID_HANDOFF_CONFIRM_FRAMES:-3} \
-    -p old_id_handoff_reject_hard_negative:=${MARS_OLD_ID_HANDOFF_REJECT_HARD_NEGATIVE:-false} \
-    -p old_id_reacquire_block_enabled:=${MARS_OLD_ID_REACQUIRE_BLOCK_ENABLED:-false} \
-    -p old_id_reacquire_block_frames:=${MARS_OLD_ID_REACQUIRE_BLOCK_FRAMES:-60} \
-    -p old_id_reacquire_block_after_missed_frames:=${MARS_OLD_ID_REACQUIRE_BLOCK_AFTER_MISSED_FRAMES:-3} \
     >"$LOG_DIR/target_memory_mars.log" 2>&1 &
 fi
 

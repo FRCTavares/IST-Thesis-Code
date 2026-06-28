@@ -186,12 +186,6 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p appearance_weight:=${MARS_APPEARANCE_WEIGHT:-0.12} \
     -p appearance_min_similarity:=${MARS_APPEARANCE_MIN_SIMILARITY:-0.35} \
     -p appearance_ambiguous_only:=${MARS_APPEARANCE_AMBIGUOUS_ONLY:-true} \
-    -p same_id_appearance_ambiguity_enabled:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_ENABLED:-false} \
-    -p same_id_appearance_ambiguity_min_similarity:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_SIMILARITY:-0.70} \
-    -p same_id_appearance_ambiguity_margin:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MARGIN:-0.05} \
-    -p same_id_appearance_ambiguity_min_challenger_total:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_CHALLENGER_TOTAL:-0.35} \
-    -p same_id_appearance_ambiguity_min_challenger_distance:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_CHALLENGER_DISTANCE:-0.20} \
-    -p same_id_appearance_ambiguity_min_challenger_scale:=${MARS_SAME_ID_APPEARANCE_AMBIGUITY_MIN_CHALLENGER_SCALE:-0.30} \
     -p hard_negative_memory_enabled:=${MARS_HARD_NEGATIVE_MEMORY_ENABLED:-false} \
     -p hard_negative_max_entries:=${MARS_HARD_NEGATIVE_MAX_ENTRIES:-8} \
     -p hard_negative_update_alpha:=${MARS_HARD_NEGATIVE_UPDATE_ALPHA:-0.20} \
@@ -219,9 +213,6 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p absence_min_similarity:=${MARS_ABSENCE_MIN_SIMILARITY:-0.65} \
     -p absence_appearance_margin:=${MARS_ABSENCE_APPEARANCE_MARGIN:-0.20} \
     -p absence_confirm_frames:=${MARS_ABSENCE_CONFIRM_FRAMES:-3} \
-    -p tim_policy:=${MARS_TIM_POLICY:-legacy} \
-    -p v4a_same_id_ambiguity_freezes_memory:=${MARS_V4A_SAME_ID_AMBIGUITY_FREEZES_MEMORY:-true} \
-    -p v4a_same_id_min_geometry_to_publish:=${MARS_V4A_SAME_ID_MIN_GEOMETRY_TO_PUBLISH:-0.45} \
     >"$LOG_DIR/target_memory_mars.log" 2>&1 &
 fi
 

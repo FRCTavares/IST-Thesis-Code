@@ -64,8 +64,6 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("id_switch_min_iou", 0.05)
     node.declare_parameter("id_switch_min_distance", 0.35)
     node.declare_parameter("id_switch_min_scale", 0.35)
-    node.declare_parameter("hold_last_on_reject_enabled", False)
-    node.declare_parameter("hold_last_on_reject_frames", 0)
 
     # Appearance extraction / ReID.
     node.declare_parameter("appearance_enabled", True)
@@ -78,16 +76,6 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("appearance_update_alpha", 0.10)
     node.declare_parameter("appearance_ambiguous_only", True)
     node.declare_parameter("appearance_update_cooldown_after_reacquire_frames", 0)
-    node.declare_parameter("appearance_challenge_enabled", False)
-    node.declare_parameter("appearance_challenge_min_similarity", 0.50)
-    node.declare_parameter("appearance_challenge_margin", 0.20)
-    node.declare_parameter("appearance_challenge_min_total", 0.45)
-    node.declare_parameter("same_id_appearance_ambiguity_enabled", False)
-    node.declare_parameter("same_id_appearance_ambiguity_min_similarity", 0.70)
-    node.declare_parameter("same_id_appearance_ambiguity_margin", 0.05)
-    node.declare_parameter("same_id_appearance_ambiguity_min_challenger_total", 0.35)
-    node.declare_parameter("same_id_appearance_ambiguity_min_challenger_distance", 0.20)
-    node.declare_parameter("same_id_appearance_ambiguity_min_challenger_scale", 0.30)
     node.declare_parameter("hard_negative_memory_enabled", False)
     node.declare_parameter("hard_negative_max_entries", 8)
     node.declare_parameter("hard_negative_update_alpha", 0.20)
@@ -114,13 +102,6 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("rank_aware_confirm_frames", 1)
     node.declare_parameter("rank_aware_missing_ttl_frames", 8)
 
-    node.declare_parameter("active_reselection_enabled", False)
-    node.declare_parameter("active_reselection_min_total", 0.20)
-    node.declare_parameter("active_reselection_min_geometry", 0.05)
-    node.declare_parameter("active_reselection_min_app", 0.82)
-    node.declare_parameter("active_reselection_app_margin", 0.10)
-    node.declare_parameter("active_reselection_confirm_frames", 2)
-    node.declare_parameter("active_reselection_reject_hard_negative", True)
 
     node.declare_parameter("absence_recovery_enabled", False)
     node.declare_parameter("absence_after_missed_frames", 6)
@@ -132,27 +113,7 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("absence_appearance_margin", 0.20)
     node.declare_parameter("absence_confirm_frames", 3)
 
-    node.declare_parameter("tim_policy", "legacy")
-    node.declare_parameter("v4a_same_id_ambiguity_freezes_memory", True)
-    node.declare_parameter("v4a_same_id_min_geometry_to_publish", 0.45)
 
-    node.declare_parameter("old_id_distrust_enabled", False)
-    node.declare_parameter("old_id_distrust_min_challenger_app", 0.55)
-    node.declare_parameter("old_id_distrust_min_challenger_geometry", 0.05)
-    node.declare_parameter("old_id_distrust_min_old_id_app_margin", 0.15)
-    node.declare_parameter("old_id_distrust_min_candidates", 2)
-    node.declare_parameter("old_id_distrust_after_missed_frames", 3)
-    node.declare_parameter("old_id_distrust_max_total_gap", 0.12)
-    node.declare_parameter("old_id_handoff_enabled", False)
-    node.declare_parameter("old_id_handoff_min_app", 0.84)
-    node.declare_parameter("old_id_handoff_min_geometry", 0.90)
-    node.declare_parameter("old_id_handoff_min_total", 0.55)
-    node.declare_parameter("old_id_handoff_max_total_gap", 0.12)
-    node.declare_parameter("old_id_handoff_confirm_frames", 3)
-    node.declare_parameter("old_id_handoff_reject_hard_negative", False)
-    node.declare_parameter("old_id_reacquire_block_enabled", False)
-    node.declare_parameter("old_id_reacquire_block_frames", 60)
-    node.declare_parameter("old_id_reacquire_block_after_missed_frames", 3)
 
 
 def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
@@ -205,8 +166,6 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         id_switch_min_iou=float(node.get_parameter("id_switch_min_iou").value),
         id_switch_min_distance=float(node.get_parameter("id_switch_min_distance").value),
         id_switch_min_scale=float(node.get_parameter("id_switch_min_scale").value),
-        hold_last_on_reject_enabled=bool(node.get_parameter("hold_last_on_reject_enabled").value),
-        hold_last_on_reject_frames=int(node.get_parameter("hold_last_on_reject_frames").value),
         appearance_enabled=params.appearance_enabled,
         appearance_weight=float(node.get_parameter("appearance_weight").value),
         appearance_min_similarity=float(node.get_parameter("appearance_min_similarity").value),
@@ -214,24 +173,6 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         appearance_ambiguous_only=bool(node.get_parameter("appearance_ambiguous_only").value),
         appearance_update_cooldown_after_reacquire_frames=int(
             node.get_parameter("appearance_update_cooldown_after_reacquire_frames").value
-        ),
-        appearance_challenge_enabled=bool(node.get_parameter("appearance_challenge_enabled").value),
-        appearance_challenge_min_similarity=float(node.get_parameter("appearance_challenge_min_similarity").value),
-        appearance_challenge_margin=float(node.get_parameter("appearance_challenge_margin").value),
-        appearance_challenge_min_total=float(node.get_parameter("appearance_challenge_min_total").value),
-        same_id_appearance_ambiguity_enabled=bool(node.get_parameter("same_id_appearance_ambiguity_enabled").value),
-        same_id_appearance_ambiguity_min_similarity=float(
-            node.get_parameter("same_id_appearance_ambiguity_min_similarity").value
-        ),
-        same_id_appearance_ambiguity_margin=float(node.get_parameter("same_id_appearance_ambiguity_margin").value),
-        same_id_appearance_ambiguity_min_challenger_total=float(
-            node.get_parameter("same_id_appearance_ambiguity_min_challenger_total").value
-        ),
-        same_id_appearance_ambiguity_min_challenger_distance=float(
-            node.get_parameter("same_id_appearance_ambiguity_min_challenger_distance").value
-        ),
-        same_id_appearance_ambiguity_min_challenger_scale=float(
-            node.get_parameter("same_id_appearance_ambiguity_min_challenger_scale").value
         ),
         hard_negative_memory_enabled=bool(node.get_parameter("hard_negative_memory_enabled").value),
         hard_negative_max_entries=int(node.get_parameter("hard_negative_max_entries").value),
@@ -253,13 +194,6 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         rank_aware_lost_app_margin=float(node.get_parameter("rank_aware_lost_app_margin").value),
         rank_aware_confirm_frames=int(node.get_parameter("rank_aware_confirm_frames").value),
         rank_aware_missing_ttl_frames=int(node.get_parameter("rank_aware_missing_ttl_frames").value),
-        active_reselection_enabled=bool(node.get_parameter("active_reselection_enabled").value),
-        active_reselection_min_total=float(node.get_parameter("active_reselection_min_total").value),
-        active_reselection_min_geometry=float(node.get_parameter("active_reselection_min_geometry").value),
-        active_reselection_min_app=float(node.get_parameter("active_reselection_min_app").value),
-        active_reselection_app_margin=float(node.get_parameter("active_reselection_app_margin").value),
-        active_reselection_confirm_frames=int(node.get_parameter("active_reselection_confirm_frames").value),
-        active_reselection_reject_hard_negative=bool(node.get_parameter("active_reselection_reject_hard_negative").value),
         absence_recovery_enabled=bool(node.get_parameter("absence_recovery_enabled").value),
         absence_after_missed_frames=int(node.get_parameter("absence_after_missed_frames").value),
         absence_new_id_requires_appearance=bool(node.get_parameter("absence_new_id_requires_appearance").value),
@@ -269,26 +203,4 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         absence_min_similarity=float(node.get_parameter("absence_min_similarity").value),
         absence_appearance_margin=float(node.get_parameter("absence_appearance_margin").value),
         absence_confirm_frames=int(node.get_parameter("absence_confirm_frames").value),
-        tim_policy=str(node.get_parameter("tim_policy").value),
-        v4a_same_id_ambiguity_freezes_memory=bool(node.get_parameter("v4a_same_id_ambiguity_freezes_memory").value),
-        v4a_same_id_min_geometry_to_publish=float(node.get_parameter("v4a_same_id_min_geometry_to_publish").value),
-        old_id_distrust_enabled=bool(node.get_parameter("old_id_distrust_enabled").value),
-        old_id_distrust_min_challenger_app=float(node.get_parameter("old_id_distrust_min_challenger_app").value),
-        old_id_distrust_min_challenger_geometry=float(node.get_parameter("old_id_distrust_min_challenger_geometry").value),
-        old_id_distrust_min_old_id_app_margin=float(node.get_parameter("old_id_distrust_min_old_id_app_margin").value),
-        old_id_distrust_min_candidates=int(node.get_parameter("old_id_distrust_min_candidates").value),
-        old_id_distrust_after_missed_frames=int(node.get_parameter("old_id_distrust_after_missed_frames").value),
-        old_id_distrust_max_total_gap=float(node.get_parameter("old_id_distrust_max_total_gap").value),
-        old_id_handoff_enabled=bool(node.get_parameter("old_id_handoff_enabled").value),
-        old_id_handoff_min_app=float(node.get_parameter("old_id_handoff_min_app").value),
-        old_id_handoff_min_geometry=float(node.get_parameter("old_id_handoff_min_geometry").value),
-        old_id_handoff_min_total=float(node.get_parameter("old_id_handoff_min_total").value),
-        old_id_handoff_max_total_gap=float(node.get_parameter("old_id_handoff_max_total_gap").value),
-        old_id_handoff_confirm_frames=int(node.get_parameter("old_id_handoff_confirm_frames").value),
-        old_id_handoff_reject_hard_negative=bool(node.get_parameter("old_id_handoff_reject_hard_negative").value),
-        old_id_reacquire_block_enabled=bool(node.get_parameter("old_id_reacquire_block_enabled").value),
-        old_id_reacquire_block_frames=int(node.get_parameter("old_id_reacquire_block_frames").value),
-        old_id_reacquire_block_after_missed_frames=int(
-            node.get_parameter("old_id_reacquire_block_after_missed_frames").value
-        ),
     )

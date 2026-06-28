@@ -66,13 +66,11 @@ def main() -> None:
             "reason": payload.get("reason"),
             "memory_update_frozen": payload.get("memory_update_frozen"),
             "memory_update_freeze_reason": payload.get("memory_update_freeze_reason"),
-            "same_id_appearance_ambiguity": payload.get("same_id_appearance_ambiguity"),
             "appearance_margin_best_vs_second": payload.get("appearance_margin_best_vs_second"),
             "geometry_strength": payload.get("geometry_strength"),
             "risk_hard_negative": payload.get("risk_hard_negative"),
             "risk_absence": payload.get("risk_absence"),
             "risk_scene_ambiguity": payload.get("risk_scene_ambiguity"),
-            "v4a_publish_allowed": payload.get("v4a_publish_allowed"),
             "best_track_id": best.get("track_id"),
         }
 
@@ -106,9 +104,7 @@ def main() -> None:
         "t", "frame_id", "state", "control_mode", "target_track_id", "visible",
         "reacquired", "quality", "frames_since_seen", "reason",
         "memory_update_frozen", "memory_update_freeze_reason",
-        "same_id_appearance_ambiguity", "appearance_margin_best_vs_second",
         "geometry_strength", "risk_hard_negative", "risk_absence",
-        "risk_scene_ambiguity", "v4a_publish_allowed", "best_track_id",
         "rank", "score_track_id", "total", "iou", "distance", "scale",
         "confidence", "id_bonus", "appearance", "appearance_used",
         "appearance_raw", "appearance_gate_passed", "geometry_allows_appearance",

@@ -129,14 +129,6 @@ class TargetMemoryConfig:
     id_switch_min_distance: float = 0.35
     id_switch_min_scale: float = 0.35
 
-    # Bounded hold-last safety hysteresis.
-    # When a short ambiguity or rejected ID switch occurs, TIM may keep
-    # publishing the last selected target box for a few frames instead of
-    # immediately dropping to a lost output. This never accepts the distractor;
-    # it only preserves the last trusted selected-target state.
-    hold_last_on_reject_enabled: bool = False
-    hold_last_on_reject_frames: int = 0
-
     # TIM-V1A optional appearance cue.
     # Disabled by default so TIM-V0 behaviour remains unchanged.
     appearance_enabled: bool = False
@@ -148,25 +140,6 @@ class TargetMemoryConfig:
     # Freeze appearance memory updates after risky reacquisition / ID switch.
     # Default 0 preserves previous behaviour.
     appearance_update_cooldown_after_reacquire_frames: int = 0
-
-    # TIM-V1 experimental safety gate.
-    # When enabled, a strong appearance challenger can force UNCERTAIN
-    # instead of allowing geometry to keep a wrong LOCKED target.
-    appearance_challenge_enabled: bool = False
-    appearance_challenge_min_similarity: float = 0.50
-    appearance_challenge_margin: float = 0.20
-    appearance_challenge_min_total: float = 0.45
-
-    # TIM-V3B same-ID drift safety gate.
-    # Trackers can keep the same numeric ID while the physical person behind
-    # that ID changes during a crossing. Same-ID continuity must therefore not
-    # automatically override close appearance challengers.
-    same_id_appearance_ambiguity_enabled: bool = False
-    same_id_appearance_ambiguity_min_similarity: float = 0.70
-    same_id_appearance_ambiguity_margin: float = 0.05
-    same_id_appearance_ambiguity_min_challenger_total: float = 0.35
-    same_id_appearance_ambiguity_min_challenger_distance: float = 0.20
-    same_id_appearance_ambiguity_min_challenger_scale: float = 0.30
 
     # TIM-V3C hard-negative memory.
     # During trusted lock, non-selected nearby candidates are remembered as
@@ -197,18 +170,6 @@ class TargetMemoryConfig:
     rank_aware_confirm_frames: int = 1
     rank_aware_missing_ttl_frames: int = 8
 
-    # TIM-V4A active appearance-first reselection.
-    # This is separate from rank-aware recovery: during LOST/UNCERTAIN it ranks
-    # candidates primarily by positive appearance memory, then applies geometry,
-    # margin, hard-negative, and confirmation gates before accepting a new ID.
-    active_reselection_enabled: bool = False
-    active_reselection_min_total: float = 0.20
-    active_reselection_min_geometry: float = 0.05
-    active_reselection_min_app: float = 0.82
-    active_reselection_app_margin: float = 0.10
-    active_reselection_confirm_frames: int = 2
-    active_reselection_reject_hard_negative: bool = True
-
     # TIM-V3A absence-aware new-ID recovery gate.
     # This protects the controller-facing target from jumping to a distractor
     # after the selected person has likely left the scene or remained hidden
@@ -223,45 +184,6 @@ class TargetMemoryConfig:
     absence_appearance_margin: float = 0.20
     absence_confirm_frames: int = 3
 
-    # TIM-MARS v4A policy switch.
-    # "legacy" preserves the current hard-gate behaviour.
-    # "v4a_risk" keeps same-ID output when geometry is strong, while freezing
-    # appearance-memory update under same-ID appearance ambiguity.
-    tim_policy: str = "legacy"
-    v4a_same_id_ambiguity_freezes_memory: bool = True
-    v4a_same_id_min_geometry_to_publish: float = 0.45
-
-    # TIM-MARS v4B old-ID distrust gate.
-    # After crowded occlusion/crossing, tracker ID continuity can become
-    # unsafe. If the old selected ID remains visible but a different
-    # candidate has similar/stronger appearance evidence, suppress the old ID
-    # instead of publishing a plausible wrong target.
-    old_id_distrust_enabled: bool = False
-    old_id_distrust_min_challenger_app: float = 0.55
-    old_id_distrust_min_challenger_geometry: float = 0.05
-    old_id_distrust_min_old_id_app_margin: float = 0.15
-    old_id_distrust_min_candidates: int = 2
-    old_id_distrust_after_missed_frames: int = 3
-    old_id_distrust_max_total_gap: float = 0.12
-
-    # TIM-MARS v4C confirmed handoff after old-ID distrust.
-    # v4B can safely suppress a stale old ID; v4C adds a controlled path to
-    # switch to a stable non-old candidate instead of remaining LOST forever.
-    old_id_handoff_enabled: bool = False
-    old_id_handoff_min_app: float = 0.84
-    old_id_handoff_min_geometry: float = 0.90
-    old_id_handoff_min_total: float = 0.55
-    old_id_handoff_max_total_gap: float = 0.12
-    old_id_handoff_confirm_frames: int = 3
-    old_id_handoff_reject_hard_negative: bool = False
-
-    # TIM-MARS v4D old-ID reacquire block.
-    # If the old selected ID becomes suspicious, do not immediately accept
-    # the same old ID again on a later frame. This preserves the safety
-    # decision made by v4B/v4C across short diagnostic branch changes.
-    old_id_reacquire_block_enabled: bool = False
-    old_id_reacquire_block_frames: int = 60
-    old_id_reacquire_block_after_missed_frames: int = 3
 
 
 @dataclass
@@ -281,13 +203,11 @@ class TargetMemoryOutput:
     all_scores: List[CandidateScore] = field(default_factory=list)
     memory_update_frozen: bool = False
     memory_update_freeze_reason: str = ""
-    same_id_appearance_ambiguity: bool = False
     appearance_margin_best_vs_second: float = 0.0
     geometry_strength: float = 0.0
     risk_hard_negative: bool = False
     risk_absence: bool = False
     risk_scene_ambiguity: bool = False
-    v4a_publish_allowed: bool = False
 
     @property
     def control_valid(self) -> bool:
@@ -444,8 +364,6 @@ class TargetIdentityMemory:
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_candidate_id: Optional[int] = None
         self._rank_reacq_confirm_count = 0
-        self._active_reselect_candidate_id: Optional[int] = None
-        self._active_reselect_confirm_count = 0
         self._absence_reacq_candidate_id: Optional[int] = None
         self._absence_reacq_confirm_count = 0
         self._hard_negative_memory: List[Any] = []
@@ -467,8 +385,6 @@ class TargetIdentityMemory:
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_candidate_id = None
         self._rank_reacq_confirm_count = 0
-        self._active_reselect_candidate_id = None
-        self._active_reselect_confirm_count = 0
         self._absence_reacq_candidate_id = None
         self._absence_reacq_confirm_count = 0
         self._hard_negative_memory = []
@@ -490,8 +406,6 @@ class TargetIdentityMemory:
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_candidate_id = None
         self._rank_reacq_confirm_count = 0
-        self._active_reselect_candidate_id = None
-        self._active_reselect_confirm_count = 0
         self._absence_reacq_candidate_id = None
         self._absence_reacq_confirm_count = 0
         self._hard_negative_memory = []
@@ -550,24 +464,6 @@ class TargetIdentityMemory:
         )
         scores_sorted[0] = best
 
-        active_best, active_pending = self._active_reselection_candidate(
-            scores_sorted,
-            candidates,
-        )
-        if active_best is not None:
-            active_candidate = next(c for c in candidates if c.track_id == active_best.track_id)
-            return self._accept(
-                active_candidate,
-                best_score=active_best,
-                all_scores=scores_sorted,
-            )
-
-        if active_pending:
-            return self._miss(
-                reason="active_reselection_pending",
-                best_score=best,
-                all_scores=scores_sorted,
-            )
 
         absence_reject_reason = self._absence_aware_reacquisition_reject_reason(
             best,
@@ -669,79 +565,8 @@ class TargetIdentityMemory:
                     all_scores=scores_sorted,
                 )
 
-        if self._appearance_challenge_should_hold(best, scores_sorted, same_id=same_id):
-            return self._miss(
-                reason="appearance_challenge_uncertain",
-                best_score=best,
-                all_scores=scores_sorted,
-            )
-
-        same_id_appearance_ambiguity = self._same_id_appearance_ambiguity_should_hold(
-            best,
-            scores_sorted,
-            same_id=same_id,
-        )
-        if same_id_appearance_ambiguity:
-            if str(self.cfg.tim_policy).strip().lower() != "v4a_risk":
-                return self._miss(
-                    reason="same_id_appearance_ambiguity",
-                    best_score=best,
-                    all_scores=scores_sorted,
-                    same_id_appearance_ambiguity=True,
-                    memory_update_frozen=bool(self.cfg.v4a_same_id_ambiguity_freezes_memory),
-                    memory_update_freeze_reason="same_id_appearance_ambiguity",
-                )
-
-            geometry_strength = max(float(best.distance), float(best.iou), float(best.scale))
-            if geometry_strength < self.cfg.v4a_same_id_min_geometry_to_publish:
-                return self._miss(
-                    reason=(
-                        "v4a_same_id_appearance_ambiguity_high_risk:"
-                        f" geometry={geometry_strength:.3f}"
-                        f"<{self.cfg.v4a_same_id_min_geometry_to_publish:.3f}"
-                    ),
-                    best_score=best,
-                    all_scores=scores_sorted,
-                    same_id_appearance_ambiguity=True,
-                    memory_update_frozen=bool(self.cfg.v4a_same_id_ambiguity_freezes_memory),
-                    memory_update_freeze_reason="same_id_appearance_ambiguity",
-                )
-
-        old_id_distrust, old_id_distrust_reason = self._old_id_distrust_should_hold(
-            best,
-            scores_sorted,
-            same_id=same_id,
-        )
-        if old_id_distrust:
-            self._start_old_id_reacquire_block()
-
-            handoff_score, handoff_reason = self._old_id_handoff_candidate(
-                best,
-                scores_sorted,
-                candidates,
-            )
-
-            if handoff_score is not None:
-                handoff_candidate = next(
-                    c for c in candidates if int(c.track_id) == int(handoff_score.track_id)
-                )
-                return self._accept(
-                    handoff_candidate,
-                    best_score=handoff_score,
-                    all_scores=scores_sorted,
-                )
-
-            return self._miss(
-                reason=handoff_reason or old_id_distrust_reason,
-                best_score=best,
-                all_scores=scores_sorted,
-                memory_update_frozen=True,
-                memory_update_freeze_reason="old_id_distrust",
-            )
 
         if self._hard_negative_should_reject(best):
-            if same_id and self._m.state in {TargetState.UNCERTAIN, TargetState.LOST}:
-                self._start_old_id_reacquire_block()
 
             return self._miss(
                 reason=(
@@ -753,32 +578,11 @@ class TargetIdentityMemory:
                 all_scores=scores_sorted,
             )
 
-        block_reason = self._same_old_id_reacquire_block_reason(best, same_id=same_id)
-        if block_reason is not None:
-            return self._miss(
-                reason=block_reason,
-                best_score=best,
-                all_scores=scores_sorted,
-                memory_update_frozen=True,
-                memory_update_freeze_reason="old_id_reacquire_block",
-            )
 
         return self._accept(
             best_candidate,
             best_score=best,
             all_scores=scores_sorted,
-            same_id_appearance_ambiguity=same_id_appearance_ambiguity,
-            memory_update_frozen=(
-                bool(self.cfg.v4a_same_id_ambiguity_freezes_memory)
-                and same_id_appearance_ambiguity
-                and str(self.cfg.tim_policy).strip().lower() == "v4a_risk"
-            ),
-            memory_update_freeze_reason=(
-                "same_id_appearance_ambiguity"
-                if same_id_appearance_ambiguity
-                and str(self.cfg.tim_policy).strip().lower() == "v4a_risk"
-                else ""
-            ),
         )
 
     def _rank_aware_app_raw(self, candidate: CandidateTrack, score: CandidateScore) -> float:
@@ -808,13 +612,13 @@ class TargetIdentityMemory:
             return False
         if bool(best.ambiguous):
             return True
+        if not best.geometry_allows_appearance:
+            return False
         app_margin = self._appearance_margin(best, scores_sorted)
-        close_appearance = (
-            best.geometry_allows_appearance
-            and best.appearance_raw >= self.cfg.same_id_appearance_ambiguity_min_similarity
-            and app_margin < self.cfg.same_id_appearance_ambiguity_margin
+        return (
+            best.appearance_raw >= self.cfg.appearance_conservative_min_similarity
+            and app_margin < self.cfg.appearance_conservative_margin
         )
-        return bool(close_appearance)
 
     def _absence_risk(self) -> bool:
         if not self.cfg.absence_recovery_enabled:
@@ -824,235 +628,17 @@ class TargetIdentityMemory:
             and self._m.frames_since_seen >= max(1, int(self.cfg.absence_after_missed_frames))
         )
 
-    def _v4a_publish_allowed(
-        self,
-        best: Optional[CandidateScore],
-        *,
-        same_id_appearance_ambiguity: bool,
-    ) -> bool:
-        if best is None:
-            return False
-        if str(self.cfg.tim_policy).strip().lower() != "v4a_risk":
-            return False
-        if not same_id_appearance_ambiguity:
-            return False
-        if self._geometry_strength(best) < self.cfg.v4a_same_id_min_geometry_to_publish:
-            return False
-        if bool(best.hard_negative_reject):
-            return False
-        return True
 
-    def _old_id_distrust_should_hold(
-        self,
-        best: CandidateScore,
-        scores_sorted: List[CandidateScore],
-        *,
-        same_id: bool,
-    ) -> tuple[bool, str]:
-        if not self.cfg.old_id_distrust_enabled:
-            return False, ""
-
-        if not same_id:
-            return False, ""
-
-        if self._m.track_id is None or int(best.track_id) != int(self._m.track_id):
-            return False, ""
-
-        if int(self._m.frames_since_seen) < int(self.cfg.old_id_distrust_after_missed_frames):
-            return False, ""
-
-        if len(scores_sorted) < max(2, int(self.cfg.old_id_distrust_min_candidates)):
-            return False, ""
-
-        old_app = float(best.appearance_raw) if best.appearance_used else 0.0
-        old_total = float(best.total)
-
-        best_challenger = None
-        best_challenger_app = 0.0
-        best_challenger_total = 0.0
-        best_challenger_gap = 999.0
-
-        for score in scores_sorted:
-            if int(score.track_id) == int(best.track_id):
-                continue
-
-            challenger_app = float(score.appearance_raw) if score.appearance_used else 0.0
-            challenger_geom = self._geometry_strength(score)
-            challenger_total = float(score.total)
-            total_gap = old_total - challenger_total
-
-            if challenger_app < self.cfg.old_id_distrust_min_challenger_app:
-                continue
-            if challenger_geom < self.cfg.old_id_distrust_min_challenger_geometry:
-                continue
-            if total_gap > self.cfg.old_id_distrust_max_total_gap:
-                continue
-
-            # Prefer the most total-score-competitive challenger. Appearance
-            # alone is not enough, because similar-looking bystanders can have
-            # high MARS similarity while still being weak candidates overall.
-            if best_challenger is None or total_gap < best_challenger_gap:
-                best_challenger = score
-                best_challenger_app = challenger_app
-                best_challenger_total = challenger_total
-                best_challenger_gap = total_gap
-
-        if best_challenger is None:
-            return False, ""
-
-        app_margin = old_app - best_challenger_app
-
-        if app_margin >= self.cfg.old_id_distrust_min_old_id_app_margin:
-            return False, ""
-
-        reason = (
-            "old_id_distrust:"
-            f" old_id={int(best.track_id)}"
-            f" old_app={old_app:.3f}"
-            f" old_total={old_total:.3f}"
-            f" challenger_id={int(best_challenger.track_id)}"
-            f" challenger_app={best_challenger_app:.3f}"
-            f" challenger_total={best_challenger_total:.3f}"
-            f" total_gap={best_challenger_gap:.3f}"
-            f" margin={app_margin:.3f}"
-            f" challenger_geom={self._geometry_strength(best_challenger):.3f}"
-        )
-        return True, reason
 
     def _reset_absence_reacquisition_confirmation(self) -> None:
         self._absence_reacq_candidate_id = None
         self._absence_reacq_confirm_count = 0
 
-    def _reset_old_id_handoff_confirmation(self) -> None:
-        self._old_id_handoff_candidate_id = None
-        self._old_id_handoff_confirm_count = 0
 
-    def _start_old_id_reacquire_block(self) -> None:
-        if not self.cfg.old_id_reacquire_block_enabled:
-            return
-        self._old_id_reacquire_block_remaining = max(
-            int(getattr(self, "_old_id_reacquire_block_remaining", 0)),
-            max(1, int(self.cfg.old_id_reacquire_block_frames)),
-        )
 
-    def _old_id_reacquire_block_active(self) -> bool:
-        return (
-            self.cfg.old_id_reacquire_block_enabled
-            and int(getattr(self, "_old_id_reacquire_block_remaining", 0)) > 0
-        )
 
-    def _consume_old_id_reacquire_block_frame(self) -> None:
-        remaining = int(getattr(self, "_old_id_reacquire_block_remaining", 0))
-        if remaining > 0:
-            self._old_id_reacquire_block_remaining = remaining - 1
 
-    def _same_old_id_reacquire_block_reason(
-        self,
-        best: CandidateScore,
-        *,
-        same_id: bool,
-    ) -> Optional[str]:
-        if not self._old_id_reacquire_block_active():
-            return None
-        if not same_id:
-            return None
-        if self._m.track_id is None or int(best.track_id) != int(self._m.track_id):
-            return None
-        # Do not restrict this to UNCERTAIN/LOST. Once the old ID is marked
-        # suspicious, the point of the block is to prevent it from becoming
-        # trusted again through any same-ID accept path.
-        if int(self._m.frames_since_seen) < int(self.cfg.old_id_reacquire_block_after_missed_frames):
-            return None
 
-        remaining = int(getattr(self, "_old_id_reacquire_block_remaining", 0))
-        self._consume_old_id_reacquire_block_frame()
-
-        return (
-            "old_id_reacquire_block:"
-            f" old_id={int(best.track_id)}"
-            f" remaining={remaining}"
-            f" frames_since_seen={int(self._m.frames_since_seen)}"
-        )
-
-    def _old_id_handoff_candidate(
-        self,
-        old_best: CandidateScore,
-        scores_sorted: List[CandidateScore],
-        candidates: Sequence[CandidateTrack],
-    ) -> tuple[Optional[CandidateScore], str]:
-        if not self.cfg.old_id_handoff_enabled:
-            self._reset_old_id_handoff_confirmation()
-            return None, ""
-
-        old_total = float(old_best.total)
-        best_handoff = None
-        best_gap = 999.0
-
-        for score in scores_sorted:
-            if int(score.track_id) == int(old_best.track_id):
-                continue
-
-            geom = self._geometry_strength(score)
-            app = float(score.appearance_raw) if score.appearance_used else 0.0
-            total = float(score.total)
-            total_gap = old_total - total
-
-            if app < float(self.cfg.old_id_handoff_min_app):
-                continue
-            if geom < float(self.cfg.old_id_handoff_min_geometry):
-                continue
-            if total < float(self.cfg.old_id_handoff_min_total):
-                continue
-            if total_gap > float(self.cfg.old_id_handoff_max_total_gap):
-                continue
-            if self.cfg.old_id_handoff_reject_hard_negative and bool(score.hard_negative_reject):
-                continue
-
-            if best_handoff is None or total_gap < best_gap:
-                best_handoff = score
-                best_gap = total_gap
-
-        if best_handoff is None:
-            self._reset_old_id_handoff_confirmation()
-            return None, ""
-
-        candidate_id = int(best_handoff.track_id)
-        prev_id = getattr(self, "_old_id_handoff_candidate_id", None)
-        prev_count = int(getattr(self, "_old_id_handoff_confirm_count", 0))
-
-        if prev_id == candidate_id:
-            count = prev_count + 1
-        else:
-            count = 1
-
-        self._old_id_handoff_candidate_id = candidate_id
-        self._old_id_handoff_confirm_count = count
-
-        required = max(1, int(self.cfg.old_id_handoff_confirm_frames))
-        geom = self._geometry_strength(best_handoff)
-        app = float(best_handoff.appearance_raw) if best_handoff.appearance_used else 0.0
-
-        if count < required:
-            return None, (
-                "old_id_handoff_pending:"
-                f" candidate_id={candidate_id}"
-                f" count={count}/{required}"
-                f" app={app:.3f}"
-                f" total={float(best_handoff.total):.3f}"
-                f" total_gap={best_gap:.3f}"
-                f" geometry={geom:.3f}"
-            )
-
-        self._reset_old_id_handoff_confirmation()
-        return best_handoff, (
-            "old_id_handoff_reacquired:"
-            f" candidate_id={candidate_id}"
-            f" count={count}/{required}"
-            f" app={app:.3f}"
-            f" total={float(best_handoff.total):.3f}"
-            f" total_gap={best_gap:.3f}"
-            f" geometry={geom:.3f}"
-        )
 
     def _absence_aware_reacquisition_reject_reason(
         self,
@@ -1129,112 +715,6 @@ class TargetIdentityMemory:
 
         return None
 
-    def _active_reselection_candidate(
-        self,
-        scores_sorted: List[CandidateScore],
-        candidates: Sequence[CandidateTrack],
-    ) -> tuple[Optional[CandidateScore], bool]:
-        """Appearance-first active reselection during LOST/UNCERTAIN.
-
-        This path is intentionally separate from rank-aware recovery. Rank-aware
-        still starts from the old total score; active reselection starts from
-        positive appearance evidence and only then applies safety gates.
-        """
-
-        if not self.cfg.active_reselection_enabled:
-            self._active_reselect_candidate_id = None
-            self._active_reselect_confirm_count = 0
-            return None, False
-
-        if self._m.state not in {TargetState.UNCERTAIN, TargetState.LOST}:
-            self._active_reselect_candidate_id = None
-            self._active_reselect_confirm_count = 0
-            return None, False
-
-        if not self.cfg.appearance_enabled or self._m.appearance is None:
-            self._active_reselect_candidate_id = None
-            self._active_reselect_confirm_count = 0
-            return None, False
-
-        by_id = {int(c.track_id): c for c in candidates}
-        eligible: list[CandidateScore] = []
-
-        for score in scores_sorted:
-            candidate = by_id.get(int(score.track_id))
-            if candidate is None:
-                continue
-
-            app = float(score.appearance_raw)
-            geom = max(float(score.distance), float(score.iou))
-
-            if score.total < self.cfg.active_reselection_min_total:
-                continue
-            if geom < self.cfg.active_reselection_min_geometry:
-                continue
-            if app < self.cfg.active_reselection_min_app:
-                continue
-            if self.cfg.active_reselection_reject_hard_negative and score.hard_negative_reject:
-                continue
-
-            eligible.append(score)
-
-        if not eligible:
-            self._active_reselect_candidate_id = None
-            self._active_reselect_confirm_count = 0
-            return None, False
-
-        best = max(
-            eligible,
-            key=lambda s: (
-                float(s.appearance_raw),
-                float(max(s.distance, s.iou)),
-                float(s.total),
-                float(s.confidence),
-            ),
-        )
-
-        other_apps = [
-            float(s.appearance_raw)
-            for s in eligible
-            if int(s.track_id) != int(best.track_id)
-        ]
-        second_app = max(other_apps, default=0.0)
-        app_margin = float(best.appearance_raw) - second_app
-
-        if app_margin < self.cfg.active_reselection_app_margin:
-            self._active_reselect_candidate_id = None
-            self._active_reselect_confirm_count = 0
-            return None, False
-
-        if self._active_reselect_candidate_id == best.track_id:
-            self._active_reselect_confirm_count += 1
-        else:
-            self._active_reselect_candidate_id = best.track_id
-            self._active_reselect_confirm_count = 1
-
-        required = max(1, int(self.cfg.active_reselection_confirm_frames))
-        if self._active_reselect_confirm_count < required:
-            return None, True
-
-        active_score = CandidateScore(
-            track_id=best.track_id,
-            total=best.total,
-            iou=best.iou,
-            distance=best.distance,
-            scale=best.scale,
-            confidence=best.confidence,
-            id_bonus=best.id_bonus,
-            appearance=float(best.appearance_raw),
-            appearance_used=True,
-            appearance_raw=float(best.appearance_raw),
-            appearance_gate_passed=True,
-            geometry_allows_appearance=best.geometry_allows_appearance,
-            hard_negative_similarity=best.hard_negative_similarity,
-            hard_negative_margin=best.hard_negative_margin,
-            hard_negative_reject=best.hard_negative_reject,
-            ambiguous=False,
-        )
-        return active_score, False
 
     def _rank_aware_reacquisition_candidate(
         self,
@@ -1421,87 +901,7 @@ class TargetIdentityMemory:
             if len(self._hard_negative_memory) > max_entries:
                 self._hard_negative_memory = self._hard_negative_memory[-max_entries:]
 
-    def _same_id_appearance_ambiguity_should_hold(
-        self,
-        best: CandidateScore,
-        scores_sorted: List[CandidateScore],
-        *,
-        same_id: bool,
-    ) -> bool:
-        if not self.cfg.same_id_appearance_ambiguity_enabled:
-            return False
 
-        if not same_id:
-            return False
-
-        if self._m.track_id is None:
-            return False
-
-        if not best.geometry_allows_appearance:
-            return False
-
-        if best.appearance_raw < self.cfg.same_id_appearance_ambiguity_min_similarity:
-            return False
-
-        challengers = [
-            s for s in scores_sorted
-            if int(s.track_id) != int(best.track_id)
-            and s.geometry_allows_appearance
-            and s.total >= self.cfg.same_id_appearance_ambiguity_min_challenger_total
-            and s.distance >= self.cfg.same_id_appearance_ambiguity_min_challenger_distance
-            and s.scale >= self.cfg.same_id_appearance_ambiguity_min_challenger_scale
-        ]
-
-        if not challengers:
-            return False
-
-        challenger = max(challengers, key=lambda s: float(s.appearance_raw))
-
-        if challenger.appearance_raw < self.cfg.same_id_appearance_ambiguity_min_similarity:
-            return False
-
-        app_margin = float(best.appearance_raw) - float(challenger.appearance_raw)
-        return app_margin < self.cfg.same_id_appearance_ambiguity_margin
-
-    def _appearance_challenge_should_hold(
-        self,
-        best: CandidateScore,
-        scores_sorted: List[CandidateScore],
-        *,
-        same_id: bool,
-    ) -> bool:
-        if not self.cfg.appearance_challenge_enabled:
-            return False
-
-        if self._m.state not in {TargetState.LOCKED, TargetState.REACQUIRED}:
-            return False
-
-        if not same_id:
-            return False
-
-        if self._m.track_id is None:
-            return False
-
-        challengers = [s for s in scores_sorted if int(s.track_id) != int(self._m.track_id)]
-
-        if not challengers:
-            return False
-
-        challenger = max(challengers, key=lambda s: float(s.appearance_raw))
-
-        if not challenger.geometry_allows_appearance:
-            return False
-
-        if challenger.total < self.cfg.appearance_challenge_min_total:
-            return False
-
-        if challenger.appearance_raw < self.cfg.appearance_challenge_min_similarity:
-            return False
-
-        if (challenger.appearance_raw - best.appearance_raw) < self.cfg.appearance_challenge_margin:
-            return False
-
-        return True
 
     def _should_use_appearance(self, *, base_ambiguous: bool) -> bool:
         if not self.cfg.appearance_enabled:
@@ -1623,7 +1023,6 @@ class TargetIdentityMemory:
         all_scores: List[CandidateScore],
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = "",
-        same_id_appearance_ambiguity: bool = False,
     ) -> TargetMemoryOutput:
         previous_state = self._m.state
         previous_id = self._m.track_id
@@ -1634,10 +1033,7 @@ class TargetIdentityMemory:
 
         self._rank_reacq_candidate_id = None
         self._rank_reacq_confirm_count = 0
-        self._active_reselect_candidate_id = None
-        self._active_reselect_confirm_count = 0
         self._reset_absence_reacquisition_confirmation()
-        self._reset_old_id_handoff_confirmation()
 
         if reacquired:
             self._appearance_update_cooldown_frames_remaining = max(
@@ -1725,7 +1121,6 @@ class TargetIdentityMemory:
             all_scores=all_scores,
             memory_update_frozen=memory_update_frozen,
             memory_update_freeze_reason=memory_update_freeze_reason,
-            same_id_appearance_ambiguity=same_id_appearance_ambiguity,
         )
 
     def _miss(
@@ -1736,7 +1131,6 @@ class TargetIdentityMemory:
         all_scores: Optional[List[CandidateScore]] = None,
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = "",
-        same_id_appearance_ambiguity: bool = False,
     ) -> TargetMemoryOutput:
         self._m.frames_since_seen += 1
         self._m.quality *= self.cfg.stale_quality_decay
@@ -1747,28 +1141,15 @@ class TargetIdentityMemory:
         else:
             self._m.state = TargetState.LOST
 
-        hold_last_reasons = {
-            "id_switch_recovery_disabled",
-            "ambiguous_best_candidate",
-        }
-        should_hold_last = (
-            self.cfg.hold_last_on_reject_enabled
-            and reason in hold_last_reasons
-            and self._m.bbox is not None
-            and self._m.track_id is not None
-            and self._m.frames_since_seen <= max(0, int(self.cfg.hold_last_on_reject_frames))
-        )
 
         return self._make_output(
-            reason=reason if not should_hold_last else f"hold_last:{reason}",
-            visible=should_hold_last,
+            reason=reason,
+            visible=False,
             reacquired=False,
             best_score=best_score,
             all_scores=all_scores or [],
-            control_mode_override=ControlMode.YAW_ONLY if should_hold_last else None,
             memory_update_frozen=memory_update_frozen,
             memory_update_freeze_reason=memory_update_freeze_reason,
-            same_id_appearance_ambiguity=same_id_appearance_ambiguity,
         )
 
     def _make_output(
@@ -1782,7 +1163,6 @@ class TargetIdentityMemory:
         control_mode_override: Optional[ControlMode] = None,
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = "",
-        same_id_appearance_ambiguity: bool = False,
     ) -> TargetMemoryOutput:
         score_list = all_scores or []
 
@@ -1795,10 +1175,6 @@ class TargetIdentityMemory:
         risk_hard_negative = bool(best_score.hard_negative_reject) if best_score is not None else False
         risk_absence = self._absence_risk()
         risk_scene_ambiguity = self._scene_ambiguity_risk(best_score, score_list)
-        v4a_publish_allowed = self._v4a_publish_allowed(
-            best_score,
-            same_id_appearance_ambiguity=same_id_appearance_ambiguity,
-        )
 
         return TargetMemoryOutput(
             state=self._m.state,
@@ -1814,13 +1190,11 @@ class TargetIdentityMemory:
             all_scores=score_list,
             memory_update_frozen=memory_update_frozen,
             memory_update_freeze_reason=memory_update_freeze_reason,
-            same_id_appearance_ambiguity=same_id_appearance_ambiguity,
             appearance_margin_best_vs_second=appearance_margin_best_vs_second,
             geometry_strength=geometry_strength,
             risk_hard_negative=risk_hard_negative,
             risk_absence=risk_absence,
             risk_scene_ambiguity=risk_scene_ambiguity,
-            v4a_publish_allowed=v4a_publish_allowed,
         )
 
 

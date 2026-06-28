@@ -118,13 +118,11 @@ def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
         "reason": str(out.reason),
         "memory_update_frozen": bool(out.memory_update_frozen),
         "memory_update_freeze_reason": str(out.memory_update_freeze_reason),
-        "same_id_appearance_ambiguity": bool(out.same_id_appearance_ambiguity),
         "appearance_margin_best_vs_second": float(out.appearance_margin_best_vs_second),
         "geometry_strength": float(out.geometry_strength),
         "risk_hard_negative": bool(out.risk_hard_negative),
         "risk_absence": bool(out.risk_absence),
         "risk_scene_ambiguity": bool(out.risk_scene_ambiguity),
-        "v4a_publish_allowed": bool(out.v4a_publish_allowed),
     }
 
 

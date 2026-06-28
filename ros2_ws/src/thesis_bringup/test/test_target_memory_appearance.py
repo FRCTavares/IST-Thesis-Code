@@ -188,76 +188,7 @@ def test_positive_appearance_bootstraps_after_selection_without_feature():
     assert out.best_score is not None
     assert out.best_score.appearance_raw > 0.90
 
-def test_same_id_appearance_ambiguity_suppresses_drift_in_legacy_policy():
-    target_feat = feat([1.0, 0.0, 0.0])
-    challenger_feat = feat([0.999, 0.035, 0.0])
 
-    tim = TargetIdentityMemory(
-        cfg(
-            appearance_enabled=True,
-            appearance_weight=0.50,
-            appearance_min_similarity=0.30,
-            appearance_ambiguous_only=False,
-            same_id_appearance_ambiguity_enabled=True,
-            same_id_appearance_ambiguity_min_similarity=0.70,
-            same_id_appearance_ambiguity_margin=0.05,
-            same_id_appearance_ambiguity_min_challenger_total=0.35,
-            same_id_appearance_ambiguity_min_challenger_distance=0.20,
-            same_id_appearance_ambiguity_min_challenger_scale=0.30,
-        )
-    )
-
-    tim.select(tr(1, (100, 100, 160, 240), 0.90, appearance=target_feat))
-
-    out = tim.update(
-        [
-            tr(1, (102, 102, 162, 242), 0.90, appearance=target_feat),
-            tr(2, (128, 102, 188, 242), 0.90, appearance=challenger_feat),
-        ]
-    )
-
-    assert out.reason == "same_id_appearance_ambiguity"
-    assert not out.control_valid
-    assert out.target_track_id == 1
-
-
-def test_v4a_same_id_appearance_ambiguity_publishes_but_freezes_memory():
-    target_feat = feat([1.0, 0.0, 0.0])
-    challenger_feat = feat([0.999, 0.035, 0.0])
-
-    tim = TargetIdentityMemory(
-        cfg(
-            appearance_enabled=True,
-            appearance_weight=0.50,
-            appearance_min_similarity=0.30,
-            appearance_ambiguous_only=False,
-            same_id_appearance_ambiguity_enabled=True,
-            same_id_appearance_ambiguity_min_similarity=0.70,
-            same_id_appearance_ambiguity_margin=0.05,
-            same_id_appearance_ambiguity_min_challenger_total=0.35,
-            same_id_appearance_ambiguity_min_challenger_distance=0.20,
-            same_id_appearance_ambiguity_min_challenger_scale=0.30,
-            tim_policy="v4a_risk",
-            v4a_same_id_ambiguity_freezes_memory=True,
-            v4a_same_id_min_geometry_to_publish=0.30,
-        )
-    )
-
-    tim.select(tr(1, (100, 100, 160, 240), 0.90, appearance=target_feat))
-
-    out = tim.update(
-        [
-            tr(1, (102, 102, 162, 242), 0.90, appearance=target_feat),
-            tr(2, (128, 102, 188, 242), 0.90, appearance=challenger_feat),
-        ]
-    )
-
-    assert out.reason == "accepted_candidate"
-    assert out.control_valid
-    assert out.target_track_id == 1
-    assert out.same_id_appearance_ambiguity
-    assert out.memory_update_frozen
-    assert out.memory_update_freeze_reason == "same_id_appearance_ambiguity"
 
 def test_hard_negative_memory_rejects_negative_like_candidate():
     target_feat = feat([1.0, 0.0, 0.0])

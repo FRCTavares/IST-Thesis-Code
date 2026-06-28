@@ -53,13 +53,11 @@ def _output(control_valid=True):
         reason="accepted",
         memory_update_frozen=False,
         memory_update_freeze_reason="",
-        same_id_appearance_ambiguity=False,
         appearance_margin_best_vs_second=0.3,
         geometry_strength=0.8,
         risk_hard_negative=False,
         risk_absence=False,
         risk_scene_ambiguity=False,
-        v4a_publish_allowed=True,
     )
 
 
@@ -126,7 +124,6 @@ def test_status_only_json_preserves_core_diagnostics():
     assert payload["visible"] is True
     assert payload["quality"] == 0.73
     assert payload["reason"] == "accepted"
-    assert payload["v4a_publish_allowed"] is True
 
 
 def test_status_json_includes_scores_and_appearance_diagnostics():
