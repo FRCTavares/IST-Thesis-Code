@@ -295,7 +295,7 @@ class TargetMemoryMarsNode(Node):
 
         t_end_ns = time.monotonic_ns()
 
-        target_msg = self._target_msg_from_output(msg, out, t_start_ns, t_end_ns)
+        target_msg = self._target_msg_from_output(msg, out)
         self._target_pub.publish(target_msg)
         self._publish_status(out, msg, t_start_ns, t_end_ns)
 
@@ -351,14 +351,16 @@ class TargetMemoryMarsNode(Node):
 
         return result.candidates
 
-    def _target_msg_from_output(self, out: TargetMemoryOutput) -> TargetState:
-        return target_msg_from_output(
+    def _target_msg_from_output(self, tracks_msg: Track2DArray, out: TargetMemoryOutput) -> TargetState:
+        target_msg = target_msg_from_output(
             out,
             image_width=self._image_width,
             image_height=self._image_height,
             tracks_are_normalized=self._tracks_are_normalized,
             zero_id_when_not_visible=self._zero_id_when_not_visible,
         )
+        target_msg.header = tracks_msg.header
+        return target_msg
 
     def _publish_status_only(self, out: TargetMemoryOutput) -> None:
         msg = String()
