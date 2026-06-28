@@ -467,6 +467,7 @@ class ReplayRequest(BaseModel):
     tracker: str = "bytetrack"
     tim_mode: str = "mars"
     rate: float = 1.0
+    tim_preset: str = "legacy"
 
     absence_recovery_enabled: bool = False
     absence_after_missed_frames: int = 6
@@ -526,6 +527,7 @@ def run_replay_job(req: ReplayRequest):
         "MARS_RANK_AWARE_LOST_APP_MARGIN": str(req.rank_aware_lost_app_margin),
 
         "MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES": str(req.appearance_update_cooldown_frames),
+        "MARS_TIM_PRESET": str(req.tim_preset),
     })
 
     cmd = [

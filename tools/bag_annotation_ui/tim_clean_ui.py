@@ -746,6 +746,11 @@ button:active {{
         <option value="ocsort">ocsort</option>
         <option value="deepsort">deepsort</option>
       </select>
+      preset
+      <select id="timPreset" style="width:220px">
+        <option value="legacy">legacy</option>
+        <option value="conservative_hardneg">conservative_hardneg</option>
+      </select>
       rate <input id="rate" value="1.0" style="width:70px">
       <button onclick="runTim()">Run TIM-MARS on selected bag</button>
       <button onclick="loadLast()">Load last output bag</button>
@@ -1387,6 +1392,7 @@ async function runTim() {
     target_id: parseInt(document.getElementById("targetId").value || "1"),
     tracker: document.getElementById("tracker").value,
     tim_mode: "mars",
+    tim_preset: document.getElementById("timPreset").value || "legacy",
     rate: parseFloat(document.getElementById("rate").value || "1.0"),
     absence_min_total: 0.45,
     absence_min_distance: 0.25,

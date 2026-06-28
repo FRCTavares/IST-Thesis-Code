@@ -122,6 +122,45 @@ ros2 run thesis_bringup dashboard_bridge_node --ros-args \
   >"$LOG_DIR/dashboard_bridge.log" 2>&1 &
 
 
+
+apply_tim_mars_preset() {
+  local preset="${MARS_TIM_PRESET:-legacy}"
+
+  case "$preset" in
+    legacy|"")
+      ;;
+
+    conservative_hardneg|tim_mars_conservative_hardneg)
+      export MARS_HARD_NEGATIVE_MEMORY_ENABLED="${MARS_HARD_NEGATIVE_MEMORY_ENABLED:-true}"
+      export MARS_HARD_NEGATIVE_MAX_ENTRIES="${MARS_HARD_NEGATIVE_MAX_ENTRIES:-8}"
+      export MARS_HARD_NEGATIVE_UPDATE_ALPHA="${MARS_HARD_NEGATIVE_UPDATE_ALPHA:-0.20}"
+      export MARS_HARD_NEGATIVE_MIN_CANDIDATE_SIMILARITY="${MARS_HARD_NEGATIVE_MIN_CANDIDATE_SIMILARITY:-0.70}"
+      export MARS_HARD_NEGATIVE_REJECT_SIMILARITY="${MARS_HARD_NEGATIVE_REJECT_SIMILARITY:-0.80}"
+      export MARS_HARD_NEGATIVE_REJECT_MARGIN="${MARS_HARD_NEGATIVE_REJECT_MARGIN:-0.08}"
+      export MARS_HARD_NEGATIVE_MIN_GEOMETRY="${MARS_HARD_NEGATIVE_MIN_GEOMETRY:-0.20}"
+
+      export MARS_APPEARANCE_CONSERVATIVE_ENABLED="${MARS_APPEARANCE_CONSERVATIVE_ENABLED:-true}"
+      export MARS_APPEARANCE_CONSERVATIVE_REQUIRE_APPEARANCE="${MARS_APPEARANCE_CONSERVATIVE_REQUIRE_APPEARANCE:-false}"
+      export MARS_APPEARANCE_CONSERVATIVE_MIN_SIMILARITY="${MARS_APPEARANCE_CONSERVATIVE_MIN_SIMILARITY:-0.65}"
+      export MARS_APPEARANCE_CONSERVATIVE_MARGIN="${MARS_APPEARANCE_CONSERVATIVE_MARGIN:-0.25}"
+
+      export MARS_RANK_AWARE_REACQUISITION_ENABLED="${MARS_RANK_AWARE_REACQUISITION_ENABLED:-true}"
+      export MARS_RANK_AWARE_CONFIRM_FRAMES="${MARS_RANK_AWARE_CONFIRM_FRAMES:-1}"
+      export MARS_ABSENCE_RECOVERY_ENABLED="${MARS_ABSENCE_RECOVERY_ENABLED:-false}"
+      export MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES="${MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES:-0}"
+      ;;
+
+    *)
+      echo "[error] unknown MARS_TIM_PRESET: $preset" >&2
+      echo "[error] valid presets: legacy, conservative_hardneg" >&2
+      exit 2
+      ;;
+  esac
+}
+
+apply_tim_mars_preset
+echo "[info] MARS_TIM_PRESET=${MARS_TIM_PRESET:-legacy}"
+
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
   echo "[info] starting TIM-MARS"
   ros2 run thesis_bringup target_memory_mars_node --ros-args \
