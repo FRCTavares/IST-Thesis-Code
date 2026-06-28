@@ -126,7 +126,7 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
   echo "[info] starting TIM-MARS"
   ros2 run thesis_bringup target_memory_mars_node --ros-args \
     -p tracks_topic:=/tracks \
-    -p raw_target_topic:=/target \
+    -p mirror_target_topic:=/target \
     -p target_topic:=/target_memory_mars \
     -p status_topic:=/target_memory_mars/status \
     -p select_topic:=/target_memory_mars/select \

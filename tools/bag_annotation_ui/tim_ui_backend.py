@@ -484,7 +484,7 @@ class ReplayRequest(BaseModel):
     rank_aware_lost_min_app: float = 0.05
     rank_aware_lost_app_margin: float = 0.03
 
-    appearance_update_cooldown_frames: int = 8
+    appearance_update_cooldown_frames: int = 0
 
 
 class ExportRequest(BaseModel):
