@@ -20,6 +20,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from thesis_bringup.tim_mars.appearance_memory import cosine_similarity, update_feature_memory
+from thesis_bringup.tim_mars.appearance_policy import (
+    score_with_appearance,
+    should_use_appearance,
+)
 from thesis_bringup.tim_mars.geometry_scoring import (
     bbox_area,
     bbox_centre,
@@ -547,15 +551,12 @@ class TargetIdentityMemory:
         return best, False
 
     def _should_use_appearance(self, *, base_ambiguous: bool) -> bool:
-        if not self.cfg.appearance_enabled:
-            return False
-        if self._m.appearance is None:
-            return False
-        if self._m.state in {TargetState.UNCERTAIN, TargetState.LOST, TargetState.REACQUIRED}:
-            return True
-        if not self.cfg.appearance_ambiguous_only:
-            return True
-        return bool(base_ambiguous)
+        return should_use_appearance(
+            cfg=self.cfg,
+            positive_appearance=self._m.appearance,
+            state_is_lostish=self._m.state in {TargetState.UNCERTAIN, TargetState.LOST, TargetState.REACQUIRED},
+            base_ambiguous=base_ambiguous,
+        )
 
     def _bootstrap_positive_appearance_if_needed(self, candidate: CandidateTrack) -> None:
         """Initialise positive appearance memory after selection if it was missing.
@@ -593,56 +594,13 @@ class TargetIdentityMemory:
         self._bootstrap_positive_appearance_if_needed(candidate)
 
         base = score_candidate(reference_bbox, candidate, self._m.track_id, self.cfg)
-
-        appearance_score = 0.0
-        appearance_raw = 0.0
-        appearance_used = False
-        appearance_gate_passed = False
-        hard_negative_similarity = 0.0
-        hard_negative_margin = 1.0
-        hard_negative_reject = False
-        total = base.total
-
-        geometry_allows_appearance = (
-            base.iou > 0.0
-            or (base.distance >= 0.25 and base.scale >= 0.35)
-        )
-
-        if candidate.appearance is not None and geometry_allows_appearance:
-            if self._m.appearance is not None:
-                appearance_raw = clamp01(cosine_similarity(self._m.appearance, candidate.appearance))
-
-                if use_appearance and appearance_raw >= self.cfg.appearance_min_similarity:
-                    appearance_score = appearance_raw
-                    appearance_gate_passed = True
-                    total = clamp01(total + self.cfg.appearance_weight * appearance_score)
-                    appearance_used = True
-
-            hard_negative_similarity = self._hard_negative_memory.similarity(candidate.appearance, self.cfg)
-            hard_negative_margin = float(appearance_raw) - float(hard_negative_similarity)
-            hard_negative_reject = (
-                self.cfg.hard_negative_memory_enabled
-                and hard_negative_similarity >= self.cfg.hard_negative_reject_similarity
-                and hard_negative_margin < self.cfg.hard_negative_reject_margin
-            )
-
-        return CandidateScore(
-            track_id=base.track_id,
-            total=total,
-            iou=base.iou,
-            distance=base.distance,
-            scale=base.scale,
-            confidence=base.confidence,
-            id_bonus=base.id_bonus,
-            appearance=appearance_score,
-            appearance_used=appearance_used,
-            appearance_raw=appearance_raw,
-            appearance_gate_passed=appearance_gate_passed,
-            geometry_allows_appearance=geometry_allows_appearance,
-            hard_negative_similarity=hard_negative_similarity,
-            hard_negative_margin=hard_negative_margin,
-            hard_negative_reject=hard_negative_reject,
-            ambiguous=base.ambiguous,
+        return score_with_appearance(
+            base=base,
+            candidate=candidate,
+            positive_appearance=self._m.appearance,
+            use_appearance=use_appearance,
+            hard_negative_memory=self._hard_negative_memory,
+            cfg=self.cfg,
         )
 
     def _is_ambiguous(
