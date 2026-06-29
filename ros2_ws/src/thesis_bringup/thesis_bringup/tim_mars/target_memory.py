@@ -743,6 +743,9 @@ class TargetIdentityMemory:
         risk_hard_negative = bool(best_score.hard_negative_reject) if best_score is not None else False
         risk_absence = self._absence_risk()
         risk_scene_ambiguity = self._scene_ambiguity_risk(best_score, score_list)
+        candidate_track_id = int(best_score.track_id) if best_score is not None else None
+        candidate_score = float(best_score.total) if best_score is not None else 0.0
+        publication_suppressed_reason = "" if visible else reason
 
         return TargetMemoryOutput(
             state=self._m.state,
@@ -763,6 +766,9 @@ class TargetIdentityMemory:
             risk_hard_negative=risk_hard_negative,
             risk_absence=risk_absence,
             risk_scene_ambiguity=risk_scene_ambiguity,
+            candidate_track_id=candidate_track_id,
+            candidate_score=candidate_score,
+            publication_suppressed_reason=publication_suppressed_reason,
         )
 
 

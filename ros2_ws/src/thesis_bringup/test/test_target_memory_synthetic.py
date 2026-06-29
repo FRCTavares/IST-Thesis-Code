@@ -208,3 +208,42 @@ def test_clear_returns_to_no_target():
     assert out.state == TargetState.NO_TARGET
     assert out.control_mode == ControlMode.NO_CONTROL
     assert out.target_track_id is None
+
+
+def test_output_exposes_candidate_belief_when_publication_is_suppressed():
+    tim = TargetIdentityMemory(
+        cfg(
+            allow_id_switch_recovery=False,
+            max_uncertain_frames=1,
+        )
+    )
+    tim.select(tr(1, (100, 100, 160, 240), score=0.95))
+
+    tim.update([])
+    tim.update([])
+    assert tim.state == TargetState.LOST
+
+    out = tim.update([
+        tr(7, (102, 100, 162, 240), score=0.95),
+    ])
+
+    assert out.visible is False
+    assert out.target_track_id == 1
+    assert out.candidate_track_id == 7
+    assert out.candidate_score > 0.0
+    assert out.publication_suppressed_reason == "id_switch_recovery_disabled"
+
+
+def test_output_has_no_suppression_reason_when_visible():
+    tim = TargetIdentityMemory(cfg())
+    tim.select(tr(1, (100, 100, 160, 240), score=0.95))
+
+    out = tim.update([
+        tr(1, (102, 100, 162, 240), score=0.95),
+    ])
+
+    assert out.visible is True
+    assert out.target_track_id == 1
+    assert out.candidate_track_id == 1
+    assert out.candidate_score > 0.0
+    assert out.publication_suppressed_reason == ""

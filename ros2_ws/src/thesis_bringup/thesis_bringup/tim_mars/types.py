@@ -197,6 +197,12 @@ class TargetMemoryOutput:
     risk_absence: bool = False
     risk_scene_ambiguity: bool = False
 
+    # Candidate belief diagnostics. These expose the best current candidate
+    # separately from the controller-facing published target.
+    candidate_track_id: Optional[int] = None
+    candidate_score: float = 0.0
+    publication_suppressed_reason: str = ""
+
     @property
     def control_valid(self) -> bool:
         # Only LOCKED/NORMAL is controller-valid.
