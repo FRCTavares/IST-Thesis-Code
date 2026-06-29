@@ -357,15 +357,9 @@ class TargetIdentityMemory:
         )
 
 
-
     def _reset_absence_reacquisition_confirmation(self) -> None:
         self._absence_reacq_candidate_id = None
         self._absence_reacq_confirm_count = 0
-
-
-
-
-
 
 
     def _absence_aware_reacquisition_reject_reason(
