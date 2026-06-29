@@ -35,6 +35,12 @@ from thesis_bringup.tim_mars.geometry_scoring import (
     score_candidate,
 )
 from thesis_bringup.tim_mars.hard_negative_memory import HardNegativeMemory
+from thesis_bringup.tim_mars.reacquisition_policy import (
+    absence_risk,
+    appearance_margin,
+    geometry_strength,
+    scene_ambiguity_risk,
+)
 from thesis_bringup.tim_mars.types import (
     BBox,
     CandidateScore,
@@ -323,37 +329,23 @@ class TargetIdentityMemory:
         return float(score.appearance_raw)
 
     def _appearance_margin(self, selected: CandidateScore, scores_sorted: List[CandidateScore]) -> float:
-        other_apps = [
-            float(s.appearance_raw)
-            for s in scores_sorted
-            if int(s.track_id) != int(selected.track_id) and s.geometry_allows_appearance
-        ]
-        return float(selected.appearance_raw) - max(other_apps, default=0.0)
+        return appearance_margin(selected, scores_sorted)
 
     def _geometry_strength(self, score: Optional[CandidateScore]) -> float:
-        if score is None:
-            return 0.0
-        return max(float(score.iou), float(score.distance), float(score.scale))
+        return geometry_strength(score)
 
     def _scene_ambiguity_risk(self, best: Optional[CandidateScore], scores_sorted: List[CandidateScore]) -> bool:
-        if best is None:
-            return False
-        if bool(best.ambiguous):
-            return True
-        if not best.geometry_allows_appearance:
-            return False
-        app_margin = self._appearance_margin(best, scores_sorted)
-        return (
-            best.appearance_raw >= self.cfg.appearance_conservative_min_similarity
-            and app_margin < self.cfg.appearance_conservative_margin
+        return scene_ambiguity_risk(
+            best=best,
+            scores_sorted=scores_sorted,
+            cfg=self.cfg,
         )
 
     def _absence_risk(self) -> bool:
-        if not self.cfg.absence_recovery_enabled:
-            return False
-        return (
-            self._m.state in {TargetState.UNCERTAIN, TargetState.LOST}
-            and self._m.frames_since_seen >= max(1, int(self.cfg.absence_after_missed_frames))
+        return absence_risk(
+            state=self._m.state,
+            frames_since_seen=self._m.frames_since_seen,
+            cfg=self.cfg,
         )
 
 
