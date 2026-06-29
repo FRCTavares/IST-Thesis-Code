@@ -101,6 +101,9 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("rank_aware_lost_app_margin", 0.03)
     node.declare_parameter("rank_aware_confirm_frames", 1)
     node.declare_parameter("rank_aware_missing_ttl_frames", 8)
+    node.declare_parameter("candidate_belief_enabled", False)
+    node.declare_parameter("candidate_belief_min_score", 0.45)
+    node.declare_parameter("candidate_belief_confirm_frames", 2)
 
 
     node.declare_parameter("absence_recovery_enabled", False)
@@ -194,6 +197,9 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         rank_aware_lost_app_margin=float(node.get_parameter("rank_aware_lost_app_margin").value),
         rank_aware_confirm_frames=int(node.get_parameter("rank_aware_confirm_frames").value),
         rank_aware_missing_ttl_frames=int(node.get_parameter("rank_aware_missing_ttl_frames").value),
+        candidate_belief_enabled=bool(node.get_parameter("candidate_belief_enabled").value),
+        candidate_belief_min_score=float(node.get_parameter("candidate_belief_min_score").value),
+        candidate_belief_confirm_frames=int(node.get_parameter("candidate_belief_confirm_frames").value),
         absence_recovery_enabled=bool(node.get_parameter("absence_recovery_enabled").value),
         absence_after_missed_frames=int(node.get_parameter("absence_after_missed_frames").value),
         absence_new_id_requires_appearance=bool(node.get_parameter("absence_new_id_requires_appearance").value),

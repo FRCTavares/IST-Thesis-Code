@@ -37,6 +37,7 @@ from thesis_bringup.tim_mars.geometry_scoring import (
 from thesis_bringup.tim_mars.hard_negative_memory import HardNegativeMemory
 from thesis_bringup.tim_mars.reacquisition_policy import (
     AbsenceRecoveryConfirmation,
+    CandidateBeliefConfirmation,
     RankAwareReacquisitionConfirmation,
     absence_risk,
     appearance_margin,
@@ -93,6 +94,7 @@ class TargetIdentityMemory:
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_confirmation = RankAwareReacquisitionConfirmation()
         self._absence_reacq_confirmation = AbsenceRecoveryConfirmation()
+        self._candidate_belief_confirmation = CandidateBeliefConfirmation()
         self._hard_negative_memory = HardNegativeMemory()
 
     @property
@@ -112,6 +114,7 @@ class TargetIdentityMemory:
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_confirmation.reset()
         self._absence_reacq_confirmation.reset()
+        self._candidate_belief_confirmation.reset()
         self._hard_negative_memory.clear()
         return self._make_output(reason="operator_clear", visible=False, reacquired=False)
 
@@ -131,6 +134,7 @@ class TargetIdentityMemory:
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_confirmation.reset()
         self._absence_reacq_confirmation.reset()
+        self._candidate_belief_confirmation.reset()
         self._hard_negative_memory.clear()
         return self._make_output(reason="operator_select", visible=True, reacquired=False)
 
@@ -260,6 +264,7 @@ class TargetIdentityMemory:
             )
 
         if ambiguous:
+            self._candidate_belief_confirmation.reset()
             return self._miss(
                 reason="ambiguous_best_candidate",
                 best_score=best,
@@ -267,6 +272,28 @@ class TargetIdentityMemory:
             )
 
         id_switch = best.track_id != self._m.track_id
+
+        if (
+            self.cfg.candidate_belief_enabled
+            and id_switch
+            and self._m.state in {TargetState.UNCERTAIN, TargetState.LOST}
+            and best.total >= self.cfg.candidate_belief_min_score
+        ):
+            confirm_count = self._candidate_belief_confirmation.observe(int(best.track_id))
+            required = max(1, int(self.cfg.candidate_belief_confirm_frames))
+            if confirm_count < required:
+                return self._miss(
+                    reason=(
+                        "candidate_belief_confirmation_pending:"
+                        f" id={best.track_id}"
+                        f" confirm={confirm_count}/{required}"
+                        f" score={best.total:.3f}"
+                    ),
+                    best_score=best,
+                    all_scores=scores_sorted,
+                )
+        else:
+            self._candidate_belief_confirmation.reset()
 
         if id_switch and not self.cfg.allow_id_switch_recovery:
             return self._miss(
@@ -602,6 +629,7 @@ class TargetIdentityMemory:
 
         self._rank_reacq_confirmation.reset()
         self._reset_absence_reacquisition_confirmation()
+        self._candidate_belief_confirmation.reset()
 
         if reacquired:
             self._appearance_update_cooldown_frames_remaining = max(

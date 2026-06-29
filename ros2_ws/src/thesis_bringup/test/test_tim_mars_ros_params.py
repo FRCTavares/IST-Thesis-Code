@@ -26,11 +26,14 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 63
+    assert len(node.values) == 66
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
     assert node.values["rank_aware_reacquisition_enabled"] is True
+    assert node.values["candidate_belief_enabled"] is False
+    assert node.values["candidate_belief_min_score"] == 0.45
+    assert node.values["candidate_belief_confirm_frames"] == 2
     assert node.values["absence_recovery_enabled"] is False
 
 
@@ -43,6 +46,9 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values["appearance_enabled"] = True
     node.values["rank_aware_reacquisition_enabled"] = True
     node.values["rank_aware_confirm_frames"] = 4
+    node.values["candidate_belief_enabled"] = True
+    node.values["candidate_belief_min_score"] = 0.33
+    node.values["candidate_belief_confirm_frames"] = 5
     node.values["absence_recovery_enabled"] = True
     node.values["absence_confirm_frames"] = 5
 
@@ -58,5 +64,8 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     assert cfg.appearance_enabled is True
     assert cfg.rank_aware_reacquisition_enabled is True
     assert cfg.rank_aware_confirm_frames == 4
+    assert cfg.candidate_belief_enabled is True
+    assert cfg.candidate_belief_min_score == 0.33
+    assert cfg.candidate_belief_confirm_frames == 5
     assert cfg.absence_recovery_enabled is True
     assert cfg.absence_confirm_frames == 5

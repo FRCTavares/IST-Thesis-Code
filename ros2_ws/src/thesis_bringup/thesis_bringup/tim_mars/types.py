@@ -159,6 +159,14 @@ class TargetMemoryConfig:
     rank_aware_confirm_frames: int = 1
     rank_aware_missing_ttl_frames: int = 8
 
+    # TIM-V4 candidate belief / publication separation.
+    # When enabled, TIM may remember a plausible new candidate during
+    # LOST/UNCERTAIN but suppress controller-facing publication until repeated
+    # confirmation. Disabled by default to preserve existing baselines.
+    candidate_belief_enabled: bool = False
+    candidate_belief_min_score: float = 0.45
+    candidate_belief_confirm_frames: int = 2
+
     # TIM-V3A absence-aware new-ID recovery gate.
     # This protects the controller-facing target from jumping to a distractor
     # after the selected person has likely left the scene or remained hidden

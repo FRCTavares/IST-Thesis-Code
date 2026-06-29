@@ -247,3 +247,60 @@ def test_output_has_no_suppression_reason_when_visible():
     assert out.candidate_track_id == 1
     assert out.candidate_score > 0.0
     assert out.publication_suppressed_reason == ""
+
+
+def test_candidate_belief_buffer_suppresses_new_id_until_confirmed():
+    tim = TargetIdentityMemory(
+        cfg(
+            candidate_belief_enabled=True,
+            candidate_belief_min_score=0.20,
+            candidate_belief_confirm_frames=2,
+            allow_id_switch_recovery=True,
+            max_uncertain_frames=1,
+        )
+    )
+    tim.select(tr(1, (100, 100, 160, 240), score=0.95))
+
+    tim.update([])
+    tim.update([])
+    assert tim.state == TargetState.LOST
+
+    candidate = [tr(7, (102, 100, 162, 240), score=0.95)]
+
+    first = tim.update(candidate)
+    assert first.visible is False
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 7
+    assert first.publication_suppressed_reason.startswith("candidate_belief_confirmation_pending:")
+
+    second = tim.update(candidate)
+    assert second.visible is False
+    assert second.target_track_id == 7
+    assert second.candidate_track_id == 7
+    assert second.reacquired
+    assert second.publication_suppressed_reason == "reacquired_candidate"
+
+
+def test_candidate_belief_disabled_preserves_immediate_new_id_recovery():
+    tim = TargetIdentityMemory(
+        cfg(
+            candidate_belief_enabled=False,
+            allow_id_switch_recovery=True,
+            max_uncertain_frames=1,
+        )
+    )
+    tim.select(tr(1, (100, 100, 160, 240), score=0.95))
+
+    tim.update([])
+    tim.update([])
+    assert tim.state == TargetState.LOST
+
+    out = tim.update([
+        tr(7, (102, 100, 162, 240), score=0.95),
+    ])
+
+    assert out.visible is False
+    assert out.target_track_id == 7
+    assert out.candidate_track_id == 7
+    assert out.reacquired
+    assert out.publication_suppressed_reason == "reacquired_candidate"
