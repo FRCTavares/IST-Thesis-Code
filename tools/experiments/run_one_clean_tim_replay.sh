@@ -202,6 +202,9 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p rank_aware_lost_app_margin:=${MARS_RANK_AWARE_LOST_APP_MARGIN:-0.03} \
     -p rank_aware_confirm_frames:=${MARS_RANK_AWARE_CONFIRM_FRAMES:-1} \
     -p rank_aware_missing_ttl_frames:=${MARS_RANK_AWARE_MISSING_TTL_FRAMES:-8} \
+    -p candidate_belief_enabled:=${MARS_CANDIDATE_BELIEF_ENABLED:-false} \
+    -p candidate_belief_min_score:=${MARS_CANDIDATE_BELIEF_MIN_SCORE:-0.45} \
+    -p candidate_belief_confirm_frames:=${MARS_CANDIDATE_BELIEF_CONFIRM_FRAMES:-2} \
     -p absence_recovery_enabled:=${MARS_ABSENCE_RECOVERY_ENABLED:-false} \
     -p absence_after_missed_frames:=${MARS_ABSENCE_AFTER_MISSED_FRAMES:-6} \
     -p absence_new_id_requires_appearance:=${MARS_ABSENCE_NEW_ID_REQUIRES_APPEARANCE:-true} \

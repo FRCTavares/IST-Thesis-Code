@@ -644,7 +644,10 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
             -p appearance_min_similarity:=$TARGET_MEMORY_MARS_APPEARANCE_MIN_SIMILARITY \
             -p rank_aware_reacquisition_enabled:=$TARGET_MEMORY_MARS_RANK_AWARE_BOOL \
             -p rank_aware_confirm_frames:=$TARGET_MEMORY_MARS_RANK_AWARE_CONFIRM_FRAMES \
-            -p rank_aware_missing_ttl_frames:=$TARGET_MEMORY_MARS_RANK_AWARE_MISSING_TTL_FRAMES
+            -p rank_aware_missing_ttl_frames:=$TARGET_MEMORY_MARS_RANK_AWARE_MISSING_TTL_FRAMES \
+            -p candidate_belief_enabled:=${TARGET_MEMORY_MARS_CANDIDATE_BELIEF_ENABLED:-false} \
+            -p candidate_belief_min_score:=${TARGET_MEMORY_MARS_CANDIDATE_BELIEF_MIN_SCORE:-0.45} \
+            -p candidate_belief_confirm_frames:=${TARGET_MEMORY_MARS_CANDIDATE_BELIEF_CONFIRM_FRAMES:-2}
         sleep 1
         if ! check_proc_alive target_memory_mars; then
             stop_stack
