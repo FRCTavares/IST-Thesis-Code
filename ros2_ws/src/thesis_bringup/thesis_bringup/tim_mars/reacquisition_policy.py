@@ -11,6 +11,28 @@ from typing import List, Optional
 from thesis_bringup.tim_mars.types import CandidateScore, TargetMemoryConfig, TargetState
 
 
+class AbsenceRecoveryConfirmation:
+    """Track repeated confirmation of the same absence-recovery candidate."""
+
+    def __init__(self) -> None:
+        self.candidate_id: Optional[int] = None
+        self.confirm_count = 0
+
+    def reset(self) -> None:
+        self.candidate_id = None
+        self.confirm_count = 0
+
+    def observe(self, track_id: int) -> int:
+        """Record one frame for track_id and return its current confirmation count."""
+
+        if self.candidate_id == track_id:
+            self.confirm_count += 1
+        else:
+            self.candidate_id = track_id
+            self.confirm_count = 1
+        return self.confirm_count
+
+
 def appearance_margin(selected: CandidateScore, scores_sorted: List[CandidateScore]) -> float:
     """Return selected appearance margin over other plausible candidates."""
 
@@ -69,6 +91,7 @@ def absence_risk(
 
 
 __all__ = [
+    "AbsenceRecoveryConfirmation",
     "absence_risk",
     "appearance_margin",
     "geometry_strength",

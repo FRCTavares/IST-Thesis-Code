@@ -36,6 +36,7 @@ from thesis_bringup.tim_mars.geometry_scoring import (
 )
 from thesis_bringup.tim_mars.hard_negative_memory import HardNegativeMemory
 from thesis_bringup.tim_mars.reacquisition_policy import (
+    AbsenceRecoveryConfirmation,
     absence_risk,
     appearance_margin,
     geometry_strength,
@@ -91,8 +92,7 @@ class TargetIdentityMemory:
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_candidate_id: Optional[int] = None
         self._rank_reacq_confirm_count = 0
-        self._absence_reacq_candidate_id: Optional[int] = None
-        self._absence_reacq_confirm_count = 0
+        self._absence_reacq_confirmation = AbsenceRecoveryConfirmation()
         self._hard_negative_memory = HardNegativeMemory()
 
     @property
@@ -112,8 +112,7 @@ class TargetIdentityMemory:
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_candidate_id = None
         self._rank_reacq_confirm_count = 0
-        self._absence_reacq_candidate_id = None
-        self._absence_reacq_confirm_count = 0
+        self._absence_reacq_confirmation.reset()
         self._hard_negative_memory.clear()
         return self._make_output(reason="operator_clear", visible=False, reacquired=False)
 
@@ -133,8 +132,7 @@ class TargetIdentityMemory:
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_candidate_id = None
         self._rank_reacq_confirm_count = 0
-        self._absence_reacq_candidate_id = None
-        self._absence_reacq_confirm_count = 0
+        self._absence_reacq_confirmation.reset()
         self._hard_negative_memory.clear()
         return self._make_output(reason="operator_select", visible=True, reacquired=False)
 
@@ -350,8 +348,7 @@ class TargetIdentityMemory:
 
 
     def _reset_absence_reacquisition_confirmation(self) -> None:
-        self._absence_reacq_candidate_id = None
-        self._absence_reacq_confirm_count = 0
+        self._absence_reacq_confirmation.reset()
 
 
     def _absence_aware_reacquisition_reject_reason(
@@ -411,18 +408,14 @@ class TargetIdentityMemory:
                     f" {app_margin:.3f}<{self.cfg.absence_appearance_margin:.3f}"
                 )
 
-        if self._absence_reacq_candidate_id == best.track_id:
-            self._absence_reacq_confirm_count += 1
-        else:
-            self._absence_reacq_candidate_id = best.track_id
-            self._absence_reacq_confirm_count = 1
+        confirm_count = self._absence_reacq_confirmation.observe(int(best.track_id))
 
         required = max(1, int(self.cfg.absence_confirm_frames))
-        if self._absence_reacq_confirm_count < required:
+        if confirm_count < required:
             return (
                 "absence_recovery_pending:"
                 f" id={best.track_id}"
-                f" confirm={self._absence_reacq_confirm_count}/{required}"
+                f" confirm={confirm_count}/{required}"
                 f" app={best.appearance_raw:.3f}"
                 f" margin={app_margin:.3f}"
             )
