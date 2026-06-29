@@ -37,6 +37,7 @@ from thesis_bringup.tim_mars.geometry_scoring import (
 from thesis_bringup.tim_mars.hard_negative_memory import HardNegativeMemory
 from thesis_bringup.tim_mars.reacquisition_policy import (
     AbsenceRecoveryConfirmation,
+    RankAwareReacquisitionConfirmation,
     absence_risk,
     appearance_margin,
     geometry_strength,
@@ -90,8 +91,7 @@ class TargetIdentityMemory:
         self.cfg = cfg or TargetMemoryConfig()
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
-        self._rank_reacq_candidate_id: Optional[int] = None
-        self._rank_reacq_confirm_count = 0
+        self._rank_reacq_confirmation = RankAwareReacquisitionConfirmation()
         self._absence_reacq_confirmation = AbsenceRecoveryConfirmation()
         self._hard_negative_memory = HardNegativeMemory()
 
@@ -110,8 +110,7 @@ class TargetIdentityMemory:
     def clear(self) -> TargetMemoryOutput:
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
-        self._rank_reacq_candidate_id = None
-        self._rank_reacq_confirm_count = 0
+        self._rank_reacq_confirmation.reset()
         self._absence_reacq_confirmation.reset()
         self._hard_negative_memory.clear()
         return self._make_output(reason="operator_clear", visible=False, reacquired=False)
@@ -130,8 +129,7 @@ class TargetIdentityMemory:
             appearance=update_feature_memory(None, track.appearance, alpha=1.0),
         )
         self._appearance_update_cooldown_frames_remaining = 0
-        self._rank_reacq_candidate_id = None
-        self._rank_reacq_confirm_count = 0
+        self._rank_reacq_confirmation.reset()
         self._absence_reacq_confirmation.reset()
         self._hard_negative_memory.clear()
         return self._make_output(reason="operator_select", visible=True, reacquired=False)
@@ -432,8 +430,7 @@ class TargetIdentityMemory:
             return None, False
 
         if self._m.state not in {TargetState.UNCERTAIN, TargetState.LOST}:
-            self._rank_reacq_candidate_id = None
-            self._rank_reacq_confirm_count = 0
+            self._rank_reacq_confirmation.reset()
             return None, False
 
         by_id = {int(c.track_id): c for c in candidates}
@@ -454,8 +451,7 @@ class TargetIdentityMemory:
                 enriched.append((score, app_raw))
 
         if not enriched:
-            self._rank_reacq_candidate_id = None
-            self._rank_reacq_confirm_count = 0
+            self._rank_reacq_confirmation.reset()
             return None, False
 
         best, best_app = max(
@@ -476,8 +472,7 @@ class TargetIdentityMemory:
         best_other_app = max(other_apps, default=0.0)
 
         if (float(best_app) - best_other_app) < self.cfg.rank_aware_lost_app_margin:
-            self._rank_reacq_candidate_id = None
-            self._rank_reacq_confirm_count = 0
+            self._rank_reacq_confirmation.reset()
             return None, False
 
         if (
@@ -494,17 +489,11 @@ class TargetIdentityMemory:
                 or best_app < self.cfg.absence_min_similarity
                 or app_margin < self.cfg.absence_appearance_margin
             ):
-                self._rank_reacq_candidate_id = None
-                self._rank_reacq_confirm_count = 0
+                self._rank_reacq_confirmation.reset()
                 return None, False
 
-        if self._rank_reacq_candidate_id == best.track_id:
-            self._rank_reacq_confirm_count += 1
-        else:
-            self._rank_reacq_candidate_id = best.track_id
-            self._rank_reacq_confirm_count = 1
-
-        pending = self._rank_reacq_confirm_count < max(1, int(self.cfg.rank_aware_confirm_frames))
+        confirm_count = self._rank_reacq_confirmation.observe(int(best.track_id))
+        pending = confirm_count < max(1, int(self.cfg.rank_aware_confirm_frames))
         if pending:
             return None, True
 
@@ -611,8 +600,7 @@ class TargetIdentityMemory:
 
         reacquired = bool(id_changed or was_lostish)
 
-        self._rank_reacq_candidate_id = None
-        self._rank_reacq_confirm_count = 0
+        self._rank_reacq_confirmation.reset()
         self._reset_absence_reacquisition_confirmation()
 
         if reacquired:
