@@ -123,6 +123,9 @@ def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
         "risk_hard_negative": bool(out.risk_hard_negative),
         "risk_absence": bool(out.risk_absence),
         "risk_scene_ambiguity": bool(out.risk_scene_ambiguity),
+        "candidate_track_id": out.candidate_track_id,
+        "candidate_score": float(out.candidate_score),
+        "publication_suppressed_reason": out.publication_suppressed_reason,
     }
 
 

@@ -58,6 +58,9 @@ def _output(control_valid=True):
         risk_hard_negative=False,
         risk_absence=False,
         risk_scene_ambiguity=False,
+        candidate_track_id=3,
+        candidate_score=0.72,
+        publication_suppressed_reason="",
     )
 
 
@@ -124,6 +127,9 @@ def test_status_only_json_preserves_core_diagnostics():
     assert payload["visible"] is True
     assert payload["quality"] == 0.73
     assert payload["reason"] == "accepted"
+    assert payload["candidate_track_id"] == 3
+    assert payload["candidate_score"] == 0.72
+    assert payload["publication_suppressed_reason"] == ""
 
 
 def test_status_json_includes_scores_and_appearance_diagnostics():
