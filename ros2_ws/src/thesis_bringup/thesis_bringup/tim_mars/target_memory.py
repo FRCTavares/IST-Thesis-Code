@@ -20,7 +20,17 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from thesis_bringup.tim_mars.appearance_memory import cosine_similarity, update_feature_memory
-
+from thesis_bringup.tim_mars.geometry_scoring import (
+    bbox_area,
+    bbox_centre,
+    bbox_iou,
+    centre_distance_norm,
+    clamp01,
+    distance_similarity,
+    scale_similarity,
+    score_candidate,
+)
+from thesis_bringup.tim_mars.hard_negative_memory import HardNegativeMemory
 from thesis_bringup.tim_mars.types import (
     BBox,
     CandidateScore,
@@ -42,20 +52,6 @@ class _Memory:
     frames_since_seen: int = 0
     confirmed_after_reacquire: int = 0
     appearance: Optional[Any] = None
-
-
-from thesis_bringup.tim_mars.hard_negative_memory import HardNegativeMemory
-
-from thesis_bringup.tim_mars.geometry_scoring import (
-    bbox_area,
-    bbox_centre,
-    bbox_iou,
-    centre_distance_norm,
-    clamp01,
-    distance_similarity,
-    scale_similarity,
-    score_candidate,
-)
 
 
 def _control_mode_for_state(state: TargetState) -> ControlMode:
