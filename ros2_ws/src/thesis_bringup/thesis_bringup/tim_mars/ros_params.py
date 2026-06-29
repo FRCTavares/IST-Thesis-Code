@@ -44,7 +44,7 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("select_topic", "/target_memory_mars/select")
     node.declare_parameter("clear_topic", "/target_memory_mars/clear")
     node.declare_parameter("mirror_target_topic", "/target")
-    node.declare_parameter("mirror_raw_target_selection", True)
+    node.declare_parameter("mirror_raw_target_selection", False)
 
     node.declare_parameter("image_width", 640.0)
     node.declare_parameter("image_height", 640.0)
@@ -76,17 +76,17 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("appearance_update_alpha", 0.10)
     node.declare_parameter("appearance_ambiguous_only", True)
     node.declare_parameter("appearance_update_cooldown_after_reacquire_frames", 0)
-    node.declare_parameter("hard_negative_memory_enabled", False)
+    node.declare_parameter("hard_negative_memory_enabled", True)
     node.declare_parameter("hard_negative_max_entries", 8)
     node.declare_parameter("hard_negative_update_alpha", 0.20)
     node.declare_parameter("hard_negative_min_candidate_similarity", 0.70)
     node.declare_parameter("hard_negative_reject_similarity", 0.80)
-    node.declare_parameter("hard_negative_reject_margin", 0.08)
+    node.declare_parameter("hard_negative_reject_margin", 0.03)
     node.declare_parameter("hard_negative_min_geometry", 0.20)
-    node.declare_parameter("appearance_conservative_enabled", False)
+    node.declare_parameter("appearance_conservative_enabled", True)
     node.declare_parameter("appearance_conservative_require_appearance", False)
     node.declare_parameter("appearance_conservative_min_similarity", 0.65)
-    node.declare_parameter("appearance_conservative_margin", 0.25)
+    node.declare_parameter("appearance_conservative_margin", 0.05)
 
     node.declare_parameter(
         "mars_model_path",

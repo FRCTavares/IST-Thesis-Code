@@ -78,7 +78,8 @@ The practical final preset is:
 - rank-aware reacquisition enabled
 - absence recovery disabled
 - appearance update cooldown disabled
-- balanced appearance margin: 0.15
+- balanced appearance margin: 0.05
+- balanced hard-negative rejection margin: 0.03
 
 ## State machine
 
@@ -144,7 +145,7 @@ This implements the thesis safety rule: lost is safer than wrong.
 
 The strict conservative preset used an appearance margin of 0.25. In full clean replay, this was too suppressive.
 
-A margin of 0.15 gave the best observed balance on the current diagnostic sequence:
+A balanced margin of 0.05, paired with hard-negative rejection margin 0.03, gave the best observed balance across the current locked-annotation validation set:
 
 - high correct-target duration
 - zero wrong-target duration

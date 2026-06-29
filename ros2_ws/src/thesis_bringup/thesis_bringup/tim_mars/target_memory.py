@@ -145,20 +145,20 @@ class TargetMemoryConfig:
     # During trusted lock, non-selected nearby candidates are remembered as
     # negative appearance prototypes. A future candidate that matches the
     # positive memory but is also too close to a hard negative is suppressed.
-    hard_negative_memory_enabled: bool = False
+    hard_negative_memory_enabled: bool = True
     hard_negative_max_entries: int = 8
     hard_negative_update_alpha: float = 0.20
     hard_negative_min_candidate_similarity: float = 0.70
     hard_negative_reject_similarity: float = 0.80
-    hard_negative_reject_margin: float = 0.08
+    hard_negative_reject_margin: float = 0.03
     hard_negative_min_geometry: float = 0.20
 
     # TIM-MARS conservative output filter.
     # When enabled, a candidate must have strong and separated appearance evidence.
-    appearance_conservative_enabled: bool = False
+    appearance_conservative_enabled: bool = True
     appearance_conservative_require_appearance: bool = False
     appearance_conservative_min_similarity: float = 0.65
-    appearance_conservative_margin: float = 0.25
+    appearance_conservative_margin: float = 0.05
 
     # TIM-V2K experimental rank-aware LOST/UNCERTAIN reacquisition.
     # Disabled by default to preserve TIM-V1 behaviour.

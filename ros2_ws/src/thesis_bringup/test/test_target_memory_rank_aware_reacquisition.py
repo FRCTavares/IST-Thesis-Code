@@ -48,7 +48,11 @@ def test_rank_aware_disabled_preserves_rank0_lost_reacquisition():
     distractor = feat([0, 1, 0])
 
     tim = TargetIdentityMemory(
-        cfg(rank_aware_reacquisition_enabled=False)
+        cfg(
+            rank_aware_reacquisition_enabled=False,
+            hard_negative_memory_enabled=False,
+            appearance_conservative_enabled=False,
+        )
     )
     tim.select(tr(1, (100, 100, 160, 240), appearance=target))
 
