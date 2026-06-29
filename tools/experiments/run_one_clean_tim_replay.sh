@@ -130,7 +130,7 @@ apply_tim_mars_preset() {
     legacy|"")
       ;;
 
-    conservative_hardneg|tim_mars_conservative_hardneg)
+    conservative_hardneg|tim_mars_conservative_hardneg|conservative_hardneg_nomirror_rankconfirm2)
       export MARS_HARD_NEGATIVE_MEMORY_ENABLED="${MARS_HARD_NEGATIVE_MEMORY_ENABLED:-true}"
       export MARS_HARD_NEGATIVE_MAX_ENTRIES="${MARS_HARD_NEGATIVE_MAX_ENTRIES:-8}"
       export MARS_HARD_NEGATIVE_UPDATE_ALPHA="${MARS_HARD_NEGATIVE_UPDATE_ALPHA:-0.20}"
@@ -148,11 +148,17 @@ apply_tim_mars_preset() {
       export MARS_RANK_AWARE_CONFIRM_FRAMES="${MARS_RANK_AWARE_CONFIRM_FRAMES:-1}"
       export MARS_ABSENCE_RECOVERY_ENABLED="${MARS_ABSENCE_RECOVERY_ENABLED:-false}"
       export MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES="${MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES:-0}"
+
+      if [[ "$preset" == "conservative_hardneg_nomirror_rankconfirm2" ]]; then
+        export MARS_MIRROR_RAW_TARGET_SELECTION="${MARS_MIRROR_RAW_TARGET_SELECTION:-false}"
+        export MARS_RANK_AWARE_CONFIRM_FRAMES="${MARS_RANK_AWARE_CONFIRM_FRAMES:-2}"
+        export MARS_APPEARANCE_CONSERVATIVE_MARGIN="${MARS_APPEARANCE_CONSERVATIVE_MARGIN:-0.10}"
+      fi
       ;;
 
     *)
       echo "[error] unknown MARS_TIM_PRESET: $preset" >&2
-      echo "[error] valid presets: legacy, conservative_hardneg" >&2
+      echo "[error] valid presets: legacy, conservative_hardneg, conservative_hardneg_nomirror_rankconfirm2" >&2
       exit 2
       ;;
   esac

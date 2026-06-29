@@ -436,6 +436,8 @@ def write_summary_md(
     lines.append("- Higher wrong ratio is bad.")
     lines.append("- Higher lost ratio is safer than wrong target if the system is uncertain, but still reduces following performance.")
     lines.append("- Valid target duration alone must not be used as the main success metric.")
+    lines.append("- This evaluator is track-ID based. It is only valid when tracker IDs match the annotation stream.")
+    lines.append("- For fresh tracker reruns where IDs may be renumbered, use bbox correctness or visual validation instead.")
     lines.append("")
 
     path.write_text("\n".join(lines))

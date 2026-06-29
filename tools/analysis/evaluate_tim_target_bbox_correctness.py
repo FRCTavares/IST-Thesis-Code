@@ -348,6 +348,28 @@ def write_summary(
     for row in rows:
         lines.append("| " + " | ".join(row[k] for k in fieldnames) + " |")
 
+    max_reference_missing_ratio = max(
+        float(row.get("reference_missing_ratio", 0.0))
+        for row in rows
+    )
+
+    lines.append("")
+    lines.append("## Interpretation")
+    lines.append("")
+    lines.append("- Bbox correctness checks whether the published box overlaps the reference target box.")
+    lines.append("- The annotation track ID is still used to locate the reference box inside /tracks.")
+    lines.append("- If reference_missing_ratio is high, the run is only partially scored and should not be compared directly against fully scored runs.")
+
+    if max_reference_missing_ratio >= 0.10:
+        lines.append("")
+        lines.append("## Warning")
+        lines.append("")
+        lines.append(
+            f"- High reference_missing_ratio detected: {max_reference_missing_ratio:.3f}. "
+            "This usually means tracker IDs changed relative to the annotation stream."
+        )
+        lines.append("- Treat correct/wrong/lost values as valid only over the scored subset of the replay.")
+
     md_path.write_text("\n".join(lines) + "\n")
 
     print(f"Wrote: {md_path}")
