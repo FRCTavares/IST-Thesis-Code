@@ -617,7 +617,1171 @@ button:active {{
   min-height: 36px;
 }
 
-</style>
+
+    .annSummary {
+      margin: 10px 0 8px 0;
+      color: #bbb;
+      font-size: 13px;
+    }
+    .annTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
+      table-layout: fixed;
+      background: #151515;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .annTable th {
+      background: #242424;
+      color: #ddd;
+      text-align: left;
+      padding: 9px 10px;
+      border-bottom: 1px solid #444;
+      font-weight: 700;
+    }
+    .annTable td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #2b2b2b;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .annTable tbody tr:hover {
+      background: #202a38;
+    }
+    .annIndex {
+      width: 42px;
+      color: #aaa;
+    }
+    .annNum {
+      font-family: monospace;
+      text-align: right;
+    }
+    .annId {
+      font-family: monospace;
+      font-weight: 800;
+      color: #fff;
+    }
+    .pillVisible,
+    .pillHidden {
+      display: inline-block;
+      min-width: 58px;
+      text-align: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pillVisible {
+      background: #183c25;
+      color: #9cffb8;
+      border: 1px solid #2f7d46;
+    }
+    .pillHidden {
+      background: #3d2d16;
+      color: #ffd28a;
+      border: 1px solid #8a6428;
+    }
+
+  
+    .annSummary {
+      margin: 10px 0 8px 0;
+      color: #bbb;
+      font-size: 13px;
+    }
+    .annEmpty {
+      margin: 10px 0;
+      color: #999;
+      font-size: 13px;
+    }
+    .annTableWrap {
+      max-width: 900px;
+      overflow-x: auto;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #151515;
+    }
+    .annTable {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 14px;
+    }
+    .annTable th {
+      background: #242424;
+      color: #ddd;
+      text-align: left;
+      padding: 9px 10px;
+      border-bottom: 1px solid #444;
+      font-weight: 700;
+    }
+    .annTable td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #2b2b2b;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .annTable tbody tr {
+      cursor: pointer;
+    }
+    .annTable tbody tr:hover {
+      background: #202a38;
+    }
+    .annTable tr.active {
+      background: #263b5e;
+    }
+    .annColSmall,
+    .annIndex {
+      width: 42px;
+      color: #aaa;
+    }
+    .annNum {
+      font-family: monospace;
+      text-align: right;
+    }
+    .annId {
+      font-family: monospace;
+      font-weight: 800;
+      color: #fff;
+      text-align: center;
+    }
+    .annEvent {
+      color: #ccc;
+    }
+    .pillVisible,
+    .pillHidden {
+      display: inline-block;
+      min-width: 58px;
+      text-align: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pillVisible {
+      background: #183c25;
+      color: #9cffb8;
+      border: 1px solid #2f7d46;
+    }
+    .pillHidden {
+      background: #3d2d16;
+      color: #ffd28a;
+      border: 1px solid #8a6428;
+    }
+
+  
+    .annotationEditorGrid {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 130px 130px 120px 1fr;
+      gap: 10px;
+      align-items: end;
+      max-width: 1100px;
+    }
+    .annotationEditorGrid label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      color: #ccc;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .annotationEditorGrid input,
+    .annotationEditorGrid select {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .annTableWrap {
+      max-width: 980px;
+      overflow-x: auto;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #151515;
+      margin-top: 8px;
+    }
+    .editableAnnTable {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 14px;
+    }
+    .editableAnnTable th {
+      background: #242424;
+      color: #ddd;
+      text-align: left;
+      padding: 9px 10px;
+      border-bottom: 1px solid #444;
+      font-weight: 700;
+    }
+    .editableAnnTable td {
+      padding: 7px 8px;
+      border-bottom: 1px solid #2b2b2b;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .editableAnnTable tbody tr:hover {
+      background: #202a38;
+    }
+    .editableAnnTable tr.active {
+      background: #263b5e;
+    }
+    .annCellInput {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 5px 7px;
+      margin: 0;
+      background: #1f1f1f;
+      color: #eee;
+      border: 1px solid #444;
+      border-radius: 5px;
+    }
+    .annNumInput {
+      font-family: monospace;
+      text-align: right;
+    }
+    .annIdInput {
+      font-family: monospace;
+      font-weight: 800;
+      text-align: center;
+    }
+    .annDuration {
+      font-family: monospace;
+      text-align: right;
+      color: #ddd;
+    }
+    .annVisibleCell {
+      text-align: center;
+    }
+    .annCheckLabel {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #9cffb8;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .annEventSelect {
+      font-size: 13px;
+    }
+    .annMiniBtn {
+      padding: 5px 8px;
+      margin: 0;
+      font-size: 12px;
+    }
+
+  
+    .annEditorCard {
+      max-width: 1100px;
+      padding: 12px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #161616;
+      margin: 10px 0 12px 0;
+    }
+    .annEditorGrid {
+      display: grid;
+      grid-template-columns: minmax(260px, 1.6fr) 120px 120px 110px minmax(180px, 1fr);
+      gap: 10px;
+      align-items: end;
+    }
+    .annEditorGrid label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      color: #ccc;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .annEditorGrid input,
+    .annEditorGrid select {
+      width: 100%;
+      box-sizing: border-box;
+      background: #222;
+      color: #eee;
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 8px 9px;
+      font-size: 14px;
+      margin: 0;
+    }
+    .annEditorActions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .annEditorActions button {
+      font-size: 13px;
+      padding: 8px 10px;
+      margin: 0;
+    }
+
+  
+    /* Final annotation editor polish */
+    .annEditorCard {
+      max-width: 960px;
+      padding: 14px;
+      border: 1px solid #303030;
+      border-radius: 10px;
+      background: #171717;
+      margin: 10px 0 14px 0;
+    }
+
+    .annEditorGrid {
+      display: grid;
+      grid-template-columns: minmax(300px, 2fr) 110px 110px 95px minmax(170px, 1fr);
+      gap: 12px;
+      align-items: end;
+    }
+
+    .annEditorGrid label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: #cfcfcf;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: none;
+    }
+
+    .annEditorGrid input,
+    .annEditorGrid select {
+      height: 36px;
+      width: 100%;
+      box-sizing: border-box;
+      background: #222;
+      color: #f0f0f0;
+      border: 1px solid #4a4a4a;
+      border-radius: 7px;
+      padding: 7px 9px;
+      font-size: 13px;
+      margin: 0;
+    }
+
+    .annEditorActions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .annEditorActions button {
+      height: 34px;
+      padding: 7px 11px;
+      margin: 0;
+      font-size: 13px;
+      border-radius: 7px;
+      border: 1px solid #666;
+    }
+
+    #annStatus {
+      margin: 8px 0 8px 0;
+      color: #aaa;
+      font-size: 13px;
+    }
+
+    .annTableWrap {
+      max-width: 960px;
+      overflow-x: hidden;
+      border: 1px solid #303030;
+      border-radius: 10px;
+      background: #151515;
+      margin-top: 8px;
+    }
+
+    .editableAnnTable {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 13px;
+    }
+
+    .editableAnnTable th {
+      background: #252525;
+      color: #ddd;
+      text-align: left;
+      padding: 9px 10px;
+      border-bottom: 1px solid #3a3a3a;
+      font-weight: 700;
+    }
+
+    .editableAnnTable td {
+      padding: 7px 8px;
+      border-bottom: 1px solid #292929;
+      vertical-align: middle;
+    }
+
+    .editableAnnTable th:nth-child(1),
+    .editableAnnTable td:nth-child(1) {
+      width: 38px;
+    }
+
+    .editableAnnTable th:nth-child(2),
+    .editableAnnTable td:nth-child(2),
+    .editableAnnTable th:nth-child(3),
+    .editableAnnTable td:nth-child(3),
+    .editableAnnTable th:nth-child(4),
+    .editableAnnTable td:nth-child(4) {
+      width: 120px;
+    }
+
+    .editableAnnTable th:nth-child(5),
+    .editableAnnTable td:nth-child(5) {
+      width: 95px;
+    }
+
+    .editableAnnTable th:nth-child(6),
+    .editableAnnTable td:nth-child(6) {
+      width: 115px;
+    }
+
+    .editableAnnTable th:nth-child(7),
+    .editableAnnTable td:nth-child(7) {
+      width: 170px;
+    }
+
+    .editableAnnTable tbody tr:hover {
+      background: #20242b;
+    }
+
+    .editableAnnTable tr.active {
+      background: #243247;
+    }
+
+    .annCellInput {
+      height: 30px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 5px 7px;
+      margin: 0;
+      background: #202020;
+      color: #eee;
+      border: 1px solid #3f3f3f;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .annNumInput,
+    .annDuration {
+      font-family: monospace;
+      text-align: right;
+    }
+
+    .annIdInput {
+      font-family: monospace;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .annDuration {
+      color: #e0e0e0;
+      padding-right: 12px !important;
+    }
+
+    .annCheckLabel {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #9cffb8;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .annEventSelect {
+      font-size: 12px;
+    }
+
+    .annIndex {
+      color: #9a9a9a;
+    }
+
+  
+    /* Annotation editor final layout pass */
+    #annStatus {
+      max-width: 860px;
+      margin: 10px 0 8px 0;
+      color: #aaa;
+      font-size: 13px;
+    }
+
+    .annEditorCard {
+      max-width: 860px !important;
+      padding: 14px !important;
+      border: 1px solid #303030 !important;
+      border-radius: 10px !important;
+      background: #171717 !important;
+      margin: 10px 0 12px 0 !important;
+    }
+
+    .annEditorGrid {
+      display: grid !important;
+      grid-template-columns: minmax(260px, 1.8fr) 92px 92px 86px minmax(145px, 1fr) !important;
+      gap: 10px !important;
+      align-items: end !important;
+    }
+
+    .annEditorGrid label {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 5px !important;
+      color: #bdbdbd !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.02em !important;
+    }
+
+    .annEditorGrid input,
+    .annEditorGrid select {
+      height: 34px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      background: #202020 !important;
+      color: #eeeeee !important;
+      border: 1px solid #454545 !important;
+      border-radius: 7px !important;
+      padding: 6px 8px !important;
+      font-size: 13px !important;
+      margin: 0 !important;
+    }
+
+    .annEditorGrid input:focus,
+    .annEditorGrid select:focus,
+    .annCellInput:focus {
+      outline: none !important;
+      border-color: #777 !important;
+      background: #252525 !important;
+    }
+
+    .annEditorActions {
+      display: flex !important;
+      gap: 8px !important;
+      margin-top: 11px !important;
+      flex-wrap: wrap !important;
+    }
+
+    .annEditorActions button {
+      height: 32px !important;
+      padding: 6px 10px !important;
+      margin: 0 !important;
+      font-size: 12px !important;
+      border-radius: 7px !important;
+      border: 1px solid #5d5d5d !important;
+      background: #303030 !important;
+    }
+
+    .annEditorActions button:hover {
+      background: #3a3a3a !important;
+      border-color: #777 !important;
+    }
+
+    .annTableWrap {
+      max-width: 860px !important;
+      overflow: hidden !important;
+      border: 1px solid #303030 !important;
+      border-radius: 10px !important;
+      background: #151515 !important;
+      margin-top: 8px !important;
+    }
+
+    .editableAnnTable {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      table-layout: fixed !important;
+      font-size: 13px !important;
+    }
+
+    .editableAnnTable th {
+      background: #232323 !important;
+      color: #cfcfcf !important;
+      text-align: left !important;
+      padding: 8px 9px !important;
+      border-bottom: 1px solid #383838 !important;
+      font-weight: 700 !important;
+      font-size: 12px !important;
+    }
+
+    .editableAnnTable td {
+      padding: 6px 8px !important;
+      border-bottom: 1px solid #282828 !important;
+      vertical-align: middle !important;
+    }
+
+    .editableAnnTable tbody tr:last-child td {
+      border-bottom: none !important;
+    }
+
+    .editableAnnTable tbody tr:hover {
+      background: #1f242b !important;
+    }
+
+    .editableAnnTable tr.active {
+      background: #243247 !important;
+    }
+
+    .editableAnnTable th:nth-child(1),
+    .editableAnnTable td:nth-child(1) {
+      width: 34px !important;
+    }
+
+    .editableAnnTable th:nth-child(2),
+    .editableAnnTable td:nth-child(2),
+    .editableAnnTable th:nth-child(3),
+    .editableAnnTable td:nth-child(3),
+    .editableAnnTable th:nth-child(4),
+    .editableAnnTable td:nth-child(4) {
+      width: 105px !important;
+    }
+
+    .editableAnnTable th:nth-child(5),
+    .editableAnnTable td:nth-child(5) {
+      width: 86px !important;
+    }
+
+    .editableAnnTable th:nth-child(6),
+    .editableAnnTable td:nth-child(6) {
+      width: 100px !important;
+    }
+
+    .editableAnnTable th:nth-child(7),
+    .editableAnnTable td:nth-child(7) {
+      width: 150px !important;
+    }
+
+    .annCellInput {
+      height: 28px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      padding: 4px 7px !important;
+      margin: 0 !important;
+      background: #1f1f1f !important;
+      color: #e8e8e8 !important;
+      border: 1px solid #3b3b3b !important;
+      border-radius: 6px !important;
+      font-size: 12px !important;
+    }
+
+    .annNumInput,
+    .annDuration {
+      font-family: monospace !important;
+      text-align: right !important;
+    }
+
+    .annIdInput {
+      font-family: monospace !important;
+      font-weight: 800 !important;
+      text-align: center !important;
+    }
+
+    .annDuration {
+      color: #ddd !important;
+      padding-right: 10px !important;
+    }
+
+    .annIndex {
+      color: #909090 !important;
+      font-size: 12px !important;
+    }
+
+    .annCheckLabel {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      color: #91f5aa !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+    }
+
+    .annCheckLabel input {
+      margin: 0 !important;
+    }
+
+    .annEventSelect {
+      font-size: 12px !important;
+      max-width: 145px !important;
+    }
+
+    #annRows {
+      max-width: 880px !important;
+    }
+
+  
+    /* Annotation editor wide layout override */
+    #annStatus {
+      max-width: 1500px !important;
+      margin: 12px 0 10px 0 !important;
+      color: #aaa !important;
+      font-size: 15px !important;
+    }
+
+    .annEditorCard {
+      width: min(1500px, calc(100vw - 80px)) !important;
+      max-width: none !important;
+      padding: 18px !important;
+      border: 1px solid #333 !important;
+      border-radius: 12px !important;
+      background: #171717 !important;
+      margin: 12px 0 16px 0 !important;
+    }
+
+    .annEditorGrid {
+      display: grid !important;
+      grid-template-columns: minmax(420px, 2.2fr) 130px 130px 120px minmax(220px, 1fr) !important;
+      gap: 14px !important;
+      align-items: end !important;
+    }
+
+    .annEditorGrid label {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 6px !important;
+      color: #cfcfcf !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+    }
+
+    .annEditorGrid input,
+    .annEditorGrid select {
+      height: 42px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      background: #222 !important;
+      color: #f0f0f0 !important;
+      border: 1px solid #555 !important;
+      border-radius: 8px !important;
+      padding: 8px 11px !important;
+      font-size: 15px !important;
+      margin: 0 !important;
+    }
+
+    .annEditorActions {
+      display: flex !important;
+      gap: 10px !important;
+      margin-top: 14px !important;
+      flex-wrap: wrap !important;
+    }
+
+    .annEditorActions button {
+      height: 40px !important;
+      padding: 8px 14px !important;
+      margin: 0 !important;
+      font-size: 15px !important;
+      border-radius: 8px !important;
+      border: 1px solid #666 !important;
+      background: #303030 !important;
+    }
+
+    .annTableWrap {
+      width: min(1500px, calc(100vw - 80px)) !important;
+      max-width: none !important;
+      overflow-x: auto !important;
+      border: 1px solid #333 !important;
+      border-radius: 12px !important;
+      background: #151515 !important;
+      margin-top: 10px !important;
+    }
+
+    .editableAnnTable {
+      width: 100% !important;
+      min-width: 1180px !important;
+      border-collapse: collapse !important;
+      table-layout: fixed !important;
+      font-size: 15px !important;
+    }
+
+    .editableAnnTable th {
+      background: #242424 !important;
+      color: #ddd !important;
+      text-align: left !important;
+      padding: 11px 12px !important;
+      border-bottom: 1px solid #3c3c3c !important;
+      font-weight: 800 !important;
+      font-size: 14px !important;
+    }
+
+    .editableAnnTable td {
+      padding: 9px 10px !important;
+      border-bottom: 1px solid #292929 !important;
+      vertical-align: middle !important;
+    }
+
+    .editableAnnTable th:nth-child(1),
+    .editableAnnTable td:nth-child(1) {
+      width: 50px !important;
+    }
+
+    .editableAnnTable th:nth-child(2),
+    .editableAnnTable td:nth-child(2),
+    .editableAnnTable th:nth-child(3),
+    .editableAnnTable td:nth-child(3),
+    .editableAnnTable th:nth-child(4),
+    .editableAnnTable td:nth-child(4) {
+      width: 150px !important;
+    }
+
+    .editableAnnTable th:nth-child(5),
+    .editableAnnTable td:nth-child(5) {
+      width: 120px !important;
+    }
+
+    .editableAnnTable th:nth-child(6),
+    .editableAnnTable td:nth-child(6) {
+      width: 140px !important;
+    }
+
+    .editableAnnTable th:nth-child(7),
+    .editableAnnTable td:nth-child(7) {
+      width: 260px !important;
+    }
+
+    .annCellInput {
+      height: 38px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      padding: 7px 10px !important;
+      margin: 0 !important;
+      background: #202020 !important;
+      color: #eee !important;
+      border: 1px solid #444 !important;
+      border-radius: 8px !important;
+      font-size: 15px !important;
+    }
+
+    .annNumInput,
+    .annDuration {
+      font-family: monospace !important;
+      text-align: right !important;
+      font-size: 15px !important;
+    }
+
+    .annIdInput {
+      font-family: monospace !important;
+      font-weight: 900 !important;
+      text-align: center !important;
+      font-size: 15px !important;
+    }
+
+    .annCheckLabel {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      color: #91f5aa !important;
+      font-size: 15px !important;
+      font-weight: 800 !important;
+    }
+
+    .annEventSelect {
+      font-size: 15px !important;
+    }
+
+    #annRows {
+      width: min(1500px, calc(100vw - 80px)) !important;
+      max-width: none !important;
+    }
+
+  
+    /* Annotation editor harmony pass */
+    #annStatus {
+      width: min(1320px, calc(100vw - 96px)) !important;
+      margin: 14px 0 8px 0 !important;
+      color: #a8a8a8 !important;
+      font-size: 14px !important;
+    }
+
+    .annEditorCard,
+    .annTableWrap {
+      width: min(1320px, calc(100vw - 96px)) !important;
+      max-width: none !important;
+      box-sizing: border-box !important;
+      background: #171717 !important;
+      border: 1px solid #2f2f2f !important;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset !important;
+    }
+
+    .annEditorCard {
+      padding: 16px !important;
+      border-radius: 12px 12px 8px 8px !important;
+      margin: 12px 0 0 0 !important;
+      border-bottom-color: #252525 !important;
+    }
+
+    .annTableWrap {
+      margin-top: 0 !important;
+      border-top: none !important;
+      border-radius: 0 0 12px 12px !important;
+      overflow-x: auto !important;
+    }
+
+    .annEditorGrid {
+      display: grid !important;
+      grid-template-columns: minmax(360px, 1.7fr) 115px 115px 105px minmax(210px, 1fr) !important;
+      gap: 12px !important;
+      align-items: end !important;
+    }
+
+    .annEditorGrid label {
+      color: #bdbdbd !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.01em !important;
+    }
+
+    .annEditorGrid input,
+    .annEditorGrid select,
+    .annCellInput {
+      height: 36px !important;
+      background: #212121 !important;
+      color: #eeeeee !important;
+      border: 1px solid #444 !important;
+      border-radius: 7px !important;
+      font-size: 14px !important;
+      box-sizing: border-box !important;
+    }
+
+    .annEditorGrid input,
+    .annEditorGrid select {
+      padding: 7px 10px !important;
+    }
+
+    .annCellInput {
+      padding: 5px 8px !important;
+    }
+
+    .annEditorActions {
+      display: flex !important;
+      gap: 8px !important;
+      margin-top: 12px !important;
+      align-items: center !important;
+    }
+
+    .annEditorActions button {
+      height: 34px !important;
+      padding: 7px 12px !important;
+      margin: 0 !important;
+      font-size: 13px !important;
+      border-radius: 7px !important;
+      border: 1px solid #5b5b5b !important;
+      background: #2f2f2f !important;
+    }
+
+    .annEditorActions button:first-child {
+      background: #353535 !important;
+      border-color: #707070 !important;
+    }
+
+    .editableAnnTable {
+      width: 100% !important;
+      min-width: 1040px !important;
+      border-collapse: collapse !important;
+      table-layout: fixed !important;
+      font-size: 14px !important;
+      background: #171717 !important;
+    }
+
+    .editableAnnTable th {
+      background: #202020 !important;
+      color: #cccccc !important;
+      padding: 10px 12px !important;
+      border-bottom: 1px solid #333 !important;
+      font-size: 12px !important;
+      font-weight: 800 !important;
+      text-transform: none !important;
+    }
+
+    .editableAnnTable td {
+      padding: 8px 10px !important;
+      border-bottom: 1px solid #262626 !important;
+      vertical-align: middle !important;
+    }
+
+    .editableAnnTable tbody tr:nth-child(even) {
+      background: #151515 !important;
+    }
+
+    .editableAnnTable tbody tr:hover {
+      background: #202833 !important;
+    }
+
+    .editableAnnTable tbody tr:last-child td {
+      border-bottom: none !important;
+    }
+
+    .editableAnnTable th:nth-child(1),
+    .editableAnnTable td:nth-child(1) {
+      width: 44px !important;
+    }
+
+    .editableAnnTable th:nth-child(2),
+    .editableAnnTable td:nth-child(2),
+    .editableAnnTable th:nth-child(3),
+    .editableAnnTable td:nth-child(3),
+    .editableAnnTable th:nth-child(4),
+    .editableAnnTable td:nth-child(4) {
+      width: 132px !important;
+    }
+
+    .editableAnnTable th:nth-child(5),
+    .editableAnnTable td:nth-child(5) {
+      width: 110px !important;
+    }
+
+    .editableAnnTable th:nth-child(6),
+    .editableAnnTable td:nth-child(6) {
+      width: 130px !important;
+    }
+
+    .editableAnnTable th:nth-child(7),
+    .editableAnnTable td:nth-child(7) {
+      width: 220px !important;
+    }
+
+    .annNumInput,
+    .annDuration {
+      font-family: monospace !important;
+      text-align: right !important;
+      font-size: 14px !important;
+    }
+
+    .annIdInput {
+      font-family: monospace !important;
+      font-weight: 800 !important;
+      text-align: center !important;
+      font-size: 14px !important;
+    }
+
+    .annDuration {
+      color: #d8d8d8 !important;
+      padding-right: 12px !important;
+    }
+
+    .annIndex {
+      color: #8d8d8d !important;
+      font-size: 13px !important;
+    }
+
+    .annCheckLabel {
+      color: #8df2a5 !important;
+      font-size: 13px !important;
+      font-weight: 800 !important;
+      gap: 7px !important;
+    }
+
+    .annEventSelect {
+      font-size: 13px !important;
+    }
+
+    #annRows {
+      width: min(1320px, calc(100vw - 96px)) !important;
+      max-width: none !important;
+    }
+
+  
+    /* Annotation editor centered layout override */
+    details:has(#annRows) {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+    }
+
+    details:has(#annRows) > summary,
+    details:has(#annRows) > h3,
+    details:has(#annRows) > p.hint {
+      width: min(1500px, calc(100vw - 96px)) !important;
+      align-self: center !important;
+    }
+
+    .annEditorCard,
+    #annStatus,
+    #annRows,
+    .annTableWrap {
+      width: min(1500px, calc(100vw - 96px)) !important;
+      max-width: none !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+      box-sizing: border-box !important;
+    }
+
+    .annEditorCard {
+      padding: 18px !important;
+      border-radius: 12px 12px 0 0 !important;
+      margin-top: 14px !important;
+      margin-bottom: 0 !important;
+      background: #171717 !important;
+      border: 1px solid #333 !important;
+      border-bottom: 0 !important;
+    }
+
+    .annTableWrap {
+      border-radius: 0 0 12px 12px !important;
+      border: 1px solid #333 !important;
+      background: #151515 !important;
+      overflow-x: auto !important;
+    }
+
+    .annEditorGrid {
+      grid-template-columns: minmax(520px, 2fr) 130px 130px 120px minmax(240px, 1fr) !important;
+      gap: 14px !important;
+    }
+
+    .editableAnnTable {
+      width: 100% !important;
+      min-width: 1250px !important;
+    }
+
+    .editableAnnTable th,
+    .editableAnnTable td {
+      text-align: center !important;
+    }
+
+    .editableAnnTable th:nth-child(1),
+    .editableAnnTable td:nth-child(1) {
+      width: 60px !important;
+      text-align: left !important;
+    }
+
+    .editableAnnTable th:nth-child(2),
+    .editableAnnTable td:nth-child(2),
+    .editableAnnTable th:nth-child(3),
+    .editableAnnTable td:nth-child(3),
+    .editableAnnTable th:nth-child(4),
+    .editableAnnTable td:nth-child(4) {
+      width: 170px !important;
+    }
+
+    .editableAnnTable th:nth-child(5),
+    .editableAnnTable td:nth-child(5) {
+      width: 140px !important;
+    }
+
+    .editableAnnTable th:nth-child(6),
+    .editableAnnTable td:nth-child(6) {
+      width: 150px !important;
+    }
+
+    .editableAnnTable th:nth-child(7),
+    .editableAnnTable td:nth-child(7) {
+      width: 260px !important;
+    }
+
+    .annNumInput,
+    .annIdInput,
+    .annDuration {
+      text-align: center !important;
+    }
+
+    .annEventSelect {
+      max-width: 240px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+
+  </style>
 </head>
 <body>
   <h2>TIM-MARS Clean UI</h2>
@@ -681,55 +1845,56 @@ button:active {{
 
   <div class="panel">
     <details open>
-      <summary>3. Evaluation result</summary>
+      <summary>3. Visual annotation tools</summary>
       
 <div class="annotationBox">
   <h3>Annotation editor</h3>
-  <div class="hint">
-    Creates evaluator-compatible interval CSVs. Use tracks-only view, scrub to the frame, set interval start/end, then add the correct target ID.
-  </div>
+  <p class="hint">
+    Edit evaluator-compatible target intervals. Use the table below for row-level edits.
+  </p>
 
-  <div class="annotationControls">
-    <label>output CSV
-      <input id="annOutPath" value="docs/data/annotations/ui_created/new_annotation.csv">
-    </label>
-    <label>start s
-      <input id="annStart" type="number" step="0.001" value="0.000">
-    </label>
-    <label>end s
-      <input id="annEnd" type="number" step="0.001" value="1.000">
-    </label>
-    <label>target ID
-      <input id="annTargetId" type="number" step="1" value="1">
-    </label>
-    <label>label
-      <select id="annLabel">
-        <option value="CORRECT_TARGET">CORRECT_TARGET</option>
-        <option value="TARGET_NOT_VISIBLE">TARGET_NOT_VISIBLE</option>
-        <option value="NO_TARGET_SELECTED">NO_TARGET_SELECTED</option>
-      </select>
-    </label>
-    <label>event
-      <select id="annEvent">
-              <option value="manual_interval">manual_interval</option>
-              <option value="id_switch">id_switch</option>
-              <option value="target_occluded">target_occluded</option>
-              <option value="target_exits_frame">target_exits_frame</option>
-              <option value="target_reappears">target_reappears</option>
-              <option value="uncertain">uncertain</option>
-            </select>
-    </label>
-  </div>
+  <div class="annEditorCard">
+    <div class="annEditorGrid">
+      <label>
+        output CSV
+        <input id="annCsv" value="docs/data/annotations/ui_created/new_annotation.csv">
+      </label>
 
-  <label>notes
-    <input id="annNotes" style="width:100%" value="created in TIM clean UI">
-  </label>
+      <label>
+        start s
+        <input id="annStart" type="number" step="0.001" value="0.000">
+      </label>
 
-  <div class="annotationButtons">
-    <button onclick="annAddInterval()">Add / update interval</button>
-    <button onclick="annDeleteActive()">Delete active</button>
-    <button onclick="annLoadSelected()">Load selected CSV</button>
-    <button onclick="annSave()">Save CSV</button>
+      <label>
+        end s
+        <input id="annEnd" type="number" step="0.001" value="1.000">
+      </label>
+
+      <label>
+        target ID
+        <input id="annTargetId" type="number" step="1" value="1">
+      </label>
+
+      <label>
+        event
+        <select id="annEvent">
+          <option value="manual_interval">manual_interval</option>
+          <option value="visible_id_interval">visible_id_interval</option>
+          <option value="occlusion">occlusion</option>
+          <option value="reentry">reentry</option>
+        </select>
+      </label>
+    </div>
+
+    <input id="annLabel" type="hidden" value="CORRECT_TARGET">
+    <input id="annNotes" type="hidden" value="created in TIM clean UI">
+
+    <div class="annEditorActions">
+      <button onclick="annAddInterval()">Add / update interval</button>
+      <button onclick="annDeleteActive()">Delete active</button>
+      <button onclick="annLoadSelected()">Load selected CSV</button>
+      <button onclick="annSave()">Save CSV</button>
+    </div>
   </div>
 
   <div class="hint" id="annStatus">No annotation rows loaded.</div>
@@ -764,6 +1929,27 @@ button:active {{
   </div>
 
 <script>
+
+
+function setValueIfPresent(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value;
+}
+
+function getValueOrDefault(id, fallback) {
+  const el = document.getElementById(id);
+  return el ? el.value : fallback;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 let allBags = __BAGS_JSON__;
 let allAnnotations = __ANNOTATIONS_JSON__;
 let loadedFrames = 0;
@@ -1472,11 +2658,11 @@ function currentTimeS() {
 }
 
 function annSetStartNow() {
-  document.getElementById("annStart").value = currentTimeS().toFixed(3);
+  setValueIfPresent("annStart", currentTimeS().toFixed(3));
 }
 
 function annSetEndNow() {
-  document.getElementById("annEnd").value = currentTimeS().toFixed(3);
+  setValueIfPresent("annEnd", currentTimeS().toFixed(3));
 }
 
 function currentBagNameForAnnotation() {
@@ -1499,37 +2685,84 @@ function normaliseAnnRow(row) {
   };
 }
 
+
+function editAnnotationCell(idx, key, value) {
+  if (idx < 0 || idx >= annotationRows.length) return;
+
+  annotationRows[idx][key] = value;
+
+  if (key === "start_s" || key === "end_s") {
+    annotationRows[idx][key] = Number(value).toFixed(3);
+  }
+
+  if (key === "correct_target_track_id") {
+    annotationRows[idx][key] = String(value || "").trim();
+  }
+
+  activeAnnotationIndex = idx;
+  renderAnnotations();
+
+  const start = document.getElementById("annStart");
+  const end = document.getElementById("annEnd");
+  const tid = document.getElementById("annTargetId");
+  if (start) start.value = annotationRows[idx].start_s || "";
+  if (end) end.value = annotationRows[idx].end_s || "";
+  if (tid) tid.value = annotationRows[idx].correct_target_track_id || "";
+}
+
 function annRenderRows() {
   const host = document.getElementById("annRows");
   const status = document.getElementById("annStatus");
-  annotationRows.sort((a, b) => parseFloat(a.start_s) - parseFloat(b.start_s));
+  if (!host) return;
 
-  status.innerText = annotationRows.length + " annotation intervals loaded.";
+  annotationRows.sort((a, b) => parseFloat(a.start_s || 0) - parseFloat(b.start_s || 0));
+
+  if (status) {
+    status.innerText = annotationRows.length + " annotation intervals loaded.";
+  }
 
   if (!annotationRows.length) {
-    host.innerHTML = "";
+    host.innerHTML = "<div class='annEmpty'>No annotation intervals loaded.</div>";
     return;
   }
 
-  let html = "<table><thead><tr>";
-  html += "<th>#</th><th>start</th><th>end</th><th>label</th><th>visible</th><th>ID</th><th>event</th><th>notes</th>";
+  let html = "";
+  html += "<div class='annTableWrap'>";
+  html += "<table class='annTable editableAnnTable'>";
+  html += "<thead><tr>";
+  html += "<th class='annColSmall'>#</th>";
+  html += "<th>start s</th>";
+  html += "<th>end s</th>";
+  html += "<th>duration</th>";
+  html += "<th>target ID</th>";
+  html += "<th>visible</th>";
+  html += "<th>event</th>";
   html += "</tr></thead><tbody>";
 
-  annotationRows.forEach((r, i) => {
-    const cls = i === activeAnnotationIndex ? " class='active'" : "";
-    html += "<tr" + cls + " onclick='annSelectRow(" + i + ")'>";
-    html += "<td>" + i + "</td>";
-    html += "<td>" + Number(r.start_s).toFixed(3) + "</td>";
-    html += "<td>" + Number(r.end_s).toFixed(3) + "</td>";
-    html += "<td>" + r.target_label + "</td>";
-    html += "<td>" + r.target_visible + "</td>";
-    html += "<td>" + r.correct_target_track_id + "</td>";
-    html += "<td>" + r.event_type + "</td>";
-    html += "<td>" + r.notes + "</td>";
+  annotationRows.forEach((r, idx) => {
+    const start = Number(r.start_s || 0);
+    const end = Number(r.end_s || 0);
+    const duration = Math.max(0, end - start);
+    const visible = String(r.target_visible || "").toLowerCase() === "true";
+    const active = idx === activeAnnotationIndex ? " active" : "";
+
+    html += "<tr class='" + active + "' onclick='selectAnnotation(" + idx + ")'>";
+    html += "<td class='annIndex'>" + idx + "</td>";
+    html += "<td><input class='annCellInput annNumInput' type='number' step='0.001' value='" + start.toFixed(3) + "' onchange='editAnnotationCell(" + idx + ", &quot;start_s&quot;, this.value)' onclick='event.stopPropagation()'></td>";
+    html += "<td><input class='annCellInput annNumInput' type='number' step='0.001' value='" + end.toFixed(3) + "' onchange='editAnnotationCell(" + idx + ", &quot;end_s&quot;, this.value)' onclick='event.stopPropagation()'></td>";
+    html += "<td class='annNum annDuration'>" + duration.toFixed(3) + "</td>";
+    html += "<td><input class='annCellInput annIdInput' type='number' step='1' value='" + escapeHtml(String(r.correct_target_track_id || "")) + "' onchange='editAnnotationCell(" + idx + ", &quot;correct_target_track_id&quot;, this.value)' onclick='event.stopPropagation()'></td>";
+    html += "<td class='annVisibleCell'><label class='annCheckLabel'><input type='checkbox' " + (visible ? "checked" : "") + " onchange='editAnnotationCell(" + idx + ", &quot;target_visible&quot;, this.checked ? &quot;true&quot; : &quot;false&quot;)' onclick='event.stopPropagation()'> visible</label></td>";
+    html += "<td><select class='annCellInput annEventSelect' onchange='editAnnotationCell(" + idx + ", &quot;event_type&quot;, this.value)' onclick='event.stopPropagation()'>";
+    html += "<option value='visible_id_interval'" + ((r.event_type || "") === "visible_id_interval" ? " selected" : "") + ">visible_id_interval</option>";
+    html += "<option value='manual_interval'" + ((r.event_type || "") === "manual_interval" ? " selected" : "") + ">manual_interval</option>";
+    html += "<option value='occlusion'" + ((r.event_type || "") === "occlusion" ? " selected" : "") + ">occlusion</option>";
+    html += "<option value='reentry'" + ((r.event_type || "") === "reentry" ? " selected" : "") + ">reentry</option>";
+    html += "</select></td>";
     html += "</tr>";
   });
 
-  html += "</tbody></table>";
+  html += "</tbody></table></div>";
   host.innerHTML = html;
 }
 
@@ -1538,21 +2771,21 @@ function annSelectRow(i) {
   const r = annotationRows[i];
   if (!r) return;
 
-  document.getElementById("annStart").value = Number(r.start_s).toFixed(3);
-  document.getElementById("annEnd").value = Number(r.end_s).toFixed(3);
-  document.getElementById("annTargetId").value = r.correct_target_track_id || "";
-  document.getElementById("annLabel").value = r.target_label || "CORRECT_TARGET";
-  document.getElementById("annEvent").value = r.event_type || "manual_interval";
-  document.getElementById("annNotes").value = r.notes || "";
+  setValueIfPresent("annStart", Number(r.start_s).toFixed(3));
+  setValueIfPresent("annEnd", Number(r.end_s).toFixed(3));
+  setValueIfPresent("annTargetId", r.correct_target_track_id || "");
+  setValueIfPresent("annLabel", r.target_label || "CORRECT_TARGET");
+  setValueIfPresent("annEvent", r.event_type || "manual_interval");
+  setValueIfPresent("annNotes", r.notes || "");
 
   annRenderRows();
 }
 
 function annAddInterval() {
-  const label = document.getElementById("annLabel").value;
-  const start = parseFloat(document.getElementById("annStart").value || "0");
-  const end = parseFloat(document.getElementById("annEnd").value || "0");
-  const targetId = document.getElementById("annTargetId").value.trim();
+  const label = getValueOrDefault("annLabel", "CORRECT_TARGET");
+  const start = parseFloat(getValueOrDefault("annStart", "0") || "0");
+  const end = parseFloat(getValueOrDefault("annEnd", "0") || "0");
+  const targetId = getValueOrDefault("annTargetId", "").trim();
 
   if (!(end > start)) {
     alert("Invalid interval: end must be greater than start.");
@@ -1568,8 +2801,8 @@ function annAddInterval() {
     target_visible: visible ? "true" : "false",
     correct_target_track_id: visible ? targetId : "",
     distractor_track_ids: "",
-    event_type: document.getElementById("annEvent").value || "manual_interval",
-    notes: document.getElementById("annNotes").value || "created in TIM clean UI"
+    event_type: getValueOrDefault("annEvent", "manual_interval") || "manual_interval",
+    notes: getValueOrDefault("annNotes", "created in TIM clean UI") || "created in TIM clean UI"
   });
 
   if (visible && !row.correct_target_track_id) {
@@ -1614,13 +2847,13 @@ async function annLoadSelected() {
 
   annotationRows = (data.rows || []).map(normaliseAnnRow);
   activeAnnotationIndex = -1;
-  document.getElementById("annOutPath").value = ann.replace(".csv", "_edited.csv");
+  setValueIfPresent("annCsv", ann.replace(".csv", "_edited.csv"));
   document.getElementById("annStatus").innerText = "Loaded " + annotationRows.length + " intervals from " + ann;
   annRenderRows();
 }
 
 async function annSave() {
-  const outPath = document.getElementById("annOutPath").value.trim();
+  const outPath = getValueOrDefault("annCsv", "").trim();
   if (!outPath) {
     alert("Set output CSV path.");
     return;
@@ -2179,7 +3412,7 @@ button:active {{
 </div>
 
 <div class="panel">
-<h3>3. Evaluation result</h3>
+<h3>3. Visual annotation tools</h3>
 
 <div class="annotationBox">
   <h3>4. Annotation editor</h3>
@@ -2567,9 +3800,9 @@ function annNormaliseRow(row) {{
 }}
 
 function annGetFormRow() {{
-  var label = document.getElementById("annLabel").value;
-  var start = Number(document.getElementById("annStart").value);
-  var end = Number(document.getElementById("annEnd").value);
+  var label = getValueOrDefault("annLabel", "CORRECT_TARGET");
+  var start = Number(getValueOrDefault("annStart", "0"));
+  var end = Number(getValueOrDefault("annEnd", "0"));
   var visible = label === "CORRECT_TARGET";
 
   return annNormaliseRow({{
@@ -2577,9 +3810,9 @@ function annGetFormRow() {{
     start_s: start.toFixed(3),
     end_s: end.toFixed(3),
     target_label: label,
-    correct_target_track_id: visible ? document.getElementById("annTargetId").value.trim() : "",
-    event_type: document.getElementById("annEvent").value,
-    notes: document.getElementById("annNotes").value || ""
+    correct_target_track_id: visible ? getValueOrDefault("annTargetId", "").trim() : "",
+    event_type: getValueOrDefault("annEvent", "manual_interval"),
+    notes: getValueOrDefault("annNotes", "created in TIM clean UI") || ""
   }});
 }}
 
@@ -2673,12 +3906,12 @@ function annSelectRow(i) {{
   if (!r) return;
 
   window.annSelectedRow = i;
-  document.getElementById("annStart").value = r.start_s;
-  document.getElementById("annEnd").value = r.end_s;
-  document.getElementById("annLabel").value = r.target_label;
-  document.getElementById("annTargetId").value = r.correct_target_track_id;
-  document.getElementById("annEvent").value = r.event_type;
-  document.getElementById("annNotes").value = r.notes || "";
+  setValueIfPresent("annStart", r.start_s);
+  setValueIfPresent("annEnd", r.end_s);
+  setValueIfPresent("annLabel", r.target_label);
+  setValueIfPresent("annTargetId", r.correct_target_track_id);
+  setValueIfPresent("annEvent", r.event_type);
+  setValueIfPresent("annNotes", r.notes || "");
   annRenderRows();
 }}
 
