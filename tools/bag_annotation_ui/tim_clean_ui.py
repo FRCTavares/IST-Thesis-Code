@@ -236,7 +236,12 @@ async def annotation_save_api(request: Request):
 
 @app.get("/clean", response_class=HTMLResponse)
 def clean_ui():
-    return """
+    bags = shared_discover_bags(REPO_ROOT)
+    annotations = shared_discover_annotations(REPO_ROOT)
+    bags_json = json.dumps(bags)
+    annotations_json = json.dumps(annotations)
+
+    html = """
 <!doctype html>
 <html>
 <head>
@@ -1359,8 +1364,8 @@ async function evaluateBag() {
       if (status) status.innerText = "failed";
       if (log) {
         log.innerText =
-          "ERROR: " + (data.error || "unknown error") + "\n\n" +
-          (data.log || "") + "\n\n" +
+          "ERROR: " + (data.error || "unknown error") + "\\n\\n" +
+          (data.log || "") + "\\n\\n" +
           (data.cmd || "");
       }
       return;
@@ -1371,9 +1376,9 @@ async function evaluateBag() {
 
     if (log) {
       log.innerText =
-        "out_dir: " + data.out_dir + "\n" +
-        "summary_csv: " + data.summary_csv + "\n" +
-        "summary_md: " + data.summary_md + "\n\n" +
+        "out_dir: " + data.out_dir + "\\n" +
+        "summary_csv: " + data.summary_csv + "\\n" +
+        "summary_md: " + data.summary_md + "\\n\\n" +
         (data.markdown || "");
     }
   } catch (err) {
@@ -1450,11 +1455,11 @@ function showFrontendError(err) {
 }
 
 window.addEventListener("error", function(e) {
-  showFrontendError("JavaScript error: " + e.message + "\n" + e.filename + ":" + e.lineno);
+  showFrontendError("JavaScript error: " + e.message + "\\\\n" + e.filename + ":" + e.lineno);
 });
 
 window.addEventListener("unhandledrejection", function(e) {
-  showFrontendError("Unhandled promise rejection:\n" + String(e.reason));
+  showFrontendError("Unhandled promise rejection:\\n" + String(e.reason));
 });
 
 
@@ -1669,10 +1674,9 @@ window.addEventListener("DOMContentLoaded", async function() {
 </body>
 </html>
 """
-
-
-
-
+    html = html.replace("__BAGS_JSON__", bags_json)
+    html = html.replace("__ANNOTATIONS_JSON__", annotations_json)
+    return HTMLResponse(html)
 def _load_bag_inventory_for_ui() -> list[dict]:
     inv = REPO_ROOT / "docs" / "data" / "catalogue" / "bag_inventory.yaml"
     if not inv.exists():
@@ -1725,16 +1729,6 @@ def _ui_bag_label_from_inventory(item: dict) -> str:
         bits.append(duration)
 
     return " | ".join(bits) + f" :: {name}"
-
-
-
-
-
-
-
-
-
-
 
 
 @app.get("/clean-static", response_class=HTMLResponse)
