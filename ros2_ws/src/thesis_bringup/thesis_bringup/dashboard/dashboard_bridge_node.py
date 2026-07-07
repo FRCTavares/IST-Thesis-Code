@@ -30,6 +30,7 @@ from vision_msgs.msg import Detection2DArray
 from std_msgs.msg import String
 from thesis_msgs.msg import TargetState, Timing, Track2DArray
 from thesis_bringup.dashboard.dashboard_models import SUPPORTED_MODELS
+from thesis_bringup.dashboard.dashboard_system_metrics import SystemMetricsReader
 
 
 METRICS_SCHEMA_VERSION = 3
@@ -157,8 +158,7 @@ class DashboardBridgeNode(Node):
         }
         self._dirty = False
 
-        self._last_cpu_total = None
-        self._last_cpu_idle = None
+        self._system_metrics_reader = SystemMetricsReader()
         self._det_arrival_ns: deque[int] = deque(maxlen=240)
 
         self._tracker_set_params_client = self.create_client(
@@ -856,9 +856,9 @@ exit 1
             self._dirty = True
 
     def _sample_system_metrics(self) -> None:
-        cpu_percent = self._read_cpu_percent()
-        mem_percent, mem_used_mb = self._read_memory_metrics()
-        temp_c = self._read_cpu_temp_c()
+        cpu_percent = self._system_metrics_reader.read_cpu_percent()
+        mem_percent, mem_used_mb = self._system_metrics_reader.read_memory_metrics()
+        temp_c = self._system_metrics_reader.read_cpu_temp_c()
 
         with self._state_lock:
             self._state["system"] = {
@@ -868,85 +868,6 @@ exit 1
                 "temp_c": temp_c,
             }
             self._dirty = True
-
-    def _read_cpu_percent(self) -> float | None:
-        try:
-            with open("/proc/stat", "r", encoding="utf-8") as f:
-                line = f.readline().strip()
-        except Exception:
-            return None
-
-        parts = line.split()
-        if len(parts) < 5 or parts[0] != "cpu":
-            return None
-
-        try:
-            values = [int(v) for v in parts[1:]]
-        except Exception:
-            return None
-
-        idle = values[3] + (values[4] if len(values) > 4 else 0)
-        total = sum(values)
-
-        if self._last_cpu_total is None or self._last_cpu_idle is None:
-            self._last_cpu_total = total
-            self._last_cpu_idle = idle
-            return None
-
-        delta_total = total - self._last_cpu_total
-        delta_idle = idle - self._last_cpu_idle
-
-        self._last_cpu_total = total
-        self._last_cpu_idle = idle
-
-        if delta_total <= 0:
-            return None
-
-        usage = 100.0 * (1.0 - (float(delta_idle) / float(delta_total)))
-        return max(0.0, min(100.0, usage))
-
-    def _read_memory_metrics(self) -> tuple[float | None, float | None]:
-        mem_total_kb = None
-        mem_available_kb = None
-        try:
-            with open("/proc/meminfo", "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.startswith("MemTotal:"):
-                        mem_total_kb = int(line.split()[1])
-                    elif line.startswith("MemAvailable:"):
-                        mem_available_kb = int(line.split()[1])
-                    if mem_total_kb is not None and mem_available_kb is not None:
-                        break
-        except Exception:
-            return None, None
-
-        if mem_total_kb is None or mem_available_kb is None or mem_total_kb <= 0:
-            return None, None
-
-        mem_used_kb = max(0, mem_total_kb - mem_available_kb)
-        mem_percent = 100.0 * float(mem_used_kb) / float(mem_total_kb)
-        mem_used_mb = float(mem_used_kb) / 1024.0
-        return mem_percent, mem_used_mb
-
-    def _read_cpu_temp_c(self) -> float | None:
-        candidates = [
-            "/sys/class/thermal/thermal_zone0/temp",
-            "/sys/class/hwmon/hwmon0/temp1_input",
-        ]
-
-        for path in candidates:
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    raw = f.read().strip()
-                value = float(raw)
-                if value > 1000.0:
-                    value = value / 1000.0
-                if value > 0.0:
-                    return value
-            except Exception:
-                continue
-
-        return None
 
     async def _shutdown_server(self) -> None:
         clients_snapshot = list(self._ws_clients)
