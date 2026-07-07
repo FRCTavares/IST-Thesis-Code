@@ -1,3 +1,14 @@
+"""Appearance attachment pipeline for TIM-MARS.
+
+This module attaches optional MARS appearance embeddings to CandidateTrack
+objects before they enter the selected-target memory state machine. It owns
+image freshness checks, embedding-cache reuse, crop scheduling, and diagnostics
+about why appearance was or was not attached.
+
+It does not decide whether a target should be accepted, rejected, or published.
+Those safety decisions stay in target_memory.py and the policy helpers.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

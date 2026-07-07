@@ -1,3 +1,13 @@
+"""ROS parameter declaration and config construction for TIM-MARS.
+
+This module owns the ROS-facing parameter surface for the TIM-MARS node. It
+declares parameters, reads them from rclpy, and builds the pure
+TargetMemoryConfig used by target_memory.py.
+
+The goal is to keep ROS parameter plumbing out of the selected-target memory
+state machine.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

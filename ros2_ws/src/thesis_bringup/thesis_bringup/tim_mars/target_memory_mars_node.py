@@ -1,3 +1,14 @@
+"""ROS 2 node wrapper for TIM-MARS selected-target memory.
+
+This node connects tracker output, optional raw target-selection mirroring, and
+optional MARS appearance embeddings to the pure TargetIdentityMemory algorithm.
+It publishes a controller-facing TargetState plus JSON diagnostics.
+
+Algorithmic accept/reject decisions should remain in target_memory.py and policy
+modules. This file should stay focused on ROS subscriptions, publications,
+parameter wiring, image handling, and message conversion.
+"""
+
 from __future__ import annotations
 
 import time

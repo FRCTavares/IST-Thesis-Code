@@ -1,3 +1,13 @@
+"""ROS message and JSON diagnostic conversion for TIM-MARS.
+
+This module converts pure TIM-MARS TargetMemoryOutput objects into ROS-facing
+messages and status payloads. It keeps publication formatting separate from the
+selected-target memory algorithm.
+
+It should not contain target-selection policy, scoring logic, or state-machine
+transitions.
+"""
+
 from __future__ import annotations
 
 import json
