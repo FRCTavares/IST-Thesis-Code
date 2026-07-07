@@ -16,7 +16,6 @@ TIM-V1A adds an optional lightweight appearance cue:
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from thesis_bringup.tim_mars.appearance_memory import cosine_similarity, update_feature_memory
@@ -35,6 +34,7 @@ from thesis_bringup.tim_mars.geometry_scoring import (
     score_candidate,
 )
 from thesis_bringup.tim_mars.hard_negative_memory import HardNegativeMemory
+from thesis_bringup.tim_mars.memory_state import _Memory, _control_mode_for_state
 from thesis_bringup.tim_mars.reacquisition_policy import (
     AbsenceRecoveryConfirmation,
     CandidateBeliefConfirmation,
@@ -53,30 +53,6 @@ from thesis_bringup.tim_mars.types import (
     TargetMemoryOutput,
     TargetState,
 )
-
-
-@dataclass
-class _Memory:
-    selected: bool = False
-    state: TargetState = TargetState.NO_TARGET
-    track_id: Optional[int] = None
-    bbox: Optional[BBox] = None
-    quality: float = 0.0
-    frames_since_seen: int = 0
-    confirmed_after_reacquire: int = 0
-    appearance: Optional[Any] = None
-
-
-def _control_mode_for_state(state: TargetState) -> ControlMode:
-    if state == TargetState.NO_TARGET:
-        return ControlMode.NO_CONTROL
-    if state == TargetState.LOCKED:
-        return ControlMode.NORMAL
-    if state == TargetState.UNCERTAIN:
-        return ControlMode.YAW_ONLY
-    if state == TargetState.REACQUIRED:
-        return ControlMode.CONFIRM
-    return ControlMode.HOVER
 
 
 class TargetIdentityMemory:
