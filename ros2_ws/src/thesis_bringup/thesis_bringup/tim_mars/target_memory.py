@@ -866,6 +866,31 @@ class TargetIdentityMemory:
         else:
             new_state = TargetState.LOCKED
 
+        self._apply_accept_memory_update(
+            candidate=candidate,
+            best_score=best_score,
+            new_state=new_state,
+            memory_update_frozen=memory_update_frozen,
+        )
+
+        return self._make_output(
+            reason="accepted_candidate" if not reacquired else "reacquired_candidate",
+            visible=(new_state == TargetState.LOCKED),
+            reacquired=reacquired,
+            best_score=best_score,
+            all_scores=all_scores,
+            memory_update_frozen=memory_update_frozen,
+            memory_update_freeze_reason=memory_update_freeze_reason,
+        )
+
+    def _apply_accept_memory_update(
+        self,
+        *,
+        candidate: CandidateTrack,
+        best_score: CandidateScore,
+        new_state: TargetState,
+        memory_update_frozen: bool,
+    ) -> None:
         self._m.selected = True
         self._m.state = new_state
         self._m.track_id = candidate.track_id
@@ -891,16 +916,6 @@ class TargetIdentityMemory:
             )
         elif self._appearance_update_cooldown_frames_remaining > 0:
             self._appearance_update_cooldown_frames_remaining -= 1
-
-        return self._make_output(
-            reason="accepted_candidate" if not reacquired else "reacquired_candidate",
-            visible=(new_state == TargetState.LOCKED),
-            reacquired=reacquired,
-            best_score=best_score,
-            all_scores=all_scores,
-            memory_update_frozen=memory_update_frozen,
-            memory_update_freeze_reason=memory_update_freeze_reason,
-        )
 
     def _appearance_conservative_reject_output(
         self,
