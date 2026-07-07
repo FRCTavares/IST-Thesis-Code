@@ -55,8 +55,6 @@ from thesis_bringup.tim_mars.types import (
     TargetState,
 )
 
-
-
 @dataclass
 class _PreparedUpdate:
     candidates: List[CandidateTrack]
@@ -68,7 +66,6 @@ class _PreparedUpdate:
     same_id_score: Optional[CandidateScore]
     same_id_candidate: Optional[CandidateTrack]
     ambiguous: bool
-
 
 class TargetIdentityMemory:
     """Selected-target memory state machine.
@@ -239,9 +236,7 @@ class TargetIdentityMemory:
                     all_scores=scores_sorted,
                 )
 
-
         if self._hard_negative_memory.should_reject(best, self.cfg):
-
             return self._miss(
                 reason=(
                     "hard_negative_reject:"
@@ -251,7 +246,6 @@ class TargetIdentityMemory:
                 best_score=best,
                 all_scores=scores_sorted,
             )
-
 
         return self._accept(
             best_candidate,
@@ -537,10 +531,8 @@ class TargetIdentityMemory:
             cfg=self.cfg,
         )
 
-
     def _reset_absence_reacquisition_confirmation(self) -> None:
         self._absence_reacq_confirmation.reset()
-
 
     def _absence_aware_reacquisition_reject_reason(
         self,
@@ -613,7 +605,6 @@ class TargetIdentityMemory:
 
         return None
 
-
     def _candidate_group_crop_risk(
         self,
         candidate: CandidateTrack,
@@ -645,7 +636,6 @@ class TargetIdentityMemory:
                 return True
 
         return False
-
 
     def _rank_aware_reacquisition_candidate(
         self,
@@ -982,7 +972,6 @@ class TargetIdentityMemory:
         else:
             self._m.state = TargetState.LOST
 
-
         return self._make_output(
             reason=reason,
             visible=False,
@@ -1043,7 +1032,6 @@ class TargetIdentityMemory:
             candidate_score=candidate_score,
             publication_suppressed_reason=publication_suppressed_reason,
         )
-
 
 __all__ = [
     "BBox",
