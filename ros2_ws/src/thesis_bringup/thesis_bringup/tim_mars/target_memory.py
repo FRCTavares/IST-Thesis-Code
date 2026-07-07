@@ -739,26 +739,33 @@ class TargetIdentityMemory:
         if pending:
             return None, True
 
-        # Return a copy with rank-aware appearance evidence exposed in diagnostics.
-        best = CandidateScore(
-            track_id=best.track_id,
-            total=best.total,
-            iou=best.iou,
-            distance=best.distance,
-            scale=best.scale,
-            confidence=best.confidence,
-            id_bonus=best.id_bonus,
-            appearance=best_app,
+        return self._rank_aware_diagnostic_score(best, best_app), False
+
+    def _rank_aware_diagnostic_score(
+        self,
+        score: CandidateScore,
+        appearance: float,
+    ) -> CandidateScore:
+        """Return a score copy exposing rank-aware appearance evidence."""
+
+        return CandidateScore(
+            track_id=score.track_id,
+            total=score.total,
+            iou=score.iou,
+            distance=score.distance,
+            scale=score.scale,
+            confidence=score.confidence,
+            id_bonus=score.id_bonus,
+            appearance=appearance,
             appearance_used=True,
-            appearance_raw=best_app,
+            appearance_raw=appearance,
             appearance_gate_passed=True,
-            geometry_allows_appearance=best.geometry_allows_appearance,
-            hard_negative_similarity=best.hard_negative_similarity,
-            hard_negative_margin=best.hard_negative_margin,
-            hard_negative_reject=best.hard_negative_reject,
-            ambiguous=best.ambiguous,
+            geometry_allows_appearance=score.geometry_allows_appearance,
+            hard_negative_similarity=score.hard_negative_similarity,
+            hard_negative_margin=score.hard_negative_margin,
+            hard_negative_reject=score.hard_negative_reject,
+            ambiguous=score.ambiguous,
         )
-        return best, False
 
     def _should_use_appearance(self, *, base_ambiguous: bool) -> bool:
         return should_use_appearance(
