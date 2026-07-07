@@ -21,6 +21,7 @@ from typing import Dict, Iterable, List, Optional
 
 TARGET_TOPIC_RAW = "/target"
 TARGET_TOPIC_TIM = "/target_memory_mars"
+IMAGE_TOPICS_FOR_T0 = ("/camera/image_raw", "/camera/dashboard")
 
 
 @dataclass
@@ -220,6 +221,18 @@ def read_target_samples_from_bag(
         get_message,
     ) = import_rosbag_tools()
 
+    if timebase not in {"bag", "header"}:
+        raise ValueError(f"Unsupported timebase: {timebase}")
+
+    requested = set(topics)
+
+    # First pass: determine the common time origin.
+    #
+    # For UI/manual annotations, interval times are created from the image/video
+    # timeline. Therefore, when using header time, t=0 must be the first image
+    # header timestamp, not the first /target or /target_memory_mars message.
+    # Otherwise, replay bags where target topics start before image topics shift
+    # the annotation boundaries and can create false wrong/lost durations.
     reader = SequentialReader()
     storage_options = StorageOptions(uri=str(bag_path), storage_id=detect_storage_id(bag_path))
     converter_options = ConverterOptions(
@@ -233,31 +246,76 @@ def read_target_samples_from_bag(
         for topic_metadata in reader.get_all_topics_and_types()
     }
 
-    requested = set(topics)
-    available = requested & set(topic_types.keys())
-
-    if not available:
+    available_targets = requested & set(topic_types.keys())
+    if not available_targets:
         raise RuntimeError(
             f"None of the requested topics were found in bag. "
             f"Requested={sorted(requested)}. "
             f"Available={sorted(topic_types.keys())}"
         )
 
-    msg_types = {
+    image_topics = [t for t in IMAGE_TOPICS_FOR_T0 if t in topic_types]
+    topics_needed_for_t0 = set(available_targets)
+    if timebase == "header":
+        topics_needed_for_t0 |= set(image_topics)
+
+    msg_types_t0 = {
         topic: get_message(topic_types[topic])
-        for topic in available
+        for topic in topics_needed_for_t0
     }
 
-    if timebase not in {"bag", "header"}:
-        raise ValueError(f"Unsupported timebase: {timebase}")
-
-    samples: Dict[str, List[TargetSample]] = {topic: [] for topic in requested}
-    first_time_ns: Optional[int] = None
+    first_image_time_ns: Optional[int] = None
+    first_any_requested_time_ns: Optional[int] = None
 
     while reader.has_next():
         topic, data, t_ns = reader.read_next()
 
-        if topic not in available:
+        if topic not in topics_needed_for_t0:
+            continue
+
+        msg = deserialize_message(data, msg_types_t0[topic])
+
+        if timebase == "header":
+            msg_time_ns = header_time_ns(msg)
+            if msg_time_ns is None:
+                continue
+        else:
+            msg_time_ns = t_ns
+
+        if topic in available_targets and first_any_requested_time_ns is None:
+            first_any_requested_time_ns = msg_time_ns
+
+        if topic in image_topics and first_image_time_ns is None:
+            first_image_time_ns = msg_time_ns
+
+        if timebase == "header":
+            if first_image_time_ns is not None:
+                break
+        elif first_any_requested_time_ns is not None:
+            break
+
+    if timebase == "header" and first_image_time_ns is not None:
+        first_time_ns = first_image_time_ns
+    elif first_any_requested_time_ns is not None:
+        first_time_ns = first_any_requested_time_ns
+    else:
+        raise RuntimeError("Could not determine time origin for evaluation")
+
+    # Second pass: read target samples relative to the selected t0.
+    reader = SequentialReader()
+    reader.open(storage_options, converter_options)
+
+    msg_types = {
+        topic: get_message(topic_types[topic])
+        for topic in available_targets
+    }
+
+    samples: Dict[str, List[TargetSample]] = {topic: [] for topic in requested}
+
+    while reader.has_next():
+        topic, data, t_ns = reader.read_next()
+
+        if topic not in available_targets:
             continue
 
         msg = deserialize_message(data, msg_types[topic])
@@ -268,9 +326,6 @@ def read_target_samples_from_bag(
                 continue
         else:
             msg_time_ns = t_ns
-
-        if first_time_ns is None:
-            first_time_ns = msg_time_ns
 
         track_id = find_track_id_field(msg)
         t_s = (msg_time_ns - first_time_ns) * 1e-9
