@@ -112,23 +112,7 @@ class TargetMemoryMarsNode(Node):
         cfg = build_target_memory_config(self, params)
         self._tim = TargetIdentityMemory(cfg)
 
-        self.get_logger().info(
-            "TIM-MARS config: "
-            f"allow_id_switch_recovery={cfg.allow_id_switch_recovery} "
-            f"id_switch_spatial_gate_enabled={cfg.id_switch_spatial_gate_enabled} "
-            f"rank_aware_reacquisition_enabled={cfg.rank_aware_reacquisition_enabled} "
-            f"rank_aware_lost_min_app={cfg.rank_aware_lost_min_app:.3f} "
-            f"rank_aware_lost_app_margin={cfg.rank_aware_lost_app_margin:.3f} "
-            f"absence_recovery_enabled={cfg.absence_recovery_enabled} "
-            f"absence_after_missed_frames={cfg.absence_after_missed_frames} "
-            f"absence_min_similarity={cfg.absence_min_similarity:.3f} "
-            f"absence_appearance_margin={cfg.absence_appearance_margin:.3f} "
-            f"absence_confirm_frames={cfg.absence_confirm_frames} "
-            f"hard_negative_memory_enabled={cfg.hard_negative_memory_enabled} "
-            f"hard_negative_max_entries={cfg.hard_negative_max_entries} "
-            f"hard_negative_reject_similarity={cfg.hard_negative_reject_similarity:.3f} "
-            f"hard_negative_reject_margin={cfg.hard_negative_reject_margin:.3f} "
-        )
+        self._log_memory_config(cfg)
 
         qos = self._best_effort_qos()
         self._create_ros_interfaces(qos)
@@ -148,6 +132,25 @@ class TargetMemoryMarsNode(Node):
             self.get_logger().info(
                 f"Waiting to initialise TIM from track id {self._pending_select_id}"
             )
+
+    def _log_memory_config(self, cfg) -> None:
+        self.get_logger().info(
+            "TIM-MARS config: "
+            f"allow_id_switch_recovery={cfg.allow_id_switch_recovery} "
+            f"id_switch_spatial_gate_enabled={cfg.id_switch_spatial_gate_enabled} "
+            f"rank_aware_reacquisition_enabled={cfg.rank_aware_reacquisition_enabled} "
+            f"rank_aware_lost_min_app={cfg.rank_aware_lost_min_app:.3f} "
+            f"rank_aware_lost_app_margin={cfg.rank_aware_lost_app_margin:.3f} "
+            f"absence_recovery_enabled={cfg.absence_recovery_enabled} "
+            f"absence_after_missed_frames={cfg.absence_after_missed_frames} "
+            f"absence_min_similarity={cfg.absence_min_similarity:.3f} "
+            f"absence_appearance_margin={cfg.absence_appearance_margin:.3f} "
+            f"absence_confirm_frames={cfg.absence_confirm_frames} "
+            f"hard_negative_memory_enabled={cfg.hard_negative_memory_enabled} "
+            f"hard_negative_max_entries={cfg.hard_negative_max_entries} "
+            f"hard_negative_reject_similarity={cfg.hard_negative_reject_similarity:.3f} "
+            f"hard_negative_reject_margin={cfg.hard_negative_reject_margin:.3f} "
+        )
 
     @staticmethod
     def _best_effort_qos() -> QoSProfile:
