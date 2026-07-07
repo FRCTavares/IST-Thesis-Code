@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""MAVROS IMU monitor for flight-controller connectivity checks.
+
+This node subscribes to MAVROS IMU data and reports basic liveness/status for
+ground validation of Pixhawk/MAVROS integration.
+"""
+
 from __future__ import annotations
 
 import math

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""Video-file image publisher for replay and development workflows.
+
+This node publishes frames from a local video file as ROS image messages so the
+pipeline can be tested without live camera hardware.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Integrated perception pipeline node.
+
+This node connects camera frames to preprocessing, Hailo inference backends,
+detection publication, and timing telemetry for the live thesis perception
+stack.
+"""
 
 from __future__ import annotations
 

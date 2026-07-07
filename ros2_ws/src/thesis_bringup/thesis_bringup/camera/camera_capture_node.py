@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""Live camera capture node for the thesis ROS 2 stack.
+
+This node owns host-side camera acquisition, frame timing, optional resizing,
+camera health reporting, and image publication for downstream perception nodes.
+
+It is hardware-sensitive code. Keep behavior changes small and validate on the
+target camera platform.
+"""
 
 from __future__ import annotations
 

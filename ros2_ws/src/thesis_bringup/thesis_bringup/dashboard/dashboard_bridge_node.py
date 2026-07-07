@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""Dashboard telemetry bridge for the live thesis stack.
+
+This node aggregates runtime status, timing metrics, target/tracker state, and
+camera/perception health into browser-facing telemetry for the dashboard UI.
+"""
 
 from __future__ import annotations
 

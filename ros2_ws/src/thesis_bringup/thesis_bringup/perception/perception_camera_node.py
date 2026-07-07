@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""Camera-source node for modular perception experiments.
+
+This node provides a camera image source path used by perception pipeline
+development and validation workflows.
+"""
 
 from __future__ import annotations
 
@@ -23,7 +28,7 @@ class PerceptionCameraNode(PerceptionPipelineNode):
 
     This node keeps the colour frame inside the perception process and publishes
     compact semantic outputs only. It bypasses the full-rate /camera/image_raw
-    DDS transport path used by the modular debug pipeline.
+    DDS transport path used by the modular camera/perception pipeline.
     """
 
     def __init__(self) -> None:

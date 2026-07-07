@@ -1,3 +1,9 @@
+"""Image preprocessing helpers for thesis perception inference.
+
+This module contains resizing, padding, coordinate mapping, and preprocessing
+utilities shared by camera/perception runtime nodes.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

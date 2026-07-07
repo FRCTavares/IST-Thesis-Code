@@ -1,3 +1,10 @@
+"""Selected-target to velocity-reference controller node.
+
+This node converts the current selected target state into body-frame velocity
+references for ground validation and optional MAVROS publication. It includes
+target freshness checks, saturation, slew limiting, and fail-safe zero output.
+"""
+
 from typing import Optional
 
 import rclpy
