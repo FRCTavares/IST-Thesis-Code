@@ -17,7 +17,7 @@ import numpy as np
 import rosbag2_py
 from cv_bridge import CvBridge
 from fastapi import FastAPI, Query
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response, FileResponse
 from pydantic import BaseModel
 from rclpy.serialization import deserialize_message
 from rosidl_runtime_py.utilities import get_message
@@ -68,41 +68,50 @@ def xywh_to_xyxy(cx, cy, w, h):
     )
 
 
-def model_box_to_image_box(box, img_shape, model_w=640.0, model_h=640.0):
-    """Map detector/tracker/TIM boxes from square model space to image space.
+def msg_time_ns(msg, bag_time_ns: int) -> int:
+    """Prefer ROS header stamp for cross-topic synchronization.
 
-    The perception stack uses 640x640 model coordinates. Camera frames in the
-    audit UI can be 640x480. In that case the original image was letterboxed
-    into the square model input, so y coordinates must be unpadded before
-    drawing.
+    Rosbag storage time can differ between image, tracks, raw target, and TIM
+    target. For visual overlays, header time is the correct matching clock when
+    available.
+    """
+    header = getattr(msg, "header", None)
+    stamp = getattr(header, "stamp", None) if header is not None else None
+    if stamp is None:
+        return int(bag_time_ns)
+
+    sec = int(getattr(stamp, "sec", 0))
+    nanosec = int(getattr(stamp, "nanosec", 0))
+    t = sec * 1_000_000_000 + nanosec
+    return t if t > 0 else int(bag_time_ns)
+
+
+def model_box_to_image_box(box, img_shape, model_w=640.0, model_h=640.0):
+    """Map 640x640 model-coordinate boxes into the displayed image frame.
+
+    The UI displays decoded frames directly, so boxes are scaled independently
+    in x/y from model coordinates to image coordinates.
     """
     img_h, img_w = img_shape[:2]
     if img_w <= 0 or img_h <= 0:
-        return box
-
-    scale = min(model_w / float(img_w), model_h / float(img_h))
-    if scale <= 0:
-        return box
-
-    resized_w = float(img_w) * scale
-    resized_h = float(img_h) * scale
-    pad_x = (model_w - resized_w) / 2.0
-    pad_y = (model_h - resized_h) / 2.0
+        return tuple(int(round(float(v))) for v in box)
 
     x1, y1, x2, y2 = [float(v) for v in box]
 
-    x1 = (x1 - pad_x) / scale
-    x2 = (x2 - pad_x) / scale
-    y1 = (y1 - pad_y) / scale
-    y2 = (y2 - pad_y) / scale
+    sx = float(img_w) / float(model_w)
+    sy = float(img_h) / float(model_h)
 
-    return (
-        int(round(x1)),
-        int(round(y1)),
-        int(round(x2)),
-        int(round(y2)),
-    )
+    ix1 = int(round(x1 * sx))
+    iy1 = int(round(y1 * sy))
+    ix2 = int(round(x2 * sx))
+    iy2 = int(round(y2 * sy))
 
+    ix1 = max(0, min(int(img_w) - 1, ix1))
+    iy1 = max(0, min(int(img_h) - 1, iy1))
+    ix2 = max(0, min(int(img_w) - 1, ix2))
+    iy2 = max(0, min(int(img_h) - 1, iy2))
+
+    return ix1, iy1, ix2, iy2
 
 def draw_model_box(img, box, label, colour, thickness=2):
     draw_box(
@@ -113,6 +122,17 @@ def draw_model_box(img, box, label, colour, thickness=2):
         thickness,
     )
 
+
+def no_store_jpeg_response(data: bytes) -> Response:
+    return Response(
+        content=data,
+        media_type="image/jpeg",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 def draw_box(img, box, label, colour, thickness=2):
     h, w = img.shape[:2]
@@ -180,7 +200,12 @@ def target_box(msg):
     score = float(getattr(msg, "score", 0.0))
     quality = float(getattr(msg, "quality", 0.0))
 
-    if tid <= 0 or w <= 0 or h <= 0 or score <= 0:
+    if tid <= 0 or w <= 0 or h <= 0:
+        return None
+
+    # Raw /target commonly has score > 0. TIM /target_memory_mars may carry
+    # score=0 while quality is valid, so do not reject solely on score.
+    if score <= 0 and quality <= 0:
         return None
 
     return {
@@ -265,14 +290,27 @@ def ref_id_at(t_rel: float, annotations):
     return None
 
 
-def nearest_before(rows, t):
-    best = None
+def nearest_by_time(rows, t, max_dt_ns: int | None = 250_000_000):
+    """Return row closest to t, optionally rejecting large time mismatches."""
+    if not rows:
+        return None
+
+    best_data = None
+    best_dt = None
+
     for ts, data in rows:
-        if ts <= t:
-            best = data
-        else:
+        dt = abs(int(ts) - int(t))
+        if best_dt is None or dt < best_dt:
+            best_dt = dt
+            best_data = data
+        elif ts > t and best_dt is not None:
+            # Rows are sorted; once we pass t and get worse, stop early.
             break
-    return best
+
+    if best_dt is not None and max_dt_ns is not None and best_dt > max_dt_ns:
+        return None
+
+    return best_data
 
 
 def load_bag_to_cache(bag_path: str, ann_path: str | None):
@@ -305,11 +343,11 @@ def load_bag_to_cache(bag_path: str, ann_path: str | None):
         if topic in ("/camera/image_raw", "/camera/dashboard"):
             msg = deserialize_message(data, msg_types[topic])
             img = bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
-            images.append((t, img))
+            images.append((msg_time_ns(msg, t), img))
 
         elif topic == "/detections":
             msg = deserialize_message(data, msg_types[topic])
-            detections_rows.append((t, detection_boxes(msg)))
+            detections_rows.append((msg_time_ns(msg, t), detection_boxes(msg)))
 
         elif topic == "/tracks":
             msg = deserialize_message(data, msg_types[topic])
@@ -318,18 +356,24 @@ def load_bag_to_cache(bag_path: str, ann_path: str | None):
                 tb = track_box(tr)
                 if tb:
                     tracks.append(tb)
-            tracks_rows.append((t, tracks))
+            tracks_rows.append((msg_time_ns(msg, t), tracks))
 
         elif topic == "/target":
             msg = deserialize_message(data, msg_types[topic])
-            raw_rows.append((t, target_box(msg)))
+            raw_rows.append((msg_time_ns(msg, t), target_box(msg)))
 
         elif topic == "/target_memory_mars":
             msg = deserialize_message(data, msg_types[topic])
-            tim_rows.append((t, target_box(msg)))
+            tim_rows.append((msg_time_ns(msg, t), target_box(msg)))
 
     if not images:
         raise RuntimeError("No /camera/image_raw or /camera/dashboard frames found in this bag.")
+
+    images.sort(key=lambda r: r[0])
+    detections_rows.sort(key=lambda r: r[0])
+    tracks_rows.sort(key=lambda r: r[0])
+    raw_rows.sort(key=lambda r: r[0])
+    tim_rows.sort(key=lambda r: r[0])
 
     CACHE.clear()
     CACHE.update({
@@ -364,10 +408,10 @@ def render_frame(idx: int, draw_detections: bool, draw_tracks: bool, draw_raw: b
     t_rel = (t - first_t) / 1e9
 
     frame = img.copy()
-    detections = nearest_before(CACHE["detections"], t) or []
-    tracks = nearest_before(CACHE["tracks"], t) or []
-    raw = nearest_before(CACHE["raw"], t)
-    tim = nearest_before(CACHE["tim"], t)
+    detections = nearest_by_time(CACHE["detections"], t) or []
+    tracks = nearest_by_time(CACHE["tracks"], t) or []
+    raw = nearest_by_time(CACHE["raw"], t)
+    tim = nearest_by_time(CACHE["tim"], t)
     ref_id = ref_id_at(t_rel, CACHE["annotations"])
 
     only = set()
@@ -436,28 +480,596 @@ def render_frame(idx: int, draw_detections: bool, draw_tracks: bool, draw_raw: b
     return frame
 
 
-def export_mp4(out_path: str, draw_detections: bool, draw_tracks: bool, draw_raw: bool, draw_tim: bool, only_ids: str, fps: float):
+def draw_dashed_box(img, box, colour, thickness=3, dash=14, gap=8):
+    """Draw a dashed rectangle with no label."""
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = box
+    x1 = max(0, min(w - 1, int(x1)))
+    y1 = max(0, min(h - 1, int(y1)))
+    x2 = max(0, min(w - 1, int(x2)))
+    y2 = max(0, min(h - 1, int(y2)))
+
+    if x2 <= x1 or y2 <= y1:
+        return
+
+    def dashed_line(p1, p2):
+        import math
+        x1_, y1_ = p1
+        x2_, y2_ = p2
+        length = int(math.hypot(x2_ - x1_, y2_ - y1_))
+        if length <= 0:
+            return
+        dx = (x2_ - x1_) / length
+        dy = (y2_ - y1_) / length
+        step = dash + gap
+        for start in range(0, length, step):
+            end = min(start + dash, length)
+            a = (int(round(x1_ + dx * start)), int(round(y1_ + dy * start)))
+            b = (int(round(x1_ + dx * end)), int(round(y1_ + dy * end)))
+            cv2.line(img, a, b, colour, thickness, cv2.LINE_AA)
+
+    # dark underlay for contrast
+    for tcol, tth in [((10, 10, 10), thickness + 2), (colour, thickness)]:
+        old_colour = colour
+        colour = tcol
+        dashed_line((x1, y1), (x2, y1))
+        dashed_line((x2, y1), (x2, y2))
+        dashed_line((x2, y2), (x1, y2))
+        dashed_line((x1, y2), (x1, y1))
+        colour = old_colour
+
+
+def draw_dashed_model_box(img, box, colour, thickness=3):
+    draw_dashed_box(
+        img,
+        model_box_to_image_box(box, img.shape),
+        colour,
+        thickness=thickness,
+    )
+
+
+def _clean_frame_base(idx: int):
+    images = CACHE["images"]
+    idx = max(0, min(len(images) - 1, idx))
+
+    t, img = images[idx]
+    first_t = images[0][0]
+    t_rel = (t - first_t) / 1e9
+
+    tracks = nearest_by_time(CACHE["tracks"], t) or []
+    raw = nearest_by_time(CACHE["raw"], t)
+    tim = nearest_by_time(CACHE["tim"], t)
+    ref_id = ref_id_at(t_rel, CACHE["annotations"])
+
+    return img, tracks, raw, tim, ref_id
+
+
+def _draw_clean_output(frame, tracks, target, ref_id, draw_reference: bool):
+    """No text. Dashed white reference; green correct output; red wrong output."""
+    if draw_reference and ref_id is not None:
+        for tid, box in tracks:
+            if int(tid) == int(ref_id):
+                draw_dashed_model_box(frame, box, (245, 245, 245), thickness=3)
+                break
+
+    if target:
+        if ref_id is not None and int(target.get("id", -1)) == int(ref_id):
+            colour = (0, 210, 0)      # correct: green
+        else:
+            colour = (0, 0, 230)      # wrong: red
+
+        draw_model_box(frame, target["box"], "", colour, 4)
+
+    return frame
+
+
+def render_frame_clean(idx: int, draw_raw: bool, draw_tim: bool, draw_reference: bool):
+    """Single-panel clean renderer."""
     if not CACHE:
         raise RuntimeError("No bag loaded.")
+
+    img, tracks, raw, tim, ref_id = _clean_frame_base(idx)
+    frame = img.copy()
+
+    target = raw if draw_raw else tim if draw_tim else None
+    return _draw_clean_output(frame, tracks, target, ref_id, draw_reference)
+
+
+def render_frame_clean_comparison(idx: int, draw_reference: bool):
+    """Side-by-side paper renderer.
+
+    Left panel: RAW selected target.
+    Right panel: TIM-MARS selected target.
+    No text is drawn in the video.
+    """
+    if not CACHE:
+        raise RuntimeError("No bag loaded.")
+
+    img, tracks, raw, tim, ref_id = _clean_frame_base(idx)
+
+    left = img.copy()
+    right = img.copy()
+
+    left = _draw_clean_output(left, tracks, raw, ref_id, draw_reference)
+    right = _draw_clean_output(right, tracks, tim, ref_id, draw_reference)
+
+    separator = np.zeros((left.shape[0], 8, 3), dtype=left.dtype)
+    return np.hstack([left, separator, right])
+
+
+def render_frame_paper_overlay(idx: int, draw_reference: bool):
+    """Single-panel paper renderer.
+
+    Dashed white: annotated/reference target.
+    Red: RAW selected target.
+    Blue: TIM-MARS selected target.
+    No text is drawn in the video.
+    """
+    if not CACHE:
+        raise RuntimeError("No bag loaded.")
+
+    img, tracks, raw, tim, ref_id = _clean_frame_base(idx)
+    frame = img.copy()
+
+    if draw_reference and ref_id is not None:
+        for tid, box in tracks:
+            if int(tid) == int(ref_id):
+                draw_dashed_model_box(frame, box, (245, 245, 245), thickness=3)
+                break
+
+    if raw:
+        draw_model_box(frame, raw["box"], "", (0, 0, 230), 4)
+
+    if tim:
+        draw_model_box(frame, tim["box"], "", (230, 80, 0), 4)
+
+    return frame
+
+
+def _paper_time_label(idx: int) -> str:
+    images = CACHE.get("images", [])
+    if not images:
+        return f"frame {idx}"
+    idx = max(0, min(len(images) - 1, int(idx)))
+    t0 = images[0][0]
+    t = images[idx][0]
+    t_rel = float(t - t0) / 1e9
+    return f"frame {idx} | t={t_rel:.2f}s"
+
+
+def _reference_box_from_tracks(tracks, ref_id):
+    if ref_id is None:
+        return None
+    for tid, box in tracks:
+        if int(tid) == int(ref_id):
+            return box
+    return None
+
+
+def _draw_paper_status_label(frame, text: str) -> None:
+    h, w = frame.shape[:2]
+    pad = max(8, int(round(w * 0.012)))
+    font_scale = max(0.55, min(1.0, w / 900.0))
+    thickness = max(1, int(round(w / 450.0)))
+    (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
+    x1, y1 = pad, pad
+    x2 = min(w - 1, x1 + tw + 2 * pad)
+    y2 = min(h - 1, y1 + th + 2 * pad)
+    cv2.rectangle(frame, (x1, y1), (x2, y2), (15, 15, 15), -1)
+    cv2.putText(
+        frame,
+        text,
+        (x1 + pad, y2 - pad),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        font_scale,
+        (245, 245, 245),
+        thickness,
+        cv2.LINE_AA,
+    )
+
+
+def _draw_paper_panel_frame(
+    idx: int,
+    mode: str,
+    draw_reference: bool = True,
+    label_mode: str = "time",
+):
+    """Draw one paper panel with no text.
+
+    RAW row:
+      - blue box for RAW selected-target output when not wrong;
+      - red box when RAW output is wrong.
+
+    TIM row:
+      - green box for correct TIM-MARS output;
+      - red box only if TIM-MARS publishes a wrong target;
+      - no box when TIM-MARS suppresses output.
+
+    The dashed white manual/reference box is drawn last, but thinner when it
+    overlaps the output box so the output colour remains visible.
+    """
+    if not CACHE:
+        raise RuntimeError("No bag loaded.")
+
+    img, tracks, raw, tim, ref_id = _clean_frame_base(idx)
+    frame = img.copy()
+
+    ref_box = _reference_box_from_tracks(tracks, ref_id)
+    target = raw if mode == "raw" else tim
+
+    target_is_correct = (
+        target is not None
+        and ref_id is not None
+        and int(target.get("id", -1)) == int(ref_id)
+    )
+
+    if target:
+        if mode == "raw":
+            # RAW is always drawn. Red means wrong; blue means normal/correct raw output.
+            colour = (0, 0, 230) if not target_is_correct else (230, 110, 0)
+            draw_model_box(frame, target["box"], "", colour, 4)
+        else:
+            # TIM is drawn only when it publishes. Green means correct; red means wrong.
+            colour = (0, 210, 0) if target_is_correct else (0, 0, 230)
+            draw_model_box(frame, target["box"], "", colour, 4)
+
+    if draw_reference and ref_box is not None:
+        # If reference and output overlap, use a thinner dashed reference so the
+        # coloured output box remains visible.
+        ref_thickness = 2 if target is not None else 3
+        draw_dashed_model_box(frame, ref_box, (245, 245, 245), thickness=ref_thickness)
+
+    boxes = []
+    if ref_box is not None:
+        boxes.append(ref_box)
+    if target:
+        boxes.append(target["box"])
+
+    # For paper contact sheets, crop only around the relevant selected-target
+    # evidence: manual reference plus RAW/TIM output. Including every tracker
+    # box makes dense-group scenes too wide and prevents useful cropping.
+    return frame, boxes, ""
+
+
+def _draw_paper_overlay_frame(idx: int, draw_reference: bool = True, label_mode: str = "time"):
+    """Backward-compatible single-panel overlay renderer."""
+    if not CACHE:
+        raise RuntimeError("No bag loaded.")
+
+    img, tracks, raw, tim, ref_id = _clean_frame_base(idx)
+    frame = img.copy()
+
+    ref_box = _reference_box_from_tracks(tracks, ref_id)
+
+    if raw:
+        draw_model_box(frame, raw["box"], "", (0, 0, 230), 4)
+
+    if tim:
+        draw_model_box(frame, tim["box"], "", (0, 210, 0), 4)
+
+    if draw_reference and ref_box is not None:
+        draw_dashed_model_box(frame, ref_box, (245, 245, 245), thickness=3)
+
+    label = _paper_time_label(idx) if label_mode == "time" else f"frame {idx}"
+    _draw_paper_status_label(frame, label)
+
+    boxes = []
+    if ref_box is not None:
+        boxes.append(ref_box)
+    if raw:
+        boxes.append(raw["box"])
+    if tim:
+        boxes.append(tim["box"])
+    for _, box in tracks:
+        boxes.append(box)
+
+    return frame, boxes
+
+
+def _crop_to_model_boxes(frame, boxes, pad_px: int):
+    if not boxes:
+        return frame
+
+    h, w = frame.shape[:2]
+    xs = []
+    ys = []
+
+    for box in boxes:
+        try:
+            x1, y1, x2, y2 = model_box_to_image_box(box, frame.shape)
+        except Exception:
+            continue
+        xs.extend([x1, x2])
+        ys.extend([y1, y2])
+
+    if not xs or not ys:
+        return frame
+
+    x1 = max(0, int(min(xs) - pad_px))
+    y1 = max(0, int(min(ys) - pad_px))
+    x2 = min(w, int(max(xs) + pad_px))
+    y2 = min(h, int(max(ys) + pad_px))
+
+    if x2 <= x1 or y2 <= y1:
+        return frame
+
+    return frame[y1:y2, x1:x2].copy()
+
+
+def _shared_crop_rect(all_boxes, image_shape, pad_px: int, aspect: float = 1.55):
+    """Compute one shared balanced crop rectangle.
+
+    The crop is shared by all panels. It is centred on the union of the
+    reference/output boxes and expanded to a fixed aspect ratio. This avoids
+    per-panel crop changes while preventing dense scenes from keeping the
+    whole field.
+    """
+    h, w = image_shape[:2]
+    xs = []
+    ys = []
+
+    for box in all_boxes:
+        try:
+            x1, y1, x2, y2 = model_box_to_image_box(box, image_shape)
+        except Exception:
+            continue
+        xs.extend([x1, x2])
+        ys.extend([y1, y2])
+
+    if not xs or not ys:
+        return (0, 0, w, h)
+
+    raw_x1 = max(0, int(min(xs)))
+    raw_y1 = max(0, int(min(ys)))
+    raw_x2 = min(w, int(max(xs)))
+    raw_y2 = min(h, int(max(ys)))
+
+    if raw_x2 <= raw_x1 or raw_y2 <= raw_y1:
+        return (0, 0, w, h)
+
+    cx = (raw_x1 + raw_x2) / 2.0
+    cy = (raw_y1 + raw_y2) / 2.0
+
+    box_w = raw_x2 - raw_x1
+    box_h = raw_y2 - raw_y1
+
+    # Balanced context: expand both dimensions from the object union, instead
+    # of letting one axis dominate. This is the "crop horizontally and
+    # vertically together" behaviour needed for paper figures.
+    target_w = max(box_w + 2 * pad_px, int(round((box_h + 2 * pad_px) * aspect)))
+    target_h = max(box_h + 2 * pad_px, int(round(target_w / aspect)))
+
+    # Do not let the crop become the full court unless unavoidable.
+    target_w = min(target_w, int(round(w * 0.72)))
+    target_h = min(target_h, int(round(h * 0.72)))
+
+    # Re-enforce aspect after clipping requested dimensions.
+    if target_w / max(1, target_h) > aspect:
+        target_w = int(round(target_h * aspect))
+    else:
+        target_h = int(round(target_w / aspect))
+
+    x1 = int(round(cx - target_w / 2))
+    x2 = int(round(cx + target_w / 2))
+    y1 = int(round(cy - target_h / 2))
+    y2 = int(round(cy + target_h / 2))
+
+    # Shift inside image while preserving crop size when possible.
+    if x1 < 0:
+        x2 -= x1
+        x1 = 0
+    if y1 < 0:
+        y2 -= y1
+        y1 = 0
+    if x2 > w:
+        shift = x2 - w
+        x1 -= shift
+        x2 = w
+    if y2 > h:
+        shift = y2 - h
+        y1 -= shift
+        y2 = h
+
+    x1 = max(0, x1)
+    y1 = max(0, y1)
+    x2 = min(w, x2)
+    y2 = min(h, y2)
+
+    if x2 <= x1 or y2 <= y1:
+        return (0, 0, w, h)
+
+    return (x1, y1, x2, y2)
+
+
+def _apply_crop_rect(frame, rect):
+    x1, y1, x2, y2 = rect
+    return frame[y1:y2, x1:x2].copy()
+
+
+
+
+def _trim_black_letterbox(frame, threshold: int = 12):
+    """Remove black letterbox bands from top/bottom after crop."""
+    if frame.size == 0:
+        return frame
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    row_mean = gray.mean(axis=1)
+    valid = np.where(row_mean > threshold)[0]
+
+    if len(valid) == 0:
+        return frame
+
+    y1 = int(valid[0])
+    y2 = int(valid[-1]) + 1
+
+    if y2 <= y1:
+        return frame
+
+    return frame[y1:y2, :].copy()
+
+
+
+def _add_paper_caption_band(panel, text: str):
+    """No-op for final paper figures: keep panels image-only."""
+    return panel
+
+
+
+def _fit_panel_to_size(frame, panel_width: int, panel_height: int):
+    """Fit image into a fixed panel without distortion.
+
+    This prevents the paper contact sheet from becoming vertically stretched.
+    """
+    h, w = frame.shape[:2]
+    panel_width = max(120, int(panel_width))
+    panel_height = max(80, int(panel_height))
+
+    if w <= 0 or h <= 0:
+        return np.full((panel_height, panel_width, 3), 255, dtype=np.uint8)
+
+    scale = min(panel_width / float(w), panel_height / float(h))
+    new_w = max(1, int(round(w * scale)))
+    new_h = max(1, int(round(h * scale)))
+
+    resized = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+    out = np.full((panel_height, panel_width, 3), 255, dtype=np.uint8)
+    x0 = (panel_width - new_w) // 2
+    y0 = (panel_height - new_h) // 2
+    out[y0:y0 + new_h, x0:x0 + new_w] = resized
+    return out
+
+
+
+def _resize_panel(frame, panel_width: int):
+    h, w = frame.shape[:2]
+    if w <= 0 or h <= 0:
+        return frame
+    panel_width = max(120, int(panel_width))
+    scale = panel_width / float(w)
+    panel_height = max(1, int(round(h * scale)))
+    return cv2.resize(frame, (panel_width, panel_height), interpolation=cv2.INTER_AREA)
+
+
+def _pad_panel_to_size(panel, width: int, height: int):
+    h, w = panel.shape[:2]
+    out = np.full((height, width, 3), 255, dtype=np.uint8)
+    out[:h, :w] = panel[:min(h, height), :min(w, width)]
+    return out
+
+
+def render_paper_contact_sheet(
+    frame_indices,
+    out_path: str,
+    cols: int = 4,
+    crop: bool = True,
+    crop_pad: int = 80,
+    panel_width: int = 520,
+    draw_reference: bool = True,
+    label_mode: str = "time",
+):
+    """Render a paper contact sheet as two rows.
+
+    Top row: RAW selected-target output.
+    Bottom row: TIM-MARS selected-target output.
+    Columns correspond to the same frame indices, so each column is a direct
+    RAW-vs-TIM comparison at one moment.
+
+    A single shared crop rectangle is computed across all selected frames so
+    every panel has identical dimensions and spatial context.
+    """
+    if not CACHE:
+        raise RuntimeError("No bag loaded.")
+
+    images = CACHE.get("images", [])
+    if not images:
+        raise RuntimeError("No images loaded.")
+
+    clean_indices = []
+    for item in frame_indices:
+        try:
+            idx = int(str(item).strip())
+        except Exception:
+            continue
+        clean_indices.append(max(0, min(len(images) - 1, idx)))
+
+    if not clean_indices:
+        raise RuntimeError("No valid frame indices were provided.")
+
+    cols = max(1, int(cols))
+    if cols < len(clean_indices):
+        cols = len(clean_indices)
+
+    # First render all panels and collect all boxes for one shared crop.
+    rendered = {
+        "raw": [],
+        "tim": [],
+    }
+    all_boxes = []
+
+    for mode in ("raw", "tim"):
+        for idx in clean_indices:
+            frame, boxes, label = _draw_paper_panel_frame(
+                idx,
+                mode=mode,
+                draw_reference=draw_reference,
+                label_mode=label_mode,
+            )
+            rendered[mode].append((frame, boxes, label))
+            all_boxes.extend(boxes)
+
+    shared_rect = None
+    if crop:
+        # Use the first rendered frame shape. All frames are from the same image stream.
+        first_frame = rendered["raw"][0][0]
+        shared_rect = _shared_crop_rect(all_boxes, first_frame.shape, int(crop_pad))
+
+    rows = []
+    for mode in ("raw", "tim"):
+        panels = []
+        for frame, _boxes, label in rendered[mode]:
+            if crop and shared_rect is not None:
+                frame = _apply_crop_rect(frame, shared_rect)
+            frame = _trim_black_letterbox(frame)
+            panel = _resize_panel(frame, int(panel_width))
+            panel = _add_paper_caption_band(panel, label)
+            panels.append(panel)
+
+        # Enforce identical cell size inside the row.
+        cell_w = max(p.shape[1] for p in panels)
+        cell_h = max(p.shape[0] for p in panels)
+        padded = [_pad_panel_to_size(p, cell_w, cell_h) for p in panels]
+
+        gap = 10
+        sep = np.full((cell_h, gap, 3), 255, dtype=np.uint8)
+        pieces = []
+        for c, panel in enumerate(padded):
+            if c > 0:
+                pieces.append(sep)
+            pieces.append(panel)
+        rows.append(np.hstack(pieces))
+
+    # Enforce both rows to the same width.
+    max_row_w = max(row.shape[1] for row in rows)
+    fixed_rows = []
+    for row in rows:
+        if row.shape[1] < max_row_w:
+            pad = np.full((row.shape[0], max_row_w - row.shape[1], 3), 255, dtype=np.uint8)
+            row = np.hstack([row, pad])
+        fixed_rows.append(row)
+
+    gap = 14
+    vsep = np.full((gap, max_row_w, 3), 255, dtype=np.uint8)
+    sheet = np.vstack([fixed_rows[0], vsep, fixed_rows[1]])
 
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    first = render_frame(0, draw_detections, draw_tracks, draw_raw, draw_tim, only_ids)
-    h, w = first.shape[:2]
+    ok = cv2.imwrite(str(out), sheet)
+    if not ok:
+        raise RuntimeError(f"Failed to write contact sheet: {out}")
 
-    writer = cv2.VideoWriter(
-        str(out),
-        cv2.VideoWriter_fourcc(*"mp4v"),
-        fps,
-        (w, h),
-    )
-
-    for idx in range(len(CACHE["images"])):
-        frame = render_frame(idx, draw_detections, draw_tracks, draw_raw, draw_tim, only_ids)
-        writer.write(frame)
-
-    writer.release()
     return str(out)
 
 
@@ -496,6 +1108,21 @@ class ExportRequest(BaseModel):
     draw_tim: bool = True
     only_ids: str = ""
     fps: float = 20.0
+    clean: bool = False
+    draw_reference: bool = True
+    comparison: bool = False
+    paper_overlay: bool = False
+
+
+class ContactSheetRequest(BaseModel):
+    out: str = "figures/paper_contact_sheet.jpg"
+    frames: str = ""
+    cols: int = 3
+    crop: bool = True
+    crop_pad: int = 80
+    panel_width: int = 520
+    draw_reference: bool = True
+    label_mode: str = "time"
 
 
 def run_replay_job(req: ReplayRequest):
@@ -570,8 +1197,28 @@ def run_replay_job(req: ReplayRequest):
 
 @app.get("/api/list")
 def api_list():
-    bags = find_metadata_bags(ROOT)
+    bags = list(find_metadata_bags(ROOT))
     favs = []
+
+    # Explicitly include UI aliases. The generic metadata scan can miss
+    # symlinked bag directories, but these aliases are intentional UI shortcuts
+    # for annotation and paper-video bags.
+    existing = set(bags)
+    alias_root = ROOT / "bags" / "annotation_inputs"
+    aliases = []
+    aliases.extend(sorted(alias_root.glob("ANNOTATE__*")))
+    aliases.extend(sorted(alias_root.glob("VIDEO__*")))
+    aliases.extend(sorted(alias_root.glob("VIEW__*")))
+
+    for alias in aliases:
+        resolved = alias.resolve()
+        if not (resolved / "metadata.yaml").exists():
+            continue
+
+        rel = str(alias.relative_to(ROOT))
+        if rel not in existing:
+            bags.insert(0, rel)
+            existing.add(rel)
 
     return {
         "bags": bags,
@@ -620,24 +1267,184 @@ def frame_jpg(
     draw_raw: int = 1,
     draw_tim: int = 1,
     only_ids: str = "",
+    clean: int = 0,
+    draw_reference: int = 1,
+    comparison: int = 0,
+    paper_overlay: int = 0,
 ):
     from fastapi import Response
     import cv2
 
-    img = render_frame(
-        idx=idx,
-        draw_detections=bool(draw_detections),
-        draw_tracks=bool(draw_tracks),
-        draw_raw=bool(draw_raw),
-        draw_tim=bool(draw_tim),
-        only_ids=only_ids,
-    )
+    if bool(clean) and bool(paper_overlay):
+        img = render_frame_paper_overlay(idx=idx, draw_reference=bool(draw_reference))
+    elif bool(clean) and bool(comparison):
+        img = render_frame_clean_comparison(idx=idx, draw_reference=bool(draw_reference))
+    elif bool(clean):
+        img = render_frame_clean(
+            idx=idx,
+            draw_raw=bool(draw_raw),
+            draw_tim=bool(draw_tim),
+            draw_reference=bool(draw_reference),
+        )
+    else:
+        img = render_frame(
+            idx=idx,
+            draw_detections=bool(draw_detections),
+            draw_tracks=bool(draw_tracks),
+            draw_raw=bool(draw_raw),
+            draw_tim=bool(draw_tim),
+            only_ids=only_ids,
+        )
 
     ok, buf = cv2.imencode(".jpg", img)
     if not ok:
         return Response(content=b"", media_type="image/jpeg", status_code=500)
 
-    return Response(content=buf.tobytes(), media_type="image/jpeg")
+    return no_store_jpeg_response(buf.tobytes())
+
+
+
+@app.post("/api/export_contact_sheet")
+def api_export_contact_sheet(payload: dict):
+    try:
+        req = ContactSheetRequest(**payload)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+    try:
+        out = Path(req.out)
+        if not out.is_absolute():
+            out = ROOT / out
+
+        out = out.resolve()
+        root = ROOT.resolve()
+        try:
+            out.relative_to(root)
+        except ValueError:
+            return {"ok": False, "error": f"Output must stay inside repository: {out}"}
+
+        if out.suffix.lower() not in {".jpg", ".jpeg", ".png"}:
+            return {"ok": False, "error": "Output must be .jpg, .jpeg, or .png"}
+
+        frames = [
+            item.strip()
+            for item in str(req.frames).replace(";", ",").split(",")
+            if item.strip()
+        ]
+
+        result = render_paper_contact_sheet(
+            frame_indices=frames,
+            out_path=str(out),
+            cols=req.cols,
+            crop=req.crop,
+            crop_pad=req.crop_pad,
+            panel_width=req.panel_width,
+            draw_reference=req.draw_reference,
+            label_mode=req.label_mode,
+        )
+
+        rel = str(Path(result).resolve().relative_to(root))
+        return {
+            "ok": True,
+            "path": rel,
+            "download_url": "/api/download_image?path=" + rel,
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.get("/api/download_image")
+def api_download_image(path: str):
+    root = ROOT.resolve()
+    p = Path(path)
+    if not p.is_absolute():
+        p = root / p
+    p = p.resolve()
+
+    try:
+        p.relative_to(root)
+    except ValueError:
+        return JSONResponse({"ok": False, "error": "Path outside repository"}, status_code=400)
+
+    if not p.exists():
+        return JSONResponse({"ok": False, "error": f"File not found: {p}"}, status_code=404)
+
+    suffix = p.suffix.lower()
+    if suffix not in {".jpg", ".jpeg", ".png"}:
+        return JSONResponse({"ok": False, "error": "Only image downloads are allowed"}, status_code=400)
+
+    media_type = "image/png" if suffix == ".png" else "image/jpeg"
+    return FileResponse(str(p), media_type=media_type, filename=p.name)
+
+
+@app.post("/api/export_mp4")
+def api_export_mp4(payload: dict):
+    try:
+        req = ExportRequest(**payload)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+    try:
+        out = Path(req.out)
+        if not out.is_absolute():
+            out = ROOT / out
+
+        # Keep exports inside the repository to avoid accidental writes elsewhere.
+        out = out.resolve()
+        root = ROOT.resolve()
+        try:
+            out.relative_to(root)
+        except ValueError:
+            return {"ok": False, "error": f"Output must stay inside repository: {out}"}
+
+        result = export_mp4(
+            out_path=str(out),
+            draw_detections=req.draw_detections,
+            draw_tracks=req.draw_tracks,
+            draw_raw=req.draw_raw,
+            draw_tim=req.draw_tim,
+            only_ids=req.only_ids,
+            fps=req.fps,
+            clean=req.clean,
+            draw_reference=req.draw_reference,
+            comparison=req.comparison,
+            paper_overlay=req.paper_overlay,
+        )
+
+        rel = str(Path(result).resolve().relative_to(root))
+        return {
+            "ok": True,
+            "path": rel,
+            "download_url": "/api/download_video?path=" + rel,
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.get("/api/download_video")
+def api_download_video(path: str):
+    root = ROOT.resolve()
+    p = Path(path)
+    if not p.is_absolute():
+        p = root / p
+    p = p.resolve()
+
+    try:
+        p.relative_to(root)
+    except ValueError:
+        return JSONResponse({"ok": False, "error": "Path outside repository"}, status_code=400)
+
+    if not p.exists():
+        return JSONResponse({"ok": False, "error": f"File not found: {p}"}, status_code=404)
+
+    if p.suffix.lower() != ".mp4":
+        return JSONResponse({"ok": False, "error": "Only .mp4 downloads are allowed"}, status_code=400)
+
+    return FileResponse(
+        str(p),
+        media_type="video/mp4",
+        filename=p.name,
+    )
 
 
 @app.post("/api/replay")
