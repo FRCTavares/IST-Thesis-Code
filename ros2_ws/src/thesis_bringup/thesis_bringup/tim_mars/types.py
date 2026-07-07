@@ -110,6 +110,19 @@ class TargetMemoryConfig:
     allow_id_switch_recovery: bool = True
     same_id_accept_relief: float = 0.08
 
+    # Short-gap identity protection.
+    # If the previously trusted tracker ID disappears briefly, TIM should not
+    # immediately replace it with a nearby new ID. If the same ID returns within
+    # the grace window, prefer it over a different candidate unless it is clearly
+    # unusable. This prevents close-crossing fragmentation from turning memory
+    # into a wrong-target reacquisition.
+    short_gap_same_id_priority_enabled: bool = True
+    short_gap_same_id_grace_frames: int = 8
+    short_gap_same_id_min_total: float = 0.30
+    short_gap_new_id_suppression_enabled: bool = True
+    short_gap_new_id_allow_total: float = 0.70
+    short_gap_group_risk_allow_total: float = 0.85
+
     # Controlled ID-switch recovery.
     # When enabled, TIM may accept a new tracker ID only if the candidate is
     # spatially plausible relative to the last trusted target memory.

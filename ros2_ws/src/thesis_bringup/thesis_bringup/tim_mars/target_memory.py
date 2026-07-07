@@ -198,6 +198,90 @@ class TargetIdentityMemory:
         )
         scores_sorted[0] = best
 
+        id_switch = best.track_id != self._m.track_id
+
+        same_id_score = None
+        same_id_candidate = None
+        if self._m.track_id is not None:
+            for score in scores_sorted:
+                if int(score.track_id) != int(self._m.track_id):
+                    continue
+                same_id_score = score
+                same_id_candidate = next(
+                    c for c in candidates if int(c.track_id) == int(self._m.track_id)
+                )
+                break
+
+        short_gap_active = (
+            self._m.track_id is not None
+            and self._m.frames_since_seen <= max(0, int(self.cfg.short_gap_same_id_grace_frames))
+            and self._m.state in {TargetState.LOCKED, TargetState.UNCERTAIN, TargetState.REACQUIRED}
+        )
+
+        if (
+            self.cfg.short_gap_same_id_priority_enabled
+            and short_gap_active
+            and self._m.state in {TargetState.UNCERTAIN, TargetState.REACQUIRED}
+            and same_id_score is not None
+            and same_id_candidate is not None
+            and same_id_score.total >= self.cfg.short_gap_same_id_min_total
+        ):
+            return self._accept(
+                same_id_candidate,
+                best_score=same_id_score,
+                all_scores=scores_sorted,
+            )
+
+        short_gap_base_threshold = (
+            self.cfg.accept_score_lost
+            if self._m.state == TargetState.LOST
+            else self.cfg.accept_score_locked
+        )
+
+        best_candidate = next(
+            (c for c in candidates if int(c.track_id) == int(best.track_id)),
+            None,
+        )
+        best_group_crop_risk = (
+            best_candidate is not None
+            and self._candidate_group_crop_risk(best_candidate, candidates)
+        )
+
+        short_gap_new_id_should_suppress = (
+            self._m.state in {TargetState.UNCERTAIN, TargetState.REACQUIRED}
+            or (
+                self._m.state == TargetState.LOCKED
+                and (
+                    best.total < self.cfg.short_gap_new_id_allow_total
+                    or (
+                        best_group_crop_risk
+                        and best.total < self.cfg.short_gap_group_risk_allow_total
+                    )
+                )
+            )
+        )
+
+        if (
+            self.cfg.short_gap_new_id_suppression_enabled
+            and self.cfg.allow_id_switch_recovery
+            and short_gap_active
+            and short_gap_new_id_should_suppress
+            and id_switch
+            and same_id_score is None
+            and not ambiguous
+            and best.total >= short_gap_base_threshold
+        ):
+            return self._miss(
+                reason=(
+                    "short_gap_new_id_suppressed:"
+                    f" id={best.track_id}"
+                    f" gap={self._m.frames_since_seen}"
+                    f" score={best.total:.3f}"
+                ),
+                best_score=best,
+                all_scores=scores_sorted,
+            )
+
 
         absence_reject_reason = self._absence_aware_reacquisition_reject_reason(
             best,
@@ -448,6 +532,39 @@ class TargetIdentityMemory:
         return None
 
 
+    def _candidate_group_crop_risk(
+        self,
+        candidate: CandidateTrack,
+        candidates: Sequence[CandidateTrack],
+    ) -> bool:
+        """Return True when a candidate crop is likely contaminated by nearby people.
+
+        This does not remove the candidate from geometric scoring. It only
+        prevents appearance-driven new-ID reacquisition during short-gap
+        ambiguity when the crop may contain another person.
+        """
+
+        for other in candidates:
+            if int(other.track_id) == int(candidate.track_id):
+                continue
+
+            overlap = bbox_iou(candidate.bbox, other.bbox)
+            distance = centre_distance_norm(
+                candidate.bbox,
+                other.bbox,
+                float(getattr(self.cfg, "image_width", 640.0)),
+                float(getattr(self.cfg, "image_height", 640.0)),
+            )
+
+            if overlap >= 0.10:
+                return True
+
+            if distance <= 0.12:
+                return True
+
+        return False
+
+
     def _rank_aware_reacquisition_candidate(
         self,
         scores_sorted: List[CandidateScore],
@@ -469,6 +586,19 @@ class TargetIdentityMemory:
                 continue
 
             app_raw = self._rank_aware_app_raw(candidate, score)
+
+            group_crop_gate_active = (
+                self._m.track_id is not None
+                and self._m.state == TargetState.UNCERTAIN
+                and self._m.frames_since_seen <= max(0, int(self.cfg.short_gap_same_id_grace_frames))
+            )
+
+            if (
+                group_crop_gate_active
+                and int(score.track_id) != int(self._m.track_id)
+                and self._candidate_group_crop_risk(candidate, candidates)
+            ):
+                continue
 
             if (
                 score.total >= self.cfg.rank_aware_lost_min_total

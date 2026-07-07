@@ -304,3 +304,39 @@ def test_candidate_belief_disabled_preserves_immediate_new_id_recovery():
     assert out.candidate_track_id == 7
     assert out.reacquired
     assert out.publication_suppressed_reason == "reacquired_candidate"
+
+def test_short_gap_new_id_is_suppressed_and_same_id_return_is_preferred():
+    cfg = TargetMemoryConfig(
+        image_width=640,
+        image_height=480,
+        max_uncertain_frames=6,
+        max_lost_frames=20,
+        appearance_conservative_enabled=False,
+        accept_score_locked=0.45,
+        short_gap_same_id_grace_frames=4,
+        short_gap_same_id_min_total=0.20,
+        short_gap_new_id_suppression_enabled=True,
+        short_gap_new_id_allow_total=0.70,
+        short_gap_same_id_priority_enabled=True,
+    )
+    tim = TargetIdentityMemory(cfg)
+
+    tim.select(tr(1, (360, 180, 390, 290), score=0.90))
+
+    # The old ID disappears briefly and a nearby distractor becomes plausible.
+    # TIM must not immediately rewrite memory from id=1 to id=2.
+    for _ in range(3):
+        out = tim.update([tr(2, (365, 235, 415, 355), score=0.80)])
+        assert out.target_track_id == 1
+        assert out.reason.startswith("short_gap_new_id_suppressed:")
+
+    # When the original ID returns during the short gap, prefer it even if the
+    # distractor is still nearby and has higher detector confidence.
+    out = tim.update([
+        tr(2, (366, 236, 416, 356), score=0.80),
+        tr(1, (378, 182, 412, 282), score=0.50),
+    ])
+
+    assert out.target_track_id == 1
+    assert out.best_score is not None
+    assert out.best_score.track_id == 1
