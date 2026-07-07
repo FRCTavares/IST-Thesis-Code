@@ -34,121 +34,9 @@ class CameraCaptureNode(Node):
     def __init__(self) -> None:
         super().__init__("camera_capture_node")
 
-        self.declare_parameter("device", "/dev/video0")
-        self.declare_parameter("media_dev", "/dev/media0")
-        self.declare_parameter("sensor_subdev", "/dev/v4l-subdev2")
-        self.declare_parameter("width", 1280)
-        self.declare_parameter("height", 720)
-        self.declare_parameter("publish_width", 0)
-        self.declare_parameter("publish_height", 0)
-        self.declare_parameter("publish_resize_mode", "letterbox")
-        self.declare_parameter("publish_encoding", "bgr8")
-        self.declare_parameter("fps", 30.0)
-        self.declare_parameter("frame_id", "camera")
-        self.declare_parameter("fourcc", "UYVY")
-        self.declare_parameter("dashboard_topic", "/camera/dashboard")
-        self.declare_parameter("dashboard_width", 640)
-        self.declare_parameter("dashboard_height", 360)
-        self.declare_parameter("dashboard_fps", 30.0)
-        self.declare_parameter("publish_dashboard_topic", True)
-        self.declare_parameter("sensor_entity", "tevs 11-0048")
-        self.declare_parameter("csi_entity", "csi2")
-        self.declare_parameter("csi_source_pad", 4)
-        self.declare_parameter("video_entity", "rp1-cfe-csi2_ch0")
-        self.declare_parameter("trigger_mode", 0)
-        self.declare_parameter("apply_sensor_trigger_control", False)
-        self.declare_parameter("apply_sensor_rate_controls", True)
-        self.declare_parameter("sensor_max_fps", 30)
-        self.declare_parameter("sensor_ae_exposure_upper", 8333)
-        self.declare_parameter("sensor_ae_exposure_max", 33333)
-        self.declare_parameter("sensor_exposure_mode", 1)
-        self.declare_parameter("sensor_manual_exposure", 8333)
-        self.declare_parameter("command_delay_s", 0.10)
-        self.declare_parameter("command_timeout_s", 5.0)
-        self.declare_parameter("reopen_delay_s", 1.0)
-        self.declare_parameter("startup_frame_timeout_s", 20.0)
-        self.declare_parameter("stall_timeout_s", 4.0)
-        self.declare_parameter("publish_fps_topic", True)
-        self.declare_parameter("flip_image", True)
-        self.declare_parameter("fail_on_media_init_error", False)
-        self.declare_parameter("adopt_detected_sensor_resolution", True)
-        self.declare_parameter("dashboard_publish_requires_subscribers", True)
-        self.declare_parameter("capture_fps_topic", "/camera/capture_fps")
-        self.declare_parameter("publish_capture_fps_topic", True)
-
-        self._device = self.get_parameter("device").value
-        self._media_dev = self.get_parameter("media_dev").value
-        self._sensor_subdev = self.get_parameter("sensor_subdev").value
-        self._width = int(self.get_parameter("width").value)
-        self._height = int(self.get_parameter("height").value)
-        self._publish_width = int(self.get_parameter("publish_width").value)
-        self._publish_height = int(self.get_parameter("publish_height").value)
-        self._publish_resize_mode = str(self.get_parameter("publish_resize_mode").value).strip().lower()
-        self._publish_encoding = str(self.get_parameter("publish_encoding").value).strip().lower()
-        self._fps = float(self.get_parameter("fps").value)
-        self._frame_id = self.get_parameter("frame_id").value
-        self._fourcc = self.get_parameter("fourcc").value
-        self._dashboard_topic = str(self.get_parameter("dashboard_topic").value)
-        self._dashboard_width = int(self.get_parameter("dashboard_width").value)
-        self._dashboard_height = int(self.get_parameter("dashboard_height").value)
-        self._dashboard_fps = max(0.0, float(self.get_parameter("dashboard_fps").value))
-        self._publish_dashboard_topic = bool(self.get_parameter("publish_dashboard_topic").value)
-        self._sensor_entity = self.get_parameter("sensor_entity").value
-        self._csi_entity = self.get_parameter("csi_entity").value
-        self._csi_source_pad = int(self.get_parameter("csi_source_pad").value)
-        self._video_entity = self.get_parameter("video_entity").value
-        self._trigger_mode = int(self.get_parameter("trigger_mode").value)
-        self._apply_sensor_trigger_control = bool(
-            self.get_parameter("apply_sensor_trigger_control").value
-        )
-        self._apply_sensor_rate_controls = bool(self.get_parameter("apply_sensor_rate_controls").value)
-        self._sensor_max_fps = int(self.get_parameter("sensor_max_fps").value)
-        self._sensor_ae_exposure_upper = int(self.get_parameter("sensor_ae_exposure_upper").value)
-        self._sensor_ae_exposure_max = int(self.get_parameter("sensor_ae_exposure_max").value)
-        self._sensor_exposure_mode = int(self.get_parameter("sensor_exposure_mode").value)
-        self._sensor_manual_exposure = int(self.get_parameter("sensor_manual_exposure").value)
-        self._command_delay_s = float(self.get_parameter("command_delay_s").value)
-        self._command_timeout_s = float(self.get_parameter("command_timeout_s").value)
-        self._reopen_delay_s = float(self.get_parameter("reopen_delay_s").value)
-        self._startup_frame_timeout_s = max(
-            1.0, float(self.get_parameter("startup_frame_timeout_s").value)
-        )
-        self._stall_timeout_s = max(1.0, float(self.get_parameter("stall_timeout_s").value))
-        self._publish_fps_topic = bool(self.get_parameter("publish_fps_topic").value)
-        # Kept for backward compatibility with existing launch args, but ignored.
-        self._flip_image = bool(self.get_parameter("flip_image").value)
-        self._fail_on_media_init_error = bool(self.get_parameter("fail_on_media_init_error").value)
-        self._adopt_detected_sensor_resolution = bool(
-            self.get_parameter("adopt_detected_sensor_resolution").value
-        )
-        self._dashboard_publish_requires_subscribers = bool(
-            self.get_parameter("dashboard_publish_requires_subscribers").value
-        )
-        self._capture_fps_topic = str(self.get_parameter("capture_fps_topic").value)
-        self._publish_capture_fps_topic = bool(self.get_parameter("publish_capture_fps_topic").value)
-
-        if self._flip_image:
-            self.get_logger().warn(
-                "flip_image parameter is deprecated and ignored; camera frames are published unrotated"
-            )
-
-        self._publish_width_auto = self._publish_width <= 0
-        self._publish_height_auto = self._publish_height <= 0
-
-        if self._publish_width_auto:
-            self._publish_width = self._width
-        if self._publish_height_auto:
-            self._publish_height = self._height
-        if self._publish_resize_mode not in ("resize", "letterbox"):
-            self.get_logger().warn(
-                f"invalid publish_resize_mode='{self._publish_resize_mode}', using letterbox"
-            )
-            self._publish_resize_mode = "letterbox"
-        if self._publish_encoding not in ("bgr8", "rgb8"):
-            self.get_logger().warn(
-                f"invalid publish_encoding='{self._publish_encoding}', using bgr8"
-            )
-            self._publish_encoding = "bgr8"
+        self._declare_parameters()
+        self._load_parameters()
+        self._validate_runtime_parameters()
 
         self._media_dev = self._resolve_media_device(self._media_dev)
         self._sensor_entity = self._resolve_sensor_entity(self._media_dev, self._sensor_entity)
@@ -236,6 +124,129 @@ class CameraCaptureNode(Node):
             f"publish={self._publish_width}x{self._publish_height} "
             f"({self._publish_resize_mode}, {self._publish_encoding}), fps={self._fps}"
         )
+
+
+    def _declare_parameters(self) -> None:
+        """Declare ROS parameters used by the camera capture node."""
+        self.declare_parameter("device", "/dev/video0")
+        self.declare_parameter("media_dev", "/dev/media0")
+        self.declare_parameter("sensor_subdev", "/dev/v4l-subdev2")
+        self.declare_parameter("width", 1280)
+        self.declare_parameter("height", 720)
+        self.declare_parameter("publish_width", 0)
+        self.declare_parameter("publish_height", 0)
+        self.declare_parameter("publish_resize_mode", "letterbox")
+        self.declare_parameter("publish_encoding", "bgr8")
+        self.declare_parameter("fps", 30.0)
+        self.declare_parameter("frame_id", "camera")
+        self.declare_parameter("fourcc", "UYVY")
+        self.declare_parameter("dashboard_topic", "/camera/dashboard")
+        self.declare_parameter("dashboard_width", 640)
+        self.declare_parameter("dashboard_height", 360)
+        self.declare_parameter("dashboard_fps", 30.0)
+        self.declare_parameter("publish_dashboard_topic", True)
+        self.declare_parameter("sensor_entity", "tevs 11-0048")
+        self.declare_parameter("csi_entity", "csi2")
+        self.declare_parameter("csi_source_pad", 4)
+        self.declare_parameter("video_entity", "rp1-cfe-csi2_ch0")
+        self.declare_parameter("trigger_mode", 0)
+        self.declare_parameter("apply_sensor_trigger_control", False)
+        self.declare_parameter("apply_sensor_rate_controls", True)
+        self.declare_parameter("sensor_max_fps", 30)
+        self.declare_parameter("sensor_ae_exposure_upper", 8333)
+        self.declare_parameter("sensor_ae_exposure_max", 33333)
+        self.declare_parameter("sensor_exposure_mode", 1)
+        self.declare_parameter("sensor_manual_exposure", 8333)
+        self.declare_parameter("command_delay_s", 0.10)
+        self.declare_parameter("command_timeout_s", 5.0)
+        self.declare_parameter("reopen_delay_s", 1.0)
+        self.declare_parameter("startup_frame_timeout_s", 20.0)
+        self.declare_parameter("stall_timeout_s", 4.0)
+        self.declare_parameter("publish_fps_topic", True)
+        self.declare_parameter("flip_image", True)
+        self.declare_parameter("fail_on_media_init_error", False)
+        self.declare_parameter("adopt_detected_sensor_resolution", True)
+        self.declare_parameter("dashboard_publish_requires_subscribers", True)
+        self.declare_parameter("capture_fps_topic", "/camera/capture_fps")
+        self.declare_parameter("publish_capture_fps_topic", True)
+
+    def _load_parameters(self) -> None:
+        """Load ROS parameter values into node attributes."""
+        self._device = self.get_parameter("device").value
+        self._media_dev = self.get_parameter("media_dev").value
+        self._sensor_subdev = self.get_parameter("sensor_subdev").value
+        self._width = int(self.get_parameter("width").value)
+        self._height = int(self.get_parameter("height").value)
+        self._publish_width = int(self.get_parameter("publish_width").value)
+        self._publish_height = int(self.get_parameter("publish_height").value)
+        self._publish_resize_mode = str(self.get_parameter("publish_resize_mode").value).strip().lower()
+        self._publish_encoding = str(self.get_parameter("publish_encoding").value).strip().lower()
+        self._fps = float(self.get_parameter("fps").value)
+        self._frame_id = self.get_parameter("frame_id").value
+        self._fourcc = self.get_parameter("fourcc").value
+        self._dashboard_topic = str(self.get_parameter("dashboard_topic").value)
+        self._dashboard_width = int(self.get_parameter("dashboard_width").value)
+        self._dashboard_height = int(self.get_parameter("dashboard_height").value)
+        self._dashboard_fps = max(0.0, float(self.get_parameter("dashboard_fps").value))
+        self._publish_dashboard_topic = bool(self.get_parameter("publish_dashboard_topic").value)
+        self._sensor_entity = self.get_parameter("sensor_entity").value
+        self._csi_entity = self.get_parameter("csi_entity").value
+        self._csi_source_pad = int(self.get_parameter("csi_source_pad").value)
+        self._video_entity = self.get_parameter("video_entity").value
+        self._trigger_mode = int(self.get_parameter("trigger_mode").value)
+        self._apply_sensor_trigger_control = bool(
+            self.get_parameter("apply_sensor_trigger_control").value
+        )
+        self._apply_sensor_rate_controls = bool(self.get_parameter("apply_sensor_rate_controls").value)
+        self._sensor_max_fps = int(self.get_parameter("sensor_max_fps").value)
+        self._sensor_ae_exposure_upper = int(self.get_parameter("sensor_ae_exposure_upper").value)
+        self._sensor_ae_exposure_max = int(self.get_parameter("sensor_ae_exposure_max").value)
+        self._sensor_exposure_mode = int(self.get_parameter("sensor_exposure_mode").value)
+        self._sensor_manual_exposure = int(self.get_parameter("sensor_manual_exposure").value)
+        self._command_delay_s = float(self.get_parameter("command_delay_s").value)
+        self._command_timeout_s = float(self.get_parameter("command_timeout_s").value)
+        self._reopen_delay_s = float(self.get_parameter("reopen_delay_s").value)
+        self._startup_frame_timeout_s = max(
+            1.0, float(self.get_parameter("startup_frame_timeout_s").value)
+        )
+        self._stall_timeout_s = max(1.0, float(self.get_parameter("stall_timeout_s").value))
+        self._publish_fps_topic = bool(self.get_parameter("publish_fps_topic").value)
+        # Kept for backward compatibility with existing launch args, but ignored.
+        self._flip_image = bool(self.get_parameter("flip_image").value)
+        self._fail_on_media_init_error = bool(self.get_parameter("fail_on_media_init_error").value)
+        self._adopt_detected_sensor_resolution = bool(
+            self.get_parameter("adopt_detected_sensor_resolution").value
+        )
+        self._dashboard_publish_requires_subscribers = bool(
+            self.get_parameter("dashboard_publish_requires_subscribers").value
+        )
+        self._capture_fps_topic = str(self.get_parameter("capture_fps_topic").value)
+        self._publish_capture_fps_topic = bool(self.get_parameter("publish_capture_fps_topic").value)
+
+    def _validate_runtime_parameters(self) -> None:
+        """Normalize runtime parameters and warn about ignored legacy settings."""
+        if self._flip_image:
+            self.get_logger().warn(
+                "flip_image parameter is deprecated and ignored; camera frames are published unrotated"
+            )
+
+        self._publish_width_auto = self._publish_width <= 0
+        self._publish_height_auto = self._publish_height <= 0
+
+        if self._publish_width_auto:
+            self._publish_width = self._width
+        if self._publish_height_auto:
+            self._publish_height = self._height
+        if self._publish_resize_mode not in ("resize", "letterbox"):
+            self.get_logger().warn(
+                f"invalid publish_resize_mode='{self._publish_resize_mode}', using letterbox"
+            )
+            self._publish_resize_mode = "letterbox"
+        if self._publish_encoding not in ("bgr8", "rgb8"):
+            self.get_logger().warn(
+                f"invalid publish_encoding='{self._publish_encoding}', using bgr8"
+            )
+            self._publish_encoding = "bgr8"
 
     def _on_set_parameters(self, params) -> SetParametersResult:
         next_publish_width = self._publish_width
