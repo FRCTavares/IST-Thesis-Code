@@ -637,18 +637,12 @@ class TargetIdentityMemory:
 
         return False
 
-    def _rank_aware_reacquisition_candidate(
+    def _rank_aware_enriched_candidates(
         self,
+        *,
         scores_sorted: List[CandidateScore],
         candidates: Sequence[CandidateTrack],
-    ) -> tuple[Optional[CandidateScore], bool]:
-        if not self.cfg.rank_aware_reacquisition_enabled:
-            return None, False
-
-        if self._m.state not in {TargetState.UNCERTAIN, TargetState.LOST}:
-            self._rank_reacq_confirmation.reset()
-            return None, False
-
+    ) -> list[tuple[CandidateScore, float]]:
         by_id = {int(c.track_id): c for c in candidates}
         enriched: list[tuple[CandidateScore, float]] = []
 
@@ -678,6 +672,25 @@ class TargetIdentityMemory:
                 and app_raw >= self.cfg.rank_aware_lost_min_app
             ):
                 enriched.append((score, app_raw))
+
+        return enriched
+
+    def _rank_aware_reacquisition_candidate(
+        self,
+        scores_sorted: List[CandidateScore],
+        candidates: Sequence[CandidateTrack],
+    ) -> tuple[Optional[CandidateScore], bool]:
+        if not self.cfg.rank_aware_reacquisition_enabled:
+            return None, False
+
+        if self._m.state not in {TargetState.UNCERTAIN, TargetState.LOST}:
+            self._rank_reacq_confirmation.reset()
+            return None, False
+
+        enriched = self._rank_aware_enriched_candidates(
+            scores_sorted=scores_sorted,
+            candidates=candidates,
+        )
 
         if not enriched:
             self._rank_reacq_confirmation.reset()
