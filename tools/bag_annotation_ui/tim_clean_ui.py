@@ -4,12 +4,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import argparse
 import json
 import html as html_lib
-import csv
-import re
-import subprocess
-import sys
 from pathlib import Path
 from tim_ui_discovery import discover_annotations as shared_discover_annotations, discover_bags as shared_discover_bags
+from tim_ui_evaluation import run_ui_evaluation
 from tim_ui_annotations import (
     ANNOTATION_EVENT_TYPES,
     ANNOTATION_FIELDS,
@@ -33,92 +30,19 @@ for route in backend.app.routes:
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def _safe_name(s: str) -> str:
-    s = s.strip().replace("/", "__")
-    return re.sub(r"[^A-Za-z0-9_.=-]+", "_", s)[:180]
-
-
 @app.post("/api/evaluate")
 async def evaluate_api(request: Request):
     payload = await request.json()
-    bag = str(payload.get("bag", "")).strip()
-    ann = str(payload.get("ann", "")).strip()
-
-    if not bag:
-        return {"ok": False, "error": "No bag selected."}
-    if not ann:
-        return {"ok": False, "error": "No annotation selected."}
-
-    bag_path = Path(bag)
-    ann_path = Path(ann)
-
-    if not bag_path.is_absolute():
-        bag_path = REPO_ROOT / bag_path
-    if not ann_path.is_absolute():
-        ann_path = REPO_ROOT / ann_path
-
-    if not bag_path.exists():
-        return {"ok": False, "error": f"Bag does not exist: {bag_path}"}
-    if not ann_path.exists():
-        return {"ok": False, "error": f"Annotation does not exist: {ann_path}"}
-
-    out_dir = (
-        REPO_ROOT
-        / "reports"
-        / "ui_evaluations"
-        / (_safe_name(bag_path.name) + "__" + _safe_name(ann_path.stem))
-    )
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    cmd = [
-        sys.executable,
-        str(REPO_ROOT / "tools" / "analysis" / "evaluate_tim_target_bbox_correctness.py"),
-        str(bag_path),
-        "--annotations",
-        str(ann_path),
-        "--out-dir",
-        str(out_dir),
-    ]
-
-    proc = subprocess.run(
-        cmd,
-        cwd=str(REPO_ROOT),
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        timeout=180,
+    status_code, data = run_ui_evaluation(
+        bag=str(payload.get("bag", "")).strip(),
+        ann=str(payload.get("ann", "")).strip(),
+        repo_root=REPO_ROOT,
     )
 
-    if proc.returncode != 0:
-        return {
-            "ok": False,
-            "error": "Evaluator failed.",
-            "cmd": " ".join(cmd),
-            "log": proc.stdout,
-            "out_dir": str(out_dir),
-        }
+    if status_code != 200:
+        return JSONResponse(data, status_code=status_code)
 
-    summary_csv = out_dir / "summary.csv"
-    summary_md = out_dir / "summary.md"
-
-    rows = []
-    if summary_csv.exists():
-        with summary_csv.open(newline="") as f:
-            for row in csv.DictReader(f):
-                rows.append(row)
-
-    markdown = summary_md.read_text() if summary_md.exists() else ""
-
-    return {
-        "ok": True,
-        "cmd": " ".join(cmd),
-        "out_dir": str(out_dir),
-        "summary_csv": str(summary_csv),
-        "summary_md": str(summary_md),
-        "rows": rows,
-        "markdown": markdown,
-        "log": proc.stdout,
-    }
+    return data
 
 
 
