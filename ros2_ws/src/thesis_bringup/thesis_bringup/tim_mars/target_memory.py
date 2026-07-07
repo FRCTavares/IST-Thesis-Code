@@ -175,46 +175,13 @@ class TargetIdentityMemory:
                 all_scores=scores_sorted,
             )
 
-        rank_aware_best, rank_aware_pending = self._rank_aware_reacquisition_candidate(
-            scores_sorted,
-            candidates,
+        rank_aware_output = self._handle_rank_aware_reacquisition(
+            candidates=candidates,
+            scores_sorted=scores_sorted,
+            best=best,
         )
-        if rank_aware_best is not None:
-            rank_candidate = next(c for c in candidates if c.track_id == rank_aware_best.track_id)
-            rank_id_switch = rank_aware_best.track_id != self._m.track_id
-
-            if rank_id_switch and self.cfg.id_switch_spatial_gate_enabled:
-                spatial_ok = (
-                    rank_aware_best.iou >= self.cfg.id_switch_min_iou
-                    or (
-                        rank_aware_best.distance >= self.cfg.id_switch_min_distance
-                        and rank_aware_best.scale >= self.cfg.id_switch_min_scale
-                    )
-                )
-                if not spatial_ok:
-                    return self._miss(
-                        reason=(
-                            "rank_aware_id_switch_spatial_reject:"
-                            f" iou={rank_aware_best.iou:.3f}"
-                            f" distance={rank_aware_best.distance:.3f}"
-                            f" scale={rank_aware_best.scale:.3f}"
-                        ),
-                        best_score=rank_aware_best,
-                        all_scores=scores_sorted,
-                    )
-
-            return self._accept(
-                rank_candidate,
-                best_score=rank_aware_best,
-                all_scores=scores_sorted,
-            )
-
-        if rank_aware_pending:
-            return self._miss(
-                reason="rank_aware_reacquisition_pending",
-                best_score=best,
-                all_scores=scores_sorted,
-            )
+        if rank_aware_output is not None:
+            return rank_aware_output
 
         threshold = self.cfg.accept_score_lost if self._m.state == TargetState.LOST else self.cfg.accept_score_locked
         if same_id:
@@ -305,6 +272,56 @@ class TargetIdentityMemory:
             best_score=best,
             all_scores=scores_sorted,
         )
+
+    def _handle_rank_aware_reacquisition(
+        self,
+        *,
+        candidates: Sequence[CandidateTrack],
+        scores_sorted: List[CandidateScore],
+        best: CandidateScore,
+    ) -> Optional[TargetMemoryOutput]:
+        rank_aware_best, rank_aware_pending = self._rank_aware_reacquisition_candidate(
+            scores_sorted,
+            candidates,
+        )
+        if rank_aware_best is not None:
+            rank_candidate = next(c for c in candidates if c.track_id == rank_aware_best.track_id)
+            rank_id_switch = rank_aware_best.track_id != self._m.track_id
+
+            if rank_id_switch and self.cfg.id_switch_spatial_gate_enabled:
+                spatial_ok = (
+                    rank_aware_best.iou >= self.cfg.id_switch_min_iou
+                    or (
+                        rank_aware_best.distance >= self.cfg.id_switch_min_distance
+                        and rank_aware_best.scale >= self.cfg.id_switch_min_scale
+                    )
+                )
+                if not spatial_ok:
+                    return self._miss(
+                        reason=(
+                            "rank_aware_id_switch_spatial_reject:"
+                            f" iou={rank_aware_best.iou:.3f}"
+                            f" distance={rank_aware_best.distance:.3f}"
+                            f" scale={rank_aware_best.scale:.3f}"
+                        ),
+                        best_score=rank_aware_best,
+                        all_scores=scores_sorted,
+                    )
+
+            return self._accept(
+                rank_candidate,
+                best_score=rank_aware_best,
+                all_scores=scores_sorted,
+            )
+
+        if rank_aware_pending:
+            return self._miss(
+                reason="rank_aware_reacquisition_pending",
+                best_score=best,
+                all_scores=scores_sorted,
+            )
+
+        return None
 
     def _handle_short_gap_identity_protection(
         self,
