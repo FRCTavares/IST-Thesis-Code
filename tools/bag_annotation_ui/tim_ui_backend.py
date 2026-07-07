@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""Backend API routes for the TIM-MARS annotation UI.
+
+This module owns FastAPI endpoints for bag loading, frame rendering, replay
+jobs, image/video export, and download guards. It delegates bag parsing,
+drawing, rendering, discovery, and evaluation to smaller helper modules.
+
+It is imported by tim_clean_ui.py and is not normally run directly.
+"""
+
 from __future__ import annotations
 
 import argparse

@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""Entrypoint for the TIM-MARS clean annotation and review UI.
+
+This FastAPI application serves the HTML frontend, mounts the shared backend
+API routes, and exposes lightweight endpoints for annotation discovery,
+annotation editing, and evaluation triggering.
+
+Run this file directly when opening the local annotation UI.
+"""
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import argparse

@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""Render a tracker-ID overlay video from a ROS 2 bag.
+
+This support tool reads image and /tracks topics from a rosbag2 bag and writes
+a video where every visible track is labeled by tracker ID. It is useful for
+manual review before annotation or when checking tracker fragmentation.
+
+It does not create annotation CSVs and does not compute correctness metrics.
+"""
+
 from __future__ import annotations
 
 import argparse

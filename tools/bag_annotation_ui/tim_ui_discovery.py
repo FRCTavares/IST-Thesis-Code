@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""Bag and annotation discovery helpers for the TIM-MARS annotation UI.
+
+Discovery is intentionally limited to known thesis repository folders so the UI
+shows curated bags and annotation files first while still supporting legacy
+fallback paths for older local data.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

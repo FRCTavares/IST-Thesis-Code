@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""Video rendering CLI helpers for TIM-MARS visual validation.
+
+This module renders single-stream and paired raw-vs-TIM videos from rosbag2
+data, annotations, and selected-target outputs. It is used for visual
+inspection, paper/thesis validation videos, and batch video summaries.
+
+It is separate from the interactive FastAPI annotation UI.
+"""
+
 from __future__ import annotations
 
 import argparse
