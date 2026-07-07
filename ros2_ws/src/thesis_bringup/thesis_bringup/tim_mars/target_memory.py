@@ -854,41 +854,12 @@ class TargetIdentityMemory:
         elif reacquired:
             self._m.confirmed_after_reacquire = 0
 
-        if self.cfg.appearance_conservative_enabled:
-            if not best_score.appearance_used:
-                if self.cfg.appearance_conservative_require_appearance:
-                    return self._miss(
-                        reason="appearance_conservative_reject:no_appearance_used",
-                        best_score=best_score,
-                        all_scores=all_scores,
-                    )
-            else:
-                appearance_scores = sorted(
-                    [
-                        s.appearance_raw
-                        for s in all_scores
-                        if s.appearance_used and s.geometry_allows_appearance
-                    ],
-                    reverse=True,
-                )
-                selected_app = best_score.appearance_raw
-                second_app = appearance_scores[1] if len(appearance_scores) > 1 else 0.0
-                app_margin = selected_app - second_app
-
-                if (
-                    selected_app < self.cfg.appearance_conservative_min_similarity
-                    or app_margin < self.cfg.appearance_conservative_margin
-                ):
-                    return self._miss(
-                        reason=(
-                            "appearance_conservative_reject:"
-                            f" selected_app={selected_app:.3f}"
-                            f" second_app={second_app:.3f}"
-                            f" margin={app_margin:.3f}"
-                        ),
-                        best_score=best_score,
-                        all_scores=all_scores,
-                    )
+        conservative_output = self._appearance_conservative_reject_output(
+            best_score=best_score,
+            all_scores=all_scores,
+        )
+        if conservative_output is not None:
+            return conservative_output
 
         if reacquired and self._m.confirmed_after_reacquire < self.cfg.min_confirm_frames_after_reacquire:
             new_state = TargetState.REACQUIRED
@@ -930,6 +901,53 @@ class TargetIdentityMemory:
             memory_update_frozen=memory_update_frozen,
             memory_update_freeze_reason=memory_update_freeze_reason,
         )
+
+    def _appearance_conservative_reject_output(
+        self,
+        *,
+        best_score: CandidateScore,
+        all_scores: List[CandidateScore],
+    ) -> Optional[TargetMemoryOutput]:
+        if not self.cfg.appearance_conservative_enabled:
+            return None
+
+        if not best_score.appearance_used:
+            if self.cfg.appearance_conservative_require_appearance:
+                return self._miss(
+                    reason="appearance_conservative_reject:no_appearance_used",
+                    best_score=best_score,
+                    all_scores=all_scores,
+                )
+            return None
+
+        appearance_scores = sorted(
+            [
+                s.appearance_raw
+                for s in all_scores
+                if s.appearance_used and s.geometry_allows_appearance
+            ],
+            reverse=True,
+        )
+        selected_app = best_score.appearance_raw
+        second_app = appearance_scores[1] if len(appearance_scores) > 1 else 0.0
+        app_margin = selected_app - second_app
+
+        if (
+            selected_app < self.cfg.appearance_conservative_min_similarity
+            or app_margin < self.cfg.appearance_conservative_margin
+        ):
+            return self._miss(
+                reason=(
+                    "appearance_conservative_reject:"
+                    f" selected_app={selected_app:.3f}"
+                    f" second_app={second_app:.3f}"
+                    f" margin={app_margin:.3f}"
+                ),
+                best_score=best_score,
+                all_scores=all_scores,
+            )
+
+        return None
 
     def _miss(
         self,
