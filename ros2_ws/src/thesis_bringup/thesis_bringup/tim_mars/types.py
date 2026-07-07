@@ -81,43 +81,58 @@ class TargetMemoryConfig:
     not by guessing from one live session.
     """
 
+    # Image geometry.
+    # Candidate bboxes are evaluated in this coordinate frame after ROS-side
+    # conversion from tracker messages.
     image_width: float = 640.0
     image_height: float = 640.0
 
-    # Candidate scoring weights. Sum need not be exactly 1 because thresholds
-    # are empirical gates over the final score.
+    # Candidate scoring weights.
+    # These combine geometry, confidence, and tracker-ID continuity into the
+    # base score. The sum does not need to be exactly 1 because acceptance
+    # thresholds are empirical gates over the final score.
     w_iou: float = 0.34
     w_distance: float = 0.26
     w_scale: float = 0.18
     w_confidence: float = 0.14
     w_id_bonus: float = 0.08
 
-    # Association gates.
+    # Acceptance and ambiguity gates.
+    # Locked targets can be accepted more easily than lost targets. Ambiguity
+    # margin controls when the best and second-best candidates are too close.
     accept_score_locked: float = 0.52
     accept_score_lost: float = 0.60
     ambiguity_margin: float = 0.07
     min_candidate_score: float = 0.10
 
-    # Normalisation and decay.
+    # Geometry normalization and stale-memory decay.
+    # Distance is normalized by image diagonal. Scale uses log-space similarity.
     distance_sigma: float = 0.18  # relative to image diagonal
     scale_sigma: float = 0.55  # log-scale sigma
     stale_quality_decay: float = 0.85
 
     # State hysteresis, measured in update calls / frames.
+    # These values control how long TIM-MARS remains uncertain before declaring
+    # the selected target lost and how long reacquisition needs confirmation.
     max_uncertain_frames: int = 6
     max_lost_frames: int = 30
     min_confirm_frames_after_reacquire: int = 1
 
-    # Safety.
+    # Identity continuity and controlled ID-switch recovery.
+    # Same-ID continuity receives a small score relief. New tracker IDs are
+    # accepted only when recovery is enabled and any configured spatial gate
+    # considers the candidate plausible relative to the remembered target.
     allow_id_switch_recovery: bool = True
     same_id_accept_relief: float = 0.08
+    id_switch_spatial_gate_enabled: bool = False
+    id_switch_min_iou: float = 0.05
+    id_switch_min_distance: float = 0.35
+    id_switch_min_scale: float = 0.35
 
     # Short-gap identity protection.
-    # If the previously trusted tracker ID disappears briefly, TIM should not
-    # immediately replace it with a nearby new ID. If the same ID returns within
-    # the grace window, prefer it over a different candidate unless it is clearly
-    # unusable. This prevents close-crossing fragmentation from turning memory
-    # into a wrong-target reacquisition.
+    # If the trusted tracker ID disappears briefly, TIM-MARS should not
+    # immediately replace it with a nearby new ID. If the same ID returns inside
+    # the grace window, it is preferred unless it is clearly unusable.
     short_gap_same_id_priority_enabled: bool = True
     short_gap_same_id_grace_frames: int = 8
     short_gap_same_id_min_total: float = 0.30
@@ -125,30 +140,24 @@ class TargetMemoryConfig:
     short_gap_new_id_allow_total: float = 0.70
     short_gap_group_risk_allow_total: float = 0.85
 
-    # Controlled ID-switch recovery.
-    # When enabled, TIM may accept a new tracker ID only if the candidate is
-    # spatially plausible relative to the last trusted target memory.
-    id_switch_spatial_gate_enabled: bool = False
-    id_switch_min_iou: float = 0.05
-    id_switch_min_distance: float = 0.35
-    id_switch_min_scale: float = 0.35
-
-    # TIM-V1A optional appearance cue.
-    # Disabled by default so TIM-V0 behaviour remains unchanged.
+    # Optional appearance scoring.
+    # Appearance is secondary evidence. It can help separate plausible
+    # candidates, but it should not rescue geometrically implausible candidates.
     appearance_enabled: bool = False
     appearance_weight: float = 0.12
     appearance_min_similarity: float = 0.35
     appearance_update_alpha: float = 0.10
     appearance_ambiguous_only: bool = True
 
-    # Freeze appearance memory updates after risky reacquisition / ID switch.
-    # Default 0 preserves previous behaviour.
+    # Appearance memory update policy.
+    # Cooldown can freeze positive-memory updates after risky reacquisition so
+    # TIM-MARS does not immediately learn a wrong target.
     appearance_update_cooldown_after_reacquire_frames: int = 0
 
-    # TIM-V3C hard-negative memory.
-    # During trusted lock, non-selected nearby candidates are remembered as
-    # negative appearance prototypes. A future candidate that matches the
-    # positive memory but is also too close to a hard negative is suppressed.
+    # Hard-negative distractor memory.
+    # During trusted lock, nearby non-selected tracks can be remembered as
+    # negative appearance prototypes. Future candidates that look too close to a
+    # hard negative can be suppressed.
     hard_negative_memory_enabled: bool = True
     hard_negative_max_entries: int = 8
     hard_negative_update_alpha: float = 0.20
@@ -157,15 +166,17 @@ class TargetMemoryConfig:
     hard_negative_reject_margin: float = 0.03
     hard_negative_min_geometry: float = 0.20
 
-    # TIM-MARS conservative output filter.
-    # When enabled, a candidate must have strong and separated appearance evidence.
+    # Conservative appearance publication filter.
+    # When enabled, a candidate needs sufficiently strong and separated
+    # appearance evidence before it is allowed to drive controller-facing output.
     appearance_conservative_enabled: bool = True
     appearance_conservative_require_appearance: bool = False
     appearance_conservative_min_similarity: float = 0.65
     appearance_conservative_margin: float = 0.05
 
-    # TIM-V2K experimental rank-aware LOST/UNCERTAIN reacquisition.
-    # Disabled by default to preserve TIM-V1 behaviour.
+    # Rank-aware reacquisition.
+    # In UNCERTAIN/LOST states, candidates can be ranked by appearance evidence
+    # rather than raw total score alone. Confirmation can require repeated frames.
     rank_aware_reacquisition_enabled: bool = False
     rank_aware_lost_min_total: float = 0.40
     rank_aware_lost_min_geom: float = 0.10
@@ -174,18 +185,16 @@ class TargetMemoryConfig:
     rank_aware_confirm_frames: int = 1
     rank_aware_missing_ttl_frames: int = 8
 
-    # TIM-V4 candidate belief / publication separation.
-    # When enabled, TIM may remember a plausible new candidate during
-    # LOST/UNCERTAIN but suppress controller-facing publication until repeated
-    # confirmation. Disabled by default to preserve existing baselines.
+    # Candidate-belief confirmation.
+    # TIM-MARS may remember a plausible new candidate during UNCERTAIN/LOST but
+    # suppress controller-facing publication until repeated confirmation.
     candidate_belief_enabled: bool = False
     candidate_belief_min_score: float = 0.45
     candidate_belief_confirm_frames: int = 2
 
-    # TIM-V3A absence-aware new-ID recovery gate.
-    # This protects the controller-facing target from jumping to a distractor
-    # after the selected person has likely left the scene or remained hidden
-    # for several frames. Same-ID continuity is not affected.
+    # Absence-aware new-ID recovery.
+    # After longer target absence, accepting a new tracker ID requires stronger
+    # geometry and appearance evidence. Same-ID continuity is not affected.
     absence_recovery_enabled: bool = False
     absence_after_missed_frames: int = 6
     absence_new_id_requires_appearance: bool = True
@@ -195,7 +204,6 @@ class TargetMemoryConfig:
     absence_min_similarity: float = 0.65
     absence_appearance_margin: float = 0.20
     absence_confirm_frames: int = 3
-
 
 @dataclass
 class TargetMemoryOutput:

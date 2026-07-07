@@ -47,6 +47,7 @@ class TimMarsRosParams:
 def declare_tim_mars_parameters(node: Any) -> None:
     """Declare all ROS parameters consumed by the TIM-MARS node."""
 
+    # ROS topic wiring.
     node.declare_parameter("tracks_topic", "/tracks")
     node.declare_parameter("target_topic", "/target_memory_mars")
     node.declare_parameter("status_topic", "/target_memory_mars/status")
@@ -55,6 +56,7 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("mirror_target_topic", "/target")
     node.declare_parameter("mirror_raw_target_selection", False)
 
+    # Image geometry and selected-target initialization.
     node.declare_parameter("image_width", 640.0)
     node.declare_parameter("image_height", 640.0)
     node.declare_parameter("tracks_are_normalized", False)
@@ -62,19 +64,22 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("auto_select_largest", False)
     node.declare_parameter("zero_id_when_not_visible", True)
 
+    # Acceptance, ambiguity, and state hysteresis.
     node.declare_parameter("accept_score_locked", 0.52)
     node.declare_parameter("accept_score_lost", 0.60)
     node.declare_parameter("ambiguity_margin", 0.07)
     node.declare_parameter("max_uncertain_frames", 6)
     node.declare_parameter("max_lost_frames", 30)
     node.declare_parameter("min_candidate_score", 0.10)
+
+    # Controlled ID-switch recovery.
     node.declare_parameter("allow_id_switch_recovery", True)
     node.declare_parameter("id_switch_spatial_gate_enabled", False)
     node.declare_parameter("id_switch_min_iou", 0.05)
     node.declare_parameter("id_switch_min_distance", 0.35)
     node.declare_parameter("id_switch_min_scale", 0.35)
 
-    # Appearance extraction / ReID.
+    # Appearance extraction, scoring, and positive-memory update policy.
     node.declare_parameter("appearance_enabled", True)
     node.declare_parameter("appearance_image_topic", "/camera/dashboard")
     node.declare_parameter("appearance_max_image_age_ms", 250.0)
@@ -85,6 +90,13 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("appearance_update_alpha", 0.10)
     node.declare_parameter("appearance_ambiguous_only", True)
     node.declare_parameter("appearance_update_cooldown_after_reacquire_frames", 0)
+    node.declare_parameter(
+        "mars_model_path",
+        "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb",
+    )
+    node.declare_parameter("mars_batch_size", 32)
+
+    # Hard-negative distractor memory.
     node.declare_parameter("hard_negative_memory_enabled", True)
     node.declare_parameter("hard_negative_max_entries", 8)
     node.declare_parameter("hard_negative_update_alpha", 0.20)
@@ -92,17 +104,14 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("hard_negative_reject_similarity", 0.80)
     node.declare_parameter("hard_negative_reject_margin", 0.03)
     node.declare_parameter("hard_negative_min_geometry", 0.20)
+
+    # Conservative appearance publication filter.
     node.declare_parameter("appearance_conservative_enabled", True)
     node.declare_parameter("appearance_conservative_require_appearance", False)
     node.declare_parameter("appearance_conservative_min_similarity", 0.65)
     node.declare_parameter("appearance_conservative_margin", 0.05)
 
-    node.declare_parameter(
-        "mars_model_path",
-        "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb",
-    )
-    node.declare_parameter("mars_batch_size", 32)
-
+    # Rank-aware reacquisition and candidate-belief confirmation.
     node.declare_parameter("rank_aware_reacquisition_enabled", True)
     node.declare_parameter("rank_aware_lost_min_total", 0.40)
     node.declare_parameter("rank_aware_lost_min_geom", 0.10)
@@ -114,7 +123,7 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("candidate_belief_min_score", 0.45)
     node.declare_parameter("candidate_belief_confirm_frames", 2)
 
-
+    # Absence-aware new-ID recovery.
     node.declare_parameter("absence_recovery_enabled", False)
     node.declare_parameter("absence_after_missed_frames", 6)
     node.declare_parameter("absence_new_id_requires_appearance", True)
@@ -124,8 +133,6 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("absence_min_similarity", 0.65)
     node.declare_parameter("absence_appearance_margin", 0.20)
     node.declare_parameter("absence_confirm_frames", 3)
-
-
 
 
 def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
