@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+"""Render overlay videos from thesis rosbag2 outputs.
+
+This support tool reads image, detection, tracking, target, and timing topics
+from a ROS 2 bag and writes an annotated video for visual inspection. It is
+useful for debugging perception outputs, checking tracker/target overlays, and
+creating quick review material.
+
+It does not compute final TIM-MARS correctness metrics. Use tools/analysis for
+metric generation and use this only for visual validation.
+"""
+
 from __future__ import annotations
 
 import argparse
