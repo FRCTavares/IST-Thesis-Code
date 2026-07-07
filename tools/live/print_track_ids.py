@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+"""Print live tracker IDs from a ROS 2 Track2DArray topic.
+
+This small runtime helper subscribes to a tracker output topic and prints
+observed track IDs, scores, and compact bbox summaries. It is useful during
+live setup and debugging when selecting or verifying a target ID.
+
+It is an inspection helper only. It does not record data, publish targets, or
+compute evaluation metrics.
+"""
+
 from __future__ import annotations
 
 import argparse
