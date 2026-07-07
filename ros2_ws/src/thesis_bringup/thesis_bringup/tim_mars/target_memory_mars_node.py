@@ -130,12 +130,34 @@ class TargetMemoryMarsNode(Node):
             f"hard_negative_reject_margin={cfg.hard_negative_reject_margin:.3f} "
         )
 
-        qos = QoSProfile(
+        qos = self._best_effort_qos()
+        self._create_ros_interfaces(qos)
+        self._setup_appearance_backend(qos)
+
+        self.get_logger().info(
+            "TIM-MARS node ready: "
+            f"tracks={self._tracks_topic}, target={self._target_topic}, "
+            f"select={self._select_topic}, clear={self._clear_topic}, "
+            f"normalised_tracks={self._tracks_are_normalized}, "
+            f"mirror_raw_target_selection={self._mirror_raw_target_selection}, "
+            f"appearance_enabled={self._appearance_enabled}, "
+            f"appearance_image_topic={self._appearance_image_topic}"
+        )
+
+        if self._pending_select_id is not None:
+            self.get_logger().info(
+                f"Waiting to initialise TIM from track id {self._pending_select_id}"
+            )
+
+    @staticmethod
+    def _best_effort_qos() -> QoSProfile:
+        return QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=10,
             reliability=ReliabilityPolicy.BEST_EFFORT,
         )
 
+    def _create_ros_interfaces(self, qos: QoSProfile) -> None:
         self._target_pub = self.create_publisher(TargetState, self._target_topic, qos)
         self._status_pub = self.create_publisher(String, self._status_topic, qos)
 
@@ -167,38 +189,26 @@ class TargetMemoryMarsNode(Node):
                 qos,
             )
 
-        if self._appearance_enabled:
-            from cv_bridge import CvBridge
+    def _setup_appearance_backend(self, qos: QoSProfile) -> None:
+        if not self._appearance_enabled:
+            return
 
-            self._cv_bridge = CvBridge()
-            self._image_sub = self.create_subscription(
-                Image,
-                self._appearance_image_topic,
-                self._on_image,
-                qos,
-            )
-            self._mars_backend = MarsReIdBackend(
-                self._mars_model_path,
-                batch_size=self._mars_batch_size,
-            )
-            self.get_logger().info(
-                f"TIM-MARS loaded MARS ReID model: {self._mars_model_path}"
-            )
+        from cv_bridge import CvBridge
 
-        self.get_logger().info(
-            "TIM-MARS node ready: "
-            f"tracks={self._tracks_topic}, target={self._target_topic}, "
-            f"select={self._select_topic}, clear={self._clear_topic}, "
-            f"normalised_tracks={self._tracks_are_normalized}, "
-            f"mirror_raw_target_selection={self._mirror_raw_target_selection}, "
-            f"appearance_enabled={self._appearance_enabled}, "
-            f"appearance_image_topic={self._appearance_image_topic}"
+        self._cv_bridge = CvBridge()
+        self._image_sub = self.create_subscription(
+            Image,
+            self._appearance_image_topic,
+            self._on_image,
+            qos,
         )
-
-        if self._pending_select_id is not None:
-            self.get_logger().info(
-                f"Waiting to initialise TIM from track id {self._pending_select_id}"
-            )
+        self._mars_backend = MarsReIdBackend(
+            self._mars_model_path,
+            batch_size=self._mars_batch_size,
+        )
+        self.get_logger().info(
+            f"TIM-MARS loaded MARS ReID model: {self._mars_model_path}"
+        )
 
     def _on_image(self, msg: Image) -> None:
         if not self._appearance_enabled or self._cv_bridge is None:
