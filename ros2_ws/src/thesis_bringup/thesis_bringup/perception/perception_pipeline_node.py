@@ -7,7 +7,6 @@ import os
 import threading
 import time
 from collections import deque
-from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -17,63 +16,19 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import Image
+from thesis_bringup.perception.pipeline_types import PreparedFrame, RawFrame
+from thesis_bringup.perception.pipeline_utils import (
+    _bbox_to_xywh,
+    _ms,
+    _normalize_label,
+    _safe_int,
+    clamp01,
+    now_ns,
+    stamp_to_ns,
+)
 from thesis_bringup.perception.preprocessing import preprocess_image_message
 from thesis_msgs.msg import Timing
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
-
-
-def clamp01(x: float) -> float:
-    return 0.0 if x < 0.0 else (1.0 if x > 1.0 else x)
-
-
-def stamp_to_ns(stamp) -> int:
-    return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
-
-
-def now_ns() -> int:
-    return time.monotonic_ns()
-
-
-def _ms(dt_ns: int) -> float:
-    return float(dt_ns) / 1e6
-
-
-def _safe_int(value, default: int = 0) -> int:
-    try:
-        return int(value)
-    except Exception:
-        return default
-
-
-def _normalize_label(value: str | None) -> str | None:
-    if value is None:
-        return None
-    out = str(value).strip().lower()
-    if not out:
-        return None
-    if out in ("none", "all", "*"):
-        return None
-    return out
-
-
-def _bbox_to_xywh(bbox) -> tuple[float | None, float | None, float | None, float | None]:
-    if hasattr(bbox, "xmin") and hasattr(bbox, "width"):
-        return (
-            float(bbox.xmin()),
-            float(bbox.ymin()),
-            float(bbox.width()),
-            float(bbox.height()),
-        )
-
-    if hasattr(bbox, "get_xmin") and hasattr(bbox, "get_width"):
-        return (
-            float(bbox.get_xmin()),
-            float(bbox.get_ymin()),
-            float(bbox.get_width()),
-            float(bbox.get_height()),
-        )
-
-    return None, None, None, None
 
 
 _COCO80_LABELS: tuple[str, ...] = (
@@ -158,40 +113,6 @@ _COCO80_LABELS: tuple[str, ...] = (
     "hair drier",
     "toothbrush",
 )
-
-
-@dataclass
-class PreparedFrame:
-    seq: int
-    frame_id: int
-    src_stamp_ns: int
-    stamp_sec: int
-    stamp_nanosec: int
-    image_width: int
-    image_height: int
-    image_encoding: str
-    t_loop0: int
-    t_cam_msg_seen_ns: int
-    t_pre_start_ns: int
-    t_pre_end_ns: int
-    t_ros_to_np_start_ns: int
-    t_ros_to_np_end_ns: int
-    t_resize_start_ns: int
-    t_resize_end_ns: int
-    t_color_start_ns: int
-    t_color_end_ns: int
-    infer_img: np.ndarray
-
-
-@dataclass
-class RawFrame:
-    seq: int
-    frame_id: int
-    src_stamp_ns: int
-    stamp_sec: int
-    stamp_nanosec: int
-    t_cam_msg_seen_ns: int
-    image_msg: Image
 
 
 class StubInferenceEngine:

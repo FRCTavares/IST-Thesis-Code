@@ -14,8 +14,7 @@ from tim_ui_annotations import (
 )
 import uvicorn
 
-# Import the original backend module, then copy its registered API routes.
-# This keeps /clean isolated from the broken old HTML page.
+# Import the backend API routes used by the clean annotation UI.
 import tim_ui_backend as backend
 
 app = FastAPI(title="TIM-MARS Clean UI")
