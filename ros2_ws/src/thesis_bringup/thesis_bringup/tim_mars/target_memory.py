@@ -16,6 +16,7 @@ TIM-V1A adds an optional lightweight appearance cue:
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from thesis_bringup.tim_mars.appearance_memory import cosine_similarity, update_feature_memory
@@ -53,6 +54,20 @@ from thesis_bringup.tim_mars.types import (
     TargetMemoryOutput,
     TargetState,
 )
+
+
+
+@dataclass
+class _PreparedUpdate:
+    candidates: List[CandidateTrack]
+    scores_sorted: List[CandidateScore]
+    best: CandidateScore
+    second: Optional[CandidateScore]
+    best_candidate: CandidateTrack
+    same_id: bool
+    same_id_score: Optional[CandidateScore]
+    same_id_candidate: Optional[CandidateTrack]
+    ambiguous: bool
 
 
 class TargetIdentityMemory:
@@ -120,73 +135,21 @@ class TargetIdentityMemory:
         if not self._m.selected or self._m.bbox is None:
             return self._make_output(reason="no_operator_selected_target", visible=False, reacquired=False)
 
-        candidates = [c for c in candidates if c.score >= self.cfg.min_candidate_score]
-        if not candidates:
+        prepared = self._prepare_update_candidates(candidates)
+        if prepared is None:
             return self._miss(reason="no_candidates")
 
-        base_scores = [score_candidate(self._m.bbox, c, self._m.track_id, self.cfg) for c in candidates]
-        base_sorted = sorted(base_scores, key=lambda s: s.total, reverse=True)
-        base_best = base_sorted[0]
-        base_second = base_sorted[1] if len(base_sorted) > 1 else None
-        base_same_id = self._m.track_id is not None and base_best.track_id == self._m.track_id
-        base_ambiguous = self._is_ambiguous(base_best, base_second, same_id=base_same_id)
-
-        use_appearance = self._should_use_appearance(base_ambiguous=base_ambiguous)
-
-        scores = [
-            self._score_candidate(self._m.bbox, c, use_appearance=use_appearance)
-            for c in candidates
-        ]
-        scores_sorted = sorted(scores, key=lambda s: s.total, reverse=True)
-        best = scores_sorted[0]
-        second = scores_sorted[1] if len(scores_sorted) > 1 else None
-
-        self._hard_negative_memory.update(
-            candidates=candidates,
-            scores_sorted=scores_sorted,
-            selected_track_id=self._m.track_id,
-            positive_appearance=self._m.appearance,
-            state=self._m.state,
-            cfg=self.cfg,
-        )
-
-        best_candidate = next(c for c in candidates if c.track_id == best.track_id)
-        same_id = self._m.track_id is not None and best.track_id == self._m.track_id
-        ambiguous = self._is_ambiguous(best, second, same_id=same_id)
-
-        best = CandidateScore(
-            track_id=best.track_id,
-            total=best.total,
-            iou=best.iou,
-            distance=best.distance,
-            scale=best.scale,
-            confidence=best.confidence,
-            id_bonus=best.id_bonus,
-            appearance=best.appearance,
-            appearance_used=best.appearance_used,
-            appearance_raw=best.appearance_raw,
-            appearance_gate_passed=best.appearance_gate_passed,
-            geometry_allows_appearance=best.geometry_allows_appearance,
-            hard_negative_similarity=best.hard_negative_similarity,
-            hard_negative_margin=best.hard_negative_margin,
-            hard_negative_reject=best.hard_negative_reject,
-            ambiguous=ambiguous,
-        )
-        scores_sorted[0] = best
+        candidates = prepared.candidates
+        scores_sorted = prepared.scores_sorted
+        best = prepared.best
+        second = prepared.second
+        best_candidate = prepared.best_candidate
+        same_id = prepared.same_id
+        ambiguous = prepared.ambiguous
+        same_id_score = prepared.same_id_score
+        same_id_candidate = prepared.same_id_candidate
 
         id_switch = best.track_id != self._m.track_id
-
-        same_id_score = None
-        same_id_candidate = None
-        if self._m.track_id is not None:
-            for score in scores_sorted:
-                if int(score.track_id) != int(self._m.track_id):
-                    continue
-                same_id_score = score
-                same_id_candidate = next(
-                    c for c in candidates if int(c.track_id) == int(self._m.track_id)
-                )
-                break
 
         short_gap_active = (
             self._m.track_id is not None
@@ -400,6 +363,91 @@ class TargetIdentityMemory:
             best_candidate,
             best_score=best,
             all_scores=scores_sorted,
+        )
+
+    def _prepare_update_candidates(
+        self,
+        candidates: Sequence[CandidateTrack],
+    ) -> Optional[_PreparedUpdate]:
+        candidates = [c for c in candidates if c.score >= self.cfg.min_candidate_score]
+        if not candidates:
+            return None
+
+        base_scores = [
+            score_candidate(self._m.bbox, c, self._m.track_id, self.cfg)
+            for c in candidates
+        ]
+        base_sorted = sorted(base_scores, key=lambda s: s.total, reverse=True)
+        base_best = base_sorted[0]
+        base_second = base_sorted[1] if len(base_sorted) > 1 else None
+        base_same_id = self._m.track_id is not None and base_best.track_id == self._m.track_id
+        base_ambiguous = self._is_ambiguous(base_best, base_second, same_id=base_same_id)
+
+        use_appearance = self._should_use_appearance(base_ambiguous=base_ambiguous)
+
+        scores = [
+            self._score_candidate(self._m.bbox, c, use_appearance=use_appearance)
+            for c in candidates
+        ]
+        scores_sorted = sorted(scores, key=lambda s: s.total, reverse=True)
+        best = scores_sorted[0]
+        second = scores_sorted[1] if len(scores_sorted) > 1 else None
+
+        self._hard_negative_memory.update(
+            candidates=candidates,
+            scores_sorted=scores_sorted,
+            selected_track_id=self._m.track_id,
+            positive_appearance=self._m.appearance,
+            state=self._m.state,
+            cfg=self.cfg,
+        )
+
+        best_candidate = next(c for c in candidates if c.track_id == best.track_id)
+        same_id = self._m.track_id is not None and best.track_id == self._m.track_id
+        ambiguous = self._is_ambiguous(best, second, same_id=same_id)
+
+        best = CandidateScore(
+            track_id=best.track_id,
+            total=best.total,
+            iou=best.iou,
+            distance=best.distance,
+            scale=best.scale,
+            confidence=best.confidence,
+            id_bonus=best.id_bonus,
+            appearance=best.appearance,
+            appearance_used=best.appearance_used,
+            appearance_raw=best.appearance_raw,
+            appearance_gate_passed=best.appearance_gate_passed,
+            geometry_allows_appearance=best.geometry_allows_appearance,
+            hard_negative_similarity=best.hard_negative_similarity,
+            hard_negative_margin=best.hard_negative_margin,
+            hard_negative_reject=best.hard_negative_reject,
+            ambiguous=ambiguous,
+        )
+        scores_sorted[0] = best
+
+        same_id_score = None
+        same_id_candidate = None
+        if self._m.track_id is not None:
+            for score in scores_sorted:
+                if int(score.track_id) != int(self._m.track_id):
+                    continue
+                same_id_score = score
+                same_id_candidate = next(
+                    c for c in candidates if int(c.track_id) == int(self._m.track_id)
+                )
+                break
+
+        return _PreparedUpdate(
+            candidates=candidates,
+            scores_sorted=scores_sorted,
+            best=best,
+            second=second,
+            best_candidate=best_candidate,
+            same_id=same_id,
+            same_id_score=same_id_score,
+            same_id_candidate=same_id_candidate,
+            ambiguous=ambiguous,
         )
 
     def _rank_aware_app_raw(self, candidate: CandidateTrack, score: CandidateScore) -> float:
