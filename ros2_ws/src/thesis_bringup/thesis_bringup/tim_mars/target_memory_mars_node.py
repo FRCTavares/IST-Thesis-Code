@@ -118,6 +118,9 @@ class TargetMemoryMarsNode(Node):
         self._create_ros_interfaces(qos)
         self._setup_appearance_backend(qos)
 
+        self._log_node_ready()
+
+    def _log_node_ready(self) -> None:
         self.get_logger().info(
             "TIM-MARS node ready: "
             f"tracks={self._tracks_topic}, target={self._target_topic}, "
