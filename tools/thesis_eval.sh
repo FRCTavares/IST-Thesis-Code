@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# thesis_eval.sh
+#
+# Thin command wrapper for selected thesis evaluation commands.
+#
+# Current final TIM-MARS evaluation should prefer the explicit tools in:
+# - tools/experiments/ for replay generation,
+# - tools/analysis/ for correctness metrics and diagnostics.
+#
+# Some commands here preserve older official-run shortcuts for provenance. Check
+# paths before using them for new final results.
+
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$THESIS_ROOT"
 

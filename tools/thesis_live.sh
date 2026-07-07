@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# thesis_live.sh
+#
+# Thin command wrapper for live thesis operation.
+#
+# This script delegates to:
+# - tools/start_live_stack.sh for live perception/tracking/control/dashboard startup,
+# - tools/start_ui_stack.sh for the dashboard frontend.
+#
+# Keep this file small. Live-stack behavior belongs in start_live_stack.sh and
+# tools/lib/*.sh.
+
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$THESIS_ROOT"
 
