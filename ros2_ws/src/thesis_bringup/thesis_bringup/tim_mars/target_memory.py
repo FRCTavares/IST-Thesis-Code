@@ -151,76 +151,17 @@ class TargetIdentityMemory:
 
         id_switch = best.track_id != self._m.track_id
 
-        short_gap_active = (
-            self._m.track_id is not None
-            and self._m.frames_since_seen <= max(0, int(self.cfg.short_gap_same_id_grace_frames))
-            and self._m.state in {TargetState.LOCKED, TargetState.UNCERTAIN, TargetState.REACQUIRED}
+        short_gap_output = self._handle_short_gap_identity_protection(
+            candidates=candidates,
+            scores_sorted=scores_sorted,
+            best=best,
+            same_id_score=same_id_score,
+            same_id_candidate=same_id_candidate,
+            id_switch=id_switch,
+            ambiguous=ambiguous,
         )
-
-        if (
-            self.cfg.short_gap_same_id_priority_enabled
-            and short_gap_active
-            and self._m.state in {TargetState.UNCERTAIN, TargetState.REACQUIRED}
-            and same_id_score is not None
-            and same_id_candidate is not None
-            and same_id_score.total >= self.cfg.short_gap_same_id_min_total
-        ):
-            return self._accept(
-                same_id_candidate,
-                best_score=same_id_score,
-                all_scores=scores_sorted,
-            )
-
-        short_gap_base_threshold = (
-            self.cfg.accept_score_lost
-            if self._m.state == TargetState.LOST
-            else self.cfg.accept_score_locked
-        )
-
-        best_candidate = next(
-            (c for c in candidates if int(c.track_id) == int(best.track_id)),
-            None,
-        )
-        best_group_crop_risk = (
-            best_candidate is not None
-            and self._candidate_group_crop_risk(best_candidate, candidates)
-        )
-
-        short_gap_new_id_should_suppress = (
-            self._m.state in {TargetState.UNCERTAIN, TargetState.REACQUIRED}
-            or (
-                self._m.state == TargetState.LOCKED
-                and (
-                    best.total < self.cfg.short_gap_new_id_allow_total
-                    or (
-                        best_group_crop_risk
-                        and best.total < self.cfg.short_gap_group_risk_allow_total
-                    )
-                )
-            )
-        )
-
-        if (
-            self.cfg.short_gap_new_id_suppression_enabled
-            and self.cfg.allow_id_switch_recovery
-            and short_gap_active
-            and short_gap_new_id_should_suppress
-            and id_switch
-            and same_id_score is None
-            and not ambiguous
-            and best.total >= short_gap_base_threshold
-        ):
-            return self._miss(
-                reason=(
-                    "short_gap_new_id_suppressed:"
-                    f" id={best.track_id}"
-                    f" gap={self._m.frames_since_seen}"
-                    f" score={best.total:.3f}"
-                ),
-                best_score=best,
-                all_scores=scores_sorted,
-            )
-
+        if short_gap_output is not None:
+            return short_gap_output
 
         absence_reject_reason = self._absence_aware_reacquisition_reject_reason(
             best,
@@ -364,6 +305,89 @@ class TargetIdentityMemory:
             best_score=best,
             all_scores=scores_sorted,
         )
+
+    def _handle_short_gap_identity_protection(
+        self,
+        *,
+        candidates: Sequence[CandidateTrack],
+        scores_sorted: List[CandidateScore],
+        best: CandidateScore,
+        same_id_score: Optional[CandidateScore],
+        same_id_candidate: Optional[CandidateTrack],
+        id_switch: bool,
+        ambiguous: bool,
+    ) -> Optional[TargetMemoryOutput]:
+        short_gap_active = (
+            self._m.track_id is not None
+            and self._m.frames_since_seen <= max(0, int(self.cfg.short_gap_same_id_grace_frames))
+            and self._m.state in {TargetState.LOCKED, TargetState.UNCERTAIN, TargetState.REACQUIRED}
+        )
+
+        if (
+            self.cfg.short_gap_same_id_priority_enabled
+            and short_gap_active
+            and self._m.state in {TargetState.UNCERTAIN, TargetState.REACQUIRED}
+            and same_id_score is not None
+            and same_id_candidate is not None
+            and same_id_score.total >= self.cfg.short_gap_same_id_min_total
+        ):
+            return self._accept(
+                same_id_candidate,
+                best_score=same_id_score,
+                all_scores=scores_sorted,
+            )
+
+        short_gap_base_threshold = (
+            self.cfg.accept_score_lost
+            if self._m.state == TargetState.LOST
+            else self.cfg.accept_score_locked
+        )
+
+        best_candidate = next(
+            (c for c in candidates if int(c.track_id) == int(best.track_id)),
+            None,
+        )
+        best_group_crop_risk = (
+            best_candidate is not None
+            and self._candidate_group_crop_risk(best_candidate, candidates)
+        )
+
+        short_gap_new_id_should_suppress = (
+            self._m.state in {TargetState.UNCERTAIN, TargetState.REACQUIRED}
+            or (
+                self._m.state == TargetState.LOCKED
+                and (
+                    best.total < self.cfg.short_gap_new_id_allow_total
+                    or (
+                        best_group_crop_risk
+                        and best.total < self.cfg.short_gap_group_risk_allow_total
+                    )
+                )
+            )
+        )
+
+        if (
+            self.cfg.short_gap_new_id_suppression_enabled
+            and self.cfg.allow_id_switch_recovery
+            and short_gap_active
+            and short_gap_new_id_should_suppress
+            and id_switch
+            and same_id_score is None
+            and not ambiguous
+            and best.total >= short_gap_base_threshold
+        ):
+            return self._miss(
+                reason=(
+                    "short_gap_new_id_suppressed:"
+                    f" id={best.track_id}"
+                    f" gap={self._m.frames_since_seen}"
+                    f" score={best.total:.3f}"
+                ),
+                best_score=best,
+                all_scores=scores_sorted,
+            )
+
+        return None
 
     def _prepare_update_candidates(
         self,
