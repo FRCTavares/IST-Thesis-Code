@@ -501,9 +501,10 @@ class TargetIdentityMemory:
     def _rank_aware_app_raw(self, candidate: CandidateTrack, score: CandidateScore) -> float:
         """Appearance evidence for rank-aware reacquisition.
 
-        TIM-V2K intentionally uses the same gated appearance_raw exported in
-        diagnostics so live behaviour matches the offline simulator. Geometry
-        bypass is a separate future experiment, not the V2K default.
+        Rank-aware reacquisition intentionally uses the same gated
+        appearance_raw exported in diagnostics so live behaviour matches
+        the offline simulator. Geometry bypass is a separate future
+        experiment, not the default TIM-MARS path.
         """
         return float(score.appearance_raw)
 
@@ -904,7 +905,7 @@ class TargetIdentityMemory:
         self._m.quality = clamp01(0.65 * best_score.total + 0.35 * candidate.score)
         self._m.frames_since_seen = 0
 
-        # TIM-V1A memory update policy:
+        # Appearance memory update policy:
         # update only after a confirmed LOCKED state.
         # freeze during UNCERTAIN, LOST, and REACQUIRED.
         # Optional cooldown prevents learning a newly reacquired wrong target.

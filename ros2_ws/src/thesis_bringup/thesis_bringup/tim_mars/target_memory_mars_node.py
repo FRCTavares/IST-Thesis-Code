@@ -306,7 +306,7 @@ class TargetMemoryMarsNode(Node):
             out = self._tim.select(largest)
             self.get_logger().warn(
                 f"TIM auto-selected largest track {largest.track_id}. "
-                "Use only for debugging, not thesis runs."
+                "Use only for manual inspection, not final thesis evaluation."
             )
         else:
             out = self._tim.update(candidates)

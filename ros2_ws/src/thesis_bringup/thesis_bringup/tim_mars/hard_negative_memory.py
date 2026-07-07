@@ -26,7 +26,7 @@ class HardNegativeMemory:
     def __len__(self) -> int:
         """Return number of stored hard-negative prototypes.
 
-        This keeps debug/tests compatible with the previous list-backed memory.
+        This preserves the simple length semantics expected by tests and diagnostics.
         """
         return len(self._memory)
 
