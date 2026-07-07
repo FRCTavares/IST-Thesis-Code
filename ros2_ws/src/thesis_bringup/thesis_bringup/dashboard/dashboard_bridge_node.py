@@ -8,7 +8,6 @@ camera/perception health into browser-facing telemetry for the dashboard UI.
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
 import json
 import os
 import subprocess
@@ -30,6 +29,7 @@ from std_msgs.msg import Float32
 from vision_msgs.msg import Detection2DArray
 from std_msgs.msg import String
 from thesis_msgs.msg import TargetState, Timing, Track2DArray
+from thesis_bringup.dashboard.dashboard_models import SUPPORTED_MODELS
 
 
 METRICS_SCHEMA_VERSION = 3
@@ -38,32 +38,6 @@ METRIC_WARN_THRESHOLDS_MS = {
     "e2e_det_ms": 120.0,
     "pub_dt_ms": 120.0,
 }
-
-
-@dataclass(frozen=True)
-class SupportedModel:
-    key: str
-    hef_file: str
-
-
-SUPPORTED_MODELS: tuple[SupportedModel, ...] = (
-    SupportedModel("yolov5m", "yolov5m.hef"),
-    SupportedModel("yolov6n", "yolov6n.hef"),
-    SupportedModel("yolov8n", "yolov8n.hef"),
-    SupportedModel("yolov8s", "yolov8s.hef"),
-    SupportedModel("yolov8m", "yolov8m.hef"),
-    SupportedModel("yolov8l", "yolov8l.hef"),
-    SupportedModel("yolov8x", "yolov8x.hef"),
-    SupportedModel("yolov10n", "yolov10n.hef"),
-    SupportedModel("yolov10s", "yolov10s.hef"),
-    SupportedModel("yolov10b", "yolov10b.hef"),
-    SupportedModel("yolov10x", "yolov10x.hef"),
-    SupportedModel("yolov11n", "yolov11n.hef"),
-    SupportedModel("yolov11s", "yolov11s.hef"),
-    SupportedModel("yolov11m", "yolov11m.hef"),
-    SupportedModel("yolov11l", "yolov11l.hef"),
-    SupportedModel("yolov11x", "yolov11x.hef"),
-)
 
 
 class DashboardBridgeNode(Node):
