@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+"""Offline tracking-continuity analysis for ROS 2 bags.
+
+This support tool reads tracker and target topics from a rosbag2/MCAP bag and
+computes basic tracking diagnostics such as lock continuity, debounced target
+switches, and reacquisition timing.
+
+It is useful for tracker/perception diagnostics, but it is not the final
+TIM-MARS selected-target correctness evaluator. Use
+evaluate_tim_target_correctness.py for final selected-target duration metrics.
+"""
+
 import argparse
 import os
 import numpy as np

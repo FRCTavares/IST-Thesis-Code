@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""
-Evaluate selected-target correctness using bbox IoU on a common /tracks clock.
+"""Evaluate selected-target bbox correctness on a common /tracks clock.
 
-The annotation ID is used only to locate the reference bbox inside /tracks.
-Raw /target and TIM /target_memory_mars are both sampled as latest output at
-each /tracks timestamp, so both streams get the same scoring timeline.
+This evaluator uses the annotated target ID only to find the reference bbox in
+/tracks. Raw /target and TIM-MARS /target_memory_mars are sampled as latest
+outputs at each /tracks timestamp, so both streams are scored on the same
+timeline.
+
+Use this as a spatial complement to track-ID correctness metrics.
 """
 
 from __future__ import annotations

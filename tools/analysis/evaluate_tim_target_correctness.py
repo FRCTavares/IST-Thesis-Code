@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Evaluate selected-target correctness for raw /target vs TIM-MARS /target_memory_mars.
+"""Evaluate selected-target correctness for raw /target versus TIM-MARS.
 
-First version:
-- interval-based annotation
-- track-ID based correctness
-- compares raw /target and TIM-MARS /target_memory_mars
-- computes correct / wrong / lost durations
+This is the main final selected-target correctness evaluator. It compares raw
+/target and TIM-MARS /target_memory_mars against manual annotation intervals
+using track-ID correctness and duration accounting.
+
+The evaluator aligns bag time using image/dashboard header timing when
+available, then reports correct-target, wrong-target, and lost-target duration
+for each stream.
 """
 
 from __future__ import annotations

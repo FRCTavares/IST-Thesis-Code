@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Extract TIM-MARS all_scores from /target_memory_mars/status into a flat CSV."""
+"""Extract TIM-MARS candidate-score diagnostics from status messages.
+
+This support tool reads /target_memory_mars/status from a replay bag and writes
+the per-candidate all_scores diagnostics to CSV. It is intended for explaining
+why TIM-MARS accepted, rejected, or suppressed candidates.
+
+It is diagnostic only and does not compute final correctness metrics.
+"""
 
 from __future__ import annotations
 
