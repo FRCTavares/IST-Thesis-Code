@@ -10,6 +10,12 @@ import subprocess
 import sys
 from pathlib import Path
 from tim_ui_discovery import discover_annotations as shared_discover_annotations, discover_bags as shared_discover_bags
+from tim_ui_annotations import (
+    ANNOTATION_EVENT_TYPES,
+    ANNOTATION_FIELDS,
+    load_annotation_rows,
+    save_annotation_rows,
+)
 import uvicorn
 
 # Import the original backend module, then copy its registered API routes.
@@ -116,52 +122,6 @@ async def evaluate_api(request: Request):
 
 
 
-ANNOTATION_FIELDS = [
-    "bag_name",
-    "start_s",
-    "end_s",
-    "target_label",
-    "target_visible",
-    "correct_target_track_id",
-    "distractor_track_ids",
-    "event_type",
-    "notes",
-]
-
-ANNOTATION_EVENT_TYPES = [
-    ("clean_visible", "Clean visible"),
-    ("target_absent", "Target absent"),
-    ("reentry", "Re-entry"),
-    ("occlusion_ambiguity", "Occlusion / ambiguity"),
-    ("id_switch_fragmentation", "ID switch / fragmentation"),
-    ("other", "Other"),
-]
-
-ANNOTATION_EVENT_VALUES = {value for value, _label in ANNOTATION_EVENT_TYPES}
-LEGACY_EVENT_TYPE_MAP = {
-    "manual_interval": "clean_visible",
-    "visible_id_interval": "clean_visible",
-    "target_not_visible": "target_absent",
-    "not_visible": "target_absent",
-    "occlusion": "occlusion_ambiguity",
-    "crossing_ambiguity": "occlusion_ambiguity",
-    "distractor_confusion": "occlusion_ambiguity",
-}
-
-
-def _safe_annotation_relpath(path_text: str) -> Path:
-    rel = Path(str(path_text).strip())
-    if rel.is_absolute():
-        raise ValueError("Annotation path must be relative to repository root")
-    if ".." in rel.parts:
-        raise ValueError("Annotation path cannot contain '..'")
-    if rel.suffix.lower() != ".csv":
-        raise ValueError("Annotation path must end with .csv")
-    if not str(rel).startswith("docs/data/annotations/"):
-        raise ValueError("Annotation path must be under docs/data/annotations/")
-    return rel
-
-
 @app.post("/api/annotation/load")
 async def annotation_load_api(request: Request):
     payload = await request.json()
@@ -170,22 +130,17 @@ async def annotation_load_api(request: Request):
         return {"ok": False, "error": "No annotation path provided."}
 
     try:
-        rel = _safe_annotation_relpath(path_text)
-    except ValueError as exc:
-        return {"ok": False, "error": str(exc)}
+        rel, rows = load_annotation_rows(path_text, REPO_ROOT)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
-    path = REPO_ROOT / rel
-    if not path.exists():
-        return {"ok": False, "error": f"Annotation does not exist: {rel}"}
-
-    rows = []
-    with path.open("r", newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            clean = {k: row.get(k, "") for k in ANNOTATION_FIELDS}
-            rows.append(clean)
-
-    return {"ok": True, "path": str(rel), "rows": rows, "fields": ANNOTATION_FIELDS}
+    return {
+        "ok": True,
+        "path": str(rel),
+        "rows": rows,
+        "fields": ANNOTATION_FIELDS,
+        "event_types": ANNOTATION_EVENT_TYPES,
+    }
 
 
 @app.post("/api/annotation/save")
@@ -200,68 +155,9 @@ async def annotation_save_api(request: Request):
         return {"ok": False, "error": "Rows must be a list."}
 
     try:
-        rel = _safe_annotation_relpath(path_text)
-    except ValueError as exc:
-        return {"ok": False, "error": str(exc)}
-
-    out_path = REPO_ROOT / rel
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    normalised = []
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        clean = {k: str(row.get(k, "")).strip() for k in ANNOTATION_FIELDS}
-
-        try:
-            start_s = float(clean["start_s"])
-            end_s = float(clean["end_s"])
-        except ValueError:
-            return {"ok": False, "error": f"Invalid interval times: {clean}"}
-
-        if end_s <= start_s:
-            return {"ok": False, "error": f"Invalid interval with end <= start: {clean}"}
-
-        label = clean["target_label"].strip().upper() or "CORRECT_TARGET"
-        clean["target_label"] = label
-
-        visible = clean["target_visible"].strip().lower()
-        if visible in {"true", "1", "yes", "y"}:
-            clean["target_visible"] = "true"
-        elif visible in {"false", "0", "no", "n"}:
-            clean["target_visible"] = "false"
-        else:
-            clean["target_visible"] = "true" if label == "CORRECT_TARGET" else "false"
-
-        event_type = clean["event_type"].strip()
-        event_type = LEGACY_EVENT_TYPE_MAP.get(event_type, event_type)
-        if event_type not in ANNOTATION_EVENT_VALUES:
-            event_type = "target_absent" if clean["target_visible"] == "false" else "clean_visible"
-
-        # Invisible rows may still be occlusion/ambiguity when the physical
-        # target is hidden but still in-scene. Only force labels that require a
-        # visible tracked target into target_absent.
-        if clean["target_visible"] == "false" and event_type in {
-            "clean_visible",
-            "id_switch_fragmentation",
-            "reentry",
-        }:
-            event_type = "target_absent"
-
-        clean["event_type"] = event_type
-
-        if label in {"NO_TARGET_SELECTED", "TARGET_NOT_VISIBLE"}:
-            clean["target_visible"] = "false"
-            clean["event_type"] = "target_absent"
-
-        normalised.append(clean)
-
-    normalised.sort(key=lambda r: (float(r["start_s"]), float(r["end_s"])))
-
-    with out_path.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=ANNOTATION_FIELDS)
-        writer.writeheader()
-        writer.writerows(normalised)
+        rel, normalised = save_annotation_rows(path_text, rows, REPO_ROOT)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     return {
         "ok": True,
