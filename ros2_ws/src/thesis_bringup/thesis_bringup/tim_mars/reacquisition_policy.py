@@ -1,7 +1,11 @@
-"""Reacquisition and ambiguity policy helpers for TIM-MARS.
+"""Reacquisition and ambiguity helper policies for TIM-MARS.
 
-This module starts with stateless helpers only. Stateful confirmation counters
-remain in target_memory.py until behavior is fully locked down by tests.
+This module contains small confirmation counters and stateless helper functions
+used when the selected target is uncertain, lost, or being reacquired.
+
+The helpers support candidate-belief confirmation, absence-aware recovery,
+appearance-margin checks, geometry-strength checks, and scene-ambiguity risk.
+The main state transition logic remains in target_memory.py.
 """
 
 from __future__ import annotations

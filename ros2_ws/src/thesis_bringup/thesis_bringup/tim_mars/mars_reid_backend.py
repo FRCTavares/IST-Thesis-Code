@@ -1,8 +1,11 @@
-"""MARS-small128 ReID backend for experimental TIM-V2Q MARS.
+"""MARS ReID backend wrapper used by TIM-MARS.
 
-This module intentionally stays small and ROS-free. It wraps the already
-validated DeepSORT MARS extractor so TIM-MARS uses the same crop/resize/model
-path as the DeepSORT backend.
+This module wraps the DeepSORT MARS-small128 extractor so TIM-MARS can reuse the
+same validated ReID embedding path as the tracker experiments. It stays small
+and ROS-free.
+
+The backend only encodes image crops. It does not cache embeddings, select
+targets, update memory, or publish ROS messages.
 """
 
 from __future__ import annotations

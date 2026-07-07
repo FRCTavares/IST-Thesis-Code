@@ -1,8 +1,11 @@
 """Appearance scoring policy for TIM-MARS.
 
-This module keeps MARS appearance score decisions separate from the target
-memory state machine. It does not own target memory state; it only enriches a
-geometric CandidateScore with positive-appearance and hard-negative evidence.
+This module decides how optional appearance evidence modifies a geometric
+CandidateScore. It applies positive target-memory similarity, hard-negative
+similarity, and appearance gating rules.
+
+It does not own target memory state or ROS messages. The selected-target state
+machine calls these helpers from target_memory.py.
 """
 
 from __future__ import annotations

@@ -1,4 +1,11 @@
-"""Private memory state helpers for TIM-MARS selected-target memory."""
+"""Private selected-target memory state helpers for TIM-MARS.
+
+This module contains the internal _Memory dataclass used by TargetIdentityMemory
+and the mapping from memory state to controller-facing control mode.
+
+It is intentionally private support code. Public TIM-MARS data structures live
+in types.py.
+"""
 
 from __future__ import annotations
 

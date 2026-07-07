@@ -1,10 +1,10 @@
 """ROS message and JSON diagnostic conversion for TIM-MARS.
 
-This module converts pure TIM-MARS TargetMemoryOutput objects into ROS-facing
-messages and status payloads. It keeps publication formatting separate from the
-selected-target memory algorithm.
+This module converts pure TargetMemoryOutput objects into ROS-facing
+TargetState messages and JSON status payloads. It keeps message formatting and
+diagnostic serialization separate from the selected-target algorithm.
 
-It should not contain target-selection policy, scoring logic, or state-machine
+It must not contain target-selection policy, scoring logic, or memory-state
 transitions.
 """
 

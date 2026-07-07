@@ -1,9 +1,11 @@
-"""Shared TIM-MARS data types.
+"""Shared public data types for TIM-MARS.
 
-This module contains only type aliases, enums, and dataclasses shared across the
-TIM-MARS implementation. Keeping these definitions outside target_memory.py
-allows scoring, appearance, and reacquisition policies to be split without
-creating circular imports.
+This module contains the enums, dataclasses, and aliases shared across the
+TIM-MARS implementation: candidate tracks, candidate scores, memory outputs,
+control modes, target states, and the TargetMemoryConfig parameter set.
+
+Keeping these definitions separate avoids circular imports between scoring,
+appearance, reacquisition, ROS glue, and the selected-target state machine.
 """
 
 from __future__ import annotations

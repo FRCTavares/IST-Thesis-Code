@@ -1,8 +1,11 @@
-"""Lightweight appearance utilities for TIM-V1A.
+"""Low-level appearance feature utilities for TIM-MARS.
 
-This module is intentionally ROS-free. It provides crop, HSV histogram,
-cosine similarity, and memory update helpers that can be tested offline
-before being integrated into target_memory.py.
+This module is intentionally ROS-free. It provides bbox-to-crop conversion,
+simple HSV appearance features, cosine similarity, and exponential feature
+memory update helpers.
+
+The helpers are generic building blocks. They do not own selected-target state,
+tracker IDs, reacquisition rules, or controller-facing publication decisions.
 """
 
 from __future__ import annotations

@@ -1,8 +1,11 @@
 """Hard-negative appearance memory for TIM-MARS.
 
-Hard negatives are appearance prototypes of nearby non-selected tracks observed
-while TIM is confidently locked. They help suppress reacquisition to distractors
-that look similar to the positive target memory.
+Hard negatives are bounded appearance prototypes of nearby non-selected tracks
+observed while TIM-MARS is confidently locked on the selected target. They help
+suppress recovery to distractors that look similar to the positive target.
+
+This module owns only the hard-negative prototype store, update policy, and
+rejection score helper. The final reject decision is made in target_memory.py.
 """
 
 from __future__ import annotations

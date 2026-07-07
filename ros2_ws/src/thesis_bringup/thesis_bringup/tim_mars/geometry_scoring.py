@@ -1,7 +1,11 @@
-"""Geometry and candidate scoring helpers for TIM-MARS.
+"""Geometry scoring helpers for TIM-MARS.
 
-This module is intentionally stateless. It contains only bbox geometry,
-similarity functions, and candidate scoring.
+This module is stateless and ROS-free. It computes bbox overlap, normalized
+center distance, scale similarity, and the base geometric CandidateScore used by
+the selected-target memory state machine.
+
+Geometry remains the primary safety gate in TIM-MARS. Appearance evidence is
+allowed only after geometry is plausible enough.
 """
 
 from __future__ import annotations

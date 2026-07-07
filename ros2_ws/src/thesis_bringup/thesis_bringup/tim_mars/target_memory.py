@@ -1,19 +1,15 @@
-"""Selected-target memory for RGB-only micro-UAV following.
+"""Core selected-target memory state machine for TIM-MARS.
 
-TIM converts noisy tracker outputs into one selected, control-valid target state.
+TargetIdentityMemory is the pure algorithmic core of TIM-MARS. It receives
+CandidateTrack objects and returns a conservative TargetMemoryOutput describing
+whether the selected target should be published, suppressed, marked uncertain,
+or reacquired.
 
-TIM-V0 is the geometry-only baseline:
-- IoU, distance, scale, confidence, and tracker-ID continuity
-- no detector feedback
-- no ROS dependency
-- deterministic update rules
-
-TIM-V1A adds an optional lightweight appearance cue:
-- disabled by default
-- used only as a gated tie-breaker
-- cannot rescue geometrically implausible candidates
-- appearance memory freezes during uncertain/lost/reacquired states
+The state machine combines tracker identity, bbox geometry, temporal memory,
+optional MARS appearance evidence, hard-negative memory, short-gap protection,
+absence-aware recovery, and rank-aware reacquisition. It has no ROS dependency.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
