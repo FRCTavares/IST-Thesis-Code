@@ -204,27 +204,13 @@ class TargetIdentityMemory:
 
         id_switch = best.track_id != self._m.track_id
 
-        if (
-            self.cfg.candidate_belief_enabled
-            and id_switch
-            and self._m.state in {TargetState.UNCERTAIN, TargetState.LOST}
-            and best.total >= self.cfg.candidate_belief_min_score
-        ):
-            confirm_count = self._candidate_belief_confirmation.observe(int(best.track_id))
-            required = max(1, int(self.cfg.candidate_belief_confirm_frames))
-            if confirm_count < required:
-                return self._miss(
-                    reason=(
-                        "candidate_belief_confirmation_pending:"
-                        f" id={best.track_id}"
-                        f" confirm={confirm_count}/{required}"
-                        f" score={best.total:.3f}"
-                    ),
-                    best_score=best,
-                    all_scores=scores_sorted,
-                )
-        else:
-            self._candidate_belief_confirmation.reset()
+        candidate_belief_output = self._handle_candidate_belief_confirmation(
+            best=best,
+            scores_sorted=scores_sorted,
+            id_switch=id_switch,
+        )
+        if candidate_belief_output is not None:
+            return candidate_belief_output
 
         if id_switch and not self.cfg.allow_id_switch_recovery:
             return self._miss(
@@ -272,6 +258,37 @@ class TargetIdentityMemory:
             best_score=best,
             all_scores=scores_sorted,
         )
+
+    def _handle_candidate_belief_confirmation(
+        self,
+        *,
+        best: CandidateScore,
+        scores_sorted: List[CandidateScore],
+        id_switch: bool,
+    ) -> Optional[TargetMemoryOutput]:
+        if (
+            self.cfg.candidate_belief_enabled
+            and id_switch
+            and self._m.state in {TargetState.UNCERTAIN, TargetState.LOST}
+            and best.total >= self.cfg.candidate_belief_min_score
+        ):
+            confirm_count = self._candidate_belief_confirmation.observe(int(best.track_id))
+            required = max(1, int(self.cfg.candidate_belief_confirm_frames))
+            if confirm_count < required:
+                return self._miss(
+                    reason=(
+                        "candidate_belief_confirmation_pending:"
+                        f" id={best.track_id}"
+                        f" confirm={confirm_count}/{required}"
+                        f" score={best.total:.3f}"
+                    ),
+                    best_score=best,
+                    all_scores=scores_sorted,
+                )
+        else:
+            self._candidate_belief_confirmation.reset()
+
+        return None
 
     def _handle_rank_aware_reacquisition(
         self,
