@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+# Purpose:
+# - Replay a source bag from image_raw.
+# - Rerun detector, tracker, and optionally TIM-MARS.
+# - Record a full-pipeline replay bag for diagnostic comparison.
+#
+# Use this only when regenerated tracker IDs and annotations are compatible.
+# It is heavier and less annotation-stable than memory-only replay.
+#
 if [[ $# -lt 5 ]]; then
   echo "Usage:"
   echo "  $0 <bag_path> <detector_model> <target_id|largest> <tracker> <tim_mode:off|mars> [rate] [target_wait_timeout_s]"

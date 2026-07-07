@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+"""Publish a clean /target stream from one fixed tracker ID.
+
+This helper is used for controlled TIM-MARS memory replays where the selected
+target is represented by a known tracker ID. It subscribes to /tracks, copies
+the matching track into a TargetState message, and publishes an invalid target
+when the selected ID is absent.
+
+It is a replay/evaluation helper, not an autonomous selector.
+"""
+
 import argparse
 
 import rclpy

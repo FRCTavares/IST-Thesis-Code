@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+# Purpose:
+# - Replay an existing bag that already contains detector/tracker outputs.
+# - Optionally rerun TIM-MARS over those tracks.
+# - Record a replay bag and generate target-correctness reports.
+#
+# Use this for controlled replays from curated detections/tracks. It does not
+# rerun the detector from images.
+#
 if [[ $# -lt 4 ]]; then
   echo "Usage:"
   echo "  $0 <bag_path> <target_id> <tracker> <tim_mode:off|mars|on> [rate] [target_wait_timeout_s]"

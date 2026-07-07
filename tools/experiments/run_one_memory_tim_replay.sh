@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+# Purpose:
+# - Replay TIM-MARS as a selected-target memory layer over existing tracks.
+# - Choose the raw /target source from the input bag, a fixed selected ID, or
+#   annotation-driven physical-target intervals.
+# - Record replay output and run selected-target correctness evaluation.
+#
+# This is the main final TIM-MARS safety replay helper.
+#
 if [[ $# -lt 4 ]]; then
   echo "Usage:"
   echo "  $0 <bag_path> <target_id> <run_name> <annotation_csv> [rate]"
