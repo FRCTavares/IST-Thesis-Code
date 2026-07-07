@@ -1695,7 +1695,7 @@ button:active {{
       <summary>Export MP4 video</summary>
       <div class="controls">
         <label>Video name
-          <input id="videoName" value="paper_video_export.mp4" style="min-width:360px">
+          <input id="videoName" value="tim_mars_video_export.mp4" style="min-width:360px">
         </label>
         <label>FPS
           <input id="videoFps" value="20" style="width:70px">
@@ -1816,14 +1816,12 @@ function paperNeedEmoji(path) {
   if (l.includes("video__paper_seq03") || l.includes("dense_group_ambiguity")) return "🎯";
   if (l.includes("det_app_v5_bytetrack_seq03_target1")) return "🎯";
   if (l.includes("det_app_v5_bytetrack_seq04_target5")) return "🎯";
-  if (l.includes("paper_v5_bytetrack_seq03_target1")) return "🎯";
-  if (l.includes("paper_v5_bytetrack_seq04_target5")) return "🎯";
 
   // Annotation aliases are useful, but they are usually not the final TIM-MARS replay.
   if (l.includes("annotate__")) return "⭐";
 
   // Candidate/replay alternatives.
-  if (l.includes("paper_final") || l.includes("paper_v") || l.includes("controlled_v5")) return "🧪";
+  if (l.includes("/replay/") || l.includes("__tim_") || l.includes("memory_tim")) return "🧪";
 
   // Source/archive bags are useful for provenance, not first-choice figure export.
   if (l.includes("/source/") || l.includes("/archive/")) return "🗄️";
@@ -2689,12 +2687,12 @@ async function pollJob() {
 
 
 function defaultVideoNameForBag() {
-  const b = loadedBag || document.getElementById("bag").value || "paper_video_export";
+  const b = loadedBag || document.getElementById("bag").value || "tim_mars_video_export";
   const base = b.split("/").pop()
     .replace(/^VIDEO__/, "")
     .replace(/[^A-Za-z0-9_.-]+/g, "_")
     .replace(/_+$/g, "");
-  return (base || "paper_video_export") + ".mp4";
+  return (base || "tim_mars_video_export") + ".mp4";
 }
 
 async function exportMp4() {
@@ -2712,7 +2710,7 @@ async function exportMp4() {
   }
 
   let name = document.getElementById("videoName").value.trim();
-  if (!name || name === "paper_video_export.mp4") {
+  if (!name || name === "tim_mars_video_export.mp4") {
     name = defaultVideoNameForBag();
     document.getElementById("videoName").value = name;
   }
@@ -2721,7 +2719,7 @@ async function exportMp4() {
   }
 
   const payload = {
-    out: "reports/paper_final_videos_2026_07_04/" + name,
+    out: "reports/ui_video_exports/" + name,
     draw_detections: document.getElementById("videoDetections").checked,
     draw_tracks: document.getElementById("videoTracks").checked,
     draw_raw: document.getElementById("videoRaw").checked,
