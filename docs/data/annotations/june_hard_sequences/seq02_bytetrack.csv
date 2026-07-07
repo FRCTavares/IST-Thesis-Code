@@ -1,12 +1,12 @@
 bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,0.000,27.960,CORRECT_TARGET,true,1,,manual_interval,created in TIM clean UI
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,27.960,40.740,TARGET_NOT_VISIBLE,false,,,manual_interval,created in TIM clean UI
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,40.740,57.480,CORRECT_TARGET,true,15,,manual_interval,created in TIM clean UI
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,57.480,65.540,TARGET_NOT_VISIBLE,false,,,manual_interval,created in TIM clean UI
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,65.540,74.320,CORRECT_TARGET,true,23,,manual_interval,created in TIM clean UI
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,74.320,81.500,TARGET_NOT_VISIBLE,false,,,manual_interval,created in TIM clean UI
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,81.500,117.450,CORRECT_TARGET,true,28,,manual_interval,created in TIM clean UI
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,117.450,130.730,TARGET_NOT_VISIBLE,false,,,manual_interval,created in TIM clean UI
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,130.730,138.010,CORRECT_TARGET,true,40,,manual_interval,created in TIM clean UI
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,138.010,143.720,TARGET_NOT_VISIBLE,false,,,manual_interval,created in TIM clean UI
-2026-06-19__seq02_target_reentry__bytetrack_full_pipeline_annotation,143.720,150.390,CORRECT_TARGET,true,46,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,0.000,27.960,CORRECT_TARGET,true,1,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,27.960,40.740,TARGET_NOT_VISIBLE,false,,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,40.740,57.480,CORRECT_TARGET,true,15,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,57.480,65.540,TARGET_NOT_VISIBLE,false,,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,65.540,74.320,CORRECT_TARGET,true,23,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,74.320,81.500,TARGET_NOT_VISIBLE,false,,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,81.500,117.450,CORRECT_TARGET,true,28,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,117.450,130.730,TARGET_NOT_VISIBLE,false,,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,130.730,138.010,CORRECT_TARGET,true,40,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,138.010,143.720,TARGET_NOT_VISIBLE,false,,,manual_interval,created in TIM clean UI
+2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest,143.720,150.390,CORRECT_TARGET,true,46,,manual_interval,created in TIM clean UI

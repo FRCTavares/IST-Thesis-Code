@@ -1,5 +1,16 @@
 bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
-bytetrack_fixed_r2_scaled4,0.0,34.84453644832175,CORRECT_TARGET,true,1,2,visible_id_interval,Scaled x4 from audit video; black-shirt target ID 1; checkered distractor ID 2 | converted_to_header_time scale=0.249889 old_span=270.520 header_span=67.600
-bytetrack_fixed_r2_scaled4,34.84453644832175,50.37764305781457,CORRECT_TARGET,true,1,42,visible_id_interval,Scaled x4; black-shirt target remains ID 1; distractor switches to ID 40 | converted_to_header_time scale=0.249889 old_span=270.520 header_span=67.600 | corrected_for_fresh_r2: distractor id 40 -> 42
-bytetrack_fixed_r2_scaled4,50.37764305781457,58.47404997782049,CORRECT_TARGET,true,41,1,visible_id_interval,Scaled x4; black-shirt target switches to ID 40; distractor is ID 1 | converted_to_header_time scale=0.249889 old_span=270.520 header_span=67.600 | corrected_for_fresh_r2: target id 40 -> 41
-bytetrack_fixed_r2_scaled4,58.47404997782049,67.6,CORRECT_TARGET,true,41,59,visible_id_interval,Scaled x4; black-shirt target remains ID 40; distractor switches to ID 59 | converted_to_header_time scale=0.249889 old_span=270.520 header_span=67.600 | corrected_for_fresh_r2: target id 40 -> 41
+final_may_hard_reentry_selected_id,0.000,24.770,CORRECT_TARGET,true,1,,clean_visible,created in TIM clean UI
+final_may_hard_reentry_selected_id,24.770,25.470,CORRECT_TARGET,true,1,,occlusion_ambiguity,created in TIM clean UI
+final_may_hard_reentry_selected_id,25.470,29.370,CORRECT_TARGET,true,1,,clean_visible,created in TIM clean UI
+final_may_hard_reentry_selected_id,29.370,30.180,CORRECT_TARGET,true,1,,occlusion_ambiguity,created in TIM clean UI
+final_may_hard_reentry_selected_id,30.180,33.930,CORRECT_TARGET,true,1,,clean_visible,created in TIM clean UI
+final_may_hard_reentry_selected_id,33.930,36.270,CORRECT_TARGET,true,1,,occlusion_ambiguity,created in TIM clean UI
+final_may_hard_reentry_selected_id,36.270,40.030,CORRECT_TARGET,true,1,,clean_visible,created in TIM clean UI
+final_may_hard_reentry_selected_id,40.030,41.500,CORRECT_TARGET,true,1,,occlusion_ambiguity,created in TIM clean UI
+final_may_hard_reentry_selected_id,41.500,48.800,CORRECT_TARGET,true,1,,clean_visible,created in TIM clean UI
+final_may_hard_reentry_selected_id,48.800,51.230,CORRECT_TARGET,true,41,,occlusion_ambiguity,created in TIM clean UI
+final_may_hard_reentry_selected_id,51.230,55.070,CORRECT_TARGET,true,41,,clean_visible,created in TIM clean UI
+final_may_hard_reentry_selected_id,55.070,56.030,CORRECT_TARGET,true,41,,occlusion_ambiguity,created in TIM clean UI
+final_may_hard_reentry_selected_id,56.030,58.160,CORRECT_TARGET,true,41,,clean_visible,created in TIM clean UI
+final_may_hard_reentry_selected_id,58.160,58.930,CORRECT_TARGET,true,41,,occlusion_ambiguity,created in TIM clean UI
+final_may_hard_reentry_selected_id,58.930,67.700,CORRECT_TARGET,true,41,,clean_visible,created in TIM clean UI

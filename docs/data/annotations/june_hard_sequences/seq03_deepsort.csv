@@ -1,0 +1,5 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw__detector_yolov8s__tracker_deepsort__tim_off__target_1,0.000,23.030,CORRECT_TARGET,true,1,,clean_visible,created in TIM clean UI
+2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw__detector_yolov8s__tracker_deepsort__tim_off__target_1,23.030,54.160,CORRECT_TARGET,true,31,,clean_visible,created in TIM clean UI
+2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw__detector_yolov8s__tracker_deepsort__tim_off__target_1,54.160,72.830,CORRECT_TARGET,true,87,,clean_visible,created in TIM clean UI
+2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw__detector_yolov8s__tracker_deepsort__tim_off__target_1,72.830,83.830,CORRECT_TARGET,true,27,,clean_visible,created in TIM clean UI
