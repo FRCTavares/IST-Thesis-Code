@@ -1005,12 +1005,12 @@ if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
     echo "[field] starting MAVROS Pixhawk 6X Ethernet link"
     export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 
-    start_ros_bg mavros_pixhawk bash -lc "cd '$THESIS_ROOT/tools/pixhawk_mavros' && ./start_pixhawk_mavros.sh"
+    start_ros_bg mavros_pixhawk bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 launch mavros apm.launch fcu_url:=udp://:14550@ tgt_system:=9 tgt_component:=1'
 
     sleep 8
 
     echo "[field] requesting MAVLink streams"
-    bash -lc "cd '$THESIS_ROOT/tools/pixhawk_mavros' && ./request_pixhawk_streams.sh" || true
+    bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate "{stream_id: 0, message_rate: 50, on_off: true}"' || true
 
     MAVROS_BAG_ROOT="$THESIS_ROOT/bags/mavros"
     mkdir -p "$MAVROS_BAG_ROOT"
@@ -1076,12 +1076,12 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
         echo "[source] starting MAVROS Pixhawk 6X Ethernet link"
         export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 
-        start_ros_bg source_mavros_pixhawk bash -lc "cd '$THESIS_ROOT/tools/pixhawk_mavros' && ./start_pixhawk_mavros.sh"
+        start_ros_bg source_mavros_pixhawk bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 launch mavros apm.launch fcu_url:=udp://:14550@ tgt_system:=9 tgt_component:=1'
 
         sleep 8
 
         echo "[source] requesting MAVLink streams"
-        bash -lc "cd '$THESIS_ROOT/tools/pixhawk_mavros' && ./request_pixhawk_streams.sh" || true
+        bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate "{stream_id: 0, message_rate: 50, on_off: true}"' || true
 
         echo "[source] starting MAVROS recorder: $SOURCE_MAVROS_BAG_OUT_DIR"
 
