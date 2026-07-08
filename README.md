@@ -5,6 +5,16 @@ All commands run from `$THESIS_ROOT` unless noted.
 
 Use this file as the command source of truth.
 
+## Final thesis artifacts
+
+For final TIM-MARS result evidence and local verification, start here:
+
+- `docs/data/final_experiment_inventory.md`: promoted final replay bags, reports, and annotation CSVs.
+- `docs/data/reproduce_final_results.md`: local checks for final result artifact availability.
+- `reports/paper_final_tables_2026_07_04/final_result_tables.md`: compact final result tables.
+- `bags/README.md`: bag roles, deletion policy, and naming contract.
+- `ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/README.md`: TIM-MARS module structure and configuration guide.
+
 ## Current runtime defaults
 
 From `tools/start_live_stack.sh`:
