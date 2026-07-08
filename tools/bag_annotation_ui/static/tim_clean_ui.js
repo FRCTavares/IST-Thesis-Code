@@ -17,14 +17,40 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-let allBags = __BAGS_JSON__;
-let allAnnotations = __ANNOTATIONS_JSON__;
+let allBags = window.TIM_CLEAN_UI_BAGS || [];
+let allAnnotations = window.TIM_CLEAN_UI_ANNOTATIONS || [];
 let loadedFrames = 0;
 let loadedDuration = 0;
+let frameTimesS = [];
 let loadedBag = "";
 let currentBagFilter = "";
 let playing = false;
 let timer = null;
+let playbackAnimationFrame = null;
+let playbackLastTickMs = 0;
+const DEFAULT_DEFAULT_PLAYBACK_FPS = 14;
+
+function selectedPlaybackFps() {
+  const el = document.getElementById("playbackFps");
+  const fps = Number(el ? el.value : DEFAULT_DEFAULT_PLAYBACK_FPS);
+  return Number.isFinite(fps) && fps > 0 ? fps : DEFAULT_DEFAULT_PLAYBACK_FPS;
+}
+
+function playbackFrameMs() {
+  return 1000 / selectedPlaybackFps();
+}
+
+function playbackDisplayDuration() {
+  if (loadedFrames > 1) {
+    return (loadedFrames - 1) / selectedPlaybackFps();
+  }
+  return 0;
+}
+
+function playbackFpsLabel() {
+  return selectedPlaybackFps().toFixed(1) + " fps";
+}
+
 
 let rawFrameCache = [];
 let timFrameCache = [];
@@ -34,6 +60,84 @@ let preloadReady = false;
 let preloadInProgress = false;
 let preloadToken = 0;
 let loadedCacheToken = 0;
+
+
+
+
+
+function setLoadedSummaryVisible(isVisible) {
+  const card = document.getElementById("loadedSummaryCard");
+  if (card) card.hidden = !isVisible;
+}
+
+function updateLoadedSummary() {
+  const title = document.getElementById("loadedSummaryTitle");
+  const meta = document.getElementById("loadedSummaryMeta");
+
+  const bag = loadedBag || document.getElementById("bag")?.value || "";
+  const ann = selectedAnnotation ? selectedAnnotation() : "";
+
+  if (title) {
+    title.innerText = bag ? (typeof bagDisplayName === "function" ? bagDisplayName(bag) : bag) : "No bag loaded.";
+  }
+
+  if (meta) {
+    const annText = ann ? ann : "annotation: none";
+    const framesText = loadedFrames ? `frames: ${loadedFrames}` : "frames: ?";
+    const durationText = loadedDuration ? `duration: ${loadedDuration.toFixed(2)} s` : "duration: ?";
+    meta.innerText = `${framesText} | ${durationText} | ${annText} | ${bag}`;
+  }
+}
+
+function changeLoadedBag() {
+  pause();
+  frameTimesS = [];
+  setLoadedWorkspaceVisible(false);
+  setLoadedSummaryVisible(false);
+  document.body.classList.remove("bagLoaded");
+  resetLoadProgressPanel();
+  const status = document.getElementById("status");
+  if (status) status.innerText = "select a bag or annotation";
+  window.scrollTo({top: 0, behavior: "smooth"});
+}
+
+function setLoadedWorkspaceVisible(isVisible) {
+  const normalWorkspace = document.getElementById("loadedWorkspace");
+  const annotationWorkspace = document.getElementById("annotationWorkspace");
+  const playbackDock = document.getElementById("playbackDock");
+
+  document.body.classList.toggle("bagLoaded", !!isVisible);
+  setLoadedSummaryVisible(!!isVisible);
+
+  if (playbackDock) {
+    playbackDock.hidden = !isVisible;
+  }
+
+  if (!isVisible) {
+    if (normalWorkspace) normalWorkspace.hidden = true;
+    if (annotationWorkspace) annotationWorkspace.hidden = true;
+    document.body.classList.remove("annotationWorkspaceMode");
+    return;
+  }
+
+  const annotationMode = shouldOpenAnnotationWorkspace();
+
+  if (normalWorkspace) {
+    normalWorkspace.hidden = annotationMode;
+  }
+  if (annotationWorkspace) {
+    annotationWorkspace.hidden = !annotationMode;
+  }
+
+  document.body.classList.toggle("annotationWorkspaceMode", annotationMode);
+
+  updateLoadedSummary();
+
+  if (annotationMode) {
+    setTimeout(updateAnnotationFrame, 0);
+  }
+}
+
 
 function paperNeedEmoji(path) {
   const l = String(path || "").toLowerCase();
@@ -240,14 +344,27 @@ function showAnnotation() {
 
 function setPreloadProgress(done, total) {
   const bar = document.getElementById("preloadBar");
-  const pctText = document.getElementById("preloadPct");
-  if (!bar) return;
+  const pct = document.getElementById("preloadPct");
+  const loadBar = document.getElementById("loadPreloadBar");
+  const loadPct = document.getElementById("loadPreloadPct");
 
-  const pct = total > 0 ? Math.max(0, Math.min(100, 100 * done / total)) : 0;
-  bar.style.width = pct.toFixed(1) + "%";
+  const value = total > 0
+    ? Math.max(0, Math.min(100, Math.round((done / total) * 100)))
+    : 0;
 
-  if (pctText) {
-    pctText.innerText = Math.round(pct) + "%";
+  if (bar) {
+    bar.style.setProperty("width", value + "%", "important");
+  }
+  if (pct) {
+    pct.innerText = value + "%";
+  }
+
+  if (loadBar) {
+    loadBar.style.setProperty("width", value + "%", "important");
+    loadBar.style.setProperty("min-width", value > 0 ? "2px" : "0", "important");
+  }
+  if (loadPct) {
+    loadPct.innerText = value + "%";
   }
 }
 
@@ -396,6 +513,9 @@ async function loadList() {
 
   wireBagFinder();
   renderBagOptions(currentBagFilter || "");
+  if (typeof renderBagTree === "function") {
+    renderBagTree(currentBagFilter || "");
+  }
   const bagEl = document.getElementById("bag");
   if (bagEl && bagEl.options.length > 0 && !bagEl.value) {
     bagEl.selectedIndex = 0;
@@ -417,6 +537,48 @@ function renderBags() {
 }
 
 
+
+function showLoadProgressPanel(isVisible) {
+  const panel = document.getElementById("loadProgressPanel");
+  if (panel) panel.hidden = !isVisible;
+}
+
+function setLoadPreloadStatus(text) {
+  const loadStatus = document.getElementById("loadPreloadStatus");
+  if (loadStatus) loadStatus.innerText = text;
+
+  const viewerStatus = document.getElementById("preloadStatus");
+  if (viewerStatus) viewerStatus.innerText = text;
+}
+
+function resetLoadProgressPanel() {
+  setLoadPreloadStatus("not loaded");
+  setPreloadProgress(0, 0);
+  showLoadProgressPanel(false);
+}
+
+function annotationEditModeEnabled() {
+  const el = document.getElementById("annotationEditMode");
+  return !!(el && el.checked);
+}
+
+function applyAnnotationEditModeView() {
+  if (!annotationEditModeEnabled()) return;
+
+  const tracks = document.getElementById("tracks");
+  const det = document.getElementById("det");
+  const mode = document.getElementById("viewMode");
+
+  if (tracks) tracks.checked = true;
+  if (det) det.checked = false;
+
+  // Keep RAW-vs-TIM as the default comparison view, but with track IDs visible.
+  // This is safer than forcing "tracks only" because it still shows selected output.
+  if (mode && !mode.value) {
+    mode.value = "compare";
+  }
+}
+
 async function loadBag(path) {
   const b = path || document.getElementById("bag").value;
   if (!b) return alert("Select a bag first.");
@@ -426,6 +588,8 @@ async function loadBag(path) {
   document.getElementById("playBtn").innerText = "▶";
 
   loadedBag = b;
+  setLoadedWorkspaceVisible(false);
+  showLoadProgressPanel(true);
   preloadReady = false;
   preloadInProgress = false;
   preloadToken += 1;
@@ -435,7 +599,7 @@ async function loadBag(path) {
   document.getElementById("progress").disabled = true;
   document.getElementById("playBtn").disabled = true;
   document.getElementById("status").innerText = "loading bag...";
-  document.getElementById("preloadStatus").innerText = "loading bag...";
+  setLoadPreloadStatus("loading bag...");
 
   const res = await fetch("/api/load", {
     method: "POST",
@@ -447,11 +611,17 @@ async function loadBag(path) {
 
   if (!data.ok) {
     document.getElementById("status").innerText = "failed: " + (data.error || "unknown");
-    document.getElementById("preloadStatus").innerText = "load failed";
+    setLoadPreloadStatus("load failed");
+    setLoadedWorkspaceVisible(false);
     return;
   }
 
   loadedFrames = data.frames || 0;
+  frameTimesS = Array.isArray(data.frame_times_s)
+    ? data.frame_times_s.map(Number).filter(Number.isFinite)
+    : [];
+  setLoadedWorkspaceVisible(false);
+  applyAnnotationEditModeView();
   loadedDuration = data.duration_s || 0;
 
   document.getElementById("progress").max = Math.max(0, loadedFrames - 1);
@@ -471,6 +641,9 @@ async function loadBag(path) {
 
   if (preloadReady) {
     document.getElementById("status").innerText = "ready";
+    showLoadProgressPanel(false);
+    updateLoadedSummary();
+      setLoadedWorkspaceVisible(true);
     document.getElementById("progress").disabled = false;
     document.getElementById("playBtn").disabled = false;
     updateFrame();
@@ -496,11 +669,13 @@ function updateTitles() {
   document.getElementById("timTitle").innerText = "TIM-MARS output /target_memory_mars";
 }
 
+
+
 function frameUrl(idx, side) {
   const q = new URLSearchParams();
   q.set("idx", String(idx));
   q.set("clean", "1");
-  q.set("cache_token", String(loadedCacheToken || preloadToken || Date.now()));
+  q.set("cache_token", String(loadedCacheToken || preloadToken || 0));
 
   if (side === "raw") {
     q.set("draw_raw", "1");
@@ -528,14 +703,46 @@ function loadDecodedImage(url) {
 function drawImageToCanvas(canvas, img) {
   if (!img) return;
 
-  if (canvas.width !== img.naturalWidth || canvas.height !== img.naturalHeight) {
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+  // Most TIM-MARS rendered frames are square 640x640 with the real camera image
+  // letterboxed inside. The viewer should show the camera aspect, not the padded
+  // square, otherwise we get ugly black bars above and below the video.
+  const targetAspect = 16 / 9;
+
+  let sx = 0;
+  let sy = 0;
+  let sw = img.naturalWidth;
+  let sh = img.naturalHeight;
+
+  const sourceAspect = img.naturalWidth / Math.max(1, img.naturalHeight);
+
+  if (Math.abs(sourceAspect - 1.0) < 0.05) {
+    // Square source: crop vertical padding to 16:9.
+    sh = Math.round(img.naturalWidth / targetAspect);
+    sy = Math.max(0, Math.round((img.naturalHeight - sh) / 2));
+  } else if (sourceAspect > targetAspect) {
+    // Too wide: crop left/right.
+    sw = Math.round(img.naturalHeight * targetAspect);
+    sx = Math.max(0, Math.round((img.naturalWidth - sw) / 2));
+  } else if (sourceAspect < targetAspect) {
+    // Too tall: crop top/bottom.
+    sh = Math.round(img.naturalWidth / targetAspect);
+    sy = Math.max(0, Math.round((img.naturalHeight - sh) / 2));
+  }
+
+  const outW = sw;
+  const outH = sh;
+
+  if (canvas.width !== outW || canvas.height !== outH) {
+    canvas.width = outW;
+    canvas.height = outH;
   }
 
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0);
+  ctx.clearRect(0, 0, outW, outH);
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
 }
+
+
 
 async function preloadAllFrames(token) {
   updateTitles();
@@ -554,7 +761,7 @@ async function preloadAllFrames(token) {
   timDecodedCache = new Array(loadedFrames);
 
   const status = document.getElementById("preloadStatus");
-  status.innerText = "preloading 0/" + loadedFrames;
+  setLoadPreloadStatus("preloading 0/" + loadedFrames);
   setPreloadProgress(0, loadedFrames);
 
   for (let i = 0; i < loadedFrames; i++) {
@@ -573,7 +780,7 @@ async function preloadAllFrames(token) {
     timFrameCache[i] = timDecodedCache[i] ? timDecodedCache[i].src : "";
 
     if (i % 10 === 0 || i === loadedFrames - 1) {
-      status.innerText = "preloading " + (i + 1) + "/" + loadedFrames;
+      setLoadPreloadStatus("preloading " + (i + 1) + "/" + loadedFrames);
       setPreloadProgress(i + 1, loadedFrames);
       await new Promise(r => setTimeout(r, 1));
     }
@@ -581,7 +788,7 @@ async function preloadAllFrames(token) {
 
   preloadInProgress = false;
   preloadReady = true;
-  status.innerText = "preloaded " + loadedFrames + "/" + loadedFrames;
+  setLoadPreloadStatus("preloaded " + loadedFrames + "/" + loadedFrames);
   setPreloadProgress(loadedFrames, loadedFrames);
 }
 
@@ -663,19 +870,40 @@ function clearPaperFrameList() {
 
 
 function updateFrame() {
-  const idx = parseInt(document.getElementById("progress").value || "0");
-  const t = loadedFrames > 1 ? idx / (loadedFrames - 1) * loadedDuration : 0;
+  const idx = currentFrameIndex();
+  const playbackDuration = playbackDisplayDuration();
+  const playbackTime = selectedPlaybackFps() > 0 ? idx / selectedPlaybackFps() : 0;
 
-  document.getElementById("time").innerText = "frame " + idx + " / " + Math.max(0, loadedFrames - 1) + " | t=" + fmt(t) + " / " + fmt(loadedDuration);
+  const timeEl = document.getElementById("time");
+  if (timeEl) {
+    timeEl.innerText =
+      "frame " + idx + " / " + Math.max(0, loadedFrames - 1) +
+      " | playback t=" + fmt(playbackTime) + " / " + fmt(playbackDuration) +
+      " | " + playbackFpsLabel();
+  }
+
   refreshPaperFrameDraft();
 
   if (!preloadReady) {
-    document.getElementById("preloadStatus").innerText = "wait for preload";
+    const preloadStatus = document.getElementById("preloadStatus");
+    if (preloadStatus) preloadStatus.innerText = "wait for preload";
     return;
   }
 
-  drawImageToCanvas(document.getElementById("rawCanvas"), rawDecodedCache[idx]);
-  drawImageToCanvas(document.getElementById("timCanvas"), timDecodedCache[idx]);
+  if (document.body.classList.contains("annotationWorkspaceMode")) {
+    updateAnnotationFrame();
+    return;
+  }
+
+  const rawCanvas = document.getElementById("rawCanvas");
+  const timCanvas = document.getElementById("timCanvas");
+
+  if (rawCanvas && rawDecodedCache[idx]) {
+    drawImageToCanvas(rawCanvas, rawDecodedCache[idx]);
+  }
+  if (timCanvas && timDecodedCache[idx]) {
+    drawImageToCanvas(timCanvas, timDecodedCache[idx]);
+  }
 }
 
 function seek() {
@@ -690,6 +918,11 @@ function togglePlay() {
   if (playing) {
     playing = false;
     clearTimeout(timer);
+    if (playbackAnimationFrame !== null) {
+      cancelAnimationFrame(playbackAnimationFrame);
+      playbackAnimationFrame = null;
+    }
+    playbackLastTickMs = 0;
     document.getElementById("playBtn").innerText = "▶";
     return;
   }
@@ -705,29 +938,45 @@ function togglePlay() {
   }
 
   playing = true;
+  playbackLastTickMs = 0;
   document.getElementById("playBtn").innerText = "⏸";
-  step();
+  playbackAnimationFrame = requestAnimationFrame(step);
 }
 
-function step() {
+function step(nowMs) {
   if (!playing) return;
 
-  const p = document.getElementById("progress");
-  let v = parseInt(p.value || "0");
+  if (!nowMs) nowMs = performance.now();
 
-  if (v >= loadedFrames - 1) {
-    v = 0;
-  } else {
-    v += 1;
+  if (!playbackLastTickMs) {
+    playbackLastTickMs = nowMs;
   }
 
-  p.value = v;
-  updateFrame();
+  const elapsed = nowMs - playbackLastTickMs;
 
-  const naturalDelay = loadedFrames > 1 ? loadedDuration * 1000 / loadedFrames : 100;
-  const delay = Math.max(40, Math.min(140, naturalDelay));
+  if (elapsed >= playbackFrameMs()) {
+    const p = document.getElementById("progress");
+    let v = parseInt(p.value || "0");
 
-  timer = setTimeout(step, delay);
+    if (v >= loadedFrames - 1) {
+      p.value = loadedFrames - 1;
+      updateFrame();
+      playing = false;
+      playbackLastTickMs = 0;
+      playbackAnimationFrame = null;
+      document.getElementById("playBtn").innerText = "▶";
+      return;
+    }
+
+    const framesToAdvance = Math.max(1, Math.floor(elapsed / playbackFrameMs()));
+    v = Math.min(loadedFrames - 1, v + framesToAdvance);
+    p.value = v;
+    updateFrame();
+
+    playbackLastTickMs += framesToAdvance * playbackFrameMs();
+  }
+
+  playbackAnimationFrame = requestAnimationFrame(step);
 }
 
 
@@ -1118,7 +1367,16 @@ let activeAnnotationIdx = -1;
 let activeAnnotationIndex = -1;
 
 function currentTimeS() {
-  const idx = parseInt(document.getElementById("progress").value || "0");
+  const idx = currentFrameIndex();
+
+  if (
+    Array.isArray(frameTimesS) &&
+    frameTimesS.length > idx &&
+    Number.isFinite(frameTimesS[idx])
+  ) {
+    return frameTimesS[idx];
+  }
+
   return loadedFrames > 1 ? idx / (loadedFrames - 1) * loadedDuration : 0;
 }
 
@@ -1296,66 +1554,71 @@ function annRenderRows() {
   }
 
   if (!annotationRows.length) {
-    host.innerHTML = "<div class='annEmpty'>No annotation intervals loaded.</div>";
+    host.innerHTML = "<div class='annEmpty'>No annotation intervals loaded. Create a new interval from the controls above.</div>";
     return;
   }
 
   let html = "";
-  html += "<div class='annTableWrap'>";
-  html += "<table class='annTable editableAnnTable'>";
+  html += "<div class='annTableWrap compactAnnTableWrap'>";
+  html += "<table class='annTable compactAnnTable'>";
   html += "<thead><tr>";
-  html += "<th class='annColSmall'>#</th>";
-  html += "<th>start s</th>";
-  html += "<th>end s</th>";
-  html += "<th>duration</th>";
-  html += "<th>target ID</th>";
-  html += "<th>visible</th>";
-  html += "<th>event</th><th>action</th>";
+  html += "<th>#</th>";
+  html += "<th>start</th>";
+  html += "<th>end</th>";
+  html += "<th>ID</th>";
+  html += "<th>event</th>";
+  html += "<th>del</th>";
   html += "</tr></thead><tbody>";
 
   annotationRows.forEach((r, idx) => {
     const start = Number(r.start_s || 0);
     const end = Number(r.end_s || 0);
-    const duration = Math.max(0, end - start);
-    const visible = String(r.target_visible || "").toLowerCase() === "true";
     const active = idx === activeAnnotationIndex ? " active" : "";
+    const targetId = escapeHtml(String(r.correct_target_track_id || ""));
+    const eventValue = normaliseRowEventType(
+      r.event_type || "",
+      String(r.target_visible || "").toLowerCase() === "true"
+    );
 
-    html += "<tr class='" + active + "' onclick='selectAnnotation(" + idx + ")'>";
+    html += "<tr class='" + active + "' onclick='annSelectRow(" + idx + ")'>";
     html += "<td class='annIndex'>" + idx + "</td>";
-    html += "<td><input class='annCellInput annNumInput' type='number' step='0.001' value='" + start.toFixed(3) + "' onchange='editAnnotationCell(" + idx + ", &quot;start_s&quot;, this.value)' onclick='event.stopPropagation()'></td>";
-    html += "<td><input class='annCellInput annNumInput' type='number' step='0.001' value='" + end.toFixed(3) + "' onchange='editAnnotationCell(" + idx + ", &quot;end_s&quot;, this.value)' onclick='event.stopPropagation()'></td>";
-    html += "<td class='annNum annDuration'>" + duration.toFixed(3) + "</td>";
-    html += "<td><input class='annCellInput annIdInput' type='number' step='1' value='" + escapeHtml(String(r.correct_target_track_id || "")) + "' onchange='editAnnotationCell(" + idx + ", &quot;correct_target_track_id&quot;, this.value)' onclick='event.stopPropagation()'></td>";
-    html += "<td class='annVisibleCell'><label class='annCheckLabel'><input type='checkbox' " + (visible ? "checked" : "") + " onchange='editAnnotationCell(" + idx + ", &quot;target_visible&quot;, this.checked ? &quot;true&quot; : &quot;false&quot;)' onclick='event.stopPropagation()'> visible</label></td>";
+
+    html += "<td><input class='annCellInput annTimeInput' type='number' step='0.001' value='" +
+      start.toFixed(3) +
+      "' onchange='editAnnotationCell(" + idx + ", &quot;start_s&quot;, this.value)' onclick='event.stopPropagation()'></td>";
+
+    html += "<td><input class='annCellInput annTimeInput' type='number' step='0.001' value='" +
+      end.toFixed(3) +
+      "' onchange='editAnnotationCell(" + idx + ", &quot;end_s&quot;, this.value)' onclick='event.stopPropagation()'></td>";
+
+    html += "<td><input class='annCellInput annIdInput' type='number' step='1' value='" +
+      targetId +
+      "' onchange='editAnnotationCell(" + idx + ", &quot;correct_target_track_id&quot;, this.value)' onclick='event.stopPropagation()'></td>";
+
     html += "<td><select class='annCellInput annEventSelect' onchange='editAnnotationCell(" + idx + ", &quot;event_type&quot;, this.value)' onclick='event.stopPropagation()'>";
-    const eventOptions = [
-      ["clean_visible", "Clean visible"],
-      ["target_absent", "Target absent"],
-      ["reentry", "Re-entry"],
-      ["occlusion_ambiguity", "Occlusion / ambiguity"],
-      ["id_switch_fragmentation", "ID switch / fragmentation"],
-      ["other", "Other"],
+
+    const events = [
+      ["clean_visible", "clean"],
+      ["target_absent", "absent"],
+      ["reentry", "re-entry"],
+      ["occlusion_ambiguity", "ambiguity"],
+      ["id_switch_fragmentation", "ID switch"],
+      ["other", "other"]
     ];
-    const legacyEventMap = {
-      manual_interval: "clean_visible",
-      visible_id_interval: "clean_visible",
-      target_not_visible: "target_absent",
-      not_visible: "target_absent",
-    };
-    let currentEvent = String(r.event_type || "").trim();
-    currentEvent = legacyEventMap[currentEvent] || currentEvent;
-    if (!eventOptions.map(ev => ev[0]).includes(currentEvent)) {
-      currentEvent = visible ? "clean_visible" : "target_absent";
-    }
-    for (const ev of eventOptions) {
-      html += "<option value='" + escapeHtml(ev[0]) + "'" + (currentEvent === ev[0] ? " selected" : "") + ">" + escapeHtml(ev[1]) + "</option>";
-    }
+
+    events.forEach(([value, label]) => {
+      html += "<option value='" + value + "'" + (eventValue === value ? " selected" : "") + ">" + label + "</option>";
+    });
+
     html += "</select></td>";
-    html += "<td><button class='smallBtn dangerBtn' onclick='deleteAnnotationRow(" + idx + "); event.stopPropagation();'>delete</button></td>";
+
+    html += "<td><button class='annMiniDelete' onclick='event.stopPropagation(); deleteAnnotationRow(" + idx + ")'>×</button></td>";
     html += "</tr>";
   });
 
-  html += "</tbody></table></div>";
+  html += "</tbody></table>";
+  html += "</div>";
+
   host.innerHTML = html;
 }
 
@@ -1532,9 +1795,603 @@ window.addEventListener("keydown", function(e) {
 
 
 window.addEventListener("DOMContentLoaded", async function() {
+  setLoadedWorkspaceVisible(false);
+  setLoadedSummaryVisible(false);
   try {
     await loadList();
   } catch (err) {
     showFrontendError(err);
   }
 });
+
+
+/* Large bag browser + favourites. This is intentionally client-only. */
+const BAG_FAVOURITES_KEY = "timMarsCleanUiFavouriteBags";
+let showFavouritesOnly = false;
+
+function bagBrowserEscapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function loadFavouriteBags() {
+  try {
+    const raw = localStorage.getItem(BAG_FAVOURITES_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_err) {
+    return [];
+  }
+}
+
+function saveFavouriteBags(items) {
+  localStorage.setItem(BAG_FAVOURITES_KEY, JSON.stringify(Array.from(new Set(items)).sort()));
+}
+
+function isFavouriteBag(path) {
+  return loadFavouriteBags().includes(path);
+}
+
+function toggleFavouriteBag(path, event) {
+  if (event) {
+    event.stopPropagation();
+  }
+  const favs = loadFavouriteBags();
+  const idx = favs.indexOf(path);
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+  } else {
+    favs.push(path);
+  }
+  saveFavouriteBags(favs);
+  renderBagTree(currentBagFilter || "");
+  renderBagOptions(currentBagFilter || "");
+}
+
+function bagShortName(path) {
+  const parts = String(path || "").split("/");
+  return parts[parts.length - 1] || path;
+}
+
+function bagFolderName(path) {
+  const parts = String(path || "").split("/");
+  if (parts.length <= 2) return parts.slice(0, -1).join("/") || "root";
+
+  if (parts[0] === "bags" && parts[1] === "source") {
+    return parts.slice(0, Math.min(parts.length - 1, 5)).join("/");
+  }
+
+  if (parts[0] === "bags" && parts[1] === "replay") {
+    return parts.slice(0, Math.min(parts.length - 1, 3)).join("/");
+  }
+
+  if (parts[0] === "bags" && parts[1] === "annotation_inputs") {
+    return "bags/annotation_inputs";
+  }
+
+  if (parts[0] === "bags" && parts[1] === "reference") {
+    return parts.slice(0, Math.min(parts.length - 1, 3)).join("/");
+  }
+
+  return parts.slice(0, Math.min(parts.length - 1, 4)).join("/");
+}
+
+function bagTags(path) {
+  const low = String(path || "").toLowerCase();
+  const tags = [];
+
+  if (low.includes("annotation_inputs")) tags.push("annotation input");
+  if (low.includes("/reference/")) tags.push("reference");
+  if (low.includes("/replay/")) tags.push("replay");
+  if (low.includes("/source/curated/")) tags.push("curated source");
+  if (low.includes("/source/archive/")) tags.push("archive");
+  if (low.includes("bytetrack")) tags.push("ByteTrack");
+  if (low.includes("deepsort")) tags.push("DeepSORT");
+  if (low.includes("ocsort")) tags.push("OCSORT");
+  if (low.includes("seq01")) tags.push("seq01");
+  if (low.includes("seq02")) tags.push("seq02");
+  if (low.includes("seq03")) tags.push("seq03");
+  if (low.includes("seq04")) tags.push("seq04");
+  if (low.includes("crossing")) tags.push("crossing");
+  if (low.includes("occlusion")) tags.push("occlusion");
+  if (low.includes("reentry") || low.includes("re-entry")) tags.push("re-entry");
+  if (low.includes("tim_mars") || low.includes("memory")) tags.push("TIM-MARS");
+  if (low.includes("tim_off")) tags.push("raw");
+
+  return tags.slice(0, 7);
+}
+
+function bagMatchesFilter(path, filterText) {
+  const q = String(filterText || "").trim().toLowerCase();
+  if (!q) return true;
+  const hay = String(path || "").toLowerCase().replaceAll("_", " ");
+  return q.split(/\s+/).every(token => hay.includes(token));
+}
+
+function selectBagFromBrowser(path, shouldLoad) {
+  // Selection only. Loading is deliberately only done by the explicit
+  // "Load selected bag" button. Keep shouldLoad ignored for safety.
+  const bagEl = document.getElementById("bag");
+  if (bagEl) {
+    bagEl.value = path;
+  }
+  renderAnnotationsForBag(path);
+  showAnnotation();
+  renderBagTree(currentBagFilter || "");
+  setLoadedWorkspaceVisible(false);
+  resetLoadProgressPanel();
+}
+
+function showOnlyFavouriteBags() {
+  showFavouritesOnly = !showFavouritesOnly;
+  renderBagTree(currentBagFilter || "");
+}
+
+function renderBagTree(filterText = "") {
+  const host = document.getElementById("bagTree");
+  const stats = document.getElementById("bagBrowserStats");
+  if (!host) return;
+
+  const selected = document.getElementById("bag")?.value || "";
+  const favourites = loadFavouriteBags();
+
+  let bags = Array.isArray(allBags) ? allBags.slice() : [];
+  bags = bags.filter(path => bagMatchesFilter(path, filterText));
+  if (showFavouritesOnly) {
+    bags = bags.filter(path => favourites.includes(path));
+  }
+
+  bags.sort((a, b) => {
+    const af = favourites.includes(a) ? 0 : 1;
+    const bf = favourites.includes(b) ? 0 : 1;
+    if (af !== bf) return af - bf;
+    return a.localeCompare(b);
+  });
+
+  if (stats) {
+    const mode = showFavouritesOnly ? " favourite" : "";
+    stats.innerText = `${bags.length} / ${(allBags || []).length} ${mode} bags shown`;
+  }
+
+  if (!bags.length) {
+    host.innerHTML = "<div class='bagEmpty'>No matching bags. Try a broader search such as <code>seq03 bytetrack</code> or clear the filter.</div>";
+    return;
+  }
+
+  const grouped = new Map();
+  for (const bag of bags) {
+    const folder = bagFolderName(bag);
+    if (!grouped.has(folder)) grouped.set(folder, []);
+    grouped.get(folder).push(bag);
+  }
+
+  let html = "";
+  for (const [folder, groupBags] of grouped.entries()) {
+    const open = groupBags.some(path => path === selected || favourites.includes(path)) || grouped.size <= 4;
+    html += `<details class="bagFolder" ${open ? "open" : ""}>`;
+    html += `<summary>[folder] ${bagBrowserEscapeHtml(folder)} <span class="bagFolderCount">${groupBags.length}</span></summary>`;
+    html += `<div class="bagRows">`;
+
+    for (const path of groupBags) {
+      const fav = favourites.includes(path);
+      const selectedClass = path === selected ? " selected" : "";
+      const favClass = fav ? " favourite" : "";
+      const tags = bagTags(path).map(t => `<span class="bagTag">${bagBrowserEscapeHtml(t)}</span>`).join("");
+      html += `
+        <div class="bagRow${selectedClass}${favClass}" data-bag="${bagBrowserEscapeHtml(path)}" onclick="selectBagFromBrowser(this.dataset.bag, false)">
+          <button type="button" class="bagStar" title="Toggle favourite" onclick="toggleFavouriteBag(this.closest('.bagRow').dataset.bag, event)">${fav ? "★" : "☆"}</button>
+          <div class="bagMain">
+            <div class="bagName">${bagBrowserEscapeHtml(bagDisplayName(path))}</div>
+            <div class="bagPath">${bagBrowserEscapeHtml(path)}</div>
+            <div class="bagTags">${tags}</div>
+          </div>
+        </div>`;
+    }
+
+    html += "</div></details>";
+  }
+
+  host.innerHTML = html;
+}
+
+// Wrap the existing select renderer so the new visual browser stays in sync.
+if (typeof renderBagOptions === "function" && !renderBagOptions.__bagBrowserWrapped) {
+  const originalRenderBagOptions = renderBagOptions;
+  renderBagOptions = function(filterText = "") {
+    originalRenderBagOptions(filterText);
+    renderBagTree(filterText);
+  };
+  renderBagOptions.__bagBrowserWrapped = true;
+}
+
+
+/* Drill-down folder browser override. */
+let bagBrowserPathParts = [];
+
+
+function humanTitleFromToken(token) {
+  const raw = String(token || "");
+  const lower = raw.toLowerCase();
+
+  const known = {
+    "bags": "Bags",
+    "annotation_inputs": "Annotation inputs",
+    "reference": "Reference bags",
+    "tim_good": "TIM good reference",
+    "replay": "Replay outputs",
+    "source": "Source bags",
+    "archive": "Archive",
+    "curated": "Curated source",
+    "lab_old": "Old lab data",
+    "full_pipeline": "Full pipeline",
+    "image_raw": "Image raw",
+    "mavros": "MAVROS",
+    "official_field_2026-06-19": "Official field 2026-06-19",
+    "seq01_clean_four_person": "Seq01 clean four-person",
+    "seq02_target_reentry": "Seq02 target re-entry",
+    "seq03_crossing_ambiguity": "Seq03 crossing ambiguity",
+    "seq04_occlusion_no_exit": "Seq04 occlusion no-exit",
+  };
+
+  if (known[lower]) return known[lower];
+
+  return raw
+    .replace(/^paper_final_/, "paper final ")
+    .replace(/^2026-\d\d-\d\d__/, "")
+    .replaceAll("__", " · ")
+    .replaceAll("_", " ")
+    .replace(/\bseq(\d\d)\b/gi, "Seq$1")
+    .replace(/\bbytetrack\b/gi, "ByteTrack")
+    .replace(/\bdeepsort\b/gi, "DeepSORT")
+    .replace(/\bocsort\b/gi, "OCSORT")
+    .replace(/\btim mars\b/gi, "TIM-MARS")
+    .replace(/\btim off\b/gi, "raw")
+    .replace(/\byolov8s\b/gi, "YOLOv8s")
+    .trim();
+}
+
+function bagFolderDisplayName(folderName, pathParts) {
+  const full = (pathParts || []).concat([folderName]).join("/").toLowerCase();
+
+  if (full === "bags/annotation_inputs") return "Annotation inputs";
+  if (full === "bags/reference") return "Reference";
+  if (full === "bags/reference/tim_good") return "TIM good";
+  if (full === "bags/replay") return "Replay outputs";
+  if (full === "bags/source") return "Source";
+  if (full === "bags/source/archive") return "Archive";
+  if (full === "bags/source/curated") return "Curated source";
+
+  return humanTitleFromToken(folderName);
+}
+
+function bagDisplayName(path) {
+  const p = String(path || "");
+  const low = p.toLowerCase();
+
+  if (typeof bagLabel === "function") {
+    try {
+      const label = bagLabel(p);
+      if (label && label !== p) return label;
+    } catch (_err) {
+      // Fall back to local naming below.
+    }
+  }
+
+  const base = bagShortName(p);
+  const parts = [];
+
+  if (low.includes("seq01")) parts.push("Seq01 clean");
+  else if (low.includes("seq02")) parts.push("Seq02 target re-entry");
+  else if (low.includes("seq03")) parts.push("Seq03 crossing ambiguity");
+  else if (low.includes("seq04")) parts.push("Seq04 occlusion no-exit");
+  else if (low.includes("hard_reentry") || low.includes("hard-reentry")) parts.push("May hard re-entry");
+
+  if (low.includes("bytetrack")) parts.push("ByteTrack");
+  else if (low.includes("deepsort")) parts.push("DeepSORT");
+  else if (low.includes("ocsort")) parts.push("OCSORT");
+
+  if (low.includes("tim_mars") || low.includes("target_memory") || low.includes("memory")) parts.push("TIM-MARS");
+  else if (low.includes("tim_off") || low.includes("raw")) parts.push("raw");
+
+  if (low.includes("annotation_inputs")) parts.push("annotation input");
+  else if (low.includes("/source/curated/")) parts.push("curated source");
+  else if (low.includes("/source/archive/")) parts.push("archived source");
+  else if (low.includes("/replay/")) parts.push("replay");
+
+  if (parts.length) return parts.join(" · ");
+
+  return humanTitleFromToken(base);
+}
+
+function folderIconForName(name) {
+  const low = String(name || "").toLowerCase();
+  if (low.includes("annotation")) return "✎";
+  if (low.includes("reference") || low.includes("tim_good")) return "★";
+  if (low.includes("replay")) return "↻";
+  if (low.includes("source") || low.includes("curated")) return "◉";
+  if (low.includes("archive")) return "▣";
+  return "▸";
+}
+
+function bagPathParts(path) {
+  return String(path || "").split("/").filter(Boolean);
+}
+
+function bagHasPrefix(path, prefixParts) {
+  const parts = bagPathParts(path);
+  if (parts.length < prefixParts.length) return false;
+  for (let i = 0; i < prefixParts.length; i++) {
+    if (parts[i] !== prefixParts[i]) return false;
+  }
+  return true;
+}
+
+function countBagsUnderPrefix(prefixParts, candidates) {
+  return candidates.filter(path => bagHasPrefix(path, prefixParts)).length;
+}
+
+
+function setBagBrowserPathFromData(pathText) {
+  const parts = String(pathText || "").split("/").filter(Boolean);
+  setBagBrowserPath(parts);
+}
+
+function descendBagFolderFromData(folderName) {
+  descendBagFolder(String(folderName || ""));
+}
+
+function setBagBrowserPath(parts) {
+  bagBrowserPathParts = Array.isArray(parts) ? parts.slice() : [];
+  renderBagTree(currentBagFilter || "");
+}
+
+function descendBagFolder(name) {
+  bagBrowserPathParts = bagBrowserPathParts.concat([name]);
+  renderBagTree(currentBagFilter || "");
+}
+
+function goUpBagFolder() {
+  bagBrowserPathParts = bagBrowserPathParts.slice(0, -1);
+  renderBagTree(currentBagFilter || "");
+}
+
+function renderBagBreadcrumbs() {
+  let html = "<div class='bagBreadcrumbs'>";
+  html += "<button type='button' class='bagCrumb' data-path='' onclick='setBagBrowserPathFromData(this.dataset.path)'>root</button>";
+
+  let acc = [];
+  for (const part of bagBrowserPathParts) {
+    acc.push(part);
+    const pathText = acc.join("/");
+    html += "<span class='bagCrumbSep'>/</span>";
+    html += `<button type="button" class="bagCrumb" data-path="${bagBrowserEscapeHtml(pathText)}" onclick="setBagBrowserPathFromData(this.dataset.path)">${bagBrowserEscapeHtml(part)}</button>`;
+  }
+
+  html += "</div>";
+  return html;
+}
+
+function renderBagTree(filterText = "") {
+  const host = document.getElementById("bagTree");
+  const stats = document.getElementById("bagBrowserStats");
+  if (!host) return;
+
+  const selected = document.getElementById("bag")?.value || "";
+  const favourites = loadFavouriteBags();
+
+  let candidates = Array.isArray(allBags) ? allBags.slice() : [];
+  candidates = candidates.filter(path => bagMatchesFilter(path, filterText));
+
+  if (showFavouritesOnly) {
+    candidates = candidates.filter(path => favourites.includes(path));
+  }
+
+  // If the current folder no longer has candidates after filtering, go back upward.
+  while (bagBrowserPathParts.length && !candidates.some(path => bagHasPrefix(path, bagBrowserPathParts))) {
+    bagBrowserPathParts = bagBrowserPathParts.slice(0, -1);
+  }
+
+  const inFolder = candidates.filter(path => bagHasPrefix(path, bagBrowserPathParts));
+  const folderMap = new Map();
+  const leafBags = [];
+
+  for (const path of inFolder) {
+    const parts = bagPathParts(path);
+    const depth = bagBrowserPathParts.length;
+
+    if (parts.length <= depth) continue;
+
+    if (parts.length === depth + 1) {
+      leafBags.push(path);
+    } else {
+      const folderName = parts[depth];
+      if (!folderMap.has(folderName)) {
+        folderMap.set(folderName, []);
+      }
+      folderMap.get(folderName).push(path);
+    }
+  }
+
+  const folderEntries = Array.from(folderMap.entries()).sort((a, b) => {
+    // Keep favourite-containing folders first.
+    const af = a[1].some(path => favourites.includes(path)) ? 0 : 1;
+    const bf = b[1].some(path => favourites.includes(path)) ? 0 : 1;
+    if (af !== bf) return af - bf;
+    return a[0].localeCompare(b[0]);
+  });
+
+  leafBags.sort((a, b) => {
+    const af = favourites.includes(a) ? 0 : 1;
+    const bf = favourites.includes(b) ? 0 : 1;
+    if (af !== bf) return af - bf;
+    return a.localeCompare(b);
+  });
+
+  if (stats) {
+    const pathText = bagBrowserPathParts.length ? bagBrowserPathParts.join("/") : "root";
+    const favText = showFavouritesOnly ? " favourite" : "";
+    stats.innerText = `${inFolder.length} / ${candidates.length} ${favText} bags in ${pathText}`;
+  }
+
+  let html = renderBagBreadcrumbs();
+
+  if (bagBrowserPathParts.length) {
+    html += "<button type='button' class='bagUpButton' onclick='goUpBagFolder()'>← up one folder</button>";
+  }
+
+  if (!folderEntries.length && !leafBags.length) {
+    html += "<div class='bagEmpty'>No bags here. Go up one folder or clear the filter.</div>";
+    host.innerHTML = html;
+    return;
+  }
+
+  html += "<div class='bagBrowserGrid'>";
+
+  for (const [folderName, paths] of folderEntries) {
+    const folderPrefix = bagBrowserPathParts.concat([folderName]);
+    const favCount = paths.filter(path => favourites.includes(path)).length;
+    const count = countBagsUnderPrefix(folderPrefix, candidates);
+    html += `
+      <div class="bagFolderTile" data-folder="${bagBrowserEscapeHtml(folderName)}" onclick="descendBagFolderFromData(this.dataset.folder)">
+        <div>
+          <div class="bagFolderName">${bagBrowserEscapeHtml(folderIconForName(folderName))} ${bagBrowserEscapeHtml(bagFolderDisplayName(folderName, bagBrowserPathParts))}</div>
+          <div class="bagFolderMeta">${count} bag${count === 1 ? "" : "s"}${favCount ? " · " + favCount + " favourite" : ""}</div>
+        </div>
+        <div class="bagFolderMeta">open →</div>
+      </div>`;
+  }
+
+  for (const path of leafBags) {
+    const fav = favourites.includes(path);
+    const selectedClass = path === selected ? " selected" : "";
+    const favClass = fav ? " favourite" : "";
+    const tags = bagTags(path).map(t => `<span class="bagTag">${bagBrowserEscapeHtml(t)}</span>`).join("");
+
+    html += `
+      <div class="bagLeafTile${selectedClass}${favClass}" data-bag="${bagBrowserEscapeHtml(path)}" onclick="selectBagFromBrowser(this.dataset.bag, false)">
+        <button type="button" class="bagStar" title="Toggle favourite" onclick="toggleFavouriteBag(this.closest('.bagLeafTile').dataset.bag, event)">${fav ? "★" : "☆"}</button>
+        <div class="bagMain">
+          <div class="bagBrowserTopLine">
+            <div class="bagName">${bagBrowserEscapeHtml(bagDisplayName(path))}</div>
+          </div>
+          <div class="bagPath">${bagBrowserEscapeHtml(path)}</div>
+          <div class="bagTags">${tags}</div>
+        </div>
+      </div>`;
+  }
+
+  html += "</div>";
+  host.innerHTML = html;
+}
+
+
+
+function shouldOpenAnnotationWorkspace() {
+  const checkedRadio = document.querySelector('input[name="workspaceMode"]:checked');
+  if (checkedRadio) {
+    const legacyCheckbox = document.getElementById("annotationEditMode");
+    const useAnnotation = checkedRadio.value === "annotation";
+    if (legacyCheckbox) legacyCheckbox.checked = useAnnotation;
+    return useAnnotation;
+  }
+
+  if (typeof annotationEditModeEnabled === "function") {
+    return annotationEditModeEnabled();
+  }
+
+  const el = document.getElementById("annotationEditMode");
+  return !!(el && el.checked);
+}
+
+function annotationFrameUrl(idx) {
+  return "/frame.jpg" +
+    "?idx=" + encodeURIComponent(String(idx)) +
+    "&clean=0" +
+    "&draw_detections=0" +
+    "&draw_tracks=1" +
+    "&draw_raw=0" +
+    "&draw_tim=0" +
+    "&only_ids=" +
+    "&ts=" + encodeURIComponent(String(Date.now()));
+}
+
+async function updateAnnotationFrame() {
+  if (!document.body.classList.contains("annotationWorkspaceMode")) return;
+
+  const imgEl = document.getElementById("annotationImage");
+  if (!imgEl) return;
+
+  if (!loadedFrames) {
+    setAnnotationFrameMessage("No frames loaded.");
+    return;
+  }
+
+  const idx = currentFrameIndex();
+
+  const meta = document.getElementById("annotationFrameMeta");
+  if (meta) {
+    meta.innerText =
+      "frame " + idx + " / " + Math.max(0, loadedFrames - 1) +
+      " | annotation t=" + currentTimeS().toFixed(3) + " s";
+  }
+
+  const url = annotationFrameUrl(idx);
+  setAnnotationFrameMessage("");
+
+  imgEl.onerror = function() {
+    setAnnotationFrameMessage("Failed to load tracker-ID frame: " + url);
+  };
+
+  imgEl.onload = function() {
+    setAnnotationFrameMessage("");
+  };
+
+  imgEl.src = url;
+}
+
+
+
+function syncWorkspaceModeInputs() {
+  const checkedRadio = document.querySelector('input[name="workspaceMode"]:checked');
+  const legacyCheckbox = document.getElementById("annotationEditMode");
+  const useAnnotation = checkedRadio ? checkedRadio.value === "annotation" : true;
+  if (legacyCheckbox) legacyCheckbox.checked = useAnnotation;
+  return useAnnotation;
+}
+
+function setupWorkspaceModeInputs() {
+  document.querySelectorAll('input[name="workspaceMode"]').forEach((input) => {
+    input.addEventListener("change", syncWorkspaceModeInputs);
+  });
+  syncWorkspaceModeInputs();
+}
+
+window.addEventListener("DOMContentLoaded", setupWorkspaceModeInputs);
+
+
+
+function drawAnnotationCanvasMessage(text) {
+  const canvas = document.getElementById("annotationCanvas");
+  if (!canvas) return;
+
+  if (!canvas.width) canvas.width = 1280;
+  if (!canvas.height) canvas.height = 720;
+
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#050505";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#dddddd";
+  ctx.font = "24px sans-serif";
+  ctx.fillText(text, 28, 48);
+}
+
+
+
+function setAnnotationFrameMessage(text) {
+  const help = document.getElementById("annotationFrameStatus");
+  if (help) help.innerText = text || "";
+}

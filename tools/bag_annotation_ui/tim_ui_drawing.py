@@ -149,3 +149,73 @@ def draw_dashed_model_box(img, box, colour, thickness=3):
         colour,
         thickness=thickness,
     )
+
+
+
+def draw_corner_box(
+    img,
+    box,
+    colour,
+    thickness=2,
+    corner_ratio=0.28,
+    shadow=True,
+):
+    """Draw a clean corner-bracket box.
+
+    This is intended for the interactive/paper-style viewer overlay. It is less
+    visually noisy than a full rectangle or dashed debug box.
+    """
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = box
+    x1 = max(0, min(w - 1, int(x1)))
+    y1 = max(0, min(h - 1, int(y1)))
+    x2 = max(0, min(w - 1, int(x2)))
+    y2 = max(0, min(h - 1, int(y2)))
+
+    if x2 <= x1 or y2 <= y1:
+        return
+
+    bw = x2 - x1
+    bh = y2 - y1
+    corner = max(8, int(round(min(bw, bh) * corner_ratio)))
+    corner = min(corner, max(8, bw // 2), max(8, bh // 2))
+
+    def draw(col, th):
+        # top-left
+        cv2.line(img, (x1, y1), (x1 + corner, y1), col, th, cv2.LINE_AA)
+        cv2.line(img, (x1, y1), (x1, y1 + corner), col, th, cv2.LINE_AA)
+
+        # top-right
+        cv2.line(img, (x2, y1), (x2 - corner, y1), col, th, cv2.LINE_AA)
+        cv2.line(img, (x2, y1), (x2, y1 + corner), col, th, cv2.LINE_AA)
+
+        # bottom-right
+        cv2.line(img, (x2, y2), (x2 - corner, y2), col, th, cv2.LINE_AA)
+        cv2.line(img, (x2, y2), (x2, y2 - corner), col, th, cv2.LINE_AA)
+
+        # bottom-left
+        cv2.line(img, (x1, y2), (x1 + corner, y2), col, th, cv2.LINE_AA)
+        cv2.line(img, (x1, y2), (x1, y2 - corner), col, th, cv2.LINE_AA)
+
+    if shadow:
+        draw((10, 10, 10), thickness + 3)
+
+    draw(colour, thickness)
+
+
+def draw_model_corner_box(
+    img,
+    box,
+    colour,
+    thickness=2,
+    corner_ratio=0.28,
+    shadow=True,
+):
+    draw_corner_box(
+        img,
+        model_box_to_image_box(box, img.shape),
+        colour,
+        thickness=thickness,
+        corner_ratio=corner_ratio,
+        shadow=shadow,
+    )

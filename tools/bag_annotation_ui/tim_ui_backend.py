@@ -15,6 +15,8 @@ import os
 import subprocess
 import threading
 from pathlib import Path
+
+import cv2
 from tim_ui_discovery import discover_annotations, discover_bags
 from tim_ui_renderers import (
     CACHE,
@@ -243,14 +245,21 @@ def api_load(payload: dict[str, str]):
         CACHE.update(load_bag_cache(bag, ann))
 
         images = CACHE.get("images", [])
+
+        frame_times_s = []
         duration_s = 0.0
-        if len(images) >= 2:
-            dt = float(images[-1][0] - images[0][0])
-            duration_s = dt / 1e9 if dt > 1e6 else dt
+
+        if images:
+            first_t = images[0][0]
+            frame_times_s = [float((t - first_t) / 1e9) for t, _img in images]
+
+            if len(images) >= 2:
+                duration_s = float(frame_times_s[-1])
 
         return {
             "ok": True,
             "frames": len(images),
+            "frame_times_s": frame_times_s,
             "duration_s": duration_s,
             "bag": CACHE.get("bag", bag),
             "ann": CACHE.get("ann", ann or ""),
@@ -265,6 +274,23 @@ def api_load(payload: dict[str, str]):
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+@app.get("/api/cache_state")
+def api_cache_state():
+    """Return current in-memory UI cache state.
+
+    This lets the browser restore the loaded viewer after a page refresh without
+    forcing a new /api/load call, as long as the FastAPI process is still alive.
+    """
+    images = CACHE.get("images", [])
+    return {
+        "ok": bool(images),
+        "frames": len(images),
+        "duration": CACHE.get("duration", 0.0),
+        "bag": str(CACHE.get("bag", "")),
+        "annotation": str(CACHE.get("annotation", "")),
+        "cache_token": CACHE.get("cache_token", 0),
+        "stats": CACHE.get("stats", {}),
+    }
 
 @app.get("/frame.jpg")
 def frame_jpg(
@@ -280,7 +306,7 @@ def frame_jpg(
     paper_overlay: int = 0,
 ):
     from fastapi import Response
-    
+
     if bool(clean) and bool(paper_overlay):
         img = render_frame_paper_overlay(idx=idx, draw_reference=bool(draw_reference))
     elif bool(clean) and bool(comparison):

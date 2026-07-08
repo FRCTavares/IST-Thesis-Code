@@ -15,7 +15,7 @@ import cv2
 import numpy as np
 
 from tim_ui_bag_cache import nearest_by_time, ref_id_at
-from tim_ui_drawing import draw_dashed_model_box, draw_model_box
+from tim_ui_drawing import draw_dashed_model_box, draw_model_box, draw_model_corner_box
 
 
 CACHE: dict[str, Any] = {}
@@ -82,25 +82,36 @@ def render_frame(idx: int, draw_detections: bool, draw_tracks: bool, draw_raw: b
             4,
         )
 
-    h, w = frame.shape[:2]
-    overlay = frame.copy()
-    cv2.rectangle(overlay, (0, 0), (w, 44), (0, 0, 0), -1)
-    frame[:] = cv2.addWeighted(overlay, 0.65, frame, 0.35, 0)
-
-    header = f"frame {idx}/{len(images)-1}    t={t_rel:.2f}s"
-    if ref_id is not None:
-        header += f"    REF id={ref_id}"
-
-    cv2.putText(
-        frame,
-        header,
-        (12, 30),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.78,
-        (245, 245, 245),
-        2,
-        cv2.LINE_AA,
+    # The annotation workspace uses this renderer as a tracker-ID-only view.
+    # In that mode, avoid the old debug header; the browser already shows frame/time.
+    tracker_only_view = (
+        draw_tracks
+        and not draw_detections
+        and not draw_raw
+        and not draw_tim
+        and not only_ids.strip()
     )
+
+    if not tracker_only_view:
+        h, w = frame.shape[:2]
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (0, 0), (w, 44), (0, 0, 0), -1)
+        frame[:] = cv2.addWeighted(overlay, 0.65, frame, 0.35, 0)
+
+        header = f"frame {idx}/{len(images)-1}    t={t_rel:.2f}s"
+        if ref_id is not None:
+            header += f"    REF id={ref_id}"
+
+        cv2.putText(
+            frame,
+            header,
+            (12, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.78,
+            (245, 245, 245),
+            2,
+            cv2.LINE_AA,
+        )
 
     return frame
 
@@ -122,20 +133,57 @@ def _clean_frame_base(idx: int):
 
 
 def _draw_clean_output(frame, tracks, target, ref_id, draw_reference: bool):
-    """No text. Dashed white reference; green correct output; red wrong output."""
+    """Professional no-text viewer overlay.
+
+    Visual rules:
+      - accepted/correct selected target: clean green corner bracket;
+      - wrong selected target: clean red corner bracket;
+      - manual/reference target: subtle white corner bracket, only when useful.
+
+    This avoids thick debug rectangles and dashed boxes in the interactive video.
+    """
+    ref_box = None
     if draw_reference and ref_id is not None:
         for tid, box in tracks:
             if int(tid) == int(ref_id):
-                draw_dashed_model_box(frame, box, (245, 245, 245), thickness=3)
+                ref_box = box
                 break
 
-    if target:
-        if ref_id is not None and int(target.get("id", -1)) == int(ref_id):
-            colour = (0, 210, 0)      # correct: green
-        else:
-            colour = (0, 0, 230)      # wrong: red
+    target_is_correct = (
+        target is not None
+        and ref_id is not None
+        and int(target.get("id", -1)) == int(ref_id)
+    )
 
-        draw_model_box(frame, target["box"], "", colour, 4)
+    # If the selected output is wrong or missing, show the reference as a quiet
+    # white bracket. If the output is already correct, avoid double-drawing over
+    # the same person; the green target bracket is enough.
+    if ref_box is not None and not target_is_correct:
+        draw_model_corner_box(
+            frame,
+            ref_box,
+            (245, 245, 245),
+            thickness=2,
+            corner_ratio=0.32,
+            shadow=True,
+        )
+
+    if target:
+        if target_is_correct:
+            colour = (60, 220, 90)      # correct: softer green
+            thickness = 2
+        else:
+            colour = (40, 40, 235)      # wrong: red
+            thickness = 3
+
+        draw_model_corner_box(
+            frame,
+            target["box"],
+            colour,
+            thickness=thickness,
+            corner_ratio=0.30,
+            shadow=True,
+        )
 
     return frame
 

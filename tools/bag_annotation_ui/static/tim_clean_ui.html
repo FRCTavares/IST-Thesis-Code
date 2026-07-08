@@ -4,34 +4,207 @@
 <head>
   <meta charset="utf-8">
   <title>TIM-MARS Clean UI</title>
-  <link rel="stylesheet" href="/static/tim_clean_ui.css">
+  <link rel="stylesheet" href="/static/tim_clean_ui.css?v=annotation_workspace_11">
 
 </head>
 <body>
   <h2>TIM-MARS Clean UI</h2>
 
   <div class="panel">
-    <h3>1. Load bag</h3>
-    filter <input id="filter" placeholder="hard, seq03, bytetrack..." oninput="renderBags()">
-    <button onclick="loadList()">Refresh</button>
-    <br>
+    <h3>Load bag</h3>
+    <input id="filter" type="hidden" value="">
     <select id="bag" onchange="renderAnnotationsForBag(this.value); showAnnotation();"></select>
     <div id="selectedPath"></div>
 
-    <div class="hint">annotation, auto-selected from bag + tracker</div>
-    <select id="annotation" onchange="showAnnotation()"></select>
-    <div id="annotationPath" class="hint"></div>
+    <div class="annotationPickerCard">
+      <div class="annotationPickerHeader">
+        <div>
+          <div class="annotationPickerTitle">Annotation</div>
+          <div class="annotationPickerHint">Auto-selected from bag and tracker, or choose manually.</div>
+        </div>
+      </div>
+      <select id="annotation" onchange="showAnnotation()"></select>
+    <div class="workspaceModePicker">
+      <div class="workspaceModeTitle">Open as</div>
+      <label>
+        <input type="radio" name="workspaceMode" value="viewer">
+        Evaluation viewer
+      </label>
+      <label>
+        <input type="radio" name="workspaceMode" value="annotation" checked>
+        Annotation editor
+      </label>
+      <input id="annotationEditMode" type="checkbox" checked hidden>
+    </div>
+    <div id="annotationPath" class="annotationPath" hidden aria-hidden="true"></div>
+    </div>
+
+    <div id="bagBrowser" class="bagBrowser">
+      <div class="bagBrowserHeader">
+        <div>
+          <div class="bagBrowserTitle">Bag browser</div>
+          <div class="hint">Select a bag by folder structure.</div>
+        </div>
+        <div class="bagBrowserActions">
+          <button type="button" onclick="setPaperCandidateFilter()">Paper candidates</button>
+          <button type="button" onclick="showOnlyFavouriteBags()">Favourites</button>
+        </div>
+      </div>
+      <div id="bagBrowserStats" class="bagBrowserStats">loading bags...</div>
+      <div id="bagTree" class="bagTree"></div>
+    </div>
 
     <br>
-    <button onclick="loadBag()">Load selected bag</button>
-    <button onclick="evaluateBag()">Evaluate RAW vs TIM</button>
-    <span id="status"></span>
-    <span id="evalStatus"></span>
+    <div id="loadProgressPanel" class="loadProgressPanel" hidden>
+      <div class="loadProgressTop">
+        <span id="loadPreloadStatus">not loaded</span>
+        <span id="loadPreloadPct">0%</span>
+      </div>
+      <div class="loadProgressTrack"><div id="loadPreloadBar"></div></div>
+    </div>
+    <div class="loadActionsCard">
+      <button class="primaryLoadButton" onclick="loadBag()">Load selected bag</button>
+      <button class="secondaryLoadButton" onclick="evaluateBag()">Evaluate RAW vs TIM</button>
+      <div class="loadStatusLine">
+        <span id="status"></span>
+        <span id="evalStatus"></span>
+      </div>
+    </div>
     <div id="frontendError"></div>
   </div>
 
+  <div id="loadedSummaryCard" class="loadedSummaryCard" hidden>
+    <div>
+      <div class="loadedSummaryKicker">Loaded bag</div>
+      <div id="loadedSummaryTitle" class="loadedSummaryTitle">No bag loaded.</div>
+      <div id="loadedSummaryMeta" class="loadedSummaryMeta"></div>
+    </div>
+    <button type="button" onclick="changeLoadedBag()">Change bag / annotation</button>
+  </div>
+
+  
+  <div id="playbackDock" hidden>
+    <div id="controls" class="viewerControlBar">
+      <div class="playbackCluster">
+        <button id="playBtn" class="playButton" onclick="togglePlay()">▶</button>
+
+        <label class="playbackFpsControl">fps
+          <select id="playbackFps" onchange="updateFrame()">
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="14" selected>14</option>
+            <option value="16">16</option>
+            <option value="20">20</option>
+            <option value="25">25</option>
+          </select>
+        </label>
+
+        <span id="time" class="playbackTime">frame 0 / 0 | playback t=0:00 / 0:00 | 14.0 fps</span>
+      </div>
+
+      <input id="progress" class="timelineSlider" type="range" min="0" max="0" value="0" step="1" oninput="seek()" disabled>
+
+      <div class="paperFrameCluster">
+        <button onclick="addCurrentFrameToPaperList()" title="Add current frame to the paper contact-sheet frame list">+ paper frame</button>
+        <button onclick="clearPaperFrameList()" title="Clear the paper contact-sheet frame list">clear</button>
+        <span id="paperFrameDraft" class="paperFrameDraft">frames: none</span>
+      </div>
+
+      <span id="preloadStatus" class="viewerPreloadStatus">not loaded</span>
+    </div>
+  </div>
+
+
+  <div id="annotationWorkspace" hidden>
+    <div class="annotationSplitLayout">
+      <section class="annotationVideoPanel">
+        <div class="annotationPanelHeader">
+          <div>
+            <div class="annotationPanelKicker">Annotation video</div>
+            <h3>Tracker IDs</h3>
+          </div>
+          <div id="annotationFrameMeta" class="annotationFrameMeta">frame 0</div>
+        </div>
+
+        <div class="annotationVideoCard">
+          <img id="annotationImage" class="annotationImage" alt="Tracker-ID annotation frame" onclick="togglePlay()">
+        </div>
+
+        <div id="annotationFrameStatus" class="annotationFrameStatus"></div>
+        <div class="annotationHelp">
+          Use this view to identify the correct track ID. It shows tracker boxes only, not RAW or TIM selected-target output.
+        </div>
+      </section>
+
+      <section class="annotationTablePanel">
+        <div class="annotationPanelHeader">
+          <div>
+            <div class="annotationPanelKicker">Annotation CSV</div>
+            <h3>Intervals</h3>
+          </div>
+          <button type="button" onclick="annLoadSelected()">Load selected CSV</button>
+        </div>
+
+        <div class="annotationQuickEditor">
+          <label>
+            output CSV
+            <input id="annCsv" value="docs/data/annotations/ui_created/new_annotation.csv">
+          </label>
+
+          <div class="annotationTimeGrid">
+            <label>
+              start s
+              <input id="annStart" type="number" step="0.001" value="0.000">
+            </label>
+            <button type="button" onclick="annSetStartNow()">set start = frame</button>
+
+            <label>
+              end s
+              <input id="annEnd" type="number" step="0.001" value="1.000">
+            </label>
+            <button type="button" onclick="annSetEndNow()">set end = frame</button>
+          </div>
+
+          <div class="annotationMetaGrid">
+            <label>
+              target ID
+              <input id="annTargetId" type="number" step="1" value="1">
+            </label>
+
+            <label>
+              event
+              <select id="annEvent">
+                <option value="clean_visible">Clean visible</option>
+                <option value="target_absent">Target absent</option>
+                <option value="reentry">Re-entry</option>
+                <option value="occlusion_ambiguity">Occlusion / ambiguity</option>
+                <option value="id_switch_fragmentation">ID switch / fragmentation</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+          </div>
+
+          <input id="annLabel" type="hidden" value="CORRECT_TARGET">
+          <input id="annNotes" type="hidden" value="created in TIM clean UI">
+
+          <div class="annotationActionRow">
+            <button type="button" onclick="annNewInterval()">+ New interval</button>
+            <button type="button" onclick="annAddInterval()">Add / update</button>
+            <button type="button" onclick="annDeleteActive()">Delete active</button>
+            <button type="button" onclick="annSave()">Save CSV</button>
+          </div>
+
+          <div class="hint" id="annStatus">No annotation rows loaded.</div>
+        </div>
+
+        <div id="annRows"></div>
+      </section>
+    </div>
+  </div>
+
+<div id="loadedWorkspace" hidden>
   <div class="panel">
-    <h3>2. Viewer</h3>
+    <h3>Viewer</h3>
     <div id="meta">Load a bag.</div>
 
     <div id="compareGrid">
@@ -45,20 +218,9 @@
       </div>
     </div>
 
-    <div id="controls">
-      <button id="playBtn" onclick="togglePlay()">▶</button>
-      <span id="time">0:00 / 0:00</span>
-      <button onclick="addCurrentFrameToPaperList()" title="Append current frame to paper contact-sheet frame list">+ paper frame</button>
-      <button onclick="clearPaperFrameList()" title="Clear paper contact-sheet frame list">clear frames</button>
-      <span id="paperFrameDraft" style="font-family:monospace;color:#91f5aa;">frames: none</span>
-      <input id="progress" type="range" min="0" max="0" value="0" oninput="seek()" disabled>
-      <span id="preloadStatus">not loaded</span>
-      <div id="preloadWrap"><div id="preloadBar"></div></div>
-      <span id="preloadPct">0%</span>
-    </div>
+    <div class="viewerControlsPlaceholder"></div>
 
-
-    <div class="bagFinderCard" style="max-width:1320px;margin:10px 0;padding:12px;border:1px solid #333;border-radius:10px;background:#171717;">
+    <div class="bagFinderCard viewerRedundantPanel viewerBagFinderPanel" hidden>
       <h3 style="margin:0 0 8px 0;">Bag finder</h3>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <input
@@ -78,8 +240,8 @@
       </div>
     </div>
 
-    <details open>
-      <summary>Overlay options</summary>
+    <details class="viewerRedundantPanel viewerOverlayOptionsPanel" hidden>
+    <summary>Overlay options</summary>
       mode
       <select id="viewMode" onchange="reloadViewCache()" style="width:220px">
         <option value="compare">RAW vs TIM-MARS</option>
@@ -91,70 +253,7 @@
   </div>
 
   <div class="panel">
-    <details open>
-      <summary>3. Visual annotation tools</summary>
-      
-<div class="annotationBox">
-  <h3>Annotation editor</h3>
-  <p class="hint">
-    Edit evaluator-compatible target intervals. Use the table below for row-level edits.
-  </p>
-
-  <div class="annEditorCard">
-    <div class="annEditorGrid">
-      <label>
-        output CSV
-        <input id="annCsv" value="docs/data/annotations/ui_created/new_annotation.csv">
-      </label>
-
-      <label>
-        start s
-        <input id="annStart" type="number" step="0.001" value="0.000">
-      </label>
-
-      <label>
-        end s
-        <input id="annEnd" type="number" step="0.001" value="1.000">
-      </label>
-
-      <label>
-        target ID
-        <input id="annTargetId" type="number" step="1" value="1">
-      </label>
-
-      <label>
-        event
-        <select id="annEvent">
-          <option value="clean_visible">Clean visible</option>
-          <option value="target_absent">Target absent</option>
-          <option value="reentry">Re-entry</option>
-          <option value="occlusion_ambiguity">Occlusion / ambiguity</option>
-          <option value="id_switch_fragmentation">ID switch / fragmentation</option>
-          <option value="other">Other</option>
-        </select>
-      </label>
-    </div>
-
-    <input id="annLabel" type="hidden" value="CORRECT_TARGET">
-    <input id="annNotes" type="hidden" value="created in TIM clean UI">
-
-    <div class="annEditorActions">
-      <button onclick="annNewInterval()">+ New interval</button>
-      <button onclick="annAddInterval()">Add / update interval</button>
-      <button onclick="annDeleteActive()">Delete active</button>
-      <button onclick="annLoadSelected()">Load selected CSV</button>
-      <button onclick="annSave()">Save CSV</button>
-    </div>
-  </div>
-
-  <div class="hint" id="annStatus">No annotation rows loaded.</div>
-  <div id="annRows"></div>
 </div>
-
-<div id="evalTable"></div>
-      <div id="evalLog"></div>
-    </details>
-  </div>
 
   <div class="panel">
     
@@ -214,28 +313,16 @@
       <pre id="videoExportLog"></pre>
     </details>
 
-<details>
-      <summary>4. Run TIM-MARS replay</summary>
-      target <input id="targetId" value="1" style="width:70px">
-      tracker
-      <select id="tracker" style="width:130px">
-        <option value="bytetrack">bytetrack</option>
-        <option value="ocsort">ocsort</option>
-        <option value="deepsort">deepsort</option>
-      </select>
-      preset
-      <select id="timPreset" style="width:220px">
-        <option value="legacy">legacy</option>
-        <option value="conservative_hardneg">conservative_hardneg</option>
-      </select>
-      rate <input id="rate" value="1.0" style="width:70px">
-      <button onclick="runTim()">Run TIM-MARS on selected bag</button>
-      <button onclick="loadLast()">Load last output bag</button>
-      <div id="log"></div>
-    </details>
+
+
   </div>
 
-<script src="/static/tim_clean_ui.js"></script>
+<script>
+window.TIM_CLEAN_UI_BAGS = __BAGS_JSON__;
+window.TIM_CLEAN_UI_ANNOTATIONS = __ANNOTATIONS_JSON__;
+</script>
+<script src="/static/tim_clean_ui.js?v=annotation_workspace_11"></script>
 
+  </div>
 </body>
 </html>
