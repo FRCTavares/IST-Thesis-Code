@@ -10,6 +10,7 @@ Run this file directly when opening the local annotation UI.
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 import argparse
 import json
 from pathlib import Path
@@ -26,15 +27,16 @@ import uvicorn
 # Import the backend API routes used by the clean annotation UI.
 import tim_ui_backend as backend
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+HTML_PATH = STATIC_DIR / "tim_clean_ui.html"
+
 app = FastAPI(title="TIM-MARS Clean UI")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 for route in backend.app.routes:
     if getattr(route, "path", "").startswith("/api/") or getattr(route, "path", "") == "/frame.jpg":
         app.router.routes.append(route)
-
-
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 @app.post("/api/evaluate")
