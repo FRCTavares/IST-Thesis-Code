@@ -9,6 +9,7 @@ from typing import Any
 import numpy as np
 
 
+@dataclass
 class PreparedFrame:
     seq: int
     frame_id: int
@@ -31,6 +32,7 @@ class PreparedFrame:
     infer_img: np.ndarray
 
 
+@dataclass
 class RawFrame:
     seq: int
     frame_id: int

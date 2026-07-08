@@ -15,6 +15,8 @@ import time
 from collections import deque
 from typing import Any
 
+import numpy as np
+
 import rclpy
 from rcl_interfaces.msg import SetParametersResult
 from rclpy.executors import ExternalShutdownException
