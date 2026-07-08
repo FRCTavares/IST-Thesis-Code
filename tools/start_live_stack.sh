@@ -453,11 +453,11 @@ fi
 
 # Keep ROS runtime on host Python, but expose required packages for integrated Hailo mode:
 # - system dist-packages for gi/Gst
-# - project .venv site-packages for hailort/tappas Python bindings
+# - project thesis_env site-packages for hailort/tappas Python bindings
 PERCEPTION_PYTHONPATH="/usr/lib/python3/dist-packages"
 PERCEPTION_VENV_SITE_PACKAGES=""
-if [[ -d "$THESIS_ROOT/.venv/lib" ]]; then
-    PERCEPTION_VENV_SITE_PACKAGES="$(find "$THESIS_ROOT/.venv/lib" -maxdepth 2 -type d -name site-packages | head -n 1 || true)"
+if [[ -d "$THESIS_ROOT/thesis_env/lib" ]]; then
+    PERCEPTION_VENV_SITE_PACKAGES="$(find "$THESIS_ROOT/thesis_env/lib" -maxdepth 2 -type d -name site-packages | head -n 1 || true)"
     if [[ -n "${PERCEPTION_VENV_SITE_PACKAGES:-}" ]]; then
         PERCEPTION_PYTHONPATH="${PERCEPTION_VENV_SITE_PACKAGES}:$PERCEPTION_PYTHONPATH"
     fi
@@ -569,9 +569,9 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     TRACKER_PYTHONPATH="${PYTHONPATH:-}"
     TRACKER_VENV_SITE_PACKAGES=""
 
-    if [[ -d "$THESIS_ROOT/.venv/lib" ]]; then
+    if [[ -d "$THESIS_ROOT/thesis_env/lib" ]]; then
         TRACKER_VENV_SITE_PACKAGES="$(
-            find "$THESIS_ROOT/.venv/lib" -maxdepth 2 -type d -name site-packages | head -n 1 || true
+            find "$THESIS_ROOT/thesis_env/lib" -maxdepth 2 -type d -name site-packages | head -n 1 || true
         )"
 
         if [[ -n "${TRACKER_VENV_SITE_PACKAGES:-}" ]]; then

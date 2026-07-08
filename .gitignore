@@ -201,3 +201,6 @@ user-interface/dist/
 # Generated local reports
 /reports/*
 !/reports/README.md
+
+thesis_env/
+reports/local_env_snapshots/

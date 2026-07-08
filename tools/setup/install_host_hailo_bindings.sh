@@ -5,7 +5,7 @@ set -euo pipefail
 # matching wheel exists for that virtualenv Python ABI.
 
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-VENV_PATH="${VENV_PATH:-$THESIS_ROOT/.venv}"
+VENV_PATH="${VENV_PATH:-$THESIS_ROOT/thesis_env}"
 BASE_URL="${BASE_URL:-https://dev-public.hailo.ai/2025_07}"
 HAILORT_VERSION="${HAILORT_VERSION:-4.23.0}"
 TAPPAS_CORE_VERSION="${TAPPAS_CORE_VERSION:-5.1.0}"
@@ -24,7 +24,7 @@ print_usage() {
 Usage: install_host_hailo_bindings.sh [options]
 
 Options:
-  --venv-path <path>             Target virtualenv (default: $THESIS_ROOT/.venv)
+  --venv-path <path>             Target virtualenv (default: $THESIS_ROOT/thesis_env)
     --base-url <url>               Hailo artifacts base URL (default: https://dev-public.hailo.ai/2025_07)
     --hailort-version <ver>        HailoRT wheel version (default: 4.23.0)
     --tappas-core-version <ver>    TAPPAS core wheel version (default: 5.1.0)

@@ -44,7 +44,7 @@ must remain manual. Do not generate final annotation CSVs automatically.
 Use the project-standard annotation UI command from the repository root after
 sourcing ROS:
 
-` .venv-tim-ui/bin/python tools/bag_annotation_ui/tim_clean_ui.py --host 100.69.42.62 --port 8888`
+` thesis_env/bin/python tools/bag_annotation_ui/tim_clean_ui.py --host 100.69.42.62 --port 8888`
 
 ## Repository paths
 
