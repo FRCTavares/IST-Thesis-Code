@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <title>TIM-MARS Clean UI</title>
-  <link rel="stylesheet" href="/static/tim_clean_ui.css?v=annotation_workspace_12">
+  <link rel="stylesheet" href="/static/tim_clean_ui.css?v=annotation_workspace_13">
 
 </head>
 <body>
@@ -251,73 +251,102 @@
       <label><input id="tracks" type="checkbox" onchange="reloadViewCache()"> tracks</label>
     </details>
   </div>
-<div class="panel">
-    
-<details open>
-      <summary>Export MP4 video</summary>
-      <div class="controls">
-        <label>Video name
-          <input id="videoName" value="tim_mars_video_export.mp4" style="min-width:360px">
+<div class="panel exportPanel">
+  <div class="exportHeader">
+    <div>
+      <h3>Exports</h3>
+      <p>Generate presentation videos and paper-ready contact sheets from the loaded bag.</p>
+    </div>
+  </div>
+
+  <div class="exportGrid">
+    <section class="exportCard">
+      <div class="exportCardHeader">
+        <h4>MP4 video</h4>
+        <p>Export the current RAW/TIM visualization as a video.</p>
+      </div>
+
+      <div class="exportFormGrid">
+        <label class="field wide">Video name
+          <input id="videoName" value="tim_mars_video_export.mp4">
         </label>
-        <label>FPS
-          <input id="videoFps" value="20" style="width:70px">
+        <label class="field small">FPS
+          <input id="videoFps" value="20">
         </label>
-        <label>Only track IDs
-          <input id="videoOnlyIds" placeholder="e.g. 1,31,87" style="width:160px">
+        <label class="field">Only track IDs
+          <input id="videoOnlyIds" placeholder="e.g. 1,31,87">
         </label>
       </div>
-      <div class="controls">
+
+      <div class="exportOptionGroup">
+        <div class="exportOptionTitle">Overlays</div>
         <label><input type="checkbox" id="videoTracks" checked> tracks</label>
         <label><input type="checkbox" id="videoRaw" checked> raw /target</label>
-        <label><input type="checkbox" id="videoTim" checked> TIM /target_memory_mars</label>
+        <label><input type="checkbox" id="videoTim" checked> TIM memory target</label>
         <label><input type="checkbox" id="videoDetections"> detections</label>
-        <label><input type="checkbox" id="videoClean" checked> clean presentation mode</label>
         <label><input type="checkbox" id="videoReference" checked> reference box</label>
+      </div>
+
+      <div class="exportOptionGroup">
+        <div class="exportOptionTitle">Presentation</div>
+        <label><input type="checkbox" id="videoClean" checked> clean presentation mode</label>
         <label><input type="checkbox" id="videoComparison" checked> side-by-side RAW vs TIM</label>
         <label><input type="checkbox" id="videoPaperOverlay"> paper overlay mode</label>
       </div>
-      <div class="controls">
+
+      <div class="exportActionRow">
         <button onclick="exportMp4()">Export MP4</button>
         <a id="videoDownload" href="#" target="_blank" style="display:none">Download MP4</a>
       </div>
 
-      <hr>
-      <h3>Paper contact sheet export</h3>
-      <p style="color:#aaa;margin-top:4px;">
-        Export cropped multi-frame figures for the paper. Use frame indices from the slider.
-      </p>
-      <label>output image
-        <input id="paperFigureName" value="seq_contact_sheet.jpg" style="width:360px;">
-      </label>
-      <label>frames
-        <input id="paperFigureFrames" value="" placeholder="120,160,200,240,280,320" style="width:360px;">
-      </label>
-      <label>columns
-        <input id="paperFigureCols" type="number" value="3" min="1" max="6" style="width:70px;">
-      </label>
-      <label>panel width
-        <input id="paperFigurePanelWidth" type="number" value="520" min="200" max="1200" style="width:90px;">
-      </label>
-      <label>crop pad
-        <input id="paperFigureCropPad" type="number" value="80" min="0" max="400" style="width:80px;">
-      </label>
-      <label><input type="checkbox" id="paperFigureCrop" checked> crop around people/boxes</label>
-      <label><input type="checkbox" id="paperFigureReference" checked> dashed manual annotation</label>
-      <button onclick="exportContactSheet()">Export paper contact sheet</button>
-      <a id="paperFigureDownload" href="#" style="display:none;margin-left:12px;">Download contact sheet</a>
-      <pre id="paperFigureLog" style="white-space:pre-wrap;"></pre>
-      <pre id="videoExportLog"></pre>
-    </details>
+      <pre id="videoExportLog" class="exportLog"></pre>
+    </section>
 
+    <section class="exportCard">
+      <div class="exportCardHeader">
+        <h4>Paper contact sheet</h4>
+        <p>Export cropped multi-frame figures. Use the slider and “+ paper frame” to collect frame indices.</p>
+      </div>
 
+      <div class="exportFormGrid">
+        <label class="field wide">Output image
+          <input id="paperFigureName" value="seq_contact_sheet.jpg">
+        </label>
+        <label class="field wide">Frames
+          <input id="paperFigureFrames" value="" placeholder="120,160,200,240,280,320">
+        </label>
+        <label class="field small">Columns
+          <input id="paperFigureCols" type="number" value="3" min="1" max="6">
+        </label>
+        <label class="field small">Panel width
+          <input id="paperFigurePanelWidth" type="number" value="520" min="200" max="1200">
+        </label>
+        <label class="field small">Crop pad
+          <input id="paperFigureCropPad" type="number" value="80" min="0" max="400">
+        </label>
+      </div>
 
+      <div class="exportOptionGroup">
+        <div class="exportOptionTitle">Figure options</div>
+        <label><input type="checkbox" id="paperFigureCrop" checked> crop around people/boxes</label>
+        <label><input type="checkbox" id="paperFigureReference" checked> dashed manual annotation</label>
+      </div>
+
+      <div class="exportActionRow">
+        <button onclick="exportContactSheet()">Export contact sheet</button>
+        <a id="paperFigureDownload" href="#" style="display:none;">Download contact sheet</a>
+      </div>
+
+      <pre id="paperFigureLog" class="exportLog"></pre>
+    </section>
   </div>
+</div>
 
 <script>
 window.TIM_CLEAN_UI_BAGS = __BAGS_JSON__;
 window.TIM_CLEAN_UI_ANNOTATIONS = __ANNOTATIONS_JSON__;
 </script>
-<script src="/static/tim_clean_ui.js?v=annotation_workspace_12"></script>
+<script src="/static/tim_clean_ui.js?v=annotation_workspace_13"></script>
 
   </div>
 </body>
