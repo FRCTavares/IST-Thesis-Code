@@ -60,7 +60,7 @@ Pattern for future promoted replays:
 
 YYYY-MM-DD__seqXX__<scenario>__replay_<kind>__det_<detector>__trk_<tracker>__tim_<mode>__target_<policy>
 
-Existing final paper replay bags are kept under their submitted final folders:
+Existing submitted-paper replay bags are kept under their historical final folders:
 
 bags/replay/paper_final_tim_results_2026_07_03/
 bags/replay/paper_final_deepsort_may_2026_07_03/
@@ -68,7 +68,9 @@ bags/replay/paper_final_deepsort_may_memory_2026_07_03/
 bags/replay/paper_final_deepsort_june_full_2026_07_04/
 bags/replay/paper_final_deepsort_june_memory_2026_07_04/
 
-Do not treat other replay folders as final evidence unless they are documented in docs/data/final_experiment_inventory.md.
+The `paper_final_*` names are frozen for traceability and should not be used as
+the naming pattern for new thesis reruns. Do not treat other replay folders as
+final evidence unless they are documented in docs/data/final_experiment_inventory.md.
 
 ## Protected source set
 

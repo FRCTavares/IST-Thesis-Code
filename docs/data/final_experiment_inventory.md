@@ -1,5 +1,9 @@
 # Final Experiment Inventory
 
+## Naming note
+
+Several final evidence folders keep their historical `paper_final_*` names because they were generated for the submitted ROBOT2026 paper. These names are frozen for traceability; they should not be used as the naming pattern for new thesis reruns.
+
 ## Final autonomous selected-target replay bags
 
 - `bags/replay/paper_final_tim_results_2026_07_03/`
