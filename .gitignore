@@ -204,3 +204,9 @@ user-interface/dist/
 
 thesis_env/
 reports/local_env_snapshots/
+
+# Root/runtime logs
+/log/
+/hailort.log
+/ros2_ws/hailort.log
+
