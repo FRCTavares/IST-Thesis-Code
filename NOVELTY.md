@@ -145,20 +145,18 @@ The promoted repository evidence currently shows:
 | Sequence | Raw ByteTrack C/W/L | ByteTrack + TIM-MARS C/W/L | Interpretation |
 |---|---:|---:|---|
 | Clean visible | 1.000 / 0.000 / 0.000 | 1.000 / 0.000 / 0.000 | No degradation |
-| May hard re-entry | disputed repository values | disputed repository values | Strong improvement, but final numbers must be reconciled |
+| May hard re-entry | 0.708 / 0.138 / 0.154 | 0.943 / 0.024 / 0.034 | Strong improvement after corrected ID-handover annotation |
 | Crossing ambiguity | 0.553 / 0.002 / 0.445 | 0.546 / 0.002 / 0.452 | No meaningful improvement |
 | Occlusion/no-exit | 0.381 / 0.182 / 0.438 | 0.381 / 0.181 / 0.439 | No meaningful improvement |
 
-The repository currently contains two incompatible May result sets:
+The earlier May result set of `0.728 / 0.118 / 0.154` for raw ByteTrack and `0.963 / 0.003 / 0.034` for TIM-MARS was generated before correction of the target-ID handover boundary.
 
-- generated summary:
-  - raw: 0.708 / 0.138 / 0.154;
-  - TIM-MARS: 0.943 / 0.024 / 0.034;
-- final table and sequence audit:
-  - raw: 0.728 / 0.118 / 0.154;
-  - TIM-MARS: 0.963 / 0.003 / 0.034.
+Commit `6a4ef843` moved the annotated ID transition from 48.800 s to 50.233 s. The canonical post-correction report is:
 
-No May result should be quoted as final until its source bag, annotation revision, evaluator version, and report are reconciled.
+- raw ByteTrack: 0.708 / 0.138 / 0.154;
+- ByteTrack + TIM-MARS: 0.943 / 0.024 / 0.034.
+
+The obsolete pre-correction report remains only for provenance and must not be quoted as final.
 
 The sequence audit also reports:
 

@@ -28,28 +28,26 @@ Confirmed repository facts:
 
 ## Phase 1 — Repair the evidence chain
 
-### P0.1 Resolve the disputed May result
+### P0.1 Resolve the disputed May result — DONE
 
-- [ ] Identify which bag produced:
-  - 0.943 / 0.024 / 0.034;
-  - 0.963 / 0.003 / 0.034.
-- [ ] Identify the annotation revision used for each.
-- [ ] Identify evaluator command, timebase, step, and Git commit.
-- [ ] Regenerate the canonical summary from the promoted source.
-- [ ] Update:
-  - `final_result_tables.md`;
-  - `sequence_audit.md`;
-  - `final_experiment_inventory.md`;
-  - thesis and paper-facing tables.
-- [ ] Quarantine or clearly label obsolete result variants.
+Resolved on 12 July 2026.
+
+Findings:
+
+- the old `0.728 / 0.118 / 0.154` raw result and `0.963 / 0.003 / 0.034` TIM result were generated before the annotation correction;
+- commit `6a4ef843` moved the correct target-ID handover boundary from 48.800 s to 50.233 s;
+- the canonical post-correction report gives:
+  - raw ByteTrack: `0.708 / 0.138 / 0.154`;
+  - ByteTrack + TIM-MARS: `0.943 / 0.024 / 0.034`;
+- the pre-correction report is retained only for provenance.
 
 Acceptance condition:
 
-- one source bag;
-- one annotation file;
-- one evaluator command;
-- one canonical report;
-- one set of quoted numbers.
+- [x] one source bag;
+- [x] one current annotation file;
+- [x] one canonical report;
+- [x] one corrected set of quoted numbers;
+- [x] obsolete values identified as pre-correction evidence.
 
 ### P0.2 Investigate the unsafe DeepSORT result
 
