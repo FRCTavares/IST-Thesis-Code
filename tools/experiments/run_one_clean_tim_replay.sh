@@ -22,6 +22,9 @@ TIM_MODE="$4"
 RATE="${5:-0.5}"
 TARGET_WAIT_TIMEOUT="${6:-90}"
 
+printf -v RUN_COMMAND '%q ' "$0" "$@"
+RUN_COMMAND="${RUN_COMMAND% }"
+
 THESIS_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}"
 ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 
@@ -132,6 +135,7 @@ ros2 run thesis_bringup dashboard_bridge_node --ros-args \
 
 
 TIM_MARS_CONFIG="${TIM_MARS_CONFIG:-$THESIS_ROOT/ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml}"
+TIM_METADATA_HELPER="$THESIS_ROOT/tools/experiments/write_tim_run_metadata.py"
 
 if [[ "$RUN_TIM_MARS" == "true" && ! -f "$TIM_MARS_CONFIG" ]]; then
   echo "[error] canonical TIM-MARS config not found: $TIM_MARS_CONFIG" >&2
@@ -139,6 +143,25 @@ if [[ "$RUN_TIM_MARS" == "true" && ! -f "$TIM_MARS_CONFIG" ]]; then
 fi
 
 echo "[info] TIM_MARS_CONFIG=$TIM_MARS_CONFIG"
+
+if [[ "$RUN_TIM_MARS" == "true" ]]; then
+  python3 "$TIM_METADATA_HELPER" \
+    --repo-root "$THESIS_ROOT" \
+    --output-dir "$REPORT_DIR" \
+    --config "$TIM_MARS_CONFIG" \
+    --runner "$THESIS_ROOT/tools/experiments/run_one_clean_tim_replay.sh" \
+    --command "$RUN_COMMAND" \
+    --field "run_name=$RUN_NAME" \
+    --field "bag_path=$BAG_PATH" \
+    --field "output_bag=$OUT_BAG" \
+    --field "target_id=$TARGET_ID" \
+    --field "tracker=$TRACKER" \
+    --field "tim_mode=$TIM_MODE" \
+    --field "rate=$RATE" \
+    --field "target_wait_timeout_s=$TARGET_WAIT_TIMEOUT" \
+    --field "tim_startup_selected_only=$TIM_STARTUP_SELECTED_ONLY" \
+    --field "mirror_raw_target_selection=${MARS_MIRROR_RAW_TARGET_SELECTION:-automatic}"
+fi
 
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
   echo "[info] starting TIM-MARS"

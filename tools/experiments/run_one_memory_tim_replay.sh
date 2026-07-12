@@ -32,6 +32,9 @@ RUN_NAME="$3"
 ANN_CSV="$4"
 RATE="${5:-1.0}"
 
+printf -v RUN_COMMAND '%q ' "$0" "$@"
+RUN_COMMAND="${RUN_COMMAND% }"
+
 THESIS_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}"
 ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 
@@ -45,6 +48,8 @@ LOG_DIR="$LOG_ROOT/$RUN_NAME"
 
 MARS_MODEL_PATH="${MARS_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}"
 TIM_MARS_CONFIG="${TIM_MARS_CONFIG:-$THESIS_ROOT/ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml}"
+TIM_METADATA_HELPER="$THESIS_ROOT/tools/experiments/write_tim_run_metadata.py"
+
 # RAW_TARGET_MODE controls how /target is produced during replay:
 #   source      -> replay original /target from the input bag
 #   selected_id -> synthesize /target from a fixed tracker ID
@@ -116,41 +121,10 @@ echo "[info] RATE=$RATE"
 echo "[info] OUT_BAG=$OUT_BAG"
 echo "[info] REPORT_DIR=$REPORT_DIR"
 echo "[info] LOG_DIR=$LOG_DIR"
-echo "[info] APP_MARGIN=$APP_MARGIN"
-echo "[info] APPEARANCE_MAX_IMAGE_AGE_MS=$APPEARANCE_MAX_IMAGE_AGE_MS"
-echo "[info] APPEARANCE_COMPUTE_MIN_INTERVAL_MS=$APPEARANCE_COMPUTE_MIN_INTERVAL_MS"
-echo "[info] APPEARANCE_CACHE_TTL_MS=$APPEARANCE_CACHE_TTL_MS"
-echo "[info] HN_ENABLED=$HN_ENABLED"
-echo "[info] HN_MARGIN=$HN_MARGIN"
-echo "[info] RANK_CONFIRM=$RANK_CONFIRM"
+echo "[info] TIM_MARS_CONFIG=$TIM_MARS_CONFIG"
 echo "[info] RAW_TARGET_MODE=$RAW_TARGET_MODE"
 echo "[info] TIM_APPEARANCE_IMAGE_TOPIC=$TIM_APPEARANCE_IMAGE_TOPIC"
 echo "[info] TIM_MIRROR_RAW_TARGET_SELECTION=$TIM_MIRROR_RAW_TARGET_SELECTION"
-echo "[info] ANCHOR_DRIFT_ENABLED=$ANCHOR_DRIFT_ENABLED"
-echo "[info] ANCHOR_DRIFT_MAX_DISTANCE=$ANCHOR_DRIFT_MAX_DISTANCE"
-echo "[info] ANCHOR_UPDATE_ALPHA=$ANCHOR_UPDATE_ALPHA"
-echo "[info] CANDIDATE_BELIEF_ENABLED=$CANDIDATE_BELIEF_ENABLED"
-echo "[info] CANDIDATE_BELIEF_MIN_SCORE=$CANDIDATE_BELIEF_MIN_SCORE"
-echo "[info] CANDIDATE_BELIEF_CONFIRM_FRAMES=$CANDIDATE_BELIEF_CONFIRM_FRAMES"
-echo "[info] ABSENCE_RECOVERY_ENABLED=$ABSENCE_RECOVERY_ENABLED"
-echo "[info] ABSENCE_AFTER_MISSED_FRAMES=$ABSENCE_AFTER_MISSED_FRAMES"
-echo "[info] ABSENCE_NEW_ID_REQUIRES_APPEARANCE=$ABSENCE_NEW_ID_REQUIRES_APPEARANCE"
-echo "[info] ABSENCE_MIN_TOTAL=$ABSENCE_MIN_TOTAL"
-echo "[info] ABSENCE_MIN_DISTANCE=$ABSENCE_MIN_DISTANCE"
-echo "[info] ABSENCE_MIN_SCALE=$ABSENCE_MIN_SCALE"
-echo "[info] ABSENCE_MIN_SIMILARITY=$ABSENCE_MIN_SIMILARITY"
-echo "[info] ABSENCE_APPEARANCE_MARGIN=$ABSENCE_APPEARANCE_MARGIN"
-echo "[info] ABSENCE_CONFIRM_FRAMES=$ABSENCE_CONFIRM_FRAMES"
-echo "[info] GROUP_SPLIT_RECOVERY_ENABLED=$GROUP_SPLIT_RECOVERY_ENABLED"
-echo "[info] GROUP_NEAR_DISTANCE=$GROUP_NEAR_DISTANCE"
-echo "[info] GROUP_NEAR_IOU=$GROUP_NEAR_IOU"
-echo "[info] GROUP_MIN_NEARBY=$GROUP_MIN_NEARBY"
-echo "[info] GROUP_CONFIRM_FRAMES=$GROUP_CONFIRM_FRAMES"
-echo "[info] SPLIT_CONFIRM_FRAMES=$SPLIT_CONFIRM_FRAMES"
-echo "[info] SPLIT_MIN_MEAN_APP=$SPLIT_MIN_MEAN_APP"
-echo "[info] SPLIT_MIN_MEAN_MARGIN=$SPLIT_MIN_MEAN_MARGIN"
-echo "[info] SPLIT_MIN_MEAN_TOTAL=$SPLIT_MIN_MEAN_TOTAL"
-echo "[info] SPLIT_WINNER_MARGIN=$SPLIT_WINNER_MARGIN"
 
 if [[ ! -d "$BAG_PATH" ]]; then
   echo "[error] bag not found: $BAG_PATH" >&2
@@ -168,6 +142,22 @@ export ROS_DOMAIN_ID
 
 rm -rf "$OUT_BAG" "$REPORT_DIR" "$LOG_DIR"
 mkdir -p "$OUT_ROOT" "$REPORT_DIR" "$LOG_DIR"
+
+python3 "$TIM_METADATA_HELPER" \
+  --repo-root "$THESIS_ROOT" \
+  --output-dir "$REPORT_DIR" \
+  --config "$TIM_MARS_CONFIG" \
+  --runner "$THESIS_ROOT/tools/experiments/run_one_memory_tim_replay.sh" \
+  --command "$RUN_COMMAND" \
+  --field "run_name=$RUN_NAME" \
+  --field "bag_path=$BAG_PATH" \
+  --field "output_bag=$OUT_BAG" \
+  --field "annotation_csv=$ANN_CSV" \
+  --field "target_id=$TARGET_ID" \
+  --field "rate=$RATE" \
+  --field "raw_target_mode=$RAW_TARGET_MODE" \
+  --field "mirror_raw_target_selection=$TIM_MIRROR_RAW_TARGET_SELECTION" \
+  --field "appearance_image_topic=$TIM_APPEARANCE_IMAGE_TOPIC"
 
 cleanup_ros
 trap cleanup_ros EXIT
