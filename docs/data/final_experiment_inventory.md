@@ -7,7 +7,7 @@ Several final evidence folders keep their historical `paper_final_*` names becau
 ## Final autonomous selected-target replay bags
 
 - `bags/replay/paper_final_tim_results_2026_07_03/`
-- `bags/replay/paper_final_deepsort_may_memory_2026_07_03/`
+- DeepSORT May memory replay bag: deleted during the 9 July 2026 cleanup; generated reports and preserved metadata remain, but it is not part of the reproducible final bag set.
 - `bags/replay/paper_final_deepsort_june_full_2026_07_04/`
 
 ## Final diagnostic replay bags

@@ -49,19 +49,32 @@ Acceptance condition:
 - [x] one corrected set of quoted numbers;
 - [x] obsolete values identified as pre-correction evidence.
 
-### P0.2 Investigate the unsafe DeepSORT result
+### P0.2 Reproduce the historical unsafe DeepSORT result
 
-Current promoted audit:
+Historical generated result:
 
 - raw DeepSORT wrong ratio: 0.028;
 - DeepSORT + TIM-MARS wrong ratio: 0.466.
 
+Evidence status:
+
+- the generated reports remain;
+- the replay bag was deleted during the 9 July 2026 cleanup;
+- preserved metadata confirms that the deleted bag contained `/tracks`, `/target`, `/target_memory_mars`, `/target_memory_mars/status`, and `/camera/image_raw`;
+- the source DeepSORT bag still exists;
+- the exact resolved TIM configuration was not preserved with the deleted replay.
+
 Tasks:
 
+- [x] Confirm that the historical replay bag was deleted.
+- [x] Confirm that the source DeepSORT bag still exists.
+- [x] Reclassify the result as historical and unresolved rather than final reproducible evidence.
+- [ ] Record a canonical TIM configuration before rerunning.
+- [ ] Regenerate the selected-ID memory replay from the surviving source bag.
+- [ ] Preserve the new replay bag, status stream, resolved configuration, command, and Git commit.
 - [ ] Confirm annotation compatibility.
-- [ ] Confirm the selected-ID initialization.
-- [ ] Confirm whether ByteTrack annotations were incorrectly applied.
-- [ ] Inspect the visual output around the first wrong handover.
+- [ ] Confirm selected-ID initialization.
+- [ ] Inspect the first wrong handover visually and through status reasons.
 - [ ] Determine whether failure comes from:
   - geometry assumptions;
   - rank-aware recovery;
@@ -70,8 +83,8 @@ Tasks:
   - mirrored selection;
   - stale embeddings;
   - configuration mismatch.
-- [ ] Remove any broad tracker-independent claim until resolved.
 - [ ] Add a regression sequence if the failure is algorithmic.
+- [ ] Keep tracker-independent claims disabled until reproduction is complete.
 
 ### P0.3 Freeze the canonical evidence set
 

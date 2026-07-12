@@ -33,7 +33,7 @@ target-ID handoff was supplied from annotations.
 The final replay bags are stored under historical submitted-paper folder names:
 
 - `bags/replay/paper_final_tim_results_2026_07_03/`
-- `bags/replay/paper_final_deepsort_may_memory_2026_07_03/`
+- The historical DeepSORT May memory replay bag was deleted during cleanup and cannot currently be reproduced directly from the promoted replay directory. Its source DeepSORT bag remains available for a controlled regeneration.
 - `bags/replay/paper_final_deepsort_june_full_2026_07_04/`
 - `bags/replay/paper_final_deepsort_june_memory_2026_07_04/`
 - `bags/replay/paper_final_deepsort_may_2026_07_03/`

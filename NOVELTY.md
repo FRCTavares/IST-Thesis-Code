@@ -158,12 +158,16 @@ Commit `6a4ef843` moved the annotated ID transition from 48.800 s to 50.233 s. T
 
 The obsolete pre-correction report remains only for provenance and must not be quoted as final.
 
-The sequence audit also reports:
+The historical sequence audit reports:
 
 - DeepSORT selected-ID raw: wrong ratio 0.028;
 - DeepSORT + TIM-MARS: wrong ratio 0.466.
 
-Therefore TIM-MARS is not currently tracker-independent in demonstrated safety. Under at least one evaluated configuration, it makes the selected-target output substantially less safe.
+The replay bag that generated this result was deleted during the 9 July 2026 bag cleanup. Its generated reports and preserved ROS bag metadata remain, but the full target, status, track, and image streams are no longer available for audit.
+
+The source DeepSORT bag still exists, so this experiment is reproducible in principle, but the historical result must currently be classified as an unresolved unsafe result rather than definitive final evidence.
+
+Until it is regenerated under a recorded canonical configuration, TIM-MARS must not be described as tracker-independent.
 
 ## 7. Claim currently supported
 
