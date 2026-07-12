@@ -149,15 +149,22 @@ python3 "$TIM_METADATA_HELPER" \
   --config "$TIM_MARS_CONFIG" \
   --runner "$THESIS_ROOT/tools/experiments/run_one_memory_tim_replay.sh" \
   --command "$RUN_COMMAND" \
+  --runtime "tracks_topic=/tracks" \
+  --runtime "mirror_target_topic=/target" \
+  --runtime "target_topic=/target_memory_mars" \
+  --runtime "status_topic=/target_memory_mars/status" \
+  --runtime "select_topic=/target_memory_mars/select" \
+  --runtime "selected_track_id=$TARGET_ID" \
+  --runtime "mirror_raw_target_selection=$TIM_MIRROR_RAW_TARGET_SELECTION" \
+  --runtime "appearance_image_topic=$TIM_APPEARANCE_IMAGE_TOPIC" \
+  --runtime "mars_model_path=$MARS_MODEL_PATH" \
   --field "run_name=$RUN_NAME" \
   --field "bag_path=$BAG_PATH" \
   --field "output_bag=$OUT_BAG" \
   --field "annotation_csv=$ANN_CSV" \
   --field "target_id=$TARGET_ID" \
   --field "rate=$RATE" \
-  --field "raw_target_mode=$RAW_TARGET_MODE" \
-  --field "mirror_raw_target_selection=$TIM_MIRROR_RAW_TARGET_SELECTION" \
-  --field "appearance_image_topic=$TIM_APPEARANCE_IMAGE_TOPIC"
+  --field "raw_target_mode=$RAW_TARGET_MODE"
 
 cleanup_ros
 trap cleanup_ros EXIT

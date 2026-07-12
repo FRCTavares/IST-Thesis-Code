@@ -144,6 +144,16 @@ fi
 
 echo "[info] TIM_MARS_CONFIG=$TIM_MARS_CONFIG"
 
+if [[ -n "${MARS_MIRROR_RAW_TARGET_SELECTION+x}" ]]; then
+  TIM_MIRROR_EFFECTIVE="$MARS_MIRROR_RAW_TARGET_SELECTION"
+elif [[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]]; then
+  TIM_MIRROR_EFFECTIVE=false
+else
+  TIM_MIRROR_EFFECTIVE=true
+fi
+
+TIM_MARS_MODEL_PATH="${MARS_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}"
+
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
   python3 "$TIM_METADATA_HELPER" \
     --repo-root "$THESIS_ROOT" \
@@ -151,6 +161,15 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     --config "$TIM_MARS_CONFIG" \
     --runner "$THESIS_ROOT/tools/experiments/run_one_clean_tim_replay.sh" \
     --command "$RUN_COMMAND" \
+    --runtime "tracks_topic=/tracks" \
+    --runtime "mirror_target_topic=/target" \
+    --runtime "target_topic=/target_memory_mars" \
+    --runtime "status_topic=/target_memory_mars/status" \
+    --runtime "select_topic=/target_memory_mars/select" \
+    --runtime "selected_track_id=$TARGET_ID" \
+    --runtime "mirror_raw_target_selection=$TIM_MIRROR_EFFECTIVE" \
+    --runtime "appearance_image_topic=/camera/image_raw" \
+    --runtime "mars_model_path=$TIM_MARS_MODEL_PATH" \
     --field "run_name=$RUN_NAME" \
     --field "bag_path=$BAG_PATH" \
     --field "output_bag=$OUT_BAG" \
@@ -159,8 +178,7 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     --field "tim_mode=$TIM_MODE" \
     --field "rate=$RATE" \
     --field "target_wait_timeout_s=$TARGET_WAIT_TIMEOUT" \
-    --field "tim_startup_selected_only=$TIM_STARTUP_SELECTED_ONLY" \
-    --field "mirror_raw_target_selection=${MARS_MIRROR_RAW_TARGET_SELECTION:-automatic}"
+    --field "tim_startup_selected_only=$TIM_STARTUP_SELECTED_ONLY"
 fi
 
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
@@ -173,9 +191,9 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p status_topic:=/target_memory_mars/status \
     -p select_topic:=/target_memory_mars/select \
     -p selected_track_id:=${TARGET_ID} \
-    -p mirror_raw_target_selection:=${MARS_MIRROR_RAW_TARGET_SELECTION:-$([[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]] && echo false || echo true)} \
+    -p mirror_raw_target_selection:="$TIM_MIRROR_EFFECTIVE" \
     -p appearance_image_topic:=/camera/image_raw \
-    -p mars_model_path:="${MARS_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}" \
+    -p mars_model_path:="$TIM_MARS_MODEL_PATH" \
     >"$LOG_DIR/target_memory_mars.log" 2>&1 &
 fi
 

@@ -122,11 +122,14 @@ Completed work:
 - [x] Restricted launcher overrides to runtime-specific parameters.
 - [x] Verified the running ROS node loads representative canonical values.
 
-Remaining reproducibility work belongs to P0.5:
+Completed replay provenance work:
 
-- serialize the complete resolved configuration into experiment outputs;
-- record a configuration fingerprint;
-- record the Git commit and exact runner command.
+- [x] Serialize the canonical YAML into TIM experiment outputs.
+- [x] Serialize all effective TIM runtime overrides separately.
+- [x] Record canonical and resolved-runtime SHA-256 fingerprints.
+- [x] Record the Git commit, repository state, runner, and exact command.
+
+Remaining paper-code equivalence work belongs to P0.5.
 
 ### P0.5 Prove paper-code-runner equivalence
 

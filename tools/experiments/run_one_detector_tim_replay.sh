@@ -152,6 +152,9 @@ fi
 
 echo "[info] TIM_MARS_CONFIG=$TIM_MARS_CONFIG"
 
+TIM_MIRROR_EFFECTIVE="${MARS_MIRROR_RAW_TARGET_SELECTION:-true}"
+TIM_MARS_MODEL_PATH="${MARS_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}"
+
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
   python3 "$TIM_METADATA_HELPER" \
     --repo-root "$THESIS_ROOT" \
@@ -159,6 +162,15 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     --config "$TIM_MARS_CONFIG" \
     --runner "$THESIS_ROOT/tools/experiments/run_one_detector_tim_replay.sh" \
     --command "$RUN_COMMAND" \
+    --runtime "tracks_topic=/tracks" \
+    --runtime "mirror_target_topic=/target" \
+    --runtime "target_topic=/target_memory_mars" \
+    --runtime "status_topic=/target_memory_mars/status" \
+    --runtime "select_topic=/target_memory_mars/select" \
+    --runtime "selected_track_id=0" \
+    --runtime "mirror_raw_target_selection=$TIM_MIRROR_EFFECTIVE" \
+    --runtime "appearance_image_topic=/camera/image_raw" \
+    --runtime "mars_model_path=$TIM_MARS_MODEL_PATH" \
     --field "run_name=$RUN_NAME" \
     --field "bag_path=$BAG_PATH" \
     --field "output_bag=$OUT_BAG" \
@@ -169,8 +181,7 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     --field "tim_mode=$TIM_MODE" \
     --field "rate=$RATE" \
     --field "target_wait_timeout_s=$TARGET_WAIT_TIMEOUT" \
-    --field "recorder_stop_timeout_s=$RECORDER_STOP_TIMEOUT" \
-    --field "mirror_raw_target_selection=${MARS_MIRROR_RAW_TARGET_SELECTION:-true}"
+    --field "recorder_stop_timeout_s=$RECORDER_STOP_TIMEOUT"
 fi
 
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
@@ -183,9 +194,9 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p status_topic:=/target_memory_mars/status \
     -p select_topic:=/target_memory_mars/select \
     -p selected_track_id:=0 \
-    -p mirror_raw_target_selection:=${MARS_MIRROR_RAW_TARGET_SELECTION:-true} \
+    -p mirror_raw_target_selection:="$TIM_MIRROR_EFFECTIVE" \
     -p appearance_image_topic:=/camera/image_raw \
-    -p mars_model_path:="${MARS_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}" \
+    -p mars_model_path:="$TIM_MARS_MODEL_PATH" \
     >"$LOG_DIR/target_memory_mars.log" 2>&1 &
 fi
 

@@ -35,7 +35,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def parse_field(value: str) -> tuple[str, str]:
+def parse_assignment(value: str) -> tuple[str, str]:
     if "=" not in value:
         raise argparse.ArgumentTypeError(
             f"expected KEY=VALUE, received {value!r}"
@@ -45,9 +45,54 @@ def parse_field(value: str) -> tuple[str, str]:
     key = key.strip()
 
     if not key:
-        raise argparse.ArgumentTypeError("field key cannot be empty")
+        raise argparse.ArgumentTypeError("assignment key cannot be empty")
 
     return key, field_value
+
+
+def parse_scalar(value: str) -> Any:
+    normalized = value.strip()
+    lowered = normalized.lower()
+
+    if lowered == "true":
+        return True
+
+    if lowered == "false":
+        return False
+
+    if lowered in {"none", "null"}:
+        return None
+
+    try:
+        return int(normalized)
+    except ValueError:
+        pass
+
+    try:
+        return float(normalized)
+    except ValueError:
+        return value
+
+
+def assignments_to_dict(
+    assignments: list[tuple[str, str]],
+) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+
+    for key, value in assignments:
+        if key in result:
+            raise ValueError(f"duplicate assignment key: {key}")
+
+        result[key] = parse_scalar(value)
+
+    return result
+
+
+def write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def main() -> int:
@@ -60,11 +105,20 @@ def main() -> int:
     parser.add_argument("--runner", required=True, type=Path)
     parser.add_argument("--command", required=True)
     parser.add_argument(
+        "--runtime",
+        action="append",
+        default=[],
+        type=parse_assignment,
+        metavar="KEY=VALUE",
+        help="Effective ROS runtime override.",
+    )
+    parser.add_argument(
         "--field",
         action="append",
         default=[],
-        type=parse_field,
+        type=parse_assignment,
         metavar="KEY=VALUE",
+        help="Experiment context that is not a TIM ROS parameter.",
     )
     args = parser.parse_args()
 
@@ -82,15 +136,45 @@ def main() -> int:
     if not runner_path.is_file():
         parser.error(f"runner does not exist: {runner_path}")
 
+    try:
+        runtime_overrides = assignments_to_dict(args.runtime)
+        experiment_fields = assignments_to_dict(args.field)
+    except ValueError as exc:
+        parser.error(str(exc))
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    config_copy = output_dir / "tim_mars_resolved_config.yaml"
-    shutil.copy2(config_path, config_copy)
+    canonical_copy = output_dir / "tim_mars_canonical_config.yaml"
+    shutil.copy2(config_path, canonical_copy)
+    canonical_sha256 = sha256_file(canonical_copy)
+
+    resolved_runtime: dict[str, Any] = {
+        "schema_version": 1,
+        "canonical_config": {
+            "copy": canonical_copy.name,
+            "sha256": canonical_sha256,
+            "source": str(config_path),
+        },
+        "runtime_overrides": runtime_overrides,
+        "experiment_fields": experiment_fields,
+    }
+
+    resolved_runtime_path = output_dir / "tim_mars_resolved_runtime.json"
+    write_json(resolved_runtime_path, resolved_runtime)
+    resolved_runtime_sha256 = sha256_file(resolved_runtime_path)
+
+    resolved_fingerprint_path = (
+        output_dir / "tim_mars_resolved_runtime.sha256"
+    )
+    resolved_fingerprint_path.write_text(
+        f"{resolved_runtime_sha256}  {resolved_runtime_path.name}\n",
+        encoding="utf-8",
+    )
 
     git_status = run_git(repo_root, "status", "--short")
 
     metadata: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "repository_root": str(repo_root),
         "git_commit": run_git(repo_root, "rev-parse", "HEAD"),
@@ -105,10 +189,16 @@ def main() -> int:
         "git_status_short": git_status.splitlines(),
         "runner": str(runner_path),
         "command": args.command,
-        "tim_config_source": str(config_path),
-        "tim_config_copy": config_copy.name,
-        "tim_config_sha256": sha256_file(config_copy),
-        "fields": dict(args.field),
+        "canonical_config": {
+            "source": str(config_path),
+            "copy": canonical_copy.name,
+            "sha256": canonical_sha256,
+        },
+        "resolved_runtime": {
+            "file": resolved_runtime_path.name,
+            "fingerprint_file": resolved_fingerprint_path.name,
+            "sha256": resolved_runtime_sha256,
+        },
         "environment": {
             "ROS_DOMAIN_ID": os.environ.get("ROS_DOMAIN_ID", ""),
             "THESIS_ROOT": os.environ.get("THESIS_ROOT", ""),
@@ -116,20 +206,13 @@ def main() -> int:
     }
 
     metadata_path = output_dir / "run_metadata.json"
-    metadata_path.write_text(
-        json.dumps(metadata, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-
-    fingerprint_path = output_dir / "tim_mars_config.sha256"
-    fingerprint_path.write_text(
-        f"{metadata['tim_config_sha256']}  {config_copy.name}\n",
-        encoding="utf-8",
-    )
+    write_json(metadata_path, metadata)
 
     print(f"[ok] metadata: {metadata_path}")
-    print(f"[ok] configuration copy: {config_copy}")
-    print(f"[ok] configuration SHA-256: {metadata['tim_config_sha256']}")
+    print(f"[ok] canonical configuration: {canonical_copy}")
+    print(f"[ok] canonical SHA-256: {canonical_sha256}")
+    print(f"[ok] resolved runtime: {resolved_runtime_path}")
+    print(f"[ok] resolved runtime SHA-256: {resolved_runtime_sha256}")
 
     if metadata["git_dirty"]:
         print(
