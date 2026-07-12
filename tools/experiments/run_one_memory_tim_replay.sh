@@ -44,39 +44,7 @@ REPORT_DIR="$REPORT_ROOT/$RUN_NAME"
 LOG_DIR="$LOG_ROOT/$RUN_NAME"
 
 MARS_MODEL_PATH="${MARS_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}"
-
-APP_MARGIN="${MARS_APPEARANCE_CONSERVATIVE_MARGIN:-0.15}"
-APPEARANCE_MAX_IMAGE_AGE_MS="${MARS_APPEARANCE_MAX_IMAGE_AGE_MS:-250.0}"
-APPEARANCE_COMPUTE_MIN_INTERVAL_MS="${MARS_APPEARANCE_COMPUTE_MIN_INTERVAL_MS:-250.0}"
-APPEARANCE_CACHE_TTL_MS="${MARS_APPEARANCE_CACHE_TTL_MS:-750.0}"
-HN_ENABLED="${MARS_HARD_NEGATIVE_MEMORY_ENABLED:-true}"
-HN_MARGIN="${MARS_HARD_NEGATIVE_REJECT_MARGIN:-0.08}"
-RANK_CONFIRM="${MARS_RANK_AWARE_CONFIRM_FRAMES:-1}"
-ANCHOR_DRIFT_ENABLED="${TIM_ANCHOR_DRIFT_ENABLED:-false}"
-ANCHOR_DRIFT_MAX_DISTANCE="${TIM_ANCHOR_DRIFT_MAX_DISTANCE:-0.10}"
-ANCHOR_UPDATE_ALPHA="${TIM_ANCHOR_UPDATE_ALPHA:-0.02}"
-CANDIDATE_BELIEF_ENABLED="${TIM_CANDIDATE_BELIEF_ENABLED:-false}"
-CANDIDATE_BELIEF_MIN_SCORE="${TIM_CANDIDATE_BELIEF_MIN_SCORE:-0.45}"
-CANDIDATE_BELIEF_CONFIRM_FRAMES="${TIM_CANDIDATE_BELIEF_CONFIRM_FRAMES:-2}"
-ABSENCE_RECOVERY_ENABLED="${TIM_ABSENCE_RECOVERY_ENABLED:-false}"
-ABSENCE_AFTER_MISSED_FRAMES="${TIM_ABSENCE_AFTER_MISSED_FRAMES:-6}"
-ABSENCE_NEW_ID_REQUIRES_APPEARANCE="${TIM_ABSENCE_NEW_ID_REQUIRES_APPEARANCE:-true}"
-ABSENCE_MIN_TOTAL="${TIM_ABSENCE_MIN_TOTAL:-0.45}"
-ABSENCE_MIN_DISTANCE="${TIM_ABSENCE_MIN_DISTANCE:-0.25}"
-ABSENCE_MIN_SCALE="${TIM_ABSENCE_MIN_SCALE:-0.35}"
-ABSENCE_MIN_SIMILARITY="${TIM_ABSENCE_MIN_SIMILARITY:-0.65}"
-ABSENCE_APPEARANCE_MARGIN="${TIM_ABSENCE_APPEARANCE_MARGIN:-0.20}"
-ABSENCE_CONFIRM_FRAMES="${TIM_ABSENCE_CONFIRM_FRAMES:-3}"
-GROUP_SPLIT_RECOVERY_ENABLED="${TIM_GROUP_SPLIT_RECOVERY_ENABLED:-false}"
-GROUP_NEAR_DISTANCE="${TIM_GROUP_NEAR_DISTANCE:-0.12}"
-GROUP_NEAR_IOU="${TIM_GROUP_NEAR_IOU:-0.10}"
-GROUP_MIN_NEARBY="${TIM_GROUP_MIN_NEARBY:-3}"
-GROUP_CONFIRM_FRAMES="${TIM_GROUP_CONFIRM_FRAMES:-3}"
-SPLIT_CONFIRM_FRAMES="${TIM_SPLIT_CONFIRM_FRAMES:-3}"
-SPLIT_MIN_MEAN_APP="${TIM_SPLIT_MIN_MEAN_APP:-0.65}"
-SPLIT_MIN_MEAN_MARGIN="${TIM_SPLIT_MIN_MEAN_MARGIN:-0.03}"
-SPLIT_MIN_MEAN_TOTAL="${TIM_SPLIT_MIN_MEAN_TOTAL:-0.50}"
-SPLIT_WINNER_MARGIN="${TIM_SPLIT_WINNER_MARGIN:-0.08}"
+TIM_MARS_CONFIG="${TIM_MARS_CONFIG:-$THESIS_ROOT/ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml}"
 # RAW_TARGET_MODE controls how /target is produced during replay:
 #   source      -> replay original /target from the input bag
 #   selected_id -> synthesize /target from a fixed tracker ID
@@ -205,7 +173,14 @@ cleanup_ros
 trap cleanup_ros EXIT
 
 echo "[info] starting TIM-MARS memory-only node"
+
+if [[ ! -f "$TIM_MARS_CONFIG" ]]; then
+  echo "[error] canonical TIM-MARS config not found: $TIM_MARS_CONFIG" >&2
+  exit 1
+fi
+
 ros2 run thesis_bringup target_memory_mars_node --ros-args \
+  --params-file "$TIM_MARS_CONFIG" \
   -p tracks_topic:=/tracks \
   -p mirror_target_topic:=/target \
   -p target_topic:=/target_memory_mars \
@@ -213,62 +188,8 @@ ros2 run thesis_bringup target_memory_mars_node --ros-args \
   -p select_topic:=/target_memory_mars/select \
   -p selected_track_id:="$TARGET_ID" \
   -p mirror_raw_target_selection:="$TIM_MIRROR_RAW_TARGET_SELECTION" \
-  -p allow_id_switch_recovery:=true \
-  -p id_switch_spatial_gate_enabled:=false \
-  -p appearance_enabled:=true \
   -p appearance_image_topic:="$TIM_APPEARANCE_IMAGE_TOPIC" \
   -p mars_model_path:="$MARS_MODEL_PATH" \
-  -p mars_batch_size:=32 \
-  -p appearance_max_image_age_ms:="$APPEARANCE_MAX_IMAGE_AGE_MS" \
-  -p appearance_compute_min_interval_ms:="$APPEARANCE_COMPUTE_MIN_INTERVAL_MS" \
-  -p appearance_cache_ttl_ms:="$APPEARANCE_CACHE_TTL_MS" \
-  -p appearance_weight:=0.12 \
-  -p appearance_min_similarity:=0.35 \
-  -p appearance_ambiguous_only:=true \
-  -p appearance_update_cooldown_after_reacquire_frames:=0 \
-  -p hard_negative_memory_enabled:="$HN_ENABLED" \
-  -p hard_negative_max_entries:=8 \
-  -p hard_negative_update_alpha:=0.20 \
-  -p hard_negative_min_candidate_similarity:=0.70 \
-  -p hard_negative_reject_similarity:=0.80 \
-  -p hard_negative_reject_margin:="$HN_MARGIN" \
-  -p hard_negative_min_geometry:=0.20 \
-  -p appearance_conservative_enabled:=true \
-  -p appearance_conservative_require_appearance:=false \
-  -p appearance_conservative_min_similarity:=0.65 \
-  -p appearance_conservative_margin:="$APP_MARGIN" \
-  -p rank_aware_reacquisition_enabled:=true \
-  -p rank_aware_lost_min_total:=0.40 \
-  -p rank_aware_lost_min_geom:=0.10 \
-  -p rank_aware_lost_min_app:=0.05 \
-  -p rank_aware_lost_app_margin:=0.03 \
-  -p rank_aware_confirm_frames:="$RANK_CONFIRM" \
-  -p rank_aware_missing_ttl_frames:=8 \
-  -p candidate_belief_enabled:="$CANDIDATE_BELIEF_ENABLED" \
-  -p candidate_belief_min_score:="$CANDIDATE_BELIEF_MIN_SCORE" \
-  -p candidate_belief_confirm_frames:="$CANDIDATE_BELIEF_CONFIRM_FRAMES" \
-  -p anchor_drift_enabled:="$ANCHOR_DRIFT_ENABLED" \
-  -p anchor_drift_max_distance:="$ANCHOR_DRIFT_MAX_DISTANCE" \
-  -p anchor_update_alpha:="$ANCHOR_UPDATE_ALPHA" \
-  -p absence_recovery_enabled:="$ABSENCE_RECOVERY_ENABLED" \
-  -p absence_after_missed_frames:="$ABSENCE_AFTER_MISSED_FRAMES" \
-  -p absence_new_id_requires_appearance:="$ABSENCE_NEW_ID_REQUIRES_APPEARANCE" \
-  -p absence_min_total:="$ABSENCE_MIN_TOTAL" \
-  -p absence_min_distance:="$ABSENCE_MIN_DISTANCE" \
-  -p absence_min_scale:="$ABSENCE_MIN_SCALE" \
-  -p absence_min_similarity:="$ABSENCE_MIN_SIMILARITY" \
-  -p absence_appearance_margin:="$ABSENCE_APPEARANCE_MARGIN" \
-  -p absence_confirm_frames:="$ABSENCE_CONFIRM_FRAMES" \
-  -p group_split_recovery_enabled:="$GROUP_SPLIT_RECOVERY_ENABLED" \
-  -p group_near_distance:="$GROUP_NEAR_DISTANCE" \
-  -p group_near_iou:="$GROUP_NEAR_IOU" \
-  -p group_min_nearby:="$GROUP_MIN_NEARBY" \
-  -p group_confirm_frames:="$GROUP_CONFIRM_FRAMES" \
-  -p split_confirm_frames:="$SPLIT_CONFIRM_FRAMES" \
-  -p split_min_mean_app:="$SPLIT_MIN_MEAN_APP" \
-  -p split_min_mean_margin:="$SPLIT_MIN_MEAN_MARGIN" \
-  -p split_min_mean_total:="$SPLIT_MIN_MEAN_TOTAL" \
-  -p split_winner_margin:="$SPLIT_WINNER_MARGIN" \
   >"$LOG_DIR/target_memory_mars.log" 2>&1 &
 TIM_PID=$!
 

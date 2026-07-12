@@ -53,6 +53,7 @@ PERCEPTION_DETECTOR_MODEL="yolov6n"
 PERCEPTION_HAILO_HEF_PATH="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/models/hef/${PERCEPTION_DETECTOR_MODEL}.hef"
 ENABLE_DASHBOARD_BRIDGE=1
 TARGET_MEMORY_MODE="${TARGET_MEMORY_MODE:-mars}"  # off | mars
+TARGET_MEMORY_MARS_CONFIG="${TARGET_MEMORY_MARS_CONFIG:-${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml}"
 
 TARGET_MEMORY_APPEARANCE_BOOL="true"
 TARGET_MEMORY_APPEARANCE_IMAGE_TOPIC="/camera/dashboard"

@@ -9,6 +9,35 @@ The core safety principle is simple: when identity evidence is weak, TIM-MARS
 prefers uncertainty or no publication over publishing a plausible but possibly
 wrong target.
 
+## Canonical thesis configuration
+
+The canonical algorithmic parameter set is stored in:
+
+- `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
+
+The installed runtime copy is stored in:
+
+- `ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml`
+
+The live stack and the active clean, memory-only, and detector replay runners
+load this file through `--params-file`.
+
+Launchers may override only runtime-specific values:
+
+- topic names;
+- selected target ID;
+- mirror-selection mode;
+- appearance image topic;
+- local MARS model path;
+- live appearance enable or disable state.
+
+Algorithm thresholds and recovery-policy settings must not be duplicated in
+launcher scripts.
+
+The former `MARS_TIM_PRESET` shell preset system is no longer part of the active
+workflow. Experimental variants must use an explicit alternative YAML file and
+record that file with the resulting evidence.
+
 ## Runtime data flow
 
 Input topics:

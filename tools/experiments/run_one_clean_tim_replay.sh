@@ -131,53 +131,19 @@ ros2 run thesis_bringup dashboard_bridge_node --ros-args \
 
 
 
-apply_tim_mars_preset() {
-  local preset="${MARS_TIM_PRESET:-legacy}"
+TIM_MARS_CONFIG="${TIM_MARS_CONFIG:-$THESIS_ROOT/ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml}"
 
-  case "$preset" in
-    legacy|"")
-      ;;
+if [[ "$RUN_TIM_MARS" == "true" && ! -f "$TIM_MARS_CONFIG" ]]; then
+  echo "[error] canonical TIM-MARS config not found: $TIM_MARS_CONFIG" >&2
+  exit 1
+fi
 
-    conservative_hardneg|tim_mars_conservative_hardneg|conservative_hardneg_nomirror_rankconfirm2)
-      export MARS_HARD_NEGATIVE_MEMORY_ENABLED="${MARS_HARD_NEGATIVE_MEMORY_ENABLED:-true}"
-      export MARS_HARD_NEGATIVE_MAX_ENTRIES="${MARS_HARD_NEGATIVE_MAX_ENTRIES:-8}"
-      export MARS_HARD_NEGATIVE_UPDATE_ALPHA="${MARS_HARD_NEGATIVE_UPDATE_ALPHA:-0.20}"
-      export MARS_HARD_NEGATIVE_MIN_CANDIDATE_SIMILARITY="${MARS_HARD_NEGATIVE_MIN_CANDIDATE_SIMILARITY:-0.70}"
-      export MARS_HARD_NEGATIVE_REJECT_SIMILARITY="${MARS_HARD_NEGATIVE_REJECT_SIMILARITY:-0.80}"
-      export MARS_HARD_NEGATIVE_REJECT_MARGIN="${MARS_HARD_NEGATIVE_REJECT_MARGIN:-0.08}"
-      export MARS_HARD_NEGATIVE_MIN_GEOMETRY="${MARS_HARD_NEGATIVE_MIN_GEOMETRY:-0.20}"
-
-      export MARS_APPEARANCE_CONSERVATIVE_ENABLED="${MARS_APPEARANCE_CONSERVATIVE_ENABLED:-true}"
-      export MARS_APPEARANCE_CONSERVATIVE_REQUIRE_APPEARANCE="${MARS_APPEARANCE_CONSERVATIVE_REQUIRE_APPEARANCE:-false}"
-      export MARS_APPEARANCE_CONSERVATIVE_MIN_SIMILARITY="${MARS_APPEARANCE_CONSERVATIVE_MIN_SIMILARITY:-0.65}"
-      export MARS_APPEARANCE_CONSERVATIVE_MARGIN="${MARS_APPEARANCE_CONSERVATIVE_MARGIN:-0.25}"
-
-      export MARS_RANK_AWARE_REACQUISITION_ENABLED="${MARS_RANK_AWARE_REACQUISITION_ENABLED:-true}"
-      export MARS_RANK_AWARE_CONFIRM_FRAMES="${MARS_RANK_AWARE_CONFIRM_FRAMES:-1}"
-      export MARS_ABSENCE_RECOVERY_ENABLED="${MARS_ABSENCE_RECOVERY_ENABLED:-false}"
-      export MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES="${MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES:-0}"
-
-      if [[ "$preset" == "conservative_hardneg_nomirror_rankconfirm2" ]]; then
-        export MARS_MIRROR_RAW_TARGET_SELECTION="${MARS_MIRROR_RAW_TARGET_SELECTION:-false}"
-        export MARS_RANK_AWARE_CONFIRM_FRAMES="${MARS_RANK_AWARE_CONFIRM_FRAMES:-2}"
-        export MARS_APPEARANCE_CONSERVATIVE_MARGIN="${MARS_APPEARANCE_CONSERVATIVE_MARGIN:-0.10}"
-      fi
-      ;;
-
-    *)
-      echo "[error] unknown MARS_TIM_PRESET: $preset" >&2
-      echo "[error] valid presets: legacy, conservative_hardneg, conservative_hardneg_nomirror_rankconfirm2" >&2
-      exit 2
-      ;;
-  esac
-}
-
-apply_tim_mars_preset
-echo "[info] MARS_TIM_PRESET=${MARS_TIM_PRESET:-legacy}"
+echo "[info] TIM_MARS_CONFIG=$TIM_MARS_CONFIG"
 
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
   echo "[info] starting TIM-MARS"
   ros2 run thesis_bringup target_memory_mars_node --ros-args \
+    --params-file "$TIM_MARS_CONFIG" \
     -p tracks_topic:=/tracks \
     -p mirror_target_topic:=/target \
     -p target_topic:=/target_memory_mars \
@@ -185,49 +151,8 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p select_topic:=/target_memory_mars/select \
     -p selected_track_id:=${TARGET_ID} \
     -p mirror_raw_target_selection:=${MARS_MIRROR_RAW_TARGET_SELECTION:-$([[ "$TIM_STARTUP_SELECTED_ONLY" == "true" ]] && echo false || echo true)} \
-    -p allow_id_switch_recovery:=${MARS_ALLOW_ID_SWITCH_RECOVERY:-true} \
-    -p id_switch_spatial_gate_enabled:=${MARS_ID_SWITCH_SPATIAL_GATE_ENABLED:-false} \
-    -p id_switch_min_iou:=${MARS_ID_SWITCH_MIN_IOU:-0.05} \
-    -p id_switch_min_distance:=${MARS_ID_SWITCH_MIN_DISTANCE:-0.35} \
-    -p id_switch_min_scale:=${MARS_ID_SWITCH_MIN_SCALE:-0.35} \
-    -p appearance_enabled:=true \
     -p appearance_image_topic:=/camera/image_raw \
     -p mars_model_path:="${MARS_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}" \
-    -p mars_batch_size:=${MARS_BATCH_SIZE:-32} \
-    -p appearance_weight:=${MARS_APPEARANCE_WEIGHT:-0.12} \
-    -p appearance_min_similarity:=${MARS_APPEARANCE_MIN_SIMILARITY:-0.35} \
-    -p appearance_ambiguous_only:=${MARS_APPEARANCE_AMBIGUOUS_ONLY:-true} \
-    -p appearance_update_cooldown_after_reacquire_frames:=${MARS_APPEARANCE_UPDATE_COOLDOWN_FRAMES:-0} \
-    -p hard_negative_memory_enabled:=${MARS_HARD_NEGATIVE_MEMORY_ENABLED:-false} \
-    -p hard_negative_max_entries:=${MARS_HARD_NEGATIVE_MAX_ENTRIES:-8} \
-    -p hard_negative_update_alpha:=${MARS_HARD_NEGATIVE_UPDATE_ALPHA:-0.20} \
-    -p hard_negative_min_candidate_similarity:=${MARS_HARD_NEGATIVE_MIN_CANDIDATE_SIMILARITY:-0.70} \
-    -p hard_negative_reject_similarity:=${MARS_HARD_NEGATIVE_REJECT_SIMILARITY:-0.80} \
-    -p hard_negative_reject_margin:=${MARS_HARD_NEGATIVE_REJECT_MARGIN:-0.08} \
-    -p hard_negative_min_geometry:=${MARS_HARD_NEGATIVE_MIN_GEOMETRY:-0.20} \
-    -p appearance_conservative_enabled:=${MARS_APPEARANCE_CONSERVATIVE_ENABLED:-false} \
-    -p appearance_conservative_require_appearance:=${MARS_APPEARANCE_CONSERVATIVE_REQUIRE_APPEARANCE:-false} \
-    -p appearance_conservative_min_similarity:=${MARS_APPEARANCE_CONSERVATIVE_MIN_SIMILARITY:-0.65} \
-    -p appearance_conservative_margin:=${MARS_APPEARANCE_CONSERVATIVE_MARGIN:-0.25} \
-    -p rank_aware_reacquisition_enabled:=${MARS_RANK_AWARE_REACQUISITION_ENABLED:-true} \
-    -p rank_aware_lost_min_total:=${MARS_RANK_AWARE_LOST_MIN_TOTAL:-0.40} \
-    -p rank_aware_lost_min_geom:=${MARS_RANK_AWARE_LOST_MIN_GEOM:-0.10} \
-    -p rank_aware_lost_min_app:=${MARS_RANK_AWARE_LOST_MIN_APP:-0.05} \
-    -p rank_aware_lost_app_margin:=${MARS_RANK_AWARE_LOST_APP_MARGIN:-0.03} \
-    -p rank_aware_confirm_frames:=${MARS_RANK_AWARE_CONFIRM_FRAMES:-1} \
-    -p rank_aware_missing_ttl_frames:=${MARS_RANK_AWARE_MISSING_TTL_FRAMES:-8} \
-    -p candidate_belief_enabled:=${MARS_CANDIDATE_BELIEF_ENABLED:-false} \
-    -p candidate_belief_min_score:=${MARS_CANDIDATE_BELIEF_MIN_SCORE:-0.45} \
-    -p candidate_belief_confirm_frames:=${MARS_CANDIDATE_BELIEF_CONFIRM_FRAMES:-2} \
-    -p absence_recovery_enabled:=${MARS_ABSENCE_RECOVERY_ENABLED:-false} \
-    -p absence_after_missed_frames:=${MARS_ABSENCE_AFTER_MISSED_FRAMES:-6} \
-    -p absence_new_id_requires_appearance:=${MARS_ABSENCE_NEW_ID_REQUIRES_APPEARANCE:-true} \
-    -p absence_min_total:=${MARS_ABSENCE_MIN_TOTAL:-0.45} \
-    -p absence_min_distance:=${MARS_ABSENCE_MIN_DISTANCE:-0.25} \
-    -p absence_min_scale:=${MARS_ABSENCE_MIN_SCALE:-0.35} \
-    -p absence_min_similarity:=${MARS_ABSENCE_MIN_SIMILARITY:-0.65} \
-    -p absence_appearance_margin:=${MARS_ABSENCE_APPEARANCE_MARGIN:-0.20} \
-    -p absence_confirm_frames:=${MARS_ABSENCE_CONFIRM_FRAMES:-3} \
     >"$LOG_DIR/target_memory_mars.log" 2>&1 &
 fi
 

@@ -100,26 +100,33 @@ Tasks:
 
 ## Phase 2 — Establish one actual TIM-MARS algorithm
 
-### P0.4 Freeze one canonical preset
+### P0.4 Freeze one canonical preset — DONE
 
-Current drift:
+Completed on 12 July 2026.
 
-| Source | Appearance margin | Hard-negative margin |
-|---|---:|---:|
-| ROS defaults | 0.05 | 0.03 |
-| clean replay conservative preset | 0.25 | 0.08 |
-| alternate replay preset | 0.10 | 0.08 |
-| memory replay | 0.15 | 0.08 |
-| old design document | 0.25 | not canonical |
+Canonical source:
 
-Tasks:
+- `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
 
-- [ ] Choose one candidate thesis preset.
-- [ ] Store it in a versioned YAML file.
-- [ ] Make live and all replay runners load that file.
-- [ ] Remove `legacy` as the silent experiment default.
-- [ ] Serialize the complete resolved config into every report.
-- [ ] Add a configuration fingerprint to replay metadata.
+Completed work:
+
+- [x] Created one versioned canonical TIM-MARS YAML.
+- [x] Verified every configured key is declared by the ROS node.
+- [x] Installed the YAML through the `thesis_bringup` package.
+- [x] Wired the live stack to the canonical YAML.
+- [x] Wired clean replay to the canonical YAML.
+- [x] Wired memory-only replay to the canonical YAML.
+- [x] Wired detector replay to the canonical YAML.
+- [x] Removed the active `MARS_TIM_PRESET` and silent `legacy` preset system.
+- [x] Removed unsupported anchor-drift and group-split parameters from the active memory runner.
+- [x] Restricted launcher overrides to runtime-specific parameters.
+- [x] Verified the running ROS node loads representative canonical values.
+
+Remaining reproducibility work belongs to P0.5:
+
+- serialize the complete resolved configuration into experiment outputs;
+- record a configuration fingerprint;
+- record the Git commit and exact runner command.
 
 ### P0.5 Prove paper-code-runner equivalence
 

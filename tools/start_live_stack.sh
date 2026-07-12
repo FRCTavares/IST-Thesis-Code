@@ -632,22 +632,20 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
     fi
 
     if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
+        if [[ ! -f "$TARGET_MEMORY_MARS_CONFIG" ]]; then
+            echo "[error] canonical TIM-MARS config not found: $TARGET_MEMORY_MARS_CONFIG"
+            stop_stack
+            exit 1
+        fi
+
         start_ros_bg target_memory_mars ros2 run thesis_bringup target_memory_mars_node --ros-args \
+            --params-file "$TARGET_MEMORY_MARS_CONFIG" \
             -p target_topic:=/target_memory_mars \
             -p status_topic:=/target_memory_mars/status \
             -p select_topic:=/target_memory_mars/select \
-            -p appearance_enabled:=true \
+            -p appearance_enabled:="$TARGET_MEMORY_APPEARANCE_BOOL" \
             -p appearance_image_topic:="$TARGET_MEMORY_MARS_IMAGE_TOPIC" \
-            -p mars_model_path:="$TARGET_MEMORY_MARS_MODEL_PATH" \
-            -p mars_batch_size:=$TARGET_MEMORY_MARS_BATCH_SIZE \
-            -p appearance_weight:=$TARGET_MEMORY_MARS_APPEARANCE_WEIGHT \
-            -p appearance_min_similarity:=$TARGET_MEMORY_MARS_APPEARANCE_MIN_SIMILARITY \
-            -p rank_aware_reacquisition_enabled:=$TARGET_MEMORY_MARS_RANK_AWARE_BOOL \
-            -p rank_aware_confirm_frames:=$TARGET_MEMORY_MARS_RANK_AWARE_CONFIRM_FRAMES \
-            -p rank_aware_missing_ttl_frames:=$TARGET_MEMORY_MARS_RANK_AWARE_MISSING_TTL_FRAMES \
-            -p candidate_belief_enabled:=${TARGET_MEMORY_MARS_CANDIDATE_BELIEF_ENABLED:-false} \
-            -p candidate_belief_min_score:=${TARGET_MEMORY_MARS_CANDIDATE_BELIEF_MIN_SCORE:-0.45} \
-            -p candidate_belief_confirm_frames:=${TARGET_MEMORY_MARS_CANDIDATE_BELIEF_CONFIRM_FRAMES:-2}
+            -p mars_model_path:="$TARGET_MEMORY_MARS_MODEL_PATH"
         sleep 1
         if ! check_proc_alive target_memory_mars; then
             stop_stack
