@@ -315,6 +315,20 @@ class TargetIdentityMemory:
                         all_scores=scores_sorted,
                     )
 
+            if self._hard_negative_memory.should_reject(
+                rank_aware_best,
+                self.cfg,
+            ):
+                return self._miss(
+                    reason=(
+                        "rank_aware_hard_negative_reject:"
+                        f" neg={rank_aware_best.hard_negative_similarity:.3f}"
+                        f" margin={rank_aware_best.hard_negative_margin:.3f}"
+                    ),
+                    best_score=rank_aware_best,
+                    all_scores=scores_sorted,
+                )
+
             return self._accept(
                 rank_candidate,
                 best_score=rank_aware_best,

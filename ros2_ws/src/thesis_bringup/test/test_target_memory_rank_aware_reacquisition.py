@@ -1,6 +1,7 @@
 import numpy as np
 
 from thesis_bringup.tim_mars.target_memory import (
+    CandidateScore,
     CandidateTrack,
     TargetIdentityMemory,
     TargetMemoryConfig,
@@ -235,3 +236,57 @@ def test_absence_recovery_rejects_low_appearance_margin():
     assert out.target_track_id == 1
     assert out.visible is False
     assert out.reason.startswith("absence_recovery_reject:appearance_margin")
+
+def test_rank_aware_reacquisition_cannot_bypass_hard_negative_rejection():
+    memory = TargetIdentityMemory(
+        cfg(
+            rank_aware_reacquisition_enabled=True,
+            rank_aware_confirm_frames=1,
+            hard_negative_memory_enabled=True,
+            hard_negative_reject_similarity=0.80,
+            hard_negative_reject_margin=0.03,
+        )
+    )
+
+    memory._m.selected = True
+    memory._m.state = TargetState.LOST
+    memory._m.track_id = 1
+    memory._m.bbox = (0.10, 0.10, 0.20, 0.40)
+
+    candidate = CandidateTrack(
+        track_id=41,
+        bbox=(0.11, 0.10, 0.20, 0.40),
+        score=0.90,
+        appearance=[1.0, 0.0],
+    )
+
+    score = CandidateScore(
+        track_id=41,
+        total=0.73,
+        iou=0.95,
+        distance=0.99,
+        scale=1.0,
+        confidence=0.90,
+        id_bonus=0.0,
+        appearance=0.70,
+        appearance_used=True,
+        appearance_raw=0.70,
+        appearance_gate_passed=True,
+        geometry_allows_appearance=True,
+        hard_negative_similarity=0.82,
+        hard_negative_margin=-0.12,
+        hard_negative_reject=True,
+    )
+
+    output = memory._handle_rank_aware_reacquisition(
+        candidates=[candidate],
+        scores_sorted=[score],
+        best=score,
+    )
+
+    assert output is not None
+    assert output.state != TargetState.REACQUIRED
+    assert output.reason.startswith(
+        "rank_aware_hard_negative_reject:"
+    )
+    assert memory._m.track_id == 1
