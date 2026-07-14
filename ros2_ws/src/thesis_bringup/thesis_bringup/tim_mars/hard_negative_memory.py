@@ -33,6 +33,22 @@ class HardNegativeMemory:
     def clear(self) -> None:
         self._memory = []
 
+    def reconcile_selected(
+        self,
+        appearance: Any,
+        cfg: TargetMemoryConfig,
+    ) -> None:
+        """Remove prototypes matching an identity that has become selected."""
+        if appearance is None or not self._memory:
+            return
+
+        threshold = float(cfg.hard_negative_min_candidate_similarity)
+        self._memory = [
+            memory
+            for memory in self._memory
+            if clamp01(cosine_similarity(memory, appearance)) < threshold
+        ]
+
     def similarity(self, appearance: Any, cfg: TargetMemoryConfig) -> float:
         if not cfg.hard_negative_memory_enabled:
             return 0.0

@@ -207,9 +207,8 @@ def test_current_locked_wrong_lineage_updates_positive_appearance_memory():
     )
 
 
-def test_current_hard_negative_updates_before_acceptance_and_is_not_reconciled():
-    """A candidate can enter negative memory before becoming the selected ID."""
-
+def test_hard_negative_transaction_reconciles_selected_identity():
+    """Keep negative mutation after trusted acceptance."""
     selected_appearance = feat([1.0, 0.0, 0.0])
     candidate_appearance = feat([0.8, 0.6, 0.0])
 
@@ -239,15 +238,15 @@ def test_current_hard_negative_updates_before_acceptance_and_is_not_reconciled()
     assert reacquired.target_track_id == 2
     assert reacquired.state == TargetState.REACQUIRED
 
-    # Characterized unsafe behaviour: candidate preparation inserted the new
-    # candidate into negative memory before the final acceptance transition.
-    assert len(tim._hard_negative_memory) == 1
+    # Candidate preparation and ID-switch acceptance are side-effect free for
+    # negative memory.
+    assert len(tim._hard_negative_memory) == 0
     assert (
         tim._hard_negative_memory.similarity(
             candidate_appearance,
             tim.cfg,
         )
-        > 0.99
+        == 0.0
     )
 
     locked = tim.update(
@@ -262,13 +261,13 @@ def test_current_hard_negative_updates_before_acceptance_and_is_not_reconciled()
     assert locked.state == TargetState.LOCKED
     assert locked.target_track_id == 2
 
-    # There is no selected-negative reconciliation. The now-selected identity
-    # remains represented as a hard negative.
-    assert len(tim._hard_negative_memory) == 1
+    # The accepted lineage is not represented as a hard negative when it
+    # becomes LOCKED.
+    assert len(tim._hard_negative_memory) == 0
     assert (
         tim._hard_negative_memory.similarity(
             candidate_appearance,
             tim.cfg,
         )
-        > 0.99
+        == 0.0
     )

@@ -247,6 +247,7 @@ class TargetIdentityMemory:
             best_candidate,
             best_score=best,
             all_scores=scores_sorted,
+            candidates=candidates,
         )
 
     def _handle_candidate_belief_confirmation(
@@ -333,6 +334,7 @@ class TargetIdentityMemory:
                 rank_candidate,
                 best_score=rank_aware_best,
                 all_scores=scores_sorted,
+                candidates=candidates,
             )
 
         if rank_aware_pending:
@@ -373,6 +375,7 @@ class TargetIdentityMemory:
                 same_id_candidate,
                 best_score=same_id_score,
                 all_scores=scores_sorted,
+                candidates=candidates,
             )
 
         short_gap_base_threshold = (
@@ -454,15 +457,6 @@ class TargetIdentityMemory:
         scores_sorted = sorted(scores, key=lambda s: s.total, reverse=True)
         best = scores_sorted[0]
         second = scores_sorted[1] if len(scores_sorted) > 1 else None
-
-        self._hard_negative_memory.update(
-            candidates=candidates,
-            scores_sorted=scores_sorted,
-            selected_track_id=self._m.track_id,
-            positive_appearance=self._m.appearance,
-            state=self._m.state,
-            cfg=self.cfg,
-        )
 
         best_candidate = next(c for c in candidates if c.track_id == best.track_id)
         same_id = self._m.track_id is not None and best.track_id == self._m.track_id
@@ -850,11 +844,13 @@ class TargetIdentityMemory:
         *,
         best_score: CandidateScore,
         all_scores: List[CandidateScore],
+        candidates: Sequence[CandidateTrack],
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = "",
     ) -> TargetMemoryOutput:
         previous_state = self._m.state
         previous_id = self._m.track_id
+        previous_positive_appearance = self._m.appearance
         id_changed = previous_id is not None and candidate.track_id != previous_id
         was_lostish = previous_state in {TargetState.UNCERTAIN, TargetState.LOST}
 
@@ -894,6 +890,16 @@ class TargetIdentityMemory:
             memory_update_frozen=memory_update_frozen,
         )
 
+        self._commit_hard_negative_transaction(
+            candidates=candidates,
+            scores_sorted=all_scores,
+            accepted_candidate=candidate,
+            previous_state=previous_state,
+            previous_track_id=previous_id,
+            previous_positive_appearance=previous_positive_appearance,
+            new_state=new_state,
+        )
+
         return self._make_output(
             reason="accepted_candidate" if not reacquired else "reacquired_candidate",
             visible=(new_state == TargetState.LOCKED),
@@ -902,6 +908,53 @@ class TargetIdentityMemory:
             all_scores=all_scores,
             memory_update_frozen=memory_update_frozen,
             memory_update_freeze_reason=memory_update_freeze_reason,
+        )
+
+    def _commit_hard_negative_transaction(
+        self,
+        *,
+        candidates: Sequence[CandidateTrack],
+        scores_sorted: List[CandidateScore],
+        accepted_candidate: CandidateTrack,
+        previous_state: TargetState,
+        previous_track_id: Optional[int],
+        previous_positive_appearance,
+        new_state: TargetState,
+    ) -> None:
+        """Commit negative memory only after trusted current-frame acceptance.
+
+        Candidate preparation and proposal validation must remain side-effect
+        free. A changed selected lineage is reconciled immediately, but new
+        negatives are learned only from uninterrupted LOCKED continuity.
+        """
+        id_changed = (
+            previous_track_id is not None
+            and int(accepted_candidate.track_id) != int(previous_track_id)
+        )
+
+        if id_changed:
+            self._hard_negative_memory.reconcile_selected(
+                accepted_candidate.appearance,
+                self.cfg,
+            )
+
+        trusted_continuity = (
+            previous_state == TargetState.LOCKED
+            and new_state == TargetState.LOCKED
+            and previous_track_id is not None
+            and int(accepted_candidate.track_id) == int(previous_track_id)
+        )
+
+        if not trusted_continuity:
+            return
+
+        self._hard_negative_memory.update(
+            candidates=candidates,
+            scores_sorted=scores_sorted,
+            selected_track_id=accepted_candidate.track_id,
+            positive_appearance=previous_positive_appearance,
+            state=TargetState.LOCKED,
+            cfg=self.cfg,
         )
 
     def _apply_accept_memory_update(

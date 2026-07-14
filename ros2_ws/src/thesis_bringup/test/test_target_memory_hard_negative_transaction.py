@@ -3,8 +3,8 @@
 These tests define the required ordering between candidate evidence preparation,
 final identity acceptance, and hard-negative memory mutation.
 
-They are marked as unresolved specifications until the implementation moves
-negative-memory mutation out of candidate preparation.
+They verify that candidate preparation is side-effect free and that negative
+memory mutation occurs only after trusted current-frame acceptance.
 """
 
 import numpy as np
@@ -80,13 +80,6 @@ def select_stable_target(tim, appearance):
     assert output.target_track_id == 1
 
 
-@pytest.mark.xfail(
-    run=False,
-    reason=(
-        "Unresolved specification: candidate preparation currently mutates "
-        "hard-negative memory before the proposal is accepted or rejected."
-    ),
-)
 def test_candidate_preparation_is_side_effect_free():
     target = feat([1.0, 0.0, 0.0])
     distractor = feat([0.8, 0.6, 0.0])
@@ -114,13 +107,6 @@ def test_candidate_preparation_is_side_effect_free():
     assert len(tim._hard_negative_memory) == 0
 
 
-@pytest.mark.xfail(
-    run=False,
-    reason=(
-        "Unresolved specification: a candidate can currently enter negative "
-        "memory before its final role in the frame has been resolved."
-    ),
-)
 def test_candidate_cannot_become_negative_before_role_resolution():
     target = feat([1.0, 0.0, 0.0])
     candidate = feat([0.8, 0.6, 0.0])
@@ -143,13 +129,6 @@ def test_candidate_cannot_become_negative_before_role_resolution():
     assert len(tim._hard_negative_memory) == 0
 
 
-@pytest.mark.xfail(
-    run=False,
-    reason=(
-        "Unresolved specification: negative memory has no reconciliation when "
-        "a previously stored identity becomes the selected lineage."
-    ),
-)
 def test_selected_identity_is_reconciled_out_of_negative_memory():
     target = feat([1.0, 0.0, 0.0])
     candidate = feat([0.8, 0.6, 0.0])
@@ -191,13 +170,6 @@ def test_selected_identity_is_reconciled_out_of_negative_memory():
     )
 
 
-@pytest.mark.xfail(
-    run=False,
-    reason=(
-        "Unresolved specification: hard-negative mutation must be explicitly "
-        "restricted to trusted accepted LOCKED frames."
-    ),
-)
 @pytest.mark.parametrize(
     "state",
     [
