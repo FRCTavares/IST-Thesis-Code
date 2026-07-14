@@ -80,6 +80,7 @@ hailo-rpi5-examples/
 # infer_service/opt/
 # infer_service/resources/
 models/reid/*.pb
+models/reid/*.hef
 
 # ROS bag recordings, generated during live/replay/flight experiments
 artifacts/bags/live_camera/
