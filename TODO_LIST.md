@@ -13,18 +13,29 @@ Priority:
 
 ## Current audit snapshot
 
-Confirmed repository facts:
+Confirmed repository facts as of 14 July 2026:
 
-- focused TIM tests pass: 44 passed;
-- the core implementation is modular, but `target_memory.py` remains 1069 lines;
-- ROS declares 66 TIM-facing parameters;
-- several experimental policies remain in the main decision path;
-- live, replay, documentation, and ROS defaults are inconsistent;
-- the May final result is internally inconsistent;
-- TIM-MARS is neutral on two June sequences;
-- TIM-MARS becomes unsafe in the promoted DeepSORT selected-ID result;
-- evaluation scripts have no dedicated metric tests;
-- documentation contains stale paths and obsolete configuration guidance.
+- the latest focused trusted-continuity validation passes: 39 tests;
+- `thesis_bringup` builds successfully and `git diff --check` passes;
+- the current trusted same-ID experiment modifies six tracked files and remains uncommitted;
+- Seq01 preservation improved from `0.218 / 0.000 / 0.782` to
+  `1.000 / 0.000 / 0.000`;
+- the same change made May unsafe, changing TIM-MARS from approximately
+  `0.944 / 0.015 / 0.041` to `0.416 / 0.527 / 0.057`;
+- therefore same tracker ID, strong geometry, and high adaptive appearance are
+  not sufficient proof of physical-target continuity;
+- May shows that a wrong reacquisition can become `LOCKED`, update the selected
+  identity context, and later satisfy ordinary same-ID continuity conditions;
+- the first May wrong lock begins with an unsafe ID switch from target ID `1`
+  to ID `2`; the later same-ID bypass protects the already-wrong lineage;
+- positive appearance memory may adapt toward a wrongly accepted identity;
+- hard-negative memory stores appearance prototypes without sufficient
+  provenance, lifecycle, or reconciliation;
+- candidate-generation policies still have parallel acceptance paths;
+- `target_memory.py` remains too large and difficult to verify as one ordered
+  algorithm;
+- evaluation scripts still lack dedicated metric and freshness tests;
+- documentation still contains stale paths and obsolete guidance.
 
 ## Phase 1 — Repair the evidence chain
 
@@ -141,7 +152,7 @@ Remaining paper-code equivalence work belongs to P0.5.
 - [ ] Add a test that loads the canonical configuration.
 - [ ] Update the paper and thesis if implementation order differs.
 
-### P0.6 Replace parallel acceptance paths with one safety gate
+### P0.6 Replace parallel acceptance paths with one transactional safety gate
 
 Current update order includes:
 
@@ -158,20 +169,50 @@ Current update order includes:
 11. `_accept()`;
 12. conservative appearance rejection inside `_accept()`.
 
+Current diagnostic evidence:
+
+- rank-aware and other recovery policies can return through separate acceptance
+  paths;
+- moving an unqualified hard-negative veto into every acceptance path was unsafe
+  because negative memory can be stale or contaminated;
+- adding a strong same-ID bypass fixed Seq01 but protected a wrong lineage in
+  May;
+- `LOCKED` currently means that the latest candidate completed the state
+  transition, not necessarily that it belongs to the operator-selected physical
+  identity.
+
 Tasks:
 
-- [ ] Create one candidate-selection stage.
+- [ ] Introduce a candidate proposal structure containing:
+  - candidate and score;
+  - proposal source;
+  - previous and proposed tracker IDs;
+  - same-ID or ID-switch classification;
+  - required confirmation;
+  - evidence availability;
+  - memory-update eligibility;
+  - diagnostic reason.
+- [ ] Make short-gap, rank-aware, absence, and normal selection return proposals
+  instead of calling `_accept()` directly.
 - [ ] Create one final candidate safety gate.
-- [ ] Ensure all paths check:
+- [ ] Ensure every proposal checks:
   - ID-switch permission;
-  - geometry;
+  - geometry and motion plausibility;
   - ambiguity;
-  - positive appearance;
-  - appearance separation;
-  - hard-negative risk;
-  - temporal confirmation.
-- [ ] Apply state transition only after the final gate.
-- [ ] Apply memory updates only after trusted acceptance.
+  - protected positive-anchor similarity;
+  - adaptive appearance similarity;
+  - current-frame distractor separation;
+  - qualified hard-negative risk;
+  - crop and synchronization quality;
+  - temporal confirmation;
+  - identity-lineage trust.
+- [ ] Return `accepted`, `rejected`, or `pending` before mutating any state.
+- [ ] Apply state transition only after final acceptance.
+- [ ] Apply positive and negative memory updates only after trusted current-frame
+  acceptance.
+- [ ] Prevent a newly reacquired ID from automatically receiving the same trust
+  privileges as an uninterrupted operator-selected lineage.
+- [ ] Add tests proving that no proposal source bypasses the final gate.
 
 ### P0.7 Fix rank-aware bypass risks
 
@@ -282,18 +323,30 @@ Do not update positive or negative memory from low-quality crops.
 
 Implement and compare:
 
-- immutable selection anchor;
-- bounded trusted gallery;
+- immutable or very slow operator-selection anchor;
+- bounded trusted multi-pose gallery;
 - adaptive recent prototype;
-- hard-negative gallery.
+- provenance-aware hard-negative gallery.
+
+The May failure demonstrates that adaptive similarity can become self-confirming
+after a wrong reacquisition. Increasing similarity to the adaptive prototype is
+not independent evidence that the physical identity is correct.
 
 Rules:
 
-- [ ] anchor is not overwritten after uncertain recovery;
+- [ ] preserve an operator-selected anchor independently of the adaptive memory;
+- [ ] never replace the anchor merely because a newly reacquired ID reaches
+  `LOCKED`;
+- [ ] compare ID-switch and long-gap candidates against the protected anchor and
+  trusted gallery;
 - [ ] adaptive memory updates only after stable trusted lock;
-- [ ] no update during ambiguity;
-- [ ] no update with weak crop quality;
-- [ ] no update under hard-negative risk.
+- [ ] no positive update on the first accepted ID-switch frame;
+- [ ] no update during `UNCERTAIN`, `LOST`, or unconfirmed `REACQUIRED`;
+- [ ] no update during ambiguity or unresolved hard-negative conflict;
+- [ ] no update with weak, clipped, blurred, tiny, overlapping, or stale crops;
+- [ ] record which memory source supported every acceptance;
+- [ ] add a regression where a wrong reacquisition becomes geometrically stable
+  and must not overwrite the original identity anchor.
 
 ### P1.5 Fix positive-memory bootstrap
 
@@ -310,13 +363,26 @@ Tasks:
 
 ### P0.11 Move hard-negative updates after trusted acceptance
 
-Current update occurs during candidate preparation before the current frame is finally accepted.
+Current update occurs during candidate preparation before the current frame is
+finally accepted. Current entries are primarily appearance prototypes and lack
+enough provenance to determine whether they remain trustworthy.
 
 Tasks:
 
-- [ ] update hard negatives only after confirming the selected target in that frame;
+- [ ] update hard negatives only after confirming the selected target in the
+  current frame;
 - [ ] never update while the scene is ambiguous;
-- [ ] never update during `UNCERTAIN`, `LOST`, or `REACQUIRED`.
+- [ ] never update during `UNCERTAIN`, `LOST`, or `REACQUIRED`;
+- [ ] store source tracker ID, first and last frame, observation count, crop
+  quality, geometry context, insertion reason, and trust level;
+- [ ] require repeated observation before a distractor becomes a strong negative;
+- [ ] remove or reconcile entries whose tracker ID later becomes selected;
+- [ ] downweight or quarantine negatives that are extremely similar to a newly
+  trusted positive anchor;
+- [ ] expire stale negatives;
+- [ ] expose negative provenance in status diagnostics;
+- [ ] add tests for contamination, ID reuse, reselection, and negative-to-positive
+  identity transitions.
 
 ### P1.6 Prevent target fragments becoming negatives
 
@@ -656,30 +722,61 @@ Required:
 
 ## Deferred experiments
 
-Only pursue after the baseline is corrected and simplified:
+Only pursue after the baseline is corrected, memory integrity is protected, and
+the unified gate is validated:
 
 - modern lightweight ReID replacement;
-- part-based embeddings;
-- multi-frame embedding aggregation;
+- part-based or horizontal-stripe embeddings for partial occlusion;
+- pose-guided visible-part comparison;
+- multi-frame embedding galleries and aggregation;
+- time-scaled reacquisition thresholds;
+- uncertainty-growing spatial and motion gates;
+- foveated high-resolution re-detection around the predicted target region;
+- moving ReID inference onto Hailo;
 - Bayesian identity belief;
 - camera-motion compensation;
 - learned candidate fusion;
 - group split recovery;
 - anchor drift adaptation.
 
-These ideas must not enter the final algorithm without controlled ablation evidence.
+The cheap prerequisites are crop-quality gating, image-track synchronization,
+protected anchor memory, qualified relative distractor margins, and trustworthy
+evaluation. Larger ReID or Hailo changes should be attempted only if controlled
+ablations show that the remaining bottleneck is the global embedding under
+occlusion.
+
+These ideas must not enter the final algorithm without controlled ablation
+evidence.
 
 ## Immediate execution order
 
-1. Resolve the May result inconsistency.
-2. Audit the unsafe DeepSORT result.
-3. Freeze one canonical YAML preset.
-4. Fix live appearance wiring.
-5. Add rank-aware bypass tests.
-6. Add evaluator freshness and tests.
-7. Unify the acceptance path.
-8. Protect appearance and hard-negative updates.
-9. Run ablations on tuning data.
-10. Run held-out evaluation.
-11. Freeze the claim.
-12. Rewrite the thesis method and results.
+1. Preserve the failed trusted-same-ID Seq01 and May reports as diagnostic
+   evidence.
+2. Revert the current six-file trusted-same-ID experiment; do not commit it.
+3. Rebuild and rerun the previous canonical May gate to confirm the safe baseline
+   is restored.
+4. Add regression tests for:
+   - unsafe first ID-switch acceptance;
+   - wrong reacquisition becoming `LOCKED`;
+   - positive-memory contamination after wrong reacquisition;
+   - hard-negative contamination and reconciliation;
+   - uninterrupted operator-selected continuity.
+5. Add diagnostics for proposal source, identity-lineage provenance, protected
+   anchor similarity, adaptive similarity, crop quality, synchronization age,
+   and negative provenance.
+6. Refactor candidate policies to produce proposals without changing canonical
+   behaviour.
+7. Route every proposal through one transactional final safety gate.
+8. Move positive and hard-negative updates after trusted acceptance.
+9. Introduce protected anchor memory and explicit trusted-lineage state.
+10. Validate every meaningful step on Seq01 and May; reject any change that
+    improves one by making the other unsafe.
+11. Extend validation to Seq03 crossing and Seq04 occlusion/absence.
+12. Reproduce and diagnose the historical DeepSORT failure using preserved
+    configuration and annotation-compatible memory replay.
+13. Add evaluator freshness, shared semantics, and dedicated tests.
+14. Fix live appearance wiring, image-track synchronization, cache safety, and
+    crop-quality gating.
+15. Run component ablations on tuning sequences.
+16. Run held-out multi-tracker evaluation.
+17. Freeze the final claim, implementation, paper pseudocode, and thesis results.
