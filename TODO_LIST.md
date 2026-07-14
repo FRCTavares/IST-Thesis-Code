@@ -15,22 +15,57 @@ Priority:
 
 Confirmed repository facts as of 14 July 2026:
 
-- the latest focused trusted-continuity validation passes: 39 tests;
-- `thesis_bringup` builds successfully and `git diff --check` passes;
-- the current trusted same-ID experiment modifies six tracked files and remains uncommitted;
-- Seq01 preservation improved from `0.218 / 0.000 / 0.782` to
-  `1.000 / 0.000 / 0.000`;
-- the same change made May unsafe, changing TIM-MARS from approximately
-  `0.944 / 0.015 / 0.041` to `0.416 / 0.527 / 0.057`;
-- therefore same tracker ID, strong geometry, and high adaptive appearance are
-  not sufficient proof of physical-target continuity;
-- May shows that a wrong reacquisition can become `LOCKED`, update the selected
-  identity context, and later satisfy ordinary same-ID continuity conditions;
-- the first May wrong lock begins with an unsafe ID switch from target ID `1`
-  to ID `2`; the later same-ID bypass protects the already-wrong lineage;
+- the failed six-file trusted-same-ID experiment was preserved as a diagnostic
+  patch and reverted from the main working tree;
+- the guarded diagnostic implementation remains isolated on branch
+  `diagnostic/trusted-same-id-bypass-2026-07-14` and was not merged;
+- the current canonical main implementation is identified by commit
+  `73ed19dd` for the clean replay evidence and commit `3aa39572` after adding
+  failure-characterization tests;
+- `thesis_bringup` builds successfully and the focused TIM-MARS suite passes
+  with `42 passed, 3 xfailed`;
+- the three `xfail` tests are explicit unresolved safety specifications rather
+  than accidental failing tests;
+- four additional characterization tests reproduce the current unsafe
+  behaviours:
+  - contradictory appearance can be ignored during a single-candidate ID
+    switch;
+  - a wrongly reacquired ID becomes `LOCKED` on the next same-ID frame;
+  - the wrong locked lineage can update positive appearance memory;
+  - a candidate can enter hard-negative memory before acceptance and remain
+    there after becoming selected;
+- clean canonical replay on commit `73ed19dd` reproduced:
+  - Seq01 TIM-MARS: `1.000 / 0.000 / 0.000`;
+  - May TIM-MARS: `0.944 / 0.015 / 0.041`;
+- both clean replays used canonical configuration SHA-256
+  `5871bc351a78c252a22cfa7ee81f951658b031c35626150979c5ef844f97e4d1`;
+- the replay metadata records the exact Git commit, command, source bag,
+  annotation, canonical configuration, runtime overrides, and fingerprints;
+- the repository was marked dirty during those replays only because
+  `TODO_LIST.md` contained an unrelated unstaged roadmap edit;
+- controlled diagnostics previously demonstrated that disabling
+  `hard_negative_max_positive_similarity` degrades May catastrophically while
+  Seq01 remains correct, so the threshold currently compensates for an
+  upstream identity-integrity defect;
+- the May hard-negative status timeline contains 950 status messages,
+  2,785 candidate-score rows, 33 hard-negative-risk frames, and seven
+  contiguous risk episodes;
+- those seven episodes contain 11 direct hard-negative vetoes;
+- at least one direct veto rejects uninterrupted same-ID continuity of the
+  currently selected lineage;
+- other episodes show candidate IDs `2`, `41`, and the returning original ID
+  being treated as negative-like at different lineage stages;
+- hard-negative memory is currently updated during candidate preparation,
+  before final acceptance, and is not reconciled when a candidate later
+  becomes selected;
+- hard-negative entries contain appearance prototypes without source identity,
+  insertion frame, observation count, trust, expiry, or selected-lineage
+  reconciliation;
+- therefore hard-negative contamination is now directly demonstrated rather
+  than only hypothesized;
+- same tracker ID, strong geometry, and high adaptive appearance are still not
+  sufficient proof of physical-target continuity;
 - positive appearance memory may adapt toward a wrongly accepted identity;
-- hard-negative memory stores appearance prototypes without sufficient
-  provenance, lifecycle, or reconciliation;
 - candidate-generation policies still have parallel acceptance paths;
 - `target_memory.py` remains too large and difficult to verify as one ordered
   algorithm;
@@ -38,6 +73,18 @@ Confirmed repository facts as of 14 July 2026:
 - documentation still contains stale paths and obsolete guidance.
 
 ## Phase 1 — Repair the evidence chain
+
+
+### Engineering principle
+
+A heuristic that prevents catastrophic failure must not be removed simply
+because it appears ad hoc.
+
+If removing a threshold causes catastrophic degradation, first determine
+whether that threshold is compensating for an upstream algorithmic flaw.
+
+Structural correctness has priority over threshold tuning.
+
 
 ### P0.1 Resolve the disputed May result — DONE
 
@@ -214,6 +261,64 @@ Tasks:
   privileges as an uninterrupted operator-selected lineage.
 - [ ] Add tests proving that no proposal source bypasses the final gate.
 
+
+
+### P0.6b Identify why structural safety heuristics are required
+
+July 2026 diagnostics demonstrated that
+`hard_negative_max_positive_similarity`
+is currently preventing catastrophic May failures.
+
+The objective is therefore **not** to tune or remove this threshold.
+The objective is to identify the missing algorithmic invariant that makes
+the threshold necessary, then eliminate that structural flaw.
+
+A heuristic that cannot be removed without catastrophic degradation is
+evidence of a missing invariant, not evidence that the heuristic itself is
+wrong.
+
+Completed diagnostic work:
+
+- [x] Preserved and reverted the failed trusted-same-ID experiment.
+- [x] Restored and reproduced the canonical Seq01 and May baseline.
+- [x] Added explicit unresolved identity-safety specifications.
+- [x] Added four tests characterizing the current unsafe behaviour.
+- [x] Extracted the complete May status timeline with 950 status records.
+- [x] Extracted 2,785 per-candidate score rows.
+- [x] Grouped 33 hard-negative-risk frames into seven contiguous episodes.
+- [x] Identified 11 direct hard-negative vetoes.
+- [x] Demonstrated a direct same-ID hard-negative veto against the current
+  selected lineage.
+- [x] Demonstrated that the current selected identity can remain represented in
+  hard-negative memory after a lineage transition.
+- [x] Located hard-negative mutation before final acceptance in
+  `_prepare_update_candidates()`.
+
+Current structural conclusion:
+
+- candidate scoring and proposal preparation currently mutate hard-negative
+  memory before candidate identity has been resolved;
+- a candidate may be inserted as a negative and later promoted to the selected
+  lineage;
+- no selected-negative reconciliation removes or invalidates that prototype;
+- later same-ID, returning-ID, and rank-aware proposals can therefore be vetoed
+  using contaminated evidence;
+- this must be repaired before considering any broad same-ID bypass.
+
+Remaining tasks:
+
+- [ ] Audit every hard-negative insertion event across all canonical sequences,
+  not only the seven May episodes.
+- [ ] Document the independent evidence supporting every negative insertion.
+- [ ] Separate "candidate rejected" from "candidate proven distractor".
+- [ ] Require repeated trusted observations before committing a strong negative.
+- [ ] Prove every hard-negative insertion has sufficient independent evidence.
+- [ ] Move hard-negative mutation out of candidate preparation.
+- [ ] Add selected-negative reconciliation after an accepted lineage change.
+- [ ] Preserve the current safety threshold until the structural replacement is
+  validated.
+- [ ] Repeat Seq01 and May diagnostics after every structural change.
+
 ### P0.7 Fix rank-aware bypass risks
 
 Add tests proving rank-aware recovery cannot bypass:
@@ -340,6 +445,10 @@ Rules:
 - [ ] compare ID-switch and long-gap candidates against the protected anchor and
   trusted gallery;
 - [ ] adaptive memory updates only after stable trusted lock;
+- [ ] adaptive appearance similarity must never be treated as independent
+  evidence once adaptive memory has already been updated from that identity;
+- [ ] prevent circular reasoning where acceptance strengthens adaptive
+  memory and strengthened adaptive memory later justifies the same identity;
 - [ ] no positive update on the first accepted ID-switch frame;
 - [ ] no update during `UNCERTAIN`, `LOST`, or unconfirmed `REACQUIRED`;
 - [ ] no update during ambiguity or unresolved hard-negative conflict;
@@ -364,8 +473,32 @@ Tasks:
 ### P0.11 Move hard-negative updates after trusted acceptance
 
 Current update occurs during candidate preparation before the current frame is
-finally accepted. Current entries are primarily appearance prototypes and lack
-enough provenance to determine whether they remain trustworthy.
+finally accepted. This ordering defect has now been reproduced in a dedicated
+characterization test and observed in the May replay status timeline.
+
+May diagnostic evidence:
+
+- 33 hard-negative-risk frames;
+- seven contiguous risk episodes;
+- 11 direct hard-negative vetoes;
+- selected/candidate transitions involving IDs `1`, `2`, and `41`;
+- a direct veto where selected ID `2` and best candidate ID `2` are the same;
+- a later direct veto where selected ID `41` rejects returning candidate ID `1`;
+- repeated rank-aware vetoes after short-gap suppression has already moved TIM
+  into `LOST`.
+
+Current entries are appearance prototypes without enough provenance to
+determine whether they remain trustworthy. The next implementation change must
+be transactional rather than a threshold or bypass adjustment.
+
+Required transaction order:
+
+1. prepare immutable candidate evidence;
+2. produce one candidate proposal;
+3. validate the proposal through the final safety gate;
+4. apply the accepted state transition;
+5. reconcile negative memory with the accepted selected identity;
+6. commit only independently proven distractors from a trusted current frame.
 
 Tasks:
 
@@ -373,6 +506,10 @@ Tasks:
   current frame;
 - [ ] never update while the scene is ambiguous;
 - [ ] never update during `UNCERTAIN`, `LOST`, or `REACQUIRED`;
+- [ ] never create a hard negative solely because a candidate was rejected;
+- [ ] require independent evidence that the candidate represents a different
+  physical identity;
+- [ ] distinguish 'candidate rejected' from 'candidate proven distractor';
 - [ ] store source tracker ID, first and last frame, observation count, crop
   quality, geometry context, insertion reason, and trust level;
 - [ ] require repeated observation before a distractor becomes a strong negative;
@@ -750,33 +887,57 @@ evidence.
 
 ## Immediate execution order
 
-1. Preserve the failed trusted-same-ID Seq01 and May reports as diagnostic
-   evidence.
-2. Revert the current six-file trusted-same-ID experiment; do not commit it.
-3. Rebuild and rerun the previous canonical May gate to confirm the safe baseline
-   is restored.
-4. Add regression tests for:
+Completed:
+
+1. [x] Preserve the failed trusted-same-ID experiment as diagnostic evidence.
+2. [x] Revert the six-file trusted-same-ID experiment from the main working tree.
+3. [x] Rebuild and rerun the canonical Seq01 and May baseline.
+4. [x] Classify the unresolved safety regressions explicitly as `xfail`.
+5. [x] Add characterization tests for:
    - unsafe first ID-switch acceptance;
    - wrong reacquisition becoming `LOCKED`;
    - positive-memory contamination after wrong reacquisition;
-   - hard-negative contamination and reconciliation;
-   - uninterrupted operator-selected continuity.
-5. Add diagnostics for proposal source, identity-lineage provenance, protected
-   anchor similarity, adaptive similarity, crop quality, synchronization age,
-   and negative provenance.
-6. Refactor candidate policies to produce proposals without changing canonical
-   behaviour.
-7. Route every proposal through one transactional final safety gate.
-8. Move positive and hard-negative updates after trusted acceptance.
-9. Introduce protected anchor memory and explicit trusted-lineage state.
-10. Validate every meaningful step on Seq01 and May; reject any change that
-    improves one by making the other unsafe.
-11. Extend validation to Seq03 crossing and Seq04 occlusion/absence.
-12. Reproduce and diagnose the historical DeepSORT failure using preserved
+   - hard-negative insertion before acceptance and missing reconciliation.
+6. [x] Extract the May status timeline and all candidate scores.
+7. [x] Summarize 33 hard-negative-risk frames into seven lifecycle episodes.
+8. [x] Demonstrate same-ID and cross-lineage hard-negative vetoes.
+
+Next:
+
+1. Move hard-negative updates out of `_prepare_update_candidates()` without
+   changing any acceptance decision yet.
+2. Introduce a post-decision hard-negative transaction that runs only after a
+   trusted current-frame acceptance.
+3. Add selected-negative reconciliation for operator selection and accepted
+   lineage changes.
+4. Add tests proving that:
+   - proposal preparation is side-effect free;
+   - a candidate cannot become a negative before its role is resolved;
+   - a newly selected identity is removed or quarantined from negative memory;
+   - `UNCERTAIN`, `LOST`, and `REACQUIRED` frames cannot add negatives;
+   - a rejected candidate is not automatically considered a proven distractor.
+5. Add negative provenance containing source track ID, insertion lineage,
+   first and last frame, observation count, insertion reason, crop quality, and
+   trust state.
+6. Require repeated trusted observations before a prototype becomes a strong
+   negative.
+7. Audit every hard-negative insertion across Seq01 and May using the new
+   provenance diagnostics.
+8. Rerun the focused suite, canonical Seq01, and canonical May after each
+   meaningful structural change.
+9. Reject any change that improves one sequence by making the other unsafe.
+10. Only after negative-memory mutation is transactional, refactor candidate
+    policies to return proposals.
+11. Route all proposal sources through one final transactional safety gate.
+12. Introduce protected anchor memory and explicit trusted-lineage state.
+13. Add diagnostics for proposal source, anchor support, adaptive similarity,
+    crop quality, synchronization age, and negative provenance.
+14. Extend validation to Seq03 crossing and Seq04 occlusion/absence.
+15. Reproduce and diagnose the historical DeepSORT failure using preserved
     configuration and annotation-compatible memory replay.
-13. Add evaluator freshness, shared semantics, and dedicated tests.
-14. Fix live appearance wiring, image-track synchronization, cache safety, and
+16. Add evaluator freshness, shared semantics, and dedicated tests.
+17. Fix live appearance wiring, image-track synchronization, cache safety, and
     crop-quality gating.
-15. Run component ablations on tuning sequences.
-16. Run held-out multi-tracker evaluation.
-17. Freeze the final claim, implementation, paper pseudocode, and thesis results.
+18. Run component ablations on tuning sequences.
+19. Run held-out multi-tracker evaluation.
+20. Freeze the final claim, implementation, paper pseudocode, and thesis results.
