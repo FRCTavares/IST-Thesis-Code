@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from thesis_bringup.tim_mars.target_memory import (
     CandidateScore,
@@ -100,6 +101,90 @@ def test_rank_aware_lost_reacquisition_can_choose_rank1_by_appearance():
     assert out.target_track_id == 11
     assert out.state in {TargetState.REACQUIRED, TargetState.LOCKED}
     assert out.reacquired
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "REACQUIRED currently overwrites the trusted selected lineage "
+        "before probation is complete"
+    ),
+)
+def test_rank_aware_reacquisition_keeps_candidate_probationary():
+    """Keep a rank-aware candidate separate from trusted selected memory."""
+    target = feat([1.0, 0.0, 0.0])
+
+    tim = TargetIdentityMemory(
+        cfg(
+            rank_aware_reacquisition_enabled=True,
+            rank_aware_confirm_frames=1,
+            min_confirm_frames_after_reacquire=2,
+            hard_negative_memory_enabled=False,
+            appearance_conservative_enabled=False,
+        )
+    )
+    tim.select(
+        tr(
+            26,
+            (100, 100, 160, 240),
+            appearance=target,
+        )
+    )
+
+    trusted_bbox = tim._m.bbox
+    trusted_appearance = tim._m.appearance.copy()
+
+    tim.update([])
+    lost = tim.update([])
+    assert lost.state == TargetState.LOST
+    assert tim._m.track_id == 26
+
+    first = tim.update(
+        [
+            tr(
+                29,
+                (104, 101, 164, 241),
+                score=0.95,
+                appearance=target,
+            )
+        ]
+    )
+
+    assert first.state == TargetState.REACQUIRED
+    assert not first.visible
+    assert not first.control_valid
+
+    # Safety invariant: a proposal in REACQUIRED is probationary. It must not
+    # replace the authoritative operator-selected lineage.
+    assert tim._m.track_id == 26
+    assert tim._m.bbox == trusted_bbox
+    assert np.allclose(tim._m.appearance, trusted_appearance)
+
+    assert tim._m.pending_track_id == 29
+    assert tim._m.pending_bbox == (104, 101, 164, 241)
+    assert tim._m.pending_confirm_count == 1
+
+    second = tim.update(
+        [
+            tr(
+                29,
+                (106, 102, 166, 242),
+                score=0.95,
+                appearance=target,
+            )
+        ]
+    )
+
+    # One subsequent same-ID observation must not automatically inherit
+    # trusted continuity or enable controller-facing publication.
+    assert second.state == TargetState.REACQUIRED
+    assert not second.visible
+    assert not second.control_valid
+    assert tim._m.track_id == 26
+    assert tim._m.pending_track_id == 29
+    assert tim._m.pending_confirm_count == 2
+    assert np.allclose(tim._m.appearance, trusted_appearance)
+
 
 
 def test_rank_aware_reacquisition_respects_confirmation_frames():
