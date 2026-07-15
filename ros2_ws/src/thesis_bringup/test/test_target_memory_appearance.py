@@ -31,7 +31,6 @@ def cfg(**overrides):
         image_width=640,
         image_height=480,
         max_uncertain_frames=1,
-        max_lost_frames=8,
     )
     base.update(overrides)
     return TargetMemoryConfig(**base)

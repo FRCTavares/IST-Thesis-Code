@@ -115,7 +115,6 @@ class TargetMemoryConfig:
     # These values control how long TIM-MARS remains uncertain before declaring
     # the selected target lost and how long reacquisition needs confirmation.
     max_uncertain_frames: int = 6
-    max_lost_frames: int = 30
     min_confirm_frames_after_reacquire: int = 1
 
     # Identity continuity and controlled ID-switch recovery.
@@ -183,7 +182,6 @@ class TargetMemoryConfig:
     rank_aware_lost_min_app: float = 0.05
     rank_aware_lost_app_margin: float = 0.03
     rank_aware_confirm_frames: int = 1
-    rank_aware_missing_ttl_frames: int = 8
 
     # Candidate-belief confirmation.
     # TIM-MARS may remember a plausible new candidate during UNCERTAIN/LOST but

@@ -23,7 +23,6 @@ target_memory_mars_node:
     accept_score_lost: 0.60
     ambiguity_margin: 0.07
     max_uncertain_frames: 6
-    max_lost_frames: 30
     min_confirm_frames_after_reacquire: 1
     min_candidate_score: 0.10
 
@@ -75,7 +74,6 @@ target_memory_mars_node:
     rank_aware_lost_min_app: 0.05
     rank_aware_lost_app_margin: 0.03
     rank_aware_confirm_frames: 1
-    rank_aware_missing_ttl_frames: 8
 
     # Experimental recovery policies disabled in the canonical algorithm
     candidate_belief_enabled: false

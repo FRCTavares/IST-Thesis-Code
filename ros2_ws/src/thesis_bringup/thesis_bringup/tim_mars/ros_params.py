@@ -79,7 +79,6 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("accept_score_lost", 0.60)
     node.declare_parameter("ambiguity_margin", 0.07)
     node.declare_parameter("max_uncertain_frames", 6)
-    node.declare_parameter("max_lost_frames", 30)
     node.declare_parameter("min_confirm_frames_after_reacquire", 1)
     node.declare_parameter("min_candidate_score", 0.10)
 
@@ -136,7 +135,6 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("rank_aware_lost_min_app", 0.05)
     node.declare_parameter("rank_aware_lost_app_margin", 0.03)
     node.declare_parameter("rank_aware_confirm_frames", 1)
-    node.declare_parameter("rank_aware_missing_ttl_frames", 8)
     node.declare_parameter("candidate_belief_enabled", False)
     node.declare_parameter("candidate_belief_min_score", 0.45)
     node.declare_parameter("candidate_belief_confirm_frames", 2)
@@ -204,7 +202,6 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         accept_score_lost=float(node.get_parameter("accept_score_lost").value),
         ambiguity_margin=float(node.get_parameter("ambiguity_margin").value),
         max_uncertain_frames=int(node.get_parameter("max_uncertain_frames").value),
-        max_lost_frames=int(node.get_parameter("max_lost_frames").value),
         min_confirm_frames_after_reacquire=int(
             node.get_parameter("min_confirm_frames_after_reacquire").value
         ),
@@ -260,7 +257,6 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         rank_aware_lost_min_app=float(node.get_parameter("rank_aware_lost_min_app").value),
         rank_aware_lost_app_margin=float(node.get_parameter("rank_aware_lost_app_margin").value),
         rank_aware_confirm_frames=int(node.get_parameter("rank_aware_confirm_frames").value),
-        rank_aware_missing_ttl_frames=int(node.get_parameter("rank_aware_missing_ttl_frames").value),
         candidate_belief_enabled=bool(node.get_parameter("candidate_belief_enabled").value),
         candidate_belief_min_score=float(node.get_parameter("candidate_belief_min_score").value),
         candidate_belief_confirm_frames=int(node.get_parameter("candidate_belief_confirm_frames").value),

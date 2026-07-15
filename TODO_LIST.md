@@ -638,7 +638,6 @@ Tasks:
 - [ ] Rename `distance` to `position_similarity`.
 - [ ] Store normalized raw centre distance separately.
 - [ ] Replace `geometry_strength = max(...)` with a meaningful aggregate or separate cues.
-- [ ] Remove or implement `max_lost_frames`.
 
 ### P1.9 Add motion evidence only if it helps
 

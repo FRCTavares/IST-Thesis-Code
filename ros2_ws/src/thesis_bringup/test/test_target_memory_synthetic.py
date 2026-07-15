@@ -16,7 +16,11 @@ def tr(track_id, bbox, score=0.9):
 
 
 def cfg(**overrides):
-    base = dict(image_width=640, image_height=480, max_uncertain_frames=2, max_lost_frames=8)
+    base = dict(
+        image_width=640,
+        image_height=480,
+        max_uncertain_frames=2,
+    )
     base.update(overrides)
     return TargetMemoryConfig(**base)
 
@@ -310,7 +314,6 @@ def test_short_gap_new_id_is_suppressed_and_same_id_return_is_preferred():
         image_width=640,
         image_height=480,
         max_uncertain_frames=6,
-        max_lost_frames=20,
         appearance_conservative_enabled=False,
         accept_score_locked=0.45,
         short_gap_same_id_grace_frames=4,
