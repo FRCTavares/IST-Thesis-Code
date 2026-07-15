@@ -13,7 +13,7 @@ Priority:
 
 ## Current audit snapshot
 
-Confirmed repository facts as of 14 July 2026:
+Confirmed repository facts as of 15 July 2026:
 
 - the failed six-file trusted-same-ID experiment was preserved as a diagnostic
   patch and reverted from the main working tree;
@@ -37,6 +37,34 @@ Confirmed repository facts as of 14 July 2026:
 - clean canonical replay on commit `73ed19dd` reproduced:
   - Seq01 TIM-MARS: `1.000 / 0.000 / 0.000`;
   - May TIM-MARS: `0.944 / 0.015 / 0.041`;
+- Seq03 ByteTrack annotations were found to describe the wrong physical target
+  and were corrected in commit `3ff6164c`;
+- the corrected Seq03 target lineage begins with tracker ID `2` and later uses
+  IDs `8`, `12`, `17`, and `13`;
+- appearance crops were confirmed to have a coordinate-frame defect:
+  - candidate boxes were expressed in the stretched 640 x 640 inference frame;
+  - June appearance images were native 640 x 480 `/camera/dashboard` frames;
+  - MARS previously received the inference-frame boxes without vertical
+    remapping;
+- commit `f8ab0c0b` maps appearance crop boxes into the actual appearance-image
+  dimensions before MARS encoding while preserving candidate geometry;
+- focused validation after the mapping change passed:
+  - 15 appearance-attachment tests;
+  - 40 focused TIM-MARS tests;
+  - Python compilation;
+  - changed-line lint;
+  - `thesis_bringup` build;
+- the memory replay runner now automatically selects:
+  - `/camera/dashboard` when present;
+  - otherwise `/camera/image_raw`;
+  - while preserving an explicit environment override;
+- active mapped-appearance replay produced:
+  - Seq01 TIM-MARS: `1.000 / 0.000 / 0.000`;
+  - May TIM-MARS: `0.944 / 0.015 / 0.041`;
+  - corrected Seq03 TIM-MARS: `0.650 / 0.288 / 0.062`;
+- the corrected Seq03 result shows a major improvement over raw ByteTrack
+  (`0.147 / 0.566 / 0.286`) but still contains substantial wrong-target
+  publication and therefore remains a primary algorithmic failure case;
 - both clean replays used canonical configuration SHA-256
   `5871bc351a78c252a22cfa7ee81f951658b031c35626150979c5ef844f97e4d1`;
 - the replay metadata records the exact Git commit, command, source bag,
@@ -364,6 +392,38 @@ Acceptance condition:
 - tests preserve behaviour.
 
 ## Phase 3 — Repair appearance integrity
+
+### P0.8a Map appearance crops into the image coordinate frame — DONE
+
+Completed on 15 July 2026 in commit `f8ab0c0b`.
+
+Confirmed defect:
+
+- tracker candidates use the stretched 640 x 640 inference coordinate frame;
+- June appearance replay uses 640 x 480 `/camera/dashboard` images;
+- MARS previously cropped the appearance image using unmapped inference-frame
+  coordinates;
+- this vertically displaced and distorted the physical crop region.
+
+Completed work:
+
+- [x] Added an explicit candidate-frame to appearance-image bbox mapping.
+- [x] Applied independent horizontal and vertical scale factors.
+- [x] Kept state-machine candidate geometry in the original inference frame.
+- [x] Passed only mapped boxes to the MARS encoder.
+- [x] Added identity-frame and 640 x 640 to 640 x 480 regression tests.
+- [x] Added invalid-frame-geometry rejection.
+- [x] Verified that active appearance features are generated during replay.
+- [x] Made the replay runner select the available appearance topic
+  automatically.
+- [x] Reran Seq01, May, and corrected Seq03 with active mapped appearance.
+
+Remaining implications:
+
+- [ ] Apply equivalent coordinate-frame validation to the DeepSORT crop path.
+- [ ] Add crop visualization or sampled crop export for direct visual checking.
+- [ ] Do not reuse appearance thresholds obtained from geometrically invalid
+  crops without a new controlled sensitivity analysis.
 
 ### P0.8 Fix live appearance wiring
 
@@ -932,8 +992,13 @@ Next:
 12. Introduce protected anchor memory and explicit trusted-lineage state.
 13. Add diagnostics for proposal source, anchor support, adaptive similarity,
     crop quality, synchronization age, and negative provenance.
-14. Extend validation to Seq03 crossing and Seq04 occlusion/absence.
-15. Reproduce and diagnose the historical DeepSORT failure using preserved
+14. Validate corrected Seq03 crossing and Seq04 occlusion/absence using active,
+    correctly mapped appearance evidence.
+15. Verify the Seq04 ByteTrack annotation visually before promoting its metrics,
+    because the previous Seq03 annotation was materially wrong.
+18. Compare Seq04 failure intervals against state, proposal reason, appearance,
+    hard-negative risk, and target-absence publication.
+17. Reproduce and diagnose the historical DeepSORT failure using preserved
     configuration and annotation-compatible memory replay.
 16. Add evaluator freshness, shared semantics, and dedicated tests.
 17. Fix live appearance wiring, image-track synchronization, cache safety, and
