@@ -64,20 +64,38 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("auto_select_largest", False)
     node.declare_parameter("zero_id_when_not_visible", True)
 
+    # Candidate scoring and geometry normalization.
+    node.declare_parameter("w_iou", 0.34)
+    node.declare_parameter("w_distance", 0.26)
+    node.declare_parameter("w_scale", 0.18)
+    node.declare_parameter("w_confidence", 0.14)
+    node.declare_parameter("w_id_bonus", 0.08)
+    node.declare_parameter("distance_sigma", 0.18)
+    node.declare_parameter("scale_sigma", 0.55)
+    node.declare_parameter("stale_quality_decay", 0.85)
+
     # Acceptance, ambiguity, and state hysteresis.
     node.declare_parameter("accept_score_locked", 0.52)
     node.declare_parameter("accept_score_lost", 0.60)
     node.declare_parameter("ambiguity_margin", 0.07)
     node.declare_parameter("max_uncertain_frames", 6)
     node.declare_parameter("max_lost_frames", 30)
+    node.declare_parameter("min_confirm_frames_after_reacquire", 1)
     node.declare_parameter("min_candidate_score", 0.10)
 
-    # Controlled ID-switch recovery.
+    # Controlled ID-switch recovery and short-gap protection.
     node.declare_parameter("allow_id_switch_recovery", True)
+    node.declare_parameter("same_id_accept_relief", 0.08)
     node.declare_parameter("id_switch_spatial_gate_enabled", False)
     node.declare_parameter("id_switch_min_iou", 0.05)
     node.declare_parameter("id_switch_min_distance", 0.35)
     node.declare_parameter("id_switch_min_scale", 0.35)
+    node.declare_parameter("short_gap_same_id_priority_enabled", True)
+    node.declare_parameter("short_gap_same_id_grace_frames", 8)
+    node.declare_parameter("short_gap_same_id_min_total", 0.30)
+    node.declare_parameter("short_gap_new_id_suppression_enabled", True)
+    node.declare_parameter("short_gap_new_id_allow_total", 0.70)
+    node.declare_parameter("short_gap_group_risk_allow_total", 0.85)
 
     # Appearance extraction, scoring, and positive-memory update policy.
     node.declare_parameter("appearance_enabled", True)
@@ -174,17 +192,47 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
     return TargetMemoryConfig(
         image_width=params.image_width,
         image_height=params.image_height,
+        w_iou=float(node.get_parameter("w_iou").value),
+        w_distance=float(node.get_parameter("w_distance").value),
+        w_scale=float(node.get_parameter("w_scale").value),
+        w_confidence=float(node.get_parameter("w_confidence").value),
+        w_id_bonus=float(node.get_parameter("w_id_bonus").value),
+        distance_sigma=float(node.get_parameter("distance_sigma").value),
+        scale_sigma=float(node.get_parameter("scale_sigma").value),
+        stale_quality_decay=float(node.get_parameter("stale_quality_decay").value),
         accept_score_locked=float(node.get_parameter("accept_score_locked").value),
         accept_score_lost=float(node.get_parameter("accept_score_lost").value),
         ambiguity_margin=float(node.get_parameter("ambiguity_margin").value),
         max_uncertain_frames=int(node.get_parameter("max_uncertain_frames").value),
         max_lost_frames=int(node.get_parameter("max_lost_frames").value),
+        min_confirm_frames_after_reacquire=int(
+            node.get_parameter("min_confirm_frames_after_reacquire").value
+        ),
         min_candidate_score=float(node.get_parameter("min_candidate_score").value),
         allow_id_switch_recovery=bool(node.get_parameter("allow_id_switch_recovery").value),
+        same_id_accept_relief=float(node.get_parameter("same_id_accept_relief").value),
         id_switch_spatial_gate_enabled=bool(node.get_parameter("id_switch_spatial_gate_enabled").value),
         id_switch_min_iou=float(node.get_parameter("id_switch_min_iou").value),
         id_switch_min_distance=float(node.get_parameter("id_switch_min_distance").value),
         id_switch_min_scale=float(node.get_parameter("id_switch_min_scale").value),
+        short_gap_same_id_priority_enabled=bool(
+            node.get_parameter("short_gap_same_id_priority_enabled").value
+        ),
+        short_gap_same_id_grace_frames=int(
+            node.get_parameter("short_gap_same_id_grace_frames").value
+        ),
+        short_gap_same_id_min_total=float(
+            node.get_parameter("short_gap_same_id_min_total").value
+        ),
+        short_gap_new_id_suppression_enabled=bool(
+            node.get_parameter("short_gap_new_id_suppression_enabled").value
+        ),
+        short_gap_new_id_allow_total=float(
+            node.get_parameter("short_gap_new_id_allow_total").value
+        ),
+        short_gap_group_risk_allow_total=float(
+            node.get_parameter("short_gap_group_risk_allow_total").value
+        ),
         appearance_enabled=params.appearance_enabled,
         appearance_weight=float(node.get_parameter("appearance_weight").value),
         appearance_min_similarity=float(node.get_parameter("appearance_min_similarity").value),

@@ -8,20 +8,38 @@
 
 target_memory_mars_node:
   ros__parameters:
-    # Selected-target decision thresholds
+    # Candidate scoring and geometry normalization
+    w_iou: 0.34
+    w_distance: 0.26
+    w_scale: 0.18
+    w_confidence: 0.14
+    w_id_bonus: 0.08
+    distance_sigma: 0.18
+    scale_sigma: 0.55
+    stale_quality_decay: 0.85
+
+    # Selected-target decision thresholds and state hysteresis
     accept_score_locked: 0.52
     accept_score_lost: 0.60
     ambiguity_margin: 0.07
     max_uncertain_frames: 6
     max_lost_frames: 30
+    min_confirm_frames_after_reacquire: 1
     min_candidate_score: 0.10
 
-    # Tracker-ID recovery
+    # Tracker-ID recovery and short-gap identity protection
     allow_id_switch_recovery: true
+    same_id_accept_relief: 0.08
     id_switch_spatial_gate_enabled: false
     id_switch_min_iou: 0.05
     id_switch_min_distance: 0.35
     id_switch_min_scale: 0.35
+    short_gap_same_id_priority_enabled: true
+    short_gap_same_id_grace_frames: 8
+    short_gap_same_id_min_total: 0.30
+    short_gap_new_id_suppression_enabled: true
+    short_gap_new_id_allow_total: 0.70
+    short_gap_group_risk_allow_total: 0.85
 
     # MARS appearance evidence
     appearance_enabled: true

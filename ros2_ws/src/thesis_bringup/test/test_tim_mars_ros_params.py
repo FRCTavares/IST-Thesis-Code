@@ -1,3 +1,7 @@
+from pathlib import Path
+
+import yaml
+
 from thesis_bringup.tim_mars.ros_params import (
     build_target_memory_config,
     declare_tim_mars_parameters,
@@ -26,7 +30,7 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 66
+    assert len(node.values) == 82
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
@@ -69,3 +73,60 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     assert cfg.candidate_belief_confirm_frames == 5
     assert cfg.absence_recovery_enabled is True
     assert cfg.absence_confirm_frames == 5
+
+
+def test_canonical_yaml_defines_all_active_algorithm_parameters():
+    node = _FakeNode()
+    declare_tim_mars_parameters(node)
+
+    config_path = (
+        Path(__file__).resolve().parents[1]
+        / "config"
+        / "tim_mars_canonical.yaml"
+    )
+
+    with config_path.open(encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+
+    canonical = document["target_memory_mars_node"]["ros__parameters"]
+
+    expected_active_keys = {
+        "w_iou",
+        "w_distance",
+        "w_scale",
+        "w_confidence",
+        "w_id_bonus",
+        "distance_sigma",
+        "scale_sigma",
+        "stale_quality_decay",
+        "accept_score_locked",
+        "accept_score_lost",
+        "ambiguity_margin",
+        "max_uncertain_frames",
+        "min_confirm_frames_after_reacquire",
+        "min_candidate_score",
+        "allow_id_switch_recovery",
+        "same_id_accept_relief",
+        "id_switch_spatial_gate_enabled",
+        "id_switch_min_iou",
+        "id_switch_min_distance",
+        "id_switch_min_scale",
+        "short_gap_same_id_priority_enabled",
+        "short_gap_same_id_grace_frames",
+        "short_gap_same_id_min_total",
+        "short_gap_new_id_suppression_enabled",
+        "short_gap_new_id_allow_total",
+        "short_gap_group_risk_allow_total",
+    }
+
+    assert expected_active_keys <= canonical.keys()
+
+    for name, value in canonical.items():
+        assert name in node.values
+        node.values[name] = value
+
+    params = read_tim_mars_ros_params(node)
+    cfg = build_target_memory_config(node, params)
+
+    for name in expected_active_keys:
+        assert getattr(cfg, name) == canonical[name]
