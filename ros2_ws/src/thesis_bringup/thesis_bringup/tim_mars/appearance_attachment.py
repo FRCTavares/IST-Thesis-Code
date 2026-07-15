@@ -38,6 +38,8 @@ class AppearanceAttachmentInput:
     latest_image_seen_ns: int | None
     latest_image_seq: int
     mars_backend: AppearanceEncoder | None
+    candidate_frame_width: float
+    candidate_frame_height: float
 
 
 @dataclass
@@ -63,6 +65,36 @@ class AppearanceAttachmentResult:
     candidates: list[CandidateTrack]
     state: AppearanceAttachmentState
     diagnostics: AppearanceAttachmentDiagnostics
+
+
+def map_bbox_to_appearance_image(
+    bbox: tuple[float, float, float, float],
+    *,
+    candidate_frame_width: float,
+    candidate_frame_height: float,
+    image_width: int,
+    image_height: int,
+) -> tuple[float, float, float, float]:
+    """Map a candidate-frame bbox into the appearance-image frame."""
+    if candidate_frame_width <= 0.0:
+        raise ValueError('candidate frame width must be positive')
+
+    if candidate_frame_height <= 0.0:
+        raise ValueError('candidate frame height must be positive')
+
+    if image_width <= 0 or image_height <= 0:
+        raise ValueError('appearance image dimensions must be positive')
+
+    scale_x = float(image_width) / float(candidate_frame_width)
+    scale_y = float(image_height) / float(candidate_frame_height)
+
+    x1, y1, x2, y2 = bbox
+    return (
+        float(x1) * scale_x,
+        float(y1) * scale_y,
+        float(x2) * scale_x,
+        float(y2) * scale_y,
+    )
 
 
 def attach_appearance_features(
@@ -147,10 +179,36 @@ def attach_appearance_features(
         diagnostics.cache_size = len(state.cache_by_track_id)
         return AppearanceAttachmentResult(enriched, state, diagnostics)
 
-    boxes = [candidate.bbox for candidate in data.candidates]
+    try:
+        image_height, image_width = data.latest_image_bgr.shape[:2]
+        boxes = [
+            map_bbox_to_appearance_image(
+                candidate.bbox,
+                candidate_frame_width=data.candidate_frame_width,
+                candidate_frame_height=data.candidate_frame_height,
+                image_width=int(image_width),
+                image_height=int(image_height),
+            )
+            for candidate in data.candidates
+        ]
+    except (AttributeError, IndexError, TypeError, ValueError) as exc:
+        diagnostics.skip_reason = 'invalid_image_geometry'
+        diagnostics.warning = str(exc)
+        enriched, valid = attach_cached_appearance_features(
+            candidates=data.candidates,
+            state=state,
+            now_ns=data.now_ns,
+            cache_ttl_ms=config.cache_ttl_ms,
+        )
+        diagnostics.features_valid = valid
+        diagnostics.cache_size = len(state.cache_by_track_id)
+        return AppearanceAttachmentResult(enriched, state, diagnostics)
 
     try:
-        appearances = data.mars_backend.encode(data.latest_image_bgr, boxes)
+        appearances = data.mars_backend.encode(
+            data.latest_image_bgr,
+            boxes,
+        )
     except Exception as exc:
         diagnostics.skip_reason = f"mars_error:{type(exc).__name__}"
         diagnostics.warning = str(exc)

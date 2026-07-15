@@ -353,6 +353,8 @@ class TargetMemoryMarsNode(Node):
                 latest_image_seen_ns=self._latest_image_seen_ns,
                 latest_image_seq=self._latest_image_seq,
                 mars_backend=self._mars_backend,
+                candidate_frame_width=self._image_width,
+                candidate_frame_height=self._image_height,
             ),
         )
 

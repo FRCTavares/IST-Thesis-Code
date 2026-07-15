@@ -56,7 +56,7 @@ TIM_METADATA_HELPER="$THESIS_ROOT/tools/experiments/write_tim_run_metadata.py"
 #   annotation  -> synthesize /target from annotation CSV + /tracks
 RAW_TARGET_MODE="${RAW_TARGET_MODE:-source}"
 
-TIM_APPEARANCE_IMAGE_TOPIC="${MARS_APPEARANCE_IMAGE_TOPIC:-${TIM_APPEARANCE_IMAGE_TOPIC:-/camera/image_raw}}"
+REQUESTED_APPEARANCE_IMAGE_TOPIC="${MARS_APPEARANCE_IMAGE_TOPIC:-${TIM_APPEARANCE_IMAGE_TOPIC:-}}"
 
 # false: TIM starts from selected_track_id and must recover ID switches itself.
 # true:  TIM mirrors /target reselection events, useful for preservation/oracle tests.
@@ -123,7 +123,6 @@ echo "[info] REPORT_DIR=$REPORT_DIR"
 echo "[info] LOG_DIR=$LOG_DIR"
 echo "[info] TIM_MARS_CONFIG=$TIM_MARS_CONFIG"
 echo "[info] RAW_TARGET_MODE=$RAW_TARGET_MODE"
-echo "[info] TIM_APPEARANCE_IMAGE_TOPIC=$TIM_APPEARANCE_IMAGE_TOPIC"
 echo "[info] TIM_MIRROR_RAW_TARGET_SELECTION=$TIM_MIRROR_RAW_TARGET_SELECTION"
 
 if [[ ! -d "$BAG_PATH" ]]; then
@@ -139,6 +138,23 @@ fi
 source /opt/ros/jazzy/setup.bash
 source "$THESIS_ROOT/ros2_ws/install/setup.bash"
 export ROS_DOMAIN_ID
+
+if [[ -n "$REQUESTED_APPEARANCE_IMAGE_TOPIC" ]]; then
+  TIM_APPEARANCE_IMAGE_TOPIC="$REQUESTED_APPEARANCE_IMAGE_TOPIC"
+else
+  BAG_INFO="$(ros2 bag info "$BAG_PATH" 2>/dev/null)"
+
+  if grep -Fq "Topic: /camera/dashboard " <<<"$BAG_INFO"; then
+    TIM_APPEARANCE_IMAGE_TOPIC="/camera/dashboard"
+  elif grep -Fq "Topic: /camera/image_raw " <<<"$BAG_INFO"; then
+    TIM_APPEARANCE_IMAGE_TOPIC="/camera/image_raw"
+  else
+    TIM_APPEARANCE_IMAGE_TOPIC="/camera/image_raw"
+    echo "[warn] input bag has no supported appearance image topic" >&2
+  fi
+fi
+
+echo "[info] TIM_APPEARANCE_IMAGE_TOPIC=$TIM_APPEARANCE_IMAGE_TOPIC"
 
 rm -rf "$OUT_BAG" "$REPORT_DIR" "$LOG_DIR"
 mkdir -p "$OUT_ROOT" "$REPORT_DIR" "$LOG_DIR"

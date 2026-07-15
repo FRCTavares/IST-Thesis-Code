@@ -1,3 +1,6 @@
+"""Tests for TIM-MARS runtime appearance attachment."""
+
+import numpy as np
 import pytest
 
 from thesis_bringup.tim_mars.appearance_attachment import (
@@ -5,6 +8,7 @@ from thesis_bringup.tim_mars.appearance_attachment import (
     AppearanceAttachmentInput,
     AppearanceAttachmentState,
     attach_appearance_features,
+    map_bbox_to_appearance_image,
 )
 from thesis_bringup.tim_mars.target_memory import CandidateTrack
 
@@ -40,10 +44,15 @@ def data(candidates, **overrides):
     values = dict(
         candidates=candidates,
         now_ns=1_000_000_000,
-        latest_image_bgr=object(),
+        latest_image_bgr=np.zeros(
+            (640, 640, 3),
+            dtype=np.uint8,
+        ),
         latest_image_seen_ns=999_900_000,
         latest_image_seq=3,
         mars_backend=None,
+        candidate_frame_width=640.0,
+        candidate_frame_height=640.0,
     )
     values.update(overrides)
     return AppearanceAttachmentInput(**values)
@@ -149,7 +158,91 @@ def test_successful_mars_encode_updates_cache_and_attaches_features():
     assert result.candidates[1].appearance is None
     assert result.candidates[2].appearance == "feat-3"
     assert len(backend.calls) == 1
-    assert backend.calls[0][1] == [candidate.bbox for candidate in candidates]
+    assert backend.calls[0][1] == [
+        candidate.bbox
+        for candidate in candidates
+    ]
+
+
+def test_bbox_mapping_preserves_identity_frame():
+    """Keep boxes unchanged when candidate and image frames match."""
+    bbox = (10.0, 20.0, 30.0, 60.0)
+
+    mapped = map_bbox_to_appearance_image(
+        bbox,
+        candidate_frame_width=640.0,
+        candidate_frame_height=640.0,
+        image_width=640,
+        image_height=640,
+    )
+
+    assert mapped == pytest.approx(bbox)
+
+
+def test_bbox_mapping_scales_640_square_to_640_by_480():
+    """Scale inference-frame vertical coordinates into the image frame."""
+    mapped = map_bbox_to_appearance_image(
+        (100.0, 160.0, 300.0, 480.0),
+        candidate_frame_width=640.0,
+        candidate_frame_height=640.0,
+        image_width=640,
+        image_height=480,
+    )
+
+    assert mapped == pytest.approx(
+        (100.0, 120.0, 300.0, 360.0),
+    )
+
+
+def test_mars_receives_mapped_boxes_but_candidates_keep_geometry():
+    """Map only MARS crop boxes while preserving candidate geometry."""
+    backend = FakeMarsBackend(['feat-1'])
+    candidate = tr(
+        1,
+        bbox=(100.0, 160.0, 300.0, 480.0),
+    )
+    image = np.zeros(
+        (480, 640, 3),
+        dtype=np.uint8,
+    )
+
+    result = attach_appearance_features(
+        config=cfg(),
+        state=AppearanceAttachmentState(),
+        data=data(
+            [candidate],
+            latest_image_bgr=image,
+            mars_backend=backend,
+        ),
+    )
+
+    assert backend.calls[0][1] == pytest.approx(
+        [(100.0, 120.0, 300.0, 360.0)],
+    )
+    assert result.candidates[0].bbox == candidate.bbox
+    assert result.candidates[0].appearance == 'feat-1'
+
+
+def test_invalid_candidate_frame_geometry_skips_encoding():
+    """Reject invalid frame geometry without calling the encoder."""
+    backend = FakeMarsBackend(['feat-1'])
+
+    result = attach_appearance_features(
+        config=cfg(),
+        state=AppearanceAttachmentState(),
+        data=data(
+            [tr(1)],
+            mars_backend=backend,
+            candidate_frame_height=0.0,
+        ),
+    )
+
+    assert result.diagnostics.skip_reason == (
+        'invalid_image_geometry'
+    )
+    assert result.diagnostics.features_valid == 0
+    assert result.candidates[0].appearance is None
+    assert backend.calls == []
 
 
 def test_same_image_uses_cache_without_reencoding():
