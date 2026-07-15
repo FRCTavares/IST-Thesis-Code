@@ -105,6 +105,22 @@ def main() -> int:
     parser.add_argument("--runner", required=True, type=Path)
     parser.add_argument("--command", required=True)
     parser.add_argument(
+        "--effective-command",
+        help=(
+            "Fully resolved replay command including effective environment "
+            "values. Defaults to --command for runners that have not yet "
+            "provided explicit value-source provenance."
+        ),
+    )
+    parser.add_argument(
+        "--source",
+        action="append",
+        default=[],
+        type=parse_assignment,
+        metavar="KEY=SOURCE",
+        help="Origin of an effective replay value.",
+    )
+    parser.add_argument(
         "--runtime",
         action="append",
         default=[],
@@ -122,6 +138,8 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    effective_command = args.effective_command or args.command
+
     repo_root = args.repo_root.expanduser().resolve()
     output_dir = args.output_dir.expanduser().resolve()
     config_path = args.config.expanduser().resolve()
@@ -137,6 +155,7 @@ def main() -> int:
         parser.error(f"runner does not exist: {runner_path}")
 
     try:
+        value_sources = assignments_to_dict(args.source)
         runtime_overrides = assignments_to_dict(args.runtime)
         experiment_fields = assignments_to_dict(args.field)
     except ValueError as exc:
@@ -149,7 +168,7 @@ def main() -> int:
     canonical_sha256 = sha256_file(canonical_copy)
 
     resolved_runtime: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "canonical_config": {
             "copy": canonical_copy.name,
             "sha256": canonical_sha256,
@@ -157,6 +176,7 @@ def main() -> int:
         },
         "runtime_overrides": runtime_overrides,
         "experiment_fields": experiment_fields,
+        "value_sources": value_sources,
     }
 
     resolved_runtime_path = output_dir / "tim_mars_resolved_runtime.json"
@@ -174,7 +194,7 @@ def main() -> int:
     git_status = run_git(repo_root, "status", "--short")
 
     metadata: dict[str, Any] = {
-        "schema_version": 2,
+        "schema_version": 3,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "repository_root": str(repo_root),
         "git_commit": run_git(repo_root, "rev-parse", "HEAD"),
@@ -189,6 +209,8 @@ def main() -> int:
         "git_status_short": git_status.splitlines(),
         "runner": str(runner_path),
         "command": args.command,
+        "effective_command": effective_command,
+        "value_sources": value_sources,
         "canonical_config": {
             "source": str(config_path),
             "copy": canonical_copy.name,

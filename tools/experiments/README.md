@@ -54,6 +54,25 @@ controlled stream, not a real raw selector baseline.
 `publish_selected_track_target.py` publishes a target from one fixed tracker ID.
 It is useful for controlled selected-ID replays and simple sanity checks.
 
+## Replay provenance
+
+The memory replay runner records both each effective value and its origin.
+
+Origins distinguish:
+
+- an explicit parent-shell environment value;
+- a runner default;
+- appearance-topic auto-detection from bag contents;
+- a fallback used when no supported image topic is present.
+
+`run_metadata.json` stores the original invocation, a fully resolved command
+with effective environment assignments, and the value-source map.
+`tim_mars_resolved_runtime.json` stores the same value-source map alongside
+runtime overrides and experiment fields.
+
+This prevents an inherited `RAW_TARGET_MODE`, output root, configuration path,
+or appearance-topic override from silently changing the meaning of a run.
+
 ## Output policy
 
 By default, replay outputs go under thesis-specific replay/report/log folders.
