@@ -50,3 +50,117 @@ def test_target_message_formatter_copies_track_header():
     ]
 
     assert assigns_header, "Expected regenerated TargetState header to be copied from tracks_msg.header"
+
+
+def test_appearance_attachment_uses_tracks_message_time():
+    tree = _tree()
+
+    methods = {
+        node.name: node
+        for node in tree.body
+        if isinstance(node, ast.ClassDef)
+        for node in node.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+
+    assert "_track_time_ns" in methods
+    assert "_select_appearance_image" in methods
+    assert "_attach_appearance_features" in methods
+
+    attach_method = methods["_attach_appearance_features"]
+
+    monotonic_calls = [
+        node
+        for node in ast.walk(attach_method)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "time"
+        and node.func.attr == "monotonic_ns"
+    ]
+
+    assert not monotonic_calls
+
+
+def test_appearance_image_selection_rejects_future_images():
+    tree = _tree()
+
+    select_methods = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "_select_appearance_image"
+    ]
+
+    assert len(select_methods) == 1
+
+    comparisons = [
+        node
+        for node in ast.walk(select_methods[0])
+        if isinstance(node, ast.Compare)
+        and any(isinstance(op, ast.LtE) for op in node.ops)
+    ]
+
+    assert comparisons, (
+        "Expected image selection to require image timestamp "
+        "<= track timestamp"
+    )
+
+
+def test_image_callback_keeps_timestamp_ordered_buffer():
+    tree = _tree()
+
+    image_methods = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "_on_image"
+    ]
+
+    assert len(image_methods) == 1
+
+    sort_calls = [
+        node
+        for node in ast.walk(image_methods[0])
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "sort"
+    ]
+
+    assert sort_calls
+
+def test_timestamp_paths_do_not_mix_monotonic_clock_domain():
+    tree = _tree()
+
+    relevant_methods = {
+        node.name: node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef)
+        and node.name in {
+            "_on_image",
+            "_track_time_ns",
+            "_attach_appearance_features",
+        }
+    }
+
+    assert set(relevant_methods) == {
+        "_on_image",
+        "_track_time_ns",
+        "_attach_appearance_features",
+    }
+
+    for method_name, method in relevant_methods.items():
+        monotonic_calls = [
+            node
+            for node in ast.walk(method)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "time"
+            and node.func.attr == "monotonic_ns"
+        ]
+
+        assert not monotonic_calls, (
+            f"{method_name} must not mix monotonic time with "
+            "message timestamps"
+        )

@@ -12,7 +12,7 @@ parameter wiring, and message conversion.
 from __future__ import annotations
 
 import time
-from typing import Optional
+from typing import Any, Optional
 
 import rclpy
 from rclpy.executors import ExternalShutdownException
@@ -96,11 +96,12 @@ class TargetMemoryMarsNode(Node):
         self._mars_batch_size = params.mars_batch_size
 
         self._mars_backend = None
-        self._latest_image_bgr = None
-        self._latest_image_seen_ns: Optional[int] = None
+        self._appearance_image_buffer: list[tuple[int, Any]] = []
+        self._appearance_image_buffer_size = 64
         self._cv_bridge = None
         self._image_sub = None
         self._image_error_warned = False
+        self._image_stamp_warned = False
 
         self._last_appearance_candidates = 0
         self._last_appearance_features_valid = 0
@@ -227,20 +228,58 @@ class TargetMemoryMarsNode(Node):
             f"TIM-MARS loaded MARS ReID model: {self._mars_model_path}"
         )
 
+    @staticmethod
+    def _stamp_to_ns(stamp) -> int:
+        return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
+
     def _on_image(self, msg: Image) -> None:
         if not self._appearance_enabled or self._cv_bridge is None:
             return
 
         try:
-            self._latest_image_bgr = self._cv_bridge.imgmsg_to_cv2(
+            image_bgr = self._cv_bridge.imgmsg_to_cv2(
                 msg,
                 desired_encoding="bgr8",
             )
-            self._latest_image_seen_ns = time.monotonic_ns()
+            image_stamp_ns = self._stamp_to_ns(msg.header.stamp)
+
+            if image_stamp_ns <= 0:
+                if not self._image_stamp_warned:
+                    self.get_logger().warn(
+                        "TIM appearance image has no valid header timestamp; "
+                        "discarding it to avoid mixing clock domains"
+                    )
+                    self._image_stamp_warned = True
+                return
+
+            self._appearance_image_buffer = [
+                item
+                for item in self._appearance_image_buffer
+                if item[0] != image_stamp_ns
+            ]
+            self._appearance_image_buffer.append(
+                (image_stamp_ns, image_bgr)
+            )
+            self._appearance_image_buffer.sort(
+                key=lambda item: item[0]
+            )
+
+            if (
+                len(self._appearance_image_buffer)
+                > self._appearance_image_buffer_size
+            ):
+                self._appearance_image_buffer = (
+                    self._appearance_image_buffer[
+                        -self._appearance_image_buffer_size:
+                    ]
+                )
+
             self._latest_image_seq += 1
         except Exception as exc:
             if not self._image_error_warned:
-                self.get_logger().warn(f"TIM appearance image conversion failed: {exc}")
+                self.get_logger().warn(
+                    f"TIM appearance image conversion failed: {exc}"
+                )
                 self._image_error_warned = True
 
     def _on_raw_target(self, msg: TargetState) -> None:
@@ -286,7 +325,10 @@ class TargetMemoryMarsNode(Node):
         t_start_ns = time.monotonic_ns()
 
         candidates = [self._candidate_from_track(t) for t in msg.tracks]
-        candidates = self._attach_appearance_features(candidates)
+        candidates = self._attach_appearance_features(
+            candidates,
+            msg,
+        )
 
         selected_candidate = None
         if self._pending_select_id is not None:
@@ -342,16 +384,69 @@ class TargetMemoryMarsNode(Node):
             score=float(track.score),
         )
 
-    def _attach_appearance_features(self, candidates: list[CandidateTrack]) -> list[CandidateTrack]:
+    def _track_time_ns(
+        self,
+        msg: Track2DArray,
+    ) -> Optional[int]:
+        header_stamp_ns = self._stamp_to_ns(msg.header.stamp)
+        if header_stamp_ns > 0:
+            return header_stamp_ns
+
+        source_stamp_ns = int(msg.src_stamp_ns)
+        if source_stamp_ns > 0:
+            return source_stamp_ns
+
+        return None
+
+    def _select_appearance_image(
+        self,
+        track_time_ns: int,
+    ) -> tuple[Any | None, int | None]:
+        eligible = [
+            item
+            for item in self._appearance_image_buffer
+            if item[0] <= track_time_ns
+        ]
+
+        if not eligible:
+            return None, None
+
+        image_stamp_ns, image_bgr = eligible[-1]
+        return image_bgr, image_stamp_ns
+
+    def _attach_appearance_features(
+        self,
+        candidates: list[CandidateTrack],
+        tracks_msg: Track2DArray,
+    ) -> list[CandidateTrack]:
+        track_time_ns = self._track_time_ns(tracks_msg)
+
+        if track_time_ns is None:
+            self._last_appearance_candidates = len(candidates)
+            self._last_appearance_features_valid = 0
+            self._last_appearance_image_age_ms = None
+            self._last_appearance_skip_reason = (
+                "invalid_track_timestamp"
+            )
+            return candidates
+
+        image_bgr, image_stamp_ns = self._select_appearance_image(
+            track_time_ns
+        )
+
         result = attach_appearance_features(
             config=self._appearance_attachment_config,
             state=self._appearance_attachment_state,
             data=AppearanceAttachmentInput(
                 candidates=candidates,
-                now_ns=time.monotonic_ns(),
-                latest_image_bgr=self._latest_image_bgr,
-                latest_image_seen_ns=self._latest_image_seen_ns,
-                latest_image_seq=self._latest_image_seq,
+                now_ns=track_time_ns,
+                latest_image_bgr=image_bgr,
+                latest_image_seen_ns=image_stamp_ns,
+                latest_image_seq=(
+                    image_stamp_ns
+                    if image_stamp_ns is not None
+                    else -1
+                ),
                 mars_backend=self._mars_backend,
                 candidate_frame_width=self._image_width,
                 candidate_frame_height=self._image_height,
