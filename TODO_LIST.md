@@ -19,11 +19,11 @@ Premise: real drone bags can be replayed offline, so this week includes real
 algorithm/perception experiments, not just readiness checks. Two rules hold the week
 together:
 
-- **Gate before A/B.** Offline replay is NOT deterministic yet (P0.9): three identical
-  causal Seq04 replays gave wrong/lost of 0.024/0.206, 0.048/0.182, 0.117/0.113 —
-  correct is stable at 0.770 but **wrong ratio swings ~0.09 from identical input**.
-  That is the *safety* metric. Until P0.9 lands, any A/B smaller than ~0.09 wrong-ratio
-  is noise, so **land P0.9 first** or run every config N>=3 and compare ranges.
+- **Gate before A/B.** Controlled offline replay is now deterministic through
+  the shared ROS-free runtime and complete-timeline runner. Three identical Seq04
+  runs produced frame-level-identical target and status streams and exactly equal
+  metrics. Algorithm A/B tests may now use this runner, but preservation on May,
+  Seq01, and Seq03 remains required before the synchronization change is committed.
 - **Offline-green != live-certified.** Replays use different image-age/cache/recompute
   values than the drone (F4), so the live appearance wiring (P0.8), the live config
   profile (F4), control-sign checks, and Pi thermals are live-only and reserved for
@@ -34,14 +34,22 @@ increase blocks promotion; MARS stays default (no Hailo-ReID this week — needs
 compile + int8 margin re-validation, no time to do safely).
 
 ### Day 1 (Fri 17) — GATE: make replay trustworthy
-- [ ] **P0.9 deterministic image-track sync** — buffer `/tracks` until the causal
-  image-selection window closes; no sleeps/wall-clock hacks; define behaviour when no
-  exact-timestamp image exists.
-- [ ] Add frame-level diagnostics (track ts, selected image ts, image age, skip reason,
-  candidate IDs, proposal/publication reason).
-- [ ] Prove it: repeat Seq04 x3 -> require stable frame-level output and wrong/lost
-  ratios bounded well under 0.09. **Do not start Day 2 until this passes.**
-- [ ] Rerun May/Seq01/Seq03 to confirm no regression; commit.
+- [x] **P0.9 deterministic image-track sync for controlled offline evaluation** —
+  preload the complete valid image timeline, process tracks in deterministic
+  semantic-time order, and avoid ROS callback scheduling and wall-clock timing hacks.
+- [x] Add frame-level diagnostics for track timestamp, selected image timestamp,
+  image age, skip reason, candidate IDs, and proposal/publication reason.
+- [x] Prove Seq04 repeatability across three runs:
+  - 1547 target messages per run;
+  - 1547 status messages per run;
+  - identical target SHA-256 across all runs;
+  - identical status SHA-256 across all runs;
+  - exactly equal correctness summaries.
+- [x] Rerun May, Seq01, and Seq03 on the matching canonical evidence bags:
+  - May reference: correct 0.965, wrong 0.000, lost 0.035;
+  - Seq01: correct 1.000, wrong 0.000, lost 0.000;
+  - Seq03: correct 0.655, wrong 0.290, lost 0.054.
+- [ ] Run complete verification and commit the deterministic synchronization change.
 
 ### Day 2 (Sat 18) — perception A/B on the now-trustworthy replay
 - [ ] Detector: wire prebuilt **YOLOv8m / YOLO11m @640** (person class) as opt-in
@@ -225,28 +233,25 @@ Confirmed repository facts as of 16 July 2026:
   contains unsafe wrong-target publication;
 - the older Seq03 result may have benefited from future-frame appearance
   leakage and must not automatically be treated as more valid;
-- three identical causal Seq04 replays produced:
+- the earlier causal ROS replay remained scheduler-dependent and produced
+  materially different wrong/lost allocations across identical Seq04 runs;
+- the deterministic complete-timeline runner removes callback-order dependence;
+- three deterministic Seq04 runs produced:
 
 | Run | Correct | Wrong | Lost | Absent output |
 |---|---:|---:|---:|---:|
-| r1 | 0.770 | 0.024 | 0.206 | 1.462 s |
-| r2 | 0.770 | 0.048 | 0.182 | 4.475 s |
-| r3 | 0.770 | 0.117 | 0.113 | 6.537 s |
+| r1 | 0.770 | 0.069 | 0.161 | 2.805 s |
+| r2 | 0.770 | 0.069 | 0.161 | 2.805 s |
+| r3 | 0.770 | 0.069 | 0.161 | 2.805 s |
 
-- Seq04 repeatability ranges were:
-  - correct ratio: `0.000`;
-  - wrong ratio: `0.093`;
-  - lost ratio: `0.093`;
-  - wrong duration: `5.295 s`;
-  - absent-output duration: `5.075 s`;
-- correct-target duration remains stable while wrong, lost, and absent-output
-  allocation changes materially;
-- this indicates scheduler-dependent image availability when `/tracks` is
-  processed;
-- timestamp causality is corrected, but deterministic image-track
-  synchronization is not;
-- Seq04 exact metrics must not be promoted until deterministic synchronization
-  is implemented;
+- all three `/target_memory_mars` streams contain 1547 messages and share SHA-256
+  `e63dc19fb5b18839c1c3b53edda642ee2a5b4f751a049238cc7de9b6b3b708f0`;
+- all three status streams contain 1547 messages and share SHA-256
+  `72559bc777aca76b7fa6f1e10f14d5aed798e590121e187899b805aeaf4d678a`;
+- deterministic synchronization is therefore established for controlled offline
+  replay;
+- Seq04's 0.069 wrong ratio and 2.805 s target-absent output are now confirmed
+  reproducible algorithmic safety failures;
 - four raw-versus-TIM supervisor videos and H.264 copies were generated under:
 
       videos/tim_mars_supervisor_comparison/
@@ -469,7 +474,7 @@ Additional status as of 16 July 2026:
   configuration.
 - [x] Preserved bag, annotation, selected target, canonical hash, runtime hash,
   report, runner, and repository-state provenance.
-- [ ] Resolve deterministic image-track synchronization.
+- [x] Resolve deterministic image-track synchronization.
 - [ ] Commit the causal timestamp and synchronization implementation.
 - [ ] Regenerate the canonical matrix from a clean committed repository.
 - [ ] Update `NOVELTY.md`, paper Table I, and promoted result tables only from
@@ -724,18 +729,20 @@ Completed:
 - [x] Run three identical Seq04 repetitions.
 - [x] Demonstrate material Seq04 replay nondeterminism.
 
-Confirmed blocker:
+Resolved replay blocker:
 
-- correct-target duration is stable across Seq04 repetitions;
-- wrong, lost, and absent-output allocation changes materially;
-- callback arrival order changes which causal image has reached the buffer when
-  `/tracks` is processed;
-- timestamp causality alone is insufficient for deterministic replay.
-- Timestamp causality is corrected, but deterministic image-track synchronization is not.
+- the former ROS callback runner was scheduler-dependent because eligible images
+  could reach the live buffer before or after the corresponding `/tracks` callback;
+- the controlled offline runner now closes the evidence window by reading the full
+  valid image timeline before processing tracks;
+- three identical Seq04 runs produced frame-level-identical target and status
+  streams;
+- the remaining Seq04 wrong-target and target-absent publication are reproducible
+  algorithmic failures rather than replay nondeterminism.
 
 Tasks:
 
-- [ ] Add frame-level diagnostics for:
+- [x] Add frame-level diagnostics for:
   - track timestamp;
   - selected image timestamp;
   - image age;
@@ -743,27 +750,61 @@ Tasks:
   - appearance skip reason;
   - candidate IDs;
   - proposal and publication reason.
-- [ ] Identify the first divergent frame between two Seq04 repetitions.
-- [ ] Confirm whether divergent runs use different causal images or differ in
+- [x] Identify the first divergent frame between two Seq04 repetitions.
+- [x] Confirm whether divergent runs use different causal images or differ in
   whether an eligible image is available.
-- [ ] Introduce deterministic synchronization between image and track evidence.
-- [ ] Buffer track messages until the causal image-selection window is closed.
-- [ ] Define deterministic behaviour when no exact image timestamp exists.
-- [ ] Avoid sleeps, wall-clock delays, and scheduler-dependent timing hacks.
-- [ ] Preserve `appearance_max_image_age_ms` rejection.
-- [ ] Expose actual image-track offset in status diagnostics.
-- [ ] Test:
-  - image before track;
-  - track before image;
+- [x] Extract tracker conversion, causal image selection, appearance attachment,
+  and memory updates into a shared ROS-free runtime used by the ROS wrapper.
+- [x] Introduce deterministic synchronization between image and track evidence for controlled offline evaluation by preloading the complete image timeline and processing tracks in deterministic semantic-time order.
+- [x] Close the causal image-selection window in deterministic offline replay by reading the complete image timeline before processing any track message.
+- [x] Define deterministic behaviour when no exact image timestamp exists: select the latest image timestamp not after the track timestamp and preserve the configured maximum-age rejection.
+- [x] Avoid sleeps, wall-clock delays, ROS playback, and callback-scheduler dependence in the deterministic offline runner.
+- [x] Preserve `appearance_max_image_age_ms` rejection through the shared appearance-attachment runtime.
+- [x] Expose actual image-track offset in status diagnostics.
+- [x] Add a deterministic ROS-free bag runner that:
+  - reads the complete appearance-image and track timelines;
+  - preloads valid timestamped images;
+  - processes tracks by trustworthy timestamp, frame ID, original bag timestamp,
+    and original sequence index;
+  - writes deterministic `/target_memory_mars` and status streams;
+  - streams original source messages in a second pass instead of retaining the
+    complete serialized bag in memory.
+- [x] Complete the first deterministic Seq04 smoke replay:
+  - 467 appearance images loaded;
+  - 1547 track messages processed;
+  - 1547 TIM target and 1547 status messages written;
+  - source evidence copied successfully;
+  - peak resident memory approximately 1.24 GiB;
+  - evaluator completed using header time.
+- [x] Record the first deterministic Seq04 result as a synchronization baseline:
+  - correct ratio 0.770;
+  - wrong ratio 0.069;
+  - lost ratio 0.161;
+  - wrong-target duration 3.936 s;
+  - target-absent output duration 2.805 s.
+- [x] Establish that the 0.069 wrong ratio and 2.805 s absent-output duration
+  are deterministic algorithmic safety issues rather than scheduler noise.
+- [x] Test deterministic image-track correspondence:
+  - image before track and latest-causal-image selection;
+  - track before image and future-image rejection;
   - equal timestamps;
-  - delayed image;
-  - dropped image;
-  - out-of-order image;
-  - stale image;
-  - invalid timestamp.
-- [ ] Repeat Seq04 at least three times after synchronization.
-- [ ] Require stable frame-level output and tightly bounded metrics.
-- [ ] Rerun May, Seq01, and Seq03 to verify preservation.
+  - delayed but eligible causal image with exact offset diagnostics;
+  - dropped or evicted images producing no causal image;
+  - out-of-order image ingestion;
+  - stale causal-image rejection through the full runtime;
+  - invalid image and track timestamps.
+- [x] Repeat Seq04 three times after synchronization.
+- [x] Require stable frame-level output and metrics:
+  - target stream count: 1547 in every run;
+  - target stream SHA-256:
+    `e63dc19fb5b18839c1c3b53edda642ee2a5b4f751a049238cc7de9b6b3b708f0`;
+  - status stream count: 1547 in every run;
+  - status stream SHA-256:
+    `72559bc777aca76b7fa6f1e10f14d5aed798e590121e187899b805aeaf4d678a`;
+  - TIM metrics in every run: correct 0.770, wrong 0.069, lost 0.161;
+  - wrong-target duration in every run: 3.936 s;
+  - target-absent output duration in every run: 2.805 s.
+- [x] Rerun May, Seq01, and Seq03 to verify preservation.
 - [ ] Commit only after deterministic repeatability passes.
 
 ### P0.10 Make appearance caching identity-safe
@@ -1379,29 +1420,23 @@ Completed:
     replays.
 18. [x] Generate four side-by-side supervisor videos and H.264 copies.
 
-Next — deterministic evidence first:
+Next — finish deterministic evidence:
 
-1. [ ] Compare Seq04 repetitions frame by frame and locate the first divergent
-   output decision.
-2. [ ] Record at each divergent frame:
-   - track timestamp;
-   - selected image timestamp;
-   - image age;
-   - image identity or sequence;
-   - candidate IDs and appearance availability;
-   - proposal reason;
-   - acceptance reason;
-   - publication state.
-3. [ ] Confirm whether divergence is caused by different image availability at
-   the `/tracks` callback.
-4. [ ] Design deterministic timestamp synchronization without wall-clock sleeps.
-5. [ ] Buffer tracks until the causal image-selection window is closed.
-6. [ ] Add tests for delayed, dropped, equal-timestamp, stale, and out-of-order
-   images.
-7. [ ] Repeat Seq04 at least three times.
-8. [ ] Require stable frame-level output and stable wrong/lost/absent metrics.
-9. [ ] Rerun May, Seq01, and Seq03 for preservation.
-10. [ ] Run compilation, focused tests, build, and `git diff --check`.
+1. [x] Compare the former nondeterministic Seq04 repetitions and locate the first
+   divergent output decision.
+2. [x] Record timestamp, image, candidate, proposal, acceptance, and publication
+   evidence at divergent frames.
+3. [x] Confirm callback-dependent causal-image availability as the divergence
+   source.
+4. [x] Design deterministic synchronization without wall-clock sleeps.
+5. [x] Close the causal image-selection window using the complete offline image
+   timeline.
+6. [x] Complete delayed, dropped, equal-timestamp, stale,
+   future-image, invalid-timestamp, and out-of-order image tests.
+7. [x] Repeat deterministic Seq04 three times.
+8. [x] Require identical frame-level target/status output and stable metrics.
+9. [x] Rerun May, Seq01, and Seq03 for preservation.
+10. [x] Run compilation, focused tests, build, and `git diff --check`.
 11. [ ] Commit the timestamp and synchronization implementation.
 12. [ ] Regenerate the four-case canonical matrix from the clean commit.
 13. [ ] Record clean provenance:
