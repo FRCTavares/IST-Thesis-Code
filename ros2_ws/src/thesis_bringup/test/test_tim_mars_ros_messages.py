@@ -144,6 +144,11 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
             appearance_features_valid=1,
             appearance_image_age_ms=12.5,
             appearance_skip_reason="ok",
+            track_timestamp_ns=2_000_000_000,
+            selected_image_timestamp_ns=1_987_500_000,
+            image_track_offset_ms=12.5,
+            appearance_warning=None,
+            candidate_track_ids=(7, 8),
             appearance_compute_min_interval_ms=250.0,
             appearance_cache_ttl_ms=750.0,
             appearance_cache_size=4,
@@ -156,5 +161,10 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     assert payload["num_tracks"] == 3
     assert payload["appearance_enabled"] is True
     assert payload["appearance_cache_size"] == 4
+    assert payload["track_timestamp_ns"] == 2_000_000_000
+    assert payload["selected_image_timestamp_ns"] == 1_987_500_000
+    assert payload["image_track_offset_ms"] == 12.5
+    assert payload["appearance_warning"] is None
+    assert payload["candidate_track_ids"] == [7, 8]
     assert payload["best"]["track_id"] == 7
     assert payload["all_scores"][0]["confidence"] == 0.91

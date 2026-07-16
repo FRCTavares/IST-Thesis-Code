@@ -12,7 +12,7 @@ parameter wiring, and message conversion.
 from __future__ import annotations
 
 import time
-from typing import Any, Optional
+from typing import Optional
 
 import rclpy
 from rclpy.executors import ExternalShutdownException
@@ -26,9 +26,6 @@ from thesis_msgs.msg import TargetState, Track2DArray
 
 from thesis_bringup.tim_mars.appearance_attachment import (
     AppearanceAttachmentConfig,
-    AppearanceAttachmentInput,
-    AppearanceAttachmentState,
-    attach_appearance_features,
 )
 from thesis_bringup.tim_mars.mars_reid_backend import MarsReIdBackend
 from thesis_bringup.tim_mars.ros_messages import (
@@ -41,13 +38,12 @@ from thesis_bringup.tim_mars.ros_params import (
     declare_tim_mars_parameters,
     read_tim_mars_ros_params,
 )
-from thesis_bringup.tim_mars.target_memory import (
-    BBox,
-    CandidateTrack,
-    TargetIdentityMemory,
-    TargetMemoryOutput,
-    TargetState as TimState,
+from thesis_bringup.tim_mars.runtime import (
+    TimMarsRuntime,
+    TimMarsRuntimeConfig,
+    TimMarsRuntimeResult,
 )
+from thesis_bringup.tim_mars.target_memory import TargetMemoryOutput
 
 
 class TargetMemoryMarsNode(Node):
@@ -96,33 +92,32 @@ class TargetMemoryMarsNode(Node):
         self._mars_batch_size = params.mars_batch_size
 
         self._mars_backend = None
-        self._appearance_image_buffer: list[tuple[int, Any]] = []
-        self._appearance_image_buffer_size = 64
         self._cv_bridge = None
         self._image_sub = None
         self._image_error_warned = False
         self._image_stamp_warned = False
 
-        self._last_appearance_candidates = 0
-        self._last_appearance_features_valid = 0
-        self._last_appearance_image_age_ms: Optional[float] = None
-        self._last_appearance_skip_reason = "disabled"
+        self._last_mirrored_target_id: Optional[int] = None
 
-        self._latest_image_seq = 0
-        self._appearance_attachment_config = AppearanceAttachmentConfig(
+        cfg = build_target_memory_config(self, params)
+        appearance_cfg = AppearanceAttachmentConfig(
             enabled=self._appearance_enabled,
             max_image_age_ms=self._appearance_max_image_age_ms,
             compute_min_interval_ms=self._appearance_compute_min_interval_ms,
             cache_ttl_ms=self._appearance_cache_ttl_ms,
         )
-        self._appearance_attachment_state = AppearanceAttachmentState()
-
-        initial_id = params.selected_track_id
-        self._pending_select_id: Optional[int] = initial_id if initial_id > 0 else None
-        self._last_mirrored_target_id: Optional[int] = None
-
-        cfg = build_target_memory_config(self, params)
-        self._tim = TargetIdentityMemory(cfg)
+        self._runtime = TimMarsRuntime(
+            TimMarsRuntimeConfig(
+                memory=cfg,
+                appearance=appearance_cfg,
+                image_width=self._image_width,
+                image_height=self._image_height,
+                tracks_are_normalized=self._tracks_are_normalized,
+                selected_track_id=params.selected_track_id,
+                auto_select_largest=self._auto_select_largest,
+                image_buffer_size=64,
+            )
+        )
 
         self._log_memory_config(cfg)
 
@@ -143,9 +138,10 @@ class TargetMemoryMarsNode(Node):
             f"appearance_image_topic={self._appearance_image_topic}"
         )
 
-        if self._pending_select_id is not None:
+        if self._runtime.pending_select_id is not None:
             self.get_logger().info(
-                f"Waiting to initialise TIM from track id {self._pending_select_id}"
+                "Waiting to initialise TIM from track id "
+                f"{self._runtime.pending_select_id}"
             )
 
     def _log_memory_config(self, cfg) -> None:
@@ -224,13 +220,10 @@ class TargetMemoryMarsNode(Node):
             self._mars_model_path,
             batch_size=self._mars_batch_size,
         )
+        self._runtime.mars_backend = self._mars_backend
         self.get_logger().info(
             f"TIM-MARS loaded MARS ReID model: {self._mars_model_path}"
         )
-
-    @staticmethod
-    def _stamp_to_ns(stamp) -> int:
-        return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
 
     def _on_image(self, msg: Image) -> None:
         if not self._appearance_enabled or self._cv_bridge is None:
@@ -241,40 +234,15 @@ class TargetMemoryMarsNode(Node):
                 msg,
                 desired_encoding="bgr8",
             )
-            image_stamp_ns = self._stamp_to_ns(msg.header.stamp)
+            image_stamp_ns = self._runtime.stamp_to_ns(msg.header.stamp)
 
-            if image_stamp_ns <= 0:
+            if not self._runtime.add_image(image_stamp_ns, image_bgr):
                 if not self._image_stamp_warned:
                     self.get_logger().warn(
                         "TIM appearance image has no valid header timestamp; "
                         "discarding it to avoid mixing clock domains"
                     )
                     self._image_stamp_warned = True
-                return
-
-            self._appearance_image_buffer = [
-                item
-                for item in self._appearance_image_buffer
-                if item[0] != image_stamp_ns
-            ]
-            self._appearance_image_buffer.append(
-                (image_stamp_ns, image_bgr)
-            )
-            self._appearance_image_buffer.sort(
-                key=lambda item: item[0]
-            )
-
-            if (
-                len(self._appearance_image_buffer)
-                > self._appearance_image_buffer_size
-            ):
-                self._appearance_image_buffer = (
-                    self._appearance_image_buffer[
-                        -self._appearance_image_buffer_size:
-                    ]
-                )
-
-            self._latest_image_seq += 1
         except Exception as exc:
             if not self._image_error_warned:
                 self.get_logger().warn(
@@ -294,11 +262,14 @@ class TargetMemoryMarsNode(Node):
         if target_id <= 0:
             return
 
-        if self._last_mirrored_target_id == target_id and self._pending_select_id is None:
+        if (
+            self._last_mirrored_target_id == target_id
+            and self._runtime.pending_select_id is None
+        ):
             return
 
         self._last_mirrored_target_id = target_id
-        self._pending_select_id = target_id
+        self._runtime.request_selection(target_id)
         self.get_logger().info(
             f"TIM mirrored raw /target selection: track id {target_id}"
         )
@@ -306,165 +277,65 @@ class TargetMemoryMarsNode(Node):
     def _on_select(self, msg: UInt32) -> None:
         requested_id = int(msg.data)
         if requested_id <= 0:
-            out = self._tim.clear()
+            out = self._runtime.clear()
             self.get_logger().info("TIM cleared by select id <= 0")
             self._publish_status_only(out)
-            self._pending_select_id = None
             return
 
-        self._pending_select_id = requested_id
-        self.get_logger().info(f"TIM pending operator selection: track id {requested_id}")
+        self._runtime.request_selection(requested_id)
+        self.get_logger().info(
+            f"TIM pending operator selection: track id {requested_id}"
+        )
 
     def _on_clear(self, _: Empty) -> None:
-        out = self._tim.clear()
-        self._pending_select_id = None
+        out = self._runtime.clear()
         self.get_logger().info("TIM cleared")
         self._publish_status_only(out)
 
     def _on_tracks(self, msg: Track2DArray) -> None:
         t_start_ns = time.monotonic_ns()
 
-        candidates = [self._candidate_from_track(t) for t in msg.tracks]
-        candidates = self._attach_appearance_features(
-            candidates,
-            msg,
-        )
+        pending_before = self._runtime.pending_select_id
+        state_before = self._runtime.memory.state
+        result = self._runtime.process_tracks(msg)
+        out = result.output
 
-        selected_candidate = None
-        if self._pending_select_id is not None:
-            selected_candidate = self._find_candidate(candidates, self._pending_select_id)
-
-        if selected_candidate is not None:
-            out = self._tim.select(selected_candidate)
+        if (
+            pending_before is not None
+            and self._runtime.pending_select_id is None
+            and out.reason == "operator_select"
+        ):
             self.get_logger().info(
-                f"TIM selected track {selected_candidate.track_id} on frame {int(msg.frame_id)}"
+                f"TIM selected track {out.target_track_id} "
+                f"on frame {int(msg.frame_id)}"
             )
-            self._pending_select_id = None
-        elif self._pending_select_id is not None and self._tim.state == TimState.NO_TARGET:
-            out = self._tim.update([])
-            out.reason = f"pending_selection_track_not_visible:{self._pending_select_id}"
-        elif self._tim.state == TimState.NO_TARGET and self._auto_select_largest and candidates:
-            largest = max(candidates, key=lambda c: self._bbox_area(c.bbox))
-            out = self._tim.select(largest)
+        elif (
+            pending_before is None
+            and self._auto_select_largest
+            and state_before.value == "NO_TARGET"
+            and out.reason == "operator_select"
+        ):
             self.get_logger().warn(
-                f"TIM auto-selected largest track {largest.track_id}. "
+                f"TIM auto-selected largest track {out.target_track_id}. "
                 "Use only for manual inspection, not final thesis evaluation."
             )
-        else:
-            out = self._tim.update(candidates)
+
+        if result.diagnostics.appearance_warning is not None:
+            self.get_logger().warn(
+                "TIM-MARS embedding extraction failed: "
+                f"{result.diagnostics.appearance_warning}"
+            )
 
         t_end_ns = time.monotonic_ns()
 
         target_msg = self._target_msg_from_output(msg, out)
         self._target_pub.publish(target_msg)
-        self._publish_status(out, msg, t_start_ns, t_end_ns)
-
-    def _candidate_from_track(self, track) -> CandidateTrack:
-        cx = float(track.cx)
-        cy = float(track.cy)
-        w = float(track.w)
-        h = float(track.h)
-
-        if self._tracks_are_normalized:
-            cx *= self._image_width
-            w *= self._image_width
-            cy *= self._image_height
-            h *= self._image_height
-
-        x1 = cx - 0.5 * w
-        y1 = cy - 0.5 * h
-        x2 = cx + 0.5 * w
-        y2 = cy + 0.5 * h
-
-        bbox = self._clip_bbox((x1, y1, x2, y2))
-
-        return CandidateTrack(
-            track_id=int(track.id),
-            bbox=bbox,
-            score=float(track.score),
+        self._publish_status(
+            result,
+            msg,
+            t_start_ns,
+            t_end_ns,
         )
-
-    def _track_time_ns(
-        self,
-        msg: Track2DArray,
-    ) -> Optional[int]:
-        header_stamp_ns = self._stamp_to_ns(msg.header.stamp)
-        if header_stamp_ns > 0:
-            return header_stamp_ns
-
-        source_stamp_ns = int(msg.src_stamp_ns)
-        if source_stamp_ns > 0:
-            return source_stamp_ns
-
-        return None
-
-    def _select_appearance_image(
-        self,
-        track_time_ns: int,
-    ) -> tuple[Any | None, int | None]:
-        eligible = [
-            item
-            for item in self._appearance_image_buffer
-            if item[0] <= track_time_ns
-        ]
-
-        if not eligible:
-            return None, None
-
-        image_stamp_ns, image_bgr = eligible[-1]
-        return image_bgr, image_stamp_ns
-
-    def _attach_appearance_features(
-        self,
-        candidates: list[CandidateTrack],
-        tracks_msg: Track2DArray,
-    ) -> list[CandidateTrack]:
-        track_time_ns = self._track_time_ns(tracks_msg)
-
-        if track_time_ns is None:
-            self._last_appearance_candidates = len(candidates)
-            self._last_appearance_features_valid = 0
-            self._last_appearance_image_age_ms = None
-            self._last_appearance_skip_reason = (
-                "invalid_track_timestamp"
-            )
-            return candidates
-
-        image_bgr, image_stamp_ns = self._select_appearance_image(
-            track_time_ns
-        )
-
-        result = attach_appearance_features(
-            config=self._appearance_attachment_config,
-            state=self._appearance_attachment_state,
-            data=AppearanceAttachmentInput(
-                candidates=candidates,
-                now_ns=track_time_ns,
-                latest_image_bgr=image_bgr,
-                latest_image_seen_ns=image_stamp_ns,
-                latest_image_seq=(
-                    image_stamp_ns
-                    if image_stamp_ns is not None
-                    else -1
-                ),
-                mars_backend=self._mars_backend,
-                candidate_frame_width=self._image_width,
-                candidate_frame_height=self._image_height,
-            ),
-        )
-
-        self._appearance_attachment_state = result.state
-        self._last_appearance_candidates = result.diagnostics.candidates
-        self._last_appearance_features_valid = result.diagnostics.features_valid
-        self._last_appearance_image_age_ms = result.diagnostics.image_age_ms
-        self._last_appearance_skip_reason = result.diagnostics.skip_reason
-
-        if result.diagnostics.warning is not None:
-            self.get_logger().warn(
-                f"TIM-MARS embedding extraction failed: {result.diagnostics.warning}"
-            )
-
-        return result.candidates
 
     def _target_msg_from_output(self, tracks_msg: Track2DArray, out: TargetMemoryOutput) -> TargetState:
         target_msg = target_msg_from_output(
@@ -484,51 +355,39 @@ class TargetMemoryMarsNode(Node):
 
     def _publish_status(
         self,
-        out: TargetMemoryOutput,
+        result: TimMarsRuntimeResult,
         tracks_msg: Track2DArray,
         t_start_ns: int,
         t_end_ns: int,
     ) -> None:
+        diagnostics = result.diagnostics
+
         msg = String()
         msg.data = status_json_from_output(
-            out,
+            result.output,
             frame_id=int(tracks_msg.frame_id),
             lat_ms=float(t_end_ns - t_start_ns) / 1e6,
             num_tracks=len(tracks_msg.tracks),
             appearance_enabled=self._appearance_enabled,
-            appearance_candidates=self._last_appearance_candidates,
-            appearance_features_valid=self._last_appearance_features_valid,
-            appearance_image_age_ms=self._last_appearance_image_age_ms,
-            appearance_skip_reason=self._last_appearance_skip_reason,
+            appearance_candidates=diagnostics.appearance_candidates,
+            appearance_features_valid=diagnostics.appearance_features_valid,
+            appearance_image_age_ms=diagnostics.image_track_offset_ms,
+            appearance_skip_reason=diagnostics.appearance_skip_reason,
+            track_timestamp_ns=diagnostics.track_timestamp_ns,
+            selected_image_timestamp_ns=(
+                diagnostics.selected_image_timestamp_ns
+            ),
+            image_track_offset_ms=diagnostics.image_track_offset_ms,
+            appearance_warning=diagnostics.appearance_warning,
+            candidate_track_ids=diagnostics.candidate_track_ids,
             appearance_compute_min_interval_ms=self._appearance_compute_min_interval_ms,
             appearance_cache_ttl_ms=self._appearance_cache_ttl_ms,
-            appearance_cache_size=len(self._appearance_attachment_state.cache_by_track_id),
-            appearance_update_cooldown_remaining=int(
-                getattr(self._tim, "_appearance_update_cooldown_frames_remaining", 0)
+            appearance_cache_size=diagnostics.appearance_cache_size,
+            appearance_update_cooldown_remaining=(
+                diagnostics.appearance_update_cooldown_remaining
             ),
         )
         self._status_pub.publish(msg)
-
-
-    def _clip_bbox(self, bbox: BBox) -> BBox:
-        x1, y1, x2, y2 = bbox
-        x1 = max(0.0, min(self._image_width, x1))
-        y1 = max(0.0, min(self._image_height, y1))
-        x2 = max(0.0, min(self._image_width, x2))
-        y2 = max(0.0, min(self._image_height, y2))
-        return (x1, y1, x2, y2)
-
-    @staticmethod
-    def _bbox_area(bbox: BBox) -> float:
-        x1, y1, x2, y2 = bbox
-        return max(0.0, x2 - x1) * max(0.0, y2 - y1)
-
-    @staticmethod
-    def _find_candidate(candidates: list[CandidateTrack], track_id: int) -> Optional[CandidateTrack]:
-        for candidate in candidates:
-            if int(candidate.track_id) == int(track_id):
-                return candidate
-        return None
 
 
 def main(args=None) -> None:

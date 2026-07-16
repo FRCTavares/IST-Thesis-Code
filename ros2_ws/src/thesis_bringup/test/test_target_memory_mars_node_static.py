@@ -4,29 +4,118 @@ import ast
 from pathlib import Path
 
 
-NODE = Path("ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory_mars_node.py")
+NODE = Path(
+    "ros2_ws/src/thesis_bringup/thesis_bringup/"
+    "tim_mars/target_memory_mars_node.py"
+)
 
 
 def _tree():
     return ast.parse(NODE.read_text())
 
 
-def test_on_tracks_passes_tracks_message_to_target_message_formatter():
+def _methods():
     tree = _tree()
+    return {
+        node.name: node
+        for class_node in tree.body
+        if isinstance(class_node, ast.ClassDef)
+        for node in class_node.body
+        if isinstance(node, ast.FunctionDef)
+    }
+
+
+def test_node_constructs_shared_runtime():
+    tree = _tree()
+
+    constructor_calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "TimMarsRuntime"
+    ]
+
+    assert constructor_calls
+
+
+def test_image_callback_delegates_to_runtime_add_image():
+    method = _methods()["_on_image"]
 
     calls = [
         node
-        for node in ast.walk(tree)
+        for node in ast.walk(method)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "add_image"
+    ]
+
+    assert calls
+
+
+def test_track_callback_delegates_to_runtime_process_tracks():
+    method = _methods()["_on_tracks"]
+
+    calls = [
+        node
+        for node in ast.walk(method)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "process_tracks"
+    ]
+
+    assert calls
+
+
+def test_selection_callbacks_delegate_to_runtime():
+    methods = _methods()
+
+    select_calls = [
+        node
+        for node in ast.walk(methods["_on_select"])
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr in {"request_selection", "clear"}
+    ]
+    clear_calls = [
+        node
+        for node in ast.walk(methods["_on_clear"])
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "clear"
+    ]
+
+    assert select_calls
+    assert clear_calls
+
+
+def test_node_no_longer_duplicates_runtime_processing_helpers():
+    methods = _methods()
+
+    duplicated_helpers = {
+        "_candidate_from_track",
+        "_track_time_ns",
+        "_select_appearance_image",
+        "_attach_appearance_features",
+        "_clip_bbox",
+        "_bbox_area",
+        "_find_candidate",
+    }
+
+    assert duplicated_helpers.isdisjoint(methods)
+
+
+def test_on_tracks_passes_tracks_message_to_target_message_formatter():
+    method = _methods()["_on_tracks"]
+
+    calls = [
+        node
+        for node in ast.walk(method)
         if isinstance(node, ast.Call)
         and isinstance(node.func, ast.Attribute)
         and node.func.attr == "_target_msg_from_output"
     ]
 
-    assert calls, "Expected at least one _target_msg_from_output call"
-
-    # The wrapper must receive the incoming Track2DArray message so it can copy
-    # msg.header into the regenerated TargetState. Header time is required for
-    # --timebase header evaluations.
     assert any(
         len(call.args) == 2
         and isinstance(call.args[0], ast.Name)
@@ -36,11 +125,11 @@ def test_on_tracks_passes_tracks_message_to_target_message_formatter():
 
 
 def test_target_message_formatter_copies_track_header():
-    tree = _tree()
+    method = _methods()["_target_msg_from_output"]
 
-    assigns_header = [
+    assignments = [
         node
-        for node in ast.walk(tree)
+        for node in ast.walk(method)
         if isinstance(node, ast.Assign)
         and any(
             isinstance(target, ast.Attribute)
@@ -49,110 +138,16 @@ def test_target_message_formatter_copies_track_header():
         )
     ]
 
-    assert assigns_header, "Expected regenerated TargetState header to be copied from tracks_msg.header"
+    assert assignments
 
 
-def test_appearance_attachment_uses_tracks_message_time():
-    tree = _tree()
+def test_message_timestamp_paths_do_not_use_monotonic_clock():
+    methods = _methods()
 
-    methods = {
-        node.name: node
-        for node in tree.body
-        if isinstance(node, ast.ClassDef)
-        for node in node.body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-    }
-
-    assert "_track_time_ns" in methods
-    assert "_select_appearance_image" in methods
-    assert "_attach_appearance_features" in methods
-
-    attach_method = methods["_attach_appearance_features"]
-
-    monotonic_calls = [
-        node
-        for node in ast.walk(attach_method)
-        if isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == "time"
-        and node.func.attr == "monotonic_ns"
-    ]
-
-    assert not monotonic_calls
-
-
-def test_appearance_image_selection_rejects_future_images():
-    tree = _tree()
-
-    select_methods = [
-        node
-        for node in ast.walk(tree)
-        if isinstance(node, ast.FunctionDef)
-        and node.name == "_select_appearance_image"
-    ]
-
-    assert len(select_methods) == 1
-
-    comparisons = [
-        node
-        for node in ast.walk(select_methods[0])
-        if isinstance(node, ast.Compare)
-        and any(isinstance(op, ast.LtE) for op in node.ops)
-    ]
-
-    assert comparisons, (
-        "Expected image selection to require image timestamp "
-        "<= track timestamp"
-    )
-
-
-def test_image_callback_keeps_timestamp_ordered_buffer():
-    tree = _tree()
-
-    image_methods = [
-        node
-        for node in ast.walk(tree)
-        if isinstance(node, ast.FunctionDef)
-        and node.name == "_on_image"
-    ]
-
-    assert len(image_methods) == 1
-
-    sort_calls = [
-        node
-        for node in ast.walk(image_methods[0])
-        if isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and node.func.attr == "sort"
-    ]
-
-    assert sort_calls
-
-def test_timestamp_paths_do_not_mix_monotonic_clock_domain():
-    tree = _tree()
-
-    relevant_methods = {
-        node.name: node
-        for node in ast.walk(tree)
-        if isinstance(node, ast.FunctionDef)
-        and node.name in {
-            "_on_image",
-            "_track_time_ns",
-            "_attach_appearance_features",
-        }
-    }
-
-    assert set(relevant_methods) == {
-        "_on_image",
-        "_track_time_ns",
-        "_attach_appearance_features",
-    }
-
-    for method_name, method in relevant_methods.items():
+    for method_name in {"_on_image"}:
         monotonic_calls = [
             node
-            for node in ast.walk(method)
+            for node in ast.walk(methods[method_name])
             if isinstance(node, ast.Call)
             and isinstance(node.func, ast.Attribute)
             and isinstance(node.func.value, ast.Name)
@@ -160,7 +155,34 @@ def test_timestamp_paths_do_not_mix_monotonic_clock_domain():
             and node.func.attr == "monotonic_ns"
         ]
 
-        assert not monotonic_calls, (
-            f"{method_name} must not mix monotonic time with "
-            "message timestamps"
+        assert not monotonic_calls
+
+
+def test_node_does_not_keep_legacy_tim_alias():
+    tree = _tree()
+
+    legacy_assignments = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Attribute)
+            and target.attr == "_tim"
+            for target in node.targets
         )
+    ]
+
+    assert not legacy_assignments
+
+
+def test_node_does_not_read_private_memory_cooldown_state():
+    tree = _tree()
+
+    private_reads = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant)
+        and node.value == "_appearance_update_cooldown_frames_remaining"
+    ]
+
+    assert not private_reads

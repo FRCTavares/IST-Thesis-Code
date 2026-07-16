@@ -154,6 +154,11 @@ def status_json_from_output(
     appearance_features_valid: int,
     appearance_image_age_ms: float | None,
     appearance_skip_reason: str,
+    track_timestamp_ns: int | None,
+    selected_image_timestamp_ns: int | None,
+    image_track_offset_ms: float | None,
+    appearance_warning: str | None,
+    candidate_track_ids: tuple[int, ...],
     appearance_compute_min_interval_ms: float,
     appearance_cache_ttl_ms: float,
     appearance_cache_size: int,
@@ -171,6 +176,14 @@ def status_json_from_output(
             "appearance_features_valid": int(appearance_features_valid),
             "appearance_image_age_ms": appearance_image_age_ms,
             "appearance_skip_reason": str(appearance_skip_reason),
+            "track_timestamp_ns": track_timestamp_ns,
+            "selected_image_timestamp_ns": selected_image_timestamp_ns,
+            "image_track_offset_ms": image_track_offset_ms,
+            "appearance_warning": appearance_warning,
+            "candidate_track_ids": [
+                int(track_id)
+                for track_id in candidate_track_ids
+            ],
             "appearance_compute_min_interval_ms": float(appearance_compute_min_interval_ms),
             "appearance_cache_ttl_ms": float(appearance_cache_ttl_ms),
             "appearance_cache_size": int(appearance_cache_size),

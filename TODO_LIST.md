@@ -11,9 +11,255 @@ Priority:
 - P2: useful improvement;
 - P3: optional future work.
 
+## Phase 0 — 5-day offline sprint -> live flight (Fri 17 Jul -> Wed 22 Jul)
+
+**This is the active work order. Start at the top of Day 1 and do not skip the Day-1 gate.**
+
+Premise: real drone bags can be replayed offline, so this week includes real
+algorithm/perception experiments, not just readiness checks. Two rules hold the week
+together:
+
+- **Gate before A/B.** Controlled offline replay is now deterministic through
+  the shared ROS-free runtime and complete-timeline runner. Three identical Seq04
+  runs produced frame-level-identical target and status streams and exactly equal
+  metrics. Algorithm A/B tests may now use this runner, but preservation on May,
+  Seq01, and Seq03 remains required before the synchronization change is committed.
+- **Offline-green != live-certified.** Replays use different image-age/cache/recompute
+  values than the drone (F4), so the live appearance wiring (P0.8), the live config
+  profile (F4), control-sign checks, and Pi thermals are live-only and reserved for
+  the day before flight.
+
+Everything below is flag-gated with the current path as default; wrong-target
+increase blocks promotion; MARS stays default (no Hailo-ReID this week — needs x86
+compile + int8 margin re-validation, no time to do safely).
+
+### Day 1 (Fri 17) — GATE: make replay trustworthy
+- [x] **P0.9 deterministic image-track sync for controlled offline evaluation** —
+  preload the complete valid image timeline, process tracks in deterministic
+  semantic-time order, and avoid ROS callback scheduling and wall-clock timing hacks.
+- [x] Add frame-level diagnostics for track timestamp, selected image timestamp,
+  image age, skip reason, candidate IDs, and proposal/publication reason.
+- [x] Prove Seq04 repeatability across three runs:
+  - 1547 target messages per run;
+  - 1547 status messages per run;
+  - identical target SHA-256 across all runs;
+  - identical status SHA-256 across all runs;
+  - exactly equal correctness summaries.
+- [x] Rerun May, Seq01, and Seq03 on the matching canonical evidence bags:
+  - May reference: correct 0.965, wrong 0.000, lost 0.035;
+  - Seq01: correct 1.000, wrong 0.000, lost 0.000;
+  - Seq03: correct 0.655, wrong 0.290, lost 0.054.
+- [ ] Run complete verification and commit the deterministic synchronization change.
+
+### Day 2 (Sat 18) — perception A/B on the now-trustworthy replay
+- [ ] Detector: wire prebuilt **YOLOv8m / YOLO11m @640** (person class) as opt-in
+  `--detector`, current HEF default. Verify `/detections` schema unchanged,
+  `hz /detections` >= camera rate, recall better on a distant/occluded bag. Keep only
+  if it wins; else fly current detector.
+- [ ] Tracker A/B: **ByteTrack (anchor) vs OC-SORT** on crossing/occlusion bags, same
+  frozen config. Add SORT if time. Single replay each is now valid post-P0.9.
+- [ ] Record results into the P0.18 / Phase-10 tables. One variable per run.
+
+### Day 3 (Sun 19) — ground dry-run + record
+- [ ] **P0.8 fix live appearance wiring** (launcher must honour the resolved
+  `--no-appearance`, not hardcode `appearance_enabled:=true`).
+- [ ] Freeze the **live config profile** (F4): decide image-age/cache/recompute for
+  flight, write it down, commit.
+- [ ] Run the *exact* live command on the ground (`--record --record-mavros`), person
+  walking/crossing/leaving frame. Confirm ~30 Hz on critical topics, ports up,
+  dashboard/UI, sane TIM state transitions and `cmd_vel`. Watch **CPU + thermals**
+  over a sustained run.
+
+### Day 4 (Mon 20) — stabilize + control safety
+- [ ] Repeat the ground dry-run until stable across 3 runs.
+- [ ] **Control-sign checks** (README §7): center->vx=0/yaw=0, left->yaw<0,
+  right->yaw>0, far->vx>0, near->vx<0, stale->0. Run the isolated test node.
+- [ ] If feasible: tethered / low-hover test with a spotter before free flight.
+
+### Day 5 (Tue 21) — freeze + flight checklist. NO CODE AFTER TODAY.
+- [ ] Commit the live profile + any kept Day-2 swaps; clean tree
+  (`git status --short --ignored`, no `log/` or `hailort.log`).
+- [ ] Write flight-day checklist: camera preflight, port checks, arm, stop via the
+  `pkill` line, explicit abort criteria (kill-to-manual on any wrong-target lock).
+- [ ] Batteries charged; SD space for bags confirmed.
+
+### Wed 22 — FLY
+- [ ] Several short runs > one long run. Record everything (`--record --record-mavros`).
+- [ ] The recorded UAV-motion bag is the prize: it is the held-out
+  UAV-motion/small-person sequence your evaluation is missing (P1.12, NOVELTY
+  §8.2/§10.8). Treat live metrics as qualitative + systems evidence only (F4) — not
+  promoted numbers.
+
+---
+
+## Consolidation note (16 July 2026)
+
+This file is now the single source of truth for what to do next. The actionable
+roadmap from `TIM_COMPLETE_ALGORITHM_REVIEW.md` has been folded in here (findings
+index + delivery calendar below); that file remains as the narrative reviewer
+critique and no longer holds any to-do item not represented here. New onboard
+pipeline priorities (detector, tracker pairing, ReID placement) are in **Phase 10**.
+
+Integrity note: the onboard pipeline upgrades are mostly **deferred behind the
+evidence-chain repair**. The near-term critical path is F2 closure + decision-logic
+repair, not model swaps. The only near-term Phase-10 item is the tracker x TIM
+matrix, which already lives on the critical path as P0.18.
+
+### Algorithm-review findings -> owning task (quick index)
+
+- **F1** appearance-crop coordinate-frame mismatch — RESOLVED 2026-07-15 (`f8ab0c0b`).
+  Key result: the fix did **not** change reported numbers, so the ceiling is the
+  decision logic and/or MARS-small128 separability, not crops. Owner: P0.8a.
+- **F2** paper / canonical YAML / NOVELTY describe three algorithms — IN PROGRESS;
+  infra landed (digest `11ae1b8f...29f8a3e`). Closure = F3 removal + paper/NOVELTY
+  text reconciliation + commit causal-timestamp impl + **regenerate promoted table
+  under the committed config**. Owner: P0.4 / P0.5 / P0.20.
+- **F3** dead parameters published as method (`max_lost_frames`,
+  `rank_aware_missing_ttl_frames`) — now a subtask blocking F2. Owner: P0.4 / P1.15.
+- **F4** evaluated pipeline != live pipeline; tables came from an offline simulator
+  whose node-equivalence is asserted, not shown. Owner: P0.5 + equivalence harness.
+- **FM1** same-ID trust transfer (wrong lineage kept because tracker ID persists).
+  Owner: P0.6 unified gate + P1.4 protected anchor.
+- **FM2** far re-entry structurally unreachable from a stale last-seen box.
+  Owner: P0.6 recovery mode + Phase 10 re-detection (deferred, paper-v2).
+- **FM3** suppression / counter bookkeeping mis-attributes wrong vs lost.
+  Owner: P0.9 sync + P1.1 counter merge.
+- **§23 vNext** single transactional gate, 24-parameter set, scene-relative margin
+  `m` — the end-state that P0.6 / P1.1 / P1.2 / P0.12 collectively build toward.
+
+### Delivery calendar (deadline 2026-10-31)
+
+Critical path, in order. Nothing downstream starts until the F2 regeneration lands.
+
+1. **Now -> ~Jul 19 (close F2, no algorithm changes):** remove/deprecate dead
+   params (F3); rewrite paper Table I + NOVELTY tables as projections of the frozen
+   YAML; commit the causal-timestamp impl; **regenerate the promoted table under the
+   committed canonical config**. Run the reason-attribution script over
+   Seq01/May/Seq03 to see whether the unchanged post-F1 results are dominated by FM1,
+   FM3, or FM2. Deterministic image-track sync (P0.9) gates a clean regeneration.
+2. **~Jul 20 -> Aug 7 (refactor + regenerate):** Phase 2/3/4 deletions + counter
+   split (P1.1) + seconds-based hysteresis + cache invalidation (P0.10), behind the
+   ported tests; node/simulator equivalence harness (P0.5 / F4); regenerate the 3
+   paper + 4 NOVELTY rows under the frozen config — these become the thesis's only
+   quoted numbers; DeepSORT rerun with attribution (P0.2 -> NOVELTY §10.4).
+3. **Aug 8 -> Aug 31 (evidence):** ablations (P0.17); sensitivity sweep over
+   surviving thresholds incl. `m` (P1.13); event-level + target-absent-output +
+   identity-independent spatial check (P1.10 / P1.11). Stretch only if on schedule:
+   gallery + scene-relative margin + same-ID monitor as one change-set. **Do not
+   start re-detection mode before Sep 1.**
+4. **September (writing):** failure-analysis chapter from reason attribution;
+   limitations state FM2 as structural scope, not tuning; optional risk-coverage
+   figure; re-measure runtime table (P1.14) after lazy encoding.
+5. **October:** buffer, freeze, provenance audit (every number -> a table row),
+   deliver Oct 31. Nothing new after ~Oct 7.
+
+Effort: the Jul-Aug plan is ~15-20 focused implement+replay days; all bag-replay,
+no new flights required for the core story.
+
 ## Current audit snapshot
 
-Confirmed repository facts as of 15 July 2026:
+Confirmed repository facts as of 16 July 2026:
+
+### 16 July causal timestamp and reproducibility update
+
+- the causal timestamp-alignment implementation is currently uncommitted;
+- current source changes include:
+  - `target_memory_mars_node.py`;
+  - `test_target_memory_mars_node_static.py`;
+  - new `test_target_memory_mars_node_timestamps.py`;
+  - new `tools/visualization/render_tim_comparison_video.py`;
+- generated supervisor videos exist under
+  `videos/tim_mars_supervisor_comparison/`;
+- generated videos should not be committed unless large media is intentionally
+  versioned;
+- `thesis_bringup` builds successfully;
+- current focused TIM-MARS validation passes with:
+  - `80 passed, 4 xfailed`;
+  - `12 passed` timestamp-focused tests;
+  - `15 passed` appearance-attachment tests;
+- Python compilation and `git diff --check` pass;
+- the canonical parameter source remains:
+
+      ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml
+
+- the current canonical configuration SHA-256 is:
+
+      11ae1b8f3cb589abcbcbfe4d7448b4d437ebed4ee71bf0878109a31c829f8a3e
+
+- the source and installed canonical YAML copies match;
+- the obsolete parameters `max_lost_frames` and
+  `rank_aware_missing_ttl_frames` have no active code, installed-package, or
+  canonical-YAML references;
+- the previous appearance attachment used the newest callback-visible image;
+- June `/tracks` messages arrive approximately 73-82 ms after image messages,
+  so the former implementation could attach future-frame appearance evidence;
+- the current causal implementation:
+  - stores appearance images in timestamp order;
+  - prefers the `/tracks` header timestamp;
+  - falls back to `src_stamp_ns` only when the header is unavailable;
+  - rejects images and tracks without trustworthy message timestamps;
+  - selects only the latest image satisfying
+    `image timestamp <= track timestamp`;
+  - does not mix ROS message timestamps with monotonic process time;
+- causal timestamp behavioural tests cover:
+  - header-time priority;
+  - source-time fallback;
+  - missing-time rejection;
+  - exact timestamp matching;
+  - latest causal-image selection;
+  - future-image rejection;
+  - clock-domain isolation;
+- original F2 canonical results at commit `06de21dd` were:
+
+| Sequence | Correct | Wrong | Lost | Absent output |
+|---|---:|---:|---:|---:|
+| May | 0.417 | 0.535 | 0.049 | 0.000 s |
+| Seq01 | 1.000 | 0.000 | 0.000 | 0.000 s |
+| Seq03 | 0.721 | 0.225 | 0.054 | 0.000 s |
+| Seq04 | 0.736 | 0.149 | 0.116 | 7.025 s |
+
+- representative causal timestamp results were:
+
+| Sequence | Correct | Wrong | Lost | Absent output |
+|---|---:|---:|---:|---:|
+| May | 0.955 | 0.011 | 0.034 | 0.000 s |
+| Seq01 | 1.000 | 0.000 | 0.000 | 0.000 s |
+| Seq03 | 0.653 | 0.292 | 0.054 | 0.000 s |
+| Seq04 illustrative run | 0.776 | 0.078 | 0.146 | 5.637 s |
+
+- May improves dramatically under causal image selection;
+- Seq01 remains perfect;
+- corrected Seq03 remains substantially better than raw ByteTrack but still
+  contains unsafe wrong-target publication;
+- the older Seq03 result may have benefited from future-frame appearance
+  leakage and must not automatically be treated as more valid;
+- the earlier causal ROS replay remained scheduler-dependent and produced
+  materially different wrong/lost allocations across identical Seq04 runs;
+- the deterministic complete-timeline runner removes callback-order dependence;
+- three deterministic Seq04 runs produced:
+
+| Run | Correct | Wrong | Lost | Absent output |
+|---|---:|---:|---:|---:|
+| r1 | 0.770 | 0.069 | 0.161 | 2.805 s |
+| r2 | 0.770 | 0.069 | 0.161 | 2.805 s |
+| r3 | 0.770 | 0.069 | 0.161 | 2.805 s |
+
+- all three `/target_memory_mars` streams contain 1547 messages and share SHA-256
+  `e63dc19fb5b18839c1c3b53edda642ee2a5b4f751a049238cc7de9b6b3b708f0`;
+- all three status streams contain 1547 messages and share SHA-256
+  `72559bc777aca76b7fa6f1e10f14d5aed798e590121e187899b805aeaf4d678a`;
+- deterministic synchronization is therefore established for controlled offline
+  replay;
+- Seq04's 0.069 wrong ratio and 2.805 s target-absent output are now confirmed
+  reproducible algorithmic safety failures;
+- four raw-versus-TIM supervisor videos and H.264 copies were generated under:
+
+      videos/tim_mars_supervisor_comparison/
+
+- the Seq04 video is explicitly labelled as an illustrative nondeterministic
+  replay.
+
+### Previously confirmed structural findings
 
 - the failed six-file trusted-same-ID experiment was preserved as a diagnostic
   patch and reverted from the main working tree;
@@ -22,10 +268,10 @@ Confirmed repository facts as of 15 July 2026:
 - the current canonical main implementation is identified by commit
   `73ed19dd` for the clean replay evidence and commit `3aa39572` after adding
   failure-characterization tests;
-- `thesis_bringup` builds successfully and the focused TIM-MARS suite passes
-  with `42 passed, 3 xfailed`;
-- the three `xfail` tests are explicit unresolved safety specifications rather
-  than accidental failing tests;
+- the earlier focused baseline passed with `42 passed, 3 xfailed`;
+- the current expanded focused suite passes with `80 passed, 4 xfailed`;
+- the four current `xfail` tests are explicit unresolved safety specifications
+  rather than accidental failing tests;
 - four additional characterization tests reproduce the current unsafe
   behaviours:
   - contradictory appearance can be ignored during a single-candidate ID
@@ -186,7 +432,7 @@ Tasks:
 
 ## Phase 2 — Establish one actual TIM-MARS algorithm
 
-### P0.4 Freeze one canonical preset — DONE
+### P0.4 Freeze one canonical preset — CONFIGURATION DONE; CLEAN RESULT FREEZE PENDING
 
 Completed on 12 July 2026.
 
@@ -216,6 +462,25 @@ Completed replay provenance work:
 - [x] Record the Git commit, repository state, runner, and exact command.
 
 Remaining paper-code equivalence work belongs to P0.5.
+
+Additional status as of 16 July 2026:
+
+- [x] Designated the checked-in canonical YAML as the single parameter source
+  of truth.
+- [x] Confirmed all four causal replay cases used canonical SHA-256
+  `11ae1b8f3cb589abcbcbfe4d7448b4d437ebed4ee71bf0878109a31c829f8a3e`.
+- [x] Confirmed `max_lost_frames` and
+  `rank_aware_missing_ttl_frames` are absent from active code and
+  configuration.
+- [x] Preserved bag, annotation, selected target, canonical hash, runtime hash,
+  report, runner, and repository-state provenance.
+- [x] Resolve deterministic image-track synchronization.
+- [ ] Commit the causal timestamp and synchronization implementation.
+- [ ] Regenerate the canonical matrix from a clean committed repository.
+- [ ] Update `NOVELTY.md`, paper Table I, and promoted result tables only from
+  clean committed reports.
+- [ ] Treat current dirty-tree causal results as diagnostic evidence rather
+  than final promoted evidence.
 
 ### P0.5 Prove paper-code-runner equivalence
 
@@ -442,14 +707,105 @@ Tasks:
 
 ### P0.9 Synchronize image and track evidence
 
-Current behaviour uses the latest received image with current track boxes.
+The previous runtime used the latest callback-visible image with current track
+boxes. This allowed future-frame appearance leakage.
+
+Completed:
+
+- [x] Use image and track message timestamps rather than callback time.
+- [x] Prefer the `/tracks` header timestamp.
+- [x] Fall back to `src_stamp_ns` only when the header is unavailable.
+- [x] Reject appearance attachment when no trustworthy track timestamp exists.
+- [x] Discard appearance images with invalid header timestamps.
+- [x] Store images in timestamp order.
+- [x] Select only the latest image at or before the track timestamp.
+- [x] Reject future images.
+- [x] Preserve monotonic time only for local processing-latency measurement.
+- [x] Add behavioural timestamp-selection tests.
+- [x] Quantify image-track age distributions for May, Seq01, Seq03, and Seq04.
+- [x] Demonstrate that the former implementation could use future-frame
+  appearance evidence.
+- [x] Rerun the four canonical cases under causal image selection.
+- [x] Run three identical Seq04 repetitions.
+- [x] Demonstrate material Seq04 replay nondeterminism.
+
+Resolved replay blocker:
+
+- the former ROS callback runner was scheduler-dependent because eligible images
+  could reach the live buffer before or after the corresponding `/tracks` callback;
+- the controlled offline runner now closes the evidence window by reading the full
+  valid image timeline before processing tracks;
+- three identical Seq04 runs produced frame-level-identical target and status
+  streams;
+- the remaining Seq04 wrong-target and target-absent publication are reproducible
+  algorithmic failures rather than replay nondeterminism.
 
 Tasks:
 
-- [ ] Match tracks with the corresponding image timestamp or frame ID.
-- [ ] Reject appearance extraction when alignment exceeds tolerance.
-- [ ] Report actual image-track offset.
-- [ ] Test delayed and dropped image conditions.
+- [x] Add frame-level diagnostics for:
+  - track timestamp;
+  - selected image timestamp;
+  - image age;
+  - image sequence or identity;
+  - appearance skip reason;
+  - candidate IDs;
+  - proposal and publication reason.
+- [x] Identify the first divergent frame between two Seq04 repetitions.
+- [x] Confirm whether divergent runs use different causal images or differ in
+  whether an eligible image is available.
+- [x] Extract tracker conversion, causal image selection, appearance attachment,
+  and memory updates into a shared ROS-free runtime used by the ROS wrapper.
+- [x] Introduce deterministic synchronization between image and track evidence for controlled offline evaluation by preloading the complete image timeline and processing tracks in deterministic semantic-time order.
+- [x] Close the causal image-selection window in deterministic offline replay by reading the complete image timeline before processing any track message.
+- [x] Define deterministic behaviour when no exact image timestamp exists: select the latest image timestamp not after the track timestamp and preserve the configured maximum-age rejection.
+- [x] Avoid sleeps, wall-clock delays, ROS playback, and callback-scheduler dependence in the deterministic offline runner.
+- [x] Preserve `appearance_max_image_age_ms` rejection through the shared appearance-attachment runtime.
+- [x] Expose actual image-track offset in status diagnostics.
+- [x] Add a deterministic ROS-free bag runner that:
+  - reads the complete appearance-image and track timelines;
+  - preloads valid timestamped images;
+  - processes tracks by trustworthy timestamp, frame ID, original bag timestamp,
+    and original sequence index;
+  - writes deterministic `/target_memory_mars` and status streams;
+  - streams original source messages in a second pass instead of retaining the
+    complete serialized bag in memory.
+- [x] Complete the first deterministic Seq04 smoke replay:
+  - 467 appearance images loaded;
+  - 1547 track messages processed;
+  - 1547 TIM target and 1547 status messages written;
+  - source evidence copied successfully;
+  - peak resident memory approximately 1.24 GiB;
+  - evaluator completed using header time.
+- [x] Record the first deterministic Seq04 result as a synchronization baseline:
+  - correct ratio 0.770;
+  - wrong ratio 0.069;
+  - lost ratio 0.161;
+  - wrong-target duration 3.936 s;
+  - target-absent output duration 2.805 s.
+- [x] Establish that the 0.069 wrong ratio and 2.805 s absent-output duration
+  are deterministic algorithmic safety issues rather than scheduler noise.
+- [x] Test deterministic image-track correspondence:
+  - image before track and latest-causal-image selection;
+  - track before image and future-image rejection;
+  - equal timestamps;
+  - delayed but eligible causal image with exact offset diagnostics;
+  - dropped or evicted images producing no causal image;
+  - out-of-order image ingestion;
+  - stale causal-image rejection through the full runtime;
+  - invalid image and track timestamps.
+- [x] Repeat Seq04 three times after synchronization.
+- [x] Require stable frame-level output and metrics:
+  - target stream count: 1547 in every run;
+  - target stream SHA-256:
+    `e63dc19fb5b18839c1c3b53edda642ee2a5b4f751a049238cc7de9b6b3b708f0`;
+  - status stream count: 1547 in every run;
+  - status stream SHA-256:
+    `72559bc777aca76b7fa6f1e10f14d5aed798e590121e187899b805aeaf4d678a`;
+  - TIM metrics in every run: correct 0.770, wrong 0.069, lost 0.161;
+  - wrong-target duration in every run: 3.936 s;
+  - target-absent output duration in every run: 2.805 s.
+- [x] Rerun May, Seq01, and Seq03 to verify preservation.
+- [ ] Commit only after deterministic repeatability passes.
 
 ### P0.10 Make appearance caching identity-safe
 
@@ -905,16 +1261,110 @@ Discuss:
 
 ### P1.20 Build final figures
 
-Required:
+Preliminary qualitative material completed:
 
-- pipeline position;
-- state machine;
-- evidence and safety gate;
-- trusted-memory update policy;
-- wrong-versus-lost trade-off;
-- ablation table;
-- failure-case frames;
-- runtime table.
+- [x] Generate four raw-versus-TIM side-by-side supervisor videos.
+- [x] Generate H.264-compatible copies.
+- [x] Show IDs, validity, timing offset, elapsed time, and summary metrics.
+- [x] Mark Seq04 as illustrative and nondeterministic.
+
+Required final material:
+
+- [ ] pipeline-position figure;
+- [ ] state-machine figure;
+- [ ] evidence and transactional safety-gate figure;
+- [ ] trusted-memory update-policy figure;
+- [ ] wrong-versus-lost trade-off;
+- [ ] ablation table;
+- [ ] failure-case frames;
+- [ ] runtime table;
+- [ ] regenerate comparison videos from the final clean deterministic commit;
+- [ ] ensure every displayed metric points to a promoted provenance record.
+
+## Phase 10 — Onboard pipeline & model upgrades (detector / tracker pairing / ReID placement)
+
+Scope: these refine existing items (P0.18 tracker validation, P1.14 runtime cost,
+Deferred-experiments ReID/Hailo) and mostly sit **after** the evidence-chain repair.
+Only the tracker x TIM matrix is near-term. Every model swap is conditional on
+ablations (P0.17) showing the global embedding under occlusion is the actual
+bottleneck — per the Deferred-experiments rule. Same safety contract as the rest of
+this file: wrong-target increase blocks promotion; every new component is flag-gated
+with the current path as default; **select on CPU/replay, promote only the winner
+onboard.**
+
+### P0.18+ Tracker pairing = the modularity claim (refines P0.18)
+
+TIM is a validation layer above the tracker, so it pairs best with **motion-only**
+trackers whose failure mode (ID switch under occlusion/crossing) is exactly what TIM
+is built to catch.
+
+- [ ] Add **SORT** to the raw-vs-TIM matrix (P0.18 currently lists ByteTrack,
+  OC-SORT, DeepSORT). SORT is the barest cheap tracker — biggest expected raw->TIM
+  delta, cleanest modularity ablation.
+- [ ] Prioritize **OC-SORT + TIM** on the crossing/occlusion sequences. OC-SORT's
+  observation-centric gap repair (ORU) + nonlinear handling (OCM) is SOTA on
+  DanceTrack/MOT20 (Cao et al., CVPR 2023) and should give TIM cleaner continuity on
+  exactly the sequences where the current table is neutral.
+- [ ] Treat **DeepSORT / StrongSORT / BoT-SORT / Deep-OC-SORT** as out-of-scope for
+  the safe claim: they already assert identity from appearance, which duplicates
+  TIM's ReID work and can conflict with it. The historical DeepSORT unsafe result
+  (P0.2: raw 0.028 -> TIM 0.466 wrong) is consistent with that conflict. Once P0.2
+  reproduction confirms it, restate NOVELTY §8.3 as a scoped design boundary — "TIM
+  validates motion-only trackers; it is not layered over appearance-based
+  association" — rather than an open failure.
+
+### P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)
+
+- [ ] **Measure first whether ReID even needs to leave the CPU.** TIM embeds only the
+  selected target + a few distractors per frame (not every detection, unlike
+  DeepSORT), so CPU load may already be tolerable — check `htop` / `hailortcli
+  monitor` during a live run before committing to any migration.
+- [ ] **Select on CPU/replay (fast iteration).** Behind the existing embedding seam,
+  add OSNet / OSNet-AIN / small CLIP-ReID-distilled as flagged alternatives to
+  MARS-small128 (identical crop preprocessing + output usage; MARS stays default).
+  Compare on wrong/lost + reacq delay across all eval bags. Promote a candidate only
+  if it lowers wrong-target with no wrong-target rise anywhere. Do NOT iterate
+  candidate nets by compiling each to HEF — that is a slow x86 train->ONNX->compile
+  loop; the CPU replay answers the quality question in an afternoon.
+- [ ] **Promote only the winner to Hailo**, then re-validate:
+  - [ ] **Quantization margin re-validation (critical — an F2 obligation, ties to
+    P1.13).** Hailo runs int8; quantization shifts cosine similarities by amounts on
+    the order of TIM's own gates (hard-neg 0.03-0.08, conservative 0.05-0.25). The
+    frozen config is only valid for the precision it was frozen at — re-verify the
+    thresholds hold on the int8 embedding and recalibrate `m`/margins against the
+    quantized model if needed.
+  - [ ] **NPU contention:** detector + ReID share one 26-TOPS Hailo-8 (HailoRT
+    time-slices network groups with context-switch cost). Measure
+    `ros2 topic hz /detections` before/after adding the ReID network; confirm
+    detector FPS stays >= camera rate.
+  - [ ] **Timing/sync:** confirm scheduler queuing does not reopen the causal
+    image-track mismatch just closed in P0.9; keep the embedding matched to the
+    correct causal frame.
+
+### P2.x Detector (perception upgrade behind TIM — additive, low priority)
+
+A missed detection forces TIM to LOST (safe, but hurts availability), so detector
+recall is the perception lever most relevant to TIM. Not on the critical path; do
+after the evidence chain is clean.
+
+- [ ] Reality: the Hailo Dataflow Compiler is x86-only — custom person-only YOLO is a
+  separate x86 task, not a Pi task. For now use a prebuilt Model Zoo HEF.
+- [ ] Trial **YOLOv8m / YOLO11m @ 640** (person class) from the Hailo-8 Model Zoo as
+  an opt-in `--detector` / config value, keeping the current HEF as default. Verify
+  `/detections` schema unchanged, `hz /detections` >= camera rate, and better recall
+  on a distant/occluded test bag.
+- [ ] If small/distant recall is the limiter, test **higher input resolution
+  (960/1280)** before a deeper backbone — resolution usually buys more small-object
+  recall at similar Hailo cost.
+- [ ] Optional: a **pose detector** (YOLOv8/YOLO11-pose, in the Model Zoo) to feed
+  TIM cheap orientation + tighter crops — enables the orientation gate below.
+
+### P3.x Orientation gating (stretch; needs pose keypoints)
+
+- [ ] If pose keypoints are available, gate the appearance vote on target
+  orientation so a front<->back flip down-weights appearance and leans on
+  geometry/motion. Flag-gated, default off. Addresses the "inverted appearance"
+  failure without heavy compute. Skip unless already producing keypoints.
 
 ## Deferred experiments
 
@@ -949,59 +1399,78 @@ evidence.
 Completed:
 
 1. [x] Preserve the failed trusted-same-ID experiment as diagnostic evidence.
-2. [x] Revert the six-file trusted-same-ID experiment from the main working tree.
-3. [x] Rebuild and rerun the canonical Seq01 and May baseline.
-4. [x] Classify the unresolved safety regressions explicitly as `xfail`.
-5. [x] Add characterization tests for:
-   - unsafe first ID-switch acceptance;
-   - wrong reacquisition becoming `LOCKED`;
-   - positive-memory contamination after wrong reacquisition;
-   - hard-negative insertion before acceptance and missing reconciliation.
-6. [x] Extract the May status timeline and all candidate scores.
-7. [x] Summarize 33 hard-negative-risk frames into seven lifecycle episodes.
+2. [x] Revert the six-file experiment from the main working tree.
+3. [x] Restore and reproduce clean Seq01 and May evidence.
+4. [x] Add unresolved identity-safety specifications.
+5. [x] Add characterization tests for unsafe ID-switch acceptance, wrong
+   reacquisition lock, positive-memory contamination, and pre-acceptance
+   hard-negative insertion.
+6. [x] Extract the May status timeline and candidate scores.
+7. [x] Group May hard-negative-risk frames into lifecycle episodes.
 8. [x] Demonstrate same-ID and cross-lineage hard-negative vetoes.
+9. [x] Correct appearance-crop coordinate mapping.
+10. [x] Add appearance-topic auto-detection to replay.
+11. [x] Correct Seq03 annotations and selected target ID.
+12. [x] Freeze one canonical YAML and provenance format.
+13. [x] Identify future-frame appearance leakage.
+14. [x] Implement causal message-time image selection.
+15. [x] Add timestamp correspondence tests.
+16. [x] Rerun May, Seq01, Seq03, and Seq04 under the causal implementation.
+17. [x] Demonstrate material Seq04 nondeterminism across three identical
+    replays.
+18. [x] Generate four side-by-side supervisor videos and H.264 copies.
 
-Next:
+Next — finish deterministic evidence:
 
-1. Move hard-negative updates out of `_prepare_update_candidates()` without
-   changing any acceptance decision yet.
-2. Introduce a post-decision hard-negative transaction that runs only after a
-   trusted current-frame acceptance.
-3. Add selected-negative reconciliation for operator selection and accepted
-   lineage changes.
-4. Add tests proving that:
-   - proposal preparation is side-effect free;
-   - a candidate cannot become a negative before its role is resolved;
-   - a newly selected identity is removed or quarantined from negative memory;
-   - `UNCERTAIN`, `LOST`, and `REACQUIRED` frames cannot add negatives;
-   - a rejected candidate is not automatically considered a proven distractor.
-5. Add negative provenance containing source track ID, insertion lineage,
-   first and last frame, observation count, insertion reason, crop quality, and
-   trust state.
-6. Require repeated trusted observations before a prototype becomes a strong
-   negative.
-7. Audit every hard-negative insertion across Seq01 and May using the new
-   provenance diagnostics.
-8. Rerun the focused suite, canonical Seq01, and canonical May after each
-   meaningful structural change.
-9. Reject any change that improves one sequence by making the other unsafe.
-10. Only after negative-memory mutation is transactional, refactor candidate
-    policies to return proposals.
-11. Route all proposal sources through one final transactional safety gate.
-12. Introduce protected anchor memory and explicit trusted-lineage state.
-13. Add diagnostics for proposal source, anchor support, adaptive similarity,
-    crop quality, synchronization age, and negative provenance.
-14. Validate corrected Seq03 crossing and Seq04 occlusion/absence using active,
-    correctly mapped appearance evidence.
-15. Verify the Seq04 ByteTrack annotation visually before promoting its metrics,
-    because the previous Seq03 annotation was materially wrong.
-18. Compare Seq04 failure intervals against state, proposal reason, appearance,
-    hard-negative risk, and target-absence publication.
-17. Reproduce and diagnose the historical DeepSORT failure using preserved
-    configuration and annotation-compatible memory replay.
-16. Add evaluator freshness, shared semantics, and dedicated tests.
-17. Fix live appearance wiring, image-track synchronization, cache safety, and
-    crop-quality gating.
-18. Run component ablations on tuning sequences.
-19. Run held-out multi-tracker evaluation.
-20. Freeze the final claim, implementation, paper pseudocode, and thesis results.
+1. [x] Compare the former nondeterministic Seq04 repetitions and locate the first
+   divergent output decision.
+2. [x] Record timestamp, image, candidate, proposal, acceptance, and publication
+   evidence at divergent frames.
+3. [x] Confirm callback-dependent causal-image availability as the divergence
+   source.
+4. [x] Design deterministic synchronization without wall-clock sleeps.
+5. [x] Close the causal image-selection window using the complete offline image
+   timeline.
+6. [x] Complete delayed, dropped, equal-timestamp, stale,
+   future-image, invalid-timestamp, and out-of-order image tests.
+7. [x] Repeat deterministic Seq04 three times.
+8. [x] Require identical frame-level target/status output and stable metrics.
+9. [x] Rerun May, Seq01, and Seq03 for preservation.
+10. [x] Run compilation, focused tests, build, and `git diff --check`.
+11. [ ] Commit the timestamp and synchronization implementation.
+12. [ ] Regenerate the four-case canonical matrix from the clean commit.
+13. [ ] Record clean provenance:
+    - Git commit;
+    - clean repository state;
+    - source bag;
+    - annotation;
+    - selected target ID;
+    - canonical config hash;
+    - resolved runtime hash;
+    - report.
+14. [ ] Regenerate supervisor videos from the clean deterministic runs.
+15. [ ] Update `NOVELTY.md`, paper Table I, and promoted result tables.
+
+Then — structural algorithm repair:
+
+16. [ ] Move hard-negative updates out of
+    `_prepare_update_candidates()` without changing acceptance decisions.
+17. [ ] Make candidate preparation side-effect free.
+18. [ ] Introduce a post-decision hard-negative transaction.
+19. [ ] Add selected-negative reconciliation.
+20. [ ] Separate candidate rejection from proven-distractor evidence.
+21. [ ] Add negative provenance and lifecycle information.
+22. [ ] Require repeated trusted observations before strong-negative promotion.
+23. [ ] Audit negative insertion across May, Seq01, Seq03, and Seq04.
+24. [ ] Refactor recovery policies to return candidate proposals.
+25. [ ] Route every proposal through one transactional safety gate.
+26. [ ] Introduce protected anchor memory and explicit trusted-lineage state.
+27. [ ] Add proposal, anchor, synchronization, crop-quality, and
+    negative-provenance diagnostics.
+28. [ ] Reproduce and diagnose the historical DeepSORT failure.
+29. [ ] Add evaluator freshness, shared semantics, and dedicated tests.
+30. [ ] Fix live appearance wiring, cache safety, and crop-quality gating.
+31. [ ] Run component ablations on tuning sequences.
+32. [ ] Run held-out multi-tracker evaluation.
+33. [ ] Freeze the final implementation, claim, pseudocode, tables, figures, and
+    thesis results.

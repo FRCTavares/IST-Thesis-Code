@@ -93,6 +93,12 @@ class TargetIdentityMemory:
     def bbox(self) -> Optional[BBox]:
         return self._m.bbox
 
+    @property
+    def appearance_update_cooldown_frames_remaining(self) -> int:
+        """Remaining frames before positive appearance updates resume."""
+
+        return int(self._appearance_update_cooldown_frames_remaining)
+
     def clear(self) -> TargetMemoryOutput:
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
