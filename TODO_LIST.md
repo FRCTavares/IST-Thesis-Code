@@ -953,38 +953,99 @@ Diagnostic acceptance invariant:
 - remaining protected-versus-adaptive appearance-memory failures belong to
   P1.4 and must not be addressed by further P1.3 threshold tuning.
 
-### P1.4 Separate protected and adaptive appearance memory
+### P1.4 Separate protected and adaptive appearance memory — DONE
 
-Implement and compare:
+Status as of 17 July 2026: implementation, deterministic A/B safety
+acceptance, Seq04 semantic repeatability, canonical promotion, and local
+verification complete.
 
-- immutable or very slow operator-selection anchor;
-- bounded trusted multi-pose gallery;
-- adaptive recent prototype;
-- provenance-aware hard-negative gallery.
+The positive-memory design now separates:
 
-The May failure demonstrates that adaptive similarity can become self-confirming
-after a wrong reacquisition. Increasing similarity to the adaptive prototype is
-not independent evidence that the physical identity is correct.
+- an immutable operator-selection anchor;
+- a bounded trusted multi-pose gallery;
+- an adaptive recent prototype;
+- a provenance-aware hard-negative gallery.
 
-Rules:
+Risky ID-switch and long-gap candidates are authorized only by protected anchor
+or trusted-gallery evidence. Adaptive similarity cannot independently authorize
+a lineage after adapting to it. Gallery-only authorization additionally requires
+an eligible crop, a non-ambiguous candidate, and immutable-anchor agreement of
+at least `0.75`.
 
-- [ ] preserve an operator-selected anchor independently of the adaptive memory;
-- [ ] never replace the anchor merely because a newly reacquired ID reaches
-  `LOCKED`;
-- [ ] compare ID-switch and long-gap candidates against the protected anchor and
-  trusted gallery;
-- [ ] adaptive memory updates only after stable trusted lock;
-- [ ] adaptive appearance similarity must never be treated as independent
-  evidence once adaptive memory has already been updated from that identity;
-- [ ] prevent circular reasoning where acceptance strengthens adaptive
-  memory and strengthened adaptive memory later justifies the same identity;
-- [ ] no positive update on the first accepted ID-switch frame;
-- [ ] no update during `UNCERTAIN`, `LOST`, or unconfirmed `REACQUIRED`;
-- [ ] no update during ambiguity or unresolved hard-negative conflict;
-- [ ] no update with weak, clipped, blurred, tiny, overlapping, or stale crops;
-- [ ] record which memory source supported every acceptance;
-- [ ] add a regression where a wrong reacquisition becomes geometrically stable
-  and must not overwrite the original identity anchor.
+Completed rules:
+
+- [x] Preserve an operator-selected anchor independently of adaptive memory.
+- [x] Never replace the anchor merely because a reacquired ID reaches `LOCKED`.
+- [x] Compare ID-switch and long-gap candidates against the protected anchor and
+  trusted gallery.
+- [x] Update adaptive memory only after stable trusted lock.
+- [x] Prevent adaptive similarity from independently authorizing an adapted
+  lineage.
+- [x] Prevent circular acceptance and self-confirming adaptive updates.
+- [x] Prevent positive updates on the first accepted ID-switch frame.
+- [x] Prevent updates during `UNCERTAIN`, `LOST`, or unconfirmed `REACQUIRED`.
+- [x] Prevent updates during ambiguity or unresolved hard-negative conflict.
+- [x] Prevent updates from weak, clipped, tiny, overlapping, stale, or otherwise
+  memory-ineligible crops.
+- [x] Record the supporting memory source for every acceptance.
+- [x] Add a regression proving that a stable wrong reacquisition cannot overwrite
+  the original anchor.
+- [x] Add bounded-gallery and hard-negative-provenance contracts.
+- [x] Add a regression proving adaptive-only similarity cannot authorize an ID
+  switch.
+- [x] Add regressions for gallery anchor agreement, ambiguous candidates, and
+  ineligible crops.
+- [x] Wire the protected-memory configuration through ROS and canonical YAML.
+- [x] Run baseline, initial protected, and corrected protected A/B replays.
+- [x] Reject the initial protected candidate after Seq04 wrong-target and
+  target-absent publication increased.
+- [x] Promote only the independently anchored `0.75` gallery candidate.
+- [x] Repeat corrected Seq04 three times with semantic target, semantic status,
+  and metric identity.
+
+Canonical replay acceptance:
+
+- May: `63.380 s` correct, `0.000 s` wrong, `4.320 s` lost, and
+  `0.000 s` target-absent output.
+- Seq01: `122.340 s` correct, `0.000 s` wrong, `0.000 s` lost, and
+  `0.000 s` target-absent output.
+- Seq03: `65.395 s` correct, `12.284 s` wrong, `18.048 s` lost, and
+  `0.000 s` target-absent output.
+- Seq04: `40.343 s` correct, `0.000 s` wrong, `16.479 s` lost, and
+  `0.000 s` target-absent output.
+- No evaluated sequence increased wrong-target or target-absent publication.
+- Aggregate deltas versus P1.3 are `+0.235 s` correct, `-16.612 s` wrong,
+  `+16.377 s` lost, and `-0.762 s` target-absent output.
+- The accepted behavior is safety-positive but more conservative.
+
+Repeatability and provenance:
+
+- all three corrected Seq04 runs contain 1547 targets and 1547 statuses;
+- target semantic SHA-256:
+  `16dffb2fa6462bb25cb1ef6a071d9809332fba669ef9f62c48525068d78fd6f7`;
+- status semantic SHA-256:
+  `00d6e3d2375a31b08accd566b2bcc73d723de3f3c655e3aeb81c85c134e8bcf0`;
+- accepted replay-profile SHA-256:
+  `9028966c4efb98a03ebdec00f237df411e398cccbd9b8e32ecfd5ddae4718007`;
+- promoted canonical configuration SHA-256:
+  `16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655`;
+- replay and canonical YAML parameter values are semantically identical;
+- MARS model SHA-256:
+  `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`;
+- replay evidence:
+  `bags/replay/p014_protected_memory_2026_07_17/protected_anchor075/`;
+- tracked evidence:
+  `reports/p014_protected_appearance_2026_07_17/`.
+
+Verification completed:
+
+- non-linter `thesis_bringup` suite: 145 passed, 3 deselected, 3 expected
+  xfails;
+- deterministic replay-runner suite: 12 passed;
+- Python compilation passed;
+- `thesis_bringup` package build passed;
+- `git diff --check` passed;
+- no root `log/` or `hailort.log` runtime noise was created.
 
 ### P1.5 Fix positive-memory bootstrap
 

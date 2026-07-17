@@ -1,0 +1,5 @@
+sequence	baseline_correct	candidate_correct	delta_correct	baseline_wrong	rejected_wrong	candidate_wrong	delta_wrong	baseline_lost	candidate_lost	delta_lost	baseline_absent	candidate_absent	delta_absent	sequence_gate
+May	64.750	63.380	-1.370	0.000	0.000	0.000	0.000	2.950	4.320	1.370	0.000	0.000	0.000	PASS
+Seq01	122.340	122.340	0.000	0.000	0.000	0.000	0.000	0.000	0.000	0.000	0.000	0.000	0.000	PASS
+Seq03	61.236	65.395	4.159	27.538	16.287	12.284	-15.254	6.953	18.048	11.095	0.000	0.000	0.000	PASS
+Seq04	42.897	40.343	-2.554	1.358	4.686	0.000	-1.358	12.567	16.479	3.912	0.762	0.000	-0.762	PASS

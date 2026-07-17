@@ -30,7 +30,7 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 90
+    assert len(node.values) == 95
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
@@ -63,6 +63,30 @@ def test_tim_mars_ros_params_declares_expected_interface():
         ]
         == 0.04
     )
+    assert (
+        node.values["appearance_protected_memory_enabled"]
+        is False
+    )
+    assert (
+        node.values["appearance_trusted_gallery_max_entries"]
+        == 4
+    )
+    assert (
+        node.values[
+            "appearance_gallery_min_anchor_similarity"
+        ]
+        == 0.0
+    )
+    assert (
+        node.values[
+            "appearance_trusted_lock_frames_before_update"
+        ]
+        == 2
+    )
+    assert (
+        node.values["hard_negative_max_positive_similarity"]
+        == 1.01
+    )
     assert node.values["rank_aware_reacquisition_enabled"] is True
     assert node.values["candidate_belief_enabled"] is False
     assert node.values["candidate_belief_min_score"] == 0.45
@@ -93,6 +117,17 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values[
         "appearance_crop_min_centre_distance_norm_for_memory"
     ] = 0.05
+    node.values["appearance_protected_memory_enabled"] = True
+    node.values["appearance_trusted_gallery_max_entries"] = 6
+    node.values[
+        "appearance_gallery_min_anchor_similarity"
+    ] = 0.74
+    node.values[
+        "appearance_trusted_lock_frames_before_update"
+    ] = 3
+    node.values[
+        "hard_negative_max_positive_similarity"
+    ] = 0.93
     node.values["rank_aware_reacquisition_enabled"] = True
     node.values["rank_aware_confirm_frames"] = 4
     node.values["candidate_belief_enabled"] = True
@@ -136,6 +171,20 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     assert (
         cfg.id_switch_min_appearance_similarity
         == 0.78
+    )
+    assert cfg.appearance_protected_memory_enabled is True
+    assert cfg.appearance_trusted_gallery_max_entries == 6
+    assert (
+        cfg.appearance_gallery_min_anchor_similarity
+        == 0.74
+    )
+    assert (
+        cfg.appearance_trusted_lock_frames_before_update
+        == 3
+    )
+    assert (
+        cfg.hard_negative_max_positive_similarity
+        == 0.93
     )
     assert cfg.rank_aware_reacquisition_enabled is True
     assert cfg.rank_aware_confirm_frames == 4
@@ -189,9 +238,24 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
         "short_gap_new_id_suppression_enabled",
         "short_gap_new_id_allow_total",
         "short_gap_group_risk_allow_total",
+        "appearance_protected_memory_enabled",
+        "appearance_trusted_gallery_max_entries",
+        "appearance_gallery_min_anchor_similarity",
+        "appearance_trusted_lock_frames_before_update",
+        "hard_negative_max_positive_similarity",
     }
 
     assert expected_active_keys <= canonical.keys()
+    assert (
+        canonical["appearance_protected_memory_enabled"]
+        is True
+    )
+    assert (
+        canonical[
+            "appearance_gallery_min_anchor_similarity"
+        ]
+        == 0.75
+    )
 
     for name, value in canonical.items():
         assert name in node.values

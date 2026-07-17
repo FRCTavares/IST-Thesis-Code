@@ -82,6 +82,14 @@ class CandidateScore:
     appearance: float = 0.0
     appearance_used: bool = False
     appearance_raw: float = 0.0
+
+    # P1.4 separated positive-memory diagnostics.
+    protected_anchor_similarity: float = 0.0
+    trusted_gallery_similarity: float = 0.0
+    adaptive_similarity: float = 0.0
+    positive_similarity: float = 0.0
+    positive_support_source: str = "none"
+
     appearance_gate_passed: bool = False
     geometry_allows_appearance: bool = False
     hard_negative_similarity: float = 0.0
@@ -174,6 +182,19 @@ class TargetMemoryConfig:
     # TIM-MARS does not immediately learn a wrong target.
     appearance_update_cooldown_after_reacquire_frames: int = 0
 
+    # P1.4 protected/adaptive positive-memory separation.
+    # Disabled by default until deterministic replay evidence supports
+    # promotion over the current canonical behaviour.
+    appearance_protected_memory_enabled: bool = False
+    appearance_trusted_gallery_max_entries: int = 4
+
+    # A gallery-supported risky reacquisition may optionally require
+    # independent agreement with the immutable operator anchor.
+    # Zero preserves the previous max-over-gallery behaviour.
+    appearance_gallery_min_anchor_similarity: float = 0.0
+
+    appearance_trusted_lock_frames_before_update: int = 2
+
     # Hard-negative distractor memory.
     # During trusted lock, nearby non-selected tracks can be remembered as
     # negative appearance prototypes. Future candidates that look too close to a
@@ -182,6 +203,12 @@ class TargetMemoryConfig:
     hard_negative_max_entries: int = 8
     hard_negative_update_alpha: float = 0.20
     hard_negative_min_candidate_similarity: float = 0.70
+
+    # Candidates almost identical to protected positive memory are more likely
+    # duplicate detections or target fragments than reliable distractors.
+    # Values above 1.0 preserve the previous behaviour.
+    hard_negative_max_positive_similarity: float = 1.01
+
     hard_negative_reject_similarity: float = 0.80
     hard_negative_reject_margin: float = 0.03
     hard_negative_min_geometry: float = 0.20
@@ -241,6 +268,16 @@ class TargetMemoryOutput:
     all_scores: List[CandidateScore] = field(default_factory=list)
     memory_update_frozen: bool = False
     memory_update_freeze_reason: str = ""
+
+    # P1.4 acceptance and positive-memory transaction diagnostics.
+    acceptance_memory_source: str = "none"
+    positive_memory_updated: bool = False
+    positive_memory_update_reason: str = ""
+    protected_anchor_available: bool = False
+    trusted_gallery_size: int = 0
+    appearance_lineage_trusted: bool = False
+    appearance_trusted_lock_streak: int = 0
+
     appearance_margin_best_vs_second: float = 0.0
     geometry_strength: float = 0.0
     risk_hard_negative: bool = False

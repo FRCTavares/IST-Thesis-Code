@@ -29,6 +29,11 @@ def _score(track_id=7):
         appearance=0.2,
         appearance_used=True,
         appearance_raw=0.85,
+        protected_anchor_similarity=0.83,
+        trusted_gallery_similarity=0.76,
+        adaptive_similarity=0.91,
+        positive_similarity=0.83,
+        positive_support_source="protected_anchor",
         appearance_gate_passed=True,
         geometry_allows_appearance=True,
         hard_negative_similarity=0.1,
@@ -56,6 +61,15 @@ def _output(control_valid=True):
         reason="accepted",
         memory_update_frozen=False,
         memory_update_freeze_reason="",
+        acceptance_memory_source="protected_anchor",
+        positive_memory_updated=True,
+        positive_memory_update_reason=(
+            "trusted_locked_adaptive_update"
+        ),
+        protected_anchor_available=True,
+        trusted_gallery_size=3,
+        appearance_lineage_trusted=True,
+        appearance_trusted_lock_streak=4,
         appearance_margin_best_vs_second=0.3,
         geometry_strength=0.8,
         risk_hard_negative=False,
@@ -133,6 +147,19 @@ def test_status_only_json_preserves_core_diagnostics():
     assert payload["candidate_track_id"] == 3
     assert payload["candidate_score"] == 0.72
     assert payload["publication_suppressed_reason"] == ""
+    assert (
+        payload["acceptance_memory_source"]
+        == "protected_anchor"
+    )
+    assert payload["positive_memory_updated"] is True
+    assert (
+        payload["positive_memory_update_reason"]
+        == "trusted_locked_adaptive_update"
+    )
+    assert payload["protected_anchor_available"] is True
+    assert payload["trusted_gallery_size"] == 3
+    assert payload["appearance_lineage_trusted"] is True
+    assert payload["appearance_trusted_lock_streak"] == 4
 
 
 def test_status_json_includes_scores_and_appearance_diagnostics():
@@ -210,4 +237,18 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     assert payload["appearance_warning"] is None
     assert payload["candidate_track_ids"] == [7, 8]
     assert payload["best"]["track_id"] == 7
+    assert (
+        payload["best"]["protected_anchor_similarity"]
+        == 0.83
+    )
+    assert (
+        payload["best"]["trusted_gallery_similarity"]
+        == 0.76
+    )
+    assert payload["best"]["adaptive_similarity"] == 0.91
+    assert payload["best"]["positive_similarity"] == 0.83
+    assert (
+        payload["best"]["positive_support_source"]
+        == "protected_anchor"
+    )
     assert payload["all_scores"][0]["confidence"] == 0.91

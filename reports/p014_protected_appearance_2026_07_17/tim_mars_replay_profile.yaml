@@ -65,6 +65,7 @@ target_memory_mars_node:
     appearance_update_cooldown_after_reacquire_frames: 0
 
     # P1.4 protected/adaptive positive memory.
+    # Keep disabled in the canonical profile until replay A/B evidence exists.
     appearance_protected_memory_enabled: true
     appearance_trusted_gallery_max_entries: 4
     appearance_gallery_min_anchor_similarity: 0.75
@@ -78,8 +79,7 @@ target_memory_mars_node:
     hard_negative_update_alpha: 0.20
     hard_negative_min_candidate_similarity: 0.70
 
-    # Disabled above the cosine range. No exclusion threshold was promoted
-    # without separate replay evidence.
+    # Disabled above the cosine range until P1.4 replay promotion.
     hard_negative_max_positive_similarity: 1.01
 
     hard_negative_reject_similarity: 0.80

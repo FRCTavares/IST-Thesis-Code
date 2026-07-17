@@ -16,6 +16,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from thesis_bringup.tim_mars.appearance_memory import cosine_similarity, update_feature_memory
+from thesis_bringup.tim_mars.positive_appearance_memory import (
+    PositiveAppearanceMemory,
+)
 from thesis_bringup.tim_mars.appearance_policy import (
     score_with_appearance,
     should_use_appearance,
@@ -80,6 +83,10 @@ class TargetIdentityMemory:
         self._absence_reacq_confirmation = AbsenceRecoveryConfirmation()
         self._candidate_belief_confirmation = CandidateBeliefConfirmation()
         self._hard_negative_memory = HardNegativeMemory()
+        self._positive_appearance = PositiveAppearanceMemory()
+        self._last_acceptance_memory_source = "none"
+        self._last_positive_memory_updated = False
+        self._last_positive_memory_update_reason = ""
 
     @property
     def state(self) -> TargetState:
@@ -99,17 +106,43 @@ class TargetIdentityMemory:
 
         return int(self._appearance_update_cooldown_frames_remaining)
 
+    def _reset_positive_memory_diagnostics(self) -> None:
+        self._last_acceptance_memory_source = "none"
+        self._last_positive_memory_updated = False
+        self._last_positive_memory_update_reason = ""
+
     def clear(self) -> TargetMemoryOutput:
+        self._reset_positive_memory_diagnostics()
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_confirmation.reset()
         self._absence_reacq_confirmation.reset()
         self._candidate_belief_confirmation.reset()
         self._hard_negative_memory.clear()
-        return self._make_output(reason="operator_clear", visible=False, reacquired=False)
+        self._positive_appearance.clear()
 
-    def select(self, track: CandidateTrack) -> TargetMemoryOutput:
+        return self._make_output(
+            reason="operator_clear",
+            visible=False,
+            reacquired=False,
+        )
+
+    def select(
+        self,
+        track: CandidateTrack,
+    ) -> TargetMemoryOutput:
         """Operator selects a visible track as the active target."""
+
+        self._reset_positive_memory_diagnostics()
+
+        selected_appearance = (
+            track.appearance
+            if track.appearance_memory_update_eligible
+            else None
+        )
+        protected_mode = bool(
+            self.cfg.appearance_protected_memory_enabled
+        )
 
         self._m = _Memory(
             selected=True,
@@ -119,25 +152,53 @@ class TargetIdentityMemory:
             quality=clamp01(track.score),
             frames_since_seen=0,
             confirmed_after_reacquire=0,
-            appearance=update_feature_memory(
-                None,
-                (
-                    track.appearance
-                    if track.appearance_memory_update_eligible
-                    else None
-                ),
-                alpha=1.0,
+            appearance=(
+                None
+                if protected_mode
+                else update_feature_memory(
+                    None,
+                    selected_appearance,
+                    alpha=1.0,
+                )
             ),
         )
+
+        self._positive_appearance.clear()
+
+        if protected_mode:
+            initialised = (
+                self._positive_appearance.select_operator(
+                    track_id=track.track_id,
+                    appearance=selected_appearance,
+                )
+            )
+            self._last_acceptance_memory_source = (
+                "operator_selection"
+            )
+            self._last_positive_memory_updated = bool(
+                initialised
+            )
+            if initialised:
+                self._last_positive_memory_update_reason = (
+                    "operator_anchor_initialised"
+                )
+
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_confirmation.reset()
         self._absence_reacq_confirmation.reset()
         self._candidate_belief_confirmation.reset()
         self._hard_negative_memory.clear()
-        return self._make_output(reason="operator_select", visible=True, reacquired=False)
+
+        return self._make_output(
+            reason="operator_select",
+            visible=True,
+            reacquired=False,
+        )
 
     def update(self, candidates: Sequence[CandidateTrack]) -> TargetMemoryOutput:
         """Update target memory from current tracker candidates."""
+
+        self._reset_positive_memory_diagnostics()
 
         if not self._m.selected or self._m.bbox is None:
             return self._make_output(reason="no_operator_selected_target", visible=False, reacquired=False)
@@ -368,6 +429,63 @@ class TargetIdentityMemory:
                 "appearance"
                 f" {score.appearance_raw:.3f}"
                 f"<{threshold:.3f}"
+            )
+
+        return None
+
+    def _protected_gallery_reacquisition_reject_reason(
+        self,
+        *,
+        candidate: CandidateTrack,
+        score: CandidateScore,
+        reacquired: bool,
+    ) -> Optional[str]:
+        """Validate gallery-only support for a risky reacquisition.
+
+        A single trusted-gallery exemplar must not independently authorize a
+        new or recovered lineage when the current crop is unsuitable for
+        identity memory, the candidate is ambiguous, or the immutable operator
+        anchor does not provide the configured minimum agreement.
+        """
+
+        if (
+            not reacquired
+            or not self.cfg.appearance_protected_memory_enabled
+            or score.positive_support_source != "trusted_gallery"
+        ):
+            return None
+
+        if not candidate.appearance_memory_update_eligible:
+            return (
+                "protected_gallery_reacquisition_reject:"
+                "untrusted_crop"
+            )
+
+        if score.ambiguous:
+            return (
+                "protected_gallery_reacquisition_reject:"
+                "ambiguous_candidate"
+            )
+
+        anchor_threshold = max(
+            0.0,
+            float(
+                self.cfg
+                .appearance_gallery_min_anchor_similarity
+            ),
+        )
+
+        if (
+            anchor_threshold > 0.0
+            and float(
+                score.protected_anchor_similarity
+            ) < anchor_threshold
+        ):
+            return (
+                "protected_gallery_reacquisition_reject:"
+                "anchor"
+                f" {score.protected_anchor_similarity:.3f}"
+                f"<{anchor_threshold:.3f}"
             )
 
         return None
@@ -631,7 +749,20 @@ class TargetIdentityMemory:
             appearance=best.appearance,
             appearance_used=best.appearance_used,
             appearance_raw=best.appearance_raw,
-            appearance_gate_passed=best.appearance_gate_passed,
+            protected_anchor_similarity=(
+                best.protected_anchor_similarity
+            ),
+            trusted_gallery_similarity=(
+                best.trusted_gallery_similarity
+            ),
+            adaptive_similarity=best.adaptive_similarity,
+            positive_similarity=best.positive_similarity,
+            positive_support_source=(
+                best.positive_support_source
+            ),
+            appearance_gate_passed=(
+                best.appearance_gate_passed
+            ),
             geometry_allows_appearance=best.geometry_allows_appearance,
             hard_negative_similarity=best.hard_negative_similarity,
             hard_negative_margin=best.hard_negative_margin,
@@ -922,6 +1053,17 @@ class TargetIdentityMemory:
             appearance=appearance,
             appearance_used=True,
             appearance_raw=appearance,
+            protected_anchor_similarity=(
+                score.protected_anchor_similarity
+            ),
+            trusted_gallery_similarity=(
+                score.trusted_gallery_similarity
+            ),
+            adaptive_similarity=score.adaptive_similarity,
+            positive_similarity=appearance,
+            positive_support_source=(
+                score.positive_support_source
+            ),
             appearance_gate_passed=True,
             geometry_allows_appearance=score.geometry_allows_appearance,
             hard_negative_similarity=score.hard_negative_similarity,
@@ -930,11 +1072,36 @@ class TargetIdentityMemory:
             ambiguous=score.ambiguous,
         )
 
-    def _should_use_appearance(self, *, base_ambiguous: bool) -> bool:
+    def _should_use_appearance(
+        self,
+        *,
+        base_ambiguous: bool,
+    ) -> bool:
+        positive_appearance = self._m.appearance
+
+        if self.cfg.appearance_protected_memory_enabled:
+            positive_appearance = (
+                self._positive_appearance
+                .protected_reference()
+            )
+            if (
+                positive_appearance is None
+                and self._positive_appearance
+                .adaptive_prototype is not None
+            ):
+                positive_appearance = (
+                    self._positive_appearance
+                    .adaptive_prototype
+                )
+
         return should_use_appearance(
             cfg=self.cfg,
-            positive_appearance=self._m.appearance,
-            state_is_lostish=self._m.state in {TargetState.UNCERTAIN, TargetState.LOST, TargetState.REACQUIRED},
+            positive_appearance=positive_appearance,
+            state_is_lostish=self._m.state in {
+                TargetState.UNCERTAIN,
+                TargetState.LOST,
+                TargetState.REACQUIRED,
+            },
             base_ambiguous=base_ambiguous,
         )
 
@@ -974,16 +1141,51 @@ class TargetIdentityMemory:
         *,
         use_appearance: bool,
     ) -> CandidateScore:
-        self._bootstrap_positive_appearance_if_needed(candidate)
+        protected_mode = bool(
+            self.cfg.appearance_protected_memory_enabled
+        )
 
-        base = score_candidate(reference_bbox, candidate, self._m.track_id, self.cfg)
+        if not protected_mode:
+            self._bootstrap_positive_appearance_if_needed(
+                candidate
+            )
+
+        base = score_candidate(
+            reference_bbox,
+            candidate,
+            self._m.track_id,
+            self.cfg,
+        )
+
+        protected_only = bool(
+            protected_mode
+            and (
+                self._m.track_id is None
+                or int(candidate.track_id)
+                != int(self._m.track_id)
+                or self._m.state in {
+                    TargetState.UNCERTAIN,
+                    TargetState.LOST,
+                    TargetState.REACQUIRED,
+                }
+            )
+        )
+
         return score_with_appearance(
             base=base,
             candidate=candidate,
             positive_appearance=self._m.appearance,
             use_appearance=use_appearance,
-            hard_negative_memory=self._hard_negative_memory,
+            hard_negative_memory=(
+                self._hard_negative_memory
+            ),
             cfg=self.cfg,
+            positive_memory=(
+                self._positive_appearance
+                if protected_mode
+                else None
+            ),
+            protected_only=protected_only,
         )
 
     def _is_ambiguous(
@@ -1011,11 +1213,41 @@ class TargetIdentityMemory:
     ) -> TargetMemoryOutput:
         previous_state = self._m.state
         previous_id = self._m.track_id
-        previous_positive_appearance = self._m.appearance
-        id_changed = previous_id is not None and candidate.track_id != previous_id
-        was_lostish = previous_state in {TargetState.UNCERTAIN, TargetState.LOST}
 
+        protected_mode = bool(
+            self.cfg.appearance_protected_memory_enabled
+        )
+        previous_positive_appearance = (
+            self._positive_appearance
+            .protected_reference()
+            if protected_mode
+            else self._m.appearance
+        )
+
+        id_changed = (
+            previous_id is not None
+            and int(candidate.track_id)
+            != int(previous_id)
+        )
+        was_lostish = previous_state in {
+            TargetState.UNCERTAIN,
+            TargetState.LOST,
+        }
         reacquired = bool(id_changed or was_lostish)
+
+        gallery_reject_reason = (
+            self._protected_gallery_reacquisition_reject_reason(
+                candidate=candidate,
+                score=best_score,
+                reacquired=reacquired,
+            )
+        )
+        if gallery_reject_reason is not None:
+            return self._miss(
+                reason=gallery_reject_reason,
+                best_score=best_score,
+                all_scores=all_scores,
+            )
 
         self._rank_reacq_confirmation.reset()
         self._reset_absence_reacquisition_confirmation()
@@ -1024,7 +1256,13 @@ class TargetIdentityMemory:
         if reacquired:
             self._appearance_update_cooldown_frames_remaining = max(
                 self._appearance_update_cooldown_frames_remaining,
-                max(0, int(self.cfg.appearance_update_cooldown_after_reacquire_frames)),
+                max(
+                    0,
+                    int(
+                        self.cfg
+                        .appearance_update_cooldown_after_reacquire_frames
+                    ),
+                ),
             )
 
         if previous_state == TargetState.REACQUIRED:
@@ -1032,21 +1270,62 @@ class TargetIdentityMemory:
         elif reacquired:
             self._m.confirmed_after_reacquire = 0
 
-        conservative_output = self._appearance_conservative_reject_output(
-            best_score=best_score,
-            all_scores=all_scores,
+        conservative_output = (
+            self._appearance_conservative_reject_output(
+                best_score=best_score,
+                all_scores=all_scores,
+            )
         )
         if conservative_output is not None:
             return conservative_output
 
-        if reacquired and self._m.confirmed_after_reacquire < self.cfg.min_confirm_frames_after_reacquire:
+        if (
+            reacquired
+            and self._m.confirmed_after_reacquire
+            < self.cfg.min_confirm_frames_after_reacquire
+        ):
             new_state = TargetState.REACQUIRED
         else:
             new_state = TargetState.LOCKED
 
+        if protected_mode and reacquired:
+            support_threshold = max(
+                float(self.cfg.appearance_min_similarity),
+                float(
+                    self.cfg
+                    .id_switch_min_appearance_similarity
+                ),
+            )
+            independently_supported = bool(
+                best_score.positive_support_source
+                in {
+                    "protected_anchor",
+                    "trusted_gallery",
+                }
+                and best_score.positive_similarity
+                >= support_threshold
+            )
+            self._last_acceptance_memory_source = (
+                best_score.positive_support_source
+                if independently_supported
+                else "none"
+            )
+        elif protected_mode:
+            self._last_acceptance_memory_source = (
+                "tracker_continuity"
+            )
+        else:
+            self._last_acceptance_memory_source = (
+                "legacy_positive_memory"
+                if best_score.appearance_raw > 0.0
+                else "tracker_continuity"
+            )
+
         self._apply_accept_memory_update(
             candidate=candidate,
             best_score=best_score,
+            previous_state=previous_state,
+            previous_track_id=previous_id,
             new_state=new_state,
             memory_update_frozen=memory_update_frozen,
         )
@@ -1057,18 +1336,26 @@ class TargetIdentityMemory:
             accepted_candidate=candidate,
             previous_state=previous_state,
             previous_track_id=previous_id,
-            previous_positive_appearance=previous_positive_appearance,
+            previous_positive_appearance=(
+                previous_positive_appearance
+            ),
             new_state=new_state,
         )
 
         return self._make_output(
-            reason="accepted_candidate" if not reacquired else "reacquired_candidate",
+            reason=(
+                "accepted_candidate"
+                if not reacquired
+                else "reacquired_candidate"
+            ),
             visible=(new_state == TargetState.LOCKED),
             reacquired=reacquired,
             best_score=best_score,
             all_scores=all_scores,
             memory_update_frozen=memory_update_frozen,
-            memory_update_freeze_reason=memory_update_freeze_reason,
+            memory_update_freeze_reason=(
+                memory_update_freeze_reason
+            ),
         )
 
     def _commit_hard_negative_transaction(
@@ -1093,7 +1380,18 @@ class TargetIdentityMemory:
             and int(accepted_candidate.track_id) != int(previous_track_id)
         )
 
-        if (
+        if self.cfg.appearance_protected_memory_enabled:
+            if (
+                new_state == TargetState.LOCKED
+                and self._positive_appearance.lineage_trusted
+                and accepted_candidate
+                .appearance_memory_update_eligible
+            ):
+                self._hard_negative_memory.reconcile_selected(
+                    accepted_candidate.appearance,
+                    self.cfg,
+                )
+        elif (
             id_changed
             and accepted_candidate.appearance_memory_update_eligible
         ):
@@ -1108,6 +1406,10 @@ class TargetIdentityMemory:
             and previous_track_id is not None
             and int(accepted_candidate.track_id) == int(previous_track_id)
             and accepted_candidate.appearance_memory_update_eligible
+            and (
+                not self.cfg.appearance_protected_memory_enabled
+                or self._positive_appearance.lineage_trusted
+            )
         )
 
         if not trusted_continuity:
@@ -1127,35 +1429,141 @@ class TargetIdentityMemory:
         *,
         candidate: CandidateTrack,
         best_score: CandidateScore,
+        previous_state: TargetState,
+        previous_track_id: Optional[int],
         new_state: TargetState,
         memory_update_frozen: bool,
     ) -> None:
+        protected_mode = bool(
+            self.cfg.appearance_protected_memory_enabled
+        )
+
+        id_changed = (
+            previous_track_id is not None
+            and int(candidate.track_id)
+            != int(previous_track_id)
+        )
+        was_lostish = previous_state in {
+            TargetState.UNCERTAIN,
+            TargetState.LOST,
+        }
+        reacquired = bool(id_changed or was_lostish)
+
+        if protected_mode and reacquired:
+            support_threshold = max(
+                float(self.cfg.appearance_min_similarity),
+                float(
+                    self.cfg
+                    .id_switch_min_appearance_similarity
+                ),
+            )
+            independently_supported = bool(
+                best_score.positive_support_source
+                in {
+                    "protected_anchor",
+                    "trusted_gallery",
+                }
+                and best_score.positive_similarity
+                >= support_threshold
+            )
+            self._positive_appearance.begin_reacquired_lineage(
+                track_id=candidate.track_id,
+                independently_supported=(
+                    independently_supported
+                ),
+            )
+
         self._m.selected = True
         self._m.state = new_state
         self._m.track_id = candidate.track_id
         self._m.bbox = candidate.bbox
-        self._m.quality = clamp01(0.65 * best_score.total + 0.35 * candidate.score)
+        self._m.quality = clamp01(
+            0.65 * best_score.total
+            + 0.35 * candidate.score
+        )
         self._m.frames_since_seen = 0
 
-        # Appearance memory update policy:
-        # update only after a confirmed LOCKED state.
-        # freeze during UNCERTAIN, LOST, and REACQUIRED.
-        # Optional cooldown prevents learning a newly reacquired wrong target.
-        can_update_appearance = (
+        if not protected_mode:
+            can_update_appearance = (
+                new_state == TargetState.LOCKED
+                and self._appearance_update_cooldown_frames_remaining
+                <= 0
+                and not memory_update_frozen
+                and candidate.appearance_memory_update_eligible
+            )
+
+            if can_update_appearance:
+                self._m.appearance = update_feature_memory(
+                    self._m.appearance,
+                    candidate.appearance,
+                    alpha=self.cfg.appearance_update_alpha,
+                )
+            elif (
+                self._appearance_update_cooldown_frames_remaining
+                > 0
+            ):
+                self._appearance_update_cooldown_frames_remaining -= 1
+            return
+
+        observation_eligible = bool(
             new_state == TargetState.LOCKED
-            and self._appearance_update_cooldown_frames_remaining <= 0
             and not memory_update_frozen
             and candidate.appearance_memory_update_eligible
+            and candidate.appearance is not None
+            and not best_score.ambiguous
+            and not best_score.hard_negative_reject
         )
 
-        if can_update_appearance:
-            self._m.appearance = update_feature_memory(
-                self._m.appearance,
-                candidate.appearance,
-                alpha=self.cfg.appearance_update_alpha,
-            )
-        elif self._appearance_update_cooldown_frames_remaining > 0:
+        if not observation_eligible:
+            return
+
+        if (
+            self._appearance_update_cooldown_frames_remaining
+            > 0
+        ):
             self._appearance_update_cooldown_frames_remaining -= 1
+            return
+
+        bootstrapped = (
+            self._positive_appearance
+            .bootstrap_operator_anchor(
+                track_id=candidate.track_id,
+                appearance=candidate.appearance,
+            )
+        )
+        if bootstrapped:
+            self._last_positive_memory_updated = True
+            self._last_positive_memory_update_reason = (
+                "protected_anchor_bootstrap"
+            )
+            return
+
+        if not self._positive_appearance.lineage_trusted:
+            self._positive_appearance.observe_locked(
+                track_id=candidate.track_id,
+                required_frames=(
+                    self.cfg
+                    .appearance_trusted_lock_frames_before_update
+                ),
+            )
+
+        if not self._positive_appearance.lineage_trusted:
+            return
+
+        updated = self._positive_appearance.update_trusted(
+            appearance=candidate.appearance,
+            alpha=self.cfg.appearance_update_alpha,
+            gallery_max_entries=(
+                self.cfg
+                .appearance_trusted_gallery_max_entries
+            ),
+        )
+
+        if updated:
+            self._last_positive_memory_updated = True
+            self._last_positive_memory_update_reason = (
+                "trusted_locked_adaptive_update"
+            )
 
     def _appearance_conservative_reject_output(
         self,
@@ -1273,6 +1681,29 @@ class TargetIdentityMemory:
             all_scores=score_list,
             memory_update_frozen=memory_update_frozen,
             memory_update_freeze_reason=memory_update_freeze_reason,
+            acceptance_memory_source=(
+                self._last_acceptance_memory_source
+            ),
+            positive_memory_updated=(
+                self._last_positive_memory_updated
+            ),
+            positive_memory_update_reason=(
+                self._last_positive_memory_update_reason
+            ),
+            protected_anchor_available=bool(
+                self._positive_appearance
+                .protected_anchor is not None
+            ),
+            trusted_gallery_size=len(
+                self._positive_appearance.trusted_gallery
+            ),
+            appearance_lineage_trusted=bool(
+                self._positive_appearance.lineage_trusted
+            ),
+            appearance_trusted_lock_streak=int(
+                self._positive_appearance
+                .trusted_lock_streak
+            ),
             appearance_margin_best_vs_second=appearance_margin_best_vs_second,
             geometry_strength=geometry_strength,
             risk_hard_negative=risk_hard_negative,

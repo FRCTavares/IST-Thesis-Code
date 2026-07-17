@@ -1,0 +1,20 @@
+===== semantic hashes =====
+r1: targets=1547 statuses=1547
+  target_semantic_sha256=16dffb2fa6462bb25cb1ef6a071d9809332fba669ef9f62c48525068d78fd6f7
+  status_semantic_sha256=00d6e3d2375a31b08accd566b2bcc73d723de3f3c655e3aeb81c85c134e8bcf0
+r2: targets=1547 statuses=1547
+  target_semantic_sha256=16dffb2fa6462bb25cb1ef6a071d9809332fba669ef9f62c48525068d78fd6f7
+  status_semantic_sha256=00d6e3d2375a31b08accd566b2bcc73d723de3f3c655e3aeb81c85c134e8bcf0
+r3: targets=1547 statuses=1547
+  target_semantic_sha256=16dffb2fa6462bb25cb1ef6a071d9809332fba669ef9f62c48525068d78fd6f7
+  status_semantic_sha256=00d6e3d2375a31b08accd566b2bcc73d723de3f3c655e3aeb81c85c134e8bcf0
+
+===== evaluated metrics =====
+r1: correct=40.343 wrong=0.000 lost=16.479 absent_output=0.000
+r2: correct=40.343 wrong=0.000 lost=16.479 absent_output=0.000
+r3: correct=40.343 wrong=0.000 lost=16.479 absent_output=0.000
+
+SEQ04_TARGET_SEMANTIC_REPEATABILITY=PASS
+SEQ04_STATUS_SEMANTIC_REPEATABILITY=PASS
+SEQ04_METRIC_REPEATABILITY=PASS
+P014_ANCHOR075_REPEATABILITY_GATE=PASS

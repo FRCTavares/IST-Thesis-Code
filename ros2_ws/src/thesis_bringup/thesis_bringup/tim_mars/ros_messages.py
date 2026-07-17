@@ -107,6 +107,33 @@ def _score_payload(score: object) -> dict[str, object]:
         "appearance": float(score.appearance),
         "appearance_used": bool(score.appearance_used),
         "appearance_raw": float(score.appearance_raw),
+        "protected_anchor_similarity": float(
+            getattr(
+                score,
+                "protected_anchor_similarity",
+                0.0,
+            )
+        ),
+        "trusted_gallery_similarity": float(
+            getattr(
+                score,
+                "trusted_gallery_similarity",
+                0.0,
+            )
+        ),
+        "adaptive_similarity": float(
+            getattr(score, "adaptive_similarity", 0.0)
+        ),
+        "positive_similarity": float(
+            getattr(score, "positive_similarity", 0.0)
+        ),
+        "positive_support_source": str(
+            getattr(
+                score,
+                "positive_support_source",
+                "none",
+            )
+        ),
         "appearance_gate_passed": bool(score.appearance_gate_passed),
         "geometry_allows_appearance": bool(score.geometry_allows_appearance),
         "hard_negative_similarity": float(score.hard_negative_similarity),
@@ -128,6 +155,47 @@ def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
         "reason": str(out.reason),
         "memory_update_frozen": bool(out.memory_update_frozen),
         "memory_update_freeze_reason": str(out.memory_update_freeze_reason),
+        "acceptance_memory_source": str(
+            getattr(
+                out,
+                "acceptance_memory_source",
+                "none",
+            )
+        ),
+        "positive_memory_updated": bool(
+            getattr(out, "positive_memory_updated", False)
+        ),
+        "positive_memory_update_reason": str(
+            getattr(
+                out,
+                "positive_memory_update_reason",
+                "",
+            )
+        ),
+        "protected_anchor_available": bool(
+            getattr(
+                out,
+                "protected_anchor_available",
+                False,
+            )
+        ),
+        "trusted_gallery_size": int(
+            getattr(out, "trusted_gallery_size", 0)
+        ),
+        "appearance_lineage_trusted": bool(
+            getattr(
+                out,
+                "appearance_lineage_trusted",
+                False,
+            )
+        ),
+        "appearance_trusted_lock_streak": int(
+            getattr(
+                out,
+                "appearance_trusted_lock_streak",
+                0,
+            )
+        ),
         "appearance_margin_best_vs_second": float(out.appearance_margin_best_vs_second),
         "geometry_strength": float(out.geometry_strength),
         "risk_hard_negative": bool(out.risk_hard_negative),

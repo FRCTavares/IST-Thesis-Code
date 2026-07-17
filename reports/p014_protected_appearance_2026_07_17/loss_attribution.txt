@@ -1,0 +1,128 @@
+May: samples=950, max_alignment_error_s=0.000000000
+Seq01: samples=2470, max_alignment_error_s=0.000000000
+Seq03: samples=2326, max_alignment_error_s=0.000000000
+Seq04: samples=1547, max_alignment_error_s=0.000000000
+
+===== duration attribution =====
+seq     category                  relation               duration reason
+May     added_correct_loss        id_switch                 0.600 rank_aware_id_switch_recovery_reject
+May     added_correct_loss        same_id_short_gap         0.300 same_id_reacquisition_reject
+May     added_correct_loss        id_switch                 0.100 id_switch_recovery_reject
+May     added_correct_loss        id_switch                 0.100 ambiguous_best_candidate
+May     added_correct_loss        same_id_short_gap         0.100 reacquired_candidate
+May     added_correct_loss        id_switch                 0.100 protected_gallery_reacquisition_reject:untrusted_crop
+May     added_correct_loss        same_id_short_gap         0.050 protected_gallery_reacquisition_reject:untrusted_crop
+May     added_correct_loss        same_id_long_gap          0.050 same_id_reacquisition_reject
+Seq03   added_correct_loss        same_id_long_gap          0.850 same_id_reacquisition_reject
+Seq03   added_correct_loss        id_switch                 0.600 rank_aware_id_switch_recovery_reject
+Seq03   added_correct_loss        id_switch                 0.250 ambiguous_best_candidate
+Seq03   added_correct_loss        id_switch                 0.250 best_below_threshold:#<#
+Seq03   added_correct_loss        same_id_short_gap         0.200 reacquired_candidate
+Seq03   added_correct_loss        same_id_long_gap          0.150 protected_gallery_reacquisition_reject:untrusted_crop
+Seq03   added_correct_loss        id_switch                 0.050 rank_aware_hard_negative_reject
+Seq03   added_correct_loss        same_id_long_gap          0.050 protected_gallery_reacquisition_reject:anchor 0.558<0.750
+Seq03   added_correct_loss        same_id_short_gap         0.050 same_id_reacquisition_reject
+Seq03   correct_to_wrong          same_id_short_gap         0.100 accepted_candidate
+Seq03   wrong_output_suppressed   same_id_long_gap          1.061 protected_gallery_reacquisition_reject:untrusted_crop
+Seq03   wrong_output_suppressed   id_switch                 1.050 rank_aware_hard_negative_reject
+Seq03   wrong_output_suppressed   id_switch                 0.850 protected_gallery_reacquisition_reject:untrusted_crop
+Seq03   wrong_output_suppressed   same_id_long_gap          0.642 protected_gallery_reacquisition_reject:anchor 0.562<0.750
+Seq03   wrong_output_suppressed   same_id_long_gap          0.600 rank_aware_hard_negative_reject
+Seq03   wrong_output_suppressed   same_id_long_gap          0.500 hard_negative_reject
+Seq03   wrong_output_suppressed   id_switch                 0.500 protected_gallery_reacquisition_reject:anchor 0.445<0.750
+Seq03   wrong_output_suppressed   id_switch                 0.450 protected_gallery_reacquisition_reject:ambiguous_candidate
+Seq03   wrong_output_suppressed   same_id_long_gap          0.350 same_id_reacquisition_reject
+Seq03   wrong_output_suppressed   same_id_long_gap          0.300 protected_gallery_reacquisition_reject:anchor 0.512<0.750
+Seq03   wrong_output_suppressed   id_switch                 0.300 protected_gallery_reacquisition_reject:anchor 0.589<0.750
+Seq03   wrong_output_suppressed   id_switch                 0.300 short_gap_new_id_suppressed: id=# gap=# score=#
+Seq03   wrong_output_suppressed   id_switch                 0.300 protected_gallery_reacquisition_reject:anchor 0.705<0.750
+Seq03   wrong_output_suppressed   id_switch                 0.296 protected_gallery_reacquisition_reject:anchor 0.579<0.750
+Seq03   wrong_output_suppressed   same_id_short_gap         0.250 appearance_conservative_reject: selected_app=# second_app=# margin=#
+Seq03   wrong_output_suppressed   id_switch                 0.250 protected_gallery_reacquisition_reject:anchor 0.558<0.750
+Seq03   wrong_output_suppressed   same_id_long_gap          0.250 protected_gallery_reacquisition_reject:anchor 0.509<0.750
+Seq03   wrong_output_suppressed   same_id_long_gap          0.250 protected_gallery_reacquisition_reject:anchor 0.556<0.750
+Seq03   wrong_output_suppressed   id_switch                 0.200 hard_negative_reject
+Seq03   wrong_output_suppressed   id_switch                 0.200 rank_aware_id_switch_recovery_reject
+Seq03   wrong_output_suppressed   same_id_long_gap          0.200 protected_gallery_reacquisition_reject:anchor 0.549<0.750
+Seq03   wrong_output_suppressed   same_id_short_gap         0.150 same_id_reacquisition_reject
+Seq03   wrong_output_suppressed   same_id_long_gap          0.150 protected_gallery_reacquisition_reject:anchor 0.563<0.750
+Seq03   wrong_output_suppressed   id_switch                 0.150 protected_gallery_reacquisition_reject:anchor 0.529<0.750
+Seq03   wrong_output_suppressed   id_switch                 0.150 protected_gallery_reacquisition_reject:anchor 0.525<0.750
+Seq03   wrong_output_suppressed   same_id_short_gap         0.150 reacquired_candidate
+Seq03   wrong_output_suppressed   id_switch                 0.100 protected_gallery_reacquisition_reject:anchor 0.514<0.750
+Seq03   wrong_output_suppressed   id_switch                 0.100 ambiguous_best_candidate
+Seq03   wrong_output_suppressed   id_switch                 0.100 protected_gallery_reacquisition_reject:anchor 0.518<0.750
+Seq03   wrong_output_suppressed   same_id_long_gap          0.050 protected_gallery_reacquisition_reject:anchor 0.517<0.750
+Seq03   wrong_output_suppressed   same_id_short_gap         0.050 hard_negative_reject
+Seq03   wrong_to_correct          same_id_short_gap         5.598 accepted_candidate
+Seq04   absent_output_suppressed  same_id_long_gap          0.200 protected_gallery_reacquisition_reject:anchor 0.727<0.750
+Seq04   absent_output_suppressed  id_switch                 0.200 protected_gallery_reacquisition_reject:ambiguous_candidate
+Seq04   absent_output_suppressed  same_id_long_gap          0.150 protected_gallery_reacquisition_reject:anchor 0.703<0.750
+Seq04   absent_output_suppressed  same_id_short_gap         0.100 protected_gallery_reacquisition_reject:anchor 0.685<0.750
+Seq04   absent_output_suppressed  same_id_long_gap          0.050 protected_gallery_reacquisition_reject:anchor 0.633<0.750
+Seq04   absent_output_suppressed  id_switch                 0.050 rank_aware_id_switch_recovery_reject
+Seq04   absent_output_suppressed  id_switch                 0.050 rank_aware_hard_negative_reject
+Seq04   added_correct_loss        id_switch                 0.600 rank_aware_id_switch_recovery_reject
+Seq04   added_correct_loss        same_id_long_gap          0.300 protected_gallery_reacquisition_reject:anchor 0.604<0.750
+Seq04   added_correct_loss        same_id_long_gap          0.250 protected_gallery_reacquisition_reject:anchor 0.734<0.750
+Seq04   added_correct_loss        same_id_long_gap          0.200 protected_gallery_reacquisition_reject:anchor 0.732<0.750
+Seq04   added_correct_loss        same_id_short_gap         0.200 protected_gallery_reacquisition_reject:anchor 0.747<0.750
+Seq04   added_correct_loss        same_id_short_gap         0.150 reacquired_candidate
+Seq04   added_correct_loss        id_switch                 0.150 appearance_conservative_reject: selected_app=# second_app=# margin=#
+Seq04   added_correct_loss        same_id_long_gap          0.054 protected_gallery_reacquisition_reject:anchor 0.728<0.750
+Seq04   added_correct_loss        id_switch                 0.050 ambiguous_best_candidate
+Seq04   added_correct_loss        id_switch                 0.050 id_switch_recovery_reject
+Seq04   wrong_output_suppressed   id_switch                 0.900 rank_aware_id_switch_recovery_reject
+Seq04   wrong_output_suppressed   same_id_long_gap          0.250 protected_gallery_reacquisition_reject:untrusted_crop
+Seq04   wrong_output_suppressed   same_id_long_gap          0.200 protected_gallery_reacquisition_reject:anchor 0.728<0.750
+Seq04   wrong_output_suppressed   id_switch                 0.150 rank_aware_hard_negative_reject
+Seq04   wrong_output_suppressed   id_switch                 0.100 protected_gallery_reacquisition_reject:anchor 0.583<0.750
+Seq04   wrong_output_suppressed   id_switch                 0.100 protected_gallery_reacquisition_reject:anchor 0.512<0.750
+Seq04   wrong_output_suppressed   id_switch                 0.100 protected_gallery_reacquisition_reject:untrusted_crop
+Seq04   wrong_output_suppressed   id_switch                 0.050 best_below_threshold:#<#
+
+===== category totals =====
+absent_output_suppressed       0.800
+added_correct_loss             5.854
+correct_to_wrong               0.100
+wrong_output_suppressed       12.099
+wrong_to_correct               5.598
+
+===== added-correct-loss relation totals =====
+id_switch                 2.900
+same_id_long_gap          1.904
+same_id_short_gap         1.050
+
+===== longest attribution windows =====
+Seq03   wrong_to_correct          same_id_short_gap      93.547..  95.697 duration=2.180 selected=13 proposed=13 max_gap=0 reason=accepted_candidate
+Seq03   wrong_to_correct          same_id_short_gap      84.630..  86.330 duration=1.718 selected=12 proposed=12 max_gap=0 reason=accepted_candidate
+Seq03   wrong_to_correct          same_id_short_gap      82.830..  84.230 duration=1.450 selected=12 proposed=12 max_gap=0 reason=accepted_candidate
+Seq03   wrong_output_suppressed   id_switch              92.647..  93.147 duration=0.550 selected=12 proposed=13 max_gap=67 reason=rank_aware_hard_negative_reject
+Seq03   wrong_output_suppressed   same_id_long_gap       82.230..  82.680 duration=0.500 selected=12 proposed=12 max_gap=97 reason=rank_aware_hard_negative_reject
+Seq03   wrong_output_suppressed   same_id_long_gap       76.822..  77.222 duration=0.450 selected=8 proposed=8 max_gap=69 reason=protected_gallery_reacquisition_reject:untrusted_crop
+May     added_correct_loss        id_switch              41.750..  42.100 duration=0.400 selected=1 proposed=41 max_gap=20 reason=rank_aware_id_switch_recovery_reject
+Seq03   wrong_output_suppressed   id_switch              79.784..  80.134 duration=0.400 selected=12 proposed=13 max_gap=40 reason=protected_gallery_reacquisition_reject:untrusted_crop
+Seq03   wrong_output_suppressed   same_id_long_gap       75.069..  75.419 duration=0.392 selected=8 proposed=8 max_gap=29 reason=protected_gallery_reacquisition_reject:anchor 0.562<0.750
+Seq03   wrong_output_suppressed   same_id_long_gap       76.211..  76.461 duration=0.300 selected=8 proposed=8 max_gap=52 reason=protected_gallery_reacquisition_reject:anchor 0.512<0.750
+Seq03   wrong_output_suppressed   id_switch              81.284..  81.534 duration=0.300 selected=12 proposed=13 max_gap=72 reason=protected_gallery_reacquisition_reject:anchor 0.589<0.750
+Seq03   wrong_output_suppressed   id_switch              91.297..  91.547 duration=0.300 selected=12 proposed=18 max_gap=30 reason=protected_gallery_reacquisition_reject:anchor 0.445<0.750
+Seq03   wrong_output_suppressed   id_switch              92.097..  92.347 duration=0.300 selected=12 proposed=13 max_gap=47 reason=protected_gallery_reacquisition_reject:anchor 0.705<0.750
+Seq04   added_correct_loss        same_id_long_gap       40.211..  40.461 duration=0.300 selected=21 proposed=21 max_gap=27 reason=protected_gallery_reacquisition_reject:anchor 0.604<0.750
+Seq03   wrong_output_suppressed   same_id_long_gap       76.561..  76.811 duration=0.261 selected=8 proposed=8 max_gap=60 reason=protected_gallery_reacquisition_reject:untrusted_crop
+May     added_correct_loss        same_id_short_gap      56.080..  56.280 duration=0.250 selected=41 proposed=41 max_gap=7 reason=same_id_reacquisition_reject
+Seq03   added_correct_loss        id_switch              33.250..  33.450 duration=0.250 selected=2 proposed=7 max_gap=18 reason=ambiguous_best_candidate
+Seq03   added_correct_loss        id_switch              40.198..  40.398 duration=0.250 selected=2 proposed=8 max_gap=18 reason=rank_aware_id_switch_recovery_reject
+Seq03   added_correct_loss        same_id_long_gap       46.099..  46.299 duration=0.250 selected=8 proposed=8 max_gap=39 reason=same_id_reacquisition_reject
+Seq03   added_correct_loss        same_id_long_gap       46.649..  46.849 duration=0.250 selected=8 proposed=8 max_gap=53 reason=same_id_reacquisition_reject
+Seq03   added_correct_loss        id_switch              48.038..  48.238 duration=0.250 selected=8 proposed=2 max_gap=89 reason=rank_aware_id_switch_recovery_reject
+Seq03   wrong_output_suppressed   same_id_long_gap       74.819..  75.019 duration=0.250 selected=8 proposed=8 max_gap=19 reason=same_id_reacquisition_reject
+Seq03   wrong_output_suppressed   same_id_long_gap       75.461..  75.661 duration=0.250 selected=8 proposed=8 max_gap=34 reason=protected_gallery_reacquisition_reject:anchor 0.562<0.750
+Seq03   wrong_to_correct          same_id_short_gap      78.034..  78.234 duration=0.250 selected=12 proposed=12 max_gap=0 reason=accepted_candidate
+Seq03   wrong_output_suppressed   same_id_short_gap      78.334..  78.534 duration=0.250 selected=12 proposed=12 max_gap=7 reason=appearance_conservative_reject: selected_app=# second_app=# margin=#
+Seq03   wrong_output_suppressed   same_id_long_gap       78.584..  78.784 duration=0.250 selected=12 proposed=12 max_gap=12 reason=hard_negative_reject
+Seq03   wrong_output_suppressed   same_id_long_gap       79.284..  79.484 duration=0.250 selected=12 proposed=12 max_gap=26 reason=hard_negative_reject
+Seq03   wrong_output_suppressed   id_switch              79.534..  79.734 duration=0.250 selected=12 proposed=13 max_gap=31 reason=protected_gallery_reacquisition_reject:anchor 0.558<0.750
+Seq03   wrong_output_suppressed   id_switch              80.434..  80.634 duration=0.250 selected=12 proposed=13 max_gap=50 reason=protected_gallery_reacquisition_reject:ambiguous_candidate
+Seq03   wrong_output_suppressed   id_switch              90.247..  90.447 duration=0.250 selected=12 proposed=2 max_gap=7 reason=short_gap_new_id_suppressed: id=# gap=# score=#
+
+EVENT_FILE=/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p014_ab/anchor075_loss_attribution/anchor075_loss_events.tsv

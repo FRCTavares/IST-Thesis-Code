@@ -154,6 +154,25 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("appearance_update_alpha", 0.10)
     node.declare_parameter("appearance_ambiguous_only", True)
     node.declare_parameter("appearance_update_cooldown_after_reacquire_frames", 0)
+
+    # P1.4 protected/adaptive positive-memory separation.
+    node.declare_parameter(
+        "appearance_protected_memory_enabled",
+        False,
+    )
+    node.declare_parameter(
+        "appearance_trusted_gallery_max_entries",
+        4,
+    )
+    node.declare_parameter(
+        "appearance_gallery_min_anchor_similarity",
+        0.0,
+    )
+    node.declare_parameter(
+        "appearance_trusted_lock_frames_before_update",
+        2,
+    )
+
     node.declare_parameter(
         "mars_model_path",
         "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb",
@@ -165,6 +184,10 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("hard_negative_max_entries", 8)
     node.declare_parameter("hard_negative_update_alpha", 0.20)
     node.declare_parameter("hard_negative_min_candidate_similarity", 0.70)
+    node.declare_parameter(
+        "hard_negative_max_positive_similarity",
+        1.01,
+    )
     node.declare_parameter("hard_negative_reject_similarity", 0.80)
     node.declare_parameter("hard_negative_reject_margin", 0.03)
     node.declare_parameter("hard_negative_min_geometry", 0.20)
@@ -369,12 +392,56 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         appearance_update_alpha=float(node.get_parameter("appearance_update_alpha").value),
         appearance_ambiguous_only=bool(node.get_parameter("appearance_ambiguous_only").value),
         appearance_update_cooldown_after_reacquire_frames=int(
-            node.get_parameter("appearance_update_cooldown_after_reacquire_frames").value
+            node.get_parameter(
+                "appearance_update_cooldown_after_reacquire_frames"
+            ).value
+        ),
+        appearance_protected_memory_enabled=bool(
+            node.get_parameter(
+                "appearance_protected_memory_enabled"
+            ).value
+        ),
+        appearance_trusted_gallery_max_entries=max(
+            0,
+            int(
+                node.get_parameter(
+                    "appearance_trusted_gallery_max_entries"
+                ).value
+            ),
+        ),
+        appearance_gallery_min_anchor_similarity=max(
+            0.0,
+            float(
+                node.get_parameter(
+                    "appearance_gallery_min_anchor_similarity"
+                ).value
+            ),
+        ),
+        appearance_trusted_lock_frames_before_update=max(
+            1,
+            int(
+                node.get_parameter(
+                    "appearance_trusted_lock_frames_before_update"
+                ).value
+            ),
         ),
         hard_negative_memory_enabled=bool(node.get_parameter("hard_negative_memory_enabled").value),
         hard_negative_max_entries=int(node.get_parameter("hard_negative_max_entries").value),
-        hard_negative_update_alpha=float(node.get_parameter("hard_negative_update_alpha").value),
-        hard_negative_min_candidate_similarity=float(node.get_parameter("hard_negative_min_candidate_similarity").value),
+        hard_negative_update_alpha=float(
+            node.get_parameter(
+                "hard_negative_update_alpha"
+            ).value
+        ),
+        hard_negative_min_candidate_similarity=float(
+            node.get_parameter(
+                "hard_negative_min_candidate_similarity"
+            ).value
+        ),
+        hard_negative_max_positive_similarity=float(
+            node.get_parameter(
+                "hard_negative_max_positive_similarity"
+            ).value
+        ),
         hard_negative_reject_similarity=float(node.get_parameter("hard_negative_reject_similarity").value),
         hard_negative_reject_margin=float(node.get_parameter("hard_negative_reject_margin").value),
         hard_negative_min_geometry=float(node.get_parameter("hard_negative_min_geometry").value),

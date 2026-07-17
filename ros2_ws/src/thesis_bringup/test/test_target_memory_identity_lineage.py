@@ -121,13 +121,6 @@ def test_new_id_with_conflicting_appearance_cannot_reacquire_on_geometry_alone()
     assert not conflicting_new_id.visible
     assert not conflicting_new_id.control_valid
 
-@pytest.mark.xfail(
-    run=False,
-    reason=(
-        "Unresolved specification: provenance-safe exclusion of target-like "
-        "candidates from hard-negative memory is not implemented in main."
-    ),
-)
 def test_target_like_duplicate_does_not_become_hard_negative():
     """A duplicate or target fragment must not poison negative memory."""
 
