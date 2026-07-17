@@ -12,10 +12,15 @@ target_memory.py and the policy helpers.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from math import hypot
 from typing import Any, Protocol
 
+from thesis_bringup.tim_mars.crop_quality import (
+    AppearanceCropQuality,
+    CropQualityThresholds,
+    measure_crop_qualities,
+)
 from thesis_bringup.tim_mars.target_memory import BBox, CandidateTrack
 
 
@@ -36,6 +41,9 @@ class AppearanceAttachmentConfig:
     cache_ttl_ms: float
     cache_max_centre_distance_norm: float = 0.25
     cache_min_scale_ratio: float = 0.25
+    crop_quality: CropQualityThresholds = field(
+        default_factory=CropQualityThresholds
+    )
 
 
 @dataclass
@@ -61,6 +69,7 @@ class AppearanceCacheEntry:
     frame_generation: int
     track_generation: int
     source_bbox: BBox
+    crop_quality: AppearanceCropQuality
 
 
 @dataclass
@@ -94,6 +103,12 @@ class AppearanceAttachmentDiagnostics:
     embedding_age_ms_by_track_id: dict[int, float] = field(
         default_factory=dict
     )
+    crop_quality_by_track_id: dict[
+        int,
+        AppearanceCropQuality,
+    ] = field(default_factory=dict)
+    encoding_rejected: int = 0
+    memory_update_ineligible: int = 0
 
 
 @dataclass
@@ -272,25 +287,41 @@ def _result_with_cached_features(
     state: AppearanceAttachmentState,
     data: AppearanceAttachmentInput,
     diagnostics: AppearanceAttachmentDiagnostics,
+    crop_quality_by_track_id: dict[
+        int,
+        AppearanceCropQuality,
+    ] | None = None,
 ) -> AppearanceAttachmentResult:
     enriched, valid, ages = attach_cached_appearance_features(
         candidates=data.candidates,
         state=state,
         now_ns=data.now_ns,
         cache_ttl_ms=config.cache_ttl_ms,
+        crop_quality_by_track_id=crop_quality_by_track_id,
     )
 
     diagnostics.features_valid = valid
     diagnostics.cache_size = len(state.cache_by_track_id)
     diagnostics.embedding_age_ms_by_track_id = ages
 
+    if crop_quality_by_track_id is not None:
+        diagnostics.crop_quality_by_track_id = dict(
+            crop_quality_by_track_id
+        )
+        diagnostics.encoding_rejected = sum(
+            not quality.encoding_eligible
+            for quality in crop_quality_by_track_id.values()
+        )
+        diagnostics.memory_update_ineligible = sum(
+            not quality.memory_update_eligible
+            for quality in crop_quality_by_track_id.values()
+        )
+
     return AppearanceAttachmentResult(
         enriched,
         state,
         diagnostics,
     )
-
-
 def attach_appearance_features(
     *,
     config: AppearanceAttachmentConfig,
@@ -325,6 +356,7 @@ def attach_appearance_features(
     if not data.candidates:
         diagnostics.skip_reason = "no_candidates"
         diagnostics.cache_size = len(state.cache_by_track_id)
+
         return AppearanceAttachmentResult(
             data.candidates,
             state,
@@ -336,12 +368,79 @@ def attach_appearance_features(
         or data.latest_image_seen_ns is None
     ):
         diagnostics.skip_reason = "no_image"
+
         return _result_with_cached_features(
             config=config,
             state=state,
             data=data,
             diagnostics=diagnostics,
         )
+
+    try:
+        image_height, image_width = (
+            data.latest_image_bgr.shape[:2]
+        )
+
+        mapped_boxes = [
+            map_bbox_to_appearance_image(
+                (
+                    candidate.unclipped_bbox
+                    if candidate.unclipped_bbox is not None
+                    else candidate.bbox
+                ),
+                candidate_frame_width=(
+                    data.candidate_frame_width
+                ),
+                candidate_frame_height=(
+                    data.candidate_frame_height
+                ),
+                image_width=int(image_width),
+                image_height=int(image_height),
+            )
+            for candidate in data.candidates
+        ]
+
+        crop_qualities = measure_crop_qualities(
+            mapped_boxes,
+            image_width=int(image_width),
+            image_height=int(image_height),
+            thresholds=config.crop_quality,
+        )
+    except (
+        AttributeError,
+        IndexError,
+        TypeError,
+        ValueError,
+    ) as exc:
+        diagnostics.skip_reason = "invalid_image_geometry"
+        diagnostics.warning = str(exc)
+
+        return _result_with_cached_features(
+            config=config,
+            state=state,
+            data=data,
+            diagnostics=diagnostics,
+        )
+
+    crop_quality_by_track_id = {
+        int(candidate.track_id): quality
+        for candidate, quality in zip(
+            data.candidates,
+            crop_qualities,
+        )
+    }
+
+    diagnostics.crop_quality_by_track_id = dict(
+        crop_quality_by_track_id
+    )
+    diagnostics.encoding_rejected = sum(
+        not quality.encoding_eligible
+        for quality in crop_qualities
+    )
+    diagnostics.memory_update_ineligible = sum(
+        not quality.memory_update_eligible
+        for quality in crop_qualities
+    )
 
     age_ms = float(
         data.now_ns - data.latest_image_seen_ns
@@ -350,20 +449,28 @@ def attach_appearance_features(
 
     if age_ms > config.max_image_age_ms:
         diagnostics.skip_reason = "stale_image"
+
         return _result_with_cached_features(
             config=config,
             state=state,
             data=data,
             diagnostics=diagnostics,
+            crop_quality_by_track_id=(
+                crop_quality_by_track_id
+            ),
         )
 
     if data.mars_backend is None:
         diagnostics.skip_reason = "no_mars_backend"
+
         return _result_with_cached_features(
             config=config,
             state=state,
             data=data,
             diagnostics=diagnostics,
+            crop_quality_by_track_id=(
+                crop_quality_by_track_id
+            ),
         )
 
     elapsed_ms = float(
@@ -392,48 +499,51 @@ def attach_appearance_features(
             state=state,
             data=data,
             diagnostics=diagnostics,
+            crop_quality_by_track_id=(
+                crop_quality_by_track_id
+            ),
         )
 
-    try:
-        image_height, image_width = (
-            data.latest_image_bgr.shape[:2]
-        )
+    encoding_indices = [
+        index
+        for index, quality in enumerate(crop_qualities)
+        if quality.encoding_eligible
+    ]
 
-        boxes = [
-            map_bbox_to_appearance_image(
-                candidate.bbox,
-                candidate_frame_width=(
-                    data.candidate_frame_width
-                ),
-                candidate_frame_height=(
-                    data.candidate_frame_height
-                ),
-                image_width=int(image_width),
-                image_height=int(image_height),
-            )
-            for candidate in data.candidates
-        ]
-    except (
-        AttributeError,
-        IndexError,
-        TypeError,
-        ValueError,
-    ) as exc:
-        diagnostics.skip_reason = "invalid_image_geometry"
-        diagnostics.warning = str(exc)
+    if not encoding_indices:
+        state.last_mars_compute_ns = data.now_ns
+        state.last_mars_image_seq = data.latest_image_seq
+        diagnostics.skip_reason = (
+            "no_encoding_eligible_crops"
+        )
 
         return _result_with_cached_features(
             config=config,
             state=state,
             data=data,
             diagnostics=diagnostics,
+            crop_quality_by_track_id=(
+                crop_quality_by_track_id
+            ),
         )
 
+    encoding_boxes = [
+        mapped_boxes[index]
+        for index in encoding_indices
+    ]
+
     try:
-        appearances = data.mars_backend.encode(
+        encoded = data.mars_backend.encode(
             data.latest_image_bgr,
-            boxes,
+            encoding_boxes,
         )
+
+        if len(encoded) != len(encoding_indices):
+            raise ValueError(
+                "appearance encoder returned "
+                f"{len(encoded)} features for "
+                f"{len(encoding_indices)} boxes"
+            )
     except Exception as exc:
         diagnostics.skip_reason = (
             f"mars_error:{type(exc).__name__}"
@@ -445,24 +555,33 @@ def attach_appearance_features(
             state=state,
             data=data,
             diagnostics=diagnostics,
+            crop_quality_by_track_id=(
+                crop_quality_by_track_id
+            ),
         )
 
     state.last_mars_compute_ns = data.now_ns
     state.last_mars_image_seq = data.latest_image_seq
 
-    encoded_valid = 0
+    fresh_appearance_by_track_id: dict[int, Any] = {}
 
-    for candidate, appearance in zip(
-        data.candidates,
-        appearances,
+    for candidate_index, appearance in zip(
+        encoding_indices,
+        encoded,
     ):
         if appearance is None:
             continue
 
-        encoded_valid += 1
+        candidate = data.candidates[candidate_index]
+        quality = crop_qualities[candidate_index]
         track_id = int(candidate.track_id)
 
-        entry = AppearanceCacheEntry(
+        fresh_appearance_by_track_id[track_id] = appearance
+
+        if not quality.memory_update_eligible:
+            continue
+
+        state.cache_by_track_id[track_id] = AppearanceCacheEntry(
             appearance=appearance,
             embedded_ns=int(data.now_ns),
             source_frame_id=int(
@@ -480,26 +599,50 @@ def attach_appearance_features(
                 )
             ),
             source_bbox=candidate.bbox,
+            crop_quality=quality,
         )
-
-        state.cache_by_track_id[track_id] = entry
         state.cache_seen_ns[track_id] = int(
             data.now_ns
         )
 
-    enriched, cached_valid, ages = (
-        attach_cached_appearance_features(
-            candidates=data.candidates,
-            state=state,
-            now_ns=data.now_ns,
-            cache_ttl_ms=config.cache_ttl_ms,
-        )
+    enriched, _, ages = attach_cached_appearance_features(
+        candidates=data.candidates,
+        state=state,
+        now_ns=data.now_ns,
+        cache_ttl_ms=config.cache_ttl_ms,
+        crop_quality_by_track_id=(
+            crop_quality_by_track_id
+        ),
     )
 
+    final_candidates: list[CandidateTrack] = []
+
+    for candidate in enriched:
+        track_id = int(candidate.track_id)
+        fresh = fresh_appearance_by_track_id.get(track_id)
+
+        if fresh is None:
+            final_candidates.append(candidate)
+            continue
+
+        quality = crop_quality_by_track_id[track_id]
+        ages[track_id] = 0.0
+
+        final_candidates.append(
+            replace(
+                candidate,
+                appearance=fresh,
+                appearance_crop_quality=quality,
+                appearance_memory_update_eligible=(
+                    quality.memory_update_eligible
+                ),
+            )
+        )
+
     diagnostics.skip_reason = "ok"
-    diagnostics.features_valid = max(
-        encoded_valid,
-        cached_valid,
+    diagnostics.features_valid = sum(
+        candidate.appearance is not None
+        for candidate in final_candidates
     )
     diagnostics.cache_size = len(
         state.cache_by_track_id
@@ -507,18 +650,20 @@ def attach_appearance_features(
     diagnostics.embedding_age_ms_by_track_id = ages
 
     return AppearanceAttachmentResult(
-        enriched,
+        final_candidates,
         state,
         diagnostics,
     )
-
-
 def attach_cached_appearance_features(
     *,
     candidates: list[CandidateTrack],
     state: AppearanceAttachmentState,
     now_ns: int,
     cache_ttl_ms: float,
+    crop_quality_by_track_id: dict[
+        int,
+        AppearanceCropQuality,
+    ] | None = None,
 ) -> tuple[
     list[CandidateTrack],
     int,
@@ -553,7 +698,14 @@ def attach_cached_appearance_features(
         cached = state.cache_by_track_id.get(
             track_id
         )
+        current_quality = (
+            crop_quality_by_track_id.get(track_id)
+            if crop_quality_by_track_id is not None
+            else None
+        )
+
         appearance = None
+        source_quality = None
         cache_age_ms = None
         cache_valid = False
 
@@ -580,11 +732,9 @@ def attach_cached_appearance_features(
 
             if cache_valid:
                 appearance = cached.appearance
+                source_quality = cached.crop_quality
 
         elif cached is not None:
-            # Compatibility path for direct low-level tests that predate
-            # generation metadata. Runtime processing always establishes a
-            # positive frame generation and therefore rejects raw entries.
             seen_ns = state.cache_seen_ns.get(
                 track_id
             )
@@ -619,14 +769,35 @@ def attach_cached_appearance_features(
                 None,
             )
 
+        effective_quality = (
+            current_quality
+            if current_quality is not None
+            else source_quality
+        )
+
+        source_memory_eligible = (
+            source_quality.memory_update_eligible
+            if source_quality is not None
+            else cache_valid
+        )
+        current_memory_eligible = (
+            current_quality is not None
+            and current_quality.memory_update_eligible
+        )
+
         enriched.append(
-            CandidateTrack(
-                track_id=candidate.track_id,
-                bbox=candidate.bbox,
-                score=candidate.score,
-                age=candidate.age,
-                last_seen=candidate.last_seen,
+            replace(
+                candidate,
                 appearance=appearance,
+                appearance_crop_quality=(
+                    effective_quality
+                ),
+                appearance_memory_update_eligible=bool(
+                    cache_valid
+                    and appearance is not None
+                    and source_memory_eligible
+                    and current_memory_eligible
+                ),
             )
         )
 

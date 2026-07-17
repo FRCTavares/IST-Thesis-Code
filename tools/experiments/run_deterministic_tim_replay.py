@@ -31,6 +31,9 @@ from thesis_msgs.msg import TargetState, Track2DArray
 from thesis_bringup.tim_mars.appearance_attachment import (
     AppearanceAttachmentConfig,
 )
+from thesis_bringup.tim_mars.crop_quality import (
+    CropQualityThresholds,
+)
 from thesis_bringup.tim_mars.mars_reid_backend import MarsReIdBackend
 from thesis_bringup.tim_mars.ros_messages import (
     status_json_from_output,
@@ -242,6 +245,57 @@ def build_memory_config(
     return TargetMemoryConfig(**values)
 
 
+def build_crop_quality_thresholds(
+    canonical: dict[str, Any],
+) -> CropQualityThresholds:
+    """Build crop-quality thresholds from the canonical configuration."""
+
+    return CropQualityThresholds(
+        min_width_px=float(
+            canonical.get(
+                "appearance_crop_min_width_px",
+                12.0,
+            )
+        ),
+        min_height_px=float(
+            canonical.get(
+                "appearance_crop_min_height_px",
+                24.0,
+            )
+        ),
+        max_clipping_fraction=float(
+            canonical.get(
+                "appearance_crop_max_clipping_fraction",
+                0.10,
+            )
+        ),
+        min_aspect_ratio=float(
+            canonical.get(
+                "appearance_crop_min_aspect_ratio",
+                0.20,
+            )
+        ),
+        max_aspect_ratio=float(
+            canonical.get(
+                "appearance_crop_max_aspect_ratio",
+                1.00,
+            )
+        ),
+        max_overlap_iou_for_memory=float(
+            canonical.get(
+                "appearance_crop_max_overlap_iou_for_memory",
+                0.10,
+            )
+        ),
+        min_centre_distance_norm_for_memory=float(
+            canonical.get(
+                "appearance_crop_min_centre_distance_norm_for_memory",
+                0.04,
+            )
+        ),
+    )
+
+
 def build_runtime(
     canonical: dict[str, Any],
     args: argparse.Namespace,
@@ -293,6 +347,9 @@ def build_runtime(
                 "appearance_cache_min_scale_ratio",
                 0.25,
             )
+        ),
+        crop_quality=build_crop_quality_thresholds(
+            canonical
         ),
     )
 
@@ -461,6 +518,15 @@ def make_status_message(
         ),
         appearance_embedding_age_ms_by_track_id=(
             diagnostics.appearance_embedding_age_ms_by_track_id
+        ),
+        appearance_crop_quality_by_track_id=(
+            diagnostics.appearance_crop_quality_by_track_id
+        ),
+        appearance_encoding_rejected=(
+            diagnostics.appearance_encoding_rejected
+        ),
+        appearance_memory_update_ineligible=(
+            diagnostics.appearance_memory_update_ineligible
         ),
         appearance_update_cooldown_remaining=(
             diagnostics

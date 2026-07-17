@@ -375,3 +375,52 @@ def test_rank_aware_reacquisition_cannot_bypass_hard_negative_rejection():
         "rank_aware_hard_negative_reject:"
     )
     assert memory._m.track_id == 1
+
+
+def test_rank_aware_id_switch_respects_minimum_appearance_similarity():
+    target = feat([1.0, 0.0, 0.0])
+    low_match = feat([0.70, 0.714142842, 0.0])
+
+    tim = TargetIdentityMemory(
+        cfg(
+            rank_aware_reacquisition_enabled=True,
+            rank_aware_confirm_frames=1,
+            rank_aware_lost_min_app=0.05,
+            id_switch_min_appearance_similarity=0.78,
+            hard_negative_memory_enabled=False,
+            appearance_conservative_enabled=False,
+            short_gap_new_id_suppression_enabled=False,
+            absence_recovery_enabled=False,
+        )
+    )
+
+    tim.select(
+        tr(
+            1,
+            (100, 100, 160, 240),
+            appearance=target,
+        )
+    )
+
+    tim.update([])
+    tim.update([])
+
+    output = tim.update(
+        [
+            tr(
+                7,
+                (104, 101, 164, 241),
+                score=0.95,
+                appearance=low_match,
+            )
+        ]
+    )
+
+    assert output.target_track_id == 1
+    assert output.state == TargetState.LOST
+    assert not output.visible
+    assert (
+        output.reason
+        == "rank_aware_id_switch_recovery_reject:"
+        "appearance 0.700<0.780"
+    )

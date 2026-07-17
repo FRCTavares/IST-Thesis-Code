@@ -1,6 +1,9 @@
 import json
 from types import SimpleNamespace
 
+from thesis_bringup.tim_mars.crop_quality import (
+    AppearanceCropQuality,
+)
 from thesis_bringup.tim_mars.ros_messages import (
     bbox_to_msg_geometry,
     status_json_from_output,
@@ -156,6 +159,23 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
                 7: 0.0,
                 8: 125.0,
             },
+            appearance_crop_quality_by_track_id={
+                7: AppearanceCropQuality(
+                    crop_width_px=40.0,
+                    crop_height_px=80.0,
+                    clipping_fraction=0.0,
+                    aspect_ratio=0.5,
+                    max_iou_with_other=0.2,
+                    min_centre_distance_norm=0.03,
+                    encoding_eligible=True,
+                    memory_update_eligible=False,
+                    rejection_reasons=(
+                        "overlap_with_person",
+                    ),
+                ),
+            },
+            appearance_encoding_rejected=0,
+            appearance_memory_update_ineligible=1,
             appearance_update_cooldown_remaining=0,
         )
     )
@@ -169,6 +189,21 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
         "7": 0.0,
         "8": 125.0,
     }
+    assert payload["appearance_crop_quality_by_track_id"]["7"] == {
+        "crop_width_px": 40.0,
+        "crop_height_px": 80.0,
+        "clipping_fraction": 0.0,
+        "aspect_ratio": 0.5,
+        "max_iou_with_other": 0.2,
+        "min_centre_distance_norm": 0.03,
+        "encoding_eligible": True,
+        "memory_update_eligible": False,
+        "rejection_reasons": [
+            "overlap_with_person",
+        ],
+    }
+    assert payload["appearance_encoding_rejected"] == 0
+    assert payload["appearance_memory_update_ineligible"] == 1
     assert payload["track_timestamp_ns"] == 2_000_000_000
     assert payload["selected_image_timestamp_ns"] == 1_987_500_000
     assert payload["image_track_offset_ms"] == 12.5

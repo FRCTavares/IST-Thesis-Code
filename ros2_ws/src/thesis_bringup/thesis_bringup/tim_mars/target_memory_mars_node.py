@@ -27,6 +27,9 @@ from thesis_msgs.msg import TargetState, Track2DArray
 from thesis_bringup.tim_mars.appearance_attachment import (
     AppearanceAttachmentConfig,
 )
+from thesis_bringup.tim_mars.crop_quality import (
+    CropQualityThresholds,
+)
 from thesis_bringup.tim_mars.mars_reid_backend import MarsReIdBackend
 from thesis_bringup.tim_mars.ros_messages import (
     status_json_from_output,
@@ -117,6 +120,32 @@ class TargetMemoryMarsNode(Node):
             cache_min_scale_ratio=(
                 self._appearance_cache_min_scale_ratio
             ),
+            crop_quality=CropQualityThresholds(
+                min_width_px=(
+                    params.appearance_crop_min_width_px
+                ),
+                min_height_px=(
+                    params.appearance_crop_min_height_px
+                ),
+                max_clipping_fraction=(
+                    params
+                    .appearance_crop_max_clipping_fraction
+                ),
+                min_aspect_ratio=(
+                    params.appearance_crop_min_aspect_ratio
+                ),
+                max_aspect_ratio=(
+                    params.appearance_crop_max_aspect_ratio
+                ),
+                max_overlap_iou_for_memory=(
+                    params
+                    .appearance_crop_max_overlap_iou_for_memory
+                ),
+                min_centre_distance_norm_for_memory=(
+                    params
+                    .appearance_crop_min_centre_distance_norm_for_memory
+                ),
+            ),
         )
         self._runtime = TimMarsRuntime(
             TimMarsRuntimeConfig(
@@ -161,6 +190,8 @@ class TargetMemoryMarsNode(Node):
             "TIM-MARS config: "
             f"allow_id_switch_recovery={cfg.allow_id_switch_recovery} "
             f"id_switch_spatial_gate_enabled={cfg.id_switch_spatial_gate_enabled} "
+            f"id_switch_min_appearance_similarity="
+            f"{cfg.id_switch_min_appearance_similarity:.3f} "
             f"rank_aware_reacquisition_enabled={cfg.rank_aware_reacquisition_enabled} "
             f"rank_aware_lost_min_app={cfg.rank_aware_lost_min_app:.3f} "
             f"rank_aware_lost_app_margin={cfg.rank_aware_lost_app_margin:.3f} "
@@ -397,6 +428,15 @@ class TargetMemoryMarsNode(Node):
             appearance_cache_size=diagnostics.appearance_cache_size,
             appearance_embedding_age_ms_by_track_id=(
                 diagnostics.appearance_embedding_age_ms_by_track_id
+            ),
+            appearance_crop_quality_by_track_id=(
+                diagnostics.appearance_crop_quality_by_track_id
+            ),
+            appearance_encoding_rejected=(
+                diagnostics.appearance_encoding_rejected
+            ),
+            appearance_memory_update_ineligible=(
+                diagnostics.appearance_memory_update_ineligible
             ),
             appearance_update_cooldown_remaining=(
                 diagnostics.appearance_update_cooldown_remaining

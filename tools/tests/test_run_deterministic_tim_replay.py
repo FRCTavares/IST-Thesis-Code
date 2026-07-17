@@ -283,3 +283,46 @@ def test_streamed_output_writes_generated_messages_between_source_timestamps():
         (300, "/last", b"last"),
     ]
 
+
+
+
+def test_build_crop_quality_thresholds_uses_canonical_values():
+    thresholds = MODULE.build_crop_quality_thresholds(
+        {
+            "appearance_crop_min_width_px": 16.0,
+            "appearance_crop_min_height_px": 32.0,
+            "appearance_crop_max_clipping_fraction": 0.20,
+            "appearance_crop_min_aspect_ratio": 0.25,
+            "appearance_crop_max_aspect_ratio": 0.90,
+            "appearance_crop_max_overlap_iou_for_memory": 0.15,
+            "appearance_crop_min_centre_distance_norm_for_memory": 0.05,
+        }
+    )
+
+    assert thresholds.min_width_px == 16.0
+    assert thresholds.min_height_px == 32.0
+    assert thresholds.max_clipping_fraction == 0.20
+    assert thresholds.min_aspect_ratio == 0.25
+    assert thresholds.max_aspect_ratio == 0.90
+    assert thresholds.max_overlap_iou_for_memory == 0.15
+    assert (
+        thresholds.min_centre_distance_norm_for_memory
+        == 0.05
+    )
+
+
+def test_build_memory_config_preserves_id_switch_appearance_threshold():
+    config = MODULE.build_memory_config(
+        {
+            "id_switch_min_appearance_similarity": 0.78,
+            "appearance_enabled": True,
+        },
+        image_width=640.0,
+        image_height=640.0,
+        appearance_enabled=True,
+    )
+
+    assert (
+        config.id_switch_min_appearance_similarity
+        == 0.78
+    )

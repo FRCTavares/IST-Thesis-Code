@@ -886,16 +886,71 @@ Tasks:
 
 ### P1.3 Add crop-quality controls
 
+Status as of 17 July 2026: complete for the defined P1.3 scope. The pure
+crop-quality contract, unclipped geometry preservation, pre-encoding
+filtering, sparse encoder alignment, cache-quality provenance, conservative
+positive and negative memory gates, canonical and ROS parameter wiring,
+deterministic-runner parity, and status diagnostics are implemented.
+
+Replay investigation also exposed two unsafe recovery paths amplified by
+reduced cache retention. Different-ID recovery now requires an embedding above
+the dedicated appearance threshold, while same-ID geometry-only recovery is
+permitted only during continuous `LOCKED` operation or confirmation of an
+already evidence-backed `REACQUIRED` transition. Same-ID recovery from
+`UNCERTAIN` or `LOST` requires current appearance evidence.
+
+Canonical replay acceptance:
+
+- May hard re-entry: `64.750 s` correct, `0.000 s` wrong, `2.950 s` lost, `0.000 s` target-absent output; deltas versus P0.10 are `-0.597 s` correct, `+0.000 s` wrong, `+0.597 s` lost, and `+0.000 s` target-absent output.
+- Seq01: `122.340 s` correct, `0.000 s` wrong, `0.000 s` lost, `0.000 s` target-absent output; deltas versus P0.10 are `+0.000 s` correct, `+0.000 s` wrong, `+0.000 s` lost, and `+0.000 s` target-absent output.
+- Seq03: `61.236 s` correct, `27.538 s` wrong, `6.953 s` lost, `0.000 s` target-absent output; deltas versus P0.10 are `-1.500 s` correct, `-0.249 s` wrong, `+1.749 s` lost, and `+0.000 s` target-absent output.
+- Seq04: `42.897 s` correct, `1.358 s` wrong, `12.567 s` lost, `0.762 s` target-absent output; deltas versus P0.10 are `-0.854 s` correct, `-2.578 s` wrong, `+3.432 s` lost, and `-2.043 s` target-absent output.
+- Seq04 was repeated independently with identical decoded target messages,
+  decision-bearing status fields, and complete status payloads.
+- The Seq03 audit found 11 wrong frames removed and four added. Two added
+  frames extended an existing wrong-ID episode at an annotation boundary; two
+  displaced a pre-existing wrong episode after longer conservative
+  suppression. Total wrong duration still decreased by `0.249 s`.
+- The accepted behavior is safety-positive but more conservative: wrong-target
+  and target-absent publication do not increase on any canonical sequence, at
+  the cost of additional lost-target duration on May, Seq03, and Seq04.
+- Canonical configuration SHA-256:
+  `6db6bed81506f7e5892b4983f541901976e68f1a7f2c0d5660c8e9dd3bd6601f`.
+- Evidence:
+  `bags/replay/p013_crop_quality_candidate_6db6bed8_2026_07_17/` and
+  `reports/p013_crop_quality_candidate_6db6bed8_2026_07_17/`.
+
 Before encoding, measure:
 
-- [ ] minimum pixel height and width;
-- [ ] clipping fraction;
-- [ ] aspect ratio;
-- [ ] overlap with nearby people;
-- [ ] centre distance to group members;
+- [x] minimum pixel height and width;
+- [x] clipping fraction;
+- [x] aspect ratio;
+- [x] overlap with nearby people;
+- [x] centre distance to group members;
 - [ ] optional blur or sharpness.
 
+Sharpness remains deferred until a controlled measurement establishes a stable
+threshold. It is not enabled through an arbitrary Laplacian-variance constant.
+
 Do not update positive or negative memory from low-quality crops.
+
+Diagnostic acceptance invariant:
+
+- when appearance mode is enabled, a different tracker ID must not be accepted
+  without an embedding or below the dedicated ID-switch appearance threshold;
+- same-ID continuity may remain geometry-driven while operation is continuously
+  `LOCKED`;
+- same-ID confirmation may complete from `REACQUIRED` without a fresh embedding
+  because entry to `REACQUIRED` has already passed the applicable evidence gates;
+- after `UNCERTAIN` or `LOST`, even the same tracker ID requires an actual
+  appearance embedding before acceptance;
+- appearance-disabled operation preserves the existing geometry-only fallback;
+- the May accepted-switch audit found wrong similarity `0.695` and correct
+  similarities `0.852` and `0.893`; the canonical threshold `0.78` lies inside
+  that observed separation and passed May, Seq01, Seq03, and Seq04 replay
+  validation;
+- remaining protected-versus-adaptive appearance-memory failures belong to
+  P1.4 and must not be addressed by further P1.3 threshold tuning.
 
 ### P1.4 Separate protected and adaptive appearance memory
 

@@ -119,7 +119,15 @@ class TargetIdentityMemory:
             quality=clamp01(track.score),
             frames_since_seen=0,
             confirmed_after_reacquire=0,
-            appearance=update_feature_memory(None, track.appearance, alpha=1.0),
+            appearance=update_feature_memory(
+                None,
+                (
+                    track.appearance
+                    if track.appearance_memory_update_eligible
+                    else None
+                ),
+                alpha=1.0,
+            ),
         )
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_confirmation.reset()
@@ -201,7 +209,35 @@ class TargetIdentityMemory:
                 all_scores=scores_sorted,
             )
 
+        same_id_appearance_reject = (
+            self._same_id_reacquisition_appearance_reject_reason(
+                candidate=best_candidate,
+            )
+        )
+        if same_id_appearance_reject is not None:
+            self._candidate_belief_confirmation.reset()
+            return self._miss(
+                reason=same_id_appearance_reject,
+                best_score=best,
+                all_scores=scores_sorted,
+            )
+
         id_switch = best.track_id != self._m.track_id
+
+        id_switch_appearance_reject = (
+            self._id_switch_appearance_reject_reason(
+                candidate=best_candidate,
+                score=best,
+                id_switch=id_switch,
+            )
+        )
+        if id_switch_appearance_reject is not None:
+            self._candidate_belief_confirmation.reset()
+            return self._miss(
+                reason=id_switch_appearance_reject,
+                best_score=best,
+                all_scores=scores_sorted,
+            )
 
         candidate_belief_output = self._handle_candidate_belief_confirmation(
             best=best,
@@ -256,6 +292,86 @@ class TargetIdentityMemory:
             candidates=candidates,
         )
 
+    def _same_id_reacquisition_appearance_reject_reason(
+        self,
+        *,
+        candidate: CandidateTrack,
+    ) -> Optional[str]:
+        """Require identity evidence when restoring an untrusted lineage.
+
+        Same-ID geometry may maintain uninterrupted LOCKED continuity. It may
+        also complete a REACQUIRED confirmation because entry to REACQUIRED
+        has already passed the applicable appearance-evidence gates. A same-ID
+        return from UNCERTAIN or LOST remains untrusted and requires an actual
+        candidate embedding while appearance mode is active.
+        """
+
+        if not self.cfg.appearance_enabled:
+            return None
+
+        if self._m.state in {
+            TargetState.LOCKED,
+            TargetState.REACQUIRED,
+        }:
+            return None
+
+        if self._m.track_id is None:
+            return None
+
+        if int(candidate.track_id) != int(self._m.track_id):
+            return None
+
+        if candidate.appearance is not None:
+            return None
+
+        return (
+            "same_id_reacquisition_reject:"
+            "no_candidate_appearance"
+        )
+
+    def _id_switch_appearance_reject_reason(
+        self,
+        *,
+        candidate: CandidateTrack,
+        score: CandidateScore,
+        id_switch: bool,
+    ) -> Optional[str]:
+        """Return why appearance evidence cannot authorize a tracker-ID change."""
+
+        if (
+            not id_switch
+            or not self.cfg.allow_id_switch_recovery
+            or not self.cfg.appearance_enabled
+        ):
+            return None
+
+        if candidate.appearance is None:
+            return (
+                "id_switch_recovery_reject:"
+                "no_candidate_appearance"
+            )
+
+        threshold = max(
+            0.0,
+            float(
+                self.cfg
+                .id_switch_min_appearance_similarity
+            ),
+        )
+
+        if (
+            threshold > 0.0
+            and float(score.appearance_raw) < threshold
+        ):
+            return (
+                "id_switch_recovery_reject:"
+                "appearance"
+                f" {score.appearance_raw:.3f}"
+                f"<{threshold:.3f}"
+            )
+
+        return None
+
     def _handle_candidate_belief_confirmation(
         self,
         *,
@@ -299,8 +415,32 @@ class TargetIdentityMemory:
             candidates,
         )
         if rank_aware_best is not None:
-            rank_candidate = next(c for c in candidates if c.track_id == rank_aware_best.track_id)
-            rank_id_switch = rank_aware_best.track_id != self._m.track_id
+            rank_candidate = next(
+                c
+                for c in candidates
+                if c.track_id == rank_aware_best.track_id
+            )
+            rank_id_switch = (
+                rank_aware_best.track_id
+                != self._m.track_id
+            )
+
+            rank_appearance_reject = (
+                self._id_switch_appearance_reject_reason(
+                    candidate=rank_candidate,
+                    score=rank_aware_best,
+                    id_switch=rank_id_switch,
+                )
+            )
+            if rank_appearance_reject is not None:
+                return self._miss(
+                    reason=(
+                        "rank_aware_"
+                        + rank_appearance_reject
+                    ),
+                    best_score=rank_aware_best,
+                    all_scores=scores_sorted,
+                )
 
             if rank_id_switch and self.cfg.id_switch_spatial_gate_enabled:
                 spatial_ok = (
@@ -377,6 +517,18 @@ class TargetIdentityMemory:
             and same_id_candidate is not None
             and same_id_score.total >= self.cfg.short_gap_same_id_min_total
         ):
+            same_id_appearance_reject = (
+                self._same_id_reacquisition_appearance_reject_reason(
+                    candidate=same_id_candidate,
+                )
+            )
+            if same_id_appearance_reject is not None:
+                return self._miss(
+                    reason=same_id_appearance_reject,
+                    best_score=same_id_score,
+                    all_scores=scores_sorted,
+                )
+
             return self._accept(
                 same_id_candidate,
                 best_score=same_id_score,
@@ -806,6 +958,9 @@ class TargetIdentityMemory:
         if candidate.appearance is None:
             return
 
+        if not candidate.appearance_memory_update_eligible:
+            return
+
         self._m.appearance = update_feature_memory(
             None,
             candidate.appearance,
@@ -938,7 +1093,10 @@ class TargetIdentityMemory:
             and int(accepted_candidate.track_id) != int(previous_track_id)
         )
 
-        if id_changed:
+        if (
+            id_changed
+            and accepted_candidate.appearance_memory_update_eligible
+        ):
             self._hard_negative_memory.reconcile_selected(
                 accepted_candidate.appearance,
                 self.cfg,
@@ -949,6 +1107,7 @@ class TargetIdentityMemory:
             and new_state == TargetState.LOCKED
             and previous_track_id is not None
             and int(accepted_candidate.track_id) == int(previous_track_id)
+            and accepted_candidate.appearance_memory_update_eligible
         )
 
         if not trusted_continuity:
@@ -986,6 +1145,7 @@ class TargetIdentityMemory:
             new_state == TargetState.LOCKED
             and self._appearance_update_cooldown_frames_remaining <= 0
             and not memory_update_frozen
+            and candidate.appearance_memory_update_eligible
         )
 
         if can_update_appearance:

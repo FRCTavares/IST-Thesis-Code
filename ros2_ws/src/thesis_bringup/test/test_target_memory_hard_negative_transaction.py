@@ -26,12 +26,19 @@ def feat(values):
     return array / norm
 
 
-def tr(track_id, bbox, score=0.95, appearance=None):
+def tr(
+    track_id,
+    bbox,
+    score=0.95,
+    appearance=None,
+    memory_eligible=True,
+):
     return CandidateTrack(
         track_id=track_id,
         bbox=bbox,
         score=score,
         appearance=appearance,
+        appearance_memory_update_eligible=memory_eligible,
     )
 
 
@@ -203,3 +210,103 @@ def test_untrusted_states_cannot_add_hard_negatives(state):
     )
 
     assert len(tim._hard_negative_memory) == 0
+
+
+
+def test_low_quality_selected_crop_blocks_negative_transaction():
+    target = feat([1.0, 0.0, 0.0])
+    distractor = feat([0.8, 0.6, 0.0])
+
+    tim = TargetIdentityMemory(cfg())
+    select_stable_target(tim, target)
+
+    output = tim.update(
+        [
+            tr(
+                1,
+                (104, 101, 164, 241),
+                appearance=target,
+                memory_eligible=False,
+            ),
+            tr(
+                2,
+                (125, 101, 185, 241),
+                appearance=distractor,
+            ),
+        ]
+    )
+
+    assert output.state == TargetState.LOCKED
+    assert len(tim._hard_negative_memory) == 0
+
+
+def test_low_quality_distractor_cannot_enter_negative_memory():
+    target = feat([1.0, 0.0, 0.0])
+    distractor = feat([0.8, 0.6, 0.0])
+
+    tim = TargetIdentityMemory(cfg())
+    select_stable_target(tim, target)
+
+    output = tim.update(
+        [
+            tr(
+                1,
+                (104, 101, 164, 241),
+                appearance=target,
+            ),
+            tr(
+                2,
+                (125, 101, 185, 241),
+                appearance=distractor,
+                memory_eligible=False,
+            ),
+        ]
+    )
+
+    assert output.state == TargetState.LOCKED
+    assert len(tim._hard_negative_memory) == 0
+
+
+def test_low_quality_selected_crop_cannot_reconcile_negatives():
+    target = feat([1.0, 0.0, 0.0])
+    candidate = feat([0.8, 0.6, 0.0])
+
+    tim = TargetIdentityMemory(cfg())
+    select_stable_target(tim, target)
+
+    tim.update(
+        [
+            tr(
+                1,
+                (104, 101, 164, 241),
+                appearance=target,
+            ),
+            tr(
+                2,
+                (125, 101, 185, 241),
+                appearance=candidate,
+            ),
+        ]
+    )
+
+    assert len(tim._hard_negative_memory) == 1
+
+    output = tim.update(
+        [
+            tr(
+                2,
+                (106, 101, 166, 241),
+                appearance=candidate,
+                memory_eligible=False,
+            )
+        ]
+    )
+
+    assert output.target_track_id == 2
+    assert (
+        tim._hard_negative_memory.similarity(
+            candidate,
+            tim.cfg,
+        )
+        > 0.99
+    )

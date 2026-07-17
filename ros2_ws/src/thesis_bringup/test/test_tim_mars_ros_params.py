@@ -30,15 +30,39 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 82
+    assert len(node.values) == 90
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
+    assert (
+        node.values[
+            "id_switch_min_appearance_similarity"
+        ]
+        == 0.0
+    )
     assert (
         node.values["appearance_cache_max_centre_distance_norm"]
         == 0.25
     )
     assert node.values["appearance_cache_min_scale_ratio"] == 0.25
+    assert node.values["appearance_crop_min_width_px"] == 12.0
+    assert node.values["appearance_crop_min_height_px"] == 24.0
+    assert (
+        node.values["appearance_crop_max_clipping_fraction"]
+        == 0.10
+    )
+    assert (
+        node.values[
+            "appearance_crop_max_overlap_iou_for_memory"
+        ]
+        == 0.10
+    )
+    assert (
+        node.values[
+            "appearance_crop_min_centre_distance_norm_for_memory"
+        ]
+        == 0.04
+    )
     assert node.values["rank_aware_reacquisition_enabled"] is True
     assert node.values["candidate_belief_enabled"] is False
     assert node.values["candidate_belief_min_score"] == 0.45
@@ -53,8 +77,22 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values["image_width"] = 1280.0
     node.values["image_height"] = 720.0
     node.values["appearance_enabled"] = True
+    node.values[
+        "id_switch_min_appearance_similarity"
+    ] = 0.78
     node.values["appearance_cache_max_centre_distance_norm"] = 0.40
     node.values["appearance_cache_min_scale_ratio"] = 0.30
+    node.values["appearance_crop_min_width_px"] = 16.0
+    node.values["appearance_crop_min_height_px"] = 32.0
+    node.values["appearance_crop_max_clipping_fraction"] = 0.20
+    node.values["appearance_crop_min_aspect_ratio"] = 0.25
+    node.values["appearance_crop_max_aspect_ratio"] = 0.90
+    node.values[
+        "appearance_crop_max_overlap_iou_for_memory"
+    ] = 0.15
+    node.values[
+        "appearance_crop_min_centre_distance_norm_for_memory"
+    ] = 0.05
     node.values["rank_aware_reacquisition_enabled"] = True
     node.values["rank_aware_confirm_frames"] = 4
     node.values["candidate_belief_enabled"] = True
@@ -74,10 +112,31 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
         == 0.40
     )
     assert params.appearance_cache_min_scale_ratio == 0.30
+    assert params.appearance_crop_min_width_px == 16.0
+    assert params.appearance_crop_min_height_px == 32.0
+    assert (
+        params.appearance_crop_max_clipping_fraction
+        == 0.20
+    )
+    assert params.appearance_crop_min_aspect_ratio == 0.25
+    assert params.appearance_crop_max_aspect_ratio == 0.90
+    assert (
+        params.appearance_crop_max_overlap_iou_for_memory
+        == 0.15
+    )
+    assert (
+        params
+        .appearance_crop_min_centre_distance_norm_for_memory
+        == 0.05
+    )
 
     assert cfg.image_width == 1280.0
     assert cfg.image_height == 720.0
     assert cfg.appearance_enabled is True
+    assert (
+        cfg.id_switch_min_appearance_similarity
+        == 0.78
+    )
     assert cfg.rank_aware_reacquisition_enabled is True
     assert cfg.rank_aware_confirm_frames == 4
     assert cfg.candidate_belief_enabled is True
@@ -123,6 +182,7 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
         "id_switch_min_iou",
         "id_switch_min_distance",
         "id_switch_min_scale",
+        "id_switch_min_appearance_similarity",
         "short_gap_same_id_priority_enabled",
         "short_gap_same_id_grace_frames",
         "short_gap_same_id_min_total",
@@ -149,6 +209,45 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
     assert (
         params.appearance_cache_min_scale_ratio
         == canonical["appearance_cache_min_scale_ratio"]
+    )
+    assert (
+        params.appearance_crop_min_width_px
+        == canonical["appearance_crop_min_width_px"]
+    )
+    assert (
+        params.appearance_crop_min_height_px
+        == canonical["appearance_crop_min_height_px"]
+    )
+    assert (
+        params.appearance_crop_max_clipping_fraction
+        == canonical[
+            "appearance_crop_max_clipping_fraction"
+        ]
+    )
+    assert (
+        params.appearance_crop_min_aspect_ratio
+        == canonical[
+            "appearance_crop_min_aspect_ratio"
+        ]
+    )
+    assert (
+        params.appearance_crop_max_aspect_ratio
+        == canonical[
+            "appearance_crop_max_aspect_ratio"
+        ]
+    )
+    assert (
+        params.appearance_crop_max_overlap_iou_for_memory
+        == canonical[
+            "appearance_crop_max_overlap_iou_for_memory"
+        ]
+    )
+    assert (
+        params
+        .appearance_crop_min_centre_distance_norm_for_memory
+        == canonical[
+            "appearance_crop_min_centre_distance_norm_for_memory"
+        ]
     )
 
     for name in expected_active_keys:

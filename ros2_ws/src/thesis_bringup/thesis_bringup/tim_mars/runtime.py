@@ -23,6 +23,9 @@ from thesis_bringup.tim_mars.appearance_attachment import (
     attach_appearance_features,
     reset_appearance_lifecycle,
 )
+from thesis_bringup.tim_mars.crop_quality import (
+    AppearanceCropQuality,
+)
 from thesis_bringup.tim_mars.target_memory import (
     BBox,
     CandidateTrack,
@@ -68,6 +71,12 @@ class TimMarsRuntimeDiagnostics:
     appearance_warning: Optional[str]
     appearance_cache_size: int
     appearance_embedding_age_ms_by_track_id: dict[int, float]
+    appearance_crop_quality_by_track_id: dict[
+        int,
+        AppearanceCropQuality,
+    ]
+    appearance_encoding_rejected: int
+    appearance_memory_update_ineligible: int
     appearance_update_cooldown_remaining: int
     candidate_track_ids: tuple[int, ...]
 
@@ -221,19 +230,19 @@ class TimMarsRuntime:
             cy *= self.config.image_height
             height *= self.config.image_height
 
-        bbox = self.clip_bbox(
-            (
-                cx - 0.5 * width,
-                cy - 0.5 * height,
-                cx + 0.5 * width,
-                cy + 0.5 * height,
-            )
+        unclipped_bbox = (
+            cx - 0.5 * width,
+            cy - 0.5 * height,
+            cx + 0.5 * width,
+            cy + 0.5 * height,
         )
+        bbox = self.clip_bbox(unclipped_bbox)
 
         return CandidateTrack(
             track_id=int(track.id),
             bbox=bbox,
             score=float(track.score),
+            unclipped_bbox=unclipped_bbox,
         )
 
     def process_tracks(self, tracks_msg: Any) -> TimMarsRuntimeResult:
@@ -322,6 +331,15 @@ class TimMarsRuntime:
             ),
             appearance_embedding_age_ms_by_track_id=dict(
                 appearance_diagnostics.embedding_age_ms_by_track_id
+            ),
+            appearance_crop_quality_by_track_id=dict(
+                appearance_diagnostics.crop_quality_by_track_id
+            ),
+            appearance_encoding_rejected=int(
+                appearance_diagnostics.encoding_rejected
+            ),
+            appearance_memory_update_ineligible=int(
+                appearance_diagnostics.memory_update_ineligible
             ),
             appearance_update_cooldown_remaining=(
                 self.memory.appearance_update_cooldown_frames_remaining

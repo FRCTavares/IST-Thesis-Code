@@ -42,6 +42,14 @@ class TimMarsRosParams:
     appearance_cache_max_centre_distance_norm: float
     appearance_cache_min_scale_ratio: float
 
+    appearance_crop_min_width_px: float
+    appearance_crop_min_height_px: float
+    appearance_crop_max_clipping_fraction: float
+    appearance_crop_min_aspect_ratio: float
+    appearance_crop_max_aspect_ratio: float
+    appearance_crop_max_overlap_iou_for_memory: float
+    appearance_crop_min_centre_distance_norm_for_memory: float
+
     mars_model_path: str
     mars_batch_size: int
 
@@ -91,6 +99,10 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("id_switch_min_iou", 0.05)
     node.declare_parameter("id_switch_min_distance", 0.35)
     node.declare_parameter("id_switch_min_scale", 0.35)
+    node.declare_parameter(
+        "id_switch_min_appearance_similarity",
+        0.0,
+    )
     node.declare_parameter("short_gap_same_id_priority_enabled", True)
     node.declare_parameter("short_gap_same_id_grace_frames", 8)
     node.declare_parameter("short_gap_same_id_min_total", 0.30)
@@ -112,6 +124,31 @@ def declare_tim_mars_parameters(node: Any) -> None:
         "appearance_cache_min_scale_ratio",
         0.25,
     )
+
+    # Appearance crop-quality controls, measured in appearance-image pixels.
+    node.declare_parameter("appearance_crop_min_width_px", 12.0)
+    node.declare_parameter("appearance_crop_min_height_px", 24.0)
+    node.declare_parameter(
+        "appearance_crop_max_clipping_fraction",
+        0.10,
+    )
+    node.declare_parameter(
+        "appearance_crop_min_aspect_ratio",
+        0.20,
+    )
+    node.declare_parameter(
+        "appearance_crop_max_aspect_ratio",
+        1.00,
+    )
+    node.declare_parameter(
+        "appearance_crop_max_overlap_iou_for_memory",
+        0.10,
+    )
+    node.declare_parameter(
+        "appearance_crop_min_centre_distance_norm_for_memory",
+        0.04,
+    )
+
     node.declare_parameter("appearance_weight", 0.12)
     node.declare_parameter("appearance_min_similarity", 0.35)
     node.declare_parameter("appearance_update_alpha", 0.10)
@@ -208,6 +245,68 @@ def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
                 ),
             ),
         ),
+        appearance_crop_min_width_px=max(
+            0.0,
+            float(
+                node.get_parameter(
+                    "appearance_crop_min_width_px"
+                ).value
+            ),
+        ),
+        appearance_crop_min_height_px=max(
+            0.0,
+            float(
+                node.get_parameter(
+                    "appearance_crop_min_height_px"
+                ).value
+            ),
+        ),
+        appearance_crop_max_clipping_fraction=max(
+            0.0,
+            min(
+                1.0,
+                float(
+                    node.get_parameter(
+                        "appearance_crop_max_clipping_fraction"
+                    ).value
+                ),
+            ),
+        ),
+        appearance_crop_min_aspect_ratio=max(
+            0.0,
+            float(
+                node.get_parameter(
+                    "appearance_crop_min_aspect_ratio"
+                ).value
+            ),
+        ),
+        appearance_crop_max_aspect_ratio=max(
+            0.0,
+            float(
+                node.get_parameter(
+                    "appearance_crop_max_aspect_ratio"
+                ).value
+            ),
+        ),
+        appearance_crop_max_overlap_iou_for_memory=max(
+            0.0,
+            min(
+                1.0,
+                float(
+                    node.get_parameter(
+                        "appearance_crop_max_overlap_iou_for_memory"
+                    ).value
+                ),
+            ),
+        ),
+        appearance_crop_min_centre_distance_norm_for_memory=max(
+            0.0,
+            float(
+                node.get_parameter(
+                    "appearance_crop_min_centre_distance_norm_for_memory"
+                ).value
+            ),
+        ),
         mars_model_path=str(node.get_parameter("mars_model_path").value),
         mars_batch_size=int(node.get_parameter("mars_batch_size").value),
     )
@@ -241,6 +340,11 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         id_switch_min_iou=float(node.get_parameter("id_switch_min_iou").value),
         id_switch_min_distance=float(node.get_parameter("id_switch_min_distance").value),
         id_switch_min_scale=float(node.get_parameter("id_switch_min_scale").value),
+        id_switch_min_appearance_similarity=float(
+            node.get_parameter(
+                "id_switch_min_appearance_similarity"
+            ).value
+        ),
         short_gap_same_id_priority_enabled=bool(
             node.get_parameter("short_gap_same_id_priority_enabled").value
         ),

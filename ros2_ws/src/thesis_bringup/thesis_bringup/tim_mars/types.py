@@ -14,6 +14,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, List, Optional, Tuple
 
+from thesis_bringup.tim_mars.crop_quality import (
+    AppearanceCropQuality,
+)
+
 BBox = Tuple[float, float, float, float]
 
 
@@ -51,6 +55,19 @@ class CandidateTrack:
     age: int = 0
     last_seen: int = 0
     appearance: Optional[Any] = None
+
+    # State-machine geometry remains clipped to the candidate frame. The
+    # original geometry is retained so appearance attachment can measure how
+    # much of the requested crop lies outside the actual image.
+    unclipped_bbox: Optional[BBox] = None
+
+    # Crop quality describes the current appearance observation. Direct
+    # algorithm tests that provide embeddings manually remain compatible by
+    # omitting this optional provenance.
+    appearance_crop_quality: Optional[
+        AppearanceCropQuality
+    ] = None
+    appearance_memory_update_eligible: bool = True
 
 
 @dataclass(frozen=True)
@@ -127,6 +144,10 @@ class TargetMemoryConfig:
     id_switch_min_iou: float = 0.05
     id_switch_min_distance: float = 0.35
     id_switch_min_scale: float = 0.35
+    # Disabled at 0.0 for generic geometry-only configurations. When positive,
+    # a different tracker ID must reach this similarity to positive appearance
+    # memory before it can replace the selected identity.
+    id_switch_min_appearance_similarity: float = 0.0
 
     # Short-gap identity protection.
     # If the trusted tracker ID disappears briefly, TIM-MARS should not
@@ -256,6 +277,7 @@ __all__ = [
     "BBox",
     "TargetState",
     "ControlMode",
+    "AppearanceCropQuality",
     "CandidateTrack",
     "CandidateScore",
     "TargetMemoryConfig",

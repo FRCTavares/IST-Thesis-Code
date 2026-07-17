@@ -103,6 +103,9 @@ class HardNegativeMemory:
             if candidate is None or candidate.appearance is None:
                 continue
 
+            if not candidate.appearance_memory_update_eligible:
+                continue
+
             if score.appearance_raw < cfg.hard_negative_min_candidate_similarity:
                 continue
 

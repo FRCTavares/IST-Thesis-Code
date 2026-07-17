@@ -161,6 +161,8 @@ def test_cache_entry_records_source_frame_generation_and_bbox():
             70.0,
         )
     )
+    assert entry.crop_quality.encoding_eligible
+    assert entry.crop_quality.memory_update_eligible
 
 
 def test_continuous_plausible_same_id_reuses_cached_embedding():

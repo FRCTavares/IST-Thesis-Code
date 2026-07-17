@@ -163,6 +163,9 @@ def status_json_from_output(
     appearance_cache_ttl_ms: float,
     appearance_cache_size: int,
     appearance_embedding_age_ms_by_track_id: dict[int, float],
+    appearance_crop_quality_by_track_id: dict[int, object],
+    appearance_encoding_rejected: int,
+    appearance_memory_update_ineligible: int,
     appearance_update_cooldown_remaining: int,
 ) -> str:
     best = out.best_score
@@ -194,6 +197,46 @@ def status_json_from_output(
                     appearance_embedding_age_ms_by_track_id.items()
                 )
             },
+            "appearance_crop_quality_by_track_id": {
+                str(int(track_id)): {
+                    "crop_width_px": float(
+                        quality.crop_width_px
+                    ),
+                    "crop_height_px": float(
+                        quality.crop_height_px
+                    ),
+                    "clipping_fraction": float(
+                        quality.clipping_fraction
+                    ),
+                    "aspect_ratio": float(
+                        quality.aspect_ratio
+                    ),
+                    "max_iou_with_other": float(
+                        quality.max_iou_with_other
+                    ),
+                    "min_centre_distance_norm": float(
+                        quality.min_centre_distance_norm
+                    ),
+                    "encoding_eligible": bool(
+                        quality.encoding_eligible
+                    ),
+                    "memory_update_eligible": bool(
+                        quality.memory_update_eligible
+                    ),
+                    "rejection_reasons": list(
+                        quality.rejection_reasons
+                    ),
+                }
+                for track_id, quality in sorted(
+                    appearance_crop_quality_by_track_id.items()
+                )
+            },
+            "appearance_encoding_rejected": int(
+                appearance_encoding_rejected
+            ),
+            "appearance_memory_update_ineligible": int(
+                appearance_memory_update_ineligible
+            ),
             "appearance_update_cooldown_remaining": int(
                 appearance_update_cooldown_remaining
             ),

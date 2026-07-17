@@ -33,6 +33,7 @@ target_memory_mars_node:
     id_switch_min_iou: 0.05
     id_switch_min_distance: 0.35
     id_switch_min_scale: 0.35
+    id_switch_min_appearance_similarity: 0.78
     short_gap_same_id_priority_enabled: true
     short_gap_same_id_grace_frames: 8
     short_gap_same_id_min_total: 0.30
@@ -47,6 +48,16 @@ target_memory_mars_node:
     appearance_cache_ttl_ms: 750.0
     appearance_cache_max_centre_distance_norm: 0.25
     appearance_cache_min_scale_ratio: 0.25
+
+    # Crop quality in appearance-image coordinates
+    appearance_crop_min_width_px: 12.0
+    appearance_crop_min_height_px: 24.0
+    appearance_crop_max_clipping_fraction: 0.10
+    appearance_crop_min_aspect_ratio: 0.20
+    appearance_crop_max_aspect_ratio: 1.00
+    appearance_crop_max_overlap_iou_for_memory: 0.10
+    appearance_crop_min_centre_distance_norm_for_memory: 0.04
+
     appearance_weight: 0.12
     appearance_min_similarity: 0.35
     appearance_update_alpha: 0.10
