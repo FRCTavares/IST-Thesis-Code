@@ -809,8 +809,8 @@ Tasks:
 
 ### P0.10 Make appearance caching identity-safe
 
-Status as of 16 July 2026: implementation, local verification, canonical
-replay acceptance, and final diff review complete. Issue closure remains pending.
+Status as of 17 July 2026: implementation, local verification, canonical
+replay acceptance, final diff review, and GitHub Issue #12 closure complete.
 
 The cache now binds every embedding to:
 
@@ -867,6 +867,11 @@ Evidence directories:
 
 - `bags/replay/p010_identity_safe_2026_07_16/`;
 - `reports/p010_identity_safe_2026_07_16/`.
+
+Closure record:
+
+- implementation commit `e5db8c3a` was pushed to `origin/main`;
+- GitHub Issue #12 was closed as completed on 17 July 2026.
 
 Tasks:
 
