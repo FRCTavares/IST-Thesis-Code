@@ -1047,6 +1047,14 @@ Verification completed:
 - `git diff --check` passed;
 - no root `log/` or `hailort.log` runtime noise was created.
 
+Closure record:
+
+- implementation commit `a4c7b1e1` was pushed to
+  `origin/main`;
+- GitHub Issue #14 was closed as completed on 18 July 2026;
+- closure evidence:
+  `https://github.com/FRCTavares/IST-Thesis-Code/issues/14#issuecomment-5008378396`.
+
 ### P1.5 Fix positive-memory bootstrap
 
 Current bootstrap can occur during scoring when the same tracker ID has an embedding.
