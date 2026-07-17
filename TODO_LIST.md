@@ -886,7 +886,8 @@ Tasks:
 
 ### P1.3 Add crop-quality controls
 
-Status as of 17 July 2026: complete for the defined P1.3 scope. The pure
+Status as of 17 July 2026: implementation, verification, canonical replay
+acceptance, final diff review, and GitHub Issue #13 closure complete. The pure
 crop-quality contract, unclipped geometry preservation, pre-encoding
 filtering, sparse encoder alignment, cache-quality provenance, conservative
 positive and negative memory gates, canonical and ROS parameter wiring,
