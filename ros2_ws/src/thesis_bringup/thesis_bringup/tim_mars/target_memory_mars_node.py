@@ -88,6 +88,12 @@ class TargetMemoryMarsNode(Node):
         self._appearance_max_image_age_ms = params.appearance_max_image_age_ms
         self._appearance_compute_min_interval_ms = params.appearance_compute_min_interval_ms
         self._appearance_cache_ttl_ms = params.appearance_cache_ttl_ms
+        self._appearance_cache_max_centre_distance_norm = (
+            params.appearance_cache_max_centre_distance_norm
+        )
+        self._appearance_cache_min_scale_ratio = (
+            params.appearance_cache_min_scale_ratio
+        )
         self._mars_model_path = params.mars_model_path
         self._mars_batch_size = params.mars_batch_size
 
@@ -105,6 +111,12 @@ class TargetMemoryMarsNode(Node):
             max_image_age_ms=self._appearance_max_image_age_ms,
             compute_min_interval_ms=self._appearance_compute_min_interval_ms,
             cache_ttl_ms=self._appearance_cache_ttl_ms,
+            cache_max_centre_distance_norm=(
+                self._appearance_cache_max_centre_distance_norm
+            ),
+            cache_min_scale_ratio=(
+                self._appearance_cache_min_scale_ratio
+            ),
         )
         self._runtime = TimMarsRuntime(
             TimMarsRuntimeConfig(
@@ -383,6 +395,9 @@ class TargetMemoryMarsNode(Node):
             appearance_compute_min_interval_ms=self._appearance_compute_min_interval_ms,
             appearance_cache_ttl_ms=self._appearance_cache_ttl_ms,
             appearance_cache_size=diagnostics.appearance_cache_size,
+            appearance_embedding_age_ms_by_track_id=(
+                diagnostics.appearance_embedding_age_ms_by_track_id
+            ),
             appearance_update_cooldown_remaining=(
                 diagnostics.appearance_update_cooldown_remaining
             ),

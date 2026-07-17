@@ -39,6 +39,8 @@ class TimMarsRosParams:
     appearance_max_image_age_ms: float
     appearance_compute_min_interval_ms: float
     appearance_cache_ttl_ms: float
+    appearance_cache_max_centre_distance_norm: float
+    appearance_cache_min_scale_ratio: float
 
     mars_model_path: str
     mars_batch_size: int
@@ -102,6 +104,14 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("appearance_max_image_age_ms", 250.0)
     node.declare_parameter("appearance_compute_min_interval_ms", 250.0)
     node.declare_parameter("appearance_cache_ttl_ms", 750.0)
+    node.declare_parameter(
+        "appearance_cache_max_centre_distance_norm",
+        0.25,
+    )
+    node.declare_parameter(
+        "appearance_cache_min_scale_ratio",
+        0.25,
+    )
     node.declare_parameter("appearance_weight", 0.12)
     node.declare_parameter("appearance_min_similarity", 0.35)
     node.declare_parameter("appearance_update_alpha", 0.10)
@@ -178,6 +188,25 @@ def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
         appearance_cache_ttl_ms=max(
             0.0,
             float(node.get_parameter("appearance_cache_ttl_ms").value),
+        ),
+        appearance_cache_max_centre_distance_norm=max(
+            0.0,
+            float(
+                node.get_parameter(
+                    "appearance_cache_max_centre_distance_norm"
+                ).value
+            ),
+        ),
+        appearance_cache_min_scale_ratio=max(
+            0.0,
+            min(
+                1.0,
+                float(
+                    node.get_parameter(
+                        "appearance_cache_min_scale_ratio"
+                    ).value
+                ),
+            ),
         ),
         mars_model_path=str(node.get_parameter("mars_model_path").value),
         mars_batch_size=int(node.get_parameter("mars_batch_size").value),

@@ -30,10 +30,15 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 80
+    assert len(node.values) == 82
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
+    assert (
+        node.values["appearance_cache_max_centre_distance_norm"]
+        == 0.25
+    )
+    assert node.values["appearance_cache_min_scale_ratio"] == 0.25
     assert node.values["rank_aware_reacquisition_enabled"] is True
     assert node.values["candidate_belief_enabled"] is False
     assert node.values["candidate_belief_min_score"] == 0.45
@@ -48,6 +53,8 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values["image_width"] = 1280.0
     node.values["image_height"] = 720.0
     node.values["appearance_enabled"] = True
+    node.values["appearance_cache_max_centre_distance_norm"] = 0.40
+    node.values["appearance_cache_min_scale_ratio"] = 0.30
     node.values["rank_aware_reacquisition_enabled"] = True
     node.values["rank_aware_confirm_frames"] = 4
     node.values["candidate_belief_enabled"] = True
@@ -62,6 +69,11 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     assert params.image_width == 1280.0
     assert params.image_height == 720.0
     assert params.appearance_enabled is True
+    assert (
+        params.appearance_cache_max_centre_distance_norm
+        == 0.40
+    )
+    assert params.appearance_cache_min_scale_ratio == 0.30
 
     assert cfg.image_width == 1280.0
     assert cfg.image_height == 720.0
@@ -127,6 +139,17 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
 
     params = read_tim_mars_ros_params(node)
     cfg = build_target_memory_config(node, params)
+
+    assert (
+        params.appearance_cache_max_centre_distance_norm
+        == canonical[
+            "appearance_cache_max_centre_distance_norm"
+        ]
+    )
+    assert (
+        params.appearance_cache_min_scale_ratio
+        == canonical["appearance_cache_min_scale_ratio"]
+    )
 
     for name in expected_active_keys:
         assert getattr(cfg, name) == canonical[name]

@@ -162,6 +162,7 @@ def status_json_from_output(
     appearance_compute_min_interval_ms: float,
     appearance_cache_ttl_ms: float,
     appearance_cache_size: int,
+    appearance_embedding_age_ms_by_track_id: dict[int, float],
     appearance_update_cooldown_remaining: int,
 ) -> str:
     best = out.best_score
@@ -187,6 +188,12 @@ def status_json_from_output(
             "appearance_compute_min_interval_ms": float(appearance_compute_min_interval_ms),
             "appearance_cache_ttl_ms": float(appearance_cache_ttl_ms),
             "appearance_cache_size": int(appearance_cache_size),
+            "appearance_embedding_age_ms_by_track_id": {
+                str(int(track_id)): float(age_ms)
+                for track_id, age_ms in sorted(
+                    appearance_embedding_age_ms_by_track_id.items()
+                )
+            },
             "appearance_update_cooldown_remaining": int(
                 appearance_update_cooldown_remaining
             ),

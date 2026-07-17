@@ -282,6 +282,18 @@ def build_runtime(
                 750.0,
             )
         ),
+        cache_max_centre_distance_norm=float(
+            canonical.get(
+                "appearance_cache_max_centre_distance_norm",
+                0.25,
+            )
+        ),
+        cache_min_scale_ratio=float(
+            canonical.get(
+                "appearance_cache_min_scale_ratio",
+                0.25,
+            )
+        ),
     )
 
     backend = None
@@ -446,6 +458,9 @@ def make_status_message(
         ),
         appearance_cache_size=(
             diagnostics.appearance_cache_size
+        ),
+        appearance_embedding_age_ms_by_track_id=(
+            diagnostics.appearance_embedding_age_ms_by_track_id
         ),
         appearance_update_cooldown_remaining=(
             diagnostics

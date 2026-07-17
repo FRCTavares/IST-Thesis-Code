@@ -21,6 +21,7 @@ from thesis_bringup.tim_mars.appearance_attachment import (
     AppearanceAttachmentState,
     AppearanceEncoder,
     attach_appearance_features,
+    reset_appearance_lifecycle,
 )
 from thesis_bringup.tim_mars.target_memory import (
     BBox,
@@ -66,6 +67,7 @@ class TimMarsRuntimeDiagnostics:
     appearance_skip_reason: str
     appearance_warning: Optional[str]
     appearance_cache_size: int
+    appearance_embedding_age_ms_by_track_id: dict[int, float]
     appearance_update_cooldown_remaining: int
     candidate_track_ids: tuple[int, ...]
 
@@ -237,6 +239,10 @@ class TimMarsRuntime:
     def process_tracks(self, tracks_msg: Any) -> TimMarsRuntimeResult:
         """Process one tracker message using deterministic causal evidence."""
 
+        track_frame_id = int(
+            getattr(tracks_msg, "frame_id", 0)
+        )
+
         candidates = [
             self.candidate_from_track(track)
             for track in tracks_msg.tracks
@@ -252,6 +258,7 @@ class TimMarsRuntime:
             candidates=candidates,
             track_timestamp_ns=track_timestamp_ns,
             selected_image=selected_image,
+            frame_id=track_frame_id,
         )
 
         selected_candidate = None
@@ -313,6 +320,9 @@ class TimMarsRuntime:
             appearance_cache_size=len(
                 self.appearance_state.cache_by_track_id
             ),
+            appearance_embedding_age_ms_by_track_id=dict(
+                appearance_diagnostics.embedding_age_ms_by_track_id
+            ),
             appearance_update_cooldown_remaining=(
                 self.memory.appearance_update_cooldown_frames_remaining
             ),
@@ -334,8 +344,12 @@ class TimMarsRuntime:
         candidates: list[CandidateTrack],
         track_timestamp_ns: Optional[int],
         selected_image: Optional[AppearanceFrame],
+        frame_id: int,
     ):
         if track_timestamp_ns is None:
+            reset_appearance_lifecycle(
+                self.appearance_state
+            )
             from thesis_bringup.tim_mars.appearance_attachment import (
                 AppearanceAttachmentDiagnostics,
             )
@@ -350,6 +364,7 @@ class TimMarsRuntime:
                     cache_size=len(
                         self.appearance_state.cache_by_track_id
                     ),
+                    embedding_age_ms_by_track_id={},
                 ),
             )
 
@@ -377,6 +392,7 @@ class TimMarsRuntime:
                 mars_backend=self.mars_backend,
                 candidate_frame_width=self.config.image_width,
                 candidate_frame_height=self.config.image_height,
+                frame_id=frame_id,
             ),
         )
 

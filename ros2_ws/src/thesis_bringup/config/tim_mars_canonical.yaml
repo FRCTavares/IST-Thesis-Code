@@ -45,6 +45,8 @@ target_memory_mars_node:
     appearance_max_image_age_ms: 250.0
     appearance_compute_min_interval_ms: 250.0
     appearance_cache_ttl_ms: 750.0
+    appearance_cache_max_centre_distance_norm: 0.25
+    appearance_cache_min_scale_ratio: 0.25
     appearance_weight: 0.12
     appearance_min_similarity: 0.35
     appearance_update_alpha: 0.10

@@ -809,23 +809,75 @@ Tasks:
 
 ### P0.10 Make appearance caching identity-safe
 
-Current cache key:
+Status as of 16 July 2026: implementation, local verification, canonical
+replay acceptance, and final diff review complete. Issue closure remains pending.
 
-    tracker ID
+The cache now binds every embedding to:
 
-Risks:
+- tracker ID;
+- tracker-instance generation;
+- frame generation;
+- source frame ID;
+- source bounding box;
+- embedding timestamp.
 
-- ID reassignment;
-- stale box;
-- cached embedding attached to a different person.
+TIM-MARS derives lifecycle generations from the observed `/tracks` stream because
+the recorded `Track2D` schema has no explicit lifecycle counter. Cache ownership
+is invalidated after an observed track absence, a non-monotonic frame restart,
+an invalid tracker timestamp, or an implausible centre or scale jump. The two
+bbox-continuity limits are explicit canonical and ROS parameters.
+
+Known limitation: an immediate same-ID reassignment with no observed absence and
+a geometrically plausible bounding box cannot be proven from the current
+`Track2DArray` evidence alone.
+
+Verification completed:
+
+- dedicated identity-safety contract: 8 passed;
+- functional `thesis_bringup` suite: 106 passed, 4 expected xfails;
+- deterministic replay-runner suite: 10 passed;
+- `thesis_bringup` package build passed;
+- Python compilation and `git diff --check` passed;
+- no root `log/` or `hailort.log` runtime noise was created;
+- package-wide ROS lint tests remain excluded because the repository already has
+  broad unrelated flake8 and pep257 debt.
+
+Canonical replay evidence:
+
+- canonical configuration SHA-256:
+  `149056bbad4895db658f9903d3ff30d8f6ac5238b3a99af5b76538e5472fcb40`;
+- May remained `0.965 / 0.000 / 0.035` correct, wrong, and lost;
+- Seq01 remained `1.000 / 0.000 / 0.000`;
+- corrected Seq03 remained `0.655 / 0.290 / 0.054`;
+- all three Seq04 runs remained `0.770 / 0.069 / 0.161`, with 3.936 s
+  wrong-target duration and 2.805 s target-absent output;
+- all three Seq04 target streams contain 1547 messages and share semantic
+  SHA-256
+  `e63dc19fb5b18839c1c3b53edda642ee2a5b4f751a049238cc7de9b6b3b708f0`;
+- all three complete new status streams contain 1547 messages and share semantic
+  SHA-256
+  `64f137129e0d0c092f90f5534223da600a92a4b0e7c8ca0f6f3c618b47307789`;
+- the target stream is identical to the clean pre-P0.10 baseline;
+- the causal status audit passed: non-diagnostic changes were confined to frames
+  260 and 261, where an observed absence invalidated one stale cached embedding;
+- no target identity, state, reason, control mode, publication decision, or
+  protected risk field changed during that invalidation event.
+
+Evidence directories:
+
+- `bags/replay/p010_identity_safe_2026_07_16/`;
+- `reports/p010_identity_safe_2026_07_16/`.
 
 Tasks:
 
-- [ ] Include frame generation and bbox continuity.
-- [ ] Invalidate on implausible box jumps.
-- [ ] Invalidate when track lifecycle restarts.
-- [ ] Report embedding age per candidate.
-- [ ] Add an ID-reuse regression test.
+- [x] Include frame generation and bbox continuity.
+- [x] Invalidate on implausible box jumps.
+- [x] Invalidate when track lifecycle restarts.
+- [x] Report embedding age per candidate.
+- [x] Add an ID-reuse regression test.
+- [x] Regenerate the canonical replay comparison and reject promotion if
+  wrong-target publication increases.
+- [x] Record the new canonical configuration SHA-256 after replay acceptance.
 
 ### P1.3 Add crop-quality controls
 
