@@ -1,0 +1,11 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+sort,0.000,29.636,CORRECT_TARGET,true,1,,clean_visible,created in TIM clean UI
+sort,29.636,30.183,CORRECT_TARGET,false,,,target_absent,created in TIM clean UI
+sort,30.183,34.800,CORRECT_TARGET,true,85,,clean_visible,created in TIM clean UI
+sort,34.800,35.699,CORRECT_TARGET,true,98,,clean_visible,created in TIM clean UI
+sort,35.699,41.332,CORRECT_TARGET,true,109,,clean_visible,created in TIM clean UI
+sort,41.332,41.568,CORRECT_TARGET,true,128,,clean_visible,created in TIM clean UI
+sort,41.568,50.734,CORRECT_TARGET,true,109,,clean_visible,created in TIM clean UI
+sort,50.734,55.631,CORRECT_TARGET,true,158,,clean_visible,created in TIM clean UI
+sort,55.631,56.631,CORRECT_TARGET,false,,,target_absent,created in TIM clean UI
+sort,56.631,67.865,CORRECT_TARGET,true,176,,clean_visible,created in TIM clean UI

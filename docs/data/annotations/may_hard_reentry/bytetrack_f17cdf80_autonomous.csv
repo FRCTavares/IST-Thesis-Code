@@ -1,0 +1,13 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+bytetrack,0.000,24.965,CORRECT_TARGET,true,2,,clean_visible,created in TIM clean UI
+bytetrack,24.965,25.733,CORRECT_TARGET,true,2,,occlusion_ambiguity,created in TIM clean UI
+bytetrack,25.733,34.364,CORRECT_TARGET,true,2,,clean_visible,created in TIM clean UI
+bytetrack,34.364,34.599,CORRECT_TARGET,true,2,,occlusion_ambiguity,created in TIM clean UI
+bytetrack,34.599,35.699,CORRECT_TARGET,false,,,target_absent,created in TIM clean UI
+bytetrack,35.699,36.331,CORRECT_TARGET,true,42,,id_switch_fragmentation,created in TIM clean UI
+bytetrack,36.331,50.297,CORRECT_TARGET,true,42,,clean_visible,created in TIM clean UI
+bytetrack,50.297,50.636,CORRECT_TARGET,true,42,,occlusion_ambiguity,created in TIM clean UI
+bytetrack,50.636,51.098,CORRECT_TARGET,true,1,,id_switch_fragmentation,created in TIM clean UI
+bytetrack,51.098,58.035,CORRECT_TARGET,true,1,,clean_visible,created in TIM clean UI
+bytetrack,58.035,59.765,CORRECT_TARGET,true,61,,id_switch_fragmentation,created in TIM clean UI
+bytetrack,59.765,67.865,CORRECT_TARGET,true,61,,clean_visible,created in TIM clean UI
