@@ -1279,6 +1279,14 @@ Required rows:
 
 ### P0.18 Validate across trackers
 
+Tracker-configuration prerequisite started on 18 July 2026:
+
+- [x] remove backend-inert keys from the active tracker YAML files;
+- [x] add a branch-aware regression test for tracker configuration consumption;
+- [x] pass the focused tracker tests and package builds;
+- [ ] create a deterministic tracker-only freezing workflow before generating
+  new raw-versus-TIM evidence.
+
 For ByteTrack, OC-SORT, and DeepSORT:
 
 - [ ] use compatible annotations;
@@ -1386,6 +1394,34 @@ Replace TODO values in:
 
 - `thesis_bringup/setup.py`;
 - `thesis_bringup/package.xml`.
+
+### P1.16a Repair the `thesis_tracker` ROS lint harness
+
+Known tooling issue confirmed again on 18 July 2026:
+
+- `test_pep257.py` repeatedly hangs inside `pydocstyle.parser` and requires
+  manual interruption;
+- `test_flake8.py` can hang inside the flake8 multiprocessing worker pool;
+- direct `flake8 --jobs=1` terminates, but reports broad historical package
+  lint debt unrelated to the current tracker-configuration change;
+- package-wide ament lint must therefore not be used as an unbounded gate for
+  unrelated P0/P1 implementation work.
+
+Tasks:
+
+- [ ] reproduce both hangs with explicit timeouts and record tool versions;
+- [ ] determine which paths make `ament_pep257` or `pydocstyle` stall;
+- [ ] exclude generated, installed, cached, environment, and runtime paths;
+- [ ] force serial flake8 execution in the maintained verification command;
+- [ ] make all lint checks bounded so they fail rather than hang indefinitely;
+- [ ] separate historical package lint debt from changed-file lint failures;
+- [ ] document the focused lint command used for normal repository work;
+- [ ] repair or replace the generated ROS lint tests once the cause is known.
+
+Until resolved, verification should use focused tests, changed-file lint,
+Python compilation, package builds, `git diff --check`, and repository-status
+review. A manual `KeyboardInterrupt` from these known hanging lint wrappers is
+not evidence of an implementation regression.
 
 ### P1.17 Create a single reproducibility command
 

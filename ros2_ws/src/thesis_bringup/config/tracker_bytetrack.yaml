@@ -1,17 +1,21 @@
 # ByteTrack configuration
-# Uses low-confidence detections to rescue tracks during occlusions
+# Uses low-confidence detections to rescue tracks during occlusions.
 
 tracker_node:
   ros__parameters:
     tracker_type: "bytetrack"
-    
-    # Common parameters
+
+    # Common filtering
     min_score: 0.2
-    # ByteTrack-specific parameters
+
+    # ByteTrack association and lifecycle
     track_thresh: 0.5
     match_thresh: 0.8
     track_buffer: 30
-    det_thresh: 0.2
-    second_match_thresh: 0.5
+    frame_rate: 30
+    low_thresh: 0.1
     new_track_thresh: 0.6
+    second_match_thresh: 0.5
     unconfirmed_match_thresh: 0.7
+    fuse_scores: true
+    mot20: false

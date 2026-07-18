@@ -1,32 +1,22 @@
-# DeepSORT configuration.
-# The backend now follows the DeepSORT association structure:
-# 8D Kalman state, Mahalanobis gating, matching cascade, cosine gallery metric,
-# and IoU fallback. Appearance features are still local crop histograms until a
-# pretrained ReID CNN is added.
+# DeepSORT configuration
+# Uses an 8D Kalman state, Mahalanobis gating, matching cascade,
+# cosine-gallery association with the MARS ReID CNN, and IoU fallback.
 
 tracker_node:
   ros__parameters:
     tracker_type: "deepsort"
 
-    # Common parameters
+    # Common filtering
     min_score: 0.35
 
-    # DeepSORT lifecycle and association parameters
+    # DeepSORT lifecycle and association
     max_age: 30
     n_init: 3
-    match_thresh: 0.25          # legacy min-IoU alias; max_iou_distance is authoritative
-    max_iou_distance: 0.75      # IoU fallback cost threshold (1 - IoU)
-    max_cosine_distance: 0.2    # nearest-neighbor appearance threshold
-    nn_budget: 100              # gallery descriptors per confirmed track
+    max_iou_distance: 0.75
+    max_cosine_distance: 0.2
+    nn_budget: 100
     only_position_gating: false
-    centre_gate: 200.0
 
-    # Local appearance descriptor fallback
+    # Appearance input and extraction
     image_topic: "/camera/image_raw"
-    appearance_enabled: true
-    appearance_max_frame_age_ms: 120.0
-    appearance_hist_bins: 8
-    appearance_weight: 0.0      # DeepSORT paper default for camera motion: appearance cost only
-    appearance_max_distance: 0.2 # backward-compatible alias for max_cosine_distance
-    appearance_min_crop_size: 12
-    appearance_update_alpha: 0.2 # kept for compatibility; gallery updates are stored directly
+    reid_batch_size: 32
