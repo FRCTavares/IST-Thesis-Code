@@ -1285,12 +1285,37 @@ Tracker-configuration prerequisite started on 18 July 2026:
 - [x] add a branch-aware regression test for tracker configuration consumption;
 - [x] pass the focused tracker tests and package builds;
 - [ ] create a deterministic tracker-only freezing workflow before generating
-  new raw-versus-TIM evidence.
+  new raw-versus-TIM evidence:
+  - [x] define original-source-order tracker processing and fixed-ID raw-target
+    semantics;
+  - [x] implement the initial ROS-free tracker-freezing runner and focused unit
+    tests;
+  - [x] verify changed-file lint, compilation, focused tests, and package builds;
+  - [x] run repeated ByteTrack, OC-SORT, SORT, and DeepSORT smoke freezes:
+    - [x] ByteTrack completed twice with autonomous initialization and matching
+      generated topic counts;
+    - [x] SORT completed twice with autonomous initialization and matching
+      generated topic counts;
+    - [x] OC-SORT completed twice with autonomous initialization and matching
+      generated topic counts;
+    - [x] DeepSORT completed twice with autonomous initialization, matching
+      generated topic counts, and identical source-order image-age evidence;
+  - [x] prove repeated semantic output identity and validate generated topic
+    counts:
+    - [x] ByteTrack matched across all 1,906 generated message fields, source
+      bytes, topic counts, selection metadata, and normalized provenance;
+    - [x] document that raw CDR and MCAP byte identity is not a determinism
+      contract because non-semantic alignment padding can differ;
+    - [x] validate matching canonical semantic digests for ByteTrack, SORT, and
+      OC-SORT;
+    - [x] validate the matching canonical semantic digest for DeepSORT;
+  - [ ] validate or recreate tracker-specific annotations for the exact frozen
+    outputs.
 
 For ByteTrack, OC-SORT, and DeepSORT:
 
 - [ ] use compatible annotations;
-- [ ] use autonomous selected-target initialization;
+- [x] use autonomous selected-target initialization;
 - [ ] report raw and TIM output;
 - [ ] report unsafe degradation;
 - [ ] determine whether one preset is valid across trackers.
