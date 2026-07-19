@@ -1,0 +1,405 @@
+{
+  "schema_version": 1,
+  "step_s": 0.05,
+  "trackers": {
+    "bytetrack": {
+      "matrix_row": {
+        "absent_output_delta_s": 0.0,
+        "annotation": "docs/data/annotations/may_hard_reentry/bytetrack_f17cdf80_autonomous.csv",
+        "annotation_sha256": "f3d156c7c46dfeb53b52130e0e0eaad2f2196cc4d06a87dc18d32072fa2a92be",
+        "correct_duration_delta_s": 27.154000000000003,
+        "integrity_passed": true,
+        "lost_duration_delta_s": -27.854,
+        "raw_absent_output_duration_s": 0.1,
+        "raw_correct_duration_s": 34.299,
+        "raw_correct_ratio": 0.514,
+        "raw_lost_duration_s": 32.466,
+        "raw_lost_ratio": 0.486,
+        "raw_wrong_duration_s": 0.0,
+        "raw_wrong_ratio": 0.0,
+        "selected_track_id": 2,
+        "source_tracker_semantic_sha256": "a0ac43a539fb52d4fd338906a9de67d839d78cb537dfd83351c28f029895e207",
+        "tim_absent_output_duration_s": 0.1,
+        "tim_correct_duration_s": 61.453,
+        "tim_correct_ratio": 0.92,
+        "tim_lost_duration_s": 4.612,
+        "tim_lost_ratio": 0.069,
+        "tim_semantic_sha256": "ab5ac497d9ecce08f614a14f7f1508692d017f3da6d1a8d17483ce76c81b55a3",
+        "tim_wrong_duration_s": 0.7,
+        "tim_wrong_ratio": 0.01,
+        "tracker": "bytetrack",
+        "unsafe_absence_output_degradation": false,
+        "unsafe_wrong_target_degradation": true,
+        "wrong_duration_delta_s": 0.7
+      },
+      "streams": {
+        "raw_target": {
+          "totals": {
+            "absent_output": 0.09999999999999432,
+            "correct": 34.298999999999985,
+            "correct_absence": 0.9999999999999432,
+            "lost": 32.46599999999955
+          },
+          "unsafe_segments": [
+            {
+              "annotation_row": 5,
+              "boundary_adjacent": true,
+              "classification": "absent_output",
+              "duration_s": 0.09999999999999432,
+              "end_s": 34.69899999999999,
+              "event_type": "target_absent",
+              "expected_id": null,
+              "output_id": 2,
+              "start_s": 34.599
+            }
+          ]
+        },
+        "tim_target_memory": {
+          "totals": {
+            "absent_output": 0.09999999999999432,
+            "correct": 61.45299999999966,
+            "correct_absence": 0.9999999999999432,
+            "lost": 4.611999999999938,
+            "wrong": 0.6999999999999602
+          },
+          "unsafe_segments": [
+            {
+              "annotation_row": 5,
+              "boundary_adjacent": true,
+              "classification": "absent_output",
+              "duration_s": 0.09999999999999432,
+              "end_s": 34.69899999999999,
+              "event_type": "target_absent",
+              "expected_id": null,
+              "output_id": 2,
+              "start_s": 34.599
+            },
+            {
+              "annotation_row": 9,
+              "boundary_adjacent": true,
+              "classification": "wrong",
+              "duration_s": 0.19999999999998863,
+              "end_s": 50.83599999999999,
+              "event_type": "id_switch_fragmentation",
+              "expected_id": 1,
+              "output_id": 42,
+              "start_s": 50.636
+            },
+            {
+              "annotation_row": 11,
+              "boundary_adjacent": true,
+              "classification": "wrong",
+              "duration_s": 0.4999999999999716,
+              "end_s": 58.53499999999997,
+              "event_type": "id_switch_fragmentation",
+              "expected_id": 61,
+              "output_id": 1,
+              "start_s": 58.035
+            }
+          ]
+        }
+      }
+    },
+    "deepsort": {
+      "matrix_row": {
+        "absent_output_delta_s": 0.0,
+        "annotation": "docs/data/annotations/may_hard_reentry/deepsort_f17cdf80_autonomous.csv",
+        "annotation_sha256": "d220fd336cf861fbbebe2fa9c6186e17abb9d6864215be614ccf09e43927931c",
+        "correct_duration_delta_s": 26.384000000000004,
+        "integrity_passed": true,
+        "lost_duration_delta_s": -41.586999999999996,
+        "raw_absent_output_duration_s": 0.0,
+        "raw_correct_duration_s": 24.828,
+        "raw_correct_ratio": 0.366,
+        "raw_lost_duration_s": 42.937,
+        "raw_lost_ratio": 0.633,
+        "raw_wrong_duration_s": 0.1,
+        "raw_wrong_ratio": 0.001,
+        "selected_track_id": 1,
+        "source_tracker_semantic_sha256": "86bf113cdc208931547478379e247dbc5242f0cf560ada224c695a5e9a335cb2",
+        "tim_absent_output_duration_s": 0.0,
+        "tim_correct_duration_s": 51.212,
+        "tim_correct_ratio": 0.755,
+        "tim_lost_duration_s": 1.35,
+        "tim_lost_ratio": 0.02,
+        "tim_semantic_sha256": "fd20694ca87ecf8e89779fd8e596c5907d46b9babe4761f729bec006b529efd9",
+        "tim_wrong_duration_s": 15.303,
+        "tim_wrong_ratio": 0.225,
+        "tracker": "deepsort",
+        "unsafe_absence_output_degradation": false,
+        "unsafe_wrong_target_degradation": true,
+        "wrong_duration_delta_s": 15.203000000000001
+      },
+      "streams": {
+        "raw_target": {
+          "totals": {
+            "correct": 24.827999999999992,
+            "lost": 42.93699999999998,
+            "wrong": 0.10000000000000142
+          },
+          "unsafe_segments": [
+            {
+              "annotation_row": 2,
+              "boundary_adjacent": true,
+              "classification": "wrong",
+              "duration_s": 0.10000000000000142,
+              "end_s": 25.178,
+              "event_type": "clean_visible",
+              "expected_id": 2,
+              "output_id": 1,
+              "start_s": 25.078
+            }
+          ]
+        },
+        "tim_target_memory": {
+          "totals": {
+            "correct": 51.21199999999993,
+            "lost": 1.3499999999999872,
+            "wrong": 15.30300000000009
+          },
+          "unsafe_segments": [
+            {
+              "annotation_row": 2,
+              "boundary_adjacent": true,
+              "classification": "wrong",
+              "duration_s": 0.10000000000000142,
+              "end_s": 25.178,
+              "event_type": "clean_visible",
+              "expected_id": 2,
+              "output_id": 1,
+              "start_s": 25.078
+            },
+            {
+              "annotation_row": 2,
+              "boundary_adjacent": true,
+              "classification": "wrong",
+              "duration_s": 15.203000000000081,
+              "end_s": 50.331,
+              "event_type": "clean_visible",
+              "expected_id": 2,
+              "output_id": 58,
+              "start_s": 35.12799999999992
+            }
+          ]
+        }
+      }
+    },
+    "ocsort": {
+      "matrix_row": {
+        "absent_output_delta_s": 0.19999999999999998,
+        "annotation": "docs/data/annotations/may_hard_reentry/ocsort_f17cdf80_autonomous.csv",
+        "annotation_sha256": "089eb7822c3bc743774d58ca8eb7d681065aeb14fa268d8c510bb45cb5847b3a",
+        "correct_duration_delta_s": 28.231,
+        "integrity_passed": true,
+        "lost_duration_delta_s": -28.230999999999998,
+        "raw_absent_output_duration_s": 0.1,
+        "raw_correct_duration_s": 33.599,
+        "raw_correct_ratio": 0.509,
+        "raw_lost_duration_s": 32.431,
+        "raw_lost_ratio": 0.491,
+        "raw_wrong_duration_s": 0.0,
+        "raw_wrong_ratio": 0.0,
+        "selected_track_id": 2,
+        "source_tracker_semantic_sha256": "bf29642a6ef996084b1dd98a506308555f6844e86de14d9ca0849e5c31ee1f18",
+        "tim_absent_output_duration_s": 0.3,
+        "tim_correct_duration_s": 61.83,
+        "tim_correct_ratio": 0.936,
+        "tim_lost_duration_s": 4.2,
+        "tim_lost_ratio": 0.064,
+        "tim_semantic_sha256": "4c9a58866a7124cbdd4bbfd52a01765aaab750014be81a500067b3a04827240b",
+        "tim_wrong_duration_s": 0.0,
+        "tim_wrong_ratio": 0.0,
+        "tracker": "ocsort",
+        "unsafe_absence_output_degradation": true,
+        "unsafe_wrong_target_degradation": false,
+        "wrong_duration_delta_s": 0.0
+      },
+      "streams": {
+        "raw_target": {
+          "totals": {
+            "absent_output": 0.09999999999999432,
+            "correct": 33.59899999999998,
+            "correct_absence": 1.7349999999999426,
+            "lost": 32.430999999999514
+          },
+          "unsafe_segments": [
+            {
+              "annotation_row": 2,
+              "boundary_adjacent": true,
+              "classification": "absent_output",
+              "duration_s": 0.09999999999999432,
+              "end_s": 34.69899999999999,
+              "event_type": "target_absent",
+              "expected_id": null,
+              "output_id": 2,
+              "start_s": 34.599
+            }
+          ]
+        },
+        "tim_target_memory": {
+          "totals": {
+            "absent_output": 0.29999999999998295,
+            "correct": 61.82999999999957,
+            "correct_absence": 1.534999999999954,
+            "lost": 4.1999999999999105
+          },
+          "unsafe_segments": [
+            {
+              "annotation_row": 2,
+              "boundary_adjacent": true,
+              "classification": "absent_output",
+              "duration_s": 0.09999999999999432,
+              "end_s": 34.69899999999999,
+              "event_type": "target_absent",
+              "expected_id": null,
+              "output_id": 2,
+              "start_s": 34.599
+            },
+            {
+              "annotation_row": 4,
+              "boundary_adjacent": true,
+              "classification": "absent_output",
+              "duration_s": 0.19999999999998863,
+              "end_s": 58.52999999999999,
+              "event_type": "target_absent",
+              "expected_id": null,
+              "output_id": 1,
+              "start_s": 58.33
+            }
+          ]
+        }
+      }
+    },
+    "sort": {
+      "matrix_row": {
+        "absent_output_delta_s": 0.15,
+        "annotation": "docs/data/annotations/may_hard_reentry/sort_f17cdf80_autonomous.csv",
+        "annotation_sha256": "1f0484acf2cfcdfa09ef16404020e6670373b128c952b82882c965a0d500e855",
+        "correct_duration_delta_s": 22.812999999999995,
+        "integrity_passed": true,
+        "lost_duration_delta_s": -28.112999999999996,
+        "raw_absent_output_duration_s": 0.15,
+        "raw_correct_duration_s": 29.286,
+        "raw_correct_ratio": 0.442,
+        "raw_lost_duration_s": 37.032,
+        "raw_lost_ratio": 0.558,
+        "raw_wrong_duration_s": 0.0,
+        "raw_wrong_ratio": 0.0,
+        "selected_track_id": 1,
+        "source_tracker_semantic_sha256": "cccccca83c44ddddf35278a8801d3cfd753392206b3dd249946eed6a3fce832b",
+        "tim_absent_output_duration_s": 0.3,
+        "tim_correct_duration_s": 52.099,
+        "tim_correct_ratio": 0.786,
+        "tim_lost_duration_s": 8.919,
+        "tim_lost_ratio": 0.134,
+        "tim_semantic_sha256": "58ea54bd9e1590279cd8e8daafae5a01230c3ac3abe479e424440f0c6a517625",
+        "tim_wrong_duration_s": 5.3,
+        "tim_wrong_ratio": 0.08,
+        "tracker": "sort",
+        "unsafe_absence_output_degradation": true,
+        "unsafe_wrong_target_degradation": true,
+        "wrong_duration_delta_s": 5.3
+      },
+      "streams": {
+        "raw_target": {
+          "totals": {
+            "absent_output": 0.15000000000000213,
+            "correct": 29.285999999999994,
+            "correct_absence": 1.3969999999999416,
+            "lost": 37.03199999999998
+          },
+          "unsafe_segments": [
+            {
+              "annotation_row": 2,
+              "boundary_adjacent": true,
+              "classification": "absent_output",
+              "duration_s": 0.15000000000000213,
+              "end_s": 29.786,
+              "event_type": "target_absent",
+              "expected_id": null,
+              "output_id": 1,
+              "start_s": 29.636
+            }
+          ]
+        },
+        "tim_target_memory": {
+          "totals": {
+            "absent_output": 0.29999999999999716,
+            "correct": 52.09900000000036,
+            "correct_absence": 1.2469999999999501,
+            "lost": 8.918999999999926,
+            "wrong": 5.299999999999699
+          },
+          "unsafe_segments": [
+            {
+              "annotation_row": 1,
+              "boundary_adjacent": false,
+              "classification": "wrong",
+              "duration_s": 0.05000000000000071,
+              "end_s": 25.250000000000224,
+              "event_type": "clean_visible",
+              "expected_id": 1,
+              "output_id": 2,
+              "start_s": 25.200000000000223
+            },
+            {
+              "annotation_row": 2,
+              "boundary_adjacent": true,
+              "classification": "absent_output",
+              "duration_s": 0.15000000000000213,
+              "end_s": 29.786,
+              "event_type": "target_absent",
+              "expected_id": null,
+              "output_id": 1,
+              "start_s": 29.636
+            },
+            {
+              "annotation_row": 4,
+              "boundary_adjacent": true,
+              "classification": "wrong",
+              "duration_s": 0.04999999999999716,
+              "end_s": 34.849999999999994,
+              "event_type": "clean_visible",
+              "expected_id": 98,
+              "output_id": 85,
+              "start_s": 34.8
+            },
+            {
+              "annotation_row": 5,
+              "boundary_adjacent": true,
+              "classification": "wrong",
+              "duration_s": 5.09999999999971,
+              "end_s": 40.79899999999971,
+              "event_type": "clean_visible",
+              "expected_id": 109,
+              "output_id": 98,
+              "start_s": 35.699
+            },
+            {
+              "annotation_row": 8,
+              "boundary_adjacent": true,
+              "classification": "wrong",
+              "duration_s": 0.09999999999999432,
+              "end_s": 50.833999999999996,
+              "event_type": "clean_visible",
+              "expected_id": 158,
+              "output_id": 109,
+              "start_s": 50.734
+            },
+            {
+              "annotation_row": 9,
+              "boundary_adjacent": true,
+              "classification": "absent_output",
+              "duration_s": 0.14999999999999147,
+              "end_s": 55.78099999999999,
+              "event_type": "target_absent",
+              "expected_id": null,
+              "output_id": 158,
+              "start_s": 55.631
+            }
+          ]
+        }
+      }
+    }
+  }
+}

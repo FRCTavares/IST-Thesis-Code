@@ -1,0 +1,1027 @@
+{
+  "authoritative_evaluator": {
+    "step_s": 0.05,
+    "timebase": "header",
+    "tool": "tools/analysis/evaluate_tim_target_correctness.py"
+  },
+  "canonical_config_sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+  "comparison_scope": "Raw-versus-TIM comparisons are valid within each tracker. Direct absolute comparisons between trackers are qualified because each tracker autonomously initialized its own physical target.",
+  "conclusion": "The single canonical preset is rejected for safety promotion on this hard-reentry sequence. Unsafe degradation remains above the 0.05-second tolerance for ByteTrack, SORT, OC-SORT, and DeepSORT.",
+  "diagnostic": {
+    "evaluator_step_s": 0.05,
+    "file": "unsafe_window_diagnostic.json",
+    "sha256": "da5d01c86f2a2910e7d34079b7465fa79ad1b423f0ad0c1558fd19b589550f3d"
+  },
+  "integrity_checks": {
+    "bytetrack": {
+      "annotation_exists": true,
+      "appearance_is_enabled": true,
+      "config_copy_matches": true,
+      "config_hash_matches": true,
+      "digest_matches_repeated_smoke": true,
+      "evaluation_streams_exist": true,
+      "metadata_fingerprint_valid": true,
+      "model_hash_matches": true,
+      "repository_commit_matches": true,
+      "repository_status_is_clean": true,
+      "schema_version_is_one": true,
+      "selected_id_matches": true,
+      "semantic_digest_is_sha256": true,
+      "semantic_schema_matches": true,
+      "source_manifest_is_fully_hashed": true,
+      "source_tracker_digest_matches": true,
+      "source_tracker_status_is_clean": true,
+      "tim_status_count_is_953": true,
+      "tim_target_count_is_953": true,
+      "track_count_is_953": true
+    },
+    "deepsort": {
+      "annotation_exists": true,
+      "appearance_is_enabled": true,
+      "config_copy_matches": true,
+      "config_hash_matches": true,
+      "evaluation_streams_exist": true,
+      "metadata_fingerprint_valid": true,
+      "model_hash_matches": true,
+      "repository_commit_matches": true,
+      "repository_status_is_clean": true,
+      "schema_version_is_one": true,
+      "selected_id_matches": true,
+      "semantic_digest_is_sha256": true,
+      "semantic_schema_matches": true,
+      "source_manifest_is_fully_hashed": true,
+      "source_tracker_digest_matches": true,
+      "source_tracker_status_is_clean": true,
+      "tim_status_count_is_953": true,
+      "tim_target_count_is_953": true,
+      "track_count_is_953": true
+    },
+    "ocsort": {
+      "annotation_exists": true,
+      "appearance_is_enabled": true,
+      "config_copy_matches": true,
+      "config_hash_matches": true,
+      "evaluation_streams_exist": true,
+      "metadata_fingerprint_valid": true,
+      "model_hash_matches": true,
+      "repository_commit_matches": true,
+      "repository_status_is_clean": true,
+      "schema_version_is_one": true,
+      "selected_id_matches": true,
+      "semantic_digest_is_sha256": true,
+      "semantic_schema_matches": true,
+      "source_manifest_is_fully_hashed": true,
+      "source_tracker_digest_matches": true,
+      "source_tracker_status_is_clean": true,
+      "tim_status_count_is_953": true,
+      "tim_target_count_is_953": true,
+      "track_count_is_953": true
+    },
+    "sort": {
+      "annotation_exists": true,
+      "appearance_is_enabled": true,
+      "config_copy_matches": true,
+      "config_hash_matches": true,
+      "evaluation_streams_exist": true,
+      "metadata_fingerprint_valid": true,
+      "model_hash_matches": true,
+      "repository_commit_matches": true,
+      "repository_status_is_clean": true,
+      "schema_version_is_one": true,
+      "selected_id_matches": true,
+      "semantic_digest_is_sha256": true,
+      "semantic_schema_matches": true,
+      "source_manifest_is_fully_hashed": true,
+      "source_tracker_digest_matches": true,
+      "source_tracker_status_is_clean": true,
+      "tim_status_count_is_953": true,
+      "tim_target_count_is_953": true,
+      "track_count_is_953": true
+    }
+  },
+  "limitations": [
+    "This is one hard-reentry sequence and does not replace the required OC-SORT crossing and occlusion evaluation.",
+    "Each tracker autonomously initialized its own physical target, so absolute cross-tracker performance is not a controlled comparison.",
+    "The safety decision uses within-tracker raw-versus-TIM deltas."
+  ],
+  "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+  "motion_only_modularity_claim_supported": false,
+  "motion_only_trackers": [
+    "bytetrack",
+    "sort",
+    "ocsort"
+  ],
+  "pass_semantics": "The top-level passed field records evidence-integrity success. It does not mean that the preset passed the safety-promotion criterion.",
+  "passed": true,
+  "promotion_blocked": true,
+  "repository_commit": "36ecd17da9a66c4b95f82234960d831fb4f5ba44",
+  "rows": [
+    {
+      "absent_output_delta_s": 0.0,
+      "annotation": "docs/data/annotations/may_hard_reentry/bytetrack_f17cdf80_autonomous.csv",
+      "annotation_sha256": "f3d156c7c46dfeb53b52130e0e0eaad2f2196cc4d06a87dc18d32072fa2a92be",
+      "correct_duration_delta_s": 27.154000000000003,
+      "integrity_passed": true,
+      "lost_duration_delta_s": -27.854,
+      "raw_absent_output_duration_s": 0.1,
+      "raw_correct_duration_s": 34.299,
+      "raw_correct_ratio": 0.514,
+      "raw_lost_duration_s": 32.466,
+      "raw_lost_ratio": 0.486,
+      "raw_wrong_duration_s": 0.0,
+      "raw_wrong_ratio": 0.0,
+      "safety_tolerance_s": 0.05,
+      "selected_track_id": 2,
+      "source_tracker_semantic_sha256": "a0ac43a539fb52d4fd338906a9de67d839d78cb537dfd83351c28f029895e207",
+      "tim_absent_output_duration_s": 0.1,
+      "tim_correct_duration_s": 61.453,
+      "tim_correct_ratio": 0.92,
+      "tim_lost_duration_s": 4.612,
+      "tim_lost_ratio": 0.069,
+      "tim_semantic_sha256": "ab5ac497d9ecce08f614a14f7f1508692d017f3da6d1a8d17483ce76c81b55a3",
+      "tim_wrong_duration_s": 0.7,
+      "tim_wrong_ratio": 0.01,
+      "tracker": "bytetrack",
+      "unsafe_absence_output_degradation": false,
+      "unsafe_degradation": true,
+      "unsafe_reason": "wrong-target +0.700 s",
+      "unsafe_wrong_target_degradation": true,
+      "wrong_duration_delta_s": 0.7
+    },
+    {
+      "absent_output_delta_s": 0.15,
+      "annotation": "docs/data/annotations/may_hard_reentry/sort_f17cdf80_autonomous.csv",
+      "annotation_sha256": "1f0484acf2cfcdfa09ef16404020e6670373b128c952b82882c965a0d500e855",
+      "correct_duration_delta_s": 22.812999999999995,
+      "integrity_passed": true,
+      "lost_duration_delta_s": -28.112999999999996,
+      "raw_absent_output_duration_s": 0.15,
+      "raw_correct_duration_s": 29.286,
+      "raw_correct_ratio": 0.442,
+      "raw_lost_duration_s": 37.032,
+      "raw_lost_ratio": 0.558,
+      "raw_wrong_duration_s": 0.0,
+      "raw_wrong_ratio": 0.0,
+      "safety_tolerance_s": 0.05,
+      "selected_track_id": 1,
+      "source_tracker_semantic_sha256": "cccccca83c44ddddf35278a8801d3cfd753392206b3dd249946eed6a3fce832b",
+      "tim_absent_output_duration_s": 0.3,
+      "tim_correct_duration_s": 52.099,
+      "tim_correct_ratio": 0.786,
+      "tim_lost_duration_s": 8.919,
+      "tim_lost_ratio": 0.134,
+      "tim_semantic_sha256": "58ea54bd9e1590279cd8e8daafae5a01230c3ac3abe479e424440f0c6a517625",
+      "tim_wrong_duration_s": 5.3,
+      "tim_wrong_ratio": 0.08,
+      "tracker": "sort",
+      "unsafe_absence_output_degradation": true,
+      "unsafe_degradation": true,
+      "unsafe_reason": "wrong-target +5.300 s; target-absence valid-output +0.150 s",
+      "unsafe_wrong_target_degradation": true,
+      "wrong_duration_delta_s": 5.3
+    },
+    {
+      "absent_output_delta_s": 0.19999999999999998,
+      "annotation": "docs/data/annotations/may_hard_reentry/ocsort_f17cdf80_autonomous.csv",
+      "annotation_sha256": "089eb7822c3bc743774d58ca8eb7d681065aeb14fa268d8c510bb45cb5847b3a",
+      "correct_duration_delta_s": 28.231,
+      "integrity_passed": true,
+      "lost_duration_delta_s": -28.230999999999998,
+      "raw_absent_output_duration_s": 0.1,
+      "raw_correct_duration_s": 33.599,
+      "raw_correct_ratio": 0.509,
+      "raw_lost_duration_s": 32.431,
+      "raw_lost_ratio": 0.491,
+      "raw_wrong_duration_s": 0.0,
+      "raw_wrong_ratio": 0.0,
+      "safety_tolerance_s": 0.05,
+      "selected_track_id": 2,
+      "source_tracker_semantic_sha256": "bf29642a6ef996084b1dd98a506308555f6844e86de14d9ca0849e5c31ee1f18",
+      "tim_absent_output_duration_s": 0.3,
+      "tim_correct_duration_s": 61.83,
+      "tim_correct_ratio": 0.936,
+      "tim_lost_duration_s": 4.2,
+      "tim_lost_ratio": 0.064,
+      "tim_semantic_sha256": "4c9a58866a7124cbdd4bbfd52a01765aaab750014be81a500067b3a04827240b",
+      "tim_wrong_duration_s": 0.0,
+      "tim_wrong_ratio": 0.0,
+      "tracker": "ocsort",
+      "unsafe_absence_output_degradation": true,
+      "unsafe_degradation": true,
+      "unsafe_reason": "target-absence valid-output +0.200 s",
+      "unsafe_wrong_target_degradation": false,
+      "wrong_duration_delta_s": 0.0
+    },
+    {
+      "absent_output_delta_s": 0.0,
+      "annotation": "docs/data/annotations/may_hard_reentry/deepsort_f17cdf80_autonomous.csv",
+      "annotation_sha256": "d220fd336cf861fbbebe2fa9c6186e17abb9d6864215be614ccf09e43927931c",
+      "correct_duration_delta_s": 26.384000000000004,
+      "integrity_passed": true,
+      "lost_duration_delta_s": -41.586999999999996,
+      "raw_absent_output_duration_s": 0.0,
+      "raw_correct_duration_s": 24.828,
+      "raw_correct_ratio": 0.366,
+      "raw_lost_duration_s": 42.937,
+      "raw_lost_ratio": 0.633,
+      "raw_wrong_duration_s": 0.1,
+      "raw_wrong_ratio": 0.001,
+      "safety_tolerance_s": 0.05,
+      "selected_track_id": 1,
+      "source_tracker_semantic_sha256": "86bf113cdc208931547478379e247dbc5242f0cf560ada224c695a5e9a335cb2",
+      "tim_absent_output_duration_s": 0.0,
+      "tim_correct_duration_s": 51.212,
+      "tim_correct_ratio": 0.755,
+      "tim_lost_duration_s": 1.35,
+      "tim_lost_ratio": 0.02,
+      "tim_semantic_sha256": "fd20694ca87ecf8e89779fd8e596c5907d46b9babe4761f729bec006b529efd9",
+      "tim_wrong_duration_s": 15.303,
+      "tim_wrong_ratio": 0.225,
+      "tracker": "deepsort",
+      "unsafe_absence_output_degradation": false,
+      "unsafe_degradation": true,
+      "unsafe_reason": "wrong-target +15.203 s",
+      "unsafe_wrong_target_degradation": true,
+      "wrong_duration_delta_s": 15.203000000000001
+    }
+  ],
+  "safety_criterion": "A single preset is safety-valid only if TIM does not increase wrong-target duration or target-absence valid-output duration by more than one evaluator step (0.05 seconds) for any tracker.",
+  "safety_tolerance_basis": "One complete evaluator step. The authoritative evaluator samples at 0.05-second resolution.",
+  "safety_tolerance_s": 0.05,
+  "schema_version": 1,
+  "scientific_interpretation": "The one-preset motion-only modularity claim is not supported on this sequence because ByteTrack, SORT, and OC-SORT each show unsafe degradation. The DeepSORT result also supports keeping appearance-based association outside the current safe layering claim.",
+  "single_preset_safety_valid": false,
+  "trackers": {
+    "bytetrack": {
+      "checks": {
+        "annotation_exists": true,
+        "appearance_is_enabled": true,
+        "config_copy_matches": true,
+        "config_hash_matches": true,
+        "digest_matches_repeated_smoke": true,
+        "evaluation_streams_exist": true,
+        "metadata_fingerprint_valid": true,
+        "model_hash_matches": true,
+        "repository_commit_matches": true,
+        "repository_status_is_clean": true,
+        "schema_version_is_one": true,
+        "selected_id_matches": true,
+        "semantic_digest_is_sha256": true,
+        "semantic_schema_matches": true,
+        "source_manifest_is_fully_hashed": true,
+        "source_tracker_digest_matches": true,
+        "source_tracker_status_is_clean": true,
+        "tim_status_count_is_953": true,
+        "tim_target_count_is_953": true,
+        "track_count_is_953": true
+      },
+      "evaluation": [
+        {
+          "correct_target_duration_s": "34.299",
+          "correct_target_ratio": "0.514",
+          "lost_target_duration_s": "32.466",
+          "lost_target_ratio": "0.486",
+          "no_target_selected_duration_s": "0.000",
+          "stream": "raw_target",
+          "target_absent_but_output_valid_duration_s": "0.100",
+          "target_not_visible_duration_s": "1.150",
+          "visible_target_duration_s": "66.765",
+          "wrong_target_duration_s": "0.000",
+          "wrong_target_ratio": "0.000"
+        },
+        {
+          "correct_target_duration_s": "61.453",
+          "correct_target_ratio": "0.920",
+          "lost_target_duration_s": "4.612",
+          "lost_target_ratio": "0.069",
+          "no_target_selected_duration_s": "0.000",
+          "stream": "tim_target_memory",
+          "target_absent_but_output_valid_duration_s": "0.100",
+          "target_not_visible_duration_s": "1.150",
+          "visible_target_duration_s": "66.765",
+          "wrong_target_duration_s": "0.700",
+          "wrong_target_ratio": "0.010"
+        }
+      ],
+      "metadata": {
+        "canonical_config": {
+          "copy": "tim_mars_canonical_config.yaml",
+          "sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+          "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+        },
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/bytetrack bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/bytetrack --config ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml --model models/reid/mars-small128.pb --selected-track-id 2 --image-topic /camera/image_raw --image-width 640 --image-height 640",
+        "counts": {
+          "images_loaded": 974,
+          "output_topic_counts": {
+            "/camera/fps": 67,
+            "/camera/image_raw": 974,
+            "/detections": 953,
+            "/target": 953,
+            "/target_memory": 912,
+            "/target_memory/status": 912,
+            "/target_memory_mars": 953,
+            "/target_memory_mars/status": 953,
+            "/timing": 953,
+            "/timing_target": 912,
+            "/tracks": 953
+          },
+          "source_messages_streamed": 7589,
+          "tim_status_messages_written": 953,
+          "tim_target_messages_written": 953,
+          "track_messages_processed": 953
+        },
+        "created_at_utc": "2026-07-19T10:28:59.925962+00:00",
+        "determinism": {
+          "generated_semantic_sha256": "ab5ac497d9ecce08f614a14f7f1508692d017f3da6d1a8d17483ce76c81b55a3",
+          "raw_cdr_payload_bytes_are_contract": false,
+          "raw_mcap_file_bytes_are_contract": false,
+          "reason": "ROS CDR payloads may contain non-semantic alignment-padding bytes; determinism is defined over declared generated message fields and write order.",
+          "semantic_digest_schema": "tim_mars_replay_generated_fields_v1"
+        },
+        "input_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/bytetrack",
+        "metadata_artifacts": {
+          "fingerprint_file": "tim_replay_metadata.sha256",
+          "metadata_file": "tim_replay_metadata.json"
+        },
+        "model": {
+          "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+          "size_bytes": 11244410,
+          "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+        },
+        "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/bytetrack",
+        "processing_contract": {
+          "algorithm_processing_order": [
+            "trustworthy_track_timestamp",
+            "frame_id",
+            "original_bag_timestamp",
+            "original_sequence_index"
+          ],
+          "bag_write_order": [
+            "original_bag_timestamp",
+            "original_source_order",
+            "generated_target_then_status"
+          ],
+          "complete_image_timeline_preloaded": true,
+          "source_copy_mode": "streamed_second_pass"
+        },
+        "repository": {
+          "branch": "main",
+          "commit": "36ecd17da9a66c4b95f82234960d831fb4f5ba44",
+          "root": "/home/francisco/Desktop/Thesis-Code",
+          "status_short": []
+        },
+        "runtime": {
+          "appearance_enabled": true,
+          "image_height": 640.0,
+          "image_width": 640.0,
+          "selected_track_id": 2,
+          "tracks_are_normalized": false,
+          "zero_id_when_not_visible": true
+        },
+        "schema_version": 1,
+        "source_manifest": [
+          {
+            "name": "bytetrack_0.mcap",
+            "sha256": "7a0ace0c323d3221cbb8c4e7fce9fc97752f3ae43f703fd7cb9e338fe73ad8b2",
+            "size_bytes": 1200775457
+          },
+          {
+            "name": "metadata.yaml",
+            "sha256": "4bafbef4931465fcb0d472e8e9e514fc173b25d9239ea9f735d1ab4cc6948a38",
+            "size_bytes": 6234
+          },
+          {
+            "name": "tracker_config.yaml",
+            "sha256": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906",
+            "size_bytes": 477
+          },
+          {
+            "name": "tracker_freeze_metadata.json",
+            "sha256": "8ebd2a2bf5c4e3487c245ee4671075066945522bd3fb66b8d0938ab291513391",
+            "size_bytes": 4329
+          },
+          {
+            "name": "tracker_freeze_metadata.sha256",
+            "sha256": "c25e36f7e06e9f633c25121c4427500fb51c2ae96a6a41bd722d7f05b39c2919",
+            "size_bytes": 95
+          }
+        ],
+        "topics": {
+          "image": "/camera/image_raw",
+          "raw_target": "/target",
+          "tim_status": "/target_memory_mars/status",
+          "tim_target": "/target_memory_mars",
+          "tracks": "/tracks"
+        }
+      },
+      "metrics": {
+        "absent_output_delta_s": 0.0,
+        "annotation": "docs/data/annotations/may_hard_reentry/bytetrack_f17cdf80_autonomous.csv",
+        "annotation_sha256": "f3d156c7c46dfeb53b52130e0e0eaad2f2196cc4d06a87dc18d32072fa2a92be",
+        "correct_duration_delta_s": 27.154000000000003,
+        "integrity_passed": true,
+        "lost_duration_delta_s": -27.854,
+        "raw_absent_output_duration_s": 0.1,
+        "raw_correct_duration_s": 34.299,
+        "raw_correct_ratio": 0.514,
+        "raw_lost_duration_s": 32.466,
+        "raw_lost_ratio": 0.486,
+        "raw_wrong_duration_s": 0.0,
+        "raw_wrong_ratio": 0.0,
+        "selected_track_id": 2,
+        "source_tracker_semantic_sha256": "a0ac43a539fb52d4fd338906a9de67d839d78cb537dfd83351c28f029895e207",
+        "tim_absent_output_duration_s": 0.1,
+        "tim_correct_duration_s": 61.453,
+        "tim_correct_ratio": 0.92,
+        "tim_lost_duration_s": 4.612,
+        "tim_lost_ratio": 0.069,
+        "tim_semantic_sha256": "ab5ac497d9ecce08f614a14f7f1508692d017f3da6d1a8d17483ce76c81b55a3",
+        "tim_wrong_duration_s": 0.7,
+        "tim_wrong_ratio": 0.01,
+        "tracker": "bytetrack",
+        "unsafe_absence_output_degradation": false,
+        "unsafe_wrong_target_degradation": true,
+        "wrong_duration_delta_s": 0.7
+      }
+    },
+    "deepsort": {
+      "checks": {
+        "annotation_exists": true,
+        "appearance_is_enabled": true,
+        "config_copy_matches": true,
+        "config_hash_matches": true,
+        "evaluation_streams_exist": true,
+        "metadata_fingerprint_valid": true,
+        "model_hash_matches": true,
+        "repository_commit_matches": true,
+        "repository_status_is_clean": true,
+        "schema_version_is_one": true,
+        "selected_id_matches": true,
+        "semantic_digest_is_sha256": true,
+        "semantic_schema_matches": true,
+        "source_manifest_is_fully_hashed": true,
+        "source_tracker_digest_matches": true,
+        "source_tracker_status_is_clean": true,
+        "tim_status_count_is_953": true,
+        "tim_target_count_is_953": true,
+        "track_count_is_953": true
+      },
+      "evaluation": [
+        {
+          "correct_target_duration_s": "24.828",
+          "correct_target_ratio": "0.366",
+          "lost_target_duration_s": "42.937",
+          "lost_target_ratio": "0.633",
+          "no_target_selected_duration_s": "0.000",
+          "stream": "raw_target",
+          "target_absent_but_output_valid_duration_s": "0.000",
+          "target_not_visible_duration_s": "0.000",
+          "visible_target_duration_s": "67.865",
+          "wrong_target_duration_s": "0.100",
+          "wrong_target_ratio": "0.001"
+        },
+        {
+          "correct_target_duration_s": "51.212",
+          "correct_target_ratio": "0.755",
+          "lost_target_duration_s": "1.350",
+          "lost_target_ratio": "0.020",
+          "no_target_selected_duration_s": "0.000",
+          "stream": "tim_target_memory",
+          "target_absent_but_output_valid_duration_s": "0.000",
+          "target_not_visible_duration_s": "0.000",
+          "visible_target_duration_s": "67.865",
+          "wrong_target_duration_s": "15.303",
+          "wrong_target_ratio": "0.225"
+        }
+      ],
+      "metadata": {
+        "canonical_config": {
+          "copy": "tim_mars_canonical_config.yaml",
+          "sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+          "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+        },
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/deepsort bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/deepsort --config ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --image-width 640 --image-height 640",
+        "counts": {
+          "images_loaded": 974,
+          "output_topic_counts": {
+            "/camera/fps": 67,
+            "/camera/image_raw": 974,
+            "/detections": 953,
+            "/target": 953,
+            "/target_memory": 912,
+            "/target_memory/status": 912,
+            "/target_memory_mars": 953,
+            "/target_memory_mars/status": 953,
+            "/timing": 953,
+            "/timing_target": 912,
+            "/tracks": 953
+          },
+          "source_messages_streamed": 7589,
+          "tim_status_messages_written": 953,
+          "tim_target_messages_written": 953,
+          "track_messages_processed": 953
+        },
+        "created_at_utc": "2026-07-19T10:32:28.813120+00:00",
+        "determinism": {
+          "generated_semantic_sha256": "fd20694ca87ecf8e89779fd8e596c5907d46b9babe4761f729bec006b529efd9",
+          "raw_cdr_payload_bytes_are_contract": false,
+          "raw_mcap_file_bytes_are_contract": false,
+          "reason": "ROS CDR payloads may contain non-semantic alignment-padding bytes; determinism is defined over declared generated message fields and write order.",
+          "semantic_digest_schema": "tim_mars_replay_generated_fields_v1"
+        },
+        "input_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/deepsort",
+        "metadata_artifacts": {
+          "fingerprint_file": "tim_replay_metadata.sha256",
+          "metadata_file": "tim_replay_metadata.json"
+        },
+        "model": {
+          "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+          "size_bytes": 11244410,
+          "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+        },
+        "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/deepsort",
+        "processing_contract": {
+          "algorithm_processing_order": [
+            "trustworthy_track_timestamp",
+            "frame_id",
+            "original_bag_timestamp",
+            "original_sequence_index"
+          ],
+          "bag_write_order": [
+            "original_bag_timestamp",
+            "original_source_order",
+            "generated_target_then_status"
+          ],
+          "complete_image_timeline_preloaded": true,
+          "source_copy_mode": "streamed_second_pass"
+        },
+        "repository": {
+          "branch": "main",
+          "commit": "36ecd17da9a66c4b95f82234960d831fb4f5ba44",
+          "root": "/home/francisco/Desktop/Thesis-Code",
+          "status_short": []
+        },
+        "runtime": {
+          "appearance_enabled": true,
+          "image_height": 640.0,
+          "image_width": 640.0,
+          "selected_track_id": 1,
+          "tracks_are_normalized": false,
+          "zero_id_when_not_visible": true
+        },
+        "schema_version": 1,
+        "source_manifest": [
+          {
+            "name": "deepsort_0.mcap",
+            "sha256": "2ef3cf5b105b8a44f9804a61d0f87a640cc7c2ad8c1c19155bb4a818d4653576",
+            "size_bytes": 1200805983
+          },
+          {
+            "name": "metadata.yaml",
+            "sha256": "5a3a8c2a3366f9103fddaa2fe7e80b7b361433a09be3569acc9d9de372e16610",
+            "size_bytes": 6232
+          },
+          {
+            "name": "tracker_config.yaml",
+            "sha256": "a4c25f5471cc5a6dd9ac49fed96b9d32ced5cd26ab8e699818af0340fee0f9ad",
+            "size_bytes": 547
+          },
+          {
+            "name": "tracker_freeze_metadata.json",
+            "sha256": "44467373084d5d0fad08918e98b3563452cd47500a08998124fd4785361c6230",
+            "size_bytes": 4815
+          },
+          {
+            "name": "tracker_freeze_metadata.sha256",
+            "sha256": "ecf9f52521edec1cb43b1ed5fc71d7d31a69b40c0e81e3977326d671f1234b0a",
+            "size_bytes": 95
+          }
+        ],
+        "topics": {
+          "image": "/camera/image_raw",
+          "raw_target": "/target",
+          "tim_status": "/target_memory_mars/status",
+          "tim_target": "/target_memory_mars",
+          "tracks": "/tracks"
+        }
+      },
+      "metrics": {
+        "absent_output_delta_s": 0.0,
+        "annotation": "docs/data/annotations/may_hard_reentry/deepsort_f17cdf80_autonomous.csv",
+        "annotation_sha256": "d220fd336cf861fbbebe2fa9c6186e17abb9d6864215be614ccf09e43927931c",
+        "correct_duration_delta_s": 26.384000000000004,
+        "integrity_passed": true,
+        "lost_duration_delta_s": -41.586999999999996,
+        "raw_absent_output_duration_s": 0.0,
+        "raw_correct_duration_s": 24.828,
+        "raw_correct_ratio": 0.366,
+        "raw_lost_duration_s": 42.937,
+        "raw_lost_ratio": 0.633,
+        "raw_wrong_duration_s": 0.1,
+        "raw_wrong_ratio": 0.001,
+        "selected_track_id": 1,
+        "source_tracker_semantic_sha256": "86bf113cdc208931547478379e247dbc5242f0cf560ada224c695a5e9a335cb2",
+        "tim_absent_output_duration_s": 0.0,
+        "tim_correct_duration_s": 51.212,
+        "tim_correct_ratio": 0.755,
+        "tim_lost_duration_s": 1.35,
+        "tim_lost_ratio": 0.02,
+        "tim_semantic_sha256": "fd20694ca87ecf8e89779fd8e596c5907d46b9babe4761f729bec006b529efd9",
+        "tim_wrong_duration_s": 15.303,
+        "tim_wrong_ratio": 0.225,
+        "tracker": "deepsort",
+        "unsafe_absence_output_degradation": false,
+        "unsafe_wrong_target_degradation": true,
+        "wrong_duration_delta_s": 15.203000000000001
+      }
+    },
+    "ocsort": {
+      "checks": {
+        "annotation_exists": true,
+        "appearance_is_enabled": true,
+        "config_copy_matches": true,
+        "config_hash_matches": true,
+        "evaluation_streams_exist": true,
+        "metadata_fingerprint_valid": true,
+        "model_hash_matches": true,
+        "repository_commit_matches": true,
+        "repository_status_is_clean": true,
+        "schema_version_is_one": true,
+        "selected_id_matches": true,
+        "semantic_digest_is_sha256": true,
+        "semantic_schema_matches": true,
+        "source_manifest_is_fully_hashed": true,
+        "source_tracker_digest_matches": true,
+        "source_tracker_status_is_clean": true,
+        "tim_status_count_is_953": true,
+        "tim_target_count_is_953": true,
+        "track_count_is_953": true
+      },
+      "evaluation": [
+        {
+          "correct_target_duration_s": "33.599",
+          "correct_target_ratio": "0.509",
+          "lost_target_duration_s": "32.431",
+          "lost_target_ratio": "0.491",
+          "no_target_selected_duration_s": "0.000",
+          "stream": "raw_target",
+          "target_absent_but_output_valid_duration_s": "0.100",
+          "target_not_visible_duration_s": "1.885",
+          "visible_target_duration_s": "66.030",
+          "wrong_target_duration_s": "0.000",
+          "wrong_target_ratio": "0.000"
+        },
+        {
+          "correct_target_duration_s": "61.830",
+          "correct_target_ratio": "0.936",
+          "lost_target_duration_s": "4.200",
+          "lost_target_ratio": "0.064",
+          "no_target_selected_duration_s": "0.000",
+          "stream": "tim_target_memory",
+          "target_absent_but_output_valid_duration_s": "0.300",
+          "target_not_visible_duration_s": "1.885",
+          "visible_target_duration_s": "66.030",
+          "wrong_target_duration_s": "0.000",
+          "wrong_target_ratio": "0.000"
+        }
+      ],
+      "metadata": {
+        "canonical_config": {
+          "copy": "tim_mars_canonical_config.yaml",
+          "sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+          "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+        },
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/ocsort bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/ocsort --config ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml --model models/reid/mars-small128.pb --selected-track-id 2 --image-topic /camera/image_raw --image-width 640 --image-height 640",
+        "counts": {
+          "images_loaded": 974,
+          "output_topic_counts": {
+            "/camera/fps": 67,
+            "/camera/image_raw": 974,
+            "/detections": 953,
+            "/target": 953,
+            "/target_memory": 912,
+            "/target_memory/status": 912,
+            "/target_memory_mars": 953,
+            "/target_memory_mars/status": 953,
+            "/timing": 953,
+            "/timing_target": 912,
+            "/tracks": 953
+          },
+          "source_messages_streamed": 7589,
+          "tim_status_messages_written": 953,
+          "tim_target_messages_written": 953,
+          "track_messages_processed": 953
+        },
+        "created_at_utc": "2026-07-19T10:31:33.809731+00:00",
+        "determinism": {
+          "generated_semantic_sha256": "4c9a58866a7124cbdd4bbfd52a01765aaab750014be81a500067b3a04827240b",
+          "raw_cdr_payload_bytes_are_contract": false,
+          "raw_mcap_file_bytes_are_contract": false,
+          "reason": "ROS CDR payloads may contain non-semantic alignment-padding bytes; determinism is defined over declared generated message fields and write order.",
+          "semantic_digest_schema": "tim_mars_replay_generated_fields_v1"
+        },
+        "input_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/ocsort",
+        "metadata_artifacts": {
+          "fingerprint_file": "tim_replay_metadata.sha256",
+          "metadata_file": "tim_replay_metadata.json"
+        },
+        "model": {
+          "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+          "size_bytes": 11244410,
+          "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+        },
+        "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/ocsort",
+        "processing_contract": {
+          "algorithm_processing_order": [
+            "trustworthy_track_timestamp",
+            "frame_id",
+            "original_bag_timestamp",
+            "original_sequence_index"
+          ],
+          "bag_write_order": [
+            "original_bag_timestamp",
+            "original_source_order",
+            "generated_target_then_status"
+          ],
+          "complete_image_timeline_preloaded": true,
+          "source_copy_mode": "streamed_second_pass"
+        },
+        "repository": {
+          "branch": "main",
+          "commit": "36ecd17da9a66c4b95f82234960d831fb4f5ba44",
+          "root": "/home/francisco/Desktop/Thesis-Code",
+          "status_short": []
+        },
+        "runtime": {
+          "appearance_enabled": true,
+          "image_height": 640.0,
+          "image_width": 640.0,
+          "selected_track_id": 2,
+          "tracks_are_normalized": false,
+          "zero_id_when_not_visible": true
+        },
+        "schema_version": 1,
+        "source_manifest": [
+          {
+            "name": "metadata.yaml",
+            "sha256": "ba5cae58bcfe9ceed0a8f2b186c2d60bb3ac18a08ae0c0dd2c2f6566f0114a4f",
+            "size_bytes": 6228
+          },
+          {
+            "name": "ocsort_0.mcap",
+            "sha256": "1b6b1d392844abbe0cf92896f2f8d353d0b1b55d1fd283c236da6847d4c57bc5",
+            "size_bytes": 1200781385
+          },
+          {
+            "name": "tracker_config.yaml",
+            "sha256": "b7967161815ecaacf903c4c8f3b5c09f601423b38ce46cefa9e00b89a36af89c",
+            "size_bytes": 373
+          },
+          {
+            "name": "tracker_freeze_metadata.json",
+            "sha256": "d9d70369d2fc6f5a5c927443231a80a3652641980b93c8a48e1cb529ebd700da",
+            "size_bytes": 4194
+          },
+          {
+            "name": "tracker_freeze_metadata.sha256",
+            "sha256": "1d4da510f92bffc3571e98c251679f06cdda240e926540b279c404ce76f7edf4",
+            "size_bytes": 95
+          }
+        ],
+        "topics": {
+          "image": "/camera/image_raw",
+          "raw_target": "/target",
+          "tim_status": "/target_memory_mars/status",
+          "tim_target": "/target_memory_mars",
+          "tracks": "/tracks"
+        }
+      },
+      "metrics": {
+        "absent_output_delta_s": 0.19999999999999998,
+        "annotation": "docs/data/annotations/may_hard_reentry/ocsort_f17cdf80_autonomous.csv",
+        "annotation_sha256": "089eb7822c3bc743774d58ca8eb7d681065aeb14fa268d8c510bb45cb5847b3a",
+        "correct_duration_delta_s": 28.231,
+        "integrity_passed": true,
+        "lost_duration_delta_s": -28.230999999999998,
+        "raw_absent_output_duration_s": 0.1,
+        "raw_correct_duration_s": 33.599,
+        "raw_correct_ratio": 0.509,
+        "raw_lost_duration_s": 32.431,
+        "raw_lost_ratio": 0.491,
+        "raw_wrong_duration_s": 0.0,
+        "raw_wrong_ratio": 0.0,
+        "selected_track_id": 2,
+        "source_tracker_semantic_sha256": "bf29642a6ef996084b1dd98a506308555f6844e86de14d9ca0849e5c31ee1f18",
+        "tim_absent_output_duration_s": 0.3,
+        "tim_correct_duration_s": 61.83,
+        "tim_correct_ratio": 0.936,
+        "tim_lost_duration_s": 4.2,
+        "tim_lost_ratio": 0.064,
+        "tim_semantic_sha256": "4c9a58866a7124cbdd4bbfd52a01765aaab750014be81a500067b3a04827240b",
+        "tim_wrong_duration_s": 0.0,
+        "tim_wrong_ratio": 0.0,
+        "tracker": "ocsort",
+        "unsafe_absence_output_degradation": true,
+        "unsafe_wrong_target_degradation": false,
+        "wrong_duration_delta_s": 0.0
+      }
+    },
+    "sort": {
+      "checks": {
+        "annotation_exists": true,
+        "appearance_is_enabled": true,
+        "config_copy_matches": true,
+        "config_hash_matches": true,
+        "evaluation_streams_exist": true,
+        "metadata_fingerprint_valid": true,
+        "model_hash_matches": true,
+        "repository_commit_matches": true,
+        "repository_status_is_clean": true,
+        "schema_version_is_one": true,
+        "selected_id_matches": true,
+        "semantic_digest_is_sha256": true,
+        "semantic_schema_matches": true,
+        "source_manifest_is_fully_hashed": true,
+        "source_tracker_digest_matches": true,
+        "source_tracker_status_is_clean": true,
+        "tim_status_count_is_953": true,
+        "tim_target_count_is_953": true,
+        "track_count_is_953": true
+      },
+      "evaluation": [
+        {
+          "correct_target_duration_s": "29.286",
+          "correct_target_ratio": "0.442",
+          "lost_target_duration_s": "37.032",
+          "lost_target_ratio": "0.558",
+          "no_target_selected_duration_s": "0.000",
+          "stream": "raw_target",
+          "target_absent_but_output_valid_duration_s": "0.150",
+          "target_not_visible_duration_s": "1.547",
+          "visible_target_duration_s": "66.318",
+          "wrong_target_duration_s": "0.000",
+          "wrong_target_ratio": "0.000"
+        },
+        {
+          "correct_target_duration_s": "52.099",
+          "correct_target_ratio": "0.786",
+          "lost_target_duration_s": "8.919",
+          "lost_target_ratio": "0.134",
+          "no_target_selected_duration_s": "0.000",
+          "stream": "tim_target_memory",
+          "target_absent_but_output_valid_duration_s": "0.300",
+          "target_not_visible_duration_s": "1.547",
+          "visible_target_duration_s": "66.318",
+          "wrong_target_duration_s": "5.300",
+          "wrong_target_ratio": "0.080"
+        }
+      ],
+      "metadata": {
+        "canonical_config": {
+          "copy": "tim_mars_canonical_config.yaml",
+          "sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+          "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+        },
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/sort bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/sort --config ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --image-width 640 --image-height 640",
+        "counts": {
+          "images_loaded": 974,
+          "output_topic_counts": {
+            "/camera/fps": 67,
+            "/camera/image_raw": 974,
+            "/detections": 953,
+            "/target": 953,
+            "/target_memory": 912,
+            "/target_memory/status": 912,
+            "/target_memory_mars": 953,
+            "/target_memory_mars/status": 953,
+            "/timing": 953,
+            "/timing_target": 912,
+            "/tracks": 953
+          },
+          "source_messages_streamed": 7589,
+          "tim_status_messages_written": 953,
+          "tim_target_messages_written": 953,
+          "track_messages_processed": 953
+        },
+        "created_at_utc": "2026-07-19T10:30:09.552904+00:00",
+        "determinism": {
+          "generated_semantic_sha256": "58ea54bd9e1590279cd8e8daafae5a01230c3ac3abe479e424440f0c6a517625",
+          "raw_cdr_payload_bytes_are_contract": false,
+          "raw_mcap_file_bytes_are_contract": false,
+          "reason": "ROS CDR payloads may contain non-semantic alignment-padding bytes; determinism is defined over declared generated message fields and write order.",
+          "semantic_digest_schema": "tim_mars_replay_generated_fields_v1"
+        },
+        "input_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/sort",
+        "metadata_artifacts": {
+          "fingerprint_file": "tim_replay_metadata.sha256",
+          "metadata_file": "tim_replay_metadata.json"
+        },
+        "model": {
+          "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+          "size_bytes": 11244410,
+          "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+        },
+        "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/sort",
+        "processing_contract": {
+          "algorithm_processing_order": [
+            "trustworthy_track_timestamp",
+            "frame_id",
+            "original_bag_timestamp",
+            "original_sequence_index"
+          ],
+          "bag_write_order": [
+            "original_bag_timestamp",
+            "original_source_order",
+            "generated_target_then_status"
+          ],
+          "complete_image_timeline_preloaded": true,
+          "source_copy_mode": "streamed_second_pass"
+        },
+        "repository": {
+          "branch": "main",
+          "commit": "36ecd17da9a66c4b95f82234960d831fb4f5ba44",
+          "root": "/home/francisco/Desktop/Thesis-Code",
+          "status_short": []
+        },
+        "runtime": {
+          "appearance_enabled": true,
+          "image_height": 640.0,
+          "image_width": 640.0,
+          "selected_track_id": 1,
+          "tracks_are_normalized": false,
+          "zero_id_when_not_visible": true
+        },
+        "schema_version": 1,
+        "source_manifest": [
+          {
+            "name": "metadata.yaml",
+            "sha256": "7b6c3b83f1c66aafb92e074bb1df460d37faef2e8368eaf2948db45dc43b71f1",
+            "size_bytes": 6224
+          },
+          {
+            "name": "sort_0.mcap",
+            "sha256": "0a45b39e003483e5ddbcd1d1587b55ebf8e8014b7718a1e691b9f65e4c3886c7",
+            "size_bytes": 1200800027
+          },
+          {
+            "name": "tracker_config.yaml",
+            "sha256": "78051b9606cae6d2f6c8de25bffe38d26697e2edf153a9961bbf31934016319c",
+            "size_bytes": 607
+          },
+          {
+            "name": "tracker_freeze_metadata.json",
+            "sha256": "60f3277cb83fc73b09bff122148cfbcd694c2bb1270ee09cef55b77d4e323b0f",
+            "size_bytes": 4118
+          },
+          {
+            "name": "tracker_freeze_metadata.sha256",
+            "sha256": "76ea40cac498dfdfb8a8ab66d1dc7192ae01d1096bad0e696c16124b362b7448",
+            "size_bytes": 95
+          }
+        ],
+        "topics": {
+          "image": "/camera/image_raw",
+          "raw_target": "/target",
+          "tim_status": "/target_memory_mars/status",
+          "tim_target": "/target_memory_mars",
+          "tracks": "/tracks"
+        }
+      },
+      "metrics": {
+        "absent_output_delta_s": 0.15,
+        "annotation": "docs/data/annotations/may_hard_reentry/sort_f17cdf80_autonomous.csv",
+        "annotation_sha256": "1f0484acf2cfcdfa09ef16404020e6670373b128c952b82882c965a0d500e855",
+        "correct_duration_delta_s": 22.812999999999995,
+        "integrity_passed": true,
+        "lost_duration_delta_s": -28.112999999999996,
+        "raw_absent_output_duration_s": 0.15,
+        "raw_correct_duration_s": 29.286,
+        "raw_correct_ratio": 0.442,
+        "raw_lost_duration_s": 37.032,
+        "raw_lost_ratio": 0.558,
+        "raw_wrong_duration_s": 0.0,
+        "raw_wrong_ratio": 0.0,
+        "selected_track_id": 1,
+        "source_tracker_semantic_sha256": "cccccca83c44ddddf35278a8801d3cfd753392206b3dd249946eed6a3fce832b",
+        "tim_absent_output_duration_s": 0.3,
+        "tim_correct_duration_s": 52.099,
+        "tim_correct_ratio": 0.786,
+        "tim_lost_duration_s": 8.919,
+        "tim_lost_ratio": 0.134,
+        "tim_semantic_sha256": "58ea54bd9e1590279cd8e8daafae5a01230c3ac3abe479e424440f0c6a517625",
+        "tim_wrong_duration_s": 5.3,
+        "tim_wrong_ratio": 0.08,
+        "tracker": "sort",
+        "unsafe_absence_output_degradation": true,
+        "unsafe_wrong_target_degradation": true,
+        "wrong_duration_delta_s": 5.3
+      }
+    }
+  },
+  "unsafe_degradation_trackers": [
+    "bytetrack",
+    "sort",
+    "ocsort",
+    "deepsort"
+  ]
+}

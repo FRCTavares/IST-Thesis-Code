@@ -1319,7 +1319,7 @@ Tracker-configuration prerequisite started on 18 July 2026:
     - [x] visually confirm or recreate the OC-SORT autonomous-target annotation;
     - [x] create and validate the DeepSORT autonomous-target annotation.
 
-- [ ] produce deterministic TIM outputs with a persisted evidence contract:
+- [x] produce deterministic TIM outputs with a persisted evidence contract:
   - [x] audit the deterministic TIM runner and select the image-header-time
     track-ID evaluator as the authoritative P0.18 evaluator;
   - [x] persist exact source, canonical-configuration, model, repository, and
@@ -1329,14 +1329,36 @@ Tracker-configuration prerequisite started on 18 July 2026:
   - [x] add focused evidence-contract tests and pass verification;
   - [x] run a repeated ByteTrack smoke replay before generating the clean
     four-tracker matrix.
+  - [x] generate and evaluate the clean four-tracker matrix from commit
+    `36ecd17d` with fully hashed clean provenance;
+  - [x] preserve the consolidated matrix report under
+    `reports/p018_tim_matrix_36ecd17d_2026_07_19/`.
 
-For ByteTrack, OC-SORT, and DeepSORT:
+For ByteTrack, SORT, OC-SORT, and DeepSORT:
 
 - [x] use compatible annotations;
 - [x] use autonomous selected-target initialization;
-- [ ] report raw and TIM output;
-- [ ] report unsafe degradation;
-- [ ] determine whether one preset is valid across trackers.
+- [x] report raw and TIM output;
+- [x] report unsafe degradation;
+- [x] determine whether one preset is valid across trackers.
+  - Result: no. With a `0.05 s` one-step safety tolerance, unsafe
+    degradation remained for all four trackers:
+    - ByteTrack: `+0.700 s` wrong-target output;
+    - SORT: `+5.300 s` wrong-target output and `+0.150 s`
+      target-absence valid output;
+    - OC-SORT: `+0.200 s` target-absence valid output;
+    - DeepSORT: `+15.203 s` wrong-target output.
+  - Interpretation: the one-preset motion-only modularity claim is not supported
+    on this hard-reentry sequence. The DeepSORT result also supports keeping
+    appearance-based association outside the current safe layering claim.
+
+Issue #43 remains open for:
+
+- [ ] run OC-SORT + TIM on the required crossing and occlusion sequences;
+- [ ] update `NOVELTY.md` Section 8.3 and the thesis-facing modularity claim
+  after this evidence commit exists;
+- [ ] record the rejected single-preset claim and close Issue #43 only after
+  the remaining OC-SORT evidence and claim updates are complete.
 
 ### P1.12 Add broader sequences
 
