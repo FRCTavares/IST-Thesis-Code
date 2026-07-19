@@ -54,7 +54,7 @@ from thesis_bringup.tim_mars.types import TargetMemoryConfig
 TIM_TARGET_TOPIC = "/target_memory_mars"
 TIM_STATUS_TOPIC = "/target_memory_mars/status"
 SEMANTIC_DIGEST_SCHEMA = (
-    "tim_mars_replay_generated_fields_v1"
+    "tim_mars_replay_generated_fields_v2"
 )
 
 
@@ -80,6 +80,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--tracks-topic", default="/tracks")
     parser.add_argument("--raw-target-topic", default="/target")
+    parser.add_argument(
+        "--raw-target-mode",
+        choices=("source", "selected_id"),
+        default="source",
+        help=(
+            "Use the source raw-target topic unchanged or replace it "
+            "deterministically from --selected-track-id."
+        ),
+    )
     parser.add_argument("--image-width", type=float, default=640.0)
     parser.add_argument("--image-height", type=float, default=640.0)
     parser.add_argument(
@@ -470,6 +479,51 @@ def make_target_message(
     return target
 
 
+def make_fixed_id_raw_target_message(
+    *,
+    tracks_message: Track2DArray,
+    selected_track_id: int,
+) -> TargetState:
+    """Create the controlled raw target for one fixed tracker ID."""
+    target = TargetState()
+    target.header = tracks_message.header
+    target.frame_id = int(
+        getattr(tracks_message, "frame_id", 0)
+    )
+    target.src_stamp_ns = int(
+        getattr(tracks_message, "src_stamp_ns", 0)
+    )
+    target.t_cam_msg_seen_ns = int(
+        getattr(tracks_message, "t_cam_msg_seen_ns", 0)
+    )
+    target.t_target_cb_start_ns = 0
+    target.t_target_cb_end_ns = 0
+
+    selected = next(
+        (
+            track
+            for track in tracks_message.tracks
+            if int(getattr(track, "id", 0))
+            == int(selected_track_id)
+        ),
+        None,
+    )
+
+    if selected is None:
+        return target
+
+    target.id = int(selected.id)
+    target.cx = float(selected.cx)
+    target.cy = float(selected.cy)
+    target.w = float(selected.w)
+    target.h = float(selected.h)
+    target.score = float(
+        getattr(selected, "score", 1.0)
+    )
+    target.quality = target.score
+    return target
+
+
 def make_status_message(
     *,
     runtime: TimMarsRuntime,
@@ -558,6 +612,7 @@ def write_streamed_output(
     writer: Any,
     source_reader: Any,
     generated_messages: list[tuple[int, int, str, bytes]],
+    skipped_source_topics: set[str] | None = None,
 ) -> int:
     """Stream source messages and merge generated messages by bag timestamp.
 
@@ -566,6 +621,14 @@ def write_streamed_output(
     matching the previous full-list ordering without retaining the source bag
     in memory.
     """
+
+    skipped_topics = {
+        TIM_TARGET_TOPIC,
+        TIM_STATUS_TOPIC,
+    }
+    skipped_topics.update(
+        skipped_source_topics or set()
+    )
 
     generated_index = 0
     source_messages_written = 0
@@ -639,10 +702,7 @@ def write_streamed_output(
         topic, serialized, bag_time_ns = source_reader.read_next()
         bag_time_ns = int(bag_time_ns)
 
-        if topic in {
-            TIM_TARGET_TOPIC,
-            TIM_STATUS_TOPIC,
-        }:
+        if topic in skipped_topics:
             continue
 
         if current_time_ns is None:
@@ -759,12 +819,20 @@ def update_generated_semantic_digest(
     topic: str,
     bag_time_ns: int,
     message: Any,
+    *,
+    raw_target_topic: str | None = None,
 ) -> None:
     """Append declared fields for one generated message."""
     _digest_text(digest, topic)
     _digest_int(digest, bag_time_ns)
 
-    if topic == TIM_TARGET_TOPIC:
+    if (
+        topic == TIM_TARGET_TOPIC
+        or (
+            raw_target_topic is not None
+            and topic == raw_target_topic
+        )
+    ):
         header = message.header
 
         _digest_int(
@@ -839,7 +907,9 @@ def update_generated_semantic_digest(
 
     raise ValueError(
         "Unsupported TIM semantic-digest topic "
-        f"{topic!r}"
+        f"{topic!r}; expected {TIM_TARGET_TOPIC!r}, "
+        f"{TIM_STATUS_TOPIC!r}, or the declared "
+        "generated raw-target topic"
     )
 
 
@@ -999,6 +1069,25 @@ def main() -> int:
     canonical = load_canonical_parameters(args.config)
     runtime = build_runtime(canonical, args)
 
+    if (
+        args.raw_target_mode == "selected_id"
+        and int(args.selected_track_id) <= 0
+    ):
+        raise RuntimeError(
+            "selected_id raw-target mode requires "
+            "--selected-track-id > 0"
+        )
+
+    if args.raw_target_topic in {
+        args.tracks_topic,
+        TIM_TARGET_TOPIC,
+        TIM_STATUS_TOPIC,
+    }:
+        raise RuntimeError(
+            "Raw-target topic must be distinct from "
+            "tracks and TIM generated topics"
+        )
+
     reader = open_reader(input_bag)
     metadata_by_topic = topic_metadata_map(reader)
 
@@ -1106,6 +1195,11 @@ def main() -> int:
     generated_semantic_digest = (
         new_generated_semantic_digest()
     )
+    replace_raw_target = (
+        args.raw_target_mode == "selected_id"
+    )
+    raw_target_messages_written = 0
+    raw_target_valid_messages_written = 0
 
     for (
         _semantic_time_ns,
@@ -1115,6 +1209,43 @@ def main() -> int:
         tracks_message,
     ) in track_events:
         result = runtime.process_tracks(tracks_message)
+
+        if replace_raw_target:
+            raw_target_message = (
+                make_fixed_id_raw_target_message(
+                    tracks_message=tracks_message,
+                    selected_track_id=(
+                        args.selected_track_id
+                    ),
+                )
+            )
+
+            update_generated_semantic_digest(
+                generated_semantic_digest,
+                args.raw_target_topic,
+                bag_time_ns,
+                raw_target_message,
+                raw_target_topic=(
+                    args.raw_target_topic
+                ),
+            )
+            generated_messages.append(
+                (
+                    bag_time_ns,
+                    generated_sequence,
+                    args.raw_target_topic,
+                    bytes(
+                        serialize_message(
+                            raw_target_message
+                        )
+                    ),
+                )
+            )
+            generated_sequence += 1
+            raw_target_messages_written += 1
+
+            if int(raw_target_message.id) > 0:
+                raw_target_valid_messages_written += 1
 
         target_message = make_target_message(
             runtime=runtime,
@@ -1176,11 +1307,22 @@ def main() -> int:
         ),
     )
 
+    skipped_source_topics = (
+        {args.raw_target_topic}
+        if replace_raw_target
+        else set()
+    )
+
     for metadata in metadata_by_topic.values():
-        if metadata.name in {
-            TIM_TARGET_TOPIC,
-            TIM_STATUS_TOPIC,
-        }:
+        if (
+            metadata.name
+            in {
+                TIM_TARGET_TOPIC,
+                TIM_STATUS_TOPIC,
+            }
+            or metadata.name
+            in skipped_source_topics
+        ):
             continue
 
         writer.create_topic(
@@ -1200,11 +1342,24 @@ def main() -> int:
         )
     )
 
+    if replace_raw_target:
+        writer.create_topic(
+            generated_topic_metadata(
+                name=args.raw_target_topic,
+                message_type=(
+                    "thesis_msgs/msg/TargetState"
+                ),
+            )
+        )
+
     source_reader = open_reader(input_bag)
     source_messages_written = write_streamed_output(
         writer=writer,
         source_reader=source_reader,
         generated_messages=generated_messages,
+        skipped_source_topics=(
+            skipped_source_topics
+        ),
     )
 
     writer.close()
@@ -1231,8 +1386,36 @@ def main() -> int:
         count_output_topics(output_bag)
     )
 
+    expected_generated_count = len(track_events)
+
+    for topic in (
+        TIM_TARGET_TOPIC,
+        TIM_STATUS_TOPIC,
+    ):
+        if (
+            output_topic_counts.get(topic, 0)
+            != expected_generated_count
+        ):
+            raise RuntimeError(
+                "Output generated-topic count mismatch "
+                f"for {topic}"
+            )
+
+    if (
+        replace_raw_target
+        and output_topic_counts.get(
+            args.raw_target_topic,
+            0,
+        )
+        != expected_generated_count
+    ):
+        raise RuntimeError(
+            "Output fixed-ID raw-target count does not "
+            "match processed track count"
+        )
+
     summary = {
-        "schema_version": 1,
+        "schema_version": 2,
         "created_at_utc": (
             datetime.now(
                 timezone.utc
@@ -1296,6 +1479,9 @@ def main() -> int:
             "appearance_enabled": bool(
                 runtime.config.appearance.enabled
             ),
+            "raw_target_mode": (
+                args.raw_target_mode
+            ),
         },
         "topics": {
             "image": image_topic,
@@ -1305,6 +1491,28 @@ def main() -> int:
             ),
             "tim_target": TIM_TARGET_TOPIC,
             "tim_status": TIM_STATUS_TOPIC,
+            "raw_target_source": (
+                "generated_fixed_selected_id"
+                if replace_raw_target
+                else "source_copy"
+            ),
+        },
+        "raw_target_generation": {
+            "mode": args.raw_target_mode,
+            "selected_track_id": (
+                int(args.selected_track_id)
+                if replace_raw_target
+                else None
+            ),
+            "source_topic_replaced": (
+                replace_raw_target
+            ),
+            "fixed_after_initialization": (
+                True if replace_raw_target else None
+            ),
+            "reselection_enabled": (
+                False if replace_raw_target else None
+            ),
         },
         "counts": {
             "images_loaded": len(images),
@@ -1320,6 +1528,12 @@ def main() -> int:
             "tim_status_messages_written": (
                 len(track_events)
             ),
+            "raw_target_messages_written": (
+                raw_target_messages_written
+            ),
+            "raw_target_valid_messages_written": (
+                raw_target_valid_messages_written
+            ),
             "output_topic_counts": (
                 output_topic_counts
             ),
@@ -1334,7 +1548,13 @@ def main() -> int:
             "bag_write_order": [
                 "original_bag_timestamp",
                 "original_source_order",
-                "generated_target_then_status",
+                (
+                    "generated_raw_target_then_"
+                    "tim_target_then_status"
+                    if replace_raw_target
+                    else
+                    "generated_tim_target_then_status"
+                ),
             ],
             "source_copy_mode": (
                 "streamed_second_pass"

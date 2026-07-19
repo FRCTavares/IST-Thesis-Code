@@ -6,7 +6,11 @@ import importlib.util
 import json
 
 from std_msgs.msg import String
-from thesis_msgs.msg import TargetState
+from thesis_msgs.msg import (
+    TargetState,
+    Track2D,
+    Track2DArray,
+)
 
 from thesis_bringup.tim_mars.types import TargetMemoryConfig
 
@@ -137,6 +141,69 @@ def test_invalid_track_time_returns_zero():
     assert MODULE.track_time_ns(Tracks()) == 0
 
 
+def _track(
+    track_id,
+    width=30.0,
+    height=60.0,
+    score=0.8,
+):
+    track = Track2D()
+    track.id = track_id
+    track.cx = 100.0
+    track.cy = 200.0
+    track.w = width
+    track.h = height
+    track.score = score
+    return track
+
+
+def test_fixed_id_raw_target_copies_selected_track():
+    message = Track2DArray()
+    message.frame_id = 7
+    message.src_stamp_ns = 123456
+    message.t_cam_msg_seen_ns = 123400
+    message.tracks = [
+        _track(1),
+        _track(2, width=40.0),
+    ]
+
+    target = (
+        MODULE.make_fixed_id_raw_target_message(
+            tracks_message=message,
+            selected_track_id=1,
+        )
+    )
+
+    assert target.id == 1
+    assert target.frame_id == 7
+    assert target.src_stamp_ns == 123456
+    assert target.t_cam_msg_seen_ns == 123400
+    assert target.t_target_cb_start_ns == 0
+    assert target.t_target_cb_end_ns == 0
+    assert target.w == 30.0
+    assert target.h == 60.0
+    assert target.score == 0.8
+    assert target.quality == 0.8
+
+
+def test_fixed_id_raw_target_is_invalid_when_id_absent():
+    message = Track2DArray()
+    message.frame_id = 8
+    message.tracks = [_track(2)]
+
+    target = (
+        MODULE.make_fixed_id_raw_target_message(
+            tracks_message=message,
+            selected_track_id=1,
+        )
+    )
+
+    assert target.id == 0
+    assert target.frame_id == 8
+    assert target.w == 0.0
+    assert target.h == 0.0
+
+
 class _FakeReader:
     def __init__(self, messages):
         self.messages = list(messages)
@@ -252,6 +319,58 @@ def test_streamed_output_removes_existing_tim_topics_from_source():
             MODULE.TIM_STATUS_TOPIC,
             b"new-status",
         ),
+    ]
+
+
+def test_streamed_output_preserves_raw_target_by_default():
+    reader = _FakeReader(
+        [
+            ("/tracks", b"tracks", 100),
+            ("/target", b"source-target", 100),
+        ]
+    )
+    writer = _FakeWriter()
+
+    source_count = MODULE.write_streamed_output(
+        writer=writer,
+        source_reader=reader,
+        generated_messages=[],
+    )
+
+    assert source_count == 2
+    assert writer.messages == [
+        (100, "/tracks", b"tracks"),
+        (100, "/target", b"source-target"),
+    ]
+
+
+def test_streamed_output_replaces_requested_raw_target():
+    reader = _FakeReader(
+        [
+            ("/tracks", b"tracks", 100),
+            ("/target", b"old-target", 100),
+        ]
+    )
+    writer = _FakeWriter()
+
+    source_count = MODULE.write_streamed_output(
+        writer=writer,
+        source_reader=reader,
+        generated_messages=[
+            (
+                100,
+                1,
+                "/target",
+                b"new-target",
+            ),
+        ],
+        skipped_source_topics={"/target"},
+    )
+
+    assert source_count == 1
+    assert writer.messages == [
+        (100, "/tracks", b"tracks"),
+        (100, "/target", b"new-target"),
     ]
 
 
@@ -463,6 +582,22 @@ def test_tim_semantic_digest_includes_write_order():
     assert _semantic_digest(normal) != (
         _semantic_digest(reversed_order)
     )
+
+
+def test_semantic_digest_supports_generated_raw_target():
+    digest = (
+        MODULE.new_generated_semantic_digest()
+    )
+
+    MODULE.update_generated_semantic_digest(
+        digest,
+        "/target",
+        500,
+        _target_message(),
+        raw_target_topic="/target",
+    )
+
+    assert len(digest.hexdigest()) == 64
 
 
 def test_source_manifest_hashes_exact_files(

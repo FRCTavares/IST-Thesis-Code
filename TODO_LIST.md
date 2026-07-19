@@ -21,6 +21,9 @@ Active executable issues: **44**.
 
 1. [ ] [#1 — P0.2 Reproduce the historical unsafe DeepSORT result](https://github.com/FRCTavares/IST-Thesis-Code/issues/1)
    - phase 1; experiment.
+   - current work: historical unsafe result reproduced and isolated to
+     the missing ID-switch appearance gate; clean committed evidence rerun
+     and preservation remain pending.
 
 2. [ ] [#2 — P0.3 Freeze the canonical evidence set](https://github.com/FRCTavares/IST-Thesis-Code/issues/2)
    - phase 1; experiment.
