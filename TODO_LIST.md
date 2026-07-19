@@ -1354,7 +1354,7 @@ For ByteTrack, SORT, OC-SORT, and DeepSORT:
 
 Issue #43 remains open for:
 
-- [ ] run OC-SORT + TIM on the required crossing and occlusion sequences:
+- [x] run OC-SORT + TIM on the required crossing and occlusion sequences:
   - [x] freeze Seq03 twice with matching semantic output and stable autonomous
     selection of OC-SORT ID `1`;
   - [x] diagnose Seq04 one-message initialization selecting transient OC-SORT
@@ -1388,8 +1388,18 @@ Issue #43 remains open for:
       - all tools tests pass;
       - corrected real-bag event aggregates match the authoritative totals
         within `0.004 s`;
-    - [ ] run repeated TIM-MARS replays and header-time evaluation for Seq03
-      and Seq04;
+    - [x] run repeated TIM-MARS replays and header-time evaluation for Seq03
+      and Seq04:
+      - Seq03 raw C/W/L `0.340/0.001/0.659`, TIM
+        `0.850/0.015/0.135`, with `+1.350 s` wrong-target output;
+      - Seq04 raw C/W/L `0.644/0.002/0.354`, TIM
+        `0.702/0.003/0.295`, with `+0.050 s` wrong-target output at
+        the evaluator-step tolerance boundary;
+      - neither sequence increases target-absence valid output;
+      - both repeated semantic digests, evaluation CSVs, runtime contracts,
+        configuration/model fingerprints, and clean provenance match;
+      - preserve the compact canonical evidence package under
+        `reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/`;
 - [ ] update `NOVELTY.md` Section 8.3 and the thesis-facing modularity claim
   after this evidence commit exists;
 - [ ] record the rejected single-preset claim and close Issue #43 only after
@@ -1631,20 +1641,25 @@ TIM is a validation layer above the tracker, so it pairs best with **motion-only
 trackers whose failure mode (ID switch under occlusion/crossing) is exactly what TIM
 is built to catch.
 
-- [ ] Add **SORT** to the raw-vs-TIM matrix (P0.18 currently lists ByteTrack,
-  OC-SORT, DeepSORT). SORT is the barest cheap tracker — biggest expected raw->TIM
-  delta, cleanest modularity ablation.
-- [ ] Prioritize **OC-SORT + TIM** on the crossing/occlusion sequences. OC-SORT's
-  observation-centric gap repair (ORU) + nonlinear handling (OCM) is SOTA on
-  DanceTrack/MOT20 (Cao et al., CVPR 2023) and should give TIM cleaner continuity on
-  exactly the sequences where the current table is neutral.
-- [ ] Treat **DeepSORT / StrongSORT / BoT-SORT / Deep-OC-SORT** as out-of-scope for
-  the safe claim: they already assert identity from appearance, which duplicates
-  TIM's ReID work and can conflict with it. The historical DeepSORT unsafe result
-  (P0.2: raw 0.028 -> TIM 0.466 wrong) is consistent with that conflict. Once P0.2
-  reproduction confirms it, restate NOVELTY §8.3 as a scoped design boundary — "TIM
-  validates motion-only trackers; it is not layered over appearance-based
-  association" — rather than an open failure.
+- [x] Add **SORT** to the raw-vs-TIM matrix:
+  - completed in
+    `reports/p018_tim_matrix_36ecd17d_2026_07_19/`;
+  - SORT produced `+5.300 s` wrong-target output and `+0.150 s`
+    target-absence valid output with the canonical preset.
+- [x] Evaluate **OC-SORT + TIM** on the crossing and occlusion sequences:
+  - completed with repeated deterministic evidence under
+    `reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/`;
+  - Seq03 fails safety promotion with `+1.350 s` wrong-target output;
+  - Seq04 is at the `+0.050 s` evaluator-step tolerance boundary.
+- [ ] Convert the canonical DeepSORT evidence into the final scoped thesis
+  boundary and keep unvalidated appearance-association trackers outside the claim:
+  - canonical DeepSORT plus TIM-MARS increased wrong-target output by `15.203 s`;
+  - this supports excluding appearance-based tracker association from the current
+    safe layering claim;
+  - do not generalise the DeepSORT result to untested StrongSORT, BoT-SORT, or
+    Deep-OC-SORT combinations;
+  - restate `NOVELTY.md` Section 8.3 so architectural modularity is separated from
+    tracker-specific safety validation and calibration.
 
 ### P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)
 

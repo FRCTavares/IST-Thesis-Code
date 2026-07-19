@@ -1,0 +1,11 @@
+stream,event_type,total_s,visible_s,correct_s,wrong_s,lost_s,target_absent_but_output_s,target_not_visible_s,no_target_selected_s,correct_ratio,wrong_ratio,lost_ratio
+raw_target,clean_visible,40.360,40.360,34.543,0.000,5.817,0.000,0.000,0.000,0.856,0.000,0.144
+raw_target,id_switch_fragmentation,7.177,7.177,0.000,0.000,7.177,0.000,0.000,0.000,0.000,0.000,1.000
+raw_target,occlusion_ambiguity,5.872,5.872,2.046,0.100,3.726,0.000,0.000,0.000,0.348,0.017,0.635
+raw_target,reentry,3.413,3.413,0.000,0.000,3.413,0.000,0.000,0.000,0.000,0.000,1.000
+raw_target,target_absent,9.594,0.000,0.000,0.000,0.000,0.000,9.594,0.000,,,
+tim_target_memory,clean_visible,40.360,40.360,37.410,0.000,2.950,0.000,0.000,0.000,0.927,0.000,0.073
+tim_target_memory,id_switch_fragmentation,7.177,7.177,1.300,0.150,5.727,0.000,0.000,0.000,0.181,0.021,0.798
+tim_target_memory,occlusion_ambiguity,5.872,5.872,1.176,0.000,4.696,0.000,0.000,0.000,0.200,0.000,0.800
+tim_target_memory,reentry,3.413,3.413,0.000,0.000,3.413,0.000,0.000,0.000,0.000,0.000,1.000
+tim_target_memory,target_absent,9.594,0.000,0.000,0.000,0.000,0.000,9.594,0.000,,,

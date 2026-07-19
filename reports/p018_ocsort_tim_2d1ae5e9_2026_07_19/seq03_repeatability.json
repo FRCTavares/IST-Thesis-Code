@@ -1,0 +1,19 @@
+{
+  "all_checks_passed": true,
+  "checks": {
+    "both_repository_states_clean": true,
+    "config_hash_matches": true,
+    "evaluation_rows_match": true,
+    "model_hash_matches": true,
+    "repository_commit_matches": true,
+    "semantic_digest_matches": true,
+    "topic_counts_match": true
+  },
+  "errors": [],
+  "r1_evaluation_sha256": "5e89be546a200610bfa2527add390b41b96ce67dbf9383bae91357674222f209",
+  "r1_generated_semantic_sha256": "9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a",
+  "r2_evaluation_sha256": "5e89be546a200610bfa2527add390b41b96ce67dbf9383bae91357674222f209",
+  "r2_generated_semantic_sha256": "9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a",
+  "schema_version": 1,
+  "sequence": "seq03_crossing_ambiguity"
+}

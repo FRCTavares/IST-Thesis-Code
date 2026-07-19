@@ -1,0 +1,212 @@
+{
+  "all_checks_passed": true,
+  "authoritative_evaluator": {
+    "origin": "first image header timestamp",
+    "step_s": 0.05,
+    "timebase": "header",
+    "tool": "tools/analysis/evaluate_tim_target_correctness.py"
+  },
+  "canonical_config_sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+  "conclusion": "The canonical OC-SORT plus TIM-MARS preset substantially improves correct-target duration and reduces LOST duration on both required sequences, but it increases wrong-target output by 1.350 s on Seq03. Seq04 adds 0.050 s, exactly the one-step tolerance boundary. The preset therefore fails safety promotion across the required OC-SORT sequence pair, and the single-preset motion-only modularity claim is rejected.",
+  "errors": [],
+  "event_evaluator": {
+    "aggregate_tolerance_s": 0.004,
+    "all_checks_passed": true,
+    "contract": "common first-image header origin, track-ID validity, and authoritative interval grid",
+    "tool": "tools/analysis/evaluate_tim_by_event_type.py"
+  },
+  "event_evaluator_repository_commit": "4d7a601c33d9bece8cbd834c062d0857b8860638",
+  "evidence_name": "P0.18 OC-SORT crossing and occlusion evidence",
+  "mars_model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+  "runtime": {
+    "appearance_enabled": true,
+    "candidate_image_height": 640,
+    "candidate_image_width": 640,
+    "image_topic": "/camera/dashboard",
+    "tracks_are_normalized": false
+  },
+  "safety_promotion_tolerance_s": 0.05,
+  "schema_version": 1,
+  "selected_track_id": 1,
+  "sequences": {
+    "seq03": {
+      "annotation": "docs/data/annotations/june_hard_sequences/seq03_ocsort_305578f3.csv",
+      "annotation_sha256": "12db619326e47ff138b4267cd19dc1f3296385a06e01f693e9c1e467876bf56a",
+      "delta": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 48.831,
+        "lost_duration_s": -50.181,
+        "wrong_duration_s": 1.35
+      },
+      "evaluation_sha256": "5e89be546a200610bfa2527add390b41b96ce67dbf9383bae91357674222f209",
+      "event_deltas": {
+        "clean_visible": {
+          "correct_s": 35.662,
+          "lost_s": -36.412,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.75
+        },
+        "id_switch_fragmentation": {
+          "correct_s": 0.0,
+          "lost_s": -0.15,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.15
+        },
+        "occlusion_ambiguity": {
+          "correct_s": 13.169,
+          "lost_s": -13.619,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.45
+        }
+      },
+      "event_evaluation_sha256": "285418647356ac1c01756dbdbfbdd4bd340611de635aa462063f0666da6d2031",
+      "generated_semantic_sha256": "9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a",
+      "name": "Crossing ambiguity",
+      "raw": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 32.554,
+        "correct_ratio": 0.34,
+        "lost_duration_s": 63.123,
+        "lost_ratio": 0.659,
+        "wrong_duration_s": 0.05,
+        "wrong_ratio": 0.001
+      },
+      "repeatability": {
+        "all_checks_passed": true,
+        "checks": {
+          "both_repository_states_clean": true,
+          "config_hash_matches": true,
+          "evaluation_rows_match": true,
+          "model_hash_matches": true,
+          "repository_commit_matches": true,
+          "semantic_digest_matches": true,
+          "topic_counts_match": true
+        },
+        "errors": [],
+        "r1_evaluation_sha256": "5e89be546a200610bfa2527add390b41b96ce67dbf9383bae91357674222f209",
+        "r1_generated_semantic_sha256": "9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a",
+        "r2_evaluation_sha256": "5e89be546a200610bfa2527add390b41b96ce67dbf9383bae91357674222f209",
+        "r2_generated_semantic_sha256": "9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a",
+        "schema_version": 1,
+        "sequence": "seq03_crossing_ambiguity"
+      },
+      "runs": {
+        "r1": "seq03_r1",
+        "r2": "seq03_r2"
+      },
+      "safety": {
+        "tolerance_s": 0.05,
+        "unsafe_absence_above_tolerance": false,
+        "unsafe_wrong_above_tolerance": true,
+        "wrong_delta_at_tolerance_boundary": false
+      },
+      "tim": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 81.385,
+        "correct_ratio": 0.85,
+        "lost_duration_s": 12.942,
+        "lost_ratio": 0.135,
+        "wrong_duration_s": 1.4,
+        "wrong_ratio": 0.015
+      }
+    },
+    "seq04": {
+      "annotation": "docs/data/annotations/june_hard_sequences/seq04_ocsort_305578f3.csv",
+      "annotation_sha256": "39cc630be6873c261de22a248ddeab1cbb723988e2513b1cc2ae24a8450fc1a1",
+      "delta": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 3.297,
+        "lost_duration_s": -3.347,
+        "wrong_duration_s": 0.05
+      },
+      "evaluation_sha256": "9430409a43e466aa1baebbb2a68ada7169fdc9dc066a4bfcf5325b3274efd05b",
+      "event_deltas": {
+        "clean_visible": {
+          "correct_s": 2.867,
+          "lost_s": -2.867,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.0
+        },
+        "id_switch_fragmentation": {
+          "correct_s": 1.3,
+          "lost_s": -1.45,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.15
+        },
+        "occlusion_ambiguity": {
+          "correct_s": -0.87,
+          "lost_s": 0.97,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": -0.1
+        },
+        "reentry": {
+          "correct_s": 0.0,
+          "lost_s": 0.0,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.0
+        },
+        "target_absent": {
+          "correct_s": 0.0,
+          "lost_s": 0.0,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.0
+        }
+      },
+      "event_evaluation_sha256": "91d180c95c0ad42ec988b28d243407b9882574e6ad230d2957cf9faf283cba75",
+      "generated_semantic_sha256": "e6b5560be7ee78f7cfaad708ccc455c09f45dd31f5e4b7f79961457deea0cd00",
+      "name": "Occlusion/no-exit",
+      "raw": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 36.589,
+        "correct_ratio": 0.644,
+        "lost_duration_s": 20.133,
+        "lost_ratio": 0.354,
+        "wrong_duration_s": 0.1,
+        "wrong_ratio": 0.002
+      },
+      "repeatability": {
+        "all_checks_passed": true,
+        "checks": {
+          "both_repository_states_clean": true,
+          "config_hash_matches": true,
+          "evaluation_rows_match": true,
+          "model_hash_matches": true,
+          "repository_commit_matches": true,
+          "runtime_matches": true,
+          "semantic_digest_matches": true,
+          "topic_contract_matches": true,
+          "topic_counts_match": true
+        },
+        "errors": [],
+        "r1_evaluation_sha256": "9430409a43e466aa1baebbb2a68ada7169fdc9dc066a4bfcf5325b3274efd05b",
+        "r1_generated_semantic_sha256": "e6b5560be7ee78f7cfaad708ccc455c09f45dd31f5e4b7f79961457deea0cd00",
+        "r2_evaluation_sha256": "9430409a43e466aa1baebbb2a68ada7169fdc9dc066a4bfcf5325b3274efd05b",
+        "r2_generated_semantic_sha256": "e6b5560be7ee78f7cfaad708ccc455c09f45dd31f5e4b7f79961457deea0cd00",
+        "schema_version": 1,
+        "sequence": "seq04_occlusion_no_exit"
+      },
+      "runs": {
+        "r1": "seq04_r1",
+        "r2": "seq04_r2"
+      },
+      "safety": {
+        "tolerance_s": 0.05,
+        "unsafe_absence_above_tolerance": false,
+        "unsafe_wrong_above_tolerance": false,
+        "wrong_delta_at_tolerance_boundary": true
+      },
+      "tim": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 39.886,
+        "correct_ratio": 0.702,
+        "lost_duration_s": 16.786,
+        "lost_ratio": 0.295,
+        "wrong_duration_s": 0.15,
+        "wrong_ratio": 0.003
+      }
+    }
+  },
+  "tim_replay_repository_commit": "2d1ae5e9126daa9d52d2d5430b23186edfdb2833",
+  "tracker": "OC-SORT",
+  "tracker_freeze_repository_commit": "305578f322df539f7d457de1f3cc7ddf27969734"
+}

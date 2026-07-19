@@ -1,0 +1,108 @@
+{
+  "canonical_config": {
+    "copy": "tim_mars_canonical_config.yaml",
+    "sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+    "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+  },
+  "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p018_ocsort_sequences_305578f3_2026_07_19/seq03_ocsort_freeze_r1 bags/replay/p018_ocsort_tim_2d1ae5e9_2026_07_19/seq03_r2 --config ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/dashboard --image-width 640 --image-height 640",
+  "counts": {
+    "images_loaded": 679,
+    "output_topic_counts": {
+      "/camera/dashboard": 679,
+      "/detections": 2336,
+      "/target": 2336,
+      "/target_memory_mars": 2336,
+      "/target_memory_mars/status": 2336,
+      "/timing": 2320,
+      "/timing_target": 2349,
+      "/tracks": 2336
+    },
+    "source_messages_streamed": 12356,
+    "tim_status_messages_written": 2336,
+    "tim_target_messages_written": 2336,
+    "track_messages_processed": 2336
+  },
+  "created_at_utc": "2026-07-19T16:30:24.438375+00:00",
+  "determinism": {
+    "generated_semantic_sha256": "9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a",
+    "raw_cdr_payload_bytes_are_contract": false,
+    "raw_mcap_file_bytes_are_contract": false,
+    "reason": "ROS CDR payloads may contain non-semantic alignment-padding bytes; determinism is defined over declared generated message fields and write order.",
+    "semantic_digest_schema": "tim_mars_replay_generated_fields_v1"
+  },
+  "input_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_ocsort_sequences_305578f3_2026_07_19/seq03_ocsort_freeze_r1",
+  "metadata_artifacts": {
+    "fingerprint_file": "tim_replay_metadata.sha256",
+    "metadata_file": "tim_replay_metadata.json"
+  },
+  "model": {
+    "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+    "size_bytes": 11244410,
+    "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+  },
+  "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_ocsort_tim_2d1ae5e9_2026_07_19/seq03_r2",
+  "processing_contract": {
+    "algorithm_processing_order": [
+      "trustworthy_track_timestamp",
+      "frame_id",
+      "original_bag_timestamp",
+      "original_sequence_index"
+    ],
+    "bag_write_order": [
+      "original_bag_timestamp",
+      "original_source_order",
+      "generated_target_then_status"
+    ],
+    "complete_image_timeline_preloaded": true,
+    "source_copy_mode": "streamed_second_pass"
+  },
+  "repository": {
+    "branch": "main",
+    "commit": "2d1ae5e9126daa9d52d2d5430b23186edfdb2833",
+    "root": "/home/francisco/Desktop/Thesis-Code",
+    "status_short": []
+  },
+  "runtime": {
+    "appearance_enabled": true,
+    "image_height": 640.0,
+    "image_width": 640.0,
+    "selected_track_id": 1,
+    "tracks_are_normalized": false,
+    "zero_id_when_not_visible": true
+  },
+  "schema_version": 1,
+  "source_manifest": [
+    {
+      "name": "metadata.yaml",
+      "sha256": "c9aa006c159371bc2bb650881746a7c535e10eb5c750b6472c9b721b66d994a4",
+      "size_bytes": 4020
+    },
+    {
+      "name": "seq03_ocsort_freeze_r1_0.mcap",
+      "sha256": "bebc0d2151bd582d772b773dbeadef327d0d04e5cf5a4074bfa969ea70078a77",
+      "size_bytes": 631321312
+    },
+    {
+      "name": "tracker_config.yaml",
+      "sha256": "b7967161815ecaacf903c4c8f3b5c09f601423b38ce46cefa9e00b89a36af89c",
+      "size_bytes": 373
+    },
+    {
+      "name": "tracker_freeze_metadata.json",
+      "sha256": "c4b55b997666f1673f598a2082d3b25ce52d597bdeb0cafd2fc532721073a9b5",
+      "size_bytes": 4556
+    },
+    {
+      "name": "tracker_freeze_metadata.sha256",
+      "sha256": "c77d0d842a731719e4cd90c87544111545e1a8a9612d8d40ebaa843df58d051c",
+      "size_bytes": 95
+    }
+  ],
+  "topics": {
+    "image": "/camera/dashboard",
+    "raw_target": "/target",
+    "tim_status": "/target_memory_mars/status",
+    "tim_target": "/target_memory_mars",
+    "tracks": "/tracks"
+  }
+}
