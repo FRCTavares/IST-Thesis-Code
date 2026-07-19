@@ -1382,6 +1382,12 @@ Issue #43 remains open for:
       (SHA-256 `39cc630be6873c261de22a248ddeab1cbb723988e2513b1cc2ae24a8450fc1a1`):
       - the visible `48.882-49.019 s` tracker-dropout interval retains physical
         lineage ID `53` and is classified as `id_switch_fragmentation`;
+    - [x] repair and test event-type evaluation so it reuses the authoritative
+      common image-header origin, track-ID validity, and interval grid:
+      - focused evaluator tests pass;
+      - all tools tests pass;
+      - corrected real-bag event aggregates match the authoritative totals
+        within `0.004 s`;
     - [ ] run repeated TIM-MARS replays and header-time evaluation for Seq03
       and Seq04;
 - [ ] update `NOVELTY.md` Section 8.3 and the thesis-facing modularity claim
