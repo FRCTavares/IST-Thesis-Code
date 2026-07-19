@@ -1284,7 +1284,7 @@ Tracker-configuration prerequisite started on 18 July 2026:
 - [x] remove backend-inert keys from the active tracker YAML files;
 - [x] add a branch-aware regression test for tracker configuration consumption;
 - [x] pass the focused tracker tests and package builds;
-- [ ] create a deterministic tracker-only freezing workflow before generating
+- [x] create a deterministic tracker-only freezing workflow before generating
   new raw-versus-TIM evidence:
   - [x] define original-source-order tracker processing and fixed-ID raw-target
     semantics;
@@ -1318,6 +1318,17 @@ Tracker-configuration prerequisite started on 18 July 2026:
     - [x] create and validate the SORT autonomous-target annotation;
     - [x] visually confirm or recreate the OC-SORT autonomous-target annotation;
     - [x] create and validate the DeepSORT autonomous-target annotation.
+
+- [ ] produce deterministic TIM outputs with a persisted evidence contract:
+  - [x] audit the deterministic TIM runner and select the image-header-time
+    track-ID evaluator as the authoritative P0.18 evaluator;
+  - [x] persist exact source, canonical-configuration, model, repository, and
+    runtime provenance;
+  - [x] persist a generated-message semantic digest over declared TIM target
+    and status fields in target-then-status write order;
+  - [x] add focused evidence-contract tests and pass verification;
+  - [x] run a repeated ByteTrack smoke replay before generating the clean
+    four-tracker matrix.
 
 For ByteTrack, OC-SORT, and DeepSORT:
 

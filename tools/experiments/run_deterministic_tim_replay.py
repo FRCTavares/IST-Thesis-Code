@@ -14,9 +14,14 @@ It is intended for controlled offline evaluation, not live operation.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
+import struct
+import subprocess
+import sys
 from dataclasses import fields
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +53,9 @@ from thesis_bringup.tim_mars.types import TargetMemoryConfig
 
 TIM_TARGET_TOPIC = "/target_memory_mars"
 TIM_STATUS_TOPIC = "/target_memory_mars/status"
+SEMANTIC_DIGEST_SCHEMA = (
+    "tim_mars_replay_generated_fields_v1"
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -96,6 +104,14 @@ def parse_args() -> argparse.Namespace:
         "--overwrite",
         action="store_true",
         help="Remove an existing output bag before writing.",
+    )
+    parser.add_argument(
+        "--skip-source-hash",
+        action="store_true",
+        help=(
+            "Record source file sizes without hashing source "
+            "files. Canonical evidence should not use this."
+        ),
     )
     return parser.parse_args()
 
@@ -662,6 +678,293 @@ def write_streamed_output(
     return source_messages_written
 
 
+def new_generated_semantic_digest():
+    """Create a domain-separated generated-message digest."""
+    digest = hashlib.sha256()
+    digest.update(
+        SEMANTIC_DIGEST_SCHEMA.encode("utf-8")
+    )
+    digest.update(b"\0")
+    return digest
+
+
+def _digest_bytes(
+    digest: Any,
+    value: bytes,
+) -> None:
+    """Append length-prefixed bytes to a digest."""
+    digest.update(
+        len(value).to_bytes(
+            8,
+            "big",
+        )
+    )
+    digest.update(value)
+
+
+def _digest_text(
+    digest: Any,
+    value: str,
+) -> None:
+    """Append one UTF-8 string to a digest."""
+    _digest_bytes(
+        digest,
+        str(value).encode("utf-8"),
+    )
+
+
+def _digest_uint(
+    digest: Any,
+    value: int,
+) -> None:
+    """Append one non-negative integer to a digest."""
+    digest.update(
+        int(value).to_bytes(
+            8,
+            "big",
+            signed=False,
+        )
+    )
+
+
+def _digest_int(
+    digest: Any,
+    value: int,
+) -> None:
+    """Append one signed integer to a digest."""
+    digest.update(
+        int(value).to_bytes(
+            8,
+            "big",
+            signed=True,
+        )
+    )
+
+
+def _digest_float32(
+    digest: Any,
+    value: float,
+) -> None:
+    """Append one canonical IEEE-754 float32 value."""
+    digest.update(
+        struct.pack(
+            ">f",
+            float(value),
+        )
+    )
+
+
+def update_generated_semantic_digest(
+    digest: Any,
+    topic: str,
+    bag_time_ns: int,
+    message: Any,
+) -> None:
+    """Append declared fields for one generated message."""
+    _digest_text(digest, topic)
+    _digest_int(digest, bag_time_ns)
+
+    if topic == TIM_TARGET_TOPIC:
+        header = message.header
+
+        _digest_int(
+            digest,
+            int(header.stamp.sec),
+        )
+        _digest_uint(
+            digest,
+            int(header.stamp.nanosec),
+        )
+        _digest_text(
+            digest,
+            str(header.frame_id),
+        )
+
+        _digest_uint(
+            digest,
+            int(message.frame_id),
+        )
+        _digest_int(
+            digest,
+            int(message.src_stamp_ns),
+        )
+        _digest_int(
+            digest,
+            int(message.t_cam_msg_seen_ns),
+        )
+        _digest_int(
+            digest,
+            int(message.t_target_cb_start_ns),
+        )
+        _digest_int(
+            digest,
+            int(message.t_target_cb_end_ns),
+        )
+        _digest_uint(
+            digest,
+            int(message.id),
+        )
+        _digest_float32(
+            digest,
+            float(message.cx),
+        )
+        _digest_float32(
+            digest,
+            float(message.cy),
+        )
+        _digest_float32(
+            digest,
+            float(message.w),
+        )
+        _digest_float32(
+            digest,
+            float(message.h),
+        )
+        _digest_float32(
+            digest,
+            float(message.score),
+        )
+        _digest_float32(
+            digest,
+            float(message.quality),
+        )
+        return
+
+    if topic == TIM_STATUS_TOPIC:
+        _digest_text(
+            digest,
+            str(message.data),
+        )
+        return
+
+    raise ValueError(
+        "Unsupported TIM semantic-digest topic "
+        f"{topic!r}"
+    )
+
+
+def sha256_file(path: Path) -> str:
+    """Calculate SHA-256 for one file."""
+    digest = hashlib.sha256()
+
+    with path.open("rb") as stream:
+        for chunk in iter(
+            lambda: stream.read(
+                1024 * 1024
+            ),
+            b"",
+        ):
+            digest.update(chunk)
+
+    return digest.hexdigest()
+
+
+def source_manifest(
+    bag_path: Path,
+    hash_files: bool,
+) -> list[dict[str, Any]]:
+    """Describe files that define one source bag."""
+    rows = []
+
+    for path in sorted(
+        item
+        for item in bag_path.iterdir()
+        if item.is_file()
+    ):
+        row = {
+            "name": path.name,
+            "size_bytes": path.stat().st_size,
+        }
+
+        if hash_files:
+            row["sha256"] = sha256_file(path)
+
+        rows.append(row)
+
+    return rows
+
+
+def git_value(
+    repo_root: Path,
+    *arguments: str,
+) -> str:
+    """Read one Git value without making replay fatal."""
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repo_root),
+                *arguments,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (
+        OSError,
+        subprocess.CalledProcessError,
+    ):
+        return ""
+
+    return result.stdout.rstrip("\n")
+
+
+def count_output_topics(
+    bag_path: Path,
+) -> dict[str, int]:
+    """Count messages written on every output topic."""
+    reader = open_reader(bag_path)
+    counts: dict[str, int] = {}
+
+    while reader.has_next():
+        topic, _serialized, _time_ns = (
+            reader.read_next()
+        )
+        counts[topic] = (
+            counts.get(topic, 0) + 1
+        )
+
+    return dict(sorted(counts.items()))
+
+
+def write_replay_metadata(
+    output_bag: Path,
+    summary: dict[str, Any],
+) -> tuple[Path, Path]:
+    """Write metadata and its SHA-256 fingerprint."""
+    metadata_path = (
+        output_bag
+        / "tim_replay_metadata.json"
+    )
+    fingerprint_path = (
+        output_bag
+        / "tim_replay_metadata.sha256"
+    )
+
+    metadata_path.write_text(
+        json.dumps(
+            summary,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    metadata_sha256 = sha256_file(
+        metadata_path
+    )
+
+    fingerprint_path.write_text(
+        f"{metadata_sha256}  "
+        f"{metadata_path.name}\n",
+        encoding="utf-8",
+    )
+
+    return metadata_path, fingerprint_path
+
+
 def main() -> int:
     args = parse_args()
 
@@ -800,6 +1103,9 @@ def main() -> int:
     ] = []
 
     generated_sequence = sequence_index + 1
+    generated_semantic_digest = (
+        new_generated_semantic_digest()
+    )
 
     for (
         _semantic_time_ns,
@@ -823,6 +1129,19 @@ def main() -> int:
             tracks_message=tracks_message,
             result=result,
             canonical=canonical,
+        )
+
+        update_generated_semantic_digest(
+            generated_semantic_digest,
+            TIM_TARGET_TOPIC,
+            bag_time_ns,
+            target_message,
+        )
+        update_generated_semantic_digest(
+            generated_semantic_digest,
+            TIM_STATUS_TOPIC,
+            bag_time_ns,
+            status_message,
         )
 
         generated_messages.append(
@@ -890,34 +1209,183 @@ def main() -> int:
 
     writer.close()
 
+    repo_root = (
+        Path(__file__).resolve().parents[2]
+    )
+    repository_status = git_value(
+        repo_root,
+        "status",
+        "--short",
+    ).splitlines()
+
+    config_copy = (
+        output_bag
+        / "tim_mars_canonical_config.yaml"
+    )
+    shutil.copy2(
+        args.config,
+        config_copy,
+    )
+
+    output_topic_counts = (
+        count_output_topics(output_bag)
+    )
+
     summary = {
+        "schema_version": 1,
+        "created_at_utc": (
+            datetime.now(
+                timezone.utc
+            ).isoformat()
+        ),
+        "repository": {
+            "root": str(repo_root),
+            "branch": git_value(
+                repo_root,
+                "branch",
+                "--show-current",
+            ),
+            "commit": git_value(
+                repo_root,
+                "rev-parse",
+                "HEAD",
+            ),
+            "status_short": repository_status,
+        },
+        "command": " ".join(sys.argv),
         "input_bag": str(input_bag),
         "output_bag": str(output_bag),
-        "image_topic": image_topic,
-        "images_loaded": len(images),
-        "source_messages_streamed": source_messages_written,
-        "track_messages_processed": len(track_events),
-        "tim_target_messages_written": len(track_events),
-        "tim_status_messages_written": len(track_events),
-        "selected_track_id": int(args.selected_track_id),
-        "appearance_enabled": bool(
-            runtime.config.appearance.enabled
+        "source_manifest": source_manifest(
+            input_bag,
+            hash_files=(
+                not args.skip_source_hash
+            ),
         ),
-        "algorithm_processing_order": [
-            "trustworthy_track_timestamp",
-            "frame_id",
-            "original_bag_timestamp",
-            "original_sequence_index",
-        ],
-        "bag_write_order": [
-            "original_bag_timestamp",
-            "original_source_order",
-            "generated_target_then_status",
-        ],
-        "source_copy_mode": "streamed_second_pass",
+        "canonical_config": {
+            "source": str(args.config),
+            "copy": config_copy.name,
+            "sha256": sha256_file(
+                config_copy
+            ),
+        },
+        "model": {
+            "source": str(args.model),
+            "size_bytes": (
+                args.model.stat().st_size
+            ),
+            "sha256": sha256_file(
+                args.model
+            ),
+        },
+        "runtime": {
+            "selected_track_id": int(
+                args.selected_track_id
+            ),
+            "image_width": float(
+                args.image_width
+            ),
+            "image_height": float(
+                args.image_height
+            ),
+            "tracks_are_normalized": bool(
+                args.tracks_are_normalized
+            ),
+            "zero_id_when_not_visible": bool(
+                args.zero_id_when_not_visible
+            ),
+            "appearance_enabled": bool(
+                runtime.config.appearance.enabled
+            ),
+        },
+        "topics": {
+            "image": image_topic,
+            "tracks": args.tracks_topic,
+            "raw_target": (
+                args.raw_target_topic
+            ),
+            "tim_target": TIM_TARGET_TOPIC,
+            "tim_status": TIM_STATUS_TOPIC,
+        },
+        "counts": {
+            "images_loaded": len(images),
+            "source_messages_streamed": (
+                source_messages_written
+            ),
+            "track_messages_processed": (
+                len(track_events)
+            ),
+            "tim_target_messages_written": (
+                len(track_events)
+            ),
+            "tim_status_messages_written": (
+                len(track_events)
+            ),
+            "output_topic_counts": (
+                output_topic_counts
+            ),
+        },
+        "processing_contract": {
+            "algorithm_processing_order": [
+                "trustworthy_track_timestamp",
+                "frame_id",
+                "original_bag_timestamp",
+                "original_sequence_index",
+            ],
+            "bag_write_order": [
+                "original_bag_timestamp",
+                "original_source_order",
+                "generated_target_then_status",
+            ],
+            "source_copy_mode": (
+                "streamed_second_pass"
+            ),
+            "complete_image_timeline_preloaded": (
+                True
+            ),
+        },
+        "determinism": {
+            "semantic_digest_schema": (
+                SEMANTIC_DIGEST_SCHEMA
+            ),
+            "generated_semantic_sha256": (
+                generated_semantic_digest.hexdigest()
+            ),
+            "raw_cdr_payload_bytes_are_contract": (
+                False
+            ),
+            "raw_mcap_file_bytes_are_contract": (
+                False
+            ),
+            "reason": (
+                "ROS CDR payloads may contain "
+                "non-semantic alignment-padding "
+                "bytes; determinism is defined "
+                "over declared generated message "
+                "fields and write order."
+            ),
+        },
+        "metadata_artifacts": {
+            "metadata_file": (
+                "tim_replay_metadata.json"
+            ),
+            "fingerprint_file": (
+                "tim_replay_metadata.sha256"
+            ),
+        },
     }
 
-    print(json.dumps(summary, indent=2, sort_keys=True))
+    write_replay_metadata(
+        output_bag,
+        summary,
+    )
+
+    print(
+        json.dumps(
+            summary,
+            indent=2,
+            sort_keys=True,
+        )
+    )
     return 0
 
 

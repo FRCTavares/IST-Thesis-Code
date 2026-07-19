@@ -3,6 +3,10 @@
 from dataclasses import fields
 from pathlib import Path
 import importlib.util
+import json
+
+from std_msgs.msg import String
+from thesis_msgs.msg import TargetState
 
 from thesis_bringup.tim_mars.types import TargetMemoryConfig
 
@@ -326,3 +330,227 @@ def test_build_memory_config_preserves_id_switch_appearance_threshold():
         config.id_switch_min_appearance_similarity
         == 0.78
     )
+
+def _semantic_digest(records):
+    """Return one digest for generated TIM records."""
+    digest = (
+        MODULE.new_generated_semantic_digest()
+    )
+
+    for topic, bag_time_ns, message in records:
+        MODULE.update_generated_semantic_digest(
+            digest,
+            topic,
+            bag_time_ns,
+            message,
+        )
+
+    return digest.hexdigest()
+
+
+def _target_message(
+    track_id=7,
+    centre_x=0.25,
+):
+    """Build one deterministic generated target."""
+    message = TargetState()
+    message.header.stamp.sec = 3
+    message.header.stamp.nanosec = 4
+    message.header.frame_id = 'camera'
+    message.frame_id = 12
+    message.src_stamp_ns = 100
+    message.t_cam_msg_seen_ns = 101
+    message.t_target_cb_start_ns = 0
+    message.t_target_cb_end_ns = 0
+    message.id = track_id
+    message.cx = centre_x
+    message.cy = 0.50
+    message.w = 0.10
+    message.h = 0.20
+    message.score = 0.80
+    message.quality = 0.70
+    return message
+
+
+def _status_message(state='LOCKED'):
+    """Build one deterministic generated status."""
+    message = String()
+    message.data = json.dumps(
+        {
+            'state': state,
+            'valid': state == 'LOCKED',
+        },
+        sort_keys=True,
+    )
+    return message
+
+
+def test_tim_semantic_digest_matches_equal_messages():
+    """Ignore Python object identity."""
+    first = [
+        (
+            MODULE.TIM_TARGET_TOPIC,
+            500,
+            _target_message(),
+        ),
+        (
+            MODULE.TIM_STATUS_TOPIC,
+            500,
+            _status_message(),
+        ),
+    ]
+    second = [
+        (
+            MODULE.TIM_TARGET_TOPIC,
+            500,
+            _target_message(),
+        ),
+        (
+            MODULE.TIM_STATUS_TOPIC,
+            500,
+            _status_message(),
+        ),
+    ]
+
+    assert _semantic_digest(first) == (
+        _semantic_digest(second)
+    )
+
+
+def test_tim_semantic_digest_detects_field_change():
+    """Detect changes to declared generated fields."""
+    first = [
+        (
+            MODULE.TIM_TARGET_TOPIC,
+            500,
+            _target_message(),
+        ),
+    ]
+    second = [
+        (
+            MODULE.TIM_TARGET_TOPIC,
+            500,
+            _target_message(
+                centre_x=0.30,
+            ),
+        ),
+    ]
+
+    assert _semantic_digest(first) != (
+        _semantic_digest(second)
+    )
+
+
+def test_tim_semantic_digest_includes_write_order():
+    """Treat target-then-status ordering as a contract."""
+    target = _target_message()
+    status = _status_message()
+
+    normal = [
+        (
+            MODULE.TIM_TARGET_TOPIC,
+            500,
+            target,
+        ),
+        (
+            MODULE.TIM_STATUS_TOPIC,
+            500,
+            status,
+        ),
+    ]
+    reversed_order = list(reversed(normal))
+
+    assert _semantic_digest(normal) != (
+        _semantic_digest(reversed_order)
+    )
+
+
+def test_source_manifest_hashes_exact_files(
+    tmp_path,
+):
+    """Record source file size and SHA-256."""
+    source = tmp_path / 'source'
+    source.mkdir()
+    payload = source / 'metadata.yaml'
+    payload.write_bytes(b'canonical-source\n')
+
+    manifest = MODULE.source_manifest(
+        source,
+        hash_files=True,
+    )
+
+    assert manifest == [
+        {
+            'name': 'metadata.yaml',
+            'size_bytes': 17,
+            'sha256': MODULE.sha256_file(
+                payload
+            ),
+        },
+    ]
+
+
+def test_write_replay_metadata_writes_fingerprint(
+    tmp_path,
+):
+    """Persist metadata and a matching fingerprint."""
+    output = tmp_path / 'bag'
+    output.mkdir()
+
+    metadata_path, fingerprint_path = (
+        MODULE.write_replay_metadata(
+            output,
+            {
+                'schema_version': 1,
+                'passed': True,
+            },
+        )
+    )
+
+    assert metadata_path.is_file()
+    assert fingerprint_path.is_file()
+
+    expected = (
+        f'{MODULE.sha256_file(metadata_path)}  '
+        f'{metadata_path.name}\n'
+    )
+
+    assert (
+        fingerprint_path.read_text(
+            encoding='utf-8'
+        )
+        == expected
+    )
+
+
+def test_git_value_preserves_leading_short_status_column(
+    monkeypatch,
+    tmp_path,
+):
+    """Keep both columns of Git short-status output."""
+
+    class Result:
+        stdout = (
+            ' M tracked.py\n'
+            '?? untracked.txt\n'
+        )
+
+    def fake_run(*_args, **_kwargs):
+        return Result()
+
+    monkeypatch.setattr(
+        MODULE.subprocess,
+        'run',
+        fake_run,
+    )
+
+    value = MODULE.git_value(
+        tmp_path,
+        'status',
+        '--short',
+    )
+
+    assert value.splitlines() == [
+        ' M tracked.py',
+        '?? untracked.txt',
+    ]
