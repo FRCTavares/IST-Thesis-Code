@@ -1365,8 +1365,25 @@ Issue #43 remains open for:
       `827/2,336` valid raw-target messages;
     - confirmation `2` replaced transient Seq04 ID `3` with stable ID `1`,
       increasing valid raw-target messages from `2/1,589` to `902/1,589`;
-    - [ ] regenerate fully hashed, repeated clean evidence for both sequences
-      after committing the verified runner change;
+    - [x] regenerate fully hashed, repeated clean evidence for both sequences
+      from implementation commit `305578f3`:
+      - Seq03 repetitions match semantic SHA-256
+        `3d5a55d6b05d831b83f8770aeeead283b0096d7816dc9480d9d3ab48b971ab9a`;
+      - Seq04 repetitions match semantic SHA-256
+        `e6f6d8e438cf879fab8daf69a6b06a7a68570427450b81b62facb2f2aadac096`;
+      - source manifests are fully hashed and repository provenance is clean;
+    - [x] manually annotate and structurally validate canonical Seq03 OC-SORT
+      identity intervals in
+      `docs/data/annotations/june_hard_sequences/seq03_ocsort_305578f3.csv`
+      (SHA-256 `12db619326e47ff138b4267cd19dc1f3296385a06e01f693e9c1e467876bf56a`);
+    - [x] manually annotate and structurally validate canonical Seq04 OC-SORT
+      identity intervals in
+      `docs/data/annotations/june_hard_sequences/seq04_ocsort_305578f3.csv`
+      (SHA-256 `39cc630be6873c261de22a248ddeab1cbb723988e2513b1cc2ae24a8450fc1a1`):
+      - the visible `48.882-49.019 s` tracker-dropout interval retains physical
+        lineage ID `53` and is classified as `id_switch_fragmentation`;
+    - [ ] run repeated TIM-MARS replays and header-time evaluation for Seq03
+      and Seq04;
 - [ ] update `NOVELTY.md` Section 8.3 and the thesis-facing modularity claim
   after this evidence commit exists;
 - [ ] record the rejected single-preset claim and close Issue #43 only after
@@ -1511,6 +1528,21 @@ The command should:
 5. verify configuration fingerprints;
 6. build the final thesis tables;
 7. fail on inconsistent numbers.
+
+### P2.1 Consolidate replay bags and define evidence retention policy
+
+Tracked by
+[GitHub Issue #49](https://github.com/FRCTavares/IST-Thesis-Code/issues/49).
+
+Complete only after the active P0.18+ OC-SORT evidence workflow:
+
+- [ ] inventory and classify replay, reference, review, and annotation-input bags;
+- [ ] define canonical evidence and deterministic-repetition retention rules;
+- [ ] protect all report, annotation, catalogue, and documentation dependencies;
+- [ ] remove only verified obsolete smoke, failed, duplicate, and UI-generated runs;
+- [ ] create stable annotation-input aliases and reduce default UI clutter;
+- [ ] preserve a machine-readable cleanup manifest and report disk usage before
+  and after cleanup.
 
 ## Phase 9 — Thesis writing
 

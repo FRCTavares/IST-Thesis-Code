@@ -1,0 +1,22 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+seq03_ocsort_freeze_r1,0.000,32.754,CORRECT_TARGET,true,1,,clean_visible,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,32.754,39.288,CORRECT_TARGET,true,33,,clean_visible,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,39.288,44.149,CORRECT_TARGET,true,39,,clean_visible,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,44.149,45.687,CORRECT_TARGET,true,39,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,45.687,46.469,CORRECT_TARGET,true,42,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,46.469,47.838,CORRECT_TARGET,true,43,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,47.838,62.012,CORRECT_TARGET,true,43,,clean_visible,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,62.012,65.034,CORRECT_TARGET,true,43,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,65.034,65.265,CORRECT_TARGET,true,43,,clean_visible,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,65.265,69.864,CORRECT_TARGET,true,76,,clean_visible,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,69.864,73.219,CORRECT_TARGET,true,84,,clean_visible,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,73.219,74.002,CORRECT_TARGET,true,84,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,74.002,75.461,CORRECT_TARGET,true,98,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,75.461,76.822,CORRECT_TARGET,true,98,,clean_visible,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,76.822,77.218,CORRECT_TARGET,true,98,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,77.218,80.922,CORRECT_TARGET,true,40,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,80.922,81.830,CORRECT_TARGET,true,126,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,81.830,88.631,CORRECT_TARGET,true,126,,clean_visible,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,88.631,89.197,CORRECT_TARGET,true,150,,id_switch_fragmentation,manual OC-SORT identity; intermittent ID 150 during tracker fragmentation
+seq03_ocsort_freeze_r1,89.197,91.466,CORRECT_TARGET,true,150,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window
+seq03_ocsort_freeze_r1,91.466,95.727,CORRECT_TARGET,true,142,,occlusion_ambiguity,manual OC-SORT identity; trusted Seq03 physical event window

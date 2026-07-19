@@ -1,0 +1,14 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+seq04_ocsort_freeze_r1,0.000,34.693,CORRECT_TARGET,true,1,,clean_visible,manual OC-SORT identity; clean visible
+seq04_ocsort_freeze_r1,34.693,37.539,CORRECT_TARGET,true,1,,occlusion_ambiguity,manual OC-SORT identity; trusted physical occlusion window
+seq04_ocsort_freeze_r1,37.539,40.565,CORRECT_TARGET,true,35,,occlusion_ambiguity,manual OC-SORT identity; trusted physical occlusion window
+seq04_ocsort_freeze_r1,40.565,46.232,CORRECT_TARGET,true,35,,clean_visible,manual OC-SORT identity; visible after occlusion
+seq04_ocsort_freeze_r1,46.232,48.882,CORRECT_TARGET,true,53,,id_switch_fragmentation,manual OC-SORT identity; tracker fragmentation
+seq04_ocsort_freeze_r1,48.882,49.019,CORRECT_TARGET,true,53,,id_switch_fragmentation,manual OC-SORT identity; ID 53 remains the correct lineage until physical absence
+seq04_ocsort_freeze_r1,49.019,53.731,CORRECT_TARGET,false,,,target_absent,trusted physical target-absence window
+seq04_ocsort_freeze_r1,53.731,54.569,CORRECT_TARGET,true,64,,reentry,manual OC-SORT identity; re-entry before and during initial ID 64 assignment
+seq04_ocsort_freeze_r1,54.569,56.002,CORRECT_TARGET,true,66,,id_switch_fragmentation,manual OC-SORT identity; fragmentation begins when ID 66 first appears
+seq04_ocsort_freeze_r1,56.002,58.959,CORRECT_TARGET,true,70,,id_switch_fragmentation,manual OC-SORT identity; post-re-entry fragmentation
+seq04_ocsort_freeze_r1,58.959,62.241,CORRECT_TARGET,false,,,target_absent,trusted physical target-absence window
+seq04_ocsort_freeze_r1,62.241,64.816,CORRECT_TARGET,true,91,,reentry,manual OC-SORT identity; target re-entry
+seq04_ocsort_freeze_r1,64.816,66.416,CORRECT_TARGET,false,,,target_absent,trusted physical absence through final /target header timestamp
