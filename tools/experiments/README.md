@@ -27,9 +27,12 @@ writes one replacement `/tracks` and `/target` message per detection,
 and does not run TIM-MARS during tracker freezing.
 
 The default `largest_first_eligible` mode selects the largest eligible
-track once and keeps that tracker ID fixed. If the selected ID disappears,
-raw `/target` becomes invalid; the runner does not silently select another
-person.
+track once and keeps that tracker ID fixed. By default, one eligible message
+is sufficient, preserving the original evidence contract. The optional
+`--selection-confirmation-messages N` gate requires the same tracker ID to be
+present in `N` consecutive generated track messages before it can be selected.
+If the selected ID later disappears, raw `/target` becomes invalid; the runner
+does not silently select another person.
 
 For DeepSORT, recorded image callbacks are forwarded in original source
 order to reproduce the live node latest-image contract. Image-age

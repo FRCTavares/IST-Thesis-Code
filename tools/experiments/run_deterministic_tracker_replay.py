@@ -95,6 +95,15 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=40.0,
     )
+    parser.add_argument(
+        '--selection-confirmation-messages',
+        type=int,
+        default=1,
+        help=(
+            'Require an eligible tracker ID in this many consecutive '
+            'track messages before autonomous selection.'
+        ),
+    )
     parser.add_argument('--overwrite', action='store_true')
     parser.add_argument(
         '--skip-source-hash',
@@ -439,17 +448,55 @@ def make_tracks_message(
     return message
 
 
+def update_track_presence_streaks(
+    tracks_message: Track2DArray,
+    previous_streaks: dict[int, int],
+    min_height_px: float,
+) -> dict[int, int]:
+    """Update consecutive per-ID eligible-observation streaks."""
+    eligible_ids = {
+        int(track.id)
+        for track in tracks_message.tracks
+        if int(track.id) > 0
+        and float(track.w) > 0.0
+        and float(track.h) >= min_height_px
+    }
+
+    return {
+        track_id: int(previous_streaks.get(track_id, 0)) + 1
+        for track_id in eligible_ids
+    }
+
+
 def select_largest_track_id(
     tracks_message: Track2DArray,
     min_height_px: float,
+    presence_streaks: dict[int, int] | None = None,
+    confirmation_messages: int = 1,
 ) -> int | None:
-    """Select the largest eligible track with deterministic tie-breaking."""
+    """Select the largest eligible, sufficiently persistent track."""
+    if confirmation_messages <= 0:
+        raise ValueError(
+            'selection confirmation messages must be positive'
+        )
+
+    def is_confirmed(track_id: int) -> bool:
+        if confirmation_messages == 1:
+            return True
+
+        return (
+            presence_streaks is not None
+            and int(presence_streaks.get(track_id, 0))
+            >= confirmation_messages
+        )
+
     eligible = [
         track
         for track in tracks_message.tracks
         if int(track.id) > 0
         and float(track.w) > 0.0
         and float(track.h) >= min_height_px
+        and is_confirmed(int(track.id))
     ]
 
     if not eligible:
@@ -873,6 +920,11 @@ def main() -> int:
             'fixed_id selection requires --selected-track-id > 0'
         )
 
+    if args.selection_confirmation_messages <= 0:
+        raise RuntimeError(
+            '--selection-confirmation-messages must be positive'
+        )
+
     reader = open_reader(input_bag)
     metadata_by_topic = topic_metadata_map(reader)
 
@@ -898,6 +950,7 @@ def main() -> int:
         else None
     )
     selection_record = None
+    selection_presence_streaks: dict[int, int] = {}
     latest_image = None
     latest_image_sequence = 0
     latest_image_time_ns = 0
@@ -973,9 +1026,20 @@ def main() -> int:
             args.selection_mode == 'largest_first_eligible'
             and selected_track_id is None
         ):
+            selection_presence_streaks = (
+                update_track_presence_streaks(
+                    tracks_message,
+                    selection_presence_streaks,
+                    args.min_selection_height_px,
+                )
+            )
             selected_track_id = select_largest_track_id(
                 tracks_message,
                 args.min_selection_height_px,
+                presence_streaks=selection_presence_streaks,
+                confirmation_messages=(
+                    args.selection_confirmation_messages
+                ),
             )
 
             if selected_track_id is not None:
@@ -989,6 +1053,11 @@ def main() -> int:
                         latest_image_sequence
                         if latest_image is not None
                         else None
+                    ),
+                    'confirmation_messages_observed': int(
+                        selection_presence_streaks[
+                            selected_track_id
+                        ]
                     ),
                 }
 
@@ -1173,6 +1242,9 @@ def main() -> int:
             'requested_track_id': args.selected_track_id,
             'effective_track_id': selected_track_id,
             'minimum_height_px': args.min_selection_height_px,
+            'required_confirmation_messages': (
+                args.selection_confirmation_messages
+            ),
             'initialization': selection_record,
             'fixed_after_initialization': True,
             'reselection_enabled': False,

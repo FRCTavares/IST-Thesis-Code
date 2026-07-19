@@ -65,6 +65,95 @@ def test_select_largest_track_rejects_short_tracks():
     assert MODULE.select_largest_track_id(message, 40.0) is None
 
 
+def test_presence_streaks_reset_missing_tracker_ids():
+    """Count only consecutive appearances of each tracker ID."""
+    first = Track2DArray()
+    first.tracks = [
+        make_track(1, 30.0, 60.0, 0.8),
+        make_track(3, 40.0, 60.0, 0.7),
+    ]
+
+    streaks = MODULE.update_track_presence_streaks(
+        first,
+        {},
+        40.0,
+    )
+
+    assert streaks == {1: 1, 3: 1}
+
+    second = Track2DArray()
+    second.tracks = [
+        make_track(1, 30.0, 60.0, 0.8),
+    ]
+
+    streaks = MODULE.update_track_presence_streaks(
+        second,
+        streaks,
+        40.0,
+    )
+
+    assert streaks == {1: 2}
+
+
+def test_presence_streaks_require_consecutive_eligible_observations():
+    """Reset an ID when its current observation fails eligibility."""
+    first = Track2DArray()
+    first.tracks = [
+        make_track(1, 30.0, 60.0, 0.8),
+    ]
+
+    streaks = MODULE.update_track_presence_streaks(
+        first,
+        {},
+        40.0,
+    )
+
+    second = Track2DArray()
+    second.tracks = [
+        make_track(1, 30.0, 39.9, 0.8),
+    ]
+
+    streaks = MODULE.update_track_presence_streaks(
+        second,
+        streaks,
+        40.0,
+    )
+
+    assert streaks == {}
+
+
+def test_selection_waits_for_required_consecutive_presence():
+    """Reject a larger transient ID until it satisfies confirmation."""
+    message = Track2DArray()
+    message.tracks = [
+        make_track(3, 60.0, 100.0, 0.5),
+        make_track(1, 44.0, 120.0, 0.9),
+    ]
+
+    selected = MODULE.select_largest_track_id(
+        message,
+        40.0,
+        presence_streaks={1: 2, 3: 1},
+        confirmation_messages=2,
+    )
+
+    assert selected == 1
+
+
+def test_selection_confirmation_one_preserves_previous_behavior():
+    """Keep one-message confirmation as the compatibility default."""
+    message = Track2DArray()
+    message.tracks = [
+        make_track(3, 60.0, 100.0, 0.5),
+        make_track(1, 44.0, 120.0, 0.9),
+    ]
+
+    assert MODULE.select_largest_track_id(
+        message,
+        40.0,
+    ) == 3
+
+
 def test_fixed_target_is_invalid_when_selected_id_is_absent():
     """Keep raw selection fixed rather than selecting a replacement."""
     message = Track2DArray()

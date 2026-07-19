@@ -1354,7 +1354,19 @@ For ByteTrack, SORT, OC-SORT, and DeepSORT:
 
 Issue #43 remains open for:
 
-- [ ] run OC-SORT + TIM on the required crossing and occlusion sequences;
+- [ ] run OC-SORT + TIM on the required crossing and occlusion sequences:
+  - [x] freeze Seq03 twice with matching semantic output and stable autonomous
+    selection of OC-SORT ID `1`;
+  - [x] diagnose Seq04 one-message initialization selecting transient OC-SORT
+    ID `3`, which produced only `2/1,589` valid raw-target messages;
+  - [x] harden and verify autonomous initialization with a configurable
+    consecutive-eligible-observation confirmation gate:
+    - confirmation `2` preserved stable OC-SORT ID `1` on Seq03 with
+      `827/2,336` valid raw-target messages;
+    - confirmation `2` replaced transient Seq04 ID `3` with stable ID `1`,
+      increasing valid raw-target messages from `2/1,589` to `902/1,589`;
+    - [ ] regenerate fully hashed, repeated clean evidence for both sequences
+      after committing the verified runner change;
 - [ ] update `NOVELTY.md` Section 8.3 and the thesis-facing modularity claim
   after this evidence commit exists;
 - [ ] record the rejected single-preset claim and close Issue #43 only after
