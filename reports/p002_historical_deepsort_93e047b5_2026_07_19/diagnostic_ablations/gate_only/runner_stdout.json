@@ -1,0 +1,107 @@
+{
+  "canonical_config": {
+    "copy": "tim_mars_canonical_config.yaml",
+    "sha256": "778fb90428a2c617393390c3d8de1b93eaa110450b879115f57a82c5d9496813",
+    "source": "/tmp/p002_gate_only.yaml"
+  },
+  "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/paper_final_deepsort_may_2026_07_03/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1 bags/replay/p002_ablation_gate_only_uncommitted_2026_07_19 --config /tmp/p002_gate_only.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 640",
+  "counts": {
+    "images_loaded": 462,
+    "output_topic_counts": {
+      "/camera/image_raw": 462,
+      "/detections": 950,
+      "/target": 507,
+      "/target_memory_mars": 507,
+      "/target_memory_mars/status": 507,
+      "/timing_target": 506,
+      "/tracks": 507
+    },
+    "raw_target_messages_written": 507,
+    "raw_target_valid_messages_written": 268,
+    "source_messages_streamed": 2425,
+    "tim_status_messages_written": 507,
+    "tim_target_messages_written": 507,
+    "track_messages_processed": 507
+  },
+  "created_at_utc": "2026-07-19T21:25:43.781832+00:00",
+  "determinism": {
+    "generated_semantic_sha256": "f3f51b772c2ec18e4a06df5b84cbe90a28ee32ec9d14e4866895198f61feb18d",
+    "raw_cdr_payload_bytes_are_contract": false,
+    "raw_mcap_file_bytes_are_contract": false,
+    "reason": "ROS CDR payloads may contain non-semantic alignment-padding bytes; determinism is defined over declared generated message fields and write order.",
+    "semantic_digest_schema": "tim_mars_replay_generated_fields_v2"
+  },
+  "input_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/paper_final_deepsort_may_2026_07_03/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1",
+  "metadata_artifacts": {
+    "fingerprint_file": "tim_replay_metadata.sha256",
+    "metadata_file": "tim_replay_metadata.json"
+  },
+  "model": {
+    "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+    "size_bytes": 11244410,
+    "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+  },
+  "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p002_ablation_gate_only_uncommitted_2026_07_19",
+  "processing_contract": {
+    "algorithm_processing_order": [
+      "trustworthy_track_timestamp",
+      "frame_id",
+      "original_bag_timestamp",
+      "original_sequence_index"
+    ],
+    "bag_write_order": [
+      "original_bag_timestamp",
+      "original_source_order",
+      "generated_raw_target_then_tim_target_then_status"
+    ],
+    "complete_image_timeline_preloaded": true,
+    "source_copy_mode": "streamed_second_pass"
+  },
+  "raw_target_generation": {
+    "fixed_after_initialization": true,
+    "mode": "selected_id",
+    "reselection_enabled": false,
+    "selected_track_id": 1,
+    "source_topic_replaced": true
+  },
+  "repository": {
+    "branch": "main",
+    "commit": "b948612d8bea3c867c1a85e1b4fa6298467bfe40",
+    "root": "/home/francisco/Desktop/Thesis-Code",
+    "status_short": [
+      " M TODO_LIST.md",
+      " M tools/experiments/run_deterministic_tim_replay.py",
+      " M tools/tests/test_run_deterministic_tim_replay.py"
+    ]
+  },
+  "runtime": {
+    "appearance_enabled": true,
+    "image_height": 640.0,
+    "image_width": 640.0,
+    "raw_target_mode": "selected_id",
+    "selected_track_id": 1,
+    "tracks_are_normalized": false,
+    "zero_id_when_not_visible": true
+  },
+  "schema_version": 2,
+  "source_manifest": [
+    {
+      "name": "2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1_0.mcap",
+      "sha256": "fd4b0d0619c9c51de4e63803f6e92e9ed919b4968d459bf23393158572249201",
+      "size_bytes": 570016569
+    },
+    {
+      "name": "metadata.yaml",
+      "sha256": "0faf17111fb85a91fb9d700e6086fc8ac90de8b9d7e9545301602970e83e5b0f",
+      "size_bytes": 5221
+    }
+  ],
+  "topics": {
+    "image": "/camera/image_raw",
+    "raw_target": "/target",
+    "raw_target_source": "generated_fixed_selected_id",
+    "tim_status": "/target_memory_mars/status",
+    "tim_target": "/target_memory_mars",
+    "tracks": "/tracks"
+  }
+}

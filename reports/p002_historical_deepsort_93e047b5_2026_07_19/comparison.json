@@ -1,0 +1,64 @@
+{
+  "annotation": {
+    "path": "docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv",
+    "sha256": "f0ba198211952e538167fc9dd6b62d065dc570dcbb6964d6cf6fbeb8c0c2affc"
+  },
+  "commit": "93e047b55294a8280dc619b42787e6dfa23ad247",
+  "current_canonical": {
+    "bag": "bags/replay/p002_historical_deepsort_current_93e047b5_2026_07_19",
+    "config": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+    "config_sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+    "raw": {
+      "correct_ratio": 0.496,
+      "correct_s": 33.58,
+      "lost_ratio": 0.474,
+      "lost_s": 32.12,
+      "wrong_ratio": 0.03,
+      "wrong_s": 2.0
+    },
+    "tim": {
+      "correct_ratio": 0.897,
+      "correct_s": 60.76,
+      "lost_ratio": 0.103,
+      "lost_s": 6.94,
+      "wrong_ratio": 0.0,
+      "wrong_s": 0.0
+    }
+  },
+  "delta_current_minus_july12": {
+    "correct_ratio": 0.42100000000000004,
+    "correct_s": 28.54,
+    "lost_ratio": 0.049999999999999996,
+    "lost_s": 3.3300000000000005,
+    "wrong_ratio": -0.471,
+    "wrong_s": -31.87
+  },
+  "model": {
+    "path": "models/reid/mars-small128.pb",
+    "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1"
+  },
+  "preserved_july12": {
+    "bag": "bags/replay/p002_historical_deepsort_july12_93e047b5_2026_07_19",
+    "config": "reports/memory_tim_safety_eval/canonical_deepsort_may_selected_id_1/tim_mars_canonical_config.yaml",
+    "config_sha256": "5871bc351a78c252a22cfa7ee81f951658b031c35626150979c5ef844f97e4d1",
+    "raw": {
+      "correct_ratio": 0.496,
+      "correct_s": 33.58,
+      "lost_ratio": 0.474,
+      "lost_s": 32.12,
+      "wrong_ratio": 0.03,
+      "wrong_s": 2.0
+    },
+    "tim": {
+      "correct_ratio": 0.476,
+      "correct_s": 32.22,
+      "lost_ratio": 0.053,
+      "lost_s": 3.61,
+      "wrong_ratio": 0.471,
+      "wrong_s": 31.87
+    }
+  },
+  "schema_version": 1,
+  "source_bag": "bags/replay/paper_final_deepsort_may_2026_07_03/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1",
+  "working_tree_clean_before_run": true
+}

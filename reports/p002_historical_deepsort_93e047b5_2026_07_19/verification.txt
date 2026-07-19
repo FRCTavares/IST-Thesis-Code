@@ -1,0 +1,46 @@
+P0.2 verification record
+========================
+
+Implementation commit:
+93e047b55294a8280dc619b42787e6dfa23ad247
+
+Focused and broader verification completed before clean evidence rerun:
+
+- Functional thesis_bringup tests, excluding the two lint collectors tracked
+  by GitHub Issue #48:
+  145 passed, 1 skipped, 3 expected xfails.
+- Deterministic replay and evaluator tooling:
+  26 passed.
+- Python compilation:
+  passed.
+- git diff --check:
+  passed.
+- Root-level log/:
+  absent.
+- Root-level hailort.log:
+  absent.
+- `thesis_bringup` package build using
+  `tools/thesis_build.sh --packages-select thesis_bringup`:
+  passed; 1 package finished in 2.45 seconds.
+- Both clean deterministic replay runners:
+  exit status 0.
+- Both correctness evaluators:
+  exit status 0.
+- Both event-type evaluators:
+  exit status 0.
+- Package source-to-copy byte comparisons:
+  passed.
+- Both tim_replay_metadata.sha256 checks:
+  passed.
+
+Lint limitation:
+
+Package-wide Flake8 and PEP257 were not claimed. GitHub Issue #48 records the
+current lint-test traversal and multiprocessing failures involving thesis_env.
+The functional suite excluded only test_flake8.py and test_pep257.py.
+
+Primary results:
+
+- Preserved July 12 TIM: correct 0.476, wrong 0.471, lost 0.053.
+- Current canonical TIM: correct 0.897, wrong 0.000, lost 0.103.
+- Fixed-ID raw baseline: correct 0.496, wrong 0.030, lost 0.474.

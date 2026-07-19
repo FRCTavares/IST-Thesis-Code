@@ -1,0 +1,87 @@
+{
+  "conclusion": {
+    "decisive_control": "id_switch_min_appearance_similarity=0.78",
+    "failure_path": "Rank-aware recovery accepted DeepSORT ID 2 after original ID 1 disappeared. Strong geometry and similarity around 0.72-0.74 were accepted by the July 12 policy. The current ID-switch gate rejects that candidate and remains LOST until DeepSORT ID 69 provides sufficient evidence.",
+    "gate_only_eliminated_sampled_wrong_duration": true,
+    "protected_memory_only_was_sufficient": false
+  },
+  "diagnostic_ablations": {
+    "gate_only": {
+      "correct_ratio": 0.911,
+      "correct_s": 61.67,
+      "lost_ratio": 0.089,
+      "lost_s": 6.03,
+      "wrong_ratio": 0.0,
+      "wrong_s": 0.0
+    },
+    "protected_memory_only": {
+      "correct_ratio": 0.481,
+      "correct_s": 32.57,
+      "lost_ratio": 0.179,
+      "lost_s": 12.15,
+      "wrong_ratio": 0.339,
+      "wrong_s": 22.98
+    },
+    "provenance_limitation": "These ablations were generated on dirty commit b948612d with temporary configuration files. They are preserved for causal attribution, not as the primary clean reproducibility result."
+  },
+  "implementation_commit": "93e047b55294a8280dc619b42787e6dfa23ad247",
+  "issue": 1,
+  "primary_clean_evidence": {
+    "current_canonical": {
+      "bag": "bags/replay/p002_historical_deepsort_current_93e047b5_2026_07_19",
+      "config": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+      "config_sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+      "raw": {
+        "correct_ratio": 0.496,
+        "correct_s": 33.58,
+        "lost_ratio": 0.474,
+        "lost_s": 32.12,
+        "wrong_ratio": 0.03,
+        "wrong_s": 2.0
+      },
+      "tim": {
+        "correct_ratio": 0.897,
+        "correct_s": 60.76,
+        "lost_ratio": 0.103,
+        "lost_s": 6.94,
+        "wrong_ratio": 0.0,
+        "wrong_s": 0.0
+      }
+    },
+    "delta_current_minus_july12": {
+      "correct_ratio": 0.42100000000000004,
+      "correct_s": 28.54,
+      "lost_ratio": 0.049999999999999996,
+      "lost_s": 3.3300000000000005,
+      "wrong_ratio": -0.471,
+      "wrong_s": -31.87
+    },
+    "preserved_july12": {
+      "bag": "bags/replay/p002_historical_deepsort_july12_93e047b5_2026_07_19",
+      "config": "reports/memory_tim_safety_eval/canonical_deepsort_may_selected_id_1/tim_mars_canonical_config.yaml",
+      "config_sha256": "5871bc351a78c252a22cfa7ee81f951658b031c35626150979c5ef844f97e4d1",
+      "raw": {
+        "correct_ratio": 0.496,
+        "correct_s": 33.58,
+        "lost_ratio": 0.474,
+        "lost_s": 32.12,
+        "wrong_ratio": 0.03,
+        "wrong_s": 2.0
+      },
+      "tim": {
+        "correct_ratio": 0.476,
+        "correct_s": 32.22,
+        "lost_ratio": 0.053,
+        "lost_s": 3.61,
+        "wrong_ratio": 0.471,
+        "wrong_s": 31.87
+      }
+    }
+  },
+  "schema_version": 1,
+  "visual_boundary_limitation": {
+    "annotation_boundary_delta_ms": 4.273578000002942,
+    "interpretation": "Current TIM selected physical-target ID 69 about 4.27 ms before the structured annotation changed from ID 1 to ID 69. The 50 ms evaluator therefore records no wrong duration, but message-level inspection preserves the boundary discrepancy.",
+    "tracker_frame_id": 617
+  }
+}

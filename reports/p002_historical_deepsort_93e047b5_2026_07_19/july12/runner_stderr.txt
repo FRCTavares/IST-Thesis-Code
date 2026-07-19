@@ -1,0 +1,7 @@
+/home/francisco/Desktop/Thesis-Code/thesis_env/lib/python3.12/site-packages/matplotlib/projections/__init__.py:63: UserWarning: Unable to import Axes3D. This may be due to multiple versions of Matplotlib being installed (e.g. as a system package and as a pip package). As a result, the 3D projection is not available.
+  warnings.warn("Unable to import Axes3D. This may be due to multiple versions of "
+WARNING:tensorflow:From /home/francisco/Desktop/Thesis-Code/thesis_env/lib/python3.12/site-packages/tensorflow/python/compat/v2_compat.py:98: disable_resource_variables (from tensorflow.python.ops.resource_variables_toggle) is deprecated and will be removed in a future version.
+Instructions for updating:
+non-resource variables are not supported in the long term
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1784497780.145758  368848 mlir_graph_optimization_pass.cc:437] MLIR V1 optimization pass is not enabled

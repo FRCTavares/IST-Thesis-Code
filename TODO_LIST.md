@@ -15,17 +15,11 @@ evidence are maintained in the linked GitHub Issues.
 6. Completed or rejected issues are removed from this file.
 7. Historical roadmap material is archived under `docs/roadmap/archive/`.
 
-Active executable issues: **44**.
+Active executable issues: **43**.
 
 ## P0 — Critical evidence, safety, thesis-claim, or flight-blocking work
 
-1. [ ] [#1 — P0.2 Reproduce the historical unsafe DeepSORT result](https://github.com/FRCTavares/IST-Thesis-Code/issues/1)
-   - phase 1; experiment.
-   - current work: historical unsafe result reproduced and isolated to
-     the missing ID-switch appearance gate; clean committed evidence rerun
-     and preservation remain pending.
-
-2. [ ] [#2 — P0.3 Freeze the canonical evidence set](https://github.com/FRCTavares/IST-Thesis-Code/issues/2)
+1. [ ] [#2 — P0.3 Freeze the canonical evidence set](https://github.com/FRCTavares/IST-Thesis-Code/issues/2)
    - phase 1; experiment.
 
 3. [ ] [#3 — P0.4 Freeze one canonical preset — CONFIGURATION DONE; CLEAN RESULT FREEZE PENDING](https://github.com/FRCTavares/IST-Thesis-Code/issues/3)

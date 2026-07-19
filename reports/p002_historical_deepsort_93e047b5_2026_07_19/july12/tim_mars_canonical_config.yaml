@@ -1,0 +1,75 @@
+# Canonical TIM-MARS thesis configuration.
+#
+# This file defines the algorithmic configuration that should be shared by
+# live execution and controlled replay experiments.
+#
+# Runtime-specific values such as topics, selected target ID, image dimensions,
+# and the local MARS model path remain launcher arguments.
+
+target_memory_mars_node:
+  ros__parameters:
+    # Selected-target decision thresholds
+    accept_score_locked: 0.52
+    accept_score_lost: 0.60
+    ambiguity_margin: 0.07
+    max_uncertain_frames: 6
+    max_lost_frames: 30
+    min_candidate_score: 0.10
+
+    # Tracker-ID recovery
+    allow_id_switch_recovery: true
+    id_switch_spatial_gate_enabled: false
+    id_switch_min_iou: 0.05
+    id_switch_min_distance: 0.35
+    id_switch_min_scale: 0.35
+
+    # MARS appearance evidence
+    appearance_enabled: true
+    appearance_max_image_age_ms: 250.0
+    appearance_compute_min_interval_ms: 250.0
+    appearance_cache_ttl_ms: 750.0
+    appearance_weight: 0.12
+    appearance_min_similarity: 0.35
+    appearance_update_alpha: 0.10
+    appearance_ambiguous_only: true
+    appearance_update_cooldown_after_reacquire_frames: 0
+    mars_batch_size: 32
+
+    # Hard-negative distractor memory
+    hard_negative_memory_enabled: true
+    hard_negative_max_entries: 8
+    hard_negative_update_alpha: 0.20
+    hard_negative_min_candidate_similarity: 0.70
+    hard_negative_reject_similarity: 0.80
+    hard_negative_reject_margin: 0.03
+    hard_negative_min_geometry: 0.20
+
+    # Conservative appearance validation
+    appearance_conservative_enabled: true
+    appearance_conservative_require_appearance: false
+    appearance_conservative_min_similarity: 0.65
+    appearance_conservative_margin: 0.05
+
+    # Rank-aware reacquisition
+    rank_aware_reacquisition_enabled: true
+    rank_aware_lost_min_total: 0.40
+    rank_aware_lost_min_geom: 0.10
+    rank_aware_lost_min_app: 0.05
+    rank_aware_lost_app_margin: 0.03
+    rank_aware_confirm_frames: 1
+    rank_aware_missing_ttl_frames: 8
+
+    # Experimental recovery policies disabled in the canonical algorithm
+    candidate_belief_enabled: false
+    candidate_belief_min_score: 0.45
+    candidate_belief_confirm_frames: 2
+
+    absence_recovery_enabled: false
+    absence_after_missed_frames: 6
+    absence_new_id_requires_appearance: true
+    absence_min_total: 0.45
+    absence_min_distance: 0.25
+    absence_min_scale: 0.35
+    absence_min_similarity: 0.65
+    absence_appearance_margin: 0.20
+    absence_confirm_frames: 3

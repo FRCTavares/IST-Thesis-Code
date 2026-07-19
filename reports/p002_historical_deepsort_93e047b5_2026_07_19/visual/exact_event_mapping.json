@@ -1,0 +1,838 @@
+{
+  "annotation": {
+    "path": "docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv",
+    "sha256": "f0ba198211952e538167fc9dd6b62d065dc570dcbb6964d6cf6fbeb8c0c2affc"
+  },
+  "annotation_contract": "Annotation intervals are loaded by evaluate_tim_target_correctness.load_annotations.",
+  "binding_contract": "Tracks, raw target, TIM target and status are bound directly by tracker frame_id. The image is only a nearest-header-time background and its time delta is recorded.",
+  "commit": "93e047b55294a8280dc619b42787e6dfa23ad247",
+  "contact_sheet": "reports/p002_historical_deepsort_visual_93e047b5_2026_07_19/exact_tracker_frame_handover_contact_sheet.png",
+  "frames": [
+    {
+      "annotation_boundary_delta_ms": null,
+      "annotation_interval": {
+        "end_s": 36.27,
+        "event_type": "occlusion_ambiguity",
+        "expected_id": 1,
+        "start_s": 33.93,
+        "target_visible": true
+      },
+      "background_image_delta_ms": 0.0,
+      "background_image_time_s": 34.598051942,
+      "background_is_stale": false,
+      "current_canonical": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "ok",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.0,
+            "appearance_gate_passed": false,
+            "appearance_raw": 0.6993067860603333,
+            "appearance_used": false,
+            "confidence": 0.8321428894996643,
+            "distance": 0.9938459129799966,
+            "geometry_allows_appearance": true,
+            "id_bonus": 0.0,
+            "iou": 0.3245381045834889,
+            "scale": 0.993896766138421,
+            "total": 0.6641443153680542,
+            "track_id": 2
+          },
+          "control_mode": "YAW_ONLY",
+          "frame_id": 583,
+          "geometry_strength": 0.993896766138421,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.0,
+              "appearance_gate_passed": false,
+              "appearance_raw": 0.6993067860603333,
+              "appearance_used": false,
+              "confidence": 0.8321428894996643,
+              "distance": 0.9938459129799966,
+              "geometry_allows_appearance": true,
+              "id_bonus": 0.0,
+              "iou": 0.3245381045834889,
+              "scale": 0.993896766138421,
+              "total": 0.6641443153680542,
+              "track_id": 2
+            }
+          ],
+          "quality": 0.7457749034366562,
+          "reacquired": false,
+          "reason": "short_gap_new_id_suppressed: id=2 gap=0 score=0.664",
+          "state": "UNCERTAIN",
+          "target_track_id": 1,
+          "visible": false
+        },
+        "tim_target": null
+      },
+      "image": "reports/p002_historical_deepsort_visual_93e047b5_2026_07_19/tracker_frame_583_exact_comparison.png",
+      "preserved_july12": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "ok",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.0,
+            "appearance_gate_passed": false,
+            "appearance_raw": 0.7595772743225098,
+            "appearance_used": false,
+            "confidence": 0.8321428894996643,
+            "distance": 0.9938459129799966,
+            "geometry_allows_appearance": true,
+            "id_bonus": 0.0,
+            "iou": 0.3245381045834889,
+            "scale": 0.993896766138421,
+            "total": 0.6641443153680542,
+            "track_id": 2
+          },
+          "control_mode": "YAW_ONLY",
+          "frame_id": 583,
+          "geometry_strength": 0.993896766138421,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.0,
+              "appearance_gate_passed": false,
+              "appearance_raw": 0.7595772743225098,
+              "appearance_used": false,
+              "confidence": 0.8321428894996643,
+              "distance": 0.9938459129799966,
+              "geometry_allows_appearance": true,
+              "id_bonus": 0.0,
+              "iou": 0.3245381045834889,
+              "scale": 0.993896766138421,
+              "total": 0.6641443153680542,
+              "track_id": 2
+            }
+          ],
+          "quality": 0.7457749034366562,
+          "reacquired": false,
+          "reason": "short_gap_new_id_suppressed: id=2 gap=0 score=0.664",
+          "state": "UNCERTAIN",
+          "target_track_id": 1,
+          "visible": false
+        },
+        "tim_target": null
+      },
+      "track_ids": [
+        2,
+        67
+      ],
+      "track_time_s": 34.598051942,
+      "tracker_frame_id": 583
+    },
+    {
+      "annotation_boundary_delta_ms": null,
+      "annotation_interval": {
+        "end_s": 36.27,
+        "event_type": "occlusion_ambiguity",
+        "expected_id": 1,
+        "start_s": 33.93,
+        "target_visible": true
+      },
+      "background_image_delta_ms": -197.950925,
+      "background_image_time_s": 35.068059516,
+      "background_is_stale": false,
+      "current_canonical": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "cached_same_image",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.7171905636787415,
+            "appearance_gate_passed": true,
+            "appearance_raw": 0.7171905636787415,
+            "appearance_used": true,
+            "confidence": 0.8524390459060669,
+            "distance": 0.9993741772314211,
+            "geometry_allows_appearance": true,
+            "id_bonus": 0.0,
+            "iou": 0.6960092242170177,
+            "scale": 0.9994595282914402,
+            "total": 0.8817874714747131,
+            "track_id": 2
+          },
+          "control_mode": "HOVER",
+          "frame_id": 595,
+          "geometry_strength": 0.9994595282914402,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.7171905636787415,
+              "appearance_gate_passed": true,
+              "appearance_raw": 0.7171905636787415,
+              "appearance_used": true,
+              "confidence": 0.8524390459060669,
+              "distance": 0.9993741772314211,
+              "geometry_allows_appearance": true,
+              "id_bonus": 0.0,
+              "iou": 0.6960092242170177,
+              "scale": 0.9994595282914402,
+              "total": 0.8817874714747131,
+              "track_id": 2
+            }
+          ],
+          "quality": 0.2390783470569536,
+          "reacquired": false,
+          "reason": "rank_aware_id_switch_recovery_reject:appearance 0.717<0.780",
+          "state": "LOST",
+          "target_track_id": 1,
+          "visible": false
+        },
+        "tim_target": null
+      },
+      "image": "reports/p002_historical_deepsort_visual_93e047b5_2026_07_19/tracker_frame_595_exact_comparison.png",
+      "preserved_july12": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "cached_same_image",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.7428591251373291,
+            "appearance_gate_passed": true,
+            "appearance_raw": 0.7428591251373291,
+            "appearance_used": true,
+            "confidence": 0.8524390459060669,
+            "distance": 0.9993741772314211,
+            "geometry_allows_appearance": true,
+            "id_bonus": 0.0,
+            "iou": 0.6960092242170177,
+            "scale": 0.9994595282914402,
+            "total": 0.8848676988497437,
+            "track_id": 2
+          },
+          "control_mode": "CONFIRM",
+          "frame_id": 595,
+          "geometry_strength": 0.9994595282914402,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.7428591251373291,
+              "appearance_gate_passed": true,
+              "appearance_raw": 0.7428591251373291,
+              "appearance_used": true,
+              "confidence": 0.8524390459060669,
+              "distance": 0.9993741772314211,
+              "geometry_allows_appearance": true,
+              "id_bonus": 0.0,
+              "iou": 0.6960092242170177,
+              "scale": 0.9994595282914402,
+              "total": 0.8848676988497437,
+              "track_id": 2
+            }
+          ],
+          "quality": 0.8735176703194567,
+          "reacquired": true,
+          "reason": "reacquired_candidate",
+          "state": "REACQUIRED",
+          "target_track_id": 2,
+          "visible": false
+        },
+        "tim_target": null
+      },
+      "track_ids": [
+        2,
+        57,
+        67
+      ],
+      "track_time_s": 35.266010441,
+      "tracker_frame_id": 595
+    },
+    {
+      "annotation_boundary_delta_ms": null,
+      "annotation_interval": {
+        "end_s": 36.27,
+        "event_type": "occlusion_ambiguity",
+        "expected_id": 1,
+        "start_s": 33.93,
+        "target_visible": true
+      },
+      "background_image_delta_ms": -331.44937,
+      "background_image_time_s": 35.068059516,
+      "background_is_stale": true,
+      "current_canonical": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "stale_image",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.7171905636787415,
+            "appearance_gate_passed": true,
+            "appearance_raw": 0.7171905636787415,
+            "appearance_used": true,
+            "confidence": 0.7952151298522949,
+            "distance": 0.9996434080529318,
+            "geometry_allows_appearance": true,
+            "id_bonus": 0.0,
+            "iou": 0.8396171966137453,
+            "scale": 0.9885450941538025,
+            "total": 0.9207082357108904,
+            "track_id": 2
+          },
+          "control_mode": "HOVER",
+          "frame_id": 598,
+          "geometry_strength": 0.9996434080529318,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.7171905636787415,
+              "appearance_gate_passed": true,
+              "appearance_raw": 0.7171905636787415,
+              "appearance_used": true,
+              "confidence": 0.7952151298522949,
+              "distance": 0.9996434080529318,
+              "geometry_allows_appearance": true,
+              "id_bonus": 0.0,
+              "iou": 0.8396171966137453,
+              "scale": 0.9885450941538025,
+              "total": 0.9207082357108904,
+              "track_id": 2
+            }
+          ],
+          "quality": 0.20321659499841055,
+          "reacquired": false,
+          "reason": "rank_aware_id_switch_recovery_reject:appearance 0.717<0.780",
+          "state": "LOST",
+          "target_track_id": 1,
+          "visible": false
+        },
+        "tim_target": null
+      },
+      "image": "reports/p002_historical_deepsort_visual_93e047b5_2026_07_19/tracker_frame_598_exact_comparison.png",
+      "preserved_july12": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "stale_image",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.7428591251373291,
+            "appearance_gate_passed": true,
+            "appearance_raw": 0.7428591251373291,
+            "appearance_used": true,
+            "confidence": 0.7952151298522949,
+            "distance": 0.9995423418612229,
+            "geometry_allows_appearance": true,
+            "id_bonus": 1.0,
+            "iou": 0.7420031043082049,
+            "scale": 0.983091563472115,
+            "total": 0.9695917589694891,
+            "track_id": 2
+          },
+          "control_mode": "NORMAL",
+          "frame_id": 598,
+          "geometry_strength": 0.9995423418612229,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.7428591251373291,
+              "appearance_gate_passed": true,
+              "appearance_raw": 0.7428591251373291,
+              "appearance_used": true,
+              "confidence": 0.7952151298522949,
+              "distance": 0.9995423418612229,
+              "geometry_allows_appearance": true,
+              "id_bonus": 1.0,
+              "iou": 0.7420031043082049,
+              "scale": 0.983091563472115,
+              "total": 0.9695917589694891,
+              "track_id": 2
+            }
+          ],
+          "quality": 0.9085599387784712,
+          "reacquired": false,
+          "reason": "accepted_candidate",
+          "state": "LOCKED",
+          "target_track_id": 2,
+          "visible": true
+        },
+        "tim_target": {
+          "box": [
+            237.0,
+            254.0,
+            273.0,
+            354.0
+          ],
+          "id": 2,
+          "quality": 0.9085599184036255,
+          "score": 0.7952151298522949
+        }
+      },
+      "track_ids": [
+        2,
+        57,
+        65,
+        67
+      ],
+      "track_time_s": 35.399508886,
+      "tracker_frame_id": 598
+    },
+    {
+      "annotation_boundary_delta_ms": null,
+      "annotation_interval": {
+        "end_s": 36.27,
+        "event_type": "occlusion_ambiguity",
+        "expected_id": 1,
+        "start_s": 33.93,
+        "target_visible": true
+      },
+      "background_image_delta_ms": 0.0,
+      "background_image_time_s": 35.798814941,
+      "background_is_stale": false,
+      "current_canonical": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "ok",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.6925597190856934,
+            "appearance_gate_passed": true,
+            "appearance_raw": 0.6925597190856934,
+            "appearance_used": true,
+            "confidence": 0.7950222492218018,
+            "distance": 0.9986782501743743,
+            "geometry_allows_appearance": true,
+            "id_bonus": 0.0,
+            "iou": 0.6059240052397938,
+            "scale": 0.9688591184847933,
+            "total": 0.8344754293354655,
+            "track_id": 2
+          },
+          "control_mode": "HOVER",
+          "frame_id": 608,
+          "geometry_strength": 0.9986782501743743,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.6925597190856934,
+              "appearance_gate_passed": true,
+              "appearance_raw": 0.6925597190856934,
+              "appearance_used": true,
+              "confidence": 0.7950222492218018,
+              "distance": 0.9986782501743743,
+              "geometry_allows_appearance": true,
+              "id_bonus": 0.0,
+              "iou": 0.6059240052397938,
+              "scale": 0.9688591184847933,
+              "total": 0.8344754293354655,
+              "track_id": 2
+            }
+          ],
+          "quality": 0.12480039140339887,
+          "reacquired": false,
+          "reason": "rank_aware_id_switch_recovery_reject:appearance 0.693<0.780",
+          "state": "LOST",
+          "target_track_id": 1,
+          "visible": false
+        },
+        "tim_target": null
+      },
+      "image": "reports/p002_historical_deepsort_visual_93e047b5_2026_07_19/tracker_frame_608_exact_comparison.png",
+      "preserved_july12": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "ok",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.0,
+            "appearance_gate_passed": false,
+            "appearance_raw": 0.7693764567375183,
+            "appearance_used": false,
+            "confidence": 0.7950222492218018,
+            "distance": 0.9994407371387691,
+            "geometry_allows_appearance": true,
+            "id_bonus": 1.0,
+            "iou": 0.7488200381078258,
+            "scale": 0.9141289541633857,
+            "total": 0.8702997312532025,
+            "track_id": 2
+          },
+          "control_mode": "NORMAL",
+          "frame_id": 608,
+          "geometry_strength": 0.9994407371387691,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.0,
+              "appearance_gate_passed": false,
+              "appearance_raw": 0.7693764567375183,
+              "appearance_used": false,
+              "confidence": 0.7950222492218018,
+              "distance": 0.9994407371387691,
+              "geometry_allows_appearance": true,
+              "id_bonus": 1.0,
+              "iou": 0.7488200381078258,
+              "scale": 0.9141289541633857,
+              "total": 0.8702997312532025,
+              "track_id": 2
+            }
+          ],
+          "quality": 0.8439526125422122,
+          "reacquired": false,
+          "reason": "accepted_candidate",
+          "state": "LOCKED",
+          "target_track_id": 2,
+          "visible": true
+        },
+        "tim_target": {
+          "box": [
+            248.0,
+            258.0,
+            281.0,
+            345.0
+          ],
+          "id": 2,
+          "quality": 0.8439525961875916,
+          "score": 0.7950222492218018
+        }
+      },
+      "track_ids": [
+        2,
+        57,
+        67
+      ],
+      "track_time_s": 35.798814941,
+      "tracker_frame_id": 608
+    },
+    {
+      "annotation_boundary_delta_ms": 4.273578000002942,
+      "annotation_interval": {
+        "end_s": 36.27,
+        "event_type": "occlusion_ambiguity",
+        "expected_id": 1,
+        "start_s": 33.93,
+        "target_visible": true
+      },
+      "background_image_delta_ms": 34.871167,
+      "background_image_time_s": 36.300597589,
+      "background_is_stale": false,
+      "current_canonical": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "stale_image",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.8569307923316956,
+            "appearance_gate_passed": true,
+            "appearance_raw": 0.8569307923316956,
+            "appearance_used": true,
+            "confidence": 0.860509991645813,
+            "distance": 0.9985862347977623,
+            "geometry_allows_appearance": true,
+            "id_bonus": 1.0,
+            "iou": 0.6161201224761742,
+            "scale": 0.9998566410020727,
+            "total": 0.9523905519799079,
+            "track_id": 69
+          },
+          "control_mode": "NORMAL",
+          "frame_id": 617,
+          "geometry_strength": 0.9998566410020727,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.8569307923316956,
+              "appearance_gate_passed": true,
+              "appearance_raw": 0.8569307923316956,
+              "appearance_used": true,
+              "confidence": 0.860509991645813,
+              "distance": 0.9985862347977623,
+              "geometry_allows_appearance": true,
+              "id_bonus": 1.0,
+              "iou": 0.6161201224761742,
+              "scale": 0.9998566410020727,
+              "total": 0.9523905519799079,
+              "track_id": 69
+            },
+            {
+              "ambiguous": false,
+              "appearance": 0.5561323165893555,
+              "appearance_gate_passed": true,
+              "appearance_raw": 0.5561323165893555,
+              "appearance_used": true,
+              "confidence": 0.8720230460166931,
+              "distance": 0.9726518703148133,
+              "geometry_allows_appearance": true,
+              "id_bonus": 0.0,
+              "iou": 0.0,
+              "scale": 0.9968172678482551,
+              "total": 0.6211356989275971,
+              "track_id": 2
+            }
+          ],
+          "quality": 0.9202323558629746,
+          "reacquired": false,
+          "reason": "accepted_candidate",
+          "state": "LOCKED",
+          "target_track_id": 69,
+          "visible": true
+        },
+        "tim_target": {
+          "box": [
+            290.0,
+            273.0,
+            327.0,
+            358.0
+          ],
+          "id": 69,
+          "quality": 0.920232355594635,
+          "score": 0.860509991645813
+        }
+      },
+      "image": "reports/p002_historical_deepsort_visual_93e047b5_2026_07_19/tracker_frame_617_exact_comparison.png",
+      "preserved_july12": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "stale_image",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.0,
+            "appearance_gate_passed": false,
+            "appearance_raw": 0.7370681009929241,
+            "appearance_used": false,
+            "confidence": 0.8720230460166931,
+            "distance": 0.999803532400222,
+            "geometry_allows_appearance": true,
+            "id_bonus": 1.0,
+            "iou": 0.9037599068660613,
+            "scale": 0.997107301788686,
+            "total": 0.9487898275228192,
+            "track_id": 2
+          },
+          "control_mode": "NORMAL",
+          "frame_id": 617,
+          "geometry_strength": 0.999803532400222,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.0,
+              "appearance_gate_passed": false,
+              "appearance_raw": 0.7370681009929241,
+              "appearance_used": false,
+              "confidence": 0.8720230460166931,
+              "distance": 0.999803532400222,
+              "geometry_allows_appearance": true,
+              "id_bonus": 1.0,
+              "iou": 0.9037599068660613,
+              "scale": 0.997107301788686,
+              "total": 0.9487898275228192,
+              "track_id": 2
+            },
+            {
+              "ambiguous": false,
+              "appearance": 0.0,
+              "appearance_gate_passed": false,
+              "appearance_raw": 0.8853661349634012,
+              "appearance_used": false,
+              "confidence": 0.860509991645813,
+              "distance": 0.9572930486115854,
+              "geometry_allows_appearance": true,
+              "id_bonus": 0.0,
+              "iou": 0.0,
+              "scale": 0.990381747183906,
+              "total": 0.5476363059625291,
+              "track_id": 69
+            }
+          ],
+          "quality": 0.921921453995675,
+          "reacquired": false,
+          "reason": "accepted_candidate",
+          "state": "LOCKED",
+          "target_track_id": 2,
+          "visible": true
+        },
+        "tim_target": {
+          "box": [
+            245.0,
+            263.0,
+            279.0,
+            353.0
+          ],
+          "id": 2,
+          "quality": 0.92192143201828,
+          "score": 0.8720230460166931
+        }
+      },
+      "track_ids": [
+        2,
+        57,
+        67,
+        69
+      ],
+      "track_time_s": 36.265726422,
+      "tracker_frame_id": 617
+    },
+    {
+      "annotation_boundary_delta_ms": -97.3463670000001,
+      "annotation_interval": {
+        "end_s": 40.03,
+        "event_type": "clean_visible",
+        "expected_id": 69,
+        "start_s": 36.27,
+        "target_visible": true
+      },
+      "background_image_delta_ms": -66.748778,
+      "background_image_time_s": 36.300597589,
+      "background_is_stale": false,
+      "current_canonical": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "cached_interval",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.0,
+            "appearance_gate_passed": false,
+            "appearance_raw": 0.8984224200248718,
+            "appearance_used": false,
+            "confidence": 0.8673941493034363,
+            "distance": 0.9987994118780745,
+            "geometry_allows_appearance": true,
+            "id_bonus": 1.0,
+            "iou": 0.6366538805662721,
+            "scale": 0.9997887614388701,
+            "total": 0.8575473244423096,
+            "track_id": 69
+          },
+          "control_mode": "NORMAL",
+          "frame_id": 619,
+          "geometry_strength": 0.9997887614388701,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.0,
+              "appearance_gate_passed": false,
+              "appearance_raw": 0.8984224200248718,
+              "appearance_used": false,
+              "confidence": 0.8673941493034363,
+              "distance": 0.9987994118780745,
+              "geometry_allows_appearance": true,
+              "id_bonus": 1.0,
+              "iou": 0.6366538805662721,
+              "scale": 0.9997887614388701,
+              "total": 0.8575473244423096,
+              "track_id": 69
+            },
+            {
+              "ambiguous": false,
+              "appearance": 0.0,
+              "appearance_gate_passed": false,
+              "appearance_raw": 0.5561323165893555,
+              "appearance_used": false,
+              "confidence": 0.874589741230011,
+              "distance": 0.9604974078894511,
+              "geometry_allows_appearance": true,
+              "id_bonus": 0.0,
+              "iou": 0.0,
+              "scale": 0.9918584487347164,
+              "total": 0.5507064105957078,
+              "track_id": 2
+            }
+          ],
+          "quality": 0.860993713143704,
+          "reacquired": false,
+          "reason": "accepted_candidate",
+          "state": "LOCKED",
+          "target_track_id": 69,
+          "visible": true
+        },
+        "tim_target": {
+          "box": [
+            298.0,
+            274.0,
+            335.0,
+            359.0
+          ],
+          "id": 69,
+          "quality": 0.8609937429428101,
+          "score": 0.8673941493034363
+        }
+      },
+      "image": "reports/p002_historical_deepsort_visual_93e047b5_2026_07_19/tracker_frame_619_exact_comparison.png",
+      "preserved_july12": {
+        "raw_target": null,
+        "status": {
+          "appearance_skip_reason": "cached_interval",
+          "best": {
+            "ambiguous": false,
+            "appearance": 0.0,
+            "appearance_gate_passed": false,
+            "appearance_raw": 0.7820929288864136,
+            "appearance_used": false,
+            "confidence": 0.874589741230011,
+            "distance": 0.9998625653744151,
+            "geometry_allows_appearance": true,
+            "id_bonus": 1.0,
+            "iou": 0.9194203592001235,
+            "scale": 0.9978928392835967,
+            "total": 0.9546304639686388,
+            "track_id": 2
+          },
+          "control_mode": "NORMAL",
+          "frame_id": 619,
+          "geometry_strength": 0.9998625653744151,
+          "interesting_scores": [
+            {
+              "ambiguous": false,
+              "appearance": 0.0,
+              "appearance_gate_passed": false,
+              "appearance_raw": 0.7820929288864136,
+              "appearance_used": false,
+              "confidence": 0.874589741230011,
+              "distance": 0.9998625653744151,
+              "geometry_allows_appearance": true,
+              "id_bonus": 1.0,
+              "iou": 0.9194203592001235,
+              "scale": 0.9978928392835967,
+              "total": 0.9546304639686388,
+              "track_id": 2
+            },
+            {
+              "ambiguous": false,
+              "appearance": 0.0,
+              "appearance_gate_passed": false,
+              "appearance_raw": 0.8725314736366272,
+              "appearance_used": false,
+              "confidence": 0.8673941493034363,
+              "distance": 0.9445989368542129,
+              "geometry_allows_appearance": true,
+              "id_bonus": 0.0,
+              "iou": 0.0,
+              "scale": 0.9991032699323201,
+              "total": 0.5468694930723941,
+              "track_id": 69
+            }
+          ],
+          "quality": 0.926616211010119,
+          "reacquired": false,
+          "reason": "accepted_candidate",
+          "state": "LOCKED",
+          "target_track_id": 2,
+          "visible": true
+        },
+        "tim_target": {
+          "box": [
+            246.0,
+            267.0,
+            279.0,
+            355.0
+          ],
+          "id": 2,
+          "quality": 0.9266161918640137,
+          "score": 0.874589741230011
+        }
+      },
+      "track_ids": [
+        2,
+        57,
+        65,
+        67,
+        69
+      ],
+      "track_time_s": 36.367346367,
+      "tracker_frame_id": 619
+    }
+  ],
+  "schema_version": 3
+}
