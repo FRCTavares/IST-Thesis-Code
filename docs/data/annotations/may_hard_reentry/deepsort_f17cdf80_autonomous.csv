@@ -1,0 +1,4 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+deepsort,0.000,25.078,CORRECT_TARGET,true,1,,clean_visible,created in TIM clean UI
+deepsort,25.078,50.331,CORRECT_TARGET,true,2,,clean_visible,created in TIM clean UI
+deepsort,50.331,67.865,CORRECT_TARGET,true,58,,clean_visible,created in TIM clean UI

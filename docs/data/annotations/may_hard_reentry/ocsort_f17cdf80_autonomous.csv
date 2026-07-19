@@ -1,0 +1,6 @@
+bag_name,start_s,end_s,target_label,target_visible,correct_target_track_id,distractor_track_ids,event_type,notes
+ocsort,0.000,34.599,CORRECT_TARGET,true,2,,clean_visible,created in TIM clean UI
+ocsort,34.599,35.699,CORRECT_TARGET,false,,,target_absent,created in TIM clean UI
+ocsort,35.699,58.330,CORRECT_TARGET,true,1,,clean_visible,created in TIM clean UI
+ocsort,58.330,59.065,CORRECT_TARGET,false,,,target_absent,created in TIM clean UI
+ocsort,59.065,67.865,CORRECT_TARGET,true,175,,clean_visible,created in TIM clean UI

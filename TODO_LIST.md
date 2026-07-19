@@ -1311,17 +1311,17 @@ Tracker-configuration prerequisite started on 18 July 2026:
     - [x] validate the matching canonical semantic digest for DeepSORT;
   - [x] regenerate one fully hashed canonical bag per tracker from clean commit
     `f17cdf80` with empty repository-status provenance;
-  - [ ] validate or recreate tracker-specific annotations for the exact frozen
+  - [x] validate or recreate tracker-specific annotations for the exact frozen
     outputs:
     - [x] create and structurally validate the ByteTrack autonomous-target
       annotation against the canonical `f17cdf80` freeze;
     - [x] create and validate the SORT autonomous-target annotation;
-    - [ ] visually confirm or recreate the OC-SORT autonomous-target annotation;
-    - [ ] create and validate the DeepSORT autonomous-target annotation.
+    - [x] visually confirm or recreate the OC-SORT autonomous-target annotation;
+    - [x] create and validate the DeepSORT autonomous-target annotation.
 
 For ByteTrack, OC-SORT, and DeepSORT:
 
-- [ ] use compatible annotations;
+- [x] use compatible annotations;
 - [x] use autonomous selected-target initialization;
 - [ ] report raw and TIM output;
 - [ ] report unsafe degradation;
