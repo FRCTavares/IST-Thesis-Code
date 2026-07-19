@@ -1406,8 +1406,12 @@ Issue #43 remains open for:
   - reject the single canonical preset as a universal cross-tracker policy;
   - require tracker-specific calibration and held-out safety evaluation;
   - mark the earlier multi-tracker result document as superseded evidence;
-- [ ] record the rejected single-preset claim and close Issue #43 only after
-  the remaining OC-SORT evidence and claim updates are complete.
+- [x] record the rejected single-preset claim and close Issue #43:
+  - tracker-output interface modularity is retained;
+  - one-preset safety portability is rejected;
+  - implementation, evidence, and claim commits are available on `origin/main`;
+  - closure evidence: `https://github.com/FRCTavares/IST-Thesis-Code/issues/43#issuecomment-5017047049`;
+  - Issue #43 closed as completed.
 
 ### P1.12 Add broader sequences
 
