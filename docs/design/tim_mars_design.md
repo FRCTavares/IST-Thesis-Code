@@ -89,52 +89,54 @@ It answers the question:
 
 It is not the normal operating mode because it can produce excessive LOST output when crops or embeddings are unavailable.
 
-## Current recommended policy
+## Current canonical evidence policy
 
-For the hard re-entry evaluation, the current effective conservative policy is:
+The promoted P0.18 evidence uses:
 
-- `MARS_APPEARANCE_WEIGHT=0.30`
-- `MARS_APPEARANCE_MIN_SIMILARITY=0.35`
-- `MARS_APPEARANCE_AMBIGUOUS_ONLY=false`
-- `MARS_APPEARANCE_CHALLENGE_ENABLED=false`
-- `MARS_APPEARANCE_CONSERVATIVE_ENABLED=true`
-- `MARS_APPEARANCE_CONSERVATIVE_REQUIRE_APPEARANCE=false`
-- `MARS_APPEARANCE_CONSERVATIVE_MIN_SIMILARITY=0.65`
-- `MARS_APPEARANCE_CONSERVATIVE_MARGIN=0.25`
-- `MARS_RANK_AWARE_REACQUISITION_ENABLED=true`
-- `MARS_RANK_AWARE_CONFIRM_FRAMES=1`
-- `MARS_RANK_AWARE_MISSING_TTL_FRAMES=8`
+- `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`;
+- configuration SHA-256
+  `16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655`;
+- MARS model SHA-256
+  `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`;
+- image-header-time evaluation with a `0.05 s` step and safety tolerance.
 
-These values are not yet universal defaults. They are the current hard re-entry evaluation policy.
+This configuration is frozen for the recorded evidence. It is not a universal preset.
 
 ## Tracker dependence
 
-TIM-MARS behaviour depends strongly on the base tracker.
+TIM-MARS behaviour depends strongly on the base tracker and sequence.
 
-Current hard re-entry verdict:
+The canonical hard-reentry matrix rejects the single preset for ByteTrack, SORT, OC-SORT, and DeepSORT:
 
-1. ByteTrack fixed + TIM-MARS is the best current result.
-2. Raw DeepSORT-MARS is already very strong and safest under wrong-target minimisation.
-3. OCSORT + TIM-MARS is defensible but weaker than ByteTrack + TIM-MARS.
-4. SORT is too fragmented for this TIM-MARS configuration.
+- ByteTrack: `+0.700 s` wrong-target output;
+- SORT: `+5.300 s` wrong-target output and `+0.150 s` target-absence valid output;
+- OC-SORT: `+0.200 s` target-absence valid output;
+- DeepSORT: `+15.203 s` wrong-target output.
+
+Repeated OC-SORT sequence evidence also rejects promotion across the required pair:
+
+- Seq03: `+1.350 s` wrong-target output;
+- Seq04: `+0.050 s`, exactly the one-step tolerance boundary.
+
+Motion-only tracker association is therefore not sufficient to guarantee safe layering. Appearance-based tracker association remains outside the current safe claim.
 
 ## Main result
 
-Current main result source:
+Canonical evidence sources:
 
-- `docs/results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`
+- `reports/p018_tim_matrix_36ecd17d_2026_07_19/`;
+- `reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/`.
 
-Best result:
+The main result is a scoped design boundary rather than a universal winning tracker:
 
-- ByteTrack + TIM-MARS
-- correct ratio = 0.970
-- wrong ratio = 0.013
-- lost ratio = 0.017
+- the tracker-output interface is modular;
+- the single canonical preset is not safety-portable;
+- each tracker and configuration pairing requires its own calibration and held-out safety evaluation.
 
 ## Design conclusion
 
-TIM-MARS is useful when the base tracker has recoverable identity instability.
+TIM-MARS can substantially improve correct-target availability when the base tracker provides recoverable candidate continuity.
 
-It is less useful when the base tracker is already highly stable.
+That benefit can coexist with unsafe wrong-target output. Aggregate correctness or reduced LOST duration is not sufficient for promotion.
 
-It is unsafe when the base tracker is too fragmented, because memory either follows wrong candidates or becomes overly conservative.
+The implementation may remain tracker-interface modular, but the safety claim must be tracker-, configuration-, and sequence-specific.

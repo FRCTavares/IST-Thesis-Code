@@ -98,15 +98,18 @@ The current strongest implementation is TIM-MARS:
 
 ## Current evidence
 
-The current main result source is:
+Canonical evidence sources are:
 
-- `docs/results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`
+- `reports/p018_tim_matrix_36ecd17d_2026_07_19/`;
+- `reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/`.
 
-On the hard re-entry sequence, ByteTrack + TIM-MARS is currently the best result:
+The canonical preset improves correct-target availability in several evaluated cases, but it is not safe for universal promotion:
 
-- correct ratio = 0.970;
-- wrong ratio = 0.013;
-- lost ratio = 0.017.
+- all four hard-reentry tracker pairings show wrong-target or target-absence degradation above the allowed tolerance;
+- OC-SORT Seq03 adds `1.350 s` wrong-target output;
+- OC-SORT Seq04 lies at the `0.050 s` tolerance boundary.
+
+Selected-target memory is therefore a tracker-output validation architecture, not a tracker-independent safety guarantee. Each tracker and configuration pairing requires separate calibration and held-out evaluation.
 
 ## Limitations
 

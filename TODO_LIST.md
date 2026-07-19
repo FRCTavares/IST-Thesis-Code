@@ -1400,8 +1400,12 @@ Issue #43 remains open for:
         configuration/model fingerprints, and clean provenance match;
       - preserve the compact canonical evidence package under
         `reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/`;
-- [ ] update `NOVELTY.md` Section 8.3 and the thesis-facing modularity claim
-  after this evidence commit exists;
+- [x] update `NOVELTY.md` Section 8.3 and the thesis-facing modularity claim
+  after evidence commit `9171c002`:
+  - distinguish tracker-output interface modularity from safety portability;
+  - reject the single canonical preset as a universal cross-tracker policy;
+  - require tracker-specific calibration and held-out safety evaluation;
+  - mark the earlier multi-tracker result document as superseded evidence;
 - [ ] record the rejected single-preset claim and close Issue #43 only after
   the remaining OC-SORT evidence and claim updates are complete.
 
@@ -1637,9 +1641,9 @@ onboard.**
 
 ### P0.18+ Tracker pairing = the modularity claim (refines P0.18)
 
-TIM is a validation layer above the tracker, so it pairs best with **motion-only**
-trackers whose failure mode (ID switch under occlusion/crossing) is exactly what TIM
-is built to catch.
+TIM is modular above the tracker-output message contract, but the canonical
+evidence rejects one-preset safety portability. Every tracker and configuration
+pairing requires calibration and held-out safety validation.
 
 - [x] Add **SORT** to the raw-vs-TIM matrix:
   - completed in
@@ -1651,14 +1655,13 @@ is built to catch.
     `reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/`;
   - Seq03 fails safety promotion with `+1.350 s` wrong-target output;
   - Seq04 is at the `+0.050 s` evaluator-step tolerance boundary.
-- [ ] Convert the canonical DeepSORT evidence into the final scoped thesis
+- [x] Convert the canonical DeepSORT evidence into the final scoped thesis
   boundary and keep unvalidated appearance-association trackers outside the claim:
   - canonical DeepSORT plus TIM-MARS increased wrong-target output by `15.203 s`;
-  - this supports excluding appearance-based tracker association from the current
-    safe layering claim;
-  - do not generalise the DeepSORT result to untested StrongSORT, BoT-SORT, or
+  - appearance-based tracker association is excluded from the current safe claim;
+  - the result is not generalised to untested StrongSORT, BoT-SORT, or
     Deep-OC-SORT combinations;
-  - restate `NOVELTY.md` Section 8.3 so architectural modularity is separated from
+  - `NOVELTY.md` Section 8.3 now separates interface modularity from
     tracker-specific safety validation and calibration.
 
 ### P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)

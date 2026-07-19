@@ -1,5 +1,16 @@
 # Hard re-entry selected-target tracking summary
 
+## Evidence status
+
+This document records a superseded exploratory comparison. Its numbers must not be cited as the current P0.18 tracker-modularity evidence.
+
+Use the promoted canonical reports instead:
+
+- `reports/p018_tim_matrix_36ecd17d_2026_07_19/`;
+- `reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/`.
+
+The current scientific conclusion is that the tracker-output interface is modular, but the tested canonical preset is not safety-portable across trackers or sequences.
+
 Date: 2026-06-06
 
 ## Sequence
@@ -138,7 +149,7 @@ This preserves conservative appearance filtering when useful, without making mis
 
 ### ByteTrack
 
-ByteTrack fixed + TIM-MARS non-strict conservative is the best current result.
+ByteTrack fixed + TIM-MARS non-strict conservative was the best result in this historical comparison.
 
 Compared with raw ByteTrack:
 
@@ -172,7 +183,7 @@ Compared with raw OCSORT:
 
 This is a weak trade-off: wrong-target output is reduced, but lost-target duration increases by a comparable amount. ByteTrack + TIM-MARS is much stronger on this sequence.
 
-## Current tracker verdict
+## Historical tracker verdict
 
 Under the strict selected-target safety metric:
 
@@ -184,7 +195,7 @@ Under the strict selected-target safety metric:
 6. Raw OCSORT
 7. SORT variants
 
-## Thesis interpretation
+## Historical interpretation
 
 TIM-MARS is most useful when the base tracker has recoverable identity instability, as shown by ByteTrack and OCSORT.
 

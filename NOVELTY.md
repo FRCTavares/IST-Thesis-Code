@@ -140,42 +140,60 @@ Parallel recovery paths and unevaluated experimental policies should not remain 
 
 ## 6. Current evidence
 
-The promoted repository evidence currently shows:
+The promoted cross-tracker evidence uses:
 
-| Sequence | Raw ByteTrack C/W/L | ByteTrack + TIM-MARS C/W/L | Interpretation |
-|---|---:|---:|---|
-| Clean visible | 1.000 / 0.000 / 0.000 | 1.000 / 0.000 / 0.000 | No degradation |
-| May hard re-entry | 0.708 / 0.138 / 0.154 | 0.943 / 0.024 / 0.034 | Strong improvement after corrected ID-handover annotation |
-| Crossing ambiguity | 0.553 / 0.002 / 0.445 | 0.546 / 0.002 / 0.452 | No meaningful improvement |
-| Occlusion/no-exit | 0.381 / 0.182 / 0.438 | 0.381 / 0.181 / 0.439 | No meaningful improvement |
+- canonical TIM-MARS configuration SHA-256
+  `16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655`;
+- MARS model SHA-256
+  `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`;
+- image-header-time evaluation with a `0.05 s` step and safety tolerance.
 
-The earlier May result set of `0.728 / 0.118 / 0.154` for raw ByteTrack and `0.963 / 0.003 / 0.034` for TIM-MARS was generated before correction of the target-ID handover boundary.
+### 6.1 Canonical hard-reentry tracker matrix
 
-Commit `6a4ef843` moved the annotated ID transition from 48.800 s to 50.233 s. The canonical post-correction report is:
+| Tracker | Raw C/W/L | TIM-MARS C/W/L | Wrong delta | Absence-output delta | Safety verdict |
+|---|---:|---:|---:|---:|---|
+| ByteTrack | 0.514 / 0.000 / 0.486 | 0.920 / 0.010 / 0.069 | +0.700 s | +0.000 s | Reject |
+| SORT | 0.442 / 0.000 / 0.558 | 0.786 / 0.080 / 0.134 | +5.300 s | +0.150 s | Reject |
+| OC-SORT | 0.509 / 0.000 / 0.491 | 0.936 / 0.000 / 0.064 | +0.000 s | +0.200 s | Reject |
+| DeepSORT | 0.366 / 0.001 / 0.633 | 0.755 / 0.225 / 0.020 | +15.203 s | +0.000 s | Reject |
 
-- raw ByteTrack: 0.708 / 0.138 / 0.154;
-- ByteTrack + TIM-MARS: 0.943 / 0.024 / 0.034.
+The canonical report is:
 
-The obsolete pre-correction report remains only for provenance and must not be quoted as final.
+- `reports/p018_tim_matrix_36ecd17d_2026_07_19/`.
 
-The historical sequence audit reports:
+Within-tracker raw-versus-TIM comparisons are valid. Absolute cross-tracker ranking is qualified because each tracker autonomously selected its own physical target.
 
-- DeepSORT selected-ID raw: wrong ratio 0.028;
-- DeepSORT + TIM-MARS: wrong ratio 0.466.
+All four tracker pairings failed promotion with the single canonical preset. Motion-only trackers were not automatically safe, and DeepSORT showed the largest wrong-target increase.
 
-The replay bag that generated this result was deleted during the 9 July 2026 bag cleanup. Its generated reports and preserved ROS bag metadata remain, but the full target, status, track, and image streams are no longer available for audit.
+### 6.2 Required OC-SORT crossing and occlusion sequences
 
-The source DeepSORT bag still exists, so this experiment is reproducible in principle, but the historical result must currently be classified as an unresolved unsafe result rather than definitive final evidence.
+| Sequence | Raw C/W/L | OC-SORT + TIM-MARS C/W/L | Correct delta | Wrong delta | Lost delta |
+|---|---:|---:|---:|---:|---:|
+| Seq03 crossing ambiguity | 0.340 / 0.001 / 0.659 | 0.850 / 0.015 / 0.135 | +48.831 s | +1.350 s | -50.181 s |
+| Seq04 occlusion/no-exit | 0.644 / 0.002 / 0.354 | 0.702 / 0.003 / 0.295 | +3.297 s | +0.050 s | -3.347 s |
 
-Until it is regenerated under a recorded canonical configuration, TIM-MARS must not be described as tracker-independent.
+The repeated deterministic report is:
+
+- `reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/`.
+
+Seq03 substantially improves availability but exceeds the wrong-target safety tolerance. Seq04 lies exactly at the one-step wrong-target tolerance boundary. Neither sequence increases target-absence valid output.
+
+Both sequence repetitions match in semantic output, authoritative evaluation, configuration and model fingerprints, runtime contract, and clean repository provenance. Corrected event-level aggregates match the authoritative evaluator within `0.004 s`.
+
+Earlier sequence-specific ByteTrack and exploratory multi-tracker results remain useful as historical evidence, but they do not override these promoted canonical safety decisions.
 
 ## 7. Claim currently supported
 
-The evidence currently supports only the following narrow claim:
+The evidence supports the following bounded claim:
 
-> TIM-MARS can substantially improve selected-target correctness in some recoverable ByteTrack identity-switch and re-entry cases while preserving clean tracking.
+> TIM-MARS is a lightweight selected-target validation layer that can improve correct-target availability in some recoverable tracker-instability cases. Its message-level architecture can be paired with different trackers, but safety is tracker-, sequence-, and configuration-dependent. The current canonical preset is not safety-portable across the evaluated tracker pairings and is not promoted as a universal cross-tracker preset.
 
-The evidence does not currently support:
+The evidence therefore separates two claims:
+
+- interface modularity is established;
+- universal safety portability is rejected.
+
+The evidence does not support:
 
 > TIM-MARS generally improves selected-person tracking across trackers, crossings, occlusions, disappearance, and re-entry.
 
@@ -195,32 +213,44 @@ The individual components are established:
 
 The thesis must demonstrate that the control-facing problem formulation, asymmetric objective, unified policy, and measured safety benefit form a meaningful contribution.
 
-### 8.2 Current gain is sequence-specific
+### 8.2 Availability gains remain sequence-specific
 
-The strongest improvement is concentrated in one May re-entry sequence.
+TIM-MARS can produce large correct-target and LOST-duration improvements, including on OC-SORT Seq03.
 
-The June crossing and occlusion sequences show neutral behaviour.
+Those gains are not sufficient for promotion when wrong-target output also increases. Seq03 improves correct duration by `48.831 s` but adds `1.350 s` of wrong-target output.
 
-### 8.3 Tracker dependence is unresolved
+The final evaluation must therefore preserve the asymmetric objective: wrong-target degradation blocks promotion even when continuity and aggregate correctness improve.
 
-The DeepSORT result shows that TIM-MARS can be unsafe when its assumptions do not match the base tracker.
+### 8.3 Architectural modularity does not establish safety portability
 
-The final method must either:
+TIM-MARS accepts a tracker-independent message contract, but the behaviour of its geometry, continuity, appearance, and recovery logic depends on the candidate trajectories produced by the base tracker.
 
-- work safely across supported trackers;
-- use tracker-specific calibrated presets;
-- or clearly limit its claim to the validated tracker configuration.
+The canonical P0.18 evidence rejects one-preset portability:
 
-### 8.4 Configuration is not frozen
+- ByteTrack increases wrong-target output by `0.700 s`;
+- SORT increases wrong-target output by `5.300 s` and target-absence valid output by `0.150 s`;
+- OC-SORT increases target-absence valid output by `0.200 s` on hard re-entry and wrong-target output by `1.350 s` on Seq03;
+- DeepSORT increases wrong-target output by `15.203 s`.
 
-Current defaults and runners use incompatible values:
+This is not only an appearance-association conflict: the motion-only trackers also show unsafe degradation with the same preset.
 
-- appearance conservative margin: 0.25, 0.15, 0.10, and 0.05;
-- hard-negative rejection margin: 0.08 and 0.03;
-- replay default preset: `legacy`;
-- ROS runtime defaults: balanced conservative settings.
+The safe thesis boundary is therefore:
 
-Until one canonical configuration is frozen, results cannot be assumed to describe the same algorithm.
+- TIM-MARS is modular at the software interface;
+- every tracker and configuration pairing requires calibration and held-out safety evaluation;
+- only pairings that satisfy the asymmetric wrong-target criterion may be promoted;
+- appearance-based association trackers remain outside the current safe layering claim;
+- results for DeepSORT must not be generalised to untested StrongSORT, BoT-SORT, or Deep-OC-SORT combinations.
+
+### 8.4 A canonical evidence configuration is frozen, not universal
+
+The P0.18 tracker matrix and repeated OC-SORT sequence evidence use one recorded canonical configuration with SHA-256:
+
+- `16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655`.
+
+This establishes reproducibility for those experiments. It does not establish that the preset is a universal runtime default or is safe for another tracker, sequence, detector, or operating domain.
+
+Tracker-specific calibration remains necessary, and any replacement preset must pass the same held-out wrong-target and target-absence safety criteria.
 
 ### 8.5 Paper, code, and runner equivalence is not established
 
@@ -271,23 +301,26 @@ TIM-MARS does not claim to:
 
 ## 10. Evidence required for the final thesis claim
 
-Before freezing the thesis contribution, complete:
+Before freezing the complete thesis contribution, complete:
 
-1. one canonical implementation and configuration;
+1. one final canonical implementation and runtime configuration;
 2. paper-code-runner equivalence verification;
-3. correction of the May result inconsistency;
-4. investigation of the unsafe DeepSORT result;
-5. geometry-only and appearance ablations;
-6. hard-negative ablation;
-7. recovery-confirmation ablation;
-8. multiple identities and sequences;
-9. identity-independent spatial evaluation;
-10. parameter sensitivity analysis;
-11. runtime and onboard resource measurements;
-12. explicit failure-case analysis.
+3. the remaining annotation and evidence-chain consolidation;
+4. geometry-only and appearance ablations;
+5. hard-negative ablation;
+6. recovery-confirmation ablation;
+7. broader identities and held-out sequences;
+8. identity-independent spatial evaluation;
+9. parameter sensitivity analysis;
+10. runtime and onboard resource measurements;
+11. explicit failure-case analysis.
+
+The P0.18 cross-tracker investigation is complete. It establishes interface modularity, rejects the single-preset safety-portability claim, and defines tracker-specific validation as a design boundary.
 
 ## 11. Target contribution statement
 
-A defensible final contribution statement is:
+A defensible contribution statement is:
 
 > This thesis introduces TIM-MARS, a lightweight selected-target identity validation layer for RGB-only UAV person following. TIM-MARS operates above an existing detector, tracker, and target selector, and combines trusted temporal memory, geometric candidate plausibility, pretrained person appearance evidence, distractor-aware comparison, and conservative publication. Its objective is not generic multi-object tracking accuracy, but reducing unsafe controller-facing wrong-target output under recoverable tracker identity instability.
+
+The layer is modular at the tracker-output interface, but safety is not portable by default. Scientific and deployment claims must remain limited to tracker, configuration, and sequence combinations that pass the asymmetric wrong-target and target-absence criteria.
