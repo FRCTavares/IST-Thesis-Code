@@ -19,8 +19,8 @@ Active executable issues: **43**.
 
 ## P0 — Critical evidence, safety, thesis-claim, or flight-blocking work
 
-1. [ ] [#2 — P0.3 Freeze the canonical evidence set](https://github.com/FRCTavares/IST-Thesis-Code/issues/2)
-   - phase 1; experiment; implementation and verification complete, issue closure pending.
+1. [x] [#2 — P0.3 Freeze the canonical evidence set](https://github.com/FRCTavares/IST-Thesis-Code/issues/2)
+   - phase 1; experiment; closed after implementation commit `39503a79be2bb86a389d0ad0062e51d700a0a860`; closure evidence recorded in GitHub Issue #2.
 
 3. [ ] [#3 — P0.4 Freeze one canonical preset — CONFIGURATION DONE; CLEAN RESULT FREEZE PENDING](https://github.com/FRCTavares/IST-Thesis-Code/issues/3)
    - phase 2; experiment.
