@@ -100,6 +100,16 @@ with effective environment assignments, and the value-source map.
 `tim_mars_resolved_runtime.json` stores the same value-source map alongside
 runtime overrides and experiment fields.
 
+The deterministic TIM runner also writes:
+
+- `tim_mars_resolved_runtime.json`;
+- `tim_mars_resolved_runtime.sha256`;
+- a `resolved_runtime` reference inside `tim_replay_metadata.json`.
+
+This records the effective selected target, image geometry, appearance mode,
+normalisation mode, raw-target mode, topic contract, value origins, and
+canonical configuration fingerprint separately from the generated ROS bag.
+
 This prevents an inherited `RAW_TARGET_MODE`, output root, configuration path,
 or appearance-topic override from silently changing the meaning of a run.
 

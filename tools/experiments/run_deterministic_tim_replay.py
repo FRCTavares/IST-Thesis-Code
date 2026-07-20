@@ -1035,6 +1035,154 @@ def write_replay_metadata(
     return metadata_path, fingerprint_path
 
 
+def write_resolved_runtime(
+    output_bag: Path,
+    payload: dict[str, Any],
+) -> tuple[Path, Path, str]:
+    """Write resolved runtime provenance and its SHA-256 fingerprint."""
+    runtime_path = (
+        output_bag / "tim_mars_resolved_runtime.json"
+    )
+    fingerprint_path = (
+        output_bag / "tim_mars_resolved_runtime.sha256"
+    )
+
+    serialized_payload = json.dumps(
+        payload,
+        indent=2,
+        sort_keys=True,
+    )
+    runtime_path.write_text(
+        f"{serialized_payload}\n",
+        encoding="utf-8",
+    )
+
+    runtime_sha256 = sha256_file(
+        runtime_path
+    )
+
+    fingerprint_path.write_text(
+        f"{runtime_sha256}  "
+        f"{runtime_path.name}\n",
+        encoding="utf-8",
+    )
+
+    return (
+        runtime_path,
+        fingerprint_path,
+        runtime_sha256,
+    )
+
+
+def argument_source(
+    *option_names: str,
+) -> str:
+    """Identify whether an optional value came from CLI or its default."""
+    arguments = sys.argv[1:]
+
+    for argument in arguments:
+        for option_name in option_names:
+            if argument == option_name or argument.startswith(
+                f"{option_name}="
+            ):
+                return "command_line"
+
+    return "runner_default"
+
+
+def build_resolved_runtime_payload(
+    *,
+    summary: dict[str, Any],
+    args: argparse.Namespace,
+    appearance_enabled: bool,
+    image_topic: str,
+    input_bag: Path,
+    output_bag: Path,
+) -> dict[str, Any]:
+    """Build exact deterministic replay runtime provenance."""
+    return {
+        "schema_version": 2,
+        "canonical_config": dict(
+            summary["canonical_config"]
+        ),
+        "runtime_overrides": {
+            "selected_track_id": int(
+                args.selected_track_id
+            ),
+            "image_width": float(
+                args.image_width
+            ),
+            "image_height": float(
+                args.image_height
+            ),
+            "tracks_are_normalized": bool(
+                args.tracks_are_normalized
+            ),
+            "zero_id_when_not_visible": bool(
+                args.zero_id_when_not_visible
+            ),
+            "appearance_enabled": bool(
+                appearance_enabled
+            ),
+        },
+        "experiment_fields": {
+            "raw_target_mode": (
+                args.raw_target_mode
+            ),
+            "image_topic": image_topic,
+            "tracks_topic": args.tracks_topic,
+            "raw_target_topic": (
+                args.raw_target_topic
+            ),
+            "input_bag": str(input_bag),
+            "output_bag": str(output_bag),
+        },
+        "value_sources": {
+            "input_bag": (
+                "command_line_required"
+            ),
+            "output_bag": (
+                "command_line_required"
+            ),
+            "selected_track_id": (
+                "command_line_required"
+            ),
+            "image_width": argument_source(
+                "--image-width"
+            ),
+            "image_height": argument_source(
+                "--image-height"
+            ),
+            "tracks_are_normalized": argument_source(
+                "--tracks-are-normalized"
+            ),
+            "zero_id_when_not_visible": argument_source(
+                "--zero-id-when-not-visible",
+                "--no-zero-id-when-not-visible",
+            ),
+            "appearance_enabled": (
+                "canonical_config"
+                if args.appearance_enabled is None
+                else "command_line"
+            ),
+            "raw_target_mode": argument_source(
+                "--raw-target-mode"
+            ),
+            "image_topic": (
+                "bag_auto_detect"
+                if args.image_topic == "auto"
+                else "command_line"
+            ),
+            "tracks_topic": argument_source(
+                "--tracks-topic"
+            ),
+            "raw_target_topic": argument_source(
+                "--raw-target-topic"
+            ),
+        },
+    }
+
+
 def main() -> int:
     args = parse_args()
 
@@ -1593,6 +1741,47 @@ def main() -> int:
             ),
         },
     }
+
+    resolved_runtime_payload = (
+        build_resolved_runtime_payload(
+            summary=summary,
+            args=args,
+            appearance_enabled=bool(
+                runtime.config.appearance.enabled
+            ),
+            image_topic=image_topic,
+            input_bag=input_bag,
+            output_bag=output_bag,
+        )
+    )
+
+    (
+        resolved_runtime_path,
+        resolved_runtime_fingerprint_path,
+        resolved_runtime_sha256,
+    ) = write_resolved_runtime(
+        output_bag,
+        resolved_runtime_payload,
+    )
+
+    summary["schema_version"] = 3
+    summary["resolved_runtime"] = {
+        "file": resolved_runtime_path.name,
+        "fingerprint_file": (
+            resolved_runtime_fingerprint_path.name
+        ),
+        "sha256": resolved_runtime_sha256,
+    }
+    summary["metadata_artifacts"].update(
+        {
+            "resolved_runtime_file": (
+                resolved_runtime_path.name
+            ),
+            "resolved_runtime_fingerprint_file": (
+                resolved_runtime_fingerprint_path.name
+            ),
+        }
+    )
 
     write_replay_metadata(
         output_bag,

@@ -658,6 +658,198 @@ def test_write_replay_metadata_writes_fingerprint(
     )
 
 
+def test_write_resolved_runtime_writes_fingerprint(
+    tmp_path,
+):
+    """Persist resolved runtime provenance and a matching fingerprint."""
+    output = tmp_path / "bag"
+    output.mkdir()
+
+    payload = {
+        "schema_version": 2,
+        "runtime_overrides": {
+            "selected_track_id": 1,
+            "appearance_enabled": True,
+        },
+        "experiment_fields": {
+            "raw_target_mode": "source",
+        },
+        "value_sources": {
+            "selected_track_id": (
+                "command_line_required"
+            ),
+            "appearance_enabled": (
+                "canonical_config"
+            ),
+        },
+    }
+
+    (
+        runtime_path,
+        fingerprint_path,
+        runtime_sha256,
+    ) = MODULE.write_resolved_runtime(
+        output,
+        payload,
+    )
+
+    assert runtime_path.is_file()
+    assert fingerprint_path.is_file()
+    assert runtime_sha256 == (
+        MODULE.sha256_file(runtime_path)
+    )
+    assert MODULE.json.loads(
+        runtime_path.read_text(
+            encoding="utf-8"
+        )
+    ) == payload
+
+    expected = (
+        f"{runtime_sha256}  "
+        f"{runtime_path.name}\n"
+    )
+
+    assert fingerprint_path.read_text(
+        encoding="utf-8"
+    ) == expected
+
+
+def test_build_resolved_runtime_payload_records_sources(
+    monkeypatch,
+    tmp_path,
+):
+    """Record precise origins for effective deterministic values."""
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        [
+            "runner",
+            "input",
+            "output",
+            "--config",
+            "config.yaml",
+            "--model",
+            "model.pb",
+            "--selected-track-id",
+            "7",
+            "--image-width",
+            "800",
+            "--no-zero-id-when-not-visible",
+            "--raw-target-mode",
+            "selected_id",
+            "--tracks-topic",
+            "/custom/tracks",
+        ],
+    )
+
+    args = MODULE.argparse.Namespace(
+        selected_track_id=7,
+        image_width=800.0,
+        image_height=640.0,
+        tracks_are_normalized=False,
+        zero_id_when_not_visible=False,
+        appearance_enabled=None,
+        raw_target_mode="selected_id",
+        image_topic="auto",
+        tracks_topic="/custom/tracks",
+        raw_target_topic="/target",
+    )
+
+    payload = (
+        MODULE.build_resolved_runtime_payload(
+            summary={
+                "canonical_config": {
+                    "copy": (
+                        "tim_mars_canonical_config.yaml"
+                    ),
+                    "sha256": "a" * 64,
+                    "source": "config.yaml",
+                },
+            },
+            args=args,
+            appearance_enabled=True,
+            image_topic="/camera/image_raw",
+            input_bag=tmp_path / "input",
+            output_bag=tmp_path / "output",
+        )
+    )
+
+    assert payload["schema_version"] == 2
+    assert payload["runtime_overrides"] == {
+        "selected_track_id": 7,
+        "image_width": 800.0,
+        "image_height": 640.0,
+        "tracks_are_normalized": False,
+        "zero_id_when_not_visible": False,
+        "appearance_enabled": True,
+    }
+
+    sources = payload["value_sources"]
+
+    assert sources["input_bag"] == (
+        "command_line_required"
+    )
+    assert sources["output_bag"] == (
+        "command_line_required"
+    )
+    assert sources["selected_track_id"] == (
+        "command_line_required"
+    )
+    assert sources["image_width"] == (
+        "command_line"
+    )
+    assert sources["image_height"] == (
+        "runner_default"
+    )
+    assert sources["tracks_are_normalized"] == (
+        "runner_default"
+    )
+    assert sources["zero_id_when_not_visible"] == (
+        "command_line"
+    )
+    assert sources["appearance_enabled"] == (
+        "canonical_config"
+    )
+    assert sources["raw_target_mode"] == (
+        "command_line"
+    )
+    assert sources["image_topic"] == (
+        "bag_auto_detect"
+    )
+    assert sources["tracks_topic"] == (
+        "command_line"
+    )
+    assert sources["raw_target_topic"] == (
+        "runner_default"
+    )
+
+
+def test_argument_source_supports_equals_and_boolean_flags(
+    monkeypatch,
+):
+    """Recognise explicit option values in both accepted CLI forms."""
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        [
+            "runner",
+            "--image-height=720",
+            "--appearance-enabled",
+        ],
+    )
+
+    assert MODULE.argument_source(
+        "--image-height"
+    ) == "command_line"
+    assert MODULE.argument_source(
+        "--appearance-enabled",
+        "--no-appearance-enabled",
+    ) == "command_line"
+    assert MODULE.argument_source(
+        "--tracks-topic"
+    ) == "runner_default"
+
+
 def test_git_value_preserves_leading_short_status_column(
     monkeypatch,
     tmp_path,
