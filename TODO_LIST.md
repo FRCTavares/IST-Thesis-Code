@@ -28,8 +28,8 @@ Active executable issues: **41**.
 4. [x] [#4 — P0.5 Prove paper-code-runner equivalence](https://github.com/FRCTavares/IST-Thesis-Code/issues/4)
    - phase 2; documentation; retired as obsolete because the referenced paper is no longer authoritative and no current thesis source is tracked in this repository; the canonical implementation, configuration, deterministic runner provenance, and clean P0.4 evidence remain the source of truth; closure rationale recorded in GitHub Issue #4.
 
-5. [ ] [#5 — P0.6 Replace parallel acceptance paths with one transactional safety gate](https://github.com/FRCTavares/IST-Thesis-Code/issues/5)
-   - phase 2; experiment; implementation committed as `bc36e553`; clean committed eight-run evidence passes provenance, evaluator, repeatability, wrong-target, and target-absence regression gates against canonical P0.4; results exactly match the uncommitted behavioural preflight; ByteTrack intentionally shifts 0.200 s from correct output to LOST because the shared gate rejects the former rank-aware ambiguity bypass; final diff review, evidence checkpoint commit, push, and GitHub closure remain (reports/p005_transactional_gate_bc36e553_2026_07_20/candidate_comparison.json).
+5. [x] [#5 — P0.6 Replace parallel acceptance paths with one transactional safety gate](https://github.com/FRCTavares/IST-Thesis-Code/issues/5)
+   - phase 2; experiment; completed and closed 20 July 2026; transactional candidate acceptance implemented in `bc36e553` and clean eight-run evidence recorded in `5d02c6f2`; all proposal paths share one final safety gate before state or memory mutation; provenance, evaluator, repeatability, wrong-target, and target-absence regression checks passed against canonical P0.4; ByteTrack intentionally shifts 0.200 s from correct output to LOST because the gate rejects the former rank-aware ambiguity bypass; GitHub Issue #5 closure recorded (reports/p005_transactional_gate_bc36e553_2026_07_20/candidate_comparison.json).
 
 6. [ ] [#6 — P0.6b Identify why structural safety heuristics are required](https://github.com/FRCTavares/IST-Thesis-Code/issues/6)
    - phase 2; experiment.
