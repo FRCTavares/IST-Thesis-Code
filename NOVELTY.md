@@ -247,7 +247,7 @@ The safe thesis boundary is therefore:
 
 ### 8.4 A canonical evidence configuration is frozen, not universal
 
-The P0.18 tracker matrix and repeated OC-SORT sequence evidence use one recorded canonical configuration with SHA-256:
+The P0.4 clean tracker matrix and repeated OC-SORT sequence evidence use one recorded canonical configuration with SHA-256:
 
 - `16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655`.
 
@@ -255,20 +255,21 @@ This establishes reproducibility for those experiments. It does not establish th
 
 Tracker-specific calibration remains necessary, and any replacement preset must pass the same held-out wrong-target and target-absence safety criteria.
 
-### 8.5 Paper, code, and runner equivalence is not established
+### 8.5 Current thesis text must follow the current implementation and evidence
 
-The paper describes a clean ordered algorithm.
+The obsolete paper is not an authoritative description of the current
+TIM-MARS algorithm and must not constrain implementation or evaluation values.
 
-The implementation contains several parallel decision paths, including rank-aware reacquisition, short-gap protection, absence recovery, candidate belief, and conservative rejection inside acceptance.
+The repository source of truth is:
 
-The final thesis must prove that:
+- the current TIM-MARS implementation;
+- `tim_mars_canonical.yaml`;
+- deterministic replay metadata and resolved-runtime fingerprints;
+- the promoted clean P0.4 evidence catalogue and reports.
 
-- the written algorithm;
-- the implementation;
-- the launcher configuration;
-- and the evaluated replay
-
-all represent the same method.
+No current thesis source is tracked in this repository. When the final thesis
+methodology and result tables are written, they must be derived from these
+current sources rather than forced to reproduce the obsolete paper.
 
 ### 8.6 Appearance evidence is fragile
 
@@ -307,7 +308,7 @@ TIM-MARS does not claim to:
 Before freezing the complete thesis contribution, complete:
 
 1. one final canonical implementation and runtime configuration;
-2. paper-code-runner equivalence verification;
+2. final thesis methodology and result tables derived from the canonical implementation and promoted evidence;
 3. the remaining annotation and evidence-chain consolidation;
 4. geometry-only and appearance ablations;
 5. hard-negative ablation;

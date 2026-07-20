@@ -15,7 +15,7 @@ evidence are maintained in the linked GitHub Issues.
 6. Completed or rejected issues are removed from this file.
 7. Historical roadmap material is archived under `docs/roadmap/archive/`.
 
-Active executable issues: **42**.
+Active executable issues: **41**.
 
 ## P0 — Critical evidence, safety, thesis-claim, or flight-blocking work
 
@@ -25,8 +25,8 @@ Active executable issues: **42**.
 3. [x] [#3 — P0.4 Freeze one canonical preset — CONFIGURATION DONE; CLEAN RESULT FREEZE PENDING](https://github.com/FRCTavares/IST-Thesis-Code/issues/3)
    - phase 2; experiment; closed after implementation commit `1b7dc4002c19e5235703913826e174df1025f1d0` and evidence commit `b02d1d01fc48ec10cda1110da57d8568fb0354a2`; clean replay, resolved-runtime provenance, compact reports, evidence catalogue, and thesis-facing claims verified; closure evidence recorded in GitHub Issue #3.
 
-4. [ ] [#4 — P0.5 Prove paper-code-runner equivalence](https://github.com/FRCTavares/IST-Thesis-Code/issues/4)
-   - phase 2; documentation.
+4. [x] [#4 — P0.5 Prove paper-code-runner equivalence](https://github.com/FRCTavares/IST-Thesis-Code/issues/4)
+   - phase 2; documentation; retired as obsolete because the referenced paper is no longer authoritative and no current thesis source is tracked in this repository; the canonical implementation, configuration, deterministic runner provenance, and clean P0.4 evidence remain the source of truth; closure rationale recorded in GitHub Issue #4.
 
 5. [ ] [#5 — P0.6 Replace parallel acceptance paths with one transactional safety gate](https://github.com/FRCTavares/IST-Thesis-Code/issues/5)
    - phase 2; experiment.

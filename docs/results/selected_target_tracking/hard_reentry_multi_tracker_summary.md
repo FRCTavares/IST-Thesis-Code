@@ -81,14 +81,16 @@ comparable.
 Recomputing both old and new bags under `v2` produced identical aggregate
 digests and identical per-message records for all eight replay cases.
 
-## Paper-source status
+## Thesis-source status
 
 This repository contains no tracked `.tex` or `.bib` thesis source. The old
-`reports/paper_final_tables_2026_07_04/final_result_tables.md` file is an ignored,
-stale generated artefact and is not promoted.
+paper and `reports/paper_final_tables_2026_07_04/final_result_tables.md` are
+obsolete and are not authoritative evidence.
 
-Synchronising the external thesis Table I with this clean evidence belongs to
-P0.5 paper-code-runner equivalence.
+The current implementation, canonical configuration, deterministic runner
+provenance, evidence catalogue, and promoted P0.4 reports are the source of
+truth. Any final thesis methodology or result table must be written from those
+current sources rather than reproducing obsolete paper values.
 
 ## Limitations
 
