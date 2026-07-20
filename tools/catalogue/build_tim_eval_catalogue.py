@@ -17,8 +17,8 @@ CATALOGUE_PATH = ROOT / "docs/data/catalogue/tim_eval_catalogue.yaml"
 
 P002_ROOT = ROOT / "reports/p002_historical_deepsort_93e047b5_2026_07_19"
 P014_ROOT = ROOT / "reports/p014_protected_appearance_2026_07_17"
-P018_OCSORT_ROOT = ROOT / "reports/p018_ocsort_tim_2d1ae5e9_2026_07_19"
-P018_MATRIX_ROOT = ROOT / "reports/p018_tim_matrix_36ecd17d_2026_07_19"
+P004_OCSORT_ROOT = ROOT / "reports/p004_ocsort_tim_1b7dc400_2026_07_20"
+P004_MATRIX_ROOT = ROOT / "reports/p004_tim_matrix_1b7dc400_2026_07_20"
 
 CANONICAL_CONFIG_SHA256 = (
     "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655"
@@ -81,6 +81,7 @@ def metadata_lineage(
     metadata_path: Path,
     *,
     selected_track_id: int,
+    require_resolved_runtime: bool = False,
 ) -> dict[str, Any]:
     """Extract exact replay lineage from a tracked metadata sidecar."""
     metadata = load_json(metadata_path)
@@ -114,7 +115,7 @@ def metadata_lineage(
                 f"Incomplete source-manifest item in {metadata_path}: {item}"
             )
 
-    return {
+    lineage = {
         "source_bag": relative_repository_path(metadata["input_bag"]),
         "output_bag": relative_repository_path(metadata["output_bag"]),
         "selected_track_id": selected_track_id,
@@ -127,6 +128,59 @@ def metadata_lineage(
         },
         "source_manifest": source_manifest,
     }
+
+    if require_resolved_runtime:
+        if metadata.get("schema_version") != 3:
+            raise ValueError(
+                f"Expected replay metadata schema 3 in {metadata_path}"
+            )
+
+        if metadata.get("repository", {}).get("status_short") != []:
+            raise ValueError(
+                f"Replay repository state is not clean in {metadata_path}"
+            )
+
+        resolved = metadata.get("resolved_runtime")
+        if not isinstance(resolved, dict):
+            raise ValueError(
+                f"Missing resolved-runtime reference in {metadata_path}"
+            )
+
+        runtime_path = metadata_path.parent / resolved["file"]
+        fingerprint_path = (
+            metadata_path.parent / resolved["fingerprint_file"]
+        )
+
+        runtime_sha256 = sha256_file(runtime_path)
+        if runtime_sha256 != resolved["sha256"]:
+            raise ValueError(
+                f"Resolved-runtime digest mismatch in {metadata_path}"
+            )
+
+        expected_fingerprint = (
+            f"{runtime_sha256}  {runtime_path.name}\n"
+        )
+        if fingerprint_path.read_text(encoding="utf-8") != expected_fingerprint:
+            raise ValueError(
+                f"Resolved-runtime fingerprint mismatch in {metadata_path}"
+            )
+
+        runtime = load_json(runtime_path)
+        if runtime.get("schema_version") != 2:
+            raise ValueError(
+                f"Expected resolved-runtime schema 2 in {runtime_path}"
+            )
+
+        lineage["resolved_runtime"] = {
+            "path": runtime_path.relative_to(ROOT).as_posix(),
+            "sha256": runtime_sha256,
+            "fingerprint_path": (
+                fingerprint_path.relative_to(ROOT).as_posix()
+            ),
+            "fingerprint_sha256": sha256_file(fingerprint_path),
+        }
+
+    return lineage
 
 
 def evaluation_reference(path: Path) -> dict[str, str]:
@@ -186,13 +240,13 @@ def build_p002_row() -> dict[str, Any]:
     return row
 
 
-def build_p018_matrix_rows() -> list[dict[str, Any]]:
+def build_p004_matrix_rows() -> list[dict[str, Any]]:
     """Build the autonomous four-tracker hard-reentry rows."""
-    summary_path = P018_MATRIX_ROOT / "canonical_matrix_summary.json"
+    summary_path = P004_MATRIX_ROOT / "canonical_matrix_summary.json"
     summary = load_json(summary_path)
 
     if summary["canonical_config_sha256"] != CANONICAL_CONFIG_SHA256:
-        raise ValueError("P0.18 matrix canonical-config digest mismatch")
+        raise ValueError("P0.4 matrix canonical-config digest mismatch")
 
     rows: list[dict[str, Any]] = []
 
@@ -200,25 +254,26 @@ def build_p018_matrix_rows() -> list[dict[str, Any]]:
         tracker = source_row["tracker"]
         selected_track_id = int(source_row["selected_track_id"])
         metadata_path = (
-            P018_MATRIX_ROOT / tracker / "tim_replay_metadata.json"
+            P004_MATRIX_ROOT / tracker / "tim_replay_metadata.json"
         )
         evaluation_path = (
-            P018_MATRIX_ROOT / tracker / "evaluation/summary.csv"
+            P004_MATRIX_ROOT / tracker / "evaluation/summary.csv"
         )
 
         lineage = metadata_lineage(
             metadata_path,
             selected_track_id=selected_track_id,
+            require_resolved_runtime=True,
         )
 
         if lineage["replay_repository_commit"] != summary["repository_commit"]:
             raise ValueError(
-                f"P0.18 matrix commit mismatch for {tracker}"
+                f"P0.4 matrix commit mismatch for {tracker}"
             )
 
         rows.append(
             {
-                "id": f"p018_matrix_{tracker}",
+                "id": f"p004_matrix_{tracker}",
                 "status": "final evidence",
                 "claim_status": "canonical safety rejection",
                 "sequence": "may_hard_reentry",
@@ -311,41 +366,42 @@ def build_p018_matrix_rows() -> list[dict[str, Any]]:
     return rows
 
 
-def build_p018_ocsort_rows() -> list[dict[str, Any]]:
+def build_p004_ocsort_rows() -> list[dict[str, Any]]:
     """Build the repeated OC-SORT sequence rows."""
     summary_path = (
-        P018_OCSORT_ROOT / "canonical_ocsort_sequence_summary.json"
+        P004_OCSORT_ROOT / "canonical_ocsort_sequence_summary.json"
     )
     summary = load_json(summary_path)
 
     if summary["canonical_config_sha256"] != CANONICAL_CONFIG_SHA256:
-        raise ValueError("P0.18 OC-SORT canonical-config digest mismatch")
+        raise ValueError("P0.4 OC-SORT canonical-config digest mismatch")
 
     rows: list[dict[str, Any]] = []
 
     for sequence, sequence_data in summary["sequences"].items():
         selected_track_id = int(summary["selected_track_id"])
         metadata_path = (
-            P018_OCSORT_ROOT / f"{sequence}_r1/tim_replay_metadata.json"
+            P004_OCSORT_ROOT / f"{sequence}_r1/tim_replay_metadata.json"
         )
         evaluation_path = (
-            P018_OCSORT_ROOT / f"{sequence}_r1/evaluation/summary.csv"
+            P004_OCSORT_ROOT / f"{sequence}_r1/evaluation/summary.csv"
         )
 
         lineage = metadata_lineage(
             metadata_path,
             selected_track_id=selected_track_id,
+            require_resolved_runtime=True,
         )
 
         expected_commit = summary["tim_replay_repository_commit"]
         if lineage["replay_repository_commit"] != expected_commit:
             raise ValueError(
-                f"P0.18 OC-SORT commit mismatch for {sequence}"
+                f"P0.4 OC-SORT commit mismatch for {sequence}"
             )
 
         rows.append(
             {
-                "id": f"p018_ocsort_{sequence}",
+                "id": f"p004_ocsort_{sequence}",
                 "status": "final evidence",
                 "claim_status": "canonical safety rejection",
                 "sequence": sequence,
@@ -396,8 +452,8 @@ def build_catalogue() -> dict[str, Any]:
     """Build the complete curated evidence catalogue."""
     final_rows = [
         build_p002_row(),
-        *build_p018_matrix_rows(),
-        *build_p018_ocsort_rows(),
+        *build_p004_matrix_rows(),
+        *build_p004_ocsort_rows(),
     ]
 
     selection_counts: dict[str, int] = {}

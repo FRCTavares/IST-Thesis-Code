@@ -1,0 +1,126 @@
+{
+  "canonical_config": {
+    "copy": "tim_mars_canonical_config.yaml",
+    "sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+    "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+  },
+  "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p018_ocsort_sequences_305578f3_2026_07_19/seq04_ocsort_freeze_r1 bags/replay/p004_ocsort_tim_1b7dc400_2026_07_20/seq04_r1 --config ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/dashboard --image-width 640 --image-height 640",
+  "counts": {
+    "images_loaded": 467,
+    "output_topic_counts": {
+      "/camera/dashboard": 467,
+      "/detections": 1589,
+      "/target": 1589,
+      "/target_memory_mars": 1589,
+      "/target_memory_mars/status": 1589,
+      "/timing": 1575,
+      "/timing_target": 1544,
+      "/tracks": 1589
+    },
+    "raw_target_messages_written": 0,
+    "raw_target_valid_messages_written": 0,
+    "source_messages_streamed": 8353,
+    "tim_status_messages_written": 1589,
+    "tim_target_messages_written": 1589,
+    "track_messages_processed": 1589
+  },
+  "created_at_utc": "2026-07-20T09:12:21.985794+00:00",
+  "determinism": {
+    "generated_semantic_sha256": "e4470095c49822e2df3e4d234c8d5d2c03efeb1b94a08fb569f3df2172eb8e0f",
+    "raw_cdr_payload_bytes_are_contract": false,
+    "raw_mcap_file_bytes_are_contract": false,
+    "reason": "ROS CDR payloads may contain non-semantic alignment-padding bytes; determinism is defined over declared generated message fields and write order.",
+    "semantic_digest_schema": "tim_mars_replay_generated_fields_v2"
+  },
+  "input_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_ocsort_sequences_305578f3_2026_07_19/seq04_ocsort_freeze_r1",
+  "metadata_artifacts": {
+    "fingerprint_file": "tim_replay_metadata.sha256",
+    "metadata_file": "tim_replay_metadata.json",
+    "resolved_runtime_file": "tim_mars_resolved_runtime.json",
+    "resolved_runtime_fingerprint_file": "tim_mars_resolved_runtime.sha256"
+  },
+  "model": {
+    "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+    "size_bytes": 11244410,
+    "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+  },
+  "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p004_ocsort_tim_1b7dc400_2026_07_20/seq04_r1",
+  "processing_contract": {
+    "algorithm_processing_order": [
+      "trustworthy_track_timestamp",
+      "frame_id",
+      "original_bag_timestamp",
+      "original_sequence_index"
+    ],
+    "bag_write_order": [
+      "original_bag_timestamp",
+      "original_source_order",
+      "generated_tim_target_then_status"
+    ],
+    "complete_image_timeline_preloaded": true,
+    "source_copy_mode": "streamed_second_pass"
+  },
+  "raw_target_generation": {
+    "fixed_after_initialization": null,
+    "mode": "source",
+    "reselection_enabled": null,
+    "selected_track_id": null,
+    "source_topic_replaced": false
+  },
+  "repository": {
+    "branch": "main",
+    "commit": "1b7dc4002c19e5235703913826e174df1025f1d0",
+    "root": "/home/francisco/Desktop/Thesis-Code",
+    "status_short": []
+  },
+  "resolved_runtime": {
+    "file": "tim_mars_resolved_runtime.json",
+    "fingerprint_file": "tim_mars_resolved_runtime.sha256",
+    "sha256": "6a2888650dfae9e3d80a2f75fd9eab1192ef541c294648b9ea49cb65c8835f36"
+  },
+  "runtime": {
+    "appearance_enabled": true,
+    "image_height": 640.0,
+    "image_width": 640.0,
+    "raw_target_mode": "source",
+    "selected_track_id": 1,
+    "tracks_are_normalized": false,
+    "zero_id_when_not_visible": true
+  },
+  "schema_version": 3,
+  "source_manifest": [
+    {
+      "name": "metadata.yaml",
+      "sha256": "743ac0e5ec54bc0fff0beffe629abf1f9d315698f6d526df847858b7402a0f73",
+      "size_bytes": 4018
+    },
+    {
+      "name": "seq04_ocsort_freeze_r1_0.mcap",
+      "sha256": "983e61004e0d43e4ba98654d3c67b4e381bf2b1009262d449bb7db0948a8316e",
+      "size_bytes": 434635304
+    },
+    {
+      "name": "tracker_config.yaml",
+      "sha256": "b7967161815ecaacf903c4c8f3b5c09f601423b38ce46cefa9e00b89a36af89c",
+      "size_bytes": 373
+    },
+    {
+      "name": "tracker_freeze_metadata.json",
+      "sha256": "f8d5979399a8311963f70f5ef50b98e45a06fb6b14b834ef0dbc1e6e6464d0e2",
+      "size_bytes": 4550
+    },
+    {
+      "name": "tracker_freeze_metadata.sha256",
+      "sha256": "2da9857ccfbdde4cccaf8bec4fa59c3409523f2c392ae17db985db5b38bc16e7",
+      "size_bytes": 95
+    }
+  ],
+  "topics": {
+    "image": "/camera/dashboard",
+    "raw_target": "/target",
+    "raw_target_source": "source_copy",
+    "tim_status": "/target_memory_mars/status",
+    "tim_target": "/target_memory_mars",
+    "tracks": "/tracks"
+  }
+}

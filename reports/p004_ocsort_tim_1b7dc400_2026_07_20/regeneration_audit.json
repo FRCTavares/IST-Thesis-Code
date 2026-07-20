@@ -1,0 +1,187 @@
+{
+  "all_checks_passed": true,
+  "audit_contract": "clean_regeneration_with_digest_schema_migration",
+  "cases": [
+    {
+      "all_checks_passed": true,
+      "canonical_config_sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+      "checks": {
+        "canonical_config_hash_consistent": true,
+        "digest_schema_migrated_v1_to_v2": true,
+        "effective_runtime_unchanged": true,
+        "evaluation_unchanged": true,
+        "event_evaluation_unchanged": true,
+        "generated_message_records_match": true,
+        "metadata_fingerprint_matches": true,
+        "metadata_references_runtime_hash": true,
+        "metadata_schema_v3": true,
+        "new_stored_digest_self_verifies": true,
+        "old_and_new_v2_digests_match": true,
+        "repository_commit_is_clean_freeze": true,
+        "resolved_runtime_fingerprint_matches": true,
+        "resolved_runtime_schema_v2": true,
+        "topic_counts_unchanged": true,
+        "value_sources_complete": true
+      },
+      "digest_migration": {
+        "first_message_difference": null,
+        "generated_message_count": 4672,
+        "interpretation": "Stored v1 and v2 digests are not directly comparable. Recomputing both bags with the current v2 contract yields identical digests and identical per-message records.",
+        "new_recomputed_with_v2_sha256": "76b8b965a03d5aaa27d790c7a1c739e9c33e214299aaeb1a9f4d8e34f26b6b37",
+        "new_schema": "tim_mars_replay_generated_fields_v2",
+        "new_stored_sha256": "76b8b965a03d5aaa27d790c7a1c739e9c33e214299aaeb1a9f4d8e34f26b6b37",
+        "old_recomputed_with_v2_sha256": "76b8b965a03d5aaa27d790c7a1c739e9c33e214299aaeb1a9f4d8e34f26b6b37",
+        "old_schema": "tim_mars_replay_generated_fields_v1",
+        "old_stored_sha256": "9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a"
+      },
+      "group": "ocsort_sequences",
+      "label": "seq03_r1",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "repository_commit": "1b7dc4002c19e5235703913826e174df1025f1d0",
+      "resolved_runtime_sha256": "431cbfb3890f1e2d944f24ddd7724f89caeb667e8be8e23d08baa1d3c139b8d3"
+    },
+    {
+      "all_checks_passed": true,
+      "canonical_config_sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+      "checks": {
+        "canonical_config_hash_consistent": true,
+        "digest_schema_migrated_v1_to_v2": true,
+        "effective_runtime_unchanged": true,
+        "evaluation_unchanged": true,
+        "event_evaluation_unchanged": true,
+        "generated_message_records_match": true,
+        "metadata_fingerprint_matches": true,
+        "metadata_references_runtime_hash": true,
+        "metadata_schema_v3": true,
+        "new_stored_digest_self_verifies": true,
+        "old_and_new_v2_digests_match": true,
+        "repository_commit_is_clean_freeze": true,
+        "resolved_runtime_fingerprint_matches": true,
+        "resolved_runtime_schema_v2": true,
+        "topic_counts_unchanged": true,
+        "value_sources_complete": true
+      },
+      "digest_migration": {
+        "first_message_difference": null,
+        "generated_message_count": 4672,
+        "interpretation": "Stored v1 and v2 digests are not directly comparable. Recomputing both bags with the current v2 contract yields identical digests and identical per-message records.",
+        "new_recomputed_with_v2_sha256": "76b8b965a03d5aaa27d790c7a1c739e9c33e214299aaeb1a9f4d8e34f26b6b37",
+        "new_schema": "tim_mars_replay_generated_fields_v2",
+        "new_stored_sha256": "76b8b965a03d5aaa27d790c7a1c739e9c33e214299aaeb1a9f4d8e34f26b6b37",
+        "old_recomputed_with_v2_sha256": "76b8b965a03d5aaa27d790c7a1c739e9c33e214299aaeb1a9f4d8e34f26b6b37",
+        "old_schema": "tim_mars_replay_generated_fields_v1",
+        "old_stored_sha256": "9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a"
+      },
+      "group": "ocsort_sequences",
+      "label": "seq03_r2",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "repository_commit": "1b7dc4002c19e5235703913826e174df1025f1d0",
+      "resolved_runtime_sha256": "69c59a987d31b4bf30eac2a76c02d86390399ce40e3f0aa12c03eeaa6e48905c"
+    },
+    {
+      "all_checks_passed": true,
+      "canonical_config_sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+      "checks": {
+        "canonical_config_hash_consistent": true,
+        "digest_schema_migrated_v1_to_v2": true,
+        "effective_runtime_unchanged": true,
+        "evaluation_unchanged": true,
+        "event_evaluation_unchanged": true,
+        "generated_message_records_match": true,
+        "metadata_fingerprint_matches": true,
+        "metadata_references_runtime_hash": true,
+        "metadata_schema_v3": true,
+        "new_stored_digest_self_verifies": true,
+        "old_and_new_v2_digests_match": true,
+        "repository_commit_is_clean_freeze": true,
+        "resolved_runtime_fingerprint_matches": true,
+        "resolved_runtime_schema_v2": true,
+        "topic_counts_unchanged": true,
+        "value_sources_complete": true
+      },
+      "digest_migration": {
+        "first_message_difference": null,
+        "generated_message_count": 3178,
+        "interpretation": "Stored v1 and v2 digests are not directly comparable. Recomputing both bags with the current v2 contract yields identical digests and identical per-message records.",
+        "new_recomputed_with_v2_sha256": "e4470095c49822e2df3e4d234c8d5d2c03efeb1b94a08fb569f3df2172eb8e0f",
+        "new_schema": "tim_mars_replay_generated_fields_v2",
+        "new_stored_sha256": "e4470095c49822e2df3e4d234c8d5d2c03efeb1b94a08fb569f3df2172eb8e0f",
+        "old_recomputed_with_v2_sha256": "e4470095c49822e2df3e4d234c8d5d2c03efeb1b94a08fb569f3df2172eb8e0f",
+        "old_schema": "tim_mars_replay_generated_fields_v1",
+        "old_stored_sha256": "e6b5560be7ee78f7cfaad708ccc455c09f45dd31f5e4b7f79961457deea0cd00"
+      },
+      "group": "ocsort_sequences",
+      "label": "seq04_r1",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "repository_commit": "1b7dc4002c19e5235703913826e174df1025f1d0",
+      "resolved_runtime_sha256": "6a2888650dfae9e3d80a2f75fd9eab1192ef541c294648b9ea49cb65c8835f36"
+    },
+    {
+      "all_checks_passed": true,
+      "canonical_config_sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+      "checks": {
+        "canonical_config_hash_consistent": true,
+        "digest_schema_migrated_v1_to_v2": true,
+        "effective_runtime_unchanged": true,
+        "evaluation_unchanged": true,
+        "event_evaluation_unchanged": true,
+        "generated_message_records_match": true,
+        "metadata_fingerprint_matches": true,
+        "metadata_references_runtime_hash": true,
+        "metadata_schema_v3": true,
+        "new_stored_digest_self_verifies": true,
+        "old_and_new_v2_digests_match": true,
+        "repository_commit_is_clean_freeze": true,
+        "resolved_runtime_fingerprint_matches": true,
+        "resolved_runtime_schema_v2": true,
+        "topic_counts_unchanged": true,
+        "value_sources_complete": true
+      },
+      "digest_migration": {
+        "first_message_difference": null,
+        "generated_message_count": 3178,
+        "interpretation": "Stored v1 and v2 digests are not directly comparable. Recomputing both bags with the current v2 contract yields identical digests and identical per-message records.",
+        "new_recomputed_with_v2_sha256": "e4470095c49822e2df3e4d234c8d5d2c03efeb1b94a08fb569f3df2172eb8e0f",
+        "new_schema": "tim_mars_replay_generated_fields_v2",
+        "new_stored_sha256": "e4470095c49822e2df3e4d234c8d5d2c03efeb1b94a08fb569f3df2172eb8e0f",
+        "old_recomputed_with_v2_sha256": "e4470095c49822e2df3e4d234c8d5d2c03efeb1b94a08fb569f3df2172eb8e0f",
+        "old_schema": "tim_mars_replay_generated_fields_v1",
+        "old_stored_sha256": "e6b5560be7ee78f7cfaad708ccc455c09f45dd31f5e4b7f79961457deea0cd00"
+      },
+      "group": "ocsort_sequences",
+      "label": "seq04_r2",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "repository_commit": "1b7dc4002c19e5235703913826e174df1025f1d0",
+      "resolved_runtime_sha256": "d0203016c3a709996c6b1a30926185d28c26c1d30b5733a22798c1655c1f4e8a"
+    }
+  ],
+  "issue": "P0.4",
+  "repeatability": [
+    {
+      "all_checks_passed": true,
+      "checks": {
+        "evaluation_rows_match": true,
+        "event_rows_match": true,
+        "generated_message_records_match": true,
+        "runtime_matches_except_output_path": true,
+        "stored_digest_matches": true,
+        "topic_counts_match": true
+      },
+      "sequence": "seq03"
+    },
+    {
+      "all_checks_passed": true,
+      "checks": {
+        "evaluation_rows_match": true,
+        "event_rows_match": true,
+        "generated_message_records_match": true,
+        "runtime_matches_except_output_path": true,
+        "stored_digest_matches": true,
+        "topic_counts_match": true
+      },
+      "sequence": "seq04"
+    }
+  ],
+  "repository_commit": "1b7dc4002c19e5235703913826e174df1025f1d0",
+  "schema_version": 2
+}

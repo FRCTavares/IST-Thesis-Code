@@ -1,0 +1,129 @@
+{
+  "canonical_config": {
+    "copy": "tim_mars_canonical_config.yaml",
+    "sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+    "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+  },
+  "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/deepsort bags/replay/p004_tim_matrix_1b7dc400_2026_07_20/deepsort --config ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --image-width 640 --image-height 640",
+  "counts": {
+    "images_loaded": 974,
+    "output_topic_counts": {
+      "/camera/fps": 67,
+      "/camera/image_raw": 974,
+      "/detections": 953,
+      "/target": 953,
+      "/target_memory": 912,
+      "/target_memory/status": 912,
+      "/target_memory_mars": 953,
+      "/target_memory_mars/status": 953,
+      "/timing": 953,
+      "/timing_target": 912,
+      "/tracks": 953
+    },
+    "raw_target_messages_written": 0,
+    "raw_target_valid_messages_written": 0,
+    "source_messages_streamed": 7589,
+    "tim_status_messages_written": 953,
+    "tim_target_messages_written": 953,
+    "track_messages_processed": 953
+  },
+  "created_at_utc": "2026-07-20T09:10:08.883282+00:00",
+  "determinism": {
+    "generated_semantic_sha256": "4822d57c6ea60e6b39b1b3a091ee714b0d55b346d4f3e78086b29e57b5a762d3",
+    "raw_cdr_payload_bytes_are_contract": false,
+    "raw_mcap_file_bytes_are_contract": false,
+    "reason": "ROS CDR payloads may contain non-semantic alignment-padding bytes; determinism is defined over declared generated message fields and write order.",
+    "semantic_digest_schema": "tim_mars_replay_generated_fields_v2"
+  },
+  "input_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/deepsort",
+  "metadata_artifacts": {
+    "fingerprint_file": "tim_replay_metadata.sha256",
+    "metadata_file": "tim_replay_metadata.json",
+    "resolved_runtime_file": "tim_mars_resolved_runtime.json",
+    "resolved_runtime_fingerprint_file": "tim_mars_resolved_runtime.sha256"
+  },
+  "model": {
+    "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+    "size_bytes": 11244410,
+    "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+  },
+  "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p004_tim_matrix_1b7dc400_2026_07_20/deepsort",
+  "processing_contract": {
+    "algorithm_processing_order": [
+      "trustworthy_track_timestamp",
+      "frame_id",
+      "original_bag_timestamp",
+      "original_sequence_index"
+    ],
+    "bag_write_order": [
+      "original_bag_timestamp",
+      "original_source_order",
+      "generated_tim_target_then_status"
+    ],
+    "complete_image_timeline_preloaded": true,
+    "source_copy_mode": "streamed_second_pass"
+  },
+  "raw_target_generation": {
+    "fixed_after_initialization": null,
+    "mode": "source",
+    "reselection_enabled": null,
+    "selected_track_id": null,
+    "source_topic_replaced": false
+  },
+  "repository": {
+    "branch": "main",
+    "commit": "1b7dc4002c19e5235703913826e174df1025f1d0",
+    "root": "/home/francisco/Desktop/Thesis-Code",
+    "status_short": []
+  },
+  "resolved_runtime": {
+    "file": "tim_mars_resolved_runtime.json",
+    "fingerprint_file": "tim_mars_resolved_runtime.sha256",
+    "sha256": "ef06baa4d00fbf45f3c07464bf028212117763c8979111a9447dc40e3852af5a"
+  },
+  "runtime": {
+    "appearance_enabled": true,
+    "image_height": 640.0,
+    "image_width": 640.0,
+    "raw_target_mode": "source",
+    "selected_track_id": 1,
+    "tracks_are_normalized": false,
+    "zero_id_when_not_visible": true
+  },
+  "schema_version": 3,
+  "source_manifest": [
+    {
+      "name": "deepsort_0.mcap",
+      "sha256": "2ef3cf5b105b8a44f9804a61d0f87a640cc7c2ad8c1c19155bb4a818d4653576",
+      "size_bytes": 1200805983
+    },
+    {
+      "name": "metadata.yaml",
+      "sha256": "5a3a8c2a3366f9103fddaa2fe7e80b7b361433a09be3569acc9d9de372e16610",
+      "size_bytes": 6232
+    },
+    {
+      "name": "tracker_config.yaml",
+      "sha256": "a4c25f5471cc5a6dd9ac49fed96b9d32ced5cd26ab8e699818af0340fee0f9ad",
+      "size_bytes": 547
+    },
+    {
+      "name": "tracker_freeze_metadata.json",
+      "sha256": "44467373084d5d0fad08918e98b3563452cd47500a08998124fd4785361c6230",
+      "size_bytes": 4815
+    },
+    {
+      "name": "tracker_freeze_metadata.sha256",
+      "sha256": "ecf9f52521edec1cb43b1ed5fc71d7d31a69b40c0e81e3977326d671f1234b0a",
+      "size_bytes": 95
+    }
+  ],
+  "topics": {
+    "image": "/camera/image_raw",
+    "raw_target": "/target",
+    "raw_target_source": "source_copy",
+    "tim_status": "/target_memory_mars/status",
+    "tim_target": "/target_memory_mars",
+    "tracks": "/tracks"
+  }
+}

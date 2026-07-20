@@ -102,6 +102,27 @@ def test_final_rows_have_complete_classification_and_lineage():
 
         assert row["lineage"]["source_manifest"]
 
+        if row["id"].startswith("p004_"):
+            resolved_runtime = row["lineage"]["resolved_runtime"]
+            assert re.fullmatch(
+                r"[0-9a-f]{64}",
+                resolved_runtime["sha256"],
+            )
+            assert re.fullmatch(
+                r"[0-9a-f]{64}",
+                resolved_runtime["fingerprint_sha256"],
+            )
+            assert (
+                ROOT / resolved_runtime["path"]
+            ).is_file()
+            assert (
+                ROOT / resolved_runtime["fingerprint_path"]
+            ).is_file()
+            assert (
+                row["lineage"]["replay_repository_commit"]
+                == "1b7dc4002c19e5235703913826e174df1025f1d0"
+            )
+
 
 def test_no_unproven_full_pipeline_row_is_promoted():
     """Reject unproven full-pipeline final evidence.
@@ -155,7 +176,7 @@ def test_legacy_valid_for_evaluation_flag_is_removed():
     assert "recommended_annotation" not in text
 
 
-def test_novelty_tables_match_promoted_p018_reports():
+def test_novelty_tables_match_promoted_p004_reports():
     """Curated thesis-facing tables must match the promoted report rows."""
     catalogue = load_catalogue()
     novelty = NOVELTY_PATH.read_text(encoding="utf-8")
@@ -163,7 +184,7 @@ def test_novelty_tables_match_promoted_p018_reports():
     matrix_rows = {
         row["tracker"]: row
         for row in catalogue["final_rows"]
-        if row["id"].startswith("p018_matrix_")
+        if row["id"].startswith("p004_matrix_")
     }
 
     for tracker, label in (
@@ -190,7 +211,7 @@ def test_novelty_tables_match_promoted_p018_reports():
     sequence_rows = {
         row["sequence"]: row
         for row in catalogue["final_rows"]
-        if row["id"].startswith("p018_ocsort_")
+        if row["id"].startswith("p004_ocsort_")
     }
 
     expected_seq03 = (

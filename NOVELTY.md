@@ -146,6 +146,9 @@ The promoted cross-tracker evidence uses:
   `16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655`;
 - MARS model SHA-256
   `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`;
+- clean replay commit
+  `1b7dc4002c19e5235703913826e174df1025f1d0`;
+- replay metadata schema `3` and resolved-runtime schema `2`;
 - image-header-time evaluation with a `0.05 s` step and safety tolerance.
 
 ### 6.1 Canonical hard-reentry tracker matrix
@@ -159,7 +162,7 @@ The promoted cross-tracker evidence uses:
 
 The canonical report is:
 
-- `reports/p018_tim_matrix_36ecd17d_2026_07_19/`.
+- `reports/p004_tim_matrix_1b7dc400_2026_07_20/`.
 
 Within-tracker raw-versus-TIM comparisons are valid. Absolute cross-tracker ranking is qualified because each tracker autonomously selected its own physical target.
 
@@ -174,7 +177,7 @@ All four tracker pairings failed promotion with the single canonical preset. Mot
 
 The repeated deterministic report is:
 
-- `reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/`.
+- `reports/p004_ocsort_tim_1b7dc400_2026_07_20/`.
 
 Seq03 substantially improves availability but exceeds the wrong-target safety tolerance. Seq04 lies exactly at the one-step wrong-target tolerance boundary. Neither sequence increases target-absence valid output.
 
@@ -225,7 +228,7 @@ The final evaluation must therefore preserve the asymmetric objective: wrong-tar
 
 TIM-MARS accepts a tracker-independent message contract, but the behaviour of its geometry, continuity, appearance, and recovery logic depends on the candidate trajectories produced by the base tracker.
 
-The canonical P0.18 evidence rejects one-preset portability:
+The canonical P0.4 clean-freeze evidence rejects one-preset portability:
 
 - ByteTrack increases wrong-target output by `0.700 s`;
 - SORT increases wrong-target output by `5.300 s` and target-absence valid output by `0.150 s`;
@@ -315,7 +318,7 @@ Before freezing the complete thesis contribution, complete:
 10. runtime and onboard resource measurements;
 11. explicit failure-case analysis.
 
-The P0.18 cross-tracker investigation is complete. It establishes interface modularity, rejects the single-preset safety-portability claim, and defines tracker-specific validation as a design boundary.
+The P0.4 clean evidence freeze is complete. It establishes interface modularity, rejects the single-preset safety-portability claim, and defines tracker-specific validation as a design boundary.
 
 ## 11. Target contribution statement
 

@@ -24,15 +24,19 @@ The multi-tracker hard-reentry summary is the main source of truth for the TIM-M
 
 It supersedes earlier TIM-V2, TIM-V2Q, active-MARS, conservative-MARS, and early DeepSORT comparison notes now stored under `archive/results/`.
 
-## Current trusted hard-reentry annotations
+## Current trusted selected-target annotations
 
-Use these active annotation files:
+Use the exact tracker-specific annotations recorded by the clean P0.4 reports:
 
-- `annotations/hard_reentry/bytetrack_tim_mars_final.csv`
-- `annotations/hard_reentry/deepsort_mars_target1_final.csv`
-- `annotations/hard_reentry/ocsort_tim_mars_r1.csv`
+- `data/annotations/may_hard_reentry/bytetrack_f17cdf80_autonomous.csv`
+- `data/annotations/may_hard_reentry/sort_f17cdf80_autonomous.csv`
+- `data/annotations/may_hard_reentry/ocsort_f17cdf80_autonomous.csv`
+- `data/annotations/may_hard_reentry/deepsort_f17cdf80_autonomous.csv`
+- `data/annotations/june_hard_sequences/seq03_ocsort_305578f3.csv`
+- `data/annotations/june_hard_sequences/seq04_ocsort_305578f3.csv`
 
-Older manual-review and intermediate annotation versions are kept under `archive/annotations/`.
+These files are tracker-ID-specific and must not be reused for freshly
+renumbered tracker outputs without a new compatibility audit.
 
 ## Archive policy
 

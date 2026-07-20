@@ -1,0 +1,211 @@
+{
+  "all_checks_passed": true,
+  "authoritative_evaluator": {
+    "origin": "first image header timestamp",
+    "step_s": 0.05,
+    "timebase": "header",
+    "tool": "tools/analysis/evaluate_tim_target_correctness.py"
+  },
+  "canonical_config_sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+  "conclusion": "The canonical preset improves correct-target availability on Seq03 and Seq04, but Seq03 exceeds the wrong-target safety tolerance and Seq04 lies at the one-step boundary. Universal safety promotion is rejected.",
+  "event_evaluator": {
+    "contract": "common first-image header origin, track-ID validity, and authoritative interval grid",
+    "tool": "tools/analysis/evaluate_tim_by_event_type.py"
+  },
+  "event_evaluator_repository_commit": "1b7dc4002c19e5235703913826e174df1025f1d0",
+  "evidence_name": "P0.4 clean repeated OC-SORT sequence evidence",
+  "mars_model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+  "provenance_contract": {
+    "cross_schema_equivalence_audit": "regeneration_audit.json",
+    "replay_metadata_schema": 3,
+    "resolved_runtime_schema": 2,
+    "semantic_digest_schema": "tim_mars_replay_generated_fields_v2"
+  },
+  "runtime": {
+    "appearance_enabled": true,
+    "candidate_image_height": 640,
+    "candidate_image_width": 640,
+    "image_topic": "/camera/dashboard",
+    "tracks_are_normalized": false
+  },
+  "safety_promotion_tolerance_s": 0.05,
+  "schema_version": 2,
+  "selected_track_id": 1,
+  "sequences": {
+    "seq03": {
+      "annotation": "docs/data/annotations/june_hard_sequences/seq03_ocsort_305578f3.csv",
+      "annotation_sha256": "12db619326e47ff138b4267cd19dc1f3296385a06e01f693e9c1e467876bf56a",
+      "delta": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 48.831,
+        "lost_duration_s": -50.181,
+        "wrong_duration_s": 1.3499999999999999
+      },
+      "evaluation_sha256": "453050ae7cd54ad08aebc74a92789c18f558e024833c95d585b659c84bccec5d",
+      "event_deltas": {
+        "clean_visible": {
+          "correct_s": 35.662,
+          "lost_s": -36.412,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.75
+        },
+        "id_switch_fragmentation": {
+          "correct_s": 0.0,
+          "lost_s": -0.15,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.15
+        },
+        "occlusion_ambiguity": {
+          "correct_s": 13.169,
+          "lost_s": -13.619,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.45
+        }
+      },
+      "event_evaluation_sha256": "a46f90293d7644260f28662169a26d38a89f8d4ef3cf0ca399bfa54a0d191203",
+      "generated_semantic_sha256": "76b8b965a03d5aaa27d790c7a1c739e9c33e214299aaeb1a9f4d8e34f26b6b37",
+      "name": "Crossing ambiguity",
+      "raw": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 32.554,
+        "correct_ratio": 0.34,
+        "lost_duration_s": 63.123,
+        "lost_ratio": 0.659,
+        "wrong_duration_s": 0.05,
+        "wrong_ratio": 0.001
+      },
+      "repeatability": {
+        "all_checks_passed": true,
+        "checks": {
+          "evaluation_rows_match": true,
+          "event_rows_match": true,
+          "generated_message_records_match": true,
+          "runtime_matches_except_output_path": true,
+          "stored_digest_matches": true,
+          "topic_counts_match": true
+        },
+        "schema_version": 2,
+        "sequence": "seq03"
+      },
+      "resolved_runtime_sha256": {
+        "r1": "431cbfb3890f1e2d944f24ddd7724f89caeb667e8be8e23d08baa1d3c139b8d3",
+        "r2": "69c59a987d31b4bf30eac2a76c02d86390399ce40e3f0aa12c03eeaa6e48905c"
+      },
+      "runs": {
+        "r1": "seq03_r1",
+        "r2": "seq03_r2"
+      },
+      "safety": {
+        "tolerance_s": 0.05,
+        "unsafe_absence_above_tolerance": false,
+        "unsafe_wrong_above_tolerance": true,
+        "wrong_delta_at_tolerance_boundary": false
+      },
+      "semantic_digest_schema": "tim_mars_replay_generated_fields_v2",
+      "tim": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 81.385,
+        "correct_ratio": 0.85,
+        "lost_duration_s": 12.942,
+        "lost_ratio": 0.135,
+        "wrong_duration_s": 1.4,
+        "wrong_ratio": 0.015
+      }
+    },
+    "seq04": {
+      "annotation": "docs/data/annotations/june_hard_sequences/seq04_ocsort_305578f3.csv",
+      "annotation_sha256": "39cc630be6873c261de22a248ddeab1cbb723988e2513b1cc2ae24a8450fc1a1",
+      "delta": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 3.297000000000004,
+        "lost_duration_s": -3.3469999999999978,
+        "wrong_duration_s": 0.04999999999999999
+      },
+      "evaluation_sha256": "064b91629a6c7d7e1216a2045005ee7598ea32f392b2c6ca197e3e034476a5bf",
+      "event_deltas": {
+        "clean_visible": {
+          "correct_s": 2.867,
+          "lost_s": -2.867,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.0
+        },
+        "id_switch_fragmentation": {
+          "correct_s": 1.3,
+          "lost_s": -1.45,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.15
+        },
+        "occlusion_ambiguity": {
+          "correct_s": -0.87,
+          "lost_s": 0.97,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": -0.1
+        },
+        "reentry": {
+          "correct_s": 0.0,
+          "lost_s": 0.0,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.0
+        },
+        "target_absent": {
+          "correct_s": 0.0,
+          "lost_s": 0.0,
+          "target_absent_but_output_s": 0.0,
+          "wrong_s": 0.0
+        }
+      },
+      "event_evaluation_sha256": "17c745ea0b5aa401a6478c84a389ed9256f6562fabcdfabba95b51bd7d5093b7",
+      "generated_semantic_sha256": "e4470095c49822e2df3e4d234c8d5d2c03efeb1b94a08fb569f3df2172eb8e0f",
+      "name": "Occlusion/no-exit",
+      "raw": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 36.589,
+        "correct_ratio": 0.644,
+        "lost_duration_s": 20.133,
+        "lost_ratio": 0.354,
+        "wrong_duration_s": 0.1,
+        "wrong_ratio": 0.002
+      },
+      "repeatability": {
+        "all_checks_passed": true,
+        "checks": {
+          "evaluation_rows_match": true,
+          "event_rows_match": true,
+          "generated_message_records_match": true,
+          "runtime_matches_except_output_path": true,
+          "stored_digest_matches": true,
+          "topic_counts_match": true
+        },
+        "schema_version": 2,
+        "sequence": "seq04"
+      },
+      "resolved_runtime_sha256": {
+        "r1": "6a2888650dfae9e3d80a2f75fd9eab1192ef541c294648b9ea49cb65c8835f36",
+        "r2": "d0203016c3a709996c6b1a30926185d28c26c1d30b5733a22798c1655c1f4e8a"
+      },
+      "runs": {
+        "r1": "seq04_r1",
+        "r2": "seq04_r2"
+      },
+      "safety": {
+        "tolerance_s": 0.05,
+        "unsafe_absence_above_tolerance": false,
+        "unsafe_wrong_above_tolerance": false,
+        "wrong_delta_at_tolerance_boundary": true
+      },
+      "semantic_digest_schema": "tim_mars_replay_generated_fields_v2",
+      "tim": {
+        "absent_output_duration_s": 0.0,
+        "correct_duration_s": 39.886,
+        "correct_ratio": 0.702,
+        "lost_duration_s": 16.786,
+        "lost_ratio": 0.295,
+        "wrong_duration_s": 0.15,
+        "wrong_ratio": 0.003
+      }
+    }
+  },
+  "tim_replay_repository_commit": "1b7dc4002c19e5235703913826e174df1025f1d0",
+  "tracker": "OC-SORT",
+  "tracker_freeze_repository_commit": "305578f322df539f7d457de1f3cc7ddf27969734"
+}

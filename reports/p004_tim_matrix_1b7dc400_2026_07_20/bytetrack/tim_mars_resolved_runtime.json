@@ -1,0 +1,38 @@
+{
+  "canonical_config": {
+    "copy": "tim_mars_canonical_config.yaml",
+    "sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+    "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+  },
+  "experiment_fields": {
+    "image_topic": "/camera/image_raw",
+    "input_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/bytetrack",
+    "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p004_tim_matrix_1b7dc400_2026_07_20/bytetrack",
+    "raw_target_mode": "source",
+    "raw_target_topic": "/target",
+    "tracks_topic": "/tracks"
+  },
+  "runtime_overrides": {
+    "appearance_enabled": true,
+    "image_height": 640.0,
+    "image_width": 640.0,
+    "selected_track_id": 2,
+    "tracks_are_normalized": false,
+    "zero_id_when_not_visible": true
+  },
+  "schema_version": 2,
+  "value_sources": {
+    "appearance_enabled": "canonical_config",
+    "image_height": "command_line",
+    "image_topic": "command_line",
+    "image_width": "command_line",
+    "input_bag": "command_line_required",
+    "output_bag": "command_line_required",
+    "raw_target_mode": "runner_default",
+    "raw_target_topic": "runner_default",
+    "selected_track_id": "command_line_required",
+    "tracks_are_normalized": "runner_default",
+    "tracks_topic": "runner_default",
+    "zero_id_when_not_visible": "runner_default"
+  }
+}

@@ -23,7 +23,7 @@ Active executable issues: **43**.
    - phase 1; experiment; closed after implementation commit `39503a79be2bb86a389d0ad0062e51d700a0a860`; closure evidence recorded in GitHub Issue #2.
 
 3. [ ] [#3 — P0.4 Freeze one canonical preset — CONFIGURATION DONE; CLEAN RESULT FREEZE PENDING](https://github.com/FRCTavares/IST-Thesis-Code/issues/3)
-   - phase 2; experiment; deterministic resolved-runtime fingerprint implementation and verification complete; clean committed replay regeneration pending.
+   - phase 2; experiment; deterministic resolved-runtime fingerprints, clean committed replay regeneration, cross-schema semantic-equivalence audit, compact report promotion, and thesis-facing documentation update complete at commit `1b7dc4002c19e5235703913826e174df1025f1d0`; final verification, evidence commit, and closure review pending.
 
 4. [ ] [#4 — P0.5 Prove paper-code-runner equivalence](https://github.com/FRCTavares/IST-Thesis-Code/issues/4)
    - phase 2; documentation.

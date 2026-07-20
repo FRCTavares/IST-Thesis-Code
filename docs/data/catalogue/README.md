@@ -63,3 +63,9 @@ Archived files:
 - `archive_legacy_cleanup/`: historical migration manifests from previous bag
   reorganisations. These are kept for traceability but are not part of the
   active catalogue.
+
+The canonical cross-tracker and OC-SORT rows now resolve to the clean P0.4
+packages generated from commit
+`1b7dc4002c19e5235703913826e174df1025f1d0`. These rows additionally preserve
+the resolved-runtime JSON and SHA-256 fingerprint required by the P0.4
+provenance contract.
