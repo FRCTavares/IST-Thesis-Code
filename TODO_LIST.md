@@ -29,7 +29,7 @@ Active executable issues: **41**.
    - phase 2; documentation; retired as obsolete because the referenced paper is no longer authoritative and no current thesis source is tracked in this repository; the canonical implementation, configuration, deterministic runner provenance, and clean P0.4 evidence remain the source of truth; closure rationale recorded in GitHub Issue #4.
 
 5. [ ] [#5 — P0.6 Replace parallel acceptance paths with one transactional safety gate](https://github.com/FRCTavares/IST-Thesis-Code/issues/5)
-   - phase 2; experiment.
+   - phase 2; experiment; in progress since 20 July 2026; all candidate sources now share one transactional safety gate and focused verification passes; the eight-run uncommitted deterministic preflight records no wrong-target or target-absence output regression against canonical P0.4; the only availability change is ByteTrack shifting 0.200 s from correct to LOST because the former rank-aware path bypassed ambiguity rejection, now locked by an explicit regression test; clean committed evidence and final closure review remain (reports/p005_transactional_gate_uncommitted_2026_07_20/candidate_comparison.json).
 
 6. [ ] [#6 — P0.6b Identify why structural safety heuristics are required](https://github.com/FRCTavares/IST-Thesis-Code/issues/6)
    - phase 2; experiment.

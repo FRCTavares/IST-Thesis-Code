@@ -363,18 +363,105 @@ def test_rank_aware_reacquisition_cannot_bypass_hard_negative_rejection():
         hard_negative_reject=True,
     )
 
-    output = memory._handle_rank_aware_reacquisition(
-        candidates=[candidate],
-        scores_sorted=[score],
-        best=score,
+    proposal, terminal_output = (
+        memory._handle_rank_aware_reacquisition(
+            candidates=[candidate],
+            scores_sorted=[score],
+            best=score,
+        )
     )
 
-    assert output is not None
+    assert terminal_output is None
+    assert proposal is not None
+    assert (
+        proposal.proposal_source
+        == 'rank_aware_reacquisition'
+    )
+
+    output = memory._finalize_candidate_proposal(
+        proposal
+    )
+
     assert output.state != TargetState.REACQUIRED
     assert output.reason.startswith(
         "rank_aware_hard_negative_reject:"
     )
     assert memory._m.track_id == 1
+
+
+def test_rank_aware_reacquisition_cannot_bypass_ambiguity_rejection():
+    """Route ambiguous rank-aware candidates through the common gate."""
+    memory = TargetIdentityMemory(
+        cfg(
+            rank_aware_reacquisition_enabled=True,
+            rank_aware_confirm_frames=1,
+            id_switch_min_appearance_similarity=0.78,
+            hard_negative_memory_enabled=False,
+            appearance_conservative_enabled=False,
+            short_gap_new_id_suppression_enabled=False,
+            absence_recovery_enabled=False,
+        )
+    )
+
+    memory._m.selected = True
+    memory._m.state = TargetState.LOST
+    memory._m.track_id = 2
+    memory._m.bbox = (0.10, 0.10, 0.20, 0.40)
+
+    candidate = CandidateTrack(
+        track_id=42,
+        bbox=(0.11, 0.10, 0.20, 0.40),
+        score=0.90,
+        appearance=[1.0, 0.0],
+    )
+
+    score = CandidateScore(
+        track_id=42,
+        total=0.67,
+        iou=0.05,
+        distance=0.98,
+        scale=0.95,
+        confidence=0.90,
+        id_bonus=0.0,
+        appearance=0.90,
+        appearance_used=True,
+        appearance_raw=0.90,
+        appearance_gate_passed=True,
+        geometry_allows_appearance=True,
+        ambiguous=True,
+        hard_negative_similarity=0.50,
+        hard_negative_margin=0.40,
+        hard_negative_reject=False,
+    )
+
+    proposal, terminal_output = (
+        memory._handle_rank_aware_reacquisition(
+            candidates=[candidate],
+            scores_sorted=[score],
+            best=score,
+        )
+    )
+
+    assert terminal_output is None
+    assert proposal is not None
+    assert (
+        proposal.proposal_source
+        == 'rank_aware_reacquisition'
+    )
+
+    output = memory._finalize_candidate_proposal(
+        proposal
+    )
+
+    assert output.reason == 'ambiguous_best_candidate'
+    assert output.state in {
+        TargetState.UNCERTAIN,
+        TargetState.LOST,
+    }
+    assert output.state != TargetState.REACQUIRED
+    assert output.target_track_id == 2
+    assert not output.visible
+    assert memory._m.track_id == 2
 
 
 def test_rank_aware_id_switch_respects_minimum_appearance_similarity():

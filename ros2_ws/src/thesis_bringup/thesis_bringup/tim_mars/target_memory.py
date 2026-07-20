@@ -13,6 +13,7 @@ absence-aware recovery, and rank-aware reacquisition. It has no ROS dependency.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from thesis_bringup.tim_mars.appearance_memory import cosine_similarity, update_feature_memory
@@ -65,6 +66,45 @@ class _PreparedUpdate:
     same_id_score: Optional[CandidateScore]
     same_id_candidate: Optional[CandidateTrack]
     ambiguous: bool
+
+
+class _ProposalVerdictStatus(str, Enum):
+    ACCEPTED = 'accepted'
+    REJECTED = 'rejected'
+    PENDING = 'pending'
+
+
+@dataclass(frozen=True)
+class _ConfirmationRequirement:
+    policy: str
+    required: int
+    count: int
+
+
+@dataclass(frozen=True)
+class _CandidateProposal:
+    candidate: CandidateTrack
+    score: CandidateScore
+    all_scores: tuple[CandidateScore, ...]
+    candidates: tuple[CandidateTrack, ...]
+    proposal_source: str
+    previous_tracker_id: Optional[int]
+    proposed_tracker_id: int
+    same_id: bool
+    id_switch: bool
+    confirmations: tuple[_ConfirmationRequirement, ...]
+    minimum_total: float
+    minimum_total_reason: str
+    evidence_available: tuple[str, ...]
+    memory_update_eligible: bool
+    diagnostic_reason: str
+
+
+@dataclass(frozen=True)
+class _ProposalVerdict:
+    status: _ProposalVerdictStatus
+    reason: str
+
 
 class TargetIdentityMemory:
     """Selected-target memory state machine.
@@ -195,162 +235,535 @@ class TargetIdentityMemory:
             reacquired=False,
         )
 
-    def update(self, candidates: Sequence[CandidateTrack]) -> TargetMemoryOutput:
+    def update(
+        self,
+        candidates: Sequence[CandidateTrack],
+    ) -> TargetMemoryOutput:
         """Update target memory from current tracker candidates."""
 
         self._reset_positive_memory_diagnostics()
 
         if not self._m.selected or self._m.bbox is None:
-            return self._make_output(reason="no_operator_selected_target", visible=False, reacquired=False)
+            return self._make_output(
+                reason='no_operator_selected_target',
+                visible=False,
+                reacquired=False,
+            )
 
         prepared = self._prepare_update_candidates(candidates)
         if prepared is None:
-            return self._miss(reason="no_candidates")
+            self._reset_confirmation_trackers_except(set())
+            return self._miss(reason='no_candidates')
 
         candidates = prepared.candidates
         scores_sorted = prepared.scores_sorted
         best = prepared.best
-        second = prepared.second
         best_candidate = prepared.best_candidate
         same_id = prepared.same_id
-        ambiguous = prepared.ambiguous
         same_id_score = prepared.same_id_score
         same_id_candidate = prepared.same_id_candidate
 
         id_switch = best.track_id != self._m.track_id
 
-        short_gap_output = self._handle_short_gap_identity_protection(
-            candidates=candidates,
-            scores_sorted=scores_sorted,
-            best=best,
-            same_id_score=same_id_score,
-            same_id_candidate=same_id_candidate,
-            id_switch=id_switch,
-            ambiguous=ambiguous,
+        short_gap_proposal, short_gap_output = (
+            self._handle_short_gap_identity_protection(
+                candidates=candidates,
+                scores_sorted=scores_sorted,
+                best=best,
+                same_id_score=same_id_score,
+                same_id_candidate=same_id_candidate,
+                id_switch=id_switch,
+                ambiguous=prepared.ambiguous,
+            )
         )
         if short_gap_output is not None:
+            self._reset_confirmation_trackers_except(set())
             return short_gap_output
-
-        absence_reject_reason = self._absence_aware_reacquisition_reject_reason(
-            best,
-            scores_sorted,
-            same_id=same_id,
-        )
-        if absence_reject_reason is not None:
-            return self._miss(
-                reason=absence_reject_reason,
-                best_score=best,
-                all_scores=scores_sorted,
+        if short_gap_proposal is not None:
+            return self._finalize_candidate_proposal(
+                short_gap_proposal
             )
 
-        rank_aware_output = self._handle_rank_aware_reacquisition(
-            candidates=candidates,
-            scores_sorted=scores_sorted,
-            best=best,
+        rank_proposal, rank_output = (
+            self._handle_rank_aware_reacquisition(
+                candidates=candidates,
+                scores_sorted=scores_sorted,
+                best=best,
+            )
         )
-        if rank_aware_output is not None:
-            return rank_aware_output
+        if rank_output is not None:
+            self._reset_confirmation_trackers_except(set())
+            return rank_output
+        if rank_proposal is not None:
+            return self._finalize_candidate_proposal(
+                rank_proposal
+            )
 
-        threshold = self.cfg.accept_score_lost if self._m.state == TargetState.LOST else self.cfg.accept_score_locked
+        threshold = (
+            self.cfg.accept_score_lost
+            if self._m.state == TargetState.LOST
+            else self.cfg.accept_score_locked
+        )
         if same_id:
-            threshold = max(0.0, threshold - self.cfg.same_id_accept_relief)
-
-        if best.total < threshold:
-            return self._miss(
-                reason=f"best_below_threshold:{best.total:.3f}<{threshold:.3f}",
-                best_score=best,
-                all_scores=scores_sorted,
+            threshold = max(
+                0.0,
+                threshold - self.cfg.same_id_accept_relief,
             )
 
-        if ambiguous:
-            self._candidate_belief_confirmation.reset()
-            return self._miss(
-                reason="ambiguous_best_candidate",
-                best_score=best,
-                all_scores=scores_sorted,
-            )
-
-        same_id_appearance_reject = (
-            self._same_id_reacquisition_appearance_reject_reason(
-                candidate=best_candidate,
-            )
-        )
-        if same_id_appearance_reject is not None:
-            self._candidate_belief_confirmation.reset()
-            return self._miss(
-                reason=same_id_appearance_reject,
-                best_score=best,
-                all_scores=scores_sorted,
-            )
-
-        id_switch = best.track_id != self._m.track_id
-
-        id_switch_appearance_reject = (
-            self._id_switch_appearance_reject_reason(
-                candidate=best_candidate,
-                score=best,
+        confirmation_requirements = (
+            self._candidate_belief_confirmation_requirements(
+                best=best,
                 id_switch=id_switch,
             )
         )
-        if id_switch_appearance_reject is not None:
-            self._candidate_belief_confirmation.reset()
-            return self._miss(
-                reason=id_switch_appearance_reject,
-                best_score=best,
-                all_scores=scores_sorted,
-            )
 
-        candidate_belief_output = self._handle_candidate_belief_confirmation(
-            best=best,
-            scores_sorted=scores_sorted,
-            id_switch=id_switch,
+        proposal = self._make_candidate_proposal(
+            candidate=best_candidate,
+            score=best,
+            all_scores=scores_sorted,
+            candidates=candidates,
+            proposal_source='normal_selection',
+            diagnostic_reason='normal_candidate',
+            minimum_total=threshold,
+            minimum_total_reason=(
+                'best_below_threshold:'
+                f'{best.total:.3f}<{threshold:.3f}'
+            ),
+            confirmation_requirements=(
+                confirmation_requirements
+            ),
         )
-        if candidate_belief_output is not None:
-            return candidate_belief_output
+        return self._finalize_candidate_proposal(proposal)
 
-        if id_switch and not self.cfg.allow_id_switch_recovery:
-            return self._miss(
-                reason="id_switch_recovery_disabled",
-                best_score=best,
-                all_scores=scores_sorted,
+    def _make_candidate_proposal(
+        self,
+        *,
+        candidate: CandidateTrack,
+        score: CandidateScore,
+        all_scores: Sequence[CandidateScore],
+        candidates: Sequence[CandidateTrack],
+        proposal_source: str,
+        diagnostic_reason: str,
+        minimum_total: float = 0.0,
+        minimum_total_reason: str = '',
+        confirmation_requirements: Sequence[
+            tuple[str, int]
+        ] = (),
+    ) -> _CandidateProposal:
+        previous_tracker_id = self._m.track_id
+        same_id = bool(
+            previous_tracker_id is not None
+            and int(candidate.track_id)
+            == int(previous_tracker_id)
+        )
+        id_switch = bool(
+            previous_tracker_id is not None
+            and int(candidate.track_id)
+            != int(previous_tracker_id)
+        )
+
+        requirements_by_policy: dict[str, int] = {}
+
+        for policy, required in confirmation_requirements:
+            policy_name = str(policy)
+            requirements_by_policy[policy_name] = max(
+                requirements_by_policy.get(policy_name, 1),
+                1,
+                int(required),
             )
 
-        if id_switch and self.cfg.id_switch_spatial_gate_enabled:
-            spatial_ok = (
-                best.iou >= self.cfg.id_switch_min_iou
+        if self._absence_confirmation_applies(
+            id_switch=id_switch,
+        ):
+            requirements_by_policy[
+                'absence_recovery'
+            ] = max(
+                requirements_by_policy.get(
+                    'absence_recovery',
+                    1,
+                ),
+                1,
+                int(self.cfg.absence_confirm_frames),
+            )
+
+        confirmations = tuple(
+            _ConfirmationRequirement(
+                policy=policy,
+                required=required,
+                count=self._preview_confirmation_count(
+                    policy,
+                    int(candidate.track_id),
+                ),
+            )
+            for policy, required
+            in requirements_by_policy.items()
+        )
+
+        evidence = ['geometry']
+        if candidate.appearance is not None:
+            evidence.append('appearance')
+        if candidate.appearance_crop_quality is not None:
+            evidence.append('crop_quality')
+        if score.hard_negative_similarity > 0.0:
+            evidence.append('hard_negative')
+        if score.protected_anchor_similarity > 0.0:
+            evidence.append('protected_anchor')
+        if score.adaptive_similarity > 0.0:
+            evidence.append('adaptive_appearance')
+
+        return _CandidateProposal(
+            candidate=candidate,
+            score=score,
+            all_scores=tuple(all_scores),
+            candidates=tuple(candidates),
+            proposal_source=str(proposal_source),
+            previous_tracker_id=previous_tracker_id,
+            proposed_tracker_id=int(candidate.track_id),
+            same_id=same_id,
+            id_switch=id_switch,
+            confirmations=confirmations,
+            minimum_total=max(0.0, float(minimum_total)),
+            minimum_total_reason=str(minimum_total_reason),
+            evidence_available=tuple(evidence),
+            memory_update_eligible=bool(
+                candidate.appearance_memory_update_eligible
+            ),
+            diagnostic_reason=str(diagnostic_reason),
+        )
+
+    def _confirmation_tracker(
+        self,
+        policy: str,
+    ) -> Any:
+        trackers = {
+            'candidate_belief': (
+                self._candidate_belief_confirmation
+            ),
+            'absence_recovery': (
+                self._absence_reacq_confirmation
+            ),
+            'rank_aware_reacquisition': (
+                self._rank_reacq_confirmation
+            ),
+        }
+
+        try:
+            return trackers[str(policy)]
+        except KeyError as error:
+            raise ValueError(
+                f'Unknown confirmation policy: {policy}'
+            ) from error
+
+    def _preview_confirmation_count(
+        self,
+        policy: str,
+        track_id: int,
+    ) -> int:
+        tracker = self._confirmation_tracker(policy)
+
+        if tracker.candidate_id == int(track_id):
+            return int(tracker.confirm_count) + 1
+
+        return 1
+
+    def _reset_confirmation_trackers_except(
+        self,
+        active: set[str],
+    ) -> None:
+        for policy in (
+            'candidate_belief',
+            'absence_recovery',
+            'rank_aware_reacquisition',
+        ):
+            if policy not in active:
+                self._confirmation_tracker(policy).reset()
+
+    def _proposal_pending_reason(
+        self,
+        proposal: _CandidateProposal,
+        requirement: _ConfirmationRequirement,
+    ) -> str:
+        if requirement.policy == 'candidate_belief':
+            return (
+                'candidate_belief_confirmation_pending:'
+                f' id={proposal.proposed_tracker_id}'
+                f' confirm={requirement.count}/'
+                f'{requirement.required}'
+                f' score={proposal.score.total:.3f}'
+            )
+
+        if requirement.policy == 'absence_recovery':
+            app_margin = self._appearance_margin(
+                proposal.score,
+                list(proposal.all_scores),
+            )
+            return (
+                'absence_recovery_pending:'
+                f' id={proposal.proposed_tracker_id}'
+                f' confirm={requirement.count}/'
+                f'{requirement.required}'
+                f' app={proposal.score.appearance_raw:.3f}'
+                f' margin={app_margin:.3f}'
+            )
+
+        if (
+            requirement.policy
+            == 'rank_aware_reacquisition'
+        ):
+            return (
+                'rank_aware_reacquisition_pending:'
+                f' id={proposal.proposed_tracker_id}'
+                f' confirm={requirement.count}/'
+                f'{requirement.required}'
+            )
+
+        return (
+            f'{proposal.proposal_source}_pending:'
+            f' id={proposal.proposed_tracker_id}'
+            f' confirm={requirement.count}/'
+            f'{requirement.required}'
+        )
+
+    def _commit_confirmation_state(
+        self,
+        proposal: _CandidateProposal,
+        verdict: _ProposalVerdict,
+    ) -> None:
+        active = {
+            requirement.policy
+            for requirement in proposal.confirmations
+        }
+        self._reset_confirmation_trackers_except(active)
+
+        if verdict.status == _ProposalVerdictStatus.REJECTED:
+            for policy in active:
+                self._confirmation_tracker(policy).reset()
+            return
+
+        for requirement in proposal.confirmations:
+            observed = self._confirmation_tracker(
+                requirement.policy
+            ).observe(
+                proposal.proposed_tracker_id
+            )
+            if observed != requirement.count:
+                raise RuntimeError(
+                    'Confirmation preview diverged from commit '
+                    f'for {requirement.policy}: '
+                    f'{observed}!={requirement.count}'
+                )
+
+    @staticmethod
+    def _proposal_reject_reason(
+        proposal: _CandidateProposal,
+        reason: str,
+    ) -> str:
+        """Preserve source-specific diagnostics without bypassing the gate."""
+        if (
+            proposal.proposal_source
+            == 'rank_aware_reacquisition'
+            and reason.startswith(
+                (
+                    'id_switch_recovery_reject:',
+                    'id_switch_spatial_reject:',
+                    'hard_negative_reject:',
+                )
+            )
+        ):
+            return 'rank_aware_' + reason
+
+        return reason
+
+    def _evaluate_candidate_proposal(
+        self,
+        proposal: _CandidateProposal,
+    ) -> _ProposalVerdict:
+        absence_reject = (
+            self._absence_aware_reacquisition_reject_reason(
+                proposal
+            )
+        )
+        if absence_reject is not None:
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.REJECTED,
+                absence_reject,
+            )
+
+        if proposal.score.total < proposal.minimum_total:
+            reason = (
+                proposal.minimum_total_reason
                 or (
-                    best.distance >= self.cfg.id_switch_min_distance
-                    and best.scale >= self.cfg.id_switch_min_scale
+                    f'{proposal.proposal_source}_'
+                    'below_threshold:'
+                    f'{proposal.score.total:.3f}'
+                    f'<{proposal.minimum_total:.3f}'
+                )
+            )
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.REJECTED,
+                reason,
+            )
+
+        same_id_reject = (
+            self._same_id_reacquisition_appearance_reject_reason(
+                candidate=proposal.candidate,
+            )
+        )
+        if same_id_reject is not None:
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.REJECTED,
+                same_id_reject,
+            )
+
+        id_switch_appearance_reject = (
+            self._id_switch_appearance_reject_reason(
+                candidate=proposal.candidate,
+                score=proposal.score,
+                id_switch=proposal.id_switch,
+            )
+        )
+        if id_switch_appearance_reject is not None:
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.REJECTED,
+                self._proposal_reject_reason(
+                    proposal,
+                    id_switch_appearance_reject,
+                ),
+            )
+
+        if proposal.score.ambiguous:
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.REJECTED,
+                'ambiguous_best_candidate',
+            )
+
+        if (
+            proposal.id_switch
+            and not self.cfg.allow_id_switch_recovery
+        ):
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.REJECTED,
+                'id_switch_recovery_disabled',
+            )
+
+        if (
+            proposal.id_switch
+            and self.cfg.id_switch_spatial_gate_enabled
+        ):
+            spatial_ok = (
+                proposal.score.iou
+                >= self.cfg.id_switch_min_iou
+                or (
+                    proposal.score.distance
+                    >= self.cfg.id_switch_min_distance
+                    and proposal.score.scale
+                    >= self.cfg.id_switch_min_scale
                 )
             )
             if not spatial_ok:
-                return self._miss(
-                    reason=(
-                        "id_switch_spatial_reject:"
-                        f" iou={best.iou:.3f}"
-                        f" distance={best.distance:.3f}"
-                        f" scale={best.scale:.3f}"
+                reason = (
+                    'id_switch_spatial_reject:'
+                    f' iou={proposal.score.iou:.3f}'
+                    f' distance={proposal.score.distance:.3f}'
+                    f' scale={proposal.score.scale:.3f}'
+                )
+                return _ProposalVerdict(
+                    _ProposalVerdictStatus.REJECTED,
+                    self._proposal_reject_reason(
+                        proposal,
+                        reason,
                     ),
-                    best_score=best,
-                    all_scores=scores_sorted,
                 )
 
-        if self._hard_negative_memory.should_reject(best, self.cfg):
-            return self._miss(
-                reason=(
-                    "hard_negative_reject:"
-                    f" neg={best.hard_negative_similarity:.3f}"
-                    f" margin={best.hard_negative_margin:.3f}"
+        if self._hard_negative_memory.should_reject(
+            proposal.score,
+            self.cfg,
+        ):
+            reason = (
+                'hard_negative_reject:'
+                f' neg={proposal.score.hard_negative_similarity:.3f}'
+                f' margin={proposal.score.hard_negative_margin:.3f}'
+            )
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.REJECTED,
+                self._proposal_reject_reason(
+                    proposal,
+                    reason,
                 ),
-                best_score=best,
-                all_scores=scores_sorted,
+            )
+
+        previous_state = self._m.state
+        reacquired = bool(
+            proposal.id_switch
+            or previous_state
+            in {
+                TargetState.UNCERTAIN,
+                TargetState.LOST,
+            }
+        )
+
+        gallery_reject = (
+            self._protected_gallery_reacquisition_reject_reason(
+                candidate=proposal.candidate,
+                score=proposal.score,
+                reacquired=reacquired,
+            )
+        )
+        if gallery_reject is not None:
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.REJECTED,
+                gallery_reject,
+            )
+
+        conservative_reject = (
+            self._appearance_conservative_reject_reason(
+                best_score=proposal.score,
+                all_scores=list(proposal.all_scores),
+            )
+        )
+        if conservative_reject is not None:
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.REJECTED,
+                conservative_reject,
+            )
+
+        for requirement in proposal.confirmations:
+            if requirement.count < requirement.required:
+                return _ProposalVerdict(
+                    _ProposalVerdictStatus.PENDING,
+                    self._proposal_pending_reason(
+                        proposal,
+                        requirement,
+                    ),
+                )
+
+        return _ProposalVerdict(
+            _ProposalVerdictStatus.ACCEPTED,
+            proposal.diagnostic_reason,
+        )
+
+    def _finalize_candidate_proposal(
+        self,
+        proposal: _CandidateProposal,
+    ) -> TargetMemoryOutput:
+        verdict = self._evaluate_candidate_proposal(proposal)
+        self._commit_confirmation_state(
+            proposal,
+            verdict,
+        )
+
+        if verdict.status != _ProposalVerdictStatus.ACCEPTED:
+            return self._miss(
+                reason=verdict.reason,
+                best_score=proposal.score,
+                all_scores=list(proposal.all_scores),
             )
 
         return self._accept(
-            best_candidate,
-            best_score=best,
-            all_scores=scores_sorted,
-            candidates=candidates,
+            proposal.candidate,
+            best_score=proposal.score,
+            all_scores=list(proposal.all_scores),
+            candidates=proposal.candidates,
         )
 
     def _same_id_reacquisition_appearance_reject_reason(
@@ -386,8 +799,8 @@ class TargetIdentityMemory:
             return None
 
         return (
-            "same_id_reacquisition_reject:"
-            "no_candidate_appearance"
+            'same_id_reacquisition_reject:'
+            'no_candidate_appearance'
         )
 
     def _id_switch_appearance_reject_reason(
@@ -408,8 +821,8 @@ class TargetIdentityMemory:
 
         if candidate.appearance is None:
             return (
-                "id_switch_recovery_reject:"
-                "no_candidate_appearance"
+                'id_switch_recovery_reject:'
+                'no_candidate_appearance'
             )
 
         threshold = max(
@@ -425,10 +838,10 @@ class TargetIdentityMemory:
             and float(score.appearance_raw) < threshold
         ):
             return (
-                "id_switch_recovery_reject:"
-                "appearance"
-                f" {score.appearance_raw:.3f}"
-                f"<{threshold:.3f}"
+                'id_switch_recovery_reject:'
+                'appearance'
+                f' {score.appearance_raw:.3f}'
+                f'<{threshold:.3f}'
             )
 
         return None
@@ -451,20 +864,20 @@ class TargetIdentityMemory:
         if (
             not reacquired
             or not self.cfg.appearance_protected_memory_enabled
-            or score.positive_support_source != "trusted_gallery"
+            or score.positive_support_source != 'trusted_gallery'
         ):
             return None
 
         if not candidate.appearance_memory_update_eligible:
             return (
-                "protected_gallery_reacquisition_reject:"
-                "untrusted_crop"
+                'protected_gallery_reacquisition_reject:'
+                'untrusted_crop'
             )
 
         if score.ambiguous:
             return (
-                "protected_gallery_reacquisition_reject:"
-                "ambiguous_candidate"
+                'protected_gallery_reacquisition_reject:'
+                'ambiguous_candidate'
             )
 
         anchor_threshold = max(
@@ -482,44 +895,45 @@ class TargetIdentityMemory:
             ) < anchor_threshold
         ):
             return (
-                "protected_gallery_reacquisition_reject:"
-                "anchor"
-                f" {score.protected_anchor_similarity:.3f}"
-                f"<{anchor_threshold:.3f}"
+                'protected_gallery_reacquisition_reject:'
+                'anchor'
+                f' {score.protected_anchor_similarity:.3f}'
+                f'<{anchor_threshold:.3f}'
             )
 
         return None
 
-    def _handle_candidate_belief_confirmation(
+    def _candidate_belief_confirmation_requirements(
         self,
         *,
         best: CandidateScore,
-        scores_sorted: List[CandidateScore],
         id_switch: bool,
-    ) -> Optional[TargetMemoryOutput]:
+    ) -> tuple[tuple[str, int], ...]:
         if (
             self.cfg.candidate_belief_enabled
             and id_switch
-            and self._m.state in {TargetState.UNCERTAIN, TargetState.LOST}
-            and best.total >= self.cfg.candidate_belief_min_score
+            and self._m.state
+            in {
+                TargetState.UNCERTAIN,
+                TargetState.LOST,
+            }
+            and best.total
+            >= self.cfg.candidate_belief_min_score
         ):
-            confirm_count = self._candidate_belief_confirmation.observe(int(best.track_id))
-            required = max(1, int(self.cfg.candidate_belief_confirm_frames))
-            if confirm_count < required:
-                return self._miss(
-                    reason=(
-                        "candidate_belief_confirmation_pending:"
-                        f" id={best.track_id}"
-                        f" confirm={confirm_count}/{required}"
-                        f" score={best.total:.3f}"
+            return (
+                (
+                    'candidate_belief',
+                    max(
+                        1,
+                        int(
+                            self.cfg
+                            .candidate_belief_confirm_frames
+                        ),
                     ),
-                    best_score=best,
-                    all_scores=scores_sorted,
-                )
-        else:
-            self._candidate_belief_confirmation.reset()
+                ),
+            )
 
-        return None
+        return ()
 
     def _handle_rank_aware_reacquisition(
         self,
@@ -527,88 +941,54 @@ class TargetIdentityMemory:
         candidates: Sequence[CandidateTrack],
         scores_sorted: List[CandidateScore],
         best: CandidateScore,
-    ) -> Optional[TargetMemoryOutput]:
-        rank_aware_best, rank_aware_pending = self._rank_aware_reacquisition_candidate(
-            scores_sorted,
-            candidates,
+    ) -> tuple[
+        Optional[_CandidateProposal],
+        Optional[TargetMemoryOutput],
+    ]:
+        rank_aware_best = (
+            self._rank_aware_reacquisition_candidate(
+                scores_sorted,
+                candidates,
+            )
         )
-        if rank_aware_best is not None:
-            rank_candidate = next(
-                c
-                for c in candidates
-                if c.track_id == rank_aware_best.track_id
-            )
-            rank_id_switch = (
-                rank_aware_best.track_id
-                != self._m.track_id
-            )
 
-            rank_appearance_reject = (
-                self._id_switch_appearance_reject_reason(
-                    candidate=rank_candidate,
-                    score=rank_aware_best,
-                    id_switch=rank_id_switch,
-                )
-            )
-            if rank_appearance_reject is not None:
-                return self._miss(
-                    reason=(
-                        "rank_aware_"
-                        + rank_appearance_reject
-                    ),
-                    best_score=rank_aware_best,
-                    all_scores=scores_sorted,
-                )
+        if rank_aware_best is None:
+            return None, None
 
-            if rank_id_switch and self.cfg.id_switch_spatial_gate_enabled:
-                spatial_ok = (
-                    rank_aware_best.iou >= self.cfg.id_switch_min_iou
-                    or (
-                        rank_aware_best.distance >= self.cfg.id_switch_min_distance
-                        and rank_aware_best.scale >= self.cfg.id_switch_min_scale
-                    )
-                )
-                if not spatial_ok:
-                    return self._miss(
-                        reason=(
-                            "rank_aware_id_switch_spatial_reject:"
-                            f" iou={rank_aware_best.iou:.3f}"
-                            f" distance={rank_aware_best.distance:.3f}"
-                            f" scale={rank_aware_best.scale:.3f}"
-                        ),
-                        best_score=rank_aware_best,
-                        all_scores=scores_sorted,
-                    )
+        rank_candidate = next(
+            candidate
+            for candidate in candidates
+            if candidate.track_id
+            == rank_aware_best.track_id
+        )
 
-            if self._hard_negative_memory.should_reject(
-                rank_aware_best,
-                self.cfg,
-            ):
-                return self._miss(
-                    reason=(
-                        "rank_aware_hard_negative_reject:"
-                        f" neg={rank_aware_best.hard_negative_similarity:.3f}"
-                        f" margin={rank_aware_best.hard_negative_margin:.3f}"
-                    ),
-                    best_score=rank_aware_best,
-                    all_scores=scores_sorted,
-                )
-
-            return self._accept(
-                rank_candidate,
-                best_score=rank_aware_best,
-                all_scores=scores_sorted,
-                candidates=candidates,
-            )
-
-        if rank_aware_pending:
-            return self._miss(
-                reason="rank_aware_reacquisition_pending",
-                best_score=best,
-                all_scores=scores_sorted,
-            )
-
-        return None
+        required = max(
+            1,
+            int(self.cfg.rank_aware_confirm_frames),
+        )
+        proposal = self._make_candidate_proposal(
+            candidate=rank_candidate,
+            score=rank_aware_best,
+            all_scores=scores_sorted,
+            candidates=candidates,
+            proposal_source='rank_aware_reacquisition',
+            diagnostic_reason=(
+                'rank_aware_reacquisition_candidate'
+            ),
+            minimum_total=(
+                self.cfg.rank_aware_lost_min_total
+            ),
+            minimum_total_reason=(
+                'rank_aware_reacquisition_reject:total'
+            ),
+            confirmation_requirements=(
+                (
+                    'rank_aware_reacquisition',
+                    required,
+                ),
+            ),
+        )
+        return proposal, None
 
     def _handle_short_gap_identity_protection(
         self,
@@ -620,39 +1000,57 @@ class TargetIdentityMemory:
         same_id_candidate: Optional[CandidateTrack],
         id_switch: bool,
         ambiguous: bool,
-    ) -> Optional[TargetMemoryOutput]:
+    ) -> tuple[
+        Optional[_CandidateProposal],
+        Optional[TargetMemoryOutput],
+    ]:
         short_gap_active = (
             self._m.track_id is not None
-            and self._m.frames_since_seen <= max(0, int(self.cfg.short_gap_same_id_grace_frames))
-            and self._m.state in {TargetState.LOCKED, TargetState.UNCERTAIN, TargetState.REACQUIRED}
+            and self._m.frames_since_seen
+            <= max(
+                0,
+                int(
+                    self.cfg.short_gap_same_id_grace_frames
+                ),
+            )
+            and self._m.state
+            in {
+                TargetState.LOCKED,
+                TargetState.UNCERTAIN,
+                TargetState.REACQUIRED,
+            }
         )
 
         if (
             self.cfg.short_gap_same_id_priority_enabled
             and short_gap_active
-            and self._m.state in {TargetState.UNCERTAIN, TargetState.REACQUIRED}
+            and self._m.state
+            in {
+                TargetState.UNCERTAIN,
+                TargetState.REACQUIRED,
+            }
             and same_id_score is not None
             and same_id_candidate is not None
-            and same_id_score.total >= self.cfg.short_gap_same_id_min_total
+            and same_id_score.total
+            >= self.cfg.short_gap_same_id_min_total
         ):
-            same_id_appearance_reject = (
-                self._same_id_reacquisition_appearance_reject_reason(
-                    candidate=same_id_candidate,
-                )
-            )
-            if same_id_appearance_reject is not None:
-                return self._miss(
-                    reason=same_id_appearance_reject,
-                    best_score=same_id_score,
-                    all_scores=scores_sorted,
-                )
-
-            return self._accept(
-                same_id_candidate,
-                best_score=same_id_score,
+            proposal = self._make_candidate_proposal(
+                candidate=same_id_candidate,
+                score=same_id_score,
                 all_scores=scores_sorted,
                 candidates=candidates,
+                proposal_source='short_gap_same_id',
+                diagnostic_reason=(
+                    'short_gap_same_id_candidate'
+                ),
+                minimum_total=(
+                    self.cfg.short_gap_same_id_min_total
+                ),
+                minimum_total_reason=(
+                    'short_gap_same_id_below_threshold'
+                ),
             )
+            return proposal, None
 
         short_gap_base_threshold = (
             self.cfg.accept_score_lost
@@ -661,23 +1059,38 @@ class TargetIdentityMemory:
         )
 
         best_candidate = next(
-            (c for c in candidates if int(c.track_id) == int(best.track_id)),
+            (
+                candidate
+                for candidate in candidates
+                if int(candidate.track_id)
+                == int(best.track_id)
+            ),
             None,
         )
-        best_group_crop_risk = (
+        best_group_crop_risk = bool(
             best_candidate is not None
-            and self._candidate_group_crop_risk(best_candidate, candidates)
+            and self._candidate_group_crop_risk(
+                best_candidate,
+                candidates,
+            )
         )
 
         short_gap_new_id_should_suppress = (
-            self._m.state in {TargetState.UNCERTAIN, TargetState.REACQUIRED}
+            self._m.state
+            in {
+                TargetState.UNCERTAIN,
+                TargetState.REACQUIRED,
+            }
             or (
                 self._m.state == TargetState.LOCKED
                 and (
-                    best.total < self.cfg.short_gap_new_id_allow_total
+                    best.total
+                    < self.cfg.short_gap_new_id_allow_total
                     or (
                         best_group_crop_risk
-                        and best.total < self.cfg.short_gap_group_risk_allow_total
+                        and best.total
+                        < self.cfg
+                        .short_gap_group_risk_allow_total
                     )
                 )
             )
@@ -693,18 +1106,18 @@ class TargetIdentityMemory:
             and not ambiguous
             and best.total >= short_gap_base_threshold
         ):
-            return self._miss(
+            return None, self._miss(
                 reason=(
-                    "short_gap_new_id_suppressed:"
-                    f" id={best.track_id}"
-                    f" gap={self._m.frames_since_seen}"
-                    f" score={best.total:.3f}"
+                    'short_gap_new_id_suppressed:'
+                    f' id={best.track_id}'
+                    f' gap={self._m.frames_since_seen}'
+                    f' score={best.total:.3f}'
                 ),
                 best_score=best,
                 all_scores=scores_sorted,
             )
 
-        return None
+        return None, None
 
     def _prepare_update_candidates(
         self,
@@ -828,73 +1241,92 @@ class TargetIdentityMemory:
     def _reset_absence_reacquisition_confirmation(self) -> None:
         self._absence_reacq_confirmation.reset()
 
+    def _absence_confirmation_applies(
+        self,
+        *,
+        id_switch: bool,
+    ) -> bool:
+        return bool(
+            self.cfg.absence_recovery_enabled
+            and id_switch
+            and self._m.state
+            in {
+                TargetState.UNCERTAIN,
+                TargetState.LOST,
+            }
+            and self._m.frames_since_seen
+            >= max(
+                1,
+                int(
+                    self.cfg.absence_after_missed_frames
+                ),
+            )
+        )
+
     def _absence_aware_reacquisition_reject_reason(
         self,
-        best: CandidateScore,
-        scores_sorted: List[CandidateScore],
-        *,
-        same_id: bool,
+        proposal: _CandidateProposal,
     ) -> Optional[str]:
-        """Reject risky new-ID recovery after likely target absence."""
-
-        if not self.cfg.absence_recovery_enabled:
+        """Reject unsafe proposals in the absence-risk window."""
+        if not self._absence_confirmation_applies(
+            id_switch=proposal.id_switch,
+        ):
             return None
 
-        if self._m.state not in {TargetState.UNCERTAIN, TargetState.LOST}:
-            self._reset_absence_reacquisition_confirmation()
-            return None
-
-        if same_id:
-            self._reset_absence_reacquisition_confirmation()
-            return None
-
-        if self._m.frames_since_seen < max(1, int(self.cfg.absence_after_missed_frames)):
-            self._reset_absence_reacquisition_confirmation()
-            return None
+        best = proposal.score
 
         if best.total < self.cfg.absence_min_total:
-            self._reset_absence_reacquisition_confirmation()
-            return f"absence_recovery_reject:total {best.total:.3f}<{self.cfg.absence_min_total:.3f}"
+            return (
+                'absence_recovery_reject:total '
+                f'{best.total:.3f}'
+                f'<{self.cfg.absence_min_total:.3f}'
+            )
 
         if best.distance < self.cfg.absence_min_distance:
-            self._reset_absence_reacquisition_confirmation()
-            return f"absence_recovery_reject:distance {best.distance:.3f}<{self.cfg.absence_min_distance:.3f}"
+            return (
+                'absence_recovery_reject:distance '
+                f'{best.distance:.3f}'
+                f'<{self.cfg.absence_min_distance:.3f}'
+            )
 
         if best.scale < self.cfg.absence_min_scale:
-            self._reset_absence_reacquisition_confirmation()
-            return f"absence_recovery_reject:scale {best.scale:.3f}<{self.cfg.absence_min_scale:.3f}"
-
-        app_margin = self._appearance_margin(best, scores_sorted)
-
-        if self.cfg.absence_new_id_requires_appearance:
-            if not best.geometry_allows_appearance or best.appearance_raw <= 0.0:
-                self._reset_absence_reacquisition_confirmation()
-                return "absence_recovery_reject:no_appearance"
-
-            if best.appearance_raw < self.cfg.absence_min_similarity:
-                self._reset_absence_reacquisition_confirmation()
-                return (
-                    "absence_recovery_reject:appearance"
-                    f" {best.appearance_raw:.3f}<{self.cfg.absence_min_similarity:.3f}"
-                )
-
-            if app_margin < self.cfg.absence_appearance_margin:
-                self._reset_absence_reacquisition_confirmation()
-                return (
-                    "absence_recovery_reject:appearance_margin"
-                    f" {app_margin:.3f}<{self.cfg.absence_appearance_margin:.3f}"
-                )
-
-        confirm_count = self._absence_reacq_confirmation.observe(int(best.track_id))
-
-        required = max(1, int(self.cfg.absence_confirm_frames))
-        if confirm_count < required:
             return (
-                "absence_recovery_pending:"
-                f" id={best.track_id}"
-                f" confirm={confirm_count}/{required}"
-                f" app={best.appearance_raw:.3f}"
-                f" margin={app_margin:.3f}"
+                'absence_recovery_reject:scale '
+                f'{best.scale:.3f}'
+                f'<{self.cfg.absence_min_scale:.3f}'
+            )
+
+        if not self.cfg.absence_new_id_requires_appearance:
+            return None
+
+        if (
+            not best.geometry_allows_appearance
+            or best.appearance_raw <= 0.0
+        ):
+            return 'absence_recovery_reject:no_appearance'
+
+        if (
+            best.appearance_raw
+            < self.cfg.absence_min_similarity
+        ):
+            return (
+                'absence_recovery_reject:appearance'
+                f' {best.appearance_raw:.3f}'
+                f'<{self.cfg.absence_min_similarity:.3f}'
+            )
+
+        app_margin = self._appearance_margin(
+            best,
+            list(proposal.all_scores),
+        )
+        if (
+            app_margin
+            < self.cfg.absence_appearance_margin
+        ):
+            return (
+                'absence_recovery_reject:appearance_margin'
+                f' {app_margin:.3f}'
+                f'<{self.cfg.absence_appearance_margin:.3f}'
             )
 
         return None
@@ -919,8 +1351,8 @@ class TargetIdentityMemory:
             distance = centre_distance_norm(
                 candidate.bbox,
                 other.bbox,
-                float(getattr(self.cfg, "image_width", 640.0)),
-                float(getattr(self.cfg, "image_height", 640.0)),
+                float(getattr(self.cfg, 'image_width', 640.0)),
+                float(getattr(self.cfg, 'image_height', 640.0)),
             )
 
             if overlap >= 0.10:
@@ -973,13 +1405,15 @@ class TargetIdentityMemory:
         self,
         scores_sorted: List[CandidateScore],
         candidates: Sequence[CandidateTrack],
-    ) -> tuple[Optional[CandidateScore], bool]:
+    ) -> Optional[CandidateScore]:
         if not self.cfg.rank_aware_reacquisition_enabled:
-            return None, False
+            return None
 
-        if self._m.state not in {TargetState.UNCERTAIN, TargetState.LOST}:
-            self._rank_reacq_confirmation.reset()
-            return None, False
+        if self._m.state not in {
+            TargetState.UNCERTAIN,
+            TargetState.LOST,
+        }:
+            return None
 
         enriched = self._rank_aware_enriched_candidates(
             scores_sorted=scores_sorted,
@@ -987,8 +1421,7 @@ class TargetIdentityMemory:
         )
 
         if not enriched:
-            self._rank_reacq_confirmation.reset()
-            return None, False
+            return None
 
         best, best_app = max(
             enriched,
@@ -1003,37 +1436,24 @@ class TargetIdentityMemory:
         other_apps = [
             app
             for score, app in enriched
-            if int(score.track_id) != int(best.track_id)
+            if int(score.track_id)
+            != int(best.track_id)
         ]
-        best_other_app = max(other_apps, default=0.0)
-
-        if (float(best_app) - best_other_app) < self.cfg.rank_aware_lost_app_margin:
-            self._rank_reacq_confirmation.reset()
-            return None, False
+        best_other_app = max(
+            other_apps,
+            default=0.0,
+        )
 
         if (
-            self.cfg.absence_recovery_enabled
-            and self._m.track_id is not None
-            and int(best.track_id) != int(self._m.track_id)
-            and self._m.frames_since_seen >= max(1, int(self.cfg.absence_after_missed_frames))
+            float(best_app) - best_other_app
+            < self.cfg.rank_aware_lost_app_margin
         ):
-            app_margin = float(best_app) - float(best_other_app)
-            if (
-                best.total < self.cfg.absence_min_total
-                or best.distance < self.cfg.absence_min_distance
-                or best.scale < self.cfg.absence_min_scale
-                or best_app < self.cfg.absence_min_similarity
-                or app_margin < self.cfg.absence_appearance_margin
-            ):
-                self._rank_reacq_confirmation.reset()
-                return None, False
+            return None
 
-        confirm_count = self._rank_reacq_confirmation.observe(int(best.track_id))
-        pending = confirm_count < max(1, int(self.cfg.rank_aware_confirm_frames))
-        if pending:
-            return None, True
-
-        return self._rank_aware_diagnostic_score(best, best_app), False
+        return self._rank_aware_diagnostic_score(
+            best,
+            best_app,
+        )
 
     def _rank_aware_diagnostic_score(
         self,
@@ -1105,35 +1525,6 @@ class TargetIdentityMemory:
             base_ambiguous=base_ambiguous,
         )
 
-    def _bootstrap_positive_appearance_if_needed(self, candidate: CandidateTrack) -> None:
-        """Initialise positive appearance memory after selection if it was missing.
-
-        TIM can select a target before the image callback has produced a MARS
-        embedding for that track. Without this delayed bootstrap, appearance_raw
-        stays permanently zero and appearance-based gates remain blind.
-        """
-
-        if not self.cfg.appearance_enabled:
-            return
-
-        if self._m.appearance is not None:
-            return
-
-        if self._m.track_id is None or int(candidate.track_id) != int(self._m.track_id):
-            return
-
-        if candidate.appearance is None:
-            return
-
-        if not candidate.appearance_memory_update_eligible:
-            return
-
-        self._m.appearance = update_feature_memory(
-            None,
-            candidate.appearance,
-            alpha=1.0,
-        )
-
     def _score_candidate(
         self,
         reference_bbox: BBox,
@@ -1145,10 +1536,23 @@ class TargetIdentityMemory:
             self.cfg.appearance_protected_memory_enabled
         )
 
-        if not protected_mode:
-            self._bootstrap_positive_appearance_if_needed(
-                candidate
-            )
+        positive_appearance = self._m.appearance
+
+        if (
+            not protected_mode
+            and self.cfg.appearance_enabled
+            and positive_appearance is None
+            and self._m.track_id is not None
+            and int(candidate.track_id)
+            == int(self._m.track_id)
+            and candidate.appearance is not None
+            and candidate.appearance_memory_update_eligible
+        ):
+            # Use the current same-ID observation as an ephemeral
+            # scoring reference. Candidate preparation remains
+            # side-effect free; accepted memory bootstrap happens
+            # only during the final commit.
+            positive_appearance = candidate.appearance
 
         base = score_candidate(
             reference_bbox,
@@ -1163,7 +1567,8 @@ class TargetIdentityMemory:
                 self._m.track_id is None
                 or int(candidate.track_id)
                 != int(self._m.track_id)
-                or self._m.state in {
+                or self._m.state
+                in {
                     TargetState.UNCERTAIN,
                     TargetState.LOST,
                     TargetState.REACQUIRED,
@@ -1174,7 +1579,7 @@ class TargetIdentityMemory:
         return score_with_appearance(
             base=base,
             candidate=candidate,
-            positive_appearance=self._m.appearance,
+            positive_appearance=positive_appearance,
             use_appearance=use_appearance,
             hard_negative_memory=(
                 self._hard_negative_memory
@@ -1209,7 +1614,7 @@ class TargetIdentityMemory:
         all_scores: List[CandidateScore],
         candidates: Sequence[CandidateTrack],
         memory_update_frozen: bool = False,
-        memory_update_freeze_reason: str = "",
+        memory_update_freeze_reason: str = '',
     ) -> TargetMemoryOutput:
         previous_state = self._m.state
         previous_id = self._m.track_id
@@ -1235,20 +1640,6 @@ class TargetIdentityMemory:
         }
         reacquired = bool(id_changed or was_lostish)
 
-        gallery_reject_reason = (
-            self._protected_gallery_reacquisition_reject_reason(
-                candidate=candidate,
-                score=best_score,
-                reacquired=reacquired,
-            )
-        )
-        if gallery_reject_reason is not None:
-            return self._miss(
-                reason=gallery_reject_reason,
-                best_score=best_score,
-                all_scores=all_scores,
-            )
-
         self._rank_reacq_confirmation.reset()
         self._reset_absence_reacquisition_confirmation()
         self._candidate_belief_confirmation.reset()
@@ -1270,15 +1661,6 @@ class TargetIdentityMemory:
         elif reacquired:
             self._m.confirmed_after_reacquire = 0
 
-        conservative_output = (
-            self._appearance_conservative_reject_output(
-                best_score=best_score,
-                all_scores=all_scores,
-            )
-        )
-        if conservative_output is not None:
-            return conservative_output
-
         if (
             reacquired
             and self._m.confirmed_after_reacquire
@@ -1299,8 +1681,8 @@ class TargetIdentityMemory:
             independently_supported = bool(
                 best_score.positive_support_source
                 in {
-                    "protected_anchor",
-                    "trusted_gallery",
+                    'protected_anchor',
+                    'trusted_gallery',
                 }
                 and best_score.positive_similarity
                 >= support_threshold
@@ -1308,17 +1690,17 @@ class TargetIdentityMemory:
             self._last_acceptance_memory_source = (
                 best_score.positive_support_source
                 if independently_supported
-                else "none"
+                else 'none'
             )
         elif protected_mode:
             self._last_acceptance_memory_source = (
-                "tracker_continuity"
+                'tracker_continuity'
             )
         else:
             self._last_acceptance_memory_source = (
-                "legacy_positive_memory"
+                'legacy_positive_memory'
                 if best_score.appearance_raw > 0.0
-                else "tracker_continuity"
+                else 'tracker_continuity'
             )
 
         self._apply_accept_memory_update(
@@ -1344,9 +1726,9 @@ class TargetIdentityMemory:
 
         return self._make_output(
             reason=(
-                "accepted_candidate"
+                'accepted_candidate'
                 if not reacquired
-                else "reacquired_candidate"
+                else 'reacquired_candidate'
             ),
             visible=(new_state == TargetState.LOCKED),
             reacquired=reacquired,
@@ -1460,8 +1842,8 @@ class TargetIdentityMemory:
             independently_supported = bool(
                 best_score.positive_support_source
                 in {
-                    "protected_anchor",
-                    "trusted_gallery",
+                    'protected_anchor',
+                    'trusted_gallery',
                 }
                 and best_score.positive_similarity
                 >= support_threshold
@@ -1534,7 +1916,7 @@ class TargetIdentityMemory:
         if bootstrapped:
             self._last_positive_memory_updated = True
             self._last_positive_memory_update_reason = (
-                "protected_anchor_bootstrap"
+                'protected_anchor_bootstrap'
             )
             return
 
@@ -1562,52 +1944,60 @@ class TargetIdentityMemory:
         if updated:
             self._last_positive_memory_updated = True
             self._last_positive_memory_update_reason = (
-                "trusted_locked_adaptive_update"
+                'trusted_locked_adaptive_update'
             )
 
-    def _appearance_conservative_reject_output(
+    def _appearance_conservative_reject_reason(
         self,
         *,
         best_score: CandidateScore,
         all_scores: List[CandidateScore],
-    ) -> Optional[TargetMemoryOutput]:
+    ) -> Optional[str]:
         if not self.cfg.appearance_conservative_enabled:
             return None
 
         if not best_score.appearance_used:
-            if self.cfg.appearance_conservative_require_appearance:
-                return self._miss(
-                    reason="appearance_conservative_reject:no_appearance_used",
-                    best_score=best_score,
-                    all_scores=all_scores,
+            if (
+                self.cfg
+                .appearance_conservative_require_appearance
+            ):
+                return (
+                    'appearance_conservative_reject:'
+                    'no_appearance_used'
                 )
             return None
 
         appearance_scores = sorted(
             [
-                s.appearance_raw
-                for s in all_scores
-                if s.appearance_used and s.geometry_allows_appearance
+                score.appearance_raw
+                for score in all_scores
+                if (
+                    score.appearance_used
+                    and score.geometry_allows_appearance
+                )
             ],
             reverse=True,
         )
         selected_app = best_score.appearance_raw
-        second_app = appearance_scores[1] if len(appearance_scores) > 1 else 0.0
+        second_app = (
+            appearance_scores[1]
+            if len(appearance_scores) > 1
+            else 0.0
+        )
         app_margin = selected_app - second_app
 
         if (
-            selected_app < self.cfg.appearance_conservative_min_similarity
-            or app_margin < self.cfg.appearance_conservative_margin
+            selected_app
+            < self.cfg
+            .appearance_conservative_min_similarity
+            or app_margin
+            < self.cfg.appearance_conservative_margin
         ):
-            return self._miss(
-                reason=(
-                    "appearance_conservative_reject:"
-                    f" selected_app={selected_app:.3f}"
-                    f" second_app={second_app:.3f}"
-                    f" margin={app_margin:.3f}"
-                ),
-                best_score=best_score,
-                all_scores=all_scores,
+            return (
+                'appearance_conservative_reject:'
+                f' selected_app={selected_app:.3f}'
+                f' second_app={second_app:.3f}'
+                f' margin={app_margin:.3f}'
             )
 
         return None
@@ -1619,7 +2009,7 @@ class TargetIdentityMemory:
         best_score: Optional[CandidateScore] = None,
         all_scores: Optional[List[CandidateScore]] = None,
         memory_update_frozen: bool = False,
-        memory_update_freeze_reason: str = "",
+        memory_update_freeze_reason: str = '',
     ) -> TargetMemoryOutput:
         self._m.frames_since_seen += 1
         self._m.quality *= self.cfg.stale_quality_decay
@@ -1650,7 +2040,7 @@ class TargetIdentityMemory:
         all_scores: Optional[List[CandidateScore]] = None,
         control_mode_override: Optional[ControlMode] = None,
         memory_update_frozen: bool = False,
-        memory_update_freeze_reason: str = "",
+        memory_update_freeze_reason: str = '',
     ) -> TargetMemoryOutput:
         score_list = all_scores or []
 
@@ -1665,7 +2055,7 @@ class TargetIdentityMemory:
         risk_scene_ambiguity = self._scene_ambiguity_risk(best_score, score_list)
         candidate_track_id = int(best_score.track_id) if best_score is not None else None
         candidate_score = float(best_score.total) if best_score is not None else 0.0
-        publication_suppressed_reason = "" if visible else reason
+        publication_suppressed_reason = '' if visible else reason
 
         return TargetMemoryOutput(
             state=self._m.state,
@@ -1715,19 +2105,19 @@ class TargetIdentityMemory:
         )
 
 __all__ = [
-    "BBox",
-    "CandidateScore",
-    "CandidateTrack",
-    "ControlMode",
-    "TargetIdentityMemory",
-    "TargetMemoryConfig",
-    "TargetMemoryOutput",
-    "TargetState",
-    "bbox_area",
-    "bbox_centre",
-    "bbox_iou",
-    "centre_distance_norm",
-    "distance_similarity",
-    "scale_similarity",
-    "score_candidate",
+    'BBox',
+    'CandidateScore',
+    'CandidateTrack',
+    'ControlMode',
+    'TargetIdentityMemory',
+    'TargetMemoryConfig',
+    'TargetMemoryOutput',
+    'TargetState',
+    'bbox_area',
+    'bbox_centre',
+    'bbox_iou',
+    'centre_distance_norm',
+    'distance_similarity',
+    'scale_similarity',
+    'score_candidate',
 ]
