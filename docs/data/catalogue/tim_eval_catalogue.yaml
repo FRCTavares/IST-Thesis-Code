@@ -1,770 +1,597 @@
+# Canonical TIM-MARS evidence catalogue.
+# Regenerate with: python3 tools/catalogue/build_tim_eval_catalogue.py
+# Validate with: python3 tools/catalogue/build_tim_eval_catalogue.py --check
+schema_version: 2
 generated_by: tools/catalogue/build_tim_eval_catalogue.py
-bags:
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r1
-  label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1 | r1
-  case: hard_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '1'
-  replay: r1
-  source: ui_replay
-  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_12_45_45_video_2026_06_19_official_seq01_clean_four_person_yolov8s_bytetrack_tim_mars
-  label: SEQ01 clean four-person | ByteTrack | TIM-MARS
-  case: seq01_clean_four_person
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: official
-  path: bags/source/archive/official_field_2026-06-19/seq01_clean_four_person/full_pipeline/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0
-  label: SEQ02 target re-entry | ByteTrack | TIM-MARS | target 0
-  case: seq02_target_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '0'
-  replay: ''
-  source: official
-  path: bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r1
-  label: SEQ02 target re-entry | ByteTrack | TIM-MARS | target 0 | r1
-  case: seq02_target_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '0'
-  replay: r1
-  source: official
-  path: bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r1
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r2
-  label: SEQ02 target re-entry | ByteTrack | TIM-MARS | target 0 | r2
-  case: seq02_target_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '0'
-  replay: r2
-  source: official
-  path: bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r2
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r3
-  label: SEQ02 target re-entry | ByteTrack | TIM-MARS | target 0
-  case: seq02_target_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '0'
-  replay: ''
-  source: official
-  path: bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r3
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0_r4
-  label: SEQ02 target re-entry | ByteTrack | TIM-MARS | target 0
-  case: seq02_target_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '0'
-  replay: ''
-  source: official
-  path: bags/replay/eval_matrix/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0__r4
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_12_50_03_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars
-  label: SEQ02 target re-entry | ByteTrack | TIM-MARS
-  case: seq02_target_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: official
-  path: bags/source/archive/official_field_2026-06-19/seq02_target_reentry/full_pipeline/2026-06-19__12-50-03__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_12_52_30_video_2026_06_19_official_seq02_four_person_target_reentry_yolov8s_bytetrack_tim_mars
-  label: SEQ02 target re-entry | ByteTrack | TIM-MARS
-  case: seq02_target_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: official
-  path: bags/source/archive/official_field_2026-06-19/seq02_target_reentry/full_pipeline/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_12_57_48_video_2026_06_19_official_seq03_four_person_crossing_ambiguity_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0
-  label: SEQ03 crossing ambiguity | ByteTrack | TIM-MARS | target 0
-  case: seq03_crossing_ambiguity
-  tracker: bytetrack
-  method: tim_mars
-  target: '0'
-  replay: ''
-  source: official
-  path: bags/replay/eval_matrix/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_12_57_48_video_2026_06_19_official_seq03_four_person_crossing_ambiguity_yolov8s_bytetrack_tim_mars
-  label: SEQ03 crossing ambiguity | ByteTrack | TIM-MARS
-  case: seq03_crossing_ambiguity
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: official
-  path: bags/source/archive/official_field_2026-06-19/seq03_crossing_ambiguity/full_pipeline/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_0
-  label: SEQ04 occlusion no-exit | ByteTrack | TIM-MARS | target 0
-  case: seq04_occlusion_no_exit
-  tracker: bytetrack
-  method: tim_mars
-  target: '0'
-  replay: ''
-  source: official
-  path: bags/replay/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_0
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_1
-  label: SEQ04 occlusion no-exit | ByteTrack | TIM-MARS | target 1
-  case: seq04_occlusion_no_exit
-  tracker: bytetrack
-  method: tim_mars
-  target: '1'
-  replay: ''
-  source: official
-  path: bags/replay/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars_tracker_bytetrack_tim_mars_target_1_r1
-  label: SEQ04 occlusion no-exit | ByteTrack | TIM-MARS | target 1 | r1
-  case: seq04_occlusion_no_exit
-  tracker: bytetrack
-  method: tim_mars
-  target: '1'
-  replay: r1
-  source: official
-  path: bags/replay/eval_matrix/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__tracker_bytetrack__tim_mars__target_1__r1
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_13_01_36_video_2026_06_19_official_seq04_four_person_occlusion_no_exit_yolov8s_bytetrack_tim_mars
-  label: SEQ04 occlusion no-exit | ByteTrack | TIM-MARS
-  case: seq04_occlusion_no_exit
-  tracker: bytetrack
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: official
-  path: bags/source/archive/official_field_2026-06-19/seq04_occlusion_no_exit/full_pipeline/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_seq02_long_strict_tim_mars
-  label: SEQ02 target re-entry | TIM-MARS
-  case: seq02_target_reentry
-  tracker: unknown
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: strict_tim_replay
-  path: bags/replay/strict_tim_replay/2026-06-19__seq02_long__strict_tim_mars
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_seq02_long_medium_tim_mars_medium
-  label: SEQ02 target re-entry | TIM-MARS
-  case: seq02_target_reentry
-  tracker: unknown
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: strict_tim_replay
-  path: bags/replay/strict_tim_replay/2026-06-19__seq02_long_medium__tim_mars_medium
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_seq02_long_strict_aligned_tim_mars
-  label: SEQ02 target re-entry | TIM-MARS
-  case: seq02_target_reentry
-  tracker: unknown
-  method: tim_mars
-  target: ''
-  replay: ''
-  source: strict_tim_replay
-  path: bags/replay/strict_tim_replay/2026-06-19__seq02_long_strict_aligned__tim_mars
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1
-  label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1
-  case: hard_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r1
-  label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1 | r1
-  case: hard_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '1'
-  replay: r1
-  source: eval_matrix
-  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r2
-  label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1 | r2
-  case: hard_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '1'
-  replay: r2
-  source: eval_matrix
-  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r2
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_bytetrack_tim_mars_target_1_r3
-  label: Hard re-entry / ID switch | ByteTrack | TIM-MARS | target 1
-  case: hard_reentry
-  tracker: bytetrack
-  method: tim_mars
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r3
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_deepsort_tim_mars_target_1
-  label: Hard re-entry / ID switch | DeepSORT | TIM-MARS | target 1
-  case: hard_reentry
+source_of_truth: Tracked report summaries and their per-run provenance sidecars.
+classification_contract:
+  selection_provenance:
+  - autonomous
+  - annotation-driven diagnostic
+  replay_scope:
+  - memory-only replay
+  - full-pipeline replay
+  note: Selection provenance and replay scope are orthogonal. Each final row must contain one value from
+    each axis.
+canonical_fingerprints:
+  tim_mars_config_sha256: 16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655
+  mars_model_sha256: e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1
+summary:
+  final_row_count: 7
+  selection_provenance_counts:
+    annotation-driven diagnostic: 3
+    autonomous: 4
+  replay_scope_counts:
+    memory-only replay: 7
+  full_pipeline_final_row_count: 0
+final_rows:
+- id: p002_deepsort_current_canonical
+  status: final evidence
+  claim_status: historical failure reproduction
+  sequence: may_hard_reentry
   tracker: deepsort
   method: tim_mars
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_off_target_1
-  label: Hard re-entry / ID switch | OCSORT | Raw | target 1
-  case: hard_reentry
-  tracker: ocsort
-  method: raw
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1
-  label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1
-  case: hard_reentry
-  tracker: ocsort
-  method: tim_mars
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1_r1
-  label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1 | r1
-  case: hard_reentry
-  tracker: ocsort
-  method: tim_mars
-  target: '1'
-  replay: r1
-  source: eval_matrix
-  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r1
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_11_03_26_dataset_tim_v1_hard_reentry_id_switch_raw_tracker_ocsort_tim_mars_target_1_r2
-  label: Hard re-entry / ID switch | OCSORT | TIM-MARS | target 1 | r2
-  case: hard_reentry
-  tracker: ocsort
-  method: tim_mars
-  target: '1'
-  replay: r2
-  source: eval_matrix
-  path: bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_mars__target_1__r2
-  recommended_annotation: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_10_27_03_video_2026_06_19_seq01_clean_two_person_yolov8s_bytetrack_tim_mars
-  label: SEQ01 clean four-person | ByteTrack | TIM-MARS
-  case: seq01_clean_four_person
+  selection_provenance: annotation-driven diagnostic
+  replay_scope: memory-only replay
+  annotation:
+    path: docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv
+    sha256: f0ba198211952e538167fc9dd6b62d065dc570dcbb6964d6cf6fbeb8c0c2affc
+  lineage:
+    source_bag: bags/replay/paper_final_deepsort_may_2026_07_03/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1
+    output_bag: bags/replay/p002_historical_deepsort_current_93e047b5_2026_07_19
+    selected_track_id: 1
+    replay_repository_commit: 93e047b55294a8280dc619b42787e6dfa23ad247
+    canonical_config_sha256: 16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655
+    mars_model_sha256: e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1
+    replay_metadata:
+      path: reports/p002_historical_deepsort_93e047b5_2026_07_19/current/tim_replay_metadata.json
+      sha256: b5b9a06b760f3df5bb79c40ec3203a94dc4af0622cf4adf09d92fa648bac594e
+    source_manifest:
+    - name: 2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1_0.mcap
+      sha256: fd4b0d0619c9c51de4e63803f6e92e9ed919b4968d459bf23393158572249201
+      size_bytes: 570016569
+    - name: metadata.yaml
+      sha256: 0faf17111fb85a91fb9d700e6086fc8ac90de8b9d7e9545301602970e83e5b0f
+      size_bytes: 5221
+  report:
+    path: reports/p002_historical_deepsort_93e047b5_2026_07_19/comparison.json
+    sha256: 422016d24d34480b6956affef8256db59d0c21ff3d73e258ed5c61db1c4b75cd
+    row_reference: current_canonical
+  evaluation:
+    path: reports/p002_historical_deepsort_93e047b5_2026_07_19/current/evaluation/summary.csv
+    sha256: d402676b6bea474fd5b30f71b5162b99e93af602569bc9277c720e1fe39737b8
+  result:
+    raw:
+      correct_ratio: 0.496
+      correct_s: 33.58
+      lost_ratio: 0.474
+      lost_s: 32.12
+      wrong_ratio: 0.03
+      wrong_s: 2.0
+    tim:
+      correct_ratio: 0.897
+      correct_s: 60.76
+      lost_ratio: 0.103
+      lost_s: 6.94
+      wrong_ratio: 0.0
+      wrong_s: 0.0
+  claim_boundary: Tracker-specific DeepSORT reproduction. It does not support tracker-independent correctness
+    claims.
+- id: p018_matrix_bytetrack
+  status: final evidence
+  claim_status: canonical safety rejection
+  sequence: may_hard_reentry
   tracker: bytetrack
   method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-06-19__10-27-03__video__2026-06-19__seq01__clean_two_person__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_11_58_02_video_2026_06_19_seq01_clean_four_person_yolov8s_bytetrack_tim_mars
-  label: SEQ01 clean four-person | ByteTrack | TIM-MARS
-  case: seq01_clean_four_person
-  tracker: bytetrack
+  selection_provenance: autonomous
+  replay_scope: memory-only replay
+  annotation:
+    path: docs/data/annotations/may_hard_reentry/bytetrack_f17cdf80_autonomous.csv
+    sha256: f3d156c7c46dfeb53b52130e0e0eaad2f2196cc4d06a87dc18d32072fa2a92be
+  lineage:
+    source_bag: bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/bytetrack
+    output_bag: bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/bytetrack
+    selected_track_id: 2
+    replay_repository_commit: 36ecd17da9a66c4b95f82234960d831fb4f5ba44
+    canonical_config_sha256: 16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655
+    mars_model_sha256: e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1
+    replay_metadata:
+      path: reports/p018_tim_matrix_36ecd17d_2026_07_19/bytetrack/tim_replay_metadata.json
+      sha256: aa0b8cc5640266f71cf4a141301a39409430c3d488ef71ccb2ad2fb09f99867d
+    source_manifest:
+    - name: bytetrack_0.mcap
+      sha256: 7a0ace0c323d3221cbb8c4e7fce9fc97752f3ae43f703fd7cb9e338fe73ad8b2
+      size_bytes: 1200775457
+    - name: metadata.yaml
+      sha256: 4bafbef4931465fcb0d472e8e9e514fc173b25d9239ea9f735d1ab4cc6948a38
+      size_bytes: 6234
+    - name: tracker_config.yaml
+      sha256: e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906
+      size_bytes: 477
+    - name: tracker_freeze_metadata.json
+      sha256: 8ebd2a2bf5c4e3487c245ee4671075066945522bd3fb66b8d0938ab291513391
+      size_bytes: 4329
+    - name: tracker_freeze_metadata.sha256
+      sha256: c25e36f7e06e9f633c25121c4427500fb51c2ae96a6a41bd722d7f05b39c2919
+      size_bytes: 95
+    source_tracker_semantic_sha256: a0ac43a539fb52d4fd338906a9de67d839d78cb537dfd83351c28f029895e207
+    tim_semantic_sha256: ab5ac497d9ecce08f614a14f7f1508692d017f3da6d1a8d17483ce76c81b55a3
+  report:
+    path: reports/p018_tim_matrix_36ecd17d_2026_07_19/canonical_matrix_summary.json
+    sha256: 6bb27d4021f902f4d2afd7b77843466f870fbac443400850c12d8c36ce4d0edc
+    row_reference: rows[tracker=bytetrack]
+  evaluation:
+    path: reports/p018_tim_matrix_36ecd17d_2026_07_19/bytetrack/evaluation/summary.csv
+    sha256: fe9e9d62872ad37c0db358e5a62ed0df77f8edf37482f983de0d108ac76a747e
+  result:
+    raw:
+      correct_ratio: 0.514
+      wrong_ratio: 0.0
+      lost_ratio: 0.486
+      correct_duration_s: 34.299
+      wrong_duration_s: 0.0
+      lost_duration_s: 32.466
+      absent_output_duration_s: 0.1
+    tim:
+      correct_ratio: 0.92
+      wrong_ratio: 0.01
+      lost_ratio: 0.069
+      correct_duration_s: 61.453
+      wrong_duration_s: 0.7
+      lost_duration_s: 4.612
+      absent_output_duration_s: 0.1
+    delta:
+      correct_duration_s: 27.154000000000003
+      wrong_duration_s: 0.7
+      lost_duration_s: -27.854
+      absent_output_duration_s: 0.0
+    safety:
+      tolerance_s: 0.05
+      unsafe: true
+      reason: wrong-target +0.700 s
+  claim_boundary: Within-tracker raw-versus-TIM comparison only. Autonomous target selection differs across
+    trackers, so absolute cross-tracker ranking is not claimed.
+- id: p018_matrix_sort
+  status: final evidence
+  claim_status: canonical safety rejection
+  sequence: may_hard_reentry
+  tracker: sort
   method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-06-19__11-58-02__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_06_19_11_59_23_video_2026_06_19_seq01_clean_four_person_yolov8s_bytetrack_tim_mars
-  label: SEQ01 clean four-person | ByteTrack | TIM-MARS
-  case: seq01_clean_four_person
-  tracker: bytetrack
+  selection_provenance: autonomous
+  replay_scope: memory-only replay
+  annotation:
+    path: docs/data/annotations/may_hard_reentry/sort_f17cdf80_autonomous.csv
+    sha256: 1f0484acf2cfcdfa09ef16404020e6670373b128c952b82882c965a0d500e855
+  lineage:
+    source_bag: bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/sort
+    output_bag: bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/sort
+    selected_track_id: 1
+    replay_repository_commit: 36ecd17da9a66c4b95f82234960d831fb4f5ba44
+    canonical_config_sha256: 16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655
+    mars_model_sha256: e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1
+    replay_metadata:
+      path: reports/p018_tim_matrix_36ecd17d_2026_07_19/sort/tim_replay_metadata.json
+      sha256: a0314f124f7c3d231a3400328e9ec2fc62fb79e2198b16134f0b39e87169f188
+    source_manifest:
+    - name: metadata.yaml
+      sha256: 7b6c3b83f1c66aafb92e074bb1df460d37faef2e8368eaf2948db45dc43b71f1
+      size_bytes: 6224
+    - name: sort_0.mcap
+      sha256: 0a45b39e003483e5ddbcd1d1587b55ebf8e8014b7718a1e691b9f65e4c3886c7
+      size_bytes: 1200800027
+    - name: tracker_config.yaml
+      sha256: 78051b9606cae6d2f6c8de25bffe38d26697e2edf153a9961bbf31934016319c
+      size_bytes: 607
+    - name: tracker_freeze_metadata.json
+      sha256: 60f3277cb83fc73b09bff122148cfbcd694c2bb1270ee09cef55b77d4e323b0f
+      size_bytes: 4118
+    - name: tracker_freeze_metadata.sha256
+      sha256: 76ea40cac498dfdfb8a8ab66d1dc7192ae01d1096bad0e696c16124b362b7448
+      size_bytes: 95
+    source_tracker_semantic_sha256: cccccca83c44ddddf35278a8801d3cfd753392206b3dd249946eed6a3fce832b
+    tim_semantic_sha256: 58ea54bd9e1590279cd8e8daafae5a01230c3ac3abe479e424440f0c6a517625
+  report:
+    path: reports/p018_tim_matrix_36ecd17d_2026_07_19/canonical_matrix_summary.json
+    sha256: 6bb27d4021f902f4d2afd7b77843466f870fbac443400850c12d8c36ce4d0edc
+    row_reference: rows[tracker=sort]
+  evaluation:
+    path: reports/p018_tim_matrix_36ecd17d_2026_07_19/sort/evaluation/summary.csv
+    sha256: f6d748f568e1024fbb3a701cb7b8110954f48035e0bc7f339ece456255c8280d
+  result:
+    raw:
+      correct_ratio: 0.442
+      wrong_ratio: 0.0
+      lost_ratio: 0.558
+      correct_duration_s: 29.286
+      wrong_duration_s: 0.0
+      lost_duration_s: 37.032
+      absent_output_duration_s: 0.15
+    tim:
+      correct_ratio: 0.786
+      wrong_ratio: 0.08
+      lost_ratio: 0.134
+      correct_duration_s: 52.099
+      wrong_duration_s: 5.3
+      lost_duration_s: 8.919
+      absent_output_duration_s: 0.3
+    delta:
+      correct_duration_s: 22.812999999999995
+      wrong_duration_s: 5.3
+      lost_duration_s: -28.112999999999996
+      absent_output_duration_s: 0.15
+    safety:
+      tolerance_s: 0.05
+      unsafe: true
+      reason: wrong-target +5.300 s; target-absence valid-output +0.150 s
+  claim_boundary: Within-tracker raw-versus-TIM comparison only. Autonomous target selection differs across
+    trackers, so absolute cross-tracker ranking is not claimed.
+- id: p018_matrix_ocsort
+  status: final evidence
+  claim_status: canonical safety rejection
+  sequence: may_hard_reentry
+  tracker: ocsort
   method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-06-19__11-59-23__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
-  recommended_annotation: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
-  valid_for_evaluation: true
-- id: 2026_05_14_10_59_01_dataset_tim_v1_two_person_no_crossing_raw_tracker_ocsort_tim_off_target_1
-  label: Unknown case | OCSORT | Raw | target 1
-  case: unknown
-  tracker: ocsort
-  method: raw
-  target: '1'
-  replay: ''
-  source: eval_matrix
-  path: bags/replay/eval_matrix/2026-05-14__10-59-01__dataset__tim_v1_two_person_no_crossing_raw__tracker_ocsort__tim_off__target_1
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_04_29_10_26_03_video_clean_walk_yolov6n_ocsort
-  label: Unknown case | OCSORT
-  case: unknown
-  tracker: ocsort
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-04-29__10-26-03__video__clean_walk_yolov6n_ocsort
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_04_29_10_28_08_video_single_person_occlusion_yolov6n_ocsort
-  label: Unknown case | OCSORT
-  case: unknown
-  tracker: ocsort
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-04-29__10-28-08__video__single_person_occlusion_yolov6n_ocsort
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_04_29_10_30_08_video_fov_exit_reentry_yolov6n_ocsort
-  label: Unknown case | OCSORT
-  case: unknown
-  tracker: ocsort
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-04-29__10-30-08__video__fov_exit_reentry_yolov6n_ocsort
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_17_11_19_06_video_two_person_tim_mars
-  label: Unknown case | TIM-MARS
-  case: unknown
-  tracker: unknown
+  selection_provenance: autonomous
+  replay_scope: memory-only replay
+  annotation:
+    path: docs/data/annotations/may_hard_reentry/ocsort_f17cdf80_autonomous.csv
+    sha256: 089eb7822c3bc743774d58ca8eb7d681065aeb14fa268d8c510bb45cb5847b3a
+  lineage:
+    source_bag: bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/ocsort
+    output_bag: bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/ocsort
+    selected_track_id: 2
+    replay_repository_commit: 36ecd17da9a66c4b95f82234960d831fb4f5ba44
+    canonical_config_sha256: 16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655
+    mars_model_sha256: e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1
+    replay_metadata:
+      path: reports/p018_tim_matrix_36ecd17d_2026_07_19/ocsort/tim_replay_metadata.json
+      sha256: 993c392c5dec50e1ae80c185ffc378846f01a7888d166c9c08dae1bf402a64a7
+    source_manifest:
+    - name: metadata.yaml
+      sha256: ba5cae58bcfe9ceed0a8f2b186c2d60bb3ac18a08ae0c0dd2c2f6566f0114a4f
+      size_bytes: 6228
+    - name: ocsort_0.mcap
+      sha256: 1b6b1d392844abbe0cf92896f2f8d353d0b1b55d1fd283c236da6847d4c57bc5
+      size_bytes: 1200781385
+    - name: tracker_config.yaml
+      sha256: b7967161815ecaacf903c4c8f3b5c09f601423b38ce46cefa9e00b89a36af89c
+      size_bytes: 373
+    - name: tracker_freeze_metadata.json
+      sha256: d9d70369d2fc6f5a5c927443231a80a3652641980b93c8a48e1cb529ebd700da
+      size_bytes: 4194
+    - name: tracker_freeze_metadata.sha256
+      sha256: 1d4da510f92bffc3571e98c251679f06cdda240e926540b279c404ce76f7edf4
+      size_bytes: 95
+    source_tracker_semantic_sha256: bf29642a6ef996084b1dd98a506308555f6844e86de14d9ca0849e5c31ee1f18
+    tim_semantic_sha256: 4c9a58866a7124cbdd4bbfd52a01765aaab750014be81a500067b3a04827240b
+  report:
+    path: reports/p018_tim_matrix_36ecd17d_2026_07_19/canonical_matrix_summary.json
+    sha256: 6bb27d4021f902f4d2afd7b77843466f870fbac443400850c12d8c36ce4d0edc
+    row_reference: rows[tracker=ocsort]
+  evaluation:
+    path: reports/p018_tim_matrix_36ecd17d_2026_07_19/ocsort/evaluation/summary.csv
+    sha256: b3ec621a62b11d08fcc85fb36cda6624eb1fcc55e033849e478988c36b530947
+  result:
+    raw:
+      correct_ratio: 0.509
+      wrong_ratio: 0.0
+      lost_ratio: 0.491
+      correct_duration_s: 33.599
+      wrong_duration_s: 0.0
+      lost_duration_s: 32.431
+      absent_output_duration_s: 0.1
+    tim:
+      correct_ratio: 0.936
+      wrong_ratio: 0.0
+      lost_ratio: 0.064
+      correct_duration_s: 61.83
+      wrong_duration_s: 0.0
+      lost_duration_s: 4.2
+      absent_output_duration_s: 0.3
+    delta:
+      correct_duration_s: 28.231
+      wrong_duration_s: 0.0
+      lost_duration_s: -28.230999999999998
+      absent_output_duration_s: 0.19999999999999998
+    safety:
+      tolerance_s: 0.05
+      unsafe: true
+      reason: target-absence valid-output +0.200 s
+  claim_boundary: Within-tracker raw-versus-TIM comparison only. Autonomous target selection differs across
+    trackers, so absolute cross-tracker ranking is not claimed.
+- id: p018_matrix_deepsort
+  status: final evidence
+  claim_status: canonical safety rejection
+  sequence: may_hard_reentry
+  tracker: deepsort
   method: tim_mars
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-06-17__11-19-06__video__two_person_tim_mars
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_03_29_control_validation_clean
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-03-29__control_validation_clean
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_04_30_10_52_20_video_flight_01
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-04-30__10-52-20__video__flight_01
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_04_30_12_29_33_video_oficial_flight_01
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-04-30__12-29-33__video__oficial_flight_01
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_04_30_12_42_17_video_oficial_flight_02
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-04-30__12-42-17__video__oficial_flight_02
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_05_11_10_44_58_video_tim_v1j_two_person_ambiguity
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-05-11__10-44-58__video__tim_v1j_two_person_ambiguity
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_05_11_11_30_18_video_tim_v1m_appearance_critical_crossing
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-05-11__11-30-18__video__tim_v1m_appearance_critical_crossing
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_05_11_11_31_27_video_tim_v1m_appearance_critical_crossing
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing
-  recommended_annotation: ''
-  valid_for_evaluation: false
-- id: 2026_06_17_12_34_54_video_integrated_vga_dash30_full
-  label: Unknown case
-  case: unknown
-  tracker: unknown
-  method: unknown
-  target: ''
-  replay: ''
-  source: bag
-  path: bags/source/archive/lab_old/full_pipeline/2026-06-17__12-34-54__video__integrated_vga_dash30_full
-  recommended_annotation: ''
-  valid_for_evaluation: false
-annotations:
-- id: docs_annotations_hard_reentry_bytetrack_tim_mars_final
-  label: Hard re-entry / ID switch | ByteTrack | manual | IDs 1 -> 40
-  case: hard_reentry
-  tracker: bytetrack
-  timebase: manual
-  target_ids:
+  selection_provenance: autonomous
+  replay_scope: memory-only replay
+  annotation:
+    path: docs/data/annotations/may_hard_reentry/deepsort_f17cdf80_autonomous.csv
+    sha256: d220fd336cf861fbbebe2fa9c6186e17abb9d6864215be614ccf09e43927931c
+  lineage:
+    source_bag: bags/replay/p018_tracker_freeze_f17cdf80_2026_07_18/deepsort
+    output_bag: bags/replay/p018_tim_matrix_36ecd17d_2026_07_19/deepsort
+    selected_track_id: 1
+    replay_repository_commit: 36ecd17da9a66c4b95f82234960d831fb4f5ba44
+    canonical_config_sha256: 16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655
+    mars_model_sha256: e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1
+    replay_metadata:
+      path: reports/p018_tim_matrix_36ecd17d_2026_07_19/deepsort/tim_replay_metadata.json
+      sha256: 3032677eec4f1f34cd5c31defbf7dd1a9760dc9248b6559bd89542640e213807
+    source_manifest:
+    - name: deepsort_0.mcap
+      sha256: 2ef3cf5b105b8a44f9804a61d0f87a640cc7c2ad8c1c19155bb4a818d4653576
+      size_bytes: 1200805983
+    - name: metadata.yaml
+      sha256: 5a3a8c2a3366f9103fddaa2fe7e80b7b361433a09be3569acc9d9de372e16610
+      size_bytes: 6232
+    - name: tracker_config.yaml
+      sha256: a4c25f5471cc5a6dd9ac49fed96b9d32ced5cd26ab8e699818af0340fee0f9ad
+      size_bytes: 547
+    - name: tracker_freeze_metadata.json
+      sha256: 44467373084d5d0fad08918e98b3563452cd47500a08998124fd4785361c6230
+      size_bytes: 4815
+    - name: tracker_freeze_metadata.sha256
+      sha256: ecf9f52521edec1cb43b1ed5fc71d7d31a69b40c0e81e3977326d671f1234b0a
+      size_bytes: 95
+    source_tracker_semantic_sha256: 86bf113cdc208931547478379e247dbc5242f0cf560ada224c695a5e9a335cb2
+    tim_semantic_sha256: fd20694ca87ecf8e89779fd8e596c5907d46b9babe4761f729bec006b529efd9
+  report:
+    path: reports/p018_tim_matrix_36ecd17d_2026_07_19/canonical_matrix_summary.json
+    sha256: 6bb27d4021f902f4d2afd7b77843466f870fbac443400850c12d8c36ce4d0edc
+    row_reference: rows[tracker=deepsort]
+  evaluation:
+    path: reports/p018_tim_matrix_36ecd17d_2026_07_19/deepsort/evaluation/summary.csv
+    sha256: 43f635d65e28b39cff43c0691c6f95470ca6e07eb2c9555dab0e165efc3132c5
+  result:
+    raw:
+      correct_ratio: 0.366
+      wrong_ratio: 0.001
+      lost_ratio: 0.633
+      correct_duration_s: 24.828
+      wrong_duration_s: 0.1
+      lost_duration_s: 42.937
+      absent_output_duration_s: 0.0
+    tim:
+      correct_ratio: 0.755
+      wrong_ratio: 0.225
+      lost_ratio: 0.02
+      correct_duration_s: 51.212
+      wrong_duration_s: 15.303
+      lost_duration_s: 1.35
+      absent_output_duration_s: 0.0
+    delta:
+      correct_duration_s: 26.384000000000004
+      wrong_duration_s: 15.203000000000001
+      lost_duration_s: -41.586999999999996
+      absent_output_duration_s: 0.0
+    safety:
+      tolerance_s: 0.05
+      unsafe: true
+      reason: wrong-target +15.203 s
+  claim_boundary: Within-tracker raw-versus-TIM comparison only. Autonomous target selection differs across
+    trackers, so absolute cross-tracker ranking is not claimed.
+- id: p018_ocsort_seq03
+  status: final evidence
+  claim_status: canonical safety rejection
+  sequence: seq03
+  tracker: ocsort
+  method: tim_mars
+  selection_provenance: annotation-driven diagnostic
+  replay_scope: memory-only replay
+  annotation:
+    path: docs/data/annotations/june_hard_sequences/seq03_ocsort_305578f3.csv
+    sha256: 12db619326e47ff138b4267cd19dc1f3296385a06e01f693e9c1e467876bf56a
+  lineage:
+    source_bag: bags/replay/p018_ocsort_sequences_305578f3_2026_07_19/seq03_ocsort_freeze_r1
+    output_bag: bags/replay/p018_ocsort_tim_2d1ae5e9_2026_07_19/seq03_r1
+    selected_track_id: 1
+    replay_repository_commit: 2d1ae5e9126daa9d52d2d5430b23186edfdb2833
+    canonical_config_sha256: 16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655
+    mars_model_sha256: e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1
+    replay_metadata:
+      path: reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/seq03_r1/tim_replay_metadata.json
+      sha256: fa88b49264e04a6b6180c73a037667d85e70d442736b35202dc77f18e4652904
+    source_manifest:
+    - name: metadata.yaml
+      sha256: c9aa006c159371bc2bb650881746a7c535e10eb5c750b6472c9b721b66d994a4
+      size_bytes: 4020
+    - name: seq03_ocsort_freeze_r1_0.mcap
+      sha256: bebc0d2151bd582d772b773dbeadef327d0d04e5cf5a4074bfa969ea70078a77
+      size_bytes: 631321312
+    - name: tracker_config.yaml
+      sha256: b7967161815ecaacf903c4c8f3b5c09f601423b38ce46cefa9e00b89a36af89c
+      size_bytes: 373
+    - name: tracker_freeze_metadata.json
+      sha256: c4b55b997666f1673f598a2082d3b25ce52d597bdeb0cafd2fc532721073a9b5
+      size_bytes: 4556
+    - name: tracker_freeze_metadata.sha256
+      sha256: c77d0d842a731719e4cd90c87544111545e1a8a9612d8d40ebaa843df58d051c
+      size_bytes: 95
+    tracker_freeze_repository_commit: 305578f322df539f7d457de1f3cc7ddf27969734
+    event_evaluator_repository_commit: 4d7a601c33d9bece8cbd834c062d0857b8860638
+    generated_semantic_sha256: 9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a
+  report:
+    path: reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/canonical_ocsort_sequence_summary.json
+    sha256: 9f1acdbe226ea47d8b9ec85bdf3aed078c4781e7d8ba8ba3df4bc0c9454c7928
+    row_reference: sequences.seq03
+  evaluation:
+    path: reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/seq03_r1/evaluation/summary.csv
+    sha256: 5e89be546a200610bfa2527add390b41b96ce67dbf9383bae91357674222f209
+  result:
+    raw:
+      absent_output_duration_s: 0.0
+      correct_duration_s: 32.554
+      correct_ratio: 0.34
+      lost_duration_s: 63.123
+      lost_ratio: 0.659
+      wrong_duration_s: 0.05
+      wrong_ratio: 0.001
+    tim:
+      absent_output_duration_s: 0.0
+      correct_duration_s: 81.385
+      correct_ratio: 0.85
+      lost_duration_s: 12.942
+      lost_ratio: 0.135
+      wrong_duration_s: 1.4
+      wrong_ratio: 0.015
+    delta:
+      absent_output_duration_s: 0.0
+      correct_duration_s: 48.831
+      lost_duration_s: -50.181
+      wrong_duration_s: 1.35
+    safety:
+      tolerance_s: 0.05
+      unsafe_absence_above_tolerance: false
+      unsafe_wrong_above_tolerance: true
+      wrong_delta_at_tolerance_boundary: false
+    repeatability:
+      all_checks_passed: true
+      checks:
+        both_repository_states_clean: true
+        config_hash_matches: true
+        evaluation_rows_match: true
+        model_hash_matches: true
+        repository_commit_matches: true
+        semantic_digest_matches: true
+        topic_counts_match: true
+      errors: []
+      r1_evaluation_sha256: 5e89be546a200610bfa2527add390b41b96ce67dbf9383bae91357674222f209
+      r1_generated_semantic_sha256: 9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a
+      r2_evaluation_sha256: 5e89be546a200610bfa2527add390b41b96ce67dbf9383bae91357674222f209
+      r2_generated_semantic_sha256: 9defd57206ea2ffcf0bdbd88e9188265e646ff3582f58734ed8315dcb75c189a
+      schema_version: 1
+      sequence: seq03_crossing_ambiguity
+  claim_boundary: OC-SORT tracker-specific diagnostic with a fixed selected ID and tracker-specific manual
+    annotation.
+- id: p018_ocsort_seq04
+  status: final evidence
+  claim_status: canonical safety rejection
+  sequence: seq04
+  tracker: ocsort
+  method: tim_mars
+  selection_provenance: annotation-driven diagnostic
+  replay_scope: memory-only replay
+  annotation:
+    path: docs/data/annotations/june_hard_sequences/seq04_ocsort_305578f3.csv
+    sha256: 39cc630be6873c261de22a248ddeab1cbb723988e2513b1cc2ae24a8450fc1a1
+  lineage:
+    source_bag: bags/replay/p018_ocsort_sequences_305578f3_2026_07_19/seq04_ocsort_freeze_r1
+    output_bag: bags/replay/p018_ocsort_tim_2d1ae5e9_2026_07_19/seq04_r1
+    selected_track_id: 1
+    replay_repository_commit: 2d1ae5e9126daa9d52d2d5430b23186edfdb2833
+    canonical_config_sha256: 16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655
+    mars_model_sha256: e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1
+    replay_metadata:
+      path: reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/seq04_r1/tim_replay_metadata.json
+      sha256: 299481ea9d01f234e6f98de0acbf6b7df8a2305d0f4ba67940254f85783b1cef
+    source_manifest:
+    - name: metadata.yaml
+      sha256: 743ac0e5ec54bc0fff0beffe629abf1f9d315698f6d526df847858b7402a0f73
+      size_bytes: 4018
+    - name: seq04_ocsort_freeze_r1_0.mcap
+      sha256: 983e61004e0d43e4ba98654d3c67b4e381bf2b1009262d449bb7db0948a8316e
+      size_bytes: 434635304
+    - name: tracker_config.yaml
+      sha256: b7967161815ecaacf903c4c8f3b5c09f601423b38ce46cefa9e00b89a36af89c
+      size_bytes: 373
+    - name: tracker_freeze_metadata.json
+      sha256: f8d5979399a8311963f70f5ef50b98e45a06fb6b14b834ef0dbc1e6e6464d0e2
+      size_bytes: 4550
+    - name: tracker_freeze_metadata.sha256
+      sha256: 2da9857ccfbdde4cccaf8bec4fa59c3409523f2c392ae17db985db5b38bc16e7
+      size_bytes: 95
+    tracker_freeze_repository_commit: 305578f322df539f7d457de1f3cc7ddf27969734
+    event_evaluator_repository_commit: 4d7a601c33d9bece8cbd834c062d0857b8860638
+    generated_semantic_sha256: e6b5560be7ee78f7cfaad708ccc455c09f45dd31f5e4b7f79961457deea0cd00
+  report:
+    path: reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/canonical_ocsort_sequence_summary.json
+    sha256: 9f1acdbe226ea47d8b9ec85bdf3aed078c4781e7d8ba8ba3df4bc0c9454c7928
+    row_reference: sequences.seq04
+  evaluation:
+    path: reports/p018_ocsort_tim_2d1ae5e9_2026_07_19/seq04_r1/evaluation/summary.csv
+    sha256: 9430409a43e466aa1baebbb2a68ada7169fdc9dc066a4bfcf5325b3274efd05b
+  result:
+    raw:
+      absent_output_duration_s: 0.0
+      correct_duration_s: 36.589
+      correct_ratio: 0.644
+      lost_duration_s: 20.133
+      lost_ratio: 0.354
+      wrong_duration_s: 0.1
+      wrong_ratio: 0.002
+    tim:
+      absent_output_duration_s: 0.0
+      correct_duration_s: 39.886
+      correct_ratio: 0.702
+      lost_duration_s: 16.786
+      lost_ratio: 0.295
+      wrong_duration_s: 0.15
+      wrong_ratio: 0.003
+    delta:
+      absent_output_duration_s: 0.0
+      correct_duration_s: 3.297
+      lost_duration_s: -3.347
+      wrong_duration_s: 0.05
+    safety:
+      tolerance_s: 0.05
+      unsafe_absence_above_tolerance: false
+      unsafe_wrong_above_tolerance: false
+      wrong_delta_at_tolerance_boundary: true
+    repeatability:
+      all_checks_passed: true
+      checks:
+        both_repository_states_clean: true
+        config_hash_matches: true
+        evaluation_rows_match: true
+        model_hash_matches: true
+        repository_commit_matches: true
+        runtime_matches: true
+        semantic_digest_matches: true
+        topic_contract_matches: true
+        topic_counts_match: true
+      errors: []
+      r1_evaluation_sha256: 9430409a43e466aa1baebbb2a68ada7169fdc9dc066a4bfcf5325b3274efd05b
+      r1_generated_semantic_sha256: e6b5560be7ee78f7cfaad708ccc455c09f45dd31f5e4b7f79961457deea0cd00
+      r2_evaluation_sha256: 9430409a43e466aa1baebbb2a68ada7169fdc9dc066a4bfcf5325b3274efd05b
+      r2_generated_semantic_sha256: e6b5560be7ee78f7cfaad708ccc455c09f45dd31f5e4b7f79961457deea0cd00
+      schema_version: 1
+      sequence: seq04_occlusion_no_exit
+  claim_boundary: OC-SORT tracker-specific diagnostic with a fixed selected ID and tracker-specific manual
+    annotation.
+diagnostic_reports:
+- id: p014_protected_appearance
+  status: diagnostic only
+  path: reports/p014_protected_appearance_2026_07_17/canonical_comparison.tsv
+  sha256: 22420264d1ac22ebf5bc9466c879f985a5fdd4ef03ca6eaf1884a7e4d8504b9c
+  reason: The aggregate table records A/B results and configuration fingerprints but does not preserve
+    source bag, annotation, selected ID, replay commit, and replay-metadata digest for each row. It therefore
+    supports the implementation decision but is not a canonical final-row package.
+excluded_candidates:
+- id: legacy_seq02_catalogue_rows
+  sequence: seq02
+  status: non-final
+  reason: The former catalogue promoted missing target-0 replay paths. The current ByteTrack annotation
+    expects IDs 1, 15, 23, 28, 40, and 46, so target 0 is not a proven correct-target lineage.
+  annotation:
+    path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
+    sha256: ae331a582793221be0bf2aca4bec622be0130bb64559456767baf0797d179fe0
+  expected_target_ids:
   - 1
+  - 15
+  - 23
+  - 28
   - 40
-  preferred: false
-  path: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-- id: docs_annotations_hard_reentry_deepsort_mars_target1_final
-  label: Hard re-entry / ID switch | DeepSORT | manual | IDs 1
-  case: hard_reentry
-  tracker: deepsort
-  timebase: manual
-  target_ids:
-  - 1
-  preferred: false
-  path: docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv
-- id: docs_annotations_hard_reentry_ocsort_tim_mars_r1
-  label: Hard re-entry / ID switch | OCSORT | manual | IDs 1 -> 98 -> 115 -> 144 ->
-    163
-  case: hard_reentry
-  tracker: ocsort
-  timebase: manual
-  target_ids:
-  - 1
-  - 98
-  - 115
-  - 144
-  - 163
-  preferred: false
-  path: docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv
-- id: docs_annotations_hard_reentry_header_time_bytetrack_tim_mars_final_header_time
-  label: Hard re-entry / ID switch | ByteTrack | header-time | IDs 1 -> 40
-  case: hard_reentry
-  tracker: bytetrack
-  timebase: header_time
-  target_ids:
-  - 1
-  - 40
-  preferred: false
-  path: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-- id: docs_annotations_hard_reentry_header_time_deepsort_mars_target1_final_header_time
-  label: Hard re-entry / ID switch | DeepSORT | header-time | IDs 1
-  case: hard_reentry
-  tracker: deepsort
-  timebase: header_time
-  target_ids:
-  - 1
-  preferred: false
-  path: docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv
-- id: docs_annotations_hard_reentry_header_time_fresh_replay_corrected_bytetrack_tim_mars_r1_header_time_corrected
-  label: Hard re-entry / ID switch | ByteTrack | header-time | corrected | IDs 1 ->
-    42
-  case: hard_reentry
-  tracker: bytetrack
-  timebase: header_time
-  target_ids:
-  - 1
-  - 42
-  preferred: false
-  path: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-- id: docs_annotations_hard_reentry_header_time_fresh_replay_corrected_bytetrack_tim_mars_r2_header_time_corrected
-  label: Hard re-entry / ID switch | ByteTrack | header-time | corrected | IDs 1 ->
-    42
-  case: hard_reentry
-  tracker: bytetrack
-  timebase: header_time
-  target_ids:
-  - 1
-  - 42
-  preferred: true
-  path: docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv
-- id: docs_annotations_hard_reentry_header_time_ocsort_tim_mars_r1_header_time
-  label: Hard re-entry / ID switch | OCSORT | header-time | IDs 1 -> 98 -> 115 ->
-    144 -> 163
-  case: hard_reentry
-  tracker: ocsort
-  timebase: header_time
-  target_ids:
-  - 1
-  - 98
-  - 115
-  - 144
-  - 163
-  preferred: false
-  path: docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv
-- id: docs_annotations_official_field_2026_06_19_seq01_clean_four_person_manual
-  label: SEQ01 clean four-person | manual | IDs 1
-  case: seq01_clean_four_person
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 1
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq01_clean_four_person_manual_ros_time
-  label: SEQ01 clean four-person | ros-time | IDs 1
-  case: seq01_clean_four_person
-  tracker: unknown
-  timebase: ros_time
-  target_ids:
-  - 1
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq01_clean_four_person_manual_track_time
-  label: SEQ01 clean four-person | track-time | IDs 1
-  case: seq01_clean_four_person
-  tracker: unknown
-  timebase: track_time
-  target_ids:
-  - 1
-  preferred: true
-  path: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq02_long_memory_only_no_switch
-  label: SEQ02 target re-entry | manual | IDs 11
-  case: seq02_target_reentry
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 11
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq02_target_reentry_manual
-  label: SEQ02 target re-entry | manual | IDs 11
-  case: seq02_target_reentry
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 11
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq02_target_reentry_manual_ros_time
-  label: SEQ02 target re-entry | ros-time | IDs 11
-  case: seq02_target_reentry
-  tracker: unknown
-  timebase: ros_time
-  target_ids:
-  - 11
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq02_target_reentry_manual_track_time
-  label: SEQ02 target re-entry | track-time | IDs 11
-  case: seq02_target_reentry
-  tracker: unknown
-  timebase: track_time
-  target_ids:
-  - 11
-  preferred: true
-  path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq03_crossing_ambiguity
-  label: SEQ03 crossing ambiguity | manual | IDs 2
-  case: seq03_crossing_ambiguity
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 2
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq03_crossing_ambiguity_manual
-  label: SEQ03 crossing ambiguity | manual | IDs 2 -> 8 -> 12 -> 13
-  case: seq03_crossing_ambiguity
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 2
-  - 8
-  - 12
-  - 13
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq03_crossing_ambiguity_manual_ros_time
-  label: SEQ03 crossing ambiguity | ros-time | IDs 2 -> 8 -> 12 -> 13
-  case: seq03_crossing_ambiguity
-  tracker: unknown
-  timebase: ros_time
-  target_ids:
-  - 2
-  - 8
-  - 12
-  - 13
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq03_crossing_ambiguity_manual_track_time
-  label: SEQ03 crossing ambiguity | track-time | IDs 2 -> 8 -> 12 -> 13
-  case: seq03_crossing_ambiguity
-  tracker: unknown
-  timebase: track_time
-  target_ids:
-  - 2
-  - 8
-  - 12
-  - 13
-  preferred: true
-  path: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq04_occlusion_no_exit
-  label: SEQ04 occlusion no-exit | manual | IDs 1
-  case: seq04_occlusion_no_exit
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 1
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq04_occlusion_no_exit_manual
-  label: SEQ04 occlusion no-exit | manual | IDs 1 -> 21 -> 26 -> 31 -> 32 -> 35 ->
-    36
-  case: seq04_occlusion_no_exit
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 1
-  - 21
-  - 26
-  - 31
-  - 32
-  - 35
-  - 36
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq04_occlusion_no_exit_manual_ros_time
-  label: SEQ04 occlusion no-exit | ros-time | IDs 1 -> 21 -> 26 -> 31 -> 32 -> 35
-    -> 36
-  case: seq04_occlusion_no_exit
-  tracker: unknown
-  timebase: ros_time
-  target_ids:
-  - 1
-  - 21
-  - 26
-  - 31
-  - 32
-  - 35
-  - 36
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_seq04_occlusion_no_exit_manual_track_time
-  label: SEQ04 occlusion no-exit | track-time | IDs 1 -> 21 -> 26
-  case: seq04_occlusion_no_exit
-  tracker: unknown
-  timebase: track_time
-  target_ids:
-  - 1
-  - 21
-  - 26
-  preferred: true
-  path: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_target_id_only_manual_seq01_clean_four_person
-  label: SEQ01 clean four-person | manual | IDs 1
-  case: seq01_clean_four_person
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 1
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_target_id_only_manual_seq02_target_reentry
-  label: SEQ02 target re-entry | manual | IDs 11
-  case: seq02_target_reentry
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 11
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_target_id_only_manual_seq03_crossing_ambiguity
-  label: SEQ03 crossing ambiguity | manual | IDs 2 -> 8 -> 12 -> 13
-  case: seq03_crossing_ambiguity
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 2
-  - 8
-  - 12
-  - 13
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv
-- id: docs_annotations_official_field_2026_06_19_target_id_only_manual_seq04_occlusion_no_exit
-  label: SEQ04 occlusion no-exit | manual | IDs 1 -> 21 -> 26 -> 31 -> 32 -> 35 ->
-    36
-  case: seq04_occlusion_no_exit
-  tracker: unknown
-  timebase: manual
-  target_ids:
-  - 1
-  - 21
-  - 26
-  - 31
-  - 32
-  - 35
-  - 36
-  preferred: false
-  path: docs/data/annotations/june_hard_sequences/seq04_bytetrack.csv
+  - 46
+- id: official_full_pipeline_field_bags
+  status: non-final
+  replay_scope: full-pipeline replay
+  reason: Fresh or relocated full-pipeline runs are not promoted because tracker IDs are not guaranteed
+    to match the existing manual annotations. No full-pipeline final row is currently supported.
+- id: legacy_eval_catalogue
+  status: replaced
+  reason: The previous catalogue declared a generator that never existed in Git, contained 30 promoted
+    rows whose paths were all absent, and included annotation metadata that disagreed with the current
+    CSV files.
