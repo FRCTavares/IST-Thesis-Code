@@ -1,0 +1,15 @@
+tag=p007_rank_aware_uncommitted_164a70c6_2026_07_21
+repository_root=/home/francisco/Desktop/Thesis-Code
+base_commit=164a70c64d50afa321ccd8f4550e463b60413739
+branch=main
+canonical_config=/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml
+canonical_config_sha256=55332935fe859edff60bedf910f126487b5da6a8e13bbe5bb7662f2645359dbc
+model=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb
+model_sha256=e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1
+selected_track_id=1
+repository_state=uncommitted Issue #7 candidate
+
+## main...origin/main
+ M TODO_LIST.md
+ M ros2_ws/src/thesis_bringup/test/test_target_memory_rank_aware_reacquisition.py
+ M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py

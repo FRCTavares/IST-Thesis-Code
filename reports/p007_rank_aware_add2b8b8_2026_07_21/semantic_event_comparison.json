@@ -1,0 +1,45 @@
+{
+  "cases": [
+    {
+      "semantic_event": {
+        "baseline_crlf_count": 0,
+        "baseline_raw_sha256": "285418647356ac1c01756dbdbfbdd4bd340611de635aa462063f0666da6d2031",
+        "baseline_row_count": 6,
+        "baseline_semantic_sha256": "0e131bab3b25245d899ec3c5365d44172ab26f6c574269265e7168dbdf22b3a9",
+        "candidate_crlf_count": 7,
+        "candidate_raw_sha256": "a46f90293d7644260f28662169a26d38a89f8d4ef3cf0ca399bfa54a0d191203",
+        "candidate_row_count": 6,
+        "candidate_semantic_sha256": "0e131bab3b25245d899ec3c5365d44172ab26f6c574269265e7168dbdf22b3a9",
+        "field_set_match": true,
+        "mismatch_count": 0,
+        "mismatches": [],
+        "passed": true,
+        "raw_hash_match": false,
+        "row_key_match": true,
+        "semantic_match": true
+      },
+      "sequence": "seq03"
+    },
+    {
+      "semantic_event": {
+        "baseline_crlf_count": 0,
+        "baseline_raw_sha256": "91d180c95c0ad42ec988b28d243407b9882574e6ad230d2957cf9faf283cba75",
+        "baseline_row_count": 10,
+        "baseline_semantic_sha256": "7ad8204fd81b24e55304b745c06c66ee06fa1bae726df25ab32294a3d9ad6cf9",
+        "candidate_crlf_count": 11,
+        "candidate_raw_sha256": "17c745ea0b5aa401a6478c84a389ed9256f6562fabcdfabba95b51bd7d5093b7",
+        "candidate_row_count": 10,
+        "candidate_semantic_sha256": "7ad8204fd81b24e55304b745c06c66ee06fa1bae726df25ab32294a3d9ad6cf9",
+        "field_set_match": true,
+        "mismatch_count": 0,
+        "mismatches": [],
+        "passed": true,
+        "raw_hash_match": false,
+        "row_key_match": true,
+        "semantic_match": true
+      },
+      "sequence": "seq04"
+    }
+  ],
+  "schema_version": 1
+}

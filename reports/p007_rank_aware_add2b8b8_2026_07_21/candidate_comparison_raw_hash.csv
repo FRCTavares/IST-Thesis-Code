@@ -1,0 +1,5 @@
+sequence,baseline_correct,candidate_correct,delta_correct,baseline_wrong,candidate_wrong,delta_wrong,baseline_lost,candidate_lost,delta_lost,semantic_match,event_match,gate
+may,63.217,63.217,0.0,0.283,0.283,0.0,4.2,4.2,0.0,,,PASS
+seq01,122.34,122.34,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,PASS
+seq03,81.385,81.385,0.0,1.4,1.4,0.0,12.942,12.942,0.0,True,False,FAIL
+seq04,39.886,39.886,0.0,0.15,0.15,0.0,16.786,16.786,0.0,True,False,FAIL

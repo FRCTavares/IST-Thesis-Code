@@ -1,0 +1,5 @@
+{
+  "all_passed": true,
+  "raw_event_hashes_are_semantic_contract": false,
+  "reason": "Seq03 and Seq04 parsed event tables are identical; raw hashes differ from line endings."
+}

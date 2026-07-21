@@ -1,0 +1,548 @@
+{
+  "all_passed": false,
+  "baseline": "/home/francisco/Desktop/Thesis-Code/reports/p006b_hard_negative_03409564_2026_07_21",
+  "candidate": "/home/francisco/Desktop/Thesis-Code/reports/memory_tim_safety_eval/p007_rank_aware_uncommitted_164a70c6_2026_07_21",
+  "cases": [
+    {
+      "event_summary_passed": null,
+      "gate": true,
+      "semantic_digest_passed": null,
+      "sequence": "may",
+      "summary_details": {
+        "raw_target": {
+          "correct_target_duration_s": {
+            "baseline": 39.383,
+            "candidate": 39.383,
+            "delta": 0.0,
+            "equal": true
+          },
+          "correct_target_ratio": {
+            "baseline": 0.582,
+            "candidate": 0.582,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_duration_s": {
+            "baseline": 21.57,
+            "candidate": 21.57,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_ratio": {
+            "baseline": 0.319,
+            "candidate": 0.319,
+            "delta": 0.0,
+            "equal": true
+          },
+          "no_target_selected_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_absent_but_output_valid_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_not_visible_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "visible_target_duration_s": {
+            "baseline": 67.7,
+            "candidate": 67.7,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_duration_s": {
+            "baseline": 6.747,
+            "candidate": 6.747,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_ratio": {
+            "baseline": 0.1,
+            "candidate": 0.1,
+            "delta": 0.0,
+            "equal": true
+          }
+        },
+        "tim_target_memory": {
+          "correct_target_duration_s": {
+            "baseline": 63.217,
+            "candidate": 63.217,
+            "delta": 0.0,
+            "equal": true
+          },
+          "correct_target_ratio": {
+            "baseline": 0.934,
+            "candidate": 0.934,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_duration_s": {
+            "baseline": 4.2,
+            "candidate": 4.2,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_ratio": {
+            "baseline": 0.062,
+            "candidate": 0.062,
+            "delta": 0.0,
+            "equal": true
+          },
+          "no_target_selected_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_absent_but_output_valid_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_not_visible_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "visible_target_duration_s": {
+            "baseline": 67.7,
+            "candidate": 67.7,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_duration_s": {
+            "baseline": 0.283,
+            "candidate": 0.283,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_ratio": {
+            "baseline": 0.004,
+            "candidate": 0.004,
+            "delta": 0.0,
+            "equal": true
+          }
+        }
+      },
+      "summary_passed": true
+    },
+    {
+      "event_summary_passed": null,
+      "gate": true,
+      "semantic_digest_passed": null,
+      "sequence": "seq01",
+      "summary_details": {
+        "raw_target": {
+          "correct_target_duration_s": {
+            "baseline": 71.79,
+            "candidate": 71.79,
+            "delta": 0.0,
+            "equal": true
+          },
+          "correct_target_ratio": {
+            "baseline": 0.587,
+            "candidate": 0.587,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_duration_s": {
+            "baseline": 50.55,
+            "candidate": 50.55,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_ratio": {
+            "baseline": 0.413,
+            "candidate": 0.413,
+            "delta": 0.0,
+            "equal": true
+          },
+          "no_target_selected_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_absent_but_output_valid_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_not_visible_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "visible_target_duration_s": {
+            "baseline": 122.34,
+            "candidate": 122.34,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_ratio": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          }
+        },
+        "tim_target_memory": {
+          "correct_target_duration_s": {
+            "baseline": 122.34,
+            "candidate": 122.34,
+            "delta": 0.0,
+            "equal": true
+          },
+          "correct_target_ratio": {
+            "baseline": 1.0,
+            "candidate": 1.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_ratio": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "no_target_selected_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_absent_but_output_valid_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_not_visible_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "visible_target_duration_s": {
+            "baseline": 122.34,
+            "candidate": 122.34,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_ratio": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          }
+        }
+      },
+      "summary_passed": true
+    },
+    {
+      "baseline_event_sha256": "285418647356ac1c01756dbdbfbdd4bd340611de635aa462063f0666da6d2031",
+      "baseline_semantic_sha256": "9c291d8a0d39019b7bd0711cd655c0f180db8a9f45ceb2a990bd0fa8610b5ef9",
+      "candidate_event_sha256": "a46f90293d7644260f28662169a26d38a89f8d4ef3cf0ca399bfa54a0d191203",
+      "candidate_semantic_sha256": "9c291d8a0d39019b7bd0711cd655c0f180db8a9f45ceb2a990bd0fa8610b5ef9",
+      "event_summary_passed": false,
+      "gate": false,
+      "semantic_digest_passed": true,
+      "sequence": "seq03",
+      "summary_details": {
+        "raw_target": {
+          "correct_target_duration_s": {
+            "baseline": 32.554,
+            "candidate": 32.554,
+            "delta": 0.0,
+            "equal": true
+          },
+          "correct_target_ratio": {
+            "baseline": 0.34,
+            "candidate": 0.34,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_duration_s": {
+            "baseline": 63.123,
+            "candidate": 63.123,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_ratio": {
+            "baseline": 0.659,
+            "candidate": 0.659,
+            "delta": 0.0,
+            "equal": true
+          },
+          "no_target_selected_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_absent_but_output_valid_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_not_visible_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "visible_target_duration_s": {
+            "baseline": 95.727,
+            "candidate": 95.727,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_duration_s": {
+            "baseline": 0.05,
+            "candidate": 0.05,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_ratio": {
+            "baseline": 0.001,
+            "candidate": 0.001,
+            "delta": 0.0,
+            "equal": true
+          }
+        },
+        "tim_target_memory": {
+          "correct_target_duration_s": {
+            "baseline": 81.385,
+            "candidate": 81.385,
+            "delta": 0.0,
+            "equal": true
+          },
+          "correct_target_ratio": {
+            "baseline": 0.85,
+            "candidate": 0.85,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_duration_s": {
+            "baseline": 12.942,
+            "candidate": 12.942,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_ratio": {
+            "baseline": 0.135,
+            "candidate": 0.135,
+            "delta": 0.0,
+            "equal": true
+          },
+          "no_target_selected_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_absent_but_output_valid_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_not_visible_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "visible_target_duration_s": {
+            "baseline": 95.727,
+            "candidate": 95.727,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_duration_s": {
+            "baseline": 1.4,
+            "candidate": 1.4,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_ratio": {
+            "baseline": 0.015,
+            "candidate": 0.015,
+            "delta": 0.0,
+            "equal": true
+          }
+        }
+      },
+      "summary_passed": true
+    },
+    {
+      "baseline_event_sha256": "91d180c95c0ad42ec988b28d243407b9882574e6ad230d2957cf9faf283cba75",
+      "baseline_semantic_sha256": "fe4b5e9e1a81974080733ef8c0846fbce4f0e6192d7cace8b9048d827dd5d04c",
+      "candidate_event_sha256": "17c745ea0b5aa401a6478c84a389ed9256f6562fabcdfabba95b51bd7d5093b7",
+      "candidate_semantic_sha256": "fe4b5e9e1a81974080733ef8c0846fbce4f0e6192d7cace8b9048d827dd5d04c",
+      "event_summary_passed": false,
+      "gate": false,
+      "semantic_digest_passed": true,
+      "sequence": "seq04",
+      "summary_details": {
+        "raw_target": {
+          "correct_target_duration_s": {
+            "baseline": 36.589,
+            "candidate": 36.589,
+            "delta": 0.0,
+            "equal": true
+          },
+          "correct_target_ratio": {
+            "baseline": 0.644,
+            "candidate": 0.644,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_duration_s": {
+            "baseline": 20.133,
+            "candidate": 20.133,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_ratio": {
+            "baseline": 0.354,
+            "candidate": 0.354,
+            "delta": 0.0,
+            "equal": true
+          },
+          "no_target_selected_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_absent_but_output_valid_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_not_visible_duration_s": {
+            "baseline": 9.594,
+            "candidate": 9.594,
+            "delta": 0.0,
+            "equal": true
+          },
+          "visible_target_duration_s": {
+            "baseline": 56.822,
+            "candidate": 56.822,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_duration_s": {
+            "baseline": 0.1,
+            "candidate": 0.1,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_ratio": {
+            "baseline": 0.002,
+            "candidate": 0.002,
+            "delta": 0.0,
+            "equal": true
+          }
+        },
+        "tim_target_memory": {
+          "correct_target_duration_s": {
+            "baseline": 39.886,
+            "candidate": 39.886,
+            "delta": 0.0,
+            "equal": true
+          },
+          "correct_target_ratio": {
+            "baseline": 0.702,
+            "candidate": 0.702,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_duration_s": {
+            "baseline": 16.786,
+            "candidate": 16.786,
+            "delta": 0.0,
+            "equal": true
+          },
+          "lost_target_ratio": {
+            "baseline": 0.295,
+            "candidate": 0.295,
+            "delta": 0.0,
+            "equal": true
+          },
+          "no_target_selected_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_absent_but_output_valid_duration_s": {
+            "baseline": 0.0,
+            "candidate": 0.0,
+            "delta": 0.0,
+            "equal": true
+          },
+          "target_not_visible_duration_s": {
+            "baseline": 9.594,
+            "candidate": 9.594,
+            "delta": 0.0,
+            "equal": true
+          },
+          "visible_target_duration_s": {
+            "baseline": 56.822,
+            "candidate": 56.822,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_duration_s": {
+            "baseline": 0.15,
+            "candidate": 0.15,
+            "delta": 0.0,
+            "equal": true
+          },
+          "wrong_target_ratio": {
+            "baseline": 0.003,
+            "candidate": 0.003,
+            "delta": 0.0,
+            "equal": true
+          }
+        }
+      },
+      "summary_passed": true
+    }
+  ],
+  "schema_version": 1
+}

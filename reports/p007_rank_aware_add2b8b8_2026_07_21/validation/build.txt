@@ -1,0 +1,4 @@
+Starting >>> thesis_bringup
+Finished <<< thesis_bringup [2.19s]
+
+Summary: 1 package finished [2.38s]

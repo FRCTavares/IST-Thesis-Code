@@ -15,7 +15,7 @@ evidence are maintained in the linked GitHub Issues.
 6. Completed or rejected issues are removed from this file.
 7. Historical roadmap material is archived under `docs/roadmap/archive/`.
 
-Active executable issues: **40**.
+Active executable issues: **39**.
 
 ## P0 — Critical evidence, safety, thesis-claim, or flight-blocking work
 
@@ -45,18 +45,19 @@ Active executable issues: **40**.
      closure evidence is recorded under
      `reports/p006b_hard_negative_03409564_2026_07_21/`.
 
-7. [ ] [#7 — P0.7 Fix rank-aware bypass risks](https://github.com/FRCTavares/IST-Thesis-Code/issues/7)
-   - phase 2; engineering; implementation validated 21 July 2026;
-     clean evidence promotion pending.
-   - Candidate-belief confirmation is now composed when every candidate
-     proposal is created, so rank-aware and future proposal sources cannot
-     bypass the enabled confirmation policy.
+7. [x] [#7 — P0.7 Fix rank-aware bypass risks](https://github.com/FRCTavares/IST-Thesis-Code/issues/7)
+   - phase 2; engineering; completed 21 July 2026.
+   - Candidate-belief confirmation is composed when every candidate proposal
+     is created, preventing rank-aware and future proposal sources from
+     bypassing an enabled confirmation policy.
+   - Implementation commit: `add2b8b87963ac26ae2551762ecccfaf119a7780`.
    - Focused validation passed 13 tests with one expected xfail; the package
      suite passed 166 tests with three expected xfails, the deterministic
      runner suite passed 40 tests, and `thesis_bringup` built successfully.
    - May, Seq01, Seq03, and Seq04 preserved all headline metrics with no
-     wrong-target increase. Seq03 and Seq04 also preserved their replay and
-     parsed event-table semantic digests exactly.
+     wrong-target increase. Seq03 and Seq04 preserved replay and parsed
+     event-table semantic digests exactly.
+   - Closure evidence: `reports/p007_rank_aware_add2b8b8_2026_07_21/`.
 
 8. [ ] [#10 — P0.8 Fix live appearance wiring](https://github.com/FRCTavares/IST-Thesis-Code/issues/10)
    - phase 3; live-system.

@@ -1,0 +1,31 @@
+{
+  "all_passed": true,
+  "deterministic_runner_tests": {
+    "result": "40 passed",
+    "status": 0
+  },
+  "focused_tests": {
+    "result": "13 passed, 1 expected xfail",
+    "status": 0
+  },
+  "four_case_semantic_preservation": {
+    "status": 0,
+    "wrong_target_increase": false
+  },
+  "implementation_commit": "add2b8b87963ac26ae2551762ecccfaf119a7780",
+  "installed_config_match": {
+    "status": 0
+  },
+  "package_tests": {
+    "result": "166 passed, 3 deselected, 3 expected xfails",
+    "status": 0
+  },
+  "replayed_code_matches_commit": {
+    "status": 0
+  },
+  "schema_version": 1,
+  "thesis_bringup_build": {
+    "result": "1 package finished",
+    "status": 0
+  }
+}
