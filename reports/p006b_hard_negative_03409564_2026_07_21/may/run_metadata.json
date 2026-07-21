@@ -1,0 +1,39 @@
+{
+  "canonical_config": {
+    "copy": "tim_mars_canonical_config.yaml",
+    "sha256": "55332935fe859edff60bedf910f126487b5da6a8e13bbe5bb7662f2645359dbc",
+    "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+  },
+  "command": "tools/experiments/run_one_memory_tim_replay.sh /home/francisco/Desktop/Thesis-Code/bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 1 may /home/francisco/Desktop/Thesis-Code/docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv 1.0",
+  "created_at_utc": "2026-07-21T12:04:06.275562+00:00",
+  "effective_command": "RAW_TARGET_MODE=source TIM_MIRROR_RAW_TARGET_SELECTION=false TIM_MARS_CONFIG=/home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml MARS_MODEL_PATH=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb TIM_APPEARANCE_IMAGE_TOPIC=/camera/image_raw TIM_REPLAY_OUT_ROOT=/home/francisco/Desktop/Thesis-Code/bags/replay/p006b_hard_negative_03409564_2026_07_21 TIM_REPLAY_REPORT_ROOT=/home/francisco/Desktop/Thesis-Code/reports/memory_tim_safety_eval/p006b_hard_negative_03409564_2026_07_21 TIM_REPLAY_LOG_ROOT=/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p006b_hard_negative_03409564_2026_07_21 ROS_DOMAIN_ID=42 tools/experiments/run_one_memory_tim_replay.sh /home/francisco/Desktop/Thesis-Code/bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 1 may /home/francisco/Desktop/Thesis-Code/docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv 1.0",
+  "environment": {
+    "ROS_DOMAIN_ID": "42",
+    "THESIS_ROOT": "/home/francisco/Desktop/Thesis-Code"
+  },
+  "git_branch": "main",
+  "git_commit": "03409564f5107d6808054dac12294b004d9d4381",
+  "git_commit_short": "03409564",
+  "git_dirty": false,
+  "git_status_short": [],
+  "repository_root": "/home/francisco/Desktop/Thesis-Code",
+  "resolved_runtime": {
+    "file": "tim_mars_resolved_runtime.json",
+    "fingerprint_file": "tim_mars_resolved_runtime.sha256",
+    "sha256": "492f80fece8c1d8150aa418b16fb97284939d210092322c18e912a7c3edcb026"
+  },
+  "runner": "/home/francisco/Desktop/Thesis-Code/tools/experiments/run_one_memory_tim_replay.sh",
+  "schema_version": 3,
+  "value_sources": {
+    "ROS_DOMAIN_ID": "environment",
+    "THESIS_ROOT": "environment",
+    "appearance_image_topic": "TIM_APPEARANCE_IMAGE_TOPIC",
+    "log_root": "environment",
+    "mars_model_path": "environment",
+    "mirror_raw_target_selection": "environment",
+    "output_root": "environment",
+    "raw_target_mode": "environment",
+    "report_root": "environment",
+    "tim_mars_config": "environment"
+  }
+}

@@ -1,0 +1,885 @@
+{
+  "invalid_insertions": [],
+  "may": {
+    "event_counts": {
+      "discard_pending": 51,
+      "expire_pending": 6,
+      "insert": 12,
+      "merge": 75,
+      "reconcile": 12,
+      "stage": 70
+    },
+    "insertions": [
+      {
+        "action": "insert",
+        "geometry_strength": 0.6841738997150089,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7236811518669128,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 2,
+        "source_track_ids": [
+          2
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9080237903452475,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7286616998113215,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 2,
+        "source_track_ids": [
+          2
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8768419152770979,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.704348087310791,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 41,
+        "source_track_ids": [
+          41
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9019686734257104,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7049129605293274,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 41,
+        "source_track_ids": [
+          41
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9584198338408005,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.753246545791626,
+        "prototype_similarity": 0.8986164331436157,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 41,
+        "source_track_ids": [
+          41
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.964493982388749,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.70339035987854,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 41,
+        "source_track_ids": [
+          41
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8859929226716976,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7013009786605835,
+        "prototype_similarity": 0.8902801406049561,
+        "selected_track_id": 41,
+        "selected_track_ids": [
+          41
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 1,
+        "source_track_ids": [
+          1
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9080488680571783,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7229385375976562,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 41,
+        "selected_track_ids": [
+          41
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 1,
+        "source_track_ids": [
+          1
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9560987921575251,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7181757688522339,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 41,
+        "selected_track_ids": [
+          41
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 1,
+        "source_track_ids": [
+          1
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8853161039906305,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7028594435965683,
+        "prototype_similarity": 0.8971390066825752,
+        "selected_track_id": 41,
+        "selected_track_ids": [
+          41
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 60,
+        "source_track_ids": [
+          60
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8930037090472022,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7098463177680969,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 41,
+        "selected_track_ids": [
+          41
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 60,
+        "source_track_ids": [
+          60
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8973113526429202,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7040414037729147,
+        "prototype_similarity": 0.9324086268191711,
+        "selected_track_id": 41,
+        "selected_track_ids": [
+          41
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 60,
+        "source_track_ids": [
+          60
+        ]
+      }
+    ],
+    "status_messages": 950
+  },
+  "passed": true,
+  "seq01": {
+    "event_counts": {},
+    "insertions": [],
+    "status_messages": 2470
+  },
+  "seq03": {
+    "event_counts": {
+      "discard_pending": 152,
+      "expire_pending": 15,
+      "insert": 29,
+      "merge": 265,
+      "reconcile": 27,
+      "stage": 196
+    },
+    "insertions": [
+      {
+        "action": "insert",
+        "geometry_strength": 0.7534279958671977,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.8165687322616577,
+        "prototype_similarity": 0.9156433343887329,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 27,
+        "source_track_ids": [
+          27
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9209422747143851,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7938252687454224,
+        "prototype_similarity": 0.8234424801537418,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 27,
+        "source_track_ids": [
+          27
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8750539954749197,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7576109170913696,
+        "prototype_similarity": 0.9341630339622498,
+        "selected_track_id": 33,
+        "selected_track_ids": [
+          33
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 27,
+        "source_track_ids": [
+          27
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8714004513891996,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7073073387145996,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 33,
+        "selected_track_ids": [
+          33
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 27,
+        "source_track_ids": [
+          27
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9668411111535227,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7034361362457275,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 33,
+        "selected_track_ids": [
+          33
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 27,
+        "source_track_ids": [
+          27
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9127244607127719,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7482932209968567,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 39,
+        "selected_track_ids": [
+          39
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 37,
+        "source_track_ids": [
+          37
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9061544909471706,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7539600133895874,
+        "prototype_similarity": 0.9315257668495178,
+        "selected_track_id": 39,
+        "selected_track_ids": [
+          39
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 37,
+        "source_track_ids": [
+          37
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9469356119785503,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7270961133127077,
+        "prototype_similarity": 0.9999998807907247,
+        "selected_track_id": 39,
+        "selected_track_ids": [
+          39
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 37,
+        "source_track_ids": [
+          37
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9535426755982813,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7363026142120361,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 39,
+        "selected_track_ids": [
+          39
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 37,
+        "source_track_ids": [
+          37
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9522604440471707,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7626340389251709,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 43,
+        "selected_track_ids": [
+          43
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 40,
+        "source_track_ids": [
+          40
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9282154152772952,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7441526651382446,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 43,
+        "selected_track_ids": [
+          43
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 40,
+        "source_track_ids": [
+          40
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9602396858960228,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7909647226333618,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 43,
+        "selected_track_ids": [
+          43
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 48,
+        "source_track_ids": [
+          48
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9428626889588329,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7765151725122436,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 43,
+        "selected_track_ids": [
+          43
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 53,
+        "source_track_ids": [
+          53
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8784911283896064,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7142176628112793,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 43,
+        "selected_track_ids": [
+          43
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 40,
+        "source_track_ids": [
+          40
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.5782016724610137,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.8048945665359497,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 84,
+        "selected_track_ids": [
+          84
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 91,
+        "source_track_ids": [
+          91
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.6543207970218257,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.7442119565136407,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 84,
+        "selected_track_ids": [
+          84
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 86,
+        "source_track_ids": [
+          86
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.7495208390672091,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7684328418036009,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 84,
+        "selected_track_ids": [
+          84
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 93,
+        "source_track_ids": [
+          93
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8249355467607662,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.7219332456588745,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 98,
+        "selected_track_ids": [
+          98
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 40,
+        "source_track_ids": [
+          40
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8872348838756463,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.7689995765686035,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 98,
+        "selected_track_ids": [
+          98
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 86,
+        "source_track_ids": [
+          86
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9332775324534845,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7140001654624939,
+        "prototype_similarity": 0.7479339241981506,
+        "selected_track_id": 40,
+        "selected_track_ids": [
+          40
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 86,
+        "source_track_ids": [
+          101,
+          86
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9635653053902347,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.7221522927284241,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 40,
+        "selected_track_ids": [
+          40
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 112,
+        "source_track_ids": [
+          112
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9324479612449308,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.7271050810813904,
+        "prototype_similarity": 0.8509155511856079,
+        "selected_track_id": 40,
+        "selected_track_ids": [
+          40
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 112,
+        "source_track_ids": [
+          112
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9512510786314501,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7956133484840393,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 126,
+        "selected_track_ids": [
+          126
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 128,
+        "source_track_ids": [
+          128
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9305544906395622,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7316887378692627,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 126,
+        "selected_track_ids": [
+          126
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 128,
+        "source_track_ids": [
+          128
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.9666050467083521,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7399724125862122,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 126,
+        "selected_track_ids": [
+          126
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 115,
+        "source_track_ids": [
+          115
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.6815748228726582,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.7247712016105652,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 126,
+        "selected_track_ids": [
+          126
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 128,
+        "source_track_ids": [
+          128
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.7883894047373513,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.7288342118263245,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 150,
+        "selected_track_ids": [
+          150
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 151,
+        "source_track_ids": [
+          151
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.6112015463478279,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7852409141968592,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 150,
+        "selected_track_ids": [
+          150
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 151,
+        "source_track_ids": [
+          151
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.963484093736085,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.7489626407623291,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 142,
+        "selected_track_ids": [
+          142
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 150,
+        "source_track_ids": [
+          150
+        ]
+      }
+    ],
+    "status_messages": 2336
+  },
+  "seq04": {
+    "event_counts": {
+      "discard_pending": 29,
+      "expire_pending": 5,
+      "insert": 8,
+      "merge": 60,
+      "reconcile": 6,
+      "stage": 42
+    },
+    "insertions": [
+      {
+        "action": "insert",
+        "geometry_strength": 0.4395232048314974,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.757754385471344,
+        "prototype_similarity": 0.9545812606811523,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 9,
+        "source_track_ids": [
+          9
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.5525192620823969,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7067249417304993,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 11,
+        "source_track_ids": [
+          11
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.6597467057801127,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7060577869415283,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 11,
+        "source_track_ids": [
+          11
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.3390384399708563,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7319175004959106,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 1,
+        "selected_track_ids": [
+          1
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 30,
+        "source_track_ids": [
+          30
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.3588120321728698,
+        "memory_size": 1,
+        "observations": 2,
+        "positive_similarity": 0.7313236594200134,
+        "prototype_similarity": 1.0,
+        "selected_track_id": 53,
+        "selected_track_ids": [
+          53
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 39,
+        "source_track_ids": [
+          39
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8871485102369895,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.7328618168830872,
+        "prototype_similarity": 0.7534823417663574,
+        "selected_track_id": 53,
+        "selected_track_ids": [
+          53
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 50,
+        "source_track_ids": [
+          51,
+          50
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.8890059967766709,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.746149480342865,
+        "prototype_similarity": 0.7245503664016724,
+        "selected_track_id": 53,
+        "selected_track_ids": [
+          53
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 50,
+        "source_track_ids": [
+          51,
+          50
+        ]
+      },
+      {
+        "action": "insert",
+        "geometry_strength": 0.853095965812851,
+        "memory_size": 2,
+        "observations": 2,
+        "positive_similarity": 0.7469186782836914,
+        "prototype_similarity": 0.8962974548339844,
+        "selected_track_id": 53,
+        "selected_track_ids": [
+          53
+        ],
+        "source": "trusted_locked_distractor",
+        "source_track_id": 50,
+        "source_track_ids": [
+          50
+        ]
+      }
+    ],
+    "status_messages": 1589
+  },
+  "total_insertions": 49
+}

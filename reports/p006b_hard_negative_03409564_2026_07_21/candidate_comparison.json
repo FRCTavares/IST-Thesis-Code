@@ -1,0 +1,58 @@
+{
+  "all_passed": true,
+  "cases": [
+    {
+      "baseline_correct": 63.217,
+      "baseline_lost": 4.2,
+      "baseline_wrong": 0.283,
+      "candidate_correct": 63.217,
+      "candidate_lost": 4.2,
+      "candidate_wrong": 0.283,
+      "delta_correct": 0.0,
+      "delta_lost": 0.0,
+      "delta_wrong": 0.0,
+      "gate": true,
+      "sequence": "may"
+    },
+    {
+      "baseline_correct": 122.34,
+      "baseline_lost": 0.0,
+      "baseline_wrong": 0.0,
+      "candidate_correct": 122.34,
+      "candidate_lost": 0.0,
+      "candidate_wrong": 0.0,
+      "delta_correct": 0.0,
+      "delta_lost": 0.0,
+      "delta_wrong": 0.0,
+      "gate": true,
+      "sequence": "seq01"
+    },
+    {
+      "baseline_correct": 81.385,
+      "baseline_lost": 12.942,
+      "baseline_wrong": 1.4,
+      "candidate_correct": 81.385,
+      "candidate_lost": 12.942,
+      "candidate_wrong": 1.4,
+      "delta_correct": 0.0,
+      "delta_lost": 0.0,
+      "delta_wrong": 0.0,
+      "gate": true,
+      "sequence": "seq03"
+    },
+    {
+      "baseline_correct": 39.886,
+      "baseline_lost": 16.786,
+      "baseline_wrong": 0.15,
+      "candidate_correct": 39.886,
+      "candidate_lost": 16.786,
+      "candidate_wrong": 0.15,
+      "delta_correct": 0.0,
+      "delta_lost": 0.0,
+      "delta_wrong": 0.0,
+      "gate": true,
+      "sequence": "seq04"
+    }
+  ],
+  "implementation_commit": "03409564f5107d6808054dac12294b004d9d4381"
+}
