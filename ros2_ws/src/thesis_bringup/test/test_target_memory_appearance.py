@@ -216,15 +216,29 @@ def test_hard_negative_memory_rejects_negative_like_candidate():
 
     tim.select(tr(1, (100, 100, 160, 240), 0.90, appearance=target_feat))
 
-    # Trusted lock with a nearby non-selected candidate, learns negative memory.
-    tim.update(
+    # The first trusted observation stages non-rejecting evidence.
+    staged = tim.update(
         [
             tr(1, (102, 100, 162, 240), 0.90, appearance=target_feat),
             tr(2, (125, 100, 185, 240), 0.90, appearance=negative_feat),
         ]
     )
 
-    assert len(tim._hard_negative_memory) >= 1
+    assert staged.state == TargetState.LOCKED
+    assert len(tim._hard_negative_memory) == 0
+    assert len(tim._hard_negative_memory.pending_entries) == 1
+
+    # A second trusted temporal observation promotes the distractor.
+    learned = tim.update(
+        [
+            tr(1, (103, 100, 163, 240), 0.90, appearance=target_feat),
+            tr(2, (126, 100, 186, 240), 0.90, appearance=negative_feat),
+        ]
+    )
+
+    assert learned.state == TargetState.LOCKED
+    assert len(tim._hard_negative_memory) == 1
+    assert tim._hard_negative_memory.pending_entries == ()
 
     # The selected tracker ID now looks like the learned negative.
     # This models same-ID tracker drift after a crossing.

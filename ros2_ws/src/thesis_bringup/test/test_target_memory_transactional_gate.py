@@ -202,7 +202,7 @@ def test_short_gap_proposal_cannot_bypass_hard_negative_rejection():
         )
     )
 
-    locked = memory.update(
+    staged = memory.update(
         [
             track(
                 1,
@@ -217,8 +217,28 @@ def test_short_gap_proposal_cannot_bypass_hard_negative_rejection():
         ]
     )
 
+    assert staged.state == TargetState.LOCKED
+    assert len(memory._hard_negative_memory) == 0
+    assert len(memory._hard_negative_memory.pending_entries) == 1
+
+    locked = memory.update(
+        [
+            track(
+                1,
+                (103, 100, 163, 240),
+                appearance=target,
+            ),
+            track(
+                2,
+                (126, 100, 186, 240),
+                appearance=distractor,
+            ),
+        ]
+    )
+
     assert locked.state == TargetState.LOCKED
     assert len(memory._hard_negative_memory) == 1
+    assert memory._hard_negative_memory.pending_entries == ()
 
     missing = memory.update([])
     assert missing.state == TargetState.UNCERTAIN

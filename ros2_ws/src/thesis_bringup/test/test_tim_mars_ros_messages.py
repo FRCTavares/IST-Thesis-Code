@@ -73,6 +73,22 @@ def _output(control_valid=True):
         appearance_margin_best_vs_second=0.3,
         geometry_strength=0.8,
         risk_hard_negative=False,
+        hard_negative_memory_size=2,
+        hard_negative_events=(
+            SimpleNamespace(
+                action="merge",
+                source="trusted_locked_distractor",
+                source_track_id=8,
+                selected_track_id=7,
+                source_track_ids=(8, 9),
+                selected_track_ids=(7,),
+                observations=3,
+                positive_similarity=0.74,
+                geometry_strength=0.81,
+                prototype_similarity=0.92,
+                memory_size=2,
+            ),
+        ),
         risk_absence=False,
         risk_scene_ambiguity=False,
         candidate_track_id=3,
@@ -160,6 +176,22 @@ def test_status_only_json_preserves_core_diagnostics():
     assert payload["trusted_gallery_size"] == 3
     assert payload["appearance_lineage_trusted"] is True
     assert payload["appearance_trusted_lock_streak"] == 4
+    assert payload["hard_negative_memory_size"] == 2
+    assert payload["hard_negative_events"] == [
+        {
+            "action": "merge",
+            "source": "trusted_locked_distractor",
+            "source_track_id": 8,
+            "selected_track_id": 7,
+            "source_track_ids": [8, 9],
+            "selected_track_ids": [7],
+            "observations": 3,
+            "positive_similarity": 0.74,
+            "geometry_strength": 0.81,
+            "prototype_similarity": 0.92,
+            "memory_size": 2,
+        }
+    ]
 
 
 def test_status_json_includes_scores_and_appearance_diagnostics():

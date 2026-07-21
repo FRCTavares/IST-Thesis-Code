@@ -32,7 +32,23 @@ Active executable issues: **41**.
    - phase 2; experiment; completed and closed 20 July 2026; transactional candidate acceptance implemented in `bc36e553` and clean eight-run evidence recorded in `5d02c6f2`; all proposal paths share one final safety gate before state or memory mutation; provenance, evaluator, repeatability, wrong-target, and target-absence regression checks passed against canonical P0.4; ByteTrack intentionally shifts 0.200 s from correct output to LOST because the gate rejects the former rank-aware ambiguity bypass; GitHub Issue #5 closure recorded (reports/p005_transactional_gate_bc36e553_2026_07_20/candidate_comparison.json).
 
 6. [ ] [#6 — P0.6b Identify why structural safety heuristics are required](https://github.com/FRCTavares/IST-Thesis-Code/issues/6)
-   - phase 2; experiment.
+   - phase 2; experiment; implementation candidate complete. The missing
+     invariants were role-dependent mutation before final acceptance and
+     immediate promotion of one-frame distractor evidence into reject-capable
+     memory. Transactional ordering was repaired in `e7e68244` and unified under
+     the acceptance gate in `bc36e553`; the current candidate stages evidence,
+     requires consecutive trusted continuity observations before promotion,
+     expires staged evidence after an unobserved update or continuity break,
+     reconciles selected identities, and exposes auditable lifecycle provenance.
+   - diagnostic replay acceptance passed with no wrong-target increase: May
+     retained 0.283 s wrong output across clean baseline repeats and the
+     candidate; Seq01 remained 122.340 s correct, 0 wrong, and 0 lost; OC-SORT
+     Seq03 remained 81.385 s correct, 1.400 s wrong, and 12.942 s lost; OC-SORT
+     Seq04 remained 39.886 s correct, 0.150 s wrong, and 16.786 s lost. The
+     lifecycle audit recorded 13 valid insertions, each supported by at least
+     two trusted observations, and zero invalid insertions. The existing
+     `hard_negative_max_positive_similarity=1.01` safeguard remains unchanged;
+     clean post-commit evidence and issue closure remain pending.
 
 7. [ ] [#7 — P0.7 Fix rank-aware bypass risks](https://github.com/FRCTavares/IST-Thesis-Code/issues/7)
    - phase 2; engineering.

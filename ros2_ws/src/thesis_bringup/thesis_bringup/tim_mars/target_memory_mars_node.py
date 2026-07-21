@@ -210,6 +210,8 @@ class TargetMemoryMarsNode(Node):
             f"absence_confirm_frames={cfg.absence_confirm_frames} "
             f"hard_negative_memory_enabled={cfg.hard_negative_memory_enabled} "
             f"hard_negative_max_entries={cfg.hard_negative_max_entries} "
+            f"hard_negative_confirm_observations="
+            f"{cfg.hard_negative_confirm_observations} "
             f"hard_negative_max_positive_similarity="
             f"{cfg.hard_negative_max_positive_similarity:.3f} "
             f"hard_negative_reject_similarity={cfg.hard_negative_reject_similarity:.3f} "

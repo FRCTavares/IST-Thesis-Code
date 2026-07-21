@@ -50,6 +50,7 @@ from thesis_bringup.tim_mars.types import (
     CandidateScore,
     CandidateTrack,
     ControlMode,
+    HardNegativeMemoryEvent,
     TargetMemoryConfig,
     TargetMemoryOutput,
     TargetState,
@@ -127,6 +128,10 @@ class TargetIdentityMemory:
         self._last_acceptance_memory_source = "none"
         self._last_positive_memory_updated = False
         self._last_positive_memory_update_reason = ""
+        self._last_hard_negative_events: tuple[
+            HardNegativeMemoryEvent,
+            ...,
+        ] = ()
 
     @property
     def state(self) -> TargetState:
@@ -151,8 +156,12 @@ class TargetIdentityMemory:
         self._last_positive_memory_updated = False
         self._last_positive_memory_update_reason = ""
 
+    def _reset_hard_negative_diagnostics(self) -> None:
+        self._last_hard_negative_events = ()
+
     def clear(self) -> TargetMemoryOutput:
         self._reset_positive_memory_diagnostics()
+        self._reset_hard_negative_diagnostics()
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
         self._rank_reacq_confirmation.reset()
@@ -174,6 +183,7 @@ class TargetIdentityMemory:
         """Operator selects a visible track as the active target."""
 
         self._reset_positive_memory_diagnostics()
+        self._reset_hard_negative_diagnostics()
 
         selected_appearance = (
             track.appearance
@@ -242,6 +252,7 @@ class TargetIdentityMemory:
         """Update target memory from current tracker candidates."""
 
         self._reset_positive_memory_diagnostics()
+        self._reset_hard_negative_diagnostics()
 
         if not self._m.selected or self._m.bbox is None:
             return self._make_output(
@@ -1761,6 +1772,7 @@ class TargetIdentityMemory:
             previous_track_id is not None
             and int(accepted_candidate.track_id) != int(previous_track_id)
         )
+        events = []
 
         if self.cfg.appearance_protected_memory_enabled:
             if (
@@ -1769,17 +1781,27 @@ class TargetIdentityMemory:
                 and accepted_candidate
                 .appearance_memory_update_eligible
             ):
-                self._hard_negative_memory.reconcile_selected(
-                    accepted_candidate.appearance,
-                    self.cfg,
+                events.extend(
+                    self._hard_negative_memory.reconcile_selected(
+                        accepted_candidate.appearance,
+                        self.cfg,
+                        selected_track_id=(
+                            accepted_candidate.track_id
+                        ),
+                    )
                 )
         elif (
             id_changed
             and accepted_candidate.appearance_memory_update_eligible
         ):
-            self._hard_negative_memory.reconcile_selected(
-                accepted_candidate.appearance,
-                self.cfg,
+            events.extend(
+                self._hard_negative_memory.reconcile_selected(
+                    accepted_candidate.appearance,
+                    self.cfg,
+                    selected_track_id=(
+                        accepted_candidate.track_id
+                    ),
+                )
             )
 
         trusted_continuity = (
@@ -1795,16 +1817,25 @@ class TargetIdentityMemory:
         )
 
         if not trusted_continuity:
+            events.extend(
+                self._hard_negative_memory.discard_pending(
+                    selected_track_id=accepted_candidate.track_id,
+                )
+            )
+            self._last_hard_negative_events = tuple(events)
             return
 
-        self._hard_negative_memory.update(
-            candidates=candidates,
-            scores_sorted=scores_sorted,
-            selected_track_id=accepted_candidate.track_id,
-            positive_appearance=previous_positive_appearance,
-            state=TargetState.LOCKED,
-            cfg=self.cfg,
+        events.extend(
+            self._hard_negative_memory.update(
+                candidates=candidates,
+                scores_sorted=scores_sorted,
+                selected_track_id=accepted_candidate.track_id,
+                positive_appearance=previous_positive_appearance,
+                state=TargetState.LOCKED,
+                cfg=self.cfg,
+            )
         )
+        self._last_hard_negative_events = tuple(events)
 
     def _apply_accept_memory_update(
         self,
@@ -2097,6 +2128,12 @@ class TargetIdentityMemory:
             appearance_margin_best_vs_second=appearance_margin_best_vs_second,
             geometry_strength=geometry_strength,
             risk_hard_negative=risk_hard_negative,
+            hard_negative_memory_size=len(
+                self._hard_negative_memory
+            ),
+            hard_negative_events=(
+                self._last_hard_negative_events
+            ),
             risk_absence=risk_absence,
             risk_scene_ambiguity=risk_scene_ambiguity,
             candidate_track_id=candidate_track_id,

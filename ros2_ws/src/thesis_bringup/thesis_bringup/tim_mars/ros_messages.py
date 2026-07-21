@@ -143,6 +143,59 @@ def _score_payload(score: object) -> dict[str, object]:
     }
 
 
+def _hard_negative_event_payload(
+    event: object,
+) -> dict[str, object]:
+    source_track_id = getattr(event, "source_track_id", None)
+    selected_track_id = getattr(event, "selected_track_id", None)
+
+    return {
+        "action": str(getattr(event, "action", "")),
+        "source": str(getattr(event, "source", "")),
+        "source_track_id": (
+            int(source_track_id)
+            if source_track_id is not None
+            else None
+        ),
+        "selected_track_id": (
+            int(selected_track_id)
+            if selected_track_id is not None
+            else None
+        ),
+        "source_track_ids": [
+            int(track_id)
+            for track_id in getattr(
+                event,
+                "source_track_ids",
+                (),
+            )
+        ],
+        "selected_track_ids": [
+            int(track_id)
+            for track_id in getattr(
+                event,
+                "selected_track_ids",
+                (),
+            )
+        ],
+        "observations": int(
+            getattr(event, "observations", 0)
+        ),
+        "positive_similarity": float(
+            getattr(event, "positive_similarity", 0.0)
+        ),
+        "geometry_strength": float(
+            getattr(event, "geometry_strength", 0.0)
+        ),
+        "prototype_similarity": float(
+            getattr(event, "prototype_similarity", 0.0)
+        ),
+        "memory_size": int(
+            getattr(event, "memory_size", 0)
+        ),
+    }
+
+
 def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
     return {
         "state": _value_text(out.state),
@@ -199,6 +252,17 @@ def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
         "appearance_margin_best_vs_second": float(out.appearance_margin_best_vs_second),
         "geometry_strength": float(out.geometry_strength),
         "risk_hard_negative": bool(out.risk_hard_negative),
+        "hard_negative_memory_size": int(
+            getattr(out, "hard_negative_memory_size", 0)
+        ),
+        "hard_negative_events": [
+            _hard_negative_event_payload(event)
+            for event in getattr(
+                out,
+                "hard_negative_events",
+                (),
+            )
+        ],
         "risk_absence": bool(out.risk_absence),
         "risk_scene_ambiguity": bool(out.risk_scene_ambiguity),
         "candidate_track_id": out.candidate_track_id,

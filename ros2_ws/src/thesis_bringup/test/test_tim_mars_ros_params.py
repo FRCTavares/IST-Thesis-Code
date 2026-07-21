@@ -30,7 +30,7 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 95
+    assert len(node.values) == 96
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
@@ -84,6 +84,10 @@ def test_tim_mars_ros_params_declares_expected_interface():
         == 2
     )
     assert (
+        node.values["hard_negative_confirm_observations"]
+        == 2
+    )
+    assert (
         node.values["hard_negative_max_positive_similarity"]
         == 1.01
     )
@@ -125,6 +129,7 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values[
         "appearance_trusted_lock_frames_before_update"
     ] = 3
+    node.values["hard_negative_confirm_observations"] = 4
     node.values[
         "hard_negative_max_positive_similarity"
     ] = 0.93
@@ -182,6 +187,7 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
         cfg.appearance_trusted_lock_frames_before_update
         == 3
     )
+    assert cfg.hard_negative_confirm_observations == 4
     assert (
         cfg.hard_negative_max_positive_similarity
         == 0.93
@@ -242,6 +248,7 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
         "appearance_trusted_gallery_max_entries",
         "appearance_gallery_min_anchor_similarity",
         "appearance_trusted_lock_frames_before_update",
+        "hard_negative_confirm_observations",
         "hard_negative_max_positive_similarity",
     }
 

@@ -184,6 +184,7 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("hard_negative_max_entries", 8)
     node.declare_parameter("hard_negative_update_alpha", 0.20)
     node.declare_parameter("hard_negative_min_candidate_similarity", 0.70)
+    node.declare_parameter("hard_negative_confirm_observations", 2)
     node.declare_parameter(
         "hard_negative_max_positive_similarity",
         1.01,
@@ -436,6 +437,14 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
             node.get_parameter(
                 "hard_negative_min_candidate_similarity"
             ).value
+        ),
+        hard_negative_confirm_observations=max(
+            1,
+            int(
+                node.get_parameter(
+                    "hard_negative_confirm_observations"
+                ).value
+            ),
         ),
         hard_negative_max_positive_similarity=float(
             node.get_parameter(

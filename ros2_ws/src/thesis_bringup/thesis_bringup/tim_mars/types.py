@@ -203,6 +203,7 @@ class TargetMemoryConfig:
     hard_negative_max_entries: int = 8
     hard_negative_update_alpha: float = 0.20
     hard_negative_min_candidate_similarity: float = 0.70
+    hard_negative_confirm_observations: int = 2
 
     # Candidates almost identical to protected positive memory are more likely
     # duplicate detections or target fragments than reliable distractors.
@@ -251,6 +252,24 @@ class TargetMemoryConfig:
     absence_appearance_margin: float = 0.20
     absence_confirm_frames: int = 3
 
+
+@dataclass(frozen=True)
+class HardNegativeMemoryEvent:
+    """One auditable hard-negative memory lifecycle mutation."""
+
+    action: str
+    source: str
+    source_track_id: Optional[int] = None
+    selected_track_id: Optional[int] = None
+    source_track_ids: tuple[int, ...] = ()
+    selected_track_ids: tuple[int, ...] = ()
+    observations: int = 0
+    positive_similarity: float = 0.0
+    geometry_strength: float = 0.0
+    prototype_similarity: float = 0.0
+    memory_size: int = 0
+
+
 @dataclass
 class TargetMemoryOutput:
     """Output published by TIM or converted into a ROS /target message."""
@@ -281,6 +300,11 @@ class TargetMemoryOutput:
     appearance_margin_best_vs_second: float = 0.0
     geometry_strength: float = 0.0
     risk_hard_negative: bool = False
+    hard_negative_memory_size: int = 0
+    hard_negative_events: tuple[
+        HardNegativeMemoryEvent,
+        ...,
+    ] = ()
     risk_absence: bool = False
     risk_scene_ambiguity: bool = False
 
@@ -318,5 +342,6 @@ __all__ = [
     "CandidateTrack",
     "CandidateScore",
     "TargetMemoryConfig",
+    "HardNegativeMemoryEvent",
     "TargetMemoryOutput",
 ]
