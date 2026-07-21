@@ -57,6 +57,7 @@ class DeepSortKalmanFilter:
     """8D image-space Kalman filter used by DeepSORT."""
 
     def __init__(self) -> None:
+        """Initialize the constant-velocity XYAH motion and observation models."""
         ndim = 4
         self._motion_mat = np.eye(2 * ndim, dtype=np.float32)
         for i in range(ndim):
@@ -66,6 +67,7 @@ class DeepSortKalmanFilter:
         self._std_weight_velocity = 1.0 / 160.0
 
     def initiate(self, measurement: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Initialize a motion state and covariance from an XYAH measurement."""
         mean = np.r_[measurement, np.zeros_like(measurement)].astype(np.float32)
         h = max(1e-3, float(measurement[3]))
         std = np.asarray(
@@ -84,6 +86,7 @@ class DeepSortKalmanFilter:
         return mean, np.diag(np.square(std)).astype(np.float32)
 
     def predict(self, mean: np.ndarray, covariance: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Predict the next motion state and covariance."""
         h = max(1e-3, float(mean[3]))
         std_pos = np.asarray(
             [
@@ -109,6 +112,7 @@ class DeepSortKalmanFilter:
         return mean.astype(np.float32), covariance.astype(np.float32)
 
     def project(self, mean: np.ndarray, covariance: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Project a motion-state distribution into measurement space."""
         h = max(1e-3, float(mean[3]))
         std = np.asarray(
             [
@@ -133,6 +137,7 @@ class DeepSortKalmanFilter:
         covariance: np.ndarray,
         measurement: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
+        """Correct a motion-state estimate with an XYAH measurement."""
         projected_mean, projected_cov = self.project(mean, covariance)
         innovation = measurement - projected_mean
         kalman_gain = covariance @ self._update_mat.T @ np.linalg.inv(projected_cov)
@@ -147,6 +152,7 @@ class DeepSortKalmanFilter:
         measurements: np.ndarray,
         only_position: bool = False,
     ) -> np.ndarray:
+        """Compute squared Mahalanobis distances for association gating."""
         projected_mean, projected_cov = self.project(mean, covariance)
         if only_position:
             projected_mean = projected_mean[:2]
@@ -160,6 +166,8 @@ class DeepSortKalmanFilter:
 
 
 class DeepSortTrackState(IntEnum):
+    """Enumerate the lifecycle states used by DeepSORT tracks."""
+
     TENTATIVE = 1
     CONFIRMED = 2
     DELETED = 3
@@ -167,19 +175,25 @@ class DeepSortTrackState(IntEnum):
 
 @dataclass
 class DeepSortDetection:
+    """Represent a detection with geometry, confidence, and appearance data."""
+
     bbox_xyxy: BBox
     score: float
     feature: np.ndarray | None
 
     def to_xyah(self) -> np.ndarray:
+        """Return the detection box as center-x, center-y, aspect, and height."""
         return _xyxy_to_xyah(self.bbox_xyxy)
 
     def to_tlwh(self) -> np.ndarray:
+        """Return the detection box in top-left/width/height form."""
         return _tlwh_from_xyxy(self.bbox_xyxy)
 
 
 @dataclass
 class DeepSortTrack:
+    """Represent a DeepSORT track with motion, appearance, and lifecycle state."""
+
     mean: np.ndarray
     covariance: np.ndarray
     track_id: int
@@ -193,18 +207,22 @@ class DeepSortTrack:
     state: DeepSortTrackState = DeepSortTrackState.TENTATIVE
 
     def to_xyxy(self) -> BBox:
+        """Return the current track box in corner-coordinate form."""
         return _xyah_to_xyxy(self.mean[:4])
 
     def to_tlwh(self) -> np.ndarray:
+        """Return the current track box in top-left/width/height form."""
         x1, y1, x2, y2 = self.to_xyxy()
         return np.asarray([x1, y1, max(0.0, x2 - x1), max(0.0, y2 - y1)], dtype=np.float32)
 
     def predict(self, kf: DeepSortKalmanFilter) -> None:
+        """Advance the track through the motion model."""
         self.mean, self.covariance = kf.predict(self.mean, self.covariance)
         self.age += 1
         self.time_since_update += 1
 
     def update(self, kf: DeepSortKalmanFilter, detection: DeepSortDetection) -> None:
+        """Correct the track from a matched detection."""
         self.mean, self.covariance = kf.update(self.mean, self.covariance, detection.to_xyah())
         self.score = detection.score
         if detection.feature is not None:
@@ -215,18 +233,22 @@ class DeepSortTrack:
             self.state = DeepSortTrackState.CONFIRMED
 
     def mark_missed(self) -> None:
+        """Update the track lifecycle after an unmatched frame."""
         if self.state == DeepSortTrackState.TENTATIVE:
             self.state = DeepSortTrackState.DELETED
         elif self.time_since_update > self.max_age:
             self.state = DeepSortTrackState.DELETED
 
     def is_tentative(self) -> bool:
+        """Return whether the track is tentative."""
         return self.state == DeepSortTrackState.TENTATIVE
 
     def is_confirmed(self) -> bool:
+        """Return whether the track is confirmed."""
         return self.state == DeepSortTrackState.CONFIRMED
 
     def is_deleted(self) -> bool:
+        """Return whether the track is deleted."""
         return self.state == DeepSortTrackState.DELETED
 
 
@@ -234,6 +256,7 @@ class NearestNeighborCosineMetric:
     """Nearest-neighbor cosine metric with a per-track feature budget."""
 
     def __init__(self, matching_threshold: float = 0.2, budget: int | None = 100) -> None:
+        """Initialize the cosine-distance threshold and feature-gallery budget."""
         self.matching_threshold = float(matching_threshold)
         self.budget = None if budget is None or budget <= 0 else int(budget)
         self.samples: dict[int, list[np.ndarray]] = {}
@@ -247,6 +270,7 @@ class NearestNeighborCosineMetric:
         return features / np.maximum(norms, 1e-12)
 
     def distance(self, features: np.ndarray, targets: np.ndarray) -> np.ndarray:
+        """Compute nearest-neighbor cosine costs for target-feature pairs."""
         features = self._normalize(features)
         cost = np.zeros((len(targets), len(features)), dtype=np.float32)
         for row, target in enumerate(targets):
@@ -265,6 +289,7 @@ class NearestNeighborCosineMetric:
         targets: np.ndarray,
         active_targets: list[int],
     ) -> None:
+        """Update appearance galleries and discard inactive target samples."""
         if len(features) > 0:
             features = self._normalize(features)
             for feature, target in zip(features, targets):
@@ -394,6 +419,7 @@ class MarsSmall128Extractor:
     """Optional TensorFlow extractor for DeepSORT mars-small128.pb."""
 
     def __init__(self, model_path: str, batch_size: int = 32) -> None:
+        """Load the MARS small-128 TensorFlow graph for appearance extraction."""
         self.model_path = str(model_path)
         self.batch_size = max(1, int(batch_size))
 
@@ -455,6 +481,7 @@ class MarsSmall128Extractor:
         return patch.astype(np.uint8, copy=False)
 
     def encode(self, image: np.ndarray, boxes: list[BBox]) -> list[np.ndarray | None]:
+        """Extract normalized MARS appearance features for detection boxes."""
         patches: list[np.ndarray] = []
         valid_indices: list[int] = []
 
@@ -507,6 +534,7 @@ class DeepSortBackend:
         reid_model_path: str = "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb",
         reid_batch_size: int = 32,
     ) -> None:
+        """Initialize DeepSORT motion, appearance, lifecycle, and image state."""
         self.max_age = int(max_age)
         self.n_init = int(n_init)
         self.max_iou_distance = float(max_iou_distance)
@@ -537,6 +565,7 @@ class DeepSortBackend:
         print(f"[DeepSORT] Loaded MARS ReID model: {self.reid_model_path}", flush=True)
 
     def reset(self) -> None:
+        """Reset all DeepSORT tracks, appearance samples, and image state."""
         self._tracks.clear()
         self.metric.samples.clear()
         self._next_id = 1
@@ -544,6 +573,7 @@ class DeepSortBackend:
         self._latest_image_stamp_ns = 0
 
     def update_latest_image(self, image_msg: Image) -> None:
+        """Store a valid ROS image for subsequent appearance extraction."""
         image_encoding = str(image_msg.encoding).lower()
         if image_encoding not in ("rgb8", "bgr8"):
             return
@@ -753,6 +783,7 @@ class DeepSortBackend:
         scores: List[float],
         frame_time_ns: int,
     ) -> List[TrackOutput]:
+        """Associate one frame of detections and return confirmed track outputs."""
         detections = self._make_detections(dets_xyxy, scores, frame_time_ns)
 
         for track in self._tracks:
