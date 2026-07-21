@@ -78,33 +78,6 @@ while [[ $# -gt 0 ]]; do
             TARGET_MEMORY_APPEARANCE_BOOL="true"
             shift
             ;;
-        --target-memory-appearance-image-topic)
-            if [[ $# -lt 2 ]]; then
-                echo "[error] --target-memory-appearance-image-topic requires a value"
-                print_usage
-                exit 1
-            fi
-            TARGET_MEMORY_APPEARANCE_IMAGE_TOPIC="$2"
-            shift 2
-            ;;
-        --target-memory-appearance-min-bbox-height)
-            if [[ $# -lt 2 ]]; then
-                echo "[error] --target-memory-appearance-min-bbox-height requires a value"
-                print_usage
-                exit 1
-            fi
-            TARGET_MEMORY_APPEARANCE_MIN_BBOX_HEIGHT="$(normalize_double_literal "$2")"
-            shift 2
-            ;;
-        --target-memory-appearance-max-image-age-ms)
-            if [[ $# -lt 2 ]]; then
-                echo "[error] --target-memory-appearance-max-image-age-ms requires a value"
-                print_usage
-                exit 1
-            fi
-            TARGET_MEMORY_APPEARANCE_MAX_IMAGE_AGE_MS="$(normalize_double_literal "$2")"
-            shift 2
-            ;;
         --target-memory-mars-image-topic)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --target-memory-mars-image-topic requires a value"
@@ -121,33 +94,6 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             TARGET_MEMORY_MARS_MODEL_PATH="$2"
-            shift 2
-            ;;
-        --target-memory-mars-batch-size)
-            if [[ $# -lt 2 ]]; then
-                echo "[error] --target-memory-mars-batch-size requires a value"
-                print_usage
-                exit 1
-            fi
-            TARGET_MEMORY_MARS_BATCH_SIZE="$2"
-            shift 2
-            ;;
-        --target-memory-mars-appearance-weight)
-            if [[ $# -lt 2 ]]; then
-                echo "[error] --target-memory-mars-appearance-weight requires a value"
-                print_usage
-                exit 1
-            fi
-            TARGET_MEMORY_MARS_APPEARANCE_WEIGHT="$(normalize_double_literal "$2")"
-            shift 2
-            ;;
-        --target-memory-mars-min-similarity)
-            if [[ $# -lt 2 ]]; then
-                echo "[error] --target-memory-mars-min-similarity requires a value"
-                print_usage
-                exit 1
-            fi
-            TARGET_MEMORY_MARS_APPEARANCE_MIN_SIMILARITY="$(normalize_double_literal "$2")"
             shift 2
             ;;
         --no-dashboard)
@@ -876,7 +822,6 @@ case "${TARGET_MEMORY_MODE:-mars}" in
         ;;
 esac
 
-RUN_TARGET_MEMORY_HSV=0
 RUN_TARGET_MEMORY_MARS=0
 
 case "${TARGET_MEMORY_MODE:-mars}" in

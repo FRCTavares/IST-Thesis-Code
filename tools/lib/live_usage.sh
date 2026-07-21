@@ -83,22 +83,10 @@ Options:
     --target-memory <off|mars>
                                           Select TIM mode, default: mars
     --target-memory-appearance         Enable TIM-MARS appearance extraction
-    --target-memory-appearance-image-topic <topic>
-                                          Image topic for TIM appearance, default: /camera/dashboard
-    --target-memory-appearance-min-bbox-height <px>
-                                          Minimum bbox height for appearance crops, default: 30.0
-    --target-memory-appearance-max-image-age-ms <ms>
-                                          Maximum latest-image age for HSV appearance features, default: 250.0
     --target-memory-mars-image-topic <topic>
                                           Image topic for TIM-MARS, default: /camera/dashboard
     --target-memory-mars-model-path <path>
                                           MARS-small128 .pb path
-    --target-memory-mars-batch-size <N>
-                                          TIM-MARS ReID batch size, default: 32
-    --target-memory-mars-appearance-weight <F>
-                                          TIM-MARS appearance weight, default: 0.12
-    --target-memory-mars-min-similarity <F>
-                                          TIM-MARS minimum appearance similarity, default: 0.35
     --no-dashboard                      Disable dashboard bridge
     --no-tracker                        Do not start tracker node
     --no-target                         Deprecated alias; target selection is now handled by dashboard bridge API

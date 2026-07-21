@@ -15,7 +15,7 @@ evidence are maintained in the linked GitHub Issues.
 6. Completed or rejected issues are removed from this file.
 7. Historical roadmap material is archived under `docs/roadmap/archive/`.
 
-Active executable issues: **39**.
+Active executable issues: **38**.
 
 ## P0 — Critical evidence, safety, thesis-claim, or flight-blocking work
 
@@ -59,8 +59,12 @@ Active executable issues: **39**.
      event-table semantic digests exactly.
    - Closure evidence: `reports/p007_rank_aware_add2b8b8_2026_07_21/`.
 
-8. [ ] [#10 — P0.8 Fix live appearance wiring](https://github.com/FRCTavares/IST-Thesis-Code/issues/10)
-   - phase 3; live-system.
+8. [x] [#10 — P0.8 Fix live appearance wiring](https://github.com/FRCTavares/IST-Thesis-Code/issues/10)
+   - phase 3; live-system; completed 21 July 2026.
+   - Repository history confirmed that the original hardcoded `appearance_enabled:=true` defect was already absent: the live launcher passes the resolved `TARGET_MEMORY_APPEARANCE_BOOL` value.
+   - Added launcher-contract regression coverage and removed obsolete HSV residue plus parsed-but-unused live appearance options. Canonical YAML remains the source of algorithm and crop-quality thresholds.
+   - Validation: 3 focused launcher tests passed; 56 tooling tests passed; the functional `thesis_bringup` suite passed with 166 passed, 3 deselected, and 3 expected failures; and the package build succeeded.
+   - No algorithm, threshold, annotation, replay-result, wrong-target, camera, or Hailo behavior changed as part of this launcher-only correction.
 
 9. [ ] [#50 — P0.23 Complete flight-readiness gate and record held-out UAV-motion evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
    - phase 10; live-system.
