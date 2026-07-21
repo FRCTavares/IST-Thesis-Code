@@ -11,7 +11,7 @@ allowed only after geometry is plausible enough.
 from __future__ import annotations
 
 from math import exp, log, sqrt
-from typing import Tuple
+from typing import Optional, Tuple
 
 from thesis_bringup.tim_mars.types import (
     BBox,

@@ -20,7 +20,7 @@ from sensor_msgs.msg import Image
 from vision_msgs.msg import Detection2DArray
 from thesis_msgs.msg import Track2D, Track2DArray, Timing
 
-from thesis_tracker.backends import BBox, TrackOutput
+from thesis_tracker.backends import BBox
 from thesis_tracker.backends.sort_backend import SortBackend
 from thesis_tracker.backends.ocsort_backend import OCSortBackend
 from thesis_tracker.backends.bytetrack_backend import ByteTrackBackend

@@ -379,8 +379,6 @@ class DashboardBridgeNode(Node):
     def _handle_container_model_switch(self, model: str) -> dict[str, Any]:
         hef_name = self._model_to_hef[model]
 
-        hef_path = f"/root/thesis_service/resources/hefs/{hef_name}"
-
         cmd = """
 echo "container model switching is not supported in the integrated-camera thesis repository" >&2
 echo "use perception_camera_node launched by tools/start_live_stack.sh" >&2

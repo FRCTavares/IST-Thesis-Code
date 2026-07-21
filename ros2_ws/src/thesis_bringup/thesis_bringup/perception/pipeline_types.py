@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 import numpy as np
+from sensor_msgs.msg import Image
 
 
 @dataclass
@@ -41,5 +41,3 @@ class RawFrame:
     stamp_nanosec: int
     t_cam_msg_seen_ns: int
     image_msg: Image
-
-

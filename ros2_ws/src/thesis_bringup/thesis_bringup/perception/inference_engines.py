@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from typing import Any
 
 import numpy as np
@@ -11,6 +12,7 @@ import numpy as np
 from thesis_bringup.perception.pipeline_utils import (
     _bbox_to_xywh,
     _normalize_label,
+    _safe_int,
     now_ns,
 )
 
@@ -684,5 +686,3 @@ class HailoDirectInferenceEngine:
             self._close_runtime_locked()
             self.hef_path = new_hef_path
             self._open_runtime_locked()
-
-

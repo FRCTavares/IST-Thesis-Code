@@ -181,8 +181,11 @@ class KalmanBox:
         S = self.H @ self.P @ self.H.T + self.R
         K = self.P @ self.H.T @ np.linalg.inv(S)
         self.x = self.x + (K @ y)
-        I = np.eye(self.P.shape[0], dtype=np.float32)
-        self.P = (I - (K @ self.H)) @ self.P
+        identity = np.eye(
+            self.P.shape[0],
+            dtype=np.float32,
+        )
+        self.P = (identity - (K @ self.H)) @ self.P
 
     def bbox(self) -> BBox:
         return x_to_xyxy(self.x[:4])

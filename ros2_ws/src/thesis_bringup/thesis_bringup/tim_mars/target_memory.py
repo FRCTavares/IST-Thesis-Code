@@ -14,9 +14,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
-from thesis_bringup.tim_mars.appearance_memory import cosine_similarity, update_feature_memory
+from thesis_bringup.tim_mars.appearance_memory import update_feature_memory
 from thesis_bringup.tim_mars.positive_appearance_memory import (
     PositiveAppearanceMemory,
 )
