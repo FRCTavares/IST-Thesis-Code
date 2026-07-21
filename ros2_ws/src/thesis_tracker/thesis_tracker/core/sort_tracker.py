@@ -339,7 +339,13 @@ def associate(
 
     if HAVE_SCIPY:
         row_ind, col_ind = linear_sum_assignment(reduced_cost)
-        pairs = [(int(row_map[r]), int(col_map[c])) for r, c in zip(row_ind.tolist(), col_ind.tolist())]
+        pairs = [
+            (int(row_map[row]), int(col_map[column]))
+            for row, column in zip(
+                row_ind.tolist(),
+                col_ind.tolist(),
+            )
+        ]
     else:
         # Greedy fallback: sort all (cost, ti, di) and pick greedily
         entries = sorted(
@@ -414,7 +420,13 @@ def hungarian_match_iou(
 
     if HAVE_SCIPY:
         row_ind, col_ind = linear_sum_assignment(cost)
-        pairs = [(int(row_map[r]), int(col_map[c])) for r, c in zip(row_ind.tolist(), col_ind.tolist())]
+        pairs = [
+            (int(row_map[row]), int(col_map[column]))
+            for row, column in zip(
+                row_ind.tolist(),
+                col_ind.tolist(),
+            )
+        ]
     else:
         entries = sorted(
             [(float(cost[ri, ci]), int(row_map[ri]), int(col_map[ci]))
@@ -523,7 +535,16 @@ class Sort:
             kf.initiate(dets[di])
             tid = self._next_id
             self._next_id += 1
-            self.tracks.append(SortTrack(track_id=tid, kf=kf, hits=1, age=0, time_since_update=0, last_frame_id=frame_id))
+            self.tracks.append(
+                SortTrack(
+                    track_id=tid,
+                    kf=kf,
+                    hits=1,
+                    age=0,
+                    time_since_update=0,
+                    last_frame_id=frame_id,
+                )
+            )
 
         # Prune dead
         self.tracks = [tr for tr in self.tracks if tr.time_since_update <= self.max_age]

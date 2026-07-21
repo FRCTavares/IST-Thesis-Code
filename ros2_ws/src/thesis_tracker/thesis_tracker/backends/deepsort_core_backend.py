@@ -122,7 +122,10 @@ class DeepSortKalmanFilter:
         innovation_cov = np.diag(np.square(std)).astype(np.float32)
         projected_mean = self._update_mat @ mean
         projected_cov = self._update_mat @ covariance @ self._update_mat.T
-        return projected_mean.astype(np.float32), (projected_cov + innovation_cov).astype(np.float32)
+        return (
+            projected_mean.astype(np.float32),
+            (projected_cov + innovation_cov).astype(np.float32),
+        )
 
     def update(
         self,
@@ -256,21 +259,43 @@ class NearestNeighborCosineMetric:
             cost[row, :] = np.maximum(0.0, np.min(distances, axis=0))
         return cost
 
-    def partial_fit(self, features: np.ndarray, targets: np.ndarray, active_targets: list[int]) -> None:
+    def partial_fit(
+        self,
+        features: np.ndarray,
+        targets: np.ndarray,
+        active_targets: list[int],
+    ) -> None:
         if len(features) > 0:
             features = self._normalize(features)
             for feature, target in zip(features, targets):
                 target_id = int(target)
-                self.samples.setdefault(target_id, []).append(feature.astype(np.float32, copy=True))
+                self.samples.setdefault(target_id, []).append(
+                    feature.astype(np.float32, copy=True)
+                )
                 if self.budget is not None:
-                    self.samples[target_id] = self.samples[target_id][-self.budget :]
+                    self.samples[target_id] = self.samples[target_id][-self.budget:]
 
-        active = set(int(t) for t in active_targets)
-        self.samples = {target: samples for target, samples in self.samples.items() if target in active}
+        active = {
+            int(target)
+            for target in active_targets
+        }
+        self.samples = {
+            target: samples
+            for target, samples in self.samples.items()
+            if target in active
+        }
 
 
 def _min_cost_matching(
-    distance_metric: Callable[[list[DeepSortTrack], list[DeepSortDetection], list[int], list[int]], np.ndarray],
+    distance_metric: Callable[
+        [
+            list[DeepSortTrack],
+            list[DeepSortDetection],
+            list[int],
+            list[int],
+        ],
+        np.ndarray,
+    ],
     max_distance: float,
     tracks: list[DeepSortTrack],
     detections: list[DeepSortDetection],
@@ -322,7 +347,15 @@ def _min_cost_matching(
 
 
 def _matching_cascade(
-    distance_metric: Callable[[list[DeepSortTrack], list[DeepSortDetection], list[int], list[int]], np.ndarray],
+    distance_metric: Callable[
+        [
+            list[DeepSortTrack],
+            list[DeepSortDetection],
+            list[int],
+            list[int],
+        ],
+        np.ndarray,
+    ],
     max_distance: float,
     cascade_depth: int,
     tracks: list[DeepSortTrack],
@@ -589,7 +622,10 @@ class DeepSortBackend:
     ) -> np.ndarray:
         gating_dim = 2 if self.only_position_gating else 4
         gating_threshold = CHI2INV95[gating_dim]
-        measurements = np.asarray([detections[i].to_xyah() for i in detection_indices], dtype=np.float32)
+        measurements = np.asarray(
+            [detections[i].to_xyah() for i in detection_indices],
+            dtype=np.float32,
+        )
         gated = np.asarray(cost_matrix, dtype=np.float32).copy()
         for row, track_idx in enumerate(track_indices):
             track = self._tracks[track_idx]
@@ -641,7 +677,10 @@ class DeepSortBackend:
             return np.empty((len(track_indices), len(detection_indices)), dtype=np.float32)
 
         track_boxes = np.asarray([tracks[i].to_xyxy() for i in track_indices], dtype=np.float32)
-        det_boxes = np.asarray([detections[i].bbox_xyxy for i in detection_indices], dtype=np.float32)
+        det_boxes = np.asarray(
+            [detections[i].bbox_xyxy for i in detection_indices],
+            dtype=np.float32,
+        )
         ious = sort_tracker.iou_batch(track_boxes, det_boxes)
         cost = 1.0 - ious
 
@@ -655,7 +694,11 @@ class DeepSortBackend:
         detections: list[DeepSortDetection],
     ) -> tuple[list[tuple[int, int]], list[int], list[int]]:
         confirmed_tracks = [idx for idx, track in enumerate(self._tracks) if track.is_confirmed()]
-        unconfirmed_tracks = [idx for idx, track in enumerate(self._tracks) if not track.is_confirmed()]
+        unconfirmed_tracks = [
+            idx
+            for idx, track in enumerate(self._tracks)
+            if not track.is_confirmed()
+        ]
 
         matches_a, unmatched_tracks_a, unmatched_detections = _matching_cascade(
             self._gated_metric,

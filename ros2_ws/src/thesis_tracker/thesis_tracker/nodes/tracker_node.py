@@ -227,7 +227,10 @@ class TrackerNode(Node):
             self.get_logger().info(f"Tracker backend switched at runtime: {requested_tracker}")
             return SetParametersResult(successful=True)
         except Exception as exc:
-            self.get_logger().error(f"Failed to switch tracker backend to '{requested_tracker}': {exc}")
+            self.get_logger().error(
+                "Failed to switch tracker backend to "
+                f"'{requested_tracker}': {exc}"
+            )
             return SetParametersResult(successful=False, reason=str(exc))
 
     def _has_track_subscribers(self) -> bool:
@@ -350,7 +353,11 @@ class TrackerNode(Node):
                 self._declare_param_if_missing("only_position_gating", False)
             )
             reid_model_path = str(
-                self._declare_param_if_missing("reid_model_path", "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb")
+                self._declare_param_if_missing(
+                    "reid_model_path",
+                    "/home/francisco/Desktop/Thesis-Code/"
+                    "models/reid/mars-small128.pb",
+                )
             )
             reid_batch_size = int(
                 self._declare_param_if_missing("reid_batch_size", 32)
@@ -405,8 +412,16 @@ class TrackerNode(Node):
         )
         profiler = SectionProfiler() if self.profiling_enabled else None
 
-        gc_before = self._gc_collections_seen if (self.profiling_gc_probe and should_log_profile) else 0
-        gc_count_before = gc.get_count() if (self.profiling_gc_probe and should_log_profile) else (0, 0, 0)
+        gc_before = (
+            self._gc_collections_seen
+            if self.profiling_gc_probe and should_log_profile
+            else 0
+        )
+        gc_count_before = (
+            gc.get_count()
+            if self.profiling_gc_probe and should_log_profile
+            else (0, 0, 0)
+        )
 
         det_boxes: List[BBox] = []
         det_scores: List[float] = []
@@ -571,8 +586,16 @@ class TrackerNode(Node):
         if self.publish_timing_topic:
             self.pub_timing.publish(tmsg)
 
-        gc_after = self._gc_collections_seen if (self.profiling_gc_probe and should_log_profile) else 0
-        gc_count_after = gc.get_count() if (self.profiling_gc_probe and should_log_profile) else (0, 0, 0)
+        gc_after = (
+            self._gc_collections_seen
+            if self.profiling_gc_probe and should_log_profile
+            else 0
+        )
+        gc_count_after = (
+            gc.get_count()
+            if self.profiling_gc_probe and should_log_profile
+            else (0, 0, 0)
+        )
 
         if should_log_profile:
             payload_est_bytes = _estimate_track_msg_payload_bytes(tracks_ros) if tracks_ros else -1

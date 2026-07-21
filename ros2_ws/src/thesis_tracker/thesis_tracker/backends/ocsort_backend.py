@@ -671,7 +671,11 @@ class OCSortBackend:
                 score = 0.0
             else:
                 d = trk.last_observation[:4]
-                score = float(trk.last_observation[4]) if trk.last_observation.shape[0] >= 5 else 0.0
+                score = (
+                    float(trk.last_observation[4])
+                    if trk.last_observation.shape[0] >= 5
+                    else 0.0
+                )
 
             if trk.time_since_update < 1:
                 if trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits:
