@@ -151,6 +151,10 @@ Active executable issues: **38**.
 
 36. [ ] [#48 — Flake8 test hangs in multiprocessing during full thesis_bringup suite](https://github.com/FRCTavares/IST-Thesis-Code/issues/48)
    - phase 8; engineering.
+   - Audit on 21 July 2026 confirmed that both generated lint tests resolve their source paths from the process working directory, causing repository-root runs to traverse `thesis_env` and unrelated runtime outputs.
+   - Package-scoped runs terminated normally with no lingering workers. The scoped baseline is 2,589 Flake8 and 108 PEP 257 findings in `thesis_bringup`, plus 246 Flake8 and 33 PEP 257 findings in `thesis_tracker`.
+   - Of the 2,835 Flake8 findings, 2,495 are the cosmetic `Q000` quote-style rule. Quote and multiline-docstring placement policy must be resolved explicitly before broad mechanical cleanup.
+   - Current work makes both packages’ Flake8 and PEP 257 tests independent of the pytest working directory. Genuine repository-owned findings remain visible and will be addressed before closure.
 
 37. [ ] [#37 — P1.17 Create a single reproducibility command](https://github.com/FRCTavares/IST-Thesis-Code/issues/37)
    - phase 8; experiment.

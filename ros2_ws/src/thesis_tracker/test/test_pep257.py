@@ -12,12 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
+
 from ament_pep257.main import main
 import pytest
+
+
+PACKAGE_ROOT = Path(__file__).resolve().parents[1]
+LINT_PATHS = [
+    str(path)
+    for path in (
+        PACKAGE_ROOT / 'setup.py',
+        PACKAGE_ROOT / PACKAGE_ROOT.name,
+        PACKAGE_ROOT / 'launch',
+        PACKAGE_ROOT / 'test',
+    )
+    if path.exists()
+]
 
 
 @pytest.mark.linter
 @pytest.mark.pep257
 def test_pep257():
-    rc = main(argv=['.', 'test'])
+    rc = main(argv=LINT_PATHS)
     assert rc == 0, 'Found code style errors / warnings'
