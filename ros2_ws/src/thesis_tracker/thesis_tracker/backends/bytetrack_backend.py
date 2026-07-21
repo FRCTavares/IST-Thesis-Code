@@ -19,10 +19,10 @@ from enum import IntEnum
 from typing import ClassVar, List, Optional, Tuple
 
 import numpy as np
-
-from . import BBox, TrackOutput
 from thesis_tracker.core import sort_tracker
 from thesis_tracker.core.sort_tracker import iou_batch
+
+from . import BBox, TrackOutput
 
 
 class TrackState(IntEnum):

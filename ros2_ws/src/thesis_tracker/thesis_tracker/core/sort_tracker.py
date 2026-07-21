@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
+
+from dataclasses import dataclass, field
 import math
 import time
-from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
 import numpy as np

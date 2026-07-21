@@ -4,21 +4,20 @@ This follows the structure of nwojke/deep_sort while fitting the local tracker
 backend interface. A real ReID CNN can be plugged in later; until then, the
 appearance feature is an L2-normalized color-histogram crop descriptor.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import IntEnum
 import math
-from typing import Callable, List
 from pathlib import Path
+from typing import Callable, List
 
 import numpy as np
-
 from sensor_msgs.msg import Image
-
-from . import BBox, TrackOutput
 from thesis_tracker.core import sort_tracker
 
+from . import BBox, TrackOutput
 
 CHI2INV95 = {
     1: 3.8415,
@@ -357,6 +356,7 @@ def _matching_cascade(
     unmatched_tracks = [idx for idx in track_indices if idx not in matched_tracks]
     return matches, unmatched_tracks, unmatched_detections
 
+
 class MarsSmall128Extractor:
     """Optional TensorFlow extractor for DeepSORT mars-small128.pb."""
 
@@ -458,6 +458,8 @@ class MarsSmall128Extractor:
                 outputs[global_idx] = feature.astype(np.float32, copy=True)
 
         return outputs
+
+
 class DeepSortBackend:
     """DeepSORT tracker backend using local crop features as the appearance descriptor."""
 
@@ -627,7 +629,7 @@ class DeepSortBackend:
             track_indices,
             detection_indices,
         )
-    
+
     def _iou_cost(
         self,
         tracks: list[DeepSortTrack],

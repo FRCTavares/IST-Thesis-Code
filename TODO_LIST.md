@@ -156,6 +156,7 @@ Active executable issues: **38**.
    - Of the 2,835 Flake8 findings, 2,495 are the cosmetic `Q000` quote-style rule. Quote and multiline-docstring placement policy must be resolved explicitly before broad mechanical cleanup.
    - Current work makes both packages’ Flake8 and PEP 257 tests independent of the pytest working directory. Genuine repository-owned findings remain visible and will be addressed before closure.
    - Correctness-first cleanup resolved all 16 correctness-sensitive findings: missing imports and helpers, dead imports and variables, and the ambiguous Kalman identity-matrix name. Both functional package suites and both package builds passed; no TIM or tracker thresholds changed.
+   - The first `thesis_tracker` cleanup batch removed all import-order, imported-name-order, grouping, trailing-whitespace, missing-final-newline, and class-docstring-spacing findings. The functional suite and package build passed; line wrapping and substantive public API docstrings remain separate work.
 
 37. [ ] [#37 — P1.17 Create a single reproducibility command](https://github.com/FRCTavares/IST-Thesis-Code/issues/37)
    - phase 8; experiment.

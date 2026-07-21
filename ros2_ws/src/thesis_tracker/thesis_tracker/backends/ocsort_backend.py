@@ -17,10 +17,10 @@ from dataclasses import dataclass
 from typing import ClassVar, Dict, List, Optional, Tuple
 
 import numpy as np
-
-from . import BBox, TrackOutput
 from thesis_tracker.core import sort_tracker
 from thesis_tracker.core.sort_tracker import iou_batch
+
+from . import BBox, TrackOutput
 
 
 def convert_bbox_to_z(bbox: np.ndarray) -> np.ndarray:

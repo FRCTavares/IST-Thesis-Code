@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 """Unified tracker node supporting multiple tracking backends."""
+
 from __future__ import annotations
 
 from collections import deque
+from contextlib import contextmanager
 import gc
 import time
-from contextlib import contextmanager
 from typing import List, Tuple, Union
 
+from rcl_interfaces.msg import SetParametersResult
 import rclpy
 from rclpy.executors import ExternalShutdownException
-from rcl_interfaces.msg import SetParametersResult
-from rclpy.parameter import Parameter
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.parameter import Parameter
+from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.serialization import serialize_message
-
 from sensor_msgs.msg import Image
-from vision_msgs.msg import Detection2DArray
-from thesis_msgs.msg import Track2D, Track2DArray, Timing
-
+from thesis_msgs.msg import Timing, Track2D, Track2DArray
 from thesis_tracker.backends import BBox
-from thesis_tracker.backends.sort_backend import SortBackend
-from thesis_tracker.backends.ocsort_backend import OCSortBackend
 from thesis_tracker.backends.bytetrack_backend import ByteTrackBackend
 from thesis_tracker.backends.deepsort_core_backend import DeepSortBackend
+from thesis_tracker.backends.ocsort_backend import OCSortBackend
+from thesis_tracker.backends.sort_backend import SortBackend
+from vision_msgs.msg import Detection2DArray
 
 # Type alias for tracker backends
 TrackerBackendType = Union[SortBackend, OCSortBackend, ByteTrackBackend, DeepSortBackend]
@@ -96,12 +95,12 @@ def _estimate_track_msg_payload_bytes(tracks: List[Track2D]) -> int:
 
 class TrackerNode(Node):
     """Unified tracker node with selectable backend."""
-    
+
     def __init__(self) -> None:
         super().__init__("tracker_node")
 
         self._supported_tracker_types = {"sort", "ocsort", "bytetrack", "deepsort"}
-        
+
         # Declare tracker type parameter
         self.declare_parameter("tracker_type", "sort")
         tracker_type = str(self.get_parameter("tracker_type").value).strip().lower()
@@ -110,19 +109,19 @@ class TrackerNode(Node):
                 f"Unsupported tracker_type '{tracker_type}', defaulting to 'sort'"
             )
             tracker_type = "sort"
-        
+
         # Create the appropriate backend
         self.backend = self._create_backend(tracker_type)
         self._tracker_type_current = tracker_type
         self._param_callback_handle = self.add_on_set_parameters_callback(self._on_set_parameters)
-        
+
         # Setup ROS communication
         qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
             reliability=ReliabilityPolicy.BEST_EFFORT,
         )
-        
+
         self.sub = self.create_subscription(
             Detection2DArray, "/detections", self.on_detections, qos
         )
@@ -140,7 +139,7 @@ class TrackerNode(Node):
         self.frame_context: dict[int, tuple[int, int]] = {}
         self.max_context = 512
         self._frame_context_order: deque[int] = deque()
-        
+
         # Declare min_score parameter (common filtering)
         self.declare_parameter("min_score", 0.35)
         self.min_score = float(self.get_parameter("min_score").value)
@@ -178,7 +177,7 @@ class TrackerNode(Node):
 
         if self.profiling_gc_probe:
             gc.callbacks.append(self._on_gc_event)
-        
+
         self.get_logger().info(
             "Tracker node ready: "
             f"type={self._tracker_type_current}, min_score={self.min_score}, "
@@ -263,7 +262,7 @@ class TrackerNode(Node):
     def _on_gc_event(self, phase: str, _info: dict) -> None:
         if phase == "stop":
             self._gc_collections_seen += 1
-    
+
     def _create_backend(self, tracker_type: str) -> TrackerBackendType:
         """Create tracker backend based on type."""
         if tracker_type == "sort":
@@ -275,7 +274,7 @@ class TrackerNode(Node):
             gate_y = float(self._declare_param_if_missing("gate_y", -1.0))
             gate_x = None if gate_x <= 0.0 else gate_x
             gate_y = None if gate_y <= 0.0 else gate_y
-            
+
             return SortBackend(
                 iou_threshold=iou_threshold,
                 max_age=max_age,
@@ -284,7 +283,7 @@ class TrackerNode(Node):
                 gate_x=gate_x,
                 gate_y=gate_y,
             )
-        
+
         elif tracker_type == "ocsort":
             # Reference-aligned OC-SORT defaults.
             # For live control, override max_age/min_hits from launcher if needed.
@@ -305,7 +304,7 @@ class TrackerNode(Node):
                 inertia=inertia,
                 use_byte=use_byte,
             )
-        
+
         elif tracker_type == "bytetrack":
             track_thresh = float(self._declare_param_if_missing("track_thresh", 0.5))
             match_thresh = float(self._declare_param_if_missing("match_thresh", 0.8))
@@ -389,7 +388,7 @@ class TrackerNode(Node):
                 self.frame_context.pop(oldest, None)
 
         self.frame_context[frame_id] = (int(msg.src_stamp_ns), int(msg.t_cam_msg_seen_ns))
-    
+
     def on_detections(self, msg: Detection2DArray) -> None:
         """Process detection message and publish tracks."""
         self._frame_counter += 1
@@ -414,7 +413,7 @@ class TrackerNode(Node):
         det_boxes_append = det_boxes.append
         det_scores_append = det_scores.append
         min_score = self.min_score
-        
+
         # Parse detections from vision_msgs format
         for det in msg.detections:
             if not det.results:
@@ -425,21 +424,21 @@ class TrackerNode(Node):
                 result_score = float(result.hypothesis.score)
                 if result_score > score:
                     score = result_score
-            
+
             # Apply min_score filter
             if score < min_score:
                 continue
-            
+
             # Convert to xyxy format
             cx = float(det.bbox.center.position.x)
             cy = float(det.bbox.center.position.y)
             w = float(det.bbox.size_x)
             h = float(det.bbox.size_y)
             box = xywh_center_to_xyxy(cx, cy, w, h)
-            
+
             det_boxes_append(box)
             det_scores_append(score)
-        
+
         # Get frame timestamp
         frame_time_ns = int(msg.header.stamp.sec * 1e9 + msg.header.stamp.nanosec)
 
@@ -455,7 +454,7 @@ class TrackerNode(Node):
 
         should_publish_tracks = self.publish_tracks and self._has_track_subscribers()
         should_build_track_msg = should_publish_tracks or should_sample_serialize
-        
+
         # Convert tracks to ROS message
         src_stamp_ns, t_cam_msg_seen_ns = self.frame_context.pop(frame_id, (0, 0))
         queue_delay_ms = 0.0
@@ -608,12 +607,12 @@ class TrackerNode(Node):
 def main(args=None) -> None:
     """Main entry point."""
     from rclpy.executors import SingleThreadedExecutor
-    
+
     rclpy.init(args=args)
     node = TrackerNode()
     executor = SingleThreadedExecutor()
     executor.add_node(node)
-    
+
     try:
         executor.spin()
     except ExternalShutdownException:
