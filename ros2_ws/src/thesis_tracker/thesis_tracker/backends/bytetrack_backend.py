@@ -26,6 +26,8 @@ from . import BBox, TrackOutput
 
 
 class TrackState(IntEnum):
+    """Enumerate the lifecycle states used by ByteTrack tracklets."""
+
     New = 0
     Tracked = 1
     Lost = 2
@@ -33,18 +35,21 @@ class TrackState(IntEnum):
 
 
 def tlbr_to_tlwh(tlbr: np.ndarray) -> np.ndarray:
+    """Convert a top-left/bottom-right box to top-left/width/height form."""
     ret = np.asarray(tlbr, dtype=np.float64).copy()
     ret[2:] -= ret[:2]
     return ret
 
 
 def tlwh_to_tlbr(tlwh: np.ndarray) -> np.ndarray:
+    """Convert a top-left/width/height box to top-left/bottom-right form."""
     ret = np.asarray(tlwh, dtype=np.float64).copy()
     ret[2:] += ret[:2]
     return ret
 
 
 def tlwh_to_xyah(tlwh: np.ndarray) -> np.ndarray:
+    """Convert a box to center-x, center-y, aspect, and height form."""
     ret = np.asarray(tlwh, dtype=np.float64).copy()
     ret[:2] += ret[2:] / 2.0
     ret[2] /= max(1e-6, ret[3])
@@ -115,6 +120,7 @@ def linear_assignment(
 
 
 def iou_distance(a_tracks: List["STrack"], b_tracks: List["STrack"]) -> np.ndarray:
+    """Compute pairwise IoU distances between two tracklet collections."""
     if len(a_tracks) == 0 or len(b_tracks) == 0:
         return np.zeros((len(a_tracks), len(b_tracks)), dtype=np.float64)
 
@@ -126,11 +132,7 @@ def iou_distance(a_tracks: List["STrack"], b_tracks: List["STrack"]) -> np.ndarr
 
 
 def fuse_score(dists: np.ndarray, detections: List["STrack"]) -> np.ndarray:
-    """ByteTrack score fusion.
-
-    Converts IoU distance to IoU similarity, multiplies by detection score,
-    then converts back to distance.
-    """
+    """Fuse ByteTrack IoU distances with detection confidence scores."""
     if dists.size == 0:
         return dists
 
@@ -150,6 +152,7 @@ class KalmanFilterXYAH:
     """
 
     def __init__(self) -> None:
+        """Initialize the constant-velocity XYAH motion and observation models."""
         ndim = 4
         dt = 1.0
 
@@ -163,6 +166,7 @@ class KalmanFilterXYAH:
         self._std_weight_velocity = 1.0 / 160.0
 
     def initiate(self, measurement: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Initialize an XYAH state and covariance from a detection measurement."""
         mean_pos = measurement.astype(np.float64)
         mean_vel = np.zeros_like(mean_pos)
         mean = np.r_[mean_pos, mean_vel]
@@ -185,6 +189,7 @@ class KalmanFilterXYAH:
         return mean, covariance
 
     def predict(self, mean: np.ndarray, covariance: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Predict the next XYAH state and covariance."""
         h = mean[3]
         std_pos = np.asarray(
             [
@@ -211,6 +216,7 @@ class KalmanFilterXYAH:
         return mean, covariance
 
     def project(self, mean: np.ndarray, covariance: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Project an XYAH state distribution into measurement space."""
         h = mean[3]
         std = np.asarray(
             [
@@ -233,6 +239,7 @@ class KalmanFilterXYAH:
         covariance: np.ndarray,
         measurement: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
+        """Correct an XYAH state estimate with a measurement."""
         projected_mean, projected_cov = self.project(mean, covariance)
 
         kalman_gain = covariance @ self._update_mat.T @ np.linalg.inv(projected_cov)
@@ -247,6 +254,7 @@ class KalmanFilterXYAH:
         mean: np.ndarray,
         covariance: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
+        """Predict a batch of XYAH states and covariances."""
         if len(mean) == 0:
             return mean, covariance
 
@@ -270,6 +278,7 @@ class STrack:
     _next_id: ClassVar[int] = 1
 
     def __post_init__(self) -> None:
+        """Initialize mutable state for a newly created ByteTrack tracklet."""
         self._tlwh = np.asarray(self.tlwh_in, dtype=np.float64)
         self.kalman_filter: Optional[KalmanFilterXYAH] = None
         self.mean: Optional[np.ndarray] = None
@@ -283,20 +292,24 @@ class STrack:
 
     @classmethod
     def reset_id(cls) -> None:
+        """Reset the shared track identifier counter."""
         cls._next_id = 1
 
     @classmethod
     def next_id(cls) -> int:
+        """Return the next shared track identifier."""
         tid = cls._next_id
         cls._next_id += 1
         return tid
 
     @property
     def end_frame(self) -> int:
+        """Return the most recent frame associated with the tracklet."""
         return self.frame_id
 
     @property
     def tlwh(self) -> np.ndarray:
+        """Return the current box in top-left/width/height form."""
         if self.mean is None:
             return self._tlwh.copy()
 
@@ -307,12 +320,15 @@ class STrack:
 
     @property
     def tlbr(self) -> np.ndarray:
+        """Return the current box in top-left/bottom-right form."""
         return tlwh_to_tlbr(self.tlwh)
 
     def to_xyah(self) -> np.ndarray:
+        """Return the current box as center-x, center-y, aspect, and height."""
         return tlwh_to_xyah(self.tlwh)
 
     def predict(self) -> None:
+        """Advance this tracklet through the motion model."""
         if self.mean is None or self.covariance is None or self.kalman_filter is None:
             return
 
@@ -325,6 +341,7 @@ class STrack:
 
     @staticmethod
     def multi_predict(stracks: List["STrack"]) -> None:
+        """Advance all initialized tracklets through the shared motion model."""
         if len(stracks) == 0:
             return
 
@@ -349,6 +366,7 @@ class STrack:
             st.covariance = multi_covariance[i]
 
     def activate(self, kalman_filter: KalmanFilterXYAH, frame_id: int) -> None:
+        """Activate a new tracklet from its initial detection."""
         self.kalman_filter = kalman_filter
         self.track_id = self.next_id()
 
@@ -364,6 +382,7 @@ class STrack:
         self.start_frame = int(frame_id)
 
     def re_activate(self, new_track: "STrack", frame_id: int, new_id: bool = False) -> None:
+        """Re-activate a lost tracklet from a matched detection."""
         assert self.kalman_filter is not None
         assert self.mean is not None
         assert self.covariance is not None
@@ -384,6 +403,7 @@ class STrack:
         self.score = float(new_track.score)
 
     def update(self, new_track: "STrack", frame_id: int) -> None:
+        """Update a tracked tracklet from a matched detection."""
         assert self.kalman_filter is not None
         assert self.mean is not None
         assert self.covariance is not None
@@ -401,13 +421,16 @@ class STrack:
         self.score = float(new_track.score)
 
     def mark_lost(self) -> None:
+        """Mark the tracklet as lost."""
         self.state = TrackState.Lost
 
     def mark_removed(self) -> None:
+        """Mark the tracklet as removed."""
         self.state = TrackState.Removed
 
 
 def joint_stracks(a: List[STrack], b: List[STrack]) -> List[STrack]:
+    """Merge two tracklet lists while preserving unique track identifiers."""
     exists: dict[int, int] = {}
     out: List[STrack] = []
 
@@ -424,6 +447,7 @@ def joint_stracks(a: List[STrack], b: List[STrack]) -> List[STrack]:
 
 
 def sub_stracks(a: List[STrack], b: List[STrack]) -> List[STrack]:
+    """Remove tracklets whose identifiers occur in a second list."""
     stracks = {t.track_id: t for t in a}
     for t in b:
         if t.track_id in stracks:
@@ -435,6 +459,7 @@ def remove_duplicate_stracks(
     tracked: List[STrack],
     lost: List[STrack],
 ) -> Tuple[List[STrack], List[STrack]]:
+    """Remove overlapping duplicates from tracked and lost tracklet lists."""
     pdist = iou_distance(tracked, lost)
     if pdist.size == 0:
         return tracked, lost
@@ -476,6 +501,7 @@ class ByteTrackBackend:
         min_box_area: float = 0.0,
         **_ignored,
     ) -> None:
+        """Initialize ByteTrack thresholds, buffers, and state containers."""
         self.track_thresh = float(track_thresh)
         self.match_thresh = float(match_thresh)
         self.track_buffer = int(track_buffer)
@@ -506,6 +532,7 @@ class ByteTrackBackend:
         STrack.reset_id()
 
     def reset(self) -> None:
+        """Reset all ByteTrack state and identifier counters."""
         self.tracked_stracks.clear()
         self.lost_stracks.clear()
         self.removed_stracks.clear()
@@ -528,6 +555,7 @@ class ByteTrackBackend:
         scores: List[float],
         frame_time_ns: int,
     ) -> List[TrackOutput]:
+        """Associate detections for one frame and return active track outputs."""
         del frame_time_ns
 
         self.frame_id += 1

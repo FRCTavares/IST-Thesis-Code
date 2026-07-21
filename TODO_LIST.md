@@ -158,6 +158,7 @@ Active executable issues: **38**.
    - Correctness-first cleanup resolved all 16 correctness-sensitive findings: missing imports and helpers, dead imports and variables, and the ambiguous Kalman identity-matrix name. Both functional package suites and both package builds passed; no TIM or tracker thresholds changed.
    - The first `thesis_tracker` cleanup batch removed all import-order, imported-name-order, grouping, trailing-whitespace, missing-final-newline, and class-docstring-spacing findings. The functional suite and package build passed; line wrapping and substantive public API docstrings remain separate work.
    - The second `thesis_tracker` cleanup batch removed all `C401`, `E203`, and `E501` findings. The functional suite and package build passed; only the three Flake8 docstring-style findings and the broader PEP 257 documentation batch remain.
+   - The ByteTrack documentation batch resolved all 32 ByteTrack PEP 257 targets with implementation-specific docstrings covering lifecycle states, geometry conversions, Kalman operations, tracklet transitions, collection helpers, and backend behavior. Package-wide PEP 257 findings fell from 103 to 71, ByteTrack Flake8 and PEP 257 are clean, and the functional suite and package build passed. DeepSORT, OC-SORT, SORT core, and tracker-node documentation remain.
 
 37. [ ] [#37 — P1.17 Create a single reproducibility command](https://github.com/FRCTavares/IST-Thesis-Code/issues/37)
    - phase 8; experiment.
