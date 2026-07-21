@@ -321,13 +321,6 @@ class TargetIdentityMemory:
                 threshold - self.cfg.same_id_accept_relief,
             )
 
-        confirmation_requirements = (
-            self._candidate_belief_confirmation_requirements(
-                best=best,
-                id_switch=id_switch,
-            )
-        )
-
         proposal = self._make_candidate_proposal(
             candidate=best_candidate,
             score=best,
@@ -339,9 +332,6 @@ class TargetIdentityMemory:
             minimum_total_reason=(
                 'best_below_threshold:'
                 f'{best.total:.3f}<{threshold:.3f}'
-            ),
-            confirmation_requirements=(
-                confirmation_requirements
             ),
         )
         return self._finalize_candidate_proposal(proposal)
@@ -375,7 +365,17 @@ class TargetIdentityMemory:
 
         requirements_by_policy: dict[str, int] = {}
 
-        for policy, required in confirmation_requirements:
+        combined_confirmation_requirements = (
+            tuple(confirmation_requirements)
+            + self._candidate_belief_confirmation_requirements(
+                best=score,
+                id_switch=id_switch,
+            )
+        )
+
+        for policy, required in (
+            combined_confirmation_requirements
+        ):
             policy_name = str(policy)
             requirements_by_policy[policy_name] = max(
                 requirements_by_policy.get(policy_name, 1),

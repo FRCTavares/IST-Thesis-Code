@@ -511,3 +511,252 @@ def test_rank_aware_id_switch_respects_minimum_appearance_similarity():
         == "rank_aware_id_switch_recovery_reject:"
         "appearance 0.700<0.780"
     )
+
+
+def test_rank_aware_reacquisition_respects_id_switch_disable():
+    target = feat([1.0, 0.0, 0.0])
+
+    tim = TargetIdentityMemory(
+        cfg(
+            rank_aware_reacquisition_enabled=True,
+            allow_id_switch_recovery=False,
+            hard_negative_memory_enabled=False,
+            appearance_conservative_enabled=False,
+            appearance_protected_memory_enabled=False,
+            short_gap_new_id_suppression_enabled=False,
+            absence_recovery_enabled=False,
+        )
+    )
+    tim.select(
+        tr(
+            1,
+            (100, 100, 160, 240),
+            appearance=target,
+        )
+    )
+
+    tim.update([])
+    tim.update([])
+    assert tim.state == TargetState.LOST
+
+    output = tim.update(
+        [
+            tr(
+                7,
+                (104, 101, 164, 241),
+                score=0.95,
+                appearance=target,
+            )
+        ]
+    )
+
+    assert output.target_track_id == 1
+    assert output.state == TargetState.LOST
+    assert not output.visible
+    assert output.reason == "id_switch_recovery_disabled"
+    assert tim._m.track_id == 1
+
+
+def test_rank_aware_reacquisition_respects_spatial_gate():
+    """Route a rank-aware proposal through the common spatial gate."""
+    memory = TargetIdentityMemory(
+        cfg(
+            rank_aware_reacquisition_enabled=True,
+            rank_aware_confirm_frames=1,
+            rank_aware_lost_min_total=0.20,
+            rank_aware_lost_min_geom=0.10,
+            rank_aware_lost_min_app=0.10,
+            id_switch_min_appearance_similarity=0.0,
+            id_switch_spatial_gate_enabled=True,
+            id_switch_min_iou=0.90,
+            id_switch_min_distance=0.95,
+            id_switch_min_scale=0.95,
+            hard_negative_memory_enabled=False,
+            appearance_conservative_enabled=False,
+            appearance_protected_memory_enabled=False,
+            short_gap_new_id_suppression_enabled=False,
+            absence_recovery_enabled=False,
+        )
+    )
+
+    memory._m.selected = True
+    memory._m.state = TargetState.LOST
+    memory._m.track_id = 1
+    memory._m.bbox = (100, 100, 160, 240)
+
+    candidate = CandidateTrack(
+        track_id=7,
+        bbox=(180, 100, 240, 240),
+        score=0.95,
+        appearance=[1.0, 0.0],
+    )
+
+    score = CandidateScore(
+        track_id=7,
+        total=0.73,
+        iou=0.10,
+        distance=0.50,
+        scale=0.80,
+        confidence=0.95,
+        id_bonus=0.0,
+        appearance=0.90,
+        appearance_used=True,
+        appearance_raw=0.90,
+        appearance_gate_passed=True,
+        geometry_allows_appearance=True,
+        hard_negative_similarity=0.0,
+        hard_negative_margin=0.90,
+        hard_negative_reject=False,
+        ambiguous=False,
+    )
+
+    proposal, terminal_output = (
+        memory._handle_rank_aware_reacquisition(
+            candidates=[candidate],
+            scores_sorted=[score],
+            best=score,
+        )
+    )
+
+    assert terminal_output is None
+    assert proposal is not None
+    assert (
+        proposal.proposal_source
+        == "rank_aware_reacquisition"
+    )
+
+    output = memory._finalize_candidate_proposal(proposal)
+
+    assert output.target_track_id == 1
+    assert output.state in {
+        TargetState.UNCERTAIN,
+        TargetState.LOST,
+    }
+    assert output.state != TargetState.REACQUIRED
+    assert not output.visible
+    assert output.reason.startswith(
+        "rank_aware_id_switch_spatial_reject:"
+    )
+    assert memory._m.track_id == 1
+
+
+def test_rank_aware_reacquisition_composes_candidate_belief_confirmation():
+    target = feat([1.0, 0.0, 0.0])
+
+    tim = TargetIdentityMemory(
+        cfg(
+            rank_aware_reacquisition_enabled=True,
+            rank_aware_confirm_frames=1,
+            candidate_belief_enabled=True,
+            candidate_belief_min_score=0.10,
+            candidate_belief_confirm_frames=3,
+            hard_negative_memory_enabled=False,
+            appearance_conservative_enabled=False,
+            appearance_protected_memory_enabled=False,
+            short_gap_new_id_suppression_enabled=False,
+            absence_recovery_enabled=False,
+        )
+    )
+    tim.select(
+        tr(
+            1,
+            (100, 100, 160, 240),
+            appearance=target,
+        )
+    )
+
+    tim.update([])
+    tim.update([])
+    assert tim.state == TargetState.LOST
+
+    candidates = [
+        tr(
+            7,
+            (104, 101, 164, 241),
+            score=0.95,
+            appearance=target,
+        )
+    ]
+
+    first = tim.update(candidates)
+    assert first.target_track_id == 1
+    assert first.state == TargetState.LOST
+    assert not first.visible
+    assert first.reason.startswith(
+        "candidate_belief_confirmation_pending:"
+    )
+    assert "confirm=1/3" in first.reason
+
+    second = tim.update(candidates)
+    assert second.target_track_id == 1
+    assert second.state == TargetState.LOST
+    assert not second.visible
+    assert second.reason.startswith(
+        "candidate_belief_confirmation_pending:"
+    )
+    assert "confirm=2/3" in second.reason
+
+    third = tim.update(candidates)
+    assert third.target_track_id == 7
+    assert third.state == TargetState.REACQUIRED
+    assert third.reacquired
+
+
+def test_rank_aware_reacquisition_respects_conservative_appearance_margin():
+    target = feat([1.0, 0.0, 0.0])
+    best_match = feat([0.80, 0.60, 0.0])
+    second_match = feat([0.76, 0.649923, 0.0])
+
+    tim = TargetIdentityMemory(
+        cfg(
+            rank_aware_reacquisition_enabled=True,
+            rank_aware_confirm_frames=1,
+            rank_aware_lost_app_margin=0.03,
+            ambiguity_margin=0.0,
+            id_switch_min_appearance_similarity=0.78,
+            hard_negative_memory_enabled=False,
+            appearance_protected_memory_enabled=False,
+            appearance_conservative_enabled=True,
+            appearance_conservative_require_appearance=False,
+            appearance_conservative_min_similarity=0.65,
+            appearance_conservative_margin=0.05,
+            short_gap_new_id_suppression_enabled=False,
+            absence_recovery_enabled=False,
+        )
+    )
+    tim.select(
+        tr(
+            1,
+            (100, 100, 160, 240),
+            appearance=target,
+        )
+    )
+
+    tim.update([])
+    tim.update([])
+    assert tim.state == TargetState.LOST
+
+    output = tim.update(
+        [
+            tr(
+                7,
+                (130, 100, 190, 240),
+                score=0.95,
+                appearance=best_match,
+            ),
+            tr(
+                8,
+                (138, 100, 198, 240),
+                score=0.95,
+                appearance=second_match,
+            ),
+        ]
+    )
+
+    assert output.target_track_id == 1
+    assert output.state == TargetState.LOST
+    assert not output.visible
+    assert output.reason.startswith(
+        "appearance_conservative_reject:"
+    )
+    assert tim._m.track_id == 1
