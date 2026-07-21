@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Implement the minimal SORT tracker and its Kalman association core."""
 
 from dataclasses import dataclass, field
 import math
@@ -48,6 +49,7 @@ BBox = Tuple[float, float, float, float]  # x1,y1,x2,y2 in pixels
 
 
 def iou(a: BBox, b: BBox) -> float:
+    """Compute intersection over union for two corner-format boxes."""
     ax1, ay1, ax2, ay2 = a
     bx1, by1, bx2, by2 = b
     inter_x1 = max(ax1, bx1)
@@ -109,6 +111,7 @@ def iou_batch(boxes1: np.ndarray, boxes2: np.ndarray) -> np.ndarray:
 
 def xyxy_to_z(b: BBox) -> np.ndarray:
     # [x, y, s, r] with centre (x,y), scale s = area, aspect r = w/h
+    """Convert a corner-format box to center, area, and aspect state."""
     x1, y1, x2, y2 = b
     w = max(1e-3, x2 - x1)
     h = max(1e-3, y2 - y1)
@@ -121,6 +124,7 @@ def xyxy_to_z(b: BBox) -> np.ndarray:
 
 def x_to_xyxy(x: np.ndarray) -> BBox:
     # from [x,y,s,r] to xyxy
+    """Convert center, area, and aspect state to a corner-format box."""
     cx, cy, s, r = float(x[0]), float(x[1]), float(x[2]), float(x[3])
     s = max(1e-3, s)
     r = max(1e-3, r)
@@ -136,6 +140,8 @@ def x_to_xyxy(x: np.ndarray) -> BBox:
 @dataclass
 class KalmanBox:
     # 7D state: [x,y,s,r, vx,vy,vs]
+    """Model one bounding box with a seven-state constant-velocity filter."""
+
     x: np.ndarray = field(default_factory=lambda: np.zeros((7, 1), dtype=np.float32))
     P: np.ndarray = field(default_factory=lambda: np.eye(7, dtype=np.float32))
     F: np.ndarray = field(default_factory=lambda: np.eye(7, dtype=np.float32))
@@ -145,6 +151,7 @@ class KalmanBox:
 
     def __post_init__(self) -> None:
         # Constant velocity model
+        """Initialize motion, observation, and covariance matrices."""
         self.F = np.eye(7, dtype=np.float32)
         for i in range(4):
             if i < 3:  # x,y,s have velocities
@@ -168,15 +175,18 @@ class KalmanBox:
         self.Q[4:, 4:] *= 0.1
 
     def initiate(self, bbox: BBox) -> None:
+        """Initialize the filter state from a bounding-box observation."""
         z = xyxy_to_z(bbox)
         self.x[:4] = z
         self.x[4:] = 0.0
 
     def predict(self) -> None:
+        """Advance the state and covariance through the motion model."""
         self.x = self.F @ self.x
         self.P = self.F @ self.P @ self.F.T + self.Q
 
     def update(self, bbox: BBox) -> None:
+        """Correct the state and covariance from a bounding-box observation."""
         z = xyxy_to_z(bbox)
         y = z - (self.H @ self.x)
         S = self.H @ self.P @ self.H.T + self.R
@@ -189,6 +199,7 @@ class KalmanBox:
         self.P = (identity - (K @ self.H)) @ self.P
 
     def bbox(self) -> BBox:
+        """Return the current predicted bounding box."""
         return x_to_xyxy(self.x[:4])
 
 
@@ -460,6 +471,8 @@ def hungarian_match_iou(
 
 @dataclass
 class SortTrack:
+    """Combine a Kalman box model with SORT track lifecycle metadata."""
+
     track_id: int
     kf: KalmanBox
     hits: int = 1
@@ -468,22 +481,27 @@ class SortTrack:
     last_frame_id: Optional[int] = None
 
     def predict(self) -> None:
+        """Predict the next track state and advance age counters."""
         self.kf.predict()
         self.age += 1
         self.time_since_update += 1
 
     def update(self, bbox: BBox, frame_id: Optional[int]) -> None:
+        """Correct the track from a matched detection."""
         self.kf.update(bbox)
         self.hits += 1
         self.time_since_update = 0
         self.last_frame_id = frame_id
 
     def bbox(self) -> BBox:
+        """Return the current track bounding box."""
         return self.kf.bbox()
 
 
 @dataclass
 class Sort:
+    """Associate detections into persistent tracks with gated IoU matching."""
+
     iou_thresh: float = 0.2
     max_age: int = 8
     min_hits: int = 3
@@ -508,6 +526,7 @@ class Sort:
 
     def update(self, dets: List[BBox], frame_id: Optional[int] = None) -> List[SortTrack]:
         # Predict existing tracks
+        """Process one detection frame and return the surviving tracks."""
         for tr in self.tracks:
             tr.predict()
 
