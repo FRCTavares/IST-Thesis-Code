@@ -24,7 +24,7 @@ from . import BBox, TrackOutput
 
 
 def convert_bbox_to_z(bbox: np.ndarray) -> np.ndarray:
-    """xyxy or xyxyscore -> [cx, cy, area, aspect]."""
+    """Convert a corner-format box to center, area, and aspect state."""
     w = bbox[2] - bbox[0]
     h = bbox[3] - bbox[1]
     x = bbox[0] + w / 2.0
@@ -98,6 +98,7 @@ def k_previous_obs(observations: Dict[int, np.ndarray], cur_age: int, k: int) ->
 
 
 def linear_assignment(cost_matrix: np.ndarray) -> np.ndarray:
+    """Solve the assignment problem with SciPy or a greedy fallback."""
     if cost_matrix.size == 0:
         return np.empty((0, 2), dtype=int)
 
@@ -215,6 +216,7 @@ class OCKalmanFilter:
     """Minimal OC-SORT KalmanFilterNew behaviour with freeze/unfreeze ORU."""
 
     def __init__(self) -> None:
+        """Initialize the observation-centric seven-state Kalman filter."""
         self.dim_x = 7
         self.dim_z = 4
 
@@ -270,6 +272,7 @@ class OCKalmanFilter:
         self.observed = False
 
     def predict(self) -> None:
+        """Advance the state and covariance through the motion model."""
         self.x = self.F @ self.x
         self.P = self.F @ self.P @ self.F.T + self.Q
 
@@ -277,6 +280,7 @@ class OCKalmanFilter:
         self.P_prior = self.P.copy()
 
     def freeze(self) -> None:
+        """Save the filter state before an unobserved interval."""
         self.attr_saved = {
             "x": self.x.copy(),
             "P": self.P.copy(),
@@ -299,6 +303,7 @@ class OCKalmanFilter:
         }
 
     def unfreeze(self) -> None:
+        """Restore the saved state and replay virtual observations."""
         if self.attr_saved is None:
             return
 
@@ -354,6 +359,7 @@ class OCKalmanFilter:
                 self.predict()
 
     def update(self, z: Optional[np.ndarray]) -> None:
+        """Update the filter from an observation or record a missed frame."""
         self.history_obs.append(z)
 
         if z is None:
@@ -392,12 +398,15 @@ class OCKalmanFilter:
 
 @dataclass
 class OCKalmanBoxTracker:
+    """Track one object with observation-centric Kalman state and history."""
+
     bbox: np.ndarray
     delta_t: int = 3
 
     count: ClassVar[int] = 0
 
     def __post_init__(self) -> None:
+        """Initialize motion, identity, observation, and lifecycle state."""
         self.kf = OCKalmanFilter()
         self.kf.x[:4] = convert_bbox_to_z(self.bbox)
 
@@ -416,6 +425,7 @@ class OCKalmanBoxTracker:
         self.velocity: Optional[np.ndarray] = None
 
     def update(self, bbox: Optional[np.ndarray]) -> None:
+        """Update the tracker from a matched observation or a missed frame."""
         if bbox is not None:
             bbox = np.asarray(bbox, dtype=np.float64)
 
@@ -447,6 +457,7 @@ class OCKalmanBoxTracker:
             self.kf.update(None)
 
     def predict(self) -> np.ndarray:
+        """Predict the next box and advance tracker age counters."""
         if self.kf.x[6] + self.kf.x[2] <= 0:
             self.kf.x[6] *= 0.0
 
@@ -465,6 +476,7 @@ class OCKalmanBoxTracker:
         return pred
 
     def get_state(self) -> np.ndarray:
+        """Return the current predicted bounding box."""
         return convert_x_to_bbox(self.kf.x)
 
 
@@ -482,6 +494,7 @@ class OCSortBackend:
         use_byte: bool = False,
         **_ignored,
     ) -> None:
+        """Initialize OC-SORT thresholds, motion settings, and tracker state."""
         self.iou_threshold = float(iou_threshold)
         self.max_age = int(max_age)
         self.min_hits = int(min_hits)
@@ -496,6 +509,7 @@ class OCSortBackend:
         OCKalmanBoxTracker.count = 0
 
     def reset(self) -> None:
+        """Reset all OC-SORT trackers, counters, and frame state."""
         self.trackers.clear()
         self.frame_count = 0
         OCKalmanBoxTracker.count = 0
@@ -506,6 +520,7 @@ class OCSortBackend:
         scores: List[float],
         frame_time_ns: int,
     ) -> List[TrackOutput]:
+        """Associate one frame of detections and return active track outputs."""
         del frame_time_ns
 
         self.frame_count += 1
