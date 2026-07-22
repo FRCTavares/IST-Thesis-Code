@@ -87,7 +87,6 @@ def measure_crop_qualities(
     thresholds: CropQualityThresholds,
 ) -> list[AppearanceCropQuality]:
     """Measure every mapped bbox before appearance encoding."""
-
     if image_width <= 0 or image_height <= 0:
         raise ValueError("appearance image dimensions must be positive")
 

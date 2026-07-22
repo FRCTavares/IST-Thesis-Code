@@ -29,7 +29,6 @@ def bbox_to_msg_geometry(
     tracks_are_normalized: bool,
 ) -> tuple[float, float, float, float]:
     """Convert TIM bbox xyxy into TargetState cx/cy/w/h geometry."""
-
     x1, y1, x2, y2 = bbox
     cx = 0.5 * (x1 + x2)
     cy = 0.5 * (y1 + y2)
@@ -56,7 +55,6 @@ def target_msg_from_output(
     zero_id_when_not_visible: bool,
 ) -> TargetState:
     """Create the controller-facing TargetState message from TIM output."""
-
     target_msg = TargetState()
 
     if (

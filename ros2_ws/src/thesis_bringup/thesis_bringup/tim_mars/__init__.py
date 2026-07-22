@@ -9,4 +9,3 @@ Pure algorithmic logic is kept separate from ROS glue:
 - policy/scoring modules own geometry, appearance, ambiguity, and recovery helpers.
 - ros_params.py, ros_messages.py, and target_memory_mars_node.py own ROS integration.
 """
-

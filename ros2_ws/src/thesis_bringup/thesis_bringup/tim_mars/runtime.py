@@ -112,13 +112,11 @@ class TimMarsRuntime:
     @staticmethod
     def stamp_to_ns(stamp: Any) -> int:
         """Convert a ROS-style sec/nanosec timestamp to integer nanoseconds."""
-
         return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
 
     @classmethod
     def track_time_ns(cls, tracks_msg: Any) -> Optional[int]:
         """Resolve the trustworthy timestamp of a tracker message."""
-
         header = getattr(tracks_msg, "header", None)
         stamp = getattr(header, "stamp", None)
 
@@ -135,7 +133,6 @@ class TimMarsRuntime:
 
     def add_image(self, stamp_ns: int, image_bgr: Any) -> bool:
         """Insert or replace a timestamped image in deterministic stamp order."""
-
         stamp_ns = int(stamp_ns)
         if stamp_ns <= 0:
             return False
@@ -167,7 +164,6 @@ class TimMarsRuntime:
         Duplicate timestamps are resolved deterministically using the final
         supplied value for that timestamp. Invalid timestamps are discarded.
         """
-
         images_by_stamp: dict[int, Any] = {}
 
         for stamp_ns, image_bgr in images:
@@ -187,7 +183,6 @@ class TimMarsRuntime:
         track_timestamp_ns: int,
     ) -> Optional[AppearanceFrame]:
         """Select the latest image whose timestamp is not after the tracks."""
-
         if not self._images:
             return None
 
@@ -201,7 +196,6 @@ class TimMarsRuntime:
 
     def request_selection(self, track_id: int) -> None:
         """Request selection of a tracker ID when it next becomes visible."""
-
         track_id = int(track_id)
 
         if track_id <= 0:
@@ -212,13 +206,11 @@ class TimMarsRuntime:
 
     def clear(self) -> TargetMemoryOutput:
         """Clear target memory and pending selection state."""
-
         self.pending_select_id = None
         return self.memory.clear()
 
     def candidate_from_track(self, track: Any) -> CandidateTrack:
         """Convert a tracker message object to the pure CandidateTrack type."""
-
         cx = float(track.cx)
         cy = float(track.cy)
         width = float(track.w)
@@ -247,7 +239,6 @@ class TimMarsRuntime:
 
     def process_tracks(self, tracks_msg: Any) -> TimMarsRuntimeResult:
         """Process one tracker message using deterministic causal evidence."""
-
         track_frame_id = int(
             getattr(tracks_msg, "frame_id", 0)
         )
@@ -419,7 +410,6 @@ class TimMarsRuntime:
 
     def clip_bbox(self, bbox: BBox) -> BBox:
         """Clip a bbox to the configured candidate coordinate frame."""
-
         x1, y1, x2, y2 = bbox
 
         return (

@@ -58,5 +58,3 @@ def _bbox_to_xywh(bbox) -> tuple[float | None, float | None, float | None, float
         )
 
     return None, None, None, None
-
-

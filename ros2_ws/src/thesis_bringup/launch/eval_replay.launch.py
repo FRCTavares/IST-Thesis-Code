@@ -30,7 +30,7 @@ def _setup(context, *args, **kwargs):
     # Get config file path based on tracker type
     bringup_share = get_package_share_directory("thesis_bringup")
     config_file = os.path.join(bringup_share, "config", f"tracker_{tracker_type}.yaml")
-    
+
     # Validate tracker type
     if not os.path.exists(config_file):
         raise ValueError(f"Unknown tracker type: {tracker_type}. Config file not found: {config_file}")

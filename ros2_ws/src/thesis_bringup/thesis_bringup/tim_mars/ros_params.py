@@ -56,7 +56,6 @@ class TimMarsRosParams:
 
 def declare_tim_mars_parameters(node: Any) -> None:
     """Declare all ROS parameters consumed by the TIM-MARS node."""
-
     # ROS topic wiring.
     node.declare_parameter("tracks_topic", "/tracks")
     node.declare_parameter("target_topic", "/target_memory_mars")
@@ -224,7 +223,6 @@ def declare_tim_mars_parameters(node: Any) -> None:
 
 def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
     """Read ROS-facing TIM-MARS parameters after declaration/overrides."""
-
     return TimMarsRosParams(
         tracks_topic=str(node.get_parameter("tracks_topic").value),
         target_topic=str(node.get_parameter("target_topic").value),
@@ -338,7 +336,6 @@ def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
 
 def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMemoryConfig:
     """Build the pure TIM algorithm config from ROS parameters."""
-
     return TargetMemoryConfig(
         image_width=params.image_width,
         image_height=params.image_height,

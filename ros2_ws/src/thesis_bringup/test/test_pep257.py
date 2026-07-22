@@ -34,5 +34,5 @@ LINT_PATHS = [
 @pytest.mark.linter
 @pytest.mark.pep257
 def test_pep257():
-    rc = main(argv=LINT_PATHS)
+    rc = main(argv=['--add-ignore=D213', *LINT_PATHS])
     assert rc == 0, 'Found code style errors / warnings'

@@ -48,7 +48,6 @@ class PositiveAppearanceMemory:
         appearance: Any,
     ) -> bool:
         """Start a new operator-authorized identity lineage."""
-
         self.clear()
         self.operator_track_id = int(track_id)
         self.current_lineage_track_id = int(track_id)

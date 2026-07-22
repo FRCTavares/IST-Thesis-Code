@@ -148,7 +148,6 @@ class TargetIdentityMemory:
     @property
     def appearance_update_cooldown_frames_remaining(self) -> int:
         """Remaining frames before positive appearance updates resume."""
-
         return int(self._appearance_update_cooldown_frames_remaining)
 
     def _reset_positive_memory_diagnostics(self) -> None:
@@ -181,7 +180,6 @@ class TargetIdentityMemory:
         track: CandidateTrack,
     ) -> TargetMemoryOutput:
         """Operator selects a visible track as the active target."""
-
         self._reset_positive_memory_diagnostics()
         self._reset_hard_negative_diagnostics()
 
@@ -250,7 +248,6 @@ class TargetIdentityMemory:
         candidates: Sequence[CandidateTrack],
     ) -> TargetMemoryOutput:
         """Update target memory from current tracker candidates."""
-
         self._reset_positive_memory_diagnostics()
         self._reset_hard_negative_diagnostics()
 
@@ -790,7 +787,6 @@ class TargetIdentityMemory:
         return from UNCERTAIN or LOST remains untrusted and requires an actual
         candidate embedding while appearance mode is active.
         """
-
         if not self.cfg.appearance_enabled:
             return None
 
@@ -822,7 +818,6 @@ class TargetIdentityMemory:
         id_switch: bool,
     ) -> Optional[str]:
         """Return why appearance evidence cannot authorize a tracker-ID change."""
-
         if (
             not id_switch
             or not self.cfg.allow_id_switch_recovery
@@ -871,7 +866,6 @@ class TargetIdentityMemory:
         identity memory, the candidate is ambiguous, or the immutable operator
         anchor does not provide the configured minimum agreement.
         """
-
         if (
             not reacquired
             or not self.cfg.appearance_protected_memory_enabled
@@ -1353,7 +1347,6 @@ class TargetIdentityMemory:
         prevents appearance-driven new-ID reacquisition during short-gap
         ambiguity when the crop may contain another person.
         """
-
         for other in candidates:
             if int(other.track_id) == int(candidate.track_id):
                 continue
@@ -1472,7 +1465,6 @@ class TargetIdentityMemory:
         appearance: float,
     ) -> CandidateScore:
         """Return a score copy exposing rank-aware appearance evidence."""
-
         return CandidateScore(
             track_id=score.track_id,
             total=score.total,

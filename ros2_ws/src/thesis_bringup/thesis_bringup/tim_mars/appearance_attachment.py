@@ -127,7 +127,6 @@ def map_bbox_to_appearance_image(
     image_height: int,
 ) -> tuple[float, float, float, float]:
     """Map a candidate-frame bbox into the appearance-image frame."""
-
     if candidate_frame_width <= 0.0:
         raise ValueError("candidate frame width must be positive")
 
@@ -158,7 +157,6 @@ def reset_appearance_lifecycle(
     must not cause the same previously encoded image to be immediately encoded
     again as if it were new evidence.
     """
-
     state.frame_generation += 1
     state.last_frame_id = None
     state.track_generation_by_id.clear()
@@ -224,7 +222,6 @@ def reconcile_appearance_track_lifecycle(
     image_height: float,
 ) -> None:
     """Update tracker-instance generations before cache lookup or encoding."""
-
     frame_id = int(frame_id)
 
     if frame_id <= 0:

@@ -1,2 +1,1 @@
-"""Perception nodes and helpers for camera-to-detection runtime pipelines.
-"""
+"""Perception nodes and helpers for camera-to-detection runtime pipelines."""

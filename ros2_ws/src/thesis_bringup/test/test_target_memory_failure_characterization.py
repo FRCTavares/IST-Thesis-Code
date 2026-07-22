@@ -85,7 +85,6 @@ def select_stable_target(tim, target_appearance):
 
 def test_current_single_new_id_can_reacquire_despite_conflicting_appearance():
     """Current ranking can accept geometry while contradictory appearance is unused."""
-
     selected_appearance = feat([1.0, 0.0, 0.0])
     wrong_appearance = feat([0.0, 1.0, 0.0])
 
@@ -118,7 +117,6 @@ def test_current_single_new_id_can_reacquire_despite_conflicting_appearance():
 
 def test_current_wrong_reacquisition_becomes_locked_on_next_same_id_frame():
     """A newly accepted wrong ID inherits normal same-ID continuity immediately."""
-
     selected_appearance = feat([1.0, 0.0, 0.0])
     wrong_appearance = feat([0.0, 1.0, 0.0])
 
@@ -157,7 +155,6 @@ def test_current_wrong_reacquisition_becomes_locked_on_next_same_id_frame():
 
 def test_current_locked_wrong_lineage_updates_positive_appearance_memory():
     """Once a wrong lineage is LOCKED, adaptive positive memory learns from it."""
-
     selected_appearance = feat([1.0, 0.0, 0.0])
     wrong_appearance = feat([0.0, 1.0, 0.0])
 

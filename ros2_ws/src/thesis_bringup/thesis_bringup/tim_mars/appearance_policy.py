@@ -27,7 +27,6 @@ from thesis_bringup.tim_mars.types import (
 
 def geometry_allows_appearance(score: CandidateScore) -> bool:
     """Return whether geometry is plausible enough to consult appearance."""
-
     return bool(
         score.iou > 0.0
         or (score.distance >= 0.25 and score.scale >= 0.35)
@@ -42,7 +41,6 @@ def should_use_appearance(
     base_ambiguous: bool,
 ) -> bool:
     """Return whether positive appearance should affect candidate scoring."""
-
     if not cfg.appearance_enabled:
         return False
     if positive_appearance is None:
@@ -66,7 +64,6 @@ def score_with_appearance(
     protected_only: bool = False,
 ) -> CandidateScore:
     """Return a base score enriched with appearance evidence."""
-
     appearance_score = 0.0
     appearance_raw = 0.0
     appearance_used = False

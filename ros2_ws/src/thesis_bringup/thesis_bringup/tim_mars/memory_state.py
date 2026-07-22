@@ -37,5 +37,3 @@ def _control_mode_for_state(state: TargetState) -> ControlMode:
     if state == TargetState.REACQUIRED:
         return ControlMode.CONFIRM
     return ControlMode.HOVER
-
-

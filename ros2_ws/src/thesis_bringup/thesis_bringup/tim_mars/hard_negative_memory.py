@@ -69,7 +69,6 @@ class HardNegativeMemory:
     @property
     def entries(self) -> tuple[HardNegativeEntry, ...]:
         """Return provenance-bearing views of stored prototypes."""
-
         result = []
         for entry in self._memory:
             if isinstance(entry, HardNegativeEntry):
@@ -93,7 +92,6 @@ class HardNegativeMemory:
     @property
     def pending_entries(self) -> tuple[HardNegativeEntry, ...]:
         """Return staged evidence that cannot reject candidates yet."""
-
         return tuple(self._pending)
 
     def clear(self) -> None:
@@ -106,7 +104,6 @@ class HardNegativeMemory:
         selected_track_id: int | None = None,
     ) -> tuple[HardNegativeMemoryEvent, ...]:
         """Expire staged evidence after trusted continuity is broken."""
-
         memory_size = len(self._memory)
         events = tuple(
             HardNegativeMemoryEvent(
@@ -133,7 +130,6 @@ class HardNegativeMemory:
         selected_track_id: int | None = None,
     ) -> tuple[HardNegativeMemoryEvent, ...]:
         """Remove negative evidence incompatible with a selected identity."""
-
         if appearance is None:
             return ()
 

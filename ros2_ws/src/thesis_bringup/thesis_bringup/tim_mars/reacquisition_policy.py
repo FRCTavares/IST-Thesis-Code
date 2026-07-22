@@ -28,7 +28,6 @@ class CandidateBeliefConfirmation:
 
     def observe(self, track_id: int) -> int:
         """Record one frame for track_id and return its current confirmation count."""
-
         if self.candidate_id == track_id:
             self.confirm_count += 1
         else:
@@ -50,7 +49,6 @@ class AbsenceRecoveryConfirmation:
 
     def observe(self, track_id: int) -> int:
         """Record one frame for track_id and return its current confirmation count."""
-
         if self.candidate_id == track_id:
             self.confirm_count += 1
         else:
@@ -72,7 +70,6 @@ class RankAwareReacquisitionConfirmation:
 
     def observe(self, track_id: int) -> int:
         """Record one frame for track_id and return its current confirmation count."""
-
         if self.candidate_id == track_id:
             self.confirm_count += 1
         else:
@@ -83,7 +80,6 @@ class RankAwareReacquisitionConfirmation:
 
 def appearance_margin(selected: CandidateScore, scores_sorted: List[CandidateScore]) -> float:
     """Return selected appearance margin over other plausible candidates."""
-
     other_apps = [
         float(s.appearance_raw)
         for s in scores_sorted
@@ -94,7 +90,6 @@ def appearance_margin(selected: CandidateScore, scores_sorted: List[CandidateSco
 
 def geometry_strength(score: Optional[CandidateScore]) -> float:
     """Return strongest geometric cue in a candidate score."""
-
     if score is None:
         return 0.0
     return max(float(score.iou), float(score.distance), float(score.scale))
@@ -107,7 +102,6 @@ def scene_ambiguity_risk(
     cfg: TargetMemoryConfig,
 ) -> bool:
     """Return whether the scene is risky due to close competing evidence."""
-
     if best is None:
         return False
     if bool(best.ambiguous):
@@ -129,7 +123,6 @@ def absence_risk(
     cfg: TargetMemoryConfig,
 ) -> bool:
     """Return whether TIM is in the configured absence-risk window."""
-
     if not cfg.absence_recovery_enabled:
         return False
     return (

@@ -1,2 +1,1 @@
-"""Controller-reference nodes for selected-target following experiments.
-"""
+"""Controller-reference nodes for selected-target following experiments."""

@@ -71,7 +71,6 @@ def distance_similarity(distance_norm: float, sigma: float) -> float:
 
 def scale_similarity(a: BBox, b: BBox, sigma: float) -> float:
     """Return 1 for equal area, decaying with log-area ratio."""
-
     area_a = bbox_area(a)
     area_b = bbox_area(b)
     if area_a <= 1e-6 or area_b <= 1e-6:
@@ -89,7 +88,6 @@ def score_candidate(
     cfg: TargetMemoryConfig,
 ) -> CandidateScore:
     """Score one candidate against the selected-target memory."""
-
     iou_score = bbox_iou(reference_bbox, candidate.bbox)
     dist = centre_distance_norm(reference_bbox, candidate.bbox, cfg.image_width, cfg.image_height)
     dist_score = distance_similarity(dist, cfg.distance_sigma)

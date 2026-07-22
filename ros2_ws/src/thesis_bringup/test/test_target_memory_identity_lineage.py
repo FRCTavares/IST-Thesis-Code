@@ -43,7 +43,6 @@ def test_new_id_with_conflicting_appearance_cannot_reacquire_on_geometry_alone()
     even when its available appearance is incompatible with the selected
     target.
     """
-
     selected_appearance = feat([1.0, 0.0, 0.0])
     distractor_appearance = feat([0.0, 1.0, 0.0])
 
@@ -123,7 +122,6 @@ def test_new_id_with_conflicting_appearance_cannot_reacquire_on_geometry_alone()
 
 def test_target_like_duplicate_does_not_become_hard_negative():
     """A duplicate or target fragment must not poison negative memory."""
-
     selected_appearance = feat([1.0, 0.0, 0.0])
     target_like_duplicate = feat([0.995, 0.100, 0.0])
 
@@ -194,7 +192,6 @@ def test_uninterrupted_same_id_is_not_rejected_after_appearance_shift():
     models the Seq01 failure where hard-negative memory suppresses the physical
     target without any tracker-ID handover.
     """
-
     selected_appearance = feat([1.0, 0.0, 0.0])
     learned_distractor = feat([0.94, 0.341, 0.0])
     shifted_target = feat([0.98, 0.199, 0.0])
@@ -269,4 +266,3 @@ def test_uninterrupted_same_id_is_not_rejected_after_appearance_shift():
     assert continued.target_track_id == 1
     assert continued.visible
     assert continued.control_valid
-
