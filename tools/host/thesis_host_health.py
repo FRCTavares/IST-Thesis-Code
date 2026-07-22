@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Conservative host-only availability monitor for the thesis Raspberry Pi.
 
-The monitor may reconnect the configured NetworkManager device, restart
-tailscaled, or restart the SSH socket after repeated failures. It never starts
+In unattended mode the monitor may reconnect Wi-Fi, restart tailscaled, or
+restart the SSH socket after repeated failures. In Pixhawk mode it requires the
+configured AERONEXT Wi-Fi profile and keeps tailscaled stopped. It never starts
 ROS, MAVROS, the live thesis stack, or any aircraft-facing process.
 """
 
@@ -72,6 +73,8 @@ def command_stdout(
 def inspect_host(
     *,
     interface: str,
+    mode: str,
+    pixhawk_wifi_connection: str,
     root_path: Path,
     min_free_bytes: int,
     runner: Callable[..., subprocess.CompletedProcess[str]] = run_command,
@@ -81,13 +84,24 @@ def inspect_host(
         runner,
         ["nmcli", "-g", "GENERAL.STATE", "device", "show", interface],
     )
+    active_wifi_connection = command_stdout(
+        runner,
+        ["nmcli", "-g", "GENERAL.CONNECTION", "device", "show", interface],
+    )
     default_route = bool(
-        command_stdout(runner, ["ip", "route", "show", "default"])
+        command_stdout(
+            runner,
+            ["ip", "route", "show", "default", "dev", interface],
+        )
     )
 
     tailscale_backend = "Unavailable"
     tailscale_online = False
-    tailscale_raw = command_stdout(runner, ["tailscale", "status", "--json"])
+    tailscale_raw = ""
+    if mode == "unattended":
+        tailscale_raw = command_stdout(
+            runner, ["tailscale", "status", "--json"]
+        )
     if tailscale_raw:
         try:
             tailscale_status = json.loads(tailscale_raw)
@@ -119,17 +133,32 @@ def inspect_host(
     )
 
     network_connected = nm_state.startswith("100")
-    network_ok = network_manager_active and network_connected and default_route
-    tailscale_ok = (
-        tailscaled_active
-        and tailscale_backend == "Running"
-        and tailscale_online
+    expected_wifi_active = (
+        mode != "pixhawk"
+        or active_wifi_connection == pixhawk_wifi_connection
     )
+    network_ok = (
+        network_manager_active
+        and network_connected
+        and default_route
+        and expected_wifi_active
+    )
+    if mode == "pixhawk":
+        tailscale_backend = "DisabledByPixhawkMode"
+        tailscale_ok = not tailscaled_active
+    else:
+        tailscale_ok = (
+            tailscaled_active
+            and tailscale_backend == "Running"
+            and tailscale_online
+        )
     ssh_ok = ssh_socket_active or ssh_service_active
 
     return {
         "network_manager_active": network_manager_active,
         "network_connected": network_connected,
+        "active_wifi_connection": active_wifi_connection,
+        "expected_wifi_active": expected_wifi_active,
         "default_route": default_route,
         "network_ok": network_ok,
         "tailscaled_active": tailscaled_active,
@@ -193,6 +222,7 @@ def choose_recovery_actions(
     now_epoch: int,
     failure_threshold: int,
     cooldown_seconds: int,
+    mode: str = "unattended",
 ) -> list[str]:
     """Choose bounded host-only recovery actions."""
     actions: list[str] = []
@@ -207,7 +237,10 @@ def choose_recovery_actions(
 
     if not snapshot["network_ok"] and eligible("network"):
         actions.append("network_reconnect")
-    if (
+    if mode == "pixhawk":
+        if snapshot["tailscaled_active"]:
+            actions.append("tailscale_stop")
+    elif (
         snapshot["network_ok"]
         and not snapshot["tailscale_ok"]
         and eligible("tailscale")
@@ -221,12 +254,14 @@ def choose_recovery_actions(
 ACTION_COMMANDS: dict[str, list[str]] = {
     "network_reconnect": ["nmcli", "device", "connect"],
     "tailscale_restart": ["systemctl", "restart", "tailscaled.service"],
+    "tailscale_stop": ["systemctl", "stop", "tailscaled.service"],
     "ssh_socket_restart": ["systemctl", "restart", "ssh.socket"],
 }
 
 ACTION_STATE_NAMES = {
     "network_reconnect": "network",
     "tailscale_restart": "tailscale",
+    "tailscale_stop": "tailscale",
     "ssh_socket_restart": "ssh",
 }
 
@@ -235,6 +270,8 @@ def execute_actions(
     actions: Sequence[str],
     *,
     interface: str,
+    mode: str = "unattended",
+    pixhawk_wifi_connection: str = "",
     dry_run: bool,
     runner: Callable[..., subprocess.CompletedProcess[str]] = run_command,
 ) -> dict[str, int]:
@@ -243,7 +280,17 @@ def execute_actions(
     for action in actions:
         command = list(ACTION_COMMANDS[action])
         if action == "network_reconnect":
-            command.append(interface)
+            if mode == "pixhawk":
+                command = [
+                    "nmcli",
+                    "connection",
+                    "up",
+                    pixhawk_wifi_connection,
+                    "ifname",
+                    interface,
+                ]
+            else:
+                command.append(interface)
         if dry_run:
             results[action] = 0
             continue
@@ -255,8 +302,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command-line and environment configuration."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--mode",
+        choices=("unattended", "pixhawk"),
+        default=os.environ.get("THESIS_HOST_MODE", "unattended"),
+    )
+    parser.add_argument(
         "--interface",
         default=os.environ.get("THESIS_HOST_INTERFACE", "wlan0"),
+    )
+    parser.add_argument(
+        "--pixhawk-wifi-connection",
+        default=os.environ.get(
+            "THESIS_HOST_PIXHAWK_WIFI_CONNECTION", "ISR Aero.Next GCS"
+        ),
     )
     parser.add_argument(
         "--state-dir",
@@ -297,11 +355,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit("--cooldown-seconds must be at least 60")
     if args.min_free_gib <= 0:
         raise SystemExit("--min-free-gib must be positive")
+    if args.mode == "pixhawk" and not args.pixhawk_wifi_connection.strip():
+        raise SystemExit("Pixhawk mode requires a Wi-Fi connection profile")
 
     state_path = args.state_dir / "state.json"
     state = load_state(state_path)
     snapshot = inspect_host(
         interface=args.interface,
+        mode=args.mode,
+        pixhawk_wifi_connection=args.pixhawk_wifi_connection,
         root_path=args.root_path,
         min_free_bytes=int(args.min_free_gib * 1024**3),
     )
@@ -313,10 +375,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         now_epoch=now_epoch,
         failure_threshold=args.failure_threshold,
         cooldown_seconds=args.cooldown_seconds,
+        mode=args.mode,
     )
     action_results = execute_actions(
         actions,
         interface=args.interface,
+        mode=args.mode,
+        pixhawk_wifi_connection=args.pixhawk_wifi_connection,
         dry_run=args.dry_run,
     )
 
@@ -341,6 +406,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "actions": action_results,
         "dry_run": args.dry_run,
         "interface": args.interface,
+        "mode": args.mode,
         "snapshot": public_snapshot,
         "state": updated,
     }

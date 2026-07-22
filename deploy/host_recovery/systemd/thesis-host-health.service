@@ -1,8 +1,8 @@
 [Unit]
 Description=Thesis Pi host-only availability health check
 Documentation=file:///home/francisco/Desktop/Thesis-Code/docs/debug/UNATTENDED_PI_OPERATION.md
-After=NetworkManager.service tailscaled.service ssh.socket
-Wants=NetworkManager.service tailscaled.service ssh.socket
+After=NetworkManager.service ssh.socket
+Wants=NetworkManager.service ssh.socket
 ConditionPathExists=/usr/local/libexec/thesis_host_health.py
 
 [Service]

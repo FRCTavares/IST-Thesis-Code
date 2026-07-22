@@ -27,6 +27,7 @@ Open executable issues: **35**.
 
 1. [ ] [#51 — P0.24 Harden unattended Raspberry Pi remote access and crash recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
    - phase 10; live-system; explicitly promoted ahead of #50 by the operator on 22 July 2026. Host availability is independent of flight readiness and must never auto-start aircraft-affecting control.
+   - Pixhawk field mode is fail-closed: `eth0` uses `pixhawk-apm`, upstream/GCS Wi-Fi must be `ISR Aero.Next GCS`, and Tailscale must be stopped.
 
 2. [ ] [#50 — P0.23 Complete flight-readiness gate and record held-out UAV-motion evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
    - phase 10; live-system; resumes immediately after #51. The target-authority (#52), coordinate/image-time (#53), appearance-wiring (#10), and live source-age (#23) prerequisites are closed.

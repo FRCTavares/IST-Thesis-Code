@@ -1048,8 +1048,8 @@ if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
 fi
 
 if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
-    echo "[field] activating pixhawk-apm Ethernet profile"
-    sudo nmcli connection up pixhawk-apm || true
+    echo "[field] enforcing AERONEXT/Pixhawk network mode (Tailscale will stop)"
+    sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk
 
     echo "[field] starting MAVROS Pixhawk 6X Ethernet link"
     export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
@@ -1119,8 +1119,8 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
     fi
 
     if [[ "${SOURCE_MAVROS_RECORD:-0}" -eq 1 ]]; then
-        echo "[source] activating pixhawk-apm Ethernet profile"
-        sudo nmcli connection up pixhawk-apm || true
+        echo "[source] enforcing AERONEXT/Pixhawk network mode (Tailscale will stop)"
+        sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk
 
         echo "[source] starting MAVROS Pixhawk 6X Ethernet link"
         export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"

@@ -52,13 +52,24 @@ Raspberry Pi must be on the same Ethernet subnet as the Pixhawk.
 
 ## 2. Configure or activate the Ethernet profile on the Raspberry Pi
 
-In my setup, the Ubuntu NetworkManager connection profile was named:
+Before activating the Pixhawk link, enter the mandatory field network mode:
+
+    sudo ./tools/host/set_pi_network_mode.sh pixhawk
+
+This requires the `ISR Aero.Next GCS` Wi-Fi profile, activates the Pixhawk
+Ethernet profile without a default route, and stops/disables Tailscale. Do not
+operate the Pixhawk Ethernet link while the Pi is using the unattended/Tailscale
+network mode. Return to remote bench operation only after disconnecting the
+Pixhawk:
+
+    sudo ./tools/host/set_pi_network_mode.sh unattended
+
+The mode command activates the Ubuntu NetworkManager connection profile named:
 
     pixhawk-apm
 
-Activate it with:
-
-    sudo nmcli connection up pixhawk-apm
+Do not activate this profile directly because that would bypass the AERONEXT
+and Tailscale safety checks.
 
 Check the active IP address:
 

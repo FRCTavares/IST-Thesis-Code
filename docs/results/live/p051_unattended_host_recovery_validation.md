@@ -8,13 +8,17 @@ Issue: [#51](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
 
 Implementation and all software-controlled host tests pass. Issue #51 remains
 open pending the physical power-removal/restoration test, external-network
-reconnection, and confirmation of the independent power/watchdog mitigation.
+reconnection, confirmation of the independent power/watchdog mitigation, and
+the physical AERONEXT/Pixhawk mode check.
 
 ## Safety boundary
 
 The deployment enables only NetworkManager, Tailscale, the SSH socket, UFW, and
 the host-health timer. It does not enable or start ROS, MAVROS, perception,
 tracking, TIM, control, arming, recording, or any aircraft-facing service.
+Tailscale is required only in unattended mode. Pixhawk mode instead requires
+`ISR Aero.Next GCS` on `wlan0`, reserves `eth0` for `pixhawk-apm`, and keeps
+Tailscale stopped.
 
 ## Audited baseline
 
@@ -52,6 +56,16 @@ an admin-console expiry change or renewal before departure.
   - restarts Tailscale only when the underlying network is healthy;
   - restarts only `ssh.socket` when SSH is unavailable;
   - emits redacted JSON and never logs credentials or Tailscale peer data.
+  - in Pixhawk mode, rejects every Wi-Fi profile except `ISR Aero.Next GCS`,
+    requires its default route through `wlan0`, and stops rather than restarts
+    Tailscale.
+- `tools/host/set_pi_network_mode.sh`
+  - switches explicitly between `unattended` and `pixhawk` modes;
+  - proves AERONEXT Wi-Fi is active before persisting field mode or stopping
+    Tailscale;
+  - activates `pixhawk-apm` with IPv4/IPv6 default routes disabled;
+  - fails before changing mode if either required NetworkManager profile is
+    absent or AERONEXT cannot connect.
 - `tools/host/install_unattended_host_recovery.sh`
   - validates and backs up system files before installation;
   - installs the host-only systemd, watchdog, journal, and firewall contract;
@@ -71,13 +85,13 @@ an admin-console expiry change or renewal before departure.
 
 Installed-system backup:
 
-`/var/backups/thesis-host-recovery/20260722T170848Z`
+Latest: `/var/backups/thesis-host-recovery/20260722T174731Z`
 
 ## Automated validation
 
 ```text
-focused host/storage tests: 11 passed
-complete tools suite in sourced ROS environment: 73 passed
+focused host/network tests: 11 passed
+complete tools suite in sourced ROS environment: 78 passed
 bash syntax: passed
 Python byte compilation: passed
 systemd-analyze verify: passed
@@ -102,7 +116,8 @@ After installation:
   five-minute limit window;
 - journald storage fell from 2.1 GiB to approximately 1.0 GiB;
 - UFW became active with default-deny inbound, Tailnet service access only on
-  `tailscale0`, and UDP 41641 allowed on `wlan0` for direct Tailscale transport;
+  `tailscale0`, UDP 41641 allowed on `wlan0` for direct Tailscale transport, and
+  Pixhawk MAVLink UDP 14550 allowed only on `eth0`;
 - a new key-based SSH connection through the Tailscale address passed after the
   firewall change;
 - `tailscale serve status` reported no public serve configuration;
@@ -169,6 +184,18 @@ After installation:
 - final service result: success;
 - result: PASS.
 
+### Pixhawk field-mode policy dry-run
+
+- installed mode before test: `unattended`, home Wi-Fi active, Tailscale active;
+- non-mutating invocation: Pixhawk mode, one-failure threshold, dry-run;
+- observed: the home Wi-Fi profile was rejected (`expected_wifi_active=false`)
+  even though the interface and a default route were present;
+- selected recovery actions: exact AERONEXT connection recovery and
+  `tailscale_stop`; no action was executed in the dry-run;
+- live-stack field and source paths now invoke the fail-closed mode switch
+  instead of activating `pixhawk-apm` directly;
+- result: SOFTWARE POLICY PASS; physical link/profile check remains open.
+
 ## Diagnostics and cleanliness
 
 - recent previous-boot journal is available;
@@ -190,4 +217,7 @@ Do not close Issue #51 until all of these are recorded:
 3. confirmation that a tested smart plug or UPS is available, or a locally
    supervised destructive watchdog-recovery test with the runbook safeguards;
 4. confirmation that the unattended interval ends before 23 August 2026, or
-   that Tailscale key expiry was extended/disabled for this node.
+   that Tailscale key expiry was extended/disabled for this node;
+5. with the Pixhawk connected to `eth0`, locally confirm `pixhawk-apm` is active,
+   `ISR Aero.Next GCS` is the active `wlan0` profile and default route, and
+   `tailscaled.service` is disabled/inactive.

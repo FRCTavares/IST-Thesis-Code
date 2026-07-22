@@ -60,6 +60,7 @@ fi
 
 required_files=(
     "$THESIS_ROOT/tools/host/thesis_host_health.py"
+    "$THESIS_ROOT/tools/host/set_pi_network_mode.sh"
     "$DEPLOY_ROOT/thesis-host-health.service"
     "$DEPLOY_ROOT/thesis-host-health.timer"
     "$DEPLOY_ROOT/thesis-host-health.default"
@@ -85,6 +86,7 @@ systemd-analyze verify \
 
 destinations=(
     "/usr/local/libexec/thesis_host_health.py"
+    "/usr/local/sbin/thesis-network-mode"
     "/etc/systemd/system/thesis-host-health.service"
     "/etc/systemd/system/thesis-host-health.timer"
     "/etc/default/thesis-host-health"
@@ -107,7 +109,7 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
     printf '[dry-run] back up before firewall changes %s\n' "${backup_only[@]}"
     echo "[dry-run] enable NetworkManager.service tailscaled.service ssh.socket thesis-host-health.timer"
     if [[ "$CONFIGURE_FIREWALL" -eq 1 ]]; then
-        echo "[dry-run] enable UFW: deny inbound, allow tailscale0, allow UDP 41641 on $INTERFACE"
+        echo "[dry-run] enable UFW: deny inbound, allow tailscale0, allow UDP 41641 on $INTERFACE, allow Pixhawk UDP 14550 on eth0"
     fi
     echo "[dry-run] no ROS, MAVROS, perception, control, or flight service is enabled"
     exit 0
@@ -141,6 +143,9 @@ done
 install -D -m 0755 \
     "$THESIS_ROOT/tools/host/thesis_host_health.py" \
     /usr/local/libexec/thesis_host_health.py
+install -D -m 0755 \
+    "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" \
+    /usr/local/sbin/thesis-network-mode
 install -D -m 0644 \
     "$DEPLOY_ROOT/thesis-host-health.service" \
     /etc/systemd/system/thesis-host-health.service
@@ -178,6 +183,8 @@ if [[ "$CONFIGURE_FIREWALL" -eq 1 ]]; then
     ufw allow in on tailscale0 comment 'Tailnet only services'
     ufw allow in on "$INTERFACE" proto udp to any port 41641 \
         comment 'Tailscale direct transport'
+    ufw allow in on eth0 proto udp to any port 14550 \
+        comment 'Pixhawk MAVLink Ethernet'
     ufw --force enable
 fi
 

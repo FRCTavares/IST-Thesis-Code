@@ -19,6 +19,7 @@ def _snapshot(**overrides):
         "network_ok": True,
         "tailscale_ok": True,
         "ssh_ok": True,
+        "tailscaled_active": True,
     }
     snapshot.update(overrides)
     return snapshot
@@ -114,6 +115,50 @@ def test_tailscale_and_ssh_recovery_are_host_only_and_bounded():
     ]
 
 
+def test_pixhawk_mode_stops_tailscale_and_never_restarts_it():
+    actions = HOST_HEALTH.choose_recovery_actions(
+        _snapshot(tailscale_ok=False, tailscaled_active=True),
+        _state(tailscale_failures=20),
+        now_epoch=10_000,
+        failure_threshold=3,
+        cooldown_seconds=900,
+        mode="pixhawk",
+    )
+
+    assert actions == ["tailscale_stop"]
+    assert HOST_HEALTH.ACTION_COMMANDS["tailscale_stop"] == [
+        "systemctl",
+        "stop",
+        "tailscaled.service",
+    ]
+
+
+def test_pixhawk_network_recovery_uses_exact_aeronext_profile():
+    commands = []
+
+    def runner(command, *, timeout):
+        import subprocess
+
+        commands.append((list(command), timeout))
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    HOST_HEALTH.execute_actions(
+        ["network_reconnect"],
+        interface="wlan0",
+        mode="pixhawk",
+        pixhawk_wifi_connection="ISR Aero.Next GCS",
+        dry_run=False,
+        runner=runner,
+    )
+
+    assert commands == [
+        ([
+            "nmcli", "connection", "up", "ISR Aero.Next GCS",
+            "ifname", "wlan0",
+        ], 45.0)
+    ]
+
+
 def test_systemd_units_never_start_thesis_or_aircraft_processes():
     service = (DEPLOY_ROOT / "thesis-host-health.service").read_text(
         encoding="utf-8"
@@ -163,5 +208,30 @@ def test_installer_enforces_tailscale_only_inbound_firewall():
     assert "ufw default allow outgoing" in installer
     assert "ufw allow in on tailscale0" in installer
     assert 'proto udp to any port 41641' in installer
+    assert 'ufw allow in on eth0 proto udp to any port 14550' in installer
     assert "ufw allow 22" not in installer
     assert "ufw allow OpenSSH" not in installer
+
+
+def test_field_stack_enters_network_mode_instead_of_direct_ethernet_up():
+    live_stack = (REPO_ROOT / "tools/start_live_stack.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert live_stack.count(
+        'sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk'
+    ) == 2
+    assert "sudo nmcli connection up pixhawk-apm" not in live_stack
+
+
+def test_network_mode_script_is_fail_closed():
+    mode_script = (
+        REPO_ROOT / "tools/host/set_pi_network_mode.sh"
+    ).read_text(encoding="utf-8")
+
+    wifi_up = 'nmcli connection up "$PIXHAWK_WIFI"'
+    mode_persist = "set_mode pixhawk"
+    tailscale_stop = "systemctl disable --now tailscaled.service"
+    assert mode_script.index(wifi_up) < mode_script.index(mode_persist)
+    assert mode_script.index(wifi_up) < mode_script.index(tailscale_stop)
+    assert "ipv4.never-default yes ipv6.never-default yes" in mode_script
