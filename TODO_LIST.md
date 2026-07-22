@@ -6,7 +6,7 @@ closing evidence.
 
 Last reconciled with GitHub: **22 July 2026**.
 
-Open executable issues: **38**.
+Open executable issues: **37**.
 
 ## Execution rules
 
@@ -27,6 +27,10 @@ Open executable issues: **38**.
 
 1. [ ] [#53 — P0.26 Unify live coordinate frames and causal image-time contracts](https://github.com/FRCTavares/IST-Thesis-Code/issues/53)
    - phase 10; live-system; flight blocker; unifies transforms and causal source-image selection across perception, tracking, TIM, UI, and evidence.
+   - software contract in progress: direct-resize inference now maps public boxes
+     back to source pixels, dashboard mapping is source-native, and DeepSORT uses
+     bounded latest-at-or-before image selection; recorded visual alignment
+     evidence is still required before closure.
 
 2. [ ] [#23 — P0.14 Add output freshness](https://github.com/FRCTavares/IST-Thesis-Code/issues/23)
    - phase 6; engineering; now includes source/header age and control fail-closed behavior, not only evaluator freshness.
@@ -66,70 +70,67 @@ Open executable issues: **38**.
 
 ## P1 — Major algorithmic, scientific, engineering, and documentation work
 
-1. [ ] [#48 — P1.23 Restore the current thesis_bringup lint contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/48)
-   - phase 8; engineering; reopened after current HEAD failed the scoped Flake8 test at `test_control_ref_safety.py:9`.
-
-2. [ ] [#8 — P1.1 Simplify recovery confirmation](https://github.com/FRCTavares/IST-Thesis-Code/issues/8)
+1. [ ] [#8 — P1.1 Simplify recovery confirmation](https://github.com/FRCTavares/IST-Thesis-Code/issues/8)
    - phase 2; experiment; keep reacquired lineage probationary until final confirmation.
 
-3. [ ] [#9 — P1.2 Reduce `target_memory.py`](https://github.com/FRCTavares/IST-Thesis-Code/issues/9)
+2. [ ] [#9 — P1.2 Reduce `target_memory.py`](https://github.com/FRCTavares/IST-Thesis-Code/issues/9)
    - phase 2; documentation/refactor; preserve behavior with characterization tests.
 
-4. [ ] [#15 — P1.5 Fix positive-memory bootstrap](https://github.com/FRCTavares/IST-Thesis-Code/issues/15)
+3. [ ] [#15 — P1.5 Fix positive-memory bootstrap](https://github.com/FRCTavares/IST-Thesis-Code/issues/15)
    - phase 3; experiment; accepted-frame ordering is present, but complete provenance and same-ID hijack evidence remain.
 
-5. [ ] [#17 — P1.6 Prevent target fragments becoming negatives](https://github.com/FRCTavares/IST-Thesis-Code/issues/17)
+4. [ ] [#17 — P1.6 Prevent target fragments becoming negatives](https://github.com/FRCTavares/IST-Thesis-Code/issues/17)
    - phase 4; engineering; prove the protection under the canonical profile and resolve the same-ID hard-negative xfail.
 
-6. [ ] [#18 — P1.7 Add hard-negative lifecycle](https://github.com/FRCTavares/IST-Thesis-Code/issues/18)
+5. [ ] [#18 — P1.7 Add hard-negative lifecycle](https://github.com/FRCTavares/IST-Thesis-Code/issues/18)
    - phase 4; engineering; staging/merge/reconciliation exist; committed-entry age, decay decision, full provenance, and visual diagnostics remain.
 
-7. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
+6. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
    - phase 5; engineering.
 
-8. [ ] [#21 — P1.9 Add motion evidence only if it helps](https://github.com/FRCTavares/IST-Thesis-Code/issues/21)
+7. [ ] [#21 — P1.9 Add motion evidence only if it helps](https://github.com/FRCTavares/IST-Thesis-Code/issues/21)
    - phase 5; experiment.
 
-9. [ ] [#25 — P1.10 Improve bbox evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/25)
+8. [ ] [#25 — P1.10 Improve bbox evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/25)
    - phase 6; experiment; use the transform contract from #53.
 
-10. [ ] [#26 — P1.11 Add event and recovery metrics](https://github.com/FRCTavares/IST-Thesis-Code/issues/26)
+9. [ ] [#26 — P1.11 Add event and recovery metrics](https://github.com/FRCTavares/IST-Thesis-Code/issues/26)
     - phase 6; experiment; use the shared evaluator semantics from #24.
 
-11. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30)
+10. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30)
     - phase 7; experiment; includes properly qualified held-out live evidence from #50 when available.
 
-12. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31)
+11. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31)
     - phase 7; experiment.
 
-13. [ ] [#32 — P1.14 Runtime and onboard cost](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
+12. [ ] [#32 — P1.14 Runtime and onboard cost](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
     - phase 7; live-system; includes raw-image DDS/QoS bandwidth and sustained Pi thermal/cadence cost.
 
-14. [ ] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35)
+13. [ ] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35)
     - phase 8; experiment.
 
-15. [ ] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36)
+14. [ ] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36)
     - phase 8; documentation; now includes versions, license, ROS/Python dependencies, and clean-environment installation.
 
-16. [ ] [#37 — P1.17 Create a single reproducibility command](https://github.com/FRCTavares/IST-Thesis-Code/issues/37)
+15. [ ] [#37 — P1.17 Create a single reproducibility command](https://github.com/FRCTavares/IST-Thesis-Code/issues/37)
     - phase 8; experiment; validate deterministic replay and versioned live-run provenance.
 
-17. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54)
+16. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54)
     - phase 10; live-system; feeds #32, #37, and #50; owns the missing integrated-camera `/camera/fps` publisher and recording-contract repair, deferred until the P0 authority/coordinate/freshness blockers are complete.
 
-18. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
+17. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
     - phase 10; engineering; coordinate target-control behavior with #52 and path documentation with #33.
 
-19. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
+18. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
     - phase 9; experiment/documentation.
 
-20. [ ] [#41 — P1.19 Add explicit limitations](https://github.com/FRCTavares/IST-Thesis-Code/issues/41)
+19. [ ] [#41 — P1.19 Add explicit limitations](https://github.com/FRCTavares/IST-Thesis-Code/issues/41)
     - phase 9; experiment/documentation.
 
-21. [ ] [#42 — P1.20 Build final figures](https://github.com/FRCTavares/IST-Thesis-Code/issues/42)
+20. [ ] [#42 — P1.20 Build final figures](https://github.com/FRCTavares/IST-Thesis-Code/issues/42)
     - phase 9; experiment/documentation.
 
-22. [ ] [#44 — P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)](https://github.com/FRCTavares/IST-Thesis-Code/issues/44)
+21. [ ] [#44 — P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)](https://github.com/FRCTavares/IST-Thesis-Code/issues/44)
     - phase 10; live-system; does not block the validated baseline flight profile.
 
 ## P2 — Useful work after the critical path

@@ -27,6 +27,7 @@ from rosidl_runtime_py.utilities import get_message
 
 
 BBox = Tuple[int, int, int, int]
+SOURCE_PIXEL_CONTRACT = "tim_mars_source_pixels_resize_v1"
 
 
 @dataclass
@@ -48,6 +49,12 @@ class TargetState:
     visible: bool = False
     bbox: Optional[BBox] = None
     quality: Optional[float] = None
+
+
+@dataclass(frozen=True)
+class BoxCoordinateContract:
+    source_width: int
+    source_height: int
 
 
 def safe_get(obj: Any, names: Iterable[str], default: Any = None) -> Any:
@@ -73,16 +80,27 @@ def clamp_box(box: Tuple[float, float, float, float], width: int, height: int) -
 
     return x1, y1, x2, y2
 
-def maybe_norm(value: float, size: int) -> float:
+def maybe_norm(value: float, size: int, *, pixel_coordinates: bool = False) -> float:
+    if pixel_coordinates:
+        return value
     if -0.05 <= value <= 1.5:
         return value * size
     return value
 
-def box_center_size(cx: float, cy: float, w: float, h: float, img_w: int, img_h: int) -> BBox:
-    cx = maybe_norm(cx, img_w)
-    cy = maybe_norm(cy, img_h)
-    w = maybe_norm(w, img_w)
-    h = maybe_norm(h, img_h)
+def box_center_size(
+    cx: float,
+    cy: float,
+    w: float,
+    h: float,
+    img_w: int,
+    img_h: int,
+    *,
+    pixel_coordinates: bool = False,
+) -> BBox:
+    cx = maybe_norm(cx, img_w, pixel_coordinates=pixel_coordinates)
+    cy = maybe_norm(cy, img_h, pixel_coordinates=pixel_coordinates)
+    w = maybe_norm(w, img_w, pixel_coordinates=pixel_coordinates)
+    h = maybe_norm(h, img_h, pixel_coordinates=pixel_coordinates)
     return clamp_box((cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2), img_w, img_h)
 
 def box_xywh(x: float, y: float, w: float, h: float, img_w: int, img_h: int) -> BBox:
@@ -166,13 +184,24 @@ def map_overlay_box_to_image(
     sy = img_h / src_h
     return clamp_box((x1 * sx, y1 * sy, x2 * sx, y2 * sy), img_w, img_h)
 
-def bbox_from_any(obj: Any, img_w: int, img_h: int) -> Optional[BBox]:
+def bbox_from_any(
+    obj: Any,
+    img_w: int,
+    img_h: int,
+    *,
+    pixel_coordinates: bool = False,
+) -> Optional[BBox]:
     if obj is None:
         return None
 
     # vision_msgs/Detection2D.bbox, BoundingBox2D
     if hasattr(obj, "bbox"):
-        out = bbox_from_any(obj.bbox, img_w, img_h)
+        out = bbox_from_any(
+            obj.bbox,
+            img_w,
+            img_h,
+            pixel_coordinates=pixel_coordinates,
+        )
         if out is not None:
             return out
 
@@ -184,7 +213,15 @@ def bbox_from_any(obj: Any, img_w: int, img_h: int) -> Optional[BBox]:
         sx = safe_get(obj, ["size_x"])
         sy = safe_get(obj, ["size_y"])
         if all(is_number(v) for v in (cx, cy, sx, sy)):
-            return box_center_size(float(cx), float(cy), float(sx), float(sy), img_w, img_h)
+            return box_center_size(
+                float(cx),
+                float(cy),
+                float(sx),
+                float(sy),
+                img_w,
+                img_h,
+                pixel_coordinates=pixel_coordinates,
+            )
 
     # direct x1 y1 x2 y2
     x1 = safe_get(obj, ["x1", "xmin", "left"])
@@ -200,7 +237,15 @@ def bbox_from_any(obj: Any, img_w: int, img_h: int) -> Optional[BBox]:
     bw = safe_get(obj, ["w", "width", "bbox_w", "target_bbox_w"])
     bh = safe_get(obj, ["h", "height", "bbox_h", "target_bbox_h"])
     if all(is_number(v) for v in (cx, cy, bw, bh)):
-        return box_center_size(float(cx), float(cy), float(bw), float(bh), img_w, img_h)
+        return box_center_size(
+            float(cx),
+            float(cy),
+            float(bw),
+            float(bh),
+            img_w,
+            img_h,
+            pixel_coordinates=pixel_coordinates,
+        )
 
     # x y w h
     x = safe_get(obj, ["x", "bbox_x"])
@@ -212,7 +257,12 @@ def bbox_from_any(obj: Any, img_w: int, img_h: int) -> Optional[BBox]:
 
     for nested in ["box", "bounding_box", "roi"]:
         if hasattr(obj, nested):
-            out = bbox_from_any(getattr(obj, nested), img_w, img_h)
+            out = bbox_from_any(
+                getattr(obj, nested),
+                img_w,
+                img_h,
+                pixel_coordinates=pixel_coordinates,
+            )
             if out is not None:
                 return out
 
@@ -257,21 +307,61 @@ def detection_score(det: Any) -> Optional[float]:
     score = safe_get(det, ["score", "confidence"], None)
     return float(score) if is_number(score) else None
 
-def extract_detections(msg: Any, img_w: int, img_h: int) -> List[DetectionBox]:
+def coordinate_contract_from_message(msg: Any) -> Optional[BoxCoordinateContract]:
+    header = safe_get(msg, ["header"], None)
+    frame_id = str(safe_get(header, ["frame_id"], ""))
+    if not frame_id.startswith(f"{SOURCE_PIXEL_CONTRACT};"):
+        return None
+
+    source_match = re.search(r"(?:^|;)source=(\d+)x(\d+)(?:;|$)", frame_id)
+    if source_match is None:
+        return None
+
+    source_width = int(source_match.group(1))
+    source_height = int(source_match.group(2))
+    if source_width <= 0 or source_height <= 0:
+        return None
+
+    return BoxCoordinateContract(source_width, source_height)
+
+
+def extract_detections(
+    msg: Any,
+    img_w: int,
+    img_h: int,
+    *,
+    pixel_coordinates: bool = False,
+) -> List[DetectionBox]:
     out: List[DetectionBox] = []
 
     for det in safe_get(msg, ["detections"], []):
-        box = bbox_from_any(det, img_w, img_h)
+        box = bbox_from_any(
+            det,
+            img_w,
+            img_h,
+            pixel_coordinates=pixel_coordinates,
+        )
         if box is not None:
             out.append(DetectionBox(bbox=box, score=detection_score(det)))
 
     return out
 
-def extract_tracks(msg: Any, img_w: int, img_h: int) -> List[TrackBox]:
+def extract_tracks(
+    msg: Any,
+    img_w: int,
+    img_h: int,
+    *,
+    pixel_coordinates: bool = False,
+) -> List[TrackBox]:
     out: List[TrackBox] = []
 
     for trk in safe_get(msg, ["tracks"], []):
-        box = bbox_from_any(trk, img_w, img_h)
+        box = bbox_from_any(
+            trk,
+            img_w,
+            img_h,
+            pixel_coordinates=pixel_coordinates,
+        )
         if box is None:
             continue
 
@@ -288,7 +378,13 @@ def extract_tracks(msg: Any, img_w: int, img_h: int) -> List[TrackBox]:
 
     return out
 
-def extract_target(msg: Any, img_w: int, img_h: int) -> TargetState:
+def extract_target(
+    msg: Any,
+    img_w: int,
+    img_h: int,
+    *,
+    pixel_coordinates: bool = False,
+) -> TargetState:
     target_id = safe_get(msg, ["target_id", "track_id", "id", "target_track_id"], 0)
     quality = safe_get(msg, ["quality", "score", "confidence"], None)
 
@@ -305,7 +401,12 @@ def extract_target(msg: Any, img_w: int, img_h: int) -> TargetState:
     return TargetState(
         target_id=int(target_id) if is_number(target_id) else 0,
         visible=bool(is_visible),
-        bbox=bbox_from_any(msg, img_w, img_h),
+        bbox=bbox_from_any(
+            msg,
+            img_w,
+            img_h,
+            pixel_coordinates=pixel_coordinates,
+        ),
         quality=float(quality) if is_number(quality) else None,
     )
 
@@ -596,11 +697,41 @@ def main() -> None:
             continue
 
         if topic == args.detections_topic:
-            latest_dets = extract_detections(msg, overlay_src_w, overlay_src_h)
+            contract = coordinate_contract_from_message(msg)
+            if contract is not None:
+                overlay_src_w = contract.source_width
+                overlay_src_h = contract.source_height
+                overlay_resize_mode = "source"
+            latest_dets = extract_detections(
+                msg,
+                overlay_src_w,
+                overlay_src_h,
+                pixel_coordinates=contract is not None,
+            )
         elif topic == args.tracks_topic:
-            latest_tracks = extract_tracks(msg, overlay_src_w, overlay_src_h)
+            contract = coordinate_contract_from_message(msg)
+            if contract is not None:
+                overlay_src_w = contract.source_width
+                overlay_src_h = contract.source_height
+                overlay_resize_mode = "source"
+            latest_tracks = extract_tracks(
+                msg,
+                overlay_src_w,
+                overlay_src_h,
+                pixel_coordinates=contract is not None,
+            )
         elif topic == args.target_topic:
-            latest_target = extract_target(msg, overlay_src_w, overlay_src_h)
+            contract = coordinate_contract_from_message(msg)
+            if contract is not None:
+                overlay_src_w = contract.source_width
+                overlay_src_h = contract.source_height
+                overlay_resize_mode = "source"
+            latest_target = extract_target(
+                msg,
+                overlay_src_w,
+                overlay_src_h,
+                pixel_coordinates=contract is not None,
+            )
         elif topic == args.camera_fps_topic:
             value = safe_get(msg, ["data"], None)
             if is_number(value):

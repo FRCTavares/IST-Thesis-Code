@@ -15,7 +15,6 @@ from http.server import (
     ThreadingHTTPServer,
 )
 import json
-import math
 import os
 import subprocess
 import threading
@@ -88,7 +87,6 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("img_h", 640)
         self.declare_parameter("camera_ref_w", 1280)
         self.declare_parameter("camera_ref_h", 720)
-        self.declare_parameter("camera_publish_resize_mode", "letterbox")
         self.declare_parameter("detector_container_name", "pi-ai-kit-ubuntu-hailo-ubuntu-pi-1")
         self.declare_parameter("detector_bind", "tcp://0.0.0.0:5556")
         self.declare_parameter("detector_width", 640)
@@ -137,15 +135,6 @@ class DashboardBridgeNode(Node):
         self._img_h = max(1.0, float(self.get_parameter("img_h").value))
         self._camera_ref_w = max(1.0, float(self.get_parameter("camera_ref_w").value))
         self._camera_ref_h = max(1.0, float(self.get_parameter("camera_ref_h").value))
-        self._camera_publish_resize_mode = str(
-            self.get_parameter("camera_publish_resize_mode").value
-        ).strip().lower()
-        if self._camera_publish_resize_mode not in ("resize", "letterbox"):
-            self.get_logger().warn(
-                f"invalid camera_publish_resize_mode="
-                f"'{self._camera_publish_resize_mode}', using letterbox"
-            )
-            self._camera_publish_resize_mode = "letterbox"
         self._detector_container_name = str(self.get_parameter("detector_container_name").value)
         self._detector_bind = str(self.get_parameter("detector_bind").value)
         self._detector_width = int(self.get_parameter("detector_width").value)
@@ -1065,43 +1054,14 @@ exit 1
         w: float,
         h: float,
     ) -> tuple[float, float, float, float]:
-        inf_w = max(1.0, self._img_w)
-        inf_h = max(1.0, self._img_h)
         ref_w = max(1.0, self._camera_ref_w)
         ref_h = max(1.0, self._camera_ref_h)
 
-        if self._camera_publish_resize_mode == "resize":
-            return (
-                self._clamp01(cx / inf_w),
-                self._clamp01(cy / inf_h),
-                self._clamp01(w / inf_w),
-                self._clamp01(h / inf_h),
-            )
-
-        scale = min(inf_w / ref_w, inf_h / ref_h)
-        if not math.isfinite(scale) or scale <= 0.0:
-            return (
-                self._clamp01(cx / inf_w),
-                self._clamp01(cy / inf_h),
-                self._clamp01(w / inf_w),
-                self._clamp01(h / inf_h),
-            )
-
-        out_w = ref_w * scale
-        out_h = ref_h * scale
-        off_x = 0.5 * (inf_w - out_w)
-        off_y = 0.5 * (inf_h - out_h)
-
-        ref_cx = (cx - off_x) / scale
-        ref_cy = (cy - off_y) / scale
-        ref_w_px = w / scale
-        ref_h_px = h / scale
-
         return (
-            self._clamp01(ref_cx / ref_w),
-            self._clamp01(ref_cy / ref_h),
-            self._clamp01(ref_w_px / ref_w),
-            self._clamp01(ref_h_px / ref_h),
+            self._clamp01(cx / ref_w),
+            self._clamp01(cy / ref_h),
+            self._clamp01(w / ref_w),
+            self._clamp01(h / ref_h),
         )
 
     def _on_target_memory_status(self, msg: String) -> None:
@@ -1204,6 +1164,9 @@ exit 1
 
     def _on_timing(self, msg: Timing) -> None:
         with self._state_lock:
+            if int(msg.image_width) > 0 and int(msg.image_height) > 0:
+                self._camera_ref_w = float(msg.image_width)
+                self._camera_ref_h = float(msg.image_height)
             e2e_det_ms = float(msg.e2e_det_ms)
             self._state["e2e_det_ms"] = e2e_det_ms
             pub_dt_ms = float(msg.pub_dt_ms)

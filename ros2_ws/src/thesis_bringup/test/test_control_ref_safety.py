@@ -7,8 +7,8 @@ from types import SimpleNamespace
 import pytest
 
 from thesis_bringup.control.control_ref_node import (
-    ControlRefNode,
     compute_control_command,
+    ControlRefNode,
 )
 
 

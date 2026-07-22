@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from sensor_msgs.msg import Image
+from thesis_bringup.perception.preprocessing import ImageTransform
 
 
 @dataclass
@@ -30,6 +31,7 @@ class PreparedFrame:
     t_color_start_ns: int
     t_color_end_ns: int
     infer_img: np.ndarray
+    transform: ImageTransform
 
 
 @dataclass

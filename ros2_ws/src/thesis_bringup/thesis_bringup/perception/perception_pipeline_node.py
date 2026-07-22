@@ -504,6 +504,7 @@ class PerceptionPipelineNode(Node):
             t_color_start_ns=int(preprocessed.t_color_start_ns),
             t_color_end_ns=int(preprocessed.t_color_end_ns),
             infer_img=np.ascontiguousarray(preprocessed.infer_img).copy(),
+            transform=preprocessed.transform,
         )
 
     def _enqueue_prepared_frame(self, frame: PreparedFrame) -> None:
@@ -606,7 +607,7 @@ class PerceptionPipelineNode(Node):
         frame: PreparedFrame,
         result: dict[str, Any],
     ) -> Detection2DArray:
-        det_header_frame_id = f"frame_{frame.frame_id}"
+        det_header_frame_id = frame.transform.detection_frame_id(frame.frame_id)
 
         det_arr = Detection2DArray()
         det_arr.header.stamp.sec = int(frame.stamp_sec)
@@ -652,11 +653,24 @@ class PerceptionPipelineNode(Node):
             else:
                 continue
 
+            x1_px = cx_px - 0.5 * w_px
+            y1_px = cy_px - 0.5 * h_px
+            x2_px = cx_px + 0.5 * w_px
+            y2_px = cy_px + 0.5 * h_px
+            source_box = frame.transform.inference_xyxy_to_source(
+                (x1_px, y1_px, x2_px, y2_px),
+            )
+            source_x1, source_y1, source_x2, source_y2 = source_box
+            source_w = max(0.0, source_x2 - source_x1)
+            source_h = max(0.0, source_y2 - source_y1)
+            if source_w <= 0.0 or source_h <= 0.0:
+                continue
+
             det = Detection2D()
-            det.bbox.center.position.x = float(cx_px)
-            det.bbox.center.position.y = float(cy_px)
-            det.bbox.size_x = float(w_px)
-            det.bbox.size_y = float(h_px)
+            det.bbox.center.position.x = float(source_x1 + 0.5 * source_w)
+            det.bbox.center.position.y = float(source_y1 + 0.5 * source_h)
+            det.bbox.size_x = float(source_w)
+            det.bbox.size_y = float(source_h)
 
             hyp = ObjectHypothesisWithPose()
             if det_label:

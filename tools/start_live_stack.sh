@@ -645,7 +645,6 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         -p img_h:=640 \
         -p camera_ref_w:=$CAMERA_WIDTH \
         -p camera_ref_h:=$CAMERA_HEIGHT \
-        -p camera_publish_resize_mode:=$CAMERA_PUBLISH_RESIZE_MODE \
         -p enable_container_model_switch_api:=$DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL \
         -p runtime_reconfiguration_enabled:=$DASHBOARD_RUNTIME_RECONFIGURATION_BOOL \
         -p target_authority_event_log_path:="$TARGET_AUTHORITY_EVENT_LOG" \
@@ -674,6 +673,8 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
             -p target_topic:=/target_memory_mars \
             -p status_topic:=/target_memory_mars/status \
             -p select_topic:=/target_memory_mars/select \
+            -p image_width:=${CAMERA_WIDTH}.0 \
+            -p image_height:=${CAMERA_HEIGHT}.0 \
             -p appearance_enabled:="$TARGET_MEMORY_APPEARANCE_BOOL" \
             -p appearance_image_topic:="$TARGET_MEMORY_MARS_IMAGE_TOPIC" \
             -p mars_model_path:="$TARGET_MEMORY_MARS_MODEL_PATH"
@@ -701,6 +702,8 @@ fi
 if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
     start_ros_bg control ros2 run thesis_bringup control_ref_node --ros-args \
         -p target_topic:=/target_memory_mars \
+        -p img_w:=${CAMERA_WIDTH}.0 \
+        -p img_h:=${CAMERA_HEIGHT}.0 \
         -p enable_mavros:=$CONTROL_MAVROS_BOOL \
         -p cmd_frame_id:=base_link \
         -p mavros_frame_id:=base_link \

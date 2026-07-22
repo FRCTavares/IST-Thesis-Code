@@ -7,6 +7,7 @@ appearance feature is an L2-normalized color-histogram crop descriptor.
 
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
 from enum import IntEnum
 import math
@@ -520,6 +521,71 @@ class MarsSmall128Extractor:
         return outputs
 
 
+@dataclass(frozen=True)
+class CausalImageFrame:
+    """One timestamped source image selected for a tracker update."""
+
+    stamp_ns: int
+    image_bgr: np.ndarray
+
+
+class CausalImageBuffer:
+    """Bounded deterministic buffer for latest-at-or-before image selection."""
+
+    def __init__(self, max_size: int = 64) -> None:
+        self.max_size = max(1, int(max_size))
+        self._stamps: list[int] = []
+        self._images: list[np.ndarray] = []
+
+    def clear(self) -> None:
+        """Remove all buffered source images."""
+        self._stamps.clear()
+        self._images.clear()
+
+    def add(self, stamp_ns: int, image_bgr: np.ndarray) -> bool:
+        """Insert by timestamp; replace duplicates and accept out-of-order input."""
+        stamp_ns = int(stamp_ns)
+        if stamp_ns <= 0:
+            return False
+
+        index = bisect_left(self._stamps, stamp_ns)
+        if index < len(self._stamps) and self._stamps[index] == stamp_ns:
+            self._images[index] = image_bgr
+        else:
+            self._stamps.insert(index, stamp_ns)
+            self._images.insert(index, image_bgr)
+
+        overflow = len(self._stamps) - self.max_size
+        if overflow > 0:
+            del self._stamps[:overflow]
+            del self._images[:overflow]
+        return True
+
+    def select(
+        self,
+        track_stamp_ns: int,
+        max_age_ns: int,
+    ) -> CausalImageFrame | None:
+        """Select the freshest non-future image within the allowed age."""
+        track_stamp_ns = int(track_stamp_ns)
+        if track_stamp_ns <= 0 or not self._stamps:
+            return None
+
+        index = bisect_right(self._stamps, track_stamp_ns) - 1
+        if index < 0:
+            return None
+
+        image_stamp_ns = self._stamps[index]
+        age_ns = track_stamp_ns - image_stamp_ns
+        if age_ns < 0 or age_ns > max(0, int(max_age_ns)):
+            return None
+
+        return CausalImageFrame(
+            stamp_ns=image_stamp_ns,
+            image_bgr=self._images[index],
+        )
+
+
 class DeepSortBackend:
     """DeepSORT tracker backend using local crop features as the appearance descriptor."""
 
@@ -533,6 +599,8 @@ class DeepSortBackend:
         only_position_gating: bool = False,
         reid_model_path: str = "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb",
         reid_batch_size: int = 32,
+        image_buffer_size: int = 64,
+        max_image_age_ms: float = 250.0,
     ) -> None:
         """Initialize DeepSORT motion, appearance, lifecycle, and image state."""
         self.max_age = int(max_age)
@@ -548,8 +616,12 @@ class DeepSortBackend:
         self.kf = DeepSortKalmanFilter()
         self._next_id = 1
         self._tracks: list[DeepSortTrack] = []
-        self._latest_image: np.ndarray | None = None
-        self._latest_image_stamp_ns: int = 0
+        self._image_buffer = CausalImageBuffer(max_size=image_buffer_size)
+        self._max_image_age_ns = max(
+            0,
+            int(float(max_image_age_ms) * 1_000_000.0),
+        )
+        self.selected_image_stamp_ns: int | None = None
 
         if not reid_model_path:
             raise ValueError(
@@ -569,11 +641,11 @@ class DeepSortBackend:
         self._tracks.clear()
         self.metric.samples.clear()
         self._next_id = 1
-        self._latest_image = None
-        self._latest_image_stamp_ns = 0
+        self._image_buffer.clear()
+        self.selected_image_stamp_ns = None
 
     def update_latest_image(self, image_msg: Image) -> None:
-        """Store a valid ROS image for subsequent appearance extraction."""
+        """Buffer a valid timestamped source image for causal extraction."""
         image_encoding = str(image_msg.encoding).lower()
         if image_encoding not in ("rgb8", "bgr8"):
             return
@@ -604,10 +676,13 @@ class DeepSortBackend:
         if image_encoding == "rgb8":
             img = img[:, :, ::-1]
 
-        self._latest_image = np.ascontiguousarray(img.copy())
-        self._latest_image_stamp_ns = (
+        image_stamp_ns = (
             int(image_msg.header.stamp.sec) * 1_000_000_000
             + int(image_msg.header.stamp.nanosec)
+        )
+        self._image_buffer.add(
+            image_stamp_ns,
+            np.ascontiguousarray(img.copy()),
         )
 
     def _make_detections(
@@ -616,12 +691,19 @@ class DeepSortBackend:
         scores: list[float],
         frame_time_ns: int,
     ) -> list[DeepSortDetection]:
-        del frame_time_ns
-
-        if self._latest_image is None:
+        selected_image = self._image_buffer.select(
+            frame_time_ns,
+            self._max_image_age_ns,
+        )
+        if selected_image is None:
+            self.selected_image_stamp_ns = None
             return []
 
-        features = self.reid_extractor.encode(self._latest_image, dets_xyxy)
+        self.selected_image_stamp_ns = selected_image.stamp_ns
+        features = self.reid_extractor.encode(
+            selected_image.image_bgr,
+            dets_xyxy,
+        )
 
         detections: list[DeepSortDetection] = []
 

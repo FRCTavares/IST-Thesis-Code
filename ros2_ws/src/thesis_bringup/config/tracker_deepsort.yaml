@@ -19,4 +19,6 @@ tracker_node:
 
     # Appearance input and extraction
     image_topic: "/camera/image_raw"
+    image_buffer_size: 64
+    max_image_age_ms: 250.0
     reid_batch_size: 32

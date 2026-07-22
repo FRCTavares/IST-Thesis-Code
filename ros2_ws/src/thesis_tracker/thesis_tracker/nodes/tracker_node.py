@@ -49,10 +49,13 @@ def xyxy_to_cxcywh(b: BBox) -> Tuple[float, float, float, float]:
 
 
 def _parse_frame_id(frame_id_str: str) -> int:
-    """Parse frame ID from 'frame_<int>' format."""
+    """Parse legacy or versioned coordinate-contract frame identifiers."""
     try:
         if frame_id_str.startswith("frame_"):
             return int(frame_id_str.split("_", 1)[1])
+        for field in frame_id_str.split(";"):
+            if field.startswith("frame="):
+                return int(field.split("=", 1)[1])
     except Exception:
         pass
     return 0
@@ -367,6 +370,12 @@ class TrackerNode(Node):
             reid_batch_size = int(
                 self._declare_param_if_missing("reid_batch_size", 32)
             )
+            image_buffer_size = int(
+                self._declare_param_if_missing("image_buffer_size", 64)
+            )
+            max_image_age_ms = float(
+                self._declare_param_if_missing("max_image_age_ms", 250.0)
+            )
 
             return DeepSortBackend(
                 max_age=max_age,
@@ -377,6 +386,8 @@ class TrackerNode(Node):
                 only_position_gating=only_position_gating,
                 reid_model_path=reid_model_path,
                 reid_batch_size=reid_batch_size,
+                image_buffer_size=image_buffer_size,
+                max_image_age_ms=max_image_age_ms,
             )
 
         else:
@@ -384,7 +395,7 @@ class TrackerNode(Node):
             return SortBackend()
 
     def on_image(self, msg: Image) -> None:
-        """Forward the latest camera image only to the DeepSORT backend."""
+        """Buffer timestamped source images only for the DeepSORT backend."""
         if isinstance(self.backend, DeepSortBackend):
             self.backend.update_latest_image(msg)
 

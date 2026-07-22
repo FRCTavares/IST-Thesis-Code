@@ -13,6 +13,123 @@ import cv2
 import numpy as np
 
 
+COORDINATE_TRANSFORM_CONTRACT = "tim_mars_source_pixels_resize_v1"
+
+
+@dataclass(frozen=True)
+class ImageTransform:
+    """Describe the versioned direct-resize transform for one source image."""
+
+    source_width: int
+    source_height: int
+    inference_width: int
+    inference_height: int
+    scale_x: float
+    scale_y: float
+    pad_x: float = 0.0
+    pad_y: float = 0.0
+    contract: str = COORDINATE_TRANSFORM_CONTRACT
+
+    @classmethod
+    def direct_resize(
+        cls,
+        source_width: int,
+        source_height: int,
+        inference_width: int,
+        inference_height: int,
+    ) -> "ImageTransform":
+        """Build the canonical anisotropic direct-resize transform."""
+        dimensions = (
+            source_width,
+            source_height,
+            inference_width,
+            inference_height,
+        )
+        if any(int(value) <= 0 for value in dimensions):
+            raise ValueError(f"image dimensions must be positive: {dimensions}")
+
+        return cls(
+            source_width=int(source_width),
+            source_height=int(source_height),
+            inference_width=int(inference_width),
+            inference_height=int(inference_height),
+            scale_x=float(inference_width) / float(source_width),
+            scale_y=float(inference_height) / float(source_height),
+        )
+
+    @staticmethod
+    def _clip(value: float, lower: float, upper: float) -> float:
+        return min(max(float(value), lower), upper)
+
+    def source_xyxy_to_inference(
+        self,
+        box: tuple[float, float, float, float],
+    ) -> tuple[float, float, float, float]:
+        """Map and clip a source-pixel corner box into inference pixels."""
+        x1, y1, x2, y2 = box
+        return (
+            self._clip(
+                x1 * self.scale_x + self.pad_x,
+                0.0,
+                float(self.inference_width),
+            ),
+            self._clip(
+                y1 * self.scale_y + self.pad_y,
+                0.0,
+                float(self.inference_height),
+            ),
+            self._clip(
+                x2 * self.scale_x + self.pad_x,
+                0.0,
+                float(self.inference_width),
+            ),
+            self._clip(
+                y2 * self.scale_y + self.pad_y,
+                0.0,
+                float(self.inference_height),
+            ),
+        )
+
+    def inference_xyxy_to_source(
+        self,
+        box: tuple[float, float, float, float],
+    ) -> tuple[float, float, float, float]:
+        """Map and clip an inference-pixel corner box into source pixels."""
+        x1, y1, x2, y2 = box
+        return (
+            self._clip(
+                (x1 - self.pad_x) / self.scale_x,
+                0.0,
+                float(self.source_width),
+            ),
+            self._clip(
+                (y1 - self.pad_y) / self.scale_y,
+                0.0,
+                float(self.source_height),
+            ),
+            self._clip(
+                (x2 - self.pad_x) / self.scale_x,
+                0.0,
+                float(self.source_width),
+            ),
+            self._clip(
+                (y2 - self.pad_y) / self.scale_y,
+                0.0,
+                float(self.source_height),
+            ),
+        )
+
+    def detection_frame_id(self, frame_id: int) -> str:
+        """Encode contract metadata in the standard detection header frame."""
+        return (
+            f"{self.contract};frame={int(frame_id)};"
+            f"source={self.source_width}x{self.source_height};"
+            f"inference={self.inference_width}x{self.inference_height};"
+            f"scale={self.scale_x:.9g},{self.scale_y:.9g};"
+            f"pad={self.pad_x:.9g},{self.pad_y:.9g}"
+        )
+
+
 @dataclass
 class PreprocessFrameResult:
     image_width: int
@@ -28,6 +145,7 @@ class PreprocessFrameResult:
     t_color_end_ns: int
     infer_img: np.ndarray
     numpy_owndata: bool
+    transform: ImageTransform
 
 
 def preprocess_image_message(
@@ -47,6 +165,16 @@ def preprocess_image_message(
     image_width = int(image_msg.width)
     image_encoding = str(image_msg.encoding).lower()
     image_step = int(image_msg.step)
+
+    try:
+        transform = ImageTransform.direct_resize(
+            source_width=image_width,
+            source_height=image_height,
+            inference_width=infer_w,
+            inference_height=infer_h,
+        )
+    except ValueError as exc:
+        return None, "error", str(exc)
 
     if image_encoding not in ("rgb8", "bgr8"):
         return (
@@ -122,6 +250,7 @@ def preprocess_image_message(
             t_color_end_ns=t_color_end_ns,
             infer_img=infer_img,
             numpy_owndata=bool(img.flags["OWNDATA"]),
+            transform=transform,
         ),
         None,
         None,
