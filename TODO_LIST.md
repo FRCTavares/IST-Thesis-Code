@@ -27,10 +27,12 @@ Open executable issues: **37**.
 
 1. [ ] [#53 — P0.26 Unify live coordinate frames and causal image-time contracts](https://github.com/FRCTavares/IST-Thesis-Code/issues/53)
    - phase 10; live-system; flight blocker; unifies transforms and causal source-image selection across perception, tracking, TIM, UI, and evidence.
-   - software contract in progress: direct-resize inference now maps public boxes
-     back to source pixels, dashboard mapping is source-native, and DeepSORT uses
-     bounded latest-at-or-before image selection; recorded visual alignment
-     evidence is still required before closure.
+   - software contract implemented and suite-validated: direct-resize inference
+     maps public boxes back to source pixels, dashboard mapping is source-native,
+     and DeepSORT uses bounded latest-at-or-before image selection. A 183-second
+     rebooted live run confirmed the versioned 640x480 contract end to end at
+     detector cadence; the scene contained no person, so recorded physical-person
+     detector/tracker/TIM/dashboard alignment is still required before closure.
 
 2. [ ] [#23 — P0.14 Add output freshness](https://github.com/FRCTavares/IST-Thesis-Code/issues/23)
    - phase 6; engineering; now includes source/header age and control fail-closed behavior, not only evaluator freshness.
