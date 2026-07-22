@@ -543,8 +543,15 @@ while [[ $# -gt 0 ]]; do
             ENABLE_ROSBAG=1
             TRACKER_PUBLISH_TIMING_BOOL="true"
             TARGET_TIMING_ENABLED=1
-            FIELD_RAW_IMAGE_RECORD=0
             FIELD_MAVROS_RECORD=1
+            shift
+            ;;
+        --record-raw)
+            FIELD_RAW_IMAGE_RECORD=1
+            shift
+            ;;
+        --no-record-raw)
+            FIELD_RAW_IMAGE_RECORD=0
             shift
             ;;
         --source-record)
@@ -845,6 +852,17 @@ fi
 
 if ! [[ "$ENABLE_ROSBAG" =~ ^[01]$ ]]; then
     echo "[error] ENABLE_ROSBAG must be 0 or 1"
+    exit 1
+fi
+
+if ! [[ "$FIELD_RAW_IMAGE_RECORD" =~ ^[01]$ ]]; then
+    echo "[error] FIELD_RAW_IMAGE_RECORD must be 0 or 1"
+    exit 1
+fi
+
+if [[ "$FIELD_RAW_IMAGE_RECORD" -eq 1 && "$ENABLE_ROSBAG" -ne 1 ]]; then
+    echo "[error] --record-raw requires the normal live recording bag"
+    echo "[hint] use --record --record-raw, or --field-record --record-raw"
     exit 1
 fi
 

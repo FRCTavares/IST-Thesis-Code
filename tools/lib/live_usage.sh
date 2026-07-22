@@ -96,6 +96,8 @@ Options:
     --no-web-video                      Do not start web_video_server
     --record-video                      Record dashboard video + perception/tracking/target/timing/control topics
     --no-record-video                   Disable video bag recording
+    --record-raw                        Add a separate synchronized /camera/image_raw MCAP bag
+    --no-record-raw                     Disable the separate raw-image bag
     --record-dataset                    Record raw camera imagery + perception/TIM telemetry for offline replay
     --no-record-dataset                 Disable dataset bag recording
     --bag-tag <NAME>                    Add a safe tag to the bag folder name
@@ -126,7 +128,8 @@ Default live stack:
 
 Common options:
     --record                 Record video/perception/tracking/control bag
-    --field-record           Record full live pipeline and MAVROS telemetry, no raw image
+    --field-record           Record full live pipeline and separate MAVROS telemetry
+    --record-raw             Also record /camera/image_raw in a separate synchronized bag
     --source-record          Record source dataset only: /camera/image_raw and MAVROS telemetry
     --tag NAME               Add a tag to the recorded bag folder
     --dash N                 Set dashboard target FPS
@@ -153,6 +156,7 @@ Runtime prompt:
 Examples:
     ./tools/start_live_stack.sh
     ./tools/start_live_stack.sh --record --tag demo1
+    ./tools/start_live_stack.sh --field-record --record-raw --tag flight1
     ./tools/start_live_stack.sh --tracker sort --mem off
     ./tools/start_live_stack.sh --dash 10 --no-control
 EOF

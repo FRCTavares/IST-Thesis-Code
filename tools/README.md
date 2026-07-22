@@ -20,6 +20,31 @@ Evaluation and replay commands are intentionally invoked from their owning
 `analysis/`, `experiments/`, `catalogue/`, or `bag/` directories. There is no
 generic evaluation wrapper hiding bag paths or experiment assumptions.
 
+## Live field recording
+
+The normal live bag keeps the dashboard, detections, tracks, TIM-MARS outputs,
+timing, and control topics. Add a clean camera stream without replacing those
+outputs by using:
+
+```bash
+./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO_NAME
+```
+
+This creates three synchronized recordings:
+
+- the normal live pipeline bag under `bags/live_camera/`;
+- a separate `__image_raw` MCAP bag containing `/camera/image_raw`;
+- a separate `__mavros` MCAP bag containing Pixhawk telemetry.
+
+Raw recording requires at least 40 GiB free by default. At 640x480 BGR8 and a
+true 30 FPS, the theoretical uncompressed payload is about 28 MB/s or 1.7
+GB/min. ROS/DDS and live-stack load can reduce the delivered raw frame rate, so
+check the recorded count and duration with `ros2 bag info` before leaving the
+field. The raw bag is clean camera imagery, not a guarantee of 30 recorded FPS.
+
+`--field-record` enforces the AERONEXT/Pixhawk Ethernet network mode and stops
+Tailscale. Run it from the Pi's local terminal when the Pixhawk is connected.
+
 ## Subdirectories
 
 | Directory | Purpose |

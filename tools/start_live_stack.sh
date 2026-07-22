@@ -402,6 +402,7 @@ fi
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then dashboard_state="on"; fi
 if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then web_video_state="on"; fi
 if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then rosbag_state="video"; fi
+if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then rosbag_state="${rosbag_state}+raw"; fi
 if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
     if [[ "$rosbag_state" == "off" ]]; then
         rosbag_state="dataset"
@@ -425,7 +426,11 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     fi
 fi
 log_step "preflight checks"
-if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
+if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
+    ensure_recording_storage_available \
+        "$BAG_OUT_ROOT" \
+        "$RAW_RECORDING_MIN_FREE_GIB" || exit 1
+elif [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     ensure_recording_storage_available \
         "$BAG_OUT_ROOT" \
         "$RECORDING_MIN_FREE_GIB" || exit 1
@@ -1030,20 +1035,50 @@ print_startup_success_summary
 
 if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
     RAW_IMAGE_BAG_OUT_DIR="${VIDEO_BAG_OUT_DIR}__image_raw"
-    echo "[field] starting raw image recorder: $RAW_IMAGE_BAG_OUT_DIR"
+    echo "[raw] starting synchronized raw image recorder: $RAW_IMAGE_BAG_OUT_DIR"
+
+    if [[ -f "$VIDEO_BAG_OUT_DIR/flight_metadata.txt" ]]; then
+        echo "raw_image_bag_out_dir=$RAW_IMAGE_BAG_OUT_DIR" >> "$VIDEO_BAG_OUT_DIR/flight_metadata.txt"
+    fi
 
     sleep 3
 
-    start_ros_bg raw_image_bag ros2 bag record \
-        --storage mcap \
-        -o "$RAW_IMAGE_BAG_OUT_DIR" \
-        --topics /camera/image_raw
+    if [[ -f "$QOS_OVERRIDE_FILE" ]]; then
+        start_ros_bg raw_image_bag ros2 bag record \
+            --storage mcap \
+            --qos-profile-overrides-path "$QOS_OVERRIDE_FILE" \
+            -o "$RAW_IMAGE_BAG_OUT_DIR" \
+            --topics /camera/image_raw
+    else
+        start_ros_bg raw_image_bag ros2 bag record \
+            --storage mcap \
+            -o "$RAW_IMAGE_BAG_OUT_DIR" \
+            --topics /camera/image_raw
+    fi
 
     sleep 1
     if ! check_proc_alive raw_image_bag; then
         echo "[error] raw image recorder failed"
         stop_stack
         exit 1
+    fi
+
+    for _ in {1..20}; do
+        if [[ -d "$RAW_IMAGE_BAG_OUT_DIR" ]]; then
+            break
+        fi
+        sleep 0.1
+    done
+
+    if [[ -d "$RAW_IMAGE_BAG_OUT_DIR" ]]; then
+        write_video_bag_metadata "$RAW_IMAGE_BAG_OUT_DIR/raw_image_metadata.txt" /camera/image_raw
+        {
+            echo "paired_video_bag=$VIDEO_BAG_OUT_DIR"
+            echo "raw_image_expected_rate_hz=$CAMERA_FPS"
+        } >> "$RAW_IMAGE_BAG_OUT_DIR/raw_image_metadata.txt"
+        echo "[ok] raw image bag metadata: $RAW_IMAGE_BAG_OUT_DIR/raw_image_metadata.txt"
+    else
+        echo "[warn] raw image bag output directory not visible yet; metadata was not written"
     fi
 fi
 
