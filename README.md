@@ -12,6 +12,7 @@ For final TIM-MARS result evidence and local verification, start here:
 - `docs/data/final_experiment_inventory.md`: promoted final replay bags, reports, and annotation CSVs.
 - `docs/data/reproduce_final_results.md`: local checks for final result artifact availability.
 - `docs/results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`: clean canonical selected-target evidence.
+- `docs/results/live/p052_target_authority_ground_evidence.md`: three retained isolated target-authority dry-runs for Issue #52.
 - `bags/README.md`: bag roles, deletion policy, and naming contract.
 - `ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/README.md`: TIM-MARS module structure and configuration guide.
 
