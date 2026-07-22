@@ -32,13 +32,21 @@ Constraints: no new installs. Uses rosbag2_py + rclpy if available.
 import argparse
 import math
 import os
+from pathlib import Path
+import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-try:
-    from timing_contract import METRICS_SCHEMA_VERSION, METRIC_WARN_THRESHOLDS, METRIC_WINDOWS, candidates_for
-except ImportError:
-    from tools.timing_contract import METRICS_SCHEMA_VERSION, METRIC_WARN_THRESHOLDS, METRIC_WINDOWS, candidates_for
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from tools.timing_contract import (  # noqa: E402
+    METRICS_SCHEMA_VERSION,
+    METRIC_WARN_THRESHOLDS,
+    METRIC_WINDOWS,
+    candidates_for,
+)
 
 
 def _percentile(sorted_vals: List[float], q: float) -> float:

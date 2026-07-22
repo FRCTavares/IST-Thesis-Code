@@ -12,11 +12,13 @@ rather than ad-hoc ROS commands.
 | Tool | Status | Purpose |
 | --- | --- | --- |
 | `tools/thesis_build.sh` | Build entrypoint | Builds the ROS 2 workspace with repository-local logs. |
-| `tools/thesis_live.sh` | Convenience wrapper | Small wrapper around live-stack and UI startup commands. |
-| `tools/thesis_eval.sh` | Convenience/provenance wrapper | Small wrapper around selected evaluation commands; check paths before using old official shortcuts. |
 | `tools/start_live_stack.sh` | Live operation entrypoint | Starts the live camera, perception, tracker, TIM/control/dashboard stack. |
 | `tools/start_ui_stack.sh` | UI operation entrypoint | Starts the dashboard frontend with consistent environment/logging. |
 | `tools/timing_contract.py` | Shared contract | Defines canonical timing metric names, aliases, labels, and thresholds. |
+
+Evaluation and replay commands are intentionally invoked from their owning
+`analysis/`, `experiments/`, `catalogue/`, or `bag/` directories. There is no
+generic evaluation wrapper hiding bag paths or experiment assumptions.
 
 ## Subdirectories
 
@@ -45,6 +47,15 @@ rather than ad-hoc ROS commands.
 - Do not create a separate top-level deployment tree for tool-owned assets.
 - Generated `__pycache__`, `.pyc`, and `.pytest_cache` content is ignored and
   must not be committed.
+- Sourced modules under `tools/lib/` are not standalone executables.
+
+## Audit status
+
+The directory was reference- and path-audited on 22 July 2026. The cleanup
+removed unused convenience wrappers, a redundant track-video renderer, and a
+broken date-specific comparison preset whose input bags no longer exist. The
+remaining tools are either current entrypoints, tested workflow components,
+hardware diagnostics, or explicitly documented support utilities.
 
 ## Recommended final evaluation path
 

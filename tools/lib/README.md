@@ -13,6 +13,7 @@ into smaller areas so the main script can stay focused on orchestration.
 | `live_usage.sh` | Support library | Prints basic and advanced command-line usage text. |
 | `live_cli.sh` | Support library | Parses and validates `start_live_stack.sh` command-line arguments. |
 | `live_camera.sh` | Support library | Handles camera preflight checks, camera process cleanup, and camera startup readiness. |
+| `live_storage.sh` | Support library | Enforces the free-space gate before any live recording directory is created. |
 
 ## Execution contract
 

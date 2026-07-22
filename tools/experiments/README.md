@@ -12,12 +12,14 @@ starting many ROS commands when reproducing TIM-MARS experiments.
 | Tool | Status | Purpose |
 | --- | --- | --- |
 | `run_one_memory_tim_replay.sh` | Core final workflow | Main memory-only TIM-MARS replay helper over existing tracks and target sources. |
+| `run_deterministic_tim_replay.py` | Core final workflow | Produces deterministic TIM-MARS replay output and resolved-runtime provenance. |
 | `run_deterministic_tracker_replay.py` | Core P0.18 workflow | Freezes one tracker and fixed-ID raw target deterministically from recorded image and detection evidence. |
 | `run_one_clean_tim_replay.sh` | Core/support workflow | Replays an existing bag with detector/tracker outputs and reruns TIM-MARS. |
 | `run_one_detector_tim_replay.sh` | Diagnostic full-pipeline workflow | Reruns detector, tracker, and TIM-MARS from image_raw source bags. |
 | `publish_annotated_track_target.py` | Core final workflow | Publishes oracle-style `/target` from annotation CSV intervals and `/tracks`. |
 | `publish_selected_track_target.py` | Core final workflow | Publishes `/target` from one fixed tracker ID. |
 | `select_largest_track_id.py` | Support helper | Selects the largest usable track ID from a `/tracks` echo dump. |
+| `write_tim_run_metadata.py` | Support helper | Writes validated replay invocation and effective-value provenance. |
 
 ## Deterministic tracker freezing
 

@@ -27,12 +27,11 @@ helpers.
 | `tim_ui_discovery.py` | Discovers curated bags and annotation CSVs in known repo folders. |
 | `tim_ui_evaluation.py` | Runs target and bbox correctness evaluators from the UI. |
 
-## Video helpers
+## Video export
 
-| Tool | Purpose |
-| --- | --- |
-| `render_all_tracks_id_video.py` | Renders an all-track-ID overlay video for manual tracker review. |
-| `video.py` | Renders single-stream and paired visual validation videos from bags and annotations. |
+Tracker-ID views and MP4 exports are built into the maintained UI renderer.
+For a standalone overlay or paired raw-versus-TIM video, use the explicit
+renderers under `tools/bag/`.
 
 ## Annotation policy
 
@@ -44,7 +43,11 @@ must remain manual. Do not generate final annotation CSVs automatically.
 Use the project-standard annotation UI command from the repository root after
 sourcing ROS:
 
-` thesis_env/bin/python tools/bag_annotation_ui/tim_clean_ui.py --host 100.69.42.62 --port 8888`
+`thesis_env/bin/python tools/bag_annotation_ui/tim_clean_ui.py --host 100.69.42.62 --port 8888`
+
+Use the explicit `thesis_env` interpreter: the UI depends on FastAPI and other
+packages intentionally absent from the system Python environment. The module is
+therefore not marked as a standalone executable.
 
 ## Repository paths
 

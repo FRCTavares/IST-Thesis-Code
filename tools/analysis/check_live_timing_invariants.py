@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import math
+from pathlib import Path
 import signal
 import sys
 import time
@@ -24,20 +25,16 @@ from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from thesis_msgs.msg import Timing
 from vision_msgs.msg import Detection2DArray
 
-try:
-    from timing_contract import (
-        DET_OUT_FPS_WINDOW_SECONDS,
-        FPS_INTERVAL_RELATIVE_DELTA_MAX,
-        resolve_metric,
-        topic_fields,
-    )
-except ImportError:
-    from tools.timing_contract import (
-        DET_OUT_FPS_WINDOW_SECONDS,
-        FPS_INTERVAL_RELATIVE_DELTA_MAX,
-        resolve_metric,
-        topic_fields,
-    )
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from tools.timing_contract import (  # noqa: E402
+    DET_OUT_FPS_WINDOW_SECONDS,
+    FPS_INTERVAL_RELATIVE_DELTA_MAX,
+    resolve_metric,
+    topic_fields,
+)
 
 
 TOPIC_METRIC_FIELDS = {

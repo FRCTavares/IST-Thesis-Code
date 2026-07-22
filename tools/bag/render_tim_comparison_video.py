@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Video rendering CLI helpers for TIM-MARS visual validation.
+"""Render one paired raw-target versus TIM-MARS comparison video.
 
 This module renders single-stream and paired raw-vs-TIM videos from rosbag2
 data, annotations, and selected-target outputs. It is used for visual
-inspection, paper/thesis validation videos, and batch video summaries.
+inspection and paper/thesis validation videos.
 
 It is separate from the interactive FastAPI annotation UI.
 """
@@ -711,14 +711,14 @@ def render_pair(
     }
 
 
-def write_batch_summary(out_dir: Path, summaries: list[dict]) -> None:
+def write_summary(out_dir: Path, summaries: list[dict]) -> None:
     out_json = out_dir / "summary.json"
     out_md = out_dir / "summary.md"
 
     out_json.write_text(json.dumps(summaries, indent=2) + "\n")
 
     lines = [
-        "# Header-time visual validation videos",
+        "# TIM-MARS comparison video",
         "",
         "Timebase: ROS message header time.",
         "",
@@ -747,50 +747,7 @@ def write_batch_summary(out_dir: Path, summaries: list[dict]) -> None:
     print(f"[ok] summary={out_json}")
 
 
-def cmd_tim_header_all(args) -> int:
-    out_dir = args.out_dir
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    base = Path("bags/replay/eval_matrix/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_ocsort__tim_off__target_1")
-
-    summaries = [
-        render_pair(
-            name="ByteTrack",
-            raw_bag=Path(str(base) + "__tracker_bytetrack__tim_off__target_1__r2"),
-            tim_bag=Path(str(base) + "__tracker_bytetrack__tim_mars__target_1__r4"),
-            annotation=Path("docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv"),
-            raw_title="ByteTrack Raw /target",
-            tim_title="ByteTrack + TIM-MARS /target_memory_mars",
-            out_dir=out_dir,
-            final_name="bytetrack_raw_vs_tim_mars_header_time.mp4",
-        ),
-        render_pair(
-            name="OCSORT",
-            raw_bag=Path(str(base) + "__tracker_ocsort__tim_off__target_1"),
-            tim_bag=Path(str(base) + "__tracker_ocsort__tim_mars__target_1__r1"),
-            annotation=Path("docs/data/annotations/may_hard_reentry/ocsort_hard_reentry.csv"),
-            raw_title="OCSORT Raw /target",
-            tim_title="OCSORT + TIM-MARS /target_memory_mars",
-            out_dir=out_dir,
-            final_name="ocsort_raw_vs_tim_mars_header_time.mp4",
-        ),
-        render_pair(
-            name="DeepSORT-MARS",
-            raw_bag=Path(str(base) + "__tracker_deepsort__tim_off__target_1"),
-            tim_bag=Path(str(base) + "__tracker_deepsort__tim_mars__target_1"),
-            annotation=Path("docs/data/annotations/may_hard_reentry/deepsort_hard_reentry.csv"),
-            raw_title="DeepSORT-MARS Raw /target",
-            tim_title="DeepSORT-MARS + TIM-MARS /target_memory_mars",
-            out_dir=out_dir,
-            final_name="deepsort_mars_raw_vs_tim_mars_header_time.mp4",
-        ),
-    ]
-
-    write_batch_summary(out_dir, summaries)
-    return 0
-
-
-def cmd_tim_header_pair(args) -> int:
+def render_comparison(args) -> int:
     out_dir = args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -804,35 +761,34 @@ def cmd_tim_header_pair(args) -> int:
         out_dir=out_dir,
         final_name=args.output_name,
     )
-    write_batch_summary(out_dir, [s])
+    write_summary(out_dir, [s])
     return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Canonical thesis video renderer.")
-    sub = p.add_subparsers(dest="cmd", required=True)
-
-    p_all = sub.add_parser("tim-header-all", help="Render all official raw-vs-TIM-MARS header-time validation videos.")
-    p_all.add_argument("--out-dir", type=Path, default=Path("reports/visual_validation_header_time_2026-06-17"))
-    p_all.set_defaults(func=cmd_tim_header_all)
-
-    p_pair = sub.add_parser("tim-header-pair", help="Render one raw-vs-TIM-MARS header-time validation video.")
-    p_pair.add_argument("--name", required=True)
-    p_pair.add_argument("--raw-bag", type=Path, required=True)
-    p_pair.add_argument("--tim-bag", type=Path, required=True)
-    p_pair.add_argument("--annotation", type=Path, required=True)
-    p_pair.add_argument("--raw-title", required=True)
-    p_pair.add_argument("--tim-title", required=True)
-    p_pair.add_argument("--output-name", required=True)
-    p_pair.add_argument("--out-dir", type=Path, default=Path("reports/visual_validation_header_time_2026-06-17"))
-    p_pair.set_defaults(func=cmd_tim_header_pair)
-
+    p = argparse.ArgumentParser(
+        description=(
+            "Render one header-time raw-target versus TIM-MARS comparison."
+        )
+    )
+    p.add_argument("--name", required=True, help="Tracker or experiment label")
+    p.add_argument("--raw-bag", type=Path, required=True)
+    p.add_argument("--tim-bag", type=Path, required=True)
+    p.add_argument("--annotation", type=Path, required=True)
+    p.add_argument("--raw-title", required=True)
+    p.add_argument("--tim-title", required=True)
+    p.add_argument("--output-name", required=True)
+    p.add_argument(
+        "--out-dir",
+        type=Path,
+        default=Path("reports/videos"),
+    )
     return p
 
 
 def main() -> int:
     args = build_parser().parse_args()
-    return args.func(args)
+    return render_comparison(args)
 
 
 if __name__ == "__main__":
