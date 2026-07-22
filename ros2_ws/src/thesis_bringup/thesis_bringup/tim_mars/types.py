@@ -334,6 +334,7 @@ class TargetMemoryOutput:
         _, y1, _, y2 = self.bbox
         return 0.5 * (y1 + y2) / image_height
 
+
 __all__ = [
     "BBox",
     "TargetState",

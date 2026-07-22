@@ -21,15 +21,15 @@ from thesis_bringup.tim_mars.target_memory import (
 
 
 def thresholds(**overrides):
-    values = dict(
-        min_width_px=12.0,
-        min_height_px=24.0,
-        max_clipping_fraction=0.10,
-        min_aspect_ratio=0.20,
-        max_aspect_ratio=1.00,
-        max_overlap_iou_for_memory=0.10,
-        min_centre_distance_norm_for_memory=0.04,
-    )
+    values = {
+        "min_width_px": 12.0,
+        "min_height_px": 24.0,
+        "max_clipping_fraction": 0.10,
+        "min_aspect_ratio": 0.20,
+        "max_aspect_ratio": 1.00,
+        "max_overlap_iou_for_memory": 0.10,
+        "min_centre_distance_norm_for_memory": 0.04,
+    }
     values.update(overrides)
     return CropQualityThresholds(**values)
 

@@ -34,11 +34,11 @@ def tr(
 
 
 def cfg(**overrides):
-    base = dict(
-        image_width=640,
-        image_height=480,
-        max_uncertain_frames=1,
-    )
+    base = {
+        "image_width": 640,
+        "image_height": 480,
+        "max_uncertain_frames": 1,
+    }
     base.update(overrides)
     return TargetMemoryConfig(**base)
 
@@ -166,6 +166,7 @@ def test_appearance_memory_updates_only_when_locked():
     assert not np.allclose(before, after)
     assert cosine_similarity(after, updated_feat) > cosine_similarity(before, updated_feat)
 
+
 def test_positive_appearance_bootstraps_after_selection_without_feature():
     target_feat = feat([1.0, 0.0, 0.0])
     other_feat = feat([0.0, 1.0, 0.0])
@@ -193,7 +194,6 @@ def test_positive_appearance_bootstraps_after_selection_without_feature():
     assert tim._m.appearance is not None
     assert out.best_score is not None
     assert out.best_score.appearance_raw > 0.90
-
 
 
 def test_hard_negative_memory_rejects_negative_like_candidate():
@@ -253,7 +253,6 @@ def test_hard_negative_memory_rejects_negative_like_candidate():
     assert out.best_score.hard_negative_reject
     assert out.reason.startswith("hard_negative_reject")
     assert not out.control_valid
-
 
 
 def test_operator_selection_ignores_ineligible_appearance():

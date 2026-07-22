@@ -52,18 +52,18 @@ def candidate_score(track_id, positive_similarity):
 
 
 def negative_cfg(**overrides):
-    values = dict(
-        appearance_enabled=True,
-        hard_negative_memory_enabled=True,
-        hard_negative_max_entries=2,
-        hard_negative_update_alpha=0.50,
-        hard_negative_min_candidate_similarity=0.70,
-        hard_negative_confirm_observations=1,
-        hard_negative_max_positive_similarity=0.95,
-        hard_negative_reject_similarity=0.80,
-        hard_negative_reject_margin=0.03,
-        hard_negative_min_geometry=0.20,
-    )
+    values = {
+        "appearance_enabled": True,
+        "hard_negative_memory_enabled": True,
+        "hard_negative_max_entries": 2,
+        "hard_negative_update_alpha": 0.50,
+        "hard_negative_min_candidate_similarity": 0.70,
+        "hard_negative_confirm_observations": 1,
+        "hard_negative_max_positive_similarity": 0.95,
+        "hard_negative_reject_similarity": 0.80,
+        "hard_negative_reject_margin": 0.03,
+        "hard_negative_min_geometry": 0.20,
+    }
     values.update(overrides)
     return TargetMemoryConfig(**values)
 
@@ -253,7 +253,6 @@ def test_selected_identity_discards_pending_negative_evidence():
     assert event.memory_size == 0
 
 
-
 def test_pending_hard_negative_cannot_affect_rejection_similarity():
     selected = feat([1.0, 0.0, 0.0])
     distractor = feat([0.8, 0.6, 0.0])
@@ -367,6 +366,7 @@ def test_same_frame_candidates_cannot_satisfy_confirmation():
         "stage",
     ]
     assert all(event.observations == 1 for event in events)
+
 
 def test_hard_negative_entry_records_merged_provenance():
     selected = feat([1.0, 0.0, 0.0])

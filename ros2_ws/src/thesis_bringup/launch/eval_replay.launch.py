@@ -61,10 +61,18 @@ def _setup(context, *args, **kwargs):
 
     record = ExecuteProcess(
         cmd=[
-        "ros2", "bag", "record",
-        "--storage", "mcap",
-        "-o", out_dir,
-        "--topics", "/tracks", "/target", "/timing_tracker", "/timing_target",
+            "ros2",
+            "bag",
+            "record",
+            "--storage",
+            "mcap",
+            "-o",
+            out_dir,
+            "--topics",
+            "/tracks",
+            "/target",
+            "/timing_tracker",
+            "/timing_target",
         ],
         output="screen",
     )
@@ -95,10 +103,14 @@ def generate_launch_description():
             DeclareLaunchArgument("tracker", default_value="sort"),
             DeclareLaunchArgument(
                 "out_root",
-                default_value=os.path.join(os.environ.get("THESIS_ROOT", os.path.expanduser("~/Desktop/Thesis-Code")),
-                "bags",
-                "eval",
-            ),
+                default_value=os.path.join(
+                    os.environ.get(
+                        "THESIS_ROOT",
+                        os.path.expanduser("~/Desktop/Thesis-Code"),
+                    ),
+                    "bags",
+                    "eval",
+                ),
             ),
             DeclareLaunchArgument("rate", default_value="1.0"),
             DeclareLaunchArgument(

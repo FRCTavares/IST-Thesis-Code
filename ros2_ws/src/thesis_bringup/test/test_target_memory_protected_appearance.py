@@ -39,29 +39,29 @@ def tr(
 
 
 def protected_cfg(**overrides):
-    values = dict(
-        image_width=640,
-        image_height=480,
-        max_uncertain_frames=6,
-        min_confirm_frames_after_reacquire=1,
-        allow_id_switch_recovery=True,
-        accept_score_locked=0.52,
-        appearance_enabled=True,
-        appearance_weight=0.12,
-        appearance_min_similarity=0.35,
-        appearance_ambiguous_only=True,
-        appearance_update_alpha=0.50,
-        appearance_update_cooldown_after_reacquire_frames=0,
-        appearance_protected_memory_enabled=True,
-        appearance_trusted_gallery_max_entries=4,
-        appearance_trusted_lock_frames_before_update=2,
-        appearance_conservative_enabled=False,
-        hard_negative_memory_enabled=False,
-        rank_aware_reacquisition_enabled=False,
-        candidate_belief_enabled=False,
-        absence_recovery_enabled=False,
-        short_gap_new_id_suppression_enabled=False,
-    )
+    values = {
+        "image_width": 640,
+        "image_height": 480,
+        "max_uncertain_frames": 6,
+        "min_confirm_frames_after_reacquire": 1,
+        "allow_id_switch_recovery": True,
+        "accept_score_locked": 0.52,
+        "appearance_enabled": True,
+        "appearance_weight": 0.12,
+        "appearance_min_similarity": 0.35,
+        "appearance_ambiguous_only": True,
+        "appearance_update_alpha": 0.50,
+        "appearance_update_cooldown_after_reacquire_frames": 0,
+        "appearance_protected_memory_enabled": True,
+        "appearance_trusted_gallery_max_entries": 4,
+        "appearance_trusted_lock_frames_before_update": 2,
+        "appearance_conservative_enabled": False,
+        "hard_negative_memory_enabled": False,
+        "rank_aware_reacquisition_enabled": False,
+        "candidate_belief_enabled": False,
+        "absence_recovery_enabled": False,
+        "short_gap_new_id_suppression_enabled": False,
+    }
     values.update(overrides)
     return TargetMemoryConfig(**values)
 
@@ -291,7 +291,6 @@ def test_protected_anchor_records_id_switch_support_source():
         < 0.86
     )
     assert not output.positive_memory_updated
-
 
 
 def test_gallery_supported_switch_requires_anchor_agreement():

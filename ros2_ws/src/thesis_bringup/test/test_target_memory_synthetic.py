@@ -16,11 +16,11 @@ def tr(track_id, bbox, score=0.9):
 
 
 def cfg(**overrides):
-    base = dict(
-        image_width=640,
-        image_height=480,
-        max_uncertain_frames=2,
-    )
+    base = {
+        "image_width": 640,
+        "image_height": 480,
+        "max_uncertain_frames": 2,
+    }
     base.update(overrides)
     return TargetMemoryConfig(**base)
 
@@ -97,8 +97,6 @@ def test_id_switch_recovery_disabled_rejects_different_id():
     assert out.control_mode == ControlMode.YAW_ONLY
     assert not out.control_valid
     assert out.reason == "id_switch_recovery_disabled"
-
-
 
 
 def test_id_switch_recovery_disabled_still_accepts_same_id():
@@ -308,6 +306,7 @@ def test_candidate_belief_disabled_preserves_immediate_new_id_recovery():
     assert out.candidate_track_id == 7
     assert out.reacquired
     assert out.publication_suppressed_reason == "reacquired_candidate"
+
 
 def test_short_gap_new_id_is_suppressed_and_same_id_return_is_preferred():
     cfg = TargetMemoryConfig(

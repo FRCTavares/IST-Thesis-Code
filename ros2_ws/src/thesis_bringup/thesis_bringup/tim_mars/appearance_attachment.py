@@ -319,6 +319,8 @@ def _result_with_cached_features(
         state,
         diagnostics,
     )
+
+
 def attach_appearance_features(
     *,
     config: AppearanceAttachmentConfig,
@@ -651,6 +653,8 @@ def attach_appearance_features(
         state,
         diagnostics,
     )
+
+
 def attach_cached_appearance_features(
     *,
     candidates: list[CandidateTrack],

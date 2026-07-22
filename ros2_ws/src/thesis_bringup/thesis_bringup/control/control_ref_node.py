@@ -219,8 +219,10 @@ class ControlRefNode(Node):
         return msg
 
     def publish_pair(self, stamp, vx: float, vy: float, yaw_z: float) -> None:
-        """Publish the same command to both the debug topic and (if enabled) the MAVROS topic.
-        Both messages share the exact same header.stamp to make topic-diff checks reliable."""
+        """Publish matching commands to debug and optional MAVROS topics.
+
+        Both messages share the same header stamp for reliable topic checks.
+        """
         msg = self._make_twist_msg(stamp, vx, vy, yaw_z, self.cmd_frame_id)
         self.pub_cmd.publish(msg)
         if self.enable_mavros:
@@ -379,6 +381,7 @@ class ControlRefNode(Node):
                 f'vx={self.prev_vx:.3f} vy={self.prev_vy:.3f} yaw_z={self.prev_yaw_z:.3f}'
             )
 
+
 def main(args=None) -> None:
     rclpy.init(args=args)
     node = ControlRefNode()
@@ -402,6 +405,7 @@ def main(args=None) -> None:
             rclpy.try_shutdown()
         except Exception:
             pass
+
 
 if __name__ == '__main__':
     main()

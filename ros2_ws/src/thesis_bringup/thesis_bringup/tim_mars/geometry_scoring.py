@@ -113,6 +113,7 @@ def score_candidate(
         id_bonus=id_bonus,
     )
 
+
 __all__ = [
     "clamp01",
     "bbox_area",

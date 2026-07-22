@@ -43,24 +43,24 @@ def tr(
 
 
 def cfg(**overrides):
-    values = dict(
-        image_width=640,
-        image_height=480,
-        appearance_enabled=True,
-        appearance_ambiguous_only=True,
-        appearance_update_alpha=0.0,
-        appearance_conservative_enabled=False,
-        hard_negative_memory_enabled=True,
-        hard_negative_min_candidate_similarity=0.70,
-        hard_negative_confirm_observations=1,
-        hard_negative_reject_similarity=1.01,
-        hard_negative_reject_margin=0.03,
-        hard_negative_min_geometry=0.20,
-        rank_aware_reacquisition_enabled=False,
-        candidate_belief_enabled=False,
-        absence_recovery_enabled=False,
-        short_gap_new_id_suppression_enabled=False,
-    )
+    values = {
+        "image_width": 640,
+        "image_height": 480,
+        "appearance_enabled": True,
+        "appearance_ambiguous_only": True,
+        "appearance_update_alpha": 0.0,
+        "appearance_conservative_enabled": False,
+        "hard_negative_memory_enabled": True,
+        "hard_negative_min_candidate_similarity": 0.70,
+        "hard_negative_confirm_observations": 1,
+        "hard_negative_reject_similarity": 1.01,
+        "hard_negative_reject_margin": 0.03,
+        "hard_negative_min_geometry": 0.20,
+        "rank_aware_reacquisition_enabled": False,
+        "candidate_belief_enabled": False,
+        "absence_recovery_enabled": False,
+        "short_gap_new_id_suppression_enabled": False,
+    }
     values.update(overrides)
     return TargetMemoryConfig(**values)
 
@@ -292,7 +292,6 @@ def test_output_reports_selected_lineage_reconciliation():
     assert event.memory_size == 0
 
 
-
 def test_broken_trusted_continuity_expires_pending_evidence():
     target = feat([1.0, 0.0, 0.0])
     distractor = feat([0.8, 0.6, 0.0])
@@ -375,6 +374,7 @@ def test_operator_selection_clears_pending_negative_evidence():
         )
         == 0.0
     )
+
 
 def test_candidate_cannot_become_negative_before_role_resolution():
     target = feat([1.0, 0.0, 0.0])
@@ -472,7 +472,6 @@ def test_untrusted_states_cannot_add_hard_negatives(state):
     )
 
     assert len(tim._hard_negative_memory) == 0
-
 
 
 def test_low_quality_selected_crop_blocks_negative_transaction():

@@ -56,6 +56,7 @@ from thesis_bringup.tim_mars.types import (
     TargetState,
 )
 
+
 @dataclass
 class _PreparedUpdate:
     candidates: List[CandidateTrack]
@@ -2132,6 +2133,7 @@ class TargetIdentityMemory:
             candidate_score=candidate_score,
             publication_suppressed_reason=publication_suppressed_reason,
         )
+
 
 __all__ = [
     'BBox',

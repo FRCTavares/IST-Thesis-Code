@@ -171,6 +171,7 @@ def score_with_appearance(
         ambiguous=base.ambiguous,
     )
 
+
 __all__ = [
     "geometry_allows_appearance",
     "score_with_appearance",

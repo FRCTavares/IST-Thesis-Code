@@ -120,6 +120,7 @@ def test_new_id_with_conflicting_appearance_cannot_reacquire_on_geometry_alone()
     assert not conflicting_new_id.visible
     assert not conflicting_new_id.control_valid
 
+
 def test_target_like_duplicate_does_not_become_hard_negative():
     """A duplicate or target fragment must not poison negative memory."""
     selected_appearance = feat([1.0, 0.0, 0.0])

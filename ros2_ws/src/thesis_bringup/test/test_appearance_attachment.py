@@ -30,30 +30,30 @@ class FakeMarsBackend:
 
 
 def cfg(**overrides):
-    values = dict(
-        enabled=True,
-        max_image_age_ms=250.0,
-        compute_min_interval_ms=250.0,
-        cache_ttl_ms=750.0,
-    )
+    values = {
+        "enabled": True,
+        "max_image_age_ms": 250.0,
+        "compute_min_interval_ms": 250.0,
+        "cache_ttl_ms": 750.0,
+    }
     values.update(overrides)
     return AppearanceAttachmentConfig(**values)
 
 
 def data(candidates, **overrides):
-    values = dict(
-        candidates=candidates,
-        now_ns=1_000_000_000,
-        latest_image_bgr=np.zeros(
+    values = {
+        "candidates": candidates,
+        "now_ns": 1_000_000_000,
+        "latest_image_bgr": np.zeros(
             (640, 640, 3),
             dtype=np.uint8,
         ),
-        latest_image_seen_ns=999_900_000,
-        latest_image_seq=3,
-        mars_backend=None,
-        candidate_frame_width=640.0,
-        candidate_frame_height=640.0,
-    )
+        "latest_image_seen_ns": 999_900_000,
+        "latest_image_seq": 3,
+        "mars_backend": None,
+        "candidate_frame_width": 640.0,
+        "candidate_frame_height": 640.0,
+    }
     values.update(overrides)
     return AppearanceAttachmentInput(**values)
 

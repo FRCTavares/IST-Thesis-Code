@@ -25,22 +25,22 @@ def feat(values):
 
 
 def cfg(**kwargs):
-    base = dict(
-        image_width=640,
-        image_height=640,
-        max_uncertain_frames=1,
-        appearance_enabled=True,
-        appearance_ambiguous_only=False,
-        appearance_min_similarity=0.0,
-        appearance_weight=0.0,
-        accept_score_lost=0.60,
-        accept_score_locked=0.52,
-        rank_aware_lost_min_total=0.20,
-        rank_aware_lost_min_geom=0.10,
-        rank_aware_lost_min_app=0.10,
-        rank_aware_lost_app_margin=0.05,
-        rank_aware_confirm_frames=1,
-    )
+    base = {
+        "image_width": 640,
+        "image_height": 640,
+        "max_uncertain_frames": 1,
+        "appearance_enabled": True,
+        "appearance_ambiguous_only": False,
+        "appearance_min_similarity": 0.0,
+        "appearance_weight": 0.0,
+        "accept_score_lost": 0.60,
+        "accept_score_locked": 0.52,
+        "rank_aware_lost_min_total": 0.20,
+        "rank_aware_lost_min_geom": 0.10,
+        "rank_aware_lost_min_app": 0.10,
+        "rank_aware_lost_app_margin": 0.05,
+        "rank_aware_confirm_frames": 1,
+    }
     base.update(kwargs)
     return TargetMemoryConfig(**base)
 
@@ -186,7 +186,6 @@ def test_rank_aware_reacquisition_keeps_candidate_probationary():
     assert np.allclose(tim._m.appearance, trusted_appearance)
 
 
-
 def test_rank_aware_reacquisition_respects_confirmation_frames():
     target = feat([1, 0, 0])
     distractor = feat([0, 1, 0])
@@ -321,6 +320,7 @@ def test_absence_recovery_rejects_low_appearance_margin():
     assert out.target_track_id == 1
     assert out.visible is False
     assert out.reason.startswith("absence_recovery_reject:appearance_margin")
+
 
 def test_rank_aware_reacquisition_cannot_bypass_hard_negative_rejection():
     memory = TargetIdentityMemory(

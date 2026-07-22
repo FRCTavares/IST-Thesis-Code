@@ -125,7 +125,6 @@ class CameraCaptureNode(Node):
             f"({self._publish_resize_mode}, {self._publish_encoding}), fps={self._fps}"
         )
 
-
     def _declare_parameters(self) -> None:
         """Declare ROS parameters used by the camera capture node."""
         self.declare_parameter("device", "/dev/video0")
