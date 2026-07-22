@@ -68,6 +68,7 @@ Active executable issues: **36**.
 
 9. [ ] [#50 — P0.23 Complete flight-readiness gate and record held-out UAV-motion evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
    - phase 10; live-system.
+   - Preparation on 22 July 2026 preserved all source, reference, and report evidence while reducing generated replay storage from 113 GB to four validated demonstration bags. The P0.23 live profile, readiness checklist, provenance template, and isolated control-safety tests are frozen; camera, Pixhawk, three ground runs, and held-out UAV-motion evidence remain pending.
 
 10. [ ] [#51 — P0.24 Harden unattended Raspberry Pi remote access and crash recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
    - phase 10; live-system; begins only after Issue #50 is completed.

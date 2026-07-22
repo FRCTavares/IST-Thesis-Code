@@ -27,6 +27,74 @@ def apply_deadband(x: float, deadband: float) -> float:
     return 0.0 if abs(x) < deadband else x
 
 
+def compute_control_command(
+    *,
+    cx: float,
+    h: float,
+    img_w: float,
+    img_h: float,
+    desired_h_norm: float,
+    yaw_kp: float,
+    forward_kp: float,
+    lateral_kp: float,
+    deadband_ex: float,
+    deadband_h: float,
+    max_yaw_z: float,
+    max_vx: float,
+    max_vy: float,
+    use_lateral: bool,
+    invert_yaw: bool,
+    invert_forward: bool,
+    invert_lateral: bool,
+) -> tuple[float, float, float, float, float, float, float]:
+    """Compute unslewed body-frame commands and diagnostic errors."""
+    if img_w <= 0.0 or img_h <= 0.0:
+        raise ValueError("image dimensions must be positive")
+
+    cx_norm = float(cx) / img_w
+    h_norm = float(h) / img_h
+
+    ex = apply_deadband(cx_norm - 0.5, deadband_ex)
+    range_err = apply_deadband(
+        desired_h_norm - h_norm,
+        deadband_h,
+    )
+
+    yaw_sign = -1.0 if invert_yaw else 1.0
+    forward_sign = -1.0 if invert_forward else 1.0
+    lateral_sign = -1.0 if invert_lateral else 1.0
+
+    yaw_z_cmd = clamp(
+        yaw_sign * yaw_kp * ex,
+        -max_yaw_z,
+        max_yaw_z,
+    )
+    vx_cmd = clamp(
+        forward_sign * forward_kp * range_err,
+        -max_vx,
+        max_vx,
+    )
+
+    if use_lateral:
+        vy_cmd = clamp(
+            lateral_sign * lateral_kp * ex,
+            -max_vy,
+            max_vy,
+        )
+    else:
+        vy_cmd = 0.0
+
+    return (
+        vx_cmd,
+        vy_cmd,
+        yaw_z_cmd,
+        cx_norm,
+        h_norm,
+        ex,
+        range_err,
+    )
+
+
 class ControlRefNode(Node):
     def __init__(self) -> None:
         super().__init__('control_ref_node')
@@ -375,26 +443,33 @@ class ControlRefNode(Node):
         self.valid_prev_tick = True
         self.update_mode('TRACKING')
 
-        cx_norm = float(t.cx) / self.img_w
-        h_norm = float(t.h) / self.img_h
-
-        ex = cx_norm - 0.5
-        range_err = self.desired_h_norm - h_norm
-
-        ex = apply_deadband(ex, self.deadband_ex)
-        range_err = apply_deadband(range_err, self.deadband_h)
-
-        yaw_sign = -1.0 if self.invert_yaw else 1.0
-        forward_sign = -1.0 if self.invert_forward else 1.0
-        lateral_sign = -1.0 if self.invert_lateral else 1.0
-
-        yaw_z_cmd = clamp(yaw_sign * self.yaw_kp * ex, -self.max_yaw_z, self.max_yaw_z)
-        vx_cmd = clamp(forward_sign * self.forward_kp * range_err, -self.max_vx, self.max_vx)
-
-        if self.use_lateral:
-            vy_cmd = clamp(lateral_sign * self.lateral_kp * ex, -self.max_vy, self.max_vy)
-        else:
-            vy_cmd = 0.0
+        (
+            vx_cmd,
+            vy_cmd,
+            yaw_z_cmd,
+            cx_norm,
+            h_norm,
+            ex,
+            range_err,
+        ) = compute_control_command(
+            cx=float(t.cx),
+            h=float(t.h),
+            img_w=self.img_w,
+            img_h=self.img_h,
+            desired_h_norm=self.desired_h_norm,
+            yaw_kp=self.yaw_kp,
+            forward_kp=self.forward_kp,
+            lateral_kp=self.lateral_kp,
+            deadband_ex=self.deadband_ex,
+            deadband_h=self.deadband_h,
+            max_yaw_z=self.max_yaw_z,
+            max_vx=self.max_vx,
+            max_vy=self.max_vy,
+            use_lateral=self.use_lateral,
+            invert_yaw=self.invert_yaw,
+            invert_forward=self.invert_forward,
+            invert_lateral=self.invert_lateral,
+        )
 
         self.prev_vx = self.slew(vx_cmd, self.prev_vx, self.max_delta_vx)
         self.prev_vy = self.slew(vy_cmd, self.prev_vy, self.max_delta_vy)
