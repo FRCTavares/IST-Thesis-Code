@@ -6,7 +6,7 @@ closing evidence.
 
 Last reconciled with GitHub: **22 July 2026**.
 
-Open executable issues: **36**.
+Open executable issues: **35**.
 
 ## Execution rules
 
@@ -25,46 +25,37 @@ Open executable issues: **36**.
 
 ## P0 — Safety, evidence integrity, thesis claims, and flight blockers
 
-1. [ ] [#53 — P0.26 Unify live coordinate frames and causal image-time contracts](https://github.com/FRCTavares/IST-Thesis-Code/issues/53)
-   - phase 10; live-system; flight blocker; unifies transforms and causal source-image selection across perception, tracking, TIM, UI, and evidence.
-   - software contract implemented and suite-validated: direct-resize inference
-     maps public boxes back to source pixels, dashboard mapping is source-native,
-     and DeepSORT uses bounded latest-at-or-before image selection. A 183-second
-     rebooted live run confirmed the versioned 640x480 contract end to end at
-     detector cadence; the scene contained no person, so recorded physical-person
-     detector/tracker/TIM/dashboard alignment is still required before closure.
+1. [ ] [#50 — P0.23 Complete flight-readiness gate and record held-out UAV-motion evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
+   - phase 10; live-system; next executable flight-readiness issue. The target-authority (#52), coordinate/image-time (#53), appearance-wiring (#10), and live source-age (#23) prerequisites are closed.
 
-2. [ ] [#50 — P0.23 Complete flight-readiness gate and record held-out UAV-motion evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
-   - phase 10; live-system; blocked by #52 and #53; the live source-age gate was completed in #23.
-
-3. [ ] [#51 — P0.24 Harden unattended Raspberry Pi remote access and crash recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
+2. [ ] [#51 — P0.24 Harden unattended Raspberry Pi remote access and crash recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
    - phase 10; live-system; starts only after #50; must never auto-start aircraft-affecting control.
 
-4. [ ] [#19 — P0.12 Separate ranking from validation](https://github.com/FRCTavares/IST-Thesis-Code/issues/19)
+3. [ ] [#19 — P0.12 Separate ranking from validation](https://github.com/FRCTavares/IST-Thesis-Code/issues/19)
    - phase 5; engineering; owns the unresolved incompatible-appearance/new-ID specification test.
 
-5. [ ] [#22 — P0.13 Add evaluator tests](https://github.com/FRCTavares/IST-Thesis-Code/issues/22)
+4. [ ] [#22 — P0.13 Add evaluator tests](https://github.com/FRCTavares/IST-Thesis-Code/issues/22)
    - phase 6; engineering; complete the boundary, gap, validity, timestamp, and stale-output matrix.
 
-6. [ ] [#24 — P0.15 Unify evaluator semantics](https://github.com/FRCTavares/IST-Thesis-Code/issues/24)
+5. [ ] [#24 — P0.15 Unify evaluator semantics](https://github.com/FRCTavares/IST-Thesis-Code/issues/24)
    - phase 6; experiment; depends on the tested semantics from #22 and freshness contract from #23.
 
-7. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
+6. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
    - phase 7; experiment.
 
-8. [ ] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
+7. [ ] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
     - phase 7; experiment; use only the frozen split and evaluator contract.
 
-9. [ ] [#33 — P0.19 Update stale tooling documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/33)
+8. [ ] [#33 — P0.19 Update stale tooling documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/33)
     - phase 8; documentation; includes automated verification of UI launcher/README paths and supported commands.
 
-10. [ ] [#34 — P0.20 Synchronize TIM documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/34)
+9. [ ] [#34 — P0.20 Synchronize TIM documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/34)
     - phase 8; experiment; add an evidence-version map from config hashes and commits to promoted claims.
 
-11. [ ] [#38 — P0.21 Freeze the research question](https://github.com/FRCTavares/IST-Thesis-Code/issues/38)
+10. [ ] [#38 — P0.21 Freeze the research question](https://github.com/FRCTavares/IST-Thesis-Code/issues/38)
     - phase 9; experiment.
 
-12. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
+11. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
     - phase 9; experiment; retain the evidence-backed rejection of universal safety portability.
 
 ## P1 — Major algorithmic, scientific, engineering, and documentation work
