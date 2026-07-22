@@ -22,6 +22,11 @@ Use these as the active result sources:
 
 The multi-tracker hard-reentry summary is the main source of truth for the TIM-MARS selected-target evaluation.
 
+## Active field runbook
+
+- `flight/SOURCE_FIRST_FIELD_RECORDING_PLAN.md` — copy-paste procedure for
+  three source-only scenarios followed by one full-stack validation run.
+
 It supersedes earlier TIM-V2, TIM-V2Q, active-MARS, conservative-MARS, and early DeepSORT comparison notes now stored under `archive/results/`.
 
 ## Current trusted selected-target annotations

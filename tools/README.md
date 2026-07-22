@@ -22,6 +22,13 @@ generic evaluation wrapper hiding bag paths or experiment assumptions.
 
 ## Live field recording
 
+The recommended retained-data workflow is source-first: record the three field
+scenarios with `--source-record`, replay the pipeline offline, and retain one
+representative `--field-record` run as live-system evidence. Follow
+`docs/flight/SOURCE_FIRST_FIELD_RECORDING_PLAN.md`.
+
+### Optional combined raw recording
+
 The normal live bag keeps the dashboard, detections, tracks, TIM-MARS outputs,
 timing, and control topics. Add a clean camera stream without replacing those
 outputs by using:
@@ -41,6 +48,8 @@ true 30 FPS, the theoretical uncompressed payload is about 28 MB/s or 1.7
 GB/min. ROS/DDS and live-stack load can reduce the delivered raw frame rate, so
 check the recorded count and duration with `ros2 bag info` before leaving the
 field. The raw bag is clean camera imagery, not a guarantee of 30 recorded FPS.
+Because the measured combined mode does not approach 30 raw FPS, it is a
+diagnostic option and is not recommended for the source-first field session.
 
 `--field-record` enforces the AERONEXT/Pixhawk Ethernet network mode and stops
 Tailscale. Run it from the Pi's local terminal when the Pixhawk is connected.
