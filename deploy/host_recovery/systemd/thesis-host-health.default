@@ -1,0 +1,6 @@
+# Host-only recovery settings. No thesis runtime or UAV service is started.
+THESIS_HOST_INTERFACE=wlan0
+THESIS_HOST_STATE_DIR=/var/lib/thesis-host-health
+THESIS_HOST_FAILURE_THRESHOLD=3
+THESIS_HOST_COOLDOWN_SECONDS=900
+THESIS_HOST_MIN_FREE_GIB=20

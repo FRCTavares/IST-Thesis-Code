@@ -1,0 +1,29 @@
+[Unit]
+Description=Thesis Pi host-only availability health check
+Documentation=file:///home/francisco/Desktop/Thesis-Code/docs/debug/UNATTENDED_PI_OPERATION.md
+After=NetworkManager.service tailscaled.service ssh.socket
+Wants=NetworkManager.service tailscaled.service ssh.socket
+ConditionPathExists=/usr/local/libexec/thesis_host_health.py
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/default/thesis-host-health
+ExecStart=/usr/bin/python3 /usr/local/libexec/thesis_host_health.py
+TimeoutStartSec=60s
+User=root
+Group=root
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=read-only
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/thesis-host-health
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+UMask=0077

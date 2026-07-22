@@ -212,6 +212,7 @@ trap 'stop_stack; exit 0' INT TERM
 
 source "$THESIS_ROOT/tools/lib/live_usage.sh"
 source "$THESIS_ROOT/tools/lib/live_defaults.sh"
+source "$THESIS_ROOT/tools/lib/live_storage.sh"
 
 source "$THESIS_ROOT/tools/lib/live_cli.sh"
 parse_and_validate_live_stack_args "$@"
@@ -424,6 +425,16 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     fi
 fi
 log_step "preflight checks"
+if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
+    ensure_recording_storage_available \
+        "$BAG_OUT_ROOT" \
+        "$RECORDING_MIN_FREE_GIB" || exit 1
+fi
+if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
+    ensure_recording_storage_available \
+        "$DATASET_BAG_OUT_ROOT" \
+        "$RECORDING_MIN_FREE_GIB" || exit 1
+fi
 if ! check_stuck_camera_processes; then
     exit 1
 fi

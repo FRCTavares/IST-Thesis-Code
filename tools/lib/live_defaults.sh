@@ -78,6 +78,7 @@ ENABLE_DATASET_BAG=0
 BAG_TAG=""
 BAG_OUT_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/bags/live_camera"
 DATASET_BAG_OUT_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/bags/datasets"
+RECORDING_MIN_FREE_GIB="${RECORDING_MIN_FREE_GIB:-20}"
 RECORD_MAVROS=0
 
 apply_startup_profile() {

@@ -1,0 +1,13 @@
+[Unit]
+Description=Run the thesis Pi host health check every two minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=20s
+RandomizedDelaySec=15s
+Persistent=true
+Unit=thesis-host-health.service
+
+[Install]
+WantedBy=timers.target

@@ -25,11 +25,11 @@ Open executable issues: **35**.
 
 ## P0 — Safety, evidence integrity, thesis claims, and flight blockers
 
-1. [ ] [#50 — P0.23 Complete flight-readiness gate and record held-out UAV-motion evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
-   - phase 10; live-system; next executable flight-readiness issue. The target-authority (#52), coordinate/image-time (#53), appearance-wiring (#10), and live source-age (#23) prerequisites are closed.
+1. [ ] [#51 — P0.24 Harden unattended Raspberry Pi remote access and crash recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
+   - phase 10; live-system; explicitly promoted ahead of #50 by the operator on 22 July 2026. Host availability is independent of flight readiness and must never auto-start aircraft-affecting control.
 
-2. [ ] [#51 — P0.24 Harden unattended Raspberry Pi remote access and crash recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
-   - phase 10; live-system; starts only after #50; must never auto-start aircraft-affecting control.
+2. [ ] [#50 — P0.23 Complete flight-readiness gate and record held-out UAV-motion evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
+   - phase 10; live-system; resumes immediately after #51. The target-authority (#52), coordinate/image-time (#53), appearance-wiring (#10), and live source-age (#23) prerequisites are closed.
 
 3. [ ] [#19 — P0.12 Separate ranking from validation](https://github.com/FRCTavares/IST-Thesis-Code/issues/19)
    - phase 5; engineering; owns the unresolved incompatible-appearance/new-ID specification test.
