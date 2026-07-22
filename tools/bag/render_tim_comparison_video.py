@@ -14,7 +14,6 @@ import argparse
 import csv
 import json
 import subprocess
-import statistics
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
@@ -27,8 +26,8 @@ GREEN = (0, 210, 0)
 RED = (0, 0, 255)
 YELLOW = (0, 220, 255)
 GREY = (160, 160, 160)
-CYAN = (255, 255, 0)
 WHITE = (255, 255, 255)
+HEADER_HEIGHT = 112
 
 
 @dataclass
@@ -163,7 +162,7 @@ def classify(ann: Optional[Ann], selected_id: int):
         return "NO SELECTION", GREY, ann.correct_id, "grey"
 
     if (not ann.target_visible) or label == "TARGET_NOT_VISIBLE":
-        return "NOT VISIBLE", GREY, ann.correct_id, "grey"
+        return "ANNOTATION: TARGET ABSENT", GREY, 0, "grey"
 
     if ann.correct_id <= 0:
         return "UNCERTAIN", GREY, ann.correct_id, "grey"
@@ -203,6 +202,23 @@ def image_to_bgr(msg: Any) -> np.ndarray:
         return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
     raise RuntimeError(f"unsupported image encoding: {msg.encoding}")
+
+
+def first_image_dimensions(bag: Path, topic_name: str, message_type: str):
+    """Return the recorded camera dimensions without assuming an aspect ratio."""
+    from rclpy.serialization import deserialize_message
+    from rosidl_runtime_py.utilities import get_message
+
+    msg_type = get_message(message_type)
+    reader = open_reader(bag)
+    while reader.has_next():
+        topic, raw, _ = reader.read_next()
+        if topic != topic_name:
+            continue
+        image = image_to_bgr(deserialize_message(raw, msg_type))
+        height, width = image.shape[:2]
+        return width, height
+    die(f"no images on {topic_name} in {bag}")
 
 
 def bbox_xyxy(obj: Any):
@@ -259,19 +275,29 @@ def selected_id(msg: Any) -> int:
     return 0
 
 
-def map_box(box, img_w: int, img_h: int, coord_w: float, coord_h: float):
+def track_boxes_are_source_pixels(msg: Any) -> bool:
+    frame_id = str(safe_get(safe_get(msg, ["header"], None), ["frame_id"], ""))
+    return frame_id.startswith("tim_mars_source_pixels_resize_v1;")
+
+
+def map_box(
+    box,
+    img_w: int,
+    img_h: int,
+    source_pixels: bool,
+    coord_w: float = 640.0,
+    coord_h: float = 640.0,
+):
+    """Map a track box according to the contract recorded in its header."""
     x1, y1, x2, y2 = box
 
-    scale = min(coord_w / float(img_w), coord_h / float(img_h))
-    new_w = float(img_w) * scale
-    new_h = float(img_h) * scale
-    pad_x = 0.5 * (coord_w - new_w)
-    pad_y = 0.5 * (coord_h - new_h)
-
-    x1 = (x1 - pad_x) / scale
-    x2 = (x2 - pad_x) / scale
-    y1 = (y1 - pad_y) / scale
-    y2 = (y2 - pad_y) / scale
+    if not source_pixels:
+        x_scale = float(img_w) / coord_w
+        y_scale = float(img_h) / coord_h
+        x1 *= x_scale
+        x2 *= x_scale
+        y1 *= y_scale
+        y2 *= y_scale
 
     xi1 = max(0, min(img_w - 1, int(round(x1))))
     yi1 = max(0, min(img_h - 1, int(round(y1))))
@@ -343,7 +369,12 @@ def read_events(bag: Path, t0_ns: int, tracks_topic: str, output_topic: str):
             msg = deserialize_message(raw, tracks_type)
             t = header_ns(msg)
             if t is not None:
-                track_events.append(((t - t0_ns) * 1e-9, extract_tracks(msg)))
+                track_events.append(
+                    (
+                        (t - t0_ns) * 1e-9,
+                        (extract_tracks(msg), track_boxes_are_source_pixels(msg)),
+                    )
+                )
 
         elif topic == output_topic:
             msg = deserialize_message(raw, output_type)
@@ -354,45 +385,14 @@ def read_events(bag: Path, t0_ns: int, tracks_topic: str, output_topic: str):
     return track_events, output_events
 
 
-def latest_at(events, idx: int, t_s: float):
+def latest_sample_at(events, idx: int, t_s: float):
     if not events:
-        return idx, None
+        return idx, None, None
     while idx + 1 < len(events) and events[idx + 1][0] <= t_s:
         idx += 1
     if events[idx][0] > t_s:
-        return idx, None
-    return idx, events[idx][1]
-
-
-def infer_fps(bag: Path, image_topic: str, t0_ns: int, default: float) -> float:
-    from rclpy.serialization import deserialize_message
-    from rosidl_runtime_py.utilities import get_message
-
-    types = topic_types(bag)
-    msg_type = get_message(types[image_topic])
-    reader = open_reader(bag)
-    times = []
-
-    while reader.has_next():
-        topic, raw, _ = reader.read_next()
-        if topic != image_topic:
-            continue
-        msg = deserialize_message(raw, msg_type)
-        t = header_ns(msg)
-        if t is not None:
-            ts = (t - t0_ns) * 1e-9
-            if ts >= 0:
-                times.append(ts)
-
-    if len(times) < 4:
-        return default
-
-    dts = [b - a for a, b in zip(times[:-1], times[1:])]
-    dts = [dt for dt in dts if 0.001 <= dt <= 1.0]
-    if not dts:
-        return default
-
-    return max(1.0, min(60.0, 1.0 / statistics.median(dts)))
+        return idx, None, None
+    return idx, events[idx][0], events[idx][1]
 
 
 def draw_text_box(img, text: str, x: int, y: int, colour):
@@ -406,33 +406,170 @@ def draw_text_box(img, text: str, x: int, y: int, colour):
     cv2.putText(img, text, (x0 + 4, y0 + th + 2), font, scale, (0, 0, 0), thickness, cv2.LINE_AA)
 
 
-def draw_panel(img, title, status, colour, t_s, out_id, ref_id, out_box, ref_box):
-    out = img.copy()
-    h, w = out.shape[:2]
+def draw_dashed_line(
+    img,
+    start: tuple[int, int],
+    end: tuple[int, int],
+    colour=WHITE,
+    thickness: int = 2,
+    dash_px: int = 12,
+    gap_px: int = 7,
+) -> None:
+    x1, y1 = start
+    x2, y2 = end
+    length = max(abs(x2 - x1), abs(y2 - y1))
+    if length <= 0:
+        return
+    step = dash_px + gap_px
+    for offset in range(0, length + 1, step):
+        finish = min(length, offset + dash_px)
+        sx = int(round(x1 + (x2 - x1) * offset / length))
+        sy = int(round(y1 + (y2 - y1) * offset / length))
+        ex = int(round(x1 + (x2 - x1) * finish / length))
+        ey = int(round(y1 + (y2 - y1) * finish / length))
+        cv2.line(img, (sx, sy), (ex, ey), colour, thickness, cv2.LINE_AA)
 
-    cv2.rectangle(out, (0, 0), (w, 88), (0, 0, 0), -1)
-    cv2.putText(out, title, (16, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.72, WHITE, 2, cv2.LINE_AA)
-    cv2.putText(out, status, (16, 64), cv2.FONT_HERSHEY_SIMPLEX, 0.95, colour, 3, cv2.LINE_AA)
-    cv2.putText(
-        out,
-        f"header t={t_s:.2f}s  output={out_id}  reference={ref_id}",
-        (260, 64),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.55,
-        (230, 230, 230),
-        2,
-        cv2.LINE_AA,
+
+def draw_dashed_rectangle(img, box, colour=WHITE, thickness: int = 2) -> None:
+    x1, y1, x2, y2 = box
+    draw_dashed_line(img, (x1, y1), (x2, y1), colour, thickness)
+    draw_dashed_line(img, (x2, y1), (x2, y2), colour, thickness)
+    draw_dashed_line(img, (x2, y2), (x1, y2), colour, thickness)
+    draw_dashed_line(img, (x1, y2), (x1, y1), colour, thickness)
+
+
+def put_text_fit(
+    img,
+    text: str,
+    origin: tuple[int, int],
+    max_width: int,
+    scale: float,
+    colour,
+    thickness: int,
+    minimum_scale: float = 0.38,
+) -> float:
+    """Draw one line without allowing it to spill outside its panel."""
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fitted = scale
+    while fitted > minimum_scale:
+        width = cv2.getTextSize(text, font, fitted, thickness)[0][0]
+        if width <= max_width:
+            break
+        fitted = max(minimum_scale, fitted - 0.02)
+    cv2.putText(img, text, origin, font, fitted, colour, thickness, cv2.LINE_AA)
+    return fitted
+
+
+def status_for_display(status: str) -> str:
+    """Keep the presentation label compact without changing classification data."""
+    if status == "ANNOTATION: TARGET ABSENT":
+        return "TARGET ABSENT"
+    return status
+
+
+def letterbox_image(img, width: int, height: int):
+    """Fit the complete camera image into a viewport without cropping or distortion."""
+    source_h, source_w = img.shape[:2]
+    scale = min(width / float(source_w), height / float(source_h))
+    resized_w = max(1, int(round(source_w * scale)))
+    resized_h = max(1, int(round(source_h * scale)))
+    resized = cv2.resize(img, (resized_w, resized_h), interpolation=cv2.INTER_LINEAR)
+    pad_x = (width - resized_w) // 2
+    pad_y = (height - resized_h) // 2
+    viewport = np.zeros((height, width, 3), dtype=np.uint8)
+    viewport[pad_y : pad_y + resized_h, pad_x : pad_x + resized_w] = resized
+    return viewport, scale, pad_x, pad_y
+
+
+def transform_box(box, scale: float, pad_x: int, pad_y: int):
+    if box is None:
+        return None
+    x1, y1, x2, y2 = box
+    return (
+        int(round(x1 * scale + pad_x)),
+        int(round(y1 * scale + pad_y)),
+        int(round(x2 * scale + pad_x)),
+        int(round(y2 * scale + pad_y)),
     )
 
-    if ref_box is not None:
-        x1, y1, x2, y2 = ref_box
-        cv2.rectangle(out, (x1, y1), (x2, y2), CYAN, 2)
-        draw_text_box(out, f"REF {ref_id}", x1, max(96, y1 - 4), CYAN)
+
+def draw_panel(
+    img,
+    title,
+    status,
+    colour,
+    t_s,
+    out_id,
+    ref_id,
+    out_box,
+    ref_box,
+    event_type,
+    output_age_s,
+    header_height=HEADER_HEIGHT,
+):
+    camera_h, w = img.shape[:2]
+    h = header_height + camera_h
+    out = np.zeros((h, w, 3), dtype=np.uint8)
+    out[header_height:, :] = img
+
+    put_text_fit(out, title, (16, 30), w - 32, 0.72, WHITE, 2, 0.52)
+    cv2.putText(
+        out,
+        status_for_display(status),
+        (16, 64),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.95,
+        colour,
+        3,
+        cv2.LINE_AA,
+    )
+    age_text = "none" if output_age_s is None else f"{output_age_s:.2f}s"
+    put_text_fit(
+        out,
+        f"t={t_s:.2f}s | out={out_id} | age={age_text} | ref={ref_id}",
+        (292, 62),
+        w - 308,
+        0.48,
+        (230, 230, 230),
+        1,
+        0.40,
+    )
+    detail = f"event={event_type or 'unlabelled'}"
+    if ref_id > 0 and ref_box is None:
+        detail += f" | annotation ref {ref_id} not present in /tracks"
+    else:
+        detail += " | solid: output | dashed white: annotation ref"
+    put_text_fit(
+        out,
+        detail,
+        (16, 93),
+        w - 32,
+        0.47,
+        WHITE,
+        1,
+        0.40,
+    )
 
     if out_box is not None:
         x1, y1, x2, y2 = out_box
+        y1 += header_height
+        y2 += header_height
         cv2.rectangle(out, (x1, y1), (x2, y2), colour, 4)
         draw_text_box(out, f"OUT {out_id}", x1, min(h - 12, y2 + 26), colour)
+
+    if ref_box is not None:
+        x1, y1, x2, y2 = ref_box
+        y1 += header_height
+        y2 += header_height
+        shifted_ref_box = (x1, y1, x2, y2)
+        draw_dashed_rectangle(out, shifted_ref_box, WHITE, 2)
+        draw_text_box(
+            out,
+            f"ANNOTATION REF {ref_id}",
+            x1,
+            max(header_height + 22, y1 - 4),
+            WHITE,
+        )
 
     return out
 
@@ -445,12 +582,16 @@ def render_panel(args) -> dict:
     types = topic_types(args.bag)
     image_topic = choose_image_topic(types, args.image_topic)
 
-    t0_ns = first_header_for_topic(args.bag, args.output_topic)
+    t0_ns = args.t0_ns
     track_events, output_events = read_events(args.bag, t0_ns, args.tracks_topic, args.output_topic)
 
     ann_start = min(x.start_s for x in ann) if ann else 0.0
     ann_end = max(x.end_s for x in ann) if ann else 0.0
-    ann_duration = max(0.001, ann_end - ann_start)
+    render_start = max(ann_start, args.start_s if args.start_s is not None else ann_start)
+    render_end = min(ann_end, args.end_s if args.end_s is not None else ann_end)
+    if render_end <= render_start:
+        die(f"invalid render window: {render_start:.3f}..{render_end:.3f}s")
+    render_duration = max(0.001, render_end - render_start)
 
     # If FPS is not explicitly set, encode sparse recorded image frames so that
     # playback duration matches the official header-time annotation window.
@@ -458,7 +599,14 @@ def render_panel(args) -> dict:
     # recorded image topic is below 15 Hz.
     fps = args.fps if args.fps > 0 else args.default_fps
 
-    out_w, out_h = [int(x) for x in args.output_size.lower().split("x")]
+    source_w, source_h = first_image_dimensions(
+        args.bag, image_topic, types[image_topic]
+    )
+    out_w = args.output_width
+    camera_h = max(2, int(round(out_w * source_h / float(source_w))))
+    if camera_h % 2:
+        camera_h += 1
+    out_h = args.header_height + camera_h
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.summary.parent.mkdir(parents=True, exist_ok=True)
@@ -478,6 +626,7 @@ def render_panel(args) -> dict:
     track_idx = 0
     output_idx = 0
     latest_tracks = {}
+    latest_tracks_source_pixels = False
     latest_output_id = 0
 
     counts = {"correct": 0, "wrong": 0, "lost": 0, "grey": 0}
@@ -496,9 +645,10 @@ def render_panel(args) -> dict:
             continue
 
         t_s = (t - t0_ns) * 1e-9
-        if ann:
-            if t_s < ann_start or t_s > ann_end:
-                continue
+        if t_s < render_start:
+            continue
+        if t_s > render_end:
+            break
 
         a = ann_at(ann, t_s)
 
@@ -510,13 +660,19 @@ def render_panel(args) -> dict:
             if a.target_label.upper() in {"NO_TARGET_SELECTED", "TARGET_NOT_VISIBLE"}:
                 continue
 
-        track_idx, tv = latest_at(track_events, track_idx, t_s)
-        if tv is not None:
-            latest_tracks = tv
+        track_idx, track_t, tv = latest_sample_at(track_events, track_idx, t_s)
+        if tv is not None and t_s - track_t <= args.max_track_age_s:
+            latest_tracks, latest_tracks_source_pixels = tv
+        elif track_t is None or t_s - track_t > args.max_track_age_s:
+            latest_tracks = {}
+            latest_tracks_source_pixels = False
 
-        output_idx, ov = latest_at(output_events, output_idx, t_s)
-        if ov is not None:
+        output_idx, output_t, ov = latest_sample_at(output_events, output_idx, t_s)
+        output_age_s = None if output_t is None else max(0.0, t_s - output_t)
+        if ov is not None and output_age_s <= args.max_output_age_s:
             latest_output_id = int(ov)
+        else:
+            latest_output_id = 0
 
         status, colour, ref_id, bucket = classify(a, latest_output_id)
 
@@ -528,6 +684,7 @@ def render_panel(args) -> dict:
                 latest_tracks[latest_output_id],
                 img.shape[1],
                 img.shape[0],
+                latest_tracks_source_pixels,
                 args.track_coord_w,
                 args.track_coord_h,
             )
@@ -538,12 +695,28 @@ def render_panel(args) -> dict:
                 latest_tracks[ref_id],
                 img.shape[1],
                 img.shape[0],
+                latest_tracks_source_pixels,
                 args.track_coord_w,
                 args.track_coord_h,
             )
 
-        frame = draw_panel(img, args.title, status, colour, t_s, latest_output_id, ref_id, out_box, ref_box)
-        frame = cv2.resize(frame, (out_w, out_h), interpolation=cv2.INTER_LINEAR)
+        camera, camera_scale, camera_pad_x, camera_pad_y = letterbox_image(
+            img, out_w, camera_h
+        )
+        frame = draw_panel(
+            camera,
+            args.title,
+            status,
+            colour,
+            t_s,
+            latest_output_id,
+            ref_id,
+            transform_box(out_box, camera_scale, camera_pad_x, camera_pad_y),
+            transform_box(ref_box, camera_scale, camera_pad_x, camera_pad_y),
+            a.event_type if a is not None else "no_annotation",
+            output_age_s,
+            args.header_height,
+        )
         writer.write(frame)
 
         rendered += 1
@@ -559,8 +732,14 @@ def render_panel(args) -> dict:
 
     writer.release()
 
+    if args.max_frames > 0 and first_t is not None and last_t is not None:
+        render_duration = max(
+            1.0 / args.default_fps,
+            last_t - first_t + 1.0 / args.default_fps,
+        )
+
     if args.fps <= 0 and rendered > 0:
-        fps = rendered / ann_duration
+        fps = rendered / render_duration
 
         # Re-encode the just-written panel with the duration-correct FPS.
         # OpenCV VideoWriter cannot change FPS after opening, so use ffmpeg
@@ -570,6 +749,9 @@ def render_panel(args) -> dict:
         subprocess.run(
             [
                 "ffmpeg",
+                "-hide_banner",
+                "-loglevel",
+                "error",
                 "-y",
                 "-r",
                 f"{fps:.9f}",
@@ -604,6 +786,13 @@ def render_panel(args) -> dict:
         "first_render_header_s": first_t,
         "last_render_header_s": last_t,
         "visible_annotation_duration_s": visible_duration(ann),
+        "render_start_s": render_start,
+        "render_end_s": render_end,
+        "max_output_age_s": args.max_output_age_s,
+        "max_track_age_s": args.max_track_age_s,
+        "source_image_size": f"{source_w}x{source_h}",
+        "camera_viewport_size": f"{out_w}x{camera_h}",
+        "panel_size": f"{out_w}x{out_h}",
         "counts": counts,
         "output": str(args.output),
     }
@@ -620,24 +809,29 @@ def join_pair(left: Path, right: Path, out: Path) -> None:
 
     cmd = [
         "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
         "-y",
         "-i",
         str(left),
         "-i",
         str(right),
         "-filter_complex",
-        "[0:v]setpts=PTS-STARTPTS[v0];[1:v]setpts=PTS-STARTPTS[v1];[v0][v1]hstack=inputs=2[v]",
+        "[0:v]fps=15,setpts=PTS-STARTPTS[v0];[1:v]fps=15,setpts=PTS-STARTPTS[v1];[v0][v1]hstack=inputs=2[v]",
         "-map",
         "[v]",
         "-an",
         "-c:v",
         "libx264",
         "-preset",
-        "veryfast",
+        "medium",
         "-crf",
-        "20",
+        "18",
         "-pix_fmt",
         "yuv420p",
+        "-movflags",
+        "+faststart",
         "-shortest",
         str(out),
     ]
@@ -646,30 +840,42 @@ def join_pair(left: Path, right: Path, out: Path) -> None:
 
 
 def panel_namespace(**kwargs):
-    return argparse.Namespace(
-        image_topic="auto",
-        tracks_topic="/tracks",
-        fps=0.0,
-        default_fps=15.0,
-        output_size="960x540",
-        track_coord_w=640.0,
-        track_coord_h=640.0,
-        visible_only=False,
-        max_frames=0,
-        **kwargs,
-    )
+    values = {
+        "image_topic": "auto",
+        "tracks_topic": "/tracks",
+        "fps": 0.0,
+        "default_fps": 15.0,
+        "output_width": 960,
+        "header_height": HEADER_HEIGHT,
+        "track_coord_w": 640.0,
+        "track_coord_h": 640.0,
+        "visible_only": False,
+        "max_frames": 0,
+        "max_output_age_s": 1.0,
+        "max_track_age_s": 1.0,
+        "start_s": None,
+        "end_s": None,
+    }
+    values.update(kwargs)
+    return argparse.Namespace(**values)
 
 
 def render_pair(
     name: str,
-    raw_bag: Path,
-    tim_bag: Path,
+    bag: Path,
     annotation: Path,
     raw_title: str,
     tim_title: str,
-    out_dir: Path,
-    final_name: str,
+    output: Path,
+    image_topic: str,
+    start_s: Optional[float],
+    end_s: Optional[float],
+    max_frames: int,
+    max_output_age_s: float,
+    max_track_age_s: float,
 ):
+    out_dir = output.parent
+    final_name = output.name
     tmp = out_dir / "_tmp_panels"
     tmp.mkdir(parents=True, exist_ok=True)
 
@@ -678,30 +884,45 @@ def render_pair(
     raw_summary = tmp / f"{name}_raw_panel.json"
     tim_summary = tmp / f"{name}_tim_mars_panel.json"
 
+    types = topic_types(bag)
+    selected_image_topic = choose_image_topic(types, image_topic)
+    t0_ns = first_header_for_topic(bag, selected_image_topic)
+    common = {
+        "bag": bag,
+        "annotation": annotation,
+        "image_topic": selected_image_topic,
+        "t0_ns": t0_ns,
+        "start_s": start_s,
+        "end_s": end_s,
+        "max_frames": max_frames,
+        "max_output_age_s": max_output_age_s,
+        "max_track_age_s": max_track_age_s,
+    }
+
     raw = render_panel(
         panel_namespace(
-            bag=raw_bag,
-            annotation=annotation,
             output_topic="/target",
             output=raw_panel,
             summary=raw_summary,
             title=raw_title,
+            **common,
         )
     )
 
     tim = render_panel(
         panel_namespace(
-            bag=tim_bag,
-            annotation=annotation,
             output_topic="/target_memory_mars",
             output=tim_panel,
             summary=tim_summary,
             title=tim_title,
+            **common,
         )
     )
 
     final = out_dir / final_name
     join_pair(raw_panel, tim_panel, final)
+    raw_panel.unlink(missing_ok=True)
+    tim_panel.unlink(missing_ok=True)
 
     return {
         "name": name,
@@ -711,9 +932,9 @@ def render_pair(
     }
 
 
-def write_summary(out_dir: Path, summaries: list[dict]) -> None:
-    out_json = out_dir / "summary.json"
-    out_md = out_dir / "summary.md"
+def write_summary(output: Path, summaries: list[dict]) -> None:
+    out_json = output.with_suffix(".json")
+    out_md = output.with_suffix(".md")
 
     out_json.write_text(json.dumps(summaries, indent=2) + "\n")
 
@@ -748,20 +969,32 @@ def write_summary(out_dir: Path, summaries: list[dict]) -> None:
 
 
 def render_comparison(args) -> int:
-    out_dir = args.out_dir
-    out_dir.mkdir(parents=True, exist_ok=True)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    safe_name = "".join(
+        character if character.isalnum() else "_"
+        for character in args.output.stem
+    ).strip("_")
 
     s = render_pair(
-        name=args.name,
-        raw_bag=args.raw_bag,
-        tim_bag=args.tim_bag,
+        name=safe_name,
+        bag=args.bag,
         annotation=args.annotation,
-        raw_title=args.raw_title,
-        tim_title=args.tim_title,
-        out_dir=out_dir,
-        final_name=args.output_name,
+        raw_title=(
+            f"{args.sequence_label} | RAW [/target] | {args.tracker_label}"
+        ),
+        tim_title=(
+            f"{args.sequence_label} | TIM-MARS [/target_memory_mars] | "
+            f"{args.tracker_label}"
+        ),
+        output=args.output,
+        image_topic=args.image_topic,
+        start_s=args.start_s,
+        end_s=args.end_s,
+        max_frames=args.max_frames,
+        max_output_age_s=args.max_output_age_s,
+        max_track_age_s=args.max_track_age_s,
     )
-    write_summary(out_dir, [s])
+    write_summary(args.output, [s])
     return 0
 
 
@@ -771,18 +1004,17 @@ def build_parser() -> argparse.ArgumentParser:
             "Render one header-time raw-target versus TIM-MARS comparison."
         )
     )
-    p.add_argument("--name", required=True, help="Tracker or experiment label")
-    p.add_argument("--raw-bag", type=Path, required=True)
-    p.add_argument("--tim-bag", type=Path, required=True)
+    p.add_argument("--bag", type=Path, required=True)
     p.add_argument("--annotation", type=Path, required=True)
-    p.add_argument("--raw-title", required=True)
-    p.add_argument("--tim-title", required=True)
-    p.add_argument("--output-name", required=True)
-    p.add_argument(
-        "--out-dir",
-        type=Path,
-        default=Path("reports/videos"),
-    )
+    p.add_argument("--sequence-label", required=True)
+    p.add_argument("--tracker-label", required=True)
+    p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--image-topic", default="auto")
+    p.add_argument("--start-s", type=float)
+    p.add_argument("--end-s", type=float)
+    p.add_argument("--max-frames", type=int, default=0)
+    p.add_argument("--max-output-age-s", type=float, default=1.0)
+    p.add_argument("--max-track-age-s", type=float, default=1.0)
     return p
 
 

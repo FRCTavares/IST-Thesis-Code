@@ -28,20 +28,33 @@ For final quantitative evaluation, use scripts in `tools/analysis/` instead.
 
 ## `render_tim_comparison_video.py`
 
-This renderer requires explicit raw bag, TIM-MARS bag, annotation, titles, and
-output name. It deliberately has no date-specific or “official” preset because
-those silently become invalid when evidence folders move.
+This renderer requires one bag containing the image, `/tracks`, raw `/target`,
+and TIM-MARS `/target_memory_mars` streams. Both panels use the same image
+header time origin and annotation intervals. The annotated track is drawn as a
+white dashed reference box; solid boxes show each method's output.
 
 ```bash
 python3 tools/bag/render_tim_comparison_video.py \
-  --name OCSORT \
-  --raw-bag BAG_RAW \
-  --tim-bag BAG_TIM \
+  --bag BAG \
   --annotation ANNOTATIONS.csv \
-  --raw-title "OCSORT raw target" \
-  --tim-title "OCSORT TIM-MARS" \
-  --output-name ocsort_comparison.mp4
+  --sequence-label "Seq03 crossing ambiguity" \
+  --tracker-label "OC-SORT" \
+  --output reports/videos/seq03_raw_vs_tim_mars.mp4
 ```
+
+The default one-second output-age gate matches the quantitative evaluator.
+Presentation output is H.264 at constant 15 FPS, with held source frames
+rather than interpolated motion. Each panel scales the complete recorded
+camera image to 960 pixels wide while preserving its native aspect ratio, then
+places a 112-pixel information header above it. The header cannot cover camera
+pixels, and the camera image is never cropped or stretched.
+
+The renderer reads the track header's coordinate contract. Versioned
+`tim_mars_source_pixels_resize_v1` boxes are already source-camera pixels and
+are not transformed twice. Legacy replay boxes with bare `frame_<n>` headers
+are mapped from their 640×640 inference plane to the camera by independent X/Y
+scaling; this correctly maps legacy 640×640 boxes onto 640×480 dashboard
+frames without assuming letterboxing.
 
 ## Relationship to the annotation UI
 
