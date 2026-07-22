@@ -12,9 +12,11 @@ from __future__ import annotations
 
 import json
 
+from thesis_bringup.tim_mars.target_memory import (
+    BBox,
+    TargetMemoryOutput,
+)
 from thesis_msgs.msg import TargetState
-
-from thesis_bringup.tim_mars.target_memory import BBox, TargetMemoryOutput
 
 
 def _value_text(value: object) -> str:

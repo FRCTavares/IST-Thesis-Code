@@ -14,12 +14,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, List, Optional, Sequence
+from typing import (
+    Any,
+    List,
+    Optional,
+    Sequence,
+)
 
 from thesis_bringup.tim_mars.appearance_memory import update_feature_memory
-from thesis_bringup.tim_mars.positive_appearance_memory import (
-    PositiveAppearanceMemory,
-)
 from thesis_bringup.tim_mars.appearance_policy import (
     score_with_appearance,
     should_use_appearance,
@@ -35,14 +37,18 @@ from thesis_bringup.tim_mars.geometry_scoring import (
     score_candidate,
 )
 from thesis_bringup.tim_mars.hard_negative_memory import HardNegativeMemory
-from thesis_bringup.tim_mars.memory_state import _Memory, _control_mode_for_state
+from thesis_bringup.tim_mars.memory_state import (
+    _control_mode_for_state,
+    _Memory,
+)
+from thesis_bringup.tim_mars.positive_appearance_memory import PositiveAppearanceMemory
 from thesis_bringup.tim_mars.reacquisition_policy import (
-    AbsenceRecoveryConfirmation,
-    CandidateBeliefConfirmation,
-    RankAwareReacquisitionConfirmation,
     absence_risk,
+    AbsenceRecoveryConfirmation,
     appearance_margin,
+    CandidateBeliefConfirmation,
     geometry_strength,
+    RankAwareReacquisitionConfirmation,
     scene_ambiguity_risk,
 )
 from thesis_bringup.tim_mars.types import (

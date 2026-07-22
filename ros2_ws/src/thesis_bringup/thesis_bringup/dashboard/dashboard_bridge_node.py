@@ -8,29 +8,47 @@ camera/perception health into browser-facing telemetry for the dashboard UI.
 from __future__ import annotations
 
 import asyncio
+from collections import deque
+from http.server import (
+    BaseHTTPRequestHandler,
+    ThreadingHTTPServer,
+)
 import json
+import math
 import os
 import subprocess
-import time
 import threading
-from collections import deque
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import time
 from typing import Any
-import math
 
+from rcl_interfaces.msg import (
+    Parameter,
+    ParameterType,
+    ParameterValue,
+)
+from rcl_interfaces.srv import SetParameters
 import rclpy
 from rclpy.executors import ExternalShutdownException
-import websockets
-from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
-from rcl_interfaces.srv import SetParameters
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
-from std_msgs.msg import Float32
-from vision_msgs.msg import Detection2DArray
-from std_msgs.msg import String
-from thesis_msgs.msg import TargetState, Timing, Track2DArray
+from rclpy.qos import (
+    DurabilityPolicy,
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
+from std_msgs.msg import (
+    Float32,
+    String,
+)
 from thesis_bringup.dashboard.dashboard_models import SUPPORTED_MODELS
 from thesis_bringup.dashboard.dashboard_system_metrics import SystemMetricsReader
+from thesis_msgs.msg import (
+    TargetState,
+    Timing,
+    Track2DArray,
+)
+from vision_msgs.msg import Detection2DArray
+import websockets
 
 
 METRICS_SCHEMA_VERSION = 3

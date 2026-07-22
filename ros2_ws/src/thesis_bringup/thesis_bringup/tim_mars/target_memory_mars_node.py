@@ -17,19 +17,19 @@ from typing import Optional
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
-from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
-
+from rclpy.qos import (
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
 from sensor_msgs.msg import Image
-from std_msgs.msg import Empty, String, UInt32
-
-from thesis_msgs.msg import TargetState, Track2DArray
-
-from thesis_bringup.tim_mars.appearance_attachment import (
-    AppearanceAttachmentConfig,
+from std_msgs.msg import (
+    Empty,
+    String,
+    UInt32,
 )
-from thesis_bringup.tim_mars.crop_quality import (
-    CropQualityThresholds,
-)
+from thesis_bringup.tim_mars.appearance_attachment import AppearanceAttachmentConfig
+from thesis_bringup.tim_mars.crop_quality import CropQualityThresholds
 from thesis_bringup.tim_mars.mars_reid_backend import MarsReIdBackend
 from thesis_bringup.tim_mars.ros_messages import (
     status_json_from_output,
@@ -47,6 +47,10 @@ from thesis_bringup.tim_mars.runtime import (
     TimMarsRuntimeResult,
 )
 from thesis_bringup.tim_mars.target_memory import TargetMemoryOutput
+from thesis_msgs.msg import (
+    TargetState,
+    Track2DArray,
+)
 
 
 class TargetMemoryMarsNode(Node):

@@ -12,8 +12,16 @@ from typing import Optional
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
-from sensor_msgs.msg import Imu, MagneticField
+from rclpy.qos import (
+    DurabilityPolicy,
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
+from sensor_msgs.msg import (
+    Imu,
+    MagneticField,
+)
 
 
 def quat_to_rpy_rad(x: float, y: float, z: float, w: float) -> tuple[float, float, float]:

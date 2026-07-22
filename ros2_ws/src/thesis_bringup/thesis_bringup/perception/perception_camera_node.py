@@ -8,18 +8,22 @@ development and validation workflows.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import threading
 import time
-from pathlib import Path
 
 import cv2
 import rclpy
 from rclpy.executors import ExternalShutdownException
-from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
+from rclpy.qos import (
+    DurabilityPolicy,
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
 from sensor_msgs.msg import Image
-
 from thesis_bringup.perception.perception_pipeline_node import PerceptionPipelineNode
 
 

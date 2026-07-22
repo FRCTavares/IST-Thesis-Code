@@ -1,13 +1,13 @@
 from thesis_bringup.tim_mars.target_memory import (
+    bbox_iou,
     CandidateTrack,
+    centre_distance_norm,
     ControlMode,
+    scale_similarity,
+    score_candidate,
     TargetIdentityMemory,
     TargetMemoryConfig,
     TargetState,
-    bbox_iou,
-    centre_distance_norm,
-    scale_similarity,
-    score_candidate,
 )
 
 

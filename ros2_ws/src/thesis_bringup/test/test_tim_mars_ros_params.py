@@ -1,12 +1,11 @@
 from pathlib import Path
 
-import yaml
-
 from thesis_bringup.tim_mars.ros_params import (
     build_target_memory_config,
     declare_tim_mars_parameters,
     read_tim_mars_ros_params,
 )
+import yaml
 
 
 class _Param:

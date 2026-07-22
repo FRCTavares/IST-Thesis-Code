@@ -7,12 +7,15 @@ target freshness checks, saturation, slew limiting, and fail-safe zero output.
 
 from typing import Optional
 
-import rclpy
-from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
-from rclpy.executors import ExternalShutdownException
-
 from geometry_msgs.msg import TwistStamped
+import rclpy
+from rclpy.executors import ExternalShutdownException
+from rclpy.node import Node
+from rclpy.qos import (
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
 from thesis_msgs.msg import TargetState
 
 
