@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,17 @@ from typing import Any
 import rosbag2_py
 from rclpy.serialization import deserialize_message
 from rosidl_runtime_py.utilities import get_message
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+BRINGUP_SOURCE = REPO_ROOT / "ros2_ws" / "src" / "thesis_bringup"
+if str(BRINGUP_SOURCE) not in sys.path:
+    sys.path.insert(0, str(BRINGUP_SOURCE))
+
+from thesis_bringup.freshness import (  # noqa: E402
+    DEFAULT_MAX_OUTPUT_AGE_S,
+    classify_relative_freshness,
+)
 
 
 @dataclass
@@ -54,6 +66,7 @@ class Stats:
     no_target_selected_duration_s: float = 0.0
     reference_missing_duration_s: float = 0.0
     visible_target_duration_s: float = 0.0
+    stale_output_duration_s: float = 0.0
 
     @property
     def correct_target_ratio(self) -> float:
@@ -207,9 +220,21 @@ def read_bag(
             track_map = {int(tr.id): msg_box(tr) for tr in msg.tracks}
             tracks.append(TrackSample(t_s=t_s, tracks=track_map))
         elif topic == raw_topic:
-            raw.append(TargetSample(t_s=t_s, id=int(msg.id), box=msg_box(msg)))
+            sample = TargetSample(t_s=t_s, id=int(msg.id), box=msg_box(msg))
+            if raw and t_s < raw[-1].t_s:
+                continue
+            if raw and t_s == raw[-1].t_s:
+                raw[-1] = sample
+            else:
+                raw.append(sample)
         elif topic == tim_topic:
-            tim.append(TargetSample(t_s=t_s, id=int(msg.id), box=msg_box(msg)))
+            sample = TargetSample(t_s=t_s, id=int(msg.id), box=msg_box(msg))
+            if tim and t_s < tim[-1].t_s:
+                continue
+            if tim and t_s == tim[-1].t_s:
+                tim[-1] = sample
+            else:
+                tim.append(sample)
 
     return tracks, raw, tim
 
@@ -239,6 +264,7 @@ def score_on_tracks_clock(
     intervals: list[Interval],
     iou_threshold: float,
     centre_distance_threshold: float,
+    max_output_age_s: float = DEFAULT_MAX_OUTPUT_AGE_S,
 ) -> Stats:
     stats = Stats()
     out_i = 0
@@ -261,7 +287,14 @@ def score_on_tracks_clock(
             continue
 
         output, out_i = latest_target_at(outputs, t_s, out_i)
-        valid = output_valid(output)
+        freshness = classify_relative_freshness(
+            now_s=t_s,
+            source_time_s=None if output is None else output.t_s,
+            max_age_s=max_output_age_s,
+        )
+        if freshness.status == "stale_source":
+            stats.stale_output_duration_s += dt
+        valid = freshness.fresh and output_valid(output)
 
         if label == "NO_TARGET_SELECTED":
             stats.no_target_selected_duration_s += dt
@@ -314,6 +347,7 @@ def stats_row(stream: str, stats: Stats) -> dict[str, str]:
         "no_target_selected_duration_s": f(stats.no_target_selected_duration_s),
         "reference_missing_duration_s": f(stats.reference_missing_duration_s),
         "visible_target_duration_s": f(stats.visible_target_duration_s),
+        "stale_output_duration_s": f(stats.stale_output_duration_s),
         "correct_target_ratio": f(stats.correct_target_ratio),
         "wrong_target_ratio": f(stats.wrong_target_ratio),
         "lost_target_ratio": f(stats.lost_target_ratio),
@@ -326,6 +360,7 @@ def write_summary(
     rows: list[dict[str, str]],
     iou_threshold: float,
     centre_distance_threshold: float,
+    max_output_age_s: float,
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -343,6 +378,7 @@ def write_summary(
         "",
         f"IoU threshold: `{iou_threshold:.3f}`",
         f"Centre-distance threshold: `{centre_distance_threshold:.3f}` reference heights",
+        f"Maximum output age: `{max_output_age_s:.3f}` s",
         "",
         "| " + " | ".join(fieldnames) + " |",
         "| " + " | ".join(["---"] * len(fieldnames)) + " |",
@@ -385,6 +421,11 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--iou-threshold", type=float, default=0.5)
     parser.add_argument("--centre-distance-threshold", type=float, default=0.5)
+    parser.add_argument(
+        "--max-output-age-s",
+        type=float,
+        default=DEFAULT_MAX_OUTPUT_AGE_S,
+    )
     parser.add_argument("--tracks-topic", default="/tracks")
     parser.add_argument("--raw-topic", default="/target")
     parser.add_argument("--tim-topic", default="/target_memory_mars")
@@ -402,6 +443,7 @@ def main() -> None:
                 intervals,
                 args.iou_threshold,
                 args.centre_distance_threshold,
+                args.max_output_age_s,
             ),
         ),
         stats_row(
@@ -412,11 +454,21 @@ def main() -> None:
                 intervals,
                 args.iou_threshold,
                 args.centre_distance_threshold,
+                args.max_output_age_s,
             ),
         ),
     ]
 
-    write_summary(args.out_dir, rows, args.iou_threshold, args.centre_distance_threshold)
+    for row in rows:
+        row["max_output_age_s"] = f"{args.max_output_age_s:.3f}"
+
+    write_summary(
+        args.out_dir,
+        rows,
+        args.iou_threshold,
+        args.centre_distance_threshold,
+        args.max_output_age_s,
+    )
 
 
 if __name__ == "__main__":

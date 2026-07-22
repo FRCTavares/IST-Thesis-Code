@@ -29,10 +29,12 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 96
+    assert len(node.values) == 98
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
+    assert node.values["freshness_max_output_age_s"] == 0.90
+    assert node.values["freshness_future_tolerance_s"] == 0.05
     assert (
         node.values[
             "id_switch_min_appearance_similarity"
@@ -104,6 +106,8 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values["image_width"] = 1280.0
     node.values["image_height"] = 720.0
     node.values["appearance_enabled"] = True
+    node.values["freshness_max_output_age_s"] = 0.75
+    node.values["freshness_future_tolerance_s"] = 0.02
     node.values[
         "id_switch_min_appearance_similarity"
     ] = 0.78
@@ -146,6 +150,8 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     assert params.image_width == 1280.0
     assert params.image_height == 720.0
     assert params.appearance_enabled is True
+    assert params.freshness_max_output_age_s == 0.75
+    assert params.freshness_future_tolerance_s == 0.02
     assert (
         params.appearance_cache_max_centre_distance_norm
         == 0.40

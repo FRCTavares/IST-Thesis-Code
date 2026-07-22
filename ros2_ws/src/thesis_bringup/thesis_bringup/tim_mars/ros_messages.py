@@ -299,6 +299,11 @@ def status_json_from_output(
     appearance_encoding_rejected: int,
     appearance_memory_update_ineligible: int,
     appearance_update_cooldown_remaining: int,
+    freshness_contract: str = "unknown",
+    freshness_status: str = "unknown",
+    freshness_is_fresh: bool = False,
+    freshness_source_age_ms: float | None = None,
+    freshness_max_output_age_ms: float | None = None,
 ) -> str:
     best = out.best_score
     payload = status_payload_base(out)
@@ -372,6 +377,11 @@ def status_json_from_output(
             "appearance_update_cooldown_remaining": int(
                 appearance_update_cooldown_remaining
             ),
+            "freshness_contract": str(freshness_contract),
+            "freshness_status": str(freshness_status),
+            "freshness_is_fresh": bool(freshness_is_fresh),
+            "freshness_source_age_ms": freshness_source_age_ms,
+            "freshness_max_output_age_ms": freshness_max_output_age_ms,
             "best": None if best is None else _score_payload(best),
             "all_scores": [_score_payload(score) for score in out.all_scores],
         }

@@ -16,9 +16,22 @@ import argparse
 import csv
 import math
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+BRINGUP_SOURCE = REPO_ROOT / "ros2_ws" / "src" / "thesis_bringup"
+if str(BRINGUP_SOURCE) not in sys.path:
+    sys.path.insert(0, str(BRINGUP_SOURCE))
+
+from thesis_bringup.freshness import (  # noqa: E402
+    DEFAULT_MAX_OUTPUT_AGE_S,
+    FreshnessResult,
+    classify_relative_freshness,
+)
 
 
 TARGET_TOPIC_RAW = "/target"
@@ -58,6 +71,7 @@ class DurationStats:
     target_absent_but_output_valid_duration_s: float = 0.0
     no_target_selected_duration_s: float = 0.0
     visible_target_duration_s: float = 0.0
+    stale_output_duration_s: float = 0.0
 
     @property
     def correct_target_ratio(self) -> float:
@@ -332,17 +346,30 @@ def read_target_samples_from_bag(
         track_id = find_track_id_field(msg)
         t_s = (msg_time_ns - first_time_ns) * 1e-9
 
-        samples[topic].append(TargetSample(t_s=t_s, track_id=track_id))
+        sample = TargetSample(t_s=t_s, track_id=track_id)
+        topic_samples = samples[topic]
+        if topic_samples and t_s < topic_samples[-1].t_s:
+            # Non-monotonic header time cannot safely refresh a held output.
+            continue
+        if topic_samples and t_s == topic_samples[-1].t_s:
+            # Duplicate timestamps are deterministic: the later bag record wins.
+            topic_samples[-1] = sample
+        else:
+            topic_samples.append(sample)
 
     return samples
 
 
-def sample_id_at_time(samples: List[TargetSample], t_s: float) -> int:
+def sample_at_time(
+    samples: List[TargetSample],
+    t_s: float,
+    max_output_age_s: float = DEFAULT_MAX_OUTPUT_AGE_S,
+) -> tuple[TargetSample | None, FreshnessResult]:
     if not samples:
-        return 0
+        return None, FreshnessResult("missing_output", False, None, None)
 
     if t_s < samples[0].t_s:
-        return 0
+        return None, FreshnessResult("missing_output", False, None, None)
 
     lo = 0
     hi = len(samples) - 1
@@ -354,7 +381,28 @@ def sample_id_at_time(samples: List[TargetSample], t_s: float) -> int:
         else:
             hi = mid - 1
 
-    return samples[max(0, hi)].track_id
+    sample = samples[max(0, hi)]
+    freshness = classify_relative_freshness(
+        now_s=t_s,
+        source_time_s=sample.t_s,
+        max_age_s=max_output_age_s,
+    )
+    return sample, freshness
+
+
+def sample_id_at_time(
+    samples: List[TargetSample],
+    t_s: float,
+    max_output_age_s: float = DEFAULT_MAX_OUTPUT_AGE_S,
+) -> int:
+    sample, freshness = sample_at_time(
+        samples,
+        t_s,
+        max_output_age_s,
+    )
+    if sample is None or not freshness.fresh:
+        return 0
+    return sample.track_id
 
 
 def make_time_grid(interval: AnnotationInterval, step_s: float) -> List[float]:
@@ -372,6 +420,7 @@ def evaluate_stream(
     annotations: List[AnnotationInterval],
     samples: List[TargetSample],
     step_s: float,
+    max_output_age_s: float = DEFAULT_MAX_OUTPUT_AGE_S,
 ) -> DurationStats:
     stats = DurationStats()
 
@@ -390,7 +439,18 @@ def evaluate_stream(
                 if dt <= 0:
                     dt = min(step_s, interval.duration_s)
 
-            output_id = sample_id_at_time(samples, t_s)
+            sample, freshness = sample_at_time(
+                samples,
+                t_s,
+                max_output_age_s,
+            )
+            if freshness.status == "stale_source":
+                stats.stale_output_duration_s += dt
+            output_id = (
+                sample.track_id
+                if sample is not None and freshness.fresh
+                else 0
+            )
 
             if label == "NO_TARGET_SELECTED":
                 stats.no_target_selected_duration_s += dt
@@ -430,6 +490,7 @@ def stats_to_row(stream_name: str, stats: DurationStats) -> Dict[str, str]:
         "target_absent_but_output_valid_duration_s": fmt_float(stats.target_absent_but_output_valid_duration_s),
         "no_target_selected_duration_s": fmt_float(stats.no_target_selected_duration_s),
         "visible_target_duration_s": fmt_float(stats.visible_target_duration_s),
+        "stale_output_duration_s": fmt_float(stats.stale_output_duration_s),
         "correct_target_ratio": fmt_float(stats.correct_target_ratio),
         "wrong_target_ratio": fmt_float(stats.wrong_target_ratio),
         "lost_target_ratio": fmt_float(stats.lost_target_ratio),
@@ -462,6 +523,7 @@ def write_summary_md(
         ("target absent but output [s]", "target_absent_but_output_valid_duration_s"),
         ("target not visible [s]", "target_not_visible_duration_s"),
         ("visible target duration [s]", "visible_target_duration_s"),
+        ("stale output duration [s]", "stale_output_duration_s"),
         ("correct ratio", "correct_target_ratio"),
         ("wrong ratio", "wrong_target_ratio"),
         ("lost ratio", "lost_target_ratio"),
@@ -477,6 +539,9 @@ def write_summary_md(
     lines.append(f"- Bag: `{bag_path}`")
     lines.append(f"- Annotations: `{annotation_path}`")
     lines.append(f"- Timebase: `{timebase}`")
+    lines.append(
+        f"- Maximum output age: `{rows[0].get('max_output_age_s', 'unknown')} s`"
+    )
     lines.append("")
     lines.append("## Main comparison")
     lines.append("")
@@ -517,6 +582,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--annotations", required=True, type=Path)
     parser.add_argument("--out-dir", type=Path, default=None)
     parser.add_argument("--step-s", type=float, default=0.05)
+    parser.add_argument(
+        "--max-output-age-s",
+        type=float,
+        default=DEFAULT_MAX_OUTPUT_AGE_S,
+        help="Latest-preceding outputs older than this are classified lost.",
+    )
     parser.add_argument("--raw-topic", default=TARGET_TOPIC_RAW)
     parser.add_argument("--tim-topic", default=TARGET_TOPIC_TIM)
     parser.add_argument(
@@ -543,17 +614,21 @@ def main() -> int:
         annotations,
         samples=samples.get(args.raw_topic, []),
         step_s=args.step_s,
+        max_output_age_s=args.max_output_age_s,
     )
     tim_stats = evaluate_stream(
         annotations,
         samples=samples.get(args.tim_topic, []),
         step_s=args.step_s,
+        max_output_age_s=args.max_output_age_s,
     )
 
     rows = [
         stats_to_row("raw_target", raw_stats),
         stats_to_row("tim_target_memory", tim_stats),
     ]
+    for row in rows:
+        row["max_output_age_s"] = fmt_float(args.max_output_age_s)
 
     out_dir = args.out_dir or default_report_dir(args.bag_path)
     out_dir.mkdir(parents=True, exist_ok=True)

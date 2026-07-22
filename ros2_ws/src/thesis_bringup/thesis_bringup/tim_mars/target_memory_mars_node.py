@@ -28,6 +28,10 @@ from std_msgs.msg import (
     String,
     UInt32,
 )
+from thesis_bringup.freshness import (
+    classify_freshness,
+    FRESHNESS_CONTRACT_VERSION,
+)
 from thesis_bringup.tim_mars.appearance_attachment import AppearanceAttachmentConfig
 from thesis_bringup.tim_mars.crop_quality import CropQualityThresholds
 from thesis_bringup.tim_mars.mars_reid_backend import MarsReIdBackend
@@ -76,6 +80,14 @@ class TargetMemoryMarsNode(Node):
 
         declare_tim_mars_parameters(self)
         params = read_tim_mars_ros_params(self)
+
+        self._freshness_max_output_age_s = (
+            params.freshness_max_output_age_s
+        )
+        self._freshness_future_tolerance_s = (
+            params.freshness_future_tolerance_s
+        )
+        self._last_tracks_source_stamp_ns: int | None = None
 
         self._tracks_topic = params.tracks_topic
         self._target_topic = params.target_topic
@@ -420,6 +432,8 @@ class TargetMemoryMarsNode(Node):
         t_end_ns = time.monotonic_ns()
 
         target_msg = self._target_msg_from_output(msg, out)
+        target_msg.t_target_cb_start_ns = int(t_start_ns)
+        target_msg.t_target_cb_end_ns = int(t_end_ns)
         self._target_pub.publish(target_msg)
         self._publish_status(
             result,
@@ -441,6 +455,11 @@ class TargetMemoryMarsNode(Node):
             zero_id_when_not_visible=self._zero_id_when_not_visible,
         )
         target_msg.header = tracks_msg.header
+        target_msg.frame_id = int(tracks_msg.frame_id)
+        target_msg.src_stamp_ns = int(tracks_msg.src_stamp_ns)
+        if target_msg.src_stamp_ns <= 0:
+            target_msg.src_stamp_ns = self._runtime.track_time_ns(tracks_msg) or 0
+        target_msg.t_cam_msg_seen_ns = int(tracks_msg.t_cam_msg_seen_ns)
         return target_msg
 
     def _publish_status_only(self, out: TargetMemoryOutput) -> None:
@@ -456,6 +475,25 @@ class TargetMemoryMarsNode(Node):
         t_end_ns: int,
     ) -> None:
         diagnostics = result.diagnostics
+        source_stamp_ns = int(tracks_msg.src_stamp_ns)
+        if source_stamp_ns <= 0:
+            source_stamp_ns = self._runtime.track_time_ns(tracks_msg) or 0
+        freshness = classify_freshness(
+            now_ns=self.get_clock().now().nanoseconds,
+            source_stamp_ns=source_stamp_ns,
+            max_age_s=self._freshness_max_output_age_s,
+            future_tolerance_s=self._freshness_future_tolerance_s,
+            previous_source_stamp_ns=self._last_tracks_source_stamp_ns,
+            reject_duplicate=True,
+        )
+        if (
+            source_stamp_ns > 0
+            and (
+                self._last_tracks_source_stamp_ns is None
+                or source_stamp_ns > self._last_tracks_source_stamp_ns
+            )
+        ):
+            self._last_tracks_source_stamp_ns = source_stamp_ns
 
         msg = String()
         msg.data = status_json_from_output(
@@ -492,6 +530,17 @@ class TargetMemoryMarsNode(Node):
             ),
             appearance_update_cooldown_remaining=(
                 diagnostics.appearance_update_cooldown_remaining
+            ),
+            freshness_contract=FRESHNESS_CONTRACT_VERSION,
+            freshness_status=freshness.status,
+            freshness_is_fresh=freshness.fresh,
+            freshness_source_age_ms=(
+                None
+                if freshness.source_age_s is None
+                else freshness.source_age_s * 1000.0
+            ),
+            freshness_max_output_age_ms=(
+                self._freshness_max_output_age_s * 1000.0
             ),
         )
         self._status_pub.publish(msg)

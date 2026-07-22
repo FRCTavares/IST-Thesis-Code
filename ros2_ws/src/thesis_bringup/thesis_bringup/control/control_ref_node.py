@@ -16,6 +16,11 @@ from rclpy.qos import (
     QoSProfile,
     ReliabilityPolicy,
 )
+from thesis_bringup.freshness import (
+    classify_freshness,
+    DEFAULT_FUTURE_TOLERANCE_S,
+    DEFAULT_MAX_OUTPUT_AGE_S,
+)
 from thesis_msgs.msg import TargetState
 
 
@@ -102,7 +107,14 @@ class ControlRefNode(Node):
         self.declare_parameter('target_topic', '/target')
         self.declare_parameter('cmd_topic', '/control_ref/cmd_vel')
         self.declare_parameter('rate_hz', 30.0)
-        self.declare_parameter('stale_timeout_s', 0.2)
+        self.declare_parameter(
+            'stale_timeout_s',
+            DEFAULT_MAX_OUTPUT_AGE_S,
+        )
+        self.declare_parameter(
+            'future_tolerance_s',
+            DEFAULT_FUTURE_TOLERANCE_S,
+        )
 
         self.declare_parameter('img_w', 640.0)
         self.declare_parameter('img_h', 640.0)
@@ -162,6 +174,9 @@ class ControlRefNode(Node):
         self.saturation_warn_every_n = int(self.get_parameter('saturation_warn_every_n').value)
 
         self.stale_timeout_s = float(self.get_parameter('stale_timeout_s').value)
+        self.future_tolerance_s = float(
+            self.get_parameter('future_tolerance_s').value
+        )
 
         self.img_w = float(self.get_parameter('img_w').value)
         self.img_h = float(self.get_parameter('img_h').value)
@@ -196,6 +211,8 @@ class ControlRefNode(Node):
 
         self.last_target: Optional[TargetState] = None
         self.last_target_rx_time = None
+        self.last_target_source_order_status: Optional[str] = None
+        self.latest_source_stamp_ns: Optional[int] = None
 
         self.prev_vx = 0.0
         self.prev_vy = 0.0
@@ -241,29 +258,90 @@ class ControlRefNode(Node):
         )
 
     def on_target(self, msg: TargetState) -> None:
+        now = self.get_clock().now()
+        source_stamp_ns = int(msg.src_stamp_ns)
+        order = classify_freshness(
+            now_ns=now.nanoseconds,
+            source_stamp_ns=source_stamp_ns,
+            receive_stamp_ns=now.nanoseconds,
+            max_age_s=self.stale_timeout_s,
+            future_tolerance_s=self.future_tolerance_s,
+            previous_source_stamp_ns=self.latest_source_stamp_ns,
+            reject_duplicate=True,
+        )
+
         self.last_target = msg
-        self.last_target_rx_time = self.get_clock().now()
+        self.last_target_rx_time = now
+        if order.status in {
+            'duplicate_source',
+            'non_monotonic_source',
+        }:
+            self.last_target_source_order_status = order.status
+        else:
+            self.last_target_source_order_status = None
+
+        if (
+            source_stamp_ns > 0
+            and (
+                self.latest_source_stamp_ns is None
+                or source_stamp_ns > self.latest_source_stamp_ns
+            )
+        ):
+            self.latest_source_stamp_ns = source_stamp_ns
 
     def is_fresh(self) -> bool:
-        if self.last_target_rx_time is None:
+        if self.last_target is None:
             return False
-        age_s = (self.get_clock().now() - self.last_target_rx_time).nanoseconds * 1e-9
-        return age_s <= self.stale_timeout_s
+        return self.target_freshness_result(self.last_target).fresh
 
     def target_age_s(self) -> Optional[float]:
         if self.last_target_rx_time is None:
             return None
         return (self.get_clock().now() - self.last_target_rx_time).nanoseconds * 1e-9
 
+    def target_freshness_result(self, target: TargetState):
+        receive_stamp_ns = None
+        if self.last_target_rx_time is not None:
+            receive_stamp_ns = self.last_target_rx_time.nanoseconds
+
+        result = classify_freshness(
+            now_ns=self.get_clock().now().nanoseconds,
+            source_stamp_ns=int(target.src_stamp_ns),
+            receive_stamp_ns=receive_stamp_ns,
+            max_age_s=self.stale_timeout_s,
+            future_tolerance_s=self.future_tolerance_s,
+        )
+
+        if self.last_target_source_order_status is not None:
+            return type(result)(
+                self.last_target_source_order_status,
+                False,
+                result.source_age_s,
+                result.receive_age_s,
+            )
+        return result
+
     def target_invalid_reason(self, t: TargetState) -> Optional[str]:
         if t.id == 0:
             return 'id_zero'
 
-        age_s = self.target_age_s()
-        if age_s is None:
-            return 'no_target_rx_time'
-        if age_s > self.stale_timeout_s:
-            return f'stale_target(age={age_s:.3f}s>{self.stale_timeout_s:.3f}s)'
+        freshness = self.target_freshness_result(t)
+        if not freshness.fresh:
+            source_age = (
+                'n/a'
+                if freshness.source_age_s is None
+                else f'{freshness.source_age_s:.3f}s'
+            )
+            receive_age = (
+                'n/a'
+                if freshness.receive_age_s is None
+                else f'{freshness.receive_age_s:.3f}s'
+            )
+            return (
+                f'freshness_{freshness.status}('
+                f'source_age={source_age},receive_age={receive_age},'
+                f'max={self.stale_timeout_s:.3f}s)'
+            )
 
         if not (0.0 <= t.cx <= self.img_w and 0.0 <= t.cy <= self.img_h):
             return 'target_out_of_bounds'
@@ -330,11 +408,17 @@ class ControlRefNode(Node):
         if should_log:
             age_s = self.target_age_s()
             age_str = f'{age_s:.3f}s' if age_s is not None else 'n/a'
+            source_age_str = 'n/a'
+            if t is not None:
+                source_age = self.target_freshness_result(t).source_age_s
+                if source_age is not None:
+                    source_age_str = f'{source_age:.3f}s'
             if t is None:
                 self.get_logger().warn(f'target invalid: {reason} age={age_str}')
             else:
                 self.get_logger().warn(
-                    f'target invalid: {reason} age={age_str} '
+                    f'target invalid: {reason} receive_age={age_str} '
+                    f'source_age={source_age_str} '
                     f'id={t.id} cx={t.cx:.1f} cy={t.cy:.1f} w={t.w:.1f} h={t.h:.1f} '
                     f'score={t.score:.3f} quality={t.quality:.3f}'
                 )

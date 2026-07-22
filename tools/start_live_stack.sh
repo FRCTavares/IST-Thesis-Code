@@ -314,6 +314,10 @@ write_video_bag_metadata() {
         echo "camera_publish_resize_mode=${CAMERA_PUBLISH_RESIZE_MODE:-}"
         echo "camera_publish_encoding=${CAMERA_PUBLISH_ENCODING:-}"
         echo "control_enabled=$ENABLE_CONTROL"
+        echo "freshness_contract=tim_mars_output_freshness_v1"
+        echo "freshness_max_output_age_s=$CONTROL_STALE_TIMEOUT_S"
+        echo "freshness_source_age_gate=true"
+        echo "freshness_receive_age_gate=true"
         echo "target_authority_source=$TARGET_AUTHORITY_SOURCE"
         echo "target_authority_generation_initial=0"
         echo "target_authority_event_log=target_authority_events.jsonl"
@@ -675,6 +679,7 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
             -p select_topic:=/target_memory_mars/select \
             -p image_width:=${CAMERA_WIDTH}.0 \
             -p image_height:=${CAMERA_HEIGHT}.0 \
+            -p freshness_max_output_age_s:=$CONTROL_STALE_TIMEOUT_S \
             -p appearance_enabled:="$TARGET_MEMORY_APPEARANCE_BOOL" \
             -p appearance_image_topic:="$TARGET_MEMORY_MARS_IMAGE_TOPIC" \
             -p mars_model_path:="$TARGET_MEMORY_MARS_MODEL_PATH"

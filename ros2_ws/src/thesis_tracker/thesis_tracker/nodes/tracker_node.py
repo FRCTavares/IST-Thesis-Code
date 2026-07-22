@@ -61,6 +61,21 @@ def _parse_frame_id(frame_id_str: str) -> int:
     return 0
 
 
+def _resolve_source_stamp_ns(context_stamp_ns: int, header: object) -> int:
+    """Prefer timing context, falling back to the detection source header."""
+    context_stamp_ns = int(context_stamp_ns)
+    if context_stamp_ns > 0:
+        return context_stamp_ns
+
+    stamp = getattr(header, "stamp", None)
+    if stamp is None:
+        return 0
+    return (
+        int(getattr(stamp, "sec", 0)) * 1_000_000_000
+        + int(getattr(stamp, "nanosec", 0))
+    )
+
+
 def now_ns() -> int:
     """Return the current monotonic timestamp in nanoseconds."""
     return time.monotonic_ns()
@@ -489,6 +504,9 @@ class TrackerNode(Node):
 
         # Convert tracks to ROS message
         src_stamp_ns, t_cam_msg_seen_ns = self.frame_context.pop(frame_id, (0, 0))
+        # /detections and /timing are separate subscriptions, so detections may
+        # arrive before timing context. Both carry the same source-image stamp.
+        src_stamp_ns = _resolve_source_stamp_ns(src_stamp_ns, msg.header)
         queue_delay_ms = 0.0
         if t_cam_msg_seen_ns > 0:
             queue_delay_ms = float(t_track_cb_start_ns - int(t_cam_msg_seen_ns)) / 1e6

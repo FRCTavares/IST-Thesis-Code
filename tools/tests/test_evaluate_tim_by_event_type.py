@@ -269,3 +269,33 @@ def test_cli_defaults_to_authoritative_header_contract(
     assert args.dt == 0.05
     assert args.raw_topic == MODULE.TARGET_TOPIC_RAW
     assert args.tim_topic == MODULE.TARGET_TOPIC_TIM
+    assert (
+        args.max_output_age_s
+        == MODULE.DEFAULT_MAX_OUTPUT_AGE_S
+    )
+
+
+def test_event_evaluator_records_stale_output_as_lost():
+    intervals = [
+        make_interval(
+            0.0,
+            0.5,
+            "CORRECT_TARGET",
+            True,
+            1,
+            "clean_visible",
+        )
+    ]
+    samples = [MODULE.TargetSample(t_s=0.0, track_id=1)]
+
+    grouped = MODULE.evaluate_by_event_type(
+        samples,
+        intervals,
+        step_s=0.1,
+        max_output_age_s=0.2,
+    )
+
+    values = grouped["clean_visible"]
+    assert values["correct_s"] == pytest.approx(0.3)
+    assert values["lost_s"] == pytest.approx(0.2)
+    assert values["stale_output_s"] == pytest.approx(0.2)

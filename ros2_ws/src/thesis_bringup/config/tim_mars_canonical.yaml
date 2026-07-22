@@ -44,6 +44,8 @@ target_memory_mars_node:
     # MARS appearance evidence
     appearance_enabled: true
     appearance_max_image_age_ms: 250.0
+    freshness_max_output_age_s: 0.90
+    freshness_future_tolerance_s: 0.05
     appearance_compute_min_interval_ms: 250.0
     appearance_cache_ttl_ms: 750.0
     appearance_cache_max_centre_distance_norm: 0.25

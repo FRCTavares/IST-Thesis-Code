@@ -4,9 +4,11 @@ import ast
 from pathlib import Path
 
 
-NODE = Path(
-    "ros2_ws/src/thesis_bringup/thesis_bringup/"
-    "tim_mars/target_memory_mars_node.py"
+NODE = (
+    Path(__file__).resolve().parents[1]
+    / "thesis_bringup"
+    / "tim_mars"
+    / "target_memory_mars_node.py"
 )
 
 
@@ -124,7 +126,7 @@ def test_on_tracks_passes_tracks_message_to_target_message_formatter():
     )
 
 
-def test_target_message_formatter_copies_track_header():
+def test_target_message_formatter_copies_track_source_context():
     method = _methods()["_target_msg_from_output"]
 
     assignments = [
@@ -138,7 +140,41 @@ def test_target_message_formatter_copies_track_header():
         )
     ]
 
+    assigned_fields = {
+        target.attr
+        for assignment in ast.walk(method)
+        if isinstance(assignment, ast.Assign)
+        for target in assignment.targets
+        if isinstance(target, ast.Attribute)
+    }
+
     assert assignments
+    assert {
+        "header",
+        "frame_id",
+        "src_stamp_ns",
+        "t_cam_msg_seen_ns",
+    } <= assigned_fields
+
+
+def test_status_carries_shared_freshness_result():
+    method = _methods()["_publish_status"]
+
+    keyword_names = {
+        keyword.arg
+        for call in ast.walk(method)
+        if isinstance(call, ast.Call)
+        for keyword in call.keywords
+        if keyword.arg is not None
+    }
+
+    assert {
+        "freshness_contract",
+        "freshness_status",
+        "freshness_is_fresh",
+        "freshness_source_age_ms",
+        "freshness_max_output_age_ms",
+    } <= keyword_names
 
 
 def test_message_timestamp_paths_do_not_use_monotonic_clock():

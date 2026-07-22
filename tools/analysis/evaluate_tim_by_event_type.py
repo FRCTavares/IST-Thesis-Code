@@ -23,6 +23,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from evaluate_tim_target_correctness import (  # noqa: E402
     AnnotationInterval,
+    DEFAULT_MAX_OUTPUT_AGE_S,
     TARGET_TOPIC_RAW,
     TARGET_TOPIC_TIM,
     TargetSample,
@@ -30,7 +31,7 @@ from evaluate_tim_target_correctness import (  # noqa: E402
     load_annotations,
     make_time_grid,
     read_target_samples_from_bag,
-    sample_id_at_time,
+    sample_at_time,
 )
 
 
@@ -38,6 +39,7 @@ def evaluate_by_event_type(
     samples: list[TargetSample],
     intervals: Iterable[AnnotationInterval],
     step_s: float,
+    max_output_age_s: float = DEFAULT_MAX_OUTPUT_AGE_S,
 ) -> dict[str, dict[str, float]]:
     """Apply the authoritative evaluator contract per event category."""
     grouped: dict[str, dict[str, float]] = defaultdict(
@@ -60,9 +62,20 @@ def evaluate_by_event_type(
                         interval.duration_s,
                     )
 
-            output_id = sample_id_at_time(samples, time_s)
+            sample, freshness = sample_at_time(
+                samples,
+                time_s,
+                max_output_age_s,
+            )
+            output_id = (
+                sample.track_id
+                if sample is not None and freshness.fresh
+                else 0
+            )
             stats = grouped[event_type]
             stats["total_s"] += duration_s
+            if freshness.status == "stale_source":
+                stats["stale_output_s"] += duration_s
 
             if label == "NO_TARGET_SELECTED":
                 stats["no_target_selected_s"] += duration_s
@@ -128,6 +141,9 @@ def rows_for_stream(
                 "correct_s": f"{correct_s:.3f}",
                 "wrong_s": f"{wrong_s:.3f}",
                 "lost_s": f"{lost_s:.3f}",
+                "stale_output_s": (
+                    f"{values.get('stale_output_s', 0.0):.3f}"
+                ),
                 "target_absent_but_output_s": (
                     f"{values.get(
                         'target_absent_but_output_s',
@@ -174,6 +190,7 @@ def evaluate_bag(
     timebase: str,
     raw_topic: str,
     tim_topic: str,
+    max_output_age_s: float = DEFAULT_MAX_OUTPUT_AGE_S,
 ) -> list[dict[str, object]]:
     """Load both streams with one common origin and evaluate them."""
     intervals = load_annotations(annotations_path)
@@ -187,17 +204,22 @@ def evaluate_bag(
         samples.get(raw_topic, []),
         intervals,
         step_s,
+        max_output_age_s,
     )
     tim_grouped = evaluate_by_event_type(
         samples.get(tim_topic, []),
         intervals,
         step_s,
+        max_output_age_s,
     )
 
-    return (
+    rows = (
         rows_for_stream("raw_target", raw_grouped)
         + rows_for_stream("tim_target_memory", tim_grouped)
     )
+    for row in rows:
+        row["max_output_age_s"] = f"{max_output_age_s:.3f}"
+    return rows
 
 
 def write_rows(
@@ -215,12 +237,14 @@ def write_rows(
         "correct_s",
         "wrong_s",
         "lost_s",
+        "stale_output_s",
         "target_absent_but_output_s",
         "target_not_visible_s",
         "no_target_selected_s",
         "correct_ratio",
         "wrong_ratio",
         "lost_ratio",
+        "max_output_age_s",
     ]
 
     with output_path.open("w", newline="") as handle:
@@ -257,6 +281,11 @@ def parse_args() -> argparse.Namespace:
         default="header",
     )
     parser.add_argument(
+        "--max-output-age-s",
+        type=float,
+        default=DEFAULT_MAX_OUTPUT_AGE_S,
+    )
+    parser.add_argument(
         "--raw-topic",
         default=TARGET_TOPIC_RAW,
     )
@@ -278,6 +307,7 @@ def main() -> int:
         timebase=args.timebase,
         raw_topic=args.raw_topic,
         tim_topic=args.tim_topic,
+        max_output_age_s=args.max_output_age_s,
     )
     write_rows(args.out, rows)
 

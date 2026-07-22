@@ -12,9 +12,11 @@ from thesis_bringup.control.control_ref_node import (
 )
 
 
-CONTROL_SOURCE = Path(
-    "ros2_ws/src/thesis_bringup/"
-    "thesis_bringup/control/control_ref_node.py"
+CONTROL_SOURCE = (
+    Path(__file__).resolve().parents[1]
+    / "thesis_bringup"
+    / "control"
+    / "control_ref_node.py"
 )
 
 BASE_COMMAND = {
@@ -47,6 +49,7 @@ def _commands(*, cx: float, h: float):
 
 def _valid_target():
     return SimpleNamespace(
+        src_stamp_ns=9_950_000_000,
         id=1,
         cx=320.0,
         cy=320.0,
@@ -57,15 +60,33 @@ def _valid_target():
     )
 
 
-def _validation_context(age_s: float):
+def _validation_context(
+    receive_age_s: float,
+    *,
+    source_age_s: float = 0.05,
+    order_status=None,
+):
+    now_ns = 10_000_000_000
     context = SimpleNamespace(
         img_w=640.0,
         img_h=640.0,
         min_score_valid=0.10,
         min_quality_valid=0.05,
         stale_timeout_s=0.20,
+        future_tolerance_s=0.05,
+        last_target_rx_time=SimpleNamespace(
+            nanoseconds=now_ns - int(receive_age_s * 1e9)
+        ),
+        last_target_source_order_status=order_status,
     )
-    context.target_age_s = lambda: age_s
+    context.get_clock = lambda: SimpleNamespace(
+        now=lambda: SimpleNamespace(nanoseconds=now_ns)
+    )
+    context.target_age_s = lambda: receive_age_s
+    context.target_freshness_result = lambda target: (
+        ControlRefNode.target_freshness_result(context, target)
+    )
+    context.source_stamp_ns = now_ns - int(source_age_s * 1e9)
     return context
 
 
@@ -118,18 +139,52 @@ def test_slew_rate_limits_each_command_step():
 
 
 def test_stale_target_is_invalid():
-    context = _validation_context(age_s=1.0)
+    context = _validation_context(receive_age_s=1.0)
+    target = _valid_target()
+    target.src_stamp_ns = context.source_stamp_ns
     reason = ControlRefNode.target_invalid_reason(
         context,
-        _valid_target(),
+        target,
     )
 
     assert reason is not None
-    assert reason.startswith("stale_target")
+    assert reason.startswith("freshness_stale_receive")
+
+
+def test_old_source_is_invalid_even_when_message_arrived_recently():
+    context = _validation_context(
+        receive_age_s=0.01,
+        source_age_s=1.0,
+    )
+    target = _valid_target()
+    target.src_stamp_ns = context.source_stamp_ns
+
+    reason = ControlRefNode.target_invalid_reason(context, target)
+
+    assert reason is not None
+    assert reason.startswith("freshness_stale_source")
+
+
+@pytest.mark.parametrize(
+    "order_status",
+    ["duplicate_source", "non_monotonic_source"],
+)
+def test_replayed_or_non_monotonic_source_is_invalid(order_status):
+    context = _validation_context(
+        receive_age_s=0.01,
+        order_status=order_status,
+    )
+    target = _valid_target()
+    target.src_stamp_ns = context.source_stamp_ns
+
+    reason = ControlRefNode.target_invalid_reason(context, target)
+
+    assert reason is not None
+    assert reason.startswith(f"freshness_{order_status}")
 
 
 def test_zero_id_target_is_invalid():
-    context = _validation_context(age_s=0.0)
+    context = _validation_context(receive_age_s=0.0)
     target = _valid_target()
     target.id = 0
 
@@ -140,11 +195,13 @@ def test_zero_id_target_is_invalid():
 
 
 def test_fresh_valid_target_has_no_invalid_reason():
-    context = _validation_context(age_s=0.05)
+    context = _validation_context(receive_age_s=0.05)
+    target = _valid_target()
+    target.src_stamp_ns = context.source_stamp_ns
 
     assert ControlRefNode.target_invalid_reason(
         context,
-        _valid_target(),
+        target,
     ) is None
 
 

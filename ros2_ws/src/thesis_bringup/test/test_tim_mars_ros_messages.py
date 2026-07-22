@@ -236,6 +236,11 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
             appearance_encoding_rejected=0,
             appearance_memory_update_ineligible=1,
             appearance_update_cooldown_remaining=0,
+            freshness_contract="tim_mars_output_freshness_v1",
+            freshness_status="fresh",
+            freshness_is_fresh=True,
+            freshness_source_age_ms=12.5,
+            freshness_max_output_age_ms=900.0,
         )
     )
 
@@ -263,6 +268,11 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     }
     assert payload["appearance_encoding_rejected"] == 0
     assert payload["appearance_memory_update_ineligible"] == 1
+    assert payload["freshness_contract"] == "tim_mars_output_freshness_v1"
+    assert payload["freshness_status"] == "fresh"
+    assert payload["freshness_is_fresh"] is True
+    assert payload["freshness_source_age_ms"] == 12.5
+    assert payload["freshness_max_output_age_ms"] == 900.0
     assert payload["track_timestamp_ns"] == 2_000_000_000
     assert payload["selected_image_timestamp_ns"] == 1_987_500_000
     assert payload["image_track_offset_ms"] == 12.5

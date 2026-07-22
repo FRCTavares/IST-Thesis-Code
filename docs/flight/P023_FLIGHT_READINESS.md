@@ -30,7 +30,7 @@ manual control and termination of the autonomous test.
 - Appearance maximum image age: 250 ms
 - Appearance recompute minimum interval: 250 ms
 - Appearance cache lifetime: 750 ms
-- Live control stale timeout: 0.90 s
+- Live source-observation and local-receive stale timeout: 0.90 s
 - MAVROS control mirroring: disabled by default
 - Controller target authority: `/target_memory_mars`
 - Raw dashboard target: `/target` (diagnostic/recording only)
@@ -135,7 +135,8 @@ The isolated control checks must demonstrate:
 - target right: positive yaw;
 - target far: positive forward command;
 - target near: negative forward command;
-- stale, missing, or invalid target: immediate zero command;
+- stale, missing, future, duplicate, non-monotonic, or invalid source target:
+  immediate zero command, even when the message arrived locally just now;
 - raw `/target` messages never grant control authority;
 - target select/clear resets control to zero until TIM-MARS publishes a new
   valid target;

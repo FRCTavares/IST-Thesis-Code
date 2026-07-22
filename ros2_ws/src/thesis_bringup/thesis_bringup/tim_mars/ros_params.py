@@ -12,6 +12,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from thesis_bringup.freshness import (
+    DEFAULT_FUTURE_TOLERANCE_S,
+    DEFAULT_MAX_OUTPUT_AGE_S,
+)
 from thesis_bringup.tim_mars.target_memory import TargetMemoryConfig
 
 
@@ -33,6 +37,8 @@ class TimMarsRosParams:
     selected_track_id: int
     auto_select_largest: bool
     zero_id_when_not_visible: bool
+    freshness_max_output_age_s: float
+    freshness_future_tolerance_s: float
 
     appearance_enabled: bool
     appearance_image_topic: str
@@ -72,6 +78,14 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("selected_track_id", 0)
     node.declare_parameter("auto_select_largest", False)
     node.declare_parameter("zero_id_when_not_visible", True)
+    node.declare_parameter(
+        "freshness_max_output_age_s",
+        DEFAULT_MAX_OUTPUT_AGE_S,
+    )
+    node.declare_parameter(
+        "freshness_future_tolerance_s",
+        DEFAULT_FUTURE_TOLERANCE_S,
+    )
 
     # Candidate scoring and geometry normalization.
     node.declare_parameter("w_iou", 0.34)
@@ -237,6 +251,12 @@ def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
         selected_track_id=int(node.get_parameter("selected_track_id").value),
         auto_select_largest=bool(node.get_parameter("auto_select_largest").value),
         zero_id_when_not_visible=bool(node.get_parameter("zero_id_when_not_visible").value),
+        freshness_max_output_age_s=float(
+            node.get_parameter("freshness_max_output_age_s").value
+        ),
+        freshness_future_tolerance_s=float(
+            node.get_parameter("freshness_future_tolerance_s").value
+        ),
         appearance_enabled=bool(node.get_parameter("appearance_enabled").value),
         appearance_image_topic=str(node.get_parameter("appearance_image_topic").value),
         appearance_max_image_age_ms=float(node.get_parameter("appearance_max_image_age_ms").value),
