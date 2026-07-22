@@ -15,7 +15,7 @@ evidence are maintained in the linked GitHub Issues.
 6. Completed or rejected issues are removed from this file.
 7. Historical roadmap material is archived under `docs/roadmap/archive/`.
 
-Active executable issues: **38**.
+Active executable issues: **36**.
 
 ## P0 — Critical evidence, safety, thesis-claim, or flight-blocking work
 
@@ -69,87 +69,90 @@ Active executable issues: **38**.
 9. [ ] [#50 — P0.23 Complete flight-readiness gate and record held-out UAV-motion evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
    - phase 10; live-system.
 
-10. [ ] [#16 — P0.11 Move hard-negative updates after trusted acceptance](https://github.com/FRCTavares/IST-Thesis-Code/issues/16)
+10. [ ] [#51 — P0.24 Harden unattended Raspberry Pi remote access and crash recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
+   - phase 10; live-system; begins only after Issue #50 is completed.
+
+11. [ ] [#16 — P0.11 Move hard-negative updates after trusted acceptance](https://github.com/FRCTavares/IST-Thesis-Code/issues/16)
    - phase 4; experiment.
 
-11. [ ] [#19 — P0.12 Separate ranking from validation](https://github.com/FRCTavares/IST-Thesis-Code/issues/19)
+12. [ ] [#19 — P0.12 Separate ranking from validation](https://github.com/FRCTavares/IST-Thesis-Code/issues/19)
    - phase 5; engineering.
 
-12. [ ] [#22 — P0.13 Add evaluator tests](https://github.com/FRCTavares/IST-Thesis-Code/issues/22)
+13. [ ] [#22 — P0.13 Add evaluator tests](https://github.com/FRCTavares/IST-Thesis-Code/issues/22)
    - phase 6; engineering.
 
-13. [ ] [#23 — P0.14 Add output freshness](https://github.com/FRCTavares/IST-Thesis-Code/issues/23)
+14. [ ] [#23 — P0.14 Add output freshness](https://github.com/FRCTavares/IST-Thesis-Code/issues/23)
    - phase 6; engineering.
 
-14. [ ] [#24 — P0.15 Unify evaluator semantics](https://github.com/FRCTavares/IST-Thesis-Code/issues/24)
+15. [ ] [#24 — P0.15 Unify evaluator semantics](https://github.com/FRCTavares/IST-Thesis-Code/issues/24)
    - phase 6; experiment.
 
-15. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
+16. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
    - phase 7; experiment.
 
-16. [ ] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
+17. [ ] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
    - phase 7; experiment.
 
-17. [ ] [#29 — P0.18 Validate across trackers](https://github.com/FRCTavares/IST-Thesis-Code/issues/29)
+18. [ ] [#29 — P0.18 Validate across trackers](https://github.com/FRCTavares/IST-Thesis-Code/issues/29)
    - phase 7; experiment.
 
-18. [ ] [#33 — P0.19 Update stale tooling documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/33)
+19. [ ] [#33 — P0.19 Update stale tooling documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/33)
    - phase 8; documentation.
 
-19. [ ] [#34 — P0.20 Synchronize TIM documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/34)
+20. [ ] [#34 — P0.20 Synchronize TIM documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/34)
    - phase 8; experiment.
 
-20. [ ] [#38 — P0.21 Freeze the research question](https://github.com/FRCTavares/IST-Thesis-Code/issues/38)
+21. [ ] [#38 — P0.21 Freeze the research question](https://github.com/FRCTavares/IST-Thesis-Code/issues/38)
    - phase 9; experiment.
 
-21. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
+22. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
    - phase 9; experiment.
 
 ## P1 — Major algorithmic, scientific, engineering, and documentation work
 
-22. [ ] [#8 — P1.1 Simplify recovery confirmation](https://github.com/FRCTavares/IST-Thesis-Code/issues/8)
+23. [ ] [#8 — P1.1 Simplify recovery confirmation](https://github.com/FRCTavares/IST-Thesis-Code/issues/8)
    - phase 2; experiment.
 
-23. [ ] [#9 — P1.2 Reduce `target_memory.py`](https://github.com/FRCTavares/IST-Thesis-Code/issues/9)
+24. [ ] [#9 — P1.2 Reduce `target_memory.py`](https://github.com/FRCTavares/IST-Thesis-Code/issues/9)
    - phase 2; documentation.
 
-24. [ ] [#15 — P1.5 Fix positive-memory bootstrap](https://github.com/FRCTavares/IST-Thesis-Code/issues/15)
+25. [ ] [#15 — P1.5 Fix positive-memory bootstrap](https://github.com/FRCTavares/IST-Thesis-Code/issues/15)
    - phase 3; experiment.
 
-25. [ ] [#17 — P1.6 Prevent target fragments becoming negatives](https://github.com/FRCTavares/IST-Thesis-Code/issues/17)
+26. [ ] [#17 — P1.6 Prevent target fragments becoming negatives](https://github.com/FRCTavares/IST-Thesis-Code/issues/17)
    - phase 4; engineering.
 
-26. [ ] [#18 — P1.7 Add hard-negative lifecycle](https://github.com/FRCTavares/IST-Thesis-Code/issues/18)
+27. [ ] [#18 — P1.7 Add hard-negative lifecycle](https://github.com/FRCTavares/IST-Thesis-Code/issues/18)
    - phase 4; engineering.
 
-27. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
+28. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
    - phase 5; engineering.
 
-28. [ ] [#21 — P1.9 Add motion evidence only if it helps](https://github.com/FRCTavares/IST-Thesis-Code/issues/21)
+29. [ ] [#21 — P1.9 Add motion evidence only if it helps](https://github.com/FRCTavares/IST-Thesis-Code/issues/21)
    - phase 5; experiment.
 
-29. [ ] [#25 — P1.10 Improve bbox evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/25)
+30. [ ] [#25 — P1.10 Improve bbox evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/25)
    - phase 6; experiment.
 
-30. [ ] [#26 — P1.11 Add event and recovery metrics](https://github.com/FRCTavares/IST-Thesis-Code/issues/26)
+31. [ ] [#26 — P1.11 Add event and recovery metrics](https://github.com/FRCTavares/IST-Thesis-Code/issues/26)
    - phase 6; experiment.
 
-31. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30)
+32. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30)
    - phase 7; experiment.
 
-32. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31)
+33. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31)
    - phase 7; experiment.
 
-33. [ ] [#32 — P1.14 Runtime and onboard cost](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
+34. [ ] [#32 — P1.14 Runtime and onboard cost](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
    - phase 7; live-system.
 
-34. [ ] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35)
+35. [ ] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35)
    - phase 8; experiment.
 
-35. [ ] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36)
+36. [ ] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36)
    - phase 8; documentation.
 
-36. [x] [#48 — Flake8 test hangs in multiprocessing during full thesis_bringup suite](https://github.com/FRCTavares/IST-Thesis-Code/issues/48)
+37. [x] [#48 — Flake8 test hangs in multiprocessing during full thesis_bringup suite](https://github.com/FRCTavares/IST-Thesis-Code/issues/48)
    - phase 8; engineering.
    - Audit on 21 July 2026 confirmed that both generated lint tests resolve their source paths from the process working directory, causing repository-root runs to traverse `thesis_env` and unrelated runtime outputs.
    - Package-scoped runs terminated normally with no lingering workers. The scoped baseline is 2,589 Flake8 and 108 PEP 257 findings in `thesis_bringup`, plus 246 Flake8 and 33 PEP 257 findings in `thesis_tracker`.
@@ -169,30 +172,30 @@ Active executable issues: **38**.
    - The `thesis_bringup` line-wrapping batch resolved all 99 remaining `E501` findings through syntax-preserving layout changes across the launch, camera, control, dashboard, perception, MAVROS, and TIM-MARS modules. Package-wide Flake8 and the package-owned ament PEP 257 test now pass from both the repository root and package directory; the complete package suite and build pass. Raw pydocstyle reports 123 missing-docstring diagnostics only (`D100`--`D107` subset), while the authoritative package-owned ament PEP 257 contract passes. No malformed existing docstrings or package lint failures remain, so no separate documentation-churn batch is required.
    - Final Issue #48 closure validation reran both packages’ Flake8 and ament PEP 257 tests from the repository root and their package directories, complete package test suites, and package builds. All checks passed without multiprocessing hangs; the repository remained clean, and the issue was closed after the validated commits were pushed.
 
-37. [ ] [#37 — P1.17 Create a single reproducibility command](https://github.com/FRCTavares/IST-Thesis-Code/issues/37)
+38. [ ] [#37 — P1.17 Create a single reproducibility command](https://github.com/FRCTavares/IST-Thesis-Code/issues/37)
    - phase 8; experiment.
 
-38. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
+39. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
    - phase 9; experiment.
 
-39. [ ] [#41 — P1.19 Add explicit limitations](https://github.com/FRCTavares/IST-Thesis-Code/issues/41)
+40. [ ] [#41 — P1.19 Add explicit limitations](https://github.com/FRCTavares/IST-Thesis-Code/issues/41)
    - phase 9; experiment.
 
-40. [ ] [#42 — P1.20 Build final figures](https://github.com/FRCTavares/IST-Thesis-Code/issues/42)
+41. [ ] [#42 — P1.20 Build final figures](https://github.com/FRCTavares/IST-Thesis-Code/issues/42)
    - phase 9; experiment.
 
-41. [ ] [#44 — P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)](https://github.com/FRCTavares/IST-Thesis-Code/issues/44)
+42. [ ] [#44 — P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)](https://github.com/FRCTavares/IST-Thesis-Code/issues/44)
    - phase 10; live-system.
 
 ## P2 — Useful work after the critical path
 
-42. [ ] [#45 — P2.x Detector (perception upgrade behind TIM — additive, low priority)](https://github.com/FRCTavares/IST-Thesis-Code/issues/45)
+43. [ ] [#45 — P2.x Detector (perception upgrade behind TIM — additive, low priority)](https://github.com/FRCTavares/IST-Thesis-Code/issues/45)
    - phase 10; live-system.
 
-43. [ ] [#49 — P2: Consolidate replay bags and define evidence retention policy](https://github.com/FRCTavares/IST-Thesis-Code/issues/49)
+44. [ ] [#49 — P2: Consolidate replay bags and define evidence retention policy](https://github.com/FRCTavares/IST-Thesis-Code/issues/49)
    - phase 8; engineering.
 
 ## P3 — Optional or stretch work
 
-44. [ ] [#46 — P3.x Orientation gating (stretch; needs pose keypoints)](https://github.com/FRCTavares/IST-Thesis-Code/issues/46)
+45. [ ] [#46 — P3.x Orientation gating (stretch; needs pose keypoints)](https://github.com/FRCTavares/IST-Thesis-Code/issues/46)
    - phase 10; engineering.
