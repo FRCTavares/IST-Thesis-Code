@@ -183,6 +183,12 @@ The recommended flight recording path is integrated into `tools/start_live_stack
 
 Use `--record` to record the dashboard image stream plus the perception, tracking, target, timing, and control topics required for later analysis and offline overlay rendering.
 
+Every recorded live run also stores target-authority provenance. The dashboard
+appends startup, select, clear, and switch-attempt generations to
+`target_authority_events.jsonl`; stack shutdown archives that JSONL file beside
+the bag. `flight_metadata.txt` records the authoritative topic, initial
+generation, runtime log path, and frozen reconfiguration state.
+
 ### 4.1) Standard flight video bag
 
 ```bash

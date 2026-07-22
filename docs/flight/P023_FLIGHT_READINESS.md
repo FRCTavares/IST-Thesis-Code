@@ -142,6 +142,30 @@ The isolated control checks must demonstrate:
 - yaw and translational commands remain saturated;
 - each command step respects the configured slew limit.
 
+## Isolated target-authority ground check
+
+Before promoting a flight candidate, run three isolated target-authority dry
+runs from a clean committed checkout. The validator starts only the dashboard,
+TIM-MARS, a MAVROS-disabled control node, and a small MCAP recorder in a
+dedicated ROS domain. It does not start a camera, detector, tracker, MAVROS, or
+aircraft.
+
+Example:
+
+    tools/live/validate_target_authority_ground_run.py \
+      --output-dir bags/ground/p052_target_authority_<commit>/run_01 \
+      --run-id p052_<commit>_run_01 \
+      --ros-domain-id 82 \
+      --api-port 18090 \
+      --ws-port 18765
+
+Use distinct domains and ports for each retained run. A passing summary must
+cover raw-target bypass, explicit select and clear, ID reuse, rejected detector
+and tracker switches, stale validated output, and TIM node restart. Retain each
+`ground_check_summary.json`, `target_authority_events.jsonl`, process log set,
+and `rosbag/` directory. Do not treat this isolated check as camera, Pixhawk,
+hover, or flight evidence.
+
 ## Preflight checklist
 
 ### Repository and storage

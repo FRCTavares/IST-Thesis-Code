@@ -17,6 +17,7 @@ TIM_NODE = (
     REPO_ROOT
     / "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory_mars_node.py"
 )
+GROUND_RUNNER = REPO_ROOT / "tools/live/validate_target_authority_ground_run.py"
 
 
 def _read(path: Path) -> str:
@@ -68,6 +69,10 @@ def test_launcher_freezes_reconfiguration_and_commands_tim_topics():
     ) in launcher
     assert "-p target_select_topic:=/target_memory_mars/select" in launcher
     assert "-p target_clear_topic:=/target_memory_mars/clear" in launcher
+    assert "target_authority_generation_initial=0" in launcher
+    assert "target_authority_event_log=target_authority_events.jsonl" in launcher
+    assert "-p target_authority_event_log_path:" in launcher
+    assert "archive_target_authority_events" in launcher
 
 
 def test_dashboard_target_focus_commands_authority_not_only_raw_target():
@@ -78,8 +83,14 @@ def test_dashboard_target_focus_commands_authority_not_only_raw_target():
     )
 
     assert "_apply_target_authority_request" in focus_calls
+    assert "_target_command_subscriber_ready" in focus_calls
     assert "_publish_immediate_target_reset" in authority_calls
     assert "_publish_target_authority_command" in authority_calls
+
+    readiness_calls = _called_attributes(
+        methods["_target_command_subscriber_ready"]
+    )
+    assert "get_subscriptions_info_by_topic" in readiness_calls
 
 
 def test_target_commands_use_reliable_qos_and_auto_fails_closed():
@@ -135,3 +146,23 @@ def test_tim_select_and_clear_publish_immediate_zero_authority():
 
     reset_calls = _called_attributes(methods["_publish_target_reset"])
     assert "publish" in reset_calls
+
+
+def test_ground_runner_covers_required_authority_transitions():
+    runner = _read(GROUND_RUNNER)
+
+    for phase_name in {
+        "raw_target_bypass",
+        "explicit_select",
+        "explicit_clear",
+        "id_reuse_without_selection",
+        "model_switch_rejected",
+        "tracker_switch_rejected",
+        "stale_validated_target",
+        "tim_node_restart",
+    }:
+        assert phase_name in runner
+
+    assert "/target_memory_mars" in runner
+    assert "/control_ref/cmd_vel" in runner
+    assert "enable_mavros:=false" in runner

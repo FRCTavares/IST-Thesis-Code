@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
+from datetime import datetime, timezone
 from http.server import (
     BaseHTTPRequestHandler,
     ThreadingHTTPServer,
@@ -20,6 +21,7 @@ import subprocess
 import threading
 import time
 from typing import Any
+import uuid
 
 from rcl_interfaces.msg import (
     Parameter,
@@ -102,7 +104,9 @@ class DashboardBridgeNode(Node):
             f"{thesis_root}/models/hef",
         )
         self.declare_parameter("tracker_node_name", "tracker_node")
+        self.declare_parameter("target_memory_node_name", "target_memory_mars_node")
         self.declare_parameter("runtime_reconfiguration_enabled", False)
+        self.declare_parameter("target_authority_event_log_path", "")
 
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._detections_topic = str(self.get_parameter("detections_topic").value)
@@ -162,8 +166,20 @@ class DashboardBridgeNode(Node):
             str(self.get_parameter("tracker_node_name").value).strip()
             or "tracker_node"
         )
+        self._target_memory_node_name = (
+            str(self.get_parameter("target_memory_node_name").value).strip()
+            or "target_memory_mars_node"
+        )
         self._runtime_reconfiguration_enabled = bool(
             self.get_parameter("runtime_reconfiguration_enabled").value
+        )
+        event_log_path = str(
+            self.get_parameter("target_authority_event_log_path").value
+        ).strip()
+        self._target_authority_event_log_path = (
+            os.path.abspath(os.path.expanduser(event_log_path))
+            if event_log_path
+            else ""
         )
 
         self._supported_models = SUPPORTED_MODELS
@@ -171,6 +187,8 @@ class DashboardBridgeNode(Node):
         self._supported_trackers = {"sort", "ocsort", "bytetrack", "deepsort"}
         self._target_focus_id: int | None = None
         self._target_authority_generation = 0
+        self._target_authority_session_id = uuid.uuid4().hex
+        self._target_authority_event_lock = threading.Lock()
 
         self._state_lock = threading.Lock()
         self._state: dict[str, Any] = {
@@ -182,6 +200,8 @@ class DashboardBridgeNode(Node):
             "target_authority_source": self._validated_target_topic,
             "target_authority_generation": self._target_authority_generation,
             "target_authority_reason": "startup",
+            "target_authority_session_id": self._target_authority_session_id,
+            "target_authority_event_log_path": self._target_authority_event_log_path,
             "target_memory": None,
             # Explicit telemetry keys (canonical)
             "camera_input_fps": None,
@@ -298,6 +318,12 @@ class DashboardBridgeNode(Node):
         )
         self._system_timer = self.create_timer(1.0, self._sample_system_metrics)
 
+        self._record_target_authority_event(
+            generation=0,
+            target_id=None,
+            reason="startup",
+        )
+
         self.get_logger().info(
             "dashboard_bridge_node started: "
             f"tracks={self._tracks_topic}, "
@@ -316,6 +342,8 @@ class DashboardBridgeNode(Node):
             f"{'enabled' if self._enable_container_model_switch_api else 'disabled'}, "
             "runtime_reconfiguration="
             f"{'enabled' if self._runtime_reconfiguration_enabled else 'disabled'}, "
+            f"target_authority_session={self._target_authority_session_id}, "
+            f"target_authority_event_log={self._target_authority_event_log_path or 'disabled'}, "
             f"integrated_camera_hef_dir={self._integrated_camera_hef_dir}"
         )
 
@@ -663,6 +691,20 @@ exit 1
         if error is not None:
             return {"ok": False, "error": error, "status_code": 400}
 
+        command_topic = (
+            self._target_select_topic
+            if target_id is not None
+            else self._target_clear_topic
+        )
+        if not self._target_command_subscriber_ready(command_topic):
+            self._publish_immediate_target_reset()
+            return {
+                "ok": False,
+                "error": "TIM-MARS command subscriber is unavailable",
+                "target_authority_source": self._validated_target_topic,
+                "status_code": 503,
+            }
+
         authority_generation = self._apply_target_authority_request(
             target_id,
             reason="operator_select" if target_id is not None else "operator_clear",
@@ -678,6 +720,13 @@ exit 1
             "target_authority_generation": authority_generation,
             "status_code": 200,
         }
+
+    def _target_command_subscriber_ready(self, topic_name: str) -> bool:
+        """Return true only when the TIM node owns a command subscription."""
+        return any(
+            endpoint.node_name == self._target_memory_node_name
+            for endpoint in self.get_subscriptions_info_by_topic(topic_name)
+        )
 
     def _apply_target_authority_request(
         self,
@@ -701,7 +750,61 @@ exit 1
 
         self._publish_immediate_target_reset()
         self._publish_target_authority_command(target_id)
+        self._record_target_authority_event(
+            generation=authority_generation,
+            target_id=target_id,
+            reason=reason,
+        )
         return authority_generation
+
+    def _record_target_authority_event(
+        self,
+        *,
+        generation: int,
+        target_id: int | None,
+        reason: str,
+    ) -> None:
+        """Append one durable authority transition to the live-run JSONL log."""
+        if not self._target_authority_event_log_path:
+            return
+
+        payload = {
+            "schema_version": 1,
+            "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+            "monotonic_ns": time.monotonic_ns(),
+            "authority_source": self._validated_target_topic,
+            "session_id": self._target_authority_session_id,
+            "generation": int(generation),
+            "reason": str(reason),
+            "requested_target_id": (
+                int(target_id) if target_id is not None else None
+            ),
+            "authority_state": (
+                "selection_requested" if target_id is not None else "cleared"
+            ),
+        }
+        encoded = (json.dumps(payload, sort_keys=True) + "\n").encode("utf-8")
+
+        try:
+            parent = os.path.dirname(self._target_authority_event_log_path)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+            with self._target_authority_event_lock:
+                descriptor = os.open(
+                    self._target_authority_event_log_path,
+                    os.O_APPEND | os.O_CREAT | os.O_WRONLY,
+                    0o640,
+                )
+                try:
+                    os.write(descriptor, encoded)
+                    os.fsync(descriptor)
+                finally:
+                    os.close(descriptor)
+        except OSError as exc:
+            self.get_logger().error(
+                "Could not persist target-authority event "
+                f"to {self._target_authority_event_log_path}: {exc}"
+            )
 
     def _publish_target_authority_command(self, target_id: int | None) -> None:
         """Publish one explicit TIM-MARS select or clear command."""
@@ -926,6 +1029,12 @@ exit 1
                 ],
                 "target_authority_reason": self._state[
                     "target_authority_reason"
+                ],
+                "target_authority_session_id": self._state[
+                    "target_authority_session_id"
+                ],
+                "target_authority_event_log_path": self._state[
+                    "target_authority_event_log_path"
                 ],
                 "target_memory": self._state.get("target_memory"),
                 "camera_input_fps": camera_input_fps,

@@ -39,6 +39,8 @@ PID_FILE="$RUN_DIR/pids.txt"
 LATEST_LINK="$LOG_ROOT/latest"
 ROS_RUNTIME_LOG_ROOT="$ROS_WS/log/runtime"
 ROS_LOG_DIR="$ROS_RUNTIME_LOG_ROOT/$RUN_ID"
+TARGET_AUTHORITY_SOURCE="/target_memory_mars"
+TARGET_AUTHORITY_EVENT_LOG="$RUN_DIR/target_authority_events.jsonl"
 
 declare -A PROC_PIDS
 
@@ -149,6 +151,22 @@ kill_tree() {
     kill -s "$sig" "$pid" >/dev/null 2>&1 || true
 }
 
+archive_target_authority_events() {
+    if [[ ! -f "$TARGET_AUTHORITY_EVENT_LOG" ]]; then
+        return
+    fi
+
+    local bag_dir
+    for bag_dir in \
+        "${VIDEO_BAG_OUT_DIR:-}" \
+        "${DATASET_BAG_OUT_DIR:-}"; do
+        if [[ -n "$bag_dir" && -d "$bag_dir" ]]; then
+            cp "$TARGET_AUTHORITY_EVENT_LOG" \
+                "$bag_dir/target_authority_events.jsonl"
+        fi
+    done
+}
+
 STOP_DONE=0
 stop_stack() {
     if [[ "$STOP_DONE" -eq 1 ]]; then
@@ -184,6 +202,8 @@ stop_stack() {
     pkill -f "dashboard_bridge_node" >/dev/null 2>&1 || true
     pkill -f "target_memory_mars_node" >/dev/null 2>&1 || true
     pkill -f "web_video_server" >/dev/null 2>&1 || true
+
+    archive_target_authority_events
 
     log_done "live stack stop requested"
 }
@@ -294,6 +314,11 @@ write_video_bag_metadata() {
         echo "camera_publish_resize_mode=${CAMERA_PUBLISH_RESIZE_MODE:-}"
         echo "camera_publish_encoding=${CAMERA_PUBLISH_ENCODING:-}"
         echo "control_enabled=$ENABLE_CONTROL"
+        echo "target_authority_source=$TARGET_AUTHORITY_SOURCE"
+        echo "target_authority_generation_initial=0"
+        echo "target_authority_event_log=target_authority_events.jsonl"
+        echo "target_authority_runtime_log=$TARGET_AUTHORITY_EVENT_LOG"
+        echo "runtime_reconfiguration_enabled=false"
         echo "mavros_mirror_enabled=${CONTROL_MAVROS_BOOL:-false}"
         echo "record_mavros=$RECORD_MAVROS"
         echo "bag_out_dir=${VIDEO_BAG_OUT_DIR:-}"
@@ -623,6 +648,7 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         -p camera_publish_resize_mode:=$CAMERA_PUBLISH_RESIZE_MODE \
         -p enable_container_model_switch_api:=$DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL \
         -p runtime_reconfiguration_enabled:=$DASHBOARD_RUNTIME_RECONFIGURATION_BOOL \
+        -p target_authority_event_log_path:="$TARGET_AUTHORITY_EVENT_LOG" \
         -p validated_target_topic:=/target_memory_mars \
         -p target_select_topic:=/target_memory_mars/select \
         -p target_clear_topic:=/target_memory_mars/clear
