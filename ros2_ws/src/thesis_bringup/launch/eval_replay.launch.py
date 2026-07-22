@@ -39,7 +39,10 @@ def _setup(context, *args, **kwargs):
 
     # Validate tracker type
     if not os.path.exists(config_file):
-        raise ValueError(f"Unknown tracker type: {tracker_type}. Config file not found: {config_file}")
+        raise ValueError(
+            f"Unknown tracker type: {tracker_type}. "
+            f"Config file not found: {config_file}"
+        )
 
     tracker = Node(
         package="thesis_tracker",

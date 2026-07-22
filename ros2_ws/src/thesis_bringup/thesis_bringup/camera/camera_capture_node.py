@@ -82,7 +82,11 @@ class CameraCaptureNode(Node):
                 history=HistoryPolicy.KEEP_LAST,
                 depth=1,
             )
-            self._dashboard_pub = self.create_publisher(Image, self._dashboard_topic, dashboard_qos)
+            self._dashboard_pub = self.create_publisher(
+                Image,
+                self._dashboard_topic,
+                dashboard_qos,
+            )
 
         self._fps_pub = None
         if self._publish_fps_topic:
@@ -183,7 +187,9 @@ class CameraCaptureNode(Node):
         self._height = int(self.get_parameter("height").value)
         self._publish_width = int(self.get_parameter("publish_width").value)
         self._publish_height = int(self.get_parameter("publish_height").value)
-        self._publish_resize_mode = str(self.get_parameter("publish_resize_mode").value).strip().lower()
+        self._publish_resize_mode = str(
+            self.get_parameter("publish_resize_mode").value
+        ).strip().lower()
         self._publish_encoding = str(self.get_parameter("publish_encoding").value).strip().lower()
         self._fps = float(self.get_parameter("fps").value)
         self._frame_id = self.get_parameter("frame_id").value
@@ -201,7 +207,9 @@ class CameraCaptureNode(Node):
         self._apply_sensor_trigger_control = bool(
             self.get_parameter("apply_sensor_trigger_control").value
         )
-        self._apply_sensor_rate_controls = bool(self.get_parameter("apply_sensor_rate_controls").value)
+        self._apply_sensor_rate_controls = bool(
+            self.get_parameter("apply_sensor_rate_controls").value
+        )
         self._sensor_max_fps = int(self.get_parameter("sensor_max_fps").value)
         self._sensor_ae_exposure_upper = int(self.get_parameter("sensor_ae_exposure_upper").value)
         self._sensor_ae_exposure_max = int(self.get_parameter("sensor_ae_exposure_max").value)
@@ -225,13 +233,16 @@ class CameraCaptureNode(Node):
             self.get_parameter("dashboard_publish_requires_subscribers").value
         )
         self._capture_fps_topic = str(self.get_parameter("capture_fps_topic").value)
-        self._publish_capture_fps_topic = bool(self.get_parameter("publish_capture_fps_topic").value)
+        self._publish_capture_fps_topic = bool(
+            self.get_parameter("publish_capture_fps_topic").value
+        )
 
     def _validate_runtime_parameters(self) -> None:
         """Normalize runtime parameters and warn about ignored legacy settings."""
         if self._flip_image:
             self.get_logger().warn(
-                "flip_image parameter is deprecated and ignored; camera frames are published unrotated"
+                "flip_image parameter is deprecated and ignored; "
+                "camera frames are published unrotated"
             )
 
         self._publish_width_auto = self._publish_width <= 0
@@ -357,7 +368,8 @@ class CameraCaptureNode(Node):
             if topology and all(marker in topology for marker in required_markers):
                 if media_dev != configured_media_dev:
                     self.get_logger().warn(
-                        f"Configured media_dev={configured_media_dev} does not match camera topology; "
+                        f"Configured media_dev={configured_media_dev} does not "
+                        "match camera topology; "
                         f"using {media_dev} instead"
                     )
                 return media_dev
@@ -371,13 +383,15 @@ class CameraCaptureNode(Node):
             if self._csi_entity in topology and "driver          pispbe" not in topology:
                 if media_dev != configured_media_dev:
                     self.get_logger().warn(
-                        f"Configured media_dev={configured_media_dev} does not expose CSI topology; "
+                        f"Configured media_dev={configured_media_dev} does not "
+                        "expose CSI topology; "
                         f"using {media_dev} instead"
                     )
                 return media_dev
 
         self.get_logger().warn(
-            f"Could not auto-detect camera media device; using configured value {configured_media_dev}"
+            "Could not auto-detect camera media device; "
+            f"using configured value {configured_media_dev}"
         )
         return configured_media_dev
 
@@ -406,8 +420,8 @@ class CameraCaptureNode(Node):
         if tevs_entities:
             detected = tevs_entities[0]
             self.get_logger().warn(
-                f"Configured sensor_entity='{configured_sensor_entity}' not present on {media_dev}; "
-                f"using '{detected}' instead"
+                f"Configured sensor_entity='{configured_sensor_entity}' "
+                f"not present on {media_dev}; using '{detected}' instead"
             )
             return detected
 
@@ -479,13 +493,14 @@ class CameraCaptureNode(Node):
         for candidate in candidates:
             if self._can_probe_video_device(str(candidate)):
                 self.get_logger().warn(
-                    f"Configured camera device {configured_device} not usable; using {candidate} instead"
+                    f"Configured camera device {configured_device} not usable; "
+                    f"using {candidate} instead"
                 )
                 return str(candidate)
 
         raise RuntimeError(
-            f"Configured camera device {configured_device} is not usable and no fallback /dev/video* "
-            "candidate could be opened"
+            f"Configured camera device {configured_device} is not usable "
+            "and no fallback /dev/video* candidate could be opened"
         )
 
     def _configure_camera(self) -> None:
@@ -524,8 +539,14 @@ class CameraCaptureNode(Node):
             "field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range"
         )
 
-        sensor_cmd = f"media-ctl -d {self._media_dev} -V '\"{self._sensor_entity}\":0 [{fmt_string}]'"
-        sensor_result = self._run_shell(sensor_cmd, allow_failure=not self._fail_on_media_init_error)
+        sensor_cmd = (
+            f"media-ctl -d {self._media_dev} -V "
+            f"'\"{self._sensor_entity}\":0 [{fmt_string}]'"
+        )
+        sensor_result = self._run_shell(
+            sensor_cmd,
+            allow_failure=not self._fail_on_media_init_error,
+        )
         time.sleep(self._command_delay_s)
 
         detected_resolution = self._detect_sensor_resolution()
@@ -547,7 +568,8 @@ class CameraCaptureNode(Node):
                     if must_adopt_for_stability and not self._adopt_detected_sensor_resolution:
                         self.get_logger().warn(
                             mismatch_msg
-                            + "; overriding adopt_detected_sensor_resolution=false to keep stream alive"
+                            + "; overriding adopt_detected_sensor_resolution="
+                            "false to keep stream alive"
                         )
                     self.get_logger().warn(
                         mismatch_msg + "; adopting detected resolution for capture"
@@ -562,7 +584,8 @@ class CameraCaptureNode(Node):
                     if self._fail_on_media_init_error:
                         raise RuntimeError(
                             mismatch_msg
-                            + "; set adopt_detected_sensor_resolution=true or fix requested width/height"
+                            + "; set adopt_detected_sensor_resolution=true "
+                            "or fix requested width/height"
                         )
                     self.get_logger().error(
                         mismatch_msg + "; keeping requested resolution for capture configuration"
@@ -570,8 +593,16 @@ class CameraCaptureNode(Node):
 
         commands = [
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":0 [{fmt_string}]'",
-            f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":{self._csi_source_pad} [{fmt_string}]'",
-            f"media-ctl -d {self._media_dev} -l '\"{self._csi_entity}\":{self._csi_source_pad} -> \"{self._video_entity}\":0 [1]'",
+            (
+                f"media-ctl -d {self._media_dev} -V "
+                f"'\"{self._csi_entity}\":{self._csi_source_pad} "
+                f"[{fmt_string}]'"
+            ),
+            (
+                f"media-ctl -d {self._media_dev} -l "
+                f"'\"{self._csi_entity}\":{self._csi_source_pad} -> "
+                f"\"{self._video_entity}\":0 [1]'"
+            ),
         ]
 
         trigger_cmd = None
@@ -599,7 +630,10 @@ class CameraCaptureNode(Node):
             time.sleep(self._command_delay_s)
 
         if trigger_cmd is not None and self._apply_sensor_trigger_control:
-            self.get_logger().info(f"Applying sensor trigger control: trigger_mode={self._trigger_mode}")
+            self.get_logger().info(
+                "Applying sensor trigger control: "
+                f"trigger_mode={self._trigger_mode}"
+            )
             self._run_shell(trigger_cmd, allow_failure=not self._fail_on_media_init_error)
             time.sleep(self._command_delay_s)
         elif trigger_cmd is not None:
@@ -941,7 +975,11 @@ class CameraCaptureNode(Node):
 
         src_h, src_w = frame.shape[:2]
         if self._publish_resize_mode == "resize":
-            interpolation = cv2.INTER_AREA if (target_w <= src_w and target_h <= src_h) else cv2.INTER_LINEAR
+            interpolation = (
+                cv2.INTER_AREA
+                if target_w <= src_w and target_h <= src_h
+                else cv2.INTER_LINEAR
+            )
             cv2.resize(
                 frame,
                 (target_w, target_h),

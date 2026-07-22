@@ -396,7 +396,11 @@ class TargetMemoryMarsNode(Node):
             t_end_ns,
         )
 
-    def _target_msg_from_output(self, tracks_msg: Track2DArray, out: TargetMemoryOutput) -> TargetState:
+    def _target_msg_from_output(
+        self,
+        tracks_msg: Track2DArray,
+        out: TargetMemoryOutput,
+    ) -> TargetState:
         target_msg = target_msg_from_output(
             out,
             image_width=self._image_width,

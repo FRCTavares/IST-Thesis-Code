@@ -357,7 +357,9 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         min_candidate_score=float(node.get_parameter("min_candidate_score").value),
         allow_id_switch_recovery=bool(node.get_parameter("allow_id_switch_recovery").value),
         same_id_accept_relief=float(node.get_parameter("same_id_accept_relief").value),
-        id_switch_spatial_gate_enabled=bool(node.get_parameter("id_switch_spatial_gate_enabled").value),
+        id_switch_spatial_gate_enabled=bool(
+            node.get_parameter("id_switch_spatial_gate_enabled").value
+        ),
         id_switch_min_iou=float(node.get_parameter("id_switch_min_iou").value),
         id_switch_min_distance=float(node.get_parameter("id_switch_min_distance").value),
         id_switch_min_scale=float(node.get_parameter("id_switch_min_scale").value),
@@ -423,7 +425,9 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
                 ).value
             ),
         ),
-        hard_negative_memory_enabled=bool(node.get_parameter("hard_negative_memory_enabled").value),
+        hard_negative_memory_enabled=bool(
+            node.get_parameter("hard_negative_memory_enabled").value
+        ),
         hard_negative_max_entries=int(node.get_parameter("hard_negative_max_entries").value),
         hard_negative_update_alpha=float(
             node.get_parameter(
@@ -448,16 +452,28 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
                 "hard_negative_max_positive_similarity"
             ).value
         ),
-        hard_negative_reject_similarity=float(node.get_parameter("hard_negative_reject_similarity").value),
+        hard_negative_reject_similarity=float(
+            node.get_parameter("hard_negative_reject_similarity").value
+        ),
         hard_negative_reject_margin=float(node.get_parameter("hard_negative_reject_margin").value),
         hard_negative_min_geometry=float(node.get_parameter("hard_negative_min_geometry").value),
-        appearance_conservative_enabled=bool(node.get_parameter("appearance_conservative_enabled").value),
+        appearance_conservative_enabled=bool(
+            node.get_parameter("appearance_conservative_enabled").value
+        ),
         appearance_conservative_require_appearance=bool(
             node.get_parameter("appearance_conservative_require_appearance").value
         ),
-        appearance_conservative_min_similarity=float(node.get_parameter("appearance_conservative_min_similarity").value),
-        appearance_conservative_margin=float(node.get_parameter("appearance_conservative_margin").value),
-        rank_aware_reacquisition_enabled=bool(node.get_parameter("rank_aware_reacquisition_enabled").value),
+        appearance_conservative_min_similarity=float(
+            node.get_parameter(
+                "appearance_conservative_min_similarity"
+            ).value
+        ),
+        appearance_conservative_margin=float(
+            node.get_parameter("appearance_conservative_margin").value
+        ),
+        rank_aware_reacquisition_enabled=bool(
+            node.get_parameter("rank_aware_reacquisition_enabled").value
+        ),
         rank_aware_lost_min_total=float(node.get_parameter("rank_aware_lost_min_total").value),
         rank_aware_lost_min_geom=float(node.get_parameter("rank_aware_lost_min_geom").value),
         rank_aware_lost_min_app=float(node.get_parameter("rank_aware_lost_min_app").value),
@@ -465,10 +481,14 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         rank_aware_confirm_frames=int(node.get_parameter("rank_aware_confirm_frames").value),
         candidate_belief_enabled=bool(node.get_parameter("candidate_belief_enabled").value),
         candidate_belief_min_score=float(node.get_parameter("candidate_belief_min_score").value),
-        candidate_belief_confirm_frames=int(node.get_parameter("candidate_belief_confirm_frames").value),
+        candidate_belief_confirm_frames=int(
+            node.get_parameter("candidate_belief_confirm_frames").value
+        ),
         absence_recovery_enabled=bool(node.get_parameter("absence_recovery_enabled").value),
         absence_after_missed_frames=int(node.get_parameter("absence_after_missed_frames").value),
-        absence_new_id_requires_appearance=bool(node.get_parameter("absence_new_id_requires_appearance").value),
+        absence_new_id_requires_appearance=bool(
+            node.get_parameter("absence_new_id_requires_appearance").value
+        ),
         absence_min_total=float(node.get_parameter("absence_min_total").value),
         absence_min_distance=float(node.get_parameter("absence_min_distance").value),
         absence_min_scale=float(node.get_parameter("absence_min_scale").value),

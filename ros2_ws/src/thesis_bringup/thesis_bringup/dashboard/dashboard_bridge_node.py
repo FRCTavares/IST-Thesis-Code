@@ -101,7 +101,9 @@ class DashboardBridgeNode(Node):
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._detections_topic = str(self.get_parameter("detections_topic").value)
         self._target_topic = str(self.get_parameter("target_topic").value)
-        self._target_memory_status_topic = str(self.get_parameter("target_memory_status_topic").value)
+        self._target_memory_status_topic = str(
+            self.get_parameter("target_memory_status_topic").value
+        )
         self._fps_topic = str(self.get_parameter("fps_topic").value)
         self._replay_progress_topic = str(self.get_parameter("replay_progress_topic").value)
         self._timing_topic = str(self.get_parameter("timing_topic").value)
@@ -121,7 +123,8 @@ class DashboardBridgeNode(Node):
         ).strip().lower()
         if self._camera_publish_resize_mode not in ("resize", "letterbox"):
             self.get_logger().warn(
-                f"invalid camera_publish_resize_mode='{self._camera_publish_resize_mode}', using letterbox"
+                f"invalid camera_publish_resize_mode="
+                f"'{self._camera_publish_resize_mode}', using letterbox"
             )
             self._camera_publish_resize_mode = "letterbox"
         self._detector_container_name = str(self.get_parameter("detector_container_name").value)
@@ -133,9 +136,17 @@ class DashboardBridgeNode(Node):
         self._enable_container_model_switch_api = bool(
             self.get_parameter("enable_container_model_switch_api").value
         )
-        self._perception_node_name = str(self.get_parameter("perception_node_name").value).strip() or "perception_camera_node"
-        self._integrated_camera_hef_dir = str(self.get_parameter("integrated_camera_hef_dir").value)
-        self._tracker_node_name = str(self.get_parameter("tracker_node_name").value).strip() or "tracker_node"
+        self._perception_node_name = (
+            str(self.get_parameter("perception_node_name").value).strip()
+            or "perception_camera_node"
+        )
+        self._integrated_camera_hef_dir = str(
+            self.get_parameter("integrated_camera_hef_dir").value
+        )
+        self._tracker_node_name = (
+            str(self.get_parameter("tracker_node_name").value).strip()
+            or "tracker_node"
+        )
 
         self._supported_models = SUPPORTED_MODELS
         self._model_to_hef = {model.key: model.hef_file for model in self._supported_models}
@@ -212,22 +223,56 @@ class DashboardBridgeNode(Node):
         self._target_pub = self.create_publisher(TargetState, self._target_topic, qos)
         self._timing_target_pub = self.create_publisher(Timing, self._timing_target_topic, qos)
 
-        self._tracks_sub = self.create_subscription(Track2DArray, self._tracks_topic, self._on_tracks, qos)
-        self._target_memory_status_sub = self.create_subscription(String, self._target_memory_status_topic, self._on_target_memory_status, qos)
-        self._detections_sub = self.create_subscription(Detection2DArray, self._detections_topic, self._on_detections, qos)
+        self._tracks_sub = self.create_subscription(
+            Track2DArray,
+            self._tracks_topic,
+            self._on_tracks,
+            qos,
+        )
+        self._target_memory_status_sub = self.create_subscription(
+            String,
+            self._target_memory_status_topic,
+            self._on_target_memory_status,
+            qos,
+        )
+        self._detections_sub = self.create_subscription(
+            Detection2DArray,
+            self._detections_topic,
+            self._on_detections,
+            qos,
+        )
         self._fps_sub = self.create_subscription(Float32, self._fps_topic, self._on_fps, qos)
-        self._replay_progress_sub = self.create_subscription(Float32, self._replay_progress_topic, self._on_replay_progress, qos)
-        self._timing_sub = self.create_subscription(Timing, self._timing_topic, self._on_timing, qos)
-        self._publish_timer = self.create_timer(1.0 / max(self._publish_hz, 1.0), self._flush_state_to_clients)
+        self._replay_progress_sub = self.create_subscription(
+            Float32,
+            self._replay_progress_topic,
+            self._on_replay_progress,
+            qos,
+        )
+        self._timing_sub = self.create_subscription(
+            Timing,
+            self._timing_topic,
+            self._on_timing,
+            qos,
+        )
+        self._publish_timer = self.create_timer(
+            1.0 / max(self._publish_hz, 1.0),
+            self._flush_state_to_clients,
+        )
         self._system_timer = self.create_timer(1.0, self._sample_system_metrics)
 
         self.get_logger().info(
             "dashboard_bridge_node started: "
-            f"tracks={self._tracks_topic}, detections={self._detections_topic}, target={self._target_topic}, "
-            f"fps={self._fps_topic}, replay_progress={self._replay_progress_topic}, timing={self._timing_topic}, "
+            f"tracks={self._tracks_topic}, "
+            f"detections={self._detections_topic}, "
+            f"target={self._target_topic}, "
+            f"fps={self._fps_topic}, "
+            f"replay_progress={self._replay_progress_topic}, "
+            f"timing={self._timing_topic}, "
             f"timing_target={self._timing_target_topic}, "
-            f"ws=ws://{self._ws_host}:{self._ws_port}, api=http://{self._api_host}:{self._api_port}, "
-            f"container_model_switch_api={'enabled' if self._enable_container_model_switch_api else 'disabled'}, "
+            f"ws=ws://{self._ws_host}:{self._ws_port}, "
+            f"api=http://{self._api_host}:{self._api_port}, "
+            "container_model_switch_api="
+            f"{'enabled' if self._enable_container_model_switch_api else 'disabled'}, "
             f"integrated_camera_hef_dir={self._integrated_camera_hef_dir}"
         )
 
@@ -276,7 +321,15 @@ class DashboardBridgeNode(Node):
                 if self.path == "/api/model":
                     model = str(payload.get("model", "")).strip().lower()
                     result = node_ref._handle_model_switch(model)
-                    self._send_json(int(result.get("status_code", 200 if result.get("ok") else 500)), result)
+                    self._send_json(
+                        int(
+                            result.get(
+                                "status_code",
+                                200 if result.get("ok") else 500,
+                            )
+                        ),
+                        result,
+                    )
                     return
 
                 if self.path == "/api/tracker":
@@ -287,7 +340,15 @@ class DashboardBridgeNode(Node):
 
                 if self.path == "/api/target":
                     result = node_ref._handle_target_focus(payload.get("target"))
-                    self._send_json(int(result.get("status_code", 200 if result.get("ok") else 500)), result)
+                    self._send_json(
+                        int(
+                            result.get(
+                                "status_code",
+                                200 if result.get("ok") else 500,
+                            )
+                        ),
+                        result,
+                    )
                     return
 
                 self._send_json(404, {"ok": False, "error": "unknown endpoint"})
@@ -296,7 +357,10 @@ class DashboardBridgeNode(Node):
                 return
 
         try:
-            self._api_server = ThreadingHTTPServer((self._api_host, self._api_port), _ControlHandler)
+            self._api_server = ThreadingHTTPServer(
+                (self._api_host, self._api_port),
+                _ControlHandler,
+            )
             self._api_server.serve_forever()
         except Exception as exc:
             self.get_logger().error(f"Control API server failed: {exc}")
@@ -442,7 +506,10 @@ exit 1
         if not self._tracker_set_params_client.wait_for_service(timeout_sec=1.0):
             return {
                 "ok": False,
-                "error": f"tracker parameter service unavailable on /{self._tracker_node_name}/set_parameters",
+                "error": (
+                    "tracker parameter service unavailable on "
+                    f"/{self._tracker_node_name}/set_parameters"
+                ),
             }
 
         request = SetParameters.Request()
@@ -493,7 +560,8 @@ exit 1
             self._state["target_active"] = int(target_id) if target_id is not None else 0
             self._dirty = True
 
-        # Publish an immediate clear to avoid stale control references until the next /tracks frame.
+        # Publish an immediate clear to avoid stale control references
+        # until the next /tracks frame.
         self._publish_immediate_target_reset()
 
         requested_label = "AUTO" if target_id is None else str(target_id)
@@ -537,7 +605,10 @@ exit 1
         return target_id, None
 
     @staticmethod
-    def _sensor_to_target_ms_if_comparable(src_stamp_ns: int, t_target_cb_end_ns: int) -> float | None:
+    def _sensor_to_target_ms_if_comparable(
+        src_stamp_ns: int,
+        t_target_cb_end_ns: int,
+    ) -> float | None:
         if src_stamp_ns <= 0:
             return None
 
@@ -620,8 +691,13 @@ exit 1
         timing_msg.t_target_cb_end_ns = int(t_target_cb_end_ns)
         timing_msg.target_ms = float((t_target_cb_end_ns - t_target_cb_start_ns) / 1e6)
         if timing_msg.t_cam_msg_seen_ns > 0 and t_target_cb_end_ns >= timing_msg.t_cam_msg_seen_ns:
-            timing_msg.e2e_target_ms = float((t_target_cb_end_ns - timing_msg.t_cam_msg_seen_ns) / 1e6)
-        sensor_ms = self._sensor_to_target_ms_if_comparable(int(msg.src_stamp_ns), t_target_cb_end_ns)
+            timing_msg.e2e_target_ms = float(
+                (t_target_cb_end_ns - timing_msg.t_cam_msg_seen_ns) / 1e6
+            )
+        sensor_ms = self._sensor_to_target_ms_if_comparable(
+            int(msg.src_stamp_ns),
+            t_target_cb_end_ns,
+        )
         if sensor_ms is not None:
             timing_msg.sensor_to_target_ms = sensor_ms
         self._timing_target_pub.publish(timing_msg)
@@ -724,7 +800,13 @@ exit 1
             return 1.0
         return value
 
-    def _map_bbox_to_stream_norm(self, cx: float, cy: float, w: float, h: float) -> tuple[float, float, float, float]:
+    def _map_bbox_to_stream_norm(
+        self,
+        cx: float,
+        cy: float,
+        w: float,
+        h: float,
+    ) -> tuple[float, float, float, float]:
         inf_w = max(1.0, self._img_w)
         inf_h = max(1.0, self._img_h)
         ref_w = max(1.0, self._camera_ref_w)

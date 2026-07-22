@@ -102,7 +102,14 @@ _COCO80_LABELS: tuple[str, ...] = (
 
 
 class StubInferenceEngine:
-    def infer(self, _frame_rgb: np.ndarray, _seq: int, _frame_id: int, _src_stamp_ns: int, _timeout_ms: int) -> dict[str, Any]:
+    def infer(
+        self,
+        _frame_rgb: np.ndarray,
+        _seq: int,
+        _frame_id: int,
+        _src_stamp_ns: int,
+        _timeout_ms: int,
+    ) -> dict[str, Any]:
         t0 = now_ns()
         return {
             "detections": [],
@@ -174,7 +181,8 @@ class HailoGstInferenceEngine:
         pipeline_str = (
             f"appsrc name=source is-live=true block=false format=time do-timestamp=false "
             f"max-buffers=1 leaky-type=downstream "
-            f"caps=video/x-raw,format=RGB,width={self.width},height={self.height},framerate={self.fps}/1 ! "
+            f"caps=video/x-raw,format=RGB,width={self.width},"
+            f"height={self.height},framerate={self.fps}/1 ! "
             f"queue max-size-buffers={queue_buffers} leaky=downstream ! "
             f"{convert_stage}"
             f"identity name=pre_hailonet_identity silent=true ! "
@@ -314,14 +322,25 @@ class HailoGstInferenceEngine:
 
         return self.Gst.PadProbeReturn.OK
 
-    def infer(self, frame_rgb: np.ndarray, seq: int, frame_id: int, src_stamp_ns: int, timeout_ms: int) -> dict[str, Any] | None:
+    def infer(
+        self,
+        frame_rgb: np.ndarray,
+        seq: int,
+        frame_id: int,
+        src_stamp_ns: int,
+        timeout_ms: int,
+    ) -> dict[str, Any] | None:
         if self._closed:
             return None
 
         if frame_rgb.dtype != np.uint8:
             raise RuntimeError("inference frame must be uint8 RGB")
 
-        frame_for_gst = frame_rgb if frame_rgb.flags["C_CONTIGUOUS"] else np.ascontiguousarray(frame_rgb)
+        frame_for_gst = (
+            frame_rgb
+            if frame_rgb.flags["C_CONTIGUOUS"]
+            else np.ascontiguousarray(frame_rgb)
+        )
         try:
             # Gst.Buffer.fill expects a flat byte buffer; 3D memoryviews can fail in PyGObject.
             frame_bytes = memoryview(frame_for_gst).cast("B")
@@ -416,7 +435,13 @@ class HailoDirectInferenceEngine:
         infer_timeout_ms: int,
         label_filter: str | None,
     ) -> None:
-        from hailo_platform import HEF, InferVStreams, InputVStreamParams, OutputVStreamParams, VDevice
+        from hailo_platform import (
+            HEF,
+            InferVStreams,
+            InputVStreamParams,
+            OutputVStreamParams,
+            VDevice,
+        )
 
         self.HEF = HEF
         self.InferVStreams = InferVStreams
@@ -635,10 +660,15 @@ class HailoDirectInferenceEngine:
                 raise RuntimeError(f"inference frame must be HWC RGB, got ndim={frame_rgb.ndim}")
             if tuple(int(v) for v in frame_rgb.shape) != self._input_shape:
                 raise RuntimeError(
-                    f"inference frame shape mismatch (got={frame_rgb.shape}, expected={self._input_shape})"
+                    "inference frame shape mismatch "
+                    f"(got={frame_rgb.shape}, expected={self._input_shape})"
                 )
 
-            frame_view = frame_rgb if frame_rgb.flags["C_CONTIGUOUS"] else np.ascontiguousarray(frame_rgb)
+            frame_view = (
+                frame_rgb
+                if frame_rgb.flags["C_CONTIGUOUS"]
+                else np.ascontiguousarray(frame_rgb)
+            )
             batch = np.expand_dims(frame_view, axis=0)
 
             t_infer_start_ns = now_ns()

@@ -93,7 +93,12 @@ def score_candidate(
     dist_score = distance_similarity(dist, cfg.distance_sigma)
     scale_score = scale_similarity(reference_bbox, candidate.bbox, cfg.scale_sigma)
     conf_score = clamp01(candidate.score)
-    id_bonus = 1.0 if current_track_id is not None and candidate.track_id == current_track_id else 0.0
+    id_bonus = (
+        1.0
+        if current_track_id is not None
+        and candidate.track_id == current_track_id
+        else 0.0
+    )
 
     total = (
         cfg.w_iou * iou_score

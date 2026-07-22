@@ -52,7 +52,8 @@ def preprocess_image_message(
         return (
             None,
             "error",
-            f"unsupported encoding '{image_msg.encoding}' in {consumer_name}; expected rgb8 or bgr8",
+            f"unsupported encoding '{image_msg.encoding}' in "
+            f"{consumer_name}; expected rgb8 or bgr8",
         )
 
     expected_step = image_width * 3
@@ -68,7 +69,8 @@ def preprocess_image_message(
         return (
             None,
             "warning",
-            f"image size mismatch: got={len(image_msg.data)} expected={expected_bytes}; dropping frame",
+            f"image size mismatch: got={len(image_msg.data)} "
+            f"expected={expected_bytes}; dropping frame",
         )
 
     try:

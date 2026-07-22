@@ -56,7 +56,9 @@ class VideoFilePublisherNode(Node):
         self._output_width = int(self.get_parameter("output_width").value)
         self._output_height = int(self.get_parameter("output_height").value)
         self._output_encoding = str(self.get_parameter("output_encoding").value).strip().lower()
-        self._image_reliability = str(self.get_parameter("image_reliability").value).strip().lower()
+        self._image_reliability = str(
+            self.get_parameter("image_reliability").value
+        ).strip().lower()
         self._image_qos_depth = max(1, int(self.get_parameter("image_qos_depth").value))
         self._publish_dashboard_topic = bool(self.get_parameter("publish_dashboard_topic").value)
         self._dashboard_topic = str(self.get_parameter("dashboard_topic").value)
@@ -105,7 +107,11 @@ class VideoFilePublisherNode(Node):
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
         )
-        self._replay_progress_pub = self.create_publisher(Float32, self._replay_progress_topic, replay_qos)
+        self._replay_progress_pub = self.create_publisher(
+            Float32,
+            self._replay_progress_topic,
+            replay_qos,
+        )
 
         self._dashboard_pub = None
         if self._publish_dashboard_topic:
@@ -115,7 +121,11 @@ class VideoFilePublisherNode(Node):
                 history=HistoryPolicy.KEEP_LAST,
                 depth=1,
             )
-            self._dashboard_pub = self.create_publisher(Image, self._dashboard_topic, dashboard_qos)
+            self._dashboard_pub = self.create_publisher(
+                Image,
+                self._dashboard_topic,
+                dashboard_qos,
+            )
 
         self._bridge = CvBridge()
         self._rgb_buffer: np.ndarray | None = None
@@ -133,7 +143,8 @@ class VideoFilePublisherNode(Node):
 
         self.get_logger().info(
             f"video_file_publisher_node started video={self._video_path} "
-            f"image_topic={self._image_topic} fps_topic={self._fps_topic} target_fps={self._target_fps:.2f} "
+            f"image_topic={self._image_topic} fps_topic={self._fps_topic} "
+            f"target_fps={self._target_fps:.2f} "
             f"dashboard_fps={self._dashboard_fps:.2f} output_encoding={self._output_encoding} "
             f"image_reliability={self._image_reliability} image_qos_depth={self._image_qos_depth} "
             f"loop={self._loop}"
@@ -185,7 +196,9 @@ class VideoFilePublisherNode(Node):
             now_ns = self.get_clock().now().nanoseconds
             should_pub_dashboard = self._dashboard_period_ns <= 0
             if not should_pub_dashboard:
-                should_pub_dashboard = (now_ns - self._last_dashboard_pub_ns) >= self._dashboard_period_ns
+                should_pub_dashboard = (
+                    now_ns - self._last_dashboard_pub_ns
+                ) >= self._dashboard_period_ns
 
             if should_pub_dashboard:
                 if self._dashboard_buffer is None:

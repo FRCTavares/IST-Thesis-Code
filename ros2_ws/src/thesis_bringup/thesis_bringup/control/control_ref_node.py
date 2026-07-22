@@ -87,7 +87,9 @@ class ControlRefNode(Node):
         self.invalid_warn_every_n = int(self.get_parameter('invalid_warn_every_n').value)
         self.timer_slip_warn_factor = float(self.get_parameter('timer_slip_warn_factor').value)
         self.enable_ambiguity_hold = bool(self.get_parameter('enable_ambiguity_hold').value)
-        self.ambiguity_quality_threshold = float(self.get_parameter('ambiguity_quality_threshold').value)
+        self.ambiguity_quality_threshold = float(
+            self.get_parameter('ambiguity_quality_threshold').value
+        )
         self.ambiguity_warn_every_n = int(self.get_parameter('ambiguity_warn_every_n').value)
         self.saturation_warn_every_n = int(self.get_parameter('saturation_warn_every_n').value)
 
@@ -165,7 +167,9 @@ class ControlRefNode(Node):
             f'Command frame_id={self.cmd_frame_id} | MAVROS frame_id={self.mavros_frame_id}'
         )
         self.get_logger().info(
-            f'MAVROS mirroring {"enabled" if self.enable_mavros else "disabled"} on {self.mavros_topic}'
+            f'MAVROS mirroring '
+            f'{"enabled" if self.enable_mavros else "disabled"} '
+            f'on {self.mavros_topic}'
         )
 
     def on_target(self, msg: TargetState) -> None:
@@ -209,7 +213,14 @@ class ControlRefNode(Node):
     def slew(self, x: float, x_prev: float, max_delta: float) -> float:
         return clamp(x, x_prev - max_delta, x_prev + max_delta)
 
-    def _make_twist_msg(self, stamp, vx: float, vy: float, yaw_z: float, frame_id: str) -> TwistStamped:
+    def _make_twist_msg(
+        self,
+        stamp,
+        vx: float,
+        vy: float,
+        yaw_z: float,
+        frame_id: str,
+    ) -> TwistStamped:
         msg = TwistStamped()
         msg.header.stamp = stamp
         msg.header.frame_id = frame_id
@@ -229,7 +240,15 @@ class ControlRefNode(Node):
         msg = self._make_twist_msg(stamp, vx, vy, yaw_z, self.cmd_frame_id)
         self.pub_cmd.publish(msg)
         if self.enable_mavros:
-            self.pub_mavros.publish(self._make_twist_msg(stamp, vx, vy, yaw_z, self.mavros_frame_id))
+            self.pub_mavros.publish(
+                self._make_twist_msg(
+                    stamp,
+                    vx,
+                    vy,
+                    yaw_z,
+                    self.mavros_frame_id,
+                )
+            )
 
     def maybe_warn_invalid_target(self, reason: str, t: Optional[TargetState]) -> None:
         self.invalid_count += 1
@@ -261,7 +280,10 @@ class ControlRefNode(Node):
 
     def update_mode(self, mode: str) -> None:
         if mode != self.last_mode:
-            self.get_logger().info(f'control_mode_transition: {self.last_mode or "INIT"} -> {mode}')
+            self.get_logger().info(
+                f'control_mode_transition: '
+                f'{self.last_mode or "INIT"} -> {mode}'
+            )
             self.last_mode = mode
 
     def is_ambiguous(self, t: TargetState) -> bool:
@@ -291,11 +313,16 @@ class ControlRefNode(Node):
         self.tick_count += 1
 
         now = self.get_clock().now()
-        if self.last_timer_time is not None and self.expected_period_s > 0.0 and self.timer_slip_warn_factor > 1.0:
+        if (
+            self.last_timer_time is not None
+            and self.expected_period_s > 0.0
+            and self.timer_slip_warn_factor > 1.0
+        ):
             dt_s = (now - self.last_timer_time).nanoseconds * 1e-9
             if dt_s > (self.expected_period_s * self.timer_slip_warn_factor):
                 self.get_logger().warn(
-                    f'control timer slip detected dt={dt_s:.3f}s expected={self.expected_period_s:.3f}s'
+                    f'control timer slip detected dt={dt_s:.3f}s '
+                    f'expected={self.expected_period_s:.3f}s'
                 )
         self.last_timer_time = now
 
@@ -328,7 +355,8 @@ class ControlRefNode(Node):
             )
             if should_log:
                 self.get_logger().warn(
-                    f'ambiguity_flag=true quality={t.quality:.3f} threshold={self.ambiguity_quality_threshold:.3f}'
+                    f'ambiguity_flag=true quality={t.quality:.3f} '
+                    f'threshold={self.ambiguity_quality_threshold:.3f}'
                 )
             self._ambiguity_prev = True
             if self.enable_ambiguity_hold:
@@ -373,7 +401,12 @@ class ControlRefNode(Node):
         self.prev_yaw_z = self.slew(yaw_z_cmd, self.prev_yaw_z, self.max_delta_yaw_z)
         self.maybe_warn_saturation(vx_cmd, vy_cmd, yaw_z_cmd)
 
-        self.publish_pair(self.get_clock().now().to_msg(), self.prev_vx, self.prev_vy, self.prev_yaw_z)
+        self.publish_pair(
+            self.get_clock().now().to_msg(),
+            self.prev_vx,
+            self.prev_vy,
+            self.prev_yaw_z,
+        )
 
         if self.debug_log_every_n > 0 and (self.tick_count % self.debug_log_every_n == 0):
             self.get_logger().info(

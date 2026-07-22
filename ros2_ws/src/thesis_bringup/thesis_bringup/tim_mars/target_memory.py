@@ -1230,13 +1230,21 @@ class TargetIdentityMemory:
         """
         return float(score.appearance_raw)
 
-    def _appearance_margin(self, selected: CandidateScore, scores_sorted: List[CandidateScore]) -> float:
+    def _appearance_margin(
+        self,
+        selected: CandidateScore,
+        scores_sorted: List[CandidateScore],
+    ) -> float:
         return appearance_margin(selected, scores_sorted)
 
     def _geometry_strength(self, score: Optional[CandidateScore]) -> float:
         return geometry_strength(score)
 
-    def _scene_ambiguity_risk(self, best: Optional[CandidateScore], scores_sorted: List[CandidateScore]) -> bool:
+    def _scene_ambiguity_risk(
+        self,
+        best: Optional[CandidateScore],
+        scores_sorted: List[CandidateScore],
+    ) -> bool:
         return scene_ambiguity_risk(
             best=best,
             scores_sorted=scores_sorted,
@@ -1393,7 +1401,10 @@ class TargetIdentityMemory:
             group_crop_gate_active = (
                 self._m.track_id is not None
                 and self._m.state == TargetState.UNCERTAIN
-                and self._m.frames_since_seen <= max(0, int(self.cfg.short_gap_same_id_grace_frames))
+                and self._m.frames_since_seen <= max(
+                    0,
+                    int(self.cfg.short_gap_same_id_grace_frames),
+                )
             )
 
             if (
@@ -2080,7 +2091,11 @@ class TargetIdentityMemory:
             else 0.0
         )
         geometry_strength = self._geometry_strength(best_score)
-        risk_hard_negative = bool(best_score.hard_negative_reject) if best_score is not None else False
+        risk_hard_negative = (
+            bool(best_score.hard_negative_reject)
+            if best_score is not None
+            else False
+        )
         risk_absence = self._absence_risk()
         risk_scene_ambiguity = self._scene_ambiguity_risk(best_score, score_list)
         candidate_track_id = int(best_score.track_id) if best_score is not None else None

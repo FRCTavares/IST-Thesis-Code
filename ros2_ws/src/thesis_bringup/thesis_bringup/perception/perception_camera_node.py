@@ -264,8 +264,16 @@ class PerceptionCameraNode(PerceptionPipelineNode):
         commands = [
             f"media-ctl -d {self._media_dev} -V '\"{self._sensor_entity}\":0 [{fmt_string}]'",
             f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":0 [{fmt_string}]'",
-            f"media-ctl -d {self._media_dev} -V '\"{self._csi_entity}\":{self._csi_source_pad} [{fmt_string}]'",
-            f"media-ctl -d {self._media_dev} -l '\"{self._csi_entity}\":{self._csi_source_pad} -> \"{self._video_entity}\":0 [1]'",
+            (
+                f"media-ctl -d {self._media_dev} -V "
+                f"'\"{self._csi_entity}\":{self._csi_source_pad} "
+                f"[{fmt_string}]'"
+            ),
+            (
+                f"media-ctl -d {self._media_dev} -l "
+                f"'\"{self._csi_entity}\":{self._csi_source_pad} -> "
+                f"\"{self._video_entity}\":0 [1]'"
+            ),
         ]
 
         for cmd in commands:

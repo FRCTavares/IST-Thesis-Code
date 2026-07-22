@@ -110,7 +110,10 @@ class PerceptionPipelineNode(Node):
         self.log_every = max(0, int(self.get_parameter("log_every").value))
         self.disable_python_gc = bool(self.get_parameter("disable_python_gc").value)
         self.async_latest_frame_requested = bool(self.get_parameter("async_latest_frame").value)
-        self.async_max_inflight_requested = max(1, int(self.get_parameter("async_max_inflight").value))
+        self.async_max_inflight_requested = max(
+            1,
+            int(self.get_parameter("async_max_inflight").value),
+        )
         self.frame_queue_size = max(1, int(self.get_parameter("frame_queue_size").value))
         self.num_workers = max(1, int(self.get_parameter("num_workers").value))
         # Old callback-thread inference path has been removed; queue+worker is mandatory.
@@ -140,7 +143,10 @@ class PerceptionPipelineNode(Node):
         self.hailo_post_so = str(self.get_parameter("hailo_post_so").value)
         self.hailo_post_function = str(self.get_parameter("hailo_post_function").value)
         self.hailo_video_sink = str(self.get_parameter("hailo_video_sink").value)
-        self.hailo_queue_max_buffers = max(1, int(self.get_parameter("hailo_queue_max_buffers").value))
+        self.hailo_queue_max_buffers = max(
+            1,
+            int(self.get_parameter("hailo_queue_max_buffers").value),
+        )
         self.hailo_use_videoconvert = bool(self.get_parameter("hailo_use_videoconvert").value)
 
         self.label_filter = _normalize_label(self.label)
@@ -595,7 +601,11 @@ class PerceptionPipelineNode(Node):
                     f"engine-owner inference worker error: {exc}"
                 )
 
-    def _build_detection_array(self, frame: PreparedFrame, result: dict[str, Any]) -> Detection2DArray:
+    def _build_detection_array(
+        self,
+        frame: PreparedFrame,
+        result: dict[str, Any],
+    ) -> Detection2DArray:
         det_header_frame_id = f"frame_{frame.frame_id}"
 
         det_arr = Detection2DArray()
@@ -808,7 +818,8 @@ class PerceptionPipelineNode(Node):
 
             queue_note = (
                 f" raw_enq={self.frames_enqueued} raw_overwritten={self.frames_overwritten}"
-                f" prepared_enq={self.frames_prepared_enqueued} prepared_overwritten={self.frames_prepared_overwritten}"
+                f" prepared_enq={self.frames_prepared_enqueued}"
+                f" prepared_overwritten={self.frames_prepared_overwritten}"
             )
 
             self.get_logger().info(

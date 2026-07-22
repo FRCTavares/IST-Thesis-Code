@@ -123,7 +123,9 @@ class MavrosImuMonitorNode(Node):
 
         msg = (
             f"imu_count={self.imu_count} "
-            f"rpy_deg=({math.degrees(roll):+.1f}, {math.degrees(pitch):+.1f}, {math.degrees(yaw):+.1f}) "
+            f"rpy_deg=({math.degrees(roll):+.1f}, "
+            f"{math.degrees(pitch):+.1f}, "
+            f"{math.degrees(yaw):+.1f}) "
             f"gyro_rad_s=({av.x:+.3f}, {av.y:+.3f}, {av.z:+.3f}) "
             f"accel_m_s2=({la.x:+.3f}, {la.y:+.3f}, {la.z:+.3f})"
         )
