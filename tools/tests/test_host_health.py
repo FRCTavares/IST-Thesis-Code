@@ -6,7 +6,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MODULE_PATH = REPO_ROOT / "tools/host/thesis_host_health.py"
-DEPLOY_ROOT = REPO_ROOT / "deploy/host_recovery/systemd"
+SYSTEMD_ASSET_ROOT = REPO_ROOT / "tools/host/systemd"
 
 SPEC = importlib.util.spec_from_file_location("thesis_host_health", MODULE_PATH)
 assert SPEC is not None and SPEC.loader is not None
@@ -160,7 +160,7 @@ def test_pixhawk_network_recovery_uses_exact_aeronext_profile():
 
 
 def test_systemd_units_never_start_thesis_or_aircraft_processes():
-    service = (DEPLOY_ROOT / "thesis-host-health.service").read_text(
+    service = (SYSTEMD_ASSET_ROOT / "thesis-host-health.service").read_text(
         encoding="utf-8"
     )
     exec_lines = [
@@ -177,15 +177,15 @@ def test_systemd_units_never_start_thesis_or_aircraft_processes():
 
 def test_retention_watchdog_and_restart_limits_are_explicit():
     journal = (
-        DEPLOY_ROOT / "journald.conf.d/10-thesis-retention.conf"
+        SYSTEMD_ASSET_ROOT / "journald.conf.d/10-thesis-retention.conf"
     ).read_text(encoding="utf-8")
     watchdog = (
-        DEPLOY_ROOT / "system.conf.d/10-thesis-watchdog.conf"
+        SYSTEMD_ASSET_ROOT / "system.conf.d/10-thesis-watchdog.conf"
     ).read_text(encoding="utf-8")
     tailscale = (
-        DEPLOY_ROOT / "tailscaled.service.d/10-thesis-recovery.conf"
+        SYSTEMD_ASSET_ROOT / "tailscaled.service.d/10-thesis-recovery.conf"
     ).read_text(encoding="utf-8")
-    timer = (DEPLOY_ROOT / "thesis-host-health.timer").read_text(
+    timer = (SYSTEMD_ASSET_ROOT / "thesis-host-health.timer").read_text(
         encoding="utf-8"
     )
 
@@ -211,6 +211,16 @@ def test_installer_enforces_tailscale_only_inbound_firewall():
     assert 'ufw allow in on eth0 proto udp to any port 14550' in installer
     assert "ufw allow 22" not in installer
     assert "ufw allow OpenSSH" not in installer
+
+
+def test_host_assets_live_with_their_installer_not_in_deploy_tree():
+    assert SYSTEMD_ASSET_ROOT.is_dir()
+    assert not (REPO_ROOT / "deploy").exists()
+    assert {
+        "thesis-host-health.default",
+        "thesis-host-health.service",
+        "thesis-host-health.timer",
+    } <= {path.name for path in SYSTEMD_ASSET_ROOT.iterdir()}
 
 
 def test_field_stack_enters_network_mode_instead_of_direct_ethernet_up():

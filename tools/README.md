@@ -1,7 +1,8 @@
 # Tools Directory
 
-This directory contains thesis support tools for replay, evaluation,
-annotation/review, visualization, live operation, camera diagnostics, and setup.
+This directory contains the repository's executable tooling and the assets
+owned by those tools: replay, evaluation, annotation/review, live operation,
+host recovery, camera diagnostics, and setup.
 
 Most final TIM-MARS evaluation work should use the more specific subfolder tools
 rather than ad-hoc ROS commands.
@@ -10,6 +11,7 @@ rather than ad-hoc ROS commands.
 
 | Tool | Status | Purpose |
 | --- | --- | --- |
+| `tools/thesis_build.sh` | Build entrypoint | Builds the ROS 2 workspace with repository-local logs. |
 | `tools/thesis_live.sh` | Convenience wrapper | Small wrapper around live-stack and UI startup commands. |
 | `tools/thesis_eval.sh` | Convenience/provenance wrapper | Small wrapper around selected evaluation commands; check paths before using old official shortcuts. |
 | `tools/start_live_stack.sh` | Live operation entrypoint | Starts the live camera, perception, tracker, TIM/control/dashboard stack. |
@@ -26,8 +28,23 @@ rather than ad-hoc ROS commands.
 | `bag/` | Standalone bag overlay/video utilities. |
 | `live/` | Small live ROS 2 inspection helpers. |
 | `camera/` | Camera probing and validation scripts. |
+| `catalogue/` | Builds the TIM evaluation bag/run catalogue. |
+| `host/` | Raspberry Pi networking, recovery, installation, and co-located systemd assets. |
 | `setup/` | Host/runtime setup helpers. |
 | `lib/` | Shared shell fragments sourced by `start_live_stack.sh`. |
+| `tests/` | Automated contracts for repository tooling. |
+
+## Layout contract
+
+- Keep the small, commonly invoked repository entrypoints directly under
+  `tools/`.
+- Put domain-specific commands, support modules, templates, and installation
+  assets in the owning subdirectory.
+- Keep service/configuration assets beside the installer that consumes them;
+  `tools/host/systemd/` is the source for the Pi host-recovery installation.
+- Do not create a separate top-level deployment tree for tool-owned assets.
+- Generated `__pycache__`, `.pyc`, and `.pytest_cache` content is ignored and
+  must not be committed.
 
 ## Recommended final evaluation path
 
@@ -44,8 +61,8 @@ For final selected-target TIM-MARS evaluation:
 
 ## Policy
 
-Do not move, rename, or delete scripts casually. Many reports, commands,
-runbooks, and local workflows refer to these paths directly.
+Treat documented entrypoint paths as a compatibility interface. Many reports,
+commands, runbooks, and local workflows refer to them directly.
 
 Prefer this order for cleanup:
 

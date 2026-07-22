@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
-DEPLOY_ROOT="$THESIS_ROOT/deploy/host_recovery/systemd"
+SYSTEMD_ASSET_ROOT="$SCRIPT_DIR/systemd"
 INTERFACE="wlan0"
 DRY_RUN=0
 CONFIGURE_FIREWALL=1
@@ -61,13 +61,13 @@ fi
 required_files=(
     "$THESIS_ROOT/tools/host/thesis_host_health.py"
     "$THESIS_ROOT/tools/host/set_pi_network_mode.sh"
-    "$DEPLOY_ROOT/thesis-host-health.service"
-    "$DEPLOY_ROOT/thesis-host-health.timer"
-    "$DEPLOY_ROOT/thesis-host-health.default"
-    "$DEPLOY_ROOT/tailscaled.service.d/10-thesis-recovery.conf"
-    "$DEPLOY_ROOT/ssh.service.d/10-thesis-recovery.conf"
-    "$DEPLOY_ROOT/system.conf.d/10-thesis-watchdog.conf"
-    "$DEPLOY_ROOT/journald.conf.d/10-thesis-retention.conf"
+    "$SYSTEMD_ASSET_ROOT/thesis-host-health.service"
+    "$SYSTEMD_ASSET_ROOT/thesis-host-health.timer"
+    "$SYSTEMD_ASSET_ROOT/thesis-host-health.default"
+    "$SYSTEMD_ASSET_ROOT/tailscaled.service.d/10-thesis-recovery.conf"
+    "$SYSTEMD_ASSET_ROOT/ssh.service.d/10-thesis-recovery.conf"
+    "$SYSTEMD_ASSET_ROOT/system.conf.d/10-thesis-watchdog.conf"
+    "$SYSTEMD_ASSET_ROOT/journald.conf.d/10-thesis-retention.conf"
 )
 
 for file in "${required_files[@]}"; do
@@ -81,8 +81,8 @@ fi
 
 python3 -m py_compile "$THESIS_ROOT/tools/host/thesis_host_health.py"
 systemd-analyze verify \
-    "$DEPLOY_ROOT/thesis-host-health.service" \
-    "$DEPLOY_ROOT/thesis-host-health.timer"
+    "$SYSTEMD_ASSET_ROOT/thesis-host-health.service" \
+    "$SYSTEMD_ASSET_ROOT/thesis-host-health.timer"
 
 destinations=(
     "/usr/local/libexec/thesis_host_health.py"
@@ -147,27 +147,27 @@ install -D -m 0755 \
     "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" \
     /usr/local/sbin/thesis-network-mode
 install -D -m 0644 \
-    "$DEPLOY_ROOT/thesis-host-health.service" \
+    "$SYSTEMD_ASSET_ROOT/thesis-host-health.service" \
     /etc/systemd/system/thesis-host-health.service
 install -D -m 0644 \
-    "$DEPLOY_ROOT/thesis-host-health.timer" \
+    "$SYSTEMD_ASSET_ROOT/thesis-host-health.timer" \
     /etc/systemd/system/thesis-host-health.timer
 install -D -m 0644 \
-    "$DEPLOY_ROOT/thesis-host-health.default" \
+    "$SYSTEMD_ASSET_ROOT/thesis-host-health.default" \
     /etc/default/thesis-host-health
 sed -i "s/^THESIS_HOST_INTERFACE=.*/THESIS_HOST_INTERFACE=$INTERFACE/" \
     /etc/default/thesis-host-health
 install -D -m 0644 \
-    "$DEPLOY_ROOT/tailscaled.service.d/10-thesis-recovery.conf" \
+    "$SYSTEMD_ASSET_ROOT/tailscaled.service.d/10-thesis-recovery.conf" \
     /etc/systemd/system/tailscaled.service.d/10-thesis-recovery.conf
 install -D -m 0644 \
-    "$DEPLOY_ROOT/ssh.service.d/10-thesis-recovery.conf" \
+    "$SYSTEMD_ASSET_ROOT/ssh.service.d/10-thesis-recovery.conf" \
     /etc/systemd/system/ssh.service.d/10-thesis-recovery.conf
 install -D -m 0644 \
-    "$DEPLOY_ROOT/system.conf.d/10-thesis-watchdog.conf" \
+    "$SYSTEMD_ASSET_ROOT/system.conf.d/10-thesis-watchdog.conf" \
     /etc/systemd/system.conf.d/10-thesis-watchdog.conf
 install -D -m 0644 \
-    "$DEPLOY_ROOT/journald.conf.d/10-thesis-retention.conf" \
+    "$SYSTEMD_ASSET_ROOT/journald.conf.d/10-thesis-retention.conf" \
     /etc/systemd/journald.conf.d/10-thesis-retention.conf
 install -d -m 0700 /var/lib/thesis-host-health
 

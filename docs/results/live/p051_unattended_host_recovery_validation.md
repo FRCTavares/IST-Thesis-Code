@@ -70,7 +70,7 @@ an admin-console expiry change or renewal before departure.
   - validates and backs up system files before installation;
   - installs the host-only systemd, watchdog, journal, and firewall contract;
   - never enables an aircraft-facing service.
-- `deploy/host_recovery/systemd/`
+- `tools/host/systemd/`
   - two-minute persistent health timer;
   - Tailscale 10-second restart with bounded start limits;
   - SSH 5-second restart with bounded start limits;
@@ -91,7 +91,7 @@ Latest: `/var/backups/thesis-host-recovery/20260722T174731Z`
 
 ```text
 focused host/network tests: 11 passed
-complete tools suite in sourced ROS environment: 78 passed
+complete tools suite in sourced ROS environment: 79 passed
 bash syntax: passed
 Python byte compilation: passed
 systemd-analyze verify: passed
