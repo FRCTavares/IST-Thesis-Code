@@ -21,16 +21,23 @@ class SortBackend:
         gate_x: float | None = None,
         gate_y: float | None = None,
     ):
-        """
-        Initialize SORT tracker.
+        """Initialize the SORT tracker backend.
 
-        Args:
-            iou_threshold: Minimum IoU for matching tracks to detections
-            max_age: Maximum frames to keep track alive without matches
-            min_hits: Minimum hits before track is confirmed
-            centre_gate: Centre distance gating (pixels) for efficient matching
-            gate_x: Optional x-axis gating threshold in pixels
-            gate_y: Optional y-axis gating threshold in pixels
+        Parameters
+        ----------
+        iou_threshold:
+            Minimum IoU required to match a track and detection.
+        max_age:
+            Maximum unmatched frames before deleting a track.
+        min_hits:
+            Minimum matched detections required for confirmation.
+        centre_gate:
+            Default center-distance gate in pixels.
+        gate_x:
+            Optional horizontal center-distance gate in pixels.
+        gate_y:
+            Optional vertical center-distance gate in pixels.
+
         """
         self.iou_threshold = iou_threshold
         self.max_age = max_age
@@ -59,16 +66,22 @@ class SortBackend:
         scores: List[float],
         frame_time_ns: int
     ) -> List[TrackOutput]:
-        """
-        Update SORT tracker with new detections.
+        """Update SORT with one frame of detections.
 
-        Args:
-            dets_xyxy: Detection bounding boxes in xyxy format
-            scores: Detection confidence scores (not used by SORT tracking logic)
-            frame_time_ns: Frame timestamp (not used by SORT)
+        Args
+        ----
+        dets_xyxy:
+            Detection bounding boxes in corner-coordinate form.
+        scores:
+            Detection scores accepted for backend compatibility.
+        frame_time_ns:
+            Frame timestamp accepted for backend compatibility.
 
-        Returns:
-            List of confirmed tracks
+        Returns
+        -------
+        list[TrackOutput]
+            Confirmed tracks matched in the current frame.
+
         """
         # SORT doesn't use scores or timestamps internally,
         # but we accept them for interface consistency

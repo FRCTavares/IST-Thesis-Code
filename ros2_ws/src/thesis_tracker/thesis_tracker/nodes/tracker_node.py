@@ -59,6 +59,7 @@ def _parse_frame_id(frame_id_str: str) -> int:
 
 
 def now_ns() -> int:
+    """Return the current monotonic timestamp in nanoseconds."""
     return time.monotonic_ns()
 
 
@@ -68,11 +69,13 @@ class SectionProfiler:
     __slots__ = ("starts", "durations")
 
     def __init__(self) -> None:
+        """Initialize section start times and measured durations."""
         self.starts: dict[str, int] = {}
         self.durations: dict[str, int] = {}
 
     @contextmanager
     def section(self, name: str):
+        """Measure one named code section as a context manager."""
         t0 = now_ns()
         self.starts[name] = t0
         try:
@@ -81,6 +84,7 @@ class SectionProfiler:
             self.durations[name] = now_ns() - t0
 
     def ms(self, name: str) -> float:
+        """Return a measured section duration in milliseconds."""
         return float(self.durations.get(name, 0)) / 1e6
 
 
@@ -97,6 +101,7 @@ class TrackerNode(Node):
     """Unified tracker node with selectable backend."""
 
     def __init__(self) -> None:
+        """Initialize tracker selection, ROS interfaces, and profiling state."""
         super().__init__("tracker_node")
 
         self._supported_tracker_types = {"sort", "ocsort", "bytetrack", "deepsort"}
@@ -384,6 +389,7 @@ class TrackerNode(Node):
             self.backend.update_latest_image(msg)
 
     def on_timing(self, msg: Timing) -> None:
+        """Store source timing context for a tracker frame."""
         frame_id = int(msg.frame_id)
         if frame_id <= 0:
             return
@@ -619,6 +625,7 @@ class TrackerNode(Node):
             )
 
     def destroy_node(self) -> bool:
+        """Remove profiling callbacks and destroy the ROS node."""
         if self.profiling_gc_probe:
             try:
                 gc.callbacks.remove(self._on_gc_event)
@@ -628,7 +635,7 @@ class TrackerNode(Node):
 
 
 def main(args=None) -> None:
-    """Main entry point."""
+    """Run the thesis tracker ROS node."""
     from rclpy.executors import SingleThreadedExecutor
 
     rclpy.init(args=args)

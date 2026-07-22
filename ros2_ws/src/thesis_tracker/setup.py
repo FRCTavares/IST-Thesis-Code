@@ -1,3 +1,4 @@
+"""Configure the thesis_tracker ROS 2 Python package."""
 from setuptools import find_packages, setup
 
 package_name = 'thesis_tracker'

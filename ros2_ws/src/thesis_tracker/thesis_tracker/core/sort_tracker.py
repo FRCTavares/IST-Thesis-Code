@@ -68,14 +68,20 @@ def iou(a: BBox, b: BBox) -> float:
 
 
 def iou_batch(boxes1: np.ndarray, boxes2: np.ndarray) -> np.ndarray:
-    """Vectorized pairwise IoU for boxes in xyxy format.
+    """Compute vectorized pairwise IoU for corner-format boxes.
 
-    Args:
-        boxes1: Array of shape (N, 4).
-        boxes2: Array of shape (M, 4).
+    Args
+    ----
+    boxes1:
+        Array of shape N by 4.
+    boxes2:
+        Array of shape M by 4.
 
-    Returns:
-        IoU matrix of shape (N, M).
+    Returns
+    -------
+    np.ndarray
+        Pairwise IoU matrix of shape N by M.
+
     """
     n = int(boxes1.shape[0]) if boxes1.ndim == 2 else 0
     m = int(boxes2.shape[0]) if boxes2.ndim == 2 else 0
@@ -212,10 +218,13 @@ def associate(
     cost_buf: Optional[np.ndarray] = None,
     gate_mask_buf: Optional[np.ndarray] = None,
 ) -> Tuple[List[Tuple[int, int]], List[int], List[int]]:
-    """Associate tracks to detections using vectorized IoU + Hungarian.
+    """Associate tracks and detections with gated IoU matching.
 
-    Returns:
-        matches, unmatched_detections, unmatched_tracks
+    Returns
+    -------
+    tuple[list[tuple[int, int]], list[int], list[int]]
+        Matches, unmatched detections, and unmatched tracks.
+
     """
     n_tracks = len(tracks)
     n_dets = len(detections)
@@ -395,10 +404,13 @@ def hungarian_match_iou(
     iou_thresh: float,
     centre_gate: float = 200.0,
 ) -> Tuple[List[Tuple[int, int]], List[int], List[int]]:
-    """Backward-compatible matcher API used by OC-SORT/ByteTrack backends.
+    """Match boxes through the compatibility Hungarian IoU API.
 
-    Returns:
-        matches, unmatched_tracks, unmatched_detections
+    Returns
+    -------
+    tuple[list[tuple[int, int]], list[int], list[int]]
+        Matches, unmatched tracks, and unmatched detections.
+
     """
     n_tracks = len(tracks)
     n_dets = len(dets)

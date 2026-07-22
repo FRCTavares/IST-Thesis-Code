@@ -32,15 +32,21 @@ class TrackerBackend(Protocol):
         scores: List[float],
         frame_time_ns: int
     ) -> List[TrackOutput]:
-        """
-        Update tracker with new detections.
+        """Update the tracker with one frame of detections.
 
-        Args:
-            dets_xyxy: List of detection bounding boxes in xyxy format
-            scores: List of detection confidence scores (same length as dets_xyxy)
-            frame_time_ns: Frame timestamp in nanoseconds
+        Args
+        ----
+        dets_xyxy:
+            Detection bounding boxes in corner-coordinate form.
+        scores:
+            Detection confidence scores corresponding to the boxes.
+        frame_time_ns:
+            Source frame timestamp in nanoseconds.
 
-        Returns:
-            List of active tracks with track_id, bbox, score, age, time_since_update
+        Returns
+        -------
+        list[TrackOutput]
+            Active tracks produced by the backend.
+
         """
         ...

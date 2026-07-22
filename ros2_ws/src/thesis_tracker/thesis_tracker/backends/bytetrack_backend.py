@@ -60,12 +60,13 @@ def linear_assignment(
     cost_matrix: np.ndarray,
     thresh: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Hungarian assignment in distance space.
+    """Solve a thresholded assignment problem in distance space.
 
-    Returns:
-        matches: array of (row, col)
-        unmatched_rows
-        unmatched_cols
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray, np.ndarray]
+        Matched pairs, unmatched rows, and unmatched columns.
+
     """
     if cost_matrix.size == 0:
         return (
