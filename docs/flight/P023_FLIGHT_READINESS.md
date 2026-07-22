@@ -32,6 +32,30 @@ manual control and termination of the autonomous test.
 - Appearance cache lifetime: 750 ms
 - Live control stale timeout: 0.90 s
 - MAVROS control mirroring: disabled by default
+- Controller target authority: `/target_memory_mars`
+- Raw dashboard target: `/target` (diagnostic/recording only)
+- Runtime detector and tracker switching: disabled
+
+## Target-authority graph
+
+The live flight profile uses one explicit authority chain:
+
+1. The dashboard or runtime prompt sends an explicit target ID to
+   `/target_memory_mars/select`, or sends clear to
+   `/target_memory_mars/clear`.
+2. `/target` remains the raw selected tracker observation used for telemetry,
+   diagnosis, and comparison. It must not drive control.
+3. `target_memory_mars_node` validates tracker continuity and publishes the
+   controller-facing target on `/target_memory_mars`.
+4. `control_ref_node` subscribes only to `/target_memory_mars` and publishes
+   `/control_ref/cmd_vel`.
+5. Every select, clear, model-switch attempt, or tracker-switch attempt first
+   revokes the previous target authority. The frozen profile rejects runtime
+   model and tracker switching.
+
+`AUTO`, `null`, target ID `0`, and `clear-target` mean explicit clear. They do
+not select tracker ID `0` and do not enable autonomous largest-track
+selection. Explicit positive IDs are the only selection requests.
 
 ## Allowed flight-run overrides
 
@@ -56,6 +80,7 @@ The following are not allowed without reopening the configuration gate:
 - changing control signs, gains, saturation, slew limits, or stale timeout;
 - enabling MAVROS control mirroring for free flight without a separate
   supervised control-authority decision.
+- enabling dashboard runtime detector or tracker reconfiguration.
 
 ## Exact build command
 
@@ -111,6 +136,9 @@ The isolated control checks must demonstrate:
 - target far: positive forward command;
 - target near: negative forward command;
 - stale, missing, or invalid target: immediate zero command;
+- raw `/target` messages never grant control authority;
+- target select/clear resets control to zero until TIM-MARS publishes a new
+  valid target;
 - yaw and translational commands remain saturated;
 - each command step respects the configured slew limit.
 

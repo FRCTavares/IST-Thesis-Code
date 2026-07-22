@@ -67,7 +67,8 @@ class TargetMemoryMarsNode(Node):
       /target_memory_mars        thesis_msgs/TargetState
       /target_memory_mars/status std_msgs/String JSON diagnostics
 
-    This node does not replace /target yet. It is for live comparison first.
+    The raw /target topic remains available for diagnostics, while this node's
+    validated output is the only target authority used by live control.
     """
 
     def __init__(self) -> None:
@@ -231,6 +232,11 @@ class TargetMemoryMarsNode(Node):
         )
 
     def _create_ros_interfaces(self, qos: QoSProfile) -> None:
+        command_qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+            reliability=ReliabilityPolicy.RELIABLE,
+        )
         self._target_pub = self.create_publisher(TargetState, self._target_topic, qos)
         self._status_pub = self.create_publisher(String, self._status_topic, qos)
 
@@ -244,13 +250,13 @@ class TargetMemoryMarsNode(Node):
             UInt32,
             self._select_topic,
             self._on_select,
-            qos,
+            command_qos,
         )
         self._clear_sub = self.create_subscription(
             Empty,
             self._clear_topic,
             self._on_clear,
-            qos,
+            command_qos,
         )
 
         self._raw_target_sub = None
@@ -337,10 +343,14 @@ class TargetMemoryMarsNode(Node):
         requested_id = int(msg.data)
         if requested_id <= 0:
             out = self._runtime.clear()
+            self._publish_target_reset()
             self.get_logger().info("TIM cleared by select id <= 0")
             self._publish_status_only(out)
             return
 
+        out = self._runtime.clear()
+        self._publish_target_reset()
+        self._publish_status_only(out)
         self._runtime.request_selection(requested_id)
         self.get_logger().info(
             f"TIM pending operator selection: track id {requested_id}"
@@ -348,8 +358,30 @@ class TargetMemoryMarsNode(Node):
 
     def _on_clear(self, _: Empty) -> None:
         out = self._runtime.clear()
+        self._publish_target_reset()
         self.get_logger().info("TIM cleared")
         self._publish_status_only(out)
+
+    def _publish_target_reset(self) -> None:
+        """Immediately revoke controller authority while TIM has no target."""
+        now = self.get_clock().now()
+        monotonic_ns = time.monotonic_ns()
+
+        target_msg = TargetState()
+        target_msg.header.stamp = now.to_msg()
+        target_msg.frame_id = 0
+        target_msg.src_stamp_ns = 0
+        target_msg.t_cam_msg_seen_ns = 0
+        target_msg.t_target_cb_start_ns = int(monotonic_ns)
+        target_msg.t_target_cb_end_ns = int(monotonic_ns)
+        target_msg.id = 0
+        target_msg.cx = 0.0
+        target_msg.cy = 0.0
+        target_msg.w = 0.0
+        target_msg.h = 0.0
+        target_msg.score = 0.0
+        target_msg.quality = 0.0
+        self._target_pub.publish(target_msg)
 
     def _on_tracks(self, msg: Track2DArray) -> None:
         t_start_ns = time.monotonic_ns()

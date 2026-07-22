@@ -613,6 +613,7 @@ fi
 
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
     DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL="false"
+    DASHBOARD_RUNTIME_RECONFIGURATION_BOOL="false"
 
     start_ros_bg dashboard_bridge ros2 run thesis_bringup dashboard_bridge_node --ros-args \
         -p img_w:=640 \
@@ -620,7 +621,11 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         -p camera_ref_w:=$CAMERA_WIDTH \
         -p camera_ref_h:=$CAMERA_HEIGHT \
         -p camera_publish_resize_mode:=$CAMERA_PUBLISH_RESIZE_MODE \
-        -p enable_container_model_switch_api:=$DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL
+        -p enable_container_model_switch_api:=$DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL \
+        -p runtime_reconfiguration_enabled:=$DASHBOARD_RUNTIME_RECONFIGURATION_BOOL \
+        -p validated_target_topic:=/target_memory_mars \
+        -p target_select_topic:=/target_memory_mars/select \
+        -p target_clear_topic:=/target_memory_mars/clear
     sleep 1
     if ! check_proc_alive dashboard_bridge; then
         stop_stack
@@ -669,6 +674,7 @@ fi
 
 if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
     start_ros_bg control ros2 run thesis_bringup control_ref_node --ros-args \
+        -p target_topic:=/target_memory_mars \
         -p enable_mavros:=$CONTROL_MAVROS_BOOL \
         -p cmd_frame_id:=base_link \
         -p mavros_frame_id:=base_link \

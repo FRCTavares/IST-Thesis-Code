@@ -27,6 +27,7 @@ Open executable issues: **39**.
 
 1. [ ] [#52 — P0.25 Restore TIM-MARS target authority and identity-safe live reconfiguration](https://github.com/FRCTavares/IST-Thesis-Code/issues/52)
    - phase 10; live-system; first flight blocker; makes TIM-MARS the only controller target authority and resets identity across runtime switches.
+   - software batch implemented: dashboard select/clear commands now target TIM-MARS, control is wired to validated output, explicit clears and supported switch attempts publish an immediate zero target, and the frozen profile rejects runtime model/tracker switching; recorded ground evidence and complete authority-generation provenance remain required.
 
 2. [ ] [#53 — P0.26 Unify live coordinate frames and causal image-time contracts](https://github.com/FRCTavares/IST-Thesis-Code/issues/53)
    - phase 10; live-system; flight blocker; unifies transforms and causal source-image selection across perception, tracking, TIM, UI, and evidence.
@@ -118,7 +119,7 @@ Open executable issues: **39**.
     - phase 8; experiment; validate deterministic replay and versioned live-run provenance.
 
 17. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54)
-    - phase 10; live-system; feeds #32, #37, and #50.
+    - phase 10; live-system; feeds #32, #37, and #50; owns the missing integrated-camera `/camera/fps` publisher and recording-contract repair, deferred until the P0 authority/coordinate/freshness blockers are complete.
 
 18. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
     - phase 10; engineering; coordinate target-control behavior with #52 and path documentation with #33.

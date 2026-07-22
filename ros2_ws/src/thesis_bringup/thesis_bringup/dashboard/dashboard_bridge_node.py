@@ -37,8 +37,10 @@ from rclpy.qos import (
     ReliabilityPolicy,
 )
 from std_msgs.msg import (
+    Empty,
     Float32,
     String,
+    UInt32,
 )
 from thesis_bringup.dashboard.dashboard_models import SUPPORTED_MODELS
 from thesis_bringup.dashboard.dashboard_system_metrics import SystemMetricsReader
@@ -66,6 +68,9 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("tracks_topic", "/tracks")
         self.declare_parameter("detections_topic", "/detections")
         self.declare_parameter("target_topic", "/target")
+        self.declare_parameter("validated_target_topic", "/target_memory_mars")
+        self.declare_parameter("target_select_topic", "/target_memory_mars/select")
+        self.declare_parameter("target_clear_topic", "/target_memory_mars/clear")
         self.declare_parameter("target_memory_status_topic", "/target_memory_mars/status")
         self.declare_parameter("fps_topic", "/camera/fps")
         self.declare_parameter("replay_progress_topic", "/camera/replay_progress")
@@ -97,10 +102,20 @@ class DashboardBridgeNode(Node):
             f"{thesis_root}/models/hef",
         )
         self.declare_parameter("tracker_node_name", "tracker_node")
+        self.declare_parameter("runtime_reconfiguration_enabled", False)
 
         self._tracks_topic = str(self.get_parameter("tracks_topic").value)
         self._detections_topic = str(self.get_parameter("detections_topic").value)
         self._target_topic = str(self.get_parameter("target_topic").value)
+        self._validated_target_topic = str(
+            self.get_parameter("validated_target_topic").value
+        )
+        self._target_select_topic = str(
+            self.get_parameter("target_select_topic").value
+        )
+        self._target_clear_topic = str(
+            self.get_parameter("target_clear_topic").value
+        )
         self._target_memory_status_topic = str(
             self.get_parameter("target_memory_status_topic").value
         )
@@ -147,11 +162,15 @@ class DashboardBridgeNode(Node):
             str(self.get_parameter("tracker_node_name").value).strip()
             or "tracker_node"
         )
+        self._runtime_reconfiguration_enabled = bool(
+            self.get_parameter("runtime_reconfiguration_enabled").value
+        )
 
         self._supported_models = SUPPORTED_MODELS
         self._model_to_hef = {model.key: model.hef_file for model in self._supported_models}
         self._supported_trackers = {"sort", "ocsort", "bytetrack", "deepsort"}
         self._target_focus_id: int | None = None
+        self._target_authority_generation = 0
 
         self._state_lock = threading.Lock()
         self._state: dict[str, Any] = {
@@ -160,6 +179,9 @@ class DashboardBridgeNode(Node):
             "target": None,
             "target_requested": None,
             "target_active": None,
+            "target_authority_source": self._validated_target_topic,
+            "target_authority_generation": self._target_authority_generation,
+            "target_authority_reason": "startup",
             "target_memory": None,
             # Explicit telemetry keys (canonical)
             "camera_input_fps": None,
@@ -219,8 +241,24 @@ class DashboardBridgeNode(Node):
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
         )
+        command_qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+        )
 
         self._target_pub = self.create_publisher(TargetState, self._target_topic, qos)
+        self._target_select_pub = self.create_publisher(
+            UInt32,
+            self._target_select_topic,
+            command_qos,
+        )
+        self._target_clear_pub = self.create_publisher(
+            Empty,
+            self._target_clear_topic,
+            command_qos,
+        )
         self._timing_target_pub = self.create_publisher(Timing, self._timing_target_topic, qos)
 
         self._tracks_sub = self.create_subscription(
@@ -264,7 +302,10 @@ class DashboardBridgeNode(Node):
             "dashboard_bridge_node started: "
             f"tracks={self._tracks_topic}, "
             f"detections={self._detections_topic}, "
-            f"target={self._target_topic}, "
+            f"raw_target={self._target_topic}, "
+            f"validated_target={self._validated_target_topic}, "
+            f"target_select={self._target_select_topic}, "
+            f"target_clear={self._target_clear_topic}, "
             f"fps={self._fps_topic}, "
             f"replay_progress={self._replay_progress_topic}, "
             f"timing={self._timing_topic}, "
@@ -273,6 +314,8 @@ class DashboardBridgeNode(Node):
             f"api=http://{self._api_host}:{self._api_port}, "
             "container_model_switch_api="
             f"{'enabled' if self._enable_container_model_switch_api else 'disabled'}, "
+            "runtime_reconfiguration="
+            f"{'enabled' if self._runtime_reconfiguration_enabled else 'disabled'}, "
             f"integrated_camera_hef_dir={self._integrated_camera_hef_dir}"
         )
 
@@ -335,7 +378,15 @@ class DashboardBridgeNode(Node):
                 if self.path == "/api/tracker":
                     tracker = str(payload.get("tracker", "")).strip().lower()
                     result = node_ref._handle_tracker_switch(tracker)
-                    self._send_json(200 if result.get("ok") else 500, result)
+                    self._send_json(
+                        int(
+                            result.get(
+                                "status_code",
+                                200 if result.get("ok") else 500,
+                            )
+                        ),
+                        result,
+                    )
                     return
 
                 if self.path == "/api/target":
@@ -387,13 +438,34 @@ class DashboardBridgeNode(Node):
         if model not in self._model_to_hef:
             return {"ok": False, "error": f"unsupported model: {model}", "status_code": 400}
 
+        authority_generation = self._apply_target_authority_request(
+            None,
+            reason=f"model_switch:{model}",
+        )
+
+        if not self._runtime_reconfiguration_enabled:
+            return {
+                "ok": False,
+                "error": (
+                    "runtime model switching is disabled in the frozen live profile; "
+                    "restart the stack with an explicitly validated model"
+                ),
+                "target_authority_generation": authority_generation,
+                "status_code": 409,
+            }
+
         # Prefer integrated-camera model switch when the perception node is available.
         integrated_camera_result = self._handle_integrated_camera_model_switch(model)
         if integrated_camera_result is not None:
+            integrated_camera_result["target_authority_generation"] = (
+                authority_generation
+            )
             return integrated_camera_result
 
         if self._enable_container_model_switch_api:
-            return self._handle_container_model_switch(model)
+            container_result = self._handle_container_model_switch(model)
+            container_result["target_authority_generation"] = authority_generation
+            return container_result
 
         return {
             "ok": False,
@@ -501,6 +573,23 @@ exit 1
             return {
                 "ok": False,
                 "error": f"unsupported tracker: {tracker}",
+                "status_code": 400,
+            }
+
+        authority_generation = self._apply_target_authority_request(
+            None,
+            reason=f"tracker_switch:{tracker}",
+        )
+
+        if not self._runtime_reconfiguration_enabled:
+            return {
+                "ok": False,
+                "error": (
+                    "runtime tracker switching is disabled in the frozen live profile; "
+                    "restart the stack with an explicitly validated tracker"
+                ),
+                "target_authority_generation": authority_generation,
+                "status_code": 409,
             }
 
         if not self._tracker_set_params_client.wait_for_service(timeout_sec=1.0):
@@ -510,6 +599,7 @@ exit 1
                     "tracker parameter service unavailable on "
                     f"/{self._tracker_node_name}/set_parameters"
                 ),
+                "status_code": 503,
             }
 
         request = SetParameters.Request()
@@ -527,51 +617,101 @@ exit 1
                 time.sleep(0.01)
         except Exception as exc:
             self.get_logger().error(f"Tracker switch execution failed: {exc}")
-            return {"ok": False, "error": f"tracker switch failed: {exc}"}
+            return {
+                "ok": False,
+                "error": f"tracker switch failed: {exc}",
+                "status_code": 500,
+            }
 
         if not future.done():
-            return {"ok": False, "error": "tracker switch timed out"}
+            return {
+                "ok": False,
+                "error": "tracker switch timed out",
+                "status_code": 504,
+            }
 
         result = future.result()
         if result is None:
-            return {"ok": False, "error": "tracker switch returned no response"}
+            return {
+                "ok": False,
+                "error": "tracker switch returned no response",
+                "status_code": 500,
+            }
 
         if not result.results:
-            return {"ok": False, "error": "tracker switch returned empty result"}
+            return {
+                "ok": False,
+                "error": "tracker switch returned empty result",
+                "status_code": 500,
+            }
 
         set_result = result.results[0]
         if not set_result.successful:
             reason = set_result.reason or "unknown tracker switch failure"
-            return {"ok": False, "error": reason}
+            return {"ok": False, "error": reason, "status_code": 500}
 
         self.get_logger().info(f"Tracker backend switch applied: {tracker}")
-        return {"ok": True, "requested_tracker": tracker}
+        return {
+            "ok": True,
+            "requested_tracker": tracker,
+            "target_authority_generation": authority_generation,
+            "status_code": 200,
+        }
 
     def _handle_target_focus(self, target_value: Any) -> dict[str, Any]:
         target_id, error = self._parse_target_focus_id(target_value)
         if error is not None:
             return {"ok": False, "error": error, "status_code": 400}
 
-        with self._state_lock:
-            self._target_focus_id = target_id
-            # Reflect requested target immediately in telemetry before next /tracks callback.
-            self._state["target"] = int(target_id) if target_id is not None else 0
-            self._state["target_requested"] = int(target_id) if target_id is not None else None
-            self._state["target_active"] = int(target_id) if target_id is not None else 0
-            self._dirty = True
+        authority_generation = self._apply_target_authority_request(
+            target_id,
+            reason="operator_select" if target_id is not None else "operator_clear",
+        )
 
-        # Publish an immediate clear to avoid stale control references
-        # until the next /tracks frame.
-        self._publish_immediate_target_reset()
-
-        requested_label = "AUTO" if target_id is None else str(target_id)
+        requested_label = "CLEAR" if target_id is None else str(target_id)
         self.get_logger().info(f"Target focus updated: {requested_label}")
         return {
             "ok": True,
             "requested_target": target_id,
-            "action": "target",
+            "action": "select" if target_id is not None else "clear",
+            "target_authority_source": self._validated_target_topic,
+            "target_authority_generation": authority_generation,
             "status_code": 200,
         }
+
+    def _apply_target_authority_request(
+        self,
+        target_id: int | None,
+        *,
+        reason: str,
+    ) -> int:
+        """Reset raw output and command the authoritative TIM-MARS target."""
+        with self._state_lock:
+            self._target_focus_id = target_id
+            self._target_authority_generation += 1
+            authority_generation = self._target_authority_generation
+            self._state["target"] = int(target_id) if target_id is not None else 0
+            self._state["target_requested"] = (
+                int(target_id) if target_id is not None else None
+            )
+            self._state["target_active"] = 0
+            self._state["target_authority_generation"] = authority_generation
+            self._state["target_authority_reason"] = str(reason)
+            self._dirty = True
+
+        self._publish_immediate_target_reset()
+        self._publish_target_authority_command(target_id)
+        return authority_generation
+
+    def _publish_target_authority_command(self, target_id: int | None) -> None:
+        """Publish one explicit TIM-MARS select or clear command."""
+        if target_id is None:
+            self._target_clear_pub.publish(Empty())
+            return
+
+        msg = UInt32()
+        msg.data = int(target_id)
+        self._target_select_pub.publish(msg)
 
     @staticmethod
     def _parse_target_focus_id(target_value: Any) -> tuple[int | None, str | None]:
@@ -778,6 +918,15 @@ exit 1
                 "target": self._state["target"],
                 "target_requested": self._state["target_requested"],
                 "target_active": self._state["target_active"],
+                "target_authority_source": self._state[
+                    "target_authority_source"
+                ],
+                "target_authority_generation": self._state[
+                    "target_authority_generation"
+                ],
+                "target_authority_reason": self._state[
+                    "target_authority_reason"
+                ],
                 "target_memory": self._state.get("target_memory"),
                 "camera_input_fps": camera_input_fps,
                 "det_out_fps": det_out_fps,

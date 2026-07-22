@@ -73,9 +73,18 @@ Startup order:
 1. Preflight and camera health checks.
 2. `perception_camera_node` captures frames, runs Hailo inference, and publishes `/detections`, `/timing`, and `/camera/dashboard`.
 3. `tracker_node` publishes `/tracks`.
-4. `dashboard_bridge_node` publishes `/target`.
-5. `target_memory_mars_node` publishes `/target_memory_mars`.
-6. `control_ref_node` publishes `/control_ref/cmd_vel`.
+4. `dashboard_bridge_node` publishes raw `/target` for telemetry and sends
+   explicit selection commands on `/target_memory_mars/select` or
+   `/target_memory_mars/clear`.
+5. `target_memory_mars_node` validates identity and publishes the only
+   controller-authoritative target on `/target_memory_mars`.
+6. `control_ref_node` subscribes to `/target_memory_mars` and publishes
+   `/control_ref/cmd_vel`. Raw `/target` never drives control.
+
+The frozen live profile rejects runtime detector and tracker switching. Restart
+the stack with an explicitly validated model/tracker instead. Selecting or
+clearing a target immediately revokes the previous control authority until
+TIM-MARS publishes a new valid target.
 
 Removed runtime paths:
 
@@ -402,6 +411,8 @@ Expected behavior from validated baseline:
 - far target (smaller h) -> vx > 0
 - near target (larger h) -> vx < 0
 - stale/lost target -> vx=0, yaw_z=0
+- raw `/target` output cannot produce a command; live control consumes
+  `/target_memory_mars` only
 
 ## 8) Canonical repository paths (for command context)
 
