@@ -3,10 +3,10 @@
   "split_id": "tim_mars_split_v1_2026_07_23",
   "freeze": {
     "created_date": "2026-07-23",
-    "algorithm_commit": "68df9d343eaf72824ac49b5c6fd6dc63ac7ec3d9",
+    "algorithm_commit": "c5ba9d30997e47c7f555baee5257bc687698508a",
     "canonical_config": {
       "path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
-      "sha256": "1e6319062a5d2bec70e24fabedc84f7999eb8059d07f6b112542c9c5edde1a55"
+      "sha256": "e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff"
     },
     "policy": {
       "tuning_allowed_sets": [
