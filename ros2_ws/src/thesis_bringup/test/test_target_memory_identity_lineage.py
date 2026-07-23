@@ -203,6 +203,7 @@ def test_uninterrupted_same_id_is_not_rejected_after_appearance_shift():
             appearance_conservative_margin=0.05,
             hard_negative_memory_enabled=True,
             hard_negative_min_candidate_similarity=0.70,
+            hard_negative_confirm_observations=1,
             hard_negative_max_positive_similarity=0.95,
             hard_negative_reject_similarity=0.80,
             hard_negative_reject_margin=0.03,
