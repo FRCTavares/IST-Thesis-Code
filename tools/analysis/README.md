@@ -15,9 +15,16 @@ The tools are split into three groups:
 
 | Tool | Purpose | Use for final metrics? |
 | --- | --- | --- |
+| `tim_evaluation.py` | Shared authority for annotation parsing, time origins, output validity, freshness sampling, and exact interval integration. | Library used by the final ID/event evaluators |
 | `evaluate_tim_target_correctness.py` | Compares raw `/target` and TIM-MARS `/target_memory_mars` against annotation intervals using track-ID correctness and duration metrics. | Yes |
 | `evaluate_tim_target_bbox_correctness.py` | Evaluates bbox correctness using the annotated target track as spatial reference on a common `/tracks` clock. | Yes, as spatial complement |
 | `evaluate_tim_by_event_type.py` | Aggregates selected-target correctness by annotation `event_type`. | Yes, for event-level tables |
+
+`evaluate_tim_target_correctness.py` and `evaluate_tim_by_event_type.py` are
+thin report/CLI layers. They must import evaluation semantics from
+`tim_evaluation.py`; neither CLI may define its own annotation parser, time
+origin, output-validity rule, freshness sampler, or duration-step calculation.
+This guarantees that event rows sum exactly to the main selected-target totals.
 
 ## Diagnostic support
 

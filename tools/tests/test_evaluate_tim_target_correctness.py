@@ -33,6 +33,7 @@ BBOX_EVAL = load(
     "target_correctness_matrix_bbox",
     "evaluate_tim_target_bbox_correctness.py",
 )
+SHARED_EVAL = sys.modules["tim_evaluation"]
 
 
 def interval(
@@ -286,7 +287,7 @@ def test_bag_and_header_time_use_distinct_shared_origins(
             pass
 
     monkeypatch.setattr(
-        ID_EVAL,
+        SHARED_EVAL,
         "import_rosbag_tools",
         lambda: (
             FakeReader,

@@ -25,6 +25,7 @@ assert SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
+SHARED = sys.modules["tim_evaluation"]
 
 
 def make_interval(
@@ -57,6 +58,26 @@ def aggregate(
     return sum(
         values.get(field, 0.0)
         for values in grouped.values()
+    )
+
+
+def test_event_evaluator_uses_shared_semantic_library():
+    """Lock the event evaluator to the one authoritative implementation."""
+    assert MODULE.AnnotationInterval is SHARED.AnnotationInterval
+    assert MODULE.TargetSample is SHARED.TargetSample
+    assert MODULE.load_annotations is SHARED.load_annotations
+    assert (
+        MODULE.read_target_samples_from_bag
+        is SHARED.read_target_samples_from_bag
+    )
+    assert MODULE.sample_output_id is SHARED.sample_output_id
+    assert (
+        MODULE.iter_interval_slices
+        is SHARED.iter_interval_slices
+    )
+    assert (
+        MODULE.evaluate_authoritative_stream
+        is SHARED.evaluate_stream
     )
 
 

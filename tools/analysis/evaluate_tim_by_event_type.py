@@ -21,15 +21,15 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from evaluate_tim_target_correctness import (  # noqa: E402
+from tim_evaluation import (  # noqa: E402
     AnnotationInterval,
     DEFAULT_MAX_OUTPUT_AGE_S,
     TARGET_TOPIC_RAW,
     TARGET_TOPIC_TIM,
     TargetSample,
     evaluate_stream as evaluate_authoritative_stream,
+    iter_interval_slices,
     load_annotations,
-    make_time_grid,
     read_target_samples_from_bag,
     sample_at_time,
     sample_output_id,
@@ -50,22 +50,11 @@ def evaluate_by_event_type(
     for interval in intervals:
         event_type = interval.event_type.strip() or "unlabeled"
         label = interval.target_label.upper()
-        grid = make_time_grid(interval, step_s)
 
-        for index, time_s in enumerate(grid):
-            if index < len(grid) - 1:
-                duration_s = step_s
-            else:
-                duration_s = interval.end_s - time_s
-                if duration_s <= 0.0:
-                    duration_s = min(
-                        step_s,
-                        interval.duration_s,
-                    )
-
+        for item in iter_interval_slices(interval, step_s):
             sample, freshness = sample_at_time(
                 samples,
-                time_s,
+                item.t_s,
                 max_output_age_s,
             )
             output_id = (
@@ -74,35 +63,35 @@ def evaluate_by_event_type(
                 else 0
             )
             stats = grouped[event_type]
-            stats["total_s"] += duration_s
+            stats["total_s"] += item.duration_s
             if freshness.status == "stale_source":
-                stats["stale_output_s"] += duration_s
+                stats["stale_output_s"] += item.duration_s
 
             if label == "NO_TARGET_SELECTED":
-                stats["no_target_selected_s"] += duration_s
+                stats["no_target_selected_s"] += item.duration_s
                 continue
 
             if (
                 not interval.target_visible
                 or label == "TARGET_NOT_VISIBLE"
             ):
-                stats["target_not_visible_s"] += duration_s
+                stats["target_not_visible_s"] += item.duration_s
 
                 if output_id != 0:
                     stats[
                         "target_absent_but_output_s"
-                    ] += duration_s
+                    ] += item.duration_s
 
                 continue
 
-            stats["visible_s"] += duration_s
+            stats["visible_s"] += item.duration_s
 
             if output_id == interval.correct_target_track_id:
-                stats["correct_s"] += duration_s
+                stats["correct_s"] += item.duration_s
             elif output_id == 0:
-                stats["lost_s"] += duration_s
+                stats["lost_s"] += item.duration_s
             else:
-                stats["wrong_s"] += duration_s
+                stats["wrong_s"] += item.duration_s
 
     return {
         event_type: dict(values)
