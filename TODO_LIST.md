@@ -6,7 +6,7 @@ closing evidence.
 
 Last reconciled with GitHub: **23 July 2026**.
 
-Open executable issues: **31**.
+Open executable issues: **30**.
 
 ## Execution rules
 
@@ -45,8 +45,16 @@ Open executable issues: **31**.
       automatically. All 142 tooling tests and a clean dashboard production
       build pass.
 
-4. [ ] [#34 — P0.20 Synchronize TIM documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/34)
-    - phase 8; experiment; add an evidence-version map from config hashes and commits to promoted claims.
+4. [x] [#34 — P0.20 Synchronize TIM documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/34)
+    - phase 8; experiment; synchronized the algorithm, module, launch, result,
+      catalogue, paper/thesis-status, and tooling documentation through a
+      machine-readable evidence-version map. Promoted claims now bind exact
+      configuration hashes and commits to explicit limits: the current
+      development evidence is not flawless, held out, or tracker-independent.
+      The live launcher no longer overrides canonical TIM freshness with the
+      profile-dependent controller deadline. Validation passed 148 tooling
+      tests, an isolated three-package ROS build, and 223 ROS tests with zero
+      errors or failures (three skipped; the existing expected xfail remains).
 
 5. [ ] [#38 — P0.21 Freeze the research question](https://github.com/FRCTavares/IST-Thesis-Code/issues/38)
     - phase 9; experiment.
