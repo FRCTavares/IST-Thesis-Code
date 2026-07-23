@@ -42,8 +42,21 @@ target visibility/correct-track fields. Use the template in:
 
 `tools/analysis/templates/target_correctness_annotations_template.csv`
 
+Intervals use half-open `[start_s, end_s)` boundaries. Gaps are permitted and
+remain unscored. Positive-duration overlaps, negative durations, and non-finite
+times are rejected because they make duration totals ambiguous. Zero-duration
+rows are permitted but contribute no time.
+
 Manual annotation files should be created by the user through the annotation UI;
 these tools only consume annotations.
+
+## Target-output validity
+
+A selected-target output is valid only when its ID is non-zero and, when bbox
+fields are present, all bbox values are finite with positive width and height.
+A zero ID with a non-zero bbox and a non-zero ID with an invalid bbox are both
+scored as no valid output. This rule is shared by the track-ID and bbox
+evaluators.
 
 ## Recommended final workflow
 

@@ -60,6 +60,7 @@ class AnnotationInterval:
 class TargetSample:
     t_s: float
     track_id: int
+    bbox_valid: Optional[bool] = None
 
 
 @dataclass
@@ -106,6 +107,49 @@ def parse_int_or_zero(value: str) -> int:
         return 0
 
 
+def validate_annotations(
+    rows: List[AnnotationInterval],
+) -> None:
+    """Reject ambiguous timelines while allowing gaps and empty rows."""
+    previous_end_by_bag: Dict[str, float] = {}
+
+    for row in sorted(
+        rows,
+        key=lambda item: (
+            item.bag_name,
+            item.start_s,
+            item.end_s,
+        ),
+    ):
+        if not (
+            math.isfinite(row.start_s)
+            and math.isfinite(row.end_s)
+        ):
+            raise ValueError(
+                "Annotation interval times must be finite: "
+                f"{row.bag_name} [{row.start_s}, {row.end_s})"
+            )
+        if row.end_s < row.start_s:
+            raise ValueError(
+                "Annotation interval has negative duration: "
+                f"{row.bag_name} [{row.start_s}, {row.end_s})"
+            )
+        if row.end_s == row.start_s:
+            continue
+
+        previous_end = previous_end_by_bag.get(row.bag_name)
+        if (
+            previous_end is not None
+            and row.start_s < previous_end
+        ):
+            raise ValueError(
+                "Overlapping annotation intervals are ambiguous: "
+                f"{row.bag_name} starts at {row.start_s} "
+                f"before previous end {previous_end}"
+            )
+        previous_end_by_bag[row.bag_name] = row.end_s
+
+
 def load_annotations(path: Path) -> List[AnnotationInterval]:
     rows: List[AnnotationInterval] = []
 
@@ -144,6 +188,7 @@ def load_annotations(path: Path) -> List[AnnotationInterval]:
             )
 
     rows.sort(key=lambda x: x.start_s)
+    validate_annotations(rows)
     return rows
 
 
@@ -222,6 +267,39 @@ def header_time_ns(msg: object) -> Optional[int]:
         return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
     except Exception:
         return None
+
+
+def target_bbox_validity(msg: object) -> Optional[bool]:
+    """Return bbox validity when the target message exposes bbox fields."""
+    names = ("cx", "cy", "w", "h")
+    if not all(hasattr(msg, name) for name in names):
+        return None
+
+    try:
+        cx, cy, width, height = (
+            float(getattr(msg, name))
+            for name in names
+        )
+    except (TypeError, ValueError):
+        return False
+
+    return bool(
+        all(
+            math.isfinite(value)
+            for value in (cx, cy, width, height)
+        )
+        and width > 0.0
+        and height > 0.0
+    )
+
+
+def sample_output_id(sample: TargetSample) -> int:
+    """Return a usable ID, treating an explicitly invalid bbox as no output."""
+    if sample.track_id == 0:
+        return 0
+    if sample.bbox_valid is False:
+        return 0
+    return sample.track_id
 
 
 def read_target_samples_from_bag(
@@ -346,7 +424,11 @@ def read_target_samples_from_bag(
         track_id = find_track_id_field(msg)
         t_s = (msg_time_ns - first_time_ns) * 1e-9
 
-        sample = TargetSample(t_s=t_s, track_id=track_id)
+        sample = TargetSample(
+            t_s=t_s,
+            track_id=track_id,
+            bbox_valid=target_bbox_validity(msg),
+        )
         topic_samples = samples[topic]
         if topic_samples and t_s < topic_samples[-1].t_s:
             # Non-monotonic header time cannot safely refresh a held output.
@@ -402,7 +484,7 @@ def sample_id_at_time(
     )
     if sample is None or not freshness.fresh:
         return 0
-    return sample.track_id
+    return sample_output_id(sample)
 
 
 def make_time_grid(interval: AnnotationInterval, step_s: float) -> List[float]:
@@ -447,7 +529,7 @@ def evaluate_stream(
             if freshness.status == "stale_source":
                 stats.stale_output_duration_s += dt
             output_id = (
-                sample.track_id
+                sample_output_id(sample)
                 if sample is not None and freshness.fresh
                 else 0
             )

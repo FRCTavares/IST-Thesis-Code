@@ -299,3 +299,34 @@ def test_event_evaluator_records_stale_output_as_lost():
     assert values["correct_s"] == pytest.approx(0.3)
     assert values["lost_s"] == pytest.approx(0.2)
     assert values["stale_output_s"] == pytest.approx(0.2)
+
+
+def test_event_evaluator_treats_invalid_bbox_as_lost():
+    intervals = [
+        make_interval(
+            0.0,
+            0.1,
+            "CORRECT_TARGET",
+            True,
+            1,
+            "clean_visible",
+        )
+    ]
+    samples = [
+        MODULE.TargetSample(
+            t_s=0.0,
+            track_id=1,
+            bbox_valid=False,
+        )
+    ]
+
+    grouped = MODULE.evaluate_by_event_type(
+        samples,
+        intervals,
+        step_s=0.1,
+    )
+
+    values = grouped["clean_visible"]
+    assert values.get("correct_s", 0.0) == pytest.approx(0.0)
+    assert values.get("wrong_s", 0.0) == pytest.approx(0.0)
+    assert values["lost_s"] == pytest.approx(0.1)

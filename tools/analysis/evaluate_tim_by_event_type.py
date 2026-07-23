@@ -32,6 +32,7 @@ from evaluate_tim_target_correctness import (  # noqa: E402
     make_time_grid,
     read_target_samples_from_bag,
     sample_at_time,
+    sample_output_id,
 )
 
 
@@ -68,7 +69,7 @@ def evaluate_by_event_type(
                 max_output_age_s,
             )
             output_id = (
-                sample.track_id
+                sample_output_id(sample)
                 if sample is not None and freshness.fresh
                 else 0
             )

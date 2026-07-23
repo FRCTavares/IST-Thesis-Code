@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -124,8 +125,12 @@ def interval_at(intervals: list[Interval], t_s: float) -> Interval | None:
 def bbox_valid(box: tuple[float, float, float, float] | None) -> bool:
     if box is None:
         return False
-    _, _, w, h = box
-    return w > 0.0 and h > 0.0
+    cx, cy, w, h = box
+    return bool(
+        all(math.isfinite(value) for value in (cx, cy, w, h))
+        and w > 0.0
+        and h > 0.0
+    )
 
 
 def cxcywh_to_xyxy(box: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
