@@ -108,14 +108,18 @@ def score_candidate(
         + cfg.w_id_bonus * id_bonus
     )
 
+    geometry_score = clamp01(total)
+
     return CandidateScore(
         track_id=candidate.track_id,
-        total=clamp01(total),
+        total=geometry_score,
         iou=iou_score,
         distance=dist_score,
         scale=scale_score,
         confidence=conf_score,
         id_bonus=id_bonus,
+        geometry_score=geometry_score,
+        ranking_score=geometry_score,
     )
 
 

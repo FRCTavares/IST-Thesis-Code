@@ -94,14 +94,25 @@ def test_appearance_breaks_geometry_tie_for_correct_candidate():
 
     assert out.best_score is not None
     assert out.best_score.track_id == 11
+    assert (
+        out.best_score.ranking_score
+        > out.best_score.geometry_score
+    )
+    assert out.best_score.appearance_available
+    assert out.best_score.appearance_evaluated
+    assert out.best_score.appearance_similarity_passed
     assert out.best_score.appearance_used
+    assert (
+        out.best_score
+        .appearance_accepted_for_publication
+    )
     assert out.target_track_id == 11
     assert out.state == TargetState.REACQUIRED
 
 
 def test_appearance_memory_does_not_update_while_lost_or_reacquired():
     target_feat = feat([1.0, 0.0, 0.0])
-    new_feat = feat([0.0, 1.0, 0.0])
+    compatible_new_feat = feat([0.8, 0.6, 0.0])
 
     tim = TargetIdentityMemory(
         cfg(
@@ -113,16 +124,26 @@ def test_appearance_memory_does_not_update_while_lost_or_reacquired():
         )
     )
     tim.select(tr(5, (100, 100, 150, 220), 0.9, appearance=target_feat))
+    appearance_before = tim._m.appearance.copy()
 
     tim.update([])
     lost = tim.update([])
     assert lost.state == TargetState.LOST
 
-    out = tim.update([tr(9, (103, 101, 153, 221), 0.90, appearance=new_feat)])
+    out = tim.update(
+        [
+            tr(
+                9,
+                (103, 101, 153, 221),
+                0.90,
+                appearance=compatible_new_feat,
+            )
+        ]
+    )
 
     assert out.state == TargetState.REACQUIRED
+    assert np.allclose(tim._m.appearance, appearance_before)
     assert cosine_similarity(tim._m.appearance, target_feat) > 0.99
-    assert cosine_similarity(tim._m.appearance, new_feat) < 0.01
 
 
 def test_appearance_cannot_rescue_impossible_geometry():
@@ -141,6 +162,19 @@ def test_appearance_cannot_rescue_impossible_geometry():
 
     assert out.state == TargetState.UNCERTAIN
     assert out.target_track_id == 5
+    assert out.best_score is not None
+    assert (
+        out.best_score.ranking_score
+        == out.best_score.geometry_score
+    )
+    assert out.best_score.appearance_available is True
+    assert out.best_score.appearance_evaluated is False
+    assert out.best_score.appearance_used is False
+    assert out.best_score.geometry_allows_appearance is False
+    assert (
+        out.best_score.geometry_score
+        < tim.cfg.accept_score_locked
+    )
     assert out.reason.startswith("best_below_threshold")
 
 

@@ -99,13 +99,39 @@ def _score_payload(score: object) -> dict[str, object]:
     return {
         "track_id": int(score.track_id),
         "total": float(score.total),
+        "geometry_score": float(
+            getattr(score, "geometry_score", score.total)
+        ),
+        "ranking_score": float(
+            getattr(score, "ranking_score", score.total)
+        ),
         "iou": float(score.iou),
         "distance": float(score.distance),
         "scale": float(score.scale),
         "confidence": float(score.confidence),
         "id_bonus": float(score.id_bonus),
         "appearance": float(score.appearance),
+        "appearance_available": bool(
+            getattr(score, "appearance_available", False)
+        ),
+        "appearance_evaluated": bool(
+            getattr(score, "appearance_evaluated", False)
+        ),
+        "appearance_similarity_passed": bool(
+            getattr(
+                score,
+                "appearance_similarity_passed",
+                False,
+            )
+        ),
         "appearance_used": bool(score.appearance_used),
+        "appearance_accepted_for_publication": bool(
+            getattr(
+                score,
+                "appearance_accepted_for_publication",
+                False,
+            )
+        ),
         "appearance_raw": float(score.appearance_raw),
         "protected_anchor_similarity": float(
             getattr(

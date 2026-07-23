@@ -88,6 +88,35 @@ compares each candidate against the remembered selected target using:
 Geometry is always the primary guard. Appearance is used only when configured
 and when geometry makes the candidate plausible enough.
 
+The score contract deliberately separates candidate ordering from safety
+validation:
+
+- `geometry_score` contains identity continuity, bbox geometry, and confidence.
+  Geometry acceptance thresholds are applied to this score.
+- `ranking_score` is used only to order otherwise plausible candidates. It may
+  add appearance evidence and is intentionally not treated as an acceptance
+  probability or clipped safety threshold.
+- `total` is the legacy, clipped ranking diagnostic retained for compatibility.
+  New policy code must use the explicit geometry or ranking field instead.
+
+Appearance evidence also has independent diagnostic states:
+
+- `appearance_available`: the candidate supplied a usable embedding.
+- `appearance_evaluated`: the embedding was compared with positive memory.
+- `appearance_similarity_passed`: it passed the base appearance threshold.
+- `appearance_used`: appearance contributed to candidate ordering.
+- `appearance_accepted_for_publication`: the accepted publication had evaluated,
+  compatible appearance evidence.
+
+These states must not be collapsed into a single boolean. In the canonical and
+conservative appearance-enabled profiles, a candidate with a new tracker ID
+must independently pass the configured ID-switch appearance threshold even
+when it is the only candidate. Available but contradictory appearance is not
+treated as missing evidence and cannot authorize an ID switch on geometry
+alone. Same-ID locked continuity remains geometry-led. Geometry-only ID-switch
+experiments require the appearance ID-switch and conservative identity gates to
+be explicitly disabled in the experiment configuration.
+
 ## Appearance memory policy
 
 TIM-MARS can attach MARS ReID embeddings to candidates. The positive appearance

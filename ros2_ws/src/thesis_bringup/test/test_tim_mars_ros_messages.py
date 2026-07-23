@@ -26,8 +26,14 @@ def _score(track_id=7):
         scale=0.5,
         confidence=0.91,
         id_bonus=0.1,
+        geometry_score=0.73,
+        ranking_score=0.81,
         appearance=0.2,
+        appearance_available=True,
+        appearance_evaluated=True,
+        appearance_similarity_passed=True,
         appearance_used=True,
+        appearance_accepted_for_publication=True,
         appearance_raw=0.85,
         protected_anchor_similarity=0.83,
         trusted_gallery_similarity=0.76,
@@ -279,6 +285,18 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     assert payload["appearance_warning"] is None
     assert payload["candidate_track_ids"] == [7, 8]
     assert payload["best"]["track_id"] == 7
+    assert payload["best"]["geometry_score"] == 0.73
+    assert payload["best"]["ranking_score"] == 0.81
+    assert payload["best"]["appearance_available"] is True
+    assert payload["best"]["appearance_evaluated"] is True
+    assert (
+        payload["best"]["appearance_similarity_passed"]
+        is True
+    )
+    assert (
+        payload["best"]["appearance_accepted_for_publication"]
+        is True
+    )
     assert (
         payload["best"]["protected_anchor_similarity"]
         == 0.83

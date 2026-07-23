@@ -12,7 +12,7 @@ absence-aware recovery, and rank-aware reacquisition. It has no ROS dependency.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import (
     Any,
@@ -335,7 +335,7 @@ class TargetIdentityMemory:
             minimum_total=threshold,
             minimum_total_reason=(
                 'best_below_threshold:'
-                f'{best.total:.3f}<{threshold:.3f}'
+                f'{best.geometry_score:.3f}<{threshold:.3f}'
             ),
         )
         return self._finalize_candidate_proposal(proposal)
@@ -604,13 +604,16 @@ class TargetIdentityMemory:
                 absence_reject,
             )
 
-        if proposal.score.total < proposal.minimum_total:
+        if (
+            proposal.score.geometry_score
+            < proposal.minimum_total
+        ):
             reason = (
                 proposal.minimum_total_reason
                 or (
                     f'{proposal.proposal_source}_'
                     'below_threshold:'
-                    f'{proposal.score.total:.3f}'
+                    f'{proposal.score.geometry_score:.3f}'
                     f'<{proposal.minimum_total:.3f}'
                 )
             )
@@ -838,18 +841,18 @@ class TargetIdentityMemory:
                 'no_candidate_appearance'
             )
 
-        threshold = max(
-            0.0,
-            float(
-                self.cfg
-                .id_switch_min_appearance_similarity
-            ),
-        )
+        threshold = self._id_switch_appearance_threshold()
 
-        if (
-            threshold > 0.0
-            and float(score.appearance_raw) < threshold
-        ):
+        if threshold <= 0.0:
+            return None
+
+        if not score.appearance_evaluated:
+            return (
+                'id_switch_recovery_reject:'
+                'appearance_not_evaluated'
+            )
+
+        if float(score.appearance_raw) < threshold:
             return (
                 'id_switch_recovery_reject:'
                 'appearance'
@@ -858,6 +861,38 @@ class TargetIdentityMemory:
             )
 
         return None
+
+    def _id_switch_appearance_threshold(self) -> float:
+        """Return the independent identity threshold for a tracker-ID change."""
+        threshold = max(
+            0.0,
+            float(
+                self.cfg
+                .id_switch_min_appearance_similarity
+            ),
+        )
+        if self.cfg.appearance_conservative_enabled:
+            threshold = max(
+                threshold,
+                float(
+                    self.cfg
+                    .appearance_conservative_min_similarity
+                ),
+            )
+
+        return threshold
+
+    def _appearance_validates_id_switch(
+        self,
+        score: CandidateScore,
+    ) -> bool:
+        """Return whether appearance independently authorizes an ID switch."""
+        threshold = self._id_switch_appearance_threshold()
+        return bool(
+            threshold > 0.0
+            and score.appearance_evaluated
+            and float(score.appearance_raw) >= threshold
+        )
 
     def _protected_gallery_reacquisition_reject_reason(
         self,
@@ -929,7 +964,7 @@ class TargetIdentityMemory:
                 TargetState.UNCERTAIN,
                 TargetState.LOST,
             }
-            and best.total
+            and best.geometry_score
             >= self.cfg.candidate_belief_min_score
         ):
             return (
@@ -1043,7 +1078,7 @@ class TargetIdentityMemory:
             }
             and same_id_score is not None
             and same_id_candidate is not None
-            and same_id_score.total
+            and same_id_score.geometry_score
             >= self.cfg.short_gap_same_id_min_total
         ):
             proposal = self._make_candidate_proposal(
@@ -1086,6 +1121,9 @@ class TargetIdentityMemory:
                 candidates,
             )
         )
+        best_identity_supported = (
+            self._appearance_validates_id_switch(best)
+        )
 
         short_gap_new_id_should_suppress = (
             self._m.state
@@ -1095,12 +1133,13 @@ class TargetIdentityMemory:
             }
             or (
                 self._m.state == TargetState.LOCKED
+                and not best_identity_supported
                 and (
-                    best.total
+                    best.geometry_score
                     < self.cfg.short_gap_new_id_allow_total
                     or (
                         best_group_crop_risk
-                        and best.total
+                        and best.geometry_score
                         < self.cfg
                         .short_gap_group_risk_allow_total
                     )
@@ -1116,14 +1155,15 @@ class TargetIdentityMemory:
             and id_switch
             and same_id_score is None
             and not ambiguous
-            and best.total >= short_gap_base_threshold
+            and best.geometry_score
+            >= short_gap_base_threshold
         ):
             return None, self._miss(
                 reason=(
                     'short_gap_new_id_suppressed:'
                     f' id={best.track_id}'
                     f' gap={self._m.frames_since_seen}'
-                    f' score={best.total:.3f}'
+                    f' score={best.geometry_score:.3f}'
                 ),
                 best_score=best,
                 all_scores=scores_sorted,
@@ -1143,7 +1183,11 @@ class TargetIdentityMemory:
             score_candidate(self._m.bbox, c, self._m.track_id, self.cfg)
             for c in candidates
         ]
-        base_sorted = sorted(base_scores, key=lambda s: s.total, reverse=True)
+        base_sorted = sorted(
+            base_scores,
+            key=lambda score: score.geometry_score,
+            reverse=True,
+        )
         base_best = base_sorted[0]
         base_second = base_sorted[1] if len(base_sorted) > 1 else None
         base_same_id = self._m.track_id is not None and base_best.track_id == self._m.track_id
@@ -1155,7 +1199,11 @@ class TargetIdentityMemory:
             self._score_candidate(self._m.bbox, c, use_appearance=use_appearance)
             for c in candidates
         ]
-        scores_sorted = sorted(scores, key=lambda s: s.total, reverse=True)
+        scores_sorted = sorted(
+            scores,
+            key=lambda score: score.ranking_score,
+            reverse=True,
+        )
         best = scores_sorted[0]
         second = scores_sorted[1] if len(scores_sorted) > 1 else None
 
@@ -1163,37 +1211,7 @@ class TargetIdentityMemory:
         same_id = self._m.track_id is not None and best.track_id == self._m.track_id
         ambiguous = self._is_ambiguous(best, second, same_id=same_id)
 
-        best = CandidateScore(
-            track_id=best.track_id,
-            total=best.total,
-            iou=best.iou,
-            distance=best.distance,
-            scale=best.scale,
-            confidence=best.confidence,
-            id_bonus=best.id_bonus,
-            appearance=best.appearance,
-            appearance_used=best.appearance_used,
-            appearance_raw=best.appearance_raw,
-            protected_anchor_similarity=(
-                best.protected_anchor_similarity
-            ),
-            trusted_gallery_similarity=(
-                best.trusted_gallery_similarity
-            ),
-            adaptive_similarity=best.adaptive_similarity,
-            positive_similarity=best.positive_similarity,
-            positive_support_source=(
-                best.positive_support_source
-            ),
-            appearance_gate_passed=(
-                best.appearance_gate_passed
-            ),
-            geometry_allows_appearance=best.geometry_allows_appearance,
-            hard_negative_similarity=best.hard_negative_similarity,
-            hard_negative_margin=best.hard_negative_margin,
-            hard_negative_reject=best.hard_negative_reject,
-            ambiguous=ambiguous,
-        )
+        best = replace(best, ambiguous=ambiguous)
         scores_sorted[0] = best
 
         same_id_score = None
@@ -1295,10 +1313,10 @@ class TargetIdentityMemory:
 
         best = proposal.score
 
-        if best.total < self.cfg.absence_min_total:
+        if best.geometry_score < self.cfg.absence_min_total:
             return (
                 'absence_recovery_reject:total '
-                f'{best.total:.3f}'
+                f'{best.geometry_score:.3f}'
                 f'<{self.cfg.absence_min_total:.3f}'
             )
 
@@ -1415,7 +1433,8 @@ class TargetIdentityMemory:
                 continue
 
             if (
-                score.total >= self.cfg.rank_aware_lost_min_total
+                score.geometry_score
+                >= self.cfg.rank_aware_lost_min_total
                 and score.distance >= self.cfg.rank_aware_lost_min_geom
                 and app_raw >= self.cfg.rank_aware_lost_min_app
             ):
@@ -1483,34 +1502,15 @@ class TargetIdentityMemory:
         appearance: float,
     ) -> CandidateScore:
         """Return a score copy exposing rank-aware appearance evidence."""
-        return CandidateScore(
-            track_id=score.track_id,
-            total=score.total,
-            iou=score.iou,
-            distance=score.distance,
-            scale=score.scale,
-            confidence=score.confidence,
-            id_bonus=score.id_bonus,
+        return replace(
+            score,
             appearance=appearance,
             appearance_used=True,
             appearance_raw=appearance,
-            protected_anchor_similarity=(
-                score.protected_anchor_similarity
-            ),
-            trusted_gallery_similarity=(
-                score.trusted_gallery_similarity
-            ),
-            adaptive_similarity=score.adaptive_similarity,
+            appearance_evaluated=True,
+            appearance_similarity_passed=True,
             positive_similarity=appearance,
-            positive_support_source=(
-                score.positive_support_source
-            ),
             appearance_gate_passed=True,
-            geometry_allows_appearance=score.geometry_allows_appearance,
-            hard_negative_similarity=score.hard_negative_similarity,
-            hard_negative_margin=score.hard_negative_margin,
-            hard_negative_reject=score.hard_negative_reject,
-            ambiguous=score.ambiguous,
         )
 
     def _should_use_appearance(
@@ -1625,7 +1625,9 @@ class TargetIdentityMemory:
             return False
         if same_id:
             return False
-        return (best.total - second.total) < self.cfg.ambiguity_margin
+        return (
+            best.ranking_score - second.ranking_score
+        ) < self.cfg.ambiguity_margin
 
     def _accept(
         self,
@@ -1690,6 +1692,23 @@ class TargetIdentityMemory:
             new_state = TargetState.REACQUIRED
         else:
             new_state = TargetState.LOCKED
+
+        best_score = replace(
+            best_score,
+            appearance_accepted_for_publication=bool(
+                best_score.appearance_evaluated
+                and best_score.appearance_similarity_passed
+            ),
+        )
+        all_scores = [
+            (
+                best_score
+                if int(score.track_id)
+                == int(best_score.track_id)
+                else score
+            )
+            for score in all_scores
+        ]
 
         if protected_mode and reacquired:
             support_threshold = max(

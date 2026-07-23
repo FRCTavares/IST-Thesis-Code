@@ -73,14 +73,23 @@ class CandidateTrack:
 @dataclass(frozen=True)
 class CandidateScore:
     track_id: int
+    # ``total`` is the legacy clipped ranking score kept for compatibility.
+    # Geometry validation must use ``geometry_score``; candidate ordering uses
+    # the unclipped ``ranking_score``.
     total: float
     iou: float
     distance: float
     scale: float
     confidence: float
     id_bonus: float
+    geometry_score: float = 0.0
+    ranking_score: float = 0.0
     appearance: float = 0.0
+    appearance_available: bool = False
+    appearance_evaluated: bool = False
+    appearance_similarity_passed: bool = False
     appearance_used: bool = False
+    appearance_accepted_for_publication: bool = False
     appearance_raw: float = 0.0
 
     # P1.4 separated positive-memory diagnostics.
@@ -96,6 +105,21 @@ class CandidateScore:
     hard_negative_margin: float = 1.0
     hard_negative_reject: bool = False
     ambiguous: bool = False
+
+    def __post_init__(self) -> None:
+        """Backfill separated scores for legacy keyword constructors."""
+        if self.geometry_score == 0.0 and self.total != 0.0:
+            object.__setattr__(
+                self,
+                "geometry_score",
+                float(self.total),
+            )
+        if self.ranking_score == 0.0 and self.total != 0.0:
+            object.__setattr__(
+                self,
+                "ranking_score",
+                float(self.total),
+            )
 
 
 @dataclass

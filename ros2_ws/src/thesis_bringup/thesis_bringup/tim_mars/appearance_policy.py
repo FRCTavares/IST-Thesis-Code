@@ -66,6 +66,9 @@ def score_with_appearance(
     """Return a base score enriched with appearance evidence."""
     appearance_score = 0.0
     appearance_raw = 0.0
+    appearance_available = candidate.appearance is not None
+    appearance_evaluated = False
+    appearance_similarity_passed = False
     appearance_used = False
     appearance_gate_passed = False
 
@@ -78,6 +81,12 @@ def score_with_appearance(
     hard_negative_similarity = 0.0
     hard_negative_margin = 1.0
     hard_negative_reject = False
+    geometry_score = (
+        float(base.geometry_score)
+        if base.geometry_score > 0.0 or base.total == 0.0
+        else float(base.total)
+    )
+    ranking_score = geometry_score
     total = base.total
 
     allows_appearance = geometry_allows_appearance(base)
@@ -94,8 +103,10 @@ def score_with_appearance(
                 appearance=candidate.appearance,
                 protected_only=protected_only,
             )
+            appearance_evaluated = positive_memory.has_any
             appearance_raw = positive_similarity
         elif positive_appearance is not None:
+            appearance_evaluated = True
             appearance_raw = clamp01(
                 cosine_similarity(
                     positive_appearance,
@@ -109,18 +120,19 @@ def score_with_appearance(
                 else "none"
             )
 
-        if (
-            use_appearance
-            and appearance_raw
-            >= cfg.appearance_min_similarity
-        ):
+        appearance_similarity_passed = bool(
+            appearance_evaluated
+            and appearance_raw >= cfg.appearance_min_similarity
+        )
+
+        if use_appearance and appearance_similarity_passed:
             appearance_score = appearance_raw
             appearance_gate_passed = True
-            total = clamp01(
-                total
-                + cfg.appearance_weight
-                * appearance_score
+            ranking_score = (
+                geometry_score
+                + cfg.appearance_weight * appearance_score
             )
+            total = clamp01(ranking_score)
             appearance_used = True
 
         hard_negative_similarity = (
@@ -149,8 +161,16 @@ def score_with_appearance(
         scale=base.scale,
         confidence=base.confidence,
         id_bonus=base.id_bonus,
+        geometry_score=geometry_score,
+        ranking_score=ranking_score,
         appearance=appearance_score,
+        appearance_available=appearance_available,
+        appearance_evaluated=appearance_evaluated,
+        appearance_similarity_passed=(
+            appearance_similarity_passed
+        ),
         appearance_used=appearance_used,
+        appearance_accepted_for_publication=False,
         appearance_raw=appearance_raw,
         protected_anchor_similarity=(
             protected_anchor_similarity

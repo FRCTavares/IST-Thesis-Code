@@ -26,13 +26,6 @@ def tr(track_id, bbox, score=0.95, appearance=None):
     )
 
 
-@pytest.mark.xfail(
-    run=False,
-    reason=(
-        "Unresolved specification: candidate appearance availability and "
-        "mandatory ID-switch appearance validation are not implemented in main."
-    ),
-)
 def test_new_id_with_conflicting_appearance_cannot_reacquire_on_geometry_alone():
     """A geometrically stable distractor must not replace the selected identity.
 
@@ -106,7 +99,15 @@ def test_new_id_with_conflicting_appearance_cannot_reacquire_on_geometry_alone()
     assert conflicting_new_id.best_score.total >= 0.70
     assert conflicting_new_id.best_score.appearance_available
     assert conflicting_new_id.best_score.appearance_evaluated
+    assert not (
+        conflicting_new_id.best_score
+        .appearance_similarity_passed
+    )
     assert not conflicting_new_id.best_score.appearance_used
+    assert not (
+        conflicting_new_id.best_score
+        .appearance_accepted_for_publication
+    )
     assert conflicting_new_id.best_score.appearance_raw < 0.10
 
     # Required safety behaviour:

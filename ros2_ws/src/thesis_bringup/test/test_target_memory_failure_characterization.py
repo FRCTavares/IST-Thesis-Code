@@ -1,8 +1,7 @@
-"""Characterize known TIM-MARS identity-integrity failure modes.
+"""Characterize explicitly safety-disabled TIM-MARS failure modes.
 
-These tests intentionally record behaviour that is currently unsafe. They are
-not desired-behaviour regressions. They provide a stable starting point for
-structural repairs to proposal validation, lineage trust, and memory updates.
+These tests turn off the conservative identity gate intentionally. They are not
+the default/canonical behavior and must not be interpreted as accepted safety.
 """
 
 import numpy as np
@@ -46,7 +45,7 @@ def unsafe_id_switch_config(**overrides):
         "appearance_min_similarity": 0.35,
         "appearance_ambiguous_only": True,
         "appearance_update_alpha": 0.50,
-        "appearance_conservative_enabled": True,
+        "appearance_conservative_enabled": False,
         "appearance_conservative_require_appearance": False,
         "appearance_conservative_min_similarity": 0.65,
         "appearance_conservative_margin": 0.05,
