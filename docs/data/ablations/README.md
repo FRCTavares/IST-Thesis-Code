@@ -25,12 +25,19 @@ without a positive identity reference.
 
 ## Safety gate
 
-Every row is compared with the same frozen raw tracker stream. Physical-target
-correctness is measured against the annotated target bbox; this avoids calling
-an overlapping tracker fragment on the same person a wrong person. Tracker-ID
-mismatch remains reported separately as a fragmentation diagnostic. The final
-simplified TIM-MARS row is not promotable if it increases physical wrong-target
-or target-absence output duration beyond the configured numerical tolerance.
+Every row is compared with the same frozen raw tracker stream using two
+complementary oracles:
+
+- the spatial oracle compares output boxes with the annotated target track
+  box; it tolerates same-person tracker-ID fragmentation but can be optimistic
+  when the reference tracker box merges two people;
+- the annotated-ID oracle follows the manually reviewed target-ID intervals;
+  it is conservative and can count same-person fragmentation.
+
+The final simplified TIM-MARS row is not promotable if either oracle increases
+wrong-target duration beyond the configured numerical tolerance, or if
+target-absence output increases beyond tolerance. A zero-wrong-target claim is
+valid only when both oracles report numerical zero.
 
 The development matrix may run only on the `development` set frozen in
 `docs/data/splits/tim_mars_split_v1.json`. The final held-out matrix must not run

@@ -30,8 +30,11 @@ Open executable issues: **31**.
 
 2. [x] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
     - phase 7; experiment; the seven-row development matrix passed the
-      physical-target safety gate at commit `c5ba9d30`; final TIM-MARS recorded
-      `0.000 s` physical wrong-target output on every development sequence.
+      dual-oracle raw-baseline safety gate at commit `c5ba9d30`. The optimistic
+      spatial oracle reports `0.000 s` final wrong-target output, while the
+      strict annotated-ID oracle reports `1.300 s`, including a visually
+      confirmed `0.100 s` May distractor handover around `41.3 s`; therefore
+      no flawless or zero-wrong-target claim is supported.
       The separately frozen H01–H03 evaluation remains blocked on capture under
       #27 and must run before the final thesis claim.
 

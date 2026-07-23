@@ -182,7 +182,7 @@ def test_wrong_target_increase_fails_row_safety():
     assert row["wrong_delta_vs_raw_s"] == pytest.approx(0.10)
 
 
-def test_id_fragment_mismatch_is_diagnostic_not_physical_wrong():
+def test_annotated_id_increase_blocks_spatially_optimistic_row():
     raw = _durations(wrong=0.0)
     row = MODULE.metrics_row(
         sequence_id="seq",
@@ -195,10 +195,39 @@ def test_id_fragment_mismatch_is_diagnostic_not_physical_wrong():
         wrong_tolerance_s=0.05,
     )
 
+    assert row["safe_vs_raw"] is False
+    assert row["spatial_oracle_safe_vs_raw"] is True
+    assert row["annotated_id_oracle_safe_vs_raw"] is False
+    assert row["wrong_target_duration_s"] == 0.0
+    assert row[
+        "annotated_id_wrong_target_duration_s"
+    ] == pytest.approx(0.95)
+    assert row[
+        "annotated_id_wrong_delta_vs_raw_s"
+    ] == pytest.approx(0.85)
+    assert row["zero_wrong_target_claim_supported"] is False
+
+
+def test_zero_wrong_claim_requires_both_oracles_to_be_zero():
+    raw = _durations(wrong=1.0)
+    row = MODULE.metrics_row(
+        sequence_id="may",
+        row_id=MODULE.FINAL_ROW_ID,
+        label="Final",
+        stream=_durations(wrong=0.0),
+        raw=raw,
+        id_stream=_durations(wrong=0.10),
+        id_raw=_durations(wrong=2.0),
+        wrong_tolerance_s=0.05,
+    )
+
     assert row["safe_vs_raw"] is True
     assert row["wrong_target_duration_s"] == 0.0
-    assert row["id_mismatch_duration_s"] == pytest.approx(0.95)
-    assert row["id_mismatch_delta_vs_raw_s"] == pytest.approx(0.85)
+    assert row[
+        "annotated_id_wrong_target_duration_s"
+    ] == pytest.approx(0.10)
+    assert row["wrong_oracle_disagreement_s"] == pytest.approx(0.10)
+    assert row["zero_wrong_target_claim_supported"] is False
 
 
 def test_aggregate_uses_duration_weighted_ratios():

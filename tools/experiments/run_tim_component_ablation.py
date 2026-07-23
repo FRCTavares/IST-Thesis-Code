@@ -438,9 +438,21 @@ def metrics_row(
     wrong = stream["wrong_target_duration_s"]
     lost = stream["lost_target_duration_s"]
     wrong_delta = wrong - raw["wrong_target_duration_s"]
+    annotated_id_wrong = id_stream["wrong_target_duration_s"]
+    annotated_id_wrong_delta = (
+        annotated_id_wrong
+        - id_raw["wrong_target_duration_s"]
+    )
     absent_delta = (
         stream["target_absent_but_output_valid_duration_s"]
         - raw["target_absent_but_output_valid_duration_s"]
+    )
+    spatial_safe = (
+        wrong_delta <= wrong_tolerance_s
+        and absent_delta <= wrong_tolerance_s
+    )
+    annotated_id_safe = (
+        annotated_id_wrong_delta <= wrong_tolerance_s
     )
     return {
         "sequence_id": sequence_id,
@@ -451,18 +463,23 @@ def metrics_row(
         "wrong_target_ratio": wrong / visible if visible else math.nan,
         "lost_target_ratio": lost / visible if visible else math.nan,
         "wrong_delta_vs_raw_s": wrong_delta,
-        "id_mismatch_duration_s": (
-            id_stream["wrong_target_duration_s"]
-        ),
-        "id_mismatch_delta_vs_raw_s": (
-            id_stream["wrong_target_duration_s"]
-            - id_raw["wrong_target_duration_s"]
+        "annotated_id_wrong_target_duration_s": annotated_id_wrong,
+        "annotated_id_wrong_delta_vs_raw_s": annotated_id_wrong_delta,
+        # Compatibility aliases for reports produced before the oracle
+        # distinction was made explicit.
+        "id_mismatch_duration_s": annotated_id_wrong,
+        "id_mismatch_delta_vs_raw_s": annotated_id_wrong_delta,
+        "wrong_oracle_disagreement_s": abs(
+            annotated_id_wrong - wrong
         ),
         "absent_output_delta_vs_raw_s": absent_delta,
-        "safe_vs_raw": (
-            wrong_delta <= wrong_tolerance_s
-            and absent_delta <= wrong_tolerance_s
+        "spatial_oracle_safe_vs_raw": spatial_safe,
+        "annotated_id_oracle_safe_vs_raw": annotated_id_safe,
+        "zero_wrong_target_claim_supported": (
+            wrong <= 1e-9
+            and annotated_id_wrong <= 1e-9
         ),
+        "safe_vs_raw": spatial_safe and annotated_id_safe,
     }
 
 
@@ -549,23 +566,37 @@ def write_markdown(
         f"- Evaluation set: `{set_name}`",
         f"- Wrong/absence safety tolerance: `{wrong_tolerance_s:.3f} s`",
         "",
-        "- Safety uses spatial bbox agreement with the annotated target. "
-        "Tracker-ID mismatch is retained as a fragmentation diagnostic.",
+        "- The spatial oracle can tolerate same-person tracker-ID "
+        "fragmentation, but can be optimistic when a reference track box "
+        "merges two people.",
+        "- The annotated-ID oracle is conservative and can count same-person "
+        "fragmentation. Promotion requires neither oracle to degrade beyond "
+        "the tolerance.",
+        "- A zero-wrong-target claim is allowed only when both oracles report "
+        "numerical zero.",
         "",
-        "| Row | Correct s | Physical wrong s | ID mismatch s | Lost s | "
-        "Correct ratio | Wrong Δ vs raw s | Absent-output Δ s | Safe |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :---: |",
+        "| Row | Correct s | Spatial wrong s | Annotated-ID wrong s | "
+        "Lost s | Spatial wrong Δ s | ID wrong Δ s | Zero-wrong claim | "
+        "Safe |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | :---: | "
+        ":---: |",
     ]
     for row in rows:
         lines.append(
             f"| {row['label']} "
             f"| {format_float(row['correct_target_duration_s'])} "
             f"| {format_float(row['wrong_target_duration_s'])} "
-            f"| {format_float(row['id_mismatch_duration_s'])} "
+            f"| {format_float(
+                row['annotated_id_wrong_target_duration_s']
+            )} "
             f"| {format_float(row['lost_target_duration_s'])} "
-            f"| {format_float(row['correct_target_ratio'])} "
             f"| {format_float(row['wrong_delta_vs_raw_s'])} "
-            f"| {format_float(row['absent_output_delta_vs_raw_s'])} "
+            f"| {format_float(
+                row['annotated_id_wrong_delta_vs_raw_s']
+            )} "
+            f"| {'yes' if row[
+                'zero_wrong_target_claim_supported'
+            ] else 'NO'} "
             f"| {'yes' if row['safe_vs_raw'] else 'NO'} |"
         )
     lines.extend(
@@ -941,8 +972,8 @@ def main() -> int:
     print(f"[ok] report: {report_root}")
     if not final_safe:
         print(
-            "[blocked] final TIM-MARS increases physical wrong-target or "
-            "target-absence output duration",
+            "[blocked] final TIM-MARS increases spatial/annotated-ID "
+            "wrong-target or target-absence output duration",
             file=sys.stderr,
         )
         return 2
