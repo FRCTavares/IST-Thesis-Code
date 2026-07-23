@@ -28,8 +28,12 @@ Open executable issues: **32**.
 1. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
    - phase 7; experiment; development/legacy inputs are frozen and hashed in `tim_mars_split_v1`; closure is blocked only by capturing, annotating, hashing, and recording people/clothing overlap for H01–H03. The final-release validator currently fails closed at `final_ready=0/3`.
 
-2. [ ] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
-    - phase 7; experiment; use only the frozen split and evaluator contract.
+2. [x] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
+    - phase 7; experiment; the seven-row development matrix passed the
+      physical-target safety gate at commit `c5ba9d30`; final TIM-MARS recorded
+      `0.000 s` physical wrong-target output on every development sequence.
+      The separately frozen H01–H03 evaluation remains blocked on capture under
+      #27 and must run before the final thesis claim.
 
 3. [ ] [#33 — P0.19 Update stale tooling documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/33)
     - phase 8; documentation; includes automated verification of UI launcher/README paths and supported commands.
