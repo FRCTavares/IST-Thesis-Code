@@ -13,6 +13,9 @@ This folder contains the active thesis documentation, trusted result summaries, 
 - `reports/` - longer written reports.
 - `archive/` - superseded notes, intermediate evaluations, old annotation versions, and historical material.
 
+The maintained TIM-MARS implementation, operator, replay, evaluation, and
+evidence paths are indexed in `design/tim_tooling_index.md`.
+
 ## Current selected-target tracking results
 
 Use these as the active result sources:

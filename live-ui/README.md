@@ -26,7 +26,7 @@ Inside `src/`:
 From repository root:
 
 ```bash
-cd user-interface
+cd live-ui
 npm install
 npm run dev
 ```
@@ -34,9 +34,18 @@ npm run dev
 Build for production:
 
 ```bash
+cd live-ui
 npm run build
 npm run preview
 ```
+
+For normal thesis operation, prefer the repository launcher:
+
+```bash
+./tools/start_ui_stack.sh --install
+```
+
+Later runs can omit `--install` while `live-ui/node_modules/` remains current.
 
 ## Environment variables
 

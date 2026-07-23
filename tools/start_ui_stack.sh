@@ -10,8 +10,8 @@ set -euo pipefail
 
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 ROS_WS="${ROS_WS:-$THESIS_ROOT/ros2_ws}"
-UI_DIR="${UI_DIR:-$THESIS_ROOT/user-interface}"
-PI_IP="${PI_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
+UI_DIR="${UI_DIR:-$THESIS_ROOT/live-ui}"
+PI_IP="${PI_IP:-$(hostname -I 2>/dev/null | awk '{print $1}' || true)}"
 
 if [[ -z "${PI_IP// }" ]]; then
     PI_IP="127.0.0.1"
@@ -91,13 +91,13 @@ Run this in a second terminal while tools/start_live_stack.sh is running.
 
 Options:
   --mode <backend|mock|offline>   Data mode for dashboard (default: backend)
-    -v, --verbose                   Enable verbose startup logs (default: warnings/errors only)
+  -v, --verbose                   Enable verbose startup logs (default: warnings/errors only)
   --host <host>                   Vite host bind (default: 0.0.0.0)
   --port <port>                   Vite dev server port (default: 5173)
   --api-base-url <url>            Override VITE_DASHBOARD_API_BASE_URL
   --ws-url <url>                  Override VITE_DASHBOARD_WS_URL
-    --install                       Run npm install before start (default: skipped)
-    --skip-install                  Skip npm install step (default)
+  --install                       Run npm install before start (default: skipped)
+  --skip-install                  Skip npm install step (default)
   -h, --help                      Show this help message
 EOF
 }
