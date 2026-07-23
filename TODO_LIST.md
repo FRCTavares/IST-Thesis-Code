@@ -6,7 +6,7 @@ closing evidence.
 
 Last reconciled with GitHub: **23 July 2026**.
 
-Open executable issues: **32**.
+Open executable issues: **31**.
 
 ## Execution rules
 
@@ -35,8 +35,12 @@ Open executable issues: **32**.
       The separately frozen H01–H03 evaluation remains blocked on capture under
       #27 and must run before the final thesis claim.
 
-3. [ ] [#33 — P0.19 Update stale tooling documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/33)
-    - phase 8; documentation; includes automated verification of UI launcher/README paths and supported commands.
+3. [x] [#33 — P0.19 Update stale tooling documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/33)
+    - phase 8; documentation; restored the TIM-MARS tooling path authority,
+      corrected the dashboard directory contract, and now verifies 41 indexed
+      paths plus launcher, build, recording, and evaluation commands
+      automatically. All 142 tooling tests and a clean dashboard production
+      build pass.
 
 4. [ ] [#34 — P0.20 Synchronize TIM documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/34)
     - phase 8; experiment; add an evidence-version map from config hashes and commits to promoted claims.
