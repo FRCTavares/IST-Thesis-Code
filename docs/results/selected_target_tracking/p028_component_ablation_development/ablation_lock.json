@@ -1,0 +1,244 @@
+{
+  "canonical_config": {
+    "path": "/home/francisco/Desktop/Thesis-Code-p028/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+    "sha256": "1e6319062a5d2bec70e24fabedc84f7999eb8059d07f6b112542c9c5edde1a55"
+  },
+  "created_at_utc": "2026-07-23T11:21:26.130424+00:00",
+  "issue": 28,
+  "manifest": {
+    "path": "/home/francisco/Desktop/Thesis-Code-p028/docs/data/ablations/tim_mars_component_ablation_v1.yaml",
+    "sha256": "a7c3b86adf4ac6d9e4b627f189fcb927e9988d47556e5c5f1cd7fdae2efaf36a"
+  },
+  "materialized_configs": [
+    {
+      "overrides": {
+        "absence_recovery_enabled": false,
+        "appearance_conservative_enabled": false,
+        "appearance_enabled": false,
+        "appearance_protected_memory_enabled": false,
+        "candidate_belief_enabled": false,
+        "hard_negative_memory_enabled": false,
+        "id_switch_min_appearance_similarity": 0.0,
+        "rank_aware_reacquisition_enabled": false,
+        "short_gap_new_id_suppression_enabled": false,
+        "short_gap_same_id_priority_enabled": false
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p028_component_ablation_6ec7644a_2026-07-23/configs/geometry_only.yaml",
+      "row_id": "geometry_only",
+      "sha256": "dec5968d8b750afcb466f0453bc81d2f1f3874e472c5651cb54c6e0bc9134055"
+    },
+    {
+      "overrides": {
+        "absence_recovery_enabled": false,
+        "appearance_conservative_enabled": false,
+        "appearance_enabled": true,
+        "appearance_protected_memory_enabled": true,
+        "candidate_belief_enabled": false,
+        "hard_negative_memory_enabled": false,
+        "rank_aware_reacquisition_enabled": false,
+        "short_gap_new_id_suppression_enabled": false,
+        "short_gap_same_id_priority_enabled": false
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p028_component_ablation_6ec7644a_2026-07-23/configs/geometry_positive_appearance.yaml",
+      "row_id": "geometry_positive_appearance",
+      "sha256": "43d1f2ce82271b404021a713013c06ed8a56c9ed1b3c629f8fe36490846c7d7a"
+    },
+    {
+      "overrides": {
+        "absence_recovery_enabled": false,
+        "appearance_conservative_enabled": true,
+        "appearance_enabled": true,
+        "appearance_protected_memory_enabled": true,
+        "candidate_belief_enabled": false,
+        "hard_negative_memory_enabled": false,
+        "rank_aware_reacquisition_enabled": false,
+        "short_gap_new_id_suppression_enabled": false,
+        "short_gap_same_id_priority_enabled": false
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p028_component_ablation_6ec7644a_2026-07-23/configs/geometry_appearance_margin.yaml",
+      "row_id": "geometry_appearance_margin",
+      "sha256": "bafbb0f46ff48ce4cf12f18bdcd1bdaf725347d077999f391bd2c70b4ef9eb08"
+    },
+    {
+      "overrides": {
+        "absence_recovery_enabled": false,
+        "appearance_conservative_enabled": false,
+        "appearance_enabled": true,
+        "appearance_protected_memory_enabled": true,
+        "candidate_belief_enabled": false,
+        "hard_negative_memory_enabled": true,
+        "rank_aware_reacquisition_enabled": false,
+        "short_gap_new_id_suppression_enabled": false,
+        "short_gap_same_id_priority_enabled": false
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p028_component_ablation_6ec7644a_2026-07-23/configs/geometry_hard_negatives.yaml",
+      "row_id": "geometry_hard_negatives",
+      "sha256": "1affd653eb6613fa4c9d3cbb2f5bbb5953ec406940d4e239e18dd47c638c8d56"
+    },
+    {
+      "overrides": {
+        "absence_recovery_enabled": false,
+        "appearance_conservative_enabled": false,
+        "appearance_enabled": false,
+        "appearance_protected_memory_enabled": false,
+        "candidate_belief_enabled": false,
+        "hard_negative_memory_enabled": false,
+        "id_switch_min_appearance_similarity": 0.0,
+        "rank_aware_reacquisition_enabled": false,
+        "short_gap_new_id_suppression_enabled": true,
+        "short_gap_same_id_priority_enabled": true
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p028_component_ablation_6ec7644a_2026-07-23/configs/geometry_persistence.yaml",
+      "row_id": "geometry_persistence",
+      "sha256": "a16f9e9abbf9a295d31ba3c97f72ca53068967f09b84bb1ca8a7d49e4fcc728b"
+    },
+    {
+      "overrides": {},
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p028_component_ablation_6ec7644a_2026-07-23/configs/final_simplified_tim_mars.yaml",
+      "row_id": "final_simplified_tim_mars",
+      "sha256": "1e6319062a5d2bec70e24fabedc84f7999eb8059d07f6b112542c9c5edde1a55"
+    }
+  ],
+  "matrix_id": "tim_mars_component_ablation_v1",
+  "repository": {
+    "branch": "",
+    "commit": "6ec7644ab3032df27fcc1e8116863c383fd3db0b",
+    "dirty": false,
+    "root": "/home/francisco/Desktop/Thesis-Code-p028",
+    "status_short": []
+  },
+  "rows": [
+    {
+      "features": [],
+      "id": "raw_tracker",
+      "kind": "raw",
+      "label": "Raw tracker",
+      "order": 1,
+      "overrides": {}
+    },
+    {
+      "features": [
+        "geometry_core"
+      ],
+      "id": "geometry_only",
+      "kind": "tim",
+      "label": "Geometry-only TIM",
+      "order": 2,
+      "overrides": {
+        "absence_recovery_enabled": false,
+        "appearance_conservative_enabled": false,
+        "appearance_enabled": false,
+        "appearance_protected_memory_enabled": false,
+        "candidate_belief_enabled": false,
+        "hard_negative_memory_enabled": false,
+        "id_switch_min_appearance_similarity": 0.0,
+        "rank_aware_reacquisition_enabled": false,
+        "short_gap_new_id_suppression_enabled": false,
+        "short_gap_same_id_priority_enabled": false
+      }
+    },
+    {
+      "features": [
+        "geometry_core",
+        "positive_appearance"
+      ],
+      "id": "geometry_positive_appearance",
+      "kind": "tim",
+      "label": "Geometry + positive appearance",
+      "order": 3,
+      "overrides": {
+        "absence_recovery_enabled": false,
+        "appearance_conservative_enabled": false,
+        "appearance_enabled": true,
+        "appearance_protected_memory_enabled": true,
+        "candidate_belief_enabled": false,
+        "hard_negative_memory_enabled": false,
+        "rank_aware_reacquisition_enabled": false,
+        "short_gap_new_id_suppression_enabled": false,
+        "short_gap_same_id_priority_enabled": false
+      }
+    },
+    {
+      "features": [
+        "geometry_core",
+        "positive_appearance",
+        "appearance_margin"
+      ],
+      "id": "geometry_appearance_margin",
+      "kind": "tim",
+      "label": "Geometry + appearance margin",
+      "order": 4,
+      "overrides": {
+        "absence_recovery_enabled": false,
+        "appearance_conservative_enabled": true,
+        "appearance_enabled": true,
+        "appearance_protected_memory_enabled": true,
+        "candidate_belief_enabled": false,
+        "hard_negative_memory_enabled": false,
+        "rank_aware_reacquisition_enabled": false,
+        "short_gap_new_id_suppression_enabled": false,
+        "short_gap_same_id_priority_enabled": false
+      }
+    },
+    {
+      "features": [
+        "geometry_core",
+        "positive_appearance",
+        "hard_negatives"
+      ],
+      "id": "geometry_hard_negatives",
+      "kind": "tim",
+      "label": "Geometry + hard negatives",
+      "order": 5,
+      "overrides": {
+        "absence_recovery_enabled": false,
+        "appearance_conservative_enabled": false,
+        "appearance_enabled": true,
+        "appearance_protected_memory_enabled": true,
+        "candidate_belief_enabled": false,
+        "hard_negative_memory_enabled": true,
+        "rank_aware_reacquisition_enabled": false,
+        "short_gap_new_id_suppression_enabled": false,
+        "short_gap_same_id_priority_enabled": false
+      }
+    },
+    {
+      "features": [
+        "geometry_core",
+        "persistence"
+      ],
+      "id": "geometry_persistence",
+      "kind": "tim",
+      "label": "Geometry + persistence",
+      "order": 6,
+      "overrides": {
+        "absence_recovery_enabled": false,
+        "appearance_conservative_enabled": false,
+        "appearance_enabled": false,
+        "appearance_protected_memory_enabled": false,
+        "candidate_belief_enabled": false,
+        "hard_negative_memory_enabled": false,
+        "id_switch_min_appearance_similarity": 0.0,
+        "rank_aware_reacquisition_enabled": false,
+        "short_gap_new_id_suppression_enabled": true,
+        "short_gap_same_id_priority_enabled": true
+      }
+    },
+    {
+      "features": [
+        "geometry_core",
+        "positive_appearance",
+        "appearance_margin",
+        "hard_negatives",
+        "persistence",
+        "rank_aware_reacquisition"
+      ],
+      "id": "final_simplified_tim_mars",
+      "kind": "tim",
+      "label": "Final simplified TIM-MARS",
+      "order": 7,
+      "overrides": {}
+    }
+  ],
+  "schema_version": 1
+}

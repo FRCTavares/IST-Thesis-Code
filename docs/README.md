@@ -49,6 +49,7 @@ Start with:
 
 - [Canonical selected-target evidence](results/selected_target_tracking/hard_reentry_multi_tracker_summary.md)
 - [Current dual-oracle development audit](results/selected_target_tracking/p028_wrong_oracle_audit.md)
+- [Seven-row development component ablation](results/selected_target_tracking/p028_component_ablation_development/README.md)
 - [Compute and throughput summary](results/selected_target_tracking/hard_reentry_compute_throughput_summary.md)
 - [Current result index](results/README.md)
 

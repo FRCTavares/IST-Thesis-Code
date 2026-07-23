@@ -42,3 +42,16 @@ valid only when both oracles report numerical zero.
 The development matrix may run only on the `development` set frozen in
 `docs/data/splits/tim_mars_split_v1.json`. The final held-out matrix must not run
 until the split validator passes with `--require-final-ready`.
+
+## Promoted development results
+
+The complete tracked seven-row result package is:
+
+- [TIM-MARS seven-row development component ablation](../../results/selected_target_tracking/p028_component_ablation_development/README.md)
+
+That package retains the original annotated-ID matrix, copied run provenance,
+copied ablation lock, artifact hashes, per-sequence tables, aggregate tables,
+and the correction boundary to the later dual-oracle final-row audit.
+
+The seven-row matrix and later corrected final-row audit are different evidence
+versions and must not be combined into a synthetic mixed-version matrix.

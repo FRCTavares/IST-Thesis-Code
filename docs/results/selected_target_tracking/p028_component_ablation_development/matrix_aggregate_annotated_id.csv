@@ -1,0 +1,8 @@
+sequence_id,row_id,label,correct_target_duration_s,wrong_target_duration_s,lost_target_duration_s,target_not_visible_duration_s,target_absent_but_output_valid_duration_s,no_target_selected_duration_s,visible_target_duration_s,correct_target_ratio,wrong_target_ratio,lost_target_ratio,wrong_delta_vs_raw_s,absent_output_delta_vs_raw_s,safe_vs_raw
+aggregate,raw_tracker,Raw tracker,163.122,8.477,170.99,9.594,0.0,0.0,342.589,0.47614488497879387,0.024743935152617278,0.49911117986858894,0.0,0.0,True
+aggregate,geometry_only,Geometry-only TIM,247.375,72.933,22.281,9.594,5.662,0.0,342.589,0.7220751395987612,0.21288774595798465,0.06503711444325416,64.456,5.662,False
+aggregate,geometry_positive_appearance,Geometry + positive appearance,266.996,1.5499999999999998,74.04299999999999,9.594,0.0,0.0,342.589,0.7793478482963551,0.00452437176908774,0.21612777993455712,-6.9270000000000005,0.0,True
+aggregate,geometry_appearance_margin,Geometry + appearance margin,266.746,1.5499999999999998,74.29299999999999,9.594,0.0,0.0,342.589,0.7786181109142442,0.00452437176908774,0.21685751731666805,-6.9270000000000005,0.0,True
+aggregate,geometry_hard_negatives,Geometry + hard negatives,266.996,1.5499999999999998,74.04299999999999,9.594,0.0,0.0,342.589,0.7793478482963551,0.00452437176908774,0.21612777993455712,-6.9270000000000005,0.0,True
+aggregate,geometry_persistence,Geometry + persistence,245.6,64.652,32.337,9.594,0.25,0.0,342.589,0.7168940041857736,0.18871592491294234,0.09439007090128405,56.175,0.25,False
+aggregate,final_simplified_tim_mars,Final simplified TIM-MARS,292.337,2.75,47.502,9.594,0.0,0.0,342.589,0.853316948296647,0.008027111203220185,0.13865594050013283,-5.727,0.0,True

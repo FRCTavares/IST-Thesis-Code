@@ -111,10 +111,8 @@ def test_tracker_readme_links_resolve():
     assert "../../thesis_msgs/msg/Timing.msg" not in text
 
 
-def test_issue_57_records_remaining_ablation_work():
+def test_issue_57_is_removed_after_completion():
     text = (DOCS / "TODO_LIST.md").read_text(encoding="utf-8")
 
-    assert text.count("[#57 —") == 1
-    assert "historical-result segregation" in text
-    assert "seven-row development ablation package" in text
-    assert "correction-aware interpretation" in text
+    assert "[#57 —" not in text
+    assert "Open executable issues: **28**." in text

@@ -110,3 +110,21 @@ The historical `paper_tim_mars` source was removed by cleanup commit
 `9b33508`; it is not an active result source. No tracked `.tex` or `.bib`
 thesis source exists in this repository. Paper or thesis text must be written
 from the versioned evidence above rather than copying obsolete result values.
+
+## P0.28 development component-ablation package
+
+The tracked seven-row development matrix is:
+
+`docs/results/selected_target_tracking/p028_component_ablation_development/README.md`
+
+It preserves the earlier `6ec7644a` annotated-ID component matrix and its
+original run provenance. It is a diagnostic development ablation, not the
+current final-row result authority.
+
+The later corrected raw-versus-final dual-oracle authority remains:
+
+`docs/results/selected_target_tracking/p028_wrong_oracle_audit.md`
+
+Do not replace the final row of the earlier seven-row matrix with values from
+the later corrected audit. The implementation, configuration, and evaluation
+contracts differ, so doing so would create an invalid mixed-version result.

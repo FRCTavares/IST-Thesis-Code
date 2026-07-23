@@ -9,6 +9,7 @@ Use:
 
 - `selected_target_tracking/hard_reentry_multi_tracker_summary.md`
 - `selected_target_tracking/p028_wrong_oracle_audit.md`
+- `selected_target_tracking/p028_component_ablation_development/README.md`
 - `selected_target_tracking/hard_reentry_compute_throughput_summary.md`
 - `selected_target_tracking/p023_output_freshness_validation.md`
 
