@@ -6,6 +6,24 @@ This file defines what TIM-MARS is intended to contribute, what the current evid
 
 TIM-MARS is a control-facing selected-target identity validation layer for RGB-only UAV person following.
 
+## Frozen research-question structure
+
+### Main research question
+
+> Can a fully onboard RGB selected-person-following architecture combine computationally lightweight multi-object tracking with post-tracker identity validation to improve correct-target continuity and reduce controller-facing wrong-target publication during occlusions, crossings, temporary absences, re-entry, and tracker identity instability on a small UAV?
+
+### Algorithmic subquestion
+
+> Can TIM-MARS, as a post-tracker selected-target identity-memory layer, improve correct-target continuity while reducing controller-facing wrong-target publication relative to the raw selected-target stream?
+
+### Embedded-deployment subquestion
+
+> Can Hailo acceleration be extended from detection to appearance-embedding inference so that detection, lightweight tracking, appearance-supported identity validation, and controller-facing perception run fully onboard a Raspberry Pi 5 without external inference while meeting the required throughput, latency, thermal, power, and safety constraints?
+
+The canonical operational definitions, evidence dependencies, and claim exclusions are maintained in `docs/research_question.md`.
+
+The algorithmic and embedded-system contributions must be evaluated separately. Current development results do not close the held-out, Hailo appearance-offload, runtime, thermal, power, or final-claim obligations.
+
 It is not:
 
 - a detector;

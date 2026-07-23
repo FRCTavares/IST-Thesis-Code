@@ -55,3 +55,9 @@ renumbered tracker outputs without a new compatibility audit.
 Move a document to `archive/` when it is useful for traceability but no longer represents the current interpretation, current workflow, or trusted evaluation input.
 
 Do not delete historical notes unless they are generated artefacts or clearly accidental duplicates.
+
+## Core thesis authority
+
+- [Research position and novelty contract](NOVELTY.md)
+- [Frozen TIM-MARS thesis research questions](research_question.md)
+- [Active GitHub issue queue](TODO_LIST.md)

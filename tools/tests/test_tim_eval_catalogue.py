@@ -12,7 +12,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 GENERATOR_PATH = ROOT / "tools/catalogue/build_tim_eval_catalogue.py"
 CATALOGUE_PATH = ROOT / "docs/data/catalogue/tim_eval_catalogue.yaml"
-NOVELTY_PATH = ROOT / "NOVELTY.md"
+NOVELTY_PATH = ROOT / "docs" / "NOVELTY.md"
 
 
 def load_generator():

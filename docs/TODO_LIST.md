@@ -4,9 +4,9 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
-Last reconciled with GitHub: **23 July 2026**.
+Last reconciled with GitHub: **24 July 2026**.
 
-Open executable issues: **30**.
+Open executable issues: **29**.
 
 ## Execution rules
 
@@ -28,11 +28,8 @@ Open executable issues: **30**.
 1. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
    - phase 7; experiment; development/legacy inputs are frozen and hashed in `tim_mars_split_v1`. The remaining H01–H03 live capture, annotation, hashing, and people/clothing-overlap work was explicitly deferred by the operator on 23 July 2026 until September. The release gate must remain fail-closed at `final_ready=0/3`; no final held-out evaluation or threshold changes are permitted before that work resumes.
 
-2. [ ] [#38 — P0.21 Freeze the research question](https://github.com/FRCTavares/IST-Thesis-Code/issues/38)
-    - phase 9; experiment.
-
-3. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
-    - phase 9; experiment; retain the evidence-backed rejection of universal safety portability.
+2. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
+    - phase 9; experiment; blocked until the September held-out evaluation under #27 and the required embedded-deployment evidence under #32 and #44 are complete; retain the evidence-backed rejection of universal safety portability.
 
 ## P1 — Major algorithmic, scientific, engineering, and documentation work
 
