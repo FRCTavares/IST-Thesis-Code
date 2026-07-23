@@ -29,7 +29,7 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 98
+    assert len(node.values) == 99
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
@@ -92,6 +92,10 @@ def test_tim_mars_ros_params_declares_expected_interface():
         node.values["hard_negative_max_positive_similarity"]
         == 1.01
     )
+    assert (
+        node.values["same_id_hijack_protection_enabled"]
+        is False
+    )
     assert node.values["rank_aware_reacquisition_enabled"] is True
     assert node.values["candidate_belief_enabled"] is False
     assert node.values["candidate_belief_min_score"] == 0.45
@@ -136,6 +140,7 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values[
         "hard_negative_max_positive_similarity"
     ] = 0.93
+    node.values["same_id_hijack_protection_enabled"] = True
     node.values["rank_aware_reacquisition_enabled"] = True
     node.values["rank_aware_confirm_frames"] = 4
     node.values["candidate_belief_enabled"] = True
@@ -197,6 +202,7 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
         cfg.hard_negative_max_positive_similarity
         == 0.93
     )
+    assert cfg.same_id_hijack_protection_enabled is True
     assert cfg.rank_aware_reacquisition_enabled is True
     assert cfg.rank_aware_confirm_frames == 4
     assert cfg.candidate_belief_enabled is True
@@ -255,6 +261,7 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
         "appearance_trusted_lock_frames_before_update",
         "hard_negative_confirm_observations",
         "hard_negative_max_positive_similarity",
+        "same_id_hijack_protection_enabled",
     }
 
     assert expected_active_keys <= canonical.keys()

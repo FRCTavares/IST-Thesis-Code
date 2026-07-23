@@ -205,6 +205,10 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("hard_negative_reject_similarity", 0.80)
     node.declare_parameter("hard_negative_reject_margin", 0.03)
     node.declare_parameter("hard_negative_min_geometry", 0.20)
+    node.declare_parameter(
+        "same_id_hijack_protection_enabled",
+        False,
+    )
 
     # Conservative appearance publication filter.
     node.declare_parameter("appearance_conservative_enabled", True)
@@ -477,6 +481,11 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         ),
         hard_negative_reject_margin=float(node.get_parameter("hard_negative_reject_margin").value),
         hard_negative_min_geometry=float(node.get_parameter("hard_negative_min_geometry").value),
+        same_id_hijack_protection_enabled=bool(
+            node.get_parameter(
+                "same_id_hijack_protection_enabled"
+            ).value
+        ),
         appearance_conservative_enabled=bool(
             node.get_parameter("appearance_conservative_enabled").value
         ),

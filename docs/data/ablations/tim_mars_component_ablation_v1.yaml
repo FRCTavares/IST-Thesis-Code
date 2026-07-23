@@ -18,7 +18,8 @@ design:
     best-versus-second appearance-margin gate.
   hard_negatives: >-
     Positive appearance plus bounded hard-negative distractor memory and
-    rejection, without the conservative publication-margin row.
+    rejection, including the same-ID hijack safety policy, without the
+    conservative publication-margin row.
   persistence: >-
     Geometry core plus short-gap same-ID priority and new-ID suppression.
     This row does not enable MARS appearance.
@@ -47,6 +48,7 @@ rows:
       appearance_protected_memory_enabled: false
       appearance_conservative_enabled: false
       hard_negative_memory_enabled: false
+      same_id_hijack_protection_enabled: false
       short_gap_same_id_priority_enabled: false
       short_gap_new_id_suppression_enabled: false
       rank_aware_reacquisition_enabled: false
@@ -65,6 +67,7 @@ rows:
       appearance_protected_memory_enabled: true
       appearance_conservative_enabled: false
       hard_negative_memory_enabled: false
+      same_id_hijack_protection_enabled: false
       short_gap_same_id_priority_enabled: false
       short_gap_new_id_suppression_enabled: false
       rank_aware_reacquisition_enabled: false
@@ -84,6 +87,7 @@ rows:
       appearance_protected_memory_enabled: true
       appearance_conservative_enabled: true
       hard_negative_memory_enabled: false
+      same_id_hijack_protection_enabled: false
       short_gap_same_id_priority_enabled: false
       short_gap_new_id_suppression_enabled: false
       rank_aware_reacquisition_enabled: false
@@ -122,6 +126,7 @@ rows:
       appearance_protected_memory_enabled: false
       appearance_conservative_enabled: false
       hard_negative_memory_enabled: false
+      same_id_hijack_protection_enabled: false
       short_gap_same_id_priority_enabled: true
       short_gap_new_id_suppression_enabled: true
       rank_aware_reacquisition_enabled: false

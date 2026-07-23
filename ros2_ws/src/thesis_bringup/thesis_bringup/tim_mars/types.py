@@ -238,6 +238,13 @@ class TargetMemoryConfig:
     hard_negative_reject_margin: float = 0.03
     hard_negative_min_geometry: float = 0.20
 
+    # Same-ID hijack protection.
+    # When enabled, uninterrupted tracker-ID continuity remains trusted unless
+    # a nearby, spatially plausible competing person challenges that identity.
+    # During such a challenge, the same-ID candidate must carry current
+    # positive appearance support and must not match hard-negative memory.
+    same_id_hijack_protection_enabled: bool = False
+
     # Conservative appearance publication filter.
     # When enabled, a candidate needs sufficiently strong and separated
     # appearance evidence before it is allowed to drive controller-facing output.

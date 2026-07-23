@@ -633,6 +633,15 @@ class TargetIdentityMemory:
                 same_id_reject,
             )
 
+        same_id_hijack_reject = (
+            self._same_id_hijack_reject_reason(proposal)
+        )
+        if same_id_hijack_reject is not None:
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.REJECTED,
+                same_id_hijack_reject,
+            )
+
         id_switch_appearance_reject = (
             self._id_switch_appearance_reject_reason(
                 candidate=proposal.candidate,
@@ -693,9 +702,20 @@ class TargetIdentityMemory:
                     ),
                 )
 
-        if self._hard_negative_memory.should_reject(
-            proposal.score,
-            self.cfg,
+        hard_negative_reject = (
+            self._hard_negative_memory.should_reject(
+                proposal.score,
+                self.cfg,
+            )
+        )
+        trusted_same_id_continuity = bool(
+            self.cfg.same_id_hijack_protection_enabled
+            and proposal.same_id
+            and self._m.state == TargetState.LOCKED
+        )
+        if (
+            hard_negative_reject
+            and not trusted_same_id_continuity
         ):
             reason = (
                 'hard_negative_reject:'
@@ -819,6 +839,128 @@ class TargetIdentityMemory:
             'same_id_reacquisition_reject:'
             'no_candidate_appearance'
         )
+
+    def _same_id_hijack_reject_reason(
+        self,
+        proposal: _CandidateProposal,
+    ) -> Optional[str]:
+        """Challenge same-ID continuity only during a plausible person handover.
+
+        Tracker IDs are normally strong temporal evidence. A hard-negative
+        prototype alone must not suppress an uninterrupted, geometrically
+        stable target because pose changes can resemble a nearby distractor.
+        Conversely, the same tracker ID is no longer sufficient when another
+        person is both spatially plausible relative to target memory and close
+        enough to contaminate the selected crop. In that narrow case, current
+        positive appearance must independently validate the same-ID candidate.
+        """
+        if (
+            not self.cfg.same_id_hijack_protection_enabled
+            or not self.cfg.appearance_enabled
+            or not proposal.same_id
+            or self._m.state != TargetState.LOCKED
+        ):
+            return None
+
+        challenger = self._same_id_group_challenger(
+            proposal
+        )
+        if challenger is None:
+            return None
+
+        threshold = self._id_switch_appearance_threshold()
+        identity_supported = bool(
+            threshold > 0.0
+            and proposal.score.appearance_evaluated
+            and proposal.score.appearance_raw >= threshold
+            and not proposal.score.hard_negative_reject
+        )
+        if identity_supported:
+            return None
+
+        if proposal.score.hard_negative_reject:
+            evidence = (
+                'hard_negative'
+                f' neg={proposal.score.hard_negative_similarity:.3f}'
+                f' margin={proposal.score.hard_negative_margin:.3f}'
+            )
+        elif not proposal.score.appearance_evaluated:
+            evidence = 'no_current_appearance'
+        else:
+            evidence = (
+                'appearance'
+                f' {proposal.score.appearance_raw:.3f}'
+                f'<{threshold:.3f}'
+            )
+
+        return (
+            'same_id_hijack_reject:'
+            f' challenger={challenger.track_id}'
+            f' {evidence}'
+        )
+
+    def _same_id_group_challenger(
+        self,
+        proposal: _CandidateProposal,
+    ) -> Optional[CandidateScore]:
+        """Return a nearby new-ID candidate plausible relative to target memory."""
+        scores_by_id = {
+            int(score.track_id): score
+            for score in proposal.all_scores
+        }
+        width = float(
+            getattr(self.cfg, 'image_width', 640.0)
+        )
+        height = float(
+            getattr(self.cfg, 'image_height', 640.0)
+        )
+
+        for candidate in proposal.candidates:
+            if (
+                int(candidate.track_id)
+                == int(proposal.candidate.track_id)
+            ):
+                continue
+
+            score = scores_by_id.get(
+                int(candidate.track_id)
+            )
+            if score is None:
+                continue
+
+            group_close = bool(
+                bbox_iou(
+                    proposal.candidate.bbox,
+                    candidate.bbox,
+                ) >= 0.10
+                or centre_distance_norm(
+                    proposal.candidate.bbox,
+                    candidate.bbox,
+                    width,
+                    height,
+                ) <= 0.12
+            )
+            if not group_close:
+                continue
+
+            spatially_plausible = bool(
+                score.geometry_score
+                >= self.cfg.min_candidate_score
+                and (
+                    score.iou
+                    >= self.cfg.id_switch_min_iou
+                    or (
+                        score.distance
+                        >= self.cfg.id_switch_min_distance
+                        and score.scale
+                        >= self.cfg.id_switch_min_scale
+                    )
+                )
+            )
+            if spatially_plausible:
+                return score
+
+        return None
 
     def _id_switch_appearance_reject_reason(
         self,

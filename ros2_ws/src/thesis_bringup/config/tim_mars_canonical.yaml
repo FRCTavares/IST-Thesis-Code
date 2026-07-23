@@ -88,6 +88,7 @@ target_memory_mars_node:
     hard_negative_reject_similarity: 0.80
     hard_negative_reject_margin: 0.03
     hard_negative_min_geometry: 0.20
+    same_id_hijack_protection_enabled: true
 
     # Conservative appearance validation
     appearance_conservative_enabled: true

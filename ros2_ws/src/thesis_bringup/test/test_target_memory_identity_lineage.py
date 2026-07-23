@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from thesis_bringup.tim_mars.target_memory import (
     CandidateTrack,
@@ -175,13 +174,6 @@ def test_target_like_duplicate_does_not_become_hard_negative():
     assert len(tim._hard_negative_memory) == 0
 
 
-@pytest.mark.xfail(
-    run=False,
-    reason=(
-        "Unresolved specification: safe handling of same-ID hard-negative "
-        "conflicts requires trusted-lineage and persistence semantics."
-    ),
-)
 def test_uninterrupted_same_id_is_not_rejected_after_appearance_shift():
     """A learned distractor must not suppress uninterrupted target continuity.
 
@@ -215,6 +207,7 @@ def test_uninterrupted_same_id_is_not_rejected_after_appearance_shift():
             hard_negative_reject_similarity=0.80,
             hard_negative_reject_margin=0.03,
             hard_negative_min_geometry=0.20,
+            same_id_hijack_protection_enabled=True,
         )
     )
 
@@ -268,3 +261,52 @@ def test_uninterrupted_same_id_is_not_rejected_after_appearance_shift():
     assert continued.target_track_id == 1
     assert continued.visible
     assert continued.control_valid
+
+
+def test_same_id_hijack_is_suppressed_during_nearby_person_handover():
+    """A crowded same-ID handover requires current identity evidence."""
+    selected_appearance = feat([1.0, 0.0, 0.0])
+
+    tim = TargetIdentityMemory(
+        TargetMemoryConfig(
+            image_width=640,
+            image_height=480,
+            appearance_enabled=True,
+            appearance_ambiguous_only=True,
+            id_switch_min_appearance_similarity=0.78,
+            appearance_conservative_enabled=True,
+            appearance_conservative_min_similarity=0.65,
+            hard_negative_memory_enabled=True,
+            same_id_hijack_protection_enabled=True,
+        )
+    )
+    tim.select(
+        tr(
+            43,
+            (100, 100, 160, 240),
+            appearance=selected_appearance,
+        )
+    )
+
+    out = tim.update(
+        [
+            # The tracker ID continues, but no current appearance supports it.
+            tr(43, (102, 100, 162, 240)),
+            # A nearby new ID remains spatially plausible target continuity.
+            tr(
+                76,
+                (135, 101, 195, 241),
+                appearance=selected_appearance,
+            ),
+        ]
+    )
+
+    assert out.best_score is not None
+    assert out.best_score.track_id == 43
+    assert out.target_track_id == 43
+    assert out.state == TargetState.UNCERTAIN
+    assert not out.visible
+    assert not out.control_valid
+    assert out.reason.startswith(
+        "same_id_hijack_reject: challenger=76"
+    )
