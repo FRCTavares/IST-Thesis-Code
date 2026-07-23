@@ -1,0 +1,142 @@
+schema_version: 1
+matrix_id: tim_mars_component_ablation_v1
+issue: 28
+canonical_config: ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml
+evaluation_split: docs/data/splits/tim_mars_split_v1.json
+
+design:
+  comparison: one_factor_against_geometry_core
+  raw_baseline: source /target from the frozen tracker bag
+  geometry_core: >-
+    TIM candidate geometry, confidence, tracker-ID continuity, and finite-state
+    hysteresis remain enabled in every TIM row.
+  positive_appearance: >-
+    Positive MARS evidence, protected operator anchor/trusted gallery, and the
+    canonical new-ID minimum appearance similarity.
+  appearance_margin: >-
+    Positive appearance plus the conservative publication similarity and
+    best-versus-second appearance-margin gate.
+  hard_negatives: >-
+    Positive appearance plus bounded hard-negative distractor memory and
+    rejection, without the conservative publication-margin row.
+  persistence: >-
+    Geometry core plus short-gap same-ID priority and new-ID suppression.
+    This row does not enable MARS appearance.
+  final_simplified: >-
+    The canonical configuration without overrides. It combines the promoted
+    positive memory, conservative margin, hard negatives, short-gap
+    persistence, and rank-aware reacquisition.
+
+rows:
+  - id: raw_tracker
+    order: 1
+    label: Raw tracker
+    kind: raw
+    features: []
+    overrides: {}
+
+  - id: geometry_only
+    order: 2
+    label: Geometry-only TIM
+    kind: tim
+    features:
+      - geometry_core
+    overrides:
+      appearance_enabled: false
+      id_switch_min_appearance_similarity: 0.0
+      appearance_protected_memory_enabled: false
+      appearance_conservative_enabled: false
+      hard_negative_memory_enabled: false
+      short_gap_same_id_priority_enabled: false
+      short_gap_new_id_suppression_enabled: false
+      rank_aware_reacquisition_enabled: false
+      candidate_belief_enabled: false
+      absence_recovery_enabled: false
+
+  - id: geometry_positive_appearance
+    order: 3
+    label: Geometry + positive appearance
+    kind: tim
+    features:
+      - geometry_core
+      - positive_appearance
+    overrides:
+      appearance_enabled: true
+      appearance_protected_memory_enabled: true
+      appearance_conservative_enabled: false
+      hard_negative_memory_enabled: false
+      short_gap_same_id_priority_enabled: false
+      short_gap_new_id_suppression_enabled: false
+      rank_aware_reacquisition_enabled: false
+      candidate_belief_enabled: false
+      absence_recovery_enabled: false
+
+  - id: geometry_appearance_margin
+    order: 4
+    label: Geometry + appearance margin
+    kind: tim
+    features:
+      - geometry_core
+      - positive_appearance
+      - appearance_margin
+    overrides:
+      appearance_enabled: true
+      appearance_protected_memory_enabled: true
+      appearance_conservative_enabled: true
+      hard_negative_memory_enabled: false
+      short_gap_same_id_priority_enabled: false
+      short_gap_new_id_suppression_enabled: false
+      rank_aware_reacquisition_enabled: false
+      candidate_belief_enabled: false
+      absence_recovery_enabled: false
+
+  - id: geometry_hard_negatives
+    order: 5
+    label: Geometry + hard negatives
+    kind: tim
+    features:
+      - geometry_core
+      - positive_appearance
+      - hard_negatives
+    overrides:
+      appearance_enabled: true
+      appearance_protected_memory_enabled: true
+      appearance_conservative_enabled: false
+      hard_negative_memory_enabled: true
+      short_gap_same_id_priority_enabled: false
+      short_gap_new_id_suppression_enabled: false
+      rank_aware_reacquisition_enabled: false
+      candidate_belief_enabled: false
+      absence_recovery_enabled: false
+
+  - id: geometry_persistence
+    order: 6
+    label: Geometry + persistence
+    kind: tim
+    features:
+      - geometry_core
+      - persistence
+    overrides:
+      appearance_enabled: false
+      id_switch_min_appearance_similarity: 0.0
+      appearance_protected_memory_enabled: false
+      appearance_conservative_enabled: false
+      hard_negative_memory_enabled: false
+      short_gap_same_id_priority_enabled: true
+      short_gap_new_id_suppression_enabled: true
+      rank_aware_reacquisition_enabled: false
+      candidate_belief_enabled: false
+      absence_recovery_enabled: false
+
+  - id: final_simplified_tim_mars
+    order: 7
+    label: Final simplified TIM-MARS
+    kind: tim
+    features:
+      - geometry_core
+      - positive_appearance
+      - appearance_margin
+      - hard_negatives
+      - persistence
+      - rank_aware_reacquisition
+    overrides: {}

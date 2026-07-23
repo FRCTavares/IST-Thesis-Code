@@ -374,6 +374,70 @@ def test_streamed_output_replaces_requested_raw_target():
     ]
 
 
+def test_compact_output_keeps_only_evaluation_source_topics():
+    skipped = MODULE.skipped_source_topics_for_output(
+        {
+            "/camera/image_raw",
+            "/diagnostics",
+            "/tracks",
+            "/target",
+            MODULE.TIM_TARGET_TOPIC,
+            MODULE.TIM_STATUS_TOPIC,
+        },
+        tracks_topic="/tracks",
+        raw_target_topic="/target",
+        replace_raw_target=False,
+        compact_output=True,
+    )
+
+    assert skipped == {
+        "/camera/image_raw",
+        "/diagnostics",
+        MODULE.TIM_TARGET_TOPIC,
+        MODULE.TIM_STATUS_TOPIC,
+    }
+
+
+def test_compact_output_omits_replaced_source_raw_target():
+    skipped = MODULE.skipped_source_topics_for_output(
+        {
+            "/camera/dashboard",
+            "/tracks",
+            "/target",
+        },
+        tracks_topic="/tracks",
+        raw_target_topic="/target",
+        replace_raw_target=True,
+        compact_output=True,
+    )
+
+    assert skipped == {
+        "/camera/dashboard",
+        "/target",
+        MODULE.TIM_TARGET_TOPIC,
+        MODULE.TIM_STATUS_TOPIC,
+    }
+
+
+def test_full_output_only_omits_generated_and_replaced_topics():
+    skipped = MODULE.skipped_source_topics_for_output(
+        {
+            "/camera/dashboard",
+            "/tracks",
+            "/target",
+        },
+        tracks_topic="/tracks",
+        raw_target_topic="/target",
+        replace_raw_target=False,
+        compact_output=False,
+    )
+
+    assert skipped == {
+        MODULE.TIM_TARGET_TOPIC,
+        MODULE.TIM_STATUS_TOPIC,
+    }
+
+
 def test_streamed_output_writes_generated_messages_between_source_timestamps():
     reader = _FakeReader(
         [

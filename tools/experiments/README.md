@@ -13,6 +13,7 @@ starting many ROS commands when reproducing TIM-MARS experiments.
 | --- | --- | --- |
 | `run_one_memory_tim_replay.sh` | Core final workflow | Main memory-only TIM-MARS replay helper over existing tracks and target sources. |
 | `run_deterministic_tim_replay.py` | Core final workflow | Produces deterministic TIM-MARS replay output and resolved-runtime provenance. |
+| `run_tim_component_ablation.py` | Core P0.17 workflow | Materializes and runs the frozen seven-row TIM-MARS component-ablation matrix. |
 | `run_deterministic_tracker_replay.py` | Core P0.18 workflow | Freezes one tracker and fixed-ID raw target deterministically from recorded image and detection evidence. |
 | `run_one_clean_tim_replay.sh` | Core/support workflow | Replays an existing bag with detector/tracker outputs and reruns TIM-MARS. |
 | `run_one_detector_tim_replay.sh` | Diagnostic full-pipeline workflow | Reruns detector, tracker, and TIM-MARS from image_raw source bags. |
@@ -114,6 +115,33 @@ canonical configuration fingerprint separately from the generated ROS bag.
 
 This prevents an inherited `RAW_TARGET_MODE`, output root, configuration path,
 or appearance-topic override from silently changing the meaning of a run.
+
+For repeated evaluations such as component ablations, pass `--compact-output`.
+TIM-MARS still consumes the complete selected image and track timelines, while
+the generated bag retains only `/tracks`, the raw target, and generated TIM
+target/status topics. The omitted source topics and the compact-output flag are
+recorded in resolved-runtime provenance. The default remains a full source copy.
+
+## Component-ablation matrix
+
+Issue #28 is defined by
+`docs/data/ablations/tim_mars_component_ablation_v1.yaml`. Validate and
+materialize its six TIM configurations without running bags:
+
+```bash
+python3 tools/experiments/run_tim_component_ablation.py --materialize-only
+```
+
+After sourcing the ROS workspace, run all frozen development sequences:
+
+```bash
+python3 tools/experiments/run_tim_component_ablation.py --set development
+```
+
+The runner evaluates the raw tracker once per sequence, runs the six TIM rows
+with compact deterministic output, writes per-event and aggregate reports, and
+enforces the final raw-baseline safety gate. `--set final_held_out` additionally
+requires the evaluation-split final-release validator to pass.
 
 ## Output policy
 

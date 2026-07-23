@@ -122,6 +122,15 @@ def parse_args() -> argparse.Namespace:
             "files. Canonical evidence should not use this."
         ),
     )
+    parser.add_argument(
+        "--compact-output",
+        action="store_true",
+        help=(
+            "Keep only tracks, raw target, and generated TIM topics in the "
+            "output bag. Source images are still consumed by TIM-MARS and "
+            "fully recorded in provenance, but are not duplicated."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -738,6 +747,31 @@ def write_streamed_output(
     return source_messages_written
 
 
+def skipped_source_topics_for_output(
+    available_topics: set[str],
+    *,
+    tracks_topic: str,
+    raw_target_topic: str,
+    replace_raw_target: bool,
+    compact_output: bool,
+) -> set[str]:
+    """Return source topics omitted from the deterministic output bag."""
+    skipped = {
+        TIM_TARGET_TOPIC,
+        TIM_STATUS_TOPIC,
+    }
+
+    if compact_output:
+        retained = {tracks_topic}
+        if not replace_raw_target:
+            retained.add(raw_target_topic)
+        skipped.update(available_topics - retained)
+    elif replace_raw_target:
+        skipped.add(raw_target_topic)
+
+    return skipped
+
+
 def new_generated_semantic_digest():
     """Create a domain-separated generated-message digest."""
     digest = hashlib.sha256()
@@ -1124,6 +1158,9 @@ def build_resolved_runtime_payload(
             "appearance_enabled": bool(
                 appearance_enabled
             ),
+            "compact_output": bool(
+                args.compact_output
+            ),
         },
         "experiment_fields": {
             "raw_target_mode": (
@@ -1133,6 +1170,9 @@ def build_resolved_runtime_payload(
             "tracks_topic": args.tracks_topic,
             "raw_target_topic": (
                 args.raw_target_topic
+            ),
+            "compact_output": bool(
+                args.compact_output
             ),
             "input_bag": str(input_bag),
             "output_bag": str(output_bag),
@@ -1178,6 +1218,9 @@ def build_resolved_runtime_payload(
             ),
             "raw_target_topic": argument_source(
                 "--raw-target-topic"
+            ),
+            "compact_output": argument_source(
+                "--compact-output"
             ),
         },
     }
@@ -1456,9 +1499,13 @@ def main() -> int:
     )
 
     skipped_source_topics = (
-        {args.raw_target_topic}
-        if replace_raw_target
-        else set()
+        skipped_source_topics_for_output(
+            set(metadata_by_topic),
+            tracks_topic=args.tracks_topic,
+            raw_target_topic=args.raw_target_topic,
+            replace_raw_target=replace_raw_target,
+            compact_output=bool(args.compact_output),
+        )
     )
 
     for metadata in metadata_by_topic.values():
@@ -1630,6 +1677,9 @@ def main() -> int:
             "raw_target_mode": (
                 args.raw_target_mode
             ),
+            "compact_output": bool(
+                args.compact_output
+            ),
         },
         "topics": {
             "image": image_topic,
@@ -1643,6 +1693,21 @@ def main() -> int:
                 "generated_fixed_selected_id"
                 if replace_raw_target
                 else "source_copy"
+            ),
+            "source_topics_retained": sorted(
+                set(metadata_by_topic)
+                - skipped_source_topics
+                - {
+                    TIM_TARGET_TOPIC,
+                    TIM_STATUS_TOPIC,
+                }
+            ),
+            "source_topics_omitted": sorted(
+                skipped_source_topics
+                - {
+                    TIM_TARGET_TOPIC,
+                    TIM_STATUS_TOPIC,
+                }
             ),
         },
         "raw_target_generation": {
@@ -1705,7 +1770,9 @@ def main() -> int:
                 ),
             ],
             "source_copy_mode": (
-                "streamed_second_pass"
+                "streamed_compact_second_pass"
+                if args.compact_output
+                else "streamed_second_pass"
             ),
             "complete_image_timeline_preloaded": (
                 True
