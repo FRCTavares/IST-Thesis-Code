@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "authority_date": "2026-07-23",
+  "current_runtime": {
+    "config_path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+    "config_sha256": "e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff",
+    "last_evaluated_algorithm_commit": "c5ba9d30997e47c7f555baee5257bc687698508a",
+    "evidence_version": "p028_dual_oracle_development"
+  },
+  "active_parameters": {
+    "appearance_conservative_margin": 0.05,
+    "hard_negative_reject_margin": 0.03,
+    "hard_negative_confirm_observations": 2,
+    "rank_aware_lost_app_margin": 0.03,
+    "absence_recovery_enabled": false,
+    "absence_appearance_margin": 0.2,
+    "same_id_hijack_protection_enabled": true,
+    "freshness_max_output_age_s": 0.9,
+    "freshness_future_tolerance_s": 0.05
+  },
+  "evidence_versions": [
+    {
+      "id": "p004_clean_cross_tracker",
+      "configuration_role": "historical frozen P0.4 preset",
+      "algorithm_commit": "1b7dc4002c19e5235703913826e174df1025f1d0",
+      "config_sha256": "16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "report_paths": [
+        "reports/p004_tim_matrix_1b7dc400_2026_07_20/canonical_matrix_summary.md",
+        "reports/p004_ocsort_tim_1b7dc400_2026_07_20/canonical_ocsort_sequence_summary.md"
+      ],
+      "claim_boundary": "Clean P0.4 within-tracker comparisons reject safety portability of one preset across ByteTrack, SORT, OC-SORT, and DeepSORT. They do not rank trackers absolutely.",
+      "tracker_independent_safety_supported": false,
+      "zero_wrong_target_supported": false,
+      "final_held_out_supported": false
+    },
+    {
+      "id": "p006b_hard_negative_structure",
+      "configuration_role": "P0.4 plus two-observation hard-negative promotion",
+      "algorithm_commit": "03409564f5107d6808054dac12294b004d9d4381",
+      "config_sha256": "55332935fe859edff60bedf910f126487b5da6a8e13bbe5bb7662f2645359dbc",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "report_paths": [
+        "reports/p006b_hard_negative_03409564_2026_07_21/closure_summary.md"
+      ],
+      "claim_boundary": "Structural hard-negative lifecycle evidence and four-sequence behavioral preservation only; no new universal performance or held-out claim.",
+      "tracker_independent_safety_supported": false,
+      "zero_wrong_target_supported": false,
+      "final_held_out_supported": false
+    },
+    {
+      "id": "p007_rank_aware_preservation",
+      "configuration_role": "P0.6b configuration preserved",
+      "algorithm_commit": "add2b8b87963ac26ae2551762ecccfaf119a7780",
+      "replay_base_commit": "164a70c64d50afa321ccd8f4550e463b60413739",
+      "config_sha256": "55332935fe859edff60bedf910f126487b5da6a8e13bbe5bb7662f2645359dbc",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "report_paths": [
+        "reports/p007_rank_aware_add2b8b8_2026_07_21/closure_summary.md"
+      ],
+      "claim_boundary": "Rank-aware confirmation composition passed focused tests and preserved the four recorded development outcomes; it is not a new absolute-performance claim.",
+      "tracker_independent_safety_supported": false,
+      "zero_wrong_target_supported": false,
+      "final_held_out_supported": false
+    },
+    {
+      "id": "p028_dual_oracle_development",
+      "configuration_role": "current development configuration with freshness and same-ID hijack protection",
+      "algorithm_commit": "c5ba9d30997e47c7f555baee5257bc687698508a",
+      "config_sha256": "e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "report_paths": [
+        "docs/results/selected_target_tracking/p028_wrong_oracle_audit.md"
+      ],
+      "claim_boundary": "Four-sequence development evidence shows improvement over raw under spatial and annotated-ID oracles. Spatial wrong is 0.000 s and strict annotated-ID wrong is 1.300 s; no flawless, tracker-independent, or held-out claim is supported.",
+      "tracker_independent_safety_supported": false,
+      "zero_wrong_target_supported": false,
+      "final_held_out_supported": false
+    }
+  ],
+  "retired_sources": {
+    "removed_design_documents": [
+      "docs/design/selected_target_memory.md",
+      "docs/design/tim_mars_design.md",
+      "docs/design/tim_evaluation_protocol.md"
+    ],
+    "paper_source": "paper_tim_mars was removed from the active tree by documentation cleanup commit 9b33508; its values are not authoritative.",
+    "thesis_source": "No tracked .tex or .bib thesis source exists in the active repository. Final thesis text must be written from this map and its report paths."
+  }
+}

@@ -2,8 +2,10 @@
 
 ## Evidence status
 
-This is the active thesis-facing summary for the clean P0.4 canonical evidence
-freeze.
+This is the versioned thesis-facing summary for the clean P0.4 evidence freeze.
+It does not use the current runtime configuration. Consult
+`docs/algorithm/tim_mars_evidence_versions.md` before quoting or combining
+these results.
 
 Canonical compact reports:
 

@@ -64,6 +64,9 @@ fresh checkout to install frontend dependencies.
 
 ## Promoted tracked evidence
 
+- Evidence-version authority: `docs/algorithm/tim_mars_evidence_versions.md`
+- Machine-readable evidence map: `docs/data/catalogue/tim_evidence_versions.json`
+- Current dual-oracle development audit: `docs/results/selected_target_tracking/p028_wrong_oracle_audit.md`
 - Current rank-aware safety evidence: `reports/p007_rank_aware_add2b8b8_2026_07_21/closure_summary.md`
 - Hard-negative structural evidence: `reports/p006b_hard_negative_03409564_2026_07_21/closure_summary.md`
 - Selected-target summary: `docs/results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`

@@ -7,7 +7,15 @@ Active files:
 - `bag_layout.md`: human-readable explanation of the bag folder taxonomy.
 - `bag_inventory.md`: readable historical inventory of bags known on 25 June 2026.
 - `bag_inventory.yaml`: machine-readable historical inventory from the same audit.
-- `tim_eval_catalogue.yaml`: generated canonical evidence contract for final TIM-MARS result rows.
+- `tim_eval_catalogue.yaml`: generated evidence contract for the frozen P0.4
+  and earlier final rows. Its `canonical_fingerprints` identify that historical
+  preset, not the current runtime configuration.
+- `tim_evidence_versions.json`: machine-readable map from promoted report sets
+  to exact configuration hashes, algorithm commits, and claim boundaries.
+
+The human-readable evidence map is
+`docs/algorithm/tim_mars_evidence_versions.md`. Consult it before combining
+result numbers from different TIM-MARS configurations.
 
 ## Canonical evidence contract
 
@@ -64,7 +72,7 @@ Archived files:
   reorganisations. These are kept for traceability but are not part of the
   active catalogue.
 
-The canonical cross-tracker and OC-SORT rows now resolve to the clean P0.4
+The frozen cross-tracker and OC-SORT rows resolve to the clean P0.4
 packages generated from commit
 `1b7dc4002c19e5235703913826e174df1025f1d0`. These rows additionally preserve
 the resolved-runtime JSON and SHA-256 fingerprint required by the P0.4

@@ -1,172 +1,160 @@
-# TIM-MARS Algorithm Versions and Final Simplification
+# TIM-MARS algorithm versions and final scope
 
-This document records the evolution of the TIM selected-target memory layer and defines the simplified final version used in the thesis.
+This document defines the implemented thesis algorithm. Result claims belong
+to a specific evidence version; use
+`docs/algorithm/tim_mars_evidence_versions.md` before quoting any metric.
 
-## Final thesis name
+## Thesis name and safety objective
 
-The final algorithm should be referred to simply as:
+Use the name:
 
 **TIM-MARS: Target Identity Memory with MARS appearance consistency**
 
-Do not describe the final algorithm as TIM-V4A, TIM-V4B, TIM-V4C, or TIM-V4D in the thesis. Those names are internal experiment history.
+TIM-V4A, TIM-V4B, TIM-V4C, and TIM-V4D are internal experiment names, not
+final algorithm names.
 
-## Core problem
-
-The tracker can output plausible but wrong identities after occlusion, crossing, or re-entry. For UAV following, publishing a wrong target is more dangerous than temporarily publishing no target.
-
-Therefore, TIM-MARS follows the rule:
+TIM-MARS is a controller-facing selected-target memory layer placed after the
+person detector, multi-object tracker, and operator/raw target selector. Its
+safety priority is:
 
 **wrong target is worse than lost target**
 
-When identity evidence is ambiguous, TIM-MARS suppresses the controller-facing target instead of publishing a likely distractor.
+When identity evidence is insufficient, TIM-MARS suppresses the target instead
+of publishing a likely distractor.
 
-## Final simplified algorithm
+## Final implemented components
 
-TIM-MARS is a selected-target memory layer placed after:
+The frozen component matrix is
+`docs/data/ablations/tim_mars_component_ablation_v1.yaml`. The final row
+contains these six identity-policy components:
 
-1. person detector
-2. multi-object tracker
-3. operator/raw target selector
+1. **Geometric memory and state hysteresis.** The last trusted ID, bbox,
+   quality, missed-frame count, and finite state are retained. Candidate
+   geometry uses bbox IoU, centre distance, scale similarity, confidence, and
+   same-ID continuity.
+2. **Protected positive MARS memory.** MARS embeddings provide identity
+   evidence. The operator anchor and trusted gallery are updated only after
+   trusted lock; risky recovery cannot immediately rewrite identity memory.
+3. **Conservative appearance margin.** Publication can be suppressed when
+   similarity or best-versus-second separation is insufficient.
+4. **Hard-negative distractor memory.** Repeated trusted distractor
+   observations form bounded negative prototypes. Hard-negative and same-ID
+   hijack gates reject candidates compatible with a known distractor.
+5. **Short-gap persistence.** The previous ID receives short-gap priority and
+   unsupported new IDs can be suppressed during the grace interval.
+6. **Rank-aware reacquisition.** Plausible lost/uncertain candidates are
+   ordered by explicit geometry and appearance evidence before publication
+   safety gates are applied.
 
-It does not replace the detector or tracker. It filters the selected target before it reaches the controller.
+Output freshness is an additional controller-validity contract, not an
+identity-scoring component.
 
-The final algorithm has three components.
+## Motion claim
 
-### 1. Geometric selected-target memory
+TIM-MARS does **not** implement an independent velocity estimator or
+motion-prediction model. Its geometry policy compares current candidates with
+the last trusted bbox. Individual base trackers may contain their own motion
+models, but that is tracker behavior and must not be presented as a TIM-MARS
+component. The ablation term “persistence” means short-gap identity hysteresis,
+not motion prediction.
 
-TIM keeps a memory of the selected target:
+## Active thresholds
 
-- last trusted tracker ID
-- last trusted bounding box
-- target quality
-- frames since last trusted observation
-- finite state: NO_TARGET, LOCKED, UNCERTAIN, LOST, REACQUIRED
+The current source authority is
+`ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`.
 
-Each tracker candidate is scored against the target memory using:
+| Parameter | Current value | Meaning |
+| --- | ---: | --- |
+| `appearance_conservative_margin` | `0.05` | Best-versus-second publication margin |
+| `hard_negative_reject_margin` | `0.03` | Positive-versus-negative rejection margin |
+| `hard_negative_confirm_observations` | `2` | Consecutive trusted observations before negative promotion |
+| `rank_aware_lost_app_margin` | `0.03` | Rank-aware lost-state appearance separation |
+| `absence_appearance_margin` | `0.20` | Inactive while `absence_recovery_enabled=false` |
 
-- bounding-box IoU
-- centre distance
-- scale similarity
-- detector/tracker confidence
-- same-ID continuity bonus
-
-This is the geometry-only TIM baseline.
-
-### 2. MARS appearance consistency
-
-TIM-MARS adds a MARS ReID embedding for each candidate when image data is available.
-
-Appearance is used as supporting evidence, not as a full replacement for geometry. A candidate must still be geometrically plausible.
-
-The positive appearance memory is updated only during trusted LOCKED states. It is frozen during uncertain, lost, or risky reacquisition states to avoid learning the wrong person.
-
-### 3. Hard-negative and conservative ambiguity suppression
-
-During trusted lock, nearby non-selected candidates can be stored as hard-negative appearance prototypes.
-
-A future candidate is rejected if it matches both:
-
-- the positive target memory
-- a remembered negative/distractor memory
-
-The conservative output filter suppresses candidates whose appearance evidence is not strong or not clearly separated from another candidate.
-
-The practical final preset is:
-
-- hard-negative memory enabled
-- conservative appearance filtering enabled
-- rank-aware reacquisition enabled
-- absence recovery disabled
-- appearance update cooldown disabled
-- balanced appearance margin: 0.05
-- balanced hard-negative rejection margin: 0.03
+The historical strict appearance margin `0.25` is not the active flight
+setting. The appearance and hard-negative margins are different quantities and
+must not be substituted for one another.
 
 ## State machine
 
-### NO_TARGET
+- `NO_TARGET`: no selected target exists; output is invalid.
+- `LOCKED`: the selected target is trusted; output may be valid.
+- `UNCERTAIN`: evidence is ambiguous; output is suppressed.
+- `LOST`: safe target availability has expired; output is suppressed.
+- `REACQUIRED`: a recovery candidate was accepted but remains probationary
+  until confirmation.
 
-No operator-selected target exists. No controller-valid output is published.
-
-### LOCKED
-
-The selected target is trusted. Controller output is valid.
-
-### UNCERTAIN
-
-A plausible candidate exists, but the evidence is ambiguous or rejected by a safety gate. Controller output is suppressed.
-
-### LOST
-
-The selected target has been missing or unsafe for multiple frames. Controller output is suppressed.
-
-### REACQUIRED
-
-A candidate has been reacquired after uncertainty/loss, but it is not yet fully trusted. Controller output is suppressed until confirmed.
+Freshness can invalidate an otherwise locked output when its source age exceeds
+the configured limit.
 
 ## Version history
 
-### TIM-V0: Geometry-only selected-target memory
+### Geometry-only TIM
 
-Used only geometric consistency:
+Established selected-target memory, finite-state hysteresis, bbox geometry,
+confidence, and tracker-ID continuity without appearance.
 
-- IoU
-- distance
-- scale
-- confidence
-- tracker ID continuity
+### MARS appearance TIM
 
-This established the core memory layer independent of ROS and independent of appearance.
+Added MARS ReID embeddings as supporting identity evidence. Appearance does not
+rescue a geometrically implausible candidate.
 
-### TIM-V1: Lightweight appearance support
+### Protected positive memory
 
-Added optional appearance memory.
-
-Appearance was used only as a gated tie-breaker and was disabled by default. This helped in ambiguous frames but was not sufficient for strong re-identification.
-
-### TIM-MARS: MARS appearance embeddings
-
-Replaced lightweight appearance with MARS ReID embeddings.
-
-This made appearance matching more meaningful for person re-identification and re-entry.
+Separated the operator anchor/trusted gallery from adaptive memory so an
+ambiguous recovery cannot immediately poison the identity reference.
 
 ### Hard-negative TIM-MARS
 
-Added memory of nearby distractors during trusted lock.
+Added bounded distractor prototypes. The promoted P0.6b configuration requires
+two consecutive trusted observations before hard-negative insertion.
 
-This prevents TIM from accepting a candidate that looks like the selected person but also matches a known distractor.
+### Rank-aware and same-ID guarded TIM-MARS
 
-### Conservative TIM-MARS
+Composed rank-aware recovery with confirmation and added same-ID appearance
+hijack protection. These changes produced the current P0.17 configuration
+fingerprint.
 
-Added explicit suppression when appearance evidence is not clearly separated from other candidates.
+## Evidence result
 
-This implements the thesis safety rule: lost is safer than wrong.
+The current development result is not flawless:
 
-### Balanced TIM-MARS
+- the optimistic spatial oracle reports `0.000 s` aggregate final wrong-target
+  output;
+- the conservative annotated-ID oracle reports `1.300 s`, including a visually
+  confirmed `0.100 s` May distractor handover around `41.3 s`;
+- both improve substantially over their corresponding raw baselines;
+- H01–H03 remain uncaptured and no final held-out claim exists.
 
-The strict conservative preset used an appearance margin of 0.25. In full clean replay, this was too suppressive.
+See
+`docs/results/selected_target_tracking/p028_wrong_oracle_audit.md`
+and the evidence-version map for the exact claim boundary.
 
-A balanced margin of 0.05, paired with hard-negative rejection margin 0.03, gave the best observed balance across the current locked-annotation validation set:
+## Tracker dependence
 
-- high correct-target duration
-- zero wrong-target duration
-- low lost-target duration
+TIM-MARS is modular at the tracker-output interface, but its safety is **not
+tracker-independent**. The P0.4 single-preset cross-tracker evaluation was
+rejected. Every tracker, configuration, sequence, and annotation pairing needs
+its own evidence.
 
-This should be treated as the practical field preset, while the stricter preset remains a safety-focused diagnostic preset.
+## Experimental policies outside the final row
 
-## Internal experiments not part of the final algorithm
+The following are not active final components unless an explicit alternative
+configuration and separate evidence package say otherwise:
 
-The following experimental branches should not be presented as part of the final thesis algorithm unless they are explicitly evaluated:
+- candidate-belief recovery;
+- absence recovery;
+- active appearance-first reselection;
+- old-ID distrust/handoff/reacquire-block variants;
+- hold-last-on-reject;
+- historical V4 risk-policy variants.
 
-- active appearance-first reselection
-- same-ID appearance ambiguity policy variants
-- V4A risk policy
-- old-ID distrust
-- old-ID handoff
-- old-ID reacquire block
-- hold-last-on-reject
+## Thesis description
 
-These were useful during exploration but make the final algorithm harder to explain and should be removed or quarantined from the main implementation if unused.
-
-## Final thesis description
-
-TIM-MARS is a conservative selected-target memory layer for RGB-only UAV person following. It combines geometric target continuity, MARS appearance consistency, and hard-negative distractor memory to decide whether the currently selected target is safe to publish. When target identity is ambiguous, TIM-MARS suppresses the output rather than risk commanding the UAV toward the wrong person.
+TIM-MARS is a conservative selected-target memory layer for RGB-only UAV person
+following. It combines bbox continuity and state hysteresis, protected MARS
+appearance memory, conservative appearance separation, hard-negative
+distractor memory, short-gap identity persistence, and rank-aware
+reacquisition. When the selected identity is ambiguous or stale, it suppresses
+controller-facing output. Evidence must remain configuration-, tracker-,
+sequence-, annotation-, and oracle-specific.

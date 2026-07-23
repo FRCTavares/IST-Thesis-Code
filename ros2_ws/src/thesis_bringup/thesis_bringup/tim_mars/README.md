@@ -15,6 +15,14 @@ The canonical algorithmic parameter set is stored in:
 
 - `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
 
+Its current SHA-256 and the report/commit claim boundaries are recorded in:
+
+- `docs/algorithm/tim_mars_evidence_versions.md`
+- `docs/data/catalogue/tim_evidence_versions.json`
+
+“Canonical” identifies current reproducible bytes; it does not make historical
+reports interchangeable or imply a universal safety result.
+
 The installed runtime copy is stored in:
 
 - `ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml`
@@ -56,9 +64,11 @@ Inside TargetIdentityMemory.update(), TIM-MARS combines:
 - geometry scoring,
 - appearance scoring,
 - short-gap same-ID protection,
-- absence-aware recovery gating,
 - rank-aware reacquisition,
 - hard-negative rejection.
+
+Absence recovery and candidate-belief confirmation remain implemented
+experimental policies but are disabled in the canonical configuration.
 
 ## State machine
 
@@ -87,6 +97,10 @@ compares each candidate against the remembered selected target using:
 
 Geometry is always the primary guard. Appearance is used only when configured
 and when geometry makes the candidate plausible enough.
+
+TIM-MARS does not add a velocity estimator or motion-prediction model. It
+compares candidates with the last trusted bbox; motion models inside ByteTrack,
+SORT, OC-SORT, or DeepSORT remain properties of those base trackers.
 
 The score contract deliberately separates candidate ordering from safety
 validation:
@@ -157,7 +171,7 @@ target_memory.py and supporting modules.
 - types.py: shared dataclasses, enums, and configuration.
 - memory_state.py: private internal memory state and control-mode mapping.
 - geometry_scoring.py: stateless bbox geometry and base candidate scoring.
-- appearance_memory.py: crop, HSV feature, cosine similarity, and feature-memory update helpers.
+- appearance_memory.py: crop, cosine-similarity, and feature-memory update helpers.
 - appearance_policy.py: appearance scoring policy and appearance gate logic.
 - appearance_attachment.py: runtime MARS embedding attachment, caching, and diagnostics.
 - mars_reid_backend.py: thin wrapper around the DeepSORT MARS-small128 extractor.
@@ -172,4 +186,6 @@ target_memory.py and supporting modules.
 For thesis evaluation, TIM-MARS should be treated as a control-facing safety
 layer. It is not a replacement for the detector or tracker. Its contribution is
 conservative selected-target publication under identity ambiguity, short target
-loss, distractors, and tracker ID instability.
+loss, distractors, and tracker ID instability. The interface is tracker-modular,
+but safety is not tracker-independent. The current development evidence is not
+flawless and must not be presented as a zero-wrong-target or held-out result.

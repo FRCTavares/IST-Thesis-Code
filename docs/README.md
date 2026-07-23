@@ -15,6 +15,8 @@ This folder contains the active thesis documentation, trusted result summaries, 
 
 The maintained TIM-MARS implementation, operator, replay, evaluation, and
 evidence paths are indexed in `design/tim_tooling_index.md`.
+The configuration/commit authority for every promoted TIM-MARS claim is
+`algorithm/tim_mars_evidence_versions.md`.
 
 ## Current selected-target tracking results
 
@@ -22,8 +24,10 @@ Use these as the active result sources:
 
 - `results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`
 - `results/selected_target_tracking/hard_reentry_compute_throughput_summary.md`
+- `results/selected_target_tracking/p028_wrong_oracle_audit.md`
 
-The multi-tracker hard-reentry summary is the main source of truth for the TIM-MARS selected-target evaluation.
+These sources describe different evidence versions. Do not combine their
+numbers without the evidence-version map.
 
 ## Active field runbook
 
