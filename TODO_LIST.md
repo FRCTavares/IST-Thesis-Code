@@ -6,7 +6,7 @@ closing evidence.
 
 Last reconciled with GitHub: **23 July 2026**.
 
-Open executable issues: **34**.
+Open executable issues: **33**.
 
 ## Execution rules
 
@@ -25,28 +25,25 @@ Open executable issues: **34**.
 
 ## P0 — Safety, evidence integrity, thesis claims, and flight blockers
 
-1. [ ] [#22 — P0.13 Add evaluator tests](https://github.com/FRCTavares/IST-Thesis-Code/issues/22)
-   - phase 6; engineering; complete the boundary, gap, validity, timestamp, and stale-output matrix.
-
-2. [ ] [#24 — P0.15 Unify evaluator semantics](https://github.com/FRCTavares/IST-Thesis-Code/issues/24)
+1. [ ] [#24 — P0.15 Unify evaluator semantics](https://github.com/FRCTavares/IST-Thesis-Code/issues/24)
    - phase 6; experiment; depends on the tested semantics from #22 and freshness contract from #23.
 
-3. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
+2. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
    - phase 7; experiment.
 
-4. [ ] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
+3. [ ] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
     - phase 7; experiment; use only the frozen split and evaluator contract.
 
-5. [ ] [#33 — P0.19 Update stale tooling documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/33)
+4. [ ] [#33 — P0.19 Update stale tooling documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/33)
     - phase 8; documentation; includes automated verification of UI launcher/README paths and supported commands.
 
-6. [ ] [#34 — P0.20 Synchronize TIM documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/34)
+5. [ ] [#34 — P0.20 Synchronize TIM documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/34)
     - phase 8; experiment; add an evidence-version map from config hashes and commits to promoted claims.
 
-7. [ ] [#38 — P0.21 Freeze the research question](https://github.com/FRCTavares/IST-Thesis-Code/issues/38)
+6. [ ] [#38 — P0.21 Freeze the research question](https://github.com/FRCTavares/IST-Thesis-Code/issues/38)
     - phase 9; experiment.
 
-8. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
+7. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
     - phase 9; experiment; retain the evidence-backed rejection of universal safety portability.
 
 ## P1 — Major algorithmic, scientific, engineering, and documentation work
