@@ -6,7 +6,7 @@ closing evidence.
 
 Last reconciled with GitHub: **23 July 2026**.
 
-Open executable issues: **30**.
+Open executable issues: **29**.
 
 ## Execution rules
 
@@ -28,38 +28,10 @@ Open executable issues: **30**.
 1. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
    - phase 7; experiment; development/legacy inputs are frozen and hashed in `tim_mars_split_v1`; closure is blocked only by capturing, annotating, hashing, and recording people/clothing overlap for H01–H03. The final-release validator currently fails closed at `final_ready=0/3`.
 
-2. [x] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
-    - phase 7; experiment; the seven-row development matrix passed the
-      dual-oracle raw-baseline safety gate at commit `c5ba9d30`. The optimistic
-      spatial oracle reports `0.000 s` final wrong-target output, while the
-      strict annotated-ID oracle reports `1.300 s`, including a visually
-      confirmed `0.100 s` May distractor handover around `41.3 s`; therefore
-      no flawless or zero-wrong-target claim is supported.
-      The separately frozen H01–H03 evaluation remains blocked on capture under
-      #27 and must run before the final thesis claim.
-
-3. [x] [#33 — P0.19 Update stale tooling documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/33)
-    - phase 8; documentation; restored the TIM-MARS tooling path authority,
-      corrected the dashboard directory contract, and now verifies 41 indexed
-      paths plus launcher, build, recording, and evaluation commands
-      automatically. All 142 tooling tests and a clean dashboard production
-      build pass.
-
-4. [x] [#34 — P0.20 Synchronize TIM documentation](https://github.com/FRCTavares/IST-Thesis-Code/issues/34)
-    - phase 8; experiment; synchronized the algorithm, module, launch, result,
-      catalogue, paper/thesis-status, and tooling documentation through a
-      machine-readable evidence-version map. Promoted claims now bind exact
-      configuration hashes and commits to explicit limits: the current
-      development evidence is not flawless, held out, or tracker-independent.
-      The live launcher no longer overrides canonical TIM freshness with the
-      profile-dependent controller deadline. Validation passed 148 tooling
-      tests, an isolated three-package ROS build, and 223 ROS tests with zero
-      errors or failures (three skipped; the existing expected xfail remains).
-
-5. [ ] [#38 — P0.21 Freeze the research question](https://github.com/FRCTavares/IST-Thesis-Code/issues/38)
+2. [ ] [#38 — P0.21 Freeze the research question](https://github.com/FRCTavares/IST-Thesis-Code/issues/38)
     - phase 9; experiment.
 
-6. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
+3. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
     - phase 9; experiment; retain the evidence-backed rejection of universal safety portability.
 
 ## P1 — Major algorithmic, scientific, engineering, and documentation work
@@ -97,20 +69,20 @@ Open executable issues: **30**.
 11. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31)
     - phase 7; experiment.
 
-12. [ ] [#32 — P1.14 Runtime and onboard cost](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
+12. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54)
+    - phase 10; live-system; feeds #32, #37, and #50; owns the missing integrated-camera `/camera/fps` publisher and recording-contract repair, deferred until the P0 authority/coordinate/freshness blockers are complete.
+
+13. [ ] [#32 — P1.14 Runtime and onboard cost](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
     - phase 7; live-system; includes raw-image DDS/QoS bandwidth and sustained Pi thermal/cadence cost.
 
-13. [ ] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35)
+14. [ ] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35)
     - phase 8; experiment.
 
-14. [ ] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36)
+15. [ ] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36)
     - phase 8; documentation; now includes versions, license, ROS/Python dependencies, and clean-environment installation.
 
-15. [ ] [#37 — P1.17 Create a single reproducibility command](https://github.com/FRCTavares/IST-Thesis-Code/issues/37)
+16. [ ] [#37 — P1.17 Create a single reproducibility command](https://github.com/FRCTavares/IST-Thesis-Code/issues/37)
     - phase 8; experiment; validate deterministic replay and versioned live-run provenance.
-
-16. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54)
-    - phase 10; live-system; feeds #32, #37, and #50; owns the missing integrated-camera `/camera/fps` publisher and recording-contract repair, deferred until the P0 authority/coordinate/freshness blockers are complete.
 
 17. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
     - phase 10; engineering; coordinate target-control behavior with #52 and path documentation with #33.
