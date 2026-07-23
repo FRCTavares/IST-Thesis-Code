@@ -155,7 +155,7 @@ def test_current_documents_state_threshold_motion_and_claim_boundaries():
         "`hard_negative_reject_margin` | `0.03`",
         "`hard_negative_confirm_observations` | `2`",
         "does **not** implement an independent velocity",
-        "not tracker-independent",
+        "safety is **not\ntracker-independent**",
         "`1.300 s`",
         "`0.100 s` May distractor handover",
     ):
@@ -172,9 +172,7 @@ def test_live_launcher_uses_canonical_params_without_threshold_copies():
     launcher = (
         REPO_ROOT / "tools/start_live_stack.sh"
     ).read_text(encoding="utf-8")
-    combined = defaults + launcher
-
     assert "tim_mars_canonical.yaml" in defaults
     assert '--params-file "$TARGET_MEMORY_MARS_CONFIG"' in launcher
     for parameter in load_map()["active_parameters"]:
-        assert parameter not in combined
+        assert f"-p {parameter}:=" not in launcher

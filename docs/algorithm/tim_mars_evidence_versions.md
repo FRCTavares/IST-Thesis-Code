@@ -95,7 +95,9 @@ trusted bbox, while any tracker motion model remains part of the base tracker.
 
 `tools/start_live_stack.sh` loads the installed copy of the canonical YAML via
 `tools/lib/live_defaults.sh` and `--params-file`. Launch scripts do not own
-copies of algorithm thresholds.
+copies of algorithm thresholds. The controller's `stale_timeout_s` remains a
+separate profile-dependent control deadline; it does not override TIM-MARS
+`freshness_max_output_age_s`.
 
 The former design documents
 `docs/design/selected_target_memory.md`,
