@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "split_id": "tim_mars_split_v1_2026_07_23",
+  "freeze": {
+    "created_date": "2026-07-23",
+    "algorithm_commit": "68df9d343eaf72824ac49b5c6fd6dc63ac7ec3d9",
+    "canonical_config": {
+      "path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+      "sha256": "1e6319062a5d2bec70e24fabedc84f7999eb8059d07f6b112542c9c5edde1a55"
+    },
+    "policy": {
+      "tuning_allowed_sets": [
+        "development"
+      ],
+      "final_held_out_outcome_access": "After capture, recording-integrity checks may inspect topics, duration, timestamps, and corruption only. Do not inspect TIM outcomes or change thresholds until all final held-out bags, annotations, participant codes, clothing codes, and hashes are frozen.",
+      "threshold_change_after_final_access": "Create a new split version and treat the accessed final set as development data. It may not support the final held-out claim.",
+      "legacy_validation_use": "Diagnostic comparison only. Do not tune on it and do not call it held-out."
+    }
+  },
+  "sets": {
+    "development": [
+      {
+        "id": "dev_may_hard_reentry",
+        "status": "ready",
+        "scenario": "hard target exit, re-entry, and tracker-ID switch",
+        "source_path": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
+        "annotation_path": "docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv",
+        "annotation_sha256": "fc4049dcd169e3b8b384b15e3963aa6ac9741e270298550fd899b30ea8b71075",
+        "selected_target_id": 1,
+        "people_group": "may_2026_05_people_unrecorded",
+        "clothing_group": "may_2026_05_clothing_unrecorded",
+        "overlap_record": "Historical recording lacks participant/outfit codes. Cross-session overlap with June or prospective held-out recordings is unknown and no subject-independent claim is permitted.",
+        "historical_exposure": "Used repeatedly for TIM threshold and recovery development; development-only.",
+        "files": [
+          {
+            "path": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r2__tracker_bytetrack__tim_mars__target_1_0.mcap",
+            "size_bytes": 447027433,
+            "sha256": "93d5b413de85eb6ccff5bbbc9c0b9e224734d0ab65046961632aabdefe77c1c3"
+          },
+          {
+            "path": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1/metadata.yaml",
+            "size_bytes": 6826,
+            "sha256": "e86f22e2b76f30d15de73fb15b6f17ac38c6587dd4b74344a8bd3587dd7f2325"
+          }
+        ]
+      },
+      {
+        "id": "dev_june_seq01",
+        "status": "ready",
+        "scenario": "clean four-person visibility",
+        "source_path": "bags/source/official_flights/2026-06-19/seq01_clean_four_person/full_pipeline/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars",
+        "annotation_path": "docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv",
+        "annotation_sha256": "487c80e472f7c0c74c60a42a5b01a261572e8089471b8d8c0b966b5f703c8bf4",
+        "selected_target_id": 1,
+        "people_group": "june19_four_person_group_A",
+        "clothing_group": "june19_outfits_A",
+        "overlap_record": "Same contiguous 19 June session, court, four-person group, and outfits as Seq02-Seq04. This is not person- or clothing-independent.",
+        "historical_exposure": "Used for repeated clean-sequence regression checks; development-only.",
+        "files": [
+          {
+            "path": "bags/source/official_flights/2026-06-19/seq01_clean_four_person/full_pipeline/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars_0.mcap",
+            "size_bytes": 754708804,
+            "sha256": "fcdcb2c9a3c8655c6c8b13a568ba81fc0c68c77c3d84ca06310c5106e6039cf9"
+          },
+          {
+            "path": "bags/source/official_flights/2026-06-19/seq01_clean_four_person/full_pipeline/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars/flight_metadata.txt",
+            "size_bytes": 1172,
+            "sha256": "dcf87dc85818257a2421439496a390733aceb6675b26571d6c4ddaa1783150ac"
+          },
+          {
+            "path": "bags/source/official_flights/2026-06-19/seq01_clean_four_person/full_pipeline/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars/metadata.yaml",
+            "size_bytes": 7495,
+            "sha256": "c8142779bc182ad68f29eebfd1bda8733bd3de89bb1363021ed2af6efe8441e8"
+          }
+        ]
+      },
+      {
+        "id": "dev_june_seq03_ocsort",
+        "status": "ready",
+        "scenario": "four-person crossing ambiguity",
+        "source_path": "bags/replay/p006b_hard_negative_03409564_2026_07_21/seq03",
+        "annotation_path": "docs/data/annotations/june_hard_sequences/seq03_ocsort_305578f3.csv",
+        "annotation_sha256": "12db619326e47ff138b4267cd19dc1f3296385a06e01f693e9c1e467876bf56a",
+        "selected_target_id": 1,
+        "people_group": "june19_four_person_group_A",
+        "clothing_group": "june19_outfits_A",
+        "overlap_record": "Same participants/outfits as June Seq01, Seq02, and Seq04; not person- or clothing-independent.",
+        "historical_exposure": "Explicit Seq03 tuning reports exist; development-only.",
+        "files": [
+          {
+            "path": "bags/replay/p006b_hard_negative_03409564_2026_07_21/seq03/seq03_0.mcap",
+            "size_bytes": 642528247,
+            "sha256": "2bb0125ece116c9a9b69ef3eb85f446970bcb145ebbcdac79b6f54cf8e7196b9"
+          },
+          {
+            "path": "bags/replay/p006b_hard_negative_03409564_2026_07_21/seq03/metadata.yaml",
+            "size_bytes": 4455,
+            "sha256": "0da8b4843f7c5e72dbba329431d1c5dc6a36776760bbcff3580bc36bc76209d8"
+          }
+        ]
+      },
+      {
+        "id": "dev_june_seq04_ocsort",
+        "status": "ready",
+        "scenario": "four-person partial occlusion without exit",
+        "source_path": "bags/replay/p006b_hard_negative_03409564_2026_07_21/seq04",
+        "annotation_path": "docs/data/annotations/june_hard_sequences/seq04_ocsort_305578f3.csv",
+        "annotation_sha256": "39cc630be6873c261de22a248ddeab1cbb723988e2513b1cc2ae24a8450fc1a1",
+        "selected_target_id": 1,
+        "people_group": "june19_four_person_group_A",
+        "clothing_group": "june19_outfits_A",
+        "overlap_record": "Same participants/outfits as June Seq01-Seq03; not person- or clothing-independent.",
+        "historical_exposure": "Explicit Seq04 group-split, absence, and hard-negative tuning reports exist; development-only.",
+        "files": [
+          {
+            "path": "bags/replay/p006b_hard_negative_03409564_2026_07_21/seq04/seq04_0.mcap",
+            "size_bytes": 443084549,
+            "sha256": "93476c3ba8e8c699515a2d3b1a395497b25d88f9c9cc99c04287f1b119ec1d36"
+          },
+          {
+            "path": "bags/replay/p006b_hard_negative_03409564_2026_07_21/seq04/metadata.yaml",
+            "size_bytes": 4455,
+            "sha256": "98129d9686bd7828f2e9d89968e8593fd3b24af7f2b2873ad6fed6f374f4a2e9"
+          }
+        ]
+      }
+    ],
+    "legacy_validation": [
+      {
+        "id": "legacy_june_seq02",
+        "status": "ready",
+        "scenario": "four-person target re-entry",
+        "source_path": "bags/source/curated/2026-06-19__12-52-30__source__2026-06-19__official__seq02__four_person_target_reentry__full_pipeline",
+        "annotation_path": "docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv",
+        "annotation_sha256": "ae331a582793221be0bf2aca4bec622be0130bb64559456767baf0797d179fe0",
+        "selected_target_id": 1,
+        "people_group": "june19_four_person_group_A",
+        "clothing_group": "june19_outfits_A",
+        "overlap_record": "Same participants and clothing as development Seq01, Seq03, and Seq04. It is quarantined from tuning but is not a subject/clothing-independent final test.",
+        "historical_exposure": "Annotation already exists and historical exposure cannot be excluded; diagnostic validation only.",
+        "files": [
+          {
+            "path": "bags/source/curated/2026-06-19__12-52-30__source__2026-06-19__official__seq02__four_person_target_reentry__full_pipeline/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars_0.mcap",
+            "size_bytes": 1065868989,
+            "sha256": "bccf7ef66550e658e1a2c899191934eb332debb3f471eb1f67774ea1931ae720"
+          },
+          {
+            "path": "bags/source/curated/2026-06-19__12-52-30__source__2026-06-19__official__seq02__four_person_target_reentry__full_pipeline/flight_metadata.txt",
+            "size_bytes": 1199,
+            "sha256": "53dd6f16e6d3290cb184fadd07ab4fd2a0709a7e3c648085dc9a81a0638fe9ca"
+          },
+          {
+            "path": "bags/source/curated/2026-06-19__12-52-30__source__2026-06-19__official__seq02__four_person_target_reentry__full_pipeline/metadata.yaml",
+            "size_bytes": 7514,
+            "sha256": "9e16fc6dc1d44c960329302af33cf10c91e085105a9b8af842b38e8bffb82f25"
+          }
+        ]
+      }
+    ],
+    "final_held_out": [
+      {
+        "id": "heldout_h01_exit_reentry",
+        "status": "reserved_pending_capture",
+        "scenario": "selected target exits fully, remains absent, then re-enters amid tracker-ID churn",
+        "expected_source_path": "bags/source/held_out/2026-07-24/h01_exit_reentry",
+        "people_group": "pending_capture",
+        "clothing_group": "pending_capture",
+        "overlap_record": "Must record anonymous participant codes, outfit codes, and exact overlap with every development/legacy group before status may become ready.",
+        "files": []
+      },
+      {
+        "id": "heldout_h02_crossing",
+        "status": "reserved_pending_capture",
+        "scenario": "close target/distractor crossing with sustained overlap and separation",
+        "expected_source_path": "bags/source/held_out/2026-07-24/h02_crossing",
+        "people_group": "pending_capture",
+        "clothing_group": "pending_capture",
+        "overlap_record": "Must record anonymous participant codes, outfit codes, and exact overlap with every development/legacy group before status may become ready.",
+        "files": []
+      },
+      {
+        "id": "heldout_h03_occlusion_distractor",
+        "status": "reserved_pending_capture",
+        "scenario": "partial/full occlusion while a distractor remains visible near the last target location",
+        "expected_source_path": "bags/source/held_out/2026-07-24/h03_occlusion_distractor",
+        "people_group": "pending_capture",
+        "clothing_group": "pending_capture",
+        "overlap_record": "Must record anonymous participant codes, outfit codes, and exact overlap with every development/legacy group before status may become ready.",
+        "files": []
+      }
+    ]
+  }
+}

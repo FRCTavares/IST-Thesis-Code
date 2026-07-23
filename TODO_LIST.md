@@ -26,7 +26,7 @@ Open executable issues: **32**.
 ## P0 — Safety, evidence integrity, thesis claims, and flight blockers
 
 1. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
-   - phase 7; experiment.
+   - phase 7; experiment; development/legacy inputs are frozen and hashed in `tim_mars_split_v1`; closure is blocked only by capturing, annotating, hashing, and recording people/clothing overlap for H01–H03. The final-release validator currently fails closed at `final_ready=0/3`.
 
 2. [ ] [#28 — P0.17 Run component ablations](https://github.com/FRCTavares/IST-Thesis-Code/issues/28)
     - phase 7; experiment; use only the frozen split and evaluator contract.

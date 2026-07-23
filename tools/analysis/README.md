@@ -19,6 +19,7 @@ The tools are split into three groups:
 | `evaluate_tim_target_correctness.py` | Compares raw `/target` and TIM-MARS `/target_memory_mars` against annotation intervals using track-ID correctness and duration metrics. | Yes |
 | `evaluate_tim_target_bbox_correctness.py` | Evaluates bbox correctness using the annotated target track as spatial reference on a common `/tracks` clock. | Yes, as spatial complement |
 | `evaluate_tim_by_event_type.py` | Aggregates selected-target correctness by annotation `event_type`. | Yes, for event-level tables |
+| `validate_tim_evaluation_split.py` | Validates the frozen development/legacy/final split, source/annotation hashes, people/clothing records, and final-release gate. | Required before final evaluation |
 
 `evaluate_tim_target_correctness.py` and `evaluate_tim_by_event_type.py` are
 thin report/CLI layers. They must import evaluation semantics from
@@ -69,12 +70,14 @@ evaluators.
 
 For final TIM-MARS selected-target evaluation:
 
-1. Produce or select a replay bag.
-2. Use `evaluate_tim_target_correctness.py` for selected-track duration metrics.
-3. Use `evaluate_tim_target_bbox_correctness.py` when spatial bbox agreement is
+1. Validate `docs/data/splits/tim_mars_split_v1.json` with
+   `validate_tim_evaluation_split.py --verify-hashes --require-final-ready`.
+2. Produce or select a replay bag from the permitted split.
+3. Use `evaluate_tim_target_correctness.py` for selected-track duration metrics.
+4. Use `evaluate_tim_target_bbox_correctness.py` when spatial bbox agreement is
    needed.
-4. Use `evaluate_tim_by_event_type.py` to summarize behavior by event type.
-5. Use `extract_tim_all_scores.py` only when a decision needs explanation.
+5. Use `evaluate_tim_by_event_type.py` to summarize behavior by event type.
+6. Use `extract_tim_all_scores.py` only when a decision needs explanation.
 
 ## Important distinction
 
