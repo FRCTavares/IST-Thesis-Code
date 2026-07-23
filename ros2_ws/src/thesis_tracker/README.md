@@ -13,11 +13,11 @@ Tracker ROS contracts documented below remain unchanged.
 - `/detections` ([vision_msgs/Detection2DArray](http://docs.ros.org/en/api/vision_msgs/html/msg/Detection2DArray.html))
 
 ### Publishes
-- `/tracks` ([thesis_msgs/Track2DArray](../../thesis_msgs/msg/Track2DArray.msg))
+- `/tracks` ([thesis_msgs/Track2DArray](../thesis_msgs/msg/Track2DArray.msg))
   - Confirmed tracks only (based on tracker-specific confirmation criteria)
   - Track IDs must be stable per tracker (no ID reassignment)
   
-- `/timing_tracker` ([thesis_msgs/Timing](../../thesis_msgs/msg/Timing.msg))
+- `/timing_tracker` ([thesis_msgs/Timing](../thesis_msgs/msg/Timing.msg))
   - Field: `track_ms` (float) - time spent in tracker update() call
   - **Note**: `Timing.msg` has no header, do not assign one
 

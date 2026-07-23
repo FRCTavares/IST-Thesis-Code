@@ -1,63 +1,89 @@
-# Thesis Documentation
+# Thesis documentation
 
-This folder contains the active thesis documentation, trusted result summaries, evaluation annotations, and archived historical material.
+This directory contains the maintained research contracts, operational
+documentation, frozen data definitions, curated result summaries, and
+historical records for the TIM-MARS thesis project.
+
+## Start here
+
+The core thesis authority is:
+
+1. [Frozen research questions](research_question.md)
+2. [Research position and novelty contract](NOVELTY.md)
+3. [Active GitHub issue queue](TODO_LIST.md)
+4. [TIM-MARS algorithm and final scope](algorithm/tim_mars_versions.md)
+5. [Evidence versions and claim boundaries](algorithm/tim_mars_evidence_versions.md)
+6. [Maintained implementation and tooling index](design/tim_tooling_index.md)
+
+## Authority hierarchy
+
+Use repository sources in this order:
+
+1. current implementation and canonical runtime configuration;
+2. frozen research, algorithm, coordinate, freshness, and split contracts;
+3. versioned evidence maps and promoted tracked result summaries;
+4. generated reports with complete provenance;
+5. archived historical material for traceability only.
+
+Generated content under `reports/` is not automatically thesis authority.
+A result becomes citable only after it is reviewed and promoted into
+`docs/results/` or an explicitly tracked evidence package.
 
 ## Folder map
 
-- `design/` - active design notes, evaluation protocols, and tooling maps.
-- `results/` - current result summaries that should be used for thesis writing, supervisor updates, and final interpretation.
-- `annotations/` - trusted annotation files used by current evaluations.
-- `Control-Pixhawk-MAVROS/` - current control and MAVROS integration notes.
-- `Debug/` - current hardware and runtime recovery notes.
-- `Daily-Logs/` - chronological engineering logs.
-- `reports/` - longer written reports.
-- `archive/` - superseded notes, intermediate evaluations, old annotation versions, and historical material.
+- `algorithm/` — active algorithm definitions, evidence-version boundaries,
+  coordinate contracts, and output-freshness contracts.
+- `control/` — maintained Pixhawk, MAVROS, and controller integration notes.
+- `data/` — annotations, experiment manifests, splits, catalogues, and
+  machine-readable research inputs.
+- `debug/` — current Hailo, camera, and unattended-host recovery procedures.
+- `design/` — maintained implementation and tooling indexes.
+- `flight/` — current recording, readiness, and run-provenance procedures.
+- `results/` — reviewed current evidence and thesis-facing result summaries.
+- `archive/` — superseded result interpretations and historical cleanup
+  records retained only for traceability.
 
-The maintained TIM-MARS implementation, operator, replay, evaluation, and
-evidence paths are indexed in `design/tim_tooling_index.md`.
-The configuration/commit authority for every promoted TIM-MARS claim is
-`algorithm/tim_mars_evidence_versions.md`.
+## Current selected-target evidence
 
-## Current selected-target tracking results
+Start with:
 
-Use these as the active result sources:
+- [Canonical selected-target evidence](results/selected_target_tracking/hard_reentry_multi_tracker_summary.md)
+- [Current dual-oracle development audit](results/selected_target_tracking/p028_wrong_oracle_audit.md)
+- [Compute and throughput summary](results/selected_target_tracking/hard_reentry_compute_throughput_summary.md)
+- [Current result index](results/README.md)
 
-- `results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`
-- `results/selected_target_tracking/hard_reentry_compute_throughput_summary.md`
-- `results/selected_target_tracking/p028_wrong_oracle_audit.md`
+Consult the evidence-version authority before combining values from different
+documents.
 
-These sources describe different evidence versions. Do not combine their
-numbers without the evidence-version map.
+## Frozen evaluation inputs
 
-## Active field runbook
+- [Data directory index](data/README.md)
+- [Evaluation split policy](data/splits/README.md)
+- [Component-ablation specification](data/ablations/README.md)
+- [Evidence catalogue](data/catalogue/README.md)
 
-- `flight/SOURCE_FIRST_FIELD_RECORDING_PLAN.md` — copy-paste procedure for
-  three source-only scenarios followed by one full-stack validation run.
+Annotation CSV files are research inputs. They do not need individual links
+from this top-level page when their authoritative manifest or result document
+records their exact paths and hashes.
 
-It supersedes earlier TIM-V2, TIM-V2Q, active-MARS, conservative-MARS, and early DeepSORT comparison notes now stored under `archive/results/`.
+## Operational documentation
 
-## Current trusted selected-target annotations
+- [Source-first field recording plan](flight/SOURCE_FIRST_FIELD_RECORDING_PLAN.md)
+- [Flight-readiness procedure](flight/P023_FLIGHT_READINESS.md)
+- [Hailo recovery](debug/HAILO_RECOVERY.md)
+- [Live camera recovery](debug/LIVE_STACK_CAMERA_RECOVERY.md)
+- [Unattended Pi operation](debug/UNATTENDED_PI_OPERATION.md)
+- [Pixhawk 6X Ethernet and MAVROS report](control/pixhawk6x_ethernet_mavros_report.md)
 
-Use the exact tracker-specific annotations recorded by the clean P0.4 reports:
+## Historical-material policy
 
-- `data/annotations/may_hard_reentry/bytetrack_f17cdf80_autonomous.csv`
-- `data/annotations/may_hard_reentry/sort_f17cdf80_autonomous.csv`
-- `data/annotations/may_hard_reentry/ocsort_f17cdf80_autonomous.csv`
-- `data/annotations/may_hard_reentry/deepsort_f17cdf80_autonomous.csv`
-- `data/annotations/june_hard_sequences/seq03_ocsort_305578f3.csv`
-- `data/annotations/june_hard_sequences/seq04_ocsort_305578f3.csv`
+Files under `archive/` are preserved for provenance but must not be used as the
+current methodology or result authority.
 
-These files are tracker-ID-specific and must not be reused for freshly
-renumbered tracker outputs without a new compatibility audit.
+Historical roadmap records, when retained, belong under `archive/` with other
+superseded planning material. No separate top-level planning directory is
+maintained.
 
-## Archive policy
-
-Move a document to `archive/` when it is useful for traceability but no longer represents the current interpretation, current workflow, or trusted evaluation input.
-
-Do not delete historical notes unless they are generated artefacts or clearly accidental duplicates.
-
-## Core thesis authority
-
-- [Research position and novelty contract](NOVELTY.md)
-- [Frozen TIM-MARS thesis research questions](research_question.md)
-- [Active GitHub issue queue](TODO_LIST.md)
+Do not delete historical files merely because they are superseded. Move them
+with `git mv`, document why they are historical, and retain any required
+provenance.

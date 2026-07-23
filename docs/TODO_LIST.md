@@ -21,7 +21,7 @@ Open executable issues: **29**.
    from this file; closure evidence stays in the issue.
 6. Do not mark a task complete from code presence alone: require the issue's
    tests, build, provenance, evidence, and clean-tree contract.
-7. Historical roadmap material remains under `docs/roadmap/archive/`.
+7. Historical roadmap material belongs under `docs/archive/` when retained.
 
 ## P0 — Safety, evidence integrity, thesis claims, and flight blockers
 
@@ -97,7 +97,7 @@ Open executable issues: **29**.
     - phase 10; live-system; does not block the validated baseline flight profile.
 
 22. [ ] [#57 — P1.23 Reorganize documentation hierarchy and promote canonical result tables](https://github.com/FRCTavares/IST-Thesis-Code/issues/57)
-    - phase 8; documentation; establish a canonical documentation map, separate current authority from historical material, validate references, and promote the complete seven-row ablation result matrix into a tracked thesis-ready document.
+    - phase 8; documentation; the canonical authority map, current-result index, historical-result segregation, and initial broken-link repair are complete. Remaining work is promotion of the complete seven-row development ablation package with correction-aware interpretation and final repository-wide reference validation.
 
 ## P2 — Useful work after the critical path
 
