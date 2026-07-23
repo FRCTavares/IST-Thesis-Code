@@ -428,7 +428,11 @@ def metrics_row(
     stream: dict[str, float],
     raw: dict[str, float],
     wrong_tolerance_s: float,
+    id_stream: dict[str, float] | None = None,
+    id_raw: dict[str, float] | None = None,
 ) -> dict[str, Any]:
+    id_stream = id_stream or stream
+    id_raw = id_raw or raw
     visible = stream["visible_target_duration_s"]
     correct = stream["correct_target_duration_s"]
     wrong = stream["wrong_target_duration_s"]
@@ -447,6 +451,13 @@ def metrics_row(
         "wrong_target_ratio": wrong / visible if visible else math.nan,
         "lost_target_ratio": lost / visible if visible else math.nan,
         "wrong_delta_vs_raw_s": wrong_delta,
+        "id_mismatch_duration_s": (
+            id_stream["wrong_target_duration_s"]
+        ),
+        "id_mismatch_delta_vs_raw_s": (
+            id_stream["wrong_target_duration_s"]
+            - id_raw["wrong_target_duration_s"]
+        ),
         "absent_output_delta_vs_raw_s": absent_delta,
         "safe_vs_raw": (
             wrong_delta <= wrong_tolerance_s
@@ -480,6 +491,12 @@ def aggregate_rows(
         key: sum(float(row[key]) for row in raw_group)
         for key in DURATION_KEYS
     }
+    raw_id_totals = {
+        "wrong_target_duration_s": sum(
+            float(row["id_mismatch_duration_s"])
+            for row in raw_group
+        )
+    }
     labels = {
         str(row["row_id"]): str(row["label"])
         for row in rows
@@ -491,6 +508,12 @@ def aggregate_rows(
             key: sum(float(row[key]) for row in group)
             for key in DURATION_KEYS
         }
+        id_totals = {
+            "wrong_target_duration_s": sum(
+                float(row["id_mismatch_duration_s"])
+                for row in group
+            )
+        }
         aggregated.append(
             metrics_row(
                 sequence_id="aggregate",
@@ -499,6 +522,8 @@ def aggregate_rows(
                 stream=totals,
                 raw=raw_totals,
                 wrong_tolerance_s=wrong_tolerance_s,
+                id_stream=id_totals,
+                id_raw=raw_id_totals,
             )
         )
     return aggregated
@@ -524,15 +549,19 @@ def write_markdown(
         f"- Evaluation set: `{set_name}`",
         f"- Wrong/absence safety tolerance: `{wrong_tolerance_s:.3f} s`",
         "",
-        "| Row | Correct s | Wrong s | Lost s | Correct ratio | "
-        "Wrong Δ vs raw s | Absent-output Δ s | Safe |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | :---: |",
+        "- Safety uses spatial bbox agreement with the annotated target. "
+        "Tracker-ID mismatch is retained as a fragmentation diagnostic.",
+        "",
+        "| Row | Correct s | Physical wrong s | ID mismatch s | Lost s | "
+        "Correct ratio | Wrong Δ vs raw s | Absent-output Δ s | Safe |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :---: |",
     ]
     for row in rows:
         lines.append(
             f"| {row['label']} "
             f"| {format_float(row['correct_target_duration_s'])} "
             f"| {format_float(row['wrong_target_duration_s'])} "
+            f"| {format_float(row['id_mismatch_duration_s'])} "
             f"| {format_float(row['lost_target_duration_s'])} "
             f"| {format_float(row['correct_target_ratio'])} "
             f"| {format_float(row['wrong_delta_vs_raw_s'])} "
@@ -679,6 +708,10 @@ def main() -> int:
     evaluator = (
         repo_root / "tools/analysis/evaluate_tim_target_correctness.py"
     )
+    bbox_evaluator = (
+        repo_root
+        / "tools/analysis/evaluate_tim_target_bbox_correctness.py"
+    )
     event_evaluator = (
         repo_root / "tools/analysis/evaluate_tim_by_event_type.py"
     )
@@ -696,6 +729,7 @@ def main() -> int:
             raise ValueError(f"annotation is missing: {annotation}")
 
         raw_reference: dict[str, float] | None = None
+        raw_id_reference: dict[str, float] | None = None
         sequence_rows: list[dict[str, Any]] = []
         for row_id in REQUIRED_ROW_IDS[1:]:
             row = rows_by_id[row_id]
@@ -704,11 +738,15 @@ def main() -> int:
                 report_root / "sequences" / sequence_id / row_id
             )
             summary_path = evaluation_dir / "summary.csv"
+            bbox_summary_path = (
+                evaluation_dir / "bbox" / "summary.csv"
+            )
             event_path = evaluation_dir / "by_event_type.csv"
             metadata_path = output_bag / "tim_replay_metadata.json"
 
             complete = (
                 summary_path.is_file()
+                and bbox_summary_path.is_file()
                 and event_path.is_file()
                 and metadata_path.is_file()
             )
@@ -735,6 +773,19 @@ def main() -> int:
                     replay_command.append("--skip-source-hash")
                 run_command(
                     replay_command,
+                    dry_run=args.dry_run,
+                    command_log=command_log,
+                )
+                run_command(
+                    [
+                        sys.executable,
+                        str(bbox_evaluator),
+                        str(output_bag),
+                        "--annotations",
+                        str(annotation),
+                        "--out-dir",
+                        str(evaluation_dir / "bbox"),
+                    ],
                     dry_run=args.dry_run,
                     command_log=command_log,
                 )
@@ -775,10 +826,13 @@ def main() -> int:
 
             if args.dry_run:
                 continue
-            streams = read_summary(summary_path)
+            id_streams = read_summary(summary_path)
+            streams = read_summary(bbox_summary_path)
             raw = streams["raw_target"]
+            raw_id = id_streams["raw_target"]
             if raw_reference is None:
                 raw_reference = raw
+                raw_id_reference = raw_id
                 raw_row = rows_by_id["raw_tracker"]
                 sequence_rows.append(
                     metrics_row(
@@ -788,13 +842,19 @@ def main() -> int:
                         stream=raw,
                         raw=raw,
                         wrong_tolerance_s=args.wrong_tolerance_s,
+                        id_stream=raw_id,
+                        id_raw=raw_id,
                     )
                 )
-            elif raw != raw_reference:
+            elif (
+                raw != raw_reference
+                or raw_id != raw_id_reference
+            ):
                 raise ValueError(
                     f"raw baseline changed across rows for {sequence_id}"
                 )
 
+            assert raw_id_reference is not None
             sequence_rows.append(
                 metrics_row(
                     sequence_id=sequence_id,
@@ -803,6 +863,10 @@ def main() -> int:
                     stream=streams["tim_target_memory"],
                     raw=raw_reference,
                     wrong_tolerance_s=args.wrong_tolerance_s,
+                    id_stream=id_streams[
+                        "tim_target_memory"
+                    ],
+                    id_raw=raw_id_reference,
                 )
             )
 
@@ -877,7 +941,7 @@ def main() -> int:
     print(f"[ok] report: {report_root}")
     if not final_safe:
         print(
-            "[blocked] final TIM-MARS increases wrong-target or "
+            "[blocked] final TIM-MARS increases physical wrong-target or "
             "target-absence output duration",
             file=sys.stderr,
         )

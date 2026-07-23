@@ -139,9 +139,10 @@ python3 tools/experiments/run_tim_component_ablation.py --set development
 ```
 
 The runner evaluates the raw tracker once per sequence, runs the six TIM rows
-with compact deterministic output, writes per-event and aggregate reports, and
-enforces the final raw-baseline safety gate. `--set final_held_out` additionally
-requires the evaluation-split final-release validator to pass.
+with compact deterministic output, writes spatial, tracker-ID fragmentation,
+per-event, and aggregate reports, and enforces the final physical-target
+raw-baseline safety gate. `--set final_held_out` additionally requires the
+evaluation-split final-release validator to pass.
 
 ## Output policy
 

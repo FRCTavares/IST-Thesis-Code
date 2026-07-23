@@ -182,6 +182,25 @@ def test_wrong_target_increase_fails_row_safety():
     assert row["wrong_delta_vs_raw_s"] == pytest.approx(0.10)
 
 
+def test_id_fragment_mismatch_is_diagnostic_not_physical_wrong():
+    raw = _durations(wrong=0.0)
+    row = MODULE.metrics_row(
+        sequence_id="seq",
+        row_id=MODULE.FINAL_ROW_ID,
+        label="Final",
+        stream=_durations(wrong=0.0),
+        raw=raw,
+        id_stream=_durations(wrong=0.95),
+        id_raw=_durations(wrong=0.10),
+        wrong_tolerance_s=0.05,
+    )
+
+    assert row["safe_vs_raw"] is True
+    assert row["wrong_target_duration_s"] == 0.0
+    assert row["id_mismatch_duration_s"] == pytest.approx(0.95)
+    assert row["id_mismatch_delta_vs_raw_s"] == pytest.approx(0.85)
+
+
 def test_aggregate_uses_duration_weighted_ratios():
     rows = []
     for sequence_id in ("a", "b"):
