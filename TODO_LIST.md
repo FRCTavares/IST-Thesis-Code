@@ -6,7 +6,7 @@ closing evidence.
 
 Last reconciled with GitHub: **23 July 2026**.
 
-Open executable issues: **29**.
+Open executable issues: **30**.
 
 ## Execution rules
 
@@ -98,6 +98,9 @@ Open executable issues: **29**.
 
 21. [ ] [#44 — P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)](https://github.com/FRCTavares/IST-Thesis-Code/issues/44)
     - phase 10; live-system; does not block the validated baseline flight profile.
+
+22. [ ] [#57 — P1.23 Reorganize documentation hierarchy and promote canonical result tables](https://github.com/FRCTavares/IST-Thesis-Code/issues/57)
+    - phase 8; documentation; establish a canonical documentation map, separate current authority from historical material, validate references, and promote the complete seven-row ablation result matrix into a tracked thesis-ready document.
 
 ## P2 — Useful work after the critical path
 
