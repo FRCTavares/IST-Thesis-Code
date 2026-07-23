@@ -803,6 +803,7 @@ def test_build_resolved_runtime_payload_records_sources(
             "selected_id",
             "--tracks-topic",
             "/custom/tracks",
+            "--compact-output",
         ],
     )
 
@@ -817,6 +818,7 @@ def test_build_resolved_runtime_payload_records_sources(
         image_topic="auto",
         tracks_topic="/custom/tracks",
         raw_target_topic="/target",
+        compact_output=True,
     )
 
     payload = (
@@ -846,6 +848,7 @@ def test_build_resolved_runtime_payload_records_sources(
         "tracks_are_normalized": False,
         "zero_id_when_not_visible": False,
         "appearance_enabled": True,
+        "compact_output": True,
     }
 
     sources = payload["value_sources"]
@@ -885,6 +888,9 @@ def test_build_resolved_runtime_payload_records_sources(
     )
     assert sources["raw_target_topic"] == (
         "runner_default"
+    )
+    assert sources["compact_output"] == (
+        "command_line"
     )
 
 
