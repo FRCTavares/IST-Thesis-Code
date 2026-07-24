@@ -83,31 +83,76 @@ def test_appearance_breaks_geometry_tie_for_correct_candidate():
             ambiguity_margin=0.001,
         )
     )
-    tim.select(tr(5, (100, 100, 150, 220), 0.9, appearance=target_feat))
+    tim.select(
+        tr(
+            5,
+            (100, 100, 150, 220),
+            0.9,
+            appearance=target_feat,
+        )
+    )
 
-    out = tim.update(
+    first = tim.update(
         [
-            tr(10, (102, 100, 152, 220), 0.90, appearance=other_feat),
-            tr(11, (118, 100, 168, 220), 0.90, appearance=target_feat),
+            tr(
+                10,
+                (102, 100, 152, 220),
+                0.90,
+                appearance=other_feat,
+            ),
+            tr(
+                11,
+                (118, 100, 168, 220),
+                0.90,
+                appearance=target_feat,
+            ),
         ]
     )
 
-    assert out.best_score is not None
-    assert out.best_score.track_id == 11
+    assert first.best_score is not None
+    assert first.best_score.track_id == 11
     assert (
-        out.best_score.ranking_score
-        > out.best_score.geometry_score
+        first.best_score.ranking_score
+        > first.best_score.geometry_score
     )
-    assert out.best_score.appearance_available
-    assert out.best_score.appearance_evaluated
-    assert out.best_score.appearance_similarity_passed
-    assert out.best_score.appearance_used
-    assert (
-        out.best_score
+    assert first.best_score.appearance_available
+    assert first.best_score.appearance_evaluated
+    assert first.best_score.appearance_similarity_passed
+    assert first.best_score.appearance_used
+    assert not (
+        first.best_score
         .appearance_accepted_for_publication
     )
-    assert out.target_track_id == 11
-    assert out.state == TargetState.REACQUIRED
+    assert first.target_track_id == 5
+    assert first.candidate_track_id == 11
+    assert first.state == TargetState.REACQUIRED
+    assert not first.visible
+
+    committed = tim.update(
+        [
+            tr(
+                10,
+                (104, 101, 154, 221),
+                0.90,
+                appearance=other_feat,
+            ),
+            tr(
+                11,
+                (120, 101, 170, 221),
+                0.90,
+                appearance=target_feat,
+            ),
+        ]
+    )
+
+    assert committed.best_score is not None
+    assert committed.target_track_id == 11
+    assert committed.state == TargetState.LOCKED
+    assert committed.visible
+    assert (
+        committed.best_score
+        .appearance_accepted_for_publication
+    )
 
 
 def test_appearance_memory_does_not_update_while_lost_or_reacquired():
@@ -485,7 +530,7 @@ def test_appearance_disabled_preserves_geometry_only_id_switch():
         )
     )
 
-    output = tim.update(
+    first = tim.update(
         [
             tr(
                 2,
@@ -496,9 +541,26 @@ def test_appearance_disabled_preserves_geometry_only_id_switch():
         ]
     )
 
-    assert output.target_track_id == 2
-    assert output.state == TargetState.REACQUIRED
-    assert output.reacquired
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert first.state == TargetState.REACQUIRED
+    assert first.reacquired
+    assert not first.visible
+
+    committed = tim.update(
+        [
+            tr(
+                2,
+                (106, 102, 166, 242),
+                score=0.95,
+                appearance=None,
+            )
+        ]
+    )
+
+    assert committed.target_track_id == 2
+    assert committed.state == TargetState.LOCKED
+    assert committed.visible
 
 
 def test_id_switch_rejects_low_appearance_similarity():
@@ -577,7 +639,7 @@ def test_id_switch_accepts_high_raw_similarity_when_not_blended():
         )
     )
 
-    output = tim.update(
+    first = tim.update(
         [
             tr(
                 2,
@@ -588,12 +650,29 @@ def test_id_switch_accepts_high_raw_similarity_when_not_blended():
         ]
     )
 
-    assert output.best_score is not None
-    assert 0.84 < output.best_score.appearance_raw < 0.86
-    assert not output.best_score.appearance_used
-    assert output.target_track_id == 2
-    assert output.state == TargetState.REACQUIRED
-    assert output.reacquired
+    assert first.best_score is not None
+    assert 0.84 < first.best_score.appearance_raw < 0.86
+    assert not first.best_score.appearance_used
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert first.state == TargetState.REACQUIRED
+    assert first.reacquired
+    assert not first.visible
+
+    committed = tim.update(
+        [
+            tr(
+                2,
+                (106, 102, 166, 242),
+                score=0.95,
+                appearance=high_match,
+            )
+        ]
+    )
+
+    assert committed.target_track_id == 2
+    assert committed.state == TargetState.LOCKED
+    assert committed.visible
 
 
 def test_same_id_reacquisition_rejects_missing_appearance_after_uncertain():
@@ -829,7 +908,7 @@ def test_evidence_backed_reacquired_id_can_confirm_without_fresh_appearance():
 
     tim.update([])
 
-    reacquired = tim.update(
+    first = tim.update(
         [
             tr(
                 2,
@@ -840,13 +919,14 @@ def test_evidence_backed_reacquired_id_can_confirm_without_fresh_appearance():
         ]
     )
 
-    assert reacquired.target_track_id == 2
-    assert reacquired.state == TargetState.REACQUIRED
-    assert reacquired.reacquired
-    assert not reacquired.visible
-    assert not reacquired.control_valid
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert first.state == TargetState.REACQUIRED
+    assert first.reacquired
+    assert not first.visible
+    assert not first.control_valid
 
-    output = tim.update(
+    committed = tim.update(
         [
             tr(
                 2,
@@ -857,9 +937,9 @@ def test_evidence_backed_reacquired_id_can_confirm_without_fresh_appearance():
         ]
     )
 
-    assert output.target_track_id == 2
-    assert output.state == TargetState.LOCKED
-    assert output.frames_since_seen == 0
-    assert output.visible
-    assert output.control_valid
-    assert output.reason == "accepted_candidate"
+    assert committed.target_track_id == 2
+    assert committed.state == TargetState.LOCKED
+    assert committed.frames_since_seen == 0
+    assert committed.visible
+    assert committed.control_valid
+    assert committed.reason == "reacquired_candidate"

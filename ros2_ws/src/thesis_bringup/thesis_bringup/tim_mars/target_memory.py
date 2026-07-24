@@ -15,7 +15,6 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import Enum
 from typing import (
-    Any,
     List,
     Optional,
     Sequence,
@@ -44,11 +43,9 @@ from thesis_bringup.tim_mars.memory_state import (
 from thesis_bringup.tim_mars.positive_appearance_memory import PositiveAppearanceMemory
 from thesis_bringup.tim_mars.reacquisition_policy import (
     absence_risk,
-    AbsenceRecoveryConfirmation,
     appearance_margin,
-    CandidateBeliefConfirmation,
+    CandidatePersistenceTracker,
     geometry_strength,
-    RankAwareReacquisitionConfirmation,
     scene_ambiguity_risk,
 )
 from thesis_bringup.tim_mars.types import (
@@ -127,9 +124,7 @@ class TargetIdentityMemory:
         self.cfg = cfg or TargetMemoryConfig()
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
-        self._rank_reacq_confirmation = RankAwareReacquisitionConfirmation()
-        self._absence_reacq_confirmation = AbsenceRecoveryConfirmation()
-        self._candidate_belief_confirmation = CandidateBeliefConfirmation()
+        self._candidate_persistence = CandidatePersistenceTracker()
         self._hard_negative_memory = HardNegativeMemory()
         self._positive_appearance = PositiveAppearanceMemory()
         self._last_acceptance_memory_source = "none"
@@ -153,6 +148,27 @@ class TargetIdentityMemory:
         return self._m.bbox
 
     @property
+    def _rank_reacq_confirmation(
+        self,
+    ) -> CandidatePersistenceTracker:
+        """Temporary compatibility view of the unified tracker."""
+        return self._candidate_persistence
+
+    @property
+    def _absence_reacq_confirmation(
+        self,
+    ) -> CandidatePersistenceTracker:
+        """Temporary compatibility view of the unified tracker."""
+        return self._candidate_persistence
+
+    @property
+    def _candidate_belief_confirmation(
+        self,
+    ) -> CandidatePersistenceTracker:
+        """Temporary compatibility view of the unified tracker."""
+        return self._candidate_persistence
+
+    @property
     def appearance_update_cooldown_frames_remaining(self) -> int:
         """Remaining frames before positive appearance updates resume."""
         return int(self._appearance_update_cooldown_frames_remaining)
@@ -170,9 +186,7 @@ class TargetIdentityMemory:
         self._reset_hard_negative_diagnostics()
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
-        self._rank_reacq_confirmation.reset()
-        self._absence_reacq_confirmation.reset()
-        self._candidate_belief_confirmation.reset()
+        self._candidate_persistence.reset()
         self._hard_negative_memory.clear()
         self._positive_appearance.clear()
 
@@ -206,7 +220,6 @@ class TargetIdentityMemory:
             bbox=track.bbox,
             quality=clamp01(track.score),
             frames_since_seen=0,
-            confirmed_after_reacquire=0,
             appearance=(
                 None
                 if protected_mode
@@ -239,9 +252,7 @@ class TargetIdentityMemory:
                 )
 
         self._appearance_update_cooldown_frames_remaining = 0
-        self._rank_reacq_confirmation.reset()
-        self._absence_reacq_confirmation.reset()
-        self._candidate_belief_confirmation.reset()
+        self._candidate_persistence.reset()
         self._hard_negative_memory.clear()
 
         return self._make_output(
@@ -367,9 +378,7 @@ class TargetIdentityMemory:
             != int(previous_tracker_id)
         )
 
-        requirements_by_policy: dict[str, int] = {}
-
-        combined_confirmation_requirements = (
+        confirmation_options = list(
             tuple(confirmation_requirements)
             + self._candidate_belief_confirmation_requirements(
                 best=score,
@@ -377,42 +386,66 @@ class TargetIdentityMemory:
             )
         )
 
-        for policy, required in (
-            combined_confirmation_requirements
-        ):
-            policy_name = str(policy)
-            requirements_by_policy[policy_name] = max(
-                requirements_by_policy.get(policy_name, 1),
-                1,
-                int(required),
-            )
-
         if self._absence_confirmation_applies(
             id_switch=id_switch,
         ):
-            requirements_by_policy[
-                'absence_recovery'
-            ] = max(
-                requirements_by_policy.get(
+            confirmation_options.append(
+                (
                     'absence_recovery',
-                    1,
-                ),
-                1,
-                int(self.cfg.absence_confirm_frames),
+                    max(
+                        1,
+                        int(self.cfg.absence_confirm_frames),
+                    ),
+                )
             )
 
-        confirmations = tuple(
-            _ConfirmationRequirement(
-                policy=policy,
-                required=required,
-                count=self._preview_confirmation_count(
-                    policy,
-                    int(candidate.track_id),
+        recovery_proposal = bool(
+            id_switch
+            or self._m.state
+            in {
+                TargetState.UNCERTAIN,
+                TargetState.LOST,
+                TargetState.REACQUIRED,
+            }
+        )
+        if recovery_proposal:
+            confirmation_options.append(
+                (
+                    'recovery_persistence',
+                    1
+                    + max(
+                        0,
+                        int(
+                            self.cfg
+                            .min_confirm_frames_after_reacquire
+                        ),
+                    ),
+                )
+            )
+
+        if confirmation_options:
+            policy, required = max(
+                (
+                    (
+                        str(policy_name),
+                        max(1, int(required_count)),
+                    )
+                    for policy_name, required_count
+                    in confirmation_options
+                ),
+                key=lambda item: item[1],
+            )
+            confirmations = (
+                _ConfirmationRequirement(
+                    policy=policy,
+                    required=required,
+                    count=self._preview_confirmation_count(
+                        int(candidate.track_id),
+                    ),
                 ),
             )
-            for policy, required
-            in requirements_by_policy.items()
-        )
+        else:
+            confirmations = ()
 
         evidence = ['geometry']
         if candidate.appearance is not None:
@@ -446,52 +479,20 @@ class TargetIdentityMemory:
             diagnostic_reason=str(diagnostic_reason),
         )
 
-    def _confirmation_tracker(
-        self,
-        policy: str,
-    ) -> Any:
-        trackers = {
-            'candidate_belief': (
-                self._candidate_belief_confirmation
-            ),
-            'absence_recovery': (
-                self._absence_reacq_confirmation
-            ),
-            'rank_aware_reacquisition': (
-                self._rank_reacq_confirmation
-            ),
-        }
-
-        try:
-            return trackers[str(policy)]
-        except KeyError as error:
-            raise ValueError(
-                f'Unknown confirmation policy: {policy}'
-            ) from error
-
     def _preview_confirmation_count(
         self,
-        policy: str,
         track_id: int,
     ) -> int:
-        tracker = self._confirmation_tracker(policy)
-
-        if tracker.candidate_id == int(track_id):
-            return int(tracker.confirm_count) + 1
-
-        return 1
+        return self._candidate_persistence.preview(
+            int(track_id)
+        )
 
     def _reset_confirmation_trackers_except(
         self,
         active: set[str],
     ) -> None:
-        for policy in (
-            'candidate_belief',
-            'absence_recovery',
-            'rank_aware_reacquisition',
-        ):
-            if policy not in active:
-                self._confirmation_tracker(policy).reset()
+        if not active:
+            self._candidate_persistence.reset()
 
     def _proposal_pending_reason(
         self,
@@ -532,6 +533,14 @@ class TargetIdentityMemory:
                 f'{requirement.required}'
             )
 
+        if requirement.policy == 'recovery_persistence':
+            return (
+                'recovery_persistence_pending:'
+                f' id={proposal.proposed_tracker_id}'
+                f' confirm={requirement.count}/'
+                f'{requirement.required}'
+            )
+
         return (
             f'{proposal.proposal_source}_pending:'
             f' id={proposal.proposed_tracker_id}'
@@ -544,29 +553,42 @@ class TargetIdentityMemory:
         proposal: _CandidateProposal,
         verdict: _ProposalVerdict,
     ) -> None:
-        active = {
-            requirement.policy
-            for requirement in proposal.confirmations
-        }
-        self._reset_confirmation_trackers_except(active)
-
         if verdict.status == _ProposalVerdictStatus.REJECTED:
-            for policy in active:
-                self._confirmation_tracker(policy).reset()
+            self._candidate_persistence.reset()
             return
 
-        for requirement in proposal.confirmations:
-            observed = self._confirmation_tracker(
-                requirement.policy
-            ).observe(
-                proposal.proposed_tracker_id
+        if not proposal.confirmations:
+            self._candidate_persistence.reset()
+            return
+
+        if len(proposal.confirmations) != 1:
+            raise RuntimeError(
+                'Unified candidate persistence requires exactly '
+                'one confirmation requirement.'
             )
-            if observed != requirement.count:
-                raise RuntimeError(
-                    'Confirmation preview diverged from commit '
-                    f'for {requirement.policy}: '
-                    f'{observed}!={requirement.count}'
+
+        requirement = proposal.confirmations[0]
+        observed = self._candidate_persistence.observe(
+            proposal.proposed_tracker_id,
+            required_observations=requirement.required,
+            source=requirement.policy,
+            bbox=proposal.candidate.bbox,
+            score=proposal.score.total,
+            identity_evidence_confirmed=bool(
+                proposal.candidate.appearance is not None
+                and proposal.score.appearance_evaluated
+                and (
+                    proposal.score
+                    .appearance_similarity_passed
                 )
+            ),
+        )
+
+        if observed != requirement.count:
+            raise RuntimeError(
+                'Confirmation preview diverged from commit: '
+                f'{observed}!={requirement.count}'
+            )
 
     @staticmethod
     def _proposal_reject_reason(
@@ -790,11 +812,33 @@ class TargetIdentityMemory:
             verdict,
         )
 
-        if verdict.status != _ProposalVerdictStatus.ACCEPTED:
+        if verdict.status == _ProposalVerdictStatus.REJECTED:
             return self._miss(
                 reason=verdict.reason,
                 best_score=proposal.score,
                 all_scores=list(proposal.all_scores),
+            )
+
+        if verdict.status == _ProposalVerdictStatus.PENDING:
+            trusted_continuity_broken = bool(
+                self._m.state != TargetState.LOCKED
+                or proposal.id_switch
+            )
+            if trusted_continuity_broken:
+                self._last_hard_negative_events = (
+                    self._hard_negative_memory.discard_pending(
+                        selected_track_id=self._m.track_id,
+                    )
+                )
+
+            return self._make_output(
+                reason=verdict.reason,
+                visible=False,
+                reacquired=True,
+                best_score=proposal.score,
+                all_scores=list(proposal.all_scores),
+                state_override=TargetState.REACQUIRED,
+                control_mode_override=ControlMode.CONFIRM,
             )
 
         return self._accept(
@@ -978,6 +1022,17 @@ class TargetIdentityMemory:
             return None
 
         if candidate.appearance is None:
+            same_pending_candidate = bool(
+                self._candidate_persistence.candidate_id
+                == int(candidate.track_id)
+            )
+            if (
+                same_pending_candidate
+                and self._candidate_persistence
+                .identity_evidence_confirmed
+            ):
+                return None
+
             return (
                 'id_switch_recovery_reject:'
                 'no_candidate_appearance'
@@ -1419,7 +1474,7 @@ class TargetIdentityMemory:
         )
 
     def _reset_absence_reacquisition_confirmation(self) -> None:
-        self._absence_reacq_confirmation.reset()
+        self._candidate_persistence.reset()
 
     def _absence_confirmation_applies(
         self,
@@ -1805,9 +1860,7 @@ class TargetIdentityMemory:
         }
         reacquired = bool(id_changed or was_lostish)
 
-        self._rank_reacq_confirmation.reset()
-        self._reset_absence_reacquisition_confirmation()
-        self._candidate_belief_confirmation.reset()
+        self._candidate_persistence.reset()
 
         if reacquired:
             self._appearance_update_cooldown_frames_remaining = max(
@@ -1821,19 +1874,9 @@ class TargetIdentityMemory:
                 ),
             )
 
-        if previous_state == TargetState.REACQUIRED:
-            self._m.confirmed_after_reacquire += 1
-        elif reacquired:
-            self._m.confirmed_after_reacquire = 0
-
-        if (
-            reacquired
-            and self._m.confirmed_after_reacquire
-            < self.cfg.min_confirm_frames_after_reacquire
-        ):
-            new_state = TargetState.REACQUIRED
-        else:
-            new_state = TargetState.LOCKED
+        # Recovery persistence has already been confirmed before _accept().
+        # Trusted selected memory is committed once, atomically, into LOCKED.
+        new_state = TargetState.LOCKED
 
         best_score = replace(
             best_score,
@@ -2215,8 +2258,6 @@ class TargetIdentityMemory:
     ) -> TargetMemoryOutput:
         self._m.frames_since_seen += 1
         self._m.quality *= self.cfg.stale_quality_decay
-        self._m.confirmed_after_reacquire = 0
-
         if self._m.frames_since_seen <= self.cfg.max_uncertain_frames:
             self._m.state = TargetState.UNCERTAIN
         else:
@@ -2240,6 +2281,7 @@ class TargetIdentityMemory:
         reacquired: bool,
         best_score: Optional[CandidateScore] = None,
         all_scores: Optional[List[CandidateScore]] = None,
+        state_override: Optional[TargetState] = None,
         control_mode_override: Optional[ControlMode] = None,
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = '',
@@ -2262,10 +2304,14 @@ class TargetIdentityMemory:
         candidate_track_id = int(best_score.track_id) if best_score is not None else None
         candidate_score = float(best_score.total) if best_score is not None else 0.0
         publication_suppressed_reason = '' if visible else reason
+        output_state = state_override or self._m.state
 
         return TargetMemoryOutput(
-            state=self._m.state,
-            control_mode=control_mode_override or _control_mode_for_state(self._m.state),
+            state=output_state,
+            control_mode=(
+                control_mode_override
+                or _control_mode_for_state(output_state)
+            ),
             target_track_id=self._m.track_id,
             bbox=self._m.bbox,
             quality=clamp01(self._m.quality),

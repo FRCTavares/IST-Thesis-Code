@@ -10,72 +10,109 @@ The main state transition logic remains in target_memory.py.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import List, Optional
 
-from thesis_bringup.tim_mars.types import CandidateScore, TargetMemoryConfig, TargetState
+from thesis_bringup.tim_mars.types import (
+    BBox,
+    CandidateScore,
+    TargetMemoryConfig,
+    TargetState,
+)
 
 
-class CandidateBeliefConfirmation:
-    """Track repeated confirmation of a plausible but unpublished candidate."""
+@dataclass
+class CandidatePersistenceTracker:
+    """Track one probationary candidate outside trusted selected memory."""
 
-    def __init__(self) -> None:
-        self.candidate_id: Optional[int] = None
-        self.confirm_count = 0
+    candidate_id: Optional[int] = None
+    observation_count: int = 0
+    required_observations: int = 0
+    source: str = ""
+    bbox: Optional[BBox] = None
+    score: float = 0.0
+    identity_evidence_confirmed: bool = False
 
-    def reset(self) -> None:
-        self.candidate_id = None
-        self.confirm_count = 0
+    @property
+    def pending(self) -> bool:
+        return self.candidate_id is not None
 
-    def observe(self, track_id: int) -> int:
-        """Record one frame for track_id and return its current confirmation count."""
-        if self.candidate_id == track_id:
-            self.confirm_count += 1
-        else:
-            self.candidate_id = track_id
-            self.confirm_count = 1
-        return self.confirm_count
-
-
-class AbsenceRecoveryConfirmation:
-    """Track repeated confirmation of the same absence-recovery candidate."""
-
-    def __init__(self) -> None:
-        self.candidate_id: Optional[int] = None
-        self.confirm_count = 0
-
-    def reset(self) -> None:
-        self.candidate_id = None
-        self.confirm_count = 0
-
-    def observe(self, track_id: int) -> int:
-        """Record one frame for track_id and return its current confirmation count."""
-        if self.candidate_id == track_id:
-            self.confirm_count += 1
-        else:
-            self.candidate_id = track_id
-            self.confirm_count = 1
-        return self.confirm_count
-
-
-class RankAwareReacquisitionConfirmation:
-    """Track repeated confirmation of the same rank-aware reacquisition candidate."""
-
-    def __init__(self) -> None:
-        self.candidate_id: Optional[int] = None
-        self.confirm_count = 0
+    @property
+    def confirmed(self) -> bool:
+        return bool(
+            self.pending
+            and self.observation_count
+            >= max(1, self.required_observations)
+        )
 
     def reset(self) -> None:
         self.candidate_id = None
-        self.confirm_count = 0
+        self.observation_count = 0
+        self.required_observations = 0
+        self.source = ""
+        self.bbox = None
+        self.score = 0.0
+        self.identity_evidence_confirmed = False
 
-    def observe(self, track_id: int) -> int:
-        """Record one frame for track_id and return its current confirmation count."""
-        if self.candidate_id == track_id:
-            self.confirm_count += 1
-        else:
-            self.candidate_id = track_id
-            self.confirm_count = 1
-        return self.confirm_count
+    def preview(self, track_id: int) -> int:
+        """Return the next observation count without mutating state."""
+        if self.candidate_id == int(track_id):
+            return self.observation_count + 1
+        return 1
+
+    @property
+    def confirm_count(self) -> int:
+        """Compatibility name while old call sites are migrated."""
+        return self.observation_count
+
+    @confirm_count.setter
+    def confirm_count(self, value: int) -> None:
+        self.observation_count = int(value)
+
+    def observe(
+        self,
+        track_id: int,
+        *,
+        required_observations: int = 1,
+        source: str = "",
+        bbox: Optional[BBox] = None,
+        score: float = 0.0,
+        identity_evidence_confirmed: bool = False,
+    ) -> int:
+        """Commit one gate-approved observation."""
+        same_candidate = bool(
+            self.candidate_id == int(track_id)
+        )
+        retained_identity_evidence = bool(
+            identity_evidence_confirmed
+            or (
+                same_candidate
+                and self.identity_evidence_confirmed
+            )
+        )
+        next_count = self.preview(track_id)
+
+        self.candidate_id = int(track_id)
+        self.observation_count = next_count
+        self.required_observations = max(
+            1,
+            int(required_observations),
+        )
+        self.source = str(source)
+        self.bbox = bbox
+        self.score = float(score)
+        self.identity_evidence_confirmed = (
+            retained_identity_evidence
+        )
+
+        return next_count
+
+
+# Compatibility aliases preserve the current imports while target_memory.py
+# is migrated from three policy-specific instances to one persistence tracker.
+CandidateBeliefConfirmation = CandidatePersistenceTracker
+AbsenceRecoveryConfirmation = CandidatePersistenceTracker
+RankAwareReacquisitionConfirmation = CandidatePersistenceTracker
 
 
 def appearance_margin(selected: CandidateScore, scores_sorted: List[CandidateScore]) -> float:
@@ -132,6 +169,7 @@ def absence_risk(
 
 
 __all__ = [
+    "CandidatePersistenceTracker",
     "AbsenceRecoveryConfirmation",
     "CandidateBeliefConfirmation",
     "RankAwareReacquisitionConfirmation",

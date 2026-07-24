@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from thesis_bringup.tim_mars.target_memory import (
     CandidateScore,
@@ -72,7 +71,22 @@ def test_rank_aware_disabled_preserves_rank0_lost_reacquisition():
         ]
     )
 
-    assert out.target_track_id == 6
+    assert out.target_track_id == 1
+    assert out.candidate_track_id == 6
+    assert out.state == TargetState.REACQUIRED
+    assert not out.visible
+    assert out.reacquired
+
+    committed = tim.update(
+        [
+            tr(6, (105, 104, 165, 244), 0.95, appearance=distractor),
+            tr(11, (132, 101, 192, 241), 0.95, appearance=target),
+        ]
+    )
+
+    assert committed.target_track_id == 6
+    assert committed.state == TargetState.LOCKED
+    assert committed.visible
 
 
 def test_rank_aware_lost_reacquisition_can_choose_rank1_by_appearance():
@@ -98,18 +112,24 @@ def test_rank_aware_lost_reacquisition_can_choose_rank1_by_appearance():
         ]
     )
 
-    assert out.target_track_id == 11
-    assert out.state in {TargetState.REACQUIRED, TargetState.LOCKED}
+    assert out.target_track_id == 1
+    assert out.candidate_track_id == 11
+    assert out.state == TargetState.REACQUIRED
+    assert not out.visible
     assert out.reacquired
 
+    committed = tim.update(
+        [
+            tr(6, (105, 104, 165, 244), 0.95, appearance=distractor),
+            tr(11, (132, 101, 192, 241), 0.95, appearance=target),
+        ]
+    )
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "REACQUIRED currently overwrites the trusted selected lineage "
-        "before probation is complete"
-    ),
-)
+    assert committed.target_track_id == 11
+    assert committed.state == TargetState.LOCKED
+    assert committed.visible
+
+
 def test_rank_aware_reacquisition_keeps_candidate_probationary():
     """Keep a rank-aware candidate separate from trusted selected memory."""
     target = feat([1.0, 0.0, 0.0])
@@ -160,9 +180,13 @@ def test_rank_aware_reacquisition_keeps_candidate_probationary():
     assert tim._m.bbox == trusted_bbox
     assert np.allclose(tim._m.appearance, trusted_appearance)
 
-    assert tim._m.pending_track_id == 29
-    assert tim._m.pending_bbox == (104, 101, 164, 241)
-    assert tim._m.pending_confirm_count == 1
+    assert tim._candidate_persistence.candidate_id == 29
+    assert (
+        tim._candidate_persistence.bbox
+        == (104, 101, 164, 241)
+    )
+    assert tim._candidate_persistence.observation_count == 1
+    assert tim._candidate_persistence.required_observations == 3
 
     second = tim.update(
         [
@@ -181,9 +205,36 @@ def test_rank_aware_reacquisition_keeps_candidate_probationary():
     assert not second.visible
     assert not second.control_valid
     assert tim._m.track_id == 26
-    assert tim._m.pending_track_id == 29
-    assert tim._m.pending_confirm_count == 2
+    assert tim._candidate_persistence.candidate_id == 29
+    assert tim._candidate_persistence.observation_count == 2
+    assert (
+        tim._candidate_persistence.bbox
+        == (106, 102, 166, 242)
+    )
     assert np.allclose(tim._m.appearance, trusted_appearance)
+
+    third = tim.update(
+        [
+            tr(
+                29,
+                (108, 103, 168, 243),
+                score=0.95,
+                appearance=target,
+            )
+        ]
+    )
+
+    # Final confirmation commits the pending candidate atomically.
+    assert third.state == TargetState.LOCKED
+    assert third.visible
+    assert third.control_valid
+    assert third.reacquired
+    assert third.target_track_id == 29
+    assert tim._m.track_id == 29
+    assert tim._m.bbox == (108, 103, 168, 243)
+    assert tim._candidate_persistence.candidate_id is None
+    assert tim._candidate_persistence.bbox is None
+    assert tim._candidate_persistence.observation_count == 0
 
 
 def test_rank_aware_reacquisition_respects_confirmation_frames():
@@ -209,10 +260,19 @@ def test_rank_aware_reacquisition_respects_confirmation_frames():
 
     first = tim.update(candidates)
     assert first.target_track_id == 1
-    assert first.state in {TargetState.UNCERTAIN, TargetState.LOST}
+    assert first.candidate_track_id == 11
+    assert first.state == TargetState.REACQUIRED
+    assert not first.visible
+    assert first.reacquired
+    assert first.reason.startswith(
+        "rank_aware_reacquisition_pending:"
+    )
+    assert "confirm=1/2" in first.reason
 
     second = tim.update(candidates)
     assert second.target_track_id == 11
+    assert second.state == TargetState.LOCKED
+    assert second.visible
     assert second.reacquired
 
 
@@ -680,7 +740,8 @@ def test_rank_aware_reacquisition_composes_candidate_belief_confirmation():
 
     first = tim.update(candidates)
     assert first.target_track_id == 1
-    assert first.state == TargetState.LOST
+    assert first.candidate_track_id == 7
+    assert first.state == TargetState.REACQUIRED
     assert not first.visible
     assert first.reason.startswith(
         "candidate_belief_confirmation_pending:"
@@ -689,7 +750,8 @@ def test_rank_aware_reacquisition_composes_candidate_belief_confirmation():
 
     second = tim.update(candidates)
     assert second.target_track_id == 1
-    assert second.state == TargetState.LOST
+    assert second.candidate_track_id == 7
+    assert second.state == TargetState.REACQUIRED
     assert not second.visible
     assert second.reason.startswith(
         "candidate_belief_confirmation_pending:"
@@ -698,7 +760,9 @@ def test_rank_aware_reacquisition_composes_candidate_belief_confirmation():
 
     third = tim.update(candidates)
     assert third.target_track_id == 7
-    assert third.state == TargetState.REACQUIRED
+    assert third.candidate_track_id == 7
+    assert third.state == TargetState.LOCKED
+    assert third.visible
     assert third.reacquired
 
 

@@ -23,7 +23,6 @@ class _Memory:
     bbox: Optional[BBox] = None
     quality: float = 0.0
     frames_since_seen: int = 0
-    confirmed_after_reacquire: int = 0
     appearance: Optional[Any] = None
 
 

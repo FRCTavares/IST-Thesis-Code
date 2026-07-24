@@ -76,13 +76,16 @@ def test_id_switch_recovery_uses_memory_not_raw_tracker_id():
     out = tim.update([tr(12, (104, 102, 154, 222), 0.88)])
 
     assert out.state == TargetState.REACQUIRED
-    assert out.target_track_id == 12
+    assert out.target_track_id == 5
+    assert out.candidate_track_id == 12
     assert out.reacquired
+    assert not out.visible
     assert out.control_mode == ControlMode.CONFIRM
 
     out2 = tim.update([tr(12, (108, 104, 158, 224), 0.88)])
     assert out2.state == TargetState.LOCKED
     assert out2.target_track_id == 12
+    assert out2.visible
 
 
 def test_id_switch_recovery_disabled_rejects_different_id():
@@ -158,7 +161,16 @@ def test_reacquire_after_temporary_loss():
     out = tim.update([tr(9, (103, 101, 153, 221), 0.90)])
     assert out.state == TargetState.REACQUIRED
     assert out.reacquired
-    assert out.target_track_id == 9
+    assert out.target_track_id == 5
+    assert out.candidate_track_id == 9
+    assert not out.visible
+
+    committed = tim.update(
+        [tr(9, (105, 102, 155, 222), 0.90)]
+    )
+    assert committed.state == TargetState.LOCKED
+    assert committed.target_track_id == 9
+    assert committed.visible
 
 
 def test_ambiguous_best_candidate_is_rejected_when_not_same_id():
@@ -276,14 +288,15 @@ def test_candidate_belief_buffer_suppresses_new_id_until_confirmed():
     assert first.publication_suppressed_reason.startswith("candidate_belief_confirmation_pending:")
 
     second = tim.update(candidate)
-    assert second.visible is False
+    assert second.visible
     assert second.target_track_id == 7
     assert second.candidate_track_id == 7
+    assert second.state == TargetState.LOCKED
     assert second.reacquired
-    assert second.publication_suppressed_reason == "reacquired_candidate"
+    assert second.publication_suppressed_reason == ""
 
 
-def test_candidate_belief_disabled_preserves_immediate_new_id_recovery():
+def test_candidate_belief_disabled_still_uses_recovery_persistence():
     tim = TargetIdentityMemory(
         cfg(
             candidate_belief_enabled=False,
@@ -301,11 +314,25 @@ def test_candidate_belief_disabled_preserves_immediate_new_id_recovery():
         tr(7, (102, 100, 162, 240), score=0.95),
     ])
 
-    assert out.visible is False
-    assert out.target_track_id == 7
+    assert not out.visible
+    assert out.target_track_id == 1
     assert out.candidate_track_id == 7
+    assert out.state == TargetState.REACQUIRED
     assert out.reacquired
-    assert out.publication_suppressed_reason == "reacquired_candidate"
+    assert out.publication_suppressed_reason.startswith(
+        "recovery_persistence_pending:"
+    )
+
+    committed = tim.update([
+        tr(7, (104, 101, 164, 241), score=0.95),
+    ])
+
+    assert committed.visible
+    assert committed.target_track_id == 7
+    assert committed.candidate_track_id == 7
+    assert committed.state == TargetState.LOCKED
+    assert committed.reacquired
+    assert committed.publication_suppressed_reason == ""
 
 
 def test_short_gap_new_id_is_suppressed_and_same_id_return_is_preferred():

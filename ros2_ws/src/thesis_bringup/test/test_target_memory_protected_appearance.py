@@ -94,7 +94,7 @@ def test_geometrically_stable_wrong_reacquisition_cannot_replace_anchor():
         .copy()
     )
 
-    reacquired = tim.update(
+    first = tim.update(
         [
             tr(
                 2,
@@ -104,11 +104,13 @@ def test_geometrically_stable_wrong_reacquisition_cannot_replace_anchor():
         ]
     )
 
-    assert reacquired.state == TargetState.REACQUIRED
-    assert reacquired.target_track_id == 2
-    assert not reacquired.positive_memory_updated
+    assert first.state == TargetState.REACQUIRED
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert not first.visible
+    assert not first.positive_memory_updated
 
-    locked = tim.update(
+    committed = tim.update(
         [
             tr(
                 2,
@@ -118,9 +120,9 @@ def test_geometrically_stable_wrong_reacquisition_cannot_replace_anchor():
         ]
     )
 
-    assert locked.state == TargetState.LOCKED
-    assert locked.target_track_id == 2
-    assert not locked.positive_memory_updated
+    assert committed.state == TargetState.LOCKED
+    assert committed.target_track_id == 2
+    assert not committed.positive_memory_updated
 
     assert np.array_equal(
         tim._positive_appearance.protected_anchor,
@@ -264,7 +266,7 @@ def test_protected_anchor_records_id_switch_support_source():
         )
     )
 
-    output = tim.update(
+    first = tim.update(
         [
             tr(
                 2,
@@ -274,23 +276,40 @@ def test_protected_anchor_records_id_switch_support_source():
         ]
     )
 
-    assert output.state == TargetState.REACQUIRED
-    assert output.target_track_id == 2
+    assert first.state == TargetState.REACQUIRED
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert not first.visible
+    assert first.acceptance_memory_source == "none"
+    assert first.best_score is not None
     assert (
-        output.acceptance_memory_source
-        == "protected_anchor"
-    )
-    assert output.best_score is not None
-    assert (
-        output.best_score.positive_support_source
+        first.best_score.positive_support_source
         == "protected_anchor"
     )
     assert (
         0.84
-        < output.best_score.protected_anchor_similarity
+        < first.best_score.protected_anchor_similarity
         < 0.86
     )
-    assert not output.positive_memory_updated
+    assert not first.positive_memory_updated
+
+    committed = tim.update(
+        [
+            tr(
+                2,
+                (106, 102, 166, 242),
+                appearance=same_identity_new_pose,
+            )
+        ]
+    )
+
+    assert committed.state == TargetState.LOCKED
+    assert committed.target_track_id == 2
+    assert committed.visible
+    assert (
+        committed.acceptance_memory_source
+        == "protected_anchor"
+    )
 
 
 def test_gallery_supported_switch_requires_anchor_agreement():
@@ -407,7 +426,7 @@ def test_gallery_supported_switch_passes_with_anchor_agreement():
         gallery_pose.copy()
     ]
 
-    output = tim.update(
+    first = tim.update(
         [
             tr(
                 2,
@@ -417,18 +436,39 @@ def test_gallery_supported_switch_passes_with_anchor_agreement():
         ]
     )
 
-    assert output.state == TargetState.REACQUIRED
-    assert output.target_track_id == 2
+    assert first.state == TargetState.REACQUIRED
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert not first.visible
+    assert first.acceptance_memory_source == "none"
+    assert first.best_score is not None
     assert (
-        output.acceptance_memory_source
+        first.best_score.positive_support_source
         == "trusted_gallery"
     )
-    assert output.best_score is not None
     assert (
-        output.best_score.protected_anchor_similarity
+        first.best_score.protected_anchor_similarity
         > 0.79
     )
-    assert not output.positive_memory_updated
+    assert not first.positive_memory_updated
+
+    committed = tim.update(
+        [
+            tr(
+                2,
+                (106, 102, 166, 242),
+                appearance=gallery_pose,
+            )
+        ]
+    )
+
+    assert committed.state == TargetState.LOCKED
+    assert committed.target_track_id == 2
+    assert committed.visible
+    assert (
+        committed.acceptance_memory_source
+        == "trusted_gallery"
+    )
 
 
 def test_direct_anchor_support_is_not_subject_to_gallery_floor():
@@ -449,7 +489,7 @@ def test_direct_anchor_support_is_not_subject_to_gallery_floor():
         )
     )
 
-    output = tim.update(
+    first = tim.update(
         [
             tr(
                 2,
@@ -459,9 +499,31 @@ def test_direct_anchor_support_is_not_subject_to_gallery_floor():
         ]
     )
 
-    assert output.state == TargetState.REACQUIRED
-    assert output.target_track_id == 2
+    assert first.state == TargetState.REACQUIRED
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert not first.visible
+    assert first.acceptance_memory_source == "none"
+    assert first.best_score is not None
     assert (
-        output.acceptance_memory_source
+        first.best_score.positive_support_source
+        == "protected_anchor"
+    )
+
+    committed = tim.update(
+        [
+            tr(
+                2,
+                (106, 102, 166, 242),
+                appearance=anchor_match,
+            )
+        ]
+    )
+
+    assert committed.state == TargetState.LOCKED
+    assert committed.target_track_id == 2
+    assert committed.visible
+    assert (
+        committed.acceptance_memory_source
         == "protected_anchor"
     )

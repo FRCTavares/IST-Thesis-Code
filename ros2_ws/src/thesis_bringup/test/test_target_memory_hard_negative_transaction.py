@@ -267,7 +267,7 @@ def test_output_reports_selected_lineage_reconciliation():
     assert learned.hard_negative_events[0].action == "insert"
     assert learned.hard_negative_events[0].observations == 2
 
-    reconciled = tim.update(
+    first = tim.update(
         [
             tr(
                 2,
@@ -277,11 +277,30 @@ def test_output_reports_selected_lineage_reconciliation():
         ]
     )
 
-    assert reconciled.target_track_id == 2
-    assert reconciled.state == TargetState.REACQUIRED
-    assert reconciled.hard_negative_memory_size == 0
-    assert len(reconciled.hard_negative_events) == 1
-    event = reconciled.hard_negative_events[0]
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert first.state == TargetState.REACQUIRED
+    assert not first.visible
+    assert first.hard_negative_memory_size == 1
+    assert first.hard_negative_events == ()
+
+    committed = tim.update(
+        [
+            tr(
+                2,
+                (108, 102, 168, 242),
+                appearance=candidate,
+            )
+        ]
+    )
+
+    assert committed.target_track_id == 2
+    assert committed.state == TargetState.LOCKED
+    assert committed.visible
+    assert committed.hard_negative_memory_size == 0
+    assert len(committed.hard_negative_events) == 1
+
+    event = committed.hard_negative_events[0]
     assert event.action == "reconcile"
     assert event.source == "trusted_locked_distractor"
     assert event.selected_track_id == 2
@@ -383,7 +402,7 @@ def test_candidate_cannot_become_negative_before_role_resolution():
     tim = TargetIdentityMemory(cfg())
     select_stable_target(tim, target)
 
-    output = tim.update(
+    first = tim.update(
         [
             tr(
                 2,
@@ -393,8 +412,24 @@ def test_candidate_cannot_become_negative_before_role_resolution():
         ]
     )
 
-    assert output.target_track_id == 2
-    assert output.state == TargetState.REACQUIRED
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert first.state == TargetState.REACQUIRED
+    assert not first.visible
+    assert len(tim._hard_negative_memory) == 0
+
+    committed = tim.update(
+        [
+            tr(
+                2,
+                (106, 102, 166, 242),
+                appearance=candidate,
+            )
+        ]
+    )
+
+    assert committed.target_track_id == 2
+    assert committed.state == TargetState.LOCKED
     assert len(tim._hard_negative_memory) == 0
 
 
@@ -552,7 +587,7 @@ def test_low_quality_selected_crop_cannot_reconcile_negatives():
 
     assert len(tim._hard_negative_memory) == 1
 
-    output = tim.update(
+    first = tim.update(
         [
             tr(
                 2,
@@ -563,7 +598,10 @@ def test_low_quality_selected_crop_cannot_reconcile_negatives():
         ]
     )
 
-    assert output.target_track_id == 2
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert first.state == TargetState.REACQUIRED
+    assert not first.visible
     assert (
         tim._hard_negative_memory.similarity(
             candidate,

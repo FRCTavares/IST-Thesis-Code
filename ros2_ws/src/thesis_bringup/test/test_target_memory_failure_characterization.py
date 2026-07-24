@@ -106,16 +106,18 @@ def test_current_single_new_id_can_reacquire_despite_conflicting_appearance():
     assert not output.best_score.appearance_used
     assert output.best_score.appearance_raw < 0.10
 
-    # Characterized unsafe behaviour: the contradictory candidate becomes the
-    # selected lineage because appearance was not used for this ranking case.
-    assert output.target_track_id == 2
+    # Even with the conservative appearance gate disabled, the contradictory
+    # candidate remains probationary and cannot replace trusted memory yet.
+    assert output.target_track_id == 1
+    assert output.candidate_track_id == 2
     assert output.state == TargetState.REACQUIRED
     assert output.reacquired
+    assert not output.visible
     assert not output.control_valid
 
 
-def test_current_wrong_reacquisition_becomes_locked_on_next_same_id_frame():
-    """A newly accepted wrong ID inherits normal same-ID continuity immediately."""
+def test_disabled_identity_gates_still_allow_persistent_wrong_candidate():
+    """Persistence alone cannot correct disabled identity evidence gates."""
     selected_appearance = feat([1.0, 0.0, 0.0])
     wrong_appearance = feat([0.0, 1.0, 0.0])
 
@@ -132,7 +134,9 @@ def test_current_wrong_reacquisition_becomes_locked_on_next_same_id_frame():
         ]
     )
     assert first.state == TargetState.REACQUIRED
-    assert first.target_track_id == 2
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert not first.visible
 
     second = tim.update(
         [
@@ -144,8 +148,8 @@ def test_current_wrong_reacquisition_becomes_locked_on_next_same_id_frame():
         ]
     )
 
-    # Characterized unsafe behaviour: REACQUIRED transitions to LOCKED without
-    # retaining separate trust status for the operator-selected physical target.
+    # After the required persistence, the disabled identity gates still permit
+    # the wrong physical candidate to be committed atomically.
     assert second.state == TargetState.LOCKED
     assert second.target_track_id == 2
     assert second.visible
@@ -231,10 +235,12 @@ def test_hard_negative_transaction_reconciles_selected_identity():
         ]
     )
 
-    assert reacquired.target_track_id == 2
+    assert reacquired.target_track_id == 1
+    assert reacquired.candidate_track_id == 2
     assert reacquired.state == TargetState.REACQUIRED
+    assert not reacquired.visible
 
-    # Candidate preparation and ID-switch acceptance are side-effect free for
+    # Candidate preparation and probation are side-effect free for
     # negative memory.
     assert len(tim._hard_negative_memory) == 0
     assert (

@@ -33,8 +33,8 @@ Open executable issues: **28**.
 
 ## P1 — Major algorithmic, scientific, engineering, and documentation work
 
-1. [ ] [#8 — P1.1 Simplify recovery confirmation](https://github.com/FRCTavares/IST-Thesis-Code/issues/8)
-   - phase 2; experiment; keep reacquired lineage probationary until final confirmation.
+1. [x] [#8 — P1.1 Simplify recovery confirmation](https://github.com/FRCTavares/IST-Thesis-Code/issues/8)
+   - completed on 24 July 2026. One observation-based persistence tracker now owns recovery confirmation; probationary lineage remains separate from trusted selected memory until atomic acceptance; broken continuity expires staged hard-negative evidence; and validated identity evidence is retained only for the same pending candidate. Deterministic validation passed with 219 tests passed and 1 skipped.
 
 2. [ ] [#9 — P1.2 Reduce `target_memory.py`](https://github.com/FRCTavares/IST-Thesis-Code/issues/9)
    - phase 2; documentation/refactor; preserve behavior with characterization tests.
