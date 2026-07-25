@@ -6,7 +6,7 @@ closing evidence.
 
 Last reconciled with GitHub: **24 July 2026**.
 
-Open executable issues: **28**.
+Open executable issues: **27**.
 
 ## Execution rules
 
@@ -72,8 +72,10 @@ Open executable issues: **28**.
 13. [ ] [#32 — P1.14 Runtime and onboard cost](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
     - phase 7; live-system; includes raw-image DDS/QoS bandwidth and sustained Pi thermal/cadence cost.
 
-14. [ ] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35)
-    - phase 8; experiment.
+14. [x] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35) — DONE
+    - Completed on 25 July 2026.
+    - The obsolete anchor-drift and group-split overrides were removed from the final replay runner when the canonical TIM-MARS configuration was frozen.
+    - Added a process-aware regression test that verifies each ROS parameter override is declared by its receiving node and rejects reintroduction of the obsolete experimental parameter names.
 
 15. [ ] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36)
     - phase 8; documentation; now includes versions, license, ROS/Python dependencies, and clean-environment installation.
