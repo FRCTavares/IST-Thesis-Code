@@ -38,6 +38,7 @@ fresh checkout to install frontend dependencies.
 
 ## Replay and evaluation
 
+- Single reproducibility command: `tools/reproduce_tim_mars.py`
 - Deterministic TIM replay: `tools/experiments/run_deterministic_tim_replay.py`
 - Component-ablation runner: `tools/experiments/run_tim_component_ablation.py`
 - Replay instructions: `tools/experiments/README.md`

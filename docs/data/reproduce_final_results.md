@@ -4,6 +4,33 @@ This document records how the final thesis result artifacts are organized and ho
 to verify that the local repository contains the evidence used for the reported
 TIM-MARS evaluation.
 
+## Current reproducibility command
+
+The current implementation and frozen development matrix are reproduced with:
+
+    python3 tools/reproduce_tim_mars.py --set development
+
+This command validates source bags, annotations, and frozen hashes; builds with
+`tools/thesis_build.sh`; executes the canonical dual-oracle component matrix;
+records Git, model, split, configuration, runtime, and child-command
+provenance; verifies replay fingerprints; and rejects inconsistent aggregate
+CSV, JSON, or Markdown values.
+
+For a preflight without running the matrix:
+
+    python3 tools/reproduce_tim_mars.py --validate-only
+
+The final held-out command is:
+
+    python3 tools/reproduce_tim_mars.py --set final_held_out
+
+That mode intentionally fails until H01-H03 are captured, annotated, frozen,
+and accepted by the final-release split validator.
+
+The historical `paper_final_*` artifacts below remain frozen for traceability.
+They are not silently treated as current canonical evidence and are not mixed
+with results generated from the current implementation.
+
 ## Scope
 
 The final result artifacts are documented in:
@@ -73,7 +100,7 @@ Non-final annotations kept for provenance are listed in
 
 Run from the repository root:
 
-    cd ~/Desktop/Thesis-Code || exit 1
+    cd ~/Desktop/Thesis-Code || return 1 2>/dev/null || true
 
     python3 - <<'PYVERIFY'
     from pathlib import Path
@@ -104,7 +131,7 @@ Run from the repository root:
 
 Also verify the final report directories are non-empty:
 
-    cd ~/Desktop/Thesis-Code || exit 1
+    cd ~/Desktop/Thesis-Code || return 1 2>/dev/null || true
 
     for d in \
       reports/paper_final_tim_results_2026_07_03 \

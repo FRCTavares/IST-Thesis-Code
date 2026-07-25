@@ -12,13 +12,16 @@ rather than ad-hoc ROS commands.
 | Tool | Status | Purpose |
 | --- | --- | --- |
 | `tools/thesis_build.sh` | Build entrypoint | Builds the ROS 2 workspace with repository-local logs. |
+| `tools/reproduce_tim_mars.py` | Reproducibility entrypoint | Validates frozen inputs, builds the workspace, runs the canonical TIM-MARS matrix, and verifies tables and provenance. |
 | `tools/start_live_stack.sh` | Live operation entrypoint | Starts the live camera, perception, tracker, TIM/control/dashboard stack. |
 | `tools/start_ui_stack.sh` | UI operation entrypoint | Starts the dashboard frontend with consistent environment/logging. |
 | `tools/timing_contract.py` | Shared contract | Defines canonical timing metric names, aliases, labels, and thresholds. |
 
-Evaluation and replay commands are intentionally invoked from their owning
-`analysis/`, `experiments/`, `catalogue/`, or `bag/` directories. There is no
-generic evaluation wrapper hiding bag paths or experiment assumptions.
+Individual evaluation and replay commands remain in their owning
+`analysis/`, `experiments/`, `catalogue/`, or `bag/` directories. The single
+public exception is `tools/reproduce_tim_mars.py`, which composes the frozen
+split, build helper, canonical component matrix, evaluators, fingerprints, and
+table-consistency checks without hiding their recorded commands or provenance.
 
 ## Live field recording
 

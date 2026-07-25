@@ -122,6 +122,23 @@ the generated bag retains only `/tracks`, the raw target, and generated TIM
 target/status topics. The omitted source topics and the compact-output flag are
 recorded in resolved-runtime provenance. The default remains a full source copy.
 
+## Single reproducibility command
+
+From the repository root, the public end-to-end command is:
+
+    python3 tools/reproduce_tim_mars.py --set development
+
+It verifies the frozen split and hashes, rejects an uncommitted repository,
+builds through `tools/thesis_build.sh`, runs this directory's canonical
+component-ablation workflow, verifies replay metadata and resolved-runtime
+fingerprints, and checks that the generated aggregate CSV, JSON, and Markdown
+tables agree.
+
+Use `--validate-only` for source/configuration validation without a build or
+replay. Use `--dry-run --allow-dirty` while developing the wrapper itself.
+`--set final_held_out` remains fail-closed until all H01-H03 entries pass the
+split release gate.
+
 ## Component-ablation matrix
 
 Issue #28 is defined by

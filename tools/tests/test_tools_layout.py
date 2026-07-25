@@ -23,6 +23,7 @@ DOMAIN_DIRECTORIES = {
 
 TOP_LEVEL_FILES = {
     "README.md",
+    "reproduce_tim_mars.py",
     "start_live_stack.sh",
     "start_ui_stack.sh",
     "thesis_build.sh",

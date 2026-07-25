@@ -268,3 +268,26 @@ def test_aggregate_uses_duration_weighted_ratios():
     assert final["correct_target_duration_s"] == 16.0
     assert final["visible_target_duration_s"] == 20.0
     assert final["correct_target_ratio"] == pytest.approx(0.8)
+
+
+def test_final_split_validator_uses_positional_manifest(tmp_path):
+    validator = tmp_path / "validate_split.py"
+    split = tmp_path / "split.json"
+    repo = tmp_path / "repo"
+
+    command = MODULE.final_split_validator_command(
+        validator=validator,
+        split_path=split,
+        repo_root=repo,
+    )
+
+    assert command == [
+        MODULE.sys.executable,
+        str(validator),
+        str(split),
+        "--repo-root",
+        str(repo),
+        "--verify-hashes",
+        "--require-final-ready",
+    ]
+    assert "--split" not in command

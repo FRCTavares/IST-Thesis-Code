@@ -390,6 +390,24 @@ def command_text(command: Iterable[str]) -> str:
     return shlex.join(str(item) for item in command)
 
 
+def final_split_validator_command(
+    *,
+    validator: Path,
+    split_path: Path,
+    repo_root: Path,
+) -> list[str]:
+    """Return the fail-closed final-held-out split validation command."""
+    return [
+        sys.executable,
+        str(validator),
+        str(split_path),
+        "--repo-root",
+        str(repo_root),
+        "--verify-hashes",
+        "--require-final-ready",
+    ]
+
+
 def run_command(
     command: list[str],
     *,
@@ -713,14 +731,11 @@ def main() -> int:
     if args.set == "final_held_out":
         validator = repo_root / "tools/analysis/validate_tim_evaluation_split.py"
         subprocess.run(
-            [
-                sys.executable,
-                str(validator),
-                "--split",
-                str(split_path),
-                "--verify-hashes",
-                "--require-final-ready",
-            ],
+            final_split_validator_command(
+                validator=validator,
+                split_path=split_path,
+                repo_root=repo_root,
+            ),
             cwd=repo_root,
             check=True,
         )
