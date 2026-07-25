@@ -216,4 +216,4 @@ def test_closed_issue_is_removed_from_queue():
     ).read_text(encoding="utf-8")
 
     assert "[#57 —" not in text
-    assert "Open executable issues: **28**." in text
+    assert "Open executable issues: **25**." in text

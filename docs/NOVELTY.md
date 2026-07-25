@@ -141,6 +141,32 @@ TIM-MARS is evaluated using control-facing metrics:
 
 This is different from reporting only generic MOT metrics.
 
+### 4.7 Selective embedded identity reasoning
+
+The intended embedded architecture places TIM-MARS above computationally
+lightweight, appearance-free trackers.
+
+Unlike an appearance-aware tracker that may compute identity embeddings for many
+detections during routine association, TIM-MARS is intended to request
+appearance evidence selectively for:
+
+- the trusted selected target;
+- plausible competing candidates;
+- uncertain or recovery states;
+- bounded refresh intervals;
+- crossings, occlusions, re-entry, and other identity-critical events.
+
+This creates a testable embedded-systems hypothesis:
+
+> A lightweight tracker paired with selective TIM-MARS validation can approach
+> or exceed the controller-facing selected-target reliability of integrated
+> appearance-aware tracking while requiring less onboard computation.
+
+This is not currently a supported result. It requires the controlled
+tracker-efficiency comparison, complete latency decomposition, appearance
+invocation accounting, sustained resource measurements, and Hailo appearance
+validation tracked by Issue #58, Issue #32, and Issue #44.
+
 ## 5. Minimal defensible final algorithm
 
 The final thesis algorithm should contain only:
@@ -208,6 +234,12 @@ Earlier sequence-specific ByteTrack and exploratory multi-tracker results remain
 The evidence supports the following bounded claim:
 
 > TIM-MARS is a lightweight selected-target validation layer that can improve correct-target availability in some recoverable tracker-instability cases. Its message-level architecture can be paired with different trackers, but safety is tracker-, sequence-, and configuration-dependent. The current canonical preset is not safety-portable across the evaluated tracker pairings and is not promoted as a universal cross-tracker preset.
+
+The architecture additionally motivates, but does not yet prove, an embedded
+efficiency hypothesis: selective TIM-MARS appearance validation above a
+lightweight appearance-free tracker may provide a more favourable
+safety–availability–cost operating point than continuous appearance association
+inside a heavier tracker.
 
 The evidence therefore separates two claims:
 
@@ -308,6 +340,32 @@ The bbox evaluator is spatial, but still uses annotated tracker IDs to locate th
 
 A genuinely identity-independent reference is still required for robust full-pipeline reruns.
 
+### 8.8 Embedded-cost superiority is not established
+
+TIM-MARS is described as lightweight because its state logic is small and its
+appearance work is intended to be selective. The current evidence does not yet
+demonstrate that a complete lightweight-tracker-plus-TIM system is cheaper than
+an integrated appearance-aware tracker.
+
+A valid efficiency claim requires:
+
+- identical source workload and evaluation semantics;
+- per-stage wall-clock and CPU-service-time measurements;
+- queueing, DDS transport, and scheduling-delay separation;
+- ReID invocation and candidate-encoding counts;
+- cache hit, miss, expiry, and reuse statistics;
+- process and relevant thread CPU utilisation;
+- RSS and peak-memory measurements;
+- detector and ReID Hailo contention;
+- sustained temperature, frequency, throttling, and cadence measurements;
+- reproducible power evidence when suitable instrumentation is available;
+- safety and availability results reported jointly with computational cost.
+
+DeepSORT, StrongSORT, BoT-SORT, and related appearance-aware trackers are
+comparison architectures, not the intended TIM-MARS layering. DeepSORT +
+TIM-MARS remains diagnostic because it duplicates appearance-based identity
+reasoning.
+
 ## 9. Non-claims
 
 TIM-MARS does not claim to:
@@ -334,8 +392,14 @@ Before freezing the complete thesis contribution, complete:
 7. broader identities and held-out sequences;
 8. identity-independent spatial evaluation;
 9. parameter sensitivity analysis;
-10. runtime and onboard resource measurements;
-11. explicit failure-case analysis.
+10. complete per-stage latency, queueing, cadence, and onboard resource
+    measurements;
+11. selective-appearance invocation, cache, and candidate-encoding accounting;
+12. sustained CPU, memory, thermal, Hailo-contention, transport, and power
+    characterisation where reproducible;
+13. controlled lightweight-tracker-plus-TIM versus integrated
+    appearance-aware-tracker evaluation;
+14. explicit failure-case analysis.
 
 The P0.4 clean evidence freeze is complete. It establishes interface modularity, rejects the single-preset safety-portability claim, and defines tracker-specific validation as a design boundary.
 
@@ -346,3 +410,9 @@ A defensible contribution statement is:
 > This thesis introduces TIM-MARS, a lightweight selected-target identity validation layer for RGB-only UAV person following. TIM-MARS operates above an existing detector, tracker, and target selector, and combines trusted temporal memory, geometric candidate plausibility, pretrained person appearance evidence, distractor-aware comparison, and conservative publication. Its objective is not generic multi-object tracking accuracy, but reducing unsafe controller-facing wrong-target output under recoverable tracker identity instability.
 
 The layer is modular at the tracker-output interface, but safety is not portable by default. Scientific and deployment claims must remain limited to tracker, configuration, and sequence combinations that pass the asymmetric wrong-target and target-absence criteria.
+
+The intended deployment pairs TIM-MARS with an appearance-free lightweight
+tracker and uses appearance selectively at the validation layer. Any claim that
+this architecture matches or exceeds the safety of integrated appearance-aware
+tracking at lower onboard cost must remain provisional until the controlled
+comparison and expanded embedded-resource evidence are complete.

@@ -115,4 +115,4 @@ def test_issue_57_is_removed_after_completion():
     text = (DOCS / "TODO_LIST.md").read_text(encoding="utf-8")
 
     assert "[#57 —" not in text
-    assert "Open executable issues: **28**." in text
+    assert "Open executable issues: **25**." in text

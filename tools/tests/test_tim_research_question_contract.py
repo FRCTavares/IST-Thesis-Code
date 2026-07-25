@@ -116,4 +116,6 @@ def test_closed_issue_is_removed_and_final_claim_is_blocked():
 
     assert "[#38 —" not in text
     assert text.count("[#39 —") == 1
-    assert "under #32 and #44 are complete" in text
+    assert "under #32" in text
+    assert "#44 are complete" in text
+    assert "#58" in text
