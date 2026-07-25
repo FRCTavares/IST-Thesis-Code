@@ -104,8 +104,12 @@ Open executable issues: **26**.
 ## P2 — Useful work after the critical path
 
 1. [ ] [#51 — P2 Complete deferred physical validation for unattended Pi recovery (September)](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
-   - phase 10; live-system; deferred by the operator on 23 July 2026 until September. Remaining work is physical power/watchdog or independent-power mitigation, external-network access, key-expiry confirmation, and physical Pixhawk/AERONEXT validation.
-   - Host protections already implemented remain active. This issue does not block the P0/P1 thesis-critical queue.
+   - the software recovery defect demonstrated on 25 July 2026 is repaired and validated.
+   - unattended mode now separates configured connectivity from verified default-gateway reachability.
+   - three consecutive reachability failures trigger one bounded `wlan0` reconnect; six failures trigger one bounded NetworkManager restart with an independent cooldown.
+   - real installed-system tests proved Tailscale restart, Wi-Fi reconnect, NetworkManager escalation, network recovery, SSH recovery, Tailscale recovery, timer restoration, and production-state isolation.
+   - 15 focused host-health tests pass, the repository and deployed monitor checksums match, and the production timer reports healthy gateway, network, SSH, and Tailscale state.
+   - the issue remains open only for the previously deferred September gates: physical power restoration, watchdog or independent-power mitigation, genuinely external Tailnet SSH, key-expiry confirmation, and physical Pixhawk/AERONEXT mode validation.
 
 2. [ ] [#50 — P2 Complete flight-readiness gate and record held-out UAV-motion evidence (September)](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
    - phase 10; live-system; deferred by the operator on 23 July 2026 until September and depends on the remaining physical validation in #51.

@@ -221,3 +221,65 @@ Do not close Issue #51 until all of these are recorded:
 5. with the Pixhawk connected to `eth0`, locally confirm `pixhawk-apm` is active,
    `ISR Aero.Next GCS` is the active `wlan0` profile and default route, and
    `tailscaled.service` is disabled/inactive.
+
+## 25 July 2026 data-plane recovery repair validation
+
+A real unattended failure demonstrated that NetworkManager connection state and
+an installed default route were insufficient evidence of usable connectivity.
+The powered Raspberry Pi became unreachable through LAN and Tailscale while the
+old monitor continued to report the network as healthy.
+
+The repaired unattended monitor now:
+
+- records the active default gateway;
+- performs one bounded ICMP probe through the configured interface;
+- records configuration health separately as `network_config_ok`;
+- requires gateway reachability for unattended `network_ok`;
+- reconnects `wlan0` after three consecutive network failures;
+- restarts NetworkManager after six consecutive failures using an independent
+  cooldown;
+- restarts Tailscale only when the underlying network is reachable;
+- never automatically reboots the host or starts ROS, MAVROS, control,
+  perception, arming, or any aircraft-facing process.
+
+Installed-system validation on 25 July 2026 proved:
+
+1. **Healthy baseline**
+   - `wlan0` active at `192.168.1.110`;
+   - default gateway `192.168.1.1` reachable;
+   - NetworkManager, SSH, Tailscale, and the health timer active.
+
+2. **Tailscale-only failure**
+   - three consecutive Tailscale failures were recorded;
+   - the third failure executed `tailscale_restart` with return code `0`;
+   - Tailscale returned to `Running` and online state;
+   - network and SSH remained healthy.
+
+3. **Unreachable gateway with nominal NetworkManager state**
+   - NetworkManager continued to report the expected Wi-Fi connection;
+   - the default route remained installed;
+   - the gateway probe correctly reported `gateway_reachable=false`;
+   - `network_config_ok=true` and `network_ok=false` were recorded;
+   - the third consecutive failure executed `network_reconnect` with return
+     code `0`;
+   - NetworkManager escalation did not occur during the three-failure test.
+
+4. **Persistent gateway failure**
+   - the third failure executed `network_reconnect` with return code `0`;
+   - failures four and five produced no additional premature action;
+   - the sixth failure executed `network_manager_restart` with return code `0`;
+   - the gateway and default route recovered;
+   - SSH remained or became active;
+   - Tailscale returned online;
+   - the production timer was restored;
+   - the temporary firewall rule was removed.
+
+5. **Isolation and deployment**
+   - tests used isolated state directories under `/tmp`;
+   - production counters remained unchanged;
+   - the repository and `/usr/local/libexec/` monitor checksums matched;
+   - 15 focused tests passed;
+   - the production timer continued producing healthy snapshots.
+
+The software repair is therefore complete. Issue #51 remains open only for the
+deferred physical and external validation planned for September 2026.

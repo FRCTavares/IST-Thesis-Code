@@ -93,6 +93,52 @@ def test_tailscale_is_not_restarted_while_underlying_network_is_down():
     assert "tailscale_restart" not in actions
 
 
+def test_nominally_connected_but_unreachable_network_reconnects_device():
+    actions = HOST_HEALTH.choose_recovery_actions(
+        _snapshot(network_ok=False, tailscale_ok=False),
+        _state(network_failures=3, tailscale_failures=3),
+        now_epoch=10_000,
+        failure_threshold=3,
+        cooldown_seconds=900,
+    )
+
+    assert actions == ["network_reconnect"]
+
+
+def test_persistent_network_failure_escalates_to_networkmanager_restart():
+    actions = HOST_HEALTH.choose_recovery_actions(
+        _snapshot(network_ok=False, tailscale_ok=False),
+        _state(network_failures=6, tailscale_failures=6),
+        now_epoch=10_000,
+        failure_threshold=3,
+        cooldown_seconds=900,
+    )
+
+    assert actions == ["network_manager_restart"]
+    assert HOST_HEALTH.ACTION_COMMANDS["network_manager_restart"] == [
+        "systemctl",
+        "restart",
+        "NetworkManager.service",
+    ]
+
+
+def test_networkmanager_restart_has_independent_cooldown():
+    actions = HOST_HEALTH.choose_recovery_actions(
+        _snapshot(network_ok=False, tailscale_ok=False),
+        _state(
+            network_failures=6,
+            tailscale_failures=6,
+            last_network_recovery_epoch=9_800,
+            last_network_manager_recovery_epoch=0,
+        ),
+        now_epoch=10_000,
+        failure_threshold=3,
+        cooldown_seconds=900,
+    )
+
+    assert actions == ["network_manager_restart"]
+
+
 def test_tailscale_and_ssh_recovery_are_host_only_and_bounded():
     actions = HOST_HEALTH.choose_recovery_actions(
         _snapshot(tailscale_ok=False, ssh_ok=False),
@@ -173,6 +219,7 @@ def test_systemd_units_never_start_thesis_or_aircraft_processes():
     assert "start_live_stack" not in service
     assert "mavros" not in service.lower()
     assert "control_ref" not in service
+    assert "reboot" not in service.lower()
 
 
 def test_retention_watchdog_and_restart_limits_are_explicit():

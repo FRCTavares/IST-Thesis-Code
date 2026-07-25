@@ -57,9 +57,16 @@ The installer:
   `tailscale0`, and permits UDP 41641 on Wi-Fi for direct Tailscale transport;
 - gives SSH and Tailscale bounded systemd restart policies;
 - runs `thesis-host-health.service` from a two-minute persistent timer;
+- distinguishes NetworkManager/configuration state from verified unattended
+  data-plane reachability by probing the current default gateway through the
+  configured interface;
 - reconnects only the configured NetworkManager device after three consecutive
-  failures and enforces a 15-minute recovery cooldown;
-- restarts Tailscale only when the underlying network is healthy;
+  reachability failures and enforces a 15-minute recovery cooldown;
+- escalates persistent reachability failure at six consecutive checks to one
+  bounded NetworkManager restart with an independent 15-minute cooldown;
+- restarts Tailscale only when gateway reachability proves the underlying
+  unattended network is usable;
+- does not automatically reboot the host;
 - restarts the SSH socket only when both socket and service are unavailable;
 - warns when root free space falls below 20 GiB, without deleting evidence;
 - caps persistent journal storage at 1 GiB while retaining up to 30 days;
@@ -201,9 +208,16 @@ Conservative reconnect:
 sudo nmcli device connect wlan0
 ```
 
-The automatic health check uses this same action only after three failed checks
-and then waits at least 15 minutes before another attempt. It does not restart
-the whole host or loop rapidly while the router is unavailable.
+The automatic health check first verifies the active default gateway with one
+bounded ICMP probe through `wlan0`. After three failed checks it uses the same
+device-reconnect action. If reachability is still absent at six consecutive
+checks, it performs one bounded NetworkManager restart using a separate
+15-minute cooldown.
+
+It does not automatically reboot the host or loop rapidly while the router is
+unavailable. If the configured gateway intentionally blocks ICMP, the probe
+contract must be adapted and validated before deployment rather than silently
+treating the host as healthy.
 
 ## Disk and log inspection
 

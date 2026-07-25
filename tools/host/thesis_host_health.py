@@ -25,6 +25,7 @@ DEFAULT_STATE: dict[str, int] = {
     "tailscale_failures": 0,
     "ssh_failures": 0,
     "last_network_recovery_epoch": 0,
+    "last_network_manager_recovery_epoch": 0,
     "last_tailscale_recovery_epoch": 0,
     "last_ssh_recovery_epoch": 0,
 }
@@ -88,12 +89,33 @@ def inspect_host(
         runner,
         ["nmcli", "-g", "GENERAL.CONNECTION", "device", "show", interface],
     )
-    default_route = bool(
-        command_stdout(
-            runner,
-            ["ip", "route", "show", "default", "dev", interface],
-        )
+    default_route_raw = command_stdout(
+        runner,
+        ["ip", "route", "show", "default", "dev", interface],
     )
+    default_route = bool(default_route_raw)
+    default_gateway = ""
+    route_fields = default_route_raw.split()
+    if "via" in route_fields:
+        gateway_index = route_fields.index("via") + 1
+        if gateway_index < len(route_fields):
+            default_gateway = route_fields[gateway_index]
+
+    gateway_reachable = False
+    if mode == "unattended" and default_gateway:
+        gateway_reachable = command_ok(
+            runner,
+            [
+                "ping",
+                "-I",
+                interface,
+                "-c",
+                "1",
+                "-W",
+                "2",
+                default_gateway,
+            ],
+        )
 
     tailscale_backend = "Unavailable"
     tailscale_online = False
@@ -137,11 +159,16 @@ def inspect_host(
         mode != "pixhawk"
         or active_wifi_connection == pixhawk_wifi_connection
     )
-    network_ok = (
+    network_config_ok = (
         network_manager_active
         and network_connected
         and default_route
         and expected_wifi_active
+    )
+    network_ok = (
+        network_config_ok
+        if mode == "pixhawk"
+        else network_config_ok and gateway_reachable
     )
     if mode == "pixhawk":
         tailscale_backend = "DisabledByPixhawkMode"
@@ -160,6 +187,9 @@ def inspect_host(
         "active_wifi_connection": active_wifi_connection,
         "expected_wifi_active": expected_wifi_active,
         "default_route": default_route,
+        "default_gateway": default_gateway,
+        "gateway_reachable": gateway_reachable,
+        "network_config_ok": network_config_ok,
         "network_ok": network_ok,
         "tailscaled_active": tailscaled_active,
         "tailscale_backend": tailscale_backend,
@@ -227,16 +257,29 @@ def choose_recovery_actions(
     """Choose bounded host-only recovery actions."""
     actions: list[str] = []
 
-    def eligible(name: str) -> bool:
-        failures = state[f"{name}_failures"]
-        last_recovery = state[f"last_{name}_recovery_epoch"]
+    def eligible(
+        failure_name: str,
+        recovery_name: str | None = None,
+        *,
+        threshold_multiplier: int = 1,
+    ) -> bool:
+        recovery_name = recovery_name or failure_name
+        failures = state[f"{failure_name}_failures"]
+        last_recovery = state[f"last_{recovery_name}_recovery_epoch"]
         return (
-            failures >= failure_threshold
+            failures >= failure_threshold * threshold_multiplier
             and now_epoch - last_recovery >= cooldown_seconds
         )
 
-    if not snapshot["network_ok"] and eligible("network"):
-        actions.append("network_reconnect")
+    if not snapshot["network_ok"]:
+        if eligible(
+            "network",
+            "network_manager",
+            threshold_multiplier=2,
+        ):
+            actions.append("network_manager_restart")
+        elif eligible("network"):
+            actions.append("network_reconnect")
     if mode == "pixhawk":
         if snapshot["tailscaled_active"]:
             actions.append("tailscale_stop")
@@ -253,6 +296,11 @@ def choose_recovery_actions(
 
 ACTION_COMMANDS: dict[str, list[str]] = {
     "network_reconnect": ["nmcli", "device", "connect"],
+    "network_manager_restart": [
+        "systemctl",
+        "restart",
+        "NetworkManager.service",
+    ],
     "tailscale_restart": ["systemctl", "restart", "tailscaled.service"],
     "tailscale_stop": ["systemctl", "stop", "tailscaled.service"],
     "ssh_socket_restart": ["systemctl", "restart", "ssh.socket"],
@@ -260,6 +308,7 @@ ACTION_COMMANDS: dict[str, list[str]] = {
 
 ACTION_STATE_NAMES = {
     "network_reconnect": "network",
+    "network_manager_restart": "network_manager",
     "tailscale_restart": "tailscale",
     "tailscale_stop": "tailscale",
     "ssh_socket_restart": "ssh",
