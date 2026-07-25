@@ -4,9 +4,9 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
-Last reconciled with GitHub: **24 July 2026**.
+Last reconciled with GitHub: **25 July 2026**.
 
-Open executable issues: **27**.
+Open executable issues: **26**.
 
 ## Execution rules
 
@@ -77,8 +77,11 @@ Open executable issues: **27**.
     - The obsolete anchor-drift and group-split overrides were removed from the final replay runner when the canonical TIM-MARS configuration was frozen.
     - Added a process-aware regression test that verifies each ROS parameter override is declared by its receiving node and rejects reintroduction of the obsolete experimental parameter names.
 
-15. [ ] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36)
-    - phase 8; documentation; now includes versions, license, ROS/Python dependencies, and clean-environment installation.
+15. [x] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36) — DONE
+    - Completed on 25 July 2026.
+    - Replaced the generated `thesis_bringup` version, description, maintainer, and license placeholders with a consistent `0.1.0` MIT package identity.
+    - Declared the package's ROS and system-Python runtime dependencies, documented the platform-specific Hailo boundary, and added a clean-checkout rosdep/build procedure.
+    - Added a package-metadata regression contract and validated the complete `thesis_bringup` test suite and package build.
 
 16. [ ] [#37 — P1.17 Create a single reproducibility command](https://github.com/FRCTavares/IST-Thesis-Code/issues/37)
     - phase 8; experiment; validate deterministic replay and versioned live-run provenance.

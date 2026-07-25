@@ -2,10 +2,10 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>thesis_bringup</name>
-  <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="francisco.carreira.tavares@gmail.com">francisco</maintainer>
-  <license>TODO: License declaration</license>
+  <version>0.1.0</version>
+  <description>ROS 2 runtime composition for onboard perception, tracking, TIM-MARS target validation, dashboard telemetry, and control.</description>
+  <maintainer email="francisco.carreira.tavares@gmail.com">Francisco Carreira Tavares</maintainer>
+  <license>MIT</license>
 
   <depend>launch</depend>
   <depend>launch_ros</depend>
@@ -14,9 +14,14 @@
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>vision_msgs</depend>
+  <depend>geometry_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>thesis_msgs</depend>
+  <depend>thesis_tracker</depend>
 
+  <exec_depend>python3-gi</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-websockets</exec_depend>
 
   <test_depend>ament_copyright</test_depend>

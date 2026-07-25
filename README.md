@@ -42,6 +42,59 @@ The 2026-06-17 validated full-stack recording held the critical topics at approx
 - ROS 2 distro: Jazzy.
 - Workspace root: `$HOME/Desktop/Thesis-Code`.
 
+## Clean-checkout installation
+
+The supported development environment is Ubuntu 24.04 with ROS 2 Jazzy.
+
+Install the generic host tools:
+
+    sudo apt update
+    sudo apt install -y \
+      git \
+      python3-colcon-common-extensions \
+      python3-rosdep \
+      python3-venv
+
+Clone the repository and enter it:
+
+    git clone git@github.com:FRCTavares/IST-Thesis-Code.git "$HOME/Desktop/Thesis-Code"
+    cd "$HOME/Desktop/Thesis-Code" || exit 1
+
+Install dependencies declared by the ROS packages:
+
+    source /opt/ros/jazzy/setup.bash
+    sudo rosdep init 2>/dev/null || true
+    rosdep update
+    rosdep install \
+      --from-paths ros2_ws/src \
+      --ignore-src \
+      --rosdistro jazzy \
+      -r \
+      -y
+
+Create the ignored project-local Python environment while retaining access to
+the ROS Python packages installed by apt:
+
+    python3 -m venv --system-site-packages thesis_env
+    thesis_env/bin/python -m pip install --upgrade pip pytest
+
+Build the workspace through the repository helper:
+
+    tools/thesis_build.sh
+
+Then source the environment manually or enable `.envrc` with `direnv allow`.
+
+The Hailo runtime is platform-specific and is not installed by rosdep or as a
+generic PyPI dependency. On the Raspberry Pi 5 deployment host, install the
+matching HailoRT and TAPPAS system runtime first. The repository helpers
+`tools/setup/install_host_hailo_bindings.sh` and
+`tools/setup/setup_local_tappas_runtime.sh` support compatible host setups.
+
+The web UI has a separate Node.js dependency set. Install it only when needed
+with:
+
+    ./tools/start_ui_stack.sh --install
+
 ## 1) One-time shell setup
 
 In ~/.bashrc set:

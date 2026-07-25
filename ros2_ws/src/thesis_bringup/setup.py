@@ -10,7 +10,7 @@ package_name = 'thesis_bringup'
 
 setup(
     name=package_name,
-    version='0.0.0',
+    version='0.1.0',
     packages=find_packages(exclude=['test']),
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/thesis_bringup"]),
@@ -20,10 +20,13 @@ setup(
     ],
     install_requires=['setuptools', 'websockets'],
     zip_safe=True,
-    maintainer='francisco',
+    maintainer='Francisco Carreira Tavares',
     maintainer_email='francisco.carreira.tavares@gmail.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description=(
+        'ROS 2 runtime composition for onboard perception, tracking, '
+        'TIM-MARS target validation, dashboard telemetry, and control.'
+    ),
+    license='MIT',
     extras_require={
         'test': [
             'pytest',
