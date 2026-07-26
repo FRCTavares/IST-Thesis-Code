@@ -61,6 +61,7 @@ from thesis_bringup.tim_mars.types import (
     CandidateTrack,
     ControlMode,
     HardNegativeMemoryEvent,
+    PositiveMemoryBootstrapEvent,
     TargetMemoryConfig,
     TargetMemoryOutput,
     TargetState,
@@ -184,6 +185,7 @@ class TargetIdentityMemory:
         self._last_acceptance_memory_source = "none"
         self._last_positive_memory_updated = False
         self._last_positive_memory_update_reason = ""
+        self._last_positive_memory_bootstrap_event = None
 
     def _reset_hard_negative_diagnostics(self) -> None:
         self._last_hard_negative_events = ()
@@ -257,6 +259,39 @@ class TargetIdentityMemory:
                 self._last_positive_memory_update_reason = (
                     "operator_anchor_initialised"
                 )
+                self._last_positive_memory_bootstrap_event = (
+                    PositiveMemoryBootstrapEvent(
+                        action=(
+                            "operator_anchor_initialised"
+                        ),
+                        track_id=int(track.track_id),
+                        accepted_bbox=track.bbox,
+                        acceptance_memory_source=str(
+                            self._last_acceptance_memory_source
+                        ),
+                        memory_update_eligible=bool(
+                            track
+                            .appearance_memory_update_eligible
+                        ),
+                        ambiguous=False,
+                        hard_negative_reject=False,
+                        operator_track_id=(
+                            self._positive_appearance
+                            .operator_track_id
+                        ),
+                        current_lineage_track_id=(
+                            self._positive_appearance
+                            .current_lineage_track_id
+                        ),
+                        current_lineage_supported=bool(
+                            self._positive_appearance
+                            .current_lineage_supported
+                        ),
+                        accepted_crop_quality=(
+                            track.appearance_crop_quality
+                        ),
+                    )
+                )
 
         self._appearance_update_cooldown_frames_remaining = 0
         self._candidate_persistence.reset()
@@ -285,6 +320,9 @@ class TargetIdentityMemory:
 
         prepared = self._prepare_update_candidates(candidates)
         if prepared is None:
+            self._positive_appearance.observe_pre_anchor_operator_presence(
+                operator_track_present=False,
+            )
             self._reset_confirmation_trackers_except(set())
             return self._miss(reason='no_candidates')
 
@@ -295,6 +333,12 @@ class TargetIdentityMemory:
         same_id = prepared.same_id
         same_id_score = prepared.same_id_score
         same_id_candidate = prepared.same_id_candidate
+
+        self._positive_appearance.observe_pre_anchor_operator_presence(
+            operator_track_present=(
+                same_id_candidate is not None
+            ),
+        )
 
         id_switch = best.track_id != self._m.track_id
 
@@ -1957,7 +2001,34 @@ class TargetIdentityMemory:
         }
         reacquired = bool(id_changed or was_lostish)
 
-        if protected_mode and reacquired:
+        preserve_pre_anchor_operator_lineage = bool(
+            protected_mode
+            and reacquired
+            and self._positive_appearance.protected_anchor
+            is None
+            and self._positive_appearance.operator_track_id
+            is not None
+            and int(candidate.track_id)
+            == int(
+                self._positive_appearance.operator_track_id
+            )
+            and self._positive_appearance
+            .current_lineage_track_id
+            is not None
+            and int(candidate.track_id)
+            == int(
+                self._positive_appearance
+                .current_lineage_track_id
+            )
+            and self._positive_appearance
+            .current_lineage_supported
+        )
+
+        if (
+            protected_mode
+            and reacquired
+            and not preserve_pre_anchor_operator_lineage
+        ):
             support_threshold = max(
                 float(self.cfg.appearance_min_similarity),
                 float(
@@ -2033,6 +2104,37 @@ class TargetIdentityMemory:
             self._last_positive_memory_updated = True
             self._last_positive_memory_update_reason = (
                 'protected_anchor_bootstrap'
+            )
+            self._last_positive_memory_bootstrap_event = (
+                PositiveMemoryBootstrapEvent(
+                    action='protected_anchor_bootstrap',
+                    track_id=int(candidate.track_id),
+                    accepted_bbox=candidate.bbox,
+                    acceptance_memory_source=str(
+                        self._last_acceptance_memory_source
+                    ),
+                    memory_update_eligible=bool(
+                        candidate.appearance_memory_update_eligible
+                    ),
+                    ambiguous=bool(best_score.ambiguous),
+                    hard_negative_reject=bool(
+                        best_score.hard_negative_reject
+                    ),
+                    operator_track_id=(
+                        self._positive_appearance.operator_track_id
+                    ),
+                    current_lineage_track_id=(
+                        self._positive_appearance
+                        .current_lineage_track_id
+                    ),
+                    current_lineage_supported=bool(
+                        self._positive_appearance
+                        .current_lineage_supported
+                    ),
+                    accepted_crop_quality=(
+                        candidate.appearance_crop_quality
+                    ),
+                )
             )
             return
 
@@ -2172,6 +2274,11 @@ class TargetIdentityMemory:
             ),
             positive_memory_update_reason=(
                 self._last_positive_memory_update_reason
+            ),
+            positive_memory_bootstrap_event=getattr(
+                self,
+                '_last_positive_memory_bootstrap_event',
+                None,
             ),
             protected_anchor_available=bool(
                 self._positive_appearance

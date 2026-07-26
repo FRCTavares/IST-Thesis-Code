@@ -1,0 +1,15 @@
+{
+  "candidate_generated_semantic_sha256": "f5b6e14c8801e9f0286f2eb8971e4c2379fb0f4430e95018e6bc96bc385819f2",
+  "candidate_metadata": "/home/francisco/Desktop/Thesis-Code/bags/replay/p015_positive_bootstrap_f1fbb799/candidate_f1fbb799/seq04_occlusion/tim_replay_metadata.json",
+  "candidate_resolved_runtime_sha256": "2cce395c2f3813cd6e11911723f9cf62793762f8b26e6db7f6baafd0d23c146b",
+  "errors": [],
+  "gate": "PASS",
+  "repeat_generated_semantic_sha256": "f5b6e14c8801e9f0286f2eb8971e4c2379fb0f4430e95018e6bc96bc385819f2",
+  "repeat_metadata": "/home/francisco/Desktop/Thesis-Code/bags/replay/p015_positive_bootstrap_f1fbb799/candidate_f1fbb799_repeat/seq04_occlusion_repeat/tim_replay_metadata.json",
+  "repeat_resolved_runtime_sha256": "35f29d44ae973b2d18933203293c981ff29a230f8fdf362ea8df2ffab1e827c7",
+  "schema_version": 1,
+  "semantic_digest_schema": "tim_mars_replay_generated_fields_v2",
+  "warnings": [
+    "resolved-runtime artifact fingerprints differ; the runtime arguments, canonical configuration, model, source manifest, topic contract, counts, and generated semantic digest are equal"
+  ]
+}

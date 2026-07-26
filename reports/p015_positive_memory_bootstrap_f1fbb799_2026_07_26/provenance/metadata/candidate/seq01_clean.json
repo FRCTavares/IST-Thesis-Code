@@ -1,0 +1,124 @@
+{
+  "canonical_config": {
+    "copy": "tim_mars_canonical_config.yaml",
+    "sha256": "e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff",
+    "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+  },
+  "command": "/home/francisco/Desktop/Thesis-Code/tools/experiments/run_deterministic_tim_replay.py /home/francisco/Desktop/Thesis-Code/bags/source/official_flights/2026-06-19/seq01_clean_four_person/full_pipeline/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars /home/francisco/Desktop/Thesis-Code/bags/replay/p015_positive_bootstrap_f1fbb799/candidate_f1fbb799/seq01_clean --config /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml --model /home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/dashboard --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --overwrite --compact-output",
+  "counts": {
+    "images_loaded": 807,
+    "output_topic_counts": {
+      "/target": 2449,
+      "/target_memory_mars": 2470,
+      "/target_memory_mars/status": 2470,
+      "/tracks": 2470
+    },
+    "raw_target_messages_written": 0,
+    "raw_target_valid_messages_written": 0,
+    "source_messages_streamed": 4919,
+    "tim_status_messages_written": 2470,
+    "tim_target_messages_written": 2470,
+    "track_messages_processed": 2470
+  },
+  "created_at_utc": "2026-07-26T20:50:25.023967+00:00",
+  "determinism": {
+    "generated_semantic_sha256": "e1c075886b094ab1e0f9a0ed42e1be36db831ebf9cf210c8dc187d81d2053e6b",
+    "raw_cdr_payload_bytes_are_contract": false,
+    "raw_mcap_file_bytes_are_contract": false,
+    "reason": "ROS CDR payloads may contain non-semantic alignment-padding bytes; determinism is defined over declared generated message fields and write order.",
+    "semantic_digest_schema": "tim_mars_replay_generated_fields_v2"
+  },
+  "input_bag": "/home/francisco/Desktop/Thesis-Code/bags/source/official_flights/2026-06-19/seq01_clean_four_person/full_pipeline/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars",
+  "metadata_artifacts": {
+    "fingerprint_file": "tim_replay_metadata.sha256",
+    "metadata_file": "tim_replay_metadata.json",
+    "resolved_runtime_file": "tim_mars_resolved_runtime.json",
+    "resolved_runtime_fingerprint_file": "tim_mars_resolved_runtime.sha256"
+  },
+  "model": {
+    "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+    "size_bytes": 11244410,
+    "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+  },
+  "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p015_positive_bootstrap_f1fbb799/candidate_f1fbb799/seq01_clean",
+  "processing_contract": {
+    "algorithm_processing_order": [
+      "trustworthy_track_timestamp",
+      "frame_id",
+      "original_bag_timestamp",
+      "original_sequence_index"
+    ],
+    "bag_write_order": [
+      "original_bag_timestamp",
+      "original_source_order",
+      "generated_tim_target_then_status"
+    ],
+    "complete_image_timeline_preloaded": true,
+    "source_copy_mode": "streamed_compact_second_pass"
+  },
+  "raw_target_generation": {
+    "fixed_after_initialization": null,
+    "mode": "source",
+    "reselection_enabled": null,
+    "selected_track_id": null,
+    "source_topic_replaced": false
+  },
+  "repository": {
+    "branch": "issue-15-positive-memory-bootstrap",
+    "commit": "f1fbb7994766080481fe8cf3b9acac9862867c9b",
+    "root": "/home/francisco/Desktop/Thesis-Code",
+    "status_short": []
+  },
+  "resolved_runtime": {
+    "file": "tim_mars_resolved_runtime.json",
+    "fingerprint_file": "tim_mars_resolved_runtime.sha256",
+    "sha256": "cbebcf564f4fd6ca827db0450f6535d21012efa0bc6bd4b1dbf9ae1712b3d394"
+  },
+  "runtime": {
+    "appearance_enabled": true,
+    "compact_output": true,
+    "image_height": 640.0,
+    "image_width": 640.0,
+    "raw_target_mode": "source",
+    "selected_track_id": 1,
+    "tracks_are_normalized": false,
+    "zero_id_when_not_visible": true
+  },
+  "schema_version": 3,
+  "source_manifest": [
+    {
+      "name": "2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars_0.mcap",
+      "sha256": "fcdcb2c9a3c8655c6c8b13a568ba81fc0c68c77c3d84ca06310c5106e6039cf9",
+      "size_bytes": 754708804
+    },
+    {
+      "name": "flight_metadata.txt",
+      "sha256": "dcf87dc85818257a2421439496a390733aceb6675b26571d6c4ddaa1783150ac",
+      "size_bytes": 1172
+    },
+    {
+      "name": "metadata.yaml",
+      "sha256": "c8142779bc182ad68f29eebfd1bda8733bd3de89bb1363021ed2af6efe8441e8",
+      "size_bytes": 7495
+    }
+  ],
+  "topics": {
+    "image": "/camera/dashboard",
+    "raw_target": "/target",
+    "raw_target_source": "source_copy",
+    "source_topics_omitted": [
+      "/camera/dashboard",
+      "/detections",
+      "/timing",
+      "/timing_target",
+      "/timing_tracker"
+    ],
+    "source_topics_retained": [
+      "/target",
+      "/tracks"
+    ],
+    "tim_status": "/target_memory_mars/status",
+    "tim_target": "/target_memory_mars",
+    "tracks": "/tracks"
+  }
+}

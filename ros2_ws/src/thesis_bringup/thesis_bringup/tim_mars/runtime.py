@@ -12,7 +12,7 @@ both delegate their algorithmic processing to this runtime.
 from __future__ import annotations
 
 from bisect import bisect_right
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Optional, Sequence
 
 from thesis_bringup.tim_mars.appearance_attachment import (
@@ -307,6 +307,15 @@ class TimMarsRuntime:
             else None
         )
 
+        self._enrich_positive_memory_bootstrap_event(
+            output=output,
+            candidates=candidates,
+            frame_id=track_frame_id,
+            track_timestamp_ns=track_timestamp_ns,
+            selected_image_timestamp_ns=selected_image_ns,
+            image_track_offset_ms=offset_ms,
+        )
+
         diagnostics = TimMarsRuntimeDiagnostics(
             track_timestamp_ns=track_timestamp_ns,
             selected_image_timestamp_ns=selected_image_ns,
@@ -345,6 +354,100 @@ class TimMarsRuntime:
             output=output,
             candidates=tuple(candidates),
             diagnostics=diagnostics,
+        )
+
+    def _enrich_positive_memory_bootstrap_event(
+        self,
+        *,
+        output: TargetMemoryOutput,
+        candidates: Sequence[CandidateTrack],
+        frame_id: int,
+        track_timestamp_ns: Optional[int],
+        selected_image_timestamp_ns: Optional[int],
+        image_track_offset_ms: Optional[float],
+    ) -> None:
+        """Attach accepted-frame and embedding-source correspondence."""
+        event = getattr(
+            output,
+            "positive_memory_bootstrap_event",
+            None,
+        )
+        if event is None:
+            return
+
+        candidate = self.find_candidate(
+            candidates,
+            event.track_id,
+        )
+        provenance = (
+            candidate.appearance_provenance
+            if candidate is not None
+            else None
+        )
+
+        resolved_frame_id = int(frame_id)
+        output.positive_memory_bootstrap_event = replace(
+            event,
+            frame_id=(
+                resolved_frame_id
+                if resolved_frame_id > 0
+                else None
+            ),
+            track_timestamp_ns=(
+                int(track_timestamp_ns)
+                if track_timestamp_ns is not None
+                else None
+            ),
+            selected_image_timestamp_ns=(
+                int(selected_image_timestamp_ns)
+                if selected_image_timestamp_ns is not None
+                else None
+            ),
+            image_track_offset_ms=(
+                float(image_track_offset_ms)
+                if image_track_offset_ms is not None
+                else None
+            ),
+            appearance_source_frame_id=(
+                provenance.source_frame_id
+                if provenance is not None
+                else None
+            ),
+            appearance_source_image_timestamp_ns=(
+                provenance.source_image_timestamp_ns
+                if provenance is not None
+                else None
+            ),
+            appearance_embedded_ns=(
+                provenance.embedded_ns
+                if provenance is not None
+                else None
+            ),
+            appearance_embedding_age_ms=(
+                provenance.embedding_age_ms
+                if provenance is not None
+                else None
+            ),
+            appearance_frame_generation=(
+                provenance.frame_generation
+                if provenance is not None
+                else None
+            ),
+            appearance_track_generation=(
+                provenance.track_generation
+                if provenance is not None
+                else None
+            ),
+            appearance_source_bbox=(
+                provenance.source_bbox
+                if provenance is not None
+                else None
+            ),
+            appearance_source_crop_quality=(
+                provenance.source_crop_quality
+                if provenance is not None
+                else None
+            ),
         )
 
     def _attach_appearance(
