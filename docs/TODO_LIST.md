@@ -46,7 +46,8 @@ Open executable issues: **25**.
    - candidate acceptance safety policies have been extracted into `candidate_safety_policy.py` with explicit, mutation-free interfaces.
    - `TargetIdentityMemory` was reduced from 53 to 48 methods and `target_memory.py` was reduced by approximately 300 lines without changing accepted behavior.
    - the workspace build passes and the complete `thesis_bringup` suite passes with 223 tests passed and 1 skipped.
-   - remaining scope: simplify proposal evaluation into a readable unified safety gate, separate state transition and trusted-memory update responsibilities, and align the final flow with thesis pseudocode.
+   - proposal evaluation now uses an ordered unified safety gate; the evaluator itself is reduced from 221 lines to 29 orchestration-only lines while preserving rejection priority and diagnostics.
+   - remaining scope: separate confirmation evaluation, state transition, and trusted-memory update responsibilities, then align the final flow with thesis pseudocode.
 
 3. [ ] [#15 — P1.5 Fix positive-memory bootstrap](https://github.com/FRCTavares/IST-Thesis-Code/issues/15)
    - phase 3; experiment; accepted-frame ordering is present, but complete provenance and same-ID hijack evidence remain.

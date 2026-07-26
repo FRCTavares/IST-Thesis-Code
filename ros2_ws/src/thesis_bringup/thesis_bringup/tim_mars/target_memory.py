@@ -618,10 +618,15 @@ class TargetIdentityMemory:
 
         return reason
 
-    def _evaluate_candidate_proposal(
+    def _candidate_safety_reject_reason(
         self,
         proposal: _CandidateProposal,
-    ) -> _ProposalVerdict:
+    ) -> Optional[str]:
+        """Return the first failed candidate-safety policy.
+
+        Policy order is intentional and preserves the established diagnostic
+        and fail-closed behaviour of the unified acceptance gate.
+        """
         absence_reject = (
             absence_aware_reacquisition_reject_reason(
                 cfg=self.cfg,
@@ -635,16 +640,13 @@ class TargetIdentityMemory:
             )
         )
         if absence_reject is not None:
-            return _ProposalVerdict(
-                _ProposalVerdictStatus.REJECTED,
-                absence_reject,
-            )
+            return absence_reject
 
         if (
             proposal.score.geometry_score
             < proposal.minimum_total
         ):
-            reason = (
+            return (
                 proposal.minimum_total_reason
                 or (
                     f'{proposal.proposal_source}_'
@@ -653,10 +655,6 @@ class TargetIdentityMemory:
                     f'<{proposal.minimum_total:.3f}'
                 )
             )
-            return _ProposalVerdict(
-                _ProposalVerdictStatus.REJECTED,
-                reason,
-            )
 
         same_id_reject = (
             self._same_id_reacquisition_appearance_reject_reason(
@@ -664,10 +662,7 @@ class TargetIdentityMemory:
             )
         )
         if same_id_reject is not None:
-            return _ProposalVerdict(
-                _ProposalVerdictStatus.REJECTED,
-                same_id_reject,
-            )
+            return same_id_reject
 
         same_id_hijack_reject = (
             same_id_hijack_reject_reason(
@@ -684,10 +679,7 @@ class TargetIdentityMemory:
             )
         )
         if same_id_hijack_reject is not None:
-            return _ProposalVerdict(
-                _ProposalVerdictStatus.REJECTED,
-                same_id_hijack_reject,
-            )
+            return same_id_hijack_reject
 
         id_switch_appearance_reject = (
             id_switch_appearance_reject_reason(
@@ -708,28 +700,19 @@ class TargetIdentityMemory:
             )
         )
         if id_switch_appearance_reject is not None:
-            return _ProposalVerdict(
-                _ProposalVerdictStatus.REJECTED,
-                self._proposal_reject_reason(
-                    proposal,
-                    id_switch_appearance_reject,
-                ),
+            return self._proposal_reject_reason(
+                proposal,
+                id_switch_appearance_reject,
             )
 
         if proposal.score.ambiguous:
-            return _ProposalVerdict(
-                _ProposalVerdictStatus.REJECTED,
-                'ambiguous_best_candidate',
-            )
+            return 'ambiguous_best_candidate'
 
         if (
             proposal.id_switch
             and not self.cfg.allow_id_switch_recovery
         ):
-            return _ProposalVerdict(
-                _ProposalVerdictStatus.REJECTED,
-                'id_switch_recovery_disabled',
-            )
+            return 'id_switch_recovery_disabled'
 
         if (
             proposal.id_switch
@@ -746,17 +729,13 @@ class TargetIdentityMemory:
                 )
             )
             if not spatial_ok:
-                reason = (
-                    'id_switch_spatial_reject:'
-                    f' iou={proposal.score.iou:.3f}'
-                    f' distance={proposal.score.distance:.3f}'
-                    f' scale={proposal.score.scale:.3f}'
-                )
-                return _ProposalVerdict(
-                    _ProposalVerdictStatus.REJECTED,
-                    self._proposal_reject_reason(
-                        proposal,
-                        reason,
+                return self._proposal_reject_reason(
+                    proposal,
+                    (
+                        'id_switch_spatial_reject:'
+                        f' iou={proposal.score.iou:.3f}'
+                        f' distance={proposal.score.distance:.3f}'
+                        f' scale={proposal.score.scale:.3f}'
                     ),
                 )
 
@@ -775,29 +754,23 @@ class TargetIdentityMemory:
             hard_negative_reject
             and not trusted_same_id_continuity
         ):
-            reason = (
-                'hard_negative_reject:'
-                f' neg={proposal.score.hard_negative_similarity:.3f}'
-                f' margin={proposal.score.hard_negative_margin:.3f}'
-            )
-            return _ProposalVerdict(
-                _ProposalVerdictStatus.REJECTED,
-                self._proposal_reject_reason(
-                    proposal,
-                    reason,
+            return self._proposal_reject_reason(
+                proposal,
+                (
+                    'hard_negative_reject:'
+                    f' neg={proposal.score.hard_negative_similarity:.3f}'
+                    f' margin={proposal.score.hard_negative_margin:.3f}'
                 ),
             )
 
-        previous_state = self._m.state
         reacquired = bool(
             proposal.id_switch
-            or previous_state
+            or self._m.state
             in {
                 TargetState.UNCERTAIN,
                 TargetState.LOST,
             }
         )
-
         gallery_reject = (
             protected_gallery_reacquisition_reject_reason(
                 cfg=self.cfg,
@@ -807,10 +780,7 @@ class TargetIdentityMemory:
             )
         )
         if gallery_reject is not None:
-            return _ProposalVerdict(
-                _ProposalVerdictStatus.REJECTED,
-                gallery_reject,
-            )
+            return gallery_reject
 
         conservative_reject = (
             appearance_conservative_reject_reason(
@@ -820,9 +790,23 @@ class TargetIdentityMemory:
             )
         )
         if conservative_reject is not None:
+            return conservative_reject
+
+        return None
+
+    def _evaluate_candidate_proposal(
+        self,
+        proposal: _CandidateProposal,
+    ) -> _ProposalVerdict:
+        rejection_reason = (
+            self._candidate_safety_reject_reason(
+                proposal
+            )
+        )
+        if rejection_reason is not None:
             return _ProposalVerdict(
                 _ProposalVerdictStatus.REJECTED,
-                conservative_reject,
+                rejection_reason,
             )
 
         for requirement in proposal.confirmations:
