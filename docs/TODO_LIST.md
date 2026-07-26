@@ -44,10 +44,14 @@ Open executable issues: **25**.
 2. [ ] [#9 — P1.2 Reduce `target_memory.py`](https://github.com/FRCTavares/IST-Thesis-Code/issues/9)
    - phase 2; documentation/refactor; preserve behavior with characterization tests.
    - candidate acceptance safety policies have been extracted into `candidate_safety_policy.py` with explicit, mutation-free interfaces.
-   - `TargetIdentityMemory` was reduced from 53 to 48 methods and `target_memory.py` was reduced by approximately 300 lines without changing accepted behavior.
-   - the workspace build passes and the complete `thesis_bringup` suite passes with 223 tests passed and 1 skipped.
-   - proposal evaluation now uses an ordered unified safety gate; the evaluator itself is reduced from 221 lines to 29 orchestration-only lines while preserving rejection priority and diagnostics.
-   - remaining scope: separate confirmation evaluation, state transition, and trusted-memory update responsibilities, then align the final flow with thesis pseudocode.
+   - `target_memory.py` has been reduced and reorganized around explicit proposal evaluation, confirmation persistence, accepted-candidate commit, selected-memory transition, appearance adaptation, and output-construction responsibilities.
+   - proposal evaluation now uses an ordered unified safety gate; the evaluator itself is reduced from 221 lines to orchestration-only flow while preserving rejection priority and diagnostics.
+   - confirmation evaluation is mutation-free and separate from confirmation persistence.
+   - accepted-candidate preparation, acceptance-memory provenance, and the atomic trusted-memory commit are separate responsibilities; `_accept()` is reduced to orchestration and output construction.
+   - authoritative selected-target state transition is separate from post-commit appearance-memory adaptation.
+   - `_make_output()` is mutation-free, and the final acceptance flow was reviewed against the intended thesis transaction: evaluate proposal, commit confirmation evidence, atomically commit trusted state, update trusted memories, then construct output.
+   - implementation validation passes with 223 tests passed, 1 skipped, successful flake8 validation, and a successful `thesis_bringup` build.
+   - remaining scope: run deterministic canonical replay regression from the committed implementation, then run or confirm the full ablation matrix before closing Issue #9.
 
 3. [ ] [#15 — P1.5 Fix positive-memory bootstrap](https://github.com/FRCTavares/IST-Thesis-Code/issues/15)
    - phase 3; experiment; accepted-frame ordering is present, but complete provenance and same-ID hijack evidence remain.

@@ -794,6 +794,24 @@ class TargetIdentityMemory:
 
         return None
 
+    def _candidate_confirmation_pending_reason(
+        self,
+        proposal: _CandidateProposal,
+    ) -> Optional[str]:
+        """Return the pending confirmation diagnostic, if any.
+
+        Confirmation evaluation is side-effect free. Persistence state is
+        committed separately after the complete proposal verdict is known.
+        """
+        for requirement in proposal.confirmations:
+            if requirement.count < requirement.required:
+                return self._proposal_pending_reason(
+                    proposal,
+                    requirement,
+                )
+
+        return None
+
     def _evaluate_candidate_proposal(
         self,
         proposal: _CandidateProposal,
@@ -809,15 +827,16 @@ class TargetIdentityMemory:
                 rejection_reason,
             )
 
-        for requirement in proposal.confirmations:
-            if requirement.count < requirement.required:
-                return _ProposalVerdict(
-                    _ProposalVerdictStatus.PENDING,
-                    self._proposal_pending_reason(
-                        proposal,
-                        requirement,
-                    ),
-                )
+        pending_reason = (
+            self._candidate_confirmation_pending_reason(
+                proposal
+            )
+        )
+        if pending_reason is not None:
+            return _ProposalVerdict(
+                _ProposalVerdictStatus.PENDING,
+                pending_reason,
+            )
 
         return _ProposalVerdict(
             _ProposalVerdictStatus.ACCEPTED,
@@ -1612,75 +1631,36 @@ class TargetIdentityMemory:
             best.ranking_score - second.ranking_score
         ) < self.cfg.ambiguity_margin
 
-    def _accept(
-        self,
-        candidate: CandidateTrack,
-        *,
+    @staticmethod
+    def _accepted_score_snapshot(
         best_score: CandidateScore,
-        all_scores: List[CandidateScore],
-        candidates: Sequence[CandidateTrack],
-        memory_update_frozen: bool = False,
-        memory_update_freeze_reason: str = '',
-    ) -> TargetMemoryOutput:
-        previous_state = self._m.state
-        previous_id = self._m.track_id
-
-        protected_mode = bool(
-            self.cfg.appearance_protected_memory_enabled
-        )
-        previous_positive_appearance = (
-            self._positive_appearance
-            .protected_reference()
-            if protected_mode
-            else self._m.appearance
-        )
-
-        id_changed = (
-            previous_id is not None
-            and int(candidate.track_id)
-            != int(previous_id)
-        )
-        was_lostish = previous_state in {
-            TargetState.UNCERTAIN,
-            TargetState.LOST,
-        }
-        reacquired = bool(id_changed or was_lostish)
-
-        self._candidate_persistence.reset()
-
-        if reacquired:
-            self._appearance_update_cooldown_frames_remaining = max(
-                self._appearance_update_cooldown_frames_remaining,
-                max(
-                    0,
-                    int(
-                        self.cfg
-                        .appearance_update_cooldown_after_reacquire_frames
-                    ),
-                ),
-            )
-
-        # Recovery persistence has already been confirmed before _accept().
-        # Trusted selected memory is committed once, atomically, into LOCKED.
-        new_state = TargetState.LOCKED
-
-        best_score = replace(
+        all_scores: Sequence[CandidateScore],
+    ) -> tuple[CandidateScore, List[CandidateScore]]:
+        accepted_score = replace(
             best_score,
             appearance_accepted_for_publication=bool(
                 best_score.appearance_evaluated
                 and best_score.appearance_similarity_passed
             ),
         )
-        all_scores = [
+        accepted_scores = [
             (
-                best_score
+                accepted_score
                 if int(score.track_id)
-                == int(best_score.track_id)
+                == int(accepted_score.track_id)
                 else score
             )
             for score in all_scores
         ]
+        return accepted_score, accepted_scores
 
+    def _accepted_memory_source(
+        self,
+        *,
+        best_score: CandidateScore,
+        protected_mode: bool,
+        reacquired: bool,
+    ) -> str:
         if protected_mode and reacquired:
             support_threshold = max(
                 float(self.cfg.appearance_min_similarity),
@@ -1698,27 +1678,66 @@ class TargetIdentityMemory:
                 and best_score.positive_similarity
                 >= support_threshold
             )
-            self._last_acceptance_memory_source = (
+            return (
                 best_score.positive_support_source
                 if independently_supported
                 else 'none'
             )
-        elif protected_mode:
-            self._last_acceptance_memory_source = (
-                'tracker_continuity'
+
+        if protected_mode:
+            return 'tracker_continuity'
+
+        return (
+            'legacy_positive_memory'
+            if best_score.appearance_raw > 0.0
+            else 'tracker_continuity'
+        )
+
+    def _commit_accepted_candidate(
+        self,
+        *,
+        candidate: CandidateTrack,
+        best_score: CandidateScore,
+        all_scores: List[CandidateScore],
+        candidates: Sequence[CandidateTrack],
+        previous_state: TargetState,
+        previous_track_id: Optional[int],
+        previous_positive_appearance,
+        reacquired: bool,
+        memory_update_frozen: bool,
+    ) -> None:
+        """Atomically commit one fully accepted candidate into trusted state."""
+        self._candidate_persistence.reset()
+
+        if reacquired:
+            self._appearance_update_cooldown_frames_remaining = max(
+                self._appearance_update_cooldown_frames_remaining,
+                max(
+                    0,
+                    int(
+                        self.cfg
+                        .appearance_update_cooldown_after_reacquire_frames
+                    ),
+                ),
             )
-        else:
-            self._last_acceptance_memory_source = (
-                'legacy_positive_memory'
-                if best_score.appearance_raw > 0.0
-                else 'tracker_continuity'
+
+        new_state = TargetState.LOCKED
+        protected_mode = bool(
+            self.cfg.appearance_protected_memory_enabled
+        )
+        self._last_acceptance_memory_source = (
+            self._accepted_memory_source(
+                best_score=best_score,
+                protected_mode=protected_mode,
+                reacquired=reacquired,
             )
+        )
 
         self._apply_accept_memory_update(
             candidate=candidate,
             best_score=best_score,
             previous_state=previous_state,
-            previous_track_id=previous_id,
+            previous_track_id=previous_track_id,
             new_state=new_state,
             memory_update_frozen=memory_update_frozen,
         )
@@ -1728,20 +1747,77 @@ class TargetIdentityMemory:
             scores_sorted=all_scores,
             accepted_candidate=candidate,
             previous_state=previous_state,
-            previous_track_id=previous_id,
+            previous_track_id=previous_track_id,
             previous_positive_appearance=(
                 previous_positive_appearance
             ),
             new_state=new_state,
         )
 
+    def _accept(
+        self,
+        candidate: CandidateTrack,
+        *,
+        best_score: CandidateScore,
+        all_scores: List[CandidateScore],
+        candidates: Sequence[CandidateTrack],
+        memory_update_frozen: bool = False,
+        memory_update_freeze_reason: str = '',
+    ) -> TargetMemoryOutput:
+        previous_state = self._m.state
+        previous_track_id = self._m.track_id
+        protected_mode = bool(
+            self.cfg.appearance_protected_memory_enabled
+        )
+        previous_positive_appearance = (
+            self._positive_appearance
+            .protected_reference()
+            if protected_mode
+            else self._m.appearance
+        )
+
+        id_changed = bool(
+            previous_track_id is not None
+            and int(candidate.track_id)
+            != int(previous_track_id)
+        )
+        reacquired = bool(
+            id_changed
+            or previous_state
+            in {
+                TargetState.UNCERTAIN,
+                TargetState.LOST,
+            }
+        )
+
+        best_score, all_scores = (
+            self._accepted_score_snapshot(
+                best_score,
+                all_scores,
+            )
+        )
+
+        self._commit_accepted_candidate(
+            candidate=candidate,
+            best_score=best_score,
+            all_scores=all_scores,
+            candidates=candidates,
+            previous_state=previous_state,
+            previous_track_id=previous_track_id,
+            previous_positive_appearance=(
+                previous_positive_appearance
+            ),
+            reacquired=reacquired,
+            memory_update_frozen=memory_update_frozen,
+        )
+
         return self._make_output(
             reason=(
-                'accepted_candidate'
-                if not reacquired
-                else 'reacquired_candidate'
+                'reacquired_candidate'
+                if reacquired
+                else 'accepted_candidate'
             ),
-            visible=(new_state == TargetState.LOCKED),
+            visible=True,
             reacquired=reacquired,
             best_score=best_score,
             all_scores=all_scores,
@@ -1837,7 +1913,25 @@ class TargetIdentityMemory:
         )
         self._last_hard_negative_events = tuple(events)
 
-    def _apply_accept_memory_update(
+    def _commit_selected_memory(
+        self,
+        *,
+        candidate: CandidateTrack,
+        best_score: CandidateScore,
+        new_state: TargetState,
+    ) -> None:
+        """Commit the accepted observation into authoritative target state."""
+        self._m.selected = True
+        self._m.state = new_state
+        self._m.track_id = candidate.track_id
+        self._m.bbox = candidate.bbox
+        self._m.quality = clamp01(
+            0.65 * best_score.total
+            + 0.35 * candidate.score
+        )
+        self._m.frames_since_seen = 0
+
+    def _update_accept_appearance_memory(
         self,
         *,
         candidate: CandidateTrack,
@@ -1847,6 +1941,7 @@ class TargetIdentityMemory:
         new_state: TargetState,
         memory_update_frozen: bool,
     ) -> None:
+        """Apply appearance adaptation after trusted state is committed."""
         protected_mode = bool(
             self.cfg.appearance_protected_memory_enabled
         )
@@ -1885,16 +1980,6 @@ class TargetIdentityMemory:
                     independently_supported
                 ),
             )
-
-        self._m.selected = True
-        self._m.state = new_state
-        self._m.track_id = candidate.track_id
-        self._m.bbox = candidate.bbox
-        self._m.quality = clamp01(
-            0.65 * best_score.total
-            + 0.35 * candidate.score
-        )
-        self._m.frames_since_seen = 0
 
         if not protected_mode:
             can_update_appearance = (
@@ -1977,6 +2062,31 @@ class TargetIdentityMemory:
             self._last_positive_memory_update_reason = (
                 'trusted_locked_adaptive_update'
             )
+
+    def _apply_accept_memory_update(
+        self,
+        *,
+        candidate: CandidateTrack,
+        best_score: CandidateScore,
+        previous_state: TargetState,
+        previous_track_id: Optional[int],
+        new_state: TargetState,
+        memory_update_frozen: bool,
+    ) -> None:
+        """Commit trusted state first, then adapt appearance memory."""
+        self._commit_selected_memory(
+            candidate=candidate,
+            best_score=best_score,
+            new_state=new_state,
+        )
+        self._update_accept_appearance_memory(
+            candidate=candidate,
+            best_score=best_score,
+            previous_state=previous_state,
+            previous_track_id=previous_track_id,
+            new_state=new_state,
+            memory_update_frozen=memory_update_frozen,
+        )
 
     def _miss(
         self,
