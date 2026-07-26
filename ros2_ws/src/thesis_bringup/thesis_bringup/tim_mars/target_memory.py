@@ -25,6 +25,13 @@ from thesis_bringup.tim_mars.appearance_policy import (
     score_with_appearance,
     should_use_appearance,
 )
+from thesis_bringup.tim_mars.candidate_safety_policy import (
+    absence_aware_reacquisition_reject_reason,
+    appearance_conservative_reject_reason,
+    id_switch_appearance_reject_reason,
+    protected_gallery_reacquisition_reject_reason,
+    same_id_hijack_reject_reason,
+)
 from thesis_bringup.tim_mars.geometry_scoring import (
     bbox_area,
     bbox_centre,
@@ -616,8 +623,15 @@ class TargetIdentityMemory:
         proposal: _CandidateProposal,
     ) -> _ProposalVerdict:
         absence_reject = (
-            self._absence_aware_reacquisition_reject_reason(
-                proposal
+            absence_aware_reacquisition_reject_reason(
+                cfg=self.cfg,
+                score=proposal.score,
+                all_scores=proposal.all_scores,
+                absence_confirmation_applies=(
+                    self._absence_confirmation_applies(
+                        id_switch=proposal.id_switch,
+                    )
+                ),
             )
         )
         if absence_reject is not None:
@@ -656,7 +670,18 @@ class TargetIdentityMemory:
             )
 
         same_id_hijack_reject = (
-            self._same_id_hijack_reject_reason(proposal)
+            same_id_hijack_reject_reason(
+                cfg=self.cfg,
+                same_id=proposal.same_id,
+                score=proposal.score,
+                memory_state=self._m.state,
+                challenger=self._same_id_group_challenger(
+                    proposal
+                ),
+                appearance_threshold=(
+                    self._id_switch_appearance_threshold()
+                ),
+            )
         )
         if same_id_hijack_reject is not None:
             return _ProposalVerdict(
@@ -665,10 +690,21 @@ class TargetIdentityMemory:
             )
 
         id_switch_appearance_reject = (
-            self._id_switch_appearance_reject_reason(
+            id_switch_appearance_reject_reason(
+                cfg=self.cfg,
                 candidate=proposal.candidate,
                 score=proposal.score,
                 id_switch=proposal.id_switch,
+                pending_candidate_id=(
+                    self._candidate_persistence.candidate_id
+                ),
+                pending_identity_confirmed=(
+                    self._candidate_persistence
+                    .identity_evidence_confirmed
+                ),
+                appearance_threshold=(
+                    self._id_switch_appearance_threshold()
+                ),
             )
         )
         if id_switch_appearance_reject is not None:
@@ -763,7 +799,8 @@ class TargetIdentityMemory:
         )
 
         gallery_reject = (
-            self._protected_gallery_reacquisition_reject_reason(
+            protected_gallery_reacquisition_reject_reason(
+                cfg=self.cfg,
                 candidate=proposal.candidate,
                 score=proposal.score,
                 reacquired=reacquired,
@@ -776,9 +813,10 @@ class TargetIdentityMemory:
             )
 
         conservative_reject = (
-            self._appearance_conservative_reject_reason(
+            appearance_conservative_reject_reason(
+                cfg=self.cfg,
                 best_score=proposal.score,
-                all_scores=list(proposal.all_scores),
+                all_scores=proposal.all_scores,
             )
         )
         if conservative_reject is not None:
@@ -884,65 +922,6 @@ class TargetIdentityMemory:
             'no_candidate_appearance'
         )
 
-    def _same_id_hijack_reject_reason(
-        self,
-        proposal: _CandidateProposal,
-    ) -> Optional[str]:
-        """Challenge same-ID continuity only during a plausible person handover.
-
-        Tracker IDs are normally strong temporal evidence. A hard-negative
-        prototype alone must not suppress an uninterrupted, geometrically
-        stable target because pose changes can resemble a nearby distractor.
-        Conversely, the same tracker ID is no longer sufficient when another
-        person is both spatially plausible relative to target memory and close
-        enough to contaminate the selected crop. In that narrow case, current
-        positive appearance must independently validate the same-ID candidate.
-        """
-        if (
-            not self.cfg.same_id_hijack_protection_enabled
-            or not self.cfg.appearance_enabled
-            or not proposal.same_id
-            or self._m.state != TargetState.LOCKED
-        ):
-            return None
-
-        challenger = self._same_id_group_challenger(
-            proposal
-        )
-        if challenger is None:
-            return None
-
-        threshold = self._id_switch_appearance_threshold()
-        identity_supported = bool(
-            threshold > 0.0
-            and proposal.score.appearance_evaluated
-            and proposal.score.appearance_raw >= threshold
-            and not proposal.score.hard_negative_reject
-        )
-        if identity_supported:
-            return None
-
-        if proposal.score.hard_negative_reject:
-            evidence = (
-                'hard_negative'
-                f' neg={proposal.score.hard_negative_similarity:.3f}'
-                f' margin={proposal.score.hard_negative_margin:.3f}'
-            )
-        elif not proposal.score.appearance_evaluated:
-            evidence = 'no_current_appearance'
-        else:
-            evidence = (
-                'appearance'
-                f' {proposal.score.appearance_raw:.3f}'
-                f'<{threshold:.3f}'
-            )
-
-        return (
-            'same_id_hijack_reject:'
-            f' challenger={challenger.track_id}'
-            f' {evidence}'
-        )
-
     def _same_id_group_challenger(
         self,
         proposal: _CandidateProposal,
@@ -1006,59 +985,6 @@ class TargetIdentityMemory:
 
         return None
 
-    def _id_switch_appearance_reject_reason(
-        self,
-        *,
-        candidate: CandidateTrack,
-        score: CandidateScore,
-        id_switch: bool,
-    ) -> Optional[str]:
-        """Return why appearance evidence cannot authorize a tracker-ID change."""
-        if (
-            not id_switch
-            or not self.cfg.allow_id_switch_recovery
-            or not self.cfg.appearance_enabled
-        ):
-            return None
-
-        if candidate.appearance is None:
-            same_pending_candidate = bool(
-                self._candidate_persistence.candidate_id
-                == int(candidate.track_id)
-            )
-            if (
-                same_pending_candidate
-                and self._candidate_persistence
-                .identity_evidence_confirmed
-            ):
-                return None
-
-            return (
-                'id_switch_recovery_reject:'
-                'no_candidate_appearance'
-            )
-
-        threshold = self._id_switch_appearance_threshold()
-
-        if threshold <= 0.0:
-            return None
-
-        if not score.appearance_evaluated:
-            return (
-                'id_switch_recovery_reject:'
-                'appearance_not_evaluated'
-            )
-
-        if float(score.appearance_raw) < threshold:
-            return (
-                'id_switch_recovery_reject:'
-                'appearance'
-                f' {score.appearance_raw:.3f}'
-                f'<{threshold:.3f}'
-            )
-
-        return None
-
     def _id_switch_appearance_threshold(self) -> float:
         """Return the independent identity threshold for a tracker-ID change."""
         threshold = max(
@@ -1090,62 +1016,6 @@ class TargetIdentityMemory:
             and score.appearance_evaluated
             and float(score.appearance_raw) >= threshold
         )
-
-    def _protected_gallery_reacquisition_reject_reason(
-        self,
-        *,
-        candidate: CandidateTrack,
-        score: CandidateScore,
-        reacquired: bool,
-    ) -> Optional[str]:
-        """Validate gallery-only support for a risky reacquisition.
-
-        A single trusted-gallery exemplar must not independently authorize a
-        new or recovered lineage when the current crop is unsuitable for
-        identity memory, the candidate is ambiguous, or the immutable operator
-        anchor does not provide the configured minimum agreement.
-        """
-        if (
-            not reacquired
-            or not self.cfg.appearance_protected_memory_enabled
-            or score.positive_support_source != 'trusted_gallery'
-        ):
-            return None
-
-        if not candidate.appearance_memory_update_eligible:
-            return (
-                'protected_gallery_reacquisition_reject:'
-                'untrusted_crop'
-            )
-
-        if score.ambiguous:
-            return (
-                'protected_gallery_reacquisition_reject:'
-                'ambiguous_candidate'
-            )
-
-        anchor_threshold = max(
-            0.0,
-            float(
-                self.cfg
-                .appearance_gallery_min_anchor_similarity
-            ),
-        )
-
-        if (
-            anchor_threshold > 0.0
-            and float(
-                score.protected_anchor_similarity
-            ) < anchor_threshold
-        ):
-            return (
-                'protected_gallery_reacquisition_reject:'
-                'anchor'
-                f' {score.protected_anchor_similarity:.3f}'
-                f'<{anchor_threshold:.3f}'
-            )
-
-        return None
 
     def _candidate_belief_confirmation_requirements(
         self,
@@ -1497,74 +1367,6 @@ class TargetIdentityMemory:
                 ),
             )
         )
-
-    def _absence_aware_reacquisition_reject_reason(
-        self,
-        proposal: _CandidateProposal,
-    ) -> Optional[str]:
-        """Reject unsafe proposals in the absence-risk window."""
-        if not self._absence_confirmation_applies(
-            id_switch=proposal.id_switch,
-        ):
-            return None
-
-        best = proposal.score
-
-        if best.geometry_score < self.cfg.absence_min_total:
-            return (
-                'absence_recovery_reject:total '
-                f'{best.geometry_score:.3f}'
-                f'<{self.cfg.absence_min_total:.3f}'
-            )
-
-        if best.distance < self.cfg.absence_min_distance:
-            return (
-                'absence_recovery_reject:distance '
-                f'{best.distance:.3f}'
-                f'<{self.cfg.absence_min_distance:.3f}'
-            )
-
-        if best.scale < self.cfg.absence_min_scale:
-            return (
-                'absence_recovery_reject:scale '
-                f'{best.scale:.3f}'
-                f'<{self.cfg.absence_min_scale:.3f}'
-            )
-
-        if not self.cfg.absence_new_id_requires_appearance:
-            return None
-
-        if (
-            not best.geometry_allows_appearance
-            or best.appearance_raw <= 0.0
-        ):
-            return 'absence_recovery_reject:no_appearance'
-
-        if (
-            best.appearance_raw
-            < self.cfg.absence_min_similarity
-        ):
-            return (
-                'absence_recovery_reject:appearance'
-                f' {best.appearance_raw:.3f}'
-                f'<{self.cfg.absence_min_similarity:.3f}'
-            )
-
-        app_margin = self._appearance_margin(
-            best,
-            list(proposal.all_scores),
-        )
-        if (
-            app_margin
-            < self.cfg.absence_appearance_margin
-        ):
-            return (
-                'absence_recovery_reject:appearance_margin'
-                f' {app_margin:.3f}'
-                f'<{self.cfg.absence_appearance_margin:.3f}'
-            )
-
-        return None
 
     def _candidate_group_crop_risk(
         self,
@@ -2191,61 +1993,6 @@ class TargetIdentityMemory:
             self._last_positive_memory_update_reason = (
                 'trusted_locked_adaptive_update'
             )
-
-    def _appearance_conservative_reject_reason(
-        self,
-        *,
-        best_score: CandidateScore,
-        all_scores: List[CandidateScore],
-    ) -> Optional[str]:
-        if not self.cfg.appearance_conservative_enabled:
-            return None
-
-        if not best_score.appearance_used:
-            if (
-                self.cfg
-                .appearance_conservative_require_appearance
-            ):
-                return (
-                    'appearance_conservative_reject:'
-                    'no_appearance_used'
-                )
-            return None
-
-        appearance_scores = sorted(
-            [
-                score.appearance_raw
-                for score in all_scores
-                if (
-                    score.appearance_used
-                    and score.geometry_allows_appearance
-                )
-            ],
-            reverse=True,
-        )
-        selected_app = best_score.appearance_raw
-        second_app = (
-            appearance_scores[1]
-            if len(appearance_scores) > 1
-            else 0.0
-        )
-        app_margin = selected_app - second_app
-
-        if (
-            selected_app
-            < self.cfg
-            .appearance_conservative_min_similarity
-            or app_margin
-            < self.cfg.appearance_conservative_margin
-        ):
-            return (
-                'appearance_conservative_reject:'
-                f' selected_app={selected_app:.3f}'
-                f' second_app={second_app:.3f}'
-                f' margin={app_margin:.3f}'
-            )
-
-        return None
 
     def _miss(
         self,
