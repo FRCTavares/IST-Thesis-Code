@@ -183,6 +183,23 @@ class PositiveAppearanceMemory:
             adaptive_similarity,
         )
 
+    def observe_pre_anchor_operator_presence(
+        self,
+        *,
+        operator_track_present: bool,
+    ) -> None:
+        """Invalidate delayed bootstrap after usable operator-ID absence."""
+        if self.protected_anchor is not None:
+            return
+        if self.operator_track_id is None:
+            return
+        if operator_track_present:
+            return
+
+        self.current_lineage_supported = False
+        self.lineage_trusted = False
+        self.trusted_lock_streak = 0
+
     def begin_reacquired_lineage(
         self,
         *,

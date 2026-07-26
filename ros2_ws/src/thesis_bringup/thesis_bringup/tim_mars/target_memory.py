@@ -320,6 +320,9 @@ class TargetIdentityMemory:
 
         prepared = self._prepare_update_candidates(candidates)
         if prepared is None:
+            self._positive_appearance.observe_pre_anchor_operator_presence(
+                operator_track_present=False,
+            )
             self._reset_confirmation_trackers_except(set())
             return self._miss(reason='no_candidates')
 
@@ -330,6 +333,12 @@ class TargetIdentityMemory:
         same_id = prepared.same_id
         same_id_score = prepared.same_id_score
         same_id_candidate = prepared.same_id_candidate
+
+        self._positive_appearance.observe_pre_anchor_operator_presence(
+            operator_track_present=(
+                same_id_candidate is not None
+            ),
+        )
 
         id_switch = best.track_id != self._m.track_id
 
@@ -1992,7 +2001,34 @@ class TargetIdentityMemory:
         }
         reacquired = bool(id_changed or was_lostish)
 
-        if protected_mode and reacquired:
+        preserve_pre_anchor_operator_lineage = bool(
+            protected_mode
+            and reacquired
+            and self._positive_appearance.protected_anchor
+            is None
+            and self._positive_appearance.operator_track_id
+            is not None
+            and int(candidate.track_id)
+            == int(
+                self._positive_appearance.operator_track_id
+            )
+            and self._positive_appearance
+            .current_lineage_track_id
+            is not None
+            and int(candidate.track_id)
+            == int(
+                self._positive_appearance
+                .current_lineage_track_id
+            )
+            and self._positive_appearance
+            .current_lineage_supported
+        )
+
+        if (
+            protected_mode
+            and reacquired
+            and not preserve_pre_anchor_operator_lineage
+        ):
             support_threshold = max(
                 float(self.cfg.appearance_min_similarity),
                 float(

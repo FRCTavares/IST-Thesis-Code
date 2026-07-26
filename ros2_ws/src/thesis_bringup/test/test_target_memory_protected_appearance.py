@@ -211,6 +211,98 @@ def test_candidate_scoring_cannot_bootstrap_protected_anchor():
     assert event.track_timestamp_ns is None
 
 
+def test_continuous_operator_id_presence_survives_policy_suppression():
+    """Policy suppression must not imitate actual tracker-ID absence."""
+    operator_appearance = feat([1.0, 0.0, 0.0])
+
+    tim = TargetIdentityMemory(
+        protected_cfg(
+            same_id_hijack_protection_enabled=True,
+            appearance_conservative_enabled=False,
+            hard_negative_memory_enabled=False,
+            rank_aware_reacquisition_enabled=False,
+            candidate_belief_enabled=False,
+            absence_recovery_enabled=False,
+            short_gap_new_id_suppression_enabled=False,
+        )
+    )
+
+    tim.select(
+        tr(
+            43,
+            (100, 100, 160, 240),
+            appearance=None,
+        )
+    )
+
+    suppressed = tim.update(
+        [
+            tr(
+                43,
+                (102, 100, 162, 240),
+                appearance=None,
+            ),
+            tr(
+                76,
+                (135, 101, 195, 241),
+                appearance=operator_appearance,
+            ),
+        ]
+    )
+
+    assert suppressed.state == TargetState.UNCERTAIN
+    assert not suppressed.visible
+    assert suppressed.reason.startswith(
+        'same_id_hijack_reject: challenger=76'
+    )
+    assert tim._positive_appearance.current_lineage_supported
+    assert tim._positive_appearance.protected_anchor is None
+
+    pending = tim.update(
+        [
+            tr(
+                43,
+                (104, 100, 164, 240),
+                appearance=operator_appearance,
+            )
+        ]
+    )
+
+    assert pending.state == TargetState.REACQUIRED
+    assert not pending.visible
+    assert tim._positive_appearance.current_lineage_supported
+
+    committed = tim.update(
+        [
+            tr(
+                43,
+                (106, 100, 166, 240),
+                appearance=operator_appearance,
+            )
+        ]
+    )
+
+    assert committed.state == TargetState.LOCKED
+    assert committed.visible
+    assert committed.positive_memory_updated
+    assert (
+        committed.positive_memory_update_reason
+        == 'protected_anchor_bootstrap'
+    )
+    assert np.array_equal(
+        tim._positive_appearance.protected_anchor,
+        operator_appearance,
+    )
+
+    event = committed.positive_memory_bootstrap_event
+    assert event is not None
+    assert event.action == 'protected_anchor_bootstrap'
+    assert event.track_id == 43
+    assert event.operator_track_id == 43
+    assert event.current_lineage_track_id == 43
+    assert event.current_lineage_supported
+
+
 def test_reacquired_same_id_cannot_bootstrap_first_protected_anchor():
     """An unsupported same-ID return must not define operator appearance.
 
@@ -247,6 +339,9 @@ def test_reacquired_same_id_cannot_bootstrap_first_protected_anchor():
 
     assert missed.state == TargetState.UNCERTAIN
     assert tim._positive_appearance.protected_anchor is None
+    assert not (
+        tim._positive_appearance.current_lineage_supported
+    )
 
     output = None
     for offset in (2, 4, 6):

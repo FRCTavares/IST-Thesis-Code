@@ -50,12 +50,13 @@ Open executable issues: **25**.
    - the final row exactly reproduced the current P0.17 dual-oracle authority: May `0.000/0.100 s`, June Seq01 `0.000/0.000 s`, June Seq03 `0.000/0.950 s`, June Seq04 `0.000/0.250 s`, and aggregate `0.000/1.300 s` spatial/annotated-ID wrong-target duration.
    - the historical P0.28 component-matrix semantic digests remain versioned diagnostic evidence and are not used as the regression authority for the current canonical configuration.
 
-3. [ ] [#15 — P1.5 Fix positive-memory bootstrap](https://github.com/FRCTavares/IST-Thesis-Code/issues/15) — IMPLEMENTED; EVIDENCE PENDING
-   - started on 26 July 2026 from clean merge commit `055984a3867b5fb1bfc22615f052bc17831e61a3`.
-   - first protected-anchor bootstrap now requires the current tracker lineage to remain the same supported operator-authorized lineage; a pre-embedding selection followed by loss and same-ID reassignment cannot define the immutable operator anchor.
-   - immediate operator initialization and delayed accepted-frame bootstrap now emit an auditable `PositiveMemoryBootstrapEvent`; the shared runtime records the accepted frame, tracker and causal-image timestamps, exact embedding-source frame and image timestamp, cache generations, bounding boxes, crop-quality evidence, and cached-embedding age.
-   - local verification passed: 38 focused bootstrap/provenance tests, 223 non-linter `thesis_bringup` tests, 29 deterministic replay-runner tests, changed-file compilation, focused lint gates, diff hygiene, and the `thesis_bringup` package build.
-   - deterministic canonical replay, wrong-target nonincrease comparison, repeatability, and promoted clean evidence remain required before marking this item DONE and closing Issue #15.
+3. [ ] [#15 — P1.5 Fix positive-memory bootstrap](https://github.com/FRCTavares/IST-Thesis-Code/issues/15) — CORRECTIVE IMPLEMENTED; EVIDENCE PENDING
+   - started on 26 July 2026 from clean merge commit `055984a3867b5fb1bfc22615f052bc17831e61a3`; implementation checkpoint `b4c80c2b35da90e0edb765657517f6647dcec02a` added lineage-gated bootstrap and auditable `PositiveMemoryBootstrapEvent` provenance.
+   - the first clean four-sequence A/B replay blocked promotion: `may_hard_reentry` produced no protected anchor, correct visible time fell from 62.513 s to 21.300 s, and wrong visible time increased from 0.100 s to 2.300 s.
+   - diagnosis showed that a transient same-ID hijack-policy suppression was treated like actual tracker-ID loss: although the operator-selected ID remained continuously present, recovery reset the pre-anchor lineage to unsupported.
+   - corrective work now distinguishes continuous usable operator-ID presence from true absence. Policy suppression may preserve the original pre-anchor authorization, but any prepared frame without the operator ID permanently invalidates delayed bootstrap; a later same-ID reassignment still cannot define immutable operator identity memory.
+   - corrective local verification passed: the new regression was RED before implementation; 3 focused regressions, 10 protected-memory tests, 4 identity-lineage tests, the runtime-provenance regression, 224 non-linter `thesis_bringup` tests, 29 deterministic replay-runner tests, changed-file compilation, diff hygiene, and the `thesis_bringup` package build all passed.
+   - a new clean committed four-sequence A/B replay, wrong-target nonincrease comparison, bootstrap-provenance audit, repeatability, and promoted evidence remain required before marking this item DONE and closing Issue #15.
 
 4. [ ] [#17 — P1.6 Prevent target fragments becoming negatives](https://github.com/FRCTavares/IST-Thesis-Code/issues/17)
    - phase 4; engineering; prove the protection under the canonical profile and resolve the same-ID hard-negative xfail.
