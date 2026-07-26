@@ -226,11 +226,18 @@ class PositiveAppearanceMemory:
         track_id: int,
         appearance: Any,
     ) -> bool:
+        """Create the first anchor only from operator-authorized continuity."""
         if self.protected_anchor is not None:
             return False
         if self.operator_track_id is None:
             return False
         if int(track_id) != int(self.operator_track_id):
+            return False
+        if (
+            self.current_lineage_track_id is None
+            or int(track_id) != int(self.current_lineage_track_id)
+            or not self.current_lineage_supported
+        ):
             return False
         if appearance is None:
             return False

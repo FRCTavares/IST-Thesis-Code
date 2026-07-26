@@ -222,6 +222,109 @@ def _hard_negative_event_payload(
     }
 
 
+def _optional_bbox_payload(bbox):
+    if bbox is None:
+        return None
+
+    return [float(value) for value in bbox]
+
+
+def _crop_quality_payload(quality):
+    if quality is None:
+        return None
+
+    return {
+        "crop_width_px": float(quality.crop_width_px),
+        "crop_height_px": float(quality.crop_height_px),
+        "clipping_fraction": float(
+            quality.clipping_fraction
+        ),
+        "aspect_ratio": float(quality.aspect_ratio),
+        "max_iou_with_other": float(
+            quality.max_iou_with_other
+        ),
+        "min_centre_distance_norm": float(
+            quality.min_centre_distance_norm
+        ),
+        "encoding_eligible": bool(
+            quality.encoding_eligible
+        ),
+        "memory_update_eligible": bool(
+            quality.memory_update_eligible
+        ),
+        "rejection_reasons": list(
+            quality.rejection_reasons
+        ),
+    }
+
+
+def _positive_memory_bootstrap_event_payload(event):
+    if event is None:
+        return None
+
+    return {
+        "action": str(event.action),
+        "track_id": int(event.track_id),
+        "accepted_bbox": _optional_bbox_payload(
+            event.accepted_bbox
+        ),
+        "acceptance_memory_source": str(
+            event.acceptance_memory_source
+        ),
+        "memory_update_eligible": bool(
+            event.memory_update_eligible
+        ),
+        "ambiguous": bool(event.ambiguous),
+        "hard_negative_reject": bool(
+            event.hard_negative_reject
+        ),
+        "operator_track_id": event.operator_track_id,
+        "current_lineage_track_id": (
+            event.current_lineage_track_id
+        ),
+        "current_lineage_supported": bool(
+            event.current_lineage_supported
+        ),
+        "frame_id": event.frame_id,
+        "track_timestamp_ns": event.track_timestamp_ns,
+        "selected_image_timestamp_ns": (
+            event.selected_image_timestamp_ns
+        ),
+        "image_track_offset_ms": (
+            event.image_track_offset_ms
+        ),
+        "appearance_source_frame_id": (
+            event.appearance_source_frame_id
+        ),
+        "appearance_source_image_timestamp_ns": (
+            event.appearance_source_image_timestamp_ns
+        ),
+        "appearance_embedded_ns": (
+            event.appearance_embedded_ns
+        ),
+        "appearance_embedding_age_ms": (
+            event.appearance_embedding_age_ms
+        ),
+        "appearance_frame_generation": (
+            event.appearance_frame_generation
+        ),
+        "appearance_track_generation": (
+            event.appearance_track_generation
+        ),
+        "appearance_source_bbox": _optional_bbox_payload(
+            event.appearance_source_bbox
+        ),
+        "accepted_crop_quality": _crop_quality_payload(
+            event.accepted_crop_quality
+        ),
+        "appearance_source_crop_quality": (
+            _crop_quality_payload(
+                event.appearance_source_crop_quality
+            )
+        ),
+    }
+
+
 def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
     return {
         "state": _value_text(out.state),
@@ -249,6 +352,15 @@ def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
                 out,
                 "positive_memory_update_reason",
                 "",
+            )
+        ),
+        "positive_memory_bootstrap_event": (
+            _positive_memory_bootstrap_event_payload(
+                getattr(
+                    out,
+                    "positive_memory_bootstrap_event",
+                    None,
+                )
             )
         ),
         "protected_anchor_available": bool(

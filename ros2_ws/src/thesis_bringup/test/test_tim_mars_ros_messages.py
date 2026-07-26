@@ -72,6 +72,38 @@ def _output(control_valid=True):
         positive_memory_update_reason=(
             "trusted_locked_adaptive_update"
         ),
+        positive_memory_bootstrap_event=SimpleNamespace(
+            action="protected_anchor_bootstrap",
+            track_id=7,
+            accepted_bbox=(10.0, 20.0, 50.0, 80.0),
+            acceptance_memory_source="operator_continuity",
+            memory_update_eligible=True,
+            ambiguous=False,
+            hard_negative_reject=False,
+            operator_track_id=7,
+            current_lineage_track_id=7,
+            current_lineage_supported=True,
+            frame_id=41,
+            track_timestamp_ns=1_500_000_000,
+            selected_image_timestamp_ns=1_480_000_000,
+            image_track_offset_ms=20.0,
+            appearance_source_frame_id=41,
+            appearance_source_image_timestamp_ns=(
+                1_480_000_000
+            ),
+            appearance_embedded_ns=1_500_000_000,
+            appearance_embedding_age_ms=0.0,
+            appearance_frame_generation=2,
+            appearance_track_generation=3,
+            appearance_source_bbox=(
+                10.0,
+                20.0,
+                50.0,
+                80.0,
+            ),
+            accepted_crop_quality=None,
+            appearance_source_crop_quality=None,
+        ),
         protected_anchor_available=True,
         trusted_gallery_size=3,
         appearance_lineage_trusted=True,
@@ -178,6 +210,45 @@ def test_status_only_json_preserves_core_diagnostics():
         payload["positive_memory_update_reason"]
         == "trusted_locked_adaptive_update"
     )
+    assert payload["positive_memory_bootstrap_event"] == {
+        "action": "protected_anchor_bootstrap",
+        "track_id": 7,
+        "accepted_bbox": [
+            10.0,
+            20.0,
+            50.0,
+            80.0,
+        ],
+        "acceptance_memory_source": (
+            "operator_continuity"
+        ),
+        "memory_update_eligible": True,
+        "ambiguous": False,
+        "hard_negative_reject": False,
+        "operator_track_id": 7,
+        "current_lineage_track_id": 7,
+        "current_lineage_supported": True,
+        "frame_id": 41,
+        "track_timestamp_ns": 1_500_000_000,
+        "selected_image_timestamp_ns": 1_480_000_000,
+        "image_track_offset_ms": 20.0,
+        "appearance_source_frame_id": 41,
+        "appearance_source_image_timestamp_ns": (
+            1_480_000_000
+        ),
+        "appearance_embedded_ns": 1_500_000_000,
+        "appearance_embedding_age_ms": 0.0,
+        "appearance_frame_generation": 2,
+        "appearance_track_generation": 3,
+        "appearance_source_bbox": [
+            10.0,
+            20.0,
+            50.0,
+            80.0,
+        ],
+        "accepted_crop_quality": None,
+        "appearance_source_crop_quality": None,
+    }
     assert payload["protected_anchor_available"] is True
     assert payload["trusted_gallery_size"] == 3
     assert payload["appearance_lineage_trusted"] is True

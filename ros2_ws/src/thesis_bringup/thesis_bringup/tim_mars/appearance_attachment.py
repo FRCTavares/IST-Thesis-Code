@@ -22,6 +22,9 @@ from thesis_bringup.tim_mars.crop_quality import (
     measure_crop_qualities,
 )
 from thesis_bringup.tim_mars.target_memory import BBox, CandidateTrack
+from thesis_bringup.tim_mars.types import (
+    AppearanceObservationProvenance,
+)
 
 
 class AppearanceEncoder(Protocol):
@@ -70,6 +73,7 @@ class AppearanceCacheEntry:
     track_generation: int
     source_bbox: BBox
     crop_quality: AppearanceCropQuality
+    source_image_timestamp_ns: int | None = None
 
 
 @dataclass
@@ -599,6 +603,11 @@ def attach_appearance_features(
             ),
             source_bbox=candidate.bbox,
             crop_quality=quality,
+            source_image_timestamp_ns=(
+                int(data.latest_image_seen_ns)
+                if data.latest_image_seen_ns is not None
+                else None
+            ),
         )
         state.cache_seen_ns[track_id] = int(
             data.now_ns
@@ -786,10 +795,45 @@ def attach_cached_appearance_features(
             and current_quality.memory_update_eligible
         )
 
+        appearance_provenance = None
+        if (
+            cache_valid
+            and isinstance(cached, AppearanceCacheEntry)
+            and cache_age_ms is not None
+        ):
+            source_frame_id = int(cached.source_frame_id)
+            appearance_provenance = (
+                AppearanceObservationProvenance(
+                    source_frame_id=(
+                        source_frame_id
+                        if source_frame_id >= 0
+                        else None
+                    ),
+                    source_image_timestamp_ns=(
+                        cached.source_image_timestamp_ns
+                    ),
+                    embedded_ns=int(cached.embedded_ns),
+                    embedding_age_ms=float(cache_age_ms),
+                    frame_generation=int(
+                        cached.frame_generation
+                    ),
+                    track_generation=int(
+                        cached.track_generation
+                    ),
+                    source_bbox=cached.source_bbox,
+                    source_crop_quality=(
+                        cached.crop_quality
+                    ),
+                )
+            )
+
         enriched.append(
             replace(
                 candidate,
                 appearance=appearance,
+                appearance_provenance=(
+                    appearance_provenance
+                ),
                 appearance_crop_quality=(
                     effective_quality
                 ),

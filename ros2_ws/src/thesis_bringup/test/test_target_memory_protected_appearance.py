@@ -196,6 +196,89 @@ def test_candidate_scoring_cannot_bootstrap_protected_anchor():
         selected,
     )
 
+    event = output.positive_memory_bootstrap_event
+    assert event is not None
+    assert event.action == "protected_anchor_bootstrap"
+    assert event.track_id == 5
+    assert event.accepted_bbox == (102, 100, 152, 220)
+    assert event.memory_update_eligible
+    assert not event.ambiguous
+    assert not event.hard_negative_reject
+    assert event.operator_track_id == 5
+    assert event.current_lineage_track_id == 5
+    assert event.current_lineage_supported
+    assert event.frame_id is None
+    assert event.track_timestamp_ns is None
+
+
+def test_reacquired_same_id_cannot_bootstrap_first_protected_anchor():
+    """An unsupported same-ID return must not define operator appearance.
+
+    The operator selects a target before an embedding is available. After
+    continuity is broken, the same tracker ID may belong to another physical
+    person. Its first embedding must not become the immutable operator anchor.
+    """
+    hijacker = feat([0.0, 1.0, 0.0])
+
+    tim = TargetIdentityMemory(
+        protected_cfg(
+            appearance_conservative_enabled=False,
+            hard_negative_memory_enabled=False,
+            rank_aware_reacquisition_enabled=False,
+            candidate_belief_enabled=False,
+            absence_recovery_enabled=False,
+            short_gap_same_id_priority_enabled=False,
+            short_gap_new_id_suppression_enabled=False,
+        )
+    )
+
+    tim.select(
+        tr(
+            5,
+            (100, 100, 150, 220),
+            appearance=None,
+        )
+    )
+
+    assert tim._positive_appearance.protected_anchor is None
+    assert tim._positive_appearance.current_lineage_supported
+
+    missed = tim.update([])
+
+    assert missed.state == TargetState.UNCERTAIN
+    assert tim._positive_appearance.protected_anchor is None
+
+    output = None
+    for offset in (2, 4, 6):
+        output = tim.update(
+            [
+                tr(
+                    5,
+                    (
+                        100 + offset,
+                        100,
+                        150 + offset,
+                        220,
+                    ),
+                    appearance=hijacker,
+                )
+            ]
+        )
+        if output.state == TargetState.LOCKED:
+            break
+
+    assert output is not None
+    assert output.state == TargetState.LOCKED
+
+    # Required Issue #15 behaviour: accepted tracker continuity may remain
+    # controller-visible, but an unsupported lineage cannot define immutable
+    # operator identity memory.
+    assert not tim._positive_appearance.current_lineage_supported
+    assert tim._positive_appearance.protected_anchor is None
+    assert tim._positive_appearance.adaptive_prototype is None
+    assert not output.positive_memory_updated
+    assert output.positive_memory_bootstrap_event is None
+
 
 def test_adaptive_similarity_cannot_authorize_id_switch():
     selected = feat([1.0, 0.0, 0.0])

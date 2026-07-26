@@ -42,6 +42,20 @@ class ControlMode(str, Enum):
 
 
 @dataclass(frozen=True)
+class AppearanceObservationProvenance:
+    """Origin of the embedding attached to one current candidate."""
+
+    source_frame_id: Optional[int]
+    source_image_timestamp_ns: Optional[int]
+    embedded_ns: int
+    embedding_age_ms: float
+    frame_generation: int
+    track_generation: int
+    source_bbox: BBox
+    source_crop_quality: AppearanceCropQuality
+
+
+@dataclass(frozen=True)
 class CandidateTrack:
     """Minimal tracker output consumed by TIM.
 
@@ -68,6 +82,9 @@ class CandidateTrack:
         AppearanceCropQuality
     ] = None
     appearance_memory_update_eligible: bool = True
+    appearance_provenance: Optional[
+        AppearanceObservationProvenance
+    ] = None
 
 
 @dataclass(frozen=True)
@@ -285,6 +302,46 @@ class TargetMemoryConfig:
 
 
 @dataclass(frozen=True)
+class PositiveMemoryBootstrapEvent:
+    """Auditable evidence for creation of the immutable operator anchor."""
+
+    action: str
+    track_id: int
+    accepted_bbox: BBox
+    acceptance_memory_source: str
+    memory_update_eligible: bool
+    ambiguous: bool
+    hard_negative_reject: bool
+
+    operator_track_id: Optional[int] = None
+    current_lineage_track_id: Optional[int] = None
+    current_lineage_supported: bool = False
+
+    # Runtime evidence correspondence. Direct algorithm tests may leave these
+    # unset; TimMarsRuntime enriches them from the accepted tracker frame and
+    # structured appearance-cache entry.
+    frame_id: Optional[int] = None
+    track_timestamp_ns: Optional[int] = None
+    selected_image_timestamp_ns: Optional[int] = None
+    image_track_offset_ms: Optional[float] = None
+
+    appearance_source_frame_id: Optional[int] = None
+    appearance_source_image_timestamp_ns: Optional[int] = None
+    appearance_embedded_ns: Optional[int] = None
+    appearance_embedding_age_ms: Optional[float] = None
+    appearance_frame_generation: Optional[int] = None
+    appearance_track_generation: Optional[int] = None
+    appearance_source_bbox: Optional[BBox] = None
+
+    accepted_crop_quality: Optional[
+        AppearanceCropQuality
+    ] = None
+    appearance_source_crop_quality: Optional[
+        AppearanceCropQuality
+    ] = None
+
+
+@dataclass(frozen=True)
 class HardNegativeMemoryEvent:
     """One auditable hard-negative memory lifecycle mutation."""
 
@@ -323,6 +380,9 @@ class TargetMemoryOutput:
     acceptance_memory_source: str = "none"
     positive_memory_updated: bool = False
     positive_memory_update_reason: str = ""
+    positive_memory_bootstrap_event: Optional[
+        PositiveMemoryBootstrapEvent
+    ] = None
     protected_anchor_available: bool = False
     trusted_gallery_size: int = 0
     appearance_lineage_trusted: bool = False
@@ -371,9 +431,11 @@ __all__ = [
     "TargetState",
     "ControlMode",
     "AppearanceCropQuality",
+    "AppearanceObservationProvenance",
     "CandidateTrack",
     "CandidateScore",
     "TargetMemoryConfig",
+    "PositiveMemoryBootstrapEvent",
     "HardNegativeMemoryEvent",
     "TargetMemoryOutput",
 ]
