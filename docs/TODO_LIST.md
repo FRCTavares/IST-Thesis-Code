@@ -59,7 +59,10 @@ Open executable issues: **25**.
    - Seq04 repeatability passed with semantic SHA-256 `f5b6e14c8801e9f0286f2eb8971e4c2379fb0f4430e95018e6bc96bc385819f2`.
    - promoted evidence: `reports/p015_positive_memory_bootstrap_f1fbb799_2026_07_26/`.
 
-4. [ ] [#17 — P1.6 Prevent target fragments becoming negatives](https://github.com/FRCTavares/IST-Thesis-Code/issues/17)
+4. [ ] [#17 — P1.6 Prevent target fragments becoming negatives](https://github.com/FRCTavares/IST-Thesis-Code/issues/17) — IN PROGRESS
+   - started on 26 July 2026 from clean baseline `c32c01691e0c6281e92aeee8880fa9bf04ecb488`;
+   - canonical regressions cover duplicate fragments, protected-anchor support, trusted-gallery history, and uninterrupted same-ID continuity;
+   - implementation validated locally: protected positive support gates hard-negative admission, the canonical exclusion threshold is `0.95`, 95 related tests passed, 31 post-build regressions passed, and the `thesis_bringup` build passed; replay evidence remains required before completion.
    - phase 4; engineering; prove the protection under the canonical profile and resolve the same-ID hard-negative xfail.
 
 5. [ ] [#18 — P1.7 Add hard-negative lifecycle](https://github.com/FRCTavares/IST-Thesis-Code/issues/18)

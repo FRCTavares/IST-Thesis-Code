@@ -81,9 +81,9 @@ target_memory_mars_node:
     hard_negative_min_candidate_similarity: 0.70
     hard_negative_confirm_observations: 2
 
-    # Disabled above the cosine range. No exclusion threshold was promoted
-    # without separate replay evidence.
-    hard_negative_max_positive_similarity: 1.01
+    # Candidates strongly supported by the protected anchor or trusted target
+    # gallery are treated as likely duplicate tracks or target fragments.
+    hard_negative_max_positive_similarity: 0.95
 
     hard_negative_reject_similarity: 0.80
     hard_negative_reject_margin: 0.03

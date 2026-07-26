@@ -56,6 +56,36 @@ def _appearance_of(entry: Any) -> Any:
     return entry
 
 
+def _positive_exclusion_similarity(
+    score: CandidateScore,
+    cfg: TargetMemoryConfig,
+) -> float:
+    """Return trusted positive support used to block negative admission.
+
+    Protected mode excludes target-like candidates using the immutable
+    operator anchor and trusted gallery. The adaptive prototype is deliberately
+    not allowed to weaken that protection. Legacy mode retains the previous
+    appearance-score behaviour.
+    """
+    fallback = max(
+        float(score.positive_similarity),
+        float(score.appearance_raw),
+    )
+
+    if not cfg.appearance_protected_memory_enabled:
+        return fallback
+
+    protected_similarity = max(
+        float(score.protected_anchor_similarity),
+        float(score.trusted_gallery_similarity),
+    )
+
+    if protected_similarity > 0.0:
+        return protected_similarity
+
+    return fallback
+
+
 class HardNegativeMemory:
     """Small bounded memory of distractor appearance prototypes."""
 
@@ -324,8 +354,11 @@ class HardNegativeMemory:
             if not candidate.appearance_memory_update_eligible:
                 continue
 
-            positive_similarity = float(
-                score.appearance_raw
+            positive_similarity = (
+                _positive_exclusion_similarity(
+                    score,
+                    cfg,
+                )
             )
             if (
                 positive_similarity
