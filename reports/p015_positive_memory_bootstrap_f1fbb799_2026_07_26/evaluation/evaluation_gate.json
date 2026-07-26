@@ -1,0 +1,24 @@
+{
+  "baseline_commit": "055984a3867b5fb1bfc22615f052bc17831e61a3",
+  "candidate_commit": "f1fbb7994766080481fe8cf3b9acac9862867c9b",
+  "components": {
+    "bootstrap": {
+      "gate": "PASS",
+      "path": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p015_ab_f1fbb799/evaluation/bootstrap_event_audit.json"
+    },
+    "correctness": {
+      "gate": "PASS",
+      "path": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p015_ab_f1fbb799/evaluation/correctness_comparison.json"
+    },
+    "repeatability": {
+      "gate": "PASS",
+      "path": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p015_ab_f1fbb799/evaluation/repeatability.json"
+    }
+  },
+  "errors": [],
+  "evaluation_count": 8,
+  "evaluation_failed": 0,
+  "evaluation_passed": 8,
+  "gate": "PASS",
+  "schema_version": 1
+}

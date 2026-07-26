@@ -1,0 +1,3 @@
+stream,event_type,total_s,visible_s,correct_s,wrong_s,lost_s,stale_output_s,target_absent_but_output_s,target_not_visible_s,no_target_selected_s,correct_ratio,wrong_ratio,lost_ratio,max_output_age_s
+raw_target,clean_visible,122.340,122.340,55.550,0.000,66.790,13.640,0.000,0.000,0.000,0.454,0.000,0.546,0.900
+tim_target_memory,clean_visible,122.340,122.340,108.750,0.000,13.590,13.590,0.000,0.000,0.000,0.889,0.000,0.111,0.900

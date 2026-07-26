@@ -1,0 +1,368 @@
+{
+  "errors": [],
+  "gate": "PASS",
+  "records": [
+    {
+      "bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p015_positive_bootstrap_f1fbb799/candidate_f1fbb799/may_hard_reentry",
+      "bootstrap_event_count": 1,
+      "errors": [],
+      "events": [
+        {
+          "event": {
+            "acceptance_memory_source": "none",
+            "accepted_bbox": [
+              327.27515506744385,
+              254.2453498840332,
+              357.02025508880615,
+              329.8383903503418
+            ],
+            "accepted_crop_quality": {
+              "aspect_ratio": 0.3934899276160156,
+              "clipping_fraction": 0.0,
+              "crop_height_px": 75.5930404663086,
+              "crop_width_px": 29.745100021362305,
+              "encoding_eligible": true,
+              "max_iou_with_other": 0.0,
+              "memory_update_eligible": true,
+              "min_centre_distance_norm": 0.10309850964311625,
+              "rejection_reasons": []
+            },
+            "action": "protected_anchor_bootstrap",
+            "ambiguous": false,
+            "appearance_embedded_ns": 1778753021199325964,
+            "appearance_embedding_age_ms": 101.167889,
+            "appearance_frame_generation": 1,
+            "appearance_source_bbox": [
+              327.9759044647217,
+              254.57321166992188,
+              357.1724109649658,
+              328.3930969238281
+            ],
+            "appearance_source_crop_quality": {
+              "aspect_ratio": 0.39551004989809546,
+              "clipping_fraction": 0.0,
+              "crop_height_px": 73.81988525390625,
+              "crop_width_px": 29.19650650024414,
+              "encoding_eligible": true,
+              "max_iou_with_other": 0.0,
+              "memory_update_eligible": true,
+              "min_centre_distance_norm": 0.10425287548190212,
+              "rejection_reasons": []
+            },
+            "appearance_source_frame_id": 104,
+            "appearance_source_image_timestamp_ns": 1778753021199325964,
+            "appearance_track_generation": 1,
+            "current_lineage_supported": true,
+            "current_lineage_track_id": 1,
+            "frame_id": 106,
+            "hard_negative_reject": false,
+            "image_track_offset_ms": 101.167889,
+            "memory_update_eligible": true,
+            "operator_track_id": 1,
+            "selected_image_timestamp_ns": 1778753021199325964,
+            "track_id": 1,
+            "track_timestamp_ns": 1778753021300493853
+          },
+          "status_frame_id": 106,
+          "status_selected_image_timestamp_ns": 1778753021199325964,
+          "status_track_timestamp_ns": 1778753021300493853
+        }
+      ],
+      "gate": "PASS",
+      "role": "candidate",
+      "run": "may_hard_reentry",
+      "selected_track_id": 1,
+      "status_messages": 950
+    },
+    {
+      "bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p015_positive_bootstrap_f1fbb799/candidate_f1fbb799/seq01_clean",
+      "bootstrap_event_count": 1,
+      "errors": [],
+      "events": [
+        {
+          "event": {
+            "acceptance_memory_source": "tracker_continuity",
+            "accepted_bbox": [
+              268.84579277038574,
+              95.92138290405273,
+              305.07962226867676,
+              218.67847061157227
+            ],
+            "accepted_crop_quality": {
+              "aspect_ratio": 0.3935558717350433,
+              "clipping_fraction": 0.0,
+              "crop_height_px": 92.06781578063965,
+              "crop_width_px": 36.233829498291016,
+              "encoding_eligible": true,
+              "max_iou_with_other": 0.0,
+              "memory_update_eligible": true,
+              "min_centre_distance_norm": 0.15339170968535298,
+              "rejection_reasons": []
+            },
+            "action": "protected_anchor_bootstrap",
+            "ambiguous": false,
+            "appearance_embedded_ns": 1781869561625936438,
+            "appearance_embedding_age_ms": 0.0,
+            "appearance_frame_generation": 1,
+            "appearance_source_bbox": [
+              268.84579277038574,
+              95.92138290405273,
+              305.07962226867676,
+              218.67847061157227
+            ],
+            "appearance_source_crop_quality": {
+              "aspect_ratio": 0.3935558717350433,
+              "clipping_fraction": 0.0,
+              "crop_height_px": 92.06781578063965,
+              "crop_width_px": 36.233829498291016,
+              "encoding_eligible": true,
+              "max_iou_with_other": 0.0,
+              "memory_update_eligible": true,
+              "min_centre_distance_norm": 0.15339170968535298,
+              "rejection_reasons": []
+            },
+            "appearance_source_frame_id": 335,
+            "appearance_source_image_timestamp_ns": 1781869561595233178,
+            "appearance_track_generation": 1,
+            "current_lineage_supported": true,
+            "current_lineage_track_id": 1,
+            "frame_id": 335,
+            "hard_negative_reject": false,
+            "image_track_offset_ms": 30.70326,
+            "memory_update_eligible": true,
+            "operator_track_id": 1,
+            "selected_image_timestamp_ns": 1781869561595233178,
+            "track_id": 1,
+            "track_timestamp_ns": 1781869561625936438
+          },
+          "status_frame_id": 335,
+          "status_selected_image_timestamp_ns": 1781869561595233178,
+          "status_track_timestamp_ns": 1781869561625936438
+        }
+      ],
+      "gate": "PASS",
+      "role": "candidate",
+      "run": "seq01_clean",
+      "selected_track_id": 1,
+      "status_messages": 2470
+    },
+    {
+      "bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p015_positive_bootstrap_f1fbb799/candidate_f1fbb799/seq03_crossing",
+      "bootstrap_event_count": 1,
+      "errors": [],
+      "events": [
+        {
+          "event": {
+            "acceptance_memory_source": "tracker_continuity",
+            "accepted_bbox": [
+              311.02207946777344,
+              148.5753402709961,
+              347.6825714111328,
+              254.81244659423828
+            ],
+            "accepted_crop_quality": {
+              "aspect_ratio": 0.4601090675018247,
+              "clipping_fraction": 0.0,
+              "crop_height_px": 79.67782974243164,
+              "crop_width_px": 36.660491943359375,
+              "encoding_eligible": true,
+              "max_iou_with_other": 0.0,
+              "memory_update_eligible": true,
+              "min_centre_distance_norm": 1.0,
+              "rejection_reasons": []
+            },
+            "action": "protected_anchor_bootstrap",
+            "ambiguous": false,
+            "appearance_embedded_ns": 1781870279726691047,
+            "appearance_embedding_age_ms": 0.0,
+            "appearance_frame_generation": 1,
+            "appearance_source_bbox": [
+              311.02207946777344,
+              148.5753402709961,
+              347.6825714111328,
+              254.81244659423828
+            ],
+            "appearance_source_crop_quality": {
+              "aspect_ratio": 0.4601090675018247,
+              "clipping_fraction": 0.0,
+              "crop_height_px": 79.67782974243164,
+              "crop_width_px": 36.660491943359375,
+              "encoding_eligible": true,
+              "max_iou_with_other": 0.0,
+              "memory_update_eligible": true,
+              "min_centre_distance_norm": 1.0,
+              "rejection_reasons": []
+            },
+            "appearance_source_frame_id": 271,
+            "appearance_source_image_timestamp_ns": 1781870279726691047,
+            "appearance_track_generation": 1,
+            "current_lineage_supported": true,
+            "current_lineage_track_id": 2,
+            "frame_id": 271,
+            "hard_negative_reject": false,
+            "image_track_offset_ms": 0.0,
+            "memory_update_eligible": true,
+            "operator_track_id": 2,
+            "selected_image_timestamp_ns": 1781870279726691047,
+            "track_id": 2,
+            "track_timestamp_ns": 1781870279726691047
+          },
+          "status_frame_id": 271,
+          "status_selected_image_timestamp_ns": 1781870279726691047,
+          "status_track_timestamp_ns": 1781870279726691047
+        }
+      ],
+      "gate": "PASS",
+      "role": "candidate",
+      "run": "seq03_crossing",
+      "selected_track_id": 2,
+      "status_messages": 2326
+    },
+    {
+      "bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p015_positive_bootstrap_f1fbb799/candidate_f1fbb799/seq04_occlusion",
+      "bootstrap_event_count": 1,
+      "errors": [],
+      "events": [
+        {
+          "event": {
+            "acceptance_memory_source": "tracker_continuity",
+            "accepted_bbox": [
+              324.97107315063477,
+              313.5204734802246,
+              368.77270126342773,
+              435.5655860900879
+            ],
+            "accepted_crop_quality": {
+              "aspect_ratio": 0.4785293697400991,
+              "clipping_fraction": 0.0,
+              "crop_height_px": 91.53383445739746,
+              "crop_width_px": 43.80162811279297,
+              "encoding_eligible": true,
+              "max_iou_with_other": 0.0,
+              "memory_update_eligible": true,
+              "min_centre_distance_norm": 1.0,
+              "rejection_reasons": []
+            },
+            "action": "protected_anchor_bootstrap",
+            "ambiguous": false,
+            "appearance_embedded_ns": 1781870506415472912,
+            "appearance_embedding_age_ms": 0.0,
+            "appearance_frame_generation": 1,
+            "appearance_source_bbox": [
+              324.97107315063477,
+              313.5204734802246,
+              368.77270126342773,
+              435.5655860900879
+            ],
+            "appearance_source_crop_quality": {
+              "aspect_ratio": 0.4785293697400991,
+              "clipping_fraction": 0.0,
+              "crop_height_px": 91.53383445739746,
+              "crop_width_px": 43.80162811279297,
+              "encoding_eligible": true,
+              "max_iou_with_other": 0.0,
+              "memory_update_eligible": true,
+              "min_centre_distance_norm": 1.0,
+              "rejection_reasons": []
+            },
+            "appearance_source_frame_id": 217,
+            "appearance_source_image_timestamp_ns": 1781870506415472912,
+            "appearance_track_generation": 1,
+            "current_lineage_supported": true,
+            "current_lineage_track_id": 1,
+            "frame_id": 217,
+            "hard_negative_reject": false,
+            "image_track_offset_ms": 0.0,
+            "memory_update_eligible": true,
+            "operator_track_id": 1,
+            "selected_image_timestamp_ns": 1781870506415472912,
+            "track_id": 1,
+            "track_timestamp_ns": 1781870506415472912
+          },
+          "status_frame_id": 217,
+          "status_selected_image_timestamp_ns": 1781870506415472912,
+          "status_track_timestamp_ns": 1781870506415472912
+        }
+      ],
+      "gate": "PASS",
+      "role": "candidate",
+      "run": "seq04_occlusion",
+      "selected_track_id": 1,
+      "status_messages": 1547
+    },
+    {
+      "bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p015_positive_bootstrap_f1fbb799/candidate_f1fbb799_repeat/seq04_occlusion_repeat",
+      "bootstrap_event_count": 1,
+      "errors": [],
+      "events": [
+        {
+          "event": {
+            "acceptance_memory_source": "tracker_continuity",
+            "accepted_bbox": [
+              324.97107315063477,
+              313.5204734802246,
+              368.77270126342773,
+              435.5655860900879
+            ],
+            "accepted_crop_quality": {
+              "aspect_ratio": 0.4785293697400991,
+              "clipping_fraction": 0.0,
+              "crop_height_px": 91.53383445739746,
+              "crop_width_px": 43.80162811279297,
+              "encoding_eligible": true,
+              "max_iou_with_other": 0.0,
+              "memory_update_eligible": true,
+              "min_centre_distance_norm": 1.0,
+              "rejection_reasons": []
+            },
+            "action": "protected_anchor_bootstrap",
+            "ambiguous": false,
+            "appearance_embedded_ns": 1781870506415472912,
+            "appearance_embedding_age_ms": 0.0,
+            "appearance_frame_generation": 1,
+            "appearance_source_bbox": [
+              324.97107315063477,
+              313.5204734802246,
+              368.77270126342773,
+              435.5655860900879
+            ],
+            "appearance_source_crop_quality": {
+              "aspect_ratio": 0.4785293697400991,
+              "clipping_fraction": 0.0,
+              "crop_height_px": 91.53383445739746,
+              "crop_width_px": 43.80162811279297,
+              "encoding_eligible": true,
+              "max_iou_with_other": 0.0,
+              "memory_update_eligible": true,
+              "min_centre_distance_norm": 1.0,
+              "rejection_reasons": []
+            },
+            "appearance_source_frame_id": 217,
+            "appearance_source_image_timestamp_ns": 1781870506415472912,
+            "appearance_track_generation": 1,
+            "current_lineage_supported": true,
+            "current_lineage_track_id": 1,
+            "frame_id": 217,
+            "hard_negative_reject": false,
+            "image_track_offset_ms": 0.0,
+            "memory_update_eligible": true,
+            "operator_track_id": 1,
+            "selected_image_timestamp_ns": 1781870506415472912,
+            "track_id": 1,
+            "track_timestamp_ns": 1781870506415472912
+          },
+          "status_frame_id": 217,
+          "status_selected_image_timestamp_ns": 1781870506415472912,
+          "status_track_timestamp_ns": 1781870506415472912
+        }
+      ],
+      "gate": "PASS",
+      "role": "candidate_repeat",
+      "run": "seq04_occlusion_repeat",
+      "selected_track_id": 1,
+      "status_messages": 1547
+    }
+  ],
+  "schema_version": 1,
+  "status_topic": "/target_memory_mars/status"
+}
