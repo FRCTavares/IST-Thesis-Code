@@ -83,7 +83,7 @@ target_memory_mars_node:
 
     # Candidates strongly supported by the protected anchor or trusted target
     # gallery are treated as likely duplicate tracks or target fragments.
-    hard_negative_max_positive_similarity: 0.95
+    hard_negative_max_positive_similarity: 0.96
 
     hard_negative_reject_similarity: 0.80
     hard_negative_reject_margin: 0.03
