@@ -1,0 +1,8 @@
+threshold	four_sequence_safety	practical_fragment_exclusion	worst_annotated_wrong_delta_s	worst_spatial_wrong_delta_s	worst_annotated_absent_delta_s	worst_spatial_absent_delta_s	total_correct_delta_s	total_lost_delta_s	promotion_candidate
+0.95	PASS	YES	+0.000	+0.000	+0.000	+0.000	+83.198	-0.293	YES
+0.96	PASS	YES	+0.000	+0.000	+0.000	+0.000	+83.198	-0.293	YES
+0.97	PASS	YES	+0.000	+0.000	+0.000	+0.000	+83.198	-0.293	YES
+0.98	PASS	YES	+0.000	+0.000	+0.000	+0.000	+83.198	-0.293	YES
+0.99	PASS	YES	+0.000	+0.000	+0.000	+0.000	+83.198	-0.293	YES
+1.00	PASS	NO	+0.000	+0.000	+0.000	+0.000	+83.198	-0.293	NO
+1.01	PASS	NO	+0.000	+0.000	+0.000	+0.000	+83.198	-0.293	NO

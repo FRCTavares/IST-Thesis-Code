@@ -1,0 +1,15 @@
+Issue #17 canonical deterministic threshold recommendation
+Safety tolerance: 0.050 s
+Sequences: May, Seq01, Seq03 OCSORT, Seq04 OCSORT
+
+0.95: safety=PASS, practical_exclusion=YES, promotion_candidate=YES
+0.96: safety=PASS, practical_exclusion=YES, promotion_candidate=YES
+0.97: safety=PASS, practical_exclusion=YES, promotion_candidate=YES
+0.98: safety=PASS, practical_exclusion=YES, promotion_candidate=YES
+0.99: safety=PASS, practical_exclusion=YES, promotion_candidate=YES
+1.00: safety=PASS, practical_exclusion=NO, promotion_candidate=NO
+1.01: safety=PASS, practical_exclusion=NO, promotion_candidate=NO
+
+Recommended threshold: 0.95
+Reason: lowest tested threshold that preserves the strongest practical fragment exclusion while passing all four deterministic predecessor-safety gates.
+Promotion status: READY_FOR_EVIDENCE_PACKAGING
