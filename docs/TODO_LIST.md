@@ -62,7 +62,7 @@ Open executable issues: **25**.
 4. [ ] [#17 — P1.6 Prevent target fragments becoming negatives](https://github.com/FRCTavares/IST-Thesis-Code/issues/17) — IN PROGRESS
    - started on 26 July 2026 from clean baseline `c32c01691e0c6281e92aeee8880fa9bf04ecb488`;
    - canonical regressions cover duplicate fragments, protected-anchor support, trusted-gallery history, and uninterrupted same-ID continuity;
-   - implementation validated locally: protected positive support gates hard-negative admission; the controlled May/Seq03 sweep selected `0.96` as the lowest tested predecessor-safe exclusion threshold; related tests and the `thesis_bringup` build pass, while the complete four-sequence replay matrix remains required before completion.
+   - protected positive support gates hard-negative admission; the corrected canonical deterministic `0.95–1.01` four-sequence sweep selected `0.95` as the lowest predecessor-safe practical exclusion threshold; evidence packaging and final repeatability validation remain required.
    - visual review confirmed the canonical May ByteTrack identity handover remains at `50.233 s`; `49.999–50.233 s` is now classified as `occlusion_ambiguity` with ID `1`, and annotation dropdown labels include filenames to distinguish canonical and autonomous CSVs.
    - phase 4; engineering; prove the protection under the canonical profile and resolve the same-ID hard-negative xfail.
 
