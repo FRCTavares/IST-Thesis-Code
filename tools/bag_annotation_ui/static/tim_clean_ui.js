@@ -240,6 +240,8 @@ function annotationLabel(path) {
   if (l.includes("_r1_") || l.endsWith("_r1_header_time_corrected.csv") || l.endsWith("_r1.csv")) bits.push("r1");
   if (l.includes("_r2_") || l.endsWith("_r2_header_time_corrected.csv")) bits.push("r2");
 
+  if (!bits.includes(name)) bits.push(name);
+
   return bits.join(" | ");
 }
 

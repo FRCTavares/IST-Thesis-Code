@@ -1,0 +1,3 @@
+stream,correct_target_duration_s,wrong_target_duration_s,lost_target_duration_s,target_not_visible_duration_s,target_absent_but_output_valid_duration_s,no_target_selected_duration_s,reference_missing_duration_s,visible_target_duration_s,stale_output_duration_s,correct_target_ratio,wrong_target_ratio,lost_target_ratio,reference_missing_ratio,max_output_age_s
+raw_target,41.417,4.429,20.675,0.000,0.000,0.000,1.088,67.610,0.000,0.613,0.066,0.306,0.016,0.900
+tim_target_memory,62.427,0.000,4.095,0.000,0.000,0.000,1.088,67.610,0.000,0.923,0.000,0.061,0.016,0.900

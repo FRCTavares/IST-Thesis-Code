@@ -25,7 +25,7 @@
         "scenario": "hard target exit, re-entry, and tracker-ID switch",
         "source_path": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
         "annotation_path": "docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv",
-        "annotation_sha256": "fc4049dcd169e3b8b384b15e3963aa6ac9741e270298550fd899b30ea8b71075",
+        "annotation_sha256": "fd0ee62693696c467968127fb4d6af0f6524487384a4b9509958076f84ed8625",
         "selected_target_id": 1,
         "people_group": "may_2026_05_people_unrecorded",
         "clothing_group": "may_2026_05_clothing_unrecorded",
