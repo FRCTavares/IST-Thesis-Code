@@ -2,6 +2,7 @@
 
 from dataclasses import fields
 from pathlib import Path
+from types import SimpleNamespace
 import importlib.util
 import json
 
@@ -951,3 +952,78 @@ def test_git_value_preserves_leading_short_status_column(
         ' M tracked.py',
         '?? untracked.txt',
     ]
+
+
+def test_make_status_message_zeroes_backend_wall_time_for_determinism(
+    monkeypatch,
+):
+    captured = {}
+
+    def fake_status_json_from_output(_output, **kwargs):
+        captured.update(kwargs)
+        return json.dumps({"ok": True}, sort_keys=True)
+
+    monkeypatch.setattr(
+        MODULE,
+        "status_json_from_output",
+        fake_status_json_from_output,
+    )
+
+    diagnostics = SimpleNamespace(
+        appearance_candidates=3,
+        appearance_features_valid=2,
+        image_track_offset_ms=12.0,
+        appearance_skip_reason="ok",
+        track_timestamp_ns=1_000_000_000,
+        selected_image_timestamp_ns=988_000_000,
+        appearance_warning=None,
+        candidate_track_ids=(1, 2, 3),
+        appearance_cache_size=2,
+        appearance_embedding_age_ms_by_track_id={1: 0.0},
+        appearance_crop_quality_by_track_id={},
+        appearance_encoding_rejected=0,
+        appearance_memory_update_ineligible=1,
+        appearance_encoding_eligible=3,
+        appearance_backend_calls=1,
+        appearance_backend_requested=3,
+        appearance_backend_returned=3,
+        appearance_backend_valid=2,
+        appearance_backend_wall_ms=7.5,
+        appearance_update_cooldown_remaining=0,
+    )
+
+    runtime = SimpleNamespace(
+        config=SimpleNamespace(
+            appearance=SimpleNamespace(enabled=True)
+        )
+    )
+    tracks_message = SimpleNamespace(
+        frame_id=12,
+        tracks=[object(), object(), object()],
+    )
+    result = SimpleNamespace(
+        output=object(),
+        diagnostics=diagnostics,
+    )
+
+    message = MODULE.make_status_message(
+        runtime=runtime,
+        tracks_message=tracks_message,
+        result=result,
+        canonical={
+            "appearance_compute_min_interval_ms": 250.0,
+            "appearance_cache_ttl_ms": 750.0,
+        },
+    )
+
+    assert json.loads(message.data) == {"ok": True}
+    assert captured["appearance_encoding_eligible"] == 3
+    assert captured["appearance_backend_calls"] == 1
+    assert captured["appearance_backend_requested"] == 3
+    assert captured["appearance_backend_returned"] == 3
+    assert captured["appearance_backend_valid"] == 2
+    assert captured["appearance_backend_wall_ms"] == 0.0
+    assert (
+        MODULE.SEMANTIC_DIGEST_SCHEMA
+        == "tim_mars_replay_generated_fields_v3"
+    )

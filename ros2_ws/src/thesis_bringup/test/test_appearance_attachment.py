@@ -527,3 +527,36 @@ def test_cached_clean_feature_is_ineligible_during_group_risk():
         .appearance_memory_update_eligible
     )
     assert len(backend.calls) == 1
+
+
+def test_reports_synchronous_cpu_backend_workload_without_policy_changes():
+    first_feature = np.ones(128, dtype=np.float32)
+    backend = FakeMarsBackend([first_feature, None])
+
+    result = attach_appearance_features(
+        config=cfg(compute_min_interval_ms=0.0),
+        state=AppearanceAttachmentState(),
+        data=data(
+            [
+                tr(1, bbox=(10, 20, 40, 100)),
+                tr(2, bbox=(200, 180, 250, 320)),
+            ],
+            mars_backend=backend,
+        ),
+    )
+
+    diagnostics = result.diagnostics
+
+    assert len(backend.calls) == 1
+    assert diagnostics.candidates == 2
+    assert diagnostics.encoding_eligible == 2
+    assert diagnostics.backend_calls == 1
+    assert diagnostics.backend_requested == 2
+    assert diagnostics.backend_returned == 2
+    assert diagnostics.backend_valid == 1
+    assert diagnostics.backend_wall_ms >= 0.0
+    assert diagnostics.skip_reason == "ok"
+    assert diagnostics.features_valid == 1
+
+    assert result.candidates[0].appearance is first_feature
+    assert result.candidates[1].appearance is None

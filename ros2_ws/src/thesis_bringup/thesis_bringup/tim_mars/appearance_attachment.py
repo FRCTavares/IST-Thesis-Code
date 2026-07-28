@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from math import hypot
+from time import perf_counter_ns
 from typing import Any, Protocol
 
 from thesis_bringup.tim_mars.crop_quality import (
@@ -113,6 +114,15 @@ class AppearanceAttachmentDiagnostics:
     ] = field(default_factory=dict)
     encoding_rejected: int = 0
     memory_update_ineligible: int = 0
+
+    # Baseline synchronous embedding workload. These diagnostics measure the
+    # existing CPU path without changing crop selection or identity policy.
+    encoding_eligible: int = 0
+    backend_calls: int = 0
+    backend_requested: int = 0
+    backend_returned: int = 0
+    backend_valid: int = 0
+    backend_wall_ms: float = 0.0
 
 
 @dataclass
@@ -512,6 +522,7 @@ def attach_appearance_features(
         for index, quality in enumerate(crop_qualities)
         if quality.encoding_eligible
     ]
+    diagnostics.encoding_eligible = len(encoding_indices)
 
     if not encoding_indices:
         state.last_mars_compute_ns = data.now_ns
@@ -535,10 +546,20 @@ def attach_appearance_features(
         for index in encoding_indices
     ]
 
+    diagnostics.backend_calls = 1
+    diagnostics.backend_requested = len(encoding_boxes)
+    encode_started_ns = perf_counter_ns()
+
     try:
         encoded = data.mars_backend.encode(
             data.latest_image_bgr,
             encoding_boxes,
+        )
+
+        diagnostics.backend_returned = len(encoded)
+        diagnostics.backend_valid = sum(
+            feature is not None
+            for feature in encoded
         )
 
         if len(encoded) != len(encoding_indices):
@@ -561,6 +582,11 @@ def attach_appearance_features(
             crop_quality_by_track_id=(
                 crop_quality_by_track_id
             ),
+        )
+
+    finally:
+        diagnostics.backend_wall_ms = (
+            float(perf_counter_ns() - encode_started_ns) / 1e6
         )
 
     state.last_mars_compute_ns = data.now_ns

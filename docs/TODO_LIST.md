@@ -79,11 +79,15 @@ Open executable issues: **21**.
    - final validation passed with 238 tests and 1 skip, 252 ROS tests with 0 failures and 0 errors, a successful package build, and a successful live-UI `tsc -b && vite build`.
    - completed on 28 July 2026; curated evidence is stored in `reports/p018_hard_negative_lifecycle_6ba28c61_2026_07_28`.
 
-6. [ ] [#44 — P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)](https://github.com/FRCTavares/IST-Thesis-Code/issues/44)
-    - **HIGH PRIORITY:** execute immediately after the remaining P0 blockers and closure of the currently active #18 work; do not defer this task to the end of P1.
-    - major thesis architecture and onboard-efficiency work: select candidates on CPU, then promote only the required winner or ambiguous subset to Hailo ReID.
-    - it must quantify CPU displacement, selective versus forced-frequent ReID load, detector/ReID Hailo contention, causal queueing, quantised-ranking equivalence, and sustained system behaviour.
-    - complete this before the final runtime/cost characterisation in #32, the architecture comparison in #58, and the final claim freeze in #39.
+6. [ ] [#44 — P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)](https://github.com/FRCTavares/IST-Thesis-Code/issues/44) — IN PROGRESS
+    - Started on 28 July 2026 from audited baseline `ca5ac1601d1a5caa0e082b83b1524eefb8b749af` on branch `issue-44-selective-hailo-reid`.
+    - Read-only repository, GitHub, runtime, model, Hailo, test, and hardware audits passed before branching.
+    - The current CPU MARS path is synchronous and encodes every crop-quality-eligible tracker candidate at each eligible compute interval; `appearance_ambiguous_only` controls later score usage rather than crop selection.
+    - Initial scope is to instrument the unchanged CPU baseline, then introduce a non-mutating CPU candidate-request policy before implementing or promoting any Hailo backend.
+    - The tracked `repvgg_a0_person_reid_512.hef` is a Hailo-8 UINT8 256x128-to-512D model and remains unvalidated against the canonical 128D CPU MARS representation.
+    - Baseline synchronous CPU workload telemetry now records encoding-eligible crops, backend calls, requested and returned crops, valid embeddings, and backend wall time; live ROS status publishes the measured duration while deterministic replay normalises it to `0.0` and uses semantic-digest schema `tim_mars_replay_generated_fields_v3`.
+    - Required evidence remains CPU displacement, selective versus forced-frequent load, causal asynchronous provenance, queueing and detector contention, quantised ranking and decision equivalence, safety and availability, and sustained onboard behaviour.
+    - Complete this before final runtime/cost characterisation in #32, the architecture comparison in #58, and the final claim freeze in #39.
 
 7. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
    - phase 5; engineering.

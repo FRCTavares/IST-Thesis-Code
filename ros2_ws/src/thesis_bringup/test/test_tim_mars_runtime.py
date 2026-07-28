@@ -396,3 +396,37 @@ def test_runtime_diagnostics_use_public_memory_cooldown_property():
         result.diagnostics.appearance_update_cooldown_remaining
         == runtime.memory.appearance_update_cooldown_frames_remaining
     )
+
+
+def test_runtime_reports_synchronous_cpu_backend_workload_diagnostics():
+    backend = FakeBackend()
+    runtime = TimMarsRuntime(
+        runtime_config(
+            appearance_enabled=True,
+            selected_track_id=1,
+        ),
+        mars_backend=backend,
+    )
+    runtime.add_image(
+        900_000_000,
+        np.full((100, 100, 3), 90, dtype=np.uint8),
+    )
+
+    result = runtime.process_tracks(
+        tracks_message(
+            frame_id=12,
+            timestamp_ns=1_000_000_000,
+            tracks=[track(1)],
+        )
+    )
+
+    diagnostics = result.diagnostics
+
+    assert diagnostics.appearance_skip_reason == "ok"
+    assert diagnostics.appearance_encoding_eligible == 1
+    assert diagnostics.appearance_backend_calls == 1
+    assert diagnostics.appearance_backend_requested == 1
+    assert diagnostics.appearance_backend_returned == 1
+    assert diagnostics.appearance_backend_valid == 1
+    assert diagnostics.appearance_backend_wall_ms >= 0.0
+    assert diagnostics.appearance_features_valid == 1

@@ -77,6 +77,12 @@ class TimMarsRuntimeDiagnostics:
     ]
     appearance_encoding_rejected: int
     appearance_memory_update_ineligible: int
+    appearance_encoding_eligible: int
+    appearance_backend_calls: int
+    appearance_backend_requested: int
+    appearance_backend_returned: int
+    appearance_backend_valid: int
+    appearance_backend_wall_ms: float
     appearance_update_cooldown_remaining: int
     candidate_track_ids: tuple[int, ...]
 
@@ -376,6 +382,24 @@ class TimMarsRuntime:
             ),
             appearance_memory_update_ineligible=int(
                 appearance_diagnostics.memory_update_ineligible
+            ),
+            appearance_encoding_eligible=int(
+                appearance_diagnostics.encoding_eligible
+            ),
+            appearance_backend_calls=int(
+                appearance_diagnostics.backend_calls
+            ),
+            appearance_backend_requested=int(
+                appearance_diagnostics.backend_requested
+            ),
+            appearance_backend_returned=int(
+                appearance_diagnostics.backend_returned
+            ),
+            appearance_backend_valid=int(
+                appearance_diagnostics.backend_valid
+            ),
+            appearance_backend_wall_ms=float(
+                appearance_diagnostics.backend_wall_ms
             ),
             appearance_update_cooldown_remaining=(
                 self.memory.appearance_update_cooldown_frames_remaining

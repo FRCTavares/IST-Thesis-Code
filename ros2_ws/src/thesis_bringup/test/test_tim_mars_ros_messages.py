@@ -312,6 +312,12 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
             },
             appearance_encoding_rejected=0,
             appearance_memory_update_ineligible=1,
+            appearance_encoding_eligible=2,
+            appearance_backend_calls=1,
+            appearance_backend_requested=2,
+            appearance_backend_returned=2,
+            appearance_backend_valid=1,
+            appearance_backend_wall_ms=4.25,
             appearance_update_cooldown_remaining=0,
             freshness_contract="tim_mars_output_freshness_v1",
             freshness_status="fresh",
@@ -345,6 +351,12 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     }
     assert payload["appearance_encoding_rejected"] == 0
     assert payload["appearance_memory_update_ineligible"] == 1
+    assert payload["appearance_encoding_eligible"] == 2
+    assert payload["appearance_backend_calls"] == 1
+    assert payload["appearance_backend_requested"] == 2
+    assert payload["appearance_backend_returned"] == 2
+    assert payload["appearance_backend_valid"] == 1
+    assert payload["appearance_backend_wall_ms"] == 4.25
     assert payload["freshness_contract"] == "tim_mars_output_freshness_v1"
     assert payload["freshness_status"] == "fresh"
     assert payload["freshness_is_fresh"] is True

@@ -672,6 +672,12 @@ def status_json_from_output(
     appearance_crop_quality_by_track_id: dict[int, object],
     appearance_encoding_rejected: int,
     appearance_memory_update_ineligible: int,
+    appearance_encoding_eligible: int,
+    appearance_backend_calls: int,
+    appearance_backend_requested: int,
+    appearance_backend_returned: int,
+    appearance_backend_valid: int,
+    appearance_backend_wall_ms: float,
     appearance_update_cooldown_remaining: int,
     freshness_contract: str = "unknown",
     freshness_status: str = "unknown",
@@ -747,6 +753,24 @@ def status_json_from_output(
             ),
             "appearance_memory_update_ineligible": int(
                 appearance_memory_update_ineligible
+            ),
+            "appearance_encoding_eligible": int(
+                appearance_encoding_eligible
+            ),
+            "appearance_backend_calls": int(
+                appearance_backend_calls
+            ),
+            "appearance_backend_requested": int(
+                appearance_backend_requested
+            ),
+            "appearance_backend_returned": int(
+                appearance_backend_returned
+            ),
+            "appearance_backend_valid": int(
+                appearance_backend_valid
+            ),
+            "appearance_backend_wall_ms": float(
+                appearance_backend_wall_ms
             ),
             "appearance_update_cooldown_remaining": int(
                 appearance_update_cooldown_remaining

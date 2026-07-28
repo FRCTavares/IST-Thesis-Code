@@ -54,7 +54,7 @@ from thesis_bringup.tim_mars.types import TargetMemoryConfig
 TIM_TARGET_TOPIC = "/target_memory_mars"
 TIM_STATUS_TOPIC = "/target_memory_mars/status"
 SEMANTIC_DIGEST_SCHEMA = (
-    "tim_mars_replay_generated_fields_v2"
+    "tim_mars_replay_generated_fields_v3"
 )
 
 
@@ -607,6 +607,24 @@ def make_status_message(
         appearance_memory_update_ineligible=(
             diagnostics.appearance_memory_update_ineligible
         ),
+        appearance_encoding_eligible=(
+            diagnostics.appearance_encoding_eligible
+        ),
+        appearance_backend_calls=(
+            diagnostics.appearance_backend_calls
+        ),
+        appearance_backend_requested=(
+            diagnostics.appearance_backend_requested
+        ),
+        appearance_backend_returned=(
+            diagnostics.appearance_backend_returned
+        ),
+        appearance_backend_valid=(
+            diagnostics.appearance_backend_valid
+        ),
+        # The complete status JSON is included in the semantic digest.
+        # Normalize wall-clock duration to preserve replay determinism.
+        appearance_backend_wall_ms=0.0,
         appearance_update_cooldown_remaining=(
             diagnostics
             .appearance_update_cooldown_remaining

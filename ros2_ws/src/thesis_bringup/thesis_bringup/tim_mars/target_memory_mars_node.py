@@ -528,6 +528,24 @@ class TargetMemoryMarsNode(Node):
             appearance_memory_update_ineligible=(
                 diagnostics.appearance_memory_update_ineligible
             ),
+            appearance_encoding_eligible=(
+                diagnostics.appearance_encoding_eligible
+            ),
+            appearance_backend_calls=(
+                diagnostics.appearance_backend_calls
+            ),
+            appearance_backend_requested=(
+                diagnostics.appearance_backend_requested
+            ),
+            appearance_backend_returned=(
+                diagnostics.appearance_backend_returned
+            ),
+            appearance_backend_valid=(
+                diagnostics.appearance_backend_valid
+            ),
+            appearance_backend_wall_ms=(
+                diagnostics.appearance_backend_wall_ms
+            ),
             appearance_update_cooldown_remaining=(
                 diagnostics.appearance_update_cooldown_remaining
             ),
