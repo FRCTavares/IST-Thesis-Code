@@ -28,6 +28,56 @@ export interface DashboardResolution {
   height: number;
 }
 
+export interface HardNegativeCropQuality {
+  crop_width_px?: number;
+  crop_height_px?: number;
+  clipping_fraction?: number;
+  aspect_ratio?: number;
+  max_iou_with_other?: number;
+}
+
+export interface HardNegativeMemorySnapshot {
+  lifecycle_state?: string;
+  source?: string;
+  source_track_ids?: number[];
+  selected_track_ids?: number[];
+  observations?: number;
+  first_frame_id?: number | null;
+  last_frame_id?: number | null;
+  first_timestamp_ns?: number | null;
+  last_timestamp_ns?: number | null;
+  age_frames?: number | null;
+  expires_at_frame_id?: number | null;
+  expired?: boolean;
+  latest_bbox?: number[] | null;
+  latest_confidence?: number;
+  latest_crop_quality?: HardNegativeCropQuality | null;
+  positive_similarity?: number;
+  geometry_strength?: number;
+  latest_iou?: number;
+  latest_distance?: number;
+  latest_scale?: number;
+  latest_geometry_score?: number;
+  appearance_source_frame_id?: number | null;
+  appearance_source_crop_quality?: HardNegativeCropQuality | null;
+  max_age_frames?: number;
+  decay_policy?: string;
+}
+
+export interface HardNegativeMemoryEvent {
+  action?: string;
+  source?: string;
+  source_track_id?: number | null;
+  selected_track_id?: number | null;
+  source_track_ids?: number[];
+  selected_track_ids?: number[];
+  observations?: number;
+  positive_similarity?: number;
+  geometry_strength?: number;
+  prototype_similarity?: number;
+  memory_size?: number;
+  snapshot?: HardNegativeMemorySnapshot;
+}
 
 export interface TargetMemoryStatus {
   state?: string;
@@ -39,6 +89,13 @@ export interface TargetMemoryStatus {
   frames_since_seen?: number;
   num_tracks?: number;
   reacquired?: boolean;
+  hard_negative_memory_size?: number;
+  hard_negative_entries?: HardNegativeMemorySnapshot[];
+  hard_negative_pending_entries?: HardNegativeMemorySnapshot[];
+  hard_negative_events?: HardNegativeMemoryEvent[];
+  hard_negative_current_frame_id?: number | null;
+  hard_negative_max_age_frames?: number;
+  hard_negative_decay_policy?: string;
   best?: {
     track_id?: number;
     total?: number;

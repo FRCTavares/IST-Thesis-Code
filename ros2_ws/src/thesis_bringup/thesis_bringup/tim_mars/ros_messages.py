@@ -172,10 +172,18 @@ def _score_payload(score: object) -> dict[str, object]:
 def _hard_negative_event_payload(
     event: object,
 ) -> dict[str, object]:
-    source_track_id = getattr(event, "source_track_id", None)
-    selected_track_id = getattr(event, "selected_track_id", None)
+    source_track_id = getattr(
+        event,
+        "source_track_id",
+        None,
+    )
+    selected_track_id = getattr(
+        event,
+        "selected_track_id",
+        None,
+    )
 
-    return {
+    payload = {
         "action": str(getattr(event, "action", "")),
         "source": str(getattr(event, "source", "")),
         "source_track_id": (
@@ -208,18 +216,38 @@ def _hard_negative_event_payload(
             getattr(event, "observations", 0)
         ),
         "positive_similarity": float(
-            getattr(event, "positive_similarity", 0.0)
+            getattr(
+                event,
+                "positive_similarity",
+                0.0,
+            )
         ),
         "geometry_strength": float(
-            getattr(event, "geometry_strength", 0.0)
+            getattr(
+                event,
+                "geometry_strength",
+                0.0,
+            )
         ),
         "prototype_similarity": float(
-            getattr(event, "prototype_similarity", 0.0)
+            getattr(
+                event,
+                "prototype_similarity",
+                0.0,
+            )
         ),
         "memory_size": int(
             getattr(event, "memory_size", 0)
         ),
     }
+
+    snapshot = getattr(event, "snapshot", None)
+    if snapshot is not None:
+        payload["snapshot"] = (
+            _hard_negative_snapshot_payload(snapshot)
+        )
+
+    return payload
 
 
 def _optional_bbox_payload(bbox):
@@ -325,6 +353,179 @@ def _positive_memory_bootstrap_event_payload(event):
     }
 
 
+def _hard_negative_snapshot_payload(
+    snapshot: object,
+) -> dict[str, object]:
+    """Serialize one committed or pending prototype snapshot."""
+    return {
+        "lifecycle_state": str(
+            getattr(snapshot, "lifecycle_state", "")
+        ),
+        "source": str(
+            getattr(snapshot, "source", "")
+        ),
+        "source_track_ids": [
+            int(track_id)
+            for track_id in getattr(
+                snapshot,
+                "source_track_ids",
+                (),
+            )
+        ],
+        "selected_track_ids": [
+            int(track_id)
+            for track_id in getattr(
+                snapshot,
+                "selected_track_ids",
+                (),
+            )
+        ],
+        "observations": int(
+            getattr(snapshot, "observations", 0)
+        ),
+        "first_frame_id": getattr(
+            snapshot,
+            "first_frame_id",
+            None,
+        ),
+        "last_frame_id": getattr(
+            snapshot,
+            "last_frame_id",
+            None,
+        ),
+        "first_timestamp_ns": getattr(
+            snapshot,
+            "first_timestamp_ns",
+            None,
+        ),
+        "last_timestamp_ns": getattr(
+            snapshot,
+            "last_timestamp_ns",
+            None,
+        ),
+        "age_frames": getattr(
+            snapshot,
+            "age_frames",
+            None,
+        ),
+        "expires_at_frame_id": getattr(
+            snapshot,
+            "expires_at_frame_id",
+            None,
+        ),
+        "expired": bool(
+            getattr(snapshot, "expired", False)
+        ),
+        "latest_bbox": _optional_bbox_payload(
+            getattr(snapshot, "latest_bbox", None)
+        ),
+        "latest_confidence": float(
+            getattr(
+                snapshot,
+                "latest_confidence",
+                0.0,
+            )
+        ),
+        "latest_crop_quality": _crop_quality_payload(
+            getattr(
+                snapshot,
+                "latest_crop_quality",
+                None,
+            )
+        ),
+        "positive_similarity": float(
+            getattr(
+                snapshot,
+                "positive_similarity",
+                0.0,
+            )
+        ),
+        "geometry_strength": float(
+            getattr(
+                snapshot,
+                "geometry_strength",
+                0.0,
+            )
+        ),
+        "latest_iou": float(
+            getattr(snapshot, "latest_iou", 0.0)
+        ),
+        "latest_distance": float(
+            getattr(
+                snapshot,
+                "latest_distance",
+                0.0,
+            )
+        ),
+        "latest_scale": float(
+            getattr(snapshot, "latest_scale", 0.0)
+        ),
+        "latest_geometry_score": float(
+            getattr(
+                snapshot,
+                "latest_geometry_score",
+                0.0,
+            )
+        ),
+        "appearance_source_frame_id": getattr(
+            snapshot,
+            "appearance_source_frame_id",
+            None,
+        ),
+        "appearance_source_image_timestamp_ns": getattr(
+            snapshot,
+            "appearance_source_image_timestamp_ns",
+            None,
+        ),
+        "appearance_embedded_ns": getattr(
+            snapshot,
+            "appearance_embedded_ns",
+            None,
+        ),
+        "appearance_embedding_age_ms": getattr(
+            snapshot,
+            "appearance_embedding_age_ms",
+            None,
+        ),
+        "appearance_frame_generation": getattr(
+            snapshot,
+            "appearance_frame_generation",
+            None,
+        ),
+        "appearance_track_generation": getattr(
+            snapshot,
+            "appearance_track_generation",
+            None,
+        ),
+        "appearance_source_bbox": _optional_bbox_payload(
+            getattr(
+                snapshot,
+                "appearance_source_bbox",
+                None,
+            )
+        ),
+        "appearance_source_crop_quality": (
+            _crop_quality_payload(
+                getattr(
+                    snapshot,
+                    "appearance_source_crop_quality",
+                    None,
+                )
+            )
+        ),
+        "max_age_frames": int(
+            getattr(snapshot, "max_age_frames", 0)
+        ),
+        "decay_policy": str(
+            getattr(
+                snapshot,
+                "decay_policy",
+                "none_until_expiry",
+            )
+        ),
+    }
+
+
 def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
     return {
         "state": _value_text(out.state),
@@ -401,6 +602,41 @@ def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
                 (),
             )
         ],
+        "hard_negative_entries": [
+            _hard_negative_snapshot_payload(snapshot)
+            for snapshot in getattr(
+                out,
+                "hard_negative_entries",
+                (),
+            )
+        ],
+        "hard_negative_pending_entries": [
+            _hard_negative_snapshot_payload(snapshot)
+            for snapshot in getattr(
+                out,
+                "hard_negative_pending_entries",
+                (),
+            )
+        ],
+        "hard_negative_current_frame_id": getattr(
+            out,
+            "hard_negative_current_frame_id",
+            None,
+        ),
+        "hard_negative_max_age_frames": int(
+            getattr(
+                out,
+                "hard_negative_max_age_frames",
+                0,
+            )
+        ),
+        "hard_negative_decay_policy": str(
+            getattr(
+                out,
+                "hard_negative_decay_policy",
+                "none_until_expiry",
+            )
+        ),
         "risk_absence": bool(out.risk_absence),
         "risk_scene_ambiguity": bool(out.risk_scene_ambiguity),
         "candidate_track_id": out.candidate_track_id,

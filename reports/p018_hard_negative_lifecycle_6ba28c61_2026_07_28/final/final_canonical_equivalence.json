@@ -1,0 +1,83 @@
+{
+  "canonical_config": {
+    "hard_negative_decay_policy": "none_until_expiry",
+    "hard_negative_max_age_frames": 247,
+    "path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+    "sha256": "08971433261522b98b4b672914ba48e413207a876f0ac62d560e99a944d5a09a"
+  },
+  "comparison_reference": "p018_lifecycle_dc64ad7e_2026_07_28_age_sweep_r1/max_age_247",
+  "deterministic_runner": {
+    "path": "tools/experiments/run_deterministic_tim_replay.py",
+    "sha256": "55fcc0067cd9f9f70b0c5271c660dc269f80999b999157f73812ad052a55c786"
+  },
+  "gate": "PASS",
+  "issue": 18,
+  "mars_model": {
+    "path": "models/reid/mars-small128.pb",
+    "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1"
+  },
+  "promotion_commit": "6ba28c6133ff2e105ca6db4c17d0b0759c27b565",
+  "rows": [
+    {
+      "annotated_metrics_match": true,
+      "final_expire_events": 0,
+      "final_semantic_sha256": "836d73cbf2a47ddbec26adcb4dc9b71765defd0685e93babfc6714287195458c",
+      "gate": "PASS",
+      "lifecycle_match": true,
+      "reference_expire_events": 0,
+      "reference_semantic_sha256": "836d73cbf2a47ddbec26adcb4dc9b71765defd0685e93babfc6714287195458c",
+      "runtime_match": true,
+      "semantic_match": true,
+      "sequence": "may_hard_reentry",
+      "source_manifest_match": true,
+      "spatial_metrics_match": true,
+      "topic_counts_match": true
+    },
+    {
+      "annotated_metrics_match": true,
+      "final_expire_events": 1,
+      "final_semantic_sha256": "55ab81da4e4b96876c84fe778effe2c357dafc24d837c9a2af92a046d92b87e9",
+      "gate": "PASS",
+      "lifecycle_match": true,
+      "reference_expire_events": 1,
+      "reference_semantic_sha256": "55ab81da4e4b96876c84fe778effe2c357dafc24d837c9a2af92a046d92b87e9",
+      "runtime_match": true,
+      "semantic_match": true,
+      "sequence": "seq01_clean",
+      "source_manifest_match": true,
+      "spatial_metrics_match": true,
+      "topic_counts_match": true
+    },
+    {
+      "annotated_metrics_match": true,
+      "final_expire_events": 0,
+      "final_semantic_sha256": "e8f836b3cb05ffd1c7b11cd329f42a94400fbfb5160ceca33fedff1f3449f54d",
+      "gate": "PASS",
+      "lifecycle_match": true,
+      "reference_expire_events": 0,
+      "reference_semantic_sha256": "e8f836b3cb05ffd1c7b11cd329f42a94400fbfb5160ceca33fedff1f3449f54d",
+      "runtime_match": true,
+      "semantic_match": true,
+      "sequence": "seq03_crossing",
+      "source_manifest_match": true,
+      "spatial_metrics_match": true,
+      "topic_counts_match": true
+    },
+    {
+      "annotated_metrics_match": true,
+      "final_expire_events": 1,
+      "final_semantic_sha256": "c60d5783908183d28368a3f59f833317313e05cbb7555a92f0d5d016ef2410b0",
+      "gate": "PASS",
+      "lifecycle_match": true,
+      "reference_expire_events": 1,
+      "reference_semantic_sha256": "c60d5783908183d28368a3f59f833317313e05cbb7555a92f0d5d016ef2410b0",
+      "runtime_match": true,
+      "semantic_match": true,
+      "sequence": "seq04_occlusion",
+      "source_manifest_match": true,
+      "spatial_metrics_match": true,
+      "topic_counts_match": true
+    }
+  ],
+  "schema_version": 1
+}

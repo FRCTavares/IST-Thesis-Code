@@ -22,6 +22,7 @@ from thesis_bringup.tim_mars.types import (
     CandidateScore,
     CandidateTrack,
     HardNegativeMemoryEvent,
+    HardNegativeMemorySnapshot,
     TargetMemoryConfig,
     TargetState,
 )
@@ -38,6 +39,39 @@ class HardNegativeEntry:
     observations: int
     positive_similarity: float
     geometry_strength: float
+
+    first_frame_id: int | None = None
+    last_frame_id: int | None = None
+    first_timestamp_ns: int | None = None
+    last_timestamp_ns: int | None = None
+
+    latest_bbox: tuple[
+        float,
+        float,
+        float,
+        float,
+    ] | None = None
+    latest_confidence: float = 0.0
+    latest_crop_quality: Any | None = None
+
+    latest_iou: float = 0.0
+    latest_distance: float = 0.0
+    latest_scale: float = 0.0
+    latest_geometry_score: float = 0.0
+
+    appearance_source_frame_id: int | None = None
+    appearance_source_image_timestamp_ns: int | None = None
+    appearance_embedded_ns: int | None = None
+    appearance_embedding_age_ms: float | None = None
+    appearance_frame_generation: int | None = None
+    appearance_track_generation: int | None = None
+    appearance_source_bbox: tuple[
+        float,
+        float,
+        float,
+        float,
+    ] | None = None
+    appearance_source_crop_quality: Any | None = None
 
 
 def _append_unique(
@@ -86,6 +120,254 @@ def _positive_exclusion_similarity(
     return fallback
 
 
+def _entry_with_candidate_provenance(
+    *,
+    appearance: Any,
+    candidate: CandidateTrack,
+    score: CandidateScore,
+    source_track_ids: tuple[int, ...],
+    selected_track_ids: tuple[int, ...],
+    source: str,
+    observations: int,
+    positive_similarity: float,
+    geometry_strength: float,
+    previous: HardNegativeEntry | None = None,
+) -> HardNegativeEntry:
+    """Build an entry while retaining earliest and latest evidence."""
+    provenance = candidate.appearance_provenance
+
+    first_frame_id = (
+        previous.first_frame_id
+        if (
+            previous is not None
+            and previous.first_frame_id is not None
+        )
+        else candidate.tracker_frame_id
+    )
+    first_timestamp_ns = (
+        previous.first_timestamp_ns
+        if (
+            previous is not None
+            and previous.first_timestamp_ns is not None
+        )
+        else candidate.tracker_timestamp_ns
+    )
+
+    last_frame_id = (
+        candidate.tracker_frame_id
+        if candidate.tracker_frame_id is not None
+        else (
+            previous.last_frame_id
+            if previous is not None
+            else None
+        )
+    )
+    last_timestamp_ns = (
+        candidate.tracker_timestamp_ns
+        if candidate.tracker_timestamp_ns is not None
+        else (
+            previous.last_timestamp_ns
+            if previous is not None
+            else None
+        )
+    )
+
+    latest_crop_quality = (
+        candidate.appearance_crop_quality
+        if candidate.appearance_crop_quality is not None
+        else (
+            previous.latest_crop_quality
+            if previous is not None
+            else None
+        )
+    )
+
+    def previous_value(name: str):
+        if previous is None:
+            return None
+        return getattr(previous, name)
+
+    return HardNegativeEntry(
+        appearance=appearance,
+        source_track_ids=source_track_ids,
+        selected_track_ids=selected_track_ids,
+        source=source,
+        observations=int(observations),
+        positive_similarity=float(positive_similarity),
+        geometry_strength=float(geometry_strength),
+        first_frame_id=first_frame_id,
+        last_frame_id=last_frame_id,
+        first_timestamp_ns=first_timestamp_ns,
+        last_timestamp_ns=last_timestamp_ns,
+        latest_bbox=candidate.bbox,
+        latest_confidence=float(candidate.score),
+        latest_crop_quality=latest_crop_quality,
+        latest_iou=float(score.iou),
+        latest_distance=float(score.distance),
+        latest_scale=float(score.scale),
+        latest_geometry_score=float(
+            score.geometry_score
+        ),
+        appearance_source_frame_id=(
+            provenance.source_frame_id
+            if provenance is not None
+            else previous_value(
+                "appearance_source_frame_id"
+            )
+        ),
+        appearance_source_image_timestamp_ns=(
+            provenance.source_image_timestamp_ns
+            if provenance is not None
+            else previous_value(
+                "appearance_source_image_timestamp_ns"
+            )
+        ),
+        appearance_embedded_ns=(
+            provenance.embedded_ns
+            if provenance is not None
+            else previous_value(
+                "appearance_embedded_ns"
+            )
+        ),
+        appearance_embedding_age_ms=(
+            provenance.embedding_age_ms
+            if provenance is not None
+            else previous_value(
+                "appearance_embedding_age_ms"
+            )
+        ),
+        appearance_frame_generation=(
+            provenance.frame_generation
+            if provenance is not None
+            else previous_value(
+                "appearance_frame_generation"
+            )
+        ),
+        appearance_track_generation=(
+            provenance.track_generation
+            if provenance is not None
+            else previous_value(
+                "appearance_track_generation"
+            )
+        ),
+        appearance_source_bbox=(
+            provenance.source_bbox
+            if provenance is not None
+            else previous_value(
+                "appearance_source_bbox"
+            )
+        ),
+        appearance_source_crop_quality=(
+            provenance.source_crop_quality
+            if provenance is not None
+            else previous_value(
+                "appearance_source_crop_quality"
+            )
+        ),
+    )
+
+
+def _snapshot_for_entry(
+    entry: HardNegativeEntry,
+    *,
+    lifecycle_state: str,
+    current_frame_id: int | None,
+    max_age_frames: int,
+    decay_policy: str,
+) -> HardNegativeMemorySnapshot:
+    """Return diagnostics without exposing the appearance vector."""
+    age_frames = None
+    if (
+        current_frame_id is not None
+        and entry.last_frame_id is not None
+    ):
+        age_frames = max(
+            0,
+            int(current_frame_id)
+            - int(entry.last_frame_id),
+        )
+
+    expires_at_frame_id = None
+    if (
+        int(max_age_frames) > 0
+        and entry.last_frame_id is not None
+    ):
+        # An entry with age equal to max_age_frames remains valid.
+        expires_at_frame_id = (
+            int(entry.last_frame_id)
+            + int(max_age_frames)
+            + 1
+        )
+
+    expired = bool(
+        int(max_age_frames) > 0
+        and age_frames is not None
+        and int(age_frames) > int(max_age_frames)
+    )
+
+    return HardNegativeMemorySnapshot(
+        lifecycle_state=str(lifecycle_state),
+        source=str(entry.source),
+        source_track_ids=entry.source_track_ids,
+        selected_track_ids=entry.selected_track_ids,
+        observations=int(entry.observations),
+        first_frame_id=entry.first_frame_id,
+        last_frame_id=entry.last_frame_id,
+        first_timestamp_ns=entry.first_timestamp_ns,
+        last_timestamp_ns=entry.last_timestamp_ns,
+        age_frames=age_frames,
+        expires_at_frame_id=expires_at_frame_id,
+        expired=expired,
+        latest_bbox=entry.latest_bbox,
+        latest_confidence=float(
+            entry.latest_confidence
+        ),
+        latest_crop_quality=entry.latest_crop_quality,
+        positive_similarity=float(
+            entry.positive_similarity
+        ),
+        geometry_strength=float(
+            entry.geometry_strength
+        ),
+        latest_iou=float(entry.latest_iou),
+        latest_distance=float(entry.latest_distance),
+        latest_scale=float(entry.latest_scale),
+        latest_geometry_score=float(
+            entry.latest_geometry_score
+        ),
+        appearance_source_frame_id=(
+            entry.appearance_source_frame_id
+        ),
+        appearance_source_image_timestamp_ns=(
+            entry
+            .appearance_source_image_timestamp_ns
+        ),
+        appearance_embedded_ns=(
+            entry.appearance_embedded_ns
+        ),
+        appearance_embedding_age_ms=(
+            entry.appearance_embedding_age_ms
+        ),
+        appearance_frame_generation=(
+            entry.appearance_frame_generation
+        ),
+        appearance_track_generation=(
+            entry.appearance_track_generation
+        ),
+        appearance_source_bbox=(
+            entry.appearance_source_bbox
+        ),
+        appearance_source_crop_quality=(
+            entry.appearance_source_crop_quality
+        ),
+        max_age_frames=max(
+            0,
+            int(max_age_frames),
+        ),
+        decay_policy=str(decay_policy),
+    )
+
+
 class HardNegativeMemory:
     """Small bounded memory of distractor appearance prototypes."""
 
@@ -123,6 +405,128 @@ class HardNegativeMemory:
     def pending_entries(self) -> tuple[HardNegativeEntry, ...]:
         """Return staged evidence that cannot reject candidates yet."""
         return tuple(self._pending)
+
+    def snapshots(
+        self,
+        *,
+        current_frame_id: int | None,
+        max_age_frames: int,
+        decay_policy: str,
+        pending: bool = False,
+    ) -> tuple[HardNegativeMemorySnapshot, ...]:
+        """Return committed or pending prototype diagnostics."""
+        entries = (
+            self.pending_entries
+            if pending
+            else self.entries
+        )
+        lifecycle_state = (
+            "pending"
+            if pending
+            else "committed"
+        )
+
+        return tuple(
+            _snapshot_for_entry(
+                entry,
+                lifecycle_state=lifecycle_state,
+                current_frame_id=current_frame_id,
+                max_age_frames=max_age_frames,
+                decay_policy=decay_policy,
+            )
+            for entry in entries
+        )
+
+    def expire_committed(
+        self,
+        *,
+        current_frame_id: int | None,
+        max_age_frames: int,
+        decay_policy: str,
+        selected_track_id: int | None = None,
+    ) -> tuple[HardNegativeMemoryEvent, ...]:
+        """Atomically remove over-age committed prototypes.
+
+        Expiry is intentionally separate from scoring and candidate
+        preparation. The caller may invoke it only after trusted current-frame
+        identity acceptance. Embeddings retain full rejection strength until
+        removal; no vector or similarity decay is applied.
+        """
+        policy = str(decay_policy)
+        if policy != "none_until_expiry":
+            raise ValueError(
+                "Unsupported hard-negative decay policy: "
+                f"{policy}"
+            )
+
+        maximum_age = max(0, int(max_age_frames))
+        if maximum_age == 0 or current_frame_id is None:
+            return ()
+
+        current_frame = int(current_frame_id)
+        retained = []
+        expired = []
+
+        for raw_entry in self._memory:
+            if isinstance(raw_entry, HardNegativeEntry):
+                entry = raw_entry
+            else:
+                entry = HardNegativeEntry(
+                    appearance=raw_entry,
+                    source_track_ids=(),
+                    selected_track_ids=(),
+                    source="legacy_unattributed",
+                    observations=1,
+                    positive_similarity=0.0,
+                    geometry_strength=0.0,
+                )
+
+            # Legacy entries and direct tests without timeline provenance
+            # cannot be expired safely by frame age.
+            if entry.last_frame_id is None:
+                retained.append(raw_entry)
+                continue
+
+            age_frames = max(
+                0,
+                current_frame - int(entry.last_frame_id),
+            )
+            if age_frames <= maximum_age:
+                retained.append(raw_entry)
+                continue
+
+            snapshot = _snapshot_for_entry(
+                entry,
+                lifecycle_state="expired",
+                current_frame_id=current_frame,
+                max_age_frames=maximum_age,
+                decay_policy=policy,
+            )
+            expired.append((entry, snapshot))
+
+        if not expired:
+            return ()
+
+        self._memory = retained
+        memory_size = len(self._memory)
+
+        return tuple(
+            HardNegativeMemoryEvent(
+                action="expire",
+                source=entry.source,
+                selected_track_id=selected_track_id,
+                source_track_ids=entry.source_track_ids,
+                selected_track_ids=entry.selected_track_ids,
+                observations=entry.observations,
+                positive_similarity=(
+                    entry.positive_similarity
+                ),
+                geometry_strength=entry.geometry_strength,
+                memory_size=memory_size,
+                snapshot=snapshot,
+            )
+            for entry, snapshot in expired
+        )
 
     def clear(self) -> None:
         self._memory = []
@@ -422,14 +826,24 @@ class HardNegativeMemory:
                     )
                     observations = 2
 
-                entry = HardNegativeEntry(
+                entry = _entry_with_candidate_provenance(
                     appearance=updated_appearance,
+                    candidate=candidate,
+                    score=score,
                     source_track_ids=source_track_ids,
                     selected_track_ids=selected_track_ids,
                     source="trusted_locked_distractor",
                     observations=observations,
                     positive_similarity=positive_similarity,
                     geometry_strength=geometry,
+                    previous=(
+                        raw_entry
+                        if isinstance(
+                            raw_entry,
+                            HardNegativeEntry,
+                        )
+                        else None
+                    ),
                 )
                 self._memory[index] = entry
                 events.append(
@@ -510,14 +924,17 @@ class HardNegativeMemory:
                 pending_touched.add(pending_index)
 
                 if observations >= required_observations:
-                    entry = HardNegativeEntry(
+                    entry = _entry_with_candidate_provenance(
                         appearance=updated_appearance,
+                        candidate=candidate,
+                        score=score,
                         source_track_ids=source_track_ids,
                         selected_track_ids=selected_track_ids,
                         source="trusted_locked_distractor",
                         observations=observations,
                         positive_similarity=positive_similarity,
                         geometry_strength=geometry,
+                        previous=pending_entry,
                     )
                     self._memory.append(entry)
                     pending_promoted.add(pending_index)
@@ -542,8 +959,10 @@ class HardNegativeMemory:
                         )
                     )
                 else:
-                    entry = HardNegativeEntry(
+                    entry = _entry_with_candidate_provenance(
                         appearance=updated_appearance,
+                        candidate=candidate,
+                        score=score,
                         source_track_ids=source_track_ids,
                         selected_track_ids=selected_track_ids,
                         source=(
@@ -552,6 +971,7 @@ class HardNegativeMemory:
                         observations=observations,
                         positive_similarity=positive_similarity,
                         geometry_strength=geometry,
+                        previous=pending_entry,
                     )
                     pending_updates[pending_index] = entry
                     events.append(
@@ -581,8 +1001,10 @@ class HardNegativeMemory:
                     continue
 
                 if required_observations <= 1:
-                    entry = HardNegativeEntry(
+                    entry = _entry_with_candidate_provenance(
                         appearance=prototype,
+                        candidate=candidate,
+                        score=score,
                         source_track_ids=(track_id,),
                         selected_track_ids=(
                             int(selected_track_id),
@@ -611,8 +1033,10 @@ class HardNegativeMemory:
                         )
                     )
                 else:
-                    entry = HardNegativeEntry(
+                    entry = _entry_with_candidate_provenance(
                         appearance=prototype,
+                        candidate=candidate,
+                        score=score,
                         source_track_ids=(track_id,),
                         selected_track_ids=(
                             int(selected_track_id),

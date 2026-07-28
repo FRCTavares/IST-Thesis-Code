@@ -1,0 +1,13 @@
+Issue #18 hard-negative maximum-age recommendation
+Safety tolerance: 0.050 s
+
+62 frames: expiry_events=10, max_wrong_delta=+0.000000 s, correct_delta=+0.000000 s, lost_delta=+0.000000 s, gate=PASS
+93 frames: expiry_events=7, max_wrong_delta=+0.000000 s, correct_delta=+0.000000 s, lost_delta=+0.000000 s, gate=PASS
+247 frames: expiry_events=2, max_wrong_delta=+0.000000 s, correct_delta=+0.000000 s, lost_delta=+0.000000 s, gate=PASS
+394 frames: expiry_events=0, max_wrong_delta=+0.000000 s, correct_delta=+0.000000 s, lost_delta=+0.000000 s, gate=PASS
+427 frames: expiry_events=0, max_wrong_delta=+0.000000 s, correct_delta=+0.000000 s, lost_delta=+0.000000 s, gate=PASS
+
+Eligible finite ages: [62, 93, 247]
+Recommended hard_negative_max_age_frames: 247
+Decision: promote_finite_age
+Decay policy remains none_until_expiry; no vector or similarity decay is introduced.

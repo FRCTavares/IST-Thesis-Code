@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import yaml
 
 from thesis_bringup.tim_mars.hard_negative_memory import (
     HardNegativeEntry,
@@ -17,6 +16,7 @@ from thesis_bringup.tim_mars.types import (
     TargetMemoryConfig,
     TargetState,
 )
+import yaml
 
 
 CONFIG_PATH = (

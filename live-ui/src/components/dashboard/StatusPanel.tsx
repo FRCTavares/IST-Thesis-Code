@@ -3,7 +3,14 @@ import { PanelShell } from "@/components/dashboard/PanelShell";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ModelTrackerSelector } from "@/components/dashboard/ModelTrackerSelector";
 import { Button } from "@/components/ui/button";
-import type { DashboardDataMode, DashboardModel, DashboardTelemetry, DashboardTracker, MetricsSnapshot } from "@/types/dashboard";
+import type {
+  DashboardDataMode,
+  DashboardModel,
+  DashboardTelemetry,
+  DashboardTracker,
+  HardNegativeMemorySnapshot,
+  MetricsSnapshot,
+} from "@/types/dashboard";
 
 interface StatusPanelProps {
   status: string;
@@ -37,6 +44,126 @@ interface StatusPanelProps {
 }
 
 
+function formatTrackIds(trackIds?: number[]) {
+  if (!trackIds || trackIds.length === 0) {
+    return "--";
+  }
+
+  return trackIds.map((trackId) => `#${trackId}`).join(", ");
+}
+
+function formatLifecycleNumber(value: number | null | undefined, digits = 2) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value.toFixed(digits)
+    : "--";
+}
+
+function HardNegativeEntryRow({
+  entry,
+  index,
+}: {
+  entry: HardNegativeMemorySnapshot;
+  index: number;
+}) {
+  const ageFrames =
+    typeof entry.age_frames === "number"
+      ? entry.age_frames
+      : null;
+  const maxAge =
+    typeof entry.max_age_frames === "number"
+      ? entry.max_age_frames
+      : 0;
+  const cropWidth =
+    entry.latest_crop_quality?.crop_width_px;
+  const cropHeight =
+    entry.latest_crop_quality?.crop_height_px;
+
+  const ageLabel =
+    maxAge <= 0
+      ? ageFrames === null
+        ? "retained"
+        : `${ageFrames}f · retained`
+      : ageFrames === null
+        ? `max ${maxAge}f`
+        : `${ageFrames}/${maxAge}f`;
+
+  const cropLabel =
+    typeof cropWidth === "number" &&
+    typeof cropHeight === "number"
+      ? `${cropWidth.toFixed(0)}×${cropHeight.toFixed(0)}`
+      : "--";
+
+  return (
+    <div
+      className={
+        entry.expired
+          ? "rounded-md border border-red-500/40 bg-red-500/10 p-2"
+          : entry.lifecycle_state === "pending"
+            ? "rounded-md border border-amber-500/35 bg-amber-500/10 p-2"
+            : "rounded-md border border-zinc-700/70 bg-zinc-900/55 p-2"
+      }
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-mono text-[11px] text-zinc-200">
+          {entry.lifecycle_state ?? "entry"} {index + 1}
+        </div>
+        <div
+          className={
+            entry.expired
+              ? "font-mono text-[10px] text-red-200"
+              : "font-mono text-[10px] text-zinc-400"
+          }
+        >
+          {entry.expired ? "EXPIRED" : ageLabel}
+        </div>
+      </div>
+
+      <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+        <div>
+          <span className="text-zinc-500">source </span>
+          <span className="font-mono text-zinc-300">
+            {formatTrackIds(entry.source_track_ids)}
+          </span>
+        </div>
+        <div>
+          <span className="text-zinc-500">selected </span>
+          <span className="font-mono text-zinc-300">
+            {formatTrackIds(entry.selected_track_ids)}
+          </span>
+        </div>
+        <div>
+          <span className="text-zinc-500">observations </span>
+          <span className="font-mono text-zinc-300">
+            {entry.observations ?? 0}
+          </span>
+        </div>
+        <div>
+          <span className="text-zinc-500">confidence </span>
+          <span className="font-mono text-zinc-300">
+            {formatLifecycleNumber(entry.latest_confidence, 3)}
+          </span>
+        </div>
+        <div>
+          <span className="text-zinc-500">crop </span>
+          <span className="font-mono text-zinc-300">
+            {cropLabel}
+          </span>
+        </div>
+        <div>
+          <span className="text-zinc-500">geometry </span>
+          <span className="font-mono text-zinc-300">
+            {formatLifecycleNumber(entry.latest_geometry_score, 3)}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-1 truncate font-mono text-[9px] text-zinc-500">
+        {entry.source ?? "unknown source"}
+      </div>
+    </div>
+  );
+}
+
 function TimStatusPanel({ telemetry }: { telemetry: DashboardTelemetry | null }) {
   const tim = telemetry?.target_memory ?? null;
   const rawTarget = telemetry?.target ?? null;
@@ -46,6 +173,28 @@ function TimStatusPanel({ telemetry }: { telemetry: DashboardTelemetry | null })
   const quality = typeof tim?.quality === "number" ? tim.quality : null;
   const latMs = typeof tim?.lat_ms === "number" ? tim.lat_ms : null;
   const reason = typeof tim?.reason === "string" ? tim.reason : "--";
+  const committedEntries = tim?.hard_negative_entries ?? [];
+  const pendingEntries = tim?.hard_negative_pending_entries ?? [];
+  const lifecycleEvents = tim?.hard_negative_events ?? [];
+  const latestLifecycleEvent =
+    lifecycleEvents.length > 0
+      ? lifecycleEvents[lifecycleEvents.length - 1]
+      : null;
+  const lifecycleFrame =
+    typeof tim?.hard_negative_current_frame_id === "number"
+      ? tim.hard_negative_current_frame_id
+      : null;
+  const lifecycleMaxAge =
+    typeof tim?.hard_negative_max_age_frames === "number"
+      ? tim.hard_negative_max_age_frames
+      : 0;
+  const lifecycleDecay =
+    typeof tim?.hard_negative_decay_policy === "string"
+      ? tim.hard_negative_decay_policy
+      : "--";
+  const expiredCount = committedEntries.filter(
+    (entry) => entry.expired,
+  ).length;
   const mismatch =
     rawTarget !== null &&
     rawTarget !== undefined &&
@@ -96,6 +245,105 @@ function TimStatusPanel({ telemetry }: { telemetry: DashboardTelemetry | null })
         <div>
           <div className="text-zinc-500">reason</div>
           <div className="break-words font-mono text-zinc-300">{reason}</div>
+        </div>
+
+        <div className="border-t border-zinc-700/70 pt-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+              Hard-negative lifecycle
+            </div>
+            <StatusBadge
+              tone={
+                expiredCount > 0
+                  ? "error"
+                  : pendingEntries.length > 0
+                    ? "warn"
+                    : "ok"
+              }
+            >
+              {committedEntries.length} committed · {pendingEntries.length} pending
+            </StatusBadge>
+          </div>
+
+          <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
+            <div className="rounded-md border border-zinc-700/70 bg-zinc-900/55 p-2">
+              <div className="text-zinc-500">tracker frame</div>
+              <div className="mt-0.5 font-mono text-zinc-200">
+                {lifecycleFrame === null ? "--" : lifecycleFrame}
+              </div>
+            </div>
+            <div className="rounded-md border border-zinc-700/70 bg-zinc-900/55 p-2">
+              <div className="text-zinc-500">maximum age</div>
+              <div className="mt-0.5 font-mono text-zinc-200">
+                {lifecycleMaxAge > 0
+                  ? `${lifecycleMaxAge} frames`
+                  : "disabled"}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-2 rounded-md border border-zinc-700/70 bg-zinc-900/55 p-2 text-[10px]">
+            <div className="flex justify-between gap-2">
+              <span className="text-zinc-500">decay policy</span>
+              <span className="font-mono text-zinc-300">
+                {lifecycleDecay}
+              </span>
+            </div>
+            <div className="mt-1 flex justify-between gap-2">
+              <span className="text-zinc-500">latest event</span>
+              <span className="font-mono text-zinc-300">
+                {latestLifecycleEvent?.action ?? "--"}
+              </span>
+            </div>
+          </div>
+
+          <details
+            className="mt-2 rounded-md border border-zinc-700/70 bg-zinc-950/35"
+            open={committedEntries.length > 0}
+          >
+            <summary className="cursor-pointer px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+              Committed prototypes
+            </summary>
+            <div className="space-y-1.5 border-t border-zinc-700/60 p-2">
+              {committedEntries.length === 0 ? (
+                <div className="text-[10px] text-zinc-500">
+                  No committed hard-negative prototypes.
+                </div>
+              ) : (
+                committedEntries.map((entry, index) => (
+                  <HardNegativeEntryRow
+                    key={`committed-${entry.first_frame_id ?? "none"}-${index}`}
+                    entry={entry}
+                    index={index}
+                  />
+                ))
+              )}
+            </div>
+          </details>
+
+          <details
+            className="mt-2 rounded-md border border-zinc-700/70 bg-zinc-950/35"
+            open={pendingEntries.length > 0}
+          >
+            <summary className="cursor-pointer px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+              Pending evidence
+            </summary>
+            <div className="space-y-1.5 border-t border-zinc-700/60 p-2">
+              {pendingEntries.length === 0 ? (
+                <div className="text-[10px] text-zinc-500">
+                  No pending hard-negative evidence.
+                </div>
+              ) : (
+                pendingEntries.map((entry, index) => (
+                  <HardNegativeEntryRow
+                    key={`pending-${entry.first_frame_id ?? "none"}-${index}`}
+                    entry={entry}
+                    index={index}
+                  />
+                ))
+              )}
+            </div>
+          </details>
         </div>
       </div>
     </PanelShell>

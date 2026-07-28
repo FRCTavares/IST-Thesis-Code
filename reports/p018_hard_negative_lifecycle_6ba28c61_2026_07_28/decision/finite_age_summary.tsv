@@ -1,0 +1,6 @@
+max_age_frames	expire_event_count	maximum_wrong_target_increase_s	combined_correct_duration_delta_s	combined_lost_duration_delta_s	safety_gate	exercises_committed_expiry	promotion_candidate
+62	10	0.0	0.0	0.0	PASS	True	NO
+93	7	0.0	0.0	0.0	PASS	True	NO
+247	2	0.0	0.0	0.0	PASS	True	YES
+394	0	0.0	0.0	0.0	PASS	False	NO
+427	0	0.0	0.0	0.0	PASS	False	NO

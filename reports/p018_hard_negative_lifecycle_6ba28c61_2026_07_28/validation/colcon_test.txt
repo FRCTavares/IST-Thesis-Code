@@ -1,0 +1,43 @@
+Starting >>> thesis_bringup
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0
+cachedir: /home/francisco/Desktop/Thesis-Code/ros2_ws/build/thesis_bringup/.pytest_cache
+rootdir: /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup
+plugins: launch-testing-ros-0.26.11, ament-xmllint-0.17.4, ament-pep257-0.17.4, ament-lint-0.17.4, ament-flake8-0.17.4, ament-copyright-0.17.4, launch-testing-3.4.10, launch-pytest-3.4.10, cov-4.1.0, colcon-core-0.20.1
+collected 239 items
+
+test/test_appearance_attachment.py ..................                    [  7%]
+test/test_appearance_cache_identity_safety.py ........                   [ 10%]
+test/test_appearance_memory.py ........                                  [ 14%]
+test/test_appearance_memory_provenance.py ..........                     [ 18%]
+test/test_candidate_persistence_tracker.py ..........                    [ 22%]
+test/test_control_ref_safety.py ..............                           [ 28%]
+test/test_coordinate_time_contract.py ........                           [ 31%]
+test/test_copyright.py s                                                 [ 32%]
+test/test_flake8.py .                                                    [ 32%]
+test/test_freshness.py .......                                           [ 35%]
+test/test_hard_negative_lifecycle_provenance.py ........                 [ 38%]
+test/test_live_target_authority.py .......                               [ 41%]
+test/test_package_metadata.py ....                                       [ 43%]
+test/test_pep257.py .                                                    [ 43%]
+test/test_positive_memory_bootstrap_runtime_provenance.py .              [ 44%]
+test/test_target_memory_appearance.py ....................               [ 52%]
+test/test_target_memory_failure_characterization.py ....                 [ 54%]
+test/test_target_memory_hard_negative_fragment_safety.py ....            [ 56%]
+test/test_target_memory_hard_negative_transaction.py .............       [ 61%]
+test/test_target_memory_identity_lineage.py ....                         [ 63%]
+test/test_target_memory_mars_node_static.py ...........                  [ 67%]
+test/test_target_memory_protected_appearance.py ..........               [ 71%]
+test/test_target_memory_rank_aware_reacquisition.py ..............       [ 77%]
+test/test_target_memory_synthetic.py ....................                [ 86%]
+test/test_target_memory_transactional_gate.py ......                     [ 88%]
+test/test_tim_mars_crop_quality.py ......                                [ 91%]
+test/test_tim_mars_ros_messages.py ......                                [ 93%]
+test/test_tim_mars_ros_params.py ...                                     [ 94%]
+test/test_tim_mars_runtime.py ............                               [100%]
+
+- generated xml file: /home/francisco/Desktop/Thesis-Code/ros2_ws/build/thesis_bringup/pytest.xml -
+======================== 238 passed, 1 skipped in 9.18s ========================
+Finished <<< thesis_bringup [10.3s]
+
+Summary: 1 package finished [10.5s]

@@ -143,6 +143,12 @@ def test_process_tracks_selects_requested_visible_target():
 
     assert result.output.target_track_id == 7
     assert result.output.reason == "operator_select"
+    assert result.output.hard_negative_current_frame_id == 10
+    assert result.candidates[0].tracker_frame_id == 10
+    assert (
+        result.candidates[0].tracker_timestamp_ns
+        == 1_000_000_000
+    )
     assert result.diagnostics.track_timestamp_ns == 1_000_000_000
     assert result.diagnostics.selected_image_timestamp_ns is None
     assert result.diagnostics.image_track_offset_ms is None

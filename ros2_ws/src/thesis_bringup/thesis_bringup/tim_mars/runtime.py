@@ -209,8 +209,14 @@ class TimMarsRuntime:
         self.pending_select_id = None
         return self.memory.clear()
 
-    def candidate_from_track(self, track: Any) -> CandidateTrack:
-        """Convert a tracker message object to the pure CandidateTrack type."""
+    def candidate_from_track(
+        self,
+        track: Any,
+        *,
+        frame_id: int | None = None,
+        timestamp_ns: int | None = None,
+    ) -> CandidateTrack:
+        """Convert one tracker observation with timeline provenance."""
         cx = float(track.cx)
         cy = float(track.cy)
         width = float(track.w)
@@ -234,6 +240,16 @@ class TimMarsRuntime:
             track_id=int(track.id),
             bbox=bbox,
             score=float(track.score),
+            tracker_frame_id=(
+                int(frame_id)
+                if frame_id is not None
+                else None
+            ),
+            tracker_timestamp_ns=(
+                int(timestamp_ns)
+                if timestamp_ns is not None
+                else None
+            ),
             unclipped_bbox=unclipped_bbox,
         )
 
@@ -243,11 +259,15 @@ class TimMarsRuntime:
             getattr(tracks_msg, "frame_id", 0)
         )
 
+        track_timestamp_ns = self.track_time_ns(tracks_msg)
         candidates = [
-            self.candidate_from_track(track)
+            self.candidate_from_track(
+                track,
+                frame_id=track_frame_id,
+                timestamp_ns=track_timestamp_ns,
+            )
             for track in tracks_msg.tracks
         ]
-        track_timestamp_ns = self.track_time_ns(tracks_msg)
         selected_image = (
             self.select_causal_image(track_timestamp_ns)
             if track_timestamp_ns is not None
@@ -269,13 +289,21 @@ class TimMarsRuntime:
             )
 
         if selected_candidate is not None:
-            output = self.memory.select(selected_candidate)
+            output = self.memory.select(
+                selected_candidate,
+                frame_id=track_frame_id,
+                timestamp_ns=track_timestamp_ns,
+            )
             self.pending_select_id = None
         elif (
             self.pending_select_id is not None
             and self.memory.state == TargetState.NO_TARGET
         ):
-            output = self.memory.update([])
+            output = self.memory.update(
+                [],
+                frame_id=track_frame_id,
+                timestamp_ns=track_timestamp_ns,
+            )
             output.reason = (
                 "pending_selection_track_not_visible:"
                 f"{self.pending_select_id}"
@@ -289,9 +317,17 @@ class TimMarsRuntime:
                 candidates,
                 key=lambda candidate: self.bbox_area(candidate.bbox),
             )
-            output = self.memory.select(largest)
+            output = self.memory.select(
+                largest,
+                frame_id=track_frame_id,
+                timestamp_ns=track_timestamp_ns,
+            )
         else:
-            output = self.memory.update(candidates)
+            output = self.memory.update(
+                candidates,
+                frame_id=track_frame_id,
+                timestamp_ns=track_timestamp_ns,
+            )
 
         selected_image_ns = (
             selected_image.stamp_ns
