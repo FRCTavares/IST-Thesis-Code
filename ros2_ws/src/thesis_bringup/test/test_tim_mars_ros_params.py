@@ -281,6 +281,11 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
     }
 
     assert expected_active_keys <= canonical.keys()
+    assert canonical["hard_negative_max_age_frames"] == 247
+    assert (
+        canonical["hard_negative_decay_policy"]
+        == "none_until_expiry"
+    )
     assert (
         canonical["appearance_protected_memory_enabled"]
         is True

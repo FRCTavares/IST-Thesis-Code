@@ -70,10 +70,12 @@ Open executable issues: **22**.
    - started on 27 July 2026 from clean synchronized baseline `bc71088ca4639f6bc75af98a5589fb246c6bff5d`.
    - read-only audit confirmed that staging, promotion, duplicate merging, bounded eviction, pending expiry, selected-lineage reconciliation, and serialized lifecycle events already exist.
    - implemented tracker-frame/time, crop-quality, confidence, full-geometry and appearance-source provenance for pending and committed prototypes; merge operations retain the earliest evidence and atomically advance the latest context.
-   - status JSON now publishes committed/pending snapshots and lifecycle policy; finite expiry uses full-strength `none_until_expiry` semantics and may mutate only after uninterrupted trusted `LOCKED -> LOCKED` acceptance. The canonical maximum age remains disabled at `0` pending deterministic replay evidence.
+   - status JSON now publishes committed/pending snapshots and lifecycle policy; finite expiry uses full-strength `none_until_expiry` semantics and may mutate only after uninterrupted trusted `LOCKED -> LOCKED` acceptance. The evidence-backed canonical maximum age is `247` tracker frames.
    - the live dashboard now exposes committed and pending prototype counts, tracker-frame age, maximum-age and decay policy, latest lifecycle action, lineage, observations, confidence, crop dimensions, geometry score, and expired-state warnings.
    - package validation passed with 238 tests and 1 skip; the ROS result set reported 252 tests, 0 errors and 0 failures; the `thesis_bringup` build, live-UI typecheck, and isolated production build also passed.
-   - remaining work is deterministic age and safety evidence, repeatability, and the evidence-based canonical maximum-age decision.
+   - deterministic replay swept `62`, `93`, `247`, `394`, and `427` frames. The `247`-frame candidate exercised two committed expiries with zero change in correct, lost, annotated-ID wrong-target, and spatial wrong-target durations across the four frozen sequences.
+   - an independent `247`-frame pass reproduced semantic digests, lifecycle payloads, evaluator metrics, source manifests, runtime resolution, and topic counts exactly.
+   - remaining work is final promoted-canonical replay provenance, curated evidence packaging, and Issue #18 closure.
 
 6. [ ] [#44 — P1.14+ ReID placement: select on CPU, then promote the winner to Hailo (refines P1.14 + Deferred ReID/Hailo items)](https://github.com/FRCTavares/IST-Thesis-Code/issues/44)
     - **HIGH PRIORITY:** execute immediately after the remaining P0 blockers and closure of the currently active #18 work; do not defer this task to the end of P1.

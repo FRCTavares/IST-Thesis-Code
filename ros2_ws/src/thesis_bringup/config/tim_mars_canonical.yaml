@@ -90,8 +90,8 @@ target_memory_mars_node:
     hard_negative_min_geometry: 0.20
 
     # Retain full-strength committed prototypes until explicit expiry.
-    # Zero preserves the validated P1.6 behaviour while P1.7 measures age.
-    hard_negative_max_age_frames: 0
+    # The evidence-backed canonical limit is 247 tracker frames.
+    hard_negative_max_age_frames: 247
     hard_negative_decay_policy: none_until_expiry
 
     same_id_hijack_protection_enabled: true
