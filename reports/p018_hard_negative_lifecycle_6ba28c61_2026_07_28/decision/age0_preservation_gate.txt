@@ -1,0 +1,9 @@
+Issue #18 canonical max-age-zero preservation gate
+Safety tolerance: 0.050 s
+
+may_hard_reentry: max wrong-target increase=+0.000000, gate=PASS
+seq01_clean: max wrong-target increase=+0.000000, gate=PASS
+seq03_crossing: max wrong-target increase=+0.000000, gate=PASS
+seq04_occlusion: max wrong-target increase=+0.000000, gate=PASS
+
+Overall gate: PASS

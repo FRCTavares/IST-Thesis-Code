@@ -1,0 +1,70 @@
+{
+  "base_configuration": {
+    "hard_negative_decay_policy": "none_until_expiry",
+    "hard_negative_max_age_frames": 0,
+    "path": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+    "sha256": "f0d7fb4fd441254d95504d0fe478b955131b260fa80a77804292811ebb182299"
+  },
+  "configurations": [
+    {
+      "config_path": "/home/francisco/Desktop/Thesis-Code/reports/p018_lifecycle_dc64ad7e_2026_07_28_age_sweep_r1/configs/max_age_62.yaml",
+      "config_sha256": "f53e5f81821e0bead0c5f05e2386af187214488182139a6666d14aeb6cdf87bd",
+      "max_age_frames": 62
+    },
+    {
+      "config_path": "/home/francisco/Desktop/Thesis-Code/reports/p018_lifecycle_dc64ad7e_2026_07_28_age_sweep_r1/configs/max_age_93.yaml",
+      "config_sha256": "65f0f94952698ab1a6a0e247318c36c3680c7fbffb48cd5a47388fdcdf76731f",
+      "max_age_frames": 93
+    },
+    {
+      "config_path": "/home/francisco/Desktop/Thesis-Code/reports/p018_lifecycle_dc64ad7e_2026_07_28_age_sweep_r1/configs/max_age_247.yaml",
+      "config_sha256": "032d9bb3ed00ed33bebe2e151b39d0d2ba396e8e39b9fd280ae8db643f487e2f",
+      "max_age_frames": 247
+    },
+    {
+      "config_path": "/home/francisco/Desktop/Thesis-Code/reports/p018_lifecycle_dc64ad7e_2026_07_28_age_sweep_r1/configs/max_age_394.yaml",
+      "config_sha256": "f27e37243f087f40760d8bc3de899cabdf671cd538c53191d86738fefab90fce",
+      "max_age_frames": 394
+    },
+    {
+      "config_path": "/home/francisco/Desktop/Thesis-Code/reports/p018_lifecycle_dc64ad7e_2026_07_28_age_sweep_r1/configs/max_age_427.yaml",
+      "config_sha256": "314e556fbbfff5e3a35d05bd86a587c185990b5c24be2b314b5f0be66a223727",
+      "max_age_frames": 427
+    }
+  ],
+  "derivation": {
+    "candidate_max_ages_frames": [
+      62,
+      93,
+      247,
+      394,
+      427
+    ],
+    "global_maximum_frames": 426,
+    "rule": "ceil each sequence committed-age p95 and add global observed maximum plus one as a no-expiry control",
+    "sequence_maximum_frames": {
+      "may_hard_reentry": 107,
+      "seq01_clean": 318,
+      "seq03_crossing": 93,
+      "seq04_occlusion": 426
+    },
+    "sequence_p95_ceiling_frames": {
+      "may_hard_reentry": 93,
+      "seq01_clean": 247,
+      "seq03_crossing": 62,
+      "seq04_occlusion": 394
+    },
+    "source_age_summary": "/home/francisco/Desktop/Thesis-Code/reports/p018_lifecycle_dc64ad7e_2026_07_28_r1/canonical_age0/lifecycle_age_summary.json"
+  },
+  "deterministic_runner": {
+    "path": "tools/experiments/run_deterministic_tim_replay.py",
+    "sha256": "55fcc0067cd9f9f70b0c5271c660dc269f80999b999157f73812ad052a55c786"
+  },
+  "implementation_commit": "dc64ad7e5129d5d171d3dfadd1652803f1211cdb",
+  "issue": 18,
+  "mars_model": {
+    "path": "models/reid/mars-small128.pb",
+    "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1"
+  },
+  "schema_version": 1
+}

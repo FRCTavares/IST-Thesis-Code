@@ -1,0 +1,301 @@
+{
+  "canonical_config_sha256": "f0d7fb4fd441254d95504d0fe478b955131b260fa80a77804292811ebb182299",
+  "hard_negative_decay_policy": "none_until_expiry",
+  "hard_negative_max_age_frames": 0,
+  "implementation_commit": "dc64ad7e5129d5d171d3dfadd1652803f1211cdb",
+  "mars_model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+  "schema_version": 1,
+  "sequences": {
+    "may_hard_reentry": {
+      "committed_age_frames": {
+        "maximum": 107,
+        "median": 11.0,
+        "minimum": 0,
+        "p90": 77.5,
+        "p95": 92.25,
+        "p99": 104.05000000000001
+      },
+      "committed_count_max": 1,
+      "committed_snapshot_samples": 296,
+      "current_frame_max": 1055,
+      "current_frame_min": 103,
+      "distinct_source_lineages": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2,
+          41
+        ],
+        [
+          41
+        ],
+        [
+          60
+        ]
+      ],
+      "event_actions": {
+        "discard_pending": 50,
+        "expire_pending": 5,
+        "insert": 11,
+        "merge": 59,
+        "reconcile": 11,
+        "stage": 67
+      },
+      "expired_snapshot_count": 0,
+      "generated_semantic_sha256": null,
+      "maximum_observations": 16,
+      "pending_age_frames": {
+        "maximum": 0,
+        "median": 0,
+        "minimum": 0,
+        "p95": 0.0
+      },
+      "pending_count_max": 1,
+      "pending_snapshot_samples": 67,
+      "runtime_overrides": {
+        "appearance_enabled": true,
+        "compact_output": true,
+        "image_height": 640.0,
+        "image_width": 640.0,
+        "selected_track_id": 1,
+        "tracks_are_normalized": false,
+        "zero_id_when_not_visible": true
+      },
+      "status_messages": 950
+    },
+    "seq01_clean": {
+      "committed_age_frames": {
+        "maximum": 318,
+        "median": 55,
+        "minimum": 0,
+        "p90": 185.0,
+        "p95": 246.5,
+        "p99": 304.9000000000001
+      },
+      "committed_count_max": 2,
+      "committed_snapshot_samples": 1311,
+      "current_frame_max": 2817,
+      "current_frame_min": 269,
+      "distinct_source_lineages": [
+        [
+          2
+        ],
+        [
+          2,
+          16
+        ],
+        [
+          3
+        ],
+        [
+          16
+        ]
+      ],
+      "event_actions": {
+        "discard_pending": 147,
+        "expire_pending": 9,
+        "insert": 23,
+        "merge": 218,
+        "reconcile": 23,
+        "stage": 179
+      },
+      "expired_snapshot_count": 0,
+      "generated_semantic_sha256": null,
+      "maximum_observations": 30,
+      "pending_age_frames": {
+        "maximum": 0,
+        "median": 0,
+        "minimum": 0,
+        "p95": 0.0
+      },
+      "pending_count_max": 2,
+      "pending_snapshot_samples": 179,
+      "runtime_overrides": {
+        "appearance_enabled": true,
+        "compact_output": true,
+        "image_height": 640.0,
+        "image_width": 640.0,
+        "selected_track_id": 1,
+        "tracks_are_normalized": false,
+        "zero_id_when_not_visible": true
+      },
+      "status_messages": 2470
+    },
+    "seq03_crossing": {
+      "committed_age_frames": {
+        "maximum": 93,
+        "median": 10.0,
+        "minimum": 0,
+        "p90": 51.0,
+        "p95": 62.0,
+        "p99": 82.65000000000009
+      },
+      "committed_count_max": 2,
+      "committed_snapshot_samples": 1036,
+      "current_frame_max": 2640,
+      "current_frame_min": 266,
+      "distinct_source_lineages": [
+        [
+          27
+        ],
+        [
+          37
+        ],
+        [
+          40
+        ],
+        [
+          48
+        ],
+        [
+          48,
+          40
+        ],
+        [
+          53
+        ],
+        [
+          86
+        ],
+        [
+          91
+        ],
+        [
+          93
+        ],
+        [
+          93,
+          40
+        ],
+        [
+          101,
+          86
+        ],
+        [
+          112
+        ],
+        [
+          115
+        ],
+        [
+          115,
+          142
+        ],
+        [
+          128
+        ],
+        [
+          150
+        ],
+        [
+          150,
+          163
+        ],
+        [
+          151
+        ]
+      ],
+      "event_actions": {
+        "discard_pending": 150,
+        "expire_pending": 16,
+        "insert": 30,
+        "merge": 264,
+        "reconcile": 28,
+        "stage": 196
+      },
+      "expired_snapshot_count": 0,
+      "generated_semantic_sha256": null,
+      "maximum_observations": 37,
+      "pending_age_frames": {
+        "maximum": 11,
+        "median": 0,
+        "minimum": 0,
+        "p95": 0.6999999999999886
+      },
+      "pending_count_max": 2,
+      "pending_snapshot_samples": 207,
+      "runtime_overrides": {
+        "appearance_enabled": true,
+        "compact_output": true,
+        "image_height": 640.0,
+        "image_width": 640.0,
+        "selected_track_id": 1,
+        "tracks_are_normalized": false,
+        "zero_id_when_not_visible": true
+      },
+      "status_messages": 2336
+    },
+    "seq04_occlusion": {
+      "committed_age_frames": {
+        "maximum": 426,
+        "median": 170.0,
+        "minimum": 0,
+        "p90": 363.0,
+        "p95": 394.0,
+        "p99": 420.0
+      },
+      "committed_count_max": 2,
+      "committed_snapshot_samples": 1242,
+      "current_frame_max": 1818,
+      "current_frame_min": 202,
+      "distinct_source_lineages": [
+        [
+          9
+        ],
+        [
+          11
+        ],
+        [
+          30
+        ],
+        [
+          39
+        ],
+        [
+          39,
+          49
+        ],
+        [
+          50
+        ],
+        [
+          51,
+          50
+        ]
+      ],
+      "event_actions": {
+        "discard_pending": 29,
+        "expire_pending": 5,
+        "insert": 8,
+        "merge": 60,
+        "reconcile": 6,
+        "stage": 42
+      },
+      "expired_snapshot_count": 0,
+      "generated_semantic_sha256": null,
+      "maximum_observations": 36,
+      "pending_age_frames": {
+        "maximum": 7,
+        "median": 0,
+        "minimum": 0,
+        "p95": 4.599999999999994
+      },
+      "pending_count_max": 2,
+      "pending_snapshot_samples": 49,
+      "runtime_overrides": {
+        "appearance_enabled": true,
+        "compact_output": true,
+        "image_height": 640.0,
+        "image_width": 640.0,
+        "selected_track_id": 1,
+        "tracks_are_normalized": false,
+        "zero_id_when_not_visible": true
+      },
+      "status_messages": 1589
+    }
+  }
+}
