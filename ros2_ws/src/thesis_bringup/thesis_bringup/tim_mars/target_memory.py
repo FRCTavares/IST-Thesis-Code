@@ -142,6 +142,8 @@ class TargetIdentityMemory:
             HardNegativeMemoryEvent,
             ...,
         ] = ()
+        self._current_tracker_frame_id: Optional[int] = None
+        self._current_tracker_timestamp_ns: Optional[int] = None
 
     @property
     def state(self) -> TargetState:
@@ -181,6 +183,71 @@ class TargetIdentityMemory:
         """Remaining frames before positive appearance updates resume."""
         return int(self._appearance_update_cooldown_frames_remaining)
 
+    def _record_tracker_timeline(
+        self,
+        candidates: Sequence[CandidateTrack],
+        *,
+        frame_id: int | None = None,
+        timestamp_ns: int | None = None,
+    ) -> None:
+        """Record timeline context independently of target visibility."""
+        resolved_frame_id = (
+            int(frame_id)
+            if (
+                frame_id is not None
+                and int(frame_id) > 0
+            )
+            else None
+        )
+        resolved_timestamp_ns = (
+            int(timestamp_ns)
+            if (
+                timestamp_ns is not None
+                and int(timestamp_ns) > 0
+            )
+            else None
+        )
+
+        if resolved_frame_id is None:
+            candidate_frames = [
+                int(candidate.tracker_frame_id)
+                for candidate in candidates
+                if (
+                    candidate.tracker_frame_id is not None
+                    and int(candidate.tracker_frame_id) > 0
+                )
+            ]
+            if candidate_frames:
+                resolved_frame_id = max(
+                    candidate_frames
+                )
+
+        if resolved_timestamp_ns is None:
+            candidate_timestamps = [
+                int(candidate.tracker_timestamp_ns)
+                for candidate in candidates
+                if (
+                    candidate.tracker_timestamp_ns is not None
+                    and int(
+                        candidate.tracker_timestamp_ns
+                    ) > 0
+                )
+            ]
+            if candidate_timestamps:
+                resolved_timestamp_ns = max(
+                    candidate_timestamps
+                )
+
+        if resolved_frame_id is not None:
+            self._current_tracker_frame_id = (
+                resolved_frame_id
+            )
+
+        if resolved_timestamp_ns is not None:
+            self._current_tracker_timestamp_ns = (
+                resolved_timestamp_ns
+            )
+
     def _reset_positive_memory_diagnostics(self) -> None:
         self._last_acceptance_memory_source = "none"
         self._last_positive_memory_updated = False
@@ -198,6 +265,8 @@ class TargetIdentityMemory:
         self._candidate_persistence.reset()
         self._hard_negative_memory.clear()
         self._positive_appearance.clear()
+        self._current_tracker_frame_id = None
+        self._current_tracker_timestamp_ns = None
 
         return self._make_output(
             reason="operator_clear",
@@ -208,10 +277,18 @@ class TargetIdentityMemory:
     def select(
         self,
         track: CandidateTrack,
+        *,
+        frame_id: int | None = None,
+        timestamp_ns: int | None = None,
     ) -> TargetMemoryOutput:
         """Operator selects a visible track as the active target."""
         self._reset_positive_memory_diagnostics()
         self._reset_hard_negative_diagnostics()
+        self._record_tracker_timeline(
+            (track,),
+            frame_id=frame_id,
+            timestamp_ns=timestamp_ns,
+        )
 
         selected_appearance = (
             track.appearance
@@ -306,10 +383,18 @@ class TargetIdentityMemory:
     def update(
         self,
         candidates: Sequence[CandidateTrack],
+        *,
+        frame_id: int | None = None,
+        timestamp_ns: int | None = None,
     ) -> TargetMemoryOutput:
         """Update target memory from current tracker candidates."""
         self._reset_positive_memory_diagnostics()
         self._reset_hard_negative_diagnostics()
+        self._record_tracker_timeline(
+            candidates,
+            frame_id=frame_id,
+            timestamp_ns=timestamp_ns,
+        )
 
         if not self._m.selected or self._m.bbox is None:
             return self._make_output(
@@ -1946,6 +2031,23 @@ class TargetIdentityMemory:
             return
 
         events.extend(
+            self._hard_negative_memory.expire_committed(
+                current_frame_id=(
+                    self._current_tracker_frame_id
+                ),
+                max_age_frames=(
+                    self.cfg.hard_negative_max_age_frames
+                ),
+                decay_policy=(
+                    self.cfg.hard_negative_decay_policy
+                ),
+                selected_track_id=(
+                    accepted_candidate.track_id
+                ),
+            )
+        )
+
+        events.extend(
             self._hard_negative_memory.update(
                 candidates=candidates,
                 scores_sorted=scores_sorted,
@@ -2302,6 +2404,56 @@ class TargetIdentityMemory:
             ),
             hard_negative_events=(
                 self._last_hard_negative_events
+            ),
+            hard_negative_entries=(
+                self._hard_negative_memory.snapshots(
+                    current_frame_id=(
+                        self._current_tracker_frame_id
+                    ),
+                    max_age_frames=max(
+                        0,
+                        int(
+                            self.cfg
+                            .hard_negative_max_age_frames
+                        ),
+                    ),
+                    decay_policy=str(
+                        self.cfg
+                        .hard_negative_decay_policy
+                    ),
+                )
+            ),
+            hard_negative_pending_entries=(
+                self._hard_negative_memory.snapshots(
+                    current_frame_id=(
+                        self._current_tracker_frame_id
+                    ),
+                    max_age_frames=max(
+                        0,
+                        int(
+                            self.cfg
+                            .hard_negative_max_age_frames
+                        ),
+                    ),
+                    decay_policy=str(
+                        self.cfg
+                        .hard_negative_decay_policy
+                    ),
+                    pending=True,
+                )
+            ),
+            hard_negative_current_frame_id=(
+                self._current_tracker_frame_id
+            ),
+            hard_negative_max_age_frames=max(
+                0,
+                int(
+                    self.cfg
+                    .hard_negative_max_age_frames
+                ),
+            ),
+            hard_negative_decay_policy=str(
+                self.cfg.hard_negative_decay_policy
             ),
             risk_absence=risk_absence,
             risk_scene_ambiguity=risk_scene_ambiguity,

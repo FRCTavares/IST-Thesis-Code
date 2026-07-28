@@ -68,6 +68,13 @@ class CandidateTrack:
     score: float = 1.0
     age: int = 0
     last_seen: int = 0
+
+    # Tracker-timeline provenance for lifecycle accounting. These values
+    # describe the current tracker observation, not the possibly cached
+    # appearance image from which the embedding originated.
+    tracker_frame_id: Optional[int] = None
+    tracker_timestamp_ns: Optional[int] = None
+
     appearance: Optional[Any] = None
 
     # State-machine geometry remains clipped to the candidate frame. The
@@ -255,6 +262,13 @@ class TargetMemoryConfig:
     hard_negative_reject_margin: float = 0.03
     hard_negative_min_geometry: float = 0.20
 
+    # Committed hard-negative lifecycle policy. Zero disables automatic
+    # expiry, preserving the established canonical behaviour until replay
+    # evidence supports a finite age. Prototypes retain full rejection
+    # strength until explicit atomic expiry; embeddings are never softened.
+    hard_negative_max_age_frames: int = 0
+    hard_negative_decay_policy: str = "none_until_expiry"
+
     # Same-ID hijack protection.
     # When enabled, uninterrupted tracker-ID continuity remains trusted unless
     # a nearby, spatially plausible competing person challenges that identity.
@@ -356,6 +370,55 @@ class HardNegativeMemoryEvent:
     geometry_strength: float = 0.0
     prototype_similarity: float = 0.0
     memory_size: int = 0
+    snapshot: Optional[
+        "HardNegativeMemorySnapshot"
+    ] = None
+
+
+@dataclass(frozen=True)
+class HardNegativeMemorySnapshot:
+    """Serializable state of one hard-negative prototype."""
+
+    lifecycle_state: str
+    source: str
+    source_track_ids: tuple[int, ...] = ()
+    selected_track_ids: tuple[int, ...] = ()
+    observations: int = 0
+
+    first_frame_id: Optional[int] = None
+    last_frame_id: Optional[int] = None
+    first_timestamp_ns: Optional[int] = None
+    last_timestamp_ns: Optional[int] = None
+    age_frames: Optional[int] = None
+    expires_at_frame_id: Optional[int] = None
+    expired: bool = False
+
+    latest_bbox: Optional[BBox] = None
+    latest_confidence: float = 0.0
+    latest_crop_quality: Optional[
+        AppearanceCropQuality
+    ] = None
+
+    positive_similarity: float = 0.0
+    geometry_strength: float = 0.0
+    latest_iou: float = 0.0
+    latest_distance: float = 0.0
+    latest_scale: float = 0.0
+    latest_geometry_score: float = 0.0
+
+    appearance_source_frame_id: Optional[int] = None
+    appearance_source_image_timestamp_ns: Optional[int] = None
+    appearance_embedded_ns: Optional[int] = None
+    appearance_embedding_age_ms: Optional[float] = None
+    appearance_frame_generation: Optional[int] = None
+    appearance_track_generation: Optional[int] = None
+    appearance_source_bbox: Optional[BBox] = None
+    appearance_source_crop_quality: Optional[
+        AppearanceCropQuality
+    ] = None
+
+    max_age_frames: int = 0
+    decay_policy: str = "none_until_expiry"
 
 
 @dataclass
@@ -396,6 +459,17 @@ class TargetMemoryOutput:
         HardNegativeMemoryEvent,
         ...,
     ] = ()
+    hard_negative_entries: tuple[
+        HardNegativeMemorySnapshot,
+        ...,
+    ] = ()
+    hard_negative_pending_entries: tuple[
+        HardNegativeMemorySnapshot,
+        ...,
+    ] = ()
+    hard_negative_current_frame_id: Optional[int] = None
+    hard_negative_max_age_frames: int = 0
+    hard_negative_decay_policy: str = "none_until_expiry"
     risk_absence: bool = False
     risk_scene_ambiguity: bool = False
 
@@ -437,5 +511,6 @@ __all__ = [
     "TargetMemoryConfig",
     "PositiveMemoryBootstrapEvent",
     "HardNegativeMemoryEvent",
+    "HardNegativeMemorySnapshot",
     "TargetMemoryOutput",
 ]

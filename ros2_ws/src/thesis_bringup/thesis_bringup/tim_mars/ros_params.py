@@ -205,6 +205,11 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("hard_negative_reject_similarity", 0.80)
     node.declare_parameter("hard_negative_reject_margin", 0.03)
     node.declare_parameter("hard_negative_min_geometry", 0.20)
+    node.declare_parameter("hard_negative_max_age_frames", 0)
+    node.declare_parameter(
+        "hard_negative_decay_policy",
+        "none_until_expiry",
+    )
     node.declare_parameter(
         "same_id_hijack_protection_enabled",
         False,
@@ -479,8 +484,29 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         hard_negative_reject_similarity=float(
             node.get_parameter("hard_negative_reject_similarity").value
         ),
-        hard_negative_reject_margin=float(node.get_parameter("hard_negative_reject_margin").value),
-        hard_negative_min_geometry=float(node.get_parameter("hard_negative_min_geometry").value),
+        hard_negative_reject_margin=float(
+            node.get_parameter(
+                "hard_negative_reject_margin"
+            ).value
+        ),
+        hard_negative_min_geometry=float(
+            node.get_parameter(
+                "hard_negative_min_geometry"
+            ).value
+        ),
+        hard_negative_max_age_frames=max(
+            0,
+            int(
+                node.get_parameter(
+                    "hard_negative_max_age_frames"
+                ).value
+            ),
+        ),
+        hard_negative_decay_policy=str(
+            node.get_parameter(
+                "hard_negative_decay_policy"
+            ).value
+        ),
         same_id_hijack_protection_enabled=bool(
             node.get_parameter(
                 "same_id_hijack_protection_enabled"

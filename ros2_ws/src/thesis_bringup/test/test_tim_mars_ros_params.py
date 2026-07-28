@@ -29,7 +29,7 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 99
+    assert len(node.values) == 101
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
@@ -92,6 +92,11 @@ def test_tim_mars_ros_params_declares_expected_interface():
         node.values["hard_negative_max_positive_similarity"]
         == 1.01
     )
+    assert node.values["hard_negative_max_age_frames"] == 0
+    assert (
+        node.values["hard_negative_decay_policy"]
+        == "none_until_expiry"
+    )
     assert (
         node.values["same_id_hijack_protection_enabled"]
         is False
@@ -140,6 +145,10 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values[
         "hard_negative_max_positive_similarity"
     ] = 0.93
+    node.values["hard_negative_max_age_frames"] = 180
+    node.values[
+        "hard_negative_decay_policy"
+    ] = "none_until_expiry"
     node.values["same_id_hijack_protection_enabled"] = True
     node.values["rank_aware_reacquisition_enabled"] = True
     node.values["rank_aware_confirm_frames"] = 4
@@ -202,6 +211,11 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
         cfg.hard_negative_max_positive_similarity
         == 0.93
     )
+    assert cfg.hard_negative_max_age_frames == 180
+    assert (
+        cfg.hard_negative_decay_policy
+        == "none_until_expiry"
+    )
     assert cfg.same_id_hijack_protection_enabled is True
     assert cfg.rank_aware_reacquisition_enabled is True
     assert cfg.rank_aware_confirm_frames == 4
@@ -261,6 +275,8 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
         "appearance_trusted_lock_frames_before_update",
         "hard_negative_confirm_observations",
         "hard_negative_max_positive_similarity",
+        "hard_negative_max_age_frames",
+        "hard_negative_decay_policy",
         "same_id_hijack_protection_enabled",
     }
 
