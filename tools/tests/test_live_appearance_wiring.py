@@ -114,3 +114,36 @@ def test_obsolete_and_silent_noop_appearance_options_are_absent():
 
     for token in obsolete_tokens:
         assert token not in combined
+
+
+def test_memory_replay_forwards_issue_44_request_controls():
+    """The live replay must resolve, record, and forward both controls."""
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parents[2]
+    wrapper = (
+        repo_root
+        / "tools"
+        / "experiments"
+        / "run_one_memory_tim_replay.sh"
+    ).read_text(encoding="utf-8")
+
+    required_tokens = (
+        "TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE",
+        "TIM_APPEARANCE_REQUEST_POLICY_SOURCE",
+        "TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE",
+        "TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_SOURCE",
+        'appearance_request_policy:="$TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE"',
+        'appearance_compute_min_interval_ms:="$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE"',
+        '--runtime "appearance_request_policy=',
+        '--runtime "appearance_compute_min_interval_ms=',
+        '--field "appearance_request_policy=',
+        '--field "appearance_compute_min_interval_ms=',
+        '--source "appearance_request_policy=',
+        '--source "appearance_compute_min_interval_ms=',
+        "all_candidates|geometry_winner",
+        "canonical_config",
+    )
+
+    for token in required_tokens:
+        assert token in wrapper, token
