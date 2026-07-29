@@ -86,6 +86,7 @@ Open executable issues: **21**.
     - Initial scope is to instrument the unchanged CPU baseline, then introduce a non-mutating CPU candidate-request policy before implementing or promoting any Hailo backend.
     - The tracked `repvgg_a0_person_reid_512.hef` is a Hailo-8 UINT8 256x128-to-512D model and remains unvalidated against the canonical 128D CPU MARS representation.
     - Baseline synchronous CPU workload telemetry now records encoding-eligible crops, backend calls, requested and returned crops, valid embeddings, and backend wall time; live ROS status publishes the measured duration while deterministic replay normalises it to `0.0` and uses semantic-digest schema `tim_mars_replay_generated_fields_v3`.
+    - The May hard-reentry live pilot recorded 183 CPU MARS calls and 370 crops over 67.439 s. The 419.541 ms maximum was isolated to the first-call warm-up; steady-state backend latency was 46.598 ms mean, 56.666 ms p95, and 61.288 ms p99, while non-backend callback overhead was 1.205 ms mean and backend wall time correlated 0.999979 with total callback latency.
     - Required evidence remains CPU displacement, selective versus forced-frequent load, causal asynchronous provenance, queueing and detector contention, quantised ranking and decision equivalence, safety and availability, and sustained onboard behaviour.
     - Complete this before final runtime/cost characterisation in #32, the architecture comparison in #58, and the final claim freeze in #39.
 
