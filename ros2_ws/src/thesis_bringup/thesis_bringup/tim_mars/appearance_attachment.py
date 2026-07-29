@@ -62,6 +62,11 @@ class AppearanceAttachmentInput:
     candidate_frame_height: float
     frame_id: int | None = None
 
+    # Optional pre-embedding request mask. The complete candidate list
+    # remains present for crop quality, cache reuse, and lifecycle ownership.
+    # None preserves the unchanged encode-all-eligible baseline.
+    requested_candidate_indices: tuple[int, ...] | None = None
+
 
 @dataclass(frozen=True)
 class AppearanceCacheEntry:
@@ -118,6 +123,8 @@ class AppearanceAttachmentDiagnostics:
     # Baseline synchronous embedding workload. These diagnostics measure the
     # existing CPU path without changing crop selection or identity policy.
     encoding_eligible: int = 0
+    request_candidates: int = 0
+    request_encoding_eligible: int = 0
     backend_calls: int = 0
     backend_requested: int = 0
     backend_returned: int = 0
@@ -335,18 +342,68 @@ def _result_with_cached_features(
     )
 
 
+def _resolve_requested_candidate_indices(
+    *,
+    candidate_count: int,
+    requested_candidate_indices: tuple[int, ...] | None,
+) -> tuple[int, ...]:
+    """Validate the optional encoder request mask.
+
+    The mask controls only fresh encoding. It must never be used to subset
+    lifecycle reconciliation, crop-quality measurement, or cache attachment.
+    """
+    candidate_count = int(candidate_count)
+
+    if requested_candidate_indices is None:
+        return tuple(range(candidate_count))
+
+    resolved = tuple(
+        int(index)
+        for index in requested_candidate_indices
+    )
+
+    if len(set(resolved)) != len(resolved):
+        raise ValueError(
+            "appearance request mask contains duplicate indices"
+        )
+
+    invalid = tuple(
+        index
+        for index in resolved
+        if index < 0 or index >= candidate_count
+    )
+
+    if invalid:
+        raise ValueError(
+            "appearance request mask contains out-of-range indices: "
+            + ", ".join(str(index) for index in invalid)
+        )
+
+    return resolved
+
+
 def attach_appearance_features(
     *,
     config: AppearanceAttachmentConfig,
     state: AppearanceAttachmentState,
     data: AppearanceAttachmentInput,
 ) -> AppearanceAttachmentResult:
+    requested_candidate_indices = (
+        _resolve_requested_candidate_indices(
+            candidate_count=len(data.candidates),
+            requested_candidate_indices=(
+                data.requested_candidate_indices
+            ),
+        )
+    )
+
     diagnostics = AppearanceAttachmentDiagnostics(
         candidates=len(data.candidates),
         features_valid=0,
         image_age_ms=None,
         skip_reason="disabled",
         cache_size=len(state.cache_by_track_id),
+        request_candidates=len(requested_candidate_indices),
     )
 
     if not config.enabled:
@@ -517,19 +574,41 @@ def attach_appearance_features(
             ),
         )
 
-    encoding_indices = [
+    crop_quality_eligible_indices = [
         index
         for index, quality in enumerate(crop_qualities)
         if quality.encoding_eligible
     ]
-    diagnostics.encoding_eligible = len(encoding_indices)
+    diagnostics.encoding_eligible = len(
+        crop_quality_eligible_indices
+    )
+
+    requested_index_set = set(requested_candidate_indices)
+    encoding_indices = [
+        index
+        for index in crop_quality_eligible_indices
+        if index in requested_index_set
+    ]
+    diagnostics.request_encoding_eligible = len(
+        encoding_indices
+    )
 
     if not encoding_indices:
         state.last_mars_compute_ns = data.now_ns
         state.last_mars_image_seq = data.latest_image_seq
-        diagnostics.skip_reason = (
-            "no_encoding_eligible_crops"
-        )
+
+        if not requested_candidate_indices:
+            diagnostics.skip_reason = (
+                "no_policy_requested_candidates"
+            )
+        elif crop_quality_eligible_indices:
+            diagnostics.skip_reason = (
+                "no_requested_encoding_eligible_crops"
+            )
+        else:
+            diagnostics.skip_reason = (
+                "no_encoding_eligible_crops"
+            )
 
         return _result_with_cached_features(
             config=config,

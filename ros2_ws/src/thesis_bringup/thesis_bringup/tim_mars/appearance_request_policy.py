@@ -182,8 +182,6 @@ def select_appearance_request_candidates(
     candidate_tuple = tuple(candidates)
     resolved_state = TargetState(target_state)
 
-    _validate_unique_track_ids(candidate_tuple)
-
     if not candidate_tuple:
         return _empty_request(
             policy=resolved_policy,
@@ -204,6 +202,11 @@ def select_appearance_request_candidates(
             ),
             reason="all_candidates",
         )
+
+    # The unchanged all-candidate baseline forwards the tracker output
+    # exactly as supplied. Experimental selective policies require unique
+    # tracker IDs because their decision is keyed by identity.
+    _validate_unique_track_ids(candidate_tuple)
 
     resolved_pending_id = (
         int(pending_select_id)

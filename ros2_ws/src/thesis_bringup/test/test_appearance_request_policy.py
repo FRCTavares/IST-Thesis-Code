@@ -292,3 +292,19 @@ def test_unknown_policy_is_rejected():
             [candidate(1)],
             policy="not_a_policy",
         )
+
+
+def test_all_candidates_accepts_duplicate_ids_for_baseline_compatibility():
+    candidates = [
+        candidate(5),
+        candidate(5),
+    ]
+
+    decision = decide(
+        candidates,
+        policy=AppearanceRequestPolicy.ALL_CANDIDATES,
+    )
+
+    assert decision.requested_indices == (0, 1)
+    assert decision.requested_track_ids == (5, 5)
+    assert decision.reason == "all_candidates"
