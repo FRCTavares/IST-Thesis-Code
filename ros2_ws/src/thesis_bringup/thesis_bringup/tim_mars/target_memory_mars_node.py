@@ -104,6 +104,9 @@ class TargetMemoryMarsNode(Node):
         self._zero_id_when_not_visible = params.zero_id_when_not_visible
 
         self._appearance_enabled = params.appearance_enabled
+        self._appearance_request_policy = (
+            params.appearance_request_policy
+        )
         self._appearance_image_topic = params.appearance_image_topic
         self._appearance_max_image_age_ms = params.appearance_max_image_age_ms
         self._appearance_compute_min_interval_ms = params.appearance_compute_min_interval_ms
@@ -170,6 +173,9 @@ class TargetMemoryMarsNode(Node):
                 appearance=appearance_cfg,
                 image_width=self._image_width,
                 image_height=self._image_height,
+                appearance_request_policy=(
+                    self._appearance_request_policy
+                ),
                 tracks_are_normalized=self._tracks_are_normalized,
                 selected_track_id=params.selected_track_id,
                 auto_select_largest=self._auto_select_largest,
@@ -193,6 +199,8 @@ class TargetMemoryMarsNode(Node):
             f"normalised_tracks={self._tracks_are_normalized}, "
             f"mirror_raw_target_selection={self._mirror_raw_target_selection}, "
             f"appearance_enabled={self._appearance_enabled}, "
+            f"appearance_request_policy="
+            f"{self._appearance_request_policy}, "
             f"appearance_image_topic={self._appearance_image_topic}"
         )
 
@@ -503,6 +511,22 @@ class TargetMemoryMarsNode(Node):
             num_tracks=len(tracks_msg.tracks),
             appearance_enabled=self._appearance_enabled,
             appearance_candidates=diagnostics.appearance_candidates,
+            appearance_request_policy=(
+                diagnostics.appearance_request_policy
+            ),
+            appearance_request_reason=(
+                diagnostics.appearance_request_reason
+            ),
+            appearance_request_candidates=(
+                diagnostics.appearance_request_candidates
+            ),
+            appearance_request_track_ids=(
+                diagnostics.appearance_request_track_ids
+            ),
+            appearance_request_encoding_eligible=(
+                diagnostics
+                .appearance_request_encoding_eligible
+            ),
             appearance_features_valid=diagnostics.appearance_features_valid,
             appearance_image_age_ms=diagnostics.image_track_offset_ms,
             appearance_skip_reason=diagnostics.appearance_skip_reason,

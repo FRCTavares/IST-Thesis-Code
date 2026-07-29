@@ -43,6 +43,11 @@ target_memory_mars_node:
 
     # MARS appearance evidence
     appearance_enabled: true
+
+    # Preserve the historical encode-all baseline by default. Controlled
+    # Issue #44 experiments may override this with geometry_winner.
+    appearance_request_policy: all_candidates
+
     appearance_max_image_age_ms: 250.0
     freshness_max_output_age_s: 0.90
     freshness_future_tolerance_s: 0.05

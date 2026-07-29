@@ -16,6 +16,9 @@ from thesis_bringup.freshness import (
     DEFAULT_FUTURE_TOLERANCE_S,
     DEFAULT_MAX_OUTPUT_AGE_S,
 )
+from thesis_bringup.tim_mars.appearance_request_policy import (
+    AppearanceRequestPolicy,
+)
 from thesis_bringup.tim_mars.target_memory import TargetMemoryConfig
 
 
@@ -41,6 +44,7 @@ class TimMarsRosParams:
     freshness_future_tolerance_s: float
 
     appearance_enabled: bool
+    appearance_request_policy: str
     appearance_image_topic: str
     appearance_max_image_age_ms: float
     appearance_compute_min_interval_ms: float
@@ -125,6 +129,10 @@ def declare_tim_mars_parameters(node: Any) -> None:
 
     # Appearance extraction, scoring, and positive-memory update policy.
     node.declare_parameter("appearance_enabled", True)
+    node.declare_parameter(
+        "appearance_request_policy",
+        AppearanceRequestPolicy.ALL_CANDIDATES.value,
+    )
     node.declare_parameter("appearance_image_topic", "/camera/dashboard")
     node.declare_parameter("appearance_max_image_age_ms", 250.0)
     node.declare_parameter("appearance_compute_min_interval_ms", 250.0)
@@ -244,6 +252,27 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("absence_confirm_frames", 3)
 
 
+def _read_appearance_request_policy(node: Any) -> str:
+    """Read and validate the configured candidate-request policy."""
+    raw_value = str(
+        node.get_parameter(
+            "appearance_request_policy"
+        ).value
+    )
+
+    try:
+        return AppearanceRequestPolicy(raw_value).value
+    except ValueError as exc:
+        supported = ", ".join(
+            policy.value
+            for policy in AppearanceRequestPolicy
+        )
+        raise ValueError(
+            "Unsupported appearance_request_policy "
+            f"{raw_value!r}; expected one of: {supported}"
+        ) from exc
+
+
 def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
     """Read ROS-facing TIM-MARS parameters after declaration/overrides."""
     return TimMarsRosParams(
@@ -267,6 +296,9 @@ def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
             node.get_parameter("freshness_future_tolerance_s").value
         ),
         appearance_enabled=bool(node.get_parameter("appearance_enabled").value),
+        appearance_request_policy=(
+            _read_appearance_request_policy(node)
+        ),
         appearance_image_topic=str(node.get_parameter("appearance_image_topic").value),
         appearance_max_image_age_ms=float(node.get_parameter("appearance_max_image_age_ms").value),
         appearance_compute_min_interval_ms=max(
