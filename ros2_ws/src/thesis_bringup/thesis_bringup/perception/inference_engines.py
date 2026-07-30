@@ -9,6 +9,9 @@ from typing import Any
 
 import numpy as np
 
+from thesis_bringup.perception.hailo_shared_runtime import (
+    HailoSharedRuntime,
+)
 from thesis_bringup.perception.pipeline_utils import (
     _bbox_to_xywh,
     _normalize_label,
@@ -427,140 +430,89 @@ class HailoGstInferenceEngine:
 
 
 class HailoDirectInferenceEngine:
-    """In-process pyHailoRT backend with persistent configured network."""
+    """Detector-compatible wrapper over one shared Hailo runtime."""
 
     def __init__(
         self,
         hef_path: str,
         infer_timeout_ms: int,
         label_filter: str | None,
+        reid_hef_path: str | None = None,
+        shared_runtime_factory=HailoSharedRuntime,
     ) -> None:
-        from hailo_platform import (
-            HEF,
-            InferVStreams,
-            InputVStreamParams,
-            OutputVStreamParams,
-            VDevice,
-        )
-
-        self.HEF = HEF
-        self.InferVStreams = InferVStreams
-        self.InputVStreamParams = InputVStreamParams
-        self.OutputVStreamParams = OutputVStreamParams
-        self.VDevice = VDevice
-
         self.hef_path = str(hef_path)
-        self.infer_timeout_ms = max(1, int(infer_timeout_ms))
+        self.reid_hef_path = (
+            None
+            if reid_hef_path is None
+            else str(reid_hef_path)
+        )
+        self.infer_timeout_ms = max(
+            1,
+            int(infer_timeout_ms),
+        )
         self.label_filter = label_filter
+
+        self._shared_runtime_factory = (
+            shared_runtime_factory
+        )
 
         self._lock = threading.RLock()
         self._closed = False
-
-        self._vdevice = None
-        self._network_group = None
-        self._hef = None
-        self._infer_ctx = None
-        self._infer_pipeline = None
-        self._activation_ctx = None
+        self._runtime = None
 
         self._input_name = ""
-        self._input_shape: tuple[int, int, int] = (0, 0, 0)
+        self._input_shape: tuple[int, int, int] = (
+            0,
+            0,
+            0,
+        )
         self._output_names: list[str] = []
 
         with self._lock:
             self._open_runtime_locked()
 
+    def _refresh_detector_contract_locked(self) -> None:
+        if self._runtime is None:
+            raise RuntimeError(
+                "shared Hailo runtime is unavailable"
+            )
+
+        self._input_name = (
+            self._runtime.detector_input_name
+        )
+        self._input_shape = (
+            self._runtime.detector_input_shape
+        )
+        self._output_names = list(
+            self._runtime.detector_output_names
+        )
+
     def _open_runtime_locked(self) -> None:
-        hef = self.HEF(self.hef_path)
-        vdevice = self.VDevice()
-        configured_networks = vdevice.configure(hef)
-        if not configured_networks:
-            vdevice.release()
-            raise RuntimeError("no configured Hailo network groups available")
-
-        network_group = configured_networks[0]
-        input_infos = network_group.get_input_vstream_infos()
-        if len(input_infos) != 1:
-            vdevice.release()
-            raise RuntimeError(
-                f"direct backend requires exactly one input vstream (got={len(input_infos)})"
-            )
-
-        input_info = input_infos[0]
-        input_shape = tuple(int(v) for v in tuple(input_info.shape))
-        if len(input_shape) != 3:
-            vdevice.release()
-            raise RuntimeError(
-                f"unexpected input shape for direct backend: {input_shape}"
-            )
-
-        output_infos = network_group.get_output_vstream_infos()
-        output_names = [str(info.name) for info in output_infos]
-
-        input_params = self.InputVStreamParams.make(
-            network_group,
-            timeout_ms=self.infer_timeout_ms,
-            queue_size=1,
-        )
-        output_params = self.OutputVStreamParams.make(
-            network_group,
-            timeout_ms=self.infer_timeout_ms,
-            queue_size=1,
+        runtime = self._shared_runtime_factory(
+            detector_hef_path=self.hef_path,
+            infer_timeout_ms=self.infer_timeout_ms,
+            reid_hef_path=self.reid_hef_path,
         )
 
-        infer_ctx = self.InferVStreams(network_group, input_params, output_params)
-        infer_pipeline = None
-        activation_ctx = None
-
-        try:
-            infer_pipeline = infer_ctx.__enter__()
-            activation_ctx = network_group.activate(network_group.create_params())
-            activation_ctx.__enter__()
-        except Exception:
-            try:
-                infer_ctx.__exit__(None, None, None)
-            except Exception:
-                pass
-            vdevice.release()
-            raise
-
-        self._hef = hef
-        self._vdevice = vdevice
-        self._network_group = network_group
-        self._infer_ctx = infer_ctx
-        self._infer_pipeline = infer_pipeline
-        self._activation_ctx = activation_ctx
-        self._input_name = str(input_info.name)
-        self._input_shape = (input_shape[0], input_shape[1], input_shape[2])
-        self._output_names = output_names
+        self._runtime = runtime
+        self._refresh_detector_contract_locked()
 
     def _close_runtime_locked(self) -> None:
-        if self._activation_ctx is not None:
-            try:
-                self._activation_ctx.__exit__(None, None, None)
-            except Exception:
-                pass
-            self._activation_ctx = None
+        runtime = self._runtime
+        self._runtime = None
 
-        if self._infer_ctx is not None:
+        if runtime is not None:
             try:
-                self._infer_ctx.__exit__(None, None, None)
-            except Exception:
-                pass
-            self._infer_ctx = None
-
-        if self._vdevice is not None:
-            try:
-                self._vdevice.release()
+                runtime.close()
             except Exception:
                 pass
 
-        self._vdevice = None
-        self._network_group = None
-        self._hef = None
-        self._infer_pipeline = None
         self._input_name = ""
-        self._input_shape = (0, 0, 0)
+        self._input_shape = (
+            0,
+            0,
+            0,
+        )
         self._output_names = []
 
     def _decode_class_rows(self, class_id: int, class_rows: Any) -> list[dict[str, Any]]:
@@ -672,8 +624,13 @@ class HailoDirectInferenceEngine:
             batch = np.expand_dims(frame_view, axis=0)
 
             t_infer_start_ns = now_ns()
+            if self._runtime is None:
+                raise RuntimeError(
+                    "shared Hailo runtime is unavailable"
+                )
+
             try:
-                outputs = self._infer_pipeline.infer({self._input_name: batch})
+                outputs = self._runtime.infer_detector(batch)
             except Exception as exc:
                 if "timeout" in str(exc).lower():
                     return None
@@ -697,6 +654,24 @@ class HailoDirectInferenceEngine:
                 },
             }
 
+    def infer_reid(
+        self,
+        batch: np.ndarray,
+    ) -> dict[str, Any]:
+        """Run optional RepVGG inference on the shared VDevice."""
+        with self._lock:
+            if self._closed:
+                raise RuntimeError(
+                    "cannot run ReID on a closed engine"
+                )
+
+            if self._runtime is None:
+                raise RuntimeError(
+                    "shared Hailo runtime is unavailable"
+                )
+
+            return self._runtime.infer_reid(batch)
+
     def close(self) -> None:
         with self._lock:
             if self._closed:
@@ -711,8 +686,17 @@ class HailoDirectInferenceEngine:
 
         with self._lock:
             if self._closed:
-                raise RuntimeError("cannot reload HEF on a closed engine")
+                raise RuntimeError(
+                    "cannot reload HEF on a closed engine"
+                )
 
-            self._close_runtime_locked()
+            if self._runtime is None:
+                raise RuntimeError(
+                    "shared Hailo runtime is unavailable"
+                )
+
+            self._runtime.reload_detector(
+                new_hef_path
+            )
             self.hef_path = new_hef_path
-            self._open_runtime_locked()
+            self._refresh_detector_contract_locked()
