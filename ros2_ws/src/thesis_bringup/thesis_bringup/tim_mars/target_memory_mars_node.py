@@ -11,6 +11,7 @@ parameter wiring, and message conversion.
 
 from __future__ import annotations
 
+import json
 import time
 from typing import Optional
 
@@ -18,6 +19,7 @@ import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import (
+    DurabilityPolicy,
     HistoryPolicy,
     QoSProfile,
     ReliabilityPolicy,
@@ -33,6 +35,13 @@ from thesis_bringup.freshness import (
     FRESHNESS_CONTRACT_VERSION,
 )
 from thesis_bringup.tim_mars.appearance_attachment import AppearanceAttachmentConfig
+from thesis_bringup.tim_mars.appearance_request_transport import (
+    TimAppearanceRequestTransport,
+)
+from thesis_bringup.tim_mars.appearance_ros_transport import (
+    request_to_ros_message,
+    result_from_ros_message,
+)
 from thesis_bringup.tim_mars.crop_quality import CropQualityThresholds
 from thesis_bringup.tim_mars.mars_reid_backend import MarsReIdBackend
 from thesis_bringup.tim_mars.ros_messages import (
@@ -52,6 +61,8 @@ from thesis_bringup.tim_mars.runtime import (
 )
 from thesis_bringup.tim_mars.target_memory import TargetMemoryOutput
 from thesis_msgs.msg import (
+    AppearanceEmbeddingRequest,
+    AppearanceEmbeddingResult,
     TargetState,
     Track2DArray,
 )
@@ -120,11 +131,35 @@ class TargetMemoryMarsNode(Node):
         self._mars_model_path = params.mars_model_path
         self._mars_batch_size = params.mars_batch_size
 
+        self._appearance_async_reid_enabled = (
+            params.appearance_async_reid_enabled
+        )
+        self._appearance_async_reid_request_topic = (
+            params.appearance_async_reid_request_topic
+        )
+        self._appearance_async_reid_result_topic = (
+            params.appearance_async_reid_result_topic
+        )
+        self._appearance_async_reid_queue_capacity = (
+            params.appearance_async_reid_queue_capacity
+        )
+        self._appearance_async_reid_deadline_ms = (
+            params.appearance_async_reid_deadline_ms
+        )
+        self._appearance_async_reid_qos_depth = (
+            params.appearance_async_reid_qos_depth
+        )
+
         self._mars_backend = None
         self._cv_bridge = None
         self._image_sub = None
         self._image_error_warned = False
         self._image_stamp_warned = False
+
+        self._appearance_async_transport = None
+        self._appearance_async_request_pub = None
+        self._appearance_async_result_sub = None
+        self._appearance_async_publish_errors = 0
 
         self._last_mirrored_target_id: Optional[int] = None
 
@@ -180,6 +215,9 @@ class TargetMemoryMarsNode(Node):
                 selected_track_id=params.selected_track_id,
                 auto_select_largest=self._auto_select_largest,
                 image_buffer_size=64,
+                appearance_async_request_crops_enabled=(
+                    self._appearance_async_reid_enabled
+                ),
             )
         )
 
@@ -187,6 +225,7 @@ class TargetMemoryMarsNode(Node):
 
         qos = self._best_effort_qos()
         self._create_ros_interfaces(qos)
+        self._setup_async_reid_transport()
         self._setup_appearance_backend(qos)
 
         self._log_node_ready()
@@ -201,7 +240,9 @@ class TargetMemoryMarsNode(Node):
             f"appearance_enabled={self._appearance_enabled}, "
             f"appearance_request_policy="
             f"{self._appearance_request_policy}, "
-            f"appearance_image_topic={self._appearance_image_topic}"
+            f"appearance_image_topic={self._appearance_image_topic}, "
+            f"appearance_async_reid_enabled="
+            f"{self._appearance_async_reid_enabled}"
         )
 
         if self._runtime.pending_select_id is not None:
@@ -288,6 +329,274 @@ class TargetMemoryMarsNode(Node):
                 qos,
             )
 
+    def _setup_async_reid_transport(self) -> None:
+        """Create optional TIM-side request and result ROS interfaces."""
+        if not self._appearance_async_reid_enabled:
+            return
+
+        if not self._appearance_enabled:
+            raise RuntimeError(
+                "asynchronous ReID transport requires "
+                "appearance_enabled"
+            )
+
+        qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=self._appearance_async_reid_qos_depth,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+        )
+
+        self._appearance_async_transport = (
+            TimAppearanceRequestTransport(
+                capacity=(
+                    self
+                    ._appearance_async_reid_queue_capacity
+                ),
+                deadline_ms=(
+                    self
+                    ._appearance_async_reid_deadline_ms
+                ),
+            )
+        )
+
+        self._appearance_async_request_pub = (
+            self.create_publisher(
+                AppearanceEmbeddingRequest,
+                self
+                ._appearance_async_reid_request_topic,
+                qos,
+            )
+        )
+        self._appearance_async_result_sub = (
+            self.create_subscription(
+                AppearanceEmbeddingResult,
+                self
+                ._appearance_async_reid_result_topic,
+                self._on_async_reid_result,
+                qos,
+            )
+        )
+
+        self.get_logger().info(
+            "Enabled TIM causal RepVGG transport "
+            f"(request_topic="
+            f"{self._appearance_async_reid_request_topic}, "
+            f"result_topic="
+            f"{self._appearance_async_reid_result_topic}, "
+            f"capacity="
+            f"{self._appearance_async_reid_queue_capacity}, "
+            f"deadline_ms="
+            f"{self._appearance_async_reid_deadline_ms:.1f}, "
+            f"qos_depth="
+            f"{self._appearance_async_reid_qos_depth})"
+        )
+
+    def _cancel_async_reid(
+        self,
+        reason: str,
+    ) -> tuple[int, ...]:
+        transport = self._appearance_async_transport
+
+        if transport is None:
+            return ()
+
+        cancelled = transport.cancel_all(
+            reason=str(reason)
+        )
+
+        if cancelled:
+            self.get_logger().info(
+                "Cancelled TIM causal ReID work "
+                f"(reason={reason}, "
+                f"request_ids={cancelled})"
+            )
+
+        return cancelled
+
+    def _publish_async_reid_requests(
+        self,
+        result: TimMarsRuntimeResult,
+    ) -> None:
+        transport = self._appearance_async_transport
+        publisher = self._appearance_async_request_pub
+
+        if transport is None or publisher is None:
+            return
+
+        if not result.appearance_request_crops:
+            return
+
+        batch = transport.stage(
+            result.appearance_request_crops,
+            now_ns=time.monotonic_ns(),
+        )
+
+        if batch.dropped_request_ids:
+            self.get_logger().warning(
+                "TIM causal ReID ledger dropped requests "
+                f"{batch.dropped_request_ids}"
+            )
+
+        if batch.expired_request_ids:
+            self.get_logger().warning(
+                "TIM causal ReID requests expired "
+                f"before publication: "
+                f"{batch.expired_request_ids}"
+            )
+
+        for request in batch.requests:
+            try:
+                publisher.publish(
+                    request_to_ros_message(request)
+                )
+            except Exception as exc:
+                self._appearance_async_publish_errors += 1
+                self.get_logger().error(
+                    "TIM causal ReID publication failed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+                self._cancel_async_reid(
+                    "request_publish_failure"
+                )
+                break
+
+    def _on_async_reid_result(
+        self,
+        message: AppearanceEmbeddingResult,
+    ) -> None:
+        transport = self._appearance_async_transport
+
+        if transport is None:
+            return
+
+        now_ns = time.monotonic_ns()
+        frame_generation = int(
+            self._runtime
+            .appearance_state
+            .frame_generation
+        )
+        track_generations = dict(
+            self._runtime
+            .appearance_state
+            .track_generation_by_id
+        )
+
+        try:
+            result = result_from_ros_message(
+                message
+            )
+        except Exception as exc:
+            decision = (
+                transport.reject_malformed_result(
+                    request_id=int(
+                        message.request_id
+                    ),
+                    now_ns=now_ns,
+                    reason=(
+                        f"{type(exc).__name__}: "
+                        f"{exc}"
+                    ),
+                    current_frame_generation=(
+                        frame_generation
+                    ),
+                    current_track_generations=(
+                        track_generations
+                    ),
+                )
+            )
+
+            self.get_logger().warning(
+                "Rejected malformed RepVGG result "
+                f"id={int(message.request_id)}: "
+                f"{type(exc).__name__}: {exc}"
+            )
+
+            if decision is not None:
+                self.get_logger().warning(
+                    "Resolved malformed RepVGG result "
+                    f"as {decision.reason}"
+                )
+            return
+
+        decision = transport.complete(
+            result,
+            now_ns=now_ns,
+            current_frame_generation=(
+                frame_generation
+            ),
+            current_track_generations=(
+                track_generations
+            ),
+        )
+
+        if not decision.accepted:
+            self.get_logger().warning(
+                "Rejected causal RepVGG result "
+                f"id={decision.request_id}, "
+                f"track={decision.track_id}, "
+                f"reason={decision.reason}"
+            )
+
+    def _augment_status_with_async_reid(
+        self,
+        status_json: str,
+    ) -> str:
+        transport = self._appearance_async_transport
+
+        if transport is None:
+            return status_json
+
+        diagnostics = transport.diagnostics()
+        queue = diagnostics.queue
+
+        payload = json.loads(status_json)
+        payload["appearance_async_reid"] = {
+            "enabled": True,
+            "constructed": diagnostics.constructed,
+            "published": diagnostics.published,
+            "cancelled": diagnostics.cancelled,
+            "malformed_results": (
+                diagnostics.malformed_results
+            ),
+            "publish_errors": (
+                self._appearance_async_publish_errors
+            ),
+            "queued": queue.queued,
+            "in_flight": queue.in_flight,
+            "maximum_queued": queue.maximum_queued,
+            "submitted": queue.submitted,
+            "dequeued": queue.dequeued,
+            "accepted_results": (
+                queue.accepted_results
+            ),
+            "rejected_submissions": (
+                queue.rejected_submissions
+            ),
+            "rejected_results": (
+                queue.rejected_results
+            ),
+            "drop_reasons": queue.drop_reasons,
+            "result_reasons": queue.result_reasons,
+            "last_result_reason": (
+                diagnostics.last_result_reason
+            ),
+            "last_accepted_request_id": (
+                diagnostics
+                .last_accepted_request_id
+            ),
+            "last_accepted_track_id": (
+                diagnostics
+                .last_accepted_track_id
+            ),
+        }
+
+        return json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
     def _setup_appearance_backend(self, qos: QoSProfile) -> None:
         if not self._appearance_enabled:
             return
@@ -353,6 +662,9 @@ class TargetMemoryMarsNode(Node):
         ):
             return
 
+        self._cancel_async_reid(
+            "mirrored_target_selection"
+        )
         self._last_mirrored_target_id = target_id
         self._runtime.request_selection(target_id)
         self.get_logger().info(
@@ -362,12 +674,18 @@ class TargetMemoryMarsNode(Node):
     def _on_select(self, msg: UInt32) -> None:
         requested_id = int(msg.data)
         if requested_id <= 0:
+            self._cancel_async_reid(
+                "operator_select_clear"
+            )
             out = self._runtime.clear()
             self._publish_target_reset()
             self.get_logger().info("TIM cleared by select id <= 0")
             self._publish_status_only(out)
             return
 
+        self._cancel_async_reid(
+            "operator_selection"
+        )
         out = self._runtime.clear()
         self._publish_target_reset()
         self._publish_status_only(out)
@@ -377,6 +695,9 @@ class TargetMemoryMarsNode(Node):
         )
 
     def _on_clear(self, _: Empty) -> None:
+        self._cancel_async_reid(
+            "operator_clear"
+        )
         out = self._runtime.clear()
         self._publish_target_reset()
         self.get_logger().info("TIM cleared")
@@ -408,8 +729,35 @@ class TargetMemoryMarsNode(Node):
 
         pending_before = self._runtime.pending_select_id
         state_before = self._runtime.memory.state
+        frame_generation_before = int(
+            self._runtime
+            .appearance_state
+            .frame_generation
+        )
+
         result = self._runtime.process_tracks(msg)
         out = result.output
+
+        frame_generation_after = int(
+            self._runtime
+            .appearance_state
+            .frame_generation
+        )
+
+        if (
+            self._appearance_async_transport
+            is not None
+            and frame_generation_before > 0
+            and frame_generation_after
+            != frame_generation_before
+        ):
+            self._cancel_async_reid(
+                "source_frame_generation_change"
+            )
+
+        self._publish_async_reid_requests(
+            result
+        )
 
         if (
             pending_before is not None
@@ -585,7 +933,17 @@ class TargetMemoryMarsNode(Node):
                 self._freshness_max_output_age_s * 1000.0
             ),
         )
+        msg.data = self._augment_status_with_async_reid(
+            msg.data
+        )
         self._status_pub.publish(msg)
+
+    def destroy_node(self):
+        """Cancel causal transport before destroying ROS interfaces."""
+        self._cancel_async_reid(
+            "node_shutdown"
+        )
+        return super().destroy_node()
 
 
 def main(args=None) -> None:

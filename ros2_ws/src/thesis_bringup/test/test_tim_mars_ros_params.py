@@ -31,10 +31,46 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 102
+    assert len(node.values) == 108
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
+    assert (
+        node.values[
+            "appearance_async_reid_enabled"
+        ]
+        is False
+    )
+    assert (
+        node.values[
+            "appearance_async_reid_request_topic"
+        ]
+        == "/appearance/reid/request"
+    )
+    assert (
+        node.values[
+            "appearance_async_reid_result_topic"
+        ]
+        == "/appearance/reid/result"
+    )
+    assert (
+        node.values[
+            "appearance_async_reid_queue_capacity"
+        ]
+        == 8
+    )
+    assert (
+        node.values[
+            "appearance_async_reid_deadline_ms"
+        ]
+        == 500.0
+    )
+    assert (
+        node.values[
+            "appearance_async_reid_qos_depth"
+        ]
+        == 1
+    )
     assert (
         node.values["appearance_request_policy"]
         == "all_candidates"
@@ -122,6 +158,24 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values["image_height"] = 720.0
     node.values["appearance_enabled"] = True
     node.values[
+        "appearance_async_reid_enabled"
+    ] = True
+    node.values[
+        "appearance_async_reid_request_topic"
+    ] = "/test/reid/request"
+    node.values[
+        "appearance_async_reid_result_topic"
+    ] = "/test/reid/result"
+    node.values[
+        "appearance_async_reid_queue_capacity"
+    ] = 6
+    node.values[
+        "appearance_async_reid_deadline_ms"
+    ] = 650.0
+    node.values[
+        "appearance_async_reid_qos_depth"
+    ] = 2
+    node.values[
         "appearance_request_policy"
     ] = "geometry_winner"
     node.values["freshness_max_output_age_s"] = 0.75
@@ -173,6 +227,24 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     assert params.image_width == 1280.0
     assert params.image_height == 720.0
     assert params.appearance_enabled is True
+    assert params.appearance_async_reid_enabled is True
+    assert (
+        params.appearance_async_reid_request_topic
+        == "/test/reid/request"
+    )
+    assert (
+        params.appearance_async_reid_result_topic
+        == "/test/reid/result"
+    )
+    assert (
+        params.appearance_async_reid_queue_capacity
+        == 6
+    )
+    assert (
+        params.appearance_async_reid_deadline_ms
+        == 650.0
+    )
+    assert params.appearance_async_reid_qos_depth == 2
     assert (
         params.appearance_request_policy
         == "geometry_winner"

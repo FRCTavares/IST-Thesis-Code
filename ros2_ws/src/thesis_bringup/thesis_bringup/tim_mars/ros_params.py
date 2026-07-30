@@ -52,6 +52,13 @@ class TimMarsRosParams:
     appearance_cache_max_centre_distance_norm: float
     appearance_cache_min_scale_ratio: float
 
+    appearance_async_reid_enabled: bool
+    appearance_async_reid_request_topic: str
+    appearance_async_reid_result_topic: str
+    appearance_async_reid_queue_capacity: int
+    appearance_async_reid_deadline_ms: float
+    appearance_async_reid_qos_depth: int
+
     appearance_crop_min_width_px: float
     appearance_crop_min_height_px: float
     appearance_crop_max_clipping_fraction: float
@@ -147,6 +154,32 @@ def declare_tim_mars_parameters(node: Any) -> None:
     )
 
     # Appearance crop-quality controls, measured in appearance-image pixels.
+    # Optional cross-process RepVGG transport.
+    node.declare_parameter(
+        "appearance_async_reid_enabled",
+        False,
+    )
+    node.declare_parameter(
+        "appearance_async_reid_request_topic",
+        "/appearance/reid/request",
+    )
+    node.declare_parameter(
+        "appearance_async_reid_result_topic",
+        "/appearance/reid/result",
+    )
+    node.declare_parameter(
+        "appearance_async_reid_queue_capacity",
+        8,
+    )
+    node.declare_parameter(
+        "appearance_async_reid_deadline_ms",
+        500.0,
+    )
+    node.declare_parameter(
+        "appearance_async_reid_qos_depth",
+        1,
+    )
+
     node.declare_parameter("appearance_crop_min_width_px", 12.0)
     node.declare_parameter("appearance_crop_min_height_px", 24.0)
     node.declare_parameter(
@@ -326,6 +359,45 @@ def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
                         "appearance_cache_min_scale_ratio"
                     ).value
                 ),
+            ),
+        ),
+        appearance_async_reid_enabled=bool(
+            node.get_parameter(
+                "appearance_async_reid_enabled"
+            ).value
+        ),
+        appearance_async_reid_request_topic=str(
+            node.get_parameter(
+                "appearance_async_reid_request_topic"
+            ).value
+        ),
+        appearance_async_reid_result_topic=str(
+            node.get_parameter(
+                "appearance_async_reid_result_topic"
+            ).value
+        ),
+        appearance_async_reid_queue_capacity=max(
+            1,
+            int(
+                node.get_parameter(
+                    "appearance_async_reid_queue_capacity"
+                ).value
+            ),
+        ),
+        appearance_async_reid_deadline_ms=max(
+            1.0,
+            float(
+                node.get_parameter(
+                    "appearance_async_reid_deadline_ms"
+                ).value
+            ),
+        ),
+        appearance_async_reid_qos_depth=max(
+            1,
+            int(
+                node.get_parameter(
+                    "appearance_async_reid_qos_depth"
+                ).value
             ),
         ),
         appearance_crop_min_width_px=max(
