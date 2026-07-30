@@ -15,6 +15,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Track2DArray.msg"
   "msg/TargetState.msg"
   "msg/Timing.msg"
+  "msg/AppearanceEmbeddingRequest.msg"
+  "msg/AppearanceEmbeddingResult.msg"
   DEPENDENCIES std_msgs builtin_interfaces
 )
 
