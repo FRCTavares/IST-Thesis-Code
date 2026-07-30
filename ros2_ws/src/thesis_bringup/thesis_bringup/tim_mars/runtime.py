@@ -28,6 +28,10 @@ from thesis_bringup.tim_mars.appearance_request_policy import (
     AppearanceRequestPolicy,
     select_appearance_request_candidates,
 )
+from thesis_bringup.tim_mars.appearance_request_producer import (
+    AppearanceRequestCrop,
+    build_appearance_request_crops,
+)
 from thesis_bringup.tim_mars.crop_quality import (
     AppearanceCropQuality,
 )
@@ -56,6 +60,7 @@ class TimMarsRuntimeConfig:
     selected_track_id: int = 0
     auto_select_largest: bool = False
     image_buffer_size: int = 64
+    appearance_async_request_crops_enabled: bool = False
 
 
 @dataclass(frozen=True)
@@ -107,6 +112,10 @@ class TimMarsRuntimeResult:
     output: TargetMemoryOutput
     candidates: tuple[CandidateTrack, ...]
     diagnostics: TimMarsRuntimeDiagnostics
+    appearance_request_crops: tuple[
+        AppearanceRequestCrop,
+        ...,
+    ] = ()
 
 
 @dataclass
@@ -316,6 +325,57 @@ class TimMarsRuntime:
             appearance_request=appearance_request,
         )
 
+        appearance_request_crops: tuple[
+            AppearanceRequestCrop,
+            ...,
+        ] = ()
+
+        if (
+            self.config.appearance_async_request_crops_enabled
+            and selected_image is not None
+            and track_timestamp_ns is not None
+            and track_frame_id > 0
+            and self.appearance_state.frame_generation > 0
+            and appearance_diagnostics.backend_calls > 0
+        ):
+            appearance_request_crops = (
+                build_appearance_request_crops(
+                    candidates=candidates,
+                    requested_candidate_indices=(
+                        appearance_request.requested_indices
+                    ),
+                    crop_quality_by_track_id=(
+                        appearance_diagnostics
+                        .crop_quality_by_track_id
+                    ),
+                    image_bgr=selected_image.image_bgr,
+                    candidate_frame_width=(
+                        self.config.image_width
+                    ),
+                    candidate_frame_height=(
+                        self.config.image_height
+                    ),
+                    source_frame_id=track_frame_id,
+                    track_timestamp_ns=(
+                        track_timestamp_ns
+                    ),
+                    source_image_timestamp_ns=(
+                        selected_image.stamp_ns
+                    ),
+                    source_image_seq=(
+                        selected_image.stamp_ns
+                    ),
+                    frame_generation=(
+                        self.appearance_state
+                        .frame_generation
+                    ),
+                    track_generation_by_id=(
+                        self.appearance_state
+                        .track_generation_by_id
+                    ),
+                )
+            )
+
         selected_candidate = None
         if self.pending_select_id is not None:
             selected_candidate = self.find_candidate(
@@ -459,6 +519,9 @@ class TimMarsRuntime:
             output=output,
             candidates=tuple(candidates),
             diagnostics=diagnostics,
+            appearance_request_crops=(
+                appearance_request_crops
+            ),
         )
 
     def _enrich_positive_memory_bootstrap_event(
