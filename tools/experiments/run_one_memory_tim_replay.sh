@@ -187,6 +187,13 @@ if ! [[ "$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE" =~ ^[0-9]+([.][0-9]*
   exit 2
 fi
 
+# rclpy infers a parameter override without a decimal point as INTEGER.
+# The ROS parameter is declared as DOUBLE, so preserve numeric meaning while
+# ensuring values such as "0" and "250" are forwarded as "0.0" and "250.0".
+if [[ "$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE" != *.* ]]; then
+  TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE="${TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE}.0"
+fi
+
 cleanup_ros() {
   echo "[info] cleaning up background ROS processes"
   local patterns="ros2 bag play|ros2 bag record|target_memory_mars_node|publish_selected_track_target.py|publish_annotated_track_target.py"

@@ -1,6 +1,8 @@
 """Regression tests for the live TIM-MARS appearance launcher contract."""
 
+import os
 import re
+import subprocess
 from pathlib import Path
 
 
@@ -147,3 +149,57 @@ def test_memory_replay_forwards_issue_44_request_controls():
 
     for token in required_tokens:
         assert token in wrapper, token
+
+
+def test_memory_replay_normalizes_zero_interval_to_double(tmp_path):
+    """An integer-looking zero override must reach ROS as a double literal."""
+    wrapper = (
+        REPO_ROOT
+        / 'tools'
+        / 'experiments'
+        / 'run_one_memory_tim_replay.sh'
+    )
+    config = (
+        REPO_ROOT
+        / 'ros2_ws'
+        / 'src'
+        / 'thesis_bringup'
+        / 'config'
+        / 'tim_mars_canonical.yaml'
+    )
+
+    environment = os.environ.copy()
+    environment.update(
+        {
+            'TIM_MARS_CONFIG': str(config),
+            'TIM_APPEARANCE_REQUEST_POLICY': 'all_candidates',
+            'TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS': '0',
+        }
+    )
+
+    result = subprocess.run(
+        [
+            'bash',
+            str(wrapper),
+            str(tmp_path / 'absent_bag'),
+            '1',
+            'p044_zero_interval_probe',
+            str(tmp_path / 'absent_annotations.csv'),
+            '1.0',
+        ],
+        cwd=REPO_ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert (
+        'TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS=0.0'
+        in result.stdout
+    )
+    assert 'bag not found' in result.stderr
+    assert 'InvalidParameterTypeException' not in (
+        result.stdout + result.stderr
+    )
