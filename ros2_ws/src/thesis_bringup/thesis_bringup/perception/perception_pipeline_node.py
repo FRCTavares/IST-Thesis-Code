@@ -95,6 +95,32 @@ class PerceptionPipelineNode(Node):
         self.declare_parameter("hailo_queue_max_buffers", 6)
         self.declare_parameter("hailo_use_videoconvert", True)
 
+        default_reid_hef = (
+            f"{thesis_root}/models/reid/"
+            "repvgg_a0_person_reid_512.hef"
+        )
+        self.declare_parameter("reid_enabled", False)
+        self.declare_parameter(
+            "reid_hef_path",
+            default_reid_hef,
+        )
+        self.declare_parameter(
+            "reid_request_topic",
+            "/appearance/reid/request",
+        )
+        self.declare_parameter(
+            "reid_result_topic",
+            "/appearance/reid/result",
+        )
+        self.declare_parameter(
+            "reid_queue_capacity",
+            4,
+        )
+        self.declare_parameter(
+            "reid_qos_depth",
+            1,
+        )
+
         self.image_topic = str(self.get_parameter("image_topic").value)
         self.img_w = int(self.get_parameter("img_w").value)
         self.img_h = int(self.get_parameter("img_h").value)
@@ -149,6 +175,43 @@ class PerceptionPipelineNode(Node):
         )
         self.hailo_use_videoconvert = bool(self.get_parameter("hailo_use_videoconvert").value)
 
+        self.reid_enabled = bool(
+            self.get_parameter(
+                "reid_enabled"
+            ).value
+        )
+        self.reid_hef_path = str(
+            self.get_parameter(
+                "reid_hef_path"
+            ).value
+        ).strip()
+        self.reid_request_topic = str(
+            self.get_parameter(
+                "reid_request_topic"
+            ).value
+        ).strip()
+        self.reid_result_topic = str(
+            self.get_parameter(
+                "reid_result_topic"
+            ).value
+        ).strip()
+        self.reid_queue_capacity = max(
+            1,
+            int(
+                self.get_parameter(
+                    "reid_queue_capacity"
+                ).value
+            ),
+        )
+        self.reid_qos_depth = max(
+            1,
+            int(
+                self.get_parameter(
+                    "reid_qos_depth"
+                ).value
+            ),
+        )
+
         self.label_filter = _normalize_label(self.label)
 
         self._engine_lock = threading.RLock()
@@ -183,6 +246,12 @@ class PerceptionPipelineNode(Node):
             )
 
         self.engine = self._build_engine()
+
+        self._reid_executor = None
+        self._reid_request_sub = None
+        self._reid_result_pub = None
+        self._reid_malformed_requests = 0
+        self._setup_reid_service()
 
         self.seq_counter = 0
         self.frame_counter = 0
@@ -276,11 +345,19 @@ class PerceptionPipelineNode(Node):
             label_filter=self.label_filter,
         )
 
-    def _make_hailo_direct_engine(self, hef_path: str) -> HailoDirectInferenceEngine:
+    def _make_hailo_direct_engine(
+        self,
+        hef_path: str,
+    ) -> HailoDirectInferenceEngine:
         return HailoDirectInferenceEngine(
             hef_path=hef_path,
             infer_timeout_ms=self.infer_timeout_ms,
             label_filter=self.label_filter,
+            reid_hef_path=(
+                self.reid_hef_path
+                if self.reid_enabled
+                else None
+            ),
         )
 
     def _switch_hailo_hef(self, new_hef_path: str) -> None:
@@ -368,6 +445,27 @@ class PerceptionPipelineNode(Node):
         return SetParametersResult(successful=True, reason="model switch applied")
 
     def _build_engine(self):
+        if self.reid_enabled:
+            if not self._backend_wants_direct(
+                self.inference_backend
+            ):
+                raise RuntimeError(
+                    "ReID service requires the hailo_direct backend"
+                )
+
+            if not self.reid_hef_path:
+                raise RuntimeError(
+                    "reid_hef_path cannot be empty when ReID is enabled"
+                )
+
+            if not os.path.isfile(
+                self.reid_hef_path
+            ):
+                raise RuntimeError(
+                    "ReID HEF file not found: "
+                    f"{self.reid_hef_path}"
+                )
+
         if self.inference_backend in ("stub", "none"):
             self.active_backend = "stub"
             self.get_logger().warning("perception backend set to stub (no real inference)")
@@ -406,6 +504,226 @@ class PerceptionPipelineNode(Node):
                 f"failed to initialize Hailo backend ({exc}); using stub fallback"
             )
             return StubInferenceEngine()
+
+    def _run_reid_inference(
+        self,
+        batch,
+    ):
+        from thesis_bringup.tim_mars.repvgg_reid_adapter import (
+            REPVGG_OUTPUT_NAME,
+        )
+
+        with self._engine_lock:
+            engine = self.engine
+
+            if not isinstance(
+                engine,
+                HailoDirectInferenceEngine,
+            ):
+                raise RuntimeError(
+                    "ReID inference requires HailoDirectInferenceEngine"
+                )
+
+            self._engine_active_calls += 1
+
+        try:
+            outputs = engine.infer_reid(batch)
+        finally:
+            with self._engine_lock:
+                self._engine_active_calls = max(
+                    0,
+                    self._engine_active_calls - 1,
+                )
+
+                if self._engine_active_calls == 0:
+                    self._engine_cv.notify_all()
+
+        if REPVGG_OUTPUT_NAME not in outputs:
+            raise RuntimeError(
+                "RepVGG output is absent: "
+                f"{REPVGG_OUTPUT_NAME}"
+            )
+
+        return outputs[REPVGG_OUTPUT_NAME]
+
+    def _publish_malformed_reid_failure(
+        self,
+        message,
+        error: Exception,
+    ) -> None:
+        from thesis_bringup.tim_mars.appearance_async import (
+            AppearanceEmbeddingResult,
+        )
+        from thesis_bringup.tim_mars.appearance_ros_transport import (
+            result_to_ros_message,
+        )
+
+        try:
+            request_id = int(message.request_id)
+            backend_name = str(
+                message.backend_name
+            ).strip()
+            embedding_space = str(
+                message.embedding_space
+            ).strip()
+            dimension = int(
+                message.backend_dimension
+            )
+
+            if (
+                request_id <= 0
+                or not backend_name
+                or not embedding_space
+                or dimension <= 0
+            ):
+                return
+
+            timestamp_ns = max(
+                1,
+                time.monotonic_ns(),
+            )
+            result = AppearanceEmbeddingResult(
+                request_id=request_id,
+                backend_name=backend_name,
+                embedding_space=embedding_space,
+                dimension=dimension,
+                started_ns=timestamp_ns,
+                completed_ns=timestamp_ns,
+                embedding=None,
+                error=(
+                    "malformed_request: "
+                    f"{type(error).__name__}: {error}"
+                ),
+            )
+
+            if self._reid_result_pub is not None:
+                self._reid_result_pub.publish(
+                    result_to_ros_message(result)
+                )
+        except Exception:
+            return
+
+    def _on_reid_request(
+        self,
+        message,
+    ) -> None:
+        from thesis_bringup.tim_mars.appearance_ros_transport import (
+            request_from_ros_message,
+        )
+
+        executor = self._reid_executor
+
+        if executor is None:
+            self._publish_malformed_reid_failure(
+                message,
+                RuntimeError(
+                    "ReID executor is unavailable"
+                ),
+            )
+            return
+
+        try:
+            request = request_from_ros_message(
+                message
+            )
+        except Exception as exc:
+            self._reid_malformed_requests += 1
+            self.get_logger().warning(
+                "Rejected malformed ReID request: "
+                f"{type(exc).__name__}: {exc}"
+            )
+            self._publish_malformed_reid_failure(
+                message,
+                exc,
+            )
+            return
+
+        decision = executor.submit(request)
+
+        if not decision.accepted:
+            self.get_logger().warning(
+                "Rejected ReID request "
+                f"id={request.request_id}, "
+                f"reason={decision.reason}"
+            )
+
+    def _setup_reid_service(self) -> None:
+        if not self.reid_enabled:
+            return
+
+        from rclpy.qos import DurabilityPolicy
+        from thesis_bringup.perception.reid_request_executor import (
+            BoundedReidRequestExecutor,
+        )
+        from thesis_bringup.tim_mars.appearance_ros_transport import (
+            result_to_ros_message,
+        )
+        from thesis_bringup.tim_mars.appearance_worker import (
+            make_deterministic_repvgg_worker,
+        )
+        from thesis_msgs.msg import (
+            AppearanceEmbeddingRequest,
+            AppearanceEmbeddingResult,
+        )
+
+        if not isinstance(
+            self.engine,
+            HailoDirectInferenceEngine,
+        ):
+            raise RuntimeError(
+                "ReID service requires Hailo direct inference"
+            )
+
+        qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=self.reid_qos_depth,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+        )
+
+        self._reid_result_pub = self.create_publisher(
+            AppearanceEmbeddingResult,
+            self.reid_result_topic,
+            qos,
+        )
+
+        def publish_result(result) -> None:
+            publisher = self._reid_result_pub
+
+            if publisher is None:
+                return
+
+            publisher.publish(
+                result_to_ros_message(result)
+            )
+
+        worker = make_deterministic_repvgg_worker(
+            infer=self._run_reid_inference,
+        )
+
+        self._reid_executor = (
+            BoundedReidRequestExecutor(
+                worker=worker,
+                result_sink=publish_result,
+                capacity=self.reid_queue_capacity,
+            )
+        )
+
+        self._reid_request_sub = self.create_subscription(
+            AppearanceEmbeddingRequest,
+            self.reid_request_topic,
+            self._on_reid_request,
+            qos,
+        )
+
+        self.get_logger().info(
+            "Enabled bounded RepVGG ReID service "
+            f"(hef={self.reid_hef_path}, "
+            f"request_topic={self.reid_request_topic}, "
+            f"result_topic={self.reid_result_topic}, "
+            f"capacity={self.reid_queue_capacity}, "
+            f"qos_depth={self.reid_qos_depth})"
+        )
 
     def _build_image_sub_qos(self) -> QoSProfile:
         qos = QoSProfile(
@@ -871,6 +1189,19 @@ class PerceptionPipelineNode(Node):
         self._enqueue_raw_frame(raw_frame)
 
     def destroy_node(self):
+        executor = self._reid_executor
+        self._reid_executor = None
+
+        if executor is not None:
+            stopped = executor.close(
+                timeout_s=5.0
+            )
+
+            if not stopped:
+                self.get_logger().error(
+                    "ReID worker did not stop before shutdown timeout"
+                )
+
         with self._worker_cv:
             self._worker_stop = True
             self._worker_cv.notify_all()
