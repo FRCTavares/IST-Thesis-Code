@@ -120,6 +120,14 @@ class PerceptionPipelineNode(Node):
             "reid_qos_depth",
             1,
         )
+        self.declare_parameter(
+            "reid_status_topic",
+            "/perception/reid/status",
+        )
+        self.declare_parameter(
+            "reid_status_period_s",
+            0.5,
+        )
 
         self.image_topic = str(self.get_parameter("image_topic").value)
         self.img_w = int(self.get_parameter("img_w").value)
@@ -211,6 +219,24 @@ class PerceptionPipelineNode(Node):
                 ).value
             ),
         )
+        self.reid_status_topic = str(
+            self.get_parameter(
+                "reid_status_topic"
+            ).value
+        ).strip()
+        self.reid_status_period_s = max(
+            0.05,
+            float(
+                self.get_parameter(
+                    "reid_status_period_s"
+                ).value
+            ),
+        )
+
+        if not self.reid_status_topic:
+            raise RuntimeError(
+                "reid_status_topic cannot be empty"
+            )
 
         self.label_filter = _normalize_label(self.label)
 
@@ -251,7 +277,11 @@ class PerceptionPipelineNode(Node):
         self._reid_request_sub = None
         self._reid_result_pub = None
         self._reid_malformed_requests = 0
+        self._reid_status_pub = None
+        self._reid_status_timer = None
+
         self._setup_reid_service()
+        self._setup_reid_status_publisher()
 
         self.seq_counter = 0
         self.frame_counter = 0
@@ -724,6 +754,137 @@ class PerceptionPipelineNode(Node):
             f"capacity={self.reid_queue_capacity}, "
             f"qos_depth={self.reid_qos_depth})"
         )
+
+    def _setup_reid_status_publisher(self) -> None:
+        """Publish periodic bounded-executor diagnostics for evidence."""
+        from std_msgs.msg import String
+
+        qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+        )
+
+        self._reid_status_pub = self.create_publisher(
+            String,
+            self.reid_status_topic,
+            qos,
+        )
+        self._reid_status_timer = self.create_timer(
+            self.reid_status_period_s,
+            self._publish_reid_status,
+        )
+
+        self.get_logger().info(
+            "Enabled ReID executor status publication "
+            f"(topic={self.reid_status_topic}, "
+            f"period_s={self.reid_status_period_s:.3f})"
+        )
+
+    def _reid_status_payload(self) -> dict:
+        """Build one evidence-facing ReID executor status snapshot."""
+        executor = self._reid_executor
+
+        if executor is None:
+            executor_payload = {
+                "accepting": False,
+                "queued": 0,
+                "in_flight_request_id": None,
+                "maximum_queued": 0,
+                "submitted": 0,
+                "executed": 0,
+                "succeeded": 0,
+                "failed": 0,
+                "rejected": 0,
+                "emitted_results": 0,
+                "reasons": {},
+            }
+        else:
+            diagnostics = executor.diagnostics()
+            executor_payload = {
+                "accepting": diagnostics.accepting,
+                "queued": diagnostics.queued,
+                "in_flight_request_id": (
+                    diagnostics.in_flight_request_id
+                ),
+                "maximum_queued": (
+                    diagnostics.maximum_queued
+                ),
+                "submitted": diagnostics.submitted,
+                "executed": diagnostics.executed,
+                "succeeded": diagnostics.succeeded,
+                "failed": diagnostics.failed,
+                "rejected": diagnostics.rejected,
+                "emitted_results": (
+                    diagnostics.emitted_results
+                ),
+                "reasons": diagnostics.reasons,
+            }
+
+        with self._engine_lock:
+            engine_active_calls = int(
+                self._engine_active_calls
+            )
+
+        return {
+            "schema": (
+                "perception_reid_executor_status_v1"
+            ),
+            "timestamp_ns": time.monotonic_ns(),
+            "enabled": bool(self.reid_enabled),
+            "active_backend": str(
+                self.active_backend
+            ),
+            "reid_hef_path": str(
+                self.reid_hef_path
+            ),
+            "request_topic": str(
+                self.reid_request_topic
+            ),
+            "result_topic": str(
+                self.reid_result_topic
+            ),
+            "queue_capacity": int(
+                self.reid_queue_capacity
+            ),
+            "qos_depth": int(
+                self.reid_qos_depth
+            ),
+            "malformed_requests": int(
+                self._reid_malformed_requests
+            ),
+            "engine_active_calls": (
+                engine_active_calls
+            ),
+            "executor": executor_payload,
+        }
+
+    def _publish_reid_status(self) -> None:
+        """Publish one compact JSON status message."""
+        import json
+
+        from std_msgs.msg import String
+
+        publisher = self._reid_status_pub
+
+        if publisher is None:
+            return
+
+        message = String()
+        message.data = json.dumps(
+            self._reid_status_payload(),
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+        try:
+            publisher.publish(message)
+        except Exception as exc:
+            if rclpy.ok():
+                self.get_logger().warning(
+                    "ReID status publication failed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
 
     def _build_image_sub_qos(self) -> QoSProfile:
         qos = QoSProfile(
