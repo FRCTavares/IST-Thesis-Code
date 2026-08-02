@@ -1,0 +1,98 @@
+{
+  "completed_ns": 718809044861647,
+  "condition": "reference",
+  "counts": {
+    "failed_results": 0,
+    "reid_status": 366,
+    "requests": 0,
+    "results": 0,
+    "successful_results": 0,
+    "tim_status": 949,
+    "timing": 337
+  },
+  "detector": {
+    "container_queue_ms": {
+      "count": 337,
+      "maximum": 3.431199073791504,
+      "mean": 0.4446825304618575,
+      "minimum": 0.3629299998283386,
+      "p50": 0.4113749861717224,
+      "p95": 0.4813655912876128,
+      "p99": 1.4689163017272937
+    },
+    "e2e_det_ms": {
+      "count": 337,
+      "maximum": 25.061344146728516,
+      "mean": 8.316236338912557,
+      "minimum": 7.178068161010742,
+      "p50": 8.083900451660156,
+      "p95": 9.159454345703123,
+      "p99": 14.204516754150388
+    },
+    "infer_ms": {
+      "count": 337,
+      "maximum": 15.567886352539062,
+      "mean": 6.113692660006288,
+      "minimum": 5.391180038452148,
+      "p50": 5.983037948608398,
+      "p95": 6.575016212463378,
+      "p99": 10.495691261291496
+    },
+    "pub_dt_ms": {
+      "count": 336,
+      "maximum": 996.582763671875,
+      "mean": 195.8793850569498,
+      "minimum": 18.016984939575195,
+      "p50": 137.95721435546875,
+      "p95": 586.2817993164062,
+      "p99": 776.2266265869138
+    }
+  },
+  "reid": {
+    "end_to_end_ms": {
+      "count": 0,
+      "maximum": null,
+      "mean": null,
+      "minimum": null,
+      "p50": null,
+      "p95": null,
+      "p99": null
+    },
+    "latest_executor": {
+      "accepting": false,
+      "emitted_results": 0,
+      "executed": 0,
+      "failed": 0,
+      "in_flight_request_id": null,
+      "maximum_queued": 0,
+      "queued": 0,
+      "reasons": {},
+      "rejected": 0,
+      "submitted": 0,
+      "succeeded": 0
+    },
+    "latest_tim_transport": {},
+    "maximum_engine_active_calls": 1,
+    "maximum_executor_queued": 0,
+    "queue_delay_ms": {
+      "count": 0,
+      "maximum": null,
+      "mean": null,
+      "minimum": null,
+      "p50": null,
+      "p95": null,
+      "p99": null
+    },
+    "worker_ms": {
+      "count": 0,
+      "maximum": null,
+      "mean": null,
+      "minimum": null,
+      "p50": null,
+      "p95": null,
+      "p99": null
+    }
+  },
+  "schema": "p044_transport_evidence_summary_v1",
+  "started_ns": 718715882862599
+}
