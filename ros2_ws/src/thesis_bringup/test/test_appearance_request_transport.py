@@ -362,3 +362,58 @@ def test_request_ids_are_process_local_and_monotonic():
 
     assert first.request_id == 1
     assert second.request_id == 2
+
+
+def test_expire_in_flight_reconciles_transport_registry():
+    """Remove deadline-expired requests from both ownership layers."""
+    transport = TimAppearanceRequestTransport(
+        capacity=4,
+        deadline_ms=500.0,
+    )
+
+    request = transport.stage(
+        (crop(),),
+        now_ns=1_000,
+    ).requests[0]
+
+    assert transport.expire_in_flight(
+        now_ns=request.deadline_ns
+    ) == ()
+
+    expired = transport.expire_in_flight(
+        now_ns=request.deadline_ns + 1
+    )
+
+    assert expired == (request.request_id,)
+
+    diagnostics = transport.diagnostics()
+
+    assert diagnostics.queue.in_flight == 0
+    assert diagnostics.expired_in_flight == 1
+    assert (
+        diagnostics.queue.expired_in_flight
+        == 1
+    )
+    assert (
+        diagnostics.last_result_reason
+        == "expired_in_flight"
+    )
+
+    late = transport.complete(
+        success_result(request),
+        now_ns=request.deadline_ns + 2,
+        current_frame_generation=3,
+        current_track_generations={
+            7: 5,
+        },
+    )
+
+    assert not late.accepted
+    assert (
+        late.reason
+        == "unknown_or_not_in_flight"
+    )
+    assert (
+        transport.last_accepted_observation
+        is None
+    )

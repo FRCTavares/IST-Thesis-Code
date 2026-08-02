@@ -106,6 +106,7 @@ class AppearanceTransportDiagnostics:
     constructed: int
     published: int
     cancelled: int
+    expired_in_flight: int
     malformed_results: int
     last_result_reason: str | None
     last_accepted_request_id: int | None
@@ -288,6 +289,29 @@ class TimAppearanceRequestTransport:
             rejected_submissions=rejected,
         )
 
+    def expire_in_flight(
+        self,
+        *,
+        now_ns: int,
+    ) -> tuple[int, ...]:
+        """Expire overdue requests and reconcile transport ownership."""
+        expired = self._queue.expire_in_flight(
+            now_ns=int(now_ns)
+        )
+
+        for request_id in expired:
+            self._requests_by_id.pop(
+                int(request_id),
+                None,
+            )
+
+        if expired:
+            self._last_result_reason = (
+                "expired_in_flight"
+            )
+
+        return expired
+
     def complete(
         self,
         result: AppearanceEmbeddingResult,
@@ -446,12 +470,16 @@ class TimAppearanceRequestTransport:
     ) -> AppearanceTransportDiagnostics:
         """Return immutable transport diagnostics."""
         observation = self._last_accepted
+        queue = self._queue.diagnostics()
 
         return AppearanceTransportDiagnostics(
-            queue=self._queue.diagnostics(),
+            queue=queue,
             constructed=int(self._constructed),
             published=int(self._published),
             cancelled=int(self._cancelled),
+            expired_in_flight=int(
+                queue.expired_in_flight
+            ),
             malformed_results=int(
                 self._malformed_results
             ),

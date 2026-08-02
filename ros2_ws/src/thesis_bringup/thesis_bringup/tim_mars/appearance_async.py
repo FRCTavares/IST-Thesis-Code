@@ -271,6 +271,7 @@ class AppearanceAsyncDiagnostics:
 
     queued: int
     in_flight: int
+    expired_in_flight: int
     maximum_queued: int
     submitted: int
     dequeued: int
@@ -303,6 +304,7 @@ class CausalAppearanceRequestQueue:
         self._submitted = 0
         self._dequeued = 0
         self._accepted_results = 0
+        self._expired_in_flight = 0
         self._rejected_submissions = 0
         self._rejected_results = 0
         self._maximum_queued = 0
@@ -424,6 +426,40 @@ class CausalAppearanceRequestQueue:
             depth=len(self._queued),
             in_flight=len(self._in_flight),
         )
+
+    def expire_in_flight(
+        self,
+        *,
+        now_ns: int,
+    ) -> tuple[int, ...]:
+        """Remove in-flight requests whose monotonic deadline passed."""
+        now_ns = int(now_ns)
+
+        if now_ns <= 0:
+            raise ValueError(
+                "expiry reconciliation time must be positive"
+            )
+
+        expired = tuple(
+            request_id
+            for request_id, request in self._in_flight.items()
+            if now_ns > int(request.deadline_ns)
+        )
+
+        for request_id in expired:
+            self._in_flight.pop(
+                int(request_id),
+                None,
+            )
+
+        if expired:
+            count = len(expired)
+            self._expired_in_flight += count
+            self._drop_reasons[
+                "expired_in_flight"
+            ] += count
+
+        return expired
 
     def _result_rejection(
         self,
@@ -641,6 +677,9 @@ class CausalAppearanceRequestQueue:
         return AppearanceAsyncDiagnostics(
             queued=len(self._queued),
             in_flight=len(self._in_flight),
+            expired_in_flight=int(
+                self._expired_in_flight
+            ),
             maximum_queued=int(self._maximum_queued),
             submitted=int(self._submitted),
             dequeued=int(self._dequeued),

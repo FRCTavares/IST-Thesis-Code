@@ -525,3 +525,85 @@ def test_cancel_all_removes_queued_and_in_flight_work():
         ]
         == 2
     )
+
+
+def test_expire_in_flight_removes_only_overdue_requests():
+    """Expire lost work without removing requests still in deadline."""
+    queue = CausalAppearanceRequestQueue(
+        capacity=3
+    )
+
+    queue.submit(
+        request(
+            1,
+            track_id=7,
+            deadline_ns=1_400,
+        )
+    )
+    queue.submit(
+        request(
+            2,
+            track_id=8,
+            deadline_ns=2_000,
+        )
+    )
+
+    batch = queue.dequeue(
+        max_items=2,
+        now_ns=1_100,
+    )
+
+    assert len(batch.requests) == 2
+    assert batch.in_flight == 2
+
+    expired = queue.expire_in_flight(
+        now_ns=1_500
+    )
+
+    assert expired == (1,)
+
+    diagnostics = queue.diagnostics()
+
+    assert diagnostics.in_flight == 1
+    assert diagnostics.expired_in_flight == 1
+    assert (
+        diagnostics.drop_reasons[
+            "expired_in_flight"
+        ]
+        == 1
+    )
+
+
+def test_result_after_explicit_expiry_is_unknown():
+    """Never restore state when a result arrives after expiry."""
+    queue = CausalAppearanceRequestQueue(
+        capacity=2
+    )
+
+    queue.submit(
+        request(
+            1,
+            deadline_ns=1_400,
+        )
+    )
+    dequeue_one(
+        queue,
+        now_ns=1_100,
+    )
+
+    assert queue.expire_in_flight(
+        now_ns=1_500
+    ) == (1,)
+
+    decision = complete(
+        queue,
+        result(1),
+        now_ns=1_600,
+    )
+
+    assert not decision.accepted
+    assert (
+        decision.reason
+        == "unknown_or_not_in_flight"
+    )
+    assert queue.diagnostics().in_flight == 0

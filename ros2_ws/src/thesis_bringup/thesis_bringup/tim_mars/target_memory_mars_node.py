@@ -159,6 +159,8 @@ class TargetMemoryMarsNode(Node):
         self._appearance_async_transport = None
         self._appearance_async_request_pub = None
         self._appearance_async_result_sub = None
+        self._appearance_async_reconcile_timer = None
+        self._appearance_async_last_status_json = None
         self._appearance_async_publish_errors = 0
 
         self._last_mirrored_target_id: Optional[int] = None
@@ -378,6 +380,21 @@ class TargetMemoryMarsNode(Node):
             )
         )
 
+        reconcile_period_s = min(
+            0.25,
+            max(
+                0.05,
+                self._appearance_async_reid_deadline_ms
+                / 2000.0,
+            ),
+        )
+        self._appearance_async_reconcile_timer = (
+            self.create_timer(
+                reconcile_period_s,
+                self._reconcile_async_reid,
+            )
+        )
+
         self.get_logger().info(
             "Enabled TIM causal RepVGG transport "
             f"(request_topic="
@@ -413,6 +430,41 @@ class TargetMemoryMarsNode(Node):
             )
 
         return cancelled
+
+    def _reconcile_async_reid(self) -> None:
+        """Expire overdue causal work and republish current status."""
+        transport = self._appearance_async_transport
+
+        if transport is None:
+            return
+
+        expired = transport.expire_in_flight(
+            now_ns=time.monotonic_ns()
+        )
+
+        if expired:
+            self.get_logger().warning(
+                "Expired TIM causal ReID requests "
+                "without a result "
+                f"(count={len(expired)}, "
+                f"first={expired[0]}, "
+                f"last={expired[-1]})"
+            )
+
+        base_status_json = (
+            self._appearance_async_last_status_json
+        )
+
+        if base_status_json is None:
+            return
+
+        message = String()
+        message.data = (
+            self._augment_status_with_async_reid(
+                base_status_json
+            )
+        )
+        self._status_pub.publish(message)
 
     def _publish_async_reid_requests(
         self,
@@ -556,6 +608,9 @@ class TargetMemoryMarsNode(Node):
             "constructed": diagnostics.constructed,
             "published": diagnostics.published,
             "cancelled": diagnostics.cancelled,
+            "expired_in_flight": (
+                diagnostics.expired_in_flight
+            ),
             "malformed_results": (
                 diagnostics.malformed_results
             ),
@@ -819,8 +874,15 @@ class TargetMemoryMarsNode(Node):
         return target_msg
 
     def _publish_status_only(self, out: TargetMemoryOutput) -> None:
+        base_status_json = status_only_json(out)
+        self._appearance_async_last_status_json = (
+            base_status_json
+        )
+
         msg = String()
-        msg.data = status_only_json(out)
+        msg.data = self._augment_status_with_async_reid(
+            base_status_json
+        )
         self._status_pub.publish(msg)
 
     def _publish_status(
@@ -852,7 +914,7 @@ class TargetMemoryMarsNode(Node):
             self._last_tracks_source_stamp_ns = source_stamp_ns
 
         msg = String()
-        msg.data = status_json_from_output(
+        base_status_json = status_json_from_output(
             result.output,
             frame_id=int(tracks_msg.frame_id),
             lat_ms=float(t_end_ns - t_start_ns) / 1e6,
@@ -933,13 +995,21 @@ class TargetMemoryMarsNode(Node):
                 self._freshness_max_output_age_s * 1000.0
             ),
         )
+        self._appearance_async_last_status_json = (
+            base_status_json
+        )
         msg.data = self._augment_status_with_async_reid(
-            msg.data
+            base_status_json
         )
         self._status_pub.publish(msg)
 
     def destroy_node(self):
         """Cancel causal transport before destroying ROS interfaces."""
+        timer = self._appearance_async_reconcile_timer
+
+        if timer is not None:
+            timer.cancel()
+
         self._cancel_async_reid(
             "node_shutdown"
         )

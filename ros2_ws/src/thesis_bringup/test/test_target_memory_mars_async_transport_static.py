@@ -142,3 +142,61 @@ def test_status_exposes_transport_diagnostics_only_when_enabled():
 
     for fragment in required:
         assert fragment in source
+
+
+def test_periodic_reconciliation_expires_lost_requests():
+    """Expire BEST_EFFORT losses after the final tracks callback."""
+    source = NODE.read_text(
+        encoding="utf-8"
+    )
+
+    required = (
+        "self._appearance_async_reconcile_timer",
+        "self.create_timer(",
+        "self._reconcile_async_reid",
+        "def _reconcile_async_reid(self)",
+        "transport.expire_in_flight(",
+        "now_ns=time.monotonic_ns()",
+    )
+
+    for fragment in required:
+        assert fragment in source
+
+
+def test_reconciliation_republishes_current_transport_status():
+    """Make the drained ledger visible without another tracks message."""
+    source = NODE.read_text(
+        encoding="utf-8"
+    )
+
+    required = (
+        "self._appearance_async_last_status_json",
+        "base_status_json",
+        "self._augment_status_with_async_reid(",
+        "self._status_pub.publish(message)",
+        '"expired_in_flight"',
+    )
+
+    for fragment in required:
+        assert fragment in source
+
+
+def test_shutdown_cancels_reconciliation_timer():
+    """Do not execute reconciliation while ROS interfaces are destroyed."""
+    source = NODE.read_text(
+        encoding="utf-8"
+    )
+
+    destroy_index = source.index(
+        "def destroy_node(self):"
+    )
+    timer_index = source.index(
+        "timer.cancel()",
+        destroy_index,
+    )
+    transport_index = source.index(
+        'self._cancel_async_reid(',
+        destroy_index,
+    )
+
+    assert timer_index < transport_index
