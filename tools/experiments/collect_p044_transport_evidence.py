@@ -205,10 +205,10 @@ class EvidenceAccumulator:
                 message.backend_dimension
             ),
             "crop_height": int(
-                message.crop.height
+                message.crop_height
             ),
             "crop_width": int(
-                message.crop.width
+                message.crop_width
             ),
         }
 

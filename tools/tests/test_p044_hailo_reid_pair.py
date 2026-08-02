@@ -1,6 +1,7 @@
 """Contracts for the Issue #44 paired Hailo ReID evidence tools."""
 
 from pathlib import Path
+from types import SimpleNamespace
 import importlib.util
 import json
 
@@ -181,3 +182,52 @@ def test_runner_metadata_is_versioned():
     )
     assert "events.jsonl" in collector
     assert "summary.json" in collector
+
+def test_collector_reads_flat_request_crop_fields():
+    """Match the generated AppearanceEmbeddingRequest schema."""
+    module = load_collector_module()
+    accumulator = module.EvidenceAccumulator(
+        condition="treatment"
+    )
+
+    message = SimpleNamespace(
+        request_id=17,
+        submitted_ns=1_000,
+        deadline_ns=501_000,
+        source_frame_id=42,
+        source_image_timestamp_ns=900,
+        source_image_seq=12,
+        frame_generation=3,
+        candidate_index=1,
+        track_id=7,
+        track_generation=5,
+        backend_name="repvgg-a0-person-reid",
+        embedding_space="repvgg-a0-person-reid-512",
+        backend_dimension=512,
+        crop_height=80,
+        crop_width=40,
+    )
+
+    event = accumulator.add_request(message)
+
+    assert event["request_id"] == 17
+    assert event["crop_height"] == 80
+    assert event["crop_width"] == 40
+    assert accumulator.request_count == 1
+    assert (
+        accumulator.requests_by_id[17][
+            "submitted_ns"
+        ]
+        == 1_000
+    )
+
+
+def test_collector_has_no_nested_crop_message_access():
+    """Prevent regression to a nonexistent nested crop message."""
+    source = COLLECTOR.read_text(
+        encoding="utf-8"
+    )
+
+    assert "message.crop." not in source
+    assert "message.crop_height" in source
+    assert "message.crop_width" in source
