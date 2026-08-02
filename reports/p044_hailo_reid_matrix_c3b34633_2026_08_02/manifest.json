@@ -1,0 +1,24 @@
+{
+  "git_head": "c3b346330b4f67894ac07d69f2ea4dff3d7ed333",
+  "invariants": {
+    "cpu_mars_authoritative": true,
+    "cpu_mars_compute_interval_ms": 250.0,
+    "cpu_mars_policy": "all_candidates",
+    "mars_dimension": 128,
+    "repvgg_decision_integration_enabled": false,
+    "repvgg_dimension": 512,
+    "shared_embedding_memory": false,
+    "transport_qos": "BEST_EFFORT"
+  },
+  "issue": 44,
+  "promoted_on": "2026-08-02",
+  "promotion_scope": "Compact aggregate and per-repetition summaries. Raw event streams, bags, process logs, and resource samples remain local ignored runtime evidence.",
+  "rate": 1.0,
+  "repetitions": 3,
+  "schema": "p044_hailo_reid_three_run_evidence_v1",
+  "source_bag": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
+  "source_runtime_bags": "bags/replay/p044_hailo_reid_pair_c3b34633_2026_08_02_hard_reentry_matrix_r3",
+  "source_runtime_logs": "ros2_ws/log/p044_hailo_reid_pair_c3b34633_2026_08_02_hard_reentry_matrix_r3",
+  "source_runtime_report": "reports/p044_hailo_reid_pair_c3b34633_2026_08_02_hard_reentry_matrix_r3",
+  "target_id": 1
+}

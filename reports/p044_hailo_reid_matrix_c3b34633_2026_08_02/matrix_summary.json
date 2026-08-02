@@ -1,0 +1,61 @@
+{
+  "assessment": {
+    "causal_reconciliation": "passed",
+    "final_architecture_claim": "not_ready",
+    "limitation": "BEST_EFFORT request delivery reached only 64.69% to 71.70% across repetitions. This requires explicit justification as intentional latest-data shedding or a follow-up transport/QoS experiment.",
+    "matrix_gate": "passed",
+    "process_and_hardware_hygiene": "passed"
+  },
+  "detector_contention_ms": {
+    "mean_delta": 3.6447373187397547,
+    "mean_relative_increase_percent": 60.488408455804,
+    "p95_delta": 7.075437045097351,
+    "p95_relative_increase_percent": 113.64705961286231,
+    "per_repetition_mean_delta": {
+      "maximum": 3.693687087446783,
+      "mean": 3.644737318739755,
+      "minimum": 3.601959077853155
+    },
+    "per_repetition_p95_delta": {
+      "maximum": 7.251467323303224,
+      "mean": 7.07543704509735,
+      "minimum": 6.913022899627684
+    },
+    "reference_mean": 6.02551366747034,
+    "reference_p95": 6.225798598925273,
+    "treatment_mean": 9.670250986210094,
+    "treatment_p95": 13.301235644022624
+  },
+  "hardware_bounds": {
+    "backend_failures": 0,
+    "maximum_engine_active_calls": 1,
+    "maximum_executor_queued": 2
+  },
+  "repetitions": 3,
+  "schema": "p044_hailo_reid_three_run_summary_v1",
+  "totals": {
+    "accepted_results": 763,
+    "cancelled": 0,
+    "constructed": 1113,
+    "executor_submitted": 766,
+    "executor_succeeded": 766,
+    "expired_in_flight": 350,
+    "final_in_flight": 0,
+    "published": 1113,
+    "rejected_results": 0,
+    "request_side_losses": 347,
+    "result_side_losses": 3
+  },
+  "transport_delivery_percent": {
+    "request": {
+      "maximum": 71.69811320754717,
+      "mean": 68.82300089847259,
+      "minimum": 64.6900269541779
+    },
+    "result": {
+      "maximum": 100.0,
+      "mean": 99.62116830537883,
+      "minimum": 99.24812030075188
+    }
+  }
+}

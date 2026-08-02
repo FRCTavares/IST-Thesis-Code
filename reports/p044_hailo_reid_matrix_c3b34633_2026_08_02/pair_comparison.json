@@ -1,0 +1,16 @@
+{
+  "detector_infer_mean_delta_ms": 3.6447373187397547,
+  "detector_infer_p95_delta_ms": 7.075437045097351,
+  "maximum_engine_active_calls": 1,
+  "maximum_executor_queued": 2,
+  "reference_detector_infer_mean_ms": 6.02551366747034,
+  "reference_detector_infer_p95_ms": 6.225798598925273,
+  "repetitions": 3,
+  "schema": "p044_hailo_reid_pair_comparison_v1",
+  "treatment_detector_infer_mean_ms": 9.670250986210094,
+  "treatment_detector_infer_p95_ms": 13.301235644022624,
+  "treatment_failed_results": 0,
+  "treatment_requests": 1113,
+  "treatment_results": 766,
+  "treatment_successful_results": 766
+}
