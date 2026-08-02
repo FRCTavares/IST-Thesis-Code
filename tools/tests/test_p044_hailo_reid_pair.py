@@ -231,3 +231,56 @@ def test_collector_has_no_nested_crop_message_access():
     assert "message.crop." not in source
     assert "message.crop_height" in source
     assert "message.crop_width" in source
+
+def test_runner_launches_background_jobs_in_new_sessions():
+    """Make each recorded PID the process-group identifier."""
+    source = RUNNER.read_text(encoding="utf-8")
+
+    required = (
+        'setsid "$THESIS_ROOT/thesis_env/bin/python"',
+        "setsid env",
+        "ros2 run thesis_bringup perception_pipeline_node",
+        "setsid ros2 run thesis_bringup target_memory_mars_node",
+        "setsid ros2 bag record",
+        "setsid pidstat",
+        'setsid ros2 bag play "$BAG_PATH"',
+    )
+
+    for fragment in required:
+        assert fragment in source
+
+    assert (
+        source.index("setsid env")
+        < source.index(
+            "ros2 run thesis_bringup "
+            "perception_pipeline_node"
+        )
+    )
+    assert "command -v setsid" in source
+
+
+def test_runner_stops_complete_process_groups():
+    """Signal wrappers and their spawned ROS executables together."""
+    source = RUNNER.read_text(encoding="utf-8")
+
+    assert "def process_group_alive" not in source
+    assert "process_group_alive()" in source
+    assert 'kill -0 -- "-$group_id"' in source
+    assert 'kill -INT -- "-$pid"' in source
+    assert 'kill -TERM -- "-$pid"' in source
+    assert 'kill -KILL -- "-$pid"' in source
+    assert "cleanup_status=$?" in source
+    assert "condition cleanup failed" in source
+
+
+def test_runner_has_fallback_process_cleanup_and_verification():
+    """Detect children that escaped an expected process group."""
+    source = RUNNER.read_text(encoding="utf-8")
+
+    assert "matching_smoke_pids()" in source
+    assert "stop_matching_smoke_processes()" in source
+    assert "unmatched smoke processes remain" in source
+    assert (
+        "trap 'cleanup_all >/dev/null 2>&1 || true'"
+        in source
+    )

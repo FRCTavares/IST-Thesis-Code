@@ -66,6 +66,17 @@ register_pid() {
   ACTIVE_PIDS+=("$1")
 }
 
+process_group_alive() {
+  local group_id="$1"
+
+  if [ -z "$group_id" ]; then
+    return 1
+  fi
+
+  kill -0 -- "-$group_id" \
+    >/dev/null 2>&1
+}
+
 stop_pid() {
   local pid="$1"
   local label="$2"
@@ -74,46 +85,135 @@ stop_pid() {
     return 0
   fi
 
-  if ! kill -0 "$pid" >/dev/null 2>&1; then
+  if ! process_group_alive "$pid"; then
+    wait "$pid" >/dev/null 2>&1 || true
     return 0
   fi
 
-  printf 'Stopping %s (pid=%s)\n' "$label" "$pid"
-  kill -INT "$pid" >/dev/null 2>&1 || true
+  printf 'Stopping %s process group (pgid=%s)\n' \
+    "$label" \
+    "$pid"
 
-  for _ in $(seq 1 20); do
-    if ! kill -0 "$pid" >/dev/null 2>&1; then
+  kill -INT -- "-$pid" \
+    >/dev/null 2>&1 || true
+
+  for _ in $(seq 1 40); do
+    if ! process_group_alive "$pid"; then
       wait "$pid" >/dev/null 2>&1 || true
       return 0
     fi
+
     sleep 0.25
   done
 
-  kill -TERM "$pid" >/dev/null 2>&1 || true
-  sleep 1
+  kill -TERM -- "-$pid" \
+    >/dev/null 2>&1 || true
 
-  if kill -0 "$pid" >/dev/null 2>&1; then
-    kill -KILL "$pid" >/dev/null 2>&1 || true
+  for _ in $(seq 1 20); do
+    if ! process_group_alive "$pid"; then
+      wait "$pid" >/dev/null 2>&1 || true
+      return 0
+    fi
+
+    sleep 0.25
+  done
+
+  kill -KILL -- "-$pid" \
+    >/dev/null 2>&1 || true
+
+  for _ in $(seq 1 12); do
+    if ! process_group_alive "$pid"; then
+      wait "$pid" >/dev/null 2>&1 || true
+      return 0
+    fi
+
+    sleep 0.25
+  done
+
+  printf 'ERROR: %s process group remains active (pgid=%s).\n' \
+    "$label" \
+    "$pid"
+
+  ps -eo pid=,pgid=,stat=,cmd= |
+    awk -v group_id="$pid" \
+      '$2 == group_id {print}'
+
+  return 1
+}
+
+matching_smoke_pids() {
+  pgrep -f \
+    '/thesis_bringup/perception_pipeline_node|/thesis_bringup/target_memory_mars_node|collect_p044_transport_evidence.py|ros2 bag play|ros2 bag record' \
+    2>/dev/null |
+    awk -v self="$$" '$1 != self {print}' ||
+    true
+}
+
+stop_matching_smoke_processes() {
+  local signal
+  local pids
+  local pid
+
+  for signal in INT TERM KILL; do
+    pids="$(matching_smoke_pids)"
+
+    if [ -z "$pids" ]; then
+      return 0
+    fi
+
+    while IFS= read -r pid; do
+      if [ -n "$pid" ]; then
+        kill "-$signal" "$pid" \
+          >/dev/null 2>&1 || true
+      fi
+    done <<< "$pids"
+
+    for _ in $(seq 1 20); do
+      if [ -z "$(matching_smoke_pids)" ]; then
+        return 0
+      fi
+
+      sleep 0.25
+    done
+  done
+
+  pids="$(matching_smoke_pids)"
+
+  if [ -n "$pids" ]; then
+    printf 'ERROR: unmatched smoke processes remain:\n%s\n' \
+      "$pids"
+    return 1
   fi
 
-  wait "$pid" >/dev/null 2>&1 || true
+  return 0
 }
 
 cleanup_all() {
   local index
+  local cleanup_status=0
 
   for ((index=${#ACTIVE_PIDS[@]}-1; index>=0; index--)); do
-    stop_pid "${ACTIVE_PIDS[$index]}" "background process"
+    stop_pid \
+      "${ACTIVE_PIDS[$index]}" \
+      "background process"
+
+    if [ "$?" -ne 0 ]; then
+      cleanup_status=1
+    fi
   done
 
   ACTIVE_PIDS=()
 
-  pkill -INT -f \
-    'p044_transport_evidence_collector|perception_pipeline_node|target_memory_mars_node|ros2 bag play|ros2 bag record' \
-    >/dev/null 2>&1 || true
+  stop_matching_smoke_processes
+
+  if [ "$?" -ne 0 ]; then
+    cleanup_status=1
+  fi
+
+  return "$cleanup_status"
 }
 
-trap cleanup_all INT TERM EXIT
+trap 'cleanup_all >/dev/null 2>&1 || true' INT TERM EXIT
 
 section "1. Evidence preflight"
 
@@ -156,6 +256,11 @@ fi
 
 if [ -e log ] || [ -e hailort.log ]; then
   printf 'ERROR: root runtime noise exists.\n'
+  overall_status=1
+fi
+
+if ! command -v setsid >/dev/null 2>&1; then
+  printf 'ERROR: setsid is unavailable.\n'
   overall_status=1
 fi
 
@@ -286,6 +391,12 @@ run_condition() {
   mkdir -p "$report_dir" "$bag_dir" "$log_dir"
 
   cleanup_all
+  initial_cleanup_status=$?
+
+  if [ "$initial_cleanup_status" -ne 0 ]; then
+    printf 'ERROR: pre-condition cleanup failed.\n'
+    return "$initial_cleanup_status"
+  fi
 
   printf '\nRunning condition=%s repetition=%s\n' \
     "$condition" \
@@ -311,14 +422,14 @@ run_condition() {
 }
 EOF
 
-  "$THESIS_ROOT/thesis_env/bin/python" "$COLLECTOR" \
+  setsid "$THESIS_ROOT/thesis_env/bin/python" "$COLLECTOR" \
     --output-dir "$report_dir/collector" \
     --condition "$condition" \
     > "$log_dir/collector.log" 2>&1 &
   collector_pid=$!
   register_pid "$collector_pid"
 
-  env \
+  setsid env \
     PYTHONPATH="$PERCEPTION_PYTHONPATH" \
     ros2 run thesis_bringup perception_pipeline_node \
     --ros-args \
@@ -352,7 +463,7 @@ EOF
     return 1
   fi
 
-  ros2 run thesis_bringup target_memory_mars_node \
+  setsid ros2 run thesis_bringup target_memory_mars_node \
     --ros-args \
     --params-file "$TIM_CONFIG" \
     -p tracks_topic:=/tracks \
@@ -385,7 +496,7 @@ EOF
     return 1
   fi
 
-  ros2 bag record \
+  setsid ros2 bag record \
     -s mcap \
     -o "$bag_dir/evidence" \
     --topics \
@@ -403,7 +514,7 @@ EOF
   sampler_pid=""
 
   if command -v pidstat >/dev/null 2>&1; then
-    pidstat \
+    setsid pidstat \
       -h \
       -r \
       -u \
@@ -419,7 +530,7 @@ EOF
 
   sleep 2
 
-  ros2 bag play "$BAG_PATH" \
+  setsid ros2 bag play "$BAG_PATH" \
     --topics "$IMAGE_TOPIC" /tracks \
     --rate "$RATE" \
     --disable-keyboard-controls \
@@ -438,7 +549,14 @@ EOF
   stop_pid "$perception_pid" "perception"
   stop_pid "$collector_pid" "collector"
 
-  ACTIVE_PIDS=()
+  cleanup_all
+  cleanup_status=$?
+
+  if [ "$cleanup_status" -ne 0 ]; then
+    printf 'ERROR: condition cleanup failed for %s.\n' \
+      "$condition_tag"
+    return "$cleanup_status"
+  fi
 
   ros2 bag reindex "$bag_dir/evidence" \
     > "$log_dir/reindex.log" 2>&1 || true
