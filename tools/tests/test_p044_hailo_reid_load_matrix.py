@@ -133,3 +133,27 @@ def test_accepted_pair_runner_is_not_replaced() -> None:
 
     assert pair_runner.is_file()
     assert RUNNER != pair_runner
+
+def test_runner_defaults_to_raw_image_topic_and_validates_bag() -> None:
+    text = source()
+
+    assert (
+        'IMAGE_TOPIC="${P044_IMAGE_TOPIC:-/camera/image_raw}"'
+        in text
+    )
+    assert (
+        'IMAGE_TOPIC="${P044_IMAGE_TOPIC:-/camera/dashboard}"'
+        not in text
+    )
+    assert (
+        'for required_source_topic in "$IMAGE_TOPIC" /tracks'
+        in text
+    )
+    assert (
+        'grep -Fq "Topic: $required_source_topic |"'
+        in text
+    )
+    assert (
+        "required source topic is absent from the bag"
+        in text
+    )

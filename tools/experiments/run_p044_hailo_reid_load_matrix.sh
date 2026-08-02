@@ -45,7 +45,7 @@ RUN_NAME="$3"
 RATE="${4:-1.0}"
 REPETITIONS="${5:-3}"
 
-IMAGE_TOPIC="${P044_IMAGE_TOPIC:-/camera/dashboard}"
+IMAGE_TOPIC="${P044_IMAGE_TOPIC:-/camera/image_raw}"
 DETECTOR_HEF="$THESIS_ROOT/models/hef/yolov6n.hef"
 REID_HEF="$THESIS_ROOT/models/reid/repvgg_a0_person_reid_512.hef"
 MARS_MODEL="$THESIS_ROOT/models/reid/mars-small128.pb"
@@ -459,13 +459,26 @@ if [ "$hailo_status" -ne 0 ]; then
   exit 1
 fi
 
-ros2 bag info "$BAG_PATH"
+bag_info_text="$(
+  ros2 bag info "$BAG_PATH" 2>&1
+)"
 bag_info_status=$?
+
+printf '%s\n' "$bag_info_text"
 
 if [ "$bag_info_status" -ne 0 ]; then
   printf 'ERROR: source bag could not be inspected.\n'
   exit 1
 fi
+
+for required_source_topic in "$IMAGE_TOPIC" /tracks; do
+  if ! printf '%s\n' "$bag_info_text" |
+       grep -Fq "Topic: $required_source_topic |"; then
+    printf 'ERROR: required source topic is absent from the bag: %s\n' \
+      "$required_source_topic"
+    exit 1
+  fi
+done
 
 mkdir -p \
   "$REPORT_ROOT" \
