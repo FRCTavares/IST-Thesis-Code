@@ -284,3 +284,32 @@ def test_runner_has_fallback_process_cleanup_and_verification():
         "trap 'cleanup_all >/dev/null 2>&1 || true'"
         in source
     )
+
+def test_collector_accepts_load_matrix_condition_labels():
+    """Preserve pair labels and accept both load conditions."""
+    module = load_collector_module()
+
+    assert module.CONDITION_CHOICES == (
+        "reference",
+        "treatment",
+        "selective",
+        "forced_frequent",
+    )
+
+
+def test_collector_handles_external_shutdown_idempotently():
+    """Avoid a traceback when ROS has already shut down."""
+    source = COLLECTOR.read_text(
+        encoding="utf-8"
+    )
+
+    assert (
+        "ExternalShutdownException"
+        in source
+    )
+    assert (
+        "except (KeyboardInterrupt, "
+        "ExternalShutdownException):"
+        in source
+    )
+    assert "if rclpy.ok():" in source

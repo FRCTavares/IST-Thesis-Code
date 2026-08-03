@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import (
     DurabilityPolicy,
@@ -27,6 +28,14 @@ from thesis_msgs.msg import (
     AppearanceEmbeddingResult,
     Timing,
 )
+
+CONDITION_CHOICES = (
+    "reference",
+    "treatment",
+    "selective",
+    "forced_frequent",
+)
+
 
 
 def percentile(
@@ -620,7 +629,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--condition",
         required=True,
-        choices=("reference", "treatment"),
+        choices=CONDITION_CHOICES,
     )
     return parser.parse_args()
 
@@ -637,12 +646,13 @@ def main() -> int:
 
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         node.close()
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
     return 0
 
