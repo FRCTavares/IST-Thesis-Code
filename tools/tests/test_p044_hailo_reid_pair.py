@@ -294,6 +294,8 @@ def test_collector_accepts_load_matrix_condition_labels():
         "treatment",
         "selective",
         "forced_frequent",
+        "all_candidates_hailo",
+        "ambiguity_guarded_hailo",
     )
 
 

@@ -34,6 +34,8 @@ CONDITION_CHOICES = (
     "treatment",
     "selective",
     "forced_frequent",
+    "all_candidates_hailo",
+    "ambiguity_guarded_hailo",
 )
 
 
