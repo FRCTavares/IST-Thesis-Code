@@ -35,6 +35,7 @@ class AppearanceRequestPolicy(str, Enum):
 
     ALL_CANDIDATES = "all_candidates"
     GEOMETRY_WINNER = "geometry_winner"
+    AMBIGUITY_GUARDED = "ambiguity_guarded"
 
 
 @dataclass(frozen=True)
@@ -125,6 +126,37 @@ def _single_request(
         requested_indices=(int(index),),
         requested_track_ids=(int(candidate.track_id),),
         reason=str(reason),
+        ranked_candidates=ranked_candidates,
+    )
+
+
+def _multi_request(
+    *,
+    policy: AppearanceRequestPolicy,
+    target_state: TargetState,
+    selected_ranks: tuple[
+        AppearanceRequestCandidateRank,
+        ...,
+    ],
+    ranked_candidates: tuple[
+        AppearanceRequestCandidateRank,
+        ...,
+    ],
+    reason: str,
+) -> AppearanceRequestDecision:
+    """Return a deterministic multi-candidate request decision."""
+    return AppearanceRequestDecision(
+        policy=policy,
+        target_state=target_state,
+        requested_indices=tuple(
+            int(item.input_index)
+            for item in selected_ranks
+        ),
+        requested_track_ids=tuple(
+            int(item.track_id)
+            for item in selected_ranks
+        ),
+        reason=reason,
         ranked_candidates=ranked_candidates,
     )
 
@@ -318,6 +350,63 @@ def select_appearance_request_candidates(
             target_state=resolved_state,
             reason="no_geometry_plausible_candidate",
             ranked_candidates=ranked,
+        )
+
+    if (
+        resolved_policy
+        == AppearanceRequestPolicy.AMBIGUITY_GUARDED
+    ):
+        winner_rank = plausible[0]
+        current_is_geometry_winner = (
+            int(winner_rank.track_id)
+            == int(current_track_id)
+        )
+
+        clear_geometry_margin = (
+            len(plausible) == 1
+            or (
+                float(
+                    plausible[0]
+                    .score
+                    .ranking_score
+                )
+                - float(
+                    plausible[1]
+                    .score
+                    .ranking_score
+                )
+                > float(
+                    target_config.ambiguity_margin
+                )
+            )
+        )
+
+        if (
+            resolved_state == TargetState.LOCKED
+            and current_is_geometry_winner
+            and clear_geometry_margin
+        ):
+            winner = candidate_tuple[
+                winner_rank.input_index
+            ]
+
+            return _single_request(
+                policy=resolved_policy,
+                target_state=resolved_state,
+                index=winner_rank.input_index,
+                candidate=winner,
+                reason=(
+                    "ambiguity_guarded_stable_current"
+                ),
+                ranked_candidates=ranked,
+            )
+
+        return _multi_request(
+            policy=resolved_policy,
+            target_state=resolved_state,
+            selected_ranks=plausible,
+            ranked_candidates=ranked,
+            reason="ambiguity_guarded_fallback",
         )
 
     winner_rank = plausible[0]

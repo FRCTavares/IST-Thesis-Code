@@ -308,3 +308,150 @@ def test_all_candidates_accepts_duplicate_ids_for_baseline_compatibility():
     assert decision.requested_indices == (0, 1)
     assert decision.requested_track_ids == (5, 5)
     assert decision.reason == "all_candidates"
+
+
+def test_ambiguity_guarded_requests_only_clear_locked_current():
+    """Use one crop only for a stable and clearly dominant current ID."""
+    decision = decide(
+        [
+            candidate(
+                1,
+                bbox=(100.0, 100.0, 160.0, 240.0),
+            ),
+            candidate(
+                2,
+                bbox=(180.0, 100.0, 240.0, 240.0),
+            ),
+        ],
+        policy=(
+            AppearanceRequestPolicy.AMBIGUITY_GUARDED
+        ),
+        target_config=config(
+            ambiguity_margin=0.01,
+        ),
+    )
+
+    assert decision.requested_indices == (0,)
+    assert decision.requested_track_ids == (1,)
+    assert decision.reason == (
+        "ambiguity_guarded_stable_current"
+    )
+
+
+def test_ambiguity_guarded_falls_back_for_close_challenger():
+    """Keep both plausible candidates when geometry is ambiguous."""
+    decision = decide(
+        [
+            candidate(
+                1,
+                bbox=(100.0, 100.0, 160.0, 240.0),
+            ),
+            candidate(
+                2,
+                bbox=(101.0, 100.0, 161.0, 240.0),
+            ),
+        ],
+        policy=(
+            AppearanceRequestPolicy.AMBIGUITY_GUARDED
+        ),
+        target_config=config(
+            ambiguity_margin=1.0,
+        ),
+    )
+
+    assert set(
+        decision.requested_track_ids
+    ) == {1, 2}
+    assert decision.reason == (
+        "ambiguity_guarded_fallback"
+    )
+
+
+def test_ambiguity_guarded_falls_back_when_current_is_not_rank0():
+    """Do not repeat the unsafe geometry-winner behaviour."""
+    decision = decide(
+        [
+            candidate(
+                1,
+                bbox=(180.0, 100.0, 240.0, 240.0),
+            ),
+            candidate(
+                2,
+                bbox=(100.0, 100.0, 160.0, 240.0),
+            ),
+        ],
+        policy=(
+            AppearanceRequestPolicy.AMBIGUITY_GUARDED
+        ),
+        target_config=config(
+            ambiguity_margin=0.01,
+        ),
+    )
+
+    assert set(
+        decision.requested_track_ids
+    ) == {1, 2}
+    assert decision.reason == (
+        "ambiguity_guarded_fallback"
+    )
+
+
+def test_ambiguity_guarded_falls_back_outside_locked_state():
+    """Request every plausible identity while recovery is unresolved."""
+    decision = decide(
+        [
+            candidate(
+                1,
+                bbox=(100.0, 100.0, 160.0, 240.0),
+            ),
+            candidate(
+                2,
+                bbox=(180.0, 100.0, 240.0, 240.0),
+            ),
+        ],
+        policy=(
+            AppearanceRequestPolicy.AMBIGUITY_GUARDED
+        ),
+        target_state=TargetState.LOST,
+        target_config=config(
+            ambiguity_margin=0.01,
+        ),
+    )
+
+    assert set(
+        decision.requested_track_ids
+    ) == {1, 2}
+    assert decision.reason == (
+        "ambiguity_guarded_fallback"
+    )
+
+
+def test_ambiguity_guarded_excludes_impossible_geometry():
+    """Fallback remains bounded to geometry-plausible candidates."""
+    decision = decide(
+        [
+            candidate(
+                1,
+                bbox=(100.0, 100.0, 160.0, 240.0),
+            ),
+            candidate(
+                9,
+                bbox=(520.0, 500.0, 620.0, 640.0),
+                score=1.0,
+            ),
+        ],
+        policy=(
+            AppearanceRequestPolicy.AMBIGUITY_GUARDED
+        ),
+        target_state=TargetState.LOST,
+    )
+
+    assert decision.requested_track_ids == (1,)
+    assert decision.reason == (
+        "ambiguity_guarded_fallback"
+    )
+    assert any(
+        rank.track_id == 9
+        and not rank.geometry_plausible
+        for rank in decision.ranked_candidates
+    )
