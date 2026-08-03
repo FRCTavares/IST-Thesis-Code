@@ -1,0 +1,143 @@
+{
+  "backend_wall_ms_all": {
+    "max": 412.181572,
+    "mean": 23.642364072423398,
+    "min": 19.733488,
+    "n": 359,
+    "p50": 22.260835,
+    "p95": 25.273259399999997,
+    "p99": 28.470787780000066
+  },
+  "backend_wall_ms_steady_state": {
+    "max": 35.326106,
+    "mean": 22.55705902234637,
+    "min": 19.733488,
+    "n": 358,
+    "p50": 22.2603945,
+    "p95": 25.250199600000002,
+    "p99": 26.644478980000002
+  },
+  "bag_path": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/seq01_clean",
+  "callback_latency_displacement_mean_ms": 23.51116297563567,
+  "callback_overhead_ms": {
+    "max": 2.296871999999997,
+    "mean": 1.3738862395543174,
+    "min": 1.1148060000000015,
+    "n": 359,
+    "p50": 1.3811789999999995,
+    "p95": 1.4871014999999992,
+    "p99": 2.2316002000000013
+  },
+  "correlations": {
+    "backend_wall_vs_callback_latency": 0.999976331789724,
+    "requested_count_vs_backend_wall": null
+  },
+  "duration_s": 107.809216005,
+  "git_commit": "7c4bedad7216d0bea5b5c3bae4c97ffa53134735",
+  "grouped_backend_wall_ms_by_requested_crops": {
+    "1": {
+      "max": 412.181572,
+      "mean": 23.642364072423398,
+      "min": 19.733488,
+      "n": 359,
+      "p50": 22.260835,
+      "p95": 25.273259399999997,
+      "p99": 28.470787780000066
+    }
+  },
+  "integrity": {
+    "all_required_fields_present": true,
+    "has_backend_calls": true,
+    "has_positive_backend_wall_time": true,
+    "non_call_records_with_nonzero_backend_wall_ms": 0,
+    "returned_not_greater_than_requested": true,
+    "valid_not_greater_than_returned": true
+  },
+  "ratios": {
+    "backend_call_record_fraction": 0.14569805194805194,
+    "backend_calls_per_second": 3.3299565037496444,
+    "backend_wall_fraction_of_run_all": 0.07872804400698322,
+    "backend_wall_fraction_of_run_steady_state": 0.07490479412841176,
+    "requested_crops_per_second": 3.3299565037496444,
+    "requested_per_call": 1.0,
+    "returned_per_requested": 1.0,
+    "status_records_per_second": 22.855188928242686,
+    "valid_per_requested": 1.0
+  },
+  "run_name": "ambiguity_guarded_250ms/seq01_clean",
+  "schema": "p044_cpu_reid_workload_summary_v2",
+  "status_topic": "/target_memory_mars/status",
+  "tim_mars_latency_all_ms": {
+    "max": 413.548714,
+    "mean": 4.930617980925325,
+    "min": 0.567301,
+    "n": 2464,
+    "p50": 1.579357,
+    "p95": 23.965860199999998,
+    "p99": 26.297384549999986
+  },
+  "tim_mars_latency_backend_call_ms": {
+    "max": 413.548714,
+    "mean": 25.016250311977714,
+    "min": 20.920998,
+    "n": 359,
+    "p50": 23.625114,
+    "p95": 26.6456798,
+    "p99": 29.850949720000067
+  },
+  "tim_mars_latency_non_call_ms": {
+    "max": 3.486994,
+    "mean": 1.5050873363420427,
+    "min": 0.567301,
+    "n": 2105,
+    "p50": 1.544218,
+    "p95": 1.699474,
+    "p99": 2.1815043600000004
+  },
+  "total_backend_wall_ms_all": 8487.608702,
+  "total_backend_wall_ms_steady_state": 8075.42713,
+  "totals": {
+    "appearance_backend_calls": 359,
+    "appearance_backend_requested": 359,
+    "appearance_backend_returned": 359,
+    "appearance_backend_valid": 359,
+    "appearance_candidates": 9102,
+    "appearance_encoding_eligible": 1318,
+    "appearance_features_valid": 2398,
+    "status_records": 2464
+  },
+  "warmup": {
+    "excluded_backend_calls_from_steady_state": 1,
+    "first_call": {
+      "backend_calls": 1,
+      "call_index": 0,
+      "callback_overhead_ms": 1.3671420000000012,
+      "latency_ms": 413.548714,
+      "requested": 1,
+      "returned": 1,
+      "status_record_index": 64,
+      "time_s": 2.935022683,
+      "valid": 1,
+      "wall_ms": 412.181572,
+      "wall_ms_per_crop": 412.181572
+    },
+    "first_call_is_largest": true,
+    "first_call_is_warmup_outlier": true,
+    "largest_call": {
+      "backend_calls": 1,
+      "call_index": 0,
+      "callback_overhead_ms": 1.3671420000000012,
+      "latency_ms": 413.548714,
+      "requested": 1,
+      "returned": 1,
+      "status_record_index": 64,
+      "time_s": 2.935022683,
+      "valid": 1,
+      "wall_ms": 412.181572,
+      "wall_ms_per_crop": 412.181572
+    },
+    "median_backend_wall_ms": 22.260835,
+    "warmup_reference_median_backend_wall_ms": 22.2603945,
+    "warmup_threshold_ms": 100.0
+  }
+}

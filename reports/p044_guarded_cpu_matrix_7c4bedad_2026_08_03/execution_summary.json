@@ -1,0 +1,76 @@
+{
+  "expected_runs": 8,
+  "finished_at_utc": "2026-08-03T22:47:54.610532+00:00",
+  "git_head": "7c4bedad7216d0bea5b5c3bae4c97ffa53134735",
+  "observed_runs": 8,
+  "overall_status": 0,
+  "run_tag": "p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1",
+  "runs": [
+    {
+      "condition": "all_candidates_250ms",
+      "log_file": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/may_hard_reentry/wrapper.log",
+      "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/may_hard_reentry",
+      "report_dir": "/home/francisco/Desktop/Thesis-Code/reports/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/may_hard_reentry",
+      "sequence": "may_hard_reentry",
+      "status": "0"
+    },
+    {
+      "condition": "ambiguity_guarded_250ms",
+      "log_file": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/may_hard_reentry/wrapper.log",
+      "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/may_hard_reentry",
+      "report_dir": "/home/francisco/Desktop/Thesis-Code/reports/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/may_hard_reentry",
+      "sequence": "may_hard_reentry",
+      "status": "0"
+    },
+    {
+      "condition": "ambiguity_guarded_250ms",
+      "log_file": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/seq01_clean/wrapper.log",
+      "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/seq01_clean",
+      "report_dir": "/home/francisco/Desktop/Thesis-Code/reports/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/seq01_clean",
+      "sequence": "seq01_clean",
+      "status": "0"
+    },
+    {
+      "condition": "all_candidates_250ms",
+      "log_file": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq01_clean/wrapper.log",
+      "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq01_clean",
+      "report_dir": "/home/francisco/Desktop/Thesis-Code/reports/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq01_clean",
+      "sequence": "seq01_clean",
+      "status": "0"
+    },
+    {
+      "condition": "all_candidates_250ms",
+      "log_file": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq03_crossing/wrapper.log",
+      "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq03_crossing",
+      "report_dir": "/home/francisco/Desktop/Thesis-Code/reports/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq03_crossing",
+      "sequence": "seq03_crossing",
+      "status": "0"
+    },
+    {
+      "condition": "ambiguity_guarded_250ms",
+      "log_file": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/seq03_crossing/wrapper.log",
+      "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/seq03_crossing",
+      "report_dir": "/home/francisco/Desktop/Thesis-Code/reports/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/seq03_crossing",
+      "sequence": "seq03_crossing",
+      "status": "0"
+    },
+    {
+      "condition": "ambiguity_guarded_250ms",
+      "log_file": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/seq04_occlusion/wrapper.log",
+      "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/seq04_occlusion",
+      "report_dir": "/home/francisco/Desktop/Thesis-Code/reports/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/seq04_occlusion",
+      "sequence": "seq04_occlusion",
+      "status": "0"
+    },
+    {
+      "condition": "all_candidates_250ms",
+      "log_file": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq04_occlusion/wrapper.log",
+      "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq04_occlusion",
+      "report_dir": "/home/francisco/Desktop/Thesis-Code/reports/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq04_occlusion",
+      "sequence": "seq04_occlusion",
+      "status": "0"
+    }
+  ],
+  "schema": "p044_guarded_cpu_matrix_execution_v1",
+  "successful_runs": 8
+}

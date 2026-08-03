@@ -1,0 +1,152 @@
+{
+  "backend_wall_ms_all": {
+    "max": 470.75526,
+    "mean": 25.882351380434784,
+    "min": 19.907042,
+    "n": 184,
+    "p50": 22.151470500000002,
+    "p95": 41.0639685,
+    "p99": 43.55695549999998
+  },
+  "backend_wall_ms_steady_state": {
+    "max": 45.162466,
+    "mean": 23.451351879781424,
+    "min": 19.907042,
+    "n": 183,
+    "p50": 22.144174,
+    "p95": 40.796190200000005,
+    "p99": 43.02331198
+  },
+  "bag_path": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/may_hard_reentry",
+  "callback_latency_displacement_mean_ms": 25.758897959785447,
+  "callback_overhead_ms": {
+    "max": 1.6251800000000003,
+    "mean": 1.2680148260869564,
+    "min": 0.832062999999998,
+    "n": 184,
+    "p50": 1.2694834999999998,
+    "p95": 1.5063003500000007,
+    "p99": 1.5815325900000017
+  },
+  "correlations": {
+    "backend_wall_vs_callback_latency": 0.999990675300723,
+    "requested_count_vs_backend_wall": 0.4213143722214542
+  },
+  "duration_s": 67.438912596,
+  "git_commit": "7c4bedad7216d0bea5b5c3bae4c97ffa53134735",
+  "grouped_backend_wall_ms_by_requested_crops": {
+    "1": {
+      "max": 39.073691,
+      "mean": 22.351238387283235,
+      "min": 19.907042,
+      "n": 173,
+      "p50": 22.101136,
+      "p95": 23.9886818,
+      "p99": 25.91088968
+    },
+    "2": {
+      "max": 470.75526,
+      "mean": 81.41712845454546,
+      "min": 40.987579,
+      "n": 11,
+      "p50": 42.726964,
+      "p95": 257.958863,
+      "p99": 428.19598060000015
+    }
+  },
+  "integrity": {
+    "all_required_fields_present": true,
+    "has_backend_calls": true,
+    "has_positive_backend_wall_time": true,
+    "non_call_records_with_nonzero_backend_wall_ms": 0,
+    "returned_not_greater_than_requested": true,
+    "valid_not_greater_than_returned": true
+  },
+  "ratios": {
+    "backend_call_record_fraction": 0.1936842105263158,
+    "backend_calls_per_second": 2.728395119628806,
+    "backend_wall_fraction_of_run_all": 0.07061728119089615,
+    "backend_wall_fraction_of_run_steady_state": 0.06363681187609403,
+    "requested_crops_per_second": 2.8915056974327022,
+    "requested_per_call": 1.059782608695652,
+    "returned_per_requested": 1.0,
+    "status_records_per_second": 14.086822628518291,
+    "valid_per_requested": 1.0
+  },
+  "run_name": "ambiguity_guarded_250ms/may_hard_reentry",
+  "schema": "p044_cpu_reid_workload_summary_v2",
+  "status_topic": "/target_memory_mars/status",
+  "tim_mars_latency_all_ms": {
+    "max": 471.838288,
+    "mean": 6.380560062105263,
+    "min": 0.590468,
+    "n": 950,
+    "p50": 1.4819019999999998,
+    "p95": 24.055545600000002,
+    "p99": 42.194872149999995
+  },
+  "tim_mars_latency_backend_call_ms": {
+    "max": 471.838288,
+    "mean": 27.15036620652174,
+    "min": 21.078257,
+    "n": 184,
+    "p50": 23.4727035,
+    "p95": 42.23158025,
+    "p99": 44.80292129999998
+  },
+  "tim_mars_latency_non_call_ms": {
+    "max": 4.053794,
+    "mean": 1.3914682467362924,
+    "min": 0.590468,
+    "n": 766,
+    "p50": 1.422651,
+    "p95": 1.7570202499999998,
+    "p99": 2.1246205000000016
+  },
+  "total_backend_wall_ms_all": 4762.352654,
+  "total_backend_wall_ms_steady_state": 4291.597394,
+  "totals": {
+    "appearance_backend_calls": 184,
+    "appearance_backend_requested": 195,
+    "appearance_backend_returned": 195,
+    "appearance_backend_valid": 195,
+    "appearance_candidates": 2788,
+    "appearance_encoding_eligible": 372,
+    "appearance_features_valid": 956,
+    "status_records": 950
+  },
+  "warmup": {
+    "excluded_backend_calls_from_steady_state": 1,
+    "first_call": {
+      "backend_calls": 1,
+      "call_index": 0,
+      "callback_overhead_ms": 1.0830279999999561,
+      "latency_ms": 471.838288,
+      "requested": 2,
+      "returned": 2,
+      "status_record_index": 34,
+      "time_s": 1.824218402,
+      "valid": 2,
+      "wall_ms": 470.75526,
+      "wall_ms_per_crop": 235.37763
+    },
+    "first_call_is_largest": true,
+    "first_call_is_warmup_outlier": true,
+    "largest_call": {
+      "backend_calls": 1,
+      "call_index": 0,
+      "callback_overhead_ms": 1.0830279999999561,
+      "latency_ms": 471.838288,
+      "requested": 2,
+      "returned": 2,
+      "status_record_index": 34,
+      "time_s": 1.824218402,
+      "valid": 2,
+      "wall_ms": 470.75526,
+      "wall_ms_per_crop": 235.37763
+    },
+    "median_backend_wall_ms": 22.151470500000002,
+    "warmup_reference_median_backend_wall_ms": 22.144174,
+    "warmup_threshold_ms": 100.0
+  }
+}

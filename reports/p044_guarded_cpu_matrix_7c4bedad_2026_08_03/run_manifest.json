@@ -1,0 +1,61 @@
+{
+  "canonical_config": {
+    "appearance_compute_min_interval_ms": 250.0,
+    "appearance_request_policy": "all_candidates",
+    "path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+    "sha256": "e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931"
+  },
+  "claim_boundary": {
+    "canonical_policy_changed": false,
+    "cpu_mars_authoritative": true,
+    "repvgg_decision_integration_enabled": false,
+    "repvgg_memory_enabled": false,
+    "repvgg_ranking_enabled": false
+  },
+  "conditions": [
+    {
+      "appearance_compute_min_interval_ms": 250.0,
+      "appearance_request_policy": "all_candidates",
+      "slug": "all_candidates_250ms"
+    },
+    {
+      "appearance_compute_min_interval_ms": 250.0,
+      "appearance_request_policy": "ambiguity_guarded",
+      "slug": "ambiguity_guarded_250ms"
+    }
+  ],
+  "created_at_utc": "2026-08-03T22:15:24.636178+00:00",
+  "execution_order": "paired by sequence with alternating first condition",
+  "git_head": "7c4bedad7216d0bea5b5c3bae4c97ffa53134735",
+  "rate": 1.0,
+  "run_tag": "p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1",
+  "runner": "tools/experiments/run_p044_guarded_cpu_policy_matrix.sh",
+  "schema": "p044_guarded_cpu_matrix_manifest_v1",
+  "sequences": [
+    {
+      "annotation_csv": "docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv",
+      "input_bag": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
+      "name": "may_hard_reentry",
+      "target_id": 1
+    },
+    {
+      "annotation_csv": "docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv",
+      "input_bag": "bags/source/official_flights/2026-06-19/seq01_clean_four_person/full_pipeline/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars",
+      "name": "seq01_clean",
+      "target_id": 1
+    },
+    {
+      "annotation_csv": "docs/data/annotations/june_hard_sequences/seq03_ocsort_305578f3.csv",
+      "input_bag": "bags/replay/p006b_hard_negative_03409564_2026_07_21/seq03",
+      "name": "seq03_crossing",
+      "target_id": 1
+    },
+    {
+      "annotation_csv": "docs/data/annotations/june_hard_sequences/seq04_ocsort_305578f3.csv",
+      "input_bag": "bags/replay/p006b_hard_negative_03409564_2026_07_21/seq04",
+      "name": "seq04_occlusion",
+      "target_id": 1
+    }
+  ],
+  "wrapper": "tools/experiments/run_one_memory_tim_replay.sh"
+}

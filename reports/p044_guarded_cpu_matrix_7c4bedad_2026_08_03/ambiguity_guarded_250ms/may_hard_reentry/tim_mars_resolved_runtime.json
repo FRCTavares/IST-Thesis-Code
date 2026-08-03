@@ -1,0 +1,46 @@
+{
+  "canonical_config": {
+    "copy": "tim_mars_canonical_config.yaml",
+    "sha256": "e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931",
+    "source": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+  },
+  "experiment_fields": {
+    "annotation_csv": "/home/francisco/Desktop/Thesis-Code/docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv",
+    "appearance_compute_min_interval_ms": 250.0,
+    "appearance_request_policy": "ambiguity_guarded",
+    "bag_path": "/home/francisco/Desktop/Thesis-Code/bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
+    "output_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/ambiguity_guarded_250ms/may_hard_reentry",
+    "rate": 1.0,
+    "raw_target_mode": "source",
+    "run_name": "may_hard_reentry",
+    "target_id": 1
+  },
+  "runtime_overrides": {
+    "appearance_compute_min_interval_ms": 250.0,
+    "appearance_image_topic": "/camera/image_raw",
+    "appearance_request_policy": "ambiguity_guarded",
+    "mars_model_path": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb",
+    "mirror_raw_target_selection": false,
+    "mirror_target_topic": "/target",
+    "select_topic": "/target_memory_mars/select",
+    "selected_track_id": 1,
+    "status_topic": "/target_memory_mars/status",
+    "target_topic": "/target_memory_mars",
+    "tracks_topic": "/tracks"
+  },
+  "schema_version": 2,
+  "value_sources": {
+    "ROS_DOMAIN_ID": "environment",
+    "THESIS_ROOT": "environment",
+    "appearance_compute_min_interval_ms": "environment",
+    "appearance_image_topic": "bag_auto_detect_image_raw",
+    "appearance_request_policy": "environment",
+    "log_root": "environment",
+    "mars_model_path": "environment",
+    "mirror_raw_target_selection": "environment",
+    "output_root": "environment",
+    "raw_target_mode": "environment",
+    "report_root": "environment",
+    "tim_mars_config": "environment"
+  }
+}

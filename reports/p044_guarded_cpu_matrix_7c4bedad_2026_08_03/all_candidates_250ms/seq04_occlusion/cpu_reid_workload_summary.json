@@ -1,0 +1,179 @@
+{
+  "backend_wall_ms_all": {
+    "max": 456.63335,
+    "mean": 65.54241188679245,
+    "min": 22.141255,
+    "n": 212,
+    "p50": 63.111558,
+    "p95": 104.28669245,
+    "p99": 112.17538211999998
+  },
+  "backend_wall_ms_steady_state": {
+    "max": 112.506716,
+    "mean": 63.68890033175355,
+    "min": 22.141255,
+    "n": 211,
+    "p50": 63.095308,
+    "p95": 103.6648855,
+    "p99": 110.8446549
+  },
+  "bag_path": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq04_occlusion",
+  "callback_latency_displacement_mean_ms": 65.55426063328821,
+  "callback_overhead_ms": {
+    "max": 2.5748570000000086,
+    "mean": 1.2911357122641507,
+    "min": 0.7443039999999996,
+    "n": 212,
+    "p50": 1.284817499999999,
+    "p95": 1.7620292999999947,
+    "p99": 2.414544130000002
+  },
+  "correlations": {
+    "backend_wall_vs_callback_latency": 0.9999699040835413,
+    "requested_count_vs_backend_wall": 0.5989147860889988
+  },
+  "duration_s": 66.393359737,
+  "git_commit": "7c4bedad7216d0bea5b5c3bae4c97ffa53134735",
+  "grouped_backend_wall_ms_by_requested_crops": {
+    "1": {
+      "max": 456.63335,
+      "mean": 34.692428155555554,
+      "min": 22.141255,
+      "n": 45,
+      "p50": 24.82502,
+      "p95": 29.1462846,
+      "p99": 269.591789800001
+    },
+    "2": {
+      "max": 64.364949,
+      "mean": 53.632191577777775,
+      "min": 44.420085,
+      "n": 45,
+      "p50": 54.712937,
+      "p95": 59.325266400000004,
+      "p99": 63.30074256
+    },
+    "3": {
+      "max": 78.054554,
+      "mean": 64.02008335714285,
+      "min": 54.665455,
+      "n": 42,
+      "p50": 63.675610000000006,
+      "p95": 69.64916915,
+      "p99": 75.21465619999996
+    },
+    "4": {
+      "max": 98.510312,
+      "mean": 82.8519763125,
+      "min": 75.138046,
+      "n": 48,
+      "p50": 82.07655299999999,
+      "p95": 92.31313005,
+      "p99": 96.14681736
+    },
+    "5": {
+      "max": 112.506716,
+      "mean": 101.707658375,
+      "min": 90.653445,
+      "n": 32,
+      "p50": 101.87158299999999,
+      "p95": 111.5893866,
+      "p99": 112.44941715
+    }
+  },
+  "integrity": {
+    "all_required_fields_present": true,
+    "has_backend_calls": true,
+    "has_positive_backend_wall_time": true,
+    "non_call_records_with_nonzero_backend_wall_ms": 0,
+    "returned_not_greater_than_requested": true,
+    "valid_not_greater_than_returned": true
+  },
+  "ratios": {
+    "backend_call_record_fraction": 0.13375394321766562,
+    "backend_calls_per_second": 3.193090406025283,
+    "backend_wall_fraction_of_run_all": 0.20928284658347443,
+    "backend_wall_fraction_of_run_steady_state": 0.20240515050349242,
+    "requested_crops_per_second": 9.232851032516502,
+    "requested_per_call": 2.891509433962264,
+    "returned_per_requested": 1.0,
+    "status_records_per_second": 23.87286930919846,
+    "valid_per_requested": 1.0
+  },
+  "run_name": "all_candidates_250ms/seq04_occlusion",
+  "schema": "p044_cpu_reid_workload_summary_v2",
+  "status_topic": "/target_memory_mars/status",
+  "tim_mars_latency_all_ms": {
+    "max": 457.539598,
+    "mean": 10.047427820189274,
+    "min": 0.187724,
+    "n": 1585,
+    "p50": 1.309475,
+    "p95": 77.3645732,
+    "p99": 103.75919208
+  },
+  "tim_mars_latency_backend_call_ms": {
+    "max": 457.539598,
+    "mean": 66.8335475990566,
+    "min": 23.003133,
+    "n": 212,
+    "p50": 64.488099,
+    "p95": 105.93457655,
+    "p99": 113.97735979999999
+  },
+  "tim_mars_latency_non_call_ms": {
+    "max": 2.898156,
+    "mean": 1.2792869657683903,
+    "min": 0.187724,
+    "n": 1373,
+    "p50": 1.221751,
+    "p95": 1.9264653999999997,
+    "p99": 2.2565769999999974
+  },
+  "total_backend_wall_ms_all": 13894.99132,
+  "total_backend_wall_ms_steady_state": 13438.35797,
+  "totals": {
+    "appearance_backend_calls": 212,
+    "appearance_backend_requested": 613,
+    "appearance_backend_returned": 613,
+    "appearance_backend_valid": 613,
+    "appearance_candidates": 4438,
+    "appearance_encoding_eligible": 613,
+    "appearance_features_valid": 3759,
+    "status_records": 1585
+  },
+  "warmup": {
+    "excluded_backend_calls_from_steady_state": 1,
+    "first_call": {
+      "backend_calls": 1,
+      "call_index": 0,
+      "callback_overhead_ms": 0.906248000000005,
+      "latency_ms": 457.539598,
+      "requested": 1,
+      "returned": 1,
+      "status_record_index": 21,
+      "time_s": 1.145282508,
+      "valid": 1,
+      "wall_ms": 456.63335,
+      "wall_ms_per_crop": 456.63335
+    },
+    "first_call_is_largest": true,
+    "first_call_is_warmup_outlier": true,
+    "largest_call": {
+      "backend_calls": 1,
+      "call_index": 0,
+      "callback_overhead_ms": 0.906248000000005,
+      "latency_ms": 457.539598,
+      "requested": 1,
+      "returned": 1,
+      "status_record_index": 21,
+      "time_s": 1.145282508,
+      "valid": 1,
+      "wall_ms": 456.63335,
+      "wall_ms_per_crop": 456.63335
+    },
+    "median_backend_wall_ms": 63.111558,
+    "warmup_reference_median_backend_wall_ms": 63.095308,
+    "warmup_threshold_ms": 189.28592400000002
+  }
+}
