@@ -143,7 +143,7 @@ def test_memory_replay_forwards_issue_44_request_controls():
         '--field "appearance_compute_min_interval_ms=',
         '--source "appearance_request_policy=',
         '--source "appearance_compute_min_interval_ms=',
-        "all_candidates|geometry_winner",
+        "all_candidates|geometry_winner|ambiguity_guarded",
         "canonical_config",
     )
 
@@ -202,4 +202,72 @@ def test_memory_replay_normalizes_zero_interval_to_double(tmp_path):
     assert 'bag not found' in result.stderr
     assert 'InvalidParameterTypeException' not in (
         result.stdout + result.stderr
+    )
+
+
+def test_memory_replay_accepts_ambiguity_guarded_override(tmp_path):
+    """Forward the guarded policy without changing canonical YAML."""
+    repo_root = Path(__file__).resolve().parents[2]
+    wrapper = (
+        repo_root
+        / "tools"
+        / "experiments"
+        / "run_one_memory_tim_replay.sh"
+    )
+    config = (
+        repo_root
+        / "ros2_ws"
+        / "src"
+        / "thesis_bringup"
+        / "config"
+        / "tim_mars_canonical.yaml"
+    )
+
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "TIM_MARS_CONFIG": str(config),
+            "TIM_APPEARANCE_REQUEST_POLICY": (
+                "ambiguity_guarded"
+            ),
+            "TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS": (
+                "250"
+            ),
+        }
+    )
+
+    result = subprocess.run(
+        [
+            "bash",
+            str(wrapper),
+            str(tmp_path / "absent_bag"),
+            "1",
+            "p044_guarded_policy_probe",
+            str(tmp_path / "absent_annotations.csv"),
+            "1.0",
+        ],
+        cwd=repo_root,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    combined = result.stdout + result.stderr
+
+    assert result.returncode == 2
+    assert (
+        "TIM_APPEARANCE_REQUEST_POLICY="
+        "ambiguity_guarded"
+        in combined
+    )
+    assert (
+        "TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS="
+        "250.0"
+        in combined
+    )
+    assert "bag not found" in combined
+    assert (
+        "invalid TIM_APPEARANCE_REQUEST_POLICY"
+        not in combined
     )

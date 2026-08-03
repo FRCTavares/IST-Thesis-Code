@@ -453,3 +453,20 @@ def test_tim_mars_ros_params_rejects_invalid_request_policy():
         match="Unsupported appearance_request_policy",
     ):
         read_tim_mars_ros_params(node)
+
+
+def test_tim_mars_ros_params_accepts_ambiguity_guarded_policy():
+    """Accept the guarded selector through an explicit ROS override."""
+    node = _FakeNode()
+    declare_tim_mars_parameters(node)
+
+    node.values[
+        "appearance_request_policy"
+    ] = "ambiguity_guarded"
+
+    params = read_tim_mars_ros_params(node)
+
+    assert (
+        params.appearance_request_policy
+        == "ambiguity_guarded"
+    )

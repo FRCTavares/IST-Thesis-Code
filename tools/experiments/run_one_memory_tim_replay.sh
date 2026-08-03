@@ -22,7 +22,7 @@ if [[ $# -lt 4 ]]; then
   echo "  TIM_MIRROR_RAW_TARGET_SELECTION=true   TIM follows /target reselection updates"
   echo
   echo "Issue #44 appearance controls:"
-  echo "  TIM_APPEARANCE_REQUEST_POLICY=all_candidates|geometry_winner"
+  echo "  TIM_APPEARANCE_REQUEST_POLICY=all_candidates|geometry_winner|ambiguity_guarded"
   echo "  TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS=<non-negative milliseconds>"
   echo "  Unset controls are resolved from TIM_MARS_CONFIG."
   echo
@@ -160,11 +160,11 @@ fi
 TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE="${TIM_APPEARANCE_REQUEST_POLICY:-$CANONICAL_APPEARANCE_REQUEST_POLICY}"
 
 case "$TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE" in
-  all_candidates|geometry_winner)
+  all_candidates|geometry_winner|ambiguity_guarded)
     ;;
   *)
     printf \
-      '[error] invalid TIM_APPEARANCE_REQUEST_POLICY=%s; expected all_candidates or geometry_winner\n' \
+      '[error] invalid TIM_APPEARANCE_REQUEST_POLICY=%s; expected all_candidates, geometry_winner, or ambiguity_guarded\n' \
       "$TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE" \
       >&2
     exit 2

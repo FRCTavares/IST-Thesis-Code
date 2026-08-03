@@ -1082,6 +1082,25 @@ def test_resolve_appearance_request_policy_uses_canonical_default():
     )
 
 
+
+def test_resolve_appearance_request_policy_accepts_ambiguity_guarded_override():
+    """Accept the guarded selector through an explicit replay override."""
+    args = argparse.Namespace(
+        appearance_request_policy="ambiguity_guarded",
+    )
+
+    assert (
+        MODULE.resolve_appearance_request_policy(
+            {
+                "appearance_request_policy": (
+                    "all_candidates"
+                ),
+            },
+            args,
+        )
+        == "ambiguity_guarded"
+    )
+
 def test_resolve_appearance_request_policy_rejects_invalid_value():
     args = argparse.Namespace(
         appearance_request_policy=None,
