@@ -300,6 +300,7 @@ def test_collector_accepts_load_matrix_condition_labels():
         "suppressed_result",
         "backend_failure",
         "delayed_result",
+        "sustained_soak",
     )
 
 

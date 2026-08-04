@@ -40,6 +40,7 @@ CONDITION_CHOICES = (
     "suppressed_result",
     "backend_failure",
     "delayed_result",
+    "sustained_soak",
 )
 
 
