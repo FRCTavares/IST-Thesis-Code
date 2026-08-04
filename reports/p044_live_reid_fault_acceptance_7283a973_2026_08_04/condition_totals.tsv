@@ -1,0 +1,5 @@
+condition	requests	relay_received	relay_forwarded	results	successful_results	failed_results	tim_accepted	tim_expired	tim_backend_failure	tim_late_rejected	executor_failed	tim_in_flight
+pass_through	582	568	568	568	568	0	566	16	0	0	0	0
+suppressed_result	582	567	0	0	0	0	0	582	0	0	0	0
+backend_failure	584	558	558	558	0	558	0	26	558	0	0	0
+delayed_result	583	567	567	567	567	0	0	583	0	552	0	0

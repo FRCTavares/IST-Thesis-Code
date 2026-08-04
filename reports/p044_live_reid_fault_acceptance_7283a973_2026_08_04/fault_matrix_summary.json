@@ -1,0 +1,534 @@
+{
+  "claim_boundary": {
+    "authoritative_repvgg_safety_proven": false,
+    "canonical_policy_changed": false,
+    "cpu_mars_authoritative": true,
+    "experiment_only_fault_injection": true,
+    "production_perception_modified": false,
+    "production_tim_modified": false,
+    "repvgg_decision_integration_enabled": false,
+    "repvgg_memory_enabled": false,
+    "repvgg_observational": true,
+    "repvgg_ranking_enabled": false
+  },
+  "conditions": [
+    "pass_through",
+    "suppressed_result",
+    "backend_failure",
+    "delayed_result"
+  ],
+  "repetitions": 3,
+  "runs": [
+    {
+      "collector_counts": {
+        "failed_results": 0,
+        "reid_status": 349,
+        "requests": 193,
+        "results": 187,
+        "successful_results": 187,
+        "tim_status": 1261,
+        "timing": 345
+      },
+      "condition": "pass_through",
+      "executor": {
+        "executed": 187,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 187,
+        "succeeded": 187
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 0,
+        "delayed_scheduled": 0,
+        "forwarded": 187,
+        "injected_backend_failures": 0,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 187,
+        "suppressed": 0
+      },
+      "relay_mode": "none",
+      "repetition": 1,
+      "tim_transport": {
+        "accepted_results": 187,
+        "constructed": 193,
+        "expired_in_flight": 6,
+        "in_flight": 0,
+        "published": 193,
+        "result_reasons": {
+          "accepted": 187
+        }
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 0,
+        "reid_status": 351,
+        "requests": 193,
+        "results": 0,
+        "successful_results": 0,
+        "tim_status": 1250,
+        "timing": 342
+      },
+      "condition": "suppressed_result",
+      "executor": {
+        "executed": 187,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 187,
+        "succeeded": 187
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 0,
+        "delayed_scheduled": 0,
+        "forwarded": 0,
+        "injected_backend_failures": 0,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 187,
+        "suppressed": 187
+      },
+      "relay_mode": "suppress_result",
+      "repetition": 1,
+      "tim_transport": {
+        "accepted_results": 0,
+        "constructed": 193,
+        "expired_in_flight": 193,
+        "in_flight": 0,
+        "published": 193,
+        "result_reasons": {}
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 184,
+        "reid_status": 343,
+        "requests": 194,
+        "results": 184,
+        "successful_results": 0,
+        "tim_status": 1262,
+        "timing": 345
+      },
+      "condition": "backend_failure",
+      "executor": {
+        "executed": 184,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 184,
+        "succeeded": 184
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 0,
+        "delayed_scheduled": 0,
+        "forwarded": 184,
+        "injected_backend_failures": 184,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 184,
+        "suppressed": 0
+      },
+      "relay_mode": "backend_failure",
+      "repetition": 1,
+      "tim_transport": {
+        "accepted_results": 0,
+        "constructed": 194,
+        "expired_in_flight": 10,
+        "in_flight": 0,
+        "published": 194,
+        "result_reasons": {
+          "backend_failure": 184
+        }
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 0,
+        "reid_status": 350,
+        "requests": 195,
+        "results": 191,
+        "successful_results": 191,
+        "tim_status": 1260,
+        "timing": 343
+      },
+      "condition": "delayed_result",
+      "executor": {
+        "executed": 191,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 191,
+        "succeeded": 191
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 191,
+        "delayed_scheduled": 191,
+        "forwarded": 191,
+        "injected_backend_failures": 0,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 191,
+        "suppressed": 0
+      },
+      "relay_mode": "delay_result",
+      "repetition": 1,
+      "tim_transport": {
+        "accepted_results": 0,
+        "constructed": 195,
+        "expired_in_flight": 195,
+        "in_flight": 0,
+        "published": 195,
+        "result_reasons": {
+          "unknown_or_not_in_flight": 185
+        }
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 0,
+        "reid_status": 349,
+        "requests": 195,
+        "results": 190,
+        "successful_results": 190,
+        "tim_status": 1262,
+        "timing": 340
+      },
+      "condition": "pass_through",
+      "executor": {
+        "executed": 190,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 190,
+        "succeeded": 190
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 0,
+        "delayed_scheduled": 0,
+        "forwarded": 190,
+        "injected_backend_failures": 0,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 190,
+        "suppressed": 0
+      },
+      "relay_mode": "none",
+      "repetition": 2,
+      "tim_transport": {
+        "accepted_results": 189,
+        "constructed": 195,
+        "expired_in_flight": 6,
+        "in_flight": 0,
+        "published": 195,
+        "result_reasons": {
+          "accepted": 189
+        }
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 0,
+        "reid_status": 352,
+        "requests": 195,
+        "results": 0,
+        "successful_results": 0,
+        "tim_status": 1263,
+        "timing": 343
+      },
+      "condition": "suppressed_result",
+      "executor": {
+        "executed": 190,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 190,
+        "succeeded": 190
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 0,
+        "delayed_scheduled": 0,
+        "forwarded": 0,
+        "injected_backend_failures": 0,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 190,
+        "suppressed": 190
+      },
+      "relay_mode": "suppress_result",
+      "repetition": 2,
+      "tim_transport": {
+        "accepted_results": 0,
+        "constructed": 195,
+        "expired_in_flight": 195,
+        "in_flight": 0,
+        "published": 195,
+        "result_reasons": {}
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 187,
+        "reid_status": 350,
+        "requests": 195,
+        "results": 187,
+        "successful_results": 0,
+        "tim_status": 1262,
+        "timing": 347
+      },
+      "condition": "backend_failure",
+      "executor": {
+        "executed": 187,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 187,
+        "succeeded": 187
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 0,
+        "delayed_scheduled": 0,
+        "forwarded": 187,
+        "injected_backend_failures": 187,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 187,
+        "suppressed": 0
+      },
+      "relay_mode": "backend_failure",
+      "repetition": 2,
+      "tim_transport": {
+        "accepted_results": 0,
+        "constructed": 195,
+        "expired_in_flight": 8,
+        "in_flight": 0,
+        "published": 195,
+        "result_reasons": {
+          "backend_failure": 187
+        }
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 0,
+        "reid_status": 350,
+        "requests": 195,
+        "results": 189,
+        "successful_results": 189,
+        "tim_status": 1262,
+        "timing": 345
+      },
+      "condition": "delayed_result",
+      "executor": {
+        "executed": 189,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 189,
+        "succeeded": 189
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 189,
+        "delayed_scheduled": 189,
+        "forwarded": 189,
+        "injected_backend_failures": 0,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 189,
+        "suppressed": 0
+      },
+      "relay_mode": "delay_result",
+      "repetition": 2,
+      "tim_transport": {
+        "accepted_results": 0,
+        "constructed": 195,
+        "expired_in_flight": 195,
+        "in_flight": 0,
+        "published": 195,
+        "result_reasons": {
+          "unknown_or_not_in_flight": 185
+        }
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 0,
+        "reid_status": 350,
+        "requests": 194,
+        "results": 191,
+        "successful_results": 191,
+        "tim_status": 1262,
+        "timing": 346
+      },
+      "condition": "pass_through",
+      "executor": {
+        "executed": 191,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 191,
+        "succeeded": 191
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 0,
+        "delayed_scheduled": 0,
+        "forwarded": 191,
+        "injected_backend_failures": 0,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 191,
+        "suppressed": 0
+      },
+      "relay_mode": "none",
+      "repetition": 3,
+      "tim_transport": {
+        "accepted_results": 190,
+        "constructed": 194,
+        "expired_in_flight": 4,
+        "in_flight": 0,
+        "published": 194,
+        "result_reasons": {
+          "accepted": 190
+        }
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 0,
+        "reid_status": 350,
+        "requests": 194,
+        "results": 0,
+        "successful_results": 0,
+        "tim_status": 1261,
+        "timing": 352
+      },
+      "condition": "suppressed_result",
+      "executor": {
+        "executed": 190,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 190,
+        "succeeded": 190
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 0,
+        "delayed_scheduled": 0,
+        "forwarded": 0,
+        "injected_backend_failures": 0,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 190,
+        "suppressed": 190
+      },
+      "relay_mode": "suppress_result",
+      "repetition": 3,
+      "tim_transport": {
+        "accepted_results": 0,
+        "constructed": 194,
+        "expired_in_flight": 194,
+        "in_flight": 0,
+        "published": 194,
+        "result_reasons": {}
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 187,
+        "reid_status": 351,
+        "requests": 195,
+        "results": 187,
+        "successful_results": 0,
+        "tim_status": 1262,
+        "timing": 341
+      },
+      "condition": "backend_failure",
+      "executor": {
+        "executed": 187,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 187,
+        "succeeded": 187
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 0,
+        "delayed_scheduled": 0,
+        "forwarded": 187,
+        "injected_backend_failures": 187,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 187,
+        "suppressed": 0
+      },
+      "relay_mode": "backend_failure",
+      "repetition": 3,
+      "tim_transport": {
+        "accepted_results": 0,
+        "constructed": 195,
+        "expired_in_flight": 8,
+        "in_flight": 0,
+        "published": 195,
+        "result_reasons": {
+          "backend_failure": 187
+        }
+      }
+    },
+    {
+      "collector_counts": {
+        "failed_results": 0,
+        "reid_status": 343,
+        "requests": 193,
+        "results": 187,
+        "successful_results": 187,
+        "tim_status": 1262,
+        "timing": 340
+      },
+      "condition": "delayed_result",
+      "executor": {
+        "executed": 187,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "queued": 0,
+        "submitted": 187,
+        "succeeded": 187
+      },
+      "relay_abandoned_delayed": 0,
+      "relay_counts": {
+        "delayed_published": 187,
+        "delayed_scheduled": 187,
+        "forwarded": 187,
+        "injected_backend_failures": 0,
+        "malformed_inputs": 0,
+        "publish_errors": 0,
+        "received": 187,
+        "suppressed": 0
+      },
+      "relay_mode": "delay_result",
+      "repetition": 3,
+      "tim_transport": {
+        "accepted_results": 0,
+        "constructed": 193,
+        "expired_in_flight": 193,
+        "in_flight": 0,
+        "published": 193,
+        "result_reasons": {
+          "unknown_or_not_in_flight": 182
+        }
+      }
+    }
+  ],
+  "schema": "p044_live_reid_fault_comparison_v1"
+}
