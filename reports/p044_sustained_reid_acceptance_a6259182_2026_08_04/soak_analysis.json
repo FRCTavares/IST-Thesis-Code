@@ -1,0 +1,710 @@
+{
+  "acceptance_thresholds": {
+    "detector_maximum_mean_ratio": 1.5,
+    "duration_early_allowance_s": 10.0,
+    "duration_late_allowance_s": 20.0,
+    "maximum_temperature_c": 80.0,
+    "minimum_memory_available_mib": 512.0,
+    "reid_maximum_mean_ratio": 2.0,
+    "resource_cpu_maximum_mean_ratio": 1.75,
+    "resource_rss_absolute_allowance_mib": 128.0,
+    "resource_rss_maximum_mean_ratio": 1.5
+  },
+  "analysis_end_monotonic_ns": 870405190364106,
+  "analysis_start_monotonic_ns": 868608614207213,
+  "claim_boundary": {
+    "authoritative_repvgg_safety_proven": false,
+    "bounded_replay_soak": true,
+    "canonical_policy_changed": false,
+    "cpu_mars_authoritative": true,
+    "cross_sequence_generality_proven": false,
+    "production_nodes_modified": false,
+    "repvgg_decision_integration_enabled": false,
+    "repvgg_memory_enabled": false,
+    "repvgg_observational": true,
+    "repvgg_ranking_enabled": false
+  },
+  "collector": {
+    "completed_ns": 870417308274697,
+    "condition": "sustained_soak",
+    "counts": {
+      "failed_results": 0,
+      "reid_status": 7270,
+      "requests": 5088,
+      "results": 4962,
+      "successful_results": 4962,
+      "tim_status": 32271,
+      "timing": 8973
+    },
+    "detector": {
+      "container_queue_ms": {
+        "count": 8973,
+        "maximum": 8.722397804260254,
+        "mean": 0.4570144527063154,
+        "minimum": 0.3826709985733032,
+        "p50": 0.43615201115608215,
+        "p95": 0.5072385907173156,
+        "p99": 0.8487258911132828
+      },
+      "e2e_det_ms": {
+        "count": 8973,
+        "maximum": 25.774330139160156,
+        "mean": 12.080165773706533,
+        "minimum": 7.208166122436523,
+        "p50": 14.355315208435059,
+        "p95": 18.126454925537107,
+        "p99": 21.121501693725605
+      },
+      "infer_ms": {
+        "count": 8973,
+        "maximum": 21.366186141967773,
+        "mean": 9.681293497379974,
+        "minimum": 5.334377765655518,
+        "p50": 12.194374084472656,
+        "p95": 14.85069828033447,
+        "p99": 17.13152801513672
+      },
+      "pub_dt_ms": {
+        "count": 8972,
+        "maximum": 1809.379638671875,
+        "mean": 200.23849889012888,
+        "minimum": 7.746597766876221,
+        "p50": 138.0941925048828,
+        "p95": 583.5840484619134,
+        "p99": 810.0726293945311
+      }
+    },
+    "reid": {
+      "end_to_end_ms": {
+        "count": 4962,
+        "maximum": 21.681928,
+        "mean": 10.152508456267633,
+        "minimum": 3.29981,
+        "p50": 9.810791,
+        "p95": 12.322975249999995,
+        "p99": 14.833072650000002
+      },
+      "latest_executor": {
+        "accepting": true,
+        "emitted_results": 4962,
+        "executed": 4962,
+        "failed": 0,
+        "in_flight_request_id": null,
+        "maximum_queued": 2,
+        "queued": 0,
+        "reasons": {
+          "backend_success": 4962
+        },
+        "rejected": 0,
+        "submitted": 4962,
+        "succeeded": 4962
+      },
+      "latest_tim_transport": {
+        "accepted_results": 4953,
+        "cancelled": 0,
+        "constructed": 5088,
+        "dequeued": 5088,
+        "drop_reasons": {
+          "expired_in_flight": 135
+        },
+        "enabled": true,
+        "expired_in_flight": 135,
+        "in_flight": 0,
+        "last_accepted_request_id": 5088,
+        "last_accepted_track_id": 1,
+        "last_result_reason": "accepted",
+        "malformed_results": 0,
+        "maximum_queued": 2,
+        "publish_errors": 0,
+        "published": 5088,
+        "queued": 0,
+        "rejected_results": 0,
+        "rejected_submissions": 0,
+        "result_reasons": {
+          "accepted": 4953
+        },
+        "submitted": 5088
+      },
+      "maximum_engine_active_calls": 1,
+      "maximum_executor_queued": 2,
+      "queue_delay_ms": {
+        "count": 4962,
+        "maximum": 19.267959,
+        "mean": 2.0322778160016126,
+        "minimum": 1.171569,
+        "p50": 1.670744,
+        "p95": 3.3170166499999993,
+        "p99": 11.387251120000002
+      },
+      "worker_ms": {
+        "count": 4962,
+        "maximum": 13.957755,
+        "mean": 8.120230640266021,
+        "minimum": 1.561313,
+        "p50": 8.178840000000001,
+        "p95": 9.18422155,
+        "p99": 10.21864803
+      }
+    },
+    "schema": "p044_transport_evidence_summary_v1",
+    "started_ns": 868596533179799
+  },
+  "health": {
+    "arm_frequency_hz": {
+      "count": 360,
+      "maximum": 2400037120.0,
+      "mean": 1824186990.2222223,
+      "minimum": 1500009472.0
+    },
+    "core_voltage_v": {
+      "count": 360,
+      "maximum": 0.8989,
+      "mean": 0.8140452777777778,
+      "minimum": 0.72
+    },
+    "maximum_throttle_value": 0,
+    "mem_available_kib": {
+      "count": 360,
+      "maximum": 6663244.0,
+      "mean": 6135352.288888888,
+      "minimum": 6099924.0
+    },
+    "nonzero_throttle_sample_count": 0,
+    "runtime_s": 1805.360619918,
+    "sample_count": 360,
+    "samples_with_errors": 0,
+    "schema": "p044_hardware_health_summary_v1",
+    "temperature_c": {
+      "count": 360,
+      "maximum": 60.4,
+      "mean": 57.59055555555556,
+      "minimum": 54.9
+    },
+    "throttle_sample_count": 360
+  },
+  "observed_event_duration_s": 1796.576156893,
+  "passed": true,
+  "relay": {
+    "claim_boundary": {
+      "canonical_policy_changed": false,
+      "cpu_mars_authoritative": true,
+      "experiment_only_timestamp_refresh": true,
+      "production_nodes_modified": false,
+      "replayed_host_timing_cleared": true,
+      "repvgg_observational": true,
+      "source_image_pixels_retained": true,
+      "source_timing_metadata_rewritten": true,
+      "source_track_non_timing_payload_retained": true,
+      "tracker_ids_retained": true
+    },
+    "counters": {
+      "image_publication_errors": 0,
+      "images_published": 9172,
+      "images_received": 9172,
+      "track_publication_errors": 0,
+      "tracks_published": 25041,
+      "tracks_received": 25041
+    },
+    "input_image_topic": "/p044/soak/source/image",
+    "input_tracks_topic": "/p044/soak/source/tracks",
+    "last_fresh_stamp_ns": 1785860826584154848,
+    "output_image_topic": "/camera/image_raw",
+    "output_tracks_topic": "/tracks",
+    "runtime_s": 1819.36409339,
+    "schema": "p044_soak_input_relay_summary_v1",
+    "source_image_rewinds": 26,
+    "source_track_rewinds": 26,
+    "timestamp_monotonic_ns": 870416996634554
+  },
+  "requested_duration_s": 1800.0,
+  "resources": {
+    "completed_monotonic_ns": 870410852903975,
+    "groups": {
+      "perception": {
+        "cpu_percent": {
+          "count": 1805,
+          "maximum": 31.99684866237209,
+          "mean": 11.50244510459161,
+          "p50": 10.998905059001375,
+          "p95": 19.99789523753388
+        },
+        "maximum_member_count": 2,
+        "member_count": {
+          "count": 1806,
+          "maximum": 2.0,
+          "mean": 2.0,
+          "p50": 2.0,
+          "p95": 2.0
+        },
+        "observed_commands": [
+          "/usr/bin/python3 /home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_bringup/lib/thesis_bringup/perception_pipeline_node --ros-args -p image_topic:=/camera/image_raw -p image_reliability:=best_effort -p image_qos_depth:=2 -p img_w:=640 -p img_h:=640 -p inference_backend:=hailo_direct -p hailo_hef_path:=/home/francisco/Desktop/Thesis-Code/models/hef/yolov6n.hef -p allow_stub_fallback:=false -p publish_timing:=true -p reid_enabled:=true -p reid_hef_path:=/home/francisco/Desktop/Thesis-Code/models/reid/repvgg_a0_person_reid_512.hef -p reid_request_topic:=/appearance/reid/request -p reid_result_topic:=/appearance/reid/result -p reid_queue_capacity:=4 -p reid_qos_depth:=1 -p reid_status_topic:=/perception/reid/status -p reid_status_period_s:=0.25",
+          "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup perception_pipeline_node --ros-args -p image_topic:=/camera/image_raw -p image_reliability:=best_effort -p image_qos_depth:=2 -p img_w:=640 -p img_h:=640 -p inference_backend:=hailo_direct -p hailo_hef_path:=/home/francisco/Desktop/Thesis-Code/models/hef/yolov6n.hef -p allow_stub_fallback:=false -p publish_timing:=true -p reid_enabled:=true -p reid_hef_path:=/home/francisco/Desktop/Thesis-Code/models/reid/repvgg_a0_person_reid_512.hef -p reid_request_topic:=/appearance/reid/request -p reid_result_topic:=/appearance/reid/result -p reid_queue_capacity:=4 -p reid_qos_depth:=1 -p reid_status_topic:=/perception/reid/status -p reid_status_period_s:=0.25"
+        ],
+        "observed_pids": [
+          603692,
+          603712
+        ],
+        "pgid": 603692,
+        "rss_kib": {
+          "count": 1806,
+          "maximum": 214428.0,
+          "mean": 211086.9169435216,
+          "p50": 210952.0,
+          "p95": 214342.0
+        },
+        "sample_count": 1806
+      },
+      "relay": {
+        "cpu_percent": {
+          "count": 1805,
+          "maximum": 12.998742540642846,
+          "mean": 6.214598836411986,
+          "p50": 5.99937852437866,
+          "p95": 8.999120134426576
+        },
+        "maximum_member_count": 1,
+        "member_count": {
+          "count": 1806,
+          "maximum": 1.0,
+          "mean": 1.0,
+          "p50": 1.0,
+          "p95": 1.0
+        },
+        "observed_commands": [
+          "/home/francisco/Desktop/Thesis-Code/thesis_env/bin/python /home/francisco/Desktop/Thesis-Code/tools/experiments/p044_soak_input_relay.py --input-image-topic /p044/soak/source/image --output-image-topic /camera/image_raw --input-tracks-topic /p044/soak/source/tracks --output-tracks-topic /tracks --status-topic /p044/soak/input_relay/status --summary-path /home/francisco/Desktop/Thesis-Code/reports/p044_sustained_reid_a6259182_2026_08_04_hard_reentry_sustained_acceptance_30m_r1/input_relay_summary.json"
+        ],
+        "observed_pids": [
+          603650
+        ],
+        "pgid": 603650,
+        "rss_kib": {
+          "count": 1806,
+          "maximum": 78972.0,
+          "mean": 76652.40088593577,
+          "p50": 76620.0,
+          "p95": 76704.0
+        },
+        "sample_count": 1806
+      },
+      "tim": {
+        "cpu_percent": {
+          "count": 1805,
+          "maximum": 81.99188239368361,
+          "mean": 32.448349773184134,
+          "p50": 32.99626353611343,
+          "p95": 46.992792185029344
+        },
+        "maximum_member_count": 2,
+        "member_count": {
+          "count": 1806,
+          "maximum": 2.0,
+          "mean": 2.0,
+          "p50": 2.0,
+          "p95": 2.0
+        },
+        "observed_commands": [
+          "/usr/bin/python3 /home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_bringup/lib/thesis_bringup/target_memory_mars_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml -p tracks_topic:=/tracks -p target_topic:=/target_memory_mars -p status_topic:=/target_memory_mars/status -p select_topic:=/target_memory_mars/select -p selected_track_id:=1 -p mirror_raw_target_selection:=false -p appearance_enabled:=true -p appearance_image_topic:=/camera/image_raw -p appearance_request_policy:=ambiguity_guarded -p appearance_compute_min_interval_ms:=250.0 -p mars_model_path:=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb -p appearance_async_reid_enabled:=true -p appearance_async_reid_request_topic:=/appearance/reid/request -p appearance_async_reid_result_topic:=/appearance/reid/result -p appearance_async_reid_queue_capacity:=8 -p appearance_async_reid_deadline_ms:=500.0 -p appearance_async_reid_qos_depth:=1",
+          "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup target_memory_mars_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml -p tracks_topic:=/tracks -p target_topic:=/target_memory_mars -p status_topic:=/target_memory_mars/status -p select_topic:=/target_memory_mars/select -p selected_track_id:=1 -p mirror_raw_target_selection:=false -p appearance_enabled:=true -p appearance_image_topic:=/camera/image_raw -p appearance_request_policy:=ambiguity_guarded -p appearance_compute_min_interval_ms:=250.0 -p mars_model_path:=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb -p appearance_async_reid_enabled:=true -p appearance_async_reid_request_topic:=/appearance/reid/request -p appearance_async_reid_result_topic:=/appearance/reid/result -p appearance_async_reid_queue_capacity:=8 -p appearance_async_reid_deadline_ms:=500.0 -p appearance_async_reid_qos_depth:=1"
+        ],
+        "observed_pids": [
+          603770,
+          603790
+        ],
+        "pgid": 603770,
+        "rss_kib": {
+          "count": 1806,
+          "maximum": 754360.0,
+          "mean": 747367.399778516,
+          "p50": 748560.0,
+          "p95": 754184.0
+        },
+        "sample_count": 1806
+      }
+    },
+    "interval_s": 1.0,
+    "schema": "p044_process_group_resources_v1",
+    "started_monotonic_ns": 868605416590028
+  },
+  "schema": "p044_sustained_reid_soak_analysis_v1",
+  "violations": [],
+  "windows": {
+    "detector": {
+      "e2e_det_ms": {
+        "early": {
+          "count": 2983,
+          "maximum": 25.774330139160156,
+          "mean": 12.191938837942084,
+          "minimum": 7.348670959472656,
+          "p50": 14.417158126831055,
+          "p95": 18.27653751373291
+        },
+        "late": {
+          "count": 3015,
+          "maximum": 24.836421966552734,
+          "mean": 11.958834105977173,
+          "minimum": 7.208166122436523,
+          "p50": 14.295480728149414,
+          "p95": 17.946806716918942
+        },
+        "middle": {
+          "count": 2975,
+          "maximum": 24.406274795532227,
+          "mean": 12.09105516113153,
+          "minimum": 7.308187007904053,
+          "p50": 14.360742568969727,
+          "p95": 18.186201858520487
+        }
+      },
+      "infer_ms": {
+        "early": {
+          "count": 2983,
+          "maximum": 21.308269500732422,
+          "mean": 9.73410797774532,
+          "minimum": 5.3774638175964355,
+          "p50": 12.202340126037598,
+          "p95": 15.046916580200197
+        },
+        "late": {
+          "count": 3015,
+          "maximum": 20.090389251708984,
+          "mean": 9.61768899161622,
+          "minimum": 5.334377765655518,
+          "p50": 12.180071830749512,
+          "p95": 14.67502498626709
+        },
+        "middle": {
+          "count": 2975,
+          "maximum": 21.366186141967773,
+          "mean": 9.692796687278427,
+          "minimum": 5.342257976531982,
+          "p50": 12.19394302368164,
+          "p95": 14.895672512054443
+        }
+      },
+      "pub_dt_ms": {
+        "early": {
+          "count": 2983,
+          "maximum": 1378.32958984375,
+          "mean": 200.71899613205554,
+          "minimum": 0.0,
+          "p50": 138.781005859375,
+          "p95": 597.0558532714845
+        },
+        "late": {
+          "count": 3015,
+          "maximum": 1809.379638671875,
+          "mean": 198.6246934171142,
+          "minimum": 7.746597766876221,
+          "p50": 137.37193298339844,
+          "p95": 582.0730590820312
+        },
+        "middle": {
+          "count": 2975,
+          "maximum": 1378.1368408203125,
+          "mean": 201.32490619419002,
+          "minimum": 7.981564044952393,
+          "p50": 138.55963134765625,
+          "p95": 583.4993713378905
+        }
+      }
+    },
+    "health": {
+      "arm_frequency_hz": {
+        "early": {
+          "count": 119,
+          "maximum": 2400027136.0,
+          "mean": 1836155032.7394958,
+          "minimum": 1500009472.0,
+          "p50": 1800012032.0,
+          "p95": 2300036096.0
+        },
+        "late": {
+          "count": 119,
+          "maximum": 2400037120.0,
+          "mean": 1817667305.4117646,
+          "minimum": 1500009472.0,
+          "p50": 1700021120.0,
+          "p95": 2400020480.0
+        },
+        "middle": {
+          "count": 119,
+          "maximum": 2400037120.0,
+          "mean": 1811784825.5462184,
+          "minimum": 1500012800.0,
+          "p50": 1700024448.0,
+          "p95": 2300026675.2000003
+        }
+      },
+      "mem_available_kib": {
+        "early": {
+          "count": 119,
+          "maximum": 6229016.0,
+          "mean": 6143848.840336135,
+          "minimum": 6120188.0,
+          "p50": 6141976.0,
+          "p95": 6160590.8
+        },
+        "late": {
+          "count": 119,
+          "maximum": 6213612.0,
+          "mean": 6121831.12605042,
+          "minimum": 6099924.0,
+          "p50": 6120492.0,
+          "p95": 6136589.2
+        },
+        "middle": {
+          "count": 119,
+          "maximum": 6232600.0,
+          "mean": 6130560.3697478995,
+          "minimum": 6105524.0,
+          "p50": 6130096.0,
+          "p95": 6140966.399999999
+        }
+      },
+      "temperature_c": {
+        "early": {
+          "count": 119,
+          "maximum": 60.4,
+          "mean": 57.496638655462185,
+          "minimum": 55.4,
+          "p50": 57.6,
+          "p95": 58.7
+        },
+        "late": {
+          "count": 119,
+          "maximum": 59.8,
+          "mean": 57.50672268907563,
+          "minimum": 55.4,
+          "p50": 57.6,
+          "p95": 59.3
+        },
+        "middle": {
+          "count": 119,
+          "maximum": 60.4,
+          "mean": 57.78151260504202,
+          "minimum": 55.4,
+          "p50": 57.6,
+          "p95": 59.8
+        }
+      }
+    },
+    "reid": {
+      "end_to_end_ms": {
+        "early": {
+          "count": 1667,
+          "maximum": 19.46875,
+          "mean": 10.172192908818237,
+          "minimum": 3.388298,
+          "p50": 9.818105,
+          "p95": 12.505914799999994
+        },
+        "late": {
+          "count": 1653,
+          "maximum": 18.530635,
+          "mean": 10.100883790078644,
+          "minimum": 3.29981,
+          "p50": 9.806314,
+          "p95": 11.82743039999999
+        },
+        "middle": {
+          "count": 1642,
+          "maximum": 21.681928,
+          "mean": 10.184494808769793,
+          "minimum": 3.528684,
+          "p50": 9.809898,
+          "p95": 12.405311049999996
+        }
+      },
+      "worker_ms": {
+        "early": {
+          "count": 1667,
+          "maximum": 13.59307,
+          "mean": 8.105439114577084,
+          "minimum": 1.561313,
+          "p50": 8.179035,
+          "p95": 9.1973594
+        },
+        "late": {
+          "count": 1653,
+          "maximum": 13.827864,
+          "mean": 8.095749683605565,
+          "minimum": 1.577397,
+          "p50": 8.162291,
+          "p95": 9.132913399999998
+        },
+        "middle": {
+          "count": 1642,
+          "maximum": 13.957755,
+          "mean": 8.159892330085261,
+          "minimum": 1.581498,
+          "p50": 8.186437999999999,
+          "p95": 9.2374329
+        }
+      }
+    },
+    "resources": {
+      "perception": {
+        "cpu_percent": {
+          "early": {
+            "count": 598,
+            "maximum": 29.996174317923668,
+            "mean": 11.645416759768107,
+            "minimum": 0.0,
+            "p50": 10.998963083760728,
+            "p95": 20.997393758944458
+          },
+          "late": {
+            "count": 599,
+            "maximum": 28.997104871055463,
+            "mean": 11.50737906866488,
+            "minimum": 0.9998982133615745,
+            "p50": 10.998892664483217,
+            "p95": 19.965960845078712
+          },
+          "middle": {
+            "count": 599,
+            "maximum": 31.99684866237209,
+            "mean": 11.505902296690834,
+            "minimum": 0.0,
+            "p50": 10.99891484706119,
+            "p95": 19.997830367393018
+          }
+        },
+        "rss_kib": {
+          "early": {
+            "count": 598,
+            "maximum": 214416.0,
+            "mean": 210917.6254180602,
+            "minimum": 208364.0,
+            "p50": 210812.0,
+            "p95": 213953.80000000002
+          },
+          "late": {
+            "count": 599,
+            "maximum": 214428.0,
+            "mean": 211205.32888146912,
+            "minimum": 210952.0,
+            "p50": 210952.0,
+            "p95": 214428.0
+          },
+          "middle": {
+            "count": 599,
+            "maximum": 214428.0,
+            "mean": 211217.2487479132,
+            "minimum": 210940.0,
+            "p50": 210948.0,
+            "p95": 214424.0
+          }
+        }
+      },
+      "relay": {
+        "cpu_percent": {
+          "early": {
+            "count": 598,
+            "maximum": 12.998718235390964,
+            "mean": 6.283343651002493,
+            "minimum": 2.9993804929560826,
+            "p50": 5.999383002454191,
+            "p95": 8.999137054750394
+          },
+          "late": {
+            "count": 599,
+            "maximum": 12.99856820771192,
+            "mean": 6.221078194914702,
+            "minimum": 1.9997980124015553,
+            "p50": 5.999382459565907,
+            "p95": 8.99911851924273
+          },
+          "middle": {
+            "count": 599,
+            "maximum": 12.998742540642846,
+            "mean": 6.209494250393812,
+            "minimum": 1.9997856149829312,
+            "p50": 5.999373101507132,
+            "p95": 8.999057196674585
+          }
+        },
+        "rss_kib": {
+          "early": {
+            "count": 598,
+            "maximum": 78864.0,
+            "mean": 76614.53511705686,
+            "minimum": 76568.0,
+            "p50": 76568.0,
+            "p95": 76592.0
+          },
+          "late": {
+            "count": 599,
+            "maximum": 78972.0,
+            "mean": 76720.66110183639,
+            "minimum": 76652.0,
+            "p50": 76680.0,
+            "p95": 76708.0
+          },
+          "middle": {
+            "count": 599,
+            "maximum": 78904.0,
+            "mean": 76654.69115191986,
+            "minimum": 76596.0,
+            "p50": 76620.0,
+            "p95": 76648.0
+          }
+        }
+      },
+      "tim": {
+        "cpu_percent": {
+          "early": {
+            "count": 598,
+            "maximum": 81.99188239368361,
+            "mean": 32.869643931327545,
+            "minimum": 10.998863784374484,
+            "p50": 32.9963093464356,
+            "p95": 46.99352145433581
+          },
+          "late": {
+            "count": 599,
+            "maximum": 77.99215274155975,
+            "mean": 32.53076695875767,
+            "minimum": 5.999401631680059,
+            "p50": 32.99654724129667,
+            "p95": 46.095606113531524
+          },
+          "middle": {
+            "count": 599,
+            "maximum": 79.9922872236582,
+            "mean": 32.36610840473179,
+            "minimum": 11.998773725325272,
+            "p50": 32.99621935917826,
+            "p95": 46.914086799950695
+          }
+        },
+        "rss_kib": {
+          "early": {
+            "count": 598,
+            "maximum": 746384.0,
+            "mean": 740589.1705685619,
+            "minimum": 705492.0,
+            "p50": 742812.0,
+            "p95": 745624.0
+          },
+          "late": {
+            "count": 599,
+            "maximum": 754360.0,
+            "mean": 753430.6510851419,
+            "minimum": 751964.0,
+            "p50": 753452.0,
+            "p95": 754300.0
+          },
+          "middle": {
+            "count": 599,
+            "maximum": 751964.0,
+            "mean": 749046.9649415693,
+            "minimum": 746388.0,
+            "p50": 748560.0,
+            "p95": 751732.0
+          }
+        }
+      }
+    }
+  }
+}

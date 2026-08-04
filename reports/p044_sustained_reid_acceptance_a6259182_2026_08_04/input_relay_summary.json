@@ -1,0 +1,32 @@
+{
+  "claim_boundary": {
+    "canonical_policy_changed": false,
+    "cpu_mars_authoritative": true,
+    "experiment_only_timestamp_refresh": true,
+    "production_nodes_modified": false,
+    "replayed_host_timing_cleared": true,
+    "repvgg_observational": true,
+    "source_image_pixels_retained": true,
+    "source_timing_metadata_rewritten": true,
+    "source_track_non_timing_payload_retained": true,
+    "tracker_ids_retained": true
+  },
+  "counters": {
+    "image_publication_errors": 0,
+    "images_published": 9172,
+    "images_received": 9172,
+    "track_publication_errors": 0,
+    "tracks_published": 25041,
+    "tracks_received": 25041
+  },
+  "input_image_topic": "/p044/soak/source/image",
+  "input_tracks_topic": "/p044/soak/source/tracks",
+  "last_fresh_stamp_ns": 1785860826584154848,
+  "output_image_topic": "/camera/image_raw",
+  "output_tracks_topic": "/tracks",
+  "runtime_s": 1819.36409339,
+  "schema": "p044_soak_input_relay_summary_v1",
+  "source_image_rewinds": 26,
+  "source_track_rewinds": 26,
+  "timestamp_monotonic_ns": 870416996634554
+}

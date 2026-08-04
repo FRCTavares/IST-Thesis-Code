@@ -1,0 +1,55 @@
+{
+  "compact_report_path": "reports/p044_sustained_reid_acceptance_a6259182_2026_08_04",
+  "execution_commit": "a6259182d344bba8b2e32176a1e6a802e11ef682",
+  "files": [
+    {
+      "bytes": 2195,
+      "path": "README.md",
+      "sha256": "4e10f03fd5cc3027dfba9a433185bf05066c49b4ed65a6a3af678bcbec68e31a"
+    },
+    {
+      "bytes": 2334,
+      "path": "acceptance_review.json",
+      "sha256": "6466604f5b1f9c2ea3a9af5f1c9fcd4b585965b91f6172428a54c93039cbf211"
+    },
+    {
+      "bytes": 3151,
+      "path": "collector_summary.json",
+      "sha256": "af18aac4fd8d04ef94dfc2e28594561b5cf41a70e8fc70984bd7bfa08f4f286d"
+    },
+    {
+      "bytes": 735,
+      "path": "health_summary.json",
+      "sha256": "a5084a581081d5562ca3b08f1f75543434ba9cb22e6b2d157899ee1f26bd2f72"
+    },
+    {
+      "bytes": 1065,
+      "path": "input_relay_summary.json",
+      "sha256": "9482303ddd7d22cffbcc38a9db3f1b85cc9b9cb0a941d7097eed283a528852cd"
+    },
+    {
+      "bytes": 0,
+      "path": "log_error_scan.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 6273,
+      "path": "resources_summary.json",
+      "sha256": "55b5fddbb791203a18a444aba714347ac4161a6879af330934a815d197451343"
+    },
+    {
+      "bytes": 824,
+      "path": "run_metadata.json",
+      "sha256": "f7428a8e40e306c4a3f43c5663837df5a9cfeb5a0bd072ae9986b5be5d5c83ff"
+    },
+    {
+      "bytes": 23295,
+      "path": "soak_analysis.json",
+      "sha256": "7637adbf08d4f4fdafe0c0e101586cff4765fbf5c3f6411854f114e843afb483"
+    }
+  ],
+  "forbidden_raw_artifacts_included": false,
+  "generated_at_utc": "2026-08-04T21:01:47.498614+00:00",
+  "schema": "p044_sustained_acceptance_manifest_v1",
+  "source_run_tag": "p044_sustained_reid_a6259182_2026_08_04_hard_reentry_sustained_acceptance_30m_r1"
+}
