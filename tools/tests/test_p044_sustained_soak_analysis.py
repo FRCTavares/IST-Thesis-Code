@@ -107,3 +107,17 @@ def test_drift_limit_accepts_absolute_allowance() -> None:
         maximum_ratio=1.1,
         absolute_allowance=2.0,
     )
+
+def test_duration_tolerance_rejects_large_overrun() -> None:
+    assert MODULE.duration_within_tolerance(
+        180.0,
+        180.0,
+    )
+    assert MODULE.duration_within_tolerance(
+        195.0,
+        180.0,
+    )
+    assert not MODULE.duration_within_tolerance(
+        2243.0,
+        180.0,
+    )

@@ -187,6 +187,19 @@ def drift_within_limit(
     return float(late) <= permitted
 
 
+def duration_within_tolerance(
+    observed_s: float,
+    requested_s: float,
+    *,
+    early_allowance_s: float = 10.0,
+    late_allowance_s: float = 20.0,
+) -> bool:
+    minimum = max(0.0, float(requested_s) - early_allowance_s)
+    maximum = float(requested_s) + late_allowance_s
+
+    return minimum <= float(observed_s) <= maximum
+
+
 def require(
     condition: bool,
     reason: str,
@@ -256,7 +269,14 @@ def main() -> int:
         )
 
     start_ns = min(relevant_event_times)
-    duration_ns = int(round(args.duration_s * 1e9))
+    end_ns = max(relevant_event_times)
+    observed_event_duration_ns = max(0, end_ns - start_ns)
+    observed_event_duration_s = observed_event_duration_ns / 1e9
+
+    # Window the evidence over the duration actually observed. Separately
+    # reject a run whose observed duration does not match the requested
+    # bounded duration.
+    duration_ns = max(1, observed_event_duration_ns)
 
     timing_predicate = lambda row: row.get("type") == "timing"
     successful_result_predicate = lambda row: (
@@ -356,6 +376,15 @@ def main() -> int:
     }
 
     violations: list[str] = []
+
+    require(
+        duration_within_tolerance(
+            observed_event_duration_s,
+            args.duration_s,
+        ),
+        "observed_duration_outside_requested_bound",
+        violations,
+    )
 
     relay_counters = relay.get("counters", {})
     claim_boundary = relay.get("claim_boundary", {})
@@ -667,8 +696,10 @@ def main() -> int:
 
     output = {
         "schema": SCHEMA,
-        "duration_s": args.duration_s,
+        "requested_duration_s": args.duration_s,
+        "observed_event_duration_s": observed_event_duration_s,
         "analysis_start_monotonic_ns": start_ns,
+        "analysis_end_monotonic_ns": end_ns,
         "passed": not violations,
         "violations": violations,
         "relay": relay,
@@ -693,6 +724,8 @@ def main() -> int:
             "minimum_memory_available_mib": (
                 args.minimum_memory_available_mib
             ),
+            "duration_early_allowance_s": 10.0,
+            "duration_late_allowance_s": 20.0,
             "detector_maximum_mean_ratio": 1.50,
             "reid_maximum_mean_ratio": 2.0,
             "resource_cpu_maximum_mean_ratio": 1.75,

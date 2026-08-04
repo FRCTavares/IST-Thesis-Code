@@ -239,6 +239,11 @@ if [ -e log ] || [ -e hailort.log ]; then
   exit 1
 fi
 
+if ! command -v timeout >/dev/null 2>&1; then
+  printf 'ERROR: GNU timeout is required for bounded loop playback.\n'
+  exit 1
+fi
+
 if [ -n "$(matching_runtime_pids)" ]; then
   printf 'ERROR: related runtime processes are already active.\n'
   matching_runtime_pids
@@ -332,6 +337,7 @@ cat > "$REPORT_DIR/run_metadata.json" <<EOF
   "target_id": $TARGET_ID,
   "rate": $RATE,
   "duration_s": $DURATION_S,
+  "duration_control": "external_wall_clock_timeout",
   "condition": "sustained_soak",
   "source_image_topic": "$SOURCE_IMAGE_TOPIC",
   "source_tracks_topic": "$SOURCE_TRACKS_TOPIC",
@@ -500,10 +506,18 @@ register_process "$health_pid" "health sampler" || exit 1
 
 section "3. Run timestamp-continuous looping replay"
 
-setsid ros2 bag play "$BAG_PATH" \
+# rosbag2 applies --playback-duration inside the source timestamp
+# range. Combined with --loop, the source restarts before reaching a
+# duration longer than the bag and playback never ends. Use a host
+# wall-clock watchdog instead.
+setsid timeout \
+  --foreground \
+  --signal=TERM \
+  --kill-after=15s \
+  "${DURATION_S}s" \
+  ros2 bag play "$BAG_PATH" \
   --rate "$RATE" \
   --loop \
-  --playback-duration "$DURATION_S" \
   --disable-keyboard-controls \
   --topics \
   /camera/image_raw \
@@ -517,9 +531,20 @@ playback_pid=$!
 register_process "$playback_pid" "bag playback" || exit 1
 
 wait "$playback_pid"
-playback_status=$?
+playback_raw_status=$?
+playback_status="$playback_raw_status"
+playback_end_reason="player_exit"
 
-printf 'playback_status: %s\n' "$playback_status"
+# GNU timeout returns 124 when the requested wall-clock duration
+# expires. That is the expected successful termination mechanism.
+if [ "$playback_raw_status" -eq 124 ]; then
+  playback_status=0
+  playback_end_reason="duration_watchdog"
+fi
+
+printf 'playback_raw_status: %s\n' "$playback_raw_status"
+printf 'playback_status:     %s\n' "$playback_status"
+printf 'playback_end_reason: %s\n' "$playback_end_reason"
 
 if [ "$playback_status" -ne 0 ]; then
   printf 'ERROR: bounded bag playback failed.\n'
@@ -645,7 +670,9 @@ fi
 
 section "8. Result"
 
+printf 'playback_raw_status:%s\n' "$playback_raw_status"
 printf 'playback_status:    %s\n' "$playback_status"
+printf 'playback_end_reason:%s\n' "$playback_end_reason"
 printf 'cleanup_status:     %s\n' "$cleanup_status"
 printf 'analysis_status:    %s\n' "$analysis_status"
 printf 'log_scan_status:    %s\n' "$log_scan_status"

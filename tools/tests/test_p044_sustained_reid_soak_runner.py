@@ -34,15 +34,26 @@ def test_runner_uses_timestamp_continuous_loop_path() -> None:
 
     required = (
         "--loop",
-        "--playback-duration",
+        "timeout",
+        "--foreground",
+        "--signal=TERM",
+        "--kill-after=15s",
         "/camera/image_raw:=$SOURCE_IMAGE_TOPIC",
         "/tracks:=$SOURCE_TRACKS_TOPIC",
         "p044_soak_input_relay.py",
         "--condition sustained_soak",
+        'playback_end_reason="duration_watchdog"',
     )
 
     for fragment in required:
         assert fragment in text
+
+    executable_text = "\n".join(
+        line
+        for line in text.splitlines()
+        if not line.lstrip().startswith("#")
+    )
+    assert "--playback-duration" not in executable_text
 
 
 def test_runner_collects_sustained_health_and_resources() -> None:
