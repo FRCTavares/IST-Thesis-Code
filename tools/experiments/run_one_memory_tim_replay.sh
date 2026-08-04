@@ -21,6 +21,11 @@ if [[ $# -lt 4 ]]; then
   echo "  TIM_MIRROR_RAW_TARGET_SELECTION=false  autonomous TIM recovery from selected_track_id"
   echo "  TIM_MIRROR_RAW_TARGET_SELECTION=true   TIM follows /target reselection updates"
   echo
+  echo "Issue #44 appearance controls:"
+  echo "  TIM_APPEARANCE_REQUEST_POLICY=all_candidates|geometry_winner|ambiguity_guarded"
+  echo "  TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS=<non-negative milliseconds>"
+  echo "  Unset controls are resolved from TIM_MARS_CONFIG."
+  echo
   echo "Example:"
   echo "  RAW_TARGET_MODE=source $0 bags/annotation_inputs/2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest 1 seq02_target_reentry docs/data/annotations/june_hard_sequences/seq02_bytetrack.csv 1.0"
   exit 1
@@ -120,6 +125,75 @@ else
 fi
 TIM_MIRROR_RAW_TARGET_SELECTION="${TIM_MIRROR_RAW_TARGET_SELECTION:-false}"
 
+if [[ ! -f "$TIM_MARS_CONFIG" ]]; then
+  echo "[error] canonical TIM-MARS config not found: $TIM_MARS_CONFIG" >&2
+  exit 1
+fi
+
+CANONICAL_APPEARANCE_REQUEST_POLICY="$(
+  awk \
+    '$1 == "appearance_request_policy:" { print $2; exit }' \
+    "$TIM_MARS_CONFIG"
+)"
+CANONICAL_APPEARANCE_COMPUTE_MIN_INTERVAL_MS="$(
+  awk \
+    '$1 == "appearance_compute_min_interval_ms:" { print $2; exit }' \
+    "$TIM_MARS_CONFIG"
+)"
+
+if [[ -z "$CANONICAL_APPEARANCE_REQUEST_POLICY" ]]; then
+  echo "[error] appearance_request_policy missing from $TIM_MARS_CONFIG" >&2
+  exit 1
+fi
+
+if [[ -z "$CANONICAL_APPEARANCE_COMPUTE_MIN_INTERVAL_MS" ]]; then
+  echo "[error] appearance_compute_min_interval_ms missing from $TIM_MARS_CONFIG" >&2
+  exit 1
+fi
+
+if [[ -n "${TIM_APPEARANCE_REQUEST_POLICY:-}" ]]; then
+  TIM_APPEARANCE_REQUEST_POLICY_SOURCE="environment"
+else
+  TIM_APPEARANCE_REQUEST_POLICY_SOURCE="canonical_config"
+fi
+
+TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE="${TIM_APPEARANCE_REQUEST_POLICY:-$CANONICAL_APPEARANCE_REQUEST_POLICY}"
+
+case "$TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE" in
+  all_candidates|geometry_winner|ambiguity_guarded)
+    ;;
+  *)
+    printf \
+      '[error] invalid TIM_APPEARANCE_REQUEST_POLICY=%s; expected all_candidates, geometry_winner, or ambiguity_guarded\n' \
+      "$TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE" \
+      >&2
+    exit 2
+    ;;
+esac
+
+if [[ -n "${TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS:-}" ]]; then
+  TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_SOURCE="environment"
+else
+  TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_SOURCE="canonical_config"
+fi
+
+TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE="${TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS:-$CANONICAL_APPEARANCE_COMPUTE_MIN_INTERVAL_MS}"
+
+if ! [[ "$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE" =~ ^[0-9]+([.][0-9]*)?$ ]]; then
+  printf \
+    '[error] invalid TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS=%s; expected a non-negative numeric value\n' \
+    "$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE" \
+    >&2
+  exit 2
+fi
+
+# rclpy infers a parameter override without a decimal point as INTEGER.
+# The ROS parameter is declared as DOUBLE, so preserve numeric meaning while
+# ensuring values such as "0" and "250" are forwarded as "0.0" and "250.0".
+if [[ "$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE" != *.* ]]; then
+  TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE="${TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE}.0"
+fi
+
 cleanup_ros() {
   echo "[info] cleaning up background ROS processes"
   local patterns="ros2 bag play|ros2 bag record|target_memory_mars_node|publish_selected_track_target.py|publish_annotated_track_target.py"
@@ -185,6 +259,10 @@ echo "[info] RAW_TARGET_MODE=$RAW_TARGET_MODE"
 echo "[info] RAW_TARGET_MODE_SOURCE=$RAW_TARGET_MODE_SOURCE"
 echo "[info] TIM_MIRROR_RAW_TARGET_SELECTION=$TIM_MIRROR_RAW_TARGET_SELECTION"
 echo "[info] TIM_MIRROR_RAW_TARGET_SELECTION_SOURCE=$TIM_MIRROR_RAW_TARGET_SELECTION_SOURCE"
+echo "[info] TIM_APPEARANCE_REQUEST_POLICY=$TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE"
+echo "[info] TIM_APPEARANCE_REQUEST_POLICY_SOURCE=$TIM_APPEARANCE_REQUEST_POLICY_SOURCE"
+echo "[info] TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS=$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE"
+echo "[info] TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_SOURCE=$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_SOURCE"
 
 if [[ ! -d "$BAG_PATH" ]]; then
   echo "[error] bag not found: $BAG_PATH" >&2
@@ -226,12 +304,14 @@ rm -rf "$OUT_BAG" "$REPORT_DIR" "$LOG_DIR"
 mkdir -p "$OUT_ROOT" "$REPORT_DIR" "$LOG_DIR"
 
 printf -v EFFECTIVE_RUN_COMMAND \
-  'RAW_TARGET_MODE=%q TIM_MIRROR_RAW_TARGET_SELECTION=%q TIM_MARS_CONFIG=%q MARS_MODEL_PATH=%q TIM_APPEARANCE_IMAGE_TOPIC=%q TIM_REPLAY_OUT_ROOT=%q TIM_REPLAY_REPORT_ROOT=%q TIM_REPLAY_LOG_ROOT=%q ROS_DOMAIN_ID=%q %s' \
+  'RAW_TARGET_MODE=%q TIM_MIRROR_RAW_TARGET_SELECTION=%q TIM_MARS_CONFIG=%q MARS_MODEL_PATH=%q TIM_APPEARANCE_IMAGE_TOPIC=%q TIM_APPEARANCE_REQUEST_POLICY=%q TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS=%q TIM_REPLAY_OUT_ROOT=%q TIM_REPLAY_REPORT_ROOT=%q TIM_REPLAY_LOG_ROOT=%q ROS_DOMAIN_ID=%q %s' \
   "$RAW_TARGET_MODE" \
   "$TIM_MIRROR_RAW_TARGET_SELECTION" \
   "$TIM_MARS_CONFIG" \
   "$MARS_MODEL_PATH" \
   "$TIM_APPEARANCE_IMAGE_TOPIC" \
+  "$TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE" \
+  "$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE" \
   "$OUT_ROOT" \
   "$REPORT_ROOT" \
   "$LOG_ROOT" \
@@ -253,6 +333,8 @@ python3 "$TIM_METADATA_HELPER" \
   --runtime "selected_track_id=$TARGET_ID" \
   --runtime "mirror_raw_target_selection=$TIM_MIRROR_RAW_TARGET_SELECTION" \
   --runtime "appearance_image_topic=$TIM_APPEARANCE_IMAGE_TOPIC" \
+  --runtime "appearance_request_policy=$TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE" \
+  --runtime "appearance_compute_min_interval_ms=$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE" \
   --runtime "mars_model_path=$MARS_MODEL_PATH" \
   --field "run_name=$RUN_NAME" \
   --field "bag_path=$BAG_PATH" \
@@ -261,6 +343,8 @@ python3 "$TIM_METADATA_HELPER" \
   --field "target_id=$TARGET_ID" \
   --field "rate=$RATE" \
   --field "raw_target_mode=$RAW_TARGET_MODE" \
+  --field "appearance_request_policy=$TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE" \
+  --field "appearance_compute_min_interval_ms=$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE" \
   --source "THESIS_ROOT=$THESIS_ROOT_SOURCE" \
   --source "ROS_DOMAIN_ID=$ROS_DOMAIN_ID_SOURCE" \
   --source "output_root=$OUT_ROOT_SOURCE" \
@@ -270,17 +354,14 @@ python3 "$TIM_METADATA_HELPER" \
   --source "tim_mars_config=$TIM_MARS_CONFIG_SOURCE" \
   --source "raw_target_mode=$RAW_TARGET_MODE_SOURCE" \
   --source "mirror_raw_target_selection=$TIM_MIRROR_RAW_TARGET_SELECTION_SOURCE" \
-  --source "appearance_image_topic=$TIM_APPEARANCE_IMAGE_TOPIC_SOURCE"
+  --source "appearance_image_topic=$TIM_APPEARANCE_IMAGE_TOPIC_SOURCE" \
+  --source "appearance_request_policy=$TIM_APPEARANCE_REQUEST_POLICY_SOURCE" \
+  --source "appearance_compute_min_interval_ms=$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_SOURCE"
 
 cleanup_ros
 trap cleanup_ros EXIT
 
 echo "[info] starting TIM-MARS memory-only node"
-
-if [[ ! -f "$TIM_MARS_CONFIG" ]]; then
-  echo "[error] canonical TIM-MARS config not found: $TIM_MARS_CONFIG" >&2
-  exit 1
-fi
 
 ros2 run thesis_bringup target_memory_mars_node --ros-args \
   --params-file "$TIM_MARS_CONFIG" \
@@ -292,6 +373,8 @@ ros2 run thesis_bringup target_memory_mars_node --ros-args \
   -p selected_track_id:="$TARGET_ID" \
   -p mirror_raw_target_selection:="$TIM_MIRROR_RAW_TARGET_SELECTION" \
   -p appearance_image_topic:="$TIM_APPEARANCE_IMAGE_TOPIC" \
+  -p appearance_request_policy:="$TIM_APPEARANCE_REQUEST_POLICY_EFFECTIVE" \
+  -p appearance_compute_min_interval_ms:="$TIM_APPEARANCE_COMPUTE_MIN_INTERVAL_MS_EFFECTIVE" \
   -p mars_model_path:="$MARS_MODEL_PATH" \
   >"$LOG_DIR/target_memory_mars.log" 2>&1 &
 TIM_PID=$!

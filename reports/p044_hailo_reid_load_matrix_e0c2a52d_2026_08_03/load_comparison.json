@@ -1,0 +1,173 @@
+{
+  "comparisons": {
+    "forced_frequent_vs_reference": {
+      "detector_infer_mean_delta_ms": 5.093108776035657,
+      "detector_infer_p95_delta_ms": 9.513303581873576,
+      "left": "forced_frequent",
+      "perception_cpu_mean_delta_percent": 1.2046349106162015,
+      "perception_rss_mean_delta_kib": 9923.657657657634,
+      "right": "reference",
+      "tim_cpu_mean_delta_percent": 18.220847356715602,
+      "tim_rss_mean_delta_kib": 2776.630630630767
+    },
+    "forced_frequent_vs_selective": {
+      "detector_infer_mean_delta_ms": 1.3699231097105127,
+      "detector_infer_p95_delta_ms": 2.2981814225514725,
+      "left": "forced_frequent",
+      "perception_cpu_mean_delta_percent": -0.11014413378377164,
+      "perception_rss_mean_delta_kib": 46.95495495494106,
+      "right": "selective",
+      "tim_cpu_mean_delta_percent": 9.916844159841276,
+      "tim_rss_mean_delta_kib": 664.9189189190511
+    },
+    "selective_vs_reference": {
+      "detector_infer_mean_delta_ms": 3.7231856663251444,
+      "detector_infer_p95_delta_ms": 7.215122159322104,
+      "left": "selective",
+      "perception_cpu_mean_delta_percent": 1.3147790443999732,
+      "perception_rss_mean_delta_kib": 9876.702702702692,
+      "right": "reference",
+      "tim_cpu_mean_delta_percent": 8.304003196874326,
+      "tim_rss_mean_delta_kib": 2111.711711711716
+    }
+  },
+  "conditions": {
+    "forced_frequent": {
+      "counts": {
+        "requests_observed": 1468,
+        "results_observed": 947
+      },
+      "detector": {
+        "infer_mean_ms": 11.162465312620116,
+        "infer_p95_ms": 15.911707766850789
+      },
+      "maximum_engine_active_calls": 1,
+      "maximum_executor_queued": 2,
+      "repetitions": 3,
+      "resources": {
+        "perception": {
+          "cpu_percent_maximum": 28.997197449863666,
+          "cpu_percent_mean": 11.179680425596471,
+          "cpu_percent_p95_mean": 20.996532677502245,
+          "minimum_sample_count": 74,
+          "rss_kib_maximum": 213496.0,
+          "rss_kib_mean": 209293.7297297297
+        },
+        "tim": {
+          "cpu_percent_maximum": 131.95353612499903,
+          "cpu_percent_mean": 61.95575771372148,
+          "cpu_percent_p95_mean": 107.65187839399601,
+          "minimum_sample_count": 74,
+          "rss_kib_maximum": 757408.0,
+          "rss_kib_mean": 734755.0270270271
+        }
+      },
+      "transport": {
+        "accepted_results": 931,
+        "constructed": 1468,
+        "executor_failed": 0,
+        "executor_submitted": 947,
+        "executor_succeeded": 947,
+        "expired_in_flight": 537,
+        "final_in_flight": 0,
+        "published": 1468,
+        "request_delivery_percent": 64.50953678474114,
+        "result_delivery_percent": 98.3104540654699
+      }
+    },
+    "reference": {
+      "counts": {
+        "requests_observed": 0,
+        "results_observed": 0
+      },
+      "detector": {
+        "infer_mean_ms": 6.069356536584459,
+        "infer_p95_ms": 6.398404184977212
+      },
+      "maximum_engine_active_calls": 1,
+      "maximum_executor_queued": 0,
+      "repetitions": 3,
+      "resources": {
+        "perception": {
+          "cpu_percent_maximum": 30.99610437860559,
+          "cpu_percent_mean": 9.97504551498027,
+          "cpu_percent_p95_mean": 19.05292589051032,
+          "minimum_sample_count": 74,
+          "rss_kib_maximum": 203600.0,
+          "rss_kib_mean": 199370.07207207207
+        },
+        "tim": {
+          "cpu_percent_maximum": 81.99172826449404,
+          "cpu_percent_mean": 43.73491035700588,
+          "cpu_percent_p95_mean": 66.5233631657172,
+          "minimum_sample_count": 74,
+          "rss_kib_maximum": 752556.0,
+          "rss_kib_mean": 731978.3963963963
+        }
+      },
+      "transport": {
+        "accepted_results": 0,
+        "constructed": 0,
+        "executor_failed": 0,
+        "executor_submitted": 0,
+        "executor_succeeded": 0,
+        "expired_in_flight": 0,
+        "final_in_flight": 0,
+        "published": 0,
+        "request_delivery_percent": null,
+        "result_delivery_percent": null
+      }
+    },
+    "selective": {
+      "counts": {
+        "requests_observed": 1098,
+        "results_observed": 775
+      },
+      "detector": {
+        "infer_mean_ms": 9.792542202909603,
+        "infer_p95_ms": 13.613526344299316
+      },
+      "maximum_engine_active_calls": 1,
+      "maximum_executor_queued": 2,
+      "repetitions": 3,
+      "resources": {
+        "perception": {
+          "cpu_percent_maximum": 31.99686225969937,
+          "cpu_percent_mean": 11.289824559380243,
+          "cpu_percent_p95_mean": 20.462755236647364,
+          "minimum_sample_count": 74,
+          "rss_kib_maximum": 213868.0,
+          "rss_kib_mean": 209246.77477477476
+        },
+        "tim": {
+          "cpu_percent_maximum": 89.71583558752926,
+          "cpu_percent_mean": 52.03891355388021,
+          "cpu_percent_p95_mean": 79.91945779584613,
+          "minimum_sample_count": 74,
+          "rss_kib_maximum": 755804.0,
+          "rss_kib_mean": 734090.108108108
+        }
+      },
+      "transport": {
+        "accepted_results": 771,
+        "constructed": 1098,
+        "executor_failed": 0,
+        "executor_submitted": 775,
+        "executor_succeeded": 775,
+        "expired_in_flight": 327,
+        "final_in_flight": 0,
+        "published": 1098,
+        "request_delivery_percent": 70.58287795992715,
+        "result_delivery_percent": 99.48387096774194
+      }
+    }
+  },
+  "interpretation_boundary": {
+    "cpu_mars_authoritative": true,
+    "geometry_winner_used": false,
+    "repvgg_decision_integration": false,
+    "resource_measurement": "complete Linux process groups"
+  },
+  "repetitions": 3,
+  "schema": "p044_hailo_reid_load_comparison_v1"
+}

@@ -1,0 +1,2125 @@
+{
+  "candidate_group_size_histogram": {
+    "1": 865,
+    "2": 230,
+    "3": 2
+  },
+  "claim_boundary": {
+    "canonical_change": false,
+    "direct_cross_model_vector_similarity": false,
+    "evidence_type": "offline observational extraction and input-feasibility audit",
+    "ranking_agreement": false,
+    "runtime_integration": false,
+    "safety_equivalence": false,
+    "target_decision_equivalence": false
+  },
+  "conditions": {
+    "all_candidates_hailo": 3,
+    "ambiguity_guarded_hailo": 3
+  },
+  "execution_commit": "ea1868fdbe807a3039d03cb857c3792150c34f34",
+  "ranking_input_readiness": {
+    "both_expected_conditions_present": true,
+    "canonical_policy_changed": false,
+    "cpu_mars_authoritative": true,
+    "direct_128d_to_512d_similarity_forbidden": true,
+    "exact_same_crop_pairing_available": true,
+    "independent_model_space_ranking_inputs_available": true,
+    "multi_candidate_frames_available": true,
+    "ranking_equivalence_computed": false,
+    "repeated_track_histories_available": true,
+    "runtime_modified": false,
+    "six_expected_runs_present": true,
+    "status_context_available": true,
+    "target_decision_equivalence_computed": false,
+    "target_decision_field_requires_manual_confirmation": true
+  },
+  "raw_vectors_promoted": false,
+  "rejection_reasons": {
+    "missing_repvgg_result": 361
+  },
+  "relevant_status_paths": [
+    {
+      "frames_present": 1097,
+      "path": "acceptance_memory_source"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[]"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].adaptive_similarity"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].ambiguous"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].appearance"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].appearance_accepted_for_publication"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].appearance_available"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].appearance_evaluated"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].appearance_gate_passed"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].appearance_raw"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].appearance_similarity_passed"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].appearance_used"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].confidence"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].distance"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].geometry_allows_appearance"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].geometry_score"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].hard_negative_margin"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].hard_negative_reject"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].hard_negative_similarity"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].id_bonus"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].iou"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].positive_similarity"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].positive_support_source"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].protected_anchor_similarity"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].ranking_score"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].scale"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].total"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].track_id"
+    },
+    {
+      "frames_present": 1097,
+      "path": "all_scores[].trusted_gallery_similarity"
+    },
+    {
+      "frames_present": 1097,
+      "path": "appearance_async_reid.last_accepted_track_id"
+    },
+    {
+      "frames_present": 1097,
+      "path": "appearance_candidates"
+    },
+    {
+      "frames_present": 1097,
+      "path": "appearance_crop_quality_by_track_id"
+    },
+    {
+      "frames_present": 1097,
+      "path": "appearance_embedding_age_ms_by_track_id"
+    },
+    {
+      "frames_present": 1097,
+      "path": "appearance_memory_update_ineligible"
+    },
+    {
+      "frames_present": 1097,
+      "path": "appearance_request_candidates"
+    },
+    {
+      "frames_present": 1097,
+      "path": "appearance_request_track_ids"
+    },
+    {
+      "frames_present": 1097,
+      "path": "appearance_request_track_ids[]"
+    },
+    {
+      "frames_present": 1097,
+      "path": "best.geometry_score"
+    },
+    {
+      "frames_present": 1097,
+      "path": "best.ranking_score"
+    },
+    {
+      "frames_present": 1097,
+      "path": "best.track_id"
+    },
+    {
+      "frames_present": 1097,
+      "path": "candidate_score"
+    },
+    {
+      "frames_present": 1097,
+      "path": "candidate_track_id"
+    },
+    {
+      "frames_present": 1097,
+      "path": "candidate_track_ids"
+    },
+    {
+      "frames_present": 1097,
+      "path": "candidate_track_ids[]"
+    },
+    {
+      "frames_present": 1097,
+      "path": "control_mode"
+    },
+    {
+      "frames_present": 1097,
+      "path": "hard_negative_memory_size"
+    },
+    {
+      "frames_present": 1097,
+      "path": "image_track_offset_ms"
+    },
+    {
+      "frames_present": 1097,
+      "path": "memory_update_freeze_reason"
+    },
+    {
+      "frames_present": 1097,
+      "path": "memory_update_frozen"
+    },
+    {
+      "frames_present": 1097,
+      "path": "num_tracks"
+    },
+    {
+      "frames_present": 1097,
+      "path": "positive_memory_bootstrap_event"
+    },
+    {
+      "frames_present": 1097,
+      "path": "positive_memory_update_reason"
+    },
+    {
+      "frames_present": 1097,
+      "path": "positive_memory_updated"
+    },
+    {
+      "frames_present": 1097,
+      "path": "selected_image_timestamp_ns"
+    },
+    {
+      "frames_present": 1097,
+      "path": "state"
+    },
+    {
+      "frames_present": 1097,
+      "path": "target_track_id"
+    },
+    {
+      "frames_present": 1097,
+      "path": "track_timestamp_ns"
+    },
+    {
+      "frames_present": 911,
+      "path": "appearance_crop_quality_by_track_id.1"
+    },
+    {
+      "frames_present": 911,
+      "path": "appearance_crop_quality_by_track_id.1.aspect_ratio"
+    },
+    {
+      "frames_present": 911,
+      "path": "appearance_crop_quality_by_track_id.1.clipping_fraction"
+    },
+    {
+      "frames_present": 911,
+      "path": "appearance_crop_quality_by_track_id.1.crop_height_px"
+    },
+    {
+      "frames_present": 911,
+      "path": "appearance_crop_quality_by_track_id.1.crop_width_px"
+    },
+    {
+      "frames_present": 911,
+      "path": "appearance_crop_quality_by_track_id.1.encoding_eligible"
+    },
+    {
+      "frames_present": 911,
+      "path": "appearance_crop_quality_by_track_id.1.max_iou_with_other"
+    },
+    {
+      "frames_present": 911,
+      "path": "appearance_crop_quality_by_track_id.1.memory_update_eligible"
+    },
+    {
+      "frames_present": 911,
+      "path": "appearance_crop_quality_by_track_id.1.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 911,
+      "path": "appearance_crop_quality_by_track_id.1.rejection_reasons"
+    },
+    {
+      "frames_present": 873,
+      "path": "appearance_embedding_age_ms_by_track_id.1"
+    },
+    {
+      "frames_present": 550,
+      "path": "appearance_crop_quality_by_track_id.41"
+    },
+    {
+      "frames_present": 550,
+      "path": "appearance_crop_quality_by_track_id.41.aspect_ratio"
+    },
+    {
+      "frames_present": 550,
+      "path": "appearance_crop_quality_by_track_id.41.clipping_fraction"
+    },
+    {
+      "frames_present": 550,
+      "path": "appearance_crop_quality_by_track_id.41.crop_height_px"
+    },
+    {
+      "frames_present": 550,
+      "path": "appearance_crop_quality_by_track_id.41.crop_width_px"
+    },
+    {
+      "frames_present": 550,
+      "path": "appearance_crop_quality_by_track_id.41.encoding_eligible"
+    },
+    {
+      "frames_present": 550,
+      "path": "appearance_crop_quality_by_track_id.41.max_iou_with_other"
+    },
+    {
+      "frames_present": 550,
+      "path": "appearance_crop_quality_by_track_id.41.memory_update_eligible"
+    },
+    {
+      "frames_present": 550,
+      "path": "appearance_crop_quality_by_track_id.41.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 550,
+      "path": "appearance_crop_quality_by_track_id.41.rejection_reasons"
+    },
+    {
+      "frames_present": 514,
+      "path": "appearance_crop_quality_by_track_id.2"
+    },
+    {
+      "frames_present": 514,
+      "path": "appearance_crop_quality_by_track_id.2.aspect_ratio"
+    },
+    {
+      "frames_present": 514,
+      "path": "appearance_crop_quality_by_track_id.2.clipping_fraction"
+    },
+    {
+      "frames_present": 514,
+      "path": "appearance_crop_quality_by_track_id.2.crop_height_px"
+    },
+    {
+      "frames_present": 514,
+      "path": "appearance_crop_quality_by_track_id.2.crop_width_px"
+    },
+    {
+      "frames_present": 514,
+      "path": "appearance_crop_quality_by_track_id.2.encoding_eligible"
+    },
+    {
+      "frames_present": 514,
+      "path": "appearance_crop_quality_by_track_id.2.max_iou_with_other"
+    },
+    {
+      "frames_present": 514,
+      "path": "appearance_crop_quality_by_track_id.2.memory_update_eligible"
+    },
+    {
+      "frames_present": 514,
+      "path": "appearance_crop_quality_by_track_id.2.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 514,
+      "path": "appearance_crop_quality_by_track_id.2.rejection_reasons"
+    },
+    {
+      "frames_present": 445,
+      "path": "appearance_embedding_age_ms_by_track_id.41"
+    },
+    {
+      "frames_present": 282,
+      "path": "hard_negative_entries[].appearance_frame_generation"
+    },
+    {
+      "frames_present": 282,
+      "path": "hard_negative_entries[].appearance_source_crop_quality.memory_update_eligible"
+    },
+    {
+      "frames_present": 282,
+      "path": "hard_negative_entries[].appearance_track_generation"
+    },
+    {
+      "frames_present": 282,
+      "path": "hard_negative_entries[].latest_crop_quality.memory_update_eligible"
+    },
+    {
+      "frames_present": 282,
+      "path": "hard_negative_entries[].latest_geometry_score"
+    },
+    {
+      "frames_present": 282,
+      "path": "hard_negative_entries[].lifecycle_state"
+    },
+    {
+      "frames_present": 282,
+      "path": "hard_negative_entries[].selected_track_ids"
+    },
+    {
+      "frames_present": 282,
+      "path": "hard_negative_entries[].selected_track_ids[]"
+    },
+    {
+      "frames_present": 282,
+      "path": "hard_negative_entries[].source_track_ids"
+    },
+    {
+      "frames_present": 282,
+      "path": "hard_negative_entries[].source_track_ids[]"
+    },
+    {
+      "frames_present": 276,
+      "path": "appearance_embedding_age_ms_by_track_id.2"
+    },
+    {
+      "frames_present": 156,
+      "path": "appearance_crop_quality_by_track_id.60"
+    },
+    {
+      "frames_present": 156,
+      "path": "appearance_crop_quality_by_track_id.60.aspect_ratio"
+    },
+    {
+      "frames_present": 156,
+      "path": "appearance_crop_quality_by_track_id.60.clipping_fraction"
+    },
+    {
+      "frames_present": 156,
+      "path": "appearance_crop_quality_by_track_id.60.crop_height_px"
+    },
+    {
+      "frames_present": 156,
+      "path": "appearance_crop_quality_by_track_id.60.crop_width_px"
+    },
+    {
+      "frames_present": 156,
+      "path": "appearance_crop_quality_by_track_id.60.encoding_eligible"
+    },
+    {
+      "frames_present": 156,
+      "path": "appearance_crop_quality_by_track_id.60.max_iou_with_other"
+    },
+    {
+      "frames_present": 156,
+      "path": "appearance_crop_quality_by_track_id.60.memory_update_eligible"
+    },
+    {
+      "frames_present": 156,
+      "path": "appearance_crop_quality_by_track_id.60.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 156,
+      "path": "appearance_crop_quality_by_track_id.60.rejection_reasons"
+    },
+    {
+      "frames_present": 140,
+      "path": "hard_negative_events[].memory_size"
+    },
+    {
+      "frames_present": 140,
+      "path": "hard_negative_events[].selected_track_id"
+    },
+    {
+      "frames_present": 140,
+      "path": "hard_negative_events[].selected_track_ids"
+    },
+    {
+      "frames_present": 140,
+      "path": "hard_negative_events[].selected_track_ids[]"
+    },
+    {
+      "frames_present": 140,
+      "path": "hard_negative_events[].source_track_id"
+    },
+    {
+      "frames_present": 140,
+      "path": "hard_negative_events[].source_track_ids"
+    },
+    {
+      "frames_present": 140,
+      "path": "hard_negative_events[].source_track_ids[]"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17.aspect_ratio"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17.clipping_fraction"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17.crop_height_px"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17.crop_width_px"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17.encoding_eligible"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17.max_iou_with_other"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17.memory_update_eligible"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17.rejection_reasons"
+    },
+    {
+      "frames_present": 119,
+      "path": "appearance_crop_quality_by_track_id.17.rejection_reasons[]"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10.aspect_ratio"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10.clipping_fraction"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10.crop_height_px"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10.crop_width_px"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10.encoding_eligible"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10.max_iou_with_other"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10.memory_update_eligible"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10.rejection_reasons"
+    },
+    {
+      "frames_present": 114,
+      "path": "appearance_crop_quality_by_track_id.10.rejection_reasons[]"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46.aspect_ratio"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46.clipping_fraction"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46.crop_height_px"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46.crop_width_px"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46.encoding_eligible"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46.max_iou_with_other"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46.memory_update_eligible"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46.rejection_reasons"
+    },
+    {
+      "frames_present": 108,
+      "path": "appearance_crop_quality_by_track_id.46.rejection_reasons[]"
+    },
+    {
+      "frames_present": 85,
+      "path": "appearance_crop_quality_by_track_id.1.rejection_reasons[]"
+    },
+    {
+      "frames_present": 83,
+      "path": "appearance_crop_quality_by_track_id.48"
+    },
+    {
+      "frames_present": 83,
+      "path": "appearance_crop_quality_by_track_id.48.aspect_ratio"
+    },
+    {
+      "frames_present": 83,
+      "path": "appearance_crop_quality_by_track_id.48.clipping_fraction"
+    },
+    {
+      "frames_present": 83,
+      "path": "appearance_crop_quality_by_track_id.48.crop_height_px"
+    },
+    {
+      "frames_present": 83,
+      "path": "appearance_crop_quality_by_track_id.48.crop_width_px"
+    },
+    {
+      "frames_present": 83,
+      "path": "appearance_crop_quality_by_track_id.48.encoding_eligible"
+    },
+    {
+      "frames_present": 83,
+      "path": "appearance_crop_quality_by_track_id.48.max_iou_with_other"
+    },
+    {
+      "frames_present": 83,
+      "path": "appearance_crop_quality_by_track_id.48.memory_update_eligible"
+    },
+    {
+      "frames_present": 83,
+      "path": "appearance_crop_quality_by_track_id.48.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 83,
+      "path": "appearance_crop_quality_by_track_id.48.rejection_reasons"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65.aspect_ratio"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65.clipping_fraction"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65.crop_height_px"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65.crop_width_px"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65.encoding_eligible"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65.max_iou_with_other"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65.memory_update_eligible"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65.rejection_reasons"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_crop_quality_by_track_id.65.rejection_reasons[]"
+    },
+    {
+      "frames_present": 78,
+      "path": "appearance_embedding_age_ms_by_track_id.60"
+    },
+    {
+      "frames_present": 73,
+      "path": "appearance_crop_quality_by_track_id.41.rejection_reasons[]"
+    },
+    {
+      "frames_present": 65,
+      "path": "appearance_crop_quality_by_track_id.48.rejection_reasons[]"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27.aspect_ratio"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27.clipping_fraction"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27.crop_height_px"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27.crop_width_px"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27.encoding_eligible"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27.max_iou_with_other"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27.memory_update_eligible"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27.rejection_reasons"
+    },
+    {
+      "frames_present": 62,
+      "path": "appearance_crop_quality_by_track_id.27.rejection_reasons[]"
+    },
+    {
+      "frames_present": 60,
+      "path": "appearance_crop_quality_by_track_id.30"
+    },
+    {
+      "frames_present": 60,
+      "path": "appearance_crop_quality_by_track_id.30.aspect_ratio"
+    },
+    {
+      "frames_present": 60,
+      "path": "appearance_crop_quality_by_track_id.30.clipping_fraction"
+    },
+    {
+      "frames_present": 60,
+      "path": "appearance_crop_quality_by_track_id.30.crop_height_px"
+    },
+    {
+      "frames_present": 60,
+      "path": "appearance_crop_quality_by_track_id.30.crop_width_px"
+    },
+    {
+      "frames_present": 60,
+      "path": "appearance_crop_quality_by_track_id.30.encoding_eligible"
+    },
+    {
+      "frames_present": 60,
+      "path": "appearance_crop_quality_by_track_id.30.max_iou_with_other"
+    },
+    {
+      "frames_present": 60,
+      "path": "appearance_crop_quality_by_track_id.30.memory_update_eligible"
+    },
+    {
+      "frames_present": 60,
+      "path": "appearance_crop_quality_by_track_id.30.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 60,
+      "path": "appearance_crop_quality_by_track_id.30.rejection_reasons"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13.aspect_ratio"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13.clipping_fraction"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13.crop_height_px"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13.crop_width_px"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13.encoding_eligible"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13.max_iou_with_other"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13.memory_update_eligible"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13.rejection_reasons"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.13.rejection_reasons[]"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.35"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.35.aspect_ratio"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.35.clipping_fraction"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.35.crop_height_px"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.35.crop_width_px"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.35.encoding_eligible"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.35.max_iou_with_other"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.35.memory_update_eligible"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.35.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 54,
+      "path": "appearance_crop_quality_by_track_id.35.rejection_reasons"
+    },
+    {
+      "frames_present": 49,
+      "path": "appearance_crop_quality_by_track_id.30.rejection_reasons[]"
+    },
+    {
+      "frames_present": 48,
+      "path": "appearance_crop_quality_by_track_id.68"
+    },
+    {
+      "frames_present": 48,
+      "path": "appearance_crop_quality_by_track_id.68.aspect_ratio"
+    },
+    {
+      "frames_present": 48,
+      "path": "appearance_crop_quality_by_track_id.68.clipping_fraction"
+    },
+    {
+      "frames_present": 48,
+      "path": "appearance_crop_quality_by_track_id.68.crop_height_px"
+    },
+    {
+      "frames_present": 48,
+      "path": "appearance_crop_quality_by_track_id.68.crop_width_px"
+    },
+    {
+      "frames_present": 48,
+      "path": "appearance_crop_quality_by_track_id.68.encoding_eligible"
+    },
+    {
+      "frames_present": 48,
+      "path": "appearance_crop_quality_by_track_id.68.max_iou_with_other"
+    },
+    {
+      "frames_present": 48,
+      "path": "appearance_crop_quality_by_track_id.68.memory_update_eligible"
+    },
+    {
+      "frames_present": 48,
+      "path": "appearance_crop_quality_by_track_id.68.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 48,
+      "path": "appearance_crop_quality_by_track_id.68.rejection_reasons"
+    },
+    {
+      "frames_present": 44,
+      "path": "hard_negative_pending_entries[].appearance_frame_generation"
+    },
+    {
+      "frames_present": 44,
+      "path": "hard_negative_pending_entries[].appearance_source_crop_quality.memory_update_eligible"
+    },
+    {
+      "frames_present": 44,
+      "path": "hard_negative_pending_entries[].appearance_track_generation"
+    },
+    {
+      "frames_present": 44,
+      "path": "hard_negative_pending_entries[].latest_crop_quality.memory_update_eligible"
+    },
+    {
+      "frames_present": 44,
+      "path": "hard_negative_pending_entries[].latest_geometry_score"
+    },
+    {
+      "frames_present": 44,
+      "path": "hard_negative_pending_entries[].lifecycle_state"
+    },
+    {
+      "frames_present": 44,
+      "path": "hard_negative_pending_entries[].selected_track_ids"
+    },
+    {
+      "frames_present": 44,
+      "path": "hard_negative_pending_entries[].selected_track_ids[]"
+    },
+    {
+      "frames_present": 44,
+      "path": "hard_negative_pending_entries[].source_track_ids"
+    },
+    {
+      "frames_present": 44,
+      "path": "hard_negative_pending_entries[].source_track_ids[]"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.35.rejection_reasons[]"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61.aspect_ratio"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61.clipping_fraction"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61.crop_height_px"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61.crop_width_px"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61.encoding_eligible"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61.max_iou_with_other"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61.memory_update_eligible"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61.rejection_reasons"
+    },
+    {
+      "frames_present": 42,
+      "path": "appearance_crop_quality_by_track_id.61.rejection_reasons[]"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66.aspect_ratio"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66.clipping_fraction"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66.crop_height_px"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66.crop_width_px"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66.encoding_eligible"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66.max_iou_with_other"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66.memory_update_eligible"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66.rejection_reasons"
+    },
+    {
+      "frames_present": 35,
+      "path": "appearance_crop_quality_by_track_id.66.rejection_reasons[]"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.58"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.58.aspect_ratio"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.58.clipping_fraction"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.58.crop_height_px"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.58.crop_width_px"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.58.encoding_eligible"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.58.max_iou_with_other"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.58.memory_update_eligible"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.58.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.58.rejection_reasons"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63.aspect_ratio"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63.clipping_fraction"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63.crop_height_px"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63.crop_width_px"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63.encoding_eligible"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63.max_iou_with_other"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63.memory_update_eligible"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63.rejection_reasons"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.63.rejection_reasons[]"
+    },
+    {
+      "frames_present": 24,
+      "path": "appearance_crop_quality_by_track_id.68.rejection_reasons[]"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.2.rejection_reasons[]"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39.aspect_ratio"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39.clipping_fraction"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39.crop_height_px"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39.crop_width_px"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39.encoding_eligible"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39.max_iou_with_other"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39.memory_update_eligible"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39.rejection_reasons"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_crop_quality_by_track_id.39.rejection_reasons[]"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_embedding_age_ms_by_track_id.30"
+    },
+    {
+      "frames_present": 18,
+      "path": "appearance_embedding_age_ms_by_track_id.68"
+    },
+    {
+      "frames_present": 15,
+      "path": "appearance_embedding_age_ms_by_track_id.48"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18.aspect_ratio"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18.clipping_fraction"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18.crop_height_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18.crop_width_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18.encoding_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18.max_iou_with_other"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18.memory_update_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18.rejection_reasons"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.18.rejection_reasons[]"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52.aspect_ratio"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52.clipping_fraction"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52.crop_height_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52.crop_width_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52.encoding_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52.max_iou_with_other"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52.memory_update_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52.rejection_reasons"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.52.rejection_reasons[]"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53.aspect_ratio"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53.clipping_fraction"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53.crop_height_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53.crop_width_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53.encoding_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53.max_iou_with_other"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53.memory_update_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53.rejection_reasons"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.53.rejection_reasons[]"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.58.rejection_reasons[]"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64.aspect_ratio"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64.clipping_fraction"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64.crop_height_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64.crop_width_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64.encoding_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64.max_iou_with_other"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64.memory_update_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64.rejection_reasons"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.64.rejection_reasons[]"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67.aspect_ratio"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67.clipping_fraction"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67.crop_height_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67.crop_width_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67.encoding_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67.max_iou_with_other"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67.memory_update_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67.rejection_reasons"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.67.rejection_reasons[]"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.9"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.9.aspect_ratio"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.9.clipping_fraction"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.9.crop_height_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.9.crop_width_px"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.9.encoding_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.9.max_iou_with_other"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.9.memory_update_eligible"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.9.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 12,
+      "path": "appearance_crop_quality_by_track_id.9.rejection_reasons"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54.aspect_ratio"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54.clipping_fraction"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54.crop_height_px"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54.crop_width_px"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54.encoding_eligible"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54.max_iou_with_other"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54.memory_update_eligible"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54.rejection_reasons"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.54.rejection_reasons[]"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56.aspect_ratio"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56.clipping_fraction"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56.crop_height_px"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56.crop_width_px"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56.encoding_eligible"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56.max_iou_with_other"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56.memory_update_eligible"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56.rejection_reasons"
+    },
+    {
+      "frames_present": 9,
+      "path": "appearance_crop_quality_by_track_id.56.rejection_reasons[]"
+    },
+    {
+      "frames_present": 8,
+      "path": "appearance_embedding_age_ms_by_track_id.58"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4.aspect_ratio"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4.clipping_fraction"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4.crop_height_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4.crop_width_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4.encoding_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4.max_iou_with_other"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4.memory_update_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4.rejection_reasons"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.4.rejection_reasons[]"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43.aspect_ratio"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43.clipping_fraction"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43.crop_height_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43.crop_width_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43.encoding_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43.max_iou_with_other"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43.memory_update_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43.rejection_reasons"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.43.rejection_reasons[]"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50.aspect_ratio"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50.clipping_fraction"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50.crop_height_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50.crop_width_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50.encoding_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50.max_iou_with_other"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50.memory_update_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50.rejection_reasons"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.50.rejection_reasons[]"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.51"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.51.aspect_ratio"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.51.clipping_fraction"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.51.crop_height_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.51.crop_width_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.51.encoding_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.51.max_iou_with_other"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.51.memory_update_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.51.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.51.rejection_reasons"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55.aspect_ratio"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55.clipping_fraction"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55.crop_height_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55.crop_width_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55.encoding_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55.max_iou_with_other"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55.memory_update_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55.rejection_reasons"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.55.rejection_reasons[]"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.60.rejection_reasons[]"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7.aspect_ratio"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7.clipping_fraction"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7.crop_height_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7.crop_width_px"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7.encoding_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7.max_iou_with_other"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7.memory_update_eligible"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7.rejection_reasons"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.7.rejection_reasons[]"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_crop_quality_by_track_id.9.rejection_reasons[]"
+    },
+    {
+      "frames_present": 6,
+      "path": "appearance_embedding_age_ms_by_track_id.35"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3.aspect_ratio"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3.clipping_fraction"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3.crop_height_px"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3.crop_width_px"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3.encoding_eligible"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3.max_iou_with_other"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3.memory_update_eligible"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3.rejection_reasons"
+    },
+    {
+      "frames_present": 4,
+      "path": "appearance_crop_quality_by_track_id.3.rejection_reasons[]"
+    },
+    {
+      "frames_present": 3,
+      "path": "appearance_embedding_age_ms_by_track_id.51"
+    },
+    {
+      "frames_present": 3,
+      "path": "appearance_embedding_age_ms_by_track_id.9"
+    },
+    {
+      "frames_present": 3,
+      "path": "hard_negative_events[].snapshot.appearance_frame_generation"
+    },
+    {
+      "frames_present": 3,
+      "path": "hard_negative_events[].snapshot.appearance_source_crop_quality.memory_update_eligible"
+    },
+    {
+      "frames_present": 3,
+      "path": "hard_negative_events[].snapshot.appearance_track_generation"
+    },
+    {
+      "frames_present": 3,
+      "path": "hard_negative_events[].snapshot.latest_crop_quality.memory_update_eligible"
+    },
+    {
+      "frames_present": 3,
+      "path": "hard_negative_events[].snapshot.latest_geometry_score"
+    },
+    {
+      "frames_present": 3,
+      "path": "hard_negative_events[].snapshot.lifecycle_state"
+    },
+    {
+      "frames_present": 3,
+      "path": "hard_negative_events[].snapshot.selected_track_ids"
+    },
+    {
+      "frames_present": 3,
+      "path": "hard_negative_events[].snapshot.selected_track_ids[]"
+    },
+    {
+      "frames_present": 3,
+      "path": "hard_negative_events[].snapshot.source_track_ids"
+    },
+    {
+      "frames_present": 3,
+      "path": "hard_negative_events[].snapshot.source_track_ids[]"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29.aspect_ratio"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29.clipping_fraction"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29.crop_height_px"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29.crop_width_px"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29.encoding_eligible"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29.max_iou_with_other"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29.memory_update_eligible"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29.min_centre_distance_norm"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29.rejection_reasons"
+    },
+    {
+      "frames_present": 1,
+      "path": "appearance_crop_quality_by_track_id.29.rejection_reasons[]"
+    }
+  ],
+  "runs": [
+    {
+      "condition": "all_candidates_hailo",
+      "paired": 250,
+      "paired_records_with_status": 250,
+      "rejected": 119,
+      "rejection_reasons": {
+        "missing_repvgg_result": 119
+      },
+      "requests": 369,
+      "results": 250,
+      "run_id": "r1_all_candidates_hailo",
+      "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_hailo_load_175d3279_2026_08_04_hard_reentry_guarded_matrix_r1/r1_all_candidates_hailo/evidence",
+      "status_frames_recorded": 950,
+      "unique_source_frames": 182,
+      "unique_track_ids": 11
+    },
+    {
+      "condition": "ambiguity_guarded_hailo",
+      "paired": 189,
+      "paired_records_with_status": 189,
+      "rejected": 5,
+      "rejection_reasons": {
+        "missing_repvgg_result": 5
+      },
+      "requests": 194,
+      "results": 189,
+      "run_id": "r1_ambiguity_guarded_hailo",
+      "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_hailo_load_175d3279_2026_08_04_hard_reentry_guarded_matrix_r1/r1_ambiguity_guarded_hailo/evidence",
+      "status_frames_recorded": 949,
+      "unique_source_frames": 183,
+      "unique_track_ids": 3
+    },
+    {
+      "condition": "all_candidates_hailo",
+      "paired": 264,
+      "paired_records_with_status": 264,
+      "rejected": 107,
+      "rejection_reasons": {
+        "missing_repvgg_result": 107
+      },
+      "requests": 371,
+      "results": 264,
+      "run_id": "r2_all_candidates_hailo",
+      "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_hailo_load_175d3279_2026_08_04_hard_reentry_guarded_matrix_r1/r2_all_candidates_hailo/evidence",
+      "status_frames_recorded": 949,
+      "unique_source_frames": 183,
+      "unique_track_ids": 11
+    },
+    {
+      "condition": "ambiguity_guarded_hailo",
+      "paired": 187,
+      "paired_records_with_status": 187,
+      "rejected": 6,
+      "rejection_reasons": {
+        "missing_repvgg_result": 6
+      },
+      "requests": 193,
+      "results": 187,
+      "run_id": "r2_ambiguity_guarded_hailo",
+      "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_hailo_load_175d3279_2026_08_04_hard_reentry_guarded_matrix_r1/r2_ambiguity_guarded_hailo/evidence",
+      "status_frames_recorded": 950,
+      "unique_source_frames": 182,
+      "unique_track_ids": 3
+    },
+    {
+      "condition": "all_candidates_hailo",
+      "paired": 249,
+      "paired_records_with_status": 249,
+      "rejected": 121,
+      "rejection_reasons": {
+        "missing_repvgg_result": 121
+      },
+      "requests": 370,
+      "results": 249,
+      "run_id": "r3_all_candidates_hailo",
+      "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_hailo_load_175d3279_2026_08_04_hard_reentry_guarded_matrix_r1/r3_all_candidates_hailo/evidence",
+      "status_frames_recorded": 944,
+      "unique_source_frames": 183,
+      "unique_track_ids": 11
+    },
+    {
+      "condition": "ambiguity_guarded_hailo",
+      "paired": 192,
+      "paired_records_with_status": 192,
+      "rejected": 3,
+      "rejection_reasons": {
+        "missing_repvgg_result": 3
+      },
+      "requests": 195,
+      "results": 192,
+      "run_id": "r3_ambiguity_guarded_hailo",
+      "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_hailo_load_175d3279_2026_08_04_hard_reentry_guarded_matrix_r1/r3_ambiguity_guarded_hailo/evidence",
+      "status_frames_recorded": 950,
+      "unique_source_frames": 184,
+      "unique_track_ids": 3
+    }
+  ],
+  "schema": "p044_observational_multirun_audit_v1",
+  "source_bag_root": "bags/replay/p044_guarded_hailo_load_175d3279_2026_08_04_hard_reentry_guarded_matrix_r1",
+  "status_path_count": 723,
+  "totals": {
+    "candidate_frames": 1097,
+    "multi_candidate_frames": 232,
+    "multi_candidate_frames_with_unique_track_ids": 232,
+    "paired": 1331,
+    "paired_records_with_status": 1331,
+    "rejected": 361,
+    "repeated_run_track_histories": 32,
+    "requests": 1692,
+    "results": 1331,
+    "run_track_histories": 42,
+    "run_track_histories_with_at_least_five_observations": 18,
+    "runs": 6,
+    "single_candidate_frames": 865
+  },
+  "track_observation_histogram": {
+    "1": 10,
+    "10-24": 3,
+    "2-4": 14,
+    "25+": 15
+  }
+}

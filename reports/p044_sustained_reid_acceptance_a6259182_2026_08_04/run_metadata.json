@@ -1,0 +1,21 @@
+{
+  "schema": "p044_sustained_reid_soak_run_v1",
+  "execution_commit": "a6259182d344bba8b2e32176a1e6a802e11ef682",
+  "source_bag": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
+  "target_id": 1,
+  "rate": 1.0,
+  "duration_s": 1800.0,
+  "duration_control": "external_wall_clock_timeout",
+  "condition": "sustained_soak",
+  "source_image_topic": "/p044/soak/source/image",
+  "source_tracks_topic": "/p044/soak/source/tracks",
+  "output_image_topic": "/camera/image_raw",
+  "output_tracks_topic": "/tracks",
+  "appearance_request_policy": "ambiguity_guarded",
+  "appearance_compute_min_interval_ms": 250.0,
+  "tim_deadline_ms": 500.0,
+  "cpu_mars_authoritative": true,
+  "repvgg_observational": true,
+  "canonical_policy_changed": false,
+  "production_nodes_modified": false
+}

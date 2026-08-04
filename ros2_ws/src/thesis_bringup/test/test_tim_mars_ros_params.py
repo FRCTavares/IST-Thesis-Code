@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from thesis_bringup.tim_mars.ros_params import (
     build_target_memory_config,
     declare_tim_mars_parameters,
@@ -29,10 +31,50 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 101
+    assert len(node.values) == 108
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
+    assert (
+        node.values[
+            "appearance_async_reid_enabled"
+        ]
+        is False
+    )
+    assert (
+        node.values[
+            "appearance_async_reid_request_topic"
+        ]
+        == "/appearance/reid/request"
+    )
+    assert (
+        node.values[
+            "appearance_async_reid_result_topic"
+        ]
+        == "/appearance/reid/result"
+    )
+    assert (
+        node.values[
+            "appearance_async_reid_queue_capacity"
+        ]
+        == 8
+    )
+    assert (
+        node.values[
+            "appearance_async_reid_deadline_ms"
+        ]
+        == 500.0
+    )
+    assert (
+        node.values[
+            "appearance_async_reid_qos_depth"
+        ]
+        == 1
+    )
+    assert (
+        node.values["appearance_request_policy"]
+        == "all_candidates"
+    )
     assert node.values["freshness_max_output_age_s"] == 0.90
     assert node.values["freshness_future_tolerance_s"] == 0.05
     assert (
@@ -115,6 +157,27 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values["image_width"] = 1280.0
     node.values["image_height"] = 720.0
     node.values["appearance_enabled"] = True
+    node.values[
+        "appearance_async_reid_enabled"
+    ] = True
+    node.values[
+        "appearance_async_reid_request_topic"
+    ] = "/test/reid/request"
+    node.values[
+        "appearance_async_reid_result_topic"
+    ] = "/test/reid/result"
+    node.values[
+        "appearance_async_reid_queue_capacity"
+    ] = 6
+    node.values[
+        "appearance_async_reid_deadline_ms"
+    ] = 650.0
+    node.values[
+        "appearance_async_reid_qos_depth"
+    ] = 2
+    node.values[
+        "appearance_request_policy"
+    ] = "geometry_winner"
     node.values["freshness_max_output_age_s"] = 0.75
     node.values["freshness_future_tolerance_s"] = 0.02
     node.values[
@@ -164,6 +227,28 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     assert params.image_width == 1280.0
     assert params.image_height == 720.0
     assert params.appearance_enabled is True
+    assert params.appearance_async_reid_enabled is True
+    assert (
+        params.appearance_async_reid_request_topic
+        == "/test/reid/request"
+    )
+    assert (
+        params.appearance_async_reid_result_topic
+        == "/test/reid/result"
+    )
+    assert (
+        params.appearance_async_reid_queue_capacity
+        == 6
+    )
+    assert (
+        params.appearance_async_reid_deadline_ms
+        == 650.0
+    )
+    assert params.appearance_async_reid_qos_depth == 2
+    assert (
+        params.appearance_request_policy
+        == "geometry_winner"
+    )
     assert params.freshness_max_output_age_s == 0.75
     assert params.freshness_future_tolerance_s == 0.02
     assert (
@@ -356,3 +441,32 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
 
     for name in expected_active_keys:
         assert getattr(cfg, name) == canonical[name]
+
+
+def test_tim_mars_ros_params_rejects_invalid_request_policy():
+    node = _FakeNode()
+    declare_tim_mars_parameters(node)
+    node.values["appearance_request_policy"] = "unsupported"
+
+    with pytest.raises(
+        ValueError,
+        match="Unsupported appearance_request_policy",
+    ):
+        read_tim_mars_ros_params(node)
+
+
+def test_tim_mars_ros_params_accepts_ambiguity_guarded_policy():
+    """Accept the guarded selector through an explicit ROS override."""
+    node = _FakeNode()
+    declare_tim_mars_parameters(node)
+
+    node.values[
+        "appearance_request_policy"
+    ] = "ambiguity_guarded"
+
+    params = read_tim_mars_ros_params(node)
+
+    assert (
+        params.appearance_request_policy
+        == "ambiguity_guarded"
+    )

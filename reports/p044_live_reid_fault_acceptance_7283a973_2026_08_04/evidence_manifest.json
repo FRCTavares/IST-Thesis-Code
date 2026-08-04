@@ -1,0 +1,30 @@
+{
+  "execution_commit": "7283a97363436f35baf3e01752b81e36e94c2af3",
+  "promoted_files": {
+    "README.md": {
+      "bytes": 2235,
+      "sha256": "f77ac6c69b3b8d8c7bef6160392273bef40854ce4f55a5f1a171a51f72e21089"
+    },
+    "aggregate_totals.json": {
+      "bytes": 13437,
+      "sha256": "70097dd62baf540cdb37bd05af5b8bf3fd956f0704262990d8285574b3f4cd7b"
+    },
+    "condition_totals.tsv": {
+      "bytes": 389,
+      "sha256": "dc3378aba9c1221c8dd4e58cd87212fea834360c932cb6b73079e5e339a6e074"
+    },
+    "fault_matrix_summary.json": {
+      "bytes": 13441,
+      "sha256": "623f19edfe9777df80823e47103c45ffb3cc99f318ec81251ae1ea2649f6c2f1"
+    },
+    "matrix_metadata.json": {
+      "bytes": 1133,
+      "sha256": "d422cb006c9a3eabfed5fa6bf2775fba4199a4308bc88dfa1d286716c1f8dc65"
+    }
+  },
+  "raw_runtime_artifacts_tracked": false,
+  "schema": "p044_live_reid_fault_evidence_manifest_v1",
+  "source_bags": "bags/replay/p044_live_reid_fault_7283a973_2026_08_04_hard_reentry_fault_acceptance_r3",
+  "source_logs": "ros2_ws/log/p044_live_reid_fault_7283a973_2026_08_04_hard_reentry_fault_acceptance_r3",
+  "source_report": "reports/p044_live_reid_fault_7283a973_2026_08_04_hard_reentry_fault_acceptance_r3"
+}

@@ -1,0 +1,345 @@
+{
+  "conditions": {
+    "forced_frequent": [
+      {
+        "condition": "forced_frequent",
+        "detector_infer_mean_ms": 11.18442903267094,
+        "detector_infer_p95_ms": 15.515634536743164,
+        "executor": {
+          "emitted_results": 313,
+          "executed": 313,
+          "failed": 0,
+          "queued": 0,
+          "rejected": 0,
+          "submitted": 313,
+          "succeeded": 313
+        },
+        "repetition": 1,
+        "resources": {
+          "perception": {
+            "cpu_mean_percent": 11.066448711347874,
+            "cpu_p95_percent": 20.398056340048004,
+            "observed_executable": true,
+            "rss_maximum_kib": 213496.0,
+            "rss_mean_kib": 209356.97297297296,
+            "sample_count": 74
+          },
+          "tim": {
+            "cpu_mean_percent": 56.387204714792745,
+            "cpu_p95_percent": 96.99064298290774,
+            "observed_executable": true,
+            "rss_maximum_kib": 757408.0,
+            "rss_mean_kib": 736564.3783783783,
+            "sample_count": 74
+          }
+        },
+        "timing_samples": 326,
+        "transport": {
+          "accepted_results": 309,
+          "cancelled": 0,
+          "constructed": 497,
+          "expired_in_flight": 188,
+          "final_in_flight": 0,
+          "published": 497,
+          "rejected_results": 0
+        }
+      },
+      {
+        "condition": "forced_frequent",
+        "detector_infer_mean_ms": 11.231186770793027,
+        "detector_infer_p95_ms": 16.62791633605957,
+        "executor": {
+          "emitted_results": 329,
+          "executed": 329,
+          "failed": 0,
+          "queued": 0,
+          "rejected": 0,
+          "submitted": 329,
+          "succeeded": 329
+        },
+        "repetition": 2,
+        "resources": {
+          "perception": {
+            "cpu_mean_percent": 11.159975160775074,
+            "cpu_p95_percent": 21.194069458667204,
+            "observed_executable": true,
+            "rss_maximum_kib": 213492.0,
+            "rss_mean_kib": 209277.8918918919,
+            "sample_count": 74
+          },
+          "tim": {
+            "cpu_mean_percent": 68.64396746580643,
+            "cpu_p95_percent": 114.9868536085383,
+            "observed_executable": true,
+            "rss_maximum_kib": 750880.0,
+            "rss_mean_kib": 733159.5675675676,
+            "sample_count": 74
+          }
+        },
+        "timing_samples": 318,
+        "transport": {
+          "accepted_results": 321,
+          "cancelled": 0,
+          "constructed": 475,
+          "expired_in_flight": 154,
+          "final_in_flight": 0,
+          "published": 475,
+          "rejected_results": 0
+        }
+      },
+      {
+        "condition": "forced_frequent",
+        "detector_infer_mean_ms": 11.07178013439638,
+        "detector_infer_p95_ms": 15.591572427749632,
+        "executor": {
+          "emitted_results": 305,
+          "executed": 305,
+          "failed": 0,
+          "queued": 0,
+          "rejected": 0,
+          "submitted": 305,
+          "succeeded": 305
+        },
+        "repetition": 3,
+        "resources": {
+          "perception": {
+            "cpu_mean_percent": 11.312617404666465,
+            "cpu_p95_percent": 21.39747223379153,
+            "observed_executable": true,
+            "rss_maximum_kib": 213492.0,
+            "rss_mean_kib": 209246.32432432432,
+            "sample_count": 74
+          },
+          "tim": {
+            "cpu_mean_percent": 60.83610096056527,
+            "cpu_p95_percent": 110.97813859054199,
+            "observed_executable": true,
+            "rss_maximum_kib": 752604.0,
+            "rss_mean_kib": 734541.1351351351,
+            "sample_count": 74
+          }
+        },
+        "timing_samples": 332,
+        "transport": {
+          "accepted_results": 301,
+          "cancelled": 0,
+          "constructed": 496,
+          "expired_in_flight": 195,
+          "final_in_flight": 0,
+          "published": 496,
+          "rejected_results": 0
+        }
+      }
+    ],
+    "reference": [
+      {
+        "condition": "reference",
+        "detector_infer_mean_ms": 6.036452940124238,
+        "detector_infer_p95_ms": 6.235289192199707,
+        "repetition": 1,
+        "resources": {
+          "perception": {
+            "cpu_mean_percent": 9.819400652999482,
+            "cpu_p95_percent": 18.766054495188314,
+            "observed_executable": true,
+            "rss_maximum_kib": 203584.0,
+            "rss_mean_kib": 199262.5945945946,
+            "sample_count": 74
+          },
+          "tim": {
+            "cpu_mean_percent": 43.674284385947054,
+            "cpu_p95_percent": 66.38673528100742,
+            "observed_executable": true,
+            "rss_maximum_kib": 748912.0,
+            "rss_mean_kib": 730661.3513513514,
+            "sample_count": 74
+          }
+        },
+        "timing_samples": 334
+      },
+      {
+        "condition": "reference",
+        "detector_infer_mean_ms": 6.06775221175696,
+        "detector_infer_p95_ms": 6.331740736961364,
+        "repetition": 2,
+        "resources": {
+          "perception": {
+            "cpu_mean_percent": 9.929932509281102,
+            "cpu_p95_percent": 20.394512251964265,
+            "observed_executable": true,
+            "rss_maximum_kib": 203600.0,
+            "rss_mean_kib": 199464.05405405405,
+            "sample_count": 74
+          },
+          "tim": {
+            "cpu_mean_percent": 42.855998225581615,
+            "cpu_p95_percent": 64.79199346007283,
+            "observed_executable": true,
+            "rss_maximum_kib": 746216.0,
+            "rss_mean_kib": 730037.7837837838,
+            "sample_count": 74
+          }
+        },
+        "timing_samples": 338
+      },
+      {
+        "condition": "reference",
+        "detector_infer_mean_ms": 6.103864457872179,
+        "detector_infer_p95_ms": 6.628182625770568,
+        "repetition": 3,
+        "resources": {
+          "perception": {
+            "cpu_mean_percent": 10.175803382660225,
+            "cpu_p95_percent": 17.998210924378377,
+            "observed_executable": true,
+            "rss_maximum_kib": 203292.0,
+            "rss_mean_kib": 199383.56756756757,
+            "sample_count": 74
+          },
+          "tim": {
+            "cpu_mean_percent": 44.674448459488985,
+            "cpu_p95_percent": 68.39136075607135,
+            "observed_executable": true,
+            "rss_maximum_kib": 752556.0,
+            "rss_mean_kib": 735236.0540540541,
+            "sample_count": 74
+          }
+        },
+        "timing_samples": 342
+      }
+    ],
+    "selective": [
+      {
+        "condition": "selective",
+        "detector_infer_mean_ms": 9.83308537519787,
+        "detector_infer_p95_ms": 13.551663970947265,
+        "executor": {
+          "emitted_results": 258,
+          "executed": 258,
+          "failed": 0,
+          "queued": 0,
+          "rejected": 0,
+          "submitted": 258,
+          "succeeded": 258
+        },
+        "repetition": 1,
+        "resources": {
+          "perception": {
+            "cpu_mean_percent": 11.36721653026452,
+            "cpu_p95_percent": 20.992987617414705,
+            "observed_executable": true,
+            "rss_maximum_kib": 213492.0,
+            "rss_mean_kib": 209183.13513513515,
+            "sample_count": 74
+          },
+          "tim": {
+            "cpu_mean_percent": 54.09678541809065,
+            "cpu_p95_percent": 81.9918161673047,
+            "observed_executable": true,
+            "rss_maximum_kib": 754072.0,
+            "rss_mean_kib": 731619.5135135135,
+            "sample_count": 74
+          }
+        },
+        "timing_samples": 339,
+        "transport": {
+          "accepted_results": 256,
+          "cancelled": 0,
+          "constructed": 368,
+          "expired_in_flight": 112,
+          "final_in_flight": 0,
+          "published": 368,
+          "rejected_results": 0
+        }
+      },
+      {
+        "condition": "selective",
+        "detector_infer_mean_ms": 9.711055043875996,
+        "detector_infer_p95_ms": 13.547473335266112,
+        "executor": {
+          "emitted_results": 257,
+          "executed": 257,
+          "failed": 0,
+          "queued": 0,
+          "rejected": 0,
+          "submitted": 257,
+          "succeeded": 257
+        },
+        "repetition": 2,
+        "resources": {
+          "perception": {
+            "cpu_mean_percent": 11.135162426078812,
+            "cpu_p95_percent": 19.99729199610109,
+            "observed_executable": true,
+            "rss_maximum_kib": 213476.0,
+            "rss_mean_kib": 209226.75675675675,
+            "sample_count": 74
+          },
+          "tim": {
+            "cpu_mean_percent": 48.21063284881453,
+            "cpu_p95_percent": 73.78709555983575,
+            "observed_executable": true,
+            "rss_maximum_kib": 751352.0,
+            "rss_mean_kib": 734822.972972973,
+            "sample_count": 74
+          }
+        },
+        "timing_samples": 339,
+        "transport": {
+          "accepted_results": 257,
+          "cancelled": 0,
+          "constructed": 365,
+          "expired_in_flight": 108,
+          "final_in_flight": 0,
+          "published": 365,
+          "rejected_results": 0
+        }
+      },
+      {
+        "condition": "selective",
+        "detector_infer_mean_ms": 9.833486189654947,
+        "detector_infer_p95_ms": 13.74144172668457,
+        "executor": {
+          "emitted_results": 260,
+          "executed": 260,
+          "failed": 0,
+          "queued": 0,
+          "rejected": 0,
+          "submitted": 260,
+          "succeeded": 260
+        },
+        "repetition": 3,
+        "resources": {
+          "perception": {
+            "cpu_mean_percent": 11.367094721797395,
+            "cpu_p95_percent": 20.3979860964263,
+            "observed_executable": true,
+            "rss_maximum_kib": 213868.0,
+            "rss_mean_kib": 209330.43243243243,
+            "sample_count": 74
+          },
+          "tim": {
+            "cpu_mean_percent": 53.809322394735446,
+            "cpu_p95_percent": 83.97946166039793,
+            "observed_executable": true,
+            "rss_maximum_kib": 755804.0,
+            "rss_mean_kib": 735827.8378378379,
+            "sample_count": 74
+          }
+        },
+        "timing_samples": 331,
+        "transport": {
+          "accepted_results": 258,
+          "cancelled": 0,
+          "constructed": 365,
+          "expired_in_flight": 107,
+          "final_in_flight": 0,
+          "published": 365,
+          "rejected_results": 0
+        }
+      }
+    ]
+  },
+  "git_head": "e0c2a52db3f57ba5b8ada75e84500fc2fc4bb155",
+  "schema": "p044_hailo_reid_load_matrix_per_run_v1"
+}

@@ -1,0 +1,125 @@
+{
+  "completed_ns": 810703582320990,
+  "condition": "all_candidates_hailo",
+  "counts": {
+    "failed_results": 0,
+    "reid_status": 347,
+    "requests": 370,
+    "results": 249,
+    "successful_results": 249,
+    "tim_status": 1251,
+    "timing": 336
+  },
+  "detector": {
+    "container_queue_ms": {
+      "count": 336,
+      "maximum": 3.683166027069092,
+      "mean": 0.4426977460583051,
+      "minimum": 0.36124399304389954,
+      "p50": 0.40947650372982025,
+      "p95": 0.536203995347023,
+      "p99": 1.094143152236938
+    },
+    "e2e_det_ms": {
+      "count": 336,
+      "maximum": 24.954389572143555,
+      "mean": 11.989233306476049,
+      "minimum": 7.073105812072754,
+      "p50": 14.442455768585205,
+      "p95": 15.839463949203491,
+      "p99": 20.248831939697233
+    },
+    "infer_ms": {
+      "count": 336,
+      "maximum": 18.43021583557129,
+      "mean": 9.645644669021879,
+      "minimum": 5.291551113128662,
+      "p50": 12.335702896118164,
+      "p95": 13.308448791503906,
+      "p99": 16.692368888854972
+    },
+    "pub_dt_ms": {
+      "count": 335,
+      "maximum": 1002.2363891601562,
+      "mean": 196.4789323465148,
+      "minimum": 13.664983749389648,
+      "p50": 139.4162139892578,
+      "p95": 586.4980651855471,
+      "p99": 794.5093469238293
+    }
+  },
+  "reid": {
+    "end_to_end_ms": {
+      "count": 249,
+      "maximum": 19.731413,
+      "mean": 10.897883277108434,
+      "minimum": 3.291402,
+      "p50": 10.395397,
+      "p95": 14.152811199999999,
+      "p99": 16.34654824000002
+    },
+    "latest_executor": {
+      "accepting": true,
+      "emitted_results": 249,
+      "executed": 249,
+      "failed": 0,
+      "in_flight_request_id": null,
+      "maximum_queued": 2,
+      "queued": 0,
+      "reasons": {
+        "backend_success": 249
+      },
+      "rejected": 0,
+      "submitted": 249,
+      "succeeded": 249
+    },
+    "latest_tim_transport": {
+      "accepted_results": 248,
+      "cancelled": 0,
+      "constructed": 370,
+      "dequeued": 370,
+      "drop_reasons": {
+        "expired_in_flight": 122
+      },
+      "enabled": true,
+      "expired_in_flight": 122,
+      "in_flight": 0,
+      "last_accepted_request_id": 370,
+      "last_accepted_track_id": 60,
+      "last_result_reason": "expired_in_flight",
+      "malformed_results": 0,
+      "maximum_queued": 4,
+      "publish_errors": 0,
+      "published": 370,
+      "queued": 0,
+      "rejected_results": 0,
+      "rejected_submissions": 0,
+      "result_reasons": {
+        "accepted": 248
+      },
+      "submitted": 370
+    },
+    "maximum_engine_active_calls": 1,
+    "maximum_executor_queued": 2,
+    "queue_delay_ms": {
+      "count": 249,
+      "maximum": 15.623245,
+      "mean": 4.229755751004016,
+      "minimum": 1.314513,
+      "p50": 1.779332,
+      "p95": 11.611934999999999,
+      "p99": 12.677689080000002
+    },
+    "worker_ms": {
+      "count": 249,
+      "maximum": 14.445825,
+      "mean": 6.668127526104418,
+      "minimum": 1.559645,
+      "p50": 8.126579,
+      "p95": 9.3373088,
+      "p99": 11.412155720000012
+    }
+  },
+  "schema": "p044_transport_evidence_summary_v1",
+  "started_ns": 810615267244249
+}

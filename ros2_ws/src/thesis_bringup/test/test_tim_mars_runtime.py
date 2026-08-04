@@ -51,6 +51,8 @@ def runtime_config(
     *,
     appearance_enabled=False,
     selected_track_id=1,
+    appearance_request_policy="all_candidates",
+    auto_select_largest=False,
 ):
     return TimMarsRuntimeConfig(
         memory=TargetMemoryConfig(
@@ -66,13 +68,21 @@ def runtime_config(
         ),
         image_width=100.0,
         image_height=100.0,
+        appearance_request_policy=(
+            appearance_request_policy
+        ),
         selected_track_id=selected_track_id,
+        auto_select_largest=auto_select_largest,
         image_buffer_size=16,
     )
 
 
 class FakeBackend:
+    def __init__(self):
+        self.calls = []
+
     def encode(self, image_bgr, boxes):
+        self.calls.append(list(boxes))
         marker = float(image_bgr[0, 0, 0])
         return [
             np.array([marker, float(index + 1)], dtype=np.float32)
@@ -396,3 +406,179 @@ def test_runtime_diagnostics_use_public_memory_cooldown_property():
         result.diagnostics.appearance_update_cooldown_remaining
         == runtime.memory.appearance_update_cooldown_frames_remaining
     )
+
+
+def test_runtime_reports_synchronous_cpu_backend_workload_diagnostics():
+    backend = FakeBackend()
+    runtime = TimMarsRuntime(
+        runtime_config(
+            appearance_enabled=True,
+            selected_track_id=1,
+        ),
+        mars_backend=backend,
+    )
+    runtime.add_image(
+        900_000_000,
+        np.full((100, 100, 3), 90, dtype=np.uint8),
+    )
+
+    result = runtime.process_tracks(
+        tracks_message(
+            frame_id=12,
+            timestamp_ns=1_000_000_000,
+            tracks=[track(1)],
+        )
+    )
+
+    diagnostics = result.diagnostics
+
+    assert diagnostics.appearance_skip_reason == "ok"
+    assert diagnostics.appearance_encoding_eligible == 1
+    assert diagnostics.appearance_backend_calls == 1
+    assert diagnostics.appearance_backend_requested == 1
+    assert diagnostics.appearance_backend_returned == 1
+    assert diagnostics.appearance_backend_valid == 1
+    assert diagnostics.appearance_backend_wall_ms >= 0.0
+    assert diagnostics.appearance_features_valid == 1
+
+
+def test_runtime_all_candidates_default_preserves_multi_crop_workload():
+    backend = FakeBackend()
+    runtime = TimMarsRuntime(
+        runtime_config(
+            appearance_enabled=True,
+            selected_track_id=1,
+        ),
+        mars_backend=backend,
+    )
+    runtime.add_image(
+        900_000_000,
+        np.full((100, 100, 3), 90, dtype=np.uint8),
+    )
+
+    result = runtime.process_tracks(
+        tracks_message(
+            frame_id=1,
+            timestamp_ns=1_000_000_000,
+            tracks=[
+                track(1, cx=40.0, cy=50.0),
+                track(2, cx=75.0, cy=50.0),
+            ],
+        )
+    )
+
+    diagnostics = result.diagnostics
+
+    assert diagnostics.appearance_request_policy == "all_candidates"
+    assert diagnostics.appearance_request_reason == "all_candidates"
+    assert diagnostics.appearance_request_candidates == 2
+    assert diagnostics.appearance_request_track_ids == (1, 2)
+    assert diagnostics.appearance_encoding_eligible == 2
+    assert diagnostics.appearance_request_encoding_eligible == 2
+    assert diagnostics.appearance_backend_requested == 2
+    assert len(backend.calls) == 1
+    assert len(backend.calls[0]) == 2
+
+
+def test_runtime_geometry_winner_encodes_only_selected_geometry_candidate():
+    backend = FakeBackend()
+    runtime = TimMarsRuntime(
+        runtime_config(
+            appearance_enabled=True,
+            selected_track_id=1,
+            appearance_request_policy="geometry_winner",
+        ),
+        mars_backend=backend,
+    )
+
+    runtime.add_image(
+        900_000_000,
+        np.full((100, 100, 3), 90, dtype=np.uint8),
+    )
+
+    first = runtime.process_tracks(
+        tracks_message(
+            frame_id=1,
+            timestamp_ns=1_000_000_000,
+            tracks=[
+                track(1, cx=50.0, cy=50.0),
+                track(2, cx=85.0, cy=75.0),
+            ],
+        )
+    )
+
+    assert first.output.target_track_id == 1
+    assert first.diagnostics.appearance_request_reason == (
+        "pending_operator_selection"
+    )
+    assert first.diagnostics.appearance_request_track_ids == (1,)
+    assert first.diagnostics.appearance_backend_requested == 1
+
+    runtime.add_image(
+        1_900_000_000,
+        np.full((100, 100, 3), 91, dtype=np.uint8),
+    )
+
+    second = runtime.process_tracks(
+        tracks_message(
+            frame_id=2,
+            timestamp_ns=2_000_000_000,
+            tracks=[
+                track(1, cx=90.0, cy=80.0),
+                track(2, cx=51.0, cy=50.0),
+            ],
+        )
+    )
+
+    diagnostics = second.diagnostics
+
+    assert diagnostics.appearance_candidates == 2
+    assert diagnostics.appearance_request_policy == "geometry_winner"
+    assert diagnostics.appearance_request_reason == "geometry_winner"
+    assert diagnostics.appearance_request_candidates == 1
+    assert diagnostics.appearance_request_track_ids == (2,)
+    assert diagnostics.appearance_encoding_eligible == 2
+    assert diagnostics.appearance_request_encoding_eligible == 1
+    assert diagnostics.appearance_backend_requested == 1
+    assert len(backend.calls) == 2
+    assert backend.calls[-1] == [
+        (41.0, 30.0, 61.0, 70.0),
+    ]
+
+
+def test_runtime_geometry_winner_can_request_no_fresh_encoding():
+    backend = FakeBackend()
+    runtime = TimMarsRuntime(
+        runtime_config(
+            appearance_enabled=True,
+            selected_track_id=0,
+            appearance_request_policy="geometry_winner",
+        ),
+        mars_backend=backend,
+    )
+    runtime.add_image(
+        900_000_000,
+        np.full((100, 100, 3), 90, dtype=np.uint8),
+    )
+
+    result = runtime.process_tracks(
+        tracks_message(
+            frame_id=1,
+            timestamp_ns=1_000_000_000,
+            tracks=[track(7)],
+        )
+    )
+
+    diagnostics = result.diagnostics
+
+    assert diagnostics.appearance_request_reason == "no_selected_target"
+    assert diagnostics.appearance_request_candidates == 0
+    assert diagnostics.appearance_request_track_ids == ()
+    assert diagnostics.appearance_encoding_eligible == 1
+    assert diagnostics.appearance_request_encoding_eligible == 0
+    assert diagnostics.appearance_backend_calls == 0
+    assert diagnostics.appearance_backend_requested == 0
+    assert diagnostics.appearance_skip_reason == (
+        "no_policy_requested_candidates"
+    )
+    assert backend.calls == []

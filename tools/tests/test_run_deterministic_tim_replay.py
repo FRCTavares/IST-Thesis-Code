@@ -1,10 +1,13 @@
 """Unit tests for deterministic TIM-MARS replay helpers."""
 
+import argparse
 from dataclasses import fields
-from pathlib import Path
 import importlib.util
 import json
+from pathlib import Path
+from types import SimpleNamespace
 
+import pytest
 from std_msgs.msg import String
 from thesis_msgs.msg import (
     TargetState,
@@ -814,6 +817,8 @@ def test_build_resolved_runtime_payload_records_sources(
         tracks_are_normalized=False,
         zero_id_when_not_visible=False,
         appearance_enabled=None,
+        appearance_request_policy=None,
+        appearance_compute_min_interval_ms=None,
         raw_target_mode="selected_id",
         image_topic="auto",
         tracks_topic="/custom/tracks",
@@ -834,13 +839,15 @@ def test_build_resolved_runtime_payload_records_sources(
             },
             args=args,
             appearance_enabled=True,
+            appearance_request_policy="all_candidates",
+            appearance_compute_min_interval_ms=250.0,
             image_topic="/camera/image_raw",
             input_bag=tmp_path / "input",
             output_bag=tmp_path / "output",
         )
     )
 
-    assert payload["schema_version"] == 2
+    assert payload["schema_version"] == 3
     assert payload["runtime_overrides"] == {
         "selected_track_id": 7,
         "image_width": 800.0,
@@ -848,6 +855,8 @@ def test_build_resolved_runtime_payload_records_sources(
         "tracks_are_normalized": False,
         "zero_id_when_not_visible": False,
         "appearance_enabled": True,
+        "appearance_request_policy": "all_candidates",
+        "appearance_compute_min_interval_ms": 250.0,
         "compact_output": True,
     }
 
@@ -877,6 +886,12 @@ def test_build_resolved_runtime_payload_records_sources(
     assert sources["appearance_enabled"] == (
         "canonical_config"
     )
+    assert sources["appearance_request_policy"] == (
+        "canonical_config"
+    )
+    assert sources[
+        "appearance_compute_min_interval_ms"
+    ] == "canonical_config"
     assert sources["raw_target_mode"] == (
         "command_line"
     )
@@ -951,3 +966,184 @@ def test_git_value_preserves_leading_short_status_column(
         ' M tracked.py',
         '?? untracked.txt',
     ]
+
+
+def test_make_status_message_zeroes_backend_wall_time_for_determinism(
+    monkeypatch,
+):
+    captured = {}
+
+    def fake_status_json_from_output(_output, **kwargs):
+        captured.update(kwargs)
+        return json.dumps({"ok": True}, sort_keys=True)
+
+    monkeypatch.setattr(
+        MODULE,
+        "status_json_from_output",
+        fake_status_json_from_output,
+    )
+
+    diagnostics = SimpleNamespace(
+        appearance_candidates=3,
+        appearance_request_policy="geometry_winner",
+        appearance_request_reason="geometry_winner",
+        appearance_request_candidates=1,
+        appearance_request_track_ids=(2,),
+        appearance_request_encoding_eligible=1,
+        appearance_features_valid=2,
+        image_track_offset_ms=12.0,
+        appearance_skip_reason="ok",
+        track_timestamp_ns=1_000_000_000,
+        selected_image_timestamp_ns=988_000_000,
+        appearance_warning=None,
+        candidate_track_ids=(1, 2, 3),
+        appearance_cache_size=2,
+        appearance_embedding_age_ms_by_track_id={1: 0.0},
+        appearance_crop_quality_by_track_id={},
+        appearance_encoding_rejected=0,
+        appearance_memory_update_ineligible=1,
+        appearance_encoding_eligible=3,
+        appearance_backend_calls=1,
+        appearance_backend_requested=3,
+        appearance_backend_returned=3,
+        appearance_backend_valid=2,
+        appearance_backend_wall_ms=7.5,
+        appearance_update_cooldown_remaining=0,
+    )
+
+    runtime = SimpleNamespace(
+        config=SimpleNamespace(
+            appearance=SimpleNamespace(
+                enabled=True,
+                compute_min_interval_ms=0.0,
+                cache_ttl_ms=750.0,
+            )
+        )
+    )
+    tracks_message = SimpleNamespace(
+        frame_id=12,
+        tracks=[object(), object(), object()],
+    )
+    result = SimpleNamespace(
+        output=object(),
+        diagnostics=diagnostics,
+    )
+
+    message = MODULE.make_status_message(
+        runtime=runtime,
+        tracks_message=tracks_message,
+        result=result,
+    )
+
+    assert json.loads(message.data) == {"ok": True}
+    assert captured["appearance_request_policy"] == (
+        "geometry_winner"
+    )
+    assert captured["appearance_request_reason"] == (
+        "geometry_winner"
+    )
+    assert captured["appearance_request_candidates"] == 1
+    assert captured["appearance_request_track_ids"] == (2,)
+    assert (
+        captured["appearance_request_encoding_eligible"]
+        == 1
+    )
+    assert (
+        captured["appearance_compute_min_interval_ms"]
+        == 0.0
+    )
+    assert captured["appearance_encoding_eligible"] == 3
+    assert captured["appearance_backend_calls"] == 1
+    assert captured["appearance_backend_requested"] == 3
+    assert captured["appearance_backend_returned"] == 3
+    assert captured["appearance_backend_valid"] == 2
+    assert captured["appearance_backend_wall_ms"] == 0.0
+    assert (
+        MODULE.SEMANTIC_DIGEST_SCHEMA
+        == "tim_mars_replay_generated_fields_v4"
+    )
+
+
+def test_resolve_appearance_request_policy_uses_canonical_default():
+    args = argparse.Namespace(
+        appearance_request_policy=None,
+    )
+
+    assert (
+        MODULE.resolve_appearance_request_policy(
+            {
+                "appearance_request_policy": (
+                    "geometry_winner"
+                )
+            },
+            args,
+        )
+        == "geometry_winner"
+    )
+
+
+
+def test_resolve_appearance_request_policy_accepts_ambiguity_guarded_override():
+    """Accept the guarded selector through an explicit replay override."""
+    args = argparse.Namespace(
+        appearance_request_policy="ambiguity_guarded",
+    )
+
+    assert (
+        MODULE.resolve_appearance_request_policy(
+            {
+                "appearance_request_policy": (
+                    "all_candidates"
+                ),
+            },
+            args,
+        )
+        == "ambiguity_guarded"
+    )
+
+def test_resolve_appearance_request_policy_rejects_invalid_value():
+    args = argparse.Namespace(
+        appearance_request_policy=None,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Unsupported appearance_request_policy",
+    ):
+        MODULE.resolve_appearance_request_policy(
+            {
+                "appearance_request_policy": "unsupported",
+            },
+            args,
+        )
+
+
+def test_resolve_appearance_compute_interval_supports_zero_override():
+    args = argparse.Namespace(
+        appearance_compute_min_interval_ms=0.0,
+    )
+
+    assert (
+        MODULE.resolve_appearance_compute_min_interval_ms(
+            {
+                "appearance_compute_min_interval_ms": 250.0,
+            },
+            args,
+        )
+        == 0.0
+    )
+
+
+def test_resolve_appearance_compute_interval_rejects_negative_value():
+    args = argparse.Namespace(
+        appearance_compute_min_interval_ms=-1.0,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="must be non-negative",
+    ):
+        MODULE.resolve_appearance_compute_min_interval_ms(
+            {},
+            args,
+        )

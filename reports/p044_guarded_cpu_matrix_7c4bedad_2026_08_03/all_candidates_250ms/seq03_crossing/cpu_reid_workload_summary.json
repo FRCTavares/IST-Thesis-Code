@@ -1,0 +1,170 @@
+{
+  "backend_wall_ms_all": {
+    "max": 416.237927,
+    "mean": 42.78036504347826,
+    "min": 20.455927,
+    "n": 322,
+    "p50": 42.522719,
+    "p95": 68.87026605,
+    "p99": 72.02014855000002
+  },
+  "backend_wall_ms_steady_state": {
+    "max": 81.14994,
+    "mean": 41.61694584735203,
+    "min": 20.455927,
+    "n": 321,
+    "p50": 42.504719,
+    "p95": 68.52251,
+    "p99": 71.46852600000001
+  },
+  "bag_path": "/home/francisco/Desktop/Thesis-Code/bags/replay/p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1/all_candidates_250ms/seq03_crossing",
+  "callback_latency_displacement_mean_ms": 42.69843343982187,
+  "callback_overhead_ms": {
+    "max": 2.4900050000000036,
+    "mean": 1.1999784906832296,
+    "min": 0.7263760000000019,
+    "n": 322,
+    "p50": 1.1745480000000015,
+    "p95": 1.7866294000000116,
+    "p99": 2.1250597700000036
+  },
+  "correlations": {
+    "backend_wall_vs_callback_latency": 0.999943936048356,
+    "requested_count_vs_backend_wall": 0.5524246187935227
+  },
+  "duration_s": 96.079607022,
+  "git_commit": "7c4bedad7216d0bea5b5c3bae4c97ffa53134735",
+  "grouped_backend_wall_ms_by_requested_crops": {
+    "1": {
+      "max": 416.237927,
+      "mean": 26.08611214912281,
+      "min": 20.455927,
+      "n": 114,
+      "p50": 22.3779995,
+      "p95": 25.321107599999998,
+      "p99": 28.764353920000012
+    },
+    "2": {
+      "max": 47.698303,
+      "mean": 42.53928343529412,
+      "min": 39.242449,
+      "n": 85,
+      "p50": 42.13042,
+      "p95": 45.7347996,
+      "p99": 47.08778847999999
+    },
+    "3": {
+      "max": 59.142111,
+      "mean": 52.743723384615386,
+      "min": 49.417003,
+      "n": 78,
+      "p50": 52.4536885,
+      "p95": 55.844726,
+      "p99": 57.16980913000001
+    },
+    "4": {
+      "max": 81.14994,
+      "mean": 68.25802762222222,
+      "min": 64.566808,
+      "n": 45,
+      "p50": 67.603668,
+      "p95": 72.025431,
+      "p99": 78.04014628000002
+    }
+  },
+  "integrity": {
+    "all_required_fields_present": true,
+    "has_backend_calls": true,
+    "has_positive_backend_wall_time": true,
+    "non_call_records_with_nonzero_backend_wall_ms": 0,
+    "returned_not_greater_than_requested": true,
+    "valid_not_greater_than_returned": true
+  },
+  "ratios": {
+    "backend_call_record_fraction": 0.13784246575342465,
+    "backend_calls_per_second": 3.351387562672581,
+    "backend_wall_fraction_of_run_all": 0.14337358333330588,
+    "backend_wall_fraction_of_run_steady_state": 0.13904136404243503,
+    "requested_crops_per_second": 7.264809064426899,
+    "requested_per_call": 2.1677018633540373,
+    "returned_per_requested": 1.0,
+    "status_records_per_second": 24.313171883239594,
+    "valid_per_requested": 1.0
+  },
+  "run_name": "all_candidates_250ms/seq03_crossing",
+  "schema": "p044_cpu_reid_workload_summary_v2",
+  "status_topic": "/target_memory_mars/status",
+  "tim_mars_latency_all_ms": {
+    "max": 417.100898,
+    "mean": 7.167567443493152,
+    "min": 0.223873,
+    "n": 2336,
+    "p50": 1.3096135,
+    "p95": 52.2581865,
+    "p99": 69.0526898
+  },
+  "tim_mars_latency_backend_call_ms": {
+    "max": 417.100898,
+    "mean": 43.98034353416149,
+    "min": 21.370082,
+    "n": 322,
+    "p50": 43.674015999999995,
+    "p95": 70.31774965,
+    "p99": 73.59556327
+  },
+  "tim_mars_latency_non_call_ms": {
+    "max": 3.633163,
+    "mean": 1.2819100943396224,
+    "min": 0.223873,
+    "n": 2014,
+    "p50": 1.1621584999999999,
+    "p95": 2.0070525999999997,
+    "p99": 2.30672857
+  },
+  "total_backend_wall_ms_all": 13775.277544,
+  "total_backend_wall_ms_steady_state": 13359.039617,
+  "totals": {
+    "appearance_backend_calls": 322,
+    "appearance_backend_requested": 698,
+    "appearance_backend_returned": 698,
+    "appearance_backend_valid": 698,
+    "appearance_candidates": 5124,
+    "appearance_encoding_eligible": 698,
+    "appearance_features_valid": 4249,
+    "status_records": 2336
+  },
+  "warmup": {
+    "excluded_backend_calls_from_steady_state": 1,
+    "first_call": {
+      "backend_calls": 1,
+      "call_index": 0,
+      "callback_overhead_ms": 0.8629709999999591,
+      "latency_ms": 417.100898,
+      "requested": 1,
+      "returned": 1,
+      "status_record_index": 13,
+      "time_s": 0.849433286,
+      "valid": 1,
+      "wall_ms": 416.237927,
+      "wall_ms_per_crop": 416.237927
+    },
+    "first_call_is_largest": true,
+    "first_call_is_warmup_outlier": true,
+    "largest_call": {
+      "backend_calls": 1,
+      "call_index": 0,
+      "callback_overhead_ms": 0.8629709999999591,
+      "latency_ms": 417.100898,
+      "requested": 1,
+      "returned": 1,
+      "status_record_index": 13,
+      "time_s": 0.849433286,
+      "valid": 1,
+      "wall_ms": 416.237927,
+      "wall_ms_per_crop": 416.237927
+    },
+    "median_backend_wall_ms": 42.522719,
+    "warmup_reference_median_backend_wall_ms": 42.504719,
+    "warmup_threshold_ms": 127.51415700000001
+  }
+}

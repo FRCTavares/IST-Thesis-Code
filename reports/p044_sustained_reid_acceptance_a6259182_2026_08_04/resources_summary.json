@@ -1,0 +1,108 @@
+{
+  "completed_monotonic_ns": 870410852903975,
+  "groups": {
+    "perception": {
+      "cpu_percent": {
+        "count": 1805,
+        "maximum": 31.99684866237209,
+        "mean": 11.50244510459161,
+        "p50": 10.998905059001375,
+        "p95": 19.99789523753388
+      },
+      "maximum_member_count": 2,
+      "member_count": {
+        "count": 1806,
+        "maximum": 2.0,
+        "mean": 2.0,
+        "p50": 2.0,
+        "p95": 2.0
+      },
+      "observed_commands": [
+        "/usr/bin/python3 /home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_bringup/lib/thesis_bringup/perception_pipeline_node --ros-args -p image_topic:=/camera/image_raw -p image_reliability:=best_effort -p image_qos_depth:=2 -p img_w:=640 -p img_h:=640 -p inference_backend:=hailo_direct -p hailo_hef_path:=/home/francisco/Desktop/Thesis-Code/models/hef/yolov6n.hef -p allow_stub_fallback:=false -p publish_timing:=true -p reid_enabled:=true -p reid_hef_path:=/home/francisco/Desktop/Thesis-Code/models/reid/repvgg_a0_person_reid_512.hef -p reid_request_topic:=/appearance/reid/request -p reid_result_topic:=/appearance/reid/result -p reid_queue_capacity:=4 -p reid_qos_depth:=1 -p reid_status_topic:=/perception/reid/status -p reid_status_period_s:=0.25",
+        "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup perception_pipeline_node --ros-args -p image_topic:=/camera/image_raw -p image_reliability:=best_effort -p image_qos_depth:=2 -p img_w:=640 -p img_h:=640 -p inference_backend:=hailo_direct -p hailo_hef_path:=/home/francisco/Desktop/Thesis-Code/models/hef/yolov6n.hef -p allow_stub_fallback:=false -p publish_timing:=true -p reid_enabled:=true -p reid_hef_path:=/home/francisco/Desktop/Thesis-Code/models/reid/repvgg_a0_person_reid_512.hef -p reid_request_topic:=/appearance/reid/request -p reid_result_topic:=/appearance/reid/result -p reid_queue_capacity:=4 -p reid_qos_depth:=1 -p reid_status_topic:=/perception/reid/status -p reid_status_period_s:=0.25"
+      ],
+      "observed_pids": [
+        603692,
+        603712
+      ],
+      "pgid": 603692,
+      "rss_kib": {
+        "count": 1806,
+        "maximum": 214428.0,
+        "mean": 211086.9169435216,
+        "p50": 210952.0,
+        "p95": 214342.0
+      },
+      "sample_count": 1806
+    },
+    "relay": {
+      "cpu_percent": {
+        "count": 1805,
+        "maximum": 12.998742540642846,
+        "mean": 6.214598836411986,
+        "p50": 5.99937852437866,
+        "p95": 8.999120134426576
+      },
+      "maximum_member_count": 1,
+      "member_count": {
+        "count": 1806,
+        "maximum": 1.0,
+        "mean": 1.0,
+        "p50": 1.0,
+        "p95": 1.0
+      },
+      "observed_commands": [
+        "/home/francisco/Desktop/Thesis-Code/thesis_env/bin/python /home/francisco/Desktop/Thesis-Code/tools/experiments/p044_soak_input_relay.py --input-image-topic /p044/soak/source/image --output-image-topic /camera/image_raw --input-tracks-topic /p044/soak/source/tracks --output-tracks-topic /tracks --status-topic /p044/soak/input_relay/status --summary-path /home/francisco/Desktop/Thesis-Code/reports/p044_sustained_reid_a6259182_2026_08_04_hard_reentry_sustained_acceptance_30m_r1/input_relay_summary.json"
+      ],
+      "observed_pids": [
+        603650
+      ],
+      "pgid": 603650,
+      "rss_kib": {
+        "count": 1806,
+        "maximum": 78972.0,
+        "mean": 76652.40088593577,
+        "p50": 76620.0,
+        "p95": 76704.0
+      },
+      "sample_count": 1806
+    },
+    "tim": {
+      "cpu_percent": {
+        "count": 1805,
+        "maximum": 81.99188239368361,
+        "mean": 32.448349773184134,
+        "p50": 32.99626353611343,
+        "p95": 46.992792185029344
+      },
+      "maximum_member_count": 2,
+      "member_count": {
+        "count": 1806,
+        "maximum": 2.0,
+        "mean": 2.0,
+        "p50": 2.0,
+        "p95": 2.0
+      },
+      "observed_commands": [
+        "/usr/bin/python3 /home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_bringup/lib/thesis_bringup/target_memory_mars_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml -p tracks_topic:=/tracks -p target_topic:=/target_memory_mars -p status_topic:=/target_memory_mars/status -p select_topic:=/target_memory_mars/select -p selected_track_id:=1 -p mirror_raw_target_selection:=false -p appearance_enabled:=true -p appearance_image_topic:=/camera/image_raw -p appearance_request_policy:=ambiguity_guarded -p appearance_compute_min_interval_ms:=250.0 -p mars_model_path:=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb -p appearance_async_reid_enabled:=true -p appearance_async_reid_request_topic:=/appearance/reid/request -p appearance_async_reid_result_topic:=/appearance/reid/result -p appearance_async_reid_queue_capacity:=8 -p appearance_async_reid_deadline_ms:=500.0 -p appearance_async_reid_qos_depth:=1",
+        "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup target_memory_mars_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml -p tracks_topic:=/tracks -p target_topic:=/target_memory_mars -p status_topic:=/target_memory_mars/status -p select_topic:=/target_memory_mars/select -p selected_track_id:=1 -p mirror_raw_target_selection:=false -p appearance_enabled:=true -p appearance_image_topic:=/camera/image_raw -p appearance_request_policy:=ambiguity_guarded -p appearance_compute_min_interval_ms:=250.0 -p mars_model_path:=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb -p appearance_async_reid_enabled:=true -p appearance_async_reid_request_topic:=/appearance/reid/request -p appearance_async_reid_result_topic:=/appearance/reid/result -p appearance_async_reid_queue_capacity:=8 -p appearance_async_reid_deadline_ms:=500.0 -p appearance_async_reid_qos_depth:=1"
+      ],
+      "observed_pids": [
+        603770,
+        603790
+      ],
+      "pgid": 603770,
+      "rss_kib": {
+        "count": 1806,
+        "maximum": 754360.0,
+        "mean": 747367.399778516,
+        "p50": 748560.0,
+        "p95": 754184.0
+      },
+      "sample_count": 1806
+    }
+  },
+  "interval_s": 1.0,
+  "schema": "p044_process_group_resources_v1",
+  "started_monotonic_ns": 868605416590028
+}

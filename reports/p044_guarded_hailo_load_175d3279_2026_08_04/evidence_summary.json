@@ -1,0 +1,64 @@
+{
+  "detector": {
+    "guarded_vs_all_candidates_mean_delta_ms": -0.13409320666707814,
+    "guarded_vs_all_candidates_p95_delta_ms": -0.12227799097696845,
+    "guarded_vs_reference_mean_delta_ms": 3.540560852105272,
+    "guarded_vs_reference_p95_delta_ms": 6.795760790506999
+  },
+  "execution": {
+    "conditions": [
+      "reference",
+      "all_candidates_hailo",
+      "ambiguity_guarded_hailo"
+    ],
+    "interval_ms": 250.0,
+    "rate": 1.0,
+    "repetitions": 3,
+    "run_count": 9,
+    "source_bag": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1"
+  },
+  "generated_at_utc": "2026-08-04T08:58:48.771978+00:00",
+  "interpretation": {
+    "best_effort_transport_justified": false,
+    "canonical_policy_changed": false,
+    "conclusion": "ambiguity_guarded materially reduces asynchronous request pressure, expirations and TIM CPU/RSS while preserving serialized Hailo execution. Detector latency remains essentially unchanged relative to all_candidates_hailo, so the guarded policy does not remove the detector-side Hailo contention penalty.",
+    "cpu_mars_authoritative": true,
+    "evidence_complete": true,
+    "failure_injection_fallback_validated": false,
+    "guarded_cpu_correctness_covered_elsewhere": true,
+    "repvgg_observational_only": true,
+    "repvgg_ranking_equivalence_validated": false,
+    "repvgg_target_decision_equivalence_validated": false,
+    "sustained_onboard_operation_validated": false
+  },
+  "load_and_transport": {
+    "all_candidates_constructed": 1110,
+    "all_candidates_expired": 348,
+    "all_candidates_maximum_executor_queued": 2,
+    "all_candidates_request_delivery_percent": 68.73873873873873,
+    "all_candidates_result_delivery_percent": 99.8689384010485,
+    "executor_failures": 0,
+    "expired_reduction_percent": 94.82758620689656,
+    "final_in_flight": 0,
+    "guarded_constructed": 582,
+    "guarded_expired": 18,
+    "guarded_maximum_executor_queued": 2,
+    "guarded_request_delivery_percent": 97.59450171821305,
+    "guarded_result_delivery_percent": 99.29577464788733,
+    "maximum_engine_active_calls": 1,
+    "request_delivery_delta_percentage_points": 28.85576297947432,
+    "request_reduction_percent": 47.56756756756757,
+    "result_delivery_delta_percentage_points": -0.5731637531611682
+  },
+  "resources": {
+    "all_candidates_tim_cpu_mean_percent": 44.195952721996186,
+    "guarded_tim_cpu_mean_percent": 26.033026837064,
+    "tim_cpu_delta_percentage_points": -18.162925884932186,
+    "tim_cpu_relative_reduction_percent": 41.09635558527637,
+    "tim_rss_delta_kib": -15875.567567567574,
+    "tim_rss_delta_mib": -15.503483952702709
+  },
+  "schema": "p044_guarded_hailo_load_evidence_summary_v1",
+  "source_git_head": "175d3279ab12dc1a108d4ad8ff08cbfd09ab4a2b",
+  "source_report": "reports/p044_guarded_hailo_load_175d3279_2026_08_04_hard_reentry_guarded_matrix_r1"
+}

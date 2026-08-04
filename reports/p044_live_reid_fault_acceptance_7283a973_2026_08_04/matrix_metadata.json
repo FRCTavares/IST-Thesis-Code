@@ -1,0 +1,40 @@
+{
+  "schema": "p044_live_reid_fault_matrix_v1",
+  "git_head": "7283a97363436f35baf3e01752b81e36e94c2af3",
+  "source_bag": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
+  "image_topic": "/camera/image_raw",
+  "target_id": 1,
+  "rate": 1.0,
+  "repetitions": 3,
+  "condition_order": "rotated",
+  "conditions": {
+    "pass_through": {
+      "relay_mode": "none",
+      "delay_ms": 0.0
+    },
+    "suppressed_result": {
+      "relay_mode": "suppress_result",
+      "delay_ms": 0.0
+    },
+    "backend_failure": {
+      "relay_mode": "backend_failure",
+      "delay_ms": 0.0
+    },
+    "delayed_result": {
+      "relay_mode": "delay_result",
+      "delay_ms": 1000.0
+    }
+  },
+  "fixed_controls": {
+    "cpu_mars_authoritative": true,
+    "repvgg_observational": true,
+    "repvgg_ranking_enabled": false,
+    "repvgg_memory_enabled": false,
+    "repvgg_decision_integration_enabled": false,
+    "appearance_request_policy": "ambiguity_guarded",
+    "appearance_compute_min_interval_ms": 250.0,
+    "tim_deadline_ms": 500.0,
+    "qos_reliability": "BEST_EFFORT",
+    "qos_depth": 1
+  }
+}

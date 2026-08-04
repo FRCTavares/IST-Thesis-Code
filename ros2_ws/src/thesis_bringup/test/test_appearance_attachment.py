@@ -527,3 +527,167 @@ def test_cached_clean_feature_is_ineligible_during_group_risk():
         .appearance_memory_update_eligible
     )
     assert len(backend.calls) == 1
+
+
+def test_reports_synchronous_cpu_backend_workload_without_policy_changes():
+    first_feature = np.ones(128, dtype=np.float32)
+    backend = FakeMarsBackend([first_feature, None])
+
+    result = attach_appearance_features(
+        config=cfg(compute_min_interval_ms=0.0),
+        state=AppearanceAttachmentState(),
+        data=data(
+            [
+                tr(1, bbox=(10, 20, 40, 100)),
+                tr(2, bbox=(200, 180, 250, 320)),
+            ],
+            mars_backend=backend,
+        ),
+    )
+
+    diagnostics = result.diagnostics
+
+    assert len(backend.calls) == 1
+    assert diagnostics.candidates == 2
+    assert diagnostics.encoding_eligible == 2
+    assert diagnostics.backend_calls == 1
+    assert diagnostics.backend_requested == 2
+    assert diagnostics.backend_returned == 2
+    assert diagnostics.backend_valid == 1
+    assert diagnostics.backend_wall_ms >= 0.0
+    assert diagnostics.skip_reason == "ok"
+    assert diagnostics.features_valid == 1
+
+    assert result.candidates[0].appearance is first_feature
+    assert result.candidates[1].appearance is None
+
+
+def test_request_mask_restricts_encoding_without_subsetting_candidates():
+    candidates = [
+        tr(1, bbox=(10.0, 20.0, 40.0, 100.0)),
+        tr(2, bbox=(200.0, 180.0, 250.0, 320.0)),
+    ]
+    backend = FakeMarsBackend(["feature-2"])
+
+    result = attach_appearance_features(
+        config=cfg(compute_min_interval_ms=0.0),
+        state=AppearanceAttachmentState(),
+        data=data(
+            candidates,
+            mars_backend=backend,
+            requested_candidate_indices=(1,),
+            frame_id=1,
+        ),
+    )
+
+    assert result.diagnostics.candidates == 2
+    assert result.diagnostics.encoding_eligible == 2
+    assert result.diagnostics.request_candidates == 1
+    assert result.diagnostics.request_encoding_eligible == 1
+    assert result.diagnostics.backend_requested == 1
+
+    assert backend.calls[0][1] == [
+        (200.0, 180.0, 250.0, 320.0),
+    ]
+    assert result.candidates[0].appearance is None
+    assert result.candidates[1].appearance == "feature-2"
+
+
+def test_request_mask_preserves_visible_nonrequested_cache_lifecycle():
+    candidates = [
+        tr(1, bbox=(10.0, 20.0, 40.0, 100.0)),
+        tr(2, bbox=(200.0, 180.0, 250.0, 320.0)),
+    ]
+    state = AppearanceAttachmentState()
+
+    first = attach_appearance_features(
+        config=cfg(compute_min_interval_ms=0.0),
+        state=state,
+        data=data(
+            candidates,
+            now_ns=1_000_000_000,
+            latest_image_seen_ns=999_900_000,
+            latest_image_seq=1,
+            mars_backend=FakeMarsBackend(
+                ["feature-1", "feature-2"]
+            ),
+            requested_candidate_indices=None,
+            frame_id=1,
+        ),
+    )
+
+    assert set(first.state.cache_by_track_id) == {1, 2}
+
+    second_backend = FakeMarsBackend(["feature-2-new"])
+    second = attach_appearance_features(
+        config=cfg(compute_min_interval_ms=0.0),
+        state=state,
+        data=data(
+            candidates,
+            # Keep the non-requested track inside the configured
+            # 750 ms cache TTL. This test isolates request-mask lifecycle
+            # behaviour rather than ordinary cache expiry.
+            now_ns=1_500_000_000,
+            latest_image_seen_ns=1_499_900_000,
+            latest_image_seq=2,
+            mars_backend=second_backend,
+            requested_candidate_indices=(1,),
+            frame_id=2,
+        ),
+    )
+
+    assert set(second.state.cache_by_track_id) == {1, 2}
+    assert second.candidates[0].appearance == "feature-1"
+    assert second.candidates[1].appearance == "feature-2-new"
+    assert (
+        second.diagnostics.embedding_age_ms_by_track_id[1]
+        == pytest.approx(500.0)
+    )
+    assert second_backend.calls[0][1] == [
+        (200.0, 180.0, 250.0, 320.0),
+    ]
+
+
+def test_empty_request_mask_skips_backend_but_keeps_quality_accounting():
+    backend = FakeMarsBackend(["unexpected"])
+
+    result = attach_appearance_features(
+        config=cfg(compute_min_interval_ms=0.0),
+        state=AppearanceAttachmentState(),
+        data=data(
+            [tr(1, bbox=(10.0, 20.0, 40.0, 100.0))],
+            mars_backend=backend,
+            requested_candidate_indices=(),
+            frame_id=1,
+        ),
+    )
+
+    assert result.diagnostics.encoding_eligible == 1
+    assert result.diagnostics.request_candidates == 0
+    assert result.diagnostics.request_encoding_eligible == 0
+    assert result.diagnostics.backend_calls == 0
+    assert result.diagnostics.backend_requested == 0
+    assert result.diagnostics.skip_reason == (
+        "no_policy_requested_candidates"
+    )
+    assert backend.calls == []
+
+
+@pytest.mark.parametrize(
+    "requested_indices",
+    [
+        (0, 0),
+        (-1,),
+        (2,),
+    ],
+)
+def test_invalid_request_mask_is_rejected(requested_indices):
+    with pytest.raises(ValueError, match="request mask"):
+        attach_appearance_features(
+            config=cfg(),
+            state=AppearanceAttachmentState(),
+            data=data(
+                [tr(1), tr(2)],
+                requested_candidate_indices=requested_indices,
+            ),
+        )

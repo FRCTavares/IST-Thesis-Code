@@ -1,0 +1,149 @@
+{
+  "candidate": "ambiguity_guarded_250ms",
+  "decision": "ambiguity_guarded passes the current four-sequence CPU correctness gate at 250 ms and can advance to the selective-Hailo validation stage. This does not change the canonical all_candidates policy or validate RepVGG ranking, memory, target decisions, BEST_EFFORT transport, or sustained onboard operation.",
+  "git_head": "7c4bedad7216d0bea5b5c3bae4c97ffa53134735",
+  "per_sequence_comparisons": [
+    {
+      "backend_calls": {
+        "all_candidates_250ms": 182,
+        "ambiguity_guarded_250ms": 184
+      },
+      "correct_target_ratio": {
+        "all_candidates_250ms": 0.922,
+        "ambiguity_guarded_250ms": 0.92,
+        "delta": -0.0020000000000000018
+      },
+      "lost_target_ratio": {
+        "all_candidates_250ms": 0.073,
+        "ambiguity_guarded_250ms": 0.076,
+        "delta": 0.0030000000000000027
+      },
+      "requested_crops": {
+        "all_candidates_250ms": 369,
+        "ambiguity_guarded_250ms": 195,
+        "reduction_percent": 47.15447154471545
+      },
+      "safety_violations": [],
+      "sequence": "may_hard_reentry",
+      "steady_backend_wall_ms": {
+        "all_candidates_250ms": 7965.832256,
+        "ambiguity_guarded_250ms": 4291.597394,
+        "reduction_percent": 46.124933891653356
+      },
+      "wrong_target_ratio": {
+        "all_candidates_250ms": 0.004,
+        "ambiguity_guarded_250ms": 0.004,
+        "delta": 0.0
+      }
+    },
+    {
+      "backend_calls": {
+        "all_candidates_250ms": 353,
+        "ambiguity_guarded_250ms": 359
+      },
+      "correct_target_ratio": {
+        "all_candidates_250ms": 0.868,
+        "ambiguity_guarded_250ms": 0.868,
+        "delta": 0.0
+      },
+      "lost_target_ratio": {
+        "all_candidates_250ms": 0.132,
+        "ambiguity_guarded_250ms": 0.132,
+        "delta": 0.0
+      },
+      "requested_crops": {
+        "all_candidates_250ms": 1297,
+        "ambiguity_guarded_250ms": 359,
+        "reduction_percent": 72.3207401696222
+      },
+      "safety_violations": [],
+      "sequence": "seq01_clean",
+      "steady_backend_wall_ms": {
+        "all_candidates_250ms": 23597.875769,
+        "ambiguity_guarded_250ms": 8075.42713,
+        "reduction_percent": 65.7790082079824
+      },
+      "wrong_target_ratio": {
+        "all_candidates_250ms": 0.0,
+        "ambiguity_guarded_250ms": 0.0,
+        "delta": 0.0
+      }
+    },
+    {
+      "backend_calls": {
+        "all_candidates_250ms": 322,
+        "ambiguity_guarded_250ms": 329
+      },
+      "correct_target_ratio": {
+        "all_candidates_250ms": 0.832,
+        "ambiguity_guarded_250ms": 0.84,
+        "delta": 0.008000000000000007
+      },
+      "lost_target_ratio": {
+        "all_candidates_250ms": 0.166,
+        "ambiguity_guarded_250ms": 0.158,
+        "delta": -0.008000000000000007
+      },
+      "requested_crops": {
+        "all_candidates_250ms": 698,
+        "ambiguity_guarded_250ms": 412,
+        "reduction_percent": 40.97421203438395
+      },
+      "safety_violations": [],
+      "sequence": "seq03_crossing",
+      "steady_backend_wall_ms": {
+        "all_candidates_250ms": 13359.039617,
+        "ambiguity_guarded_250ms": 8747.898155,
+        "reduction_percent": 34.517013155138095
+      },
+      "wrong_target_ratio": {
+        "all_candidates_250ms": 0.002,
+        "ambiguity_guarded_250ms": 0.002,
+        "delta": 0.0
+      }
+    },
+    {
+      "backend_calls": {
+        "all_candidates_250ms": 212,
+        "ambiguity_guarded_250ms": 205
+      },
+      "correct_target_ratio": {
+        "all_candidates_250ms": 0.663,
+        "ambiguity_guarded_250ms": 0.663,
+        "delta": 0.0
+      },
+      "lost_target_ratio": {
+        "all_candidates_250ms": 0.337,
+        "ambiguity_guarded_250ms": 0.337,
+        "delta": 0.0
+      },
+      "requested_crops": {
+        "all_candidates_250ms": 613,
+        "ambiguity_guarded_250ms": 369,
+        "reduction_percent": 39.8042414355628
+      },
+      "safety_violations": [],
+      "sequence": "seq04_occlusion",
+      "steady_backend_wall_ms": {
+        "all_candidates_250ms": 13438.35797,
+        "ambiguity_guarded_250ms": 7462.976116,
+        "reduction_percent": 44.46511893297927
+      },
+      "wrong_target_ratio": {
+        "all_candidates_250ms": 0.0,
+        "ambiguity_guarded_250ms": 0.0,
+        "delta": 0.0
+      }
+    }
+  ],
+  "reference": "all_candidates_250ms",
+  "safe_on_current_matrix": true,
+  "schema": "p044_guarded_cpu_safety_assessment_v1",
+  "tag": "p044_guarded_cpu_matrix_7c4bedad_2026_08_03_r1",
+  "thresholds": {
+    "material_correct_ratio_drop": 0.02,
+    "material_lost_ratio_increase": 0.02,
+    "material_wrong_ratio_increase": 0.001
+  },
+  "violations": []
+}

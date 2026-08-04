@@ -1,0 +1,85 @@
+{
+  "conditions": {
+    "reference": "Direct Hailo detector with perception ReID and TIM asynchronous transport disabled.",
+    "treatment": "Identical detector and replay with perception RepVGG executor and TIM causal transport enabled."
+  },
+  "detector_contention_ms": {
+    "mean_delta": 3.518242500413997,
+    "p95_delta": 6.729220199584958,
+    "reference_mean": 6.113692660006288,
+    "reference_p95": 6.575016212463378,
+    "treatment_mean": 9.631935160420285,
+    "treatment_p95": 13.304236412048336
+  },
+  "git_head": "52c84c2a8258d32127c124d39317b7af2f5ddf04",
+  "hardware": {
+    "executor_failed": 0,
+    "executor_rejected": 0,
+    "maximum_engine_active_calls": 1,
+    "maximum_executor_queued": 2
+  },
+  "invariants": {
+    "cpu_mars_authoritative": true,
+    "cpu_mars_compute_interval_ms": 250.0,
+    "cpu_mars_policy": "all_candidates",
+    "mars_dimension": 128,
+    "repvgg_decision_integration_enabled": false,
+    "repvgg_dimension": 512,
+    "shared_embedding_memory": false,
+    "transport_qos": "BEST_EFFORT"
+  },
+  "issue": 44,
+  "promoted_on": "2026-08-02",
+  "promotion_scope": "Compact summaries and manifest only. Raw bags, JSONL events, process logs, and resource samples remain local ignored runtime evidence.",
+  "rate": 1.0,
+  "reid_latency_ms": {
+    "end_to_end": {
+      "count": 267,
+      "maximum": 38.268303,
+      "mean": 11.029089505617977,
+      "minimum": 3.292254,
+      "p50": 10.422265,
+      "p95": 13.309194899999998,
+      "p99": 18.816996419999942
+    },
+    "queue_delay": {
+      "count": 267,
+      "maximum": 15.761502,
+      "mean": 4.579869389513109,
+      "minimum": 1.28239,
+      "p50": 1.756913,
+      "p95": 11.4108123,
+      "p99": 13.09361531999999
+    },
+    "worker": {
+      "count": 267,
+      "maximum": 22.506801,
+      "mean": 6.449220116104869,
+      "minimum": 1.506727,
+      "p50": 8.153324,
+      "p95": 9.683736,
+      "p99": 11.051970959999986
+    }
+  },
+  "repetitions": 1,
+  "request_accounting": {
+    "accepted_results": 264,
+    "accounted": 370,
+    "cancelled": 0,
+    "constructed": 370,
+    "executor_submitted": 267,
+    "executor_succeeded": 267,
+    "expired_in_flight": 106,
+    "final_in_flight": 0,
+    "published": 370,
+    "rejected_results": 0,
+    "request_transport_losses": 103,
+    "result_transport_losses": 3
+  },
+  "schema": "p044_reconciled_reid_smoke_evidence_v1",
+  "source_bag": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
+  "source_runtime_bags": "bags/replay/p044_hailo_reid_pair_52c84c2a_2026_08_02_hard_reentry_smoke_reconciled_r1",
+  "source_runtime_logs": "ros2_ws/log/p044_hailo_reid_pair_52c84c2a_2026_08_02_hard_reentry_smoke_reconciled_r1",
+  "source_runtime_report": "reports/p044_hailo_reid_pair_52c84c2a_2026_08_02_hard_reentry_smoke_reconciled_r1",
+  "target_id": 1
+}

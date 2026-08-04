@@ -280,6 +280,11 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
             num_tracks=3,
             appearance_enabled=True,
             appearance_candidates=2,
+            appearance_request_policy="geometry_winner",
+            appearance_request_reason="geometry_winner",
+            appearance_request_candidates=1,
+            appearance_request_track_ids=(8,),
+            appearance_request_encoding_eligible=1,
             appearance_features_valid=1,
             appearance_image_age_ms=12.5,
             appearance_skip_reason="ok",
@@ -312,6 +317,12 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
             },
             appearance_encoding_rejected=0,
             appearance_memory_update_ineligible=1,
+            appearance_encoding_eligible=2,
+            appearance_backend_calls=1,
+            appearance_backend_requested=2,
+            appearance_backend_returned=2,
+            appearance_backend_valid=1,
+            appearance_backend_wall_ms=4.25,
             appearance_update_cooldown_remaining=0,
             freshness_contract="tim_mars_output_freshness_v1",
             freshness_status="fresh",
@@ -325,6 +336,14 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     assert payload["lat_ms"] == 1.5
     assert payload["num_tracks"] == 3
     assert payload["appearance_enabled"] is True
+    assert payload["appearance_request_policy"] == "geometry_winner"
+    assert payload["appearance_request_reason"] == "geometry_winner"
+    assert payload["appearance_request_candidates"] == 1
+    assert payload["appearance_request_track_ids"] == [8]
+    assert (
+        payload["appearance_request_encoding_eligible"]
+        == 1
+    )
     assert payload["appearance_cache_size"] == 4
     assert payload["appearance_embedding_age_ms_by_track_id"] == {
         "7": 0.0,
@@ -345,6 +364,12 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     }
     assert payload["appearance_encoding_rejected"] == 0
     assert payload["appearance_memory_update_ineligible"] == 1
+    assert payload["appearance_encoding_eligible"] == 2
+    assert payload["appearance_backend_calls"] == 1
+    assert payload["appearance_backend_requested"] == 2
+    assert payload["appearance_backend_returned"] == 2
+    assert payload["appearance_backend_valid"] == 1
+    assert payload["appearance_backend_wall_ms"] == 4.25
     assert payload["freshness_contract"] == "tim_mars_output_freshness_v1"
     assert payload["freshness_status"] == "fresh"
     assert payload["freshness_is_fresh"] is True

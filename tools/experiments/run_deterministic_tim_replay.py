@@ -36,6 +36,9 @@ from thesis_msgs.msg import TargetState, Track2DArray
 from thesis_bringup.tim_mars.appearance_attachment import (
     AppearanceAttachmentConfig,
 )
+from thesis_bringup.tim_mars.appearance_request_policy import (
+    AppearanceRequestPolicy,
+)
 from thesis_bringup.tim_mars.crop_quality import (
     CropQualityThresholds,
 )
@@ -54,7 +57,7 @@ from thesis_bringup.tim_mars.types import TargetMemoryConfig
 TIM_TARGET_TOPIC = "/target_memory_mars"
 TIM_STATUS_TOPIC = "/target_memory_mars/status"
 SEMANTIC_DIGEST_SCHEMA = (
-    "tim_mars_replay_generated_fields_v2"
+    "tim_mars_replay_generated_fields_v4"
 )
 
 
@@ -107,6 +110,27 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Override canonical appearance_enabled. By default the canonical "
             "configuration value is used."
+        ),
+    )
+    parser.add_argument(
+        "--appearance-request-policy",
+        choices=tuple(
+            policy.value
+            for policy in AppearanceRequestPolicy
+        ),
+        default=None,
+        help=(
+            "Override canonical appearance_request_policy for controlled "
+            "Issue #44 experiments."
+        ),
+    )
+    parser.add_argument(
+        "--appearance-compute-min-interval-ms",
+        type=float,
+        default=None,
+        help=(
+            "Override canonical appearance_compute_min_interval_ms. "
+            "Use 0 for forced-frequent controlled experiments."
         ),
     )
     parser.add_argument(
@@ -330,6 +354,65 @@ def build_crop_quality_thresholds(
     )
 
 
+def resolve_appearance_request_policy(
+    canonical: dict[str, Any],
+    args: argparse.Namespace,
+) -> str:
+    """Resolve and validate the replay candidate-request policy."""
+    override = getattr(
+        args,
+        "appearance_request_policy",
+        None,
+    )
+    raw_value = (
+        canonical.get(
+            "appearance_request_policy",
+            AppearanceRequestPolicy.ALL_CANDIDATES.value,
+        )
+        if override is None
+        else override
+    )
+
+    try:
+        return AppearanceRequestPolicy(str(raw_value)).value
+    except ValueError as exc:
+        supported = ", ".join(
+            policy.value
+            for policy in AppearanceRequestPolicy
+        )
+        raise ValueError(
+            "Unsupported appearance_request_policy "
+            f"{raw_value!r}; expected one of: {supported}"
+        ) from exc
+
+
+def resolve_appearance_compute_min_interval_ms(
+    canonical: dict[str, Any],
+    args: argparse.Namespace,
+) -> float:
+    """Resolve a non-negative appearance compute interval."""
+    override = getattr(
+        args,
+        "appearance_compute_min_interval_ms",
+        None,
+    )
+    value = float(
+        canonical.get(
+            "appearance_compute_min_interval_ms",
+            250.0,
+        )
+        if override is None
+        else override
+    )
+
+    if value < 0.0:
+        raise ValueError(
+            "appearance_compute_min_interval_ms must be non-negative"
+        )
+
+    return value
+
+
 def build_runtime(
     canonical: dict[str, Any],
     args: argparse.Namespace,
@@ -341,6 +424,18 @@ def build_runtime(
         canonical_appearance
         if args.appearance_enabled is None
         else bool(args.appearance_enabled)
+    )
+    appearance_request_policy = (
+        resolve_appearance_request_policy(
+            canonical,
+            args,
+        )
+    )
+    appearance_compute_min_interval_ms = (
+        resolve_appearance_compute_min_interval_ms(
+            canonical,
+            args,
+        )
     )
 
     memory = build_memory_config(
@@ -358,11 +453,8 @@ def build_runtime(
                 250.0,
             )
         ),
-        compute_min_interval_ms=float(
-            canonical.get(
-                "appearance_compute_min_interval_ms",
-                250.0,
-            )
+        compute_min_interval_ms=(
+            appearance_compute_min_interval_ms
         ),
         cache_ttl_ms=float(
             canonical.get(
@@ -408,6 +500,9 @@ def build_runtime(
             appearance=appearance,
             image_width=float(args.image_width),
             image_height=float(args.image_height),
+            appearance_request_policy=(
+                appearance_request_policy
+            ),
             tracks_are_normalized=bool(
                 args.tracks_are_normalized
             ),
@@ -538,7 +633,6 @@ def make_status_message(
     runtime: TimMarsRuntime,
     tracks_message: Track2DArray,
     result: Any,
-    canonical: dict[str, Any],
 ) -> String:
     diagnostics = result.diagnostics
     message = String()
@@ -555,6 +649,22 @@ def make_status_message(
         ),
         appearance_candidates=(
             diagnostics.appearance_candidates
+        ),
+        appearance_request_policy=(
+            diagnostics.appearance_request_policy
+        ),
+        appearance_request_reason=(
+            diagnostics.appearance_request_reason
+        ),
+        appearance_request_candidates=(
+            diagnostics.appearance_request_candidates
+        ),
+        appearance_request_track_ids=(
+            diagnostics.appearance_request_track_ids
+        ),
+        appearance_request_encoding_eligible=(
+            diagnostics
+            .appearance_request_encoding_eligible
         ),
         appearance_features_valid=(
             diagnostics.appearance_features_valid
@@ -581,16 +691,10 @@ def make_status_message(
             diagnostics.candidate_track_ids
         ),
         appearance_compute_min_interval_ms=float(
-            canonical.get(
-                "appearance_compute_min_interval_ms",
-                250.0,
-            )
+            runtime.config.appearance.compute_min_interval_ms
         ),
         appearance_cache_ttl_ms=float(
-            canonical.get(
-                "appearance_cache_ttl_ms",
-                750.0,
-            )
+            runtime.config.appearance.cache_ttl_ms
         ),
         appearance_cache_size=(
             diagnostics.appearance_cache_size
@@ -607,6 +711,24 @@ def make_status_message(
         appearance_memory_update_ineligible=(
             diagnostics.appearance_memory_update_ineligible
         ),
+        appearance_encoding_eligible=(
+            diagnostics.appearance_encoding_eligible
+        ),
+        appearance_backend_calls=(
+            diagnostics.appearance_backend_calls
+        ),
+        appearance_backend_requested=(
+            diagnostics.appearance_backend_requested
+        ),
+        appearance_backend_returned=(
+            diagnostics.appearance_backend_returned
+        ),
+        appearance_backend_valid=(
+            diagnostics.appearance_backend_valid
+        ),
+        # The complete status JSON is included in the semantic digest.
+        # Normalize wall-clock duration to preserve replay determinism.
+        appearance_backend_wall_ms=0.0,
         appearance_update_cooldown_remaining=(
             diagnostics
             .appearance_update_cooldown_remaining
@@ -1129,13 +1251,15 @@ def build_resolved_runtime_payload(
     summary: dict[str, Any],
     args: argparse.Namespace,
     appearance_enabled: bool,
+    appearance_request_policy: str,
+    appearance_compute_min_interval_ms: float,
     image_topic: str,
     input_bag: Path,
     output_bag: Path,
 ) -> dict[str, Any]:
     """Build exact deterministic replay runtime provenance."""
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "canonical_config": dict(
             summary["canonical_config"]
         ),
@@ -1157,6 +1281,12 @@ def build_resolved_runtime_payload(
             ),
             "appearance_enabled": bool(
                 appearance_enabled
+            ),
+            "appearance_request_policy": str(
+                appearance_request_policy
+            ),
+            "appearance_compute_min_interval_ms": float(
+                appearance_compute_min_interval_ms
             ),
             "compact_output": bool(
                 args.compact_output
@@ -1203,6 +1333,24 @@ def build_resolved_runtime_payload(
             "appearance_enabled": (
                 "canonical_config"
                 if args.appearance_enabled is None
+                else "command_line"
+            ),
+            "appearance_request_policy": (
+                "canonical_config"
+                if getattr(
+                    args,
+                    "appearance_request_policy",
+                    None,
+                ) is None
+                else "command_line"
+            ),
+            "appearance_compute_min_interval_ms": (
+                "canonical_config"
+                if getattr(
+                    args,
+                    "appearance_compute_min_interval_ms",
+                    None,
+                ) is None
                 else "command_line"
             ),
             "raw_target_mode": argument_source(
@@ -1450,7 +1598,6 @@ def main() -> int:
             runtime=runtime,
             tracks_message=tracks_message,
             result=result,
-            canonical=canonical,
         )
 
         update_generated_semantic_digest(
@@ -1674,6 +1821,17 @@ def main() -> int:
             "appearance_enabled": bool(
                 runtime.config.appearance.enabled
             ),
+            "appearance_request_policy": str(
+                runtime.config.appearance_request_policy.value
+                if isinstance(
+                    runtime.config.appearance_request_policy,
+                    AppearanceRequestPolicy,
+                )
+                else runtime.config.appearance_request_policy
+            ),
+            "appearance_compute_min_interval_ms": float(
+                runtime.config.appearance.compute_min_interval_ms
+            ),
             "raw_target_mode": (
                 args.raw_target_mode
             ),
@@ -1815,6 +1973,17 @@ def main() -> int:
             args=args,
             appearance_enabled=bool(
                 runtime.config.appearance.enabled
+            ),
+            appearance_request_policy=str(
+                runtime.config.appearance_request_policy.value
+                if isinstance(
+                    runtime.config.appearance_request_policy,
+                    AppearanceRequestPolicy,
+                )
+                else runtime.config.appearance_request_policy
+            ),
+            appearance_compute_min_interval_ms=float(
+                runtime.config.appearance.compute_min_interval_ms
             ),
             image_topic=image_topic,
             input_bag=input_bag,

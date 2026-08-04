@@ -23,6 +23,15 @@ from thesis_bringup.tim_mars.appearance_attachment import (
     attach_appearance_features,
     reset_appearance_lifecycle,
 )
+from thesis_bringup.tim_mars.appearance_request_policy import (
+    AppearanceRequestDecision,
+    AppearanceRequestPolicy,
+    select_appearance_request_candidates,
+)
+from thesis_bringup.tim_mars.appearance_request_producer import (
+    AppearanceRequestCrop,
+    build_appearance_request_crops,
+)
 from thesis_bringup.tim_mars.crop_quality import (
     AppearanceCropQuality,
 )
@@ -44,10 +53,14 @@ class TimMarsRuntimeConfig:
     appearance: AppearanceAttachmentConfig
     image_width: float
     image_height: float
+    appearance_request_policy: (
+        AppearanceRequestPolicy | str
+    ) = AppearanceRequestPolicy.ALL_CANDIDATES
     tracks_are_normalized: bool = False
     selected_track_id: int = 0
     auto_select_largest: bool = False
     image_buffer_size: int = 64
+    appearance_async_request_crops_enabled: bool = False
 
 
 @dataclass(frozen=True)
@@ -66,6 +79,11 @@ class TimMarsRuntimeDiagnostics:
     selected_image_timestamp_ns: Optional[int]
     image_track_offset_ms: Optional[float]
     appearance_candidates: int
+    appearance_request_policy: str
+    appearance_request_reason: str
+    appearance_request_candidates: int
+    appearance_request_track_ids: tuple[int, ...]
+    appearance_request_encoding_eligible: int
     appearance_features_valid: int
     appearance_skip_reason: str
     appearance_warning: Optional[str]
@@ -77,6 +95,12 @@ class TimMarsRuntimeDiagnostics:
     ]
     appearance_encoding_rejected: int
     appearance_memory_update_ineligible: int
+    appearance_encoding_eligible: int
+    appearance_backend_calls: int
+    appearance_backend_requested: int
+    appearance_backend_returned: int
+    appearance_backend_valid: int
+    appearance_backend_wall_ms: float
     appearance_update_cooldown_remaining: int
     candidate_track_ids: tuple[int, ...]
 
@@ -88,6 +112,10 @@ class TimMarsRuntimeResult:
     output: TargetMemoryOutput
     candidates: tuple[CandidateTrack, ...]
     diagnostics: TimMarsRuntimeDiagnostics
+    appearance_request_crops: tuple[
+        AppearanceRequestCrop,
+        ...,
+    ] = ()
 
 
 @dataclass
@@ -274,12 +302,79 @@ class TimMarsRuntime:
             else None
         )
 
+        appearance_request = (
+            select_appearance_request_candidates(
+                policy=self.config.appearance_request_policy,
+                candidates=candidates,
+                target_state=self.memory.state,
+                reference_bbox=self.memory.bbox,
+                current_track_id=self.memory.target_track_id,
+                target_config=self.config.memory,
+                pending_select_id=self.pending_select_id,
+                auto_select_largest=(
+                    self.config.auto_select_largest
+                ),
+            )
+        )
+
         candidates, appearance_diagnostics = self._attach_appearance(
             candidates=candidates,
             track_timestamp_ns=track_timestamp_ns,
             selected_image=selected_image,
             frame_id=track_frame_id,
+            appearance_request=appearance_request,
         )
+
+        appearance_request_crops: tuple[
+            AppearanceRequestCrop,
+            ...,
+        ] = ()
+
+        if (
+            self.config.appearance_async_request_crops_enabled
+            and selected_image is not None
+            and track_timestamp_ns is not None
+            and track_frame_id > 0
+            and self.appearance_state.frame_generation > 0
+            and appearance_diagnostics.backend_calls > 0
+        ):
+            appearance_request_crops = (
+                build_appearance_request_crops(
+                    candidates=candidates,
+                    requested_candidate_indices=(
+                        appearance_request.requested_indices
+                    ),
+                    crop_quality_by_track_id=(
+                        appearance_diagnostics
+                        .crop_quality_by_track_id
+                    ),
+                    image_bgr=selected_image.image_bgr,
+                    candidate_frame_width=(
+                        self.config.image_width
+                    ),
+                    candidate_frame_height=(
+                        self.config.image_height
+                    ),
+                    source_frame_id=track_frame_id,
+                    track_timestamp_ns=(
+                        track_timestamp_ns
+                    ),
+                    source_image_timestamp_ns=(
+                        selected_image.stamp_ns
+                    ),
+                    source_image_seq=(
+                        selected_image.stamp_ns
+                    ),
+                    frame_generation=(
+                        self.appearance_state
+                        .frame_generation
+                    ),
+                    track_generation_by_id=(
+                        self.appearance_state
+                        .track_generation_by_id
+                    ),
+                )
+            )
 
         selected_candidate = None
         if self.pending_select_id is not None:
@@ -357,6 +452,22 @@ class TimMarsRuntime:
             selected_image_timestamp_ns=selected_image_ns,
             image_track_offset_ms=offset_ms,
             appearance_candidates=appearance_diagnostics.candidates,
+            appearance_request_policy=(
+                appearance_request.policy.value
+            ),
+            appearance_request_reason=(
+                appearance_request.reason
+            ),
+            appearance_request_candidates=len(
+                appearance_request.requested_indices
+            ),
+            appearance_request_track_ids=tuple(
+                appearance_request.requested_track_ids
+            ),
+            appearance_request_encoding_eligible=int(
+                appearance_diagnostics
+                .request_encoding_eligible
+            ),
             appearance_features_valid=(
                 appearance_diagnostics.features_valid
             ),
@@ -377,6 +488,24 @@ class TimMarsRuntime:
             appearance_memory_update_ineligible=int(
                 appearance_diagnostics.memory_update_ineligible
             ),
+            appearance_encoding_eligible=int(
+                appearance_diagnostics.encoding_eligible
+            ),
+            appearance_backend_calls=int(
+                appearance_diagnostics.backend_calls
+            ),
+            appearance_backend_requested=int(
+                appearance_diagnostics.backend_requested
+            ),
+            appearance_backend_returned=int(
+                appearance_diagnostics.backend_returned
+            ),
+            appearance_backend_valid=int(
+                appearance_diagnostics.backend_valid
+            ),
+            appearance_backend_wall_ms=float(
+                appearance_diagnostics.backend_wall_ms
+            ),
             appearance_update_cooldown_remaining=(
                 self.memory.appearance_update_cooldown_frames_remaining
             ),
@@ -390,6 +519,9 @@ class TimMarsRuntime:
             output=output,
             candidates=tuple(candidates),
             diagnostics=diagnostics,
+            appearance_request_crops=(
+                appearance_request_crops
+            ),
         )
 
     def _enrich_positive_memory_bootstrap_event(
@@ -493,6 +625,7 @@ class TimMarsRuntime:
         track_timestamp_ns: Optional[int],
         selected_image: Optional[AppearanceFrame],
         frame_id: int,
+        appearance_request: AppearanceRequestDecision,
     ):
         if track_timestamp_ns is None:
             reset_appearance_lifecycle(
@@ -513,6 +646,10 @@ class TimMarsRuntime:
                         self.appearance_state.cache_by_track_id
                     ),
                     embedding_age_ms_by_track_id={},
+                    request_candidates=len(
+                        appearance_request.requested_indices
+                    ),
+                    request_encoding_eligible=0,
                 ),
             )
 
@@ -541,6 +678,9 @@ class TimMarsRuntime:
                 candidate_frame_width=self.config.image_width,
                 candidate_frame_height=self.config.image_height,
                 frame_id=frame_id,
+                requested_candidate_indices=(
+                    appearance_request.requested_indices
+                ),
             ),
         )
 

@@ -1,0 +1,53 @@
+{
+  "accepted_observations": 4953,
+  "backend_result_delivery_percent": 97.52358490566037,
+  "claim_boundary": {
+    "authoritative_repvgg_safety_proven": false,
+    "bounded_replay_soak": true,
+    "canonical_policy_changed": false,
+    "cpu_mars_authoritative": true,
+    "cross_sequence_generality_proven": false,
+    "production_nodes_modified": false,
+    "repvgg_decision_integration_enabled": false,
+    "repvgg_memory_enabled": false,
+    "repvgg_observational": true,
+    "repvgg_ranking_enabled": false
+  },
+  "execution_commit": "a6259182d344bba8b2e32176a1e6a802e11ef682",
+  "expired_requests": 135,
+  "expiry_percent": 2.6533018867924527,
+  "failures": [],
+  "maximum_executor_queued": 2,
+  "maximum_hailo_active_calls": 1,
+  "maximum_temperature_c": 60.4,
+  "mean_temperature_c": 57.59055555555556,
+  "minimum_available_memory_mib": 5956.95703125,
+  "nonzero_throttle_samples": 0,
+  "observed_event_duration_s": 1796.576156893,
+  "passed": true,
+  "raw_evidence_retained_locally": {
+    "collector_events": "reports/p044_sustained_reid_a6259182_2026_08_04_hard_reentry_sustained_acceptance_30m_r1/collector/events.jsonl",
+    "evidence_bag": "bags/replay/p044_sustained_reid_a6259182_2026_08_04_hard_reentry_sustained_acceptance_30m_r1/evidence",
+    "health_samples": "reports/p044_sustained_reid_a6259182_2026_08_04_hard_reentry_sustained_acceptance_30m_r1/health/samples.jsonl",
+    "logs": "ros2_ws/log/p044_sustained_reid_a6259182_2026_08_04_hard_reentry_sustained_acceptance_30m_r1",
+    "resource_samples": "reports/p044_sustained_reid_a6259182_2026_08_04_hard_reentry_sustained_acceptance_30m_r1/resources/samples.jsonl"
+  },
+  "relay_image_rewinds": 26,
+  "relay_images": 9172,
+  "relay_track_rewinds": 26,
+  "relay_tracks": 25041,
+  "requested_duration_s": 1800.0,
+  "requests": 5088,
+  "resource_means": {
+    "perception_cpu_percent": 11.50244510459161,
+    "perception_rss_mib": 206.1395673276578,
+    "relay_cpu_percent": 6.214598836411986,
+    "relay_rss_mib": 74.85586024017165,
+    "tim_cpu_percent": 32.448349773184134,
+    "tim_rss_mib": 729.8509763462071
+  },
+  "schema": "p044_sustained_acceptance_review_v1",
+  "source_run_tag": "p044_sustained_reid_a6259182_2026_08_04_hard_reentry_sustained_acceptance_30m_r1",
+  "successful_backend_results": 4962,
+  "tim_acceptance_percent": 97.34669811320755
+}

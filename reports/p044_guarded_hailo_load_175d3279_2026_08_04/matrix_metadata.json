@@ -1,0 +1,41 @@
+{
+  "schema": "p044_guarded_hailo_load_matrix_v1",
+  "git_head": "175d3279ab12dc1a108d4ad8ff08cbfd09ab4a2b",
+  "source_bag": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
+  "image_topic": "/camera/image_raw",
+  "target_id": 1,
+  "rate": 1.0,
+  "repetitions": 3,
+  "condition_order": "rotated",
+  "conditions": {
+    "reference": {
+      "reid_enabled": false,
+      "tim_async_reid_enabled": false,
+      "appearance_request_policy": "all_candidates",
+      "appearance_compute_min_interval_ms": 250.0
+    },
+    "all_candidates_hailo": {
+      "reid_enabled": true,
+      "tim_async_reid_enabled": true,
+      "appearance_request_policy": "all_candidates",
+      "appearance_compute_min_interval_ms": 250.0
+    },
+    "ambiguity_guarded_hailo": {
+      "reid_enabled": true,
+      "tim_async_reid_enabled": true,
+      "appearance_request_policy": "ambiguity_guarded",
+      "appearance_compute_min_interval_ms": 250.0
+    }
+  },
+  "fixed_controls": {
+    "cpu_mars_authoritative": true,
+    "repvgg_ranking_enabled": false,
+    "repvgg_memory_enabled": false,
+    "repvgg_decision_integration_enabled": false,
+    "tim_queue_capacity": 8,
+    "executor_queue_capacity": 4,
+    "deadline_ms": 500.0,
+    "qos_reliability": "BEST_EFFORT",
+    "qos_depth": 1
+  }
+}
