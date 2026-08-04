@@ -69,6 +69,7 @@ LOG_DIR="$THESIS_ROOT/ros2_ws/log/$TAG"
 overall_status=0
 cleanup_status=0
 analysis_status=1
+log_scan_raw_status=1
 log_scan_status=1
 final_hailo_status=1
 
@@ -628,13 +629,16 @@ rg -n -i \
   --glob '!analysis.log' \
   > "$REPORT_DIR/log_error_scan.txt"
 
-log_scan_status=$?
+log_scan_raw_status=$?
+log_scan_status="$log_scan_raw_status"
 
-if [ "$log_scan_status" -eq 0 ]; then
+if [ "$log_scan_raw_status" -eq 0 ]; then
+  log_scan_status=1
   cat "$REPORT_DIR/log_error_scan.txt"
   printf 'ATTENTION: runtime error-pattern matches were found.\n'
   overall_status=1
-elif [ "$log_scan_status" -eq 1 ]; then
+elif [ "$log_scan_raw_status" -eq 1 ]; then
+  log_scan_status=0
   printf 'PASS: no runtime error-pattern matches found.\n'
   : > "$REPORT_DIR/log_error_scan.txt"
 else
@@ -675,6 +679,7 @@ printf 'playback_status:    %s\n' "$playback_status"
 printf 'playback_end_reason:%s\n' "$playback_end_reason"
 printf 'cleanup_status:     %s\n' "$cleanup_status"
 printf 'analysis_status:    %s\n' "$analysis_status"
+printf 'log_scan_raw_status:%s\n' "$log_scan_raw_status"
 printf 'log_scan_status:    %s\n' "$log_scan_status"
 printf 'final_hailo_status: %s\n' "$final_hailo_status"
 printf 'overall_status:     %s\n' "$overall_status"

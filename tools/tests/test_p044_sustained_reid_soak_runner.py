@@ -94,3 +94,20 @@ def test_analyser_declares_limited_claim_boundary() -> None:
 
     for fragment in required:
         assert fragment in text
+
+
+def test_runner_normalizes_no_match_log_scan_status() -> None:
+    text = RUNNER.read_text(encoding="utf-8")
+
+    required = (
+        "log_scan_raw_status=$?",
+        'if [ "$log_scan_raw_status" -eq 0 ]',
+        'elif [ "$log_scan_raw_status" -eq 1 ]',
+        "log_scan_status=1",
+        "log_scan_status=0",
+        "log_scan_raw_status:%s",
+        "log_scan_status:    %s",
+    )
+
+    for fragment in required:
+        assert fragment in text
