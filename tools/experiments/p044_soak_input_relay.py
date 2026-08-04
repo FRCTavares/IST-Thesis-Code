@@ -3,7 +3,7 @@
 
 The relay is experiment-only. It prevents direct rosbag loop playback from
 reintroducing duplicate or non-monotonic source timestamps into TIM-MARS.
-Message content and tracker IDs are retained. CPU MARS remains authoritative.
+Image pixels and non-timing track payload are retained. Source timing metadata is refreshed, while unavailable replayed host-monotonic tracker timing is cleared. CPU MARS remains authoritative.
 """
 
 from __future__ import annotations
@@ -106,8 +106,18 @@ def rewrite_tracks(
     if hasattr(output, "src_stamp_ns"):
         output.src_stamp_ns = int(fresh_ns)
 
-    if hasattr(output, "t_cam_msg_seen_ns"):
-        output.t_cam_msg_seen_ns = int(fresh_ns)
+    # These values belong to the original host-monotonic tracker
+    # execution. This experiment replays precomputed tracks, so no valid
+    # current tracker callback timestamps exist. Clear them rather than
+    # mixing ROS time into the monotonic domain or retaining repeated
+    # timestamps from the source bag.
+    for field_name in (
+        "t_cam_msg_seen_ns",
+        "t_track_cb_start_ns",
+        "t_track_cb_end_ns",
+    ):
+        if hasattr(output, field_name):
+            setattr(output, field_name, 0)
 
     if hasattr(output, "frame_id"):
         output.frame_id = int(output_frame_id)
@@ -255,7 +265,10 @@ class P044SoakInputRelay(Node):
             "last_fresh_stamp_ns": self.allocator.last_ns,
             "claim_boundary": {
                 "experiment_only_timestamp_refresh": True,
-                "source_payload_content_retained": True,
+                "source_image_pixels_retained": True,
+                "source_track_non_timing_payload_retained": True,
+                "source_timing_metadata_rewritten": True,
+                "replayed_host_timing_cleared": True,
                 "tracker_ids_retained": True,
                 "cpu_mars_authoritative": True,
                 "repvgg_observational": True,

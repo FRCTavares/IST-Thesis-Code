@@ -58,11 +58,14 @@ def test_image_stamp_is_refreshed_without_mutating_source() -> None:
     assert output.width == 640
 
 
-def test_tracks_refresh_preserves_track_ids() -> None:
+def test_tracks_refresh_source_time_and_clear_old_host_time() -> None:
     message = Track2DArray()
     message.header.stamp.sec = 3
     message.src_stamp_ns = 3_000_000_000
     message.frame_id = 9
+    message.t_cam_msg_seen_ns = 31
+    message.t_track_cb_start_ns = 32
+    message.t_track_cb_end_ns = 33
 
     output = MODULE.rewrite_tracks(
         message,
@@ -73,8 +76,17 @@ def test_tracks_refresh_preserves_track_ids() -> None:
     assert MODULE.stamp_to_ns(output.header.stamp) == 7_000_000_005
     assert output.src_stamp_ns == 7_000_000_005
     assert output.frame_id == 42
+
+    assert output.t_cam_msg_seen_ns == 0
+    assert output.t_track_cb_start_ns == 0
+    assert output.t_track_cb_end_ns == 0
+
+    assert MODULE.stamp_to_ns(message.header.stamp) == 3_000_000_000
     assert message.src_stamp_ns == 3_000_000_000
     assert message.frame_id == 9
+    assert message.t_cam_msg_seen_ns == 31
+    assert message.t_track_cb_start_ns == 32
+    assert message.t_track_cb_end_ns == 33
 
 
 def test_claim_boundary_remains_experiment_only() -> None:
@@ -82,6 +94,10 @@ def test_claim_boundary_remains_experiment_only() -> None:
 
     required = (
         '"experiment_only_timestamp_refresh": True',
+        '"source_image_pixels_retained": True',
+        '"source_track_non_timing_payload_retained": True',
+        '"source_timing_metadata_rewritten": True',
+        '"replayed_host_timing_cleared": True',
         '"cpu_mars_authoritative": True',
         '"repvgg_observational": True',
         '"canonical_policy_changed": False',
