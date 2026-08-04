@@ -1,0 +1,76 @@
+{
+  "completed_monotonic_ns": 810602150279186,
+  "groups": {
+    "perception": {
+      "cpu_percent": {
+        "count": 73,
+        "maximum": 26.99721027027393,
+        "mean": 9.792485525400279,
+        "p50": 9.998930364424266,
+        "p95": 19.197960127076584
+      },
+      "maximum_member_count": 2,
+      "member_count": {
+        "count": 74,
+        "maximum": 2.0,
+        "mean": 2.0,
+        "p50": 2.0,
+        "p95": 2.0
+      },
+      "observed_commands": [
+        "/usr/bin/python3 /home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_bringup/lib/thesis_bringup/perception_pipeline_node --ros-args -p image_topic:=/camera/image_raw -p image_reliability:=best_effort -p image_qos_depth:=2 -p img_w:=640 -p img_h:=640 -p inference_backend:=hailo_direct -p hailo_hef_path:=/home/francisco/Desktop/Thesis-Code/models/hef/yolov6n.hef -p allow_stub_fallback:=false -p publish_timing:=true -p reid_enabled:=false -p reid_hef_path:=/home/francisco/Desktop/Thesis-Code/models/reid/repvgg_a0_person_reid_512.hef -p reid_request_topic:=/appearance/reid/request -p reid_result_topic:=/appearance/reid/result -p reid_queue_capacity:=4 -p reid_qos_depth:=1 -p reid_status_topic:=/perception/reid/status -p reid_status_period_s:=0.25",
+        "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup perception_pipeline_node --ros-args -p image_topic:=/camera/image_raw -p image_reliability:=best_effort -p image_qos_depth:=2 -p img_w:=640 -p img_h:=640 -p inference_backend:=hailo_direct -p hailo_hef_path:=/home/francisco/Desktop/Thesis-Code/models/hef/yolov6n.hef -p allow_stub_fallback:=false -p publish_timing:=true -p reid_enabled:=false -p reid_hef_path:=/home/francisco/Desktop/Thesis-Code/models/reid/repvgg_a0_person_reid_512.hef -p reid_request_topic:=/appearance/reid/request -p reid_result_topic:=/appearance/reid/result -p reid_queue_capacity:=4 -p reid_qos_depth:=1 -p reid_status_topic:=/perception/reid/status -p reid_status_period_s:=0.25"
+      ],
+      "observed_pids": [
+        484758,
+        484781
+      ],
+      "pgid": 484758,
+      "rss_kib": {
+        "count": 74,
+        "maximum": 203604.0,
+        "mean": 199310.2162162162,
+        "p50": 199776.0,
+        "p95": 203224.40000000002
+      },
+      "sample_count": 74
+    },
+    "tim": {
+      "cpu_percent": {
+        "count": 73,
+        "maximum": 66.98709279298646,
+        "mean": 41.48418580242788,
+        "p50": 45.99474707792047,
+        "p95": 62.99398302364911
+      },
+      "maximum_member_count": 2,
+      "member_count": {
+        "count": 74,
+        "maximum": 2.0,
+        "mean": 2.0,
+        "p50": 2.0,
+        "p95": 2.0
+      },
+      "observed_commands": [
+        "/usr/bin/python3 /home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_bringup/lib/thesis_bringup/target_memory_mars_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml -p tracks_topic:=/tracks -p target_topic:=/target_memory_mars -p status_topic:=/target_memory_mars/status -p select_topic:=/target_memory_mars/select -p selected_track_id:=1 -p mirror_raw_target_selection:=false -p appearance_enabled:=true -p appearance_image_topic:=/camera/image_raw -p appearance_request_policy:=all_candidates -p appearance_compute_min_interval_ms:=250.0 -p mars_model_path:=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb -p appearance_async_reid_enabled:=false -p appearance_async_reid_request_topic:=/appearance/reid/request -p appearance_async_reid_result_topic:=/appearance/reid/result -p appearance_async_reid_queue_capacity:=8 -p appearance_async_reid_deadline_ms:=500.0 -p appearance_async_reid_qos_depth:=1",
+        "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup target_memory_mars_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml -p tracks_topic:=/tracks -p target_topic:=/target_memory_mars -p status_topic:=/target_memory_mars/status -p select_topic:=/target_memory_mars/select -p selected_track_id:=1 -p mirror_raw_target_selection:=false -p appearance_enabled:=true -p appearance_image_topic:=/camera/image_raw -p appearance_request_policy:=all_candidates -p appearance_compute_min_interval_ms:=250.0 -p mars_model_path:=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb -p appearance_async_reid_enabled:=false -p appearance_async_reid_request_topic:=/appearance/reid/request -p appearance_async_reid_result_topic:=/appearance/reid/result -p appearance_async_reid_queue_capacity:=8 -p appearance_async_reid_deadline_ms:=500.0 -p appearance_async_reid_qos_depth:=1"
+      ],
+      "observed_pids": [
+        484842,
+        484861
+      ],
+      "pgid": 484842,
+      "rss_kib": {
+        "count": 74,
+        "maximum": 750656.0,
+        "mean": 734224.8648648649,
+        "p50": 747432.0,
+        "p95": 750590.8
+      },
+      "sample_count": 74
+    }
+  },
+  "interval_s": 1.0,
+  "schema": "p044_process_group_resources_v1",
+  "started_monotonic_ns": 810528185468884
+}
