@@ -296,6 +296,10 @@ def test_collector_accepts_load_matrix_condition_labels():
         "forced_frequent",
         "all_candidates_hailo",
         "ambiguity_guarded_hailo",
+        "pass_through",
+        "suppressed_result",
+        "backend_failure",
+        "delayed_result",
     )
 
 
