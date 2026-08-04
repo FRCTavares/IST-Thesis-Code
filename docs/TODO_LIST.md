@@ -4,9 +4,9 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
-Last reconciled with GitHub: **27 July 2026**.
+Last reconciled with GitHub: **5 August 2026**.
 
-Open executable issues: **21**.
+Open executable issues: **24**.
 
 ## Execution rules
 
@@ -41,10 +41,21 @@ Open executable issues: **21**.
 
 **Immediate thesis-critical algorithm freeze (target 31 August 2026):** complete or explicitly reject #26 → #25 → #64 → #21 → #31 → #30 → #58 before lower-impact cleanup. #54 is the enabling image-transport dependency. Thesis writing proceeds in parallel now; after the algorithm freeze, prioritise #32 and the final method, limitations, and figure work in #40–#42.
 
-1. [x] [#8 — P1.1 Simplify recovery confirmation](https://github.com/FRCTavares/IST-Thesis-Code/issues/8)
+**Parallel thesis-writing workstream:** the thesis is not postponed until the code is finished. Complete the August chapter draft, the September full draft, and the October review/submission work alongside the algorithm and evaluation schedule.
+
+1. [ ] [#66 — P1.T1 Write thesis background, related work, architecture, and method draft by 31 August 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/66) — HIGHEST PRIORITY — PARALLEL THESIS WORKSTREAM
+   - target 35–45 complete pages covering the introduction, literature review, problem, system architecture and TIM-MARS method.
+
+2. [ ] [#67 — P1.T2 Complete thesis experiments, results, and discussion draft by 30 September 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/67) — HIGHEST PRIORITY — PARALLEL THESIS WORKSTREAM
+   - deliver the complete 75–90-page first draft, including datasets, evaluation, results, discussion, limitations and figures.
+
+3. [ ] [#68 — P1.T3 Complete thesis review, formatting, and final submission by 31 October 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/68) — HIGHEST PRIORITY — PARALLEL THESIS WORKSTREAM
+   - own supervisor revisions, proofreading, formatting, final reproducibility checks, release archival and submission.
+
+4. [x] [#8 — P1.1 Simplify recovery confirmation](https://github.com/FRCTavares/IST-Thesis-Code/issues/8)
    - completed on 24 July 2026. One observation-based persistence tracker now owns recovery confirmation; probationary lineage remains separate from trusted selected memory until atomic acceptance; broken continuity expires staged hard-negative evidence; and validated identity evidence is retained only for the same pending candidate. Deterministic validation passed with 219 tests passed and 1 skipped.
 
-2. [x] [#9 — P1.2 Reduce `target_memory.py`](https://github.com/FRCTavares/IST-Thesis-Code/issues/9) — DONE
+5. [x] [#9 — P1.2 Reduce `target_memory.py`](https://github.com/FRCTavares/IST-Thesis-Code/issues/9) — DONE
    - completed on 26 July 2026 in implementation commit `931f13b63226a88cee67c1d9e391eb1dee1d7b8a`.
    - extracted mutation-free candidate acceptance policies into `candidate_safety_policy.py` and reorganized `TargetIdentityMemory` around explicit proposal evaluation, confirmation persistence, atomic trusted-state commit, selected-memory transition, appearance adaptation, and output construction.
    - reduced the candidate evaluator and acceptance path to orchestration while preserving rejection priority, diagnostics, trusted-memory provenance, and the intended evaluate–confirm–commit–adapt–output transaction.
@@ -53,7 +64,7 @@ Open executable issues: **21**.
    - the final row exactly reproduced the current P0.17 dual-oracle authority: May `0.000/0.100 s`, June Seq01 `0.000/0.000 s`, June Seq03 `0.000/0.950 s`, June Seq04 `0.000/0.250 s`, and aggregate `0.000/1.300 s` spatial/annotated-ID wrong-target duration.
    - the historical P0.28 component-matrix semantic digests remain versioned diagnostic evidence and are not used as the regression authority for the current canonical configuration.
 
-3. [x] [#15 — P1.5 Fix positive-memory bootstrap](https://github.com/FRCTavares/IST-Thesis-Code/issues/15) — DONE
+6. [x] [#15 — P1.5 Fix positive-memory bootstrap](https://github.com/FRCTavares/IST-Thesis-Code/issues/15) — DONE
    - completed on 26 July 2026 against baseline `055984a3867b5fb1bfc22615f052bc17831e61a3` with corrective implementation `f1fbb7994766080481fe8cf3b9acac9862867c9b`.
    - bootstrap is allowed only while the original operator-selected lineage remains supported. Transient policy suppression preserves pre-anchor authorization only while the usable operator ID remains continuously present; true absence permanently invalidates delayed bootstrap.
    - four baseline runs, four candidate runs, and one independent Seq04 repeat completed successfully. All eight correctness and event-type evaluations passed.
@@ -62,14 +73,14 @@ Open executable issues: **21**.
    - Seq04 repeatability passed with semantic SHA-256 `f5b6e14c8801e9f0286f2eb8971e4c2379fb0f4430e95018e6bc96bc385819f2`.
    - promoted evidence: `reports/p015_positive_memory_bootstrap_f1fbb799_2026_07_26/`.
 
-4. [x] [#17 — P1.6 Prevent target fragments becoming negatives](https://github.com/FRCTavares/IST-Thesis-Code/issues/17) — DONE
+7. [x] [#17 — P1.6 Prevent target fragments becoming negatives](https://github.com/FRCTavares/IST-Thesis-Code/issues/17) — DONE
    - completed on 27 July 2026 from clean baseline `c32c01691e0c6281e92aeee8880fa9bf04ecb488`;
    - canonical regressions cover duplicate fragments, protected-anchor support, trusted-gallery history, and uninterrupted same-ID continuity;
    - protected positive support gates hard-negative admission; the canonical deterministic `0.95–1.01` four-sequence sweep selected `0.95`, and a second deterministic `0.95` pass reproduced identical semantic digests and evaluator metrics on all four sequences; promoted evidence is packaged under `reports/p017_fragment_safety_f1049263_2026_07_27`.
    - visual review confirmed the canonical May ByteTrack identity handover remains at `50.233 s`; `49.999–50.233 s` is now classified as `occlusion_ambiguity` with ID `1`, and annotation dropdown labels include filenames to distinguish canonical and autonomous CSVs.
    - phase 4; engineering; complete.
 
-5. [x] [#18 — P1.7 Add hard-negative lifecycle](https://github.com/FRCTavares/IST-Thesis-Code/issues/18) — DONE
+8. [x] [#18 — P1.7 Add hard-negative lifecycle](https://github.com/FRCTavares/IST-Thesis-Code/issues/18) — DONE
    - started on 27 July 2026 from clean synchronized baseline `bc71088ca4639f6bc75af98a5589fb246c6bff5d`.
    - read-only audit confirmed that staging, promotion, duplicate merging, bounded eviction, pending expiry, selected-lineage reconciliation, and serialized lifecycle events already exist.
    - implemented tracker-frame/time, crop-quality, confidence, full-geometry and appearance-source provenance for pending and committed prototypes; merge operations retain the earliest evidence and atomically advance the latest context.
@@ -82,30 +93,32 @@ Open executable issues: **21**.
    - final validation passed with 238 tests and 1 skip, 252 ROS tests with 0 failures and 0 errors, a successful package build, and a successful live-UI `tsc -b && vite build`.
    - completed on 28 July 2026; curated evidence is stored in `reports/p018_hard_negative_lifecycle_6ba28c61_2026_07_28`.
 
-6. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
+9. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
    - phase 5; engineering.
 
-7. [ ] [#21 — P1.9 Add motion evidence only if it helps](https://github.com/FRCTavares/IST-Thesis-Code/issues/21) — HIGHEST PRIORITY
+10. [ ] [#21 — P1.9 Add motion evidence only if it helps](https://github.com/FRCTavares/IST-Thesis-Code/issues/21) — HIGHEST PRIORITY
    - phase 5; experiment.
 
-8. [ ] [#64 — P1.9+ Evaluate higher-resolution source frames for appearance crops while retaining 640x640 Hailo detection](https://github.com/FRCTavares/IST-Thesis-Code/issues/64) — HIGHEST PRIORITY
+11. [ ] [#64 — P1.9+ Evaluate higher-resolution source frames for appearance crops while retaining 640x640 Hailo detection](https://github.com/FRCTavares/IST-Thesis-Code/issues/64) — HIGHEST PRIORITY
 
-9. [ ] [#25 — P1.10 Improve bbox evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/25) — HIGHEST PRIORITY
+12. [ ] [#25 — P1.10 Improve bbox evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/25) — HIGHEST PRIORITY
    - phase 6; experiment; use the transform contract from #53.
 
-10. [ ] [#26 — P1.11 Add event and recovery metrics](https://github.com/FRCTavares/IST-Thesis-Code/issues/26) — HIGHEST PRIORITY
+13. [ ] [#26 — P1.11 Add event and recovery metrics](https://github.com/FRCTavares/IST-Thesis-Code/issues/26) — HIGHEST PRIORITY
     - phase 6; experiment; use the shared evaluator semantics from #24.
 
-11. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30) — HIGHEST PRIORITY
+14. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30) — HIGHEST PRIORITY
     - phase 7; experiment; includes properly qualified held-out live evidence
       from #50 when available and must expose the event types needed to compare
       candidate loss, identity confusion, tracker fragmentation, integrated
       appearance association, and selective TIM-MARS recovery fairly.
+    - external benchmark scope: freeze a manageable subset of approximately four MOT17, four to six DanceTrack, and four VisDrone-MOT sequences; evaluate both oracle-candidate and detector–ByteTrack–TIM-MARS modes alongside the four ROS 2 sequences.
 
-12. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
+
+15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
     - phase 7; experiment.
 
-13. [ ] [#58 — P1.13+ Compare lightweight tracker + TIM-MARS against integrated appearance-aware tracking](https://github.com/FRCTavares/IST-Thesis-Code/issues/58) — HIGHEST PRIORITY
+16. [ ] [#58 — P1.13+ Compare lightweight tracker + TIM-MARS against integrated appearance-aware tracking](https://github.com/FRCTavares/IST-Thesis-Code/issues/58) — HIGHEST PRIORITY
     - phase 7; experiment; compare separately calibrated lightweight
       appearance-free tracker + TIM-MARS systems against integrated
       appearance-aware tracker references using held-out controller-facing
@@ -113,10 +126,10 @@ Open executable issues: **21**.
       methodology. DeepSORT + TIM-MARS is diagnostic rather than the intended
       architecture.
 
-14. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54) — THESIS-CRITICAL DEPENDENCY
+17. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54) — THESIS-CRITICAL DEPENDENCY
     - phase 10; live-system; feeds #32, #37, and #50; owns the missing integrated-camera `/camera/fps` publisher and recording-contract repair, deferred until the P0 authority/coordinate/freshness blockers are complete.
 
-15. [ ] [#32 — P1.14 End-to-end runtime, compute budget, and onboard resource characterisation](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
+18. [ ] [#32 — P1.14 End-to-end runtime, compute budget, and onboard resource characterisation](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
     - phase 7; live-system; owns the canonical per-stage latency and queueing
       timebase, wall-clock versus CPU-service-time separation, p50/p90/p95/p99
       and maximum distributions, cadence/jitter/drop accounting, selective-ReID
@@ -126,27 +139,27 @@ Open executable issues: **21**.
       incremental cost of TIM-MARS and supplies the runtime contract for the
       lightweight-versus-integrated tracker comparison.
 
-16. [x] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35) — DONE
+19. [x] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35) — DONE
     - Completed on 25 July 2026.
     - The obsolete anchor-drift and group-split overrides were removed from the final replay runner when the canonical TIM-MARS configuration was frozen.
     - Added a process-aware regression test that verifies each ROS parameter override is declared by its receiving node and rejects reintroduction of the obsolete experimental parameter names.
 
-17. [x] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36) — DONE
+20. [x] [#36 — P1.16 Clean package metadata](https://github.com/FRCTavares/IST-Thesis-Code/issues/36) — DONE
     - Completed on 25 July 2026.
     - Replaced the generated `thesis_bringup` version, description, maintainer, and license placeholders with a consistent `0.1.0` MIT package identity.
     - Declared the package's ROS and system-Python runtime dependencies, documented the platform-specific Hailo boundary, and added a clean-checkout rosdep/build procedure.
     - Added a package-metadata regression contract and validated the complete `thesis_bringup` test suite and package build.
 
-18. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
+21. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
     - phase 10; engineering; coordinate target-control behavior with #52 and path documentation with #33.
 
-19. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
+22. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
     - phase 9; experiment/documentation.
 
-20. [ ] [#41 — P1.19 Add explicit limitations](https://github.com/FRCTavares/IST-Thesis-Code/issues/41)
+23. [ ] [#41 — P1.19 Add explicit limitations](https://github.com/FRCTavares/IST-Thesis-Code/issues/41)
     - phase 9; experiment/documentation.
 
-21. [ ] [#42 — P1.20 Build final figures](https://github.com/FRCTavares/IST-Thesis-Code/issues/42)
+24. [ ] [#42 — P1.20 Build final figures](https://github.com/FRCTavares/IST-Thesis-Code/issues/42)
     - phase 9; experiment/documentation.
 
 ## P2 — Useful work after the critical path
