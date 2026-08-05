@@ -164,6 +164,20 @@ Cover:
 - multiple lifecycle events in one payload;
 - final censored recovery episode.
 
+## Implementation progress
+
+### Slice 1 — authoritative classification and contiguous episodes
+
+Added shared, evaluation-only primitives for:
+
+- one classification per exact authoritative interval slice;
+- explicit correct, wrong, lost, target-absent and no-selection categories;
+- retained freshness provenance;
+- maximal contiguous episodes without crossing gaps, bags or event types;
+- wrong-target episodes that retain all selected IDs for later handover analysis.
+
+This slice does not alter existing evaluators or runtime behaviour.
+
 ## Evidence boundary
 
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.

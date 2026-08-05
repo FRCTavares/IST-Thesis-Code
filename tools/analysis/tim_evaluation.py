@@ -541,10 +541,17 @@ def iter_interval_slices(
     if interval.duration_s <= 0.0:
         return
 
-    count = max(
-        1,
-        int(math.ceil(interval.duration_s / step_s)),
-    )
+    raw_count = interval.duration_s / step_s
+    nearest_count = round(raw_count)
+    if math.isclose(
+        raw_count,
+        nearest_count,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    ):
+        count = max(1, int(nearest_count))
+    else:
+        count = max(1, int(math.ceil(raw_count)))
     for index in range(count):
         time_s = min(
             interval.end_s,
@@ -573,6 +580,172 @@ def make_time_grid(
         item.t_s
         for item in iter_interval_slices(interval, step_s)
     ]
+
+
+
+@dataclass(frozen=True)
+class ClassifiedSlice:
+    """One authoritative interval slice with selected-target classification."""
+
+    annotation_index: int
+    bag_name: str
+    event_type: str
+    t_s: float
+    duration_s: float
+    classification: str
+    output_track_id: int
+    correct_target_track_id: int
+    freshness_status: str
+
+    @property
+    def end_s(self) -> float:
+        return self.t_s + self.duration_s
+
+
+@dataclass(frozen=True)
+class ContiguousEpisode:
+    """One maximal contiguous run of an authoritative classification."""
+
+    classification: str
+    event_type: str
+    start_s: float
+    end_s: float
+    duration_s: float
+    slice_count: int
+    output_track_ids: tuple[int, ...]
+
+
+def classify_interval_slices(
+    annotations: List[AnnotationInterval],
+    samples: List[TargetSample],
+    step_s: float,
+    max_output_age_s: float = DEFAULT_MAX_OUTPUT_AGE_S,
+) -> List[ClassifiedSlice]:
+    """Classify every authoritative integration slice exactly once."""
+    classified: List[ClassifiedSlice] = []
+
+    for annotation_index, interval in enumerate(annotations):
+        label = interval.target_label.upper()
+        event_type = interval.event_type.strip() or "unlabeled"
+
+        for item in iter_interval_slices(interval, step_s):
+            sample, freshness = sample_at_time(
+                samples,
+                item.t_s,
+                max_output_age_s,
+            )
+            output_id = (
+                sample_output_id(sample)
+                if sample is not None and freshness.fresh
+                else 0
+            )
+
+            if label == "NO_TARGET_SELECTED":
+                classification = "no_target_selected"
+            elif (
+                not interval.target_visible
+                or label == "TARGET_NOT_VISIBLE"
+            ):
+                classification = (
+                    "target_absent_output"
+                    if output_id != 0
+                    else "target_absent_clear"
+                )
+            elif output_id == interval.correct_target_track_id:
+                classification = "correct"
+            elif output_id == 0:
+                classification = "lost"
+            else:
+                classification = "wrong"
+
+            classified.append(
+                ClassifiedSlice(
+                    annotation_index=annotation_index,
+                    bag_name=interval.bag_name,
+                    event_type=event_type,
+                    t_s=item.t_s,
+                    duration_s=item.duration_s,
+                    classification=classification,
+                    output_track_id=output_id,
+                    correct_target_track_id=(
+                        interval.correct_target_track_id
+                    ),
+                    freshness_status=freshness.status,
+                )
+            )
+
+    return classified
+
+
+def contiguous_episodes(
+    slices: Iterable[ClassifiedSlice],
+    classification: Optional[str] = None,
+    tolerance_s: float = 1e-9,
+) -> List[ContiguousEpisode]:
+    """Merge adjacent slices without crossing gaps or event boundaries."""
+    if tolerance_s < 0.0 or not math.isfinite(tolerance_s):
+        raise ValueError(
+            "tolerance_s must be finite and non-negative"
+        )
+
+    selected = [
+        item
+        for item in slices
+        if (
+            classification is None
+            or item.classification == classification
+        )
+    ]
+    if not selected:
+        return []
+
+    episodes: List[ContiguousEpisode] = []
+    current = selected[0]
+    start_s = current.t_s
+    end_s = current.end_s
+    slice_count = 1
+    output_track_ids = [current.output_track_id]
+
+    def finish() -> None:
+        episodes.append(
+            ContiguousEpisode(
+                classification=current.classification,
+                event_type=current.event_type,
+                start_s=start_s,
+                end_s=end_s,
+                duration_s=end_s - start_s,
+                slice_count=slice_count,
+                output_track_ids=tuple(
+                    dict.fromkeys(output_track_ids)
+                ),
+            )
+        )
+
+    for item in selected[1:]:
+        adjacent = abs(item.t_s - end_s) <= tolerance_s
+        compatible = (
+            item.classification == current.classification
+            and item.event_type == current.event_type
+            and item.bag_name == current.bag_name
+            and adjacent
+        )
+
+        if compatible:
+            end_s = item.end_s
+            slice_count += 1
+            output_track_ids.append(item.output_track_id)
+            continue
+
+        finish()
+        current = item
+        start_s = item.t_s
+        end_s = item.end_s
+        slice_count = 1
+        output_track_ids = [item.output_track_id]
+
+    finish()
+    return episodes
+
 
 
 def evaluate_stream(
