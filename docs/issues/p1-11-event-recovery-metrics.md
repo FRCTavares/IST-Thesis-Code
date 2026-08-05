@@ -1,0 +1,171 @@
+# P1.11 Event and Recovery Metrics
+
+GitHub Issue: #26
+Branch: `issue-26-event-recovery-metrics`
+Baseline: `feda884463664a677aedfd228b3c3ee945c0adea`
+
+## Objective
+
+Extend the authoritative selected-target evaluator introduced by Issue #24 with deterministic event, burst, transition and recovery-episode metrics.
+
+This work is evaluation-only. It must not change TIM-MARS runtime policy, thresholds, canonical configuration, tracker behaviour or controller-facing publication.
+
+## Existing authority
+
+`tools/analysis/tim_evaluation.py` remains the single authority for:
+
+- annotation parsing and validation;
+- image-header or bag time origins;
+- selected-target output validity;
+- latest-preceding freshness;
+- half-open annotation boundaries;
+- exact interval-slice integration;
+- correct, wrong-target, lost, absent and stale classifications.
+
+New evaluators must import and reuse these semantics.
+
+## Canonical event vocabulary
+
+Use the repository annotation values:
+
+- `clean_visible`
+- `target_absent`
+- `reentry`
+- `occlusion_ambiguity`
+- `id_switch_fragmentation`
+- `other`
+
+Do not invent replacement names in report outputs.
+
+## Required metrics
+
+### Existing duration metrics
+
+Retain per stream and per event type:
+
+- correct-target duration and ratio;
+- wrong-target duration and ratio;
+- lost-target duration and ratio;
+- target-not-visible duration;
+- target-absent-but-output duration;
+- stale-output duration.
+
+### New event and burst metrics
+
+Add:
+
+- wrong-target burst count;
+- each wrong-target burst start, end and duration;
+- longest wrong-target burst;
+- wrong-handover count;
+- recovery-attempt count;
+- correct-candidate-suppressed duration;
+- target-absent-but-output episodes;
+- TIM-MARS state occupancy;
+- memory-event counts.
+
+### Recovery episodes
+
+Each recovery episode must record:
+
+- stream;
+- bag or sequence identifier;
+- annotation event type;
+- disturbance start and end;
+- first eligible recovery time;
+- first correct output time;
+- first stable correct output time;
+- first-correct latency;
+- stable-correct latency;
+- success, failure or censored result;
+- wrong-target duration before recovery;
+- lost duration before recovery;
+- target track ID before disturbance;
+- target track ID after recovery;
+- same-ID or new-ID recovery;
+- TIM state transitions when status data exists.
+
+Stable recovery must use a documented persistence rule and must not be inferred from one correct sample.
+
+## Scientific rules
+
+- Wrong target and lost output are never merged.
+- Sequence end without stable recovery is censored, not successful.
+- Target absence is not ordinary tracking failure.
+- Tracker fragmentation is distinct from physical exit and re-entry.
+- Missing annotations remain unscored.
+- Positive-duration annotation overlap remains invalid.
+- Events must not be double-counted across overlapping definitions.
+- Raw `/target` and TIM `/target_memory_mars` remain separate.
+- The annotated-ID oracle and spatial oracle remain separate.
+- State or memory metrics unavailable in an older status payload must be emitted as unavailable, not guessed.
+
+## Status-payload availability
+
+All four canonical development bags contain `/target_memory_mars/status`.
+
+May and June Seq01 contain an older payload with:
+
+- state;
+- control mode;
+- target track ID;
+- visible;
+- reacquired;
+- reason;
+- frame ID;
+- candidate score lists.
+
+June Seq03 and Seq04 additionally contain:
+
+- candidate track ID;
+- publication suppression reason;
+- positive-memory update fields;
+- hard-negative memory size;
+- hard-negative lifecycle events;
+- risk flags;
+- trusted-gallery and protected-anchor diagnostics;
+- source track timestamps.
+
+Schema-version and field-availability reporting is therefore mandatory.
+
+## Proposed implementation shape
+
+Prefer:
+
+- shared episode and classification helpers in `tools/analysis/tim_evaluation.py`;
+- one dedicated CLI such as `evaluate_tim_event_recovery.py`;
+- versioned deterministic JSON as the complete report;
+- deterministic CSV tables for event, burst, recovery and state rows;
+- concise Markdown summary;
+- focused unit tests using synthetic timelines;
+- canonical four-sequence evidence.
+
+## Required edge-case tests
+
+Cover:
+
+- no events;
+- no output messages;
+- exact half-open boundaries;
+- zero-duration annotations;
+- stale outputs;
+- duplicate timestamps;
+- non-monotonic timestamps;
+- one-frame correctness that fails stable recovery;
+- wrong output before recovery;
+- repeated loss and recovery;
+- recovery after tracker-ID change;
+- same tracker ID on the wrong person;
+- target absent until sequence end;
+- missing status topic;
+- older status schema;
+- missing status fields;
+- empty hard-negative events;
+- multiple lifecycle events in one payload;
+- final censored recovery episode.
+
+## Evidence boundary
+
+Canonical development evidence may use May, June Seq01, Seq03 and Seq04.
+
+September held-out sequences from Issue #27 must not be used for tuning or promotion in this issue.
