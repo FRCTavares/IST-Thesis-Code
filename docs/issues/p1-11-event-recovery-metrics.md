@@ -271,6 +271,30 @@ Added a shared ROS bag reader that:
 This prevents status-derived recovery and memory metrics from being aligned to
 a different origin than the selected-target correctness stream.
 
+### Slice 8 — deterministic event and recovery report CLI
+
+Added `tools/analysis/evaluate_tim_event_recovery.py` as the dedicated
+evaluation-only report entry point.
+
+The CLI emits:
+
+- versioned, deterministic `report.json`;
+- aggregate `summary.csv`;
+- event-level `events.csv`;
+- wrong-target and absent-output `bursts.csv`;
+- physical-absence `recovery_episodes.csv`;
+- TIM state `state_occupancy.csv`;
+- status-derived `recovery_attempts.csv`;
+- lifecycle `memory_events.csv`;
+- concise `summary.md`.
+
+The report includes the bag and annotation paths, timebase, shared time origin,
+sampling interval, output freshness threshold, stable-recovery persistence,
+topic names and status-schema availability.
+
+Missing status information remains explicitly unavailable, while sequence-end
+recovery remains explicitly censored.
+
 ## Evidence boundary
 
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.
