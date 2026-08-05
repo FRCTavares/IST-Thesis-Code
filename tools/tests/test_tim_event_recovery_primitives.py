@@ -1439,3 +1439,163 @@ def test_empty_current_memory_event_lists_are_available():
     assert metrics.positive_memory_events_available is True
     assert metrics.hard_negative_event_count == 0
     assert metrics.hard_negative_action_counts == {}
+
+
+def test_evaluation_bag_samples_retains_shared_origin():
+    result = MODULE.EvaluationBagSamples(
+        target_samples={
+            "/target": [
+                MODULE.TargetSample(
+                    t_s=0.2,
+                    track_id=7,
+                    bbox_valid=True,
+                )
+            ]
+        },
+        status_samples={
+            "/status": [
+                MODULE.parse_status_payload(
+                    0.2,
+                    '{"state":"LOCKED"}',
+                )
+            ]
+        },
+        time_origin_ns=123456789,
+    )
+
+    assert result.time_origin_ns == 123456789
+    assert result.target_samples["/target"][0].t_s == pytest.approx(
+        result.status_samples["/status"][0].t_s
+    )
+
+
+def test_target_reader_is_compatibility_wrapper(monkeypatch):
+    expected = MODULE.EvaluationBagSamples(
+        target_samples={
+            "/target": [
+                MODULE.TargetSample(
+                    t_s=0.0,
+                    track_id=4,
+                )
+            ]
+        },
+        status_samples={},
+        time_origin_ns=10,
+    )
+    calls = []
+
+    def fake_reader(
+        bag_path,
+        target_topics,
+        status_topics,
+        timebase,
+    ):
+        calls.append(
+            (
+                bag_path,
+                tuple(target_topics),
+                tuple(status_topics),
+                timebase,
+            )
+        )
+        return expected
+
+    monkeypatch.setattr(
+        MODULE,
+        "read_evaluation_samples_from_bag",
+        fake_reader,
+    )
+
+    result = MODULE.read_target_samples_from_bag(
+        __import__("pathlib").Path("bag"),
+        topics=["/target"],
+        timebase="header",
+    )
+
+    assert result is expected.target_samples
+    assert calls == [
+        (
+            __import__("pathlib").Path("bag"),
+            ("/target",),
+            (),
+            "header",
+        )
+    ]
+
+
+def test_status_reader_is_compatibility_wrapper(monkeypatch):
+    expected = MODULE.EvaluationBagSamples(
+        target_samples={},
+        status_samples={
+            "/status": [
+                MODULE.parse_status_payload(
+                    0.0,
+                    '{"state":"LOST"}',
+                )
+            ]
+        },
+        time_origin_ns=10,
+    )
+    calls = []
+
+    def fake_reader(
+        bag_path,
+        target_topics,
+        status_topics,
+        timebase,
+    ):
+        calls.append(
+            (
+                bag_path,
+                tuple(target_topics),
+                tuple(status_topics),
+                timebase,
+            )
+        )
+        return expected
+
+    monkeypatch.setattr(
+        MODULE,
+        "read_evaluation_samples_from_bag",
+        fake_reader,
+    )
+
+    result = MODULE.read_status_samples_from_bag(
+        __import__("pathlib").Path("bag"),
+        topics=["/status"],
+        timebase="bag",
+    )
+
+    assert result is expected.status_samples
+    assert calls == [
+        (
+            __import__("pathlib").Path("bag"),
+            (),
+            ("/status",),
+            "bag",
+        )
+    ]
+
+
+def test_missing_requested_status_topic_returns_empty_list(
+    monkeypatch,
+):
+    expected = MODULE.EvaluationBagSamples(
+        target_samples={},
+        status_samples={"/missing": []},
+        time_origin_ns=10,
+    )
+
+    monkeypatch.setattr(
+        MODULE,
+        "read_evaluation_samples_from_bag",
+        lambda **kwargs: expected,
+    )
+
+    result = MODULE.read_status_samples_from_bag(
+        __import__("pathlib").Path("bag"),
+        topics=["/missing"],
+        timebase="bag",
+    )
+
+    assert result == {"/missing": []}

@@ -256,6 +256,21 @@ Added schema-aware memory accounting:
 - empty current-schema event lists are available zero counts;
 - old schemas lacking memory fields remain explicitly unavailable.
 
+### Slice 7 — shared target and status bag loading
+
+Added a shared ROS bag reader that:
+
+- determines one authoritative bag or image-header time origin;
+- reads selected-target and TIM status topics on that same timeline;
+- preserves deterministic replacement of duplicate timestamps;
+- rejects decreasing timestamps independently per topic;
+- parses status JSON through the schema-aware status parser;
+- retains compatibility wrappers for the existing correctness and event-type
+  evaluators.
+
+This prevents status-derived recovery and memory metrics from being aligned to
+a different origin than the selected-target correctness stream.
+
 ## Evidence boundary
 
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.

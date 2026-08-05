@@ -58,6 +58,15 @@ class TargetSample:
 
 
 @dataclass(frozen=True)
+class EvaluationBagSamples:
+    """Selected-target and TIM status samples on one shared origin."""
+
+    target_samples: Dict[str, List[TargetSample]]
+    status_samples: Dict[str, List["StatusSample"]]
+    time_origin_ns: int
+
+
+@dataclass(frozen=True)
 class IntervalSlice:
     t_s: float
     duration_s: float
@@ -334,11 +343,13 @@ def sample_output_id(sample: TargetSample) -> int:
     return sample.track_id
 
 
-def read_target_samples_from_bag(
+def read_evaluation_samples_from_bag(
     bag_path: Path,
-    topics: Iterable[str],
+    target_topics: Iterable[str],
+    status_topics: Iterable[str],
     timebase: str,
-) -> Dict[str, List[TargetSample]]:
+) -> EvaluationBagSamples:
+    """Read target and JSON status topics using one common time origin."""
     (
         SequentialReader,
         StorageOptions,
@@ -350,7 +361,10 @@ def read_target_samples_from_bag(
     if timebase not in {"bag", "header"}:
         raise ValueError(f"Unsupported timebase: {timebase}")
 
-    requested = set(topics)
+    requested_targets = set(target_topics)
+    requested_statuses = set(status_topics)
+    requested = requested_targets | requested_statuses
+
     reader = SequentialReader()
     storage_options = StorageOptions(
         uri=str(bag_path),
@@ -366,20 +380,25 @@ def read_target_samples_from_bag(
         metadata.name: metadata.type
         for metadata in reader.get_all_topics_and_types()
     }
-    available_targets = requested & set(topic_types)
-    if not available_targets:
+    available_requested = requested & set(topic_types)
+
+    if not available_requested:
         raise RuntimeError(
             "None of the requested topics were found in bag. "
             f"Requested={sorted(requested)}. "
             f"Available={sorted(topic_types)}"
         )
 
+    available_targets = requested_targets & set(topic_types)
+    available_statuses = requested_statuses & set(topic_types)
+
     image_topics = [
         topic
         for topic in IMAGE_TOPICS_FOR_T0
         if topic in topic_types
     ]
-    topics_needed_for_t0 = set(available_targets)
+    topics_needed_for_t0 = set(available_requested)
+
     if timebase == "header":
         topics_needed_for_t0 |= set(image_topics)
 
@@ -388,26 +407,30 @@ def read_target_samples_from_bag(
         for topic in topics_needed_for_t0
     }
     first_image_time_ns: Optional[int] = None
-    first_target_time_ns: Optional[int] = None
+    first_requested_time_ns: Optional[int] = None
 
     while reader.has_next():
         topic, data, bag_time_ns = reader.read_next()
+
         if topic not in topics_needed_for_t0:
             continue
+
         msg = deserialize_message(data, t0_types[topic])
         message_time_ns = (
             header_time_ns(msg)
             if timebase == "header"
             else bag_time_ns
         )
+
         if message_time_ns is None:
             continue
 
         if (
-            topic in available_targets
-            and first_target_time_ns is None
+            topic in available_requested
+            and first_requested_time_ns is None
         ):
-            first_target_time_ns = message_time_ns
+            first_requested_time_ns = message_time_ns
+
         if (
             topic in image_topics
             and first_image_time_ns is None
@@ -415,13 +438,12 @@ def read_target_samples_from_bag(
             first_image_time_ns = message_time_ns
 
         if (
-            timebase == "header"
-            and first_image_time_ns is not None
-        ):
-            break
-        if (
-            timebase == "bag"
-            and first_target_time_ns is not None
+            first_requested_time_ns is not None
+            and (
+                timebase == "bag"
+                or first_image_time_ns is not None
+                or not image_topics
+            )
         ):
             break
 
@@ -429,58 +451,149 @@ def read_target_samples_from_bag(
         timebase == "header"
         and first_image_time_ns is not None
     ):
-        first_time_ns = first_image_time_ns
-    elif first_target_time_ns is not None:
-        first_time_ns = first_target_time_ns
+        t0_ns = first_image_time_ns
     else:
+        t0_ns = first_requested_time_ns
+
+    if t0_ns is None:
         raise RuntimeError(
             "Could not determine time origin for evaluation"
         )
 
     reader = SequentialReader()
     reader.open(storage_options, converter_options)
+
     message_types = {
         topic: get_message(topic_types[topic])
-        for topic in available_targets
+        for topic in available_requested
     }
-    samples: Dict[str, List[TargetSample]] = {
+
+    target_samples: Dict[str, List[TargetSample]] = {
         topic: []
-        for topic in requested
+        for topic in requested_targets
+    }
+    status_samples: Dict[str, List[StatusSample]] = {
+        topic: []
+        for topic in requested_statuses
     }
 
     while reader.has_next():
         topic, data, bag_time_ns = reader.read_next()
-        if topic not in available_targets:
+
+        if topic not in available_requested:
             continue
-        msg = deserialize_message(data, message_types[topic])
+
+        msg = deserialize_message(
+            data,
+            message_types[topic],
+        )
         message_time_ns = (
             header_time_ns(msg)
             if timebase == "header"
             else bag_time_ns
         )
+
         if message_time_ns is None:
             continue
 
-        sample = TargetSample(
-            t_s=(message_time_ns - first_time_ns) * 1e-9,
-            track_id=find_track_id_field(msg),
-            bbox_valid=target_bbox_validity(msg),
-        )
-        topic_samples = samples[topic]
-        if (
-            topic_samples
-            and sample.t_s < topic_samples[-1].t_s
-        ):
-            continue
-        if (
-            topic_samples
-            and sample.t_s == topic_samples[-1].t_s
-        ):
-            topic_samples[-1] = sample
-        else:
-            topic_samples.append(sample)
+        t_s = (message_time_ns - t0_ns) / 1e9
 
-    return samples
+        if topic in available_targets:
+            sample = TargetSample(
+                t_s=t_s,
+                track_id=find_track_id_field(msg),
+                bbox_valid=target_bbox_validity(msg),
+            )
+            topic_samples = target_samples[topic]
+
+            if (
+                topic_samples
+                and sample.t_s < topic_samples[-1].t_s
+            ):
+                continue
+
+            if (
+                topic_samples
+                and sample.t_s == topic_samples[-1].t_s
+            ):
+                topic_samples[-1] = sample
+            else:
+                topic_samples.append(sample)
+
+        if topic in available_statuses:
+            raw_payload = getattr(msg, "data", None)
+
+            if not isinstance(raw_payload, str):
+                parsed = StatusSample(
+                    t_s=t_s,
+                    state=None,
+                    target_track_id=None,
+                    candidate_track_id=None,
+                    publication_suppressed_reason=None,
+                    positive_memory_updated=None,
+                    positive_memory_update_reason=None,
+                    positive_memory_bootstrap_event=None,
+                    hard_negative_events=(),
+                    available_fields=frozenset(),
+                    payload_valid=False,
+                )
+            else:
+                parsed = parse_status_payload(
+                    t_s,
+                    raw_payload,
+                )
+
+            topic_statuses = status_samples[topic]
+
+            if (
+                topic_statuses
+                and parsed.t_s < topic_statuses[-1].t_s
+            ):
+                continue
+
+            if (
+                topic_statuses
+                and parsed.t_s == topic_statuses[-1].t_s
+            ):
+                topic_statuses[-1] = parsed
+            else:
+                topic_statuses.append(parsed)
+
+    return EvaluationBagSamples(
+        target_samples=target_samples,
+        status_samples=status_samples,
+        time_origin_ns=int(t0_ns),
+    )
+
+
+def read_target_samples_from_bag(
+    bag_path: Path,
+    topics: Iterable[str],
+    timebase: str,
+) -> Dict[str, List[TargetSample]]:
+    """Compatibility wrapper for selected-target-only evaluators."""
+    result = read_evaluation_samples_from_bag(
+        bag_path=bag_path,
+        target_topics=topics,
+        status_topics=(),
+        timebase=timebase,
+    )
+    return result.target_samples
+
+
+def read_status_samples_from_bag(
+    bag_path: Path,
+    topics: Iterable[str],
+    timebase: str,
+) -> Dict[str, List[StatusSample]]:
+    """Read TIM status topics using the authoritative bag origin."""
+    result = read_evaluation_samples_from_bag(
+        bag_path=bag_path,
+        target_topics=(),
+        status_topics=topics,
+        timebase=timebase,
+    )
+    return result.status_samples
 
 
 def sample_at_time(
