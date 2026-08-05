@@ -1204,6 +1204,9 @@ STATUS_FIELD_STATE = "state"
 STATUS_FIELD_CANDIDATE_TRACK_ID = "candidate_track_id"
 STATUS_FIELD_SUPPRESSION_REASON = "publication_suppressed_reason"
 STATUS_FIELD_POSITIVE_MEMORY_UPDATED = "positive_memory_updated"
+STATUS_FIELD_POSITIVE_MEMORY_BOOTSTRAP_EVENT = (
+    "positive_memory_bootstrap_event"
+)
 STATUS_FIELD_HARD_NEGATIVE_EVENTS = "hard_negative_events"
 
 
@@ -1218,6 +1221,9 @@ class StatusSample:
     publication_suppressed_reason: Optional[str]
     positive_memory_updated: Optional[bool]
     positive_memory_update_reason: Optional[str]
+    positive_memory_bootstrap_event: Optional[
+        dict[str, object]
+    ]
     hard_negative_events: tuple[dict[str, object], ...]
     available_fields: frozenset[str]
     payload_valid: bool
@@ -1283,6 +1289,7 @@ def parse_status_payload(
             publication_suppressed_reason=None,
             positive_memory_updated=None,
             positive_memory_update_reason=None,
+            positive_memory_bootstrap_event=None,
             hard_negative_events=(),
             available_fields=frozenset(),
             payload_valid=False,
@@ -1297,6 +1304,7 @@ def parse_status_payload(
             publication_suppressed_reason=None,
             positive_memory_updated=None,
             positive_memory_update_reason=None,
+            positive_memory_bootstrap_event=None,
             hard_negative_events=(),
             available_fields=frozenset(),
             payload_valid=False,
@@ -1335,6 +1343,15 @@ def parse_status_payload(
         else None
     )
 
+    raw_bootstrap_event = decoded.get(
+        STATUS_FIELD_POSITIVE_MEMORY_BOOTSTRAP_EVENT
+    )
+    positive_memory_bootstrap_event = (
+        raw_bootstrap_event
+        if isinstance(raw_bootstrap_event, dict)
+        else None
+    )
+
     raw_events = decoded.get(
         STATUS_FIELD_HARD_NEGATIVE_EVENTS,
         [],
@@ -1365,6 +1382,9 @@ def parse_status_payload(
             STATUS_FIELD_POSITIVE_MEMORY_UPDATED,
         ),
         positive_memory_update_reason=update_reason,
+        positive_memory_bootstrap_event=(
+            positive_memory_bootstrap_event
+        ),
         hard_negative_events=hard_negative_events,
         available_fields=available_fields,
         payload_valid=True,
@@ -1386,6 +1406,7 @@ def status_schema_availability(
         STATUS_FIELD_CANDIDATE_TRACK_ID,
         STATUS_FIELD_SUPPRESSION_REASON,
         STATUS_FIELD_POSITIVE_MEMORY_UPDATED,
+        STATUS_FIELD_POSITIVE_MEMORY_BOOTSTRAP_EVENT,
         STATUS_FIELD_HARD_NEGATIVE_EVENTS,
     )
 
@@ -1774,6 +1795,241 @@ def summarise_status_recovery_metrics(
             0
             if suppression is None
             else suppression[1]
+        ),
+    )
+
+
+
+
+HARD_NEGATIVE_LEARNING_ACTIONS = frozenset(
+    {"stage", "insert", "merge"}
+)
+
+
+@dataclass(frozen=True)
+class MemoryEventMetrics:
+    """Memory lifecycle and contamination counts."""
+
+    hard_negative_events_available: bool
+    hard_negative_event_count: int
+    hard_negative_action_counts: Dict[str, int]
+    hard_negative_contamination_count: int
+    positive_memory_events_available: bool
+    positive_memory_update_count: int
+    positive_memory_bootstrap_count: int
+    positive_memory_contamination_count: int
+    total_memory_contamination_count: int
+
+
+def _event_track_ids(
+    event: dict[str, object],
+) -> set[int]:
+    track_ids: set[int] = set()
+
+    source_track_id = event.get("source_track_id")
+    try:
+        if source_track_id is not None:
+            track_ids.add(int(source_track_id))
+    except (TypeError, ValueError):
+        pass
+
+    source_track_ids = event.get("source_track_ids")
+    if isinstance(source_track_ids, list):
+        for value in source_track_ids:
+            try:
+                track_ids.add(int(value))
+            except (TypeError, ValueError):
+                continue
+
+    return track_ids
+
+
+def _classified_slice_at_time(
+    slices: List[ClassifiedSlice],
+    t_s: float,
+    tolerance_s: float = 1e-9,
+) -> Optional[ClassifiedSlice]:
+    for item in slices:
+        if (
+            item.t_s - tolerance_s
+            <= t_s
+            < item.end_s - tolerance_s
+        ):
+            return item
+    return None
+
+
+def summarise_memory_event_metrics(
+    classified_slices: Iterable[ClassifiedSlice],
+    status_samples: Iterable[StatusSample],
+) -> MemoryEventMetrics:
+    """Count lifecycle events and annotation-grounded contamination."""
+    slices = sorted(
+        list(classified_slices),
+        key=lambda item: item.t_s,
+    )
+    statuses = sorted(
+        (
+            sample
+            for sample in status_samples
+            if sample.payload_valid
+        ),
+        key=lambda sample: sample.t_s,
+    )
+
+    availability = status_schema_availability(statuses)
+
+    hard_negative_available = availability.get(
+        STATUS_FIELD_HARD_NEGATIVE_EVENTS,
+        False,
+    )
+    positive_update_available = availability.get(
+        STATUS_FIELD_POSITIVE_MEMORY_UPDATED,
+        False,
+    )
+    positive_bootstrap_available = availability.get(
+        STATUS_FIELD_POSITIVE_MEMORY_BOOTSTRAP_EVENT,
+        False,
+    )
+    positive_available = (
+        positive_update_available
+        or positive_bootstrap_available
+    )
+
+    hard_negative_action_counts: Dict[str, int] = {}
+    hard_negative_event_count = 0
+    hard_negative_contamination_count = 0
+    positive_memory_update_count = 0
+    positive_memory_bootstrap_count = 0
+    positive_memory_contamination_count = 0
+
+    for status in statuses:
+        classified = _classified_slice_at_time(
+            slices,
+            status.t_s,
+        )
+        correct_track_id = (
+            0
+            if classified is None
+            else classified.correct_target_track_id
+        )
+
+        if hard_negative_available:
+            for event in status.hard_negative_events:
+                action = str(
+                    event.get("action", "")
+                ).strip().lower()
+
+                if not action:
+                    action = "unknown"
+
+                hard_negative_event_count += 1
+                hard_negative_action_counts[action] = (
+                    hard_negative_action_counts.get(
+                        action,
+                        0,
+                    )
+                    + 1
+                )
+
+                if (
+                    action in HARD_NEGATIVE_LEARNING_ACTIONS
+                    and correct_track_id != 0
+                    and correct_track_id
+                    in _event_track_ids(event)
+                ):
+                    hard_negative_contamination_count += 1
+
+        if (
+            positive_update_available
+            and status.positive_memory_updated is True
+        ):
+            positive_memory_update_count += 1
+
+            if (
+                classified is not None
+                and classified.classification == "wrong"
+            ):
+                positive_memory_contamination_count += 1
+
+        if (
+            positive_bootstrap_available
+            and status.positive_memory_bootstrap_event
+            is not None
+        ):
+            positive_memory_bootstrap_count += 1
+
+            bootstrap_track_id = (
+                status.positive_memory_bootstrap_event.get(
+                    "track_id"
+                )
+            )
+            try:
+                parsed_bootstrap_track_id = int(
+                    bootstrap_track_id
+                )
+            except (TypeError, ValueError):
+                parsed_bootstrap_track_id = 0
+
+            if (
+                classified is not None
+                and (
+                    classified.classification == "wrong"
+                    or (
+                        correct_track_id != 0
+                        and parsed_bootstrap_track_id != 0
+                        and parsed_bootstrap_track_id
+                        != correct_track_id
+                    )
+                )
+            ):
+                positive_memory_contamination_count += 1
+
+    total_contamination = (
+        hard_negative_contamination_count
+        + positive_memory_contamination_count
+    )
+
+    return MemoryEventMetrics(
+        hard_negative_events_available=(
+            hard_negative_available
+        ),
+        hard_negative_event_count=(
+            hard_negative_event_count
+            if hard_negative_available
+            else 0
+        ),
+        hard_negative_action_counts=(
+            dict(sorted(hard_negative_action_counts.items()))
+            if hard_negative_available
+            else {}
+        ),
+        hard_negative_contamination_count=(
+            hard_negative_contamination_count
+            if hard_negative_available
+            else 0
+        ),
+        positive_memory_events_available=positive_available,
+        positive_memory_update_count=(
+            positive_memory_update_count
+            if positive_available
+            else 0
+        ),
+        positive_memory_bootstrap_count=(
+            positive_memory_bootstrap_count
+            if positive_available
+            else 0
+        ),
+        positive_memory_contamination_count=(
+            positive_memory_contamination_count
+            if positive_available
+            else 0
+        ),
+        total_memory_contamination_count=(
+            total_contamination
+            if hard_negative_available
+            or positive_available
+            else 0
         ),
     )
 

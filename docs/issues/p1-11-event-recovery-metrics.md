@@ -241,6 +241,21 @@ Added status-derived recovery metrics with these rules:
 - candidate and suppression metrics are unavailable for older schemas that do
   not expose the required fields.
 
+### Slice 6 — memory lifecycle and contamination metrics
+
+Added schema-aware memory accounting:
+
+- every hard-negative lifecycle action is counted by action name;
+- `stage`, `insert` and `merge` are negative-memory learning actions;
+- learning the annotation-oracle target as a hard negative is contamination;
+- expiry, reconciliation, discard and eviction remain lifecycle events but do
+  not create new contamination;
+- positive-memory updates while selected output is wrong are contamination;
+- bootstrap of a tracker ID that conflicts with the annotation oracle is
+  contamination;
+- empty current-schema event lists are available zero counts;
+- old schemas lacking memory fields remain explicitly unavailable.
+
 ## Evidence boundary
 
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.

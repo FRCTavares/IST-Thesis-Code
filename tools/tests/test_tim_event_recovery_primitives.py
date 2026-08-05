@@ -1156,3 +1156,286 @@ def test_status_recovery_summary_preserves_availability():
         metrics.correct_candidate_suppressed_episode_count
         == 1
     )
+
+
+def memory_status(
+    t_s: float,
+    *,
+    hard_negative_events=None,
+    positive_updated=False,
+    bootstrap_event=None,
+):
+    payload = {
+        "state": "LOCKED",
+        "positive_memory_updated": positive_updated,
+        "positive_memory_update_reason": (
+            "trusted_locked_update"
+            if positive_updated
+            else ""
+        ),
+        "positive_memory_bootstrap_event": bootstrap_event,
+        "hard_negative_events": (
+            []
+            if hard_negative_events is None
+            else hard_negative_events
+        ),
+    }
+    return MODULE.parse_status_payload(
+        t_s,
+        __import__("json").dumps(payload),
+    )
+
+
+def test_memory_event_counts_all_hard_negative_actions():
+    statuses = [
+        memory_status(
+            0.0,
+            hard_negative_events=[
+                {
+                    "action": "stage",
+                    "source_track_id": 2,
+                },
+                {
+                    "action": "insert",
+                    "source_track_ids": [2, 3],
+                },
+            ],
+        ),
+        memory_status(
+            0.1,
+            hard_negative_events=[
+                {
+                    "action": "expire",
+                    "source_track_ids": [2],
+                },
+                {
+                    "action": "discard_pending",
+                    "source_track_ids": [3],
+                },
+            ],
+        ),
+    ]
+
+    metrics = MODULE.summarise_memory_event_metrics(
+        [],
+        statuses,
+    )
+
+    assert metrics.hard_negative_events_available is True
+    assert metrics.hard_negative_event_count == 4
+    assert metrics.hard_negative_action_counts == {
+        "discard_pending": 1,
+        "expire": 1,
+        "insert": 1,
+        "stage": 1,
+    }
+
+
+def test_correct_target_learned_as_negative_is_contamination():
+    slices = [
+        classified_slice(
+            0.0,
+            classification="correct",
+            output_id=1,
+        ),
+        classified_slice(
+            0.1,
+            classification="lost",
+            output_id=0,
+        ),
+    ]
+    statuses = [
+        memory_status(
+            0.0,
+            hard_negative_events=[
+                {
+                    "action": "stage",
+                    "source_track_id": 1,
+                },
+                {
+                    "action": "merge",
+                    "source_track_ids": [1, 3],
+                },
+                {
+                    "action": "expire",
+                    "source_track_ids": [1],
+                },
+            ],
+        )
+    ]
+
+    metrics = MODULE.summarise_memory_event_metrics(
+        slices,
+        statuses,
+    )
+
+    assert metrics.hard_negative_event_count == 3
+    assert metrics.hard_negative_contamination_count == 2
+    assert metrics.total_memory_contamination_count == 2
+
+
+def test_expiry_of_correct_target_negative_is_not_new_contamination():
+    slices = [
+        classified_slice(
+            0.0,
+            classification="correct",
+            output_id=1,
+        )
+    ]
+    statuses = [
+        memory_status(
+            0.0,
+            hard_negative_events=[
+                {
+                    "action": "expire",
+                    "source_track_id": 1,
+                },
+                {
+                    "action": "reconcile",
+                    "source_track_ids": [1],
+                },
+                {
+                    "action": "discard_pending",
+                    "source_track_ids": [1],
+                },
+            ],
+        )
+    ]
+
+    metrics = MODULE.summarise_memory_event_metrics(
+        slices,
+        statuses,
+    )
+
+    assert metrics.hard_negative_event_count == 3
+    assert metrics.hard_negative_contamination_count == 0
+
+
+def test_positive_update_while_wrong_is_contamination():
+    slices = [
+        classified_slice(
+            0.0,
+            classification="wrong",
+            output_id=3,
+        ),
+        classified_slice(
+            0.1,
+            classification="correct",
+            output_id=1,
+        ),
+    ]
+    statuses = [
+        memory_status(
+            0.0,
+            positive_updated=True,
+        ),
+        memory_status(
+            0.1,
+            positive_updated=True,
+        ),
+    ]
+
+    metrics = MODULE.summarise_memory_event_metrics(
+        slices,
+        statuses,
+    )
+
+    assert metrics.positive_memory_events_available is True
+    assert metrics.positive_memory_update_count == 2
+    assert metrics.positive_memory_contamination_count == 1
+    assert metrics.total_memory_contamination_count == 1
+
+
+def test_wrong_bootstrap_track_id_is_contamination():
+    slices = [
+        classified_slice(
+            0.0,
+            classification="lost",
+            output_id=0,
+        )
+    ]
+    statuses = [
+        memory_status(
+            0.0,
+            bootstrap_event={
+                "action": "protected_anchor_bootstrap",
+                "track_id": 9,
+            },
+        )
+    ]
+
+    metrics = MODULE.summarise_memory_event_metrics(
+        slices,
+        statuses,
+    )
+
+    assert metrics.positive_memory_bootstrap_count == 1
+    assert metrics.positive_memory_contamination_count == 1
+
+
+def test_correct_bootstrap_is_not_contamination():
+    slices = [
+        classified_slice(
+            0.0,
+            classification="lost",
+            output_id=0,
+        )
+    ]
+    statuses = [
+        memory_status(
+            0.0,
+            bootstrap_event={
+                "action": "protected_anchor_bootstrap",
+                "track_id": 1,
+            },
+        )
+    ]
+
+    metrics = MODULE.summarise_memory_event_metrics(
+        slices,
+        statuses,
+    )
+
+    assert metrics.positive_memory_bootstrap_count == 1
+    assert metrics.positive_memory_contamination_count == 0
+
+
+def test_old_schema_memory_metrics_are_unavailable():
+    statuses = [
+        MODULE.parse_status_payload(
+            0.0,
+            '{"state":"LOCKED","target_track_id":1}',
+        )
+    ]
+
+    metrics = MODULE.summarise_memory_event_metrics(
+        [],
+        statuses,
+    )
+
+    assert metrics.hard_negative_events_available is False
+    assert metrics.positive_memory_events_available is False
+    assert metrics.hard_negative_event_count == 0
+    assert metrics.positive_memory_update_count == 0
+    assert metrics.total_memory_contamination_count == 0
+
+
+def test_empty_current_memory_event_lists_are_available():
+    statuses = [
+        memory_status(
+            0.0,
+            hard_negative_events=[],
+            positive_updated=False,
+            bootstrap_event=None,
+        )
+    ]
+
+    metrics = MODULE.summarise_memory_event_metrics(
+        [],
+        statuses,
+    )
+
+    assert metrics.hard_negative_events_available is True
+    assert metrics.positive_memory_events_available is True
+    assert metrics.hard_negative_event_count == 0
+    assert metrics.hard_negative_action_counts == {}
