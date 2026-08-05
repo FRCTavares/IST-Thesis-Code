@@ -226,6 +226,21 @@ Current-only fields such as candidate ID, publication suppression, positive
 memory updates and hard-negative lifecycle events remain unavailable when
 absent from older payloads.
 
+### Slice 5 — recovery attempts and correct-candidate suppression
+
+Added status-derived recovery metrics with these rules:
+
+- an attempt begins when a nonzero candidate is proposed in `UNCERTAIN`,
+  `LOST` or `REACQUIRED`;
+- repeated status samples for the same candidate remain one attempt;
+- a candidate-ID change starts a new attempt;
+- no candidate, `LOCKED` or `NO_TARGET` ends the active attempt;
+- correct-candidate-suppressed duration requires the proposed candidate to
+  match the annotation oracle while publication remains suppressed;
+- already-correct selected output is not counted as suppressed;
+- candidate and suppression metrics are unavailable for older schemas that do
+  not expose the required fields.
+
 ## Evidence boundary
 
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.

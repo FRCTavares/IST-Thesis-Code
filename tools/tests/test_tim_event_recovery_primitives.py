@@ -875,3 +875,284 @@ def test_state_occupancy_counts_invalid_payloads():
     assert occupancy.duration_by_state_s == pytest.approx(
         {"LOCKED": 0.5}
     )
+
+
+def rich_status(
+    t_s: float,
+    *,
+    state: str,
+    candidate_id,
+    suppression_reason: str = "",
+):
+    payload = {
+        "state": state,
+        "candidate_track_id": candidate_id,
+        "publication_suppressed_reason": suppression_reason,
+    }
+    return MODULE.parse_status_payload(
+        t_s,
+        __import__("json").dumps(payload),
+    )
+
+
+def test_recovery_attempts_merge_repeated_same_candidate():
+    statuses = [
+        rich_status(
+            0.0,
+            state="LOST",
+            candidate_id=7,
+        ),
+        rich_status(
+            0.1,
+            state="LOST",
+            candidate_id=7,
+        ),
+        rich_status(
+            0.2,
+            state="REACQUIRED",
+            candidate_id=7,
+        ),
+        rich_status(
+            0.3,
+            state="LOCKED",
+            candidate_id=7,
+        ),
+    ]
+
+    attempts = MODULE.recovery_attempts_from_status(
+        statuses,
+        end_s=0.4,
+    )
+
+    assert attempts is not None
+    assert len(attempts) == 1
+    assert attempts[0].candidate_track_id == 7
+    assert attempts[0].start_s == pytest.approx(0.0)
+    assert attempts[0].end_s == pytest.approx(0.3)
+    assert attempts[0].duration_s == pytest.approx(0.3)
+    assert attempts[0].initial_state == "LOST"
+    assert attempts[0].final_state == "REACQUIRED"
+    assert attempts[0].sample_count == 3
+
+
+def test_candidate_change_starts_new_recovery_attempt():
+    statuses = [
+        rich_status(
+            0.0,
+            state="LOST",
+            candidate_id=7,
+        ),
+        rich_status(
+            0.1,
+            state="LOST",
+            candidate_id=8,
+        ),
+        rich_status(
+            0.2,
+            state="UNCERTAIN",
+            candidate_id=8,
+        ),
+        rich_status(
+            0.3,
+            state="LOST",
+            candidate_id=None,
+        ),
+    ]
+
+    attempts = MODULE.recovery_attempts_from_status(
+        statuses,
+        end_s=0.4,
+    )
+
+    assert attempts is not None
+    assert [item.candidate_track_id for item in attempts] == [
+        7,
+        8,
+    ]
+    assert attempts[0].end_s == pytest.approx(0.1)
+    assert attempts[1].end_s == pytest.approx(0.3)
+
+
+def test_locked_candidate_is_not_a_recovery_attempt():
+    statuses = [
+        rich_status(
+            0.0,
+            state="LOCKED",
+            candidate_id=1,
+        ),
+        rich_status(
+            0.1,
+            state="LOCKED",
+            candidate_id=1,
+        ),
+    ]
+
+    attempts = MODULE.recovery_attempts_from_status(
+        statuses,
+        end_s=0.2,
+    )
+
+    assert attempts == []
+
+
+def test_old_status_schema_makes_attempts_unavailable():
+    statuses = [
+        MODULE.parse_status_payload(
+            0.0,
+            '{"state":"LOST","target_track_id":1}',
+        )
+    ]
+
+    assert (
+        MODULE.recovery_attempts_from_status(statuses)
+        is None
+    )
+
+
+def test_correct_candidate_suppressed_duration():
+    slices = [
+        classified_slice(
+            0.0,
+            classification="lost",
+            output_id=0,
+        ),
+        classified_slice(
+            0.1,
+            classification="wrong",
+            output_id=3,
+        ),
+        classified_slice(
+            0.2,
+            classification="correct",
+            output_id=1,
+        ),
+        classified_slice(
+            0.3,
+            classification="lost",
+            output_id=0,
+        ),
+    ]
+
+    statuses = [
+        rich_status(
+            0.0,
+            state="LOST",
+            candidate_id=1,
+            suppression_reason="appearance_margin",
+        ),
+        rich_status(
+            0.2,
+            state="LOCKED",
+            candidate_id=1,
+            suppression_reason="",
+        ),
+        rich_status(
+            0.3,
+            state="LOST",
+            candidate_id=2,
+            suppression_reason="appearance_margin",
+        ),
+    ]
+
+    result = MODULE.correct_candidate_suppression_metrics(
+        slices,
+        statuses,
+    )
+
+    assert result is not None
+    duration_s, episode_count = result
+    assert duration_s == pytest.approx(0.2)
+    assert episode_count == 1
+
+
+def test_correct_output_is_not_counted_as_suppressed():
+    slices = [
+        classified_slice(
+            0.0,
+            classification="correct",
+            output_id=1,
+        )
+    ]
+    statuses = [
+        rich_status(
+            0.0,
+            state="REACQUIRED",
+            candidate_id=1,
+            suppression_reason="confirmation_pending",
+        )
+    ]
+
+    result = MODULE.correct_candidate_suppression_metrics(
+        slices,
+        statuses,
+    )
+
+    assert result == pytest.approx((0.0, 0))
+
+
+def test_old_schema_makes_suppression_unavailable():
+    slices = [
+        classified_slice(
+            0.0,
+            classification="lost",
+            output_id=0,
+        )
+    ]
+    statuses = [
+        MODULE.parse_status_payload(
+            0.0,
+            '{"state":"LOST","target_track_id":1}',
+        )
+    ]
+
+    assert (
+        MODULE.correct_candidate_suppression_metrics(
+            slices,
+            statuses,
+        )
+        is None
+    )
+
+
+def test_status_recovery_summary_preserves_availability():
+    slices = [
+        classified_slice(
+            0.0,
+            classification="lost",
+            output_id=0,
+        )
+    ]
+    statuses = [
+        rich_status(
+            0.0,
+            state="LOST",
+            candidate_id=1,
+            suppression_reason="appearance_margin",
+        ),
+        rich_status(
+            0.1,
+            state="LOCKED",
+            candidate_id=1,
+        ),
+    ]
+
+    metrics = MODULE.summarise_status_recovery_metrics(
+        slices,
+        statuses,
+        end_s=0.2,
+    )
+
+    assert metrics.recovery_attempts_available is True
+    assert metrics.recovery_attempt_count == 1
+    assert (
+        metrics.correct_candidate_suppressed_available
+        is True
+    )
+    assert (
+        metrics.correct_candidate_suppressed_duration_s
+        == pytest.approx(0.1)
+    )
+    assert (
+        metrics.correct_candidate_suppressed_episode_count
+        == 1
+    )

@@ -1490,6 +1490,295 @@ def compute_state_occupancy(
 
 
 
+
+RECOVERY_ATTEMPT_STATES = frozenset(
+    {"UNCERTAIN", "LOST", "REACQUIRED"}
+)
+
+
+@dataclass(frozen=True)
+class RecoveryAttempt:
+    """One contiguous proposed-candidate recovery attempt."""
+
+    candidate_track_id: int
+    start_s: float
+    end_s: float
+    duration_s: float
+    initial_state: str
+    final_state: str
+    sample_count: int
+
+
+@dataclass(frozen=True)
+class StatusRecoveryMetrics:
+    """Status-derived recovery metrics with explicit availability."""
+
+    recovery_attempts_available: bool
+    recovery_attempt_count: int
+    recovery_attempts: tuple[RecoveryAttempt, ...]
+    correct_candidate_suppressed_available: bool
+    correct_candidate_suppressed_duration_s: float
+    correct_candidate_suppressed_episode_count: int
+
+
+def _latest_status_at_time(
+    samples: List[StatusSample],
+    t_s: float,
+) -> Optional[StatusSample]:
+    """Return the latest valid status sample not later than t_s."""
+    latest: Optional[StatusSample] = None
+
+    for sample in samples:
+        if sample.t_s > t_s:
+            break
+        if sample.payload_valid:
+            latest = sample
+
+    return latest
+
+
+def recovery_attempts_from_status(
+    samples: Iterable[StatusSample],
+    end_s: Optional[float] = None,
+) -> Optional[List[RecoveryAttempt]]:
+    """Count contiguous candidate proposals during recovery states."""
+    materialised = sorted(
+        (
+            sample
+            for sample in samples
+            if sample.payload_valid
+        ),
+        key=lambda sample: sample.t_s,
+    )
+
+    if not materialised:
+        return None
+
+    availability = status_schema_availability(materialised)
+    if not availability[STATUS_FIELD_CANDIDATE_TRACK_ID]:
+        return None
+
+    deduplicated: List[StatusSample] = []
+    for sample in materialised:
+        if (
+            deduplicated
+            and sample.t_s == deduplicated[-1].t_s
+        ):
+            deduplicated[-1] = sample
+        else:
+            deduplicated.append(sample)
+
+    if end_s is None:
+        resolved_end_s = deduplicated[-1].t_s
+    else:
+        resolved_end_s = float(end_s)
+
+    if (
+        not math.isfinite(resolved_end_s)
+        or resolved_end_s < deduplicated[0].t_s
+    ):
+        raise ValueError(
+            "end_s must be finite and not precede the first status sample"
+        )
+
+    attempts: List[RecoveryAttempt] = []
+    active_candidate: Optional[int] = None
+    active_start_s = 0.0
+    active_initial_state = ""
+    active_final_state = ""
+    active_sample_count = 0
+
+    def finish(end_time_s: float) -> None:
+        nonlocal active_candidate
+        nonlocal active_start_s
+        nonlocal active_initial_state
+        nonlocal active_final_state
+        nonlocal active_sample_count
+
+        if active_candidate is None:
+            return
+
+        attempts.append(
+            RecoveryAttempt(
+                candidate_track_id=active_candidate,
+                start_s=active_start_s,
+                end_s=end_time_s,
+                duration_s=max(
+                    0.0,
+                    end_time_s - active_start_s,
+                ),
+                initial_state=active_initial_state,
+                final_state=active_final_state,
+                sample_count=active_sample_count,
+            )
+        )
+
+        active_candidate = None
+        active_start_s = 0.0
+        active_initial_state = ""
+        active_final_state = ""
+        active_sample_count = 0
+
+    for sample in deduplicated:
+        state = (sample.state or "").upper()
+        candidate_id = sample.candidate_track_id
+
+        eligible = (
+            state in RECOVERY_ATTEMPT_STATES
+            and candidate_id is not None
+            and candidate_id != 0
+        )
+
+        if not eligible:
+            finish(sample.t_s)
+            continue
+
+        candidate_id = int(candidate_id)
+
+        if active_candidate is None:
+            active_candidate = candidate_id
+            active_start_s = sample.t_s
+            active_initial_state = state
+            active_final_state = state
+            active_sample_count = 1
+            continue
+
+        if candidate_id != active_candidate:
+            finish(sample.t_s)
+            active_candidate = candidate_id
+            active_start_s = sample.t_s
+            active_initial_state = state
+            active_final_state = state
+            active_sample_count = 1
+            continue
+
+        active_final_state = state
+        active_sample_count += 1
+
+    finish(resolved_end_s)
+    return attempts
+
+
+def correct_candidate_suppression_metrics(
+    classified_slices: Iterable[ClassifiedSlice],
+    status_samples: Iterable[StatusSample],
+) -> Optional[tuple[float, int]]:
+    """Measure suppressed correct candidates using authoritative slices."""
+    slices = list(classified_slices)
+    statuses = sorted(
+        (
+            sample
+            for sample in status_samples
+            if sample.payload_valid
+        ),
+        key=lambda sample: sample.t_s,
+    )
+
+    if not statuses:
+        return None
+
+    availability = status_schema_availability(statuses)
+    if (
+        not availability[STATUS_FIELD_CANDIDATE_TRACK_ID]
+        or not availability[STATUS_FIELD_SUPPRESSION_REASON]
+    ):
+        return None
+
+    suppressed: List[ClassifiedSlice] = []
+
+    for item in slices:
+        if item.correct_target_track_id == 0:
+            continue
+
+        status = _latest_status_at_time(
+            statuses,
+            item.t_s,
+        )
+        if status is None:
+            continue
+
+        reason = (
+            status.publication_suppressed_reason or ""
+        ).strip()
+
+        if (
+            status.candidate_track_id
+            == item.correct_target_track_id
+            and bool(reason)
+            and item.classification != "correct"
+        ):
+            suppressed.append(
+                ClassifiedSlice(
+                    annotation_index=item.annotation_index,
+                    bag_name=item.bag_name,
+                    event_type=item.event_type,
+                    t_s=item.t_s,
+                    duration_s=item.duration_s,
+                    classification=(
+                        "correct_candidate_suppressed"
+                    ),
+                    output_track_id=item.output_track_id,
+                    correct_target_track_id=(
+                        item.correct_target_track_id
+                    ),
+                    freshness_status=item.freshness_status,
+                )
+            )
+
+    episodes = contiguous_episodes(
+        suppressed,
+        classification="correct_candidate_suppressed",
+    )
+
+    return (
+        sum(item.duration_s for item in suppressed),
+        len(episodes),
+    )
+
+
+def summarise_status_recovery_metrics(
+    classified_slices: Iterable[ClassifiedSlice],
+    status_samples: Iterable[StatusSample],
+    end_s: Optional[float] = None,
+) -> StatusRecoveryMetrics:
+    """Aggregate status-derived attempts and correct suppression."""
+    statuses = list(status_samples)
+    attempts = recovery_attempts_from_status(
+        statuses,
+        end_s=end_s,
+    )
+    suppression = correct_candidate_suppression_metrics(
+        classified_slices,
+        statuses,
+    )
+
+    return StatusRecoveryMetrics(
+        recovery_attempts_available=attempts is not None,
+        recovery_attempt_count=(
+            0 if attempts is None else len(attempts)
+        ),
+        recovery_attempts=(
+            ()
+            if attempts is None
+            else tuple(attempts)
+        ),
+        correct_candidate_suppressed_available=(
+            suppression is not None
+        ),
+        correct_candidate_suppressed_duration_s=(
+            0.0
+            if suppression is None
+            else suppression[0]
+        ),
+        correct_candidate_suppressed_episode_count=(
+            0
+            if suppression is None
+            else suppression[1]
+        ),
+    )
+
+
+
 def evaluate_stream(
     annotations: List[AnnotationInterval],
     samples: List[TargetSample],
