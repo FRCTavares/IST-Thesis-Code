@@ -8,6 +8,7 @@ integration, and track-ID correctness classification.
 from __future__ import annotations
 
 import csv
+import json
 import math
 import sys
 from dataclasses import dataclass
@@ -1195,6 +1196,297 @@ def build_absence_recovery_episodes(
             )
 
     return episodes
+
+
+
+
+STATUS_FIELD_STATE = "state"
+STATUS_FIELD_CANDIDATE_TRACK_ID = "candidate_track_id"
+STATUS_FIELD_SUPPRESSION_REASON = "publication_suppressed_reason"
+STATUS_FIELD_POSITIVE_MEMORY_UPDATED = "positive_memory_updated"
+STATUS_FIELD_HARD_NEGATIVE_EVENTS = "hard_negative_events"
+
+
+@dataclass(frozen=True)
+class StatusSample:
+    """One parsed TIM-MARS status payload with field availability."""
+
+    t_s: float
+    state: Optional[str]
+    target_track_id: Optional[int]
+    candidate_track_id: Optional[int]
+    publication_suppressed_reason: Optional[str]
+    positive_memory_updated: Optional[bool]
+    positive_memory_update_reason: Optional[str]
+    hard_negative_events: tuple[dict[str, object], ...]
+    available_fields: frozenset[str]
+    payload_valid: bool
+
+
+@dataclass(frozen=True)
+class StateOccupancy:
+    """Half-open status-state occupancy with explicit availability."""
+
+    available: bool
+    total_duration_s: float
+    duration_by_state_s: Dict[str, float]
+    sample_count: int
+    invalid_payload_count: int
+
+
+def _optional_int(
+    payload: dict[str, object],
+    field: str,
+) -> Optional[int]:
+    if field not in payload or payload[field] is None:
+        return None
+    try:
+        return int(payload[field])
+    except (TypeError, ValueError):
+        return None
+
+
+def _optional_bool(
+    payload: dict[str, object],
+    field: str,
+) -> Optional[bool]:
+    if field not in payload or payload[field] is None:
+        return None
+
+    value = payload[field]
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "y"}:
+            return True
+        if normalized in {"false", "0", "no", "n"}:
+            return False
+    return None
+
+
+def parse_status_payload(
+    t_s: float,
+    raw_payload: str,
+) -> StatusSample:
+    """Parse one schema-version-tolerant TIM-MARS status JSON payload."""
+    try:
+        decoded = json.loads(raw_payload)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return StatusSample(
+            t_s=t_s,
+            state=None,
+            target_track_id=None,
+            candidate_track_id=None,
+            publication_suppressed_reason=None,
+            positive_memory_updated=None,
+            positive_memory_update_reason=None,
+            hard_negative_events=(),
+            available_fields=frozenset(),
+            payload_valid=False,
+        )
+
+    if not isinstance(decoded, dict):
+        return StatusSample(
+            t_s=t_s,
+            state=None,
+            target_track_id=None,
+            candidate_track_id=None,
+            publication_suppressed_reason=None,
+            positive_memory_updated=None,
+            positive_memory_update_reason=None,
+            hard_negative_events=(),
+            available_fields=frozenset(),
+            payload_valid=False,
+        )
+
+    available_fields = frozenset(
+        str(key)
+        for key in decoded
+    )
+
+    state_value = decoded.get("state")
+    state = (
+        str(state_value).strip()
+        if state_value is not None
+        and str(state_value).strip()
+        else None
+    )
+
+    suppression_value = decoded.get(
+        STATUS_FIELD_SUPPRESSION_REASON
+    )
+    suppression_reason = (
+        str(suppression_value).strip()
+        if suppression_value is not None
+        and str(suppression_value).strip()
+        else None
+    )
+
+    update_reason_value = decoded.get(
+        "positive_memory_update_reason"
+    )
+    update_reason = (
+        str(update_reason_value).strip()
+        if update_reason_value is not None
+        and str(update_reason_value).strip()
+        else None
+    )
+
+    raw_events = decoded.get(
+        STATUS_FIELD_HARD_NEGATIVE_EVENTS,
+        [],
+    )
+    if isinstance(raw_events, list):
+        hard_negative_events = tuple(
+            event
+            for event in raw_events
+            if isinstance(event, dict)
+        )
+    else:
+        hard_negative_events = ()
+
+    return StatusSample(
+        t_s=float(t_s),
+        state=state,
+        target_track_id=_optional_int(
+            decoded,
+            "target_track_id",
+        ),
+        candidate_track_id=_optional_int(
+            decoded,
+            STATUS_FIELD_CANDIDATE_TRACK_ID,
+        ),
+        publication_suppressed_reason=suppression_reason,
+        positive_memory_updated=_optional_bool(
+            decoded,
+            STATUS_FIELD_POSITIVE_MEMORY_UPDATED,
+        ),
+        positive_memory_update_reason=update_reason,
+        hard_negative_events=hard_negative_events,
+        available_fields=available_fields,
+        payload_valid=True,
+    )
+
+
+def status_schema_availability(
+    samples: Iterable[StatusSample],
+) -> Dict[str, bool]:
+    """Report whether each diagnostic field exists in any valid payload."""
+    materialised = [
+        sample
+        for sample in samples
+        if sample.payload_valid
+    ]
+
+    fields = (
+        STATUS_FIELD_STATE,
+        STATUS_FIELD_CANDIDATE_TRACK_ID,
+        STATUS_FIELD_SUPPRESSION_REASON,
+        STATUS_FIELD_POSITIVE_MEMORY_UPDATED,
+        STATUS_FIELD_HARD_NEGATIVE_EVENTS,
+    )
+
+    return {
+        field: any(
+            field in sample.available_fields
+            for sample in materialised
+        )
+        for field in fields
+    }
+
+
+def compute_state_occupancy(
+    samples: Iterable[StatusSample],
+    end_s: Optional[float] = None,
+) -> StateOccupancy:
+    """Integrate latest-status state occupancy over half-open intervals."""
+    materialised = list(samples)
+    invalid_count = sum(
+        not sample.payload_valid
+        for sample in materialised
+    )
+    valid = sorted(
+        (
+            sample
+            for sample in materialised
+            if sample.payload_valid
+            and sample.state is not None
+        ),
+        key=lambda sample: sample.t_s,
+    )
+
+    deduplicated: List[StatusSample] = []
+    for sample in valid:
+        if (
+            deduplicated
+            and sample.t_s < deduplicated[-1].t_s
+        ):
+            continue
+        if (
+            deduplicated
+            and sample.t_s == deduplicated[-1].t_s
+        ):
+            deduplicated[-1] = sample
+        else:
+            deduplicated.append(sample)
+
+    if not deduplicated:
+        return StateOccupancy(
+            available=False,
+            total_duration_s=0.0,
+            duration_by_state_s={},
+            sample_count=0,
+            invalid_payload_count=invalid_count,
+        )
+
+    if end_s is None:
+        resolved_end_s = deduplicated[-1].t_s
+    else:
+        resolved_end_s = float(end_s)
+
+    if (
+        not math.isfinite(resolved_end_s)
+        or resolved_end_s < deduplicated[0].t_s
+    ):
+        raise ValueError(
+            "end_s must be finite and not precede the first status sample"
+        )
+
+    duration_by_state: Dict[str, float] = {}
+
+    for index, sample in enumerate(deduplicated):
+        if index + 1 < len(deduplicated):
+            interval_end_s = min(
+                deduplicated[index + 1].t_s,
+                resolved_end_s,
+            )
+        else:
+            interval_end_s = resolved_end_s
+
+        duration_s = max(
+            0.0,
+            interval_end_s - sample.t_s,
+        )
+        duration_by_state[sample.state] = (
+            duration_by_state.get(sample.state, 0.0)
+            + duration_s
+        )
+
+        if interval_end_s >= resolved_end_s:
+            break
+
+    return StateOccupancy(
+        available=True,
+        total_duration_s=sum(duration_by_state.values()),
+        duration_by_state_s=dict(
+            sorted(duration_by_state.items())
+        ),
+        sample_count=len(deduplicated),
+        invalid_payload_count=invalid_count,
+    )
 
 
 

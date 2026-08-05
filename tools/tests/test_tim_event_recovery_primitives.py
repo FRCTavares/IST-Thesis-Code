@@ -698,3 +698,180 @@ def test_invalid_stable_recovery_duration_is_rejected():
             [],
             stable_duration_s=0.0,
         )
+
+
+def test_status_parser_supports_current_rich_schema():
+    payload = {
+        "state": "LOST",
+        "target_track_id": 1,
+        "candidate_track_id": 42,
+        "publication_suppressed_reason": "appearance_margin",
+        "positive_memory_updated": False,
+        "positive_memory_update_reason": "state_not_locked",
+        "hard_negative_events": [
+            {"event": "promoted", "track_id": 7},
+            {"event": "expired", "track_id": 8},
+        ],
+    }
+
+    sample = MODULE.parse_status_payload(
+        1.25,
+        __import__("json").dumps(payload),
+    )
+
+    assert sample.payload_valid is True
+    assert sample.state == "LOST"
+    assert sample.target_track_id == 1
+    assert sample.candidate_track_id == 42
+    assert (
+        sample.publication_suppressed_reason
+        == "appearance_margin"
+    )
+    assert sample.positive_memory_updated is False
+    assert len(sample.hard_negative_events) == 2
+    assert (
+        MODULE.STATUS_FIELD_CANDIDATE_TRACK_ID
+        in sample.available_fields
+    )
+
+
+def test_status_parser_preserves_older_schema_unavailability():
+    sample = MODULE.parse_status_payload(
+        0.0,
+        '{"state":"LOCKED","target_track_id":1,"visible":true}',
+    )
+
+    availability = MODULE.status_schema_availability([sample])
+
+    assert sample.payload_valid is True
+    assert sample.state == "LOCKED"
+    assert sample.candidate_track_id is None
+    assert sample.publication_suppressed_reason is None
+    assert sample.positive_memory_updated is None
+    assert sample.hard_negative_events == ()
+    assert availability[MODULE.STATUS_FIELD_STATE] is True
+    assert (
+        availability[MODULE.STATUS_FIELD_CANDIDATE_TRACK_ID]
+        is False
+    )
+    assert (
+        availability[MODULE.STATUS_FIELD_SUPPRESSION_REASON]
+        is False
+    )
+    assert (
+        availability[
+            MODULE.STATUS_FIELD_POSITIVE_MEMORY_UPDATED
+        ]
+        is False
+    )
+
+
+def test_invalid_status_json_is_retained_as_invalid():
+    sample = MODULE.parse_status_payload(
+        0.0,
+        "{not valid json",
+    )
+
+    assert sample.payload_valid is False
+    assert sample.state is None
+    assert sample.available_fields == frozenset()
+
+
+def test_state_occupancy_uses_half_open_status_intervals():
+    samples = [
+        MODULE.parse_status_payload(
+            0.0,
+            '{"state":"LOCKED"}',
+        ),
+        MODULE.parse_status_payload(
+            1.0,
+            '{"state":"UNCERTAIN"}',
+        ),
+        MODULE.parse_status_payload(
+            1.5,
+            '{"state":"LOST"}',
+        ),
+        MODULE.parse_status_payload(
+            2.5,
+            '{"state":"LOCKED"}',
+        ),
+    ]
+
+    occupancy = MODULE.compute_state_occupancy(
+        samples,
+        end_s=3.0,
+    )
+
+    assert occupancy.available is True
+    assert occupancy.sample_count == 4
+    assert occupancy.total_duration_s == pytest.approx(3.0)
+    assert occupancy.duration_by_state_s == pytest.approx(
+        {
+            "LOCKED": 1.5,
+            "UNCERTAIN": 0.5,
+            "LOST": 1.0,
+        }
+    )
+
+
+def test_state_occupancy_replaces_duplicate_timestamp():
+    samples = [
+        MODULE.parse_status_payload(
+            0.0,
+            '{"state":"LOCKED"}',
+        ),
+        MODULE.parse_status_payload(
+            1.0,
+            '{"state":"UNCERTAIN"}',
+        ),
+        MODULE.parse_status_payload(
+            1.0,
+            '{"state":"LOST"}',
+        ),
+    ]
+
+    occupancy = MODULE.compute_state_occupancy(
+        samples,
+        end_s=2.0,
+    )
+
+    assert occupancy.sample_count == 2
+    assert occupancy.duration_by_state_s == pytest.approx(
+        {
+            "LOCKED": 1.0,
+            "LOST": 1.0,
+        }
+    )
+
+
+def test_state_occupancy_reports_missing_status_as_unavailable():
+    occupancy = MODULE.compute_state_occupancy([])
+
+    assert occupancy.available is False
+    assert occupancy.total_duration_s == pytest.approx(0.0)
+    assert occupancy.duration_by_state_s == {}
+    assert occupancy.sample_count == 0
+
+
+def test_state_occupancy_counts_invalid_payloads():
+    samples = [
+        MODULE.parse_status_payload(
+            0.0,
+            "{invalid",
+        ),
+        MODULE.parse_status_payload(
+            0.5,
+            '{"state":"LOCKED"}',
+        ),
+    ]
+
+    occupancy = MODULE.compute_state_occupancy(
+        samples,
+        end_s=1.0,
+    )
+
+    assert occupancy.available is True
+    assert occupancy.invalid_payload_count == 1
+    assert occupancy.duration_by_state_s == pytest.approx(
+        {"LOCKED": 0.5}
+    )

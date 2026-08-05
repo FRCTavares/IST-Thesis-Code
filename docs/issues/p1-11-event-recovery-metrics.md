@@ -211,6 +211,21 @@ The evaluation contract is:
 The persistence threshold is an evaluation parameter and is independent of the
 TIM-MARS runtime confirmation configuration.
 
+### Slice 4 — schema-aware status parsing and state occupancy
+
+Added evaluation-only support for:
+
+- tolerant parsing of JSON status payloads;
+- explicit field availability for old and current status schemas;
+- invalid-payload accounting without silently fabricating values;
+- latest-status half-open state occupancy;
+- deterministic duplicate-timestamp replacement;
+- explicit unavailable output when no usable status data exists.
+
+Current-only fields such as candidate ID, publication suppression, positive
+memory updates and hard-negative lifecycle events remain unavailable when
+absent from older payloads.
+
 ## Evidence boundary
 
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.
