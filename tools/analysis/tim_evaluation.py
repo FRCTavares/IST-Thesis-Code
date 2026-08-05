@@ -748,6 +748,143 @@ def contiguous_episodes(
 
 
 
+
+@dataclass(frozen=True)
+class EpisodeMetrics:
+    """Aggregate metrics derived from authoritative classified episodes."""
+
+    wrong_target_burst_count: int
+    wrong_target_total_duration_s: float
+    longest_wrong_target_burst_s: float
+    wrong_handover_count: int
+    target_absent_output_episode_count: int
+    target_absent_output_total_duration_s: float
+    longest_target_absent_output_episode_s: float
+
+
+def count_output_handovers(
+    slices: Iterable[ClassifiedSlice],
+    *,
+    classification: str = "wrong",
+) -> int:
+    """Count non-zero selected-ID transitions inside contiguous episodes."""
+    handovers = 0
+
+    for episode_slices in _contiguous_slice_groups(
+        slices,
+        classification=classification,
+    ):
+        previous_id: Optional[int] = None
+
+        for item in episode_slices:
+            current_id = item.output_track_id
+            if current_id == 0:
+                continue
+            if (
+                previous_id is not None
+                and current_id != previous_id
+            ):
+                handovers += 1
+            previous_id = current_id
+
+    return handovers
+
+
+def _contiguous_slice_groups(
+    slices: Iterable[ClassifiedSlice],
+    *,
+    classification: Optional[str] = None,
+    tolerance_s: float = 1e-9,
+) -> List[List[ClassifiedSlice]]:
+    """Return contiguous slice groups using the episode boundary contract."""
+    if tolerance_s < 0.0 or not math.isfinite(tolerance_s):
+        raise ValueError(
+            "tolerance_s must be finite and non-negative"
+        )
+
+    selected = [
+        item
+        for item in slices
+        if (
+            classification is None
+            or item.classification == classification
+        )
+    ]
+    if not selected:
+        return []
+
+    groups: List[List[ClassifiedSlice]] = []
+    current_group = [selected[0]]
+
+    for item in selected[1:]:
+        previous = current_group[-1]
+        adjacent = abs(item.t_s - previous.end_s) <= tolerance_s
+        compatible = (
+            item.classification == previous.classification
+            and item.event_type == previous.event_type
+            and item.bag_name == previous.bag_name
+            and adjacent
+        )
+
+        if compatible:
+            current_group.append(item)
+        else:
+            groups.append(current_group)
+            current_group = [item]
+
+    groups.append(current_group)
+    return groups
+
+
+def summarise_episode_metrics(
+    slices: Iterable[ClassifiedSlice],
+) -> EpisodeMetrics:
+    """Calculate deterministic burst, handover and absent-output metrics."""
+    materialised = list(slices)
+
+    wrong_episodes = contiguous_episodes(
+        materialised,
+        classification="wrong",
+    )
+    absent_output_episodes = contiguous_episodes(
+        materialised,
+        classification="target_absent_output",
+    )
+
+    wrong_durations = [
+        episode.duration_s
+        for episode in wrong_episodes
+    ]
+    absent_durations = [
+        episode.duration_s
+        for episode in absent_output_episodes
+    ]
+
+    return EpisodeMetrics(
+        wrong_target_burst_count=len(wrong_episodes),
+        wrong_target_total_duration_s=sum(wrong_durations),
+        longest_wrong_target_burst_s=max(
+            wrong_durations,
+            default=0.0,
+        ),
+        wrong_handover_count=count_output_handovers(
+            materialised,
+            classification="wrong",
+        ),
+        target_absent_output_episode_count=(
+            len(absent_output_episodes)
+        ),
+        target_absent_output_total_duration_s=sum(
+            absent_durations
+        ),
+        longest_target_absent_output_episode_s=max(
+            absent_durations,
+            default=0.0,
+        ),
+    )
+
+
+
 def evaluate_stream(
     annotations: List[AnnotationInterval],
     samples: List[TargetSample],

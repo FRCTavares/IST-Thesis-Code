@@ -284,3 +284,152 @@ def test_negative_episode_tolerance_is_rejected():
             [],
             tolerance_s=-0.1,
         )
+
+
+def classified_slice(
+    t_s: float,
+    *,
+    duration_s: float = 0.1,
+    classification: str = "wrong",
+    output_id: int = 2,
+    event_type: str = "occlusion_ambiguity",
+    bag_name: str = "bag",
+):
+    return MODULE.ClassifiedSlice(
+        annotation_index=0,
+        bag_name=bag_name,
+        event_type=event_type,
+        t_s=t_s,
+        duration_s=duration_s,
+        classification=classification,
+        output_track_id=output_id,
+        correct_target_track_id=1,
+        freshness_status="fresh",
+    )
+
+
+def test_episode_metrics_count_wrong_bursts_and_longest_duration():
+    slices = [
+        classified_slice(0.0),
+        classified_slice(0.1),
+        classified_slice(
+            0.2,
+            classification="correct",
+            output_id=1,
+        ),
+        classified_slice(0.3),
+        classified_slice(0.4),
+        classified_slice(0.5),
+    ]
+
+    metrics = MODULE.summarise_episode_metrics(slices)
+
+    assert metrics.wrong_target_burst_count == 2
+    assert metrics.wrong_target_total_duration_s == pytest.approx(0.5)
+    assert metrics.longest_wrong_target_burst_s == pytest.approx(0.3)
+
+
+def test_wrong_handover_counts_selected_id_transitions_inside_burst():
+    slices = [
+        classified_slice(0.0, output_id=2),
+        classified_slice(0.1, output_id=2),
+        classified_slice(0.2, output_id=3),
+        classified_slice(0.3, output_id=4),
+        classified_slice(
+            0.4,
+            classification="correct",
+            output_id=1,
+        ),
+        classified_slice(0.5, output_id=4),
+        classified_slice(0.6, output_id=5),
+    ]
+
+    metrics = MODULE.summarise_episode_metrics(slices)
+
+    assert metrics.wrong_target_burst_count == 2
+    assert metrics.wrong_handover_count == 3
+
+
+def test_wrong_handover_does_not_cross_event_or_gap_boundary():
+    slices = [
+        classified_slice(
+            0.0,
+            output_id=2,
+            event_type="reentry",
+        ),
+        classified_slice(
+            0.1,
+            output_id=3,
+            event_type="id_switch_fragmentation",
+        ),
+        classified_slice(
+            0.3,
+            output_id=4,
+            event_type="id_switch_fragmentation",
+        ),
+    ]
+
+    metrics = MODULE.summarise_episode_metrics(slices)
+
+    assert metrics.wrong_target_burst_count == 3
+    assert metrics.wrong_handover_count == 0
+
+
+def test_target_absent_output_episode_metrics_are_separate():
+    slices = [
+        classified_slice(
+            0.0,
+            classification="target_absent_output",
+            output_id=7,
+            event_type="target_absent",
+        ),
+        classified_slice(
+            0.1,
+            classification="target_absent_output",
+            output_id=7,
+            event_type="target_absent",
+        ),
+        classified_slice(
+            0.2,
+            classification="target_absent_clear",
+            output_id=0,
+            event_type="target_absent",
+        ),
+        classified_slice(
+            0.3,
+            classification="target_absent_output",
+            output_id=8,
+            event_type="target_absent",
+        ),
+    ]
+
+    metrics = MODULE.summarise_episode_metrics(slices)
+
+    assert metrics.wrong_target_burst_count == 0
+    assert metrics.target_absent_output_episode_count == 2
+    assert (
+        metrics.target_absent_output_total_duration_s
+        == pytest.approx(0.3)
+    )
+    assert (
+        metrics.longest_target_absent_output_episode_s
+        == pytest.approx(0.2)
+    )
+
+
+def test_empty_episode_metrics_are_zero():
+    metrics = MODULE.summarise_episode_metrics([])
+
+    assert metrics.wrong_target_burst_count == 0
+    assert metrics.wrong_target_total_duration_s == pytest.approx(0.0)
+    assert metrics.longest_wrong_target_burst_s == pytest.approx(0.0)
+    assert metrics.wrong_handover_count == 0
+    assert metrics.target_absent_output_episode_count == 0
+    assert (
+        metrics.target_absent_output_total_duration_s
+        == pytest.approx(0.0)
+    )
+    assert (
+        metrics.longest_target_absent_output_episode_s
+        == pytest.approx(0.0)
+    )

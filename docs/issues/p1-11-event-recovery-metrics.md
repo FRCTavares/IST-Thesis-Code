@@ -178,6 +178,18 @@ Added shared, evaluation-only primitives for:
 
 This slice does not alter existing evaluators or runtime behaviour.
 
+### Slice 2 — wrong bursts, handovers and absent-output episodes
+
+Added deterministic aggregate metrics for:
+
+- wrong-target burst count, total duration and longest duration;
+- non-zero selected-ID handovers inside each wrong-target burst;
+- target-absent-but-output episode count, total duration and longest duration;
+- strict separation between wrong-target and target-absence metrics;
+- boundaries that do not cross gaps, bags or annotation event types.
+
+This slice remains evaluation-only and introduces no runtime-policy changes.
+
 ## Evidence boundary
 
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.
