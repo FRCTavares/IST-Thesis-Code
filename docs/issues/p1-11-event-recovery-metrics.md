@@ -295,6 +295,21 @@ topic names and status-schema availability.
 Missing status information remains explicitly unavailable, while sequence-end
 recovery remains explicitly censored.
 
+### Slice 9 — headerless status timestamp projection
+
+Canonical evidence exposed that `std_msgs/msg/String` status messages have no
+ROS message header and were therefore skipped under the header timebase.
+
+The shared reader now projects headerless bag timestamps onto the header
+timeline using the nearest header-bearing selected-target message as a
+timestamp anchor. When an image header exists, its bag-to-header offset remains
+a valid fallback. Header-bearing target messages continue to use their own
+headers.
+
+This supports compact replay bags without image topics while preserving one
+common timeline and without fabricating status fields or silently dropping
+valid status samples.
+
 ## Evidence boundary
 
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.

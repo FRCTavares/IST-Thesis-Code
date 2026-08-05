@@ -1599,3 +1599,75 @@ def test_missing_requested_status_topic_returns_empty_list(
     )
 
     assert result == {"/missing": []}
+
+
+def test_headerless_status_uses_image_header_bag_offset():
+    resolved = MODULE.evaluation_message_time_ns(
+        bag_time_ns=1_500_000_000,
+        message_header_time_ns=None,
+        timebase="header",
+        header_from_bag_offset_ns=8_000_000_000,
+    )
+
+    assert resolved == 9_500_000_000
+
+
+def test_headered_message_keeps_its_header_timestamp():
+    resolved = MODULE.evaluation_message_time_ns(
+        bag_time_ns=1_500_000_000,
+        message_header_time_ns=9_600_000_000,
+        timebase="header",
+        header_from_bag_offset_ns=8_000_000_000,
+    )
+
+    assert resolved == 9_600_000_000
+
+
+def test_bag_timebase_ignores_header_and_offset():
+    resolved = MODULE.evaluation_message_time_ns(
+        bag_time_ns=1_500_000_000,
+        message_header_time_ns=9_600_000_000,
+        timebase="bag",
+        header_from_bag_offset_ns=8_000_000_000,
+    )
+
+    assert resolved == 1_500_000_000
+
+
+def test_headerless_message_without_mapping_is_unavailable():
+    resolved = MODULE.evaluation_message_time_ns(
+        bag_time_ns=1_500_000_000,
+        message_header_time_ns=None,
+        timebase="header",
+        header_from_bag_offset_ns=None,
+        header_anchors=[],
+    )
+
+    assert resolved is None
+
+
+def test_headerless_message_uses_nearest_target_anchor():
+    resolved = MODULE.evaluation_message_time_ns(
+        bag_time_ns=1_510_000_000,
+        message_header_time_ns=None,
+        timebase="header",
+        header_from_bag_offset_ns=None,
+        header_anchors=[
+            (1_500_000_000, 9_500_000_000),
+            (1_550_000_000, 9_550_000_000),
+        ],
+    )
+
+    assert resolved == 9_510_000_000
+
+
+def test_nearest_anchor_prefers_earlier_on_equal_distance():
+    resolved = MODULE.nearest_header_anchor_time_ns(
+        bag_time_ns=1_525_000_000,
+        anchors=[
+            (1_500_000_000, 9_500_000_000),
+            (1_550_000_000, 9_550_000_000),
+        ],
+    )
+
+    assert resolved == 9_525_000_000

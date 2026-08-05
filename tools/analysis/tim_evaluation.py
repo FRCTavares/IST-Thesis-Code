@@ -7,6 +7,8 @@ integration, and track-ID correctness classification.
 
 from __future__ import annotations
 
+import bisect
+
 import csv
 import json
 import math
@@ -343,6 +345,70 @@ def sample_output_id(sample: TargetSample) -> int:
     return sample.track_id
 
 
+def nearest_header_anchor_time_ns(
+    *,
+    bag_time_ns: int,
+    anchors: List[tuple[int, int]],
+) -> Optional[int]:
+    """Project one bag timestamp using the nearest header-bearing sample."""
+    if not anchors:
+        return None
+
+    bag_times = [anchor[0] for anchor in anchors]
+    index = bisect.bisect_left(bag_times, bag_time_ns)
+
+    candidates: List[tuple[int, int]] = []
+
+    if index > 0:
+        candidates.append(anchors[index - 1])
+    if index < len(anchors):
+        candidates.append(anchors[index])
+
+    anchor_bag_ns, anchor_header_ns = min(
+        candidates,
+        key=lambda anchor: (
+            abs(anchor[0] - bag_time_ns),
+            anchor[0],
+        ),
+    )
+
+    return (
+        anchor_header_ns
+        + bag_time_ns
+        - anchor_bag_ns
+    )
+
+
+def evaluation_message_time_ns(
+    *,
+    bag_time_ns: int,
+    message_header_time_ns: Optional[int],
+    timebase: str,
+    header_from_bag_offset_ns: Optional[int],
+    header_anchors: Optional[List[tuple[int, int]]] = None,
+) -> Optional[int]:
+    """Resolve headerless messages onto the evaluation timeline."""
+    if timebase == "bag":
+        return bag_time_ns
+
+    if timebase != "header":
+        raise ValueError(f"Unsupported timebase: {timebase}")
+
+    if message_header_time_ns is not None:
+        return message_header_time_ns
+
+    if header_anchors:
+        return nearest_header_anchor_time_ns(
+            bag_time_ns=bag_time_ns,
+            anchors=header_anchors,
+        )
+
+    if header_from_bag_offset_ns is None:
+        return None
+
+    return bag_time_ns + header_from_bag_offset_ns
+
+
 def read_evaluation_samples_from_bag(
     bag_path: Path,
     target_topics: Iterable[str],
@@ -407,7 +473,10 @@ def read_evaluation_samples_from_bag(
         for topic in topics_needed_for_t0
     }
     first_image_time_ns: Optional[int] = None
+    first_image_bag_time_ns: Optional[int] = None
     first_requested_time_ns: Optional[int] = None
+    first_requested_bag_time_ns: Optional[int] = None
+    header_anchors: List[tuple[int, int]] = []
 
     while reader.has_next():
         topic, data, bag_time_ns = reader.read_next()
@@ -416,42 +485,135 @@ def read_evaluation_samples_from_bag(
             continue
 
         msg = deserialize_message(data, t0_types[topic])
+        message_header_time_ns = header_time_ns(msg)
         message_time_ns = (
-            header_time_ns(msg)
+            message_header_time_ns
             if timebase == "header"
             else bag_time_ns
         )
 
-        if message_time_ns is None:
-            continue
+        if (
+            topic in available_requested
+            and first_requested_bag_time_ns is None
+        ):
+            first_requested_bag_time_ns = bag_time_ns
 
         if (
             topic in available_requested
             and first_requested_time_ns is None
+            and message_time_ns is not None
         ):
             first_requested_time_ns = message_time_ns
 
         if (
             topic in image_topics
-            and first_image_time_ns is None
+            and first_image_bag_time_ns is None
         ):
-            first_image_time_ns = message_time_ns
+            first_image_bag_time_ns = bag_time_ns
 
         if (
-            first_requested_time_ns is not None
-            and (
-                timebase == "bag"
-                or first_image_time_ns is not None
-                or not image_topics
-            )
+            topic in image_topics
+            and first_image_time_ns is None
+            and message_header_time_ns is not None
         ):
+            first_image_time_ns = message_header_time_ns
+
+        if (
+            timebase == "header"
+            and topic in available_targets
+            and message_header_time_ns is not None
+        ):
+            header_anchors.append(
+                (
+                    bag_time_ns,
+                    message_header_time_ns,
+                )
+            )
+
+        if timebase == "bag":
+            if first_requested_bag_time_ns is not None:
+                break
+        elif first_image_time_ns is not None:
             break
+
+    if timebase == "header" and not header_anchors:
+        reader = SequentialReader()
+        reader.open(storage_options, converter_options)
+
+        anchor_types = {
+            topic: get_message(topic_types[topic])
+            for topic in available_targets
+        }
+
+        while reader.has_next():
+            topic, data, bag_time_ns = reader.read_next()
+
+            if topic not in available_targets:
+                continue
+
+            msg = deserialize_message(
+                data,
+                anchor_types[topic],
+            )
+            message_header_time_ns = header_time_ns(msg)
+
+            if message_header_time_ns is None:
+                continue
+
+            header_anchors.append(
+                (
+                    bag_time_ns,
+                    message_header_time_ns,
+                )
+            )
+
+            if first_requested_time_ns is None:
+                first_requested_time_ns = (
+                    message_header_time_ns
+                )
+
+            if first_requested_bag_time_ns is None:
+                first_requested_bag_time_ns = bag_time_ns
+
+    header_anchors.sort(
+        key=lambda anchor: (
+            anchor[0],
+            anchor[1],
+        )
+    )
+
+    deduplicated_header_anchors: List[
+        tuple[int, int]
+    ] = []
+
+    for anchor in header_anchors:
+        if (
+            deduplicated_header_anchors
+            and anchor[0]
+            == deduplicated_header_anchors[-1][0]
+        ):
+            deduplicated_header_anchors[-1] = anchor
+        else:
+            deduplicated_header_anchors.append(anchor)
+
+    header_anchors = deduplicated_header_anchors
+
+    header_from_bag_offset_ns: Optional[int] = None
 
     if (
         timebase == "header"
         and first_image_time_ns is not None
+        and first_image_bag_time_ns is not None
     ):
         t0_ns = first_image_time_ns
+        header_from_bag_offset_ns = (
+            first_image_time_ns
+            - first_image_bag_time_ns
+        )
+    elif timebase == "bag":
+        t0_ns = first_requested_bag_time_ns
+    elif header_anchors:
+        t0_ns = header_anchors[0][1]
     else:
         t0_ns = first_requested_time_ns
 
@@ -487,10 +649,16 @@ def read_evaluation_samples_from_bag(
             data,
             message_types[topic],
         )
-        message_time_ns = (
-            header_time_ns(msg)
-            if timebase == "header"
-            else bag_time_ns
+        message_header_time_ns = header_time_ns(msg)
+
+        message_time_ns = evaluation_message_time_ns(
+            bag_time_ns=bag_time_ns,
+            message_header_time_ns=message_header_time_ns,
+            timebase=timebase,
+            header_from_bag_offset_ns=(
+                header_from_bag_offset_ns
+            ),
+            header_anchors=header_anchors,
         )
 
         if message_time_ns is None:
