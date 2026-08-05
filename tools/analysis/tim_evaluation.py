@@ -885,6 +885,319 @@ def summarise_episode_metrics(
 
 
 
+
+DEFAULT_STABLE_RECOVERY_S = 0.25
+
+
+@dataclass(frozen=True)
+class RecoveryEpisode:
+    """One physical-absence recovery opportunity."""
+
+    bag_name: str
+    event_type: str
+    disturbance_start_s: float
+    disturbance_end_s: float
+    first_eligible_recovery_s: Optional[float]
+    first_correct_output_s: Optional[float]
+    first_stable_correct_output_s: Optional[float]
+    first_correct_latency_s: Optional[float]
+    stable_correct_latency_s: Optional[float]
+    result: str
+    wrong_target_duration_before_recovery_s: float
+    lost_duration_before_recovery_s: float
+    target_track_id_before_disturbance: int
+    target_track_id_after_recovery: int
+    recovery_identity: str
+    stable_recovery_required_s: float
+
+
+def _annotation_target_absent(
+    interval: AnnotationInterval,
+) -> bool:
+    label = interval.target_label.upper()
+    return (
+        label != "NO_TARGET_SELECTED"
+        and (
+            not interval.target_visible
+            or label == "TARGET_NOT_VISIBLE"
+        )
+    )
+
+
+def _annotation_target_visible(
+    interval: AnnotationInterval,
+) -> bool:
+    label = interval.target_label.upper()
+    return (
+        interval.target_visible
+        and label not in {
+            "NO_TARGET_SELECTED",
+            "TARGET_NOT_VISIBLE",
+        }
+    )
+
+
+def _first_stable_correct_start(
+    slices: List[ClassifiedSlice],
+    stable_duration_s: float,
+    tolerance_s: float,
+) -> Optional[float]:
+    """Return the start of the first sufficiently persistent correct run."""
+    run_start: Optional[float] = None
+    run_end: Optional[float] = None
+
+    for item in slices:
+        if item.classification != "correct":
+            run_start = None
+            run_end = None
+            continue
+
+        if (
+            run_start is None
+            or run_end is None
+            or abs(item.t_s - run_end) > tolerance_s
+        ):
+            run_start = item.t_s
+
+        run_end = item.end_s
+
+        if run_end - run_start + tolerance_s >= stable_duration_s:
+            return run_start
+
+    return None
+
+
+def build_absence_recovery_episodes(
+    annotations: List[AnnotationInterval],
+    classified_slices: Iterable[ClassifiedSlice],
+    stable_duration_s: float = DEFAULT_STABLE_RECOVERY_S,
+    tolerance_s: float = 1e-9,
+) -> List[RecoveryEpisode]:
+    """Evaluate physical-absence recovery without treating absence as failure."""
+    if (
+        stable_duration_s <= 0.0
+        or not math.isfinite(stable_duration_s)
+    ):
+        raise ValueError(
+            "stable_duration_s must be finite and greater than zero"
+        )
+    if tolerance_s < 0.0 or not math.isfinite(tolerance_s):
+        raise ValueError(
+            "tolerance_s must be finite and non-negative"
+        )
+
+    materialised = list(classified_slices)
+    indexed_by_bag: Dict[
+        str,
+        List[tuple[int, AnnotationInterval]],
+    ] = {}
+
+    for index, interval in enumerate(annotations):
+        indexed_by_bag.setdefault(
+            interval.bag_name,
+            [],
+        ).append((index, interval))
+
+    episodes: List[RecoveryEpisode] = []
+
+    for bag_name in sorted(indexed_by_bag):
+        bag_rows = sorted(
+            indexed_by_bag[bag_name],
+            key=lambda pair: (
+                pair[1].start_s,
+                pair[1].end_s,
+                pair[0],
+            ),
+        )
+        sequence_end_s = max(
+            interval.end_s
+            for _, interval in bag_rows
+        )
+
+        for position, (_, absent) in enumerate(bag_rows):
+            if not _annotation_target_absent(absent):
+                continue
+
+            previous_visible = next(
+                (
+                    interval
+                    for _, interval in reversed(
+                        bag_rows[:position]
+                    )
+                    if (
+                        _annotation_target_visible(interval)
+                        and abs(
+                            interval.end_s - absent.start_s
+                        ) <= tolerance_s
+                    )
+                ),
+                None,
+            )
+
+            next_visible_position: Optional[int] = None
+            next_visible: Optional[AnnotationInterval] = None
+
+            if position + 1 < len(bag_rows):
+                candidate = bag_rows[position + 1][1]
+                if (
+                    _annotation_target_visible(candidate)
+                    and abs(
+                        candidate.start_s - absent.end_s
+                    ) <= tolerance_s
+                ):
+                    next_visible_position = position + 1
+                    next_visible = candidate
+
+            before_id = (
+                previous_visible.correct_target_track_id
+                if previous_visible is not None
+                else 0
+            )
+
+            if (
+                next_visible is None
+                or next_visible_position is None
+            ):
+                episodes.append(
+                    RecoveryEpisode(
+                        bag_name=bag_name,
+                        event_type="target_absent",
+                        disturbance_start_s=absent.start_s,
+                        disturbance_end_s=absent.end_s,
+                        first_eligible_recovery_s=None,
+                        first_correct_output_s=None,
+                        first_stable_correct_output_s=None,
+                        first_correct_latency_s=None,
+                        stable_correct_latency_s=None,
+                        result="censored",
+                        wrong_target_duration_before_recovery_s=0.0,
+                        lost_duration_before_recovery_s=0.0,
+                        target_track_id_before_disturbance=before_id,
+                        target_track_id_after_recovery=0,
+                        recovery_identity="unavailable",
+                        stable_recovery_required_s=stable_duration_s,
+                    )
+                )
+                continue
+
+            eligible_s = next_visible.start_s
+            after_id = next_visible.correct_target_track_id
+
+            next_absence = next(
+                (
+                    interval
+                    for _, interval in bag_rows[
+                        next_visible_position + 1:
+                    ]
+                    if _annotation_target_absent(interval)
+                ),
+                None,
+            )
+
+            if next_absence is not None:
+                episode_end_s = next_absence.start_s
+                unsuccessful_result = "failure"
+            else:
+                episode_end_s = sequence_end_s
+                unsuccessful_result = "censored"
+
+            episode_slices = [
+                item
+                for item in materialised
+                if (
+                    item.bag_name == bag_name
+                    and item.t_s + tolerance_s >= eligible_s
+                    and item.t_s < episode_end_s - tolerance_s
+                )
+            ]
+
+            first_correct = next(
+                (
+                    item.t_s
+                    for item in episode_slices
+                    if item.classification == "correct"
+                ),
+                None,
+            )
+            first_stable = _first_stable_correct_start(
+                episode_slices,
+                stable_duration_s,
+                tolerance_s,
+            )
+
+            recovery_cutoff = (
+                first_stable
+                if first_stable is not None
+                else episode_end_s
+            )
+
+            wrong_before = sum(
+                item.duration_s
+                for item in episode_slices
+                if (
+                    item.t_s < recovery_cutoff - tolerance_s
+                    and item.classification == "wrong"
+                )
+            )
+            lost_before = sum(
+                item.duration_s
+                for item in episode_slices
+                if (
+                    item.t_s < recovery_cutoff - tolerance_s
+                    and item.classification == "lost"
+                )
+            )
+
+            if first_stable is not None:
+                result = "success"
+            else:
+                result = unsuccessful_result
+
+            if before_id == 0 or after_id == 0:
+                recovery_identity = "unavailable"
+            elif before_id == after_id:
+                recovery_identity = "same_id"
+            else:
+                recovery_identity = "new_id"
+
+            episodes.append(
+                RecoveryEpisode(
+                    bag_name=bag_name,
+                    event_type=(
+                        next_visible.event_type.strip()
+                        or "unlabeled"
+                    ),
+                    disturbance_start_s=absent.start_s,
+                    disturbance_end_s=absent.end_s,
+                    first_eligible_recovery_s=eligible_s,
+                    first_correct_output_s=first_correct,
+                    first_stable_correct_output_s=first_stable,
+                    first_correct_latency_s=(
+                        None
+                        if first_correct is None
+                        else first_correct - eligible_s
+                    ),
+                    stable_correct_latency_s=(
+                        None
+                        if first_stable is None
+                        else first_stable - eligible_s
+                    ),
+                    result=result,
+                    wrong_target_duration_before_recovery_s=(
+                        wrong_before
+                    ),
+                    lost_duration_before_recovery_s=lost_before,
+                    target_track_id_before_disturbance=before_id,
+                    target_track_id_after_recovery=after_id,
+                    recovery_identity=recovery_identity,
+                    stable_recovery_required_s=stable_duration_s,
+                )
+            )
+
+    return episodes
+
+
+
 def evaluate_stream(
     annotations: List[AnnotationInterval],
     samples: List[TargetSample],

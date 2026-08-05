@@ -190,6 +190,27 @@ Added deterministic aggregate metrics for:
 
 This slice remains evaluation-only and introduces no runtime-policy changes.
 
+### Slice 3 — physical-absence recovery episodes
+
+Added recovery episodes for an annotated physical target absence followed by
+an adjacent visible interval.
+
+The evaluation contract is:
+
+- disturbance start and end are the annotated target-absence boundaries;
+- recovery becomes eligible at the start of the next adjacent visible interval;
+- first-correct latency is measured from that eligible time;
+- stable recovery requires at least `0.25 s` of contiguous correct output;
+- the reported stable-output time is the start of the first qualifying run;
+- wrong and lost durations before stable recovery remain separate;
+- a new physical absence before stable recovery is a failure;
+- sequence end without stable recovery is censored;
+- an absence with no subsequent visible interval is censored;
+- same-ID and new-ID recovery are reported separately.
+
+The persistence threshold is an evaluation parameter and is independent of the
+TIM-MARS runtime confirmation configuration.
+
 ## Evidence boundary
 
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.

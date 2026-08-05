@@ -433,3 +433,268 @@ def test_empty_episode_metrics_are_zero():
         metrics.longest_target_absent_output_episode_s
         == pytest.approx(0.0)
     )
+
+
+def recovery_interval(
+    start_s: float,
+    end_s: float,
+    *,
+    visible: bool,
+    correct_id: int = 0,
+    event_type: str,
+    bag_name: str = "recovery_bag",
+):
+    return MODULE.AnnotationInterval(
+        bag_name=bag_name,
+        start_s=start_s,
+        end_s=end_s,
+        target_label=(
+            "CORRECT_TARGET"
+            if visible
+            else "TARGET_NOT_VISIBLE"
+        ),
+        target_visible=visible,
+        correct_target_track_id=correct_id,
+        distractor_track_ids="",
+        event_type=event_type,
+        notes="",
+    )
+
+
+def recovery_slice(
+    t_s: float,
+    classification: str,
+    *,
+    output_id: int,
+    correct_id: int = 9,
+    duration_s: float = 0.1,
+    bag_name: str = "recovery_bag",
+):
+    return MODULE.ClassifiedSlice(
+        annotation_index=0,
+        bag_name=bag_name,
+        event_type="reentry",
+        t_s=t_s,
+        duration_s=duration_s,
+        classification=classification,
+        output_track_id=output_id,
+        correct_target_track_id=correct_id,
+        freshness_status="fresh",
+    )
+
+
+def test_absence_recovery_succeeds_after_stable_new_id_return():
+    annotations = [
+        recovery_interval(
+            0.0,
+            0.5,
+            visible=True,
+            correct_id=1,
+            event_type="clean_visible",
+        ),
+        recovery_interval(
+            0.5,
+            1.0,
+            visible=False,
+            event_type="target_absent",
+        ),
+        recovery_interval(
+            1.0,
+            2.0,
+            visible=True,
+            correct_id=9,
+            event_type="reentry",
+        ),
+    ]
+    slices = [
+        recovery_slice(1.0, "lost", output_id=0),
+        recovery_slice(1.1, "wrong", output_id=4),
+        recovery_slice(1.2, "correct", output_id=9),
+        recovery_slice(1.3, "correct", output_id=9),
+        recovery_slice(1.4, "correct", output_id=9),
+    ]
+
+    episodes = MODULE.build_absence_recovery_episodes(
+        annotations,
+        slices,
+        stable_duration_s=0.25,
+    )
+
+    assert len(episodes) == 1
+    episode = episodes[0]
+    assert episode.result == "success"
+    assert episode.first_eligible_recovery_s == pytest.approx(1.0)
+    assert episode.first_correct_output_s == pytest.approx(1.2)
+    assert (
+        episode.first_stable_correct_output_s
+        == pytest.approx(1.2)
+    )
+    assert episode.first_correct_latency_s == pytest.approx(0.2)
+    assert episode.stable_correct_latency_s == pytest.approx(0.2)
+    assert (
+        episode.wrong_target_duration_before_recovery_s
+        == pytest.approx(0.1)
+    )
+    assert (
+        episode.lost_duration_before_recovery_s
+        == pytest.approx(0.1)
+    )
+    assert episode.recovery_identity == "new_id"
+
+
+def test_one_correct_slice_is_not_stable_recovery():
+    annotations = [
+        recovery_interval(
+            0.0,
+            0.5,
+            visible=True,
+            correct_id=1,
+            event_type="clean_visible",
+        ),
+        recovery_interval(
+            0.5,
+            1.0,
+            visible=False,
+            event_type="target_absent",
+        ),
+        recovery_interval(
+            1.0,
+            1.5,
+            visible=True,
+            correct_id=1,
+            event_type="reentry",
+        ),
+        recovery_interval(
+            1.5,
+            2.0,
+            visible=False,
+            event_type="target_absent",
+        ),
+    ]
+    slices = [
+        recovery_slice(
+            1.0,
+            "correct",
+            output_id=1,
+            correct_id=1,
+        ),
+        recovery_slice(
+            1.1,
+            "wrong",
+            output_id=3,
+            correct_id=1,
+        ),
+        recovery_slice(
+            1.2,
+            "lost",
+            output_id=0,
+            correct_id=1,
+        ),
+    ]
+
+    episodes = MODULE.build_absence_recovery_episodes(
+        annotations,
+        slices,
+        stable_duration_s=0.25,
+    )
+
+    assert episodes[0].first_correct_output_s == pytest.approx(1.0)
+    assert episodes[0].first_stable_correct_output_s is None
+    assert episodes[0].result == "failure"
+    assert episodes[0].recovery_identity == "same_id"
+
+
+def test_visible_return_without_recovery_until_sequence_end_is_censored():
+    annotations = [
+        recovery_interval(
+            0.0,
+            0.5,
+            visible=True,
+            correct_id=1,
+            event_type="clean_visible",
+        ),
+        recovery_interval(
+            0.5,
+            1.0,
+            visible=False,
+            event_type="target_absent",
+        ),
+        recovery_interval(
+            1.0,
+            1.5,
+            visible=True,
+            correct_id=8,
+            event_type="reentry",
+        ),
+    ]
+    slices = [
+        recovery_slice(
+            1.0,
+            "wrong",
+            output_id=4,
+            correct_id=8,
+        ),
+        recovery_slice(
+            1.1,
+            "lost",
+            output_id=0,
+            correct_id=8,
+        ),
+        recovery_slice(
+            1.2,
+            "wrong",
+            output_id=4,
+            correct_id=8,
+        ),
+    ]
+
+    episodes = MODULE.build_absence_recovery_episodes(
+        annotations,
+        slices,
+        stable_duration_s=0.25,
+    )
+
+    assert episodes[0].result == "censored"
+    assert episodes[0].first_correct_output_s is None
+    assert episodes[0].first_stable_correct_output_s is None
+
+
+def test_final_absence_without_visible_return_is_censored():
+    annotations = [
+        recovery_interval(
+            0.0,
+            0.5,
+            visible=True,
+            correct_id=1,
+            event_type="clean_visible",
+        ),
+        recovery_interval(
+            0.5,
+            1.0,
+            visible=False,
+            event_type="target_absent",
+        ),
+    ]
+
+    episodes = MODULE.build_absence_recovery_episodes(
+        annotations,
+        [],
+        stable_duration_s=0.25,
+    )
+
+    assert len(episodes) == 1
+    assert episodes[0].result == "censored"
+    assert episodes[0].first_eligible_recovery_s is None
+    assert episodes[0].recovery_identity == "unavailable"
+
+
+def test_invalid_stable_recovery_duration_is_rejected():
+    with pytest.raises(
+        ValueError,
+        match="finite and greater than zero",
+    ):
+        MODULE.build_absence_recovery_episodes(
+            [],
+            [],
+            stable_duration_s=0.0,
+        )
