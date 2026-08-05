@@ -310,6 +310,19 @@ This supports compact replay bags without image topics while preserving one
 common timeline and without fabricating status fields or silently dropping
 valid status samples.
 
+## Canonical development evidence
+
+Canonical four-sequence evidence was generated from commit
+`b50f914aa2e7b985b0283e706f0e577779b4254e` under
+`reports/p026_event_recovery_b50f914a_2026_08_05`.
+
+All required status fields were available, all stored evidence hashes passed,
+the complete output was identical across a second evaluation run, and the
+focused regression matrix passed with 81 tests.
+
+The concise tracked interpretation is recorded in
+`docs/results/selected_target_tracking/p026_event_recovery_metrics.md`.
+
 ## Evidence boundary
 
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.

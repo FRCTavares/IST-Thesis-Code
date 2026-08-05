@@ -108,7 +108,8 @@ Open executable issues: **24**.
     - started on 5 August 2026 from clean synchronized baseline `feda884463664a677aedfd228b3c3ee945c0adea`.
     - phase 6; experiment; extends the shared evaluator semantics from #24 without changing TIM-MARS runtime policy or canonical parameters.
     - implementation must preserve separate correct, wrong-target, lost, absent and stale classifications; add event episodes, recovery latency, wrong-target bursts, handovers, attempts, suppression, state occupancy and memory-event reporting with explicit unavailable/censored semantics.
-    - shared metric primitives, schema-aware status loading and the deterministic event/recovery report CLI are implemented; canonical four-sequence development evidence and final promotion remain pending.
+    - shared metric primitives, schema-aware status loading, the deterministic report CLI and canonical four-sequence evidence are complete at `b50f914a`; hashes and a deterministic second run passed, alongside 81 focused tests.
+    - tracked interpretation: `docs/results/selected_target_tracking/p026_event_recovery_metrics.md`; final issue promotion and GitHub closure remain pending.
 
 14. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30) — HIGHEST PRIORITY
     - phase 7; experiment; includes properly qualified held-out live evidence
