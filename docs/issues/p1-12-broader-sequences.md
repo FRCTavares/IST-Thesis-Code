@@ -679,3 +679,56 @@ This slice selects which existing sequences are in scope; it does not itself
 freeze `sequence_manifest.json`, choose initialization frames, or inspect
 tracker/TIM-MARS outcomes beyond the already-published Issue #26 evidence
 cited above for provenance.
+
+### Slice 14 — DanceTrack and VisDrone-MOT first-phase selection
+
+Added `tools/analysis/select_first_phase_benchmark.py`, a deterministic,
+tested selection tool that populates `sequence_manifest.json` entries for the
+first benchmark phase using only annotation-derived facts already produced by
+`profile_external_tracking_dataset`.
+
+Selection method:
+
+- sequences are ranked by `(candidate_count, sequence_name)`, using annotated
+  candidate count as a crowd-density proxy;
+- `count` sequences are then taken at evenly spaced positions across that
+  ranking, so the selection spans low- to high-density scenes instead of
+  clustering at one end;
+- within each selected sequence, the physical target is the eligible,
+  initialization-eligible candidate with the greatest total visible-frame
+  count, tied first by longest consecutive visible run and then by lowest
+  dataset identity;
+- scene facts (`approximate_people`, `primary_challenge`) and
+  `event_categories` are derived from the same candidate's annotated overlap,
+  border-contact and height statistics.
+
+No tracker or TIM-MARS outcome is read, computed or referenced anywhere in
+the selection path.
+
+This produced 5 DanceTrack `val` sequences (`dancetrack0004`,
+`dancetrack0019`, `dancetrack0063`, `dancetrack0073`, `dancetrack0094`) and 4
+VisDrone-MOT `val` sequences (`uav0000117_02622_v`, `uav0000137_00458_v`,
+`uav0000268_05773_v`, `uav0000339_00001_v`), each with a frozen candidate
+physical-target identity, initialization window, evaluation frame range and
+schema-validated entry (status `selected`) in `sequence_manifest.json`. Every
+entry sets `target.initial_tracker_identity` to `null`: the schema allows
+this explicitly, and the real tracker candidate ID can only be known once the
+detector-ByteTrack candidate stream is generated for that sequence, which is
+later, execution-time work, not a selection-time decision.
+
+The tool is idempotent and re-runnable: it replaces only the entries whose
+`id` it produced and leaves any other sequences (including the ROS 2 entries
+added in a later slice) untouched. Two consecutive runs over the same local
+data produce byte-identical output.
+
+The manifest root `status` remains `draft_not_frozen` after this slice. It
+must not be read as final until the ROS 2 sequences are also added and the
+manifest is deliberately frozen.
+
+15 focused unit tests cover stratified-selection determinism and density
+spread, physical-target tie-breaking, scene/event-category classification,
+manifest-entry merging, and full JSON Schema validation of a synthetic built
+entry against `manifest.schema.json`. The pre-existing 353-test non-ROS suite
+was confirmed unaffected (11 failures present both with and without this
+slice's changes, all in unrelated documentation-hash and ROS-environment
+areas).

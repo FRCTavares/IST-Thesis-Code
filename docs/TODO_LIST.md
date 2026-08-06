@@ -124,11 +124,12 @@ Open executable issues: **24**.
       internet access unaffected on both). No mirror was substituted. MOT17
       stays in scope as a later supplementary phase; see Slice 12 in
       `docs/issues/p1-12-broader-sequences.md`.
-    - current milestone: first benchmark phase excludes MOT17 and covers
-      four to six DanceTrack validation sequences, approximately four
-      VisDrone-MOT validation sequences, and the four existing ROS 2
-      development sequences (Slice 13); prepare the deterministic
-      pre-outcome sequence and physical-target freeze for that phase.
+    - current milestone: DanceTrack and VisDrone-MOT first-phase sequences
+      and physical targets are selected and populated into
+      `sequence_manifest.json` (Slice 14, status `selected`, root manifest
+      still `draft_not_frozen`); next add the four ROS 2 development
+      sequences to the same manifest, then freeze it before running the
+      first paired raw-versus-TIM-MARS benchmark.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
@@ -179,6 +180,13 @@ Open executable issues: **24**.
       `tim_mars_split_v1` development set (May hard-reentry, June Seq01,
       Seq03, Seq04), reusing the Issue #26 raw-versus-TIM evidence path;
       June Seq02 stays excluded as quarantined `legacy_validation`.
+    - selection slice 14: deterministically select 5 DanceTrack validation
+      sequences and 4 VisDrone-MOT validation sequences by stratified
+      annotation-derived candidate-density sampling, choose each physical
+      target by greatest visible-frame count among eligible candidates, and
+      populate schema-validated `sequence_manifest.json` entries
+      (status `selected`); no tracker or TIM-MARS outcome was inspected and
+      the manifest root status remains `draft_not_frozen`.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
