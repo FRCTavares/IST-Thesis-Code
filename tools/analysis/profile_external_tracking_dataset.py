@@ -297,6 +297,76 @@ def resolve_frame_rate(
     return explicit_frame_rate, "explicit_cli_unfrozen"
 
 
+
+def build_sequence_timing_contract(
+    record: LocalSequenceRecord,
+    *,
+    dataset_source: dict[str, Any],
+    analysis_frame_rate: float,
+    analysis_frame_rate_source: str,
+) -> dict[str, Any]:
+    if record.dataset == "visdrone_mot":
+        timing = dataset_source["timing_provenance"]
+
+        return {
+            "status": timing["status"],
+            "original_capture_frame_rate_hz": (
+                timing["original_capture_frame_rate_hz"]
+            ),
+            "exported_sequence_frame_rate_hz": (
+                timing["exported_sequence_frame_rate_hz"]
+            ),
+            "exported_sequence_cadence_known": (
+                timing["exported_sequence_cadence_known"]
+            ),
+            "analysis_frame_rate_hz": analysis_frame_rate,
+            "analysis_frame_rate_source": (
+                analysis_frame_rate_source
+            ),
+            "analysis_frame_rate_frozen": False,
+            "derived_seconds_semantics": (
+                "deterministic_analysis_only_not_physical_source_time"
+            ),
+            "benchmark_time_policy": (
+                timing["benchmark_time_policy"]
+            ),
+            "evidence_authority": (
+                timing["evidence_authority"]
+            ),
+            "evidence_reference": (
+                timing["evidence_reference"]
+            ),
+            "evidence_retrieved_date": (
+                timing["evidence_retrieved_date"]
+            ),
+        }
+
+    return {
+        "status": (
+            "exported_cadence_known_from_sequence_metadata"
+        ),
+        "original_capture_frame_rate_hz": None,
+        "exported_sequence_frame_rate_hz": (
+            analysis_frame_rate
+        ),
+        "exported_sequence_cadence_known": True,
+        "analysis_frame_rate_hz": analysis_frame_rate,
+        "analysis_frame_rate_source": (
+            analysis_frame_rate_source
+        ),
+        "analysis_frame_rate_frozen": False,
+        "derived_seconds_semantics": (
+            "source_sequence_metadata"
+        ),
+        "benchmark_time_policy": (
+            "source_sequence_metadata"
+        ),
+        "evidence_authority": None,
+        "evidence_reference": None,
+        "evidence_retrieved_date": None,
+    }
+
+
 def load_sequence_annotations(
     record: LocalSequenceRecord,
     *,
@@ -473,6 +543,13 @@ def profile_sequence(
         explicit_frame_rate=explicit_frame_rate,
     )
 
+    timing_contract = build_sequence_timing_contract(
+        record,
+        dataset_source=dataset_source,
+        analysis_frame_rate=frame_rate,
+        analysis_frame_rate_source=frame_rate_source,
+    )
+
     candidate_rows = [
         row
         for row in annotations
@@ -522,6 +599,7 @@ def profile_sequence(
         "frame_rate": frame_rate,
         "frame_rate_source": frame_rate_source,
         "frame_rate_assumption_frozen": False,
+        "timing_contract": timing_contract,
         "annotation_count": len(annotations),
         "included_person_annotation_count": len(
             candidate_rows
@@ -689,7 +767,11 @@ def render_human(payload: dict[str, Any]) -> str:
                 f"eligible={sequence['eligible_candidate_count']} "
                 f"fps={sequence['frame_rate']} "
                 f"fps_source={sequence['frame_rate_source']} "
-                "frozen=false"
+                "frozen=false "
+                "export_cadence_known="
+                f"{str(sequence['timing_contract']['exported_sequence_cadence_known']).lower()} "
+                "time_semantics="
+                f"{sequence['timing_contract']['derived_seconds_semantics']}"
             )
         )
 

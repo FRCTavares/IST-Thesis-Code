@@ -520,3 +520,29 @@ never silently hard-coded or treated as frozen provenance.
 
 This slice does not change the selection policy, select a sequence, freeze a
 physical identity or frame range, or modify `sequence_manifest.json`.
+
+### Slice 10 — original capture rate versus exported cadence
+
+The tracked source registry now records the official VisDrone timing evidence
+without equating two different quantities:
+
+- the original dataset videos were captured at 24 FPS;
+- only part of the original frames was extracted for annotation;
+- the cadence between adjacent exported annotation images is unavailable;
+- exported frame indices therefore cannot establish physical source time.
+
+The profiler retains its explicit frame-rate input for deterministic parsing,
+analysis and eventual replay. For VisDrone that input remains
+`explicit_cli_unfrozen` and is reported separately from:
+
+- `original_capture_frame_rate_hz=24.0`;
+- `exported_sequence_frame_rate_hz=null`;
+- `exported_sequence_cadence_known=false`;
+- `benchmark_time_policy=frame_index_only_until_cadence_resolved`.
+
+Derived seconds under an explicit VisDrone analysis rate are labelled
+`deterministic_analysis_only_not_physical_source_time`.
+
+This slice does not modify `sequence_manifest.json`, select a sequence or
+physical identity, freeze a frame range, define a final replay rate, or inspect
+tracker and TIM-MARS outcomes.

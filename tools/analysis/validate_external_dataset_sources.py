@@ -57,6 +57,28 @@ LEGACY_ARCHIVE_FIELDS = {
     "archive_sha256",
 }
 
+VISDRONE_TIMING_FIELDS = {
+    "status",
+    "original_capture_frame_rate_hz",
+    "exported_sequence_frame_rate_hz",
+    "exported_sequence_cadence_known",
+    "evidence_authority",
+    "evidence_reference",
+    "evidence_retrieved_date",
+    "evidence_scope",
+    "benchmark_time_policy",
+}
+
+VISDRONE_TIMING_STATUS = (
+    "capture_rate_known_export_cadence_unknown"
+)
+
+VISDRONE_TIMING_POLICY = (
+    "frame_index_only_until_cadence_resolved"
+)
+
+VISDRONE_TIMING_REFERENCE = "https://aiskyeye.com/faq/"
+
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -296,6 +318,129 @@ def validate_acquisitions(
         )
 
 
+
+def validate_dataset_timing_provenance(
+    dataset: dict[str, Any],
+    *,
+    dataset_id: str,
+) -> None:
+    timing = dataset.get("timing_provenance")
+
+    if dataset_id != "visdrone_mot":
+        if timing is not None:
+            raise ValueError(
+                f"{dataset_id}: timing_provenance is only "
+                "defined for VisDrone until another dataset "
+                "requires registry-level timing evidence"
+            )
+
+        return
+
+    if not isinstance(timing, dict):
+        raise ValueError(
+            "visdrone_mot.timing_provenance must be an object"
+        )
+
+    fields = set(timing)
+    missing = sorted(VISDRONE_TIMING_FIELDS - fields)
+    extra = sorted(fields - VISDRONE_TIMING_FIELDS)
+
+    if missing or extra:
+        raise ValueError(
+            "visdrone_mot.timing_provenance fields mismatch: "
+            f"missing={missing}, extra={extra}"
+        )
+
+    if timing.get("status") != VISDRONE_TIMING_STATUS:
+        raise ValueError(
+            "visdrone_mot timing status must distinguish "
+            "original capture rate from exported cadence"
+        )
+
+    capture_rate = timing.get(
+        "original_capture_frame_rate_hz"
+    )
+
+    if (
+        not isinstance(capture_rate, (int, float))
+        or isinstance(capture_rate, bool)
+        or float(capture_rate) != 24.0
+    ):
+        raise ValueError(
+            "visdrone_mot original capture rate must equal 24 FPS"
+        )
+
+    if timing.get("exported_sequence_frame_rate_hz") is not None:
+        raise ValueError(
+            "visdrone_mot exported sequence frame rate "
+            "must remain null"
+        )
+
+    if timing.get("exported_sequence_cadence_known") is not False:
+        raise ValueError(
+            "visdrone_mot exported sequence cadence "
+            "must remain explicitly unknown"
+        )
+
+    authority = require_nonempty_text(
+        timing.get("evidence_authority"),
+        field=(
+            "visdrone_mot.timing_provenance."
+            "evidence_authority"
+        ),
+    )
+
+    if authority != "AISKYEYE official FAQ":
+        raise ValueError(
+            "visdrone_mot timing evidence authority "
+            "must remain the AISKYEYE official FAQ"
+        )
+
+    reference = require_nonempty_text(
+        timing.get("evidence_reference"),
+        field=(
+            "visdrone_mot.timing_provenance."
+            "evidence_reference"
+        ),
+    )
+
+    if reference != VISDRONE_TIMING_REFERENCE:
+        raise ValueError(
+            "visdrone_mot timing evidence reference "
+            "must remain the official FAQ"
+        )
+
+    validate_official_reference(
+        reference,
+        dataset_id="visdrone_mot.timing_provenance",
+    )
+
+    validate_verified_date(
+        timing.get("evidence_retrieved_date"),
+        field=(
+            "visdrone_mot.timing_provenance."
+            "evidence_retrieved_date"
+        ),
+    )
+
+    if timing.get("evidence_scope") != (
+        "dataset_original_videos_and_annotated_frame_extraction"
+    ):
+        raise ValueError(
+            "visdrone_mot timing evidence scope must distinguish "
+            "the original videos from extracted annotation frames"
+        )
+
+    if (
+        timing.get("benchmark_time_policy")
+        != VISDRONE_TIMING_POLICY
+    ):
+        raise ValueError(
+            "visdrone_mot benchmark time policy must remain "
+            "frame-index-only until exported cadence is resolved"
+        )
+
+
 def validate_registry(registry: dict[str, Any]) -> None:
     if registry.get("schema_version") != 2:
         raise ValueError("schema_version must equal 2")
@@ -424,6 +569,11 @@ def validate_registry(registry: dict[str, Any]) -> None:
                 f"{dataset_id}: source frame index base must be 1"
             )
 
+        validate_dataset_timing_provenance(
+            dataset,
+            dataset_id=dataset_id,
+        )
+
         validate_acquisitions(
             dataset,
             dataset_id=dataset_id,
@@ -486,6 +636,10 @@ def main() -> int:
     print("OK: partial acquisition cannot imply full coverage.")
     print("OK: only splits with local official GT are admissible.")
     print("OK: MOT17 scene duplication remains explicit.")
+    print(
+        "OK: VisDrone capture rate and exported cadence "
+        "remain distinct."
+    )
     return 0
 
 

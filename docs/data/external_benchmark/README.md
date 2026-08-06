@@ -57,3 +57,21 @@ without source timing metadata, including the installed VisDrone layout, must
 receive `--frame-rate` explicitly. Such an input is labelled
 `explicit_cli_unfrozen` and remains unfrozen until its provenance is resolved
 and the benchmark manifest is deliberately frozen.
+
+## VisDrone timing provenance
+
+The official VisDrone FAQ states that the original videos were captured at
+24 FPS and that only part of their frames was extracted for annotation.
+
+These are separate facts:
+
+- `original_capture_frame_rate_hz` is `24.0`;
+- `exported_sequence_frame_rate_hz` remains unavailable;
+- adjacent exported images are not assumed to be consecutive original-video
+  frames;
+- exported-frame indices therefore do not define authoritative physical time.
+
+An explicit profiler `--frame-rate` remains an unfrozen deterministic analysis
+or replay input. For VisDrone it must not be described as source metadata,
+exported cadence or physical timestamp evidence. Sequence selection remains
+frame-index-only until exported cadence is authoritatively resolved.

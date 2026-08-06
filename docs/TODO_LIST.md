@@ -118,9 +118,9 @@ Open executable issues: **24**.
       candidate loss, identity confusion, tracker fragmentation, integrated
       appearance association, and selective TIM-MARS recovery fairly.
     - external benchmark scope: freeze a manageable subset of approximately four MOT17, four to six DanceTrack, and four VisDrone-MOT sequences; evaluate both oracle-candidate and detector–ByteTrack–TIM-MARS modes alongside the four ROS 2 sequences.
-    - current milestone: generate deterministic annotation-only sequence and
-      candidate profiles, then resolve source timing provenance before any
-      sequence, identity or frame-range freeze and before outcome review.
+    - current milestone: retain frame-index-only VisDrone analysis while
+      acquiring the remaining external datasets and preparing a deterministic
+      pre-outcome sequence and physical-target freeze.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
@@ -156,6 +156,10 @@ Open executable issues: **24**.
       physical-target candidate profiles using the existing catalogue, adapter
       and selection contracts; explicit frame-rate inputs remain unfrozen and
       no tracker, TIM-MARS or recovery outcomes enter the profile.
+    - timing slice 10: record the official 24 FPS original-video capture
+      rate separately from the unknown cadence of the extracted annotated
+      frames; VisDrone selection remains frame-index-only and explicit analysis
+      rates remain unfrozen deterministic inputs rather than physical time.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY

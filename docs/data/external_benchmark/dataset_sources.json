@@ -111,7 +111,18 @@
           "image_count": 2846,
           "verified_date": "2026-08-06"
         }
-      ]
+      ],
+      "timing_provenance": {
+        "status": "capture_rate_known_export_cadence_unknown",
+        "original_capture_frame_rate_hz": 24.0,
+        "exported_sequence_frame_rate_hz": null,
+        "exported_sequence_cadence_known": false,
+        "evidence_authority": "AISKYEYE official FAQ",
+        "evidence_reference": "https://aiskyeye.com/faq/",
+        "evidence_retrieved_date": "2026-08-06",
+        "evidence_scope": "dataset_original_videos_and_annotated_frame_extraction",
+        "benchmark_time_policy": "frame_index_only_until_cadence_resolved"
+      }
     }
   ]
 }

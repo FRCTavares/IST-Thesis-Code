@@ -182,3 +182,73 @@ def test_archive_hash_must_be_lowercase_hex():
         match="64 lowercase hexadecimal",
     ):
         MODULE.validate_registry(value)
+
+
+def test_visdrone_timing_provenance_is_required():
+    value = copy.deepcopy(registry())
+    source = dataset(value, "visdrone_mot")
+    source.pop("timing_provenance")
+
+    with pytest.raises(
+        ValueError,
+        match="timing_provenance must be an object",
+    ):
+        MODULE.validate_registry(value)
+
+
+def test_visdrone_exported_cadence_must_remain_unknown():
+    value = copy.deepcopy(registry())
+    source = dataset(value, "visdrone_mot")
+    timing = source["timing_provenance"]
+    timing["exported_sequence_frame_rate_hz"] = 24.0
+    timing["exported_sequence_cadence_known"] = True
+
+    with pytest.raises(
+        ValueError,
+        match="exported sequence frame rate must remain null",
+    ):
+        MODULE.validate_registry(value)
+
+
+def test_visdrone_capture_rate_is_not_exported_rate():
+    value = copy.deepcopy(registry())
+    source = dataset(value, "visdrone_mot")
+    source["timing_provenance"][
+        "original_capture_frame_rate_hz"
+    ] = 30.0
+
+    with pytest.raises(
+        ValueError,
+        match="original capture rate must equal 24 FPS",
+    ):
+        MODULE.validate_registry(value)
+
+
+def test_visdrone_time_policy_remains_frame_index_only():
+    value = copy.deepcopy(registry())
+    source = dataset(value, "visdrone_mot")
+    source["timing_provenance"][
+        "benchmark_time_policy"
+    ] = "normalized_frame_index_divided_by_24"
+
+    with pytest.raises(
+        ValueError,
+        match="frame-index-only",
+    ):
+        MODULE.validate_registry(value)
+
+
+def test_other_datasets_cannot_inherit_visdrone_timing():
+    value = copy.deepcopy(registry())
+    mot17 = dataset(value, "mot17")
+    visdrone = dataset(value, "visdrone_mot")
+
+    mot17["timing_provenance"] = copy.deepcopy(
+        visdrone["timing_provenance"]
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="timing_provenance is only defined for VisDrone",
+    ):
+        MODULE.validate_registry(value)

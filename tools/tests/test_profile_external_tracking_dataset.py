@@ -319,3 +319,101 @@ def test_profile_contains_no_outcome_fields(tmp_path):
     assert keys.isdisjoint(
         MODULE.FORBIDDEN_OUTCOME_FIELDS
     )
+
+
+def test_visdrone_timing_contract_separates_capture_and_export(
+    tmp_path,
+):
+    value, _, _ = create_fixture(tmp_path)
+
+    result = MODULE.profile_external_tracking_dataset(
+        value,
+        repository_root=tmp_path,
+        dataset_id="visdrone_mot",
+        split="val",
+        explicit_frame_rate=24.0,
+        policy=MODULE.SelectionPolicy(),
+    )
+
+    sequence = result["sequences"][0]
+    timing = sequence["timing_contract"]
+
+    assert timing["status"] == (
+        "capture_rate_known_export_cadence_unknown"
+    )
+    assert timing["original_capture_frame_rate_hz"] == pytest.approx(
+        24.0
+    )
+    assert timing["exported_sequence_frame_rate_hz"] is None
+    assert timing["exported_sequence_cadence_known"] is False
+    assert timing["analysis_frame_rate_hz"] == pytest.approx(24.0)
+    assert timing["analysis_frame_rate_frozen"] is False
+    assert timing["benchmark_time_policy"] == (
+        "frame_index_only_until_cadence_resolved"
+    )
+    assert timing["derived_seconds_semantics"] == (
+        "deterministic_analysis_only_not_physical_source_time"
+    )
+
+
+def test_analysis_rate_does_not_become_exported_cadence(tmp_path):
+    value, _, _ = create_fixture(tmp_path)
+
+    result = MODULE.profile_external_tracking_dataset(
+        value,
+        repository_root=tmp_path,
+        dataset_id="visdrone_mot",
+        split="val",
+        explicit_frame_rate=12.0,
+        policy=MODULE.SelectionPolicy(),
+    )
+
+    timing = result["sequences"][0]["timing_contract"]
+
+    assert timing["original_capture_frame_rate_hz"] == pytest.approx(
+        24.0
+    )
+    assert timing["exported_sequence_frame_rate_hz"] is None
+    assert timing["exported_sequence_cadence_known"] is False
+    assert timing["analysis_frame_rate_hz"] == pytest.approx(12.0)
+    assert timing["analysis_frame_rate_source"] == (
+        "explicit_cli_unfrozen"
+    )
+    assert timing["analysis_frame_rate_frozen"] is False
+
+
+def test_json_cli_exposes_frame_index_only_policy(tmp_path):
+    _, registry_path, _ = create_fixture(tmp_path)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(MODULE_PATH),
+            "--registry",
+            str(registry_path),
+            "--repository-root",
+            str(tmp_path),
+            "--dataset",
+            "visdrone_mot",
+            "--split",
+            "val",
+            "--frame-rate",
+            "24",
+            "--json",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+
+    payload = json.loads(completed.stdout)
+    timing = payload["sequences"][0]["timing_contract"]
+
+    assert timing["benchmark_time_policy"] == (
+        "frame_index_only_until_cadence_resolved"
+    )
+    assert timing["derived_seconds_semantics"] == (
+        "deterministic_analysis_only_not_physical_source_time"
+    )
