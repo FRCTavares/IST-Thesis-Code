@@ -546,3 +546,37 @@ Derived seconds under an explicit VisDrone analysis rate are labelled
 This slice does not modify `sequence_manifest.json`, select a sequence or
 physical identity, freeze a frame range, define a final replay rate, or inspect
 tracker and TIM-MARS outcomes.
+
+### Slice 11 — verified DanceTrack validation acquisition
+
+The official DanceTrack validation archive was acquired from the source linked
+by the DanceTrack authors and verified before installation.
+
+The local acquisition records:
+
+- archive `val.zip`;
+- exact size `4,209,785,614` bytes;
+- SHA-256
+  `90ba30973761ce0b81a9654c11086d87537392475ac8bc666d842e645641277c`;
+- 25 validation sequences;
+- 25 `gt/gt.txt` files;
+- 25,508 source images;
+- 20 FPS sequence timing from the official `seqinfo.ini` files.
+
+The archive was checked for unsafe paths, symbolic links and encrypted entries
+before extraction. Extraction used an isolated ignored staging directory, and
+every installed sequence was checked for:
+
+- required sequence metadata;
+- metadata-name agreement;
+- positive frame rate and image dimensions;
+- image-directory presence;
+- exact metadata-to-image-count agreement;
+- local ground-truth identity annotations.
+
+The source registry records only the verified validation split. The absent
+training split remains unverified, so DanceTrack is `partially_verified`.
+
+This slice does not select a sequence or physical target, freeze an
+initialization window or frame range, modify `sequence_manifest.json`, or
+inspect tracker and TIM-MARS outcomes.

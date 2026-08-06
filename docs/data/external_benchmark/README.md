@@ -75,3 +75,28 @@ An explicit profiler `--frame-rate` remains an unfrozen deterministic analysis
 or replay input. For VisDrone it must not be described as source metadata,
 exported cadence or physical timestamp evidence. Sequence selection remains
 frame-index-only until exported cadence is authoritatively resolved.
+
+## Verified DanceTrack validation acquisition
+
+The official DanceTrack validation archive is installed locally for
+non-commercial research evaluation.
+
+Verified acquisition facts:
+
+- split: `val`;
+- archive: `val.zip`;
+- archive size: `4,209,785,614` bytes;
+- archive SHA-256:
+  `90ba30973761ce0b81a9654c11086d87537392475ac8bc666d842e645641277c`;
+- installed sequences: 25;
+- ground-truth files: 25;
+- source images: 25,508;
+- source frame rate: 20 FPS from each sequence's `seqinfo.ini`;
+- verification date: 6 August 2026.
+
+The DanceTrack training split remains absent. Therefore, the dataset
+acquisition status is `partially_verified`, not `fully_verified`.
+
+The acquisition does not select a benchmark sequence, physical identity,
+initialization window or frame range. It does not modify the benchmark
+manifest or inspect tracker and TIM-MARS outcomes.

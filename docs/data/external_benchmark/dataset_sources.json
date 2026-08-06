@@ -69,8 +69,21 @@
         "reason": "No MOT17-style detector-folder duplication is expected."
       },
       "public_detection_policy": "Not used. Oracle mode uses official ground truth; end-to-end mode uses the thesis detector and ByteTrack.",
-      "acquisition_status": "not_downloaded",
-      "acquisitions": []
+      "acquisition_status": "partially_verified",
+      "acquisitions": [
+        {
+          "split": "val",
+          "status": "verified",
+          "archive_filename": "val.zip",
+          "archive_sha256": "90ba30973761ce0b81a9654c11086d87537392475ac8bc666d842e645641277c",
+          "archive_size_bytes": 4209785614,
+          "local_relative_path": "data/datasets/external/dancetrack/val",
+          "sequence_count": 25,
+          "annotation_count": 25,
+          "image_count": 25508,
+          "verified_date": "2026-08-06"
+        }
+      ]
     },
     {
       "id": "visdrone_mot",
