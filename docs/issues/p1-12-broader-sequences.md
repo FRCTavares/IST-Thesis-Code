@@ -495,3 +495,28 @@ mismatch and invalid installed structures.
 This slice records acquisition provenance only. It does not freeze a sequence,
 physical identity, frame range or frame-rate assumption, and it does not inspect
 TIM-MARS outcomes.
+
+### Slice 9 — deterministic annotation-only dataset profiles
+
+A tracked read-only profiler now combines the source registry, canonical local
+catalogue, dataset adapter and existing selection policy to report:
+
+- sequence paths, image geometry and sequence length;
+- frame-rate value and its provenance;
+- total, included and explicitly excluded annotation rows;
+- deterministic exclusion-reason counts;
+- per-identity visibility, size, border and competition facts;
+- clean initialization-window availability;
+- candidate eligibility and exclusion reasons.
+
+The profiler emits deterministic human-readable and standalone JSON output.
+It contains no tracker identities, TIM-MARS scores, recovery events or final
+benchmark selection.
+
+MOT-style datasets use official `seqinfo.ini` timing. When source metadata does
+not provide timing, the CLI requires an explicit frame rate and labels it
+`explicit_cli_unfrozen`. The inspection-only VisDrone 24 FPS input is therefore
+never silently hard-coded or treated as frozen provenance.
+
+This slice does not change the selection policy, select a sequence, freeze a
+physical identity or frame range, or modify `sequence_manifest.json`.

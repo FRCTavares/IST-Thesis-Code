@@ -41,3 +41,19 @@ image count. Large archives and extracted images remain ignored.
 
 The tracked verifier checks those fields against local storage without selecting
 a sequence, target identity or frame range.
+
+## Annotation-only sequence profiles
+
+`profile_external_tracking_dataset.py` creates deterministic profiles from the
+tracked source registry, local catalogue, normalized annotations and existing
+candidate-selection policy.
+
+Profiles contain sequence geometry, annotation counts, explicit exclusion
+reasons and physical-target candidate facts. They do not contain tracker IDs,
+TIM-MARS scores, recovery outcomes or benchmark selections.
+
+MOT17 and DanceTrack use the official frame rate in `seqinfo.ini`. A dataset
+without source timing metadata, including the installed VisDrone layout, must
+receive `--frame-rate` explicitly. Such an input is labelled
+`explicit_cli_unfrozen` and remains unfrozen until its provenance is resolved
+and the benchmark manifest is deliberately frozen.
