@@ -18,6 +18,11 @@ The benchmark extends the four internal ROS 2 development sequences with a manag
 
 This issue is evaluation-only. It must not change the canonical TIM-MARS policy, thresholds, tracker configuration or controller-facing publication contract.
 
+TIM-MARS is not another multi-object tracker. The tracker supplies candidate
+boxes and temporary tracker identities. TIM-MARS must preserve the physical
+person selected during the initialization frames, reject unsafe substitutions,
+and recover that same person when the tracker identity changes or disappears.
+
 ## Research boundary
 
 External datasets provide broader pedestrian-tracking stress tests.
@@ -132,6 +137,22 @@ No dropped-frame correction may be inferred unless the source dataset documents 
 
 Target selection must be deterministic and frozen before final evaluation.
 
+The selected target is the physical person chosen during an explicit
+initialization frame or initialization window. This initial choice defines the
+identity that TIM-MARS must preserve for the remainder of the evaluated range.
+
+The benchmark must record separately:
+
+- the dataset identity of the physical target;
+- the initialization frame or window;
+- the deterministic initialization rule;
+- the tracker identity associated with the target at initialization;
+- later tracker-identity changes corresponding to the same physical person.
+
+A later tracker ID must not become the selected target merely because it has a
+larger box, higher score or stronger visibility. Tracker IDs are candidate
+identifiers, not the permanent definition of the person being followed.
+
 A retained target should normally satisfy:
 
 - sufficient visible duration;
@@ -151,6 +172,16 @@ Permitted deterministic selection inputs include:
 - documented sequence challenge categories.
 
 TIM-MARS performance must not be used to select the target.
+
+After initialization, evaluation must distinguish:
+
+- correct publication of the initialized physical person;
+- recovery of that person under a new tracker identity;
+- safe suppression when identity is uncertain;
+- wrong publication of a distractor;
+- stale publication after the tracker identity has transferred to another
+  person;
+- loss caused by candidate absence rather than a TIM-MARS decision.
 
 Every exclusion must record a reason.
 
@@ -297,3 +328,34 @@ The protocol milestone is complete when:
 - `git diff --check` passes.
 
 No dataset download or benchmark result is required for this milestone.
+
+## Implementation progress
+
+### Slice 1 — dataset-neutral records and annotation parsing
+
+Added an evaluation-only normalization layer for:
+
+- MOTChallenge-compatible annotations;
+- VisDrone-MOT annotations;
+- one-based or zero-based source frame numbering;
+- deterministic zero-based frame indices and timestamps;
+- source top-left `xywh` to geometric-edge source-pixel `xyxy`;
+- clipping to `[0, width]` and `[0, height]`;
+- source row and line-number provenance;
+- retained source image dimensions, frame rate and index base per record;
+- explicit inclusion and exclusion reasons;
+- retained VisDrone class, truncation and occlusion semantics;
+- deterministic ordering and rejection of repeated frame–identity pairs;
+- finite-value and integral-frame validation.
+
+The parser preserves class `1` (`pedestrian`) and class `2` (`people`) as
+distinct source labels. It does not silently merge or erase the distinction.
+
+This slice uses synthetic fixtures only. No external dataset was downloaded,
+selected, frozen or evaluated.
+
+The normalized records represent tracker candidates and physical
+dataset identities. They do not define a tracker benchmark objective. The next
+slice must implement deterministic initialization-target analysis so that all
+later TIM-MARS results remain anchored to the person chosen in the initial
+frames.

@@ -122,6 +122,13 @@ Open executable issues: **24**.
       target-selection, storage, provenance and manifest contracts before any
       dataset download or outcome review.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
+    - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
+      parsing with source-row and source-geometry provenance, explicit
+      exclusions, geometric-edge clipping, frame–identity uniqueness and
+      synthetic tests; no external data has been downloaded.
+    - evaluation invariant: TIM-MARS is not treated as another tracker; every
+      run must remain anchored to the physical person selected during the
+      frozen initialization frames, even when tracker IDs later change.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
