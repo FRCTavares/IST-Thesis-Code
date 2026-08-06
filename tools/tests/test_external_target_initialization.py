@@ -189,3 +189,33 @@ def test_invalid_configuration_is_rejected():
             start_frame_index=5,
             end_frame_index_inclusive=4,
         )
+
+
+def test_duplicate_tracker_identity_in_one_frame_is_rejected():
+    targets = [target(0)]
+    candidates = [
+        candidate(
+            0,
+            7,
+            (10.0, 10.0, 30.0, 50.0),
+        ),
+        candidate(
+            0,
+            7,
+            (11.0, 10.0, 31.0, 50.0),
+        ),
+    ]
+
+    with pytest.raises(
+        ValueError,
+        match="duplicate tracker identity in frame 0: 7",
+    ):
+        MODULE.initialize_frozen_target(
+            dataset_identity=42,
+            target_observations=targets,
+            tracker_candidates=candidates,
+            config=config(
+                end_frame_index_inclusive=0,
+                confirmation_frames=1,
+            ),
+        )

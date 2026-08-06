@@ -128,10 +128,21 @@ def _group_candidates(
             [],
         ).append(candidate)
 
-    for frame_candidates in grouped.values():
+    for frame_index, frame_candidates in grouped.items():
         frame_candidates.sort(
             key=lambda item: item.tracker_identity
         )
+
+        seen_tracker_ids: set[int] = set()
+
+        for candidate in frame_candidates:
+            if candidate.tracker_identity in seen_tracker_ids:
+                raise ValueError(
+                    "duplicate tracker identity in frame "
+                    f"{frame_index}: {candidate.tracker_identity}"
+                )
+
+            seen_tracker_ids.add(candidate.tracker_identity)
 
     return grouped
 

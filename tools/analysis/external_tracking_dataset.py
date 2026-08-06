@@ -33,7 +33,7 @@ VISDRONE_CLASS_NAMES = {
     11: "others",
 }
 
-VISDRONE_PERSON_CLASS_IDS = frozenset({1, 2})
+VISDRONE_PERSON_CLASS_IDS = frozenset({1})
 
 
 @dataclass(frozen=True)
@@ -370,6 +370,51 @@ def parse_mot_sequence_metadata(
     )
 
 
+def validate_annotations_against_metadata(
+    annotations: Iterable[ExternalObjectAnnotation],
+    metadata: MotSequenceMetadata,
+) -> list[ExternalObjectAnnotation]:
+    """Validate normalized annotations against MOT sequence metadata."""
+
+    rows = list(annotations)
+
+    for row in rows:
+        if row.sequence_name != metadata.name:
+            raise ValueError(
+                "annotation sequence name does not match metadata: "
+                f"{row.sequence_name!r} != {metadata.name!r}"
+            )
+
+        if row.image_width != metadata.image_width:
+            raise ValueError(
+                "annotation image width does not match metadata"
+            )
+
+        if row.image_height != metadata.image_height:
+            raise ValueError(
+                "annotation image height does not match metadata"
+            )
+
+        if not math.isclose(
+            row.frame_rate,
+            metadata.frame_rate,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        ):
+            raise ValueError(
+                "annotation frame rate does not match metadata"
+            )
+
+        if row.normalized_frame_index >= metadata.sequence_length:
+            raise ValueError(
+                "annotation frame exceeds sequence length: "
+                f"frame={row.normalized_frame_index}, "
+                f"sequence_length={metadata.sequence_length}"
+            )
+
+    return rows
+
+
 def parse_dancetrack_annotations(
     path: Path,
     *,
@@ -538,7 +583,7 @@ def parse_motchallenge_annotations(
                 source_score=confidence,
                 class_id=class_id,
                 class_name=(
-                    "person"
+                    "unspecified"
                     if class_id is None
                     else f"class_{class_id}"
                 ),
@@ -655,6 +700,8 @@ def parse_visdrone_annotations(
 
         if ignored_region:
             exclusion_reason = "ignored_region"
+        elif class_id == 2:
+            exclusion_reason = "group_class_not_single_identity"
         elif class_id not in VISDRONE_PERSON_CLASS_IDS:
             exclusion_reason = "non_person_class"
         elif identity <= 0:

@@ -145,6 +145,9 @@ Open executable issues: **24**.
     - catalogue slice 6: deterministic read-only discovery and structure
       validation for installed MOT17, DanceTrack and VisDrone-MOT sequences,
       including canonical MOT17 scene deduplication.
+    - integrity slice 7: exclude VisDrone group-class boxes from physical-target
+      selection, preserve missing MOT classes as unspecified, validate
+      annotations against sequence metadata, and reject duplicate tracker IDs.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY

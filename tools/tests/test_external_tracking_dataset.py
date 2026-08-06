@@ -270,7 +270,10 @@ def test_visdrone_parser_preserves_class_semantics():
     grouped_people = rows[0]
     assert grouped_people.class_id == 2
     assert grouped_people.class_name == "people"
-    assert grouped_people.include_as_person_candidate is True
+    assert grouped_people.include_as_person_candidate is False
+    assert grouped_people.exclusion_reason == (
+        "group_class_not_single_identity"
+    )
     assert grouped_people.truncation == 1
     assert grouped_people.occlusion == 2
 
@@ -347,3 +350,104 @@ def test_non_integral_or_non_finite_values_are_rejected(tmp_path):
             split="train",
             geometry=geometry(),
         )
+
+def test_classless_mot_row_preserves_unspecified_class(tmp_path):
+    path = tmp_path / "classless.txt"
+    path.write_text(
+        "1,7,10,20,30,80\n",
+        encoding="utf-8",
+    )
+
+    rows = MODULE.parse_motchallenge_annotations(
+        path,
+        dataset="mot17",
+        sequence_name="classless",
+        split="train",
+        geometry=geometry(),
+        person_class_ids={1},
+    )
+
+    assert len(rows) == 1
+    assert rows[0].class_id is None
+    assert rows[0].class_name == "unspecified"
+    assert rows[0].include_as_person_candidate is False
+    assert rows[0].exclusion_reason == "non_person_class"
+
+
+def test_annotation_frame_must_fit_sequence_length(tmp_path):
+    seqinfo = tmp_path / "seqinfo.ini"
+    seqinfo.write_text(
+        "[Sequence]\n"
+        "name=bounded\n"
+        "imDir=img1\n"
+        "frameRate=30\n"
+        "seqLength=2\n"
+        "imWidth=100\n"
+        "imHeight=80\n"
+        "imExt=.jpg\n",
+        encoding="utf-8",
+    )
+
+    annotations = tmp_path / "gt.txt"
+    annotations.write_text(
+        "3,7,10,10,20,20,1,1,1\n",
+        encoding="utf-8",
+    )
+
+    metadata = MODULE.parse_mot_sequence_metadata(seqinfo)
+    rows = MODULE.parse_motchallenge_annotations(
+        annotations,
+        dataset="mot17",
+        sequence_name="bounded",
+        split="train",
+        geometry=metadata.geometry(),
+        person_class_ids={1},
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="annotation frame exceeds sequence length",
+    ):
+        MODULE.validate_annotations_against_metadata(
+            rows,
+            metadata,
+        )
+
+
+def test_metadata_validation_accepts_last_valid_frame(tmp_path):
+    seqinfo = tmp_path / "seqinfo.ini"
+    seqinfo.write_text(
+        "[Sequence]\n"
+        "name=bounded\n"
+        "imDir=img1\n"
+        "frameRate=30\n"
+        "seqLength=2\n"
+        "imWidth=100\n"
+        "imHeight=80\n"
+        "imExt=.jpg\n",
+        encoding="utf-8",
+    )
+
+    annotations = tmp_path / "gt.txt"
+    annotations.write_text(
+        "2,7,10,10,20,20,1,1,1\n",
+        encoding="utf-8",
+    )
+
+    metadata = MODULE.parse_mot_sequence_metadata(seqinfo)
+    rows = MODULE.parse_motchallenge_annotations(
+        annotations,
+        dataset="mot17",
+        sequence_name="bounded",
+        split="train",
+        geometry=metadata.geometry(),
+        person_class_ids={1},
+    )
+
+    validated = MODULE.validate_annotations_against_metadata(
+        rows,
+        metadata,
+    )
+
+    assert validated == rows
+    assert validated[0].normalized_frame_index == 1

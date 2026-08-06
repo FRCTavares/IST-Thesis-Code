@@ -454,3 +454,18 @@ folders and records:
 The scanner is read-only. It neither downloads datasets nor selects benchmark
 targets. Synthetic directory fixtures validate MOT17, DanceTrack and
 VisDrone-MOT layouts.
+
+### Slice 7 — dataset-profile integrity hardening
+
+Dataset-specific eligibility and sequence-integrity rules now enforce:
+
+- VisDrone class `1` (`pedestrian`) as the only single-person target class;
+- VisDrone class `2` (`people`) retained for provenance but excluded with
+  `group_class_not_single_identity`;
+- MOT rows without a source class labelled `unspecified`, never `person`;
+- explicit annotation-to-`seqLength`, image-geometry and frame-rate checks;
+- rejection of repeated tracker identities within one initialization frame.
+
+These rules prevent group boxes, missing class metadata, out-of-range
+annotations and malformed tracker candidate sets from silently entering target
+selection or initialization.
