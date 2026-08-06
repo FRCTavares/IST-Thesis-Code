@@ -104,12 +104,11 @@ Open executable issues: **24**.
 12. [ ] [#25 — P1.10 Improve bbox evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/25) — HIGHEST PRIORITY
    - phase 6; experiment; use the transform contract from #53.
 
-13. [ ] [#26 — P1.11 Add event and recovery metrics](https://github.com/FRCTavares/IST-Thesis-Code/issues/26) — IN PROGRESS — HIGHEST PRIORITY
-    - started on 5 August 2026 from clean synchronized baseline `feda884463664a677aedfd228b3c3ee945c0adea`.
-    - phase 6; experiment; extends the shared evaluator semantics from #24 without changing TIM-MARS runtime policy or canonical parameters.
-    - implementation must preserve separate correct, wrong-target, lost, absent and stale classifications; add event episodes, recovery latency, wrong-target bursts, handovers, attempts, suppression, state occupancy and memory-event reporting with explicit unavailable/censored semantics.
-    - shared metric primitives, schema-aware status loading, the deterministic report CLI and canonical four-sequence evidence are complete at `b50f914a`; hashes and a deterministic second run passed, alongside 81 focused tests.
-    - tracked interpretation: `docs/results/selected_target_tracking/p026_event_recovery_metrics.md`; final issue promotion and GitHub closure remain pending.
+13. [x] [#26 — P1.11 Add event and recovery metrics](https://github.com/FRCTavares/IST-Thesis-Code/issues/26) — DONE
+    - completed and promoted for merge on 6 August 2026; the promotion commit is recorded in Git history.
+    - added separate correctness, event-episode, recovery-latency, wrong-target burst, handover, recovery-attempt, suppression, state-occupancy and memory-lifecycle metrics without changing TIM-MARS runtime policy or canonical parameters.
+    - canonical four-sequence evidence at `b50f914a` passed all stored hashes, an identical deterministic rerun and 81 focused tests.
+    - tracked interpretation: `docs/results/selected_target_tracking/p026_event_recovery_metrics.md`.
 
 14. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30) — HIGHEST PRIORITY
     - phase 7; experiment; includes properly qualified held-out live evidence

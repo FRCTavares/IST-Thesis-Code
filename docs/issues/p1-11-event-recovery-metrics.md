@@ -328,3 +328,16 @@ The concise tracked interpretation is recorded in
 Canonical development evidence may use May, June Seq01, Seq03 and Seq04.
 
 September held-out sequences from Issue #27 must not be used for tuning or promotion in this issue.
+
+## Final promotion
+
+Issue #26 was promoted for merge on 6 August 2026 after:
+
+- 81 focused tests passed;
+- canonical four-sequence evidence passed all stored hashes;
+- a complete deterministic rerun produced identical output;
+- all current status-schema fields were available;
+- PR #70 had no inline comments or unresolved review threads;
+- the repository exposed no active GitHub Actions workflows or required checks.
+
+The final promotion commit is recorded in Git history and contains this completion update.
