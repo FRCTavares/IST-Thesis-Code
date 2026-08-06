@@ -355,7 +355,24 @@ This slice uses synthetic fixtures only. No external dataset was downloaded,
 selected, frozen or evaluated.
 
 The normalized records represent tracker candidates and physical
-dataset identities. They do not define a tracker benchmark objective. The next
-slice must implement deterministic initialization-target analysis so that all
-later TIM-MARS results remain anchored to the person chosen in the initial
-frames.
+dataset identities. They do not define a tracker benchmark objective.
+
+### Slice 2 — frozen-target initialization mapping
+
+The physical dataset identity is frozen before TIM-MARS outcome review.
+Initialization then maps that physical target to one tracker candidate using:
+
+- the target ground-truth box;
+- a bounded initialization window;
+- unique best-IoU matching;
+- a minimum IoU;
+- a minimum best-versus-second margin;
+- consecutive-frame confirmation.
+
+The largest person in the scene is not automatically substituted for the
+frozen benchmark target. The confirmed tracker identity is fixed as the raw
+initial target, reselection is disabled, and later tracker-ID changes do not
+redefine the physical person being evaluated.
+
+This slice uses synthetic observations only. No external dataset was
+downloaded, selected, frozen or evaluated.

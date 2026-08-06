@@ -305,8 +305,16 @@
           "additionalProperties": false,
           "required": [
             "dataset_identity",
-            "initialization_frame",
+            "initialization_start_frame",
+            "initialization_end_frame_inclusive",
             "initialization_rule",
+            "candidate_match_rule",
+            "minimum_match_iou",
+            "minimum_match_margin",
+            "confirmation_frames",
+            "initial_tracker_identity",
+            "fixed_after_initialization",
+            "reselection_enabled",
             "minimum_visible_frames",
             "selected_before_outcome_review"
           ],
@@ -317,13 +325,47 @@
                 "string"
               ]
             },
-            "initialization_frame": {
+            "initialization_start_frame": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "initialization_end_frame_inclusive": {
               "type": "integer",
               "minimum": 0
             },
             "initialization_rule": {
               "type": "string",
               "minLength": 1
+            },
+            "candidate_match_rule": {
+              "const": "frozen_target_unique_iou_confirmation_v1"
+            },
+            "minimum_match_iou": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "minimum_match_margin": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "confirmation_frames": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "initial_tracker_identity": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "fixed_after_initialization": {
+              "const": true
+            },
+            "reselection_enabled": {
+              "const": false
             },
             "minimum_visible_frames": {
               "type": "integer",

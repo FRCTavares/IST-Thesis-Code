@@ -129,6 +129,10 @@ Open executable issues: **24**.
     - evaluation invariant: TIM-MARS is not treated as another tracker; every
       run must remain anchored to the physical person selected during the
       frozen initialization frames, even when tracker IDs later change.
+    - initialization slice 2: map the frozen physical dataset identity to a
+      unique tracker candidate using IoU, ambiguity margin and consecutive
+      confirmation; fix that tracker ID after initialization and never
+      reselect a different physical person.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
