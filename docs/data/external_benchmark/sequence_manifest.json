@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "tim_mars_broader_sequences_v1",
+  "status": "draft_not_frozen",
+  "created_date": "2026-08-06",
+  "frozen_date": null,
+  "baseline_commit": "f1f02ebb8742e69bf6a1a5e416da2061b8efb1c4",
+  "manifest_commit": null,
+  "policy": {
+    "canonical_policy_changes_allowed": false,
+    "external_outcome_tuning_allowed": false,
+    "issue_27_held_out_allowed": false,
+    "selection_before_outcome_review": true
+  },
+  "coordinate_contract": {
+    "representation": "xyxy",
+    "space": "original_source_image_pixels",
+    "x2_y2_semantics": "geometric_edge",
+    "clipping": "clip_to_zero_width_and_zero_height_bounds",
+    "normalized_frame_index": "zero_based",
+    "timestamp_rule": "normalized_frame_index_divided_by_frame_rate"
+  },
+  "sequences": []
+}

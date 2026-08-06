@@ -110,12 +110,18 @@ Open executable issues: **24**.
     - canonical four-sequence evidence at `b50f914a` passed all stored hashes, an identical deterministic rerun and 81 focused tests.
     - tracked interpretation: `docs/results/selected_target_tracking/p026_event_recovery_metrics.md`.
 
-14. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30) — HIGHEST PRIORITY
+14. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30) — IN PROGRESS — HIGHEST PRIORITY
+    - started on 6 August 2026 from baseline `f1f02ebb` on branch
+      `issue-30-broader-sequences`.
     - phase 7; experiment; includes properly qualified held-out live evidence
       from #50 when available and must expose the event types needed to compare
       candidate loss, identity confusion, tracker fragmentation, integrated
       appearance association, and selective TIM-MARS recovery fairly.
     - external benchmark scope: freeze a manageable subset of approximately four MOT17, four to six DanceTrack, and four VisDrone-MOT sequences; evaluate both oracle-candidate and detector–ByteTrack–TIM-MARS modes alongside the four ROS 2 sequences.
+    - current milestone: define the dataset-neutral annotation, coordinate,
+      target-selection, storage, provenance and manifest contracts before any
+      dataset download or outcome review.
+    - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
