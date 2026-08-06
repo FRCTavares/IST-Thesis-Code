@@ -136,6 +136,9 @@ Open executable issues: **24**.
     - adapter slice 3: explicit DanceTrack sequence metadata and annotation
       compatibility using deterministic MOT-style normalization and synthetic
       fixtures; no DanceTrack data has been downloaded.
+    - selection slice 4: deterministic annotation-derived target-candidate
+      analysis covering visibility, initialization quality, border contact and
+      person competition without using TIM-MARS outcomes.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY

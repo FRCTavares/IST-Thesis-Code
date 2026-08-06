@@ -398,3 +398,25 @@ exclusion reasons.
 
 This slice uses synthetic fixtures only. No DanceTrack archive or sequence was
 downloaded, selected, frozen or evaluated.
+
+### Slice 4 — deterministic target-candidate analysis
+
+A dataset-neutral analysis layer now computes objective candidate facts before
+any TIM-MARS outcome is examined:
+
+- visible-frame count and span;
+- longest consecutive visible run;
+- bbox-height statistics;
+- available visibility and occlusion statistics;
+- border contact;
+- frames containing other person candidates;
+- bbox-overlap and centre-proximity competition;
+- earliest clean initialization window;
+- deterministic eligibility and exclusion reasons.
+
+Candidate ordering is stable and uses only annotation-derived properties.
+TIM-MARS correctness, recovery and suppression outcomes are deliberately absent
+from the selection records.
+
+This slice uses synthetic annotations only. No real sequence, identity or frame
+range was selected or frozen.
