@@ -100,3 +100,35 @@ acquisition status is `partially_verified`, not `fully_verified`.
 The acquisition does not select a benchmark sequence, physical identity,
 initialization window or frame range. It does not modify the benchmark
 manifest or inspect tracker and TIM-MARS outcomes.
+
+## MOT17 acquisition deferral
+
+MOT17 acquisition is deferred. The official MOTChallenge source
+(`https://motchallenge.net/data/MOT17/`, resolving to the TUM-hosted
+`131.159.19.34` / `2a09:80c0:18::1034`) is currently unreachable from the
+development network.
+
+Diagnosis on 7 August 2026 found:
+
+- DNS resolution for `motchallenge.net` and `www.motchallenge.net` succeeds
+  and returns the same host;
+- IPv6 fails immediately with no local route;
+- IPv4 fails with a routing-level error (`No route to host` /
+  `Network is unreachable`) on both port 80 and port 443, distinct from a TLS
+  or application-layer failure;
+- general internet access from the same network is unaffected (for example
+  `https://github.com` succeeds);
+- the same TUM host is independently unreachable from a second, unrelated
+  network, while general internet access from that network also succeeds.
+
+This pattern indicates a routing or peering gap to the TUM-hosted network (or
+a possible outage on their end), not a local misconfiguration, and it does
+not justify substituting an unofficial mirror.
+
+`dataset_sources.json` keeps the `mot17` entry as `acquisition_status:
+"not_downloaded"` with an empty `acquisitions` list, which remains literally
+accurate. MOT17 stays in scope as a later supplementary benchmark once the
+official source is reachable or the archive is obtained through another
+official-source download performed by the repository owner. It is excluded
+from the first benchmark phase (see `docs/issues/p1-12-broader-sequences.md`
+and `docs/TODO_LIST.md`).

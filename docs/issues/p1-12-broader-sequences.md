@@ -40,7 +40,7 @@ The benchmark must not be described as final held-out validation.
 
 ## Planned benchmark composition
 
-The intended frozen benchmark contains approximately:
+The intended full benchmark contains approximately:
 
 - four MOT17 sequences;
 - four to six DanceTrack sequences;
@@ -48,6 +48,24 @@ The intended frozen benchmark contains approximately:
 - the four existing ROS 2 sequences.
 
 The exact sequence names, target identities and frame ranges remain unfrozen until adapter compatibility and selection-policy checks are complete.
+
+### Phasing: MOT17 deferred
+
+MOT17 acquisition is currently blocked because the official MOTChallenge
+source is unreachable from the development network (see Slice 12). MOT17
+therefore moves to a later supplementary phase and is not part of the first
+frozen benchmark.
+
+The first benchmark phase freezes and evaluates:
+
+- four to six DanceTrack validation sequences;
+- approximately four VisDrone-MOT validation sequences;
+- the four existing ROS 2 development sequences.
+
+MOT17 remains in scope. It will be added as a later supplementary phase, with
+its own selection, freeze and paired raw-versus-TIM-MARS evaluation, once the
+official archive is acquired. Its later addition must not reopen or alter the
+first-phase freeze.
 
 ## Evaluation modes
 
@@ -580,3 +598,84 @@ training split remains unverified, so DanceTrack is `partially_verified`.
 This slice does not select a sequence or physical target, freeze an
 initialization window or frame range, modify `sequence_manifest.json`, or
 inspect tracker and TIM-MARS outcomes.
+
+### Slice 12 — MOT17 acquisition deferral and first-phase scope
+
+MOT17 acquisition was attempted from the development Raspberry Pi 5 on
+7 August 2026 and failed. Diagnosis before any workaround was attempted:
+
+- `motchallenge.net` and `www.motchallenge.net` resolve via DNS to the same
+  TUM-hosted host (`131.159.19.34`, IPv6 `2a09:80c0:18::1034`);
+- IPv6 connection attempts fail immediately with no local route;
+- IPv4 connection attempts to port 80 and port 443 fail with a routing-level
+  error (`No route to host` / connection timeout), not a TLS or HTTP-layer
+  failure;
+- general internet access from the same network is unaffected
+  (`https://github.com` succeeds);
+- the identical TUM host is independently unreachable from a second,
+  unrelated network with otherwise-working general internet access.
+
+Two independent networks fail to reach specifically the TUM-hosted subnet
+while general connectivity is healthy on both. This is consistent with a
+routing or peering gap to that academic network, or an outage on their end,
+and it is not evidence that the official reference URL is wrong. No
+unofficial mirror was substituted. No archive URL was guessed. No download
+was attempted.
+
+The operator confirmed the Pi cannot be relocated to another network during
+this work period. `dataset_sources.json` keeps `mot17.acquisition_status`
+literally accurate as `"not_downloaded"`; no acquisition contract field was
+weakened to accommodate the deferral. MOT17 remains fully in scope and moves
+to a later supplementary benchmark phase, to be acquired manually by the
+repository owner from a network that can reach the official source and
+transferred to the Pi for verification, extraction and cataloguing under the
+existing Slice 5/6/8/11 machinery, which is dataset-agnostic and requires no
+changes to accommodate MOT17 once the archive is local.
+
+This slice does not select a sequence, physical identity, initialization
+window or frame range for any dataset, and it does not inspect tracker or
+TIM-MARS outcomes.
+
+### Slice 13 — first-phase ROS 2 sequence identification
+
+The "four existing ROS 2 sequences" are the four sequences already frozen as
+the `development` set in `docs/data/splits/tim_mars_split_v1.json`:
+
+- `dev_may_hard_reentry` (hard target exit, re-entry and tracker-ID switch);
+- `dev_june_seq01` (clean four-person visibility);
+- `dev_june_seq03_ocsort` (four-person crossing ambiguity);
+- `dev_june_seq04_ocsort` (four-person occlusion without exit).
+
+These are exactly the four sequences used as Issue #26's canonical
+event-and-recovery evidence
+(`reports/p026_event_recovery_b50f914a_2026_08_05`), so their raw-versus-TIM
+evaluation path already exists and is validated: the recorded bags contain
+both the raw selected-target stream (`/target`) and the TIM-MARS stream
+(`/target_memory_mars`) recorded together from one run against one shared
+detector/tracker candidate stream, and `tools/analysis/tim_evaluation.py`
+plus `tools/analysis/evaluate_tim_event_recovery.py` already score both
+streams against the same annotation oracle. This satisfies the Issue #30
+requirement that the raw and TIM branches share identical detector and
+tracker output.
+
+The June `seq02` (target re-entry) sequence is deliberately excluded. It is
+classified `legacy_validation` in `tim_mars_split_v1.json`, explicitly
+"quarantined from tuning" and restricted to "diagnostic validation only... do
+not call it held-out." Using it as a fifth or substitute ROS 2 benchmark case
+here would blur that quarantine boundary without an explicit, separate
+decision to do so; it remains available only for diagnostic comparison, not
+for benchmark freeze evidence.
+
+Issue #26's event vocabulary (`clean_visible`, `target_absent`, `reentry`,
+`occlusion_ambiguity`, `id_switch_fragmentation`, `other`; correct/wrong/lost/
+absent/stale durations) overlaps with but does not equal the Issue #30
+outcome taxonomy (which additionally distinguishes distractor selection from
+stale-ID transfer, and adds ambiguous-candidate and initialization-failure
+categories). The ROS 2 evaluation path for Issue #30 extends the existing
+authoritative classification in `tim_evaluation.py` rather than
+reimplementing bag loading, timebase handling or annotation parsing.
+
+This slice selects which existing sequences are in scope; it does not itself
+freeze `sequence_manifest.json`, choose initialization frames, or inspect
+tracker/TIM-MARS outcomes beyond the already-published Issue #26 evidence
+cited above for provenance.

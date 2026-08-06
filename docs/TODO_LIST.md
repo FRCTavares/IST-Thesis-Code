@@ -118,9 +118,17 @@ Open executable issues: **24**.
       candidate loss, identity confusion, tracker fragmentation, integrated
       appearance association, and selective TIM-MARS recovery fairly.
     - external benchmark scope: freeze a manageable subset of approximately four MOT17, four to six DanceTrack, and four VisDrone-MOT sequences; evaluate both oracle-candidate and detector–ByteTrack–TIM-MARS modes alongside the four ROS 2 sequences.
-    - current milestone: generate the real DanceTrack annotation-only profile,
-      acquire and profile MOT17, then prepare the deterministic pre-outcome
-      sequence and physical-target freeze.
+    - MOT17 deferral: the official MOTChallenge source is currently
+      unreachable from the development network (routing-level failure to the
+      TUM-hosted server, confirmed from two independent networks; general
+      internet access unaffected on both). No mirror was substituted. MOT17
+      stays in scope as a later supplementary phase; see Slice 12 in
+      `docs/issues/p1-12-broader-sequences.md`.
+    - current milestone: first benchmark phase excludes MOT17 and covers
+      four to six DanceTrack validation sequences, approximately four
+      VisDrone-MOT validation sequences, and the four existing ROS 2
+      development sequences (Slice 13); prepare the deterministic
+      pre-outcome sequence and physical-target freeze for that phase.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
@@ -164,6 +172,13 @@ Open executable issues: **24**.
       validation archive with 25 sequences, 25 ground-truth files and 25,508
       images; record its exact byte size and SHA-256 while leaving the training
       split absent and the benchmark manifest empty.
+    - deferral slice 12: record the diagnosed MOT17 network failure and defer
+      MOT17 to a later supplementary phase without weakening the acquisition
+      contract or substituting a mirror.
+    - selection slice 13: identify the four existing ROS 2 sequences as the
+      `tim_mars_split_v1` development set (May hard-reentry, June Seq01,
+      Seq03, Seq04), reusing the Issue #26 raw-versus-TIM evidence path;
+      June Seq02 stays excluded as quarantined `legacy_validation`.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
