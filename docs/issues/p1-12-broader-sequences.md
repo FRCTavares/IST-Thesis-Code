@@ -376,3 +376,25 @@ redefine the physical person being evaluated.
 
 This slice uses synthetic observations only. No external dataset was
 downloaded, selected, frozen or evaluated.
+
+### Slice 3 — explicit DanceTrack compatibility
+
+DanceTrack sequence metadata is parsed from a required MOT-style
+`seqinfo.ini` contract. The adapter preserves:
+
+- sequence name;
+- image directory;
+- frame rate;
+- sequence length;
+- image width and height;
+- image extension;
+- one-based source-frame numbering.
+
+DanceTrack annotations are normalized through the existing
+MOTChallenge-compatible parser while retaining `dataset=dancetrack`.
+Only source class `1` is admitted as a person candidate. Invalid identities,
+non-person rows and non-positive source confidence remain present with explicit
+exclusion reasons.
+
+This slice uses synthetic fixtures only. No DanceTrack archive or sequence was
+downloaded, selected, frozen or evaluated.

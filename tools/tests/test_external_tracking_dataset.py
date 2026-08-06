@@ -144,6 +144,112 @@ def test_motchallenge_parser_preserves_and_sorts_provenance():
     assert rows[4].exclusion_reason == "non_person_class"
 
 
+def test_mot_sequence_metadata_preserves_geometry_and_timing():
+    metadata = MODULE.parse_mot_sequence_metadata(
+        FIXTURE_DIR / "dancetrack_seqinfo.ini"
+    )
+
+    assert metadata.name == "dancetrack-synthetic"
+    assert metadata.image_directory == "img1"
+    assert metadata.frame_rate == pytest.approx(20.0)
+    assert metadata.sequence_length == 4
+    assert metadata.image_width == 1920
+    assert metadata.image_height == 1080
+    assert metadata.image_extension == ".jpg"
+
+    geometry = metadata.geometry(source_index_base=1)
+
+    assert geometry.image_width == 1920
+    assert geometry.image_height == 1080
+    assert geometry.frame_rate == pytest.approx(20.0)
+    assert geometry.source_index_base == 1
+
+
+def test_dancetrack_parser_is_explicit_and_deterministic():
+    metadata = MODULE.parse_mot_sequence_metadata(
+        FIXTURE_DIR / "dancetrack_seqinfo.ini"
+    )
+
+    rows = MODULE.parse_dancetrack_annotations(
+        FIXTURE_DIR / "dancetrack_gt.txt",
+        sequence_name=metadata.name,
+        split="train",
+        geometry=metadata.geometry(),
+    )
+
+    assert [
+        (
+            row.normalized_frame_index,
+            row.identity,
+        )
+        for row in rows
+    ] == [
+        (0, 12),
+        (0, 31),
+        (1, 12),
+        (1, 31),
+        (2, -1),
+        (3, 77),
+    ]
+
+    assert all(row.dataset == "dancetrack" for row in rows)
+    assert all(
+        row.sequence_name == "dancetrack-synthetic"
+        for row in rows
+    )
+    assert rows[0].timestamp_s == pytest.approx(0.0)
+    assert rows[2].timestamp_s == pytest.approx(0.05)
+
+    invalid = next(row for row in rows if row.identity == -1)
+    assert invalid.include_as_person_candidate is False
+    assert invalid.exclusion_reason == "non_positive_identity"
+
+    clipped = next(row for row in rows if row.identity == 77)
+    assert clipped.bbox_xyxy == pytest.approx(
+        (1850.0, 980.0, 1920.0, 1080.0)
+    )
+
+
+def test_dancetrack_rejects_non_person_source_class(tmp_path):
+    annotations = tmp_path / "gt.txt"
+    annotations.write_text(
+        "1,4,10,20,30,80,1,2,1\n",
+        encoding="utf-8",
+    )
+
+    rows = MODULE.parse_dancetrack_annotations(
+        annotations,
+        sequence_name="synthetic",
+        split="train",
+        geometry=MODULE.SequenceGeometry(
+            image_width=640,
+            image_height=480,
+            frame_rate=30.0,
+            source_index_base=1,
+        ),
+    )
+
+    assert len(rows) == 1
+    assert rows[0].include_as_person_candidate is False
+    assert rows[0].exclusion_reason == "non_person_class"
+
+
+def test_mot_sequence_metadata_rejects_missing_fields(tmp_path):
+    seqinfo = tmp_path / "seqinfo.ini"
+    seqinfo.write_text(
+        "[Sequence]\n"
+        "name=incomplete\n"
+        "frameRate=30\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="missing sequence fields",
+    ):
+        MODULE.parse_mot_sequence_metadata(seqinfo)
+
+
 def test_visdrone_parser_preserves_class_semantics():
     rows = MODULE.parse_visdrone_annotations(
         FIXTURE_DIR / "visdrone_gt.txt",

@@ -133,6 +133,9 @@ Open executable issues: **24**.
       unique tracker candidate using IoU, ambiguity margin and consecutive
       confirmation; fix that tracker ID after initialization and never
       reselect a different physical person.
+    - adapter slice 3: explicit DanceTrack sequence metadata and annotation
+      compatibility using deterministic MOT-style normalization and synthetic
+      fixtures; no DanceTrack data has been downloaded.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY

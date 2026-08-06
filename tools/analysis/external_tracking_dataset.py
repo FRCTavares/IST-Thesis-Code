@@ -8,6 +8,7 @@ TIM-MARS, or selected-target evaluation.
 
 from __future__ import annotations
 
+import configparser
 import csv
 import math
 from dataclasses import dataclass
@@ -53,6 +54,43 @@ class SequenceGeometry:
             raise ValueError("frame_rate must be finite and positive")
         if self.source_index_base not in (0, 1):
             raise ValueError("source_index_base must be 0 or 1")
+
+
+@dataclass(frozen=True)
+class MotSequenceMetadata:
+    """Sequence metadata loaded from a MOT-style seqinfo.ini file."""
+
+    name: str
+    image_directory: str
+    frame_rate: float
+    sequence_length: int
+    image_width: int
+    image_height: int
+    image_extension: str
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            raise ValueError("sequence name must not be empty")
+        if not self.image_directory:
+            raise ValueError("image_directory must not be empty")
+        if not math.isfinite(self.frame_rate) or self.frame_rate <= 0.0:
+            raise ValueError("frame_rate must be finite and positive")
+        if self.sequence_length <= 0:
+            raise ValueError("sequence_length must be positive")
+        if self.image_width <= 0:
+            raise ValueError("image_width must be positive")
+        if self.image_height <= 0:
+            raise ValueError("image_height must be positive")
+        if not self.image_extension.startswith("."):
+            raise ValueError("image_extension must begin with '.'")
+
+    def geometry(self, *, source_index_base: int = 1) -> SequenceGeometry:
+        return SequenceGeometry(
+            image_width=self.image_width,
+            image_height=self.image_height,
+            frame_rate=self.frame_rate,
+            source_index_base=source_index_base,
+        )
 
 
 @dataclass(frozen=True)
@@ -258,6 +296,102 @@ def _sort_and_validate_unique(
         seen.add(key)
 
     return ordered
+
+
+def parse_mot_sequence_metadata(
+    path: Path,
+) -> MotSequenceMetadata:
+    """Parse one MOT-style seqinfo.ini file without guessing fields."""
+
+    if not path.is_file():
+        raise FileNotFoundError(path)
+
+    parser = configparser.ConfigParser(
+        interpolation=None,
+        strict=True,
+    )
+
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            parser.read_file(handle)
+    except configparser.Error as exc:
+        raise ValueError(f"{path}: invalid INI metadata") from exc
+
+    if "Sequence" not in parser:
+        raise ValueError(f"{path}: missing [Sequence] section")
+
+    sequence = parser["Sequence"]
+
+    required = {
+        "name",
+        "imDir",
+        "frameRate",
+        "seqLength",
+        "imWidth",
+        "imHeight",
+        "imExt",
+    }
+
+    missing = sorted(
+        key for key in required
+        if key not in sequence
+    )
+    if missing:
+        raise ValueError(
+            f"{path}: missing sequence fields: {missing}"
+        )
+
+    def integer(name: str) -> int:
+        raw = sequence[name].strip()
+        try:
+            value = int(raw)
+        except ValueError as exc:
+            raise ValueError(
+                f"{path}: {name} must be integral: {raw!r}"
+            ) from exc
+        return value
+
+    raw_rate = sequence["frameRate"].strip()
+    try:
+        frame_rate = float(raw_rate)
+    except ValueError as exc:
+        raise ValueError(
+            f"{path}: frameRate must be numeric: {raw_rate!r}"
+        ) from exc
+
+    return MotSequenceMetadata(
+        name=sequence["name"].strip(),
+        image_directory=sequence["imDir"].strip(),
+        frame_rate=frame_rate,
+        sequence_length=integer("seqLength"),
+        image_width=integer("imWidth"),
+        image_height=integer("imHeight"),
+        image_extension=sequence["imExt"].strip(),
+    )
+
+
+def parse_dancetrack_annotations(
+    path: Path,
+    *,
+    sequence_name: str,
+    split: str,
+    geometry: SequenceGeometry,
+) -> list[ExternalObjectAnnotation]:
+    """Parse DanceTrack ground truth through the explicit MOT contract.
+
+    DanceTrack remains separately labelled in normalized records even though
+    its annotation rows are consumed by the MOTChallenge-compatible parser.
+    Only source class 1 is admitted as a person candidate.
+    """
+
+    return parse_motchallenge_annotations(
+        path,
+        dataset="dancetrack",
+        sequence_name=sequence_name,
+        split=split,
+        geometry=geometry,
+        person_class_ids={1},
+    )
 
 
 def parse_motchallenge_annotations(
