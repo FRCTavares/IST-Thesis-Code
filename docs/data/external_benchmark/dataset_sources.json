@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "purpose": "Issue #30 external pedestrian-tracking benchmark acquisition contract",
   "large_data_policy": {
     "download_automatically": false,
@@ -41,9 +41,8 @@
         "reason": "The three detector-labelled folders represent the same underlying image scene. Issue #30 must not count them as three independent sequences."
       },
       "public_detection_policy": "Ignore MOT17 public detections for detector-ByteTrack mode. Use the thesis detector output. The canonical variant only identifies one non-duplicated image/ground-truth folder.",
-      "archive_sha256": null,
-      "archive_filename": null,
-      "acquisition_status": "not_downloaded"
+      "acquisition_status": "not_downloaded",
+      "acquisitions": []
     },
     {
       "id": "dancetrack",
@@ -70,9 +69,8 @@
         "reason": "No MOT17-style detector-folder duplication is expected."
       },
       "public_detection_policy": "Not used. Oracle mode uses official ground truth; end-to-end mode uses the thesis detector and ByteTrack.",
-      "archive_sha256": null,
-      "archive_filename": null,
-      "acquisition_status": "not_downloaded"
+      "acquisition_status": "not_downloaded",
+      "acquisitions": []
     },
     {
       "id": "visdrone_mot",
@@ -99,9 +97,21 @@
         "reason": "No MOT17-style detector-folder duplication is expected."
       },
       "public_detection_policy": "Not used. Oracle mode uses official ground truth; end-to-end mode uses the thesis detector and ByteTrack.",
-      "archive_sha256": null,
-      "archive_filename": null,
-      "acquisition_status": "not_downloaded"
+      "acquisition_status": "partially_verified",
+      "acquisitions": [
+        {
+          "split": "val",
+          "status": "verified",
+          "archive_filename": "VisDrone2019-MOT-val.zip",
+          "archive_sha256": "e53571990dfc79229e0a8ae10264bc4fa604a027c44b06e3a097417e4fa55705",
+          "archive_size_bytes": 1602397759,
+          "local_relative_path": "data/datasets/external/visdrone_mot/val",
+          "sequence_count": 7,
+          "annotation_count": 7,
+          "image_count": 2846,
+          "verified_date": "2026-08-06"
+        }
+      ]
     }
   ]
 }

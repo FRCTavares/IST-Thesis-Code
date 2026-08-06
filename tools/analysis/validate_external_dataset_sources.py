@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from datetime import date
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -32,10 +33,28 @@ EXPECTED_LOCAL_ROOTS = {
     "visdrone_mot": "data/datasets/external/visdrone_mot",
 }
 
-ALLOWED_ACQUISITION_STATUSES = {
+ALLOWED_DATASET_ACQUISITION_STATUSES = {
     "not_downloaded",
-    "downloaded_unverified",
-    "verified",
+    "partially_verified",
+    "fully_verified",
+}
+
+REQUIRED_ACQUISITION_FIELDS = {
+    "split",
+    "status",
+    "archive_filename",
+    "archive_sha256",
+    "archive_size_bytes",
+    "local_relative_path",
+    "sequence_count",
+    "annotation_count",
+    "image_count",
+    "verified_date",
+}
+
+LEGACY_ARCHIVE_FIELDS = {
+    "archive_filename",
+    "archive_sha256",
 }
 
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -62,6 +81,21 @@ def require_nonempty_text(
     return value
 
 
+def require_positive_integer(
+    value: Any,
+    *,
+    field: str,
+) -> int:
+    if (
+        not isinstance(value, int)
+        or isinstance(value, bool)
+        or value <= 0
+    ):
+        raise ValueError(f"{field} must be a positive integer")
+
+    return value
+
+
 def validate_official_reference(
     value: Any,
     *,
@@ -79,39 +113,192 @@ def validate_official_reference(
         )
 
 
-def validate_sha256_pair(
+def validate_verified_date(
+    value: Any,
+    *,
+    field: str,
+) -> None:
+    text = require_nonempty_text(value, field=field)
+
+    try:
+        parsed = date.fromisoformat(text)
+    except ValueError as exc:
+        raise ValueError(
+            f"{field} must use ISO YYYY-MM-DD format"
+        ) from exc
+
+    if parsed.isoformat() != text:
+        raise ValueError(
+            f"{field} must use canonical ISO YYYY-MM-DD format"
+        )
+
+
+def validate_acquisitions(
     dataset: dict[str, Any],
     *,
     dataset_id: str,
+    admissible_splits: list[str],
+    local_root: str,
 ) -> None:
-    archive_sha256 = dataset.get("archive_sha256")
-    archive_filename = dataset.get("archive_filename")
-
-    if archive_sha256 is None and archive_filename is None:
-        return
-
-    if archive_sha256 is None or archive_filename is None:
-        raise ValueError(
-            f"{dataset_id}: archive filename and SHA-256 "
-            "must be recorded together"
-        )
-
-    if not isinstance(archive_sha256, str) or not SHA256_PATTERN.fullmatch(
-        archive_sha256
-    ):
-        raise ValueError(
-            f"{dataset_id}.archive_sha256 must be 64 lowercase hex"
-        )
-
-    require_nonempty_text(
-        archive_filename,
-        field=f"{dataset_id}.archive_filename",
+    legacy = sorted(
+        field
+        for field in LEGACY_ARCHIVE_FIELDS
+        if field in dataset
     )
+    if legacy:
+        raise ValueError(
+            f"{dataset_id}: legacy dataset-level archive fields "
+            f"are forbidden: {legacy}"
+        )
+
+    acquisitions = dataset.get("acquisitions")
+
+    if not isinstance(acquisitions, list):
+        raise ValueError(
+            f"{dataset_id}.acquisitions must be a list"
+        )
+
+    split_order = {
+        split: index
+        for index, split in enumerate(admissible_splits)
+    }
+
+    seen_splits: set[str] = set()
+    previous_order = -1
+
+    for index, acquisition in enumerate(acquisitions):
+        context = f"{dataset_id}.acquisitions[{index}]"
+
+        if not isinstance(acquisition, dict):
+            raise ValueError(f"{context} must be an object")
+
+        fields = set(acquisition)
+        missing = sorted(REQUIRED_ACQUISITION_FIELDS - fields)
+        extra = sorted(fields - REQUIRED_ACQUISITION_FIELDS)
+
+        if missing or extra:
+            raise ValueError(
+                f"{context} fields mismatch: "
+                f"missing={missing}, extra={extra}"
+            )
+
+        split = require_nonempty_text(
+            acquisition.get("split"),
+            field=f"{context}.split",
+        )
+
+        if split not in split_order:
+            raise ValueError(
+                f"{context}.split is not admissible: {split!r}"
+            )
+
+        if split in seen_splits:
+            raise ValueError(
+                f"{dataset_id}: duplicate acquisition split {split!r}"
+            )
+
+        current_order = split_order[split]
+
+        if current_order <= previous_order:
+            raise ValueError(
+                f"{dataset_id}: acquisitions must follow "
+                "admissible split order"
+            )
+
+        seen_splits.add(split)
+        previous_order = current_order
+
+        if acquisition.get("status") != "verified":
+            raise ValueError(
+                f"{context}.status must equal 'verified'"
+            )
+
+        filename = require_nonempty_text(
+            acquisition.get("archive_filename"),
+            field=f"{context}.archive_filename",
+        )
+
+        if (
+            Path(filename).name != filename
+            or "/" in filename
+            or chr(92) in filename
+        ):
+            raise ValueError(
+                f"{context}.archive_filename must be a basename"
+            )
+
+        digest = acquisition.get("archive_sha256")
+
+        if (
+            not isinstance(digest, str)
+            or not SHA256_PATTERN.fullmatch(digest)
+        ):
+            raise ValueError(
+                f"{context}.archive_sha256 must be "
+                "64 lowercase hexadecimal characters"
+            )
+
+        require_positive_integer(
+            acquisition.get("archive_size_bytes"),
+            field=f"{context}.archive_size_bytes",
+        )
+        require_positive_integer(
+            acquisition.get("sequence_count"),
+            field=f"{context}.sequence_count",
+        )
+        require_positive_integer(
+            acquisition.get("annotation_count"),
+            field=f"{context}.annotation_count",
+        )
+        require_positive_integer(
+            acquisition.get("image_count"),
+            field=f"{context}.image_count",
+        )
+
+        expected_local_path = f"{local_root}/{split}"
+
+        if (
+            acquisition.get("local_relative_path")
+            != expected_local_path
+        ):
+            raise ValueError(
+                f"{context}.local_relative_path must equal "
+                f"{expected_local_path!r}"
+            )
+
+        validate_verified_date(
+            acquisition.get("verified_date"),
+            field=f"{context}.verified_date",
+        )
+
+    status = dataset.get("acquisition_status")
+
+    if status not in ALLOWED_DATASET_ACQUISITION_STATUSES:
+        raise ValueError(
+            f"{dataset_id}: invalid acquisition_status {status!r}"
+        )
+
+    acquired_splits = set(seen_splits)
+    admissible_set = set(admissible_splits)
+
+    if not acquired_splits:
+        expected_status = "not_downloaded"
+    elif acquired_splits == admissible_set:
+        expected_status = "fully_verified"
+    else:
+        expected_status = "partially_verified"
+
+    if status != expected_status:
+        raise ValueError(
+            f"{dataset_id}: acquisition_status must be "
+            f"{expected_status!r} for verified splits "
+            f"{sorted(acquired_splits)}"
+        )
 
 
 def validate_registry(registry: dict[str, Any]) -> None:
-    if registry.get("schema_version") != 1:
-        raise ValueError("schema_version must equal 1")
+    if registry.get("schema_version") != 2:
+        raise ValueError("schema_version must equal 2")
 
     policy = registry.get("large_data_policy")
     if not isinstance(policy, dict):
@@ -137,7 +324,8 @@ def validate_registry(registry: dict[str, Any]) -> None:
     )
     if not isinstance(minimum_free, int) or minimum_free < 20:
         raise ValueError(
-            "minimum free space after acquisition must be at least 20 GiB"
+            "minimum free space after acquisition must be "
+            "at least 20 GiB"
         )
 
     if policy.get("commit_raw_datasets") is not False:
@@ -198,12 +386,15 @@ def validate_registry(registry: dict[str, Any]) -> None:
             )
 
         expected_root = EXPECTED_LOCAL_ROOTS[dataset_id]
+
         if dataset.get("local_root") != expected_root:
             raise ValueError(
-                f"{dataset_id}: expected local_root {expected_root!r}"
+                f"{dataset_id}: expected local_root "
+                f"{expected_root!r}"
             )
 
         splits = dataset.get("admissible_splits")
+
         if (
             not isinstance(splits, list)
             or not splits
@@ -218,7 +409,8 @@ def validate_registry(registry: dict[str, Any]) -> None:
 
         if len(splits) != len(set(splits)):
             raise ValueError(
-                f"{dataset_id}.admissible_splits contains duplicates"
+                f"{dataset_id}.admissible_splits "
+                "contains duplicates"
             )
 
         if "test" in splits or "test-dev" in splits:
@@ -232,21 +424,19 @@ def validate_registry(registry: dict[str, Any]) -> None:
                 f"{dataset_id}: source frame index base must be 1"
             )
 
-        status = dataset.get("acquisition_status")
-        if status not in ALLOWED_ACQUISITION_STATUSES:
-            raise ValueError(
-                f"{dataset_id}: invalid acquisition_status {status!r}"
-            )
-
-        validate_sha256_pair(
+        validate_acquisitions(
             dataset,
             dataset_id=dataset_id,
+            admissible_splits=splits,
+            local_root=expected_root,
         )
 
         deduplication = dataset.get("scene_deduplication")
+
         if not isinstance(deduplication, dict):
             raise ValueError(
-                f"{dataset_id}.scene_deduplication must be an object"
+                f"{dataset_id}.scene_deduplication "
+                "must be an object"
             )
 
         if dataset_id == "mot17":
@@ -256,20 +446,25 @@ def validate_registry(registry: dict[str, Any]) -> None:
                 )
 
             suffixes = deduplication.get("variant_suffixes")
+
             if suffixes != ["DPM", "FRCNN", "SDP"]:
                 raise ValueError(
-                    "MOT17 detector suffixes must be DPM/FRCNN/SDP"
+                    "MOT17 detector suffixes must be "
+                    "DPM/FRCNN/SDP"
                 )
 
-            if deduplication.get("canonical_variant") != "FRCNN":
+            if (
+                deduplication.get("canonical_variant")
+                != "FRCNN"
+            ):
                 raise ValueError(
-                    "MOT17 canonical storage variant must be FRCNN"
+                    "MOT17 canonical storage variant "
+                    "must be FRCNN"
                 )
-        else:
-            if deduplication.get("enabled") is not False:
-                raise ValueError(
-                    f"{dataset_id}: scene deduplication must be false"
-                )
+        elif deduplication.get("enabled") is not False:
+            raise ValueError(
+                f"{dataset_id}: scene deduplication must be false"
+            )
 
 
 def main() -> int:
@@ -285,18 +480,12 @@ def main() -> int:
     registry = load_registry(arguments.registry)
     validate_registry(registry)
 
-    print(
-        "OK: external dataset source registry is valid."
-    )
-    print(
-        "OK: acquisition remains manual and no download URL is guessed."
-    )
-    print(
-        "OK: only splits with local official ground truth are admissible."
-    )
-    print(
-        "OK: MOT17 detector-labelled scene duplication is explicit."
-    )
+    print("OK: external dataset source registry is valid.")
+    print("OK: acquisition remains manually reviewed.")
+    print("OK: verified archives are recorded per split.")
+    print("OK: partial acquisition cannot imply full coverage.")
+    print("OK: only splits with local official GT are admissible.")
+    print("OK: MOT17 scene duplication remains explicit.")
     return 0
 
 

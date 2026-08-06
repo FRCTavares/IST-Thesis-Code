@@ -435,8 +435,9 @@ A tracked source registry now defines:
 - the separation between oracle ground truth and thesis detector output.
 
 The registry deliberately contains no guessed direct-download URLs. Dataset
-acquisition remains a reviewed manual action. No archive has been downloaded,
-hashed or marked as verified.
+acquisition remains a reviewed manual action. Slice 8 later replaces the
+dataset-level archive placeholders with verified split-level provenance so a
+partial acquisition cannot imply that every admissible split is installed.
 
 ### Slice 6 — read-only local dataset catalogue
 
@@ -469,3 +470,28 @@ Dataset-specific eligibility and sequence-integrity rules now enforce:
 These rules prevent group boxes, missing class metadata, out-of-range
 annotations and malformed tracker candidate sets from silently entering target
 selection or initialization.
+
+### Slice 8 — verified split-level acquisition provenance
+
+The source registry now records acquisitions per admissible split rather than
+using one dataset-level archive pair. This prevents the verified VisDrone
+validation archive from implying that the absent training split is installed.
+
+The verified VisDrone2019-MOT validation acquisition records:
+
+- archive `VisDrone2019-MOT-val.zip`;
+- its locally calculated SHA-256 and exact byte size;
+- the canonical installed `val` path;
+- seven sequences;
+- seven annotation files;
+- 2,846 images;
+- verification date 6 August 2026.
+
+A tracked local verifier checks archive existence, byte size, SHA-256, installed
+structure and catalogue-derived counts. Synthetic tests cover valid
+acquisitions, deterministic output, missing archives, hash mismatch, count
+mismatch and invalid installed structures.
+
+This slice records acquisition provenance only. It does not freeze a sequence,
+physical identity, frame range or frame-rate assumption, and it does not inspect
+TIM-MARS outcomes.
