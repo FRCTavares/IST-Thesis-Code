@@ -142,6 +142,9 @@ Open executable issues: **24**.
     - acquisition slice 5: tracked official-source, admissible-split, storage,
       free-space, archive-hash and MOT17 scene-deduplication contract; downloads
       remain manual and no archive has been acquired.
+    - catalogue slice 6: deterministic read-only discovery and structure
+      validation for installed MOT17, DanceTrack and VisDrone-MOT sequences,
+      including canonical MOT17 scene deduplication.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY

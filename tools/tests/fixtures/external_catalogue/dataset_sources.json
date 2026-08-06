@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "large_data_policy": {
+    "download_automatically": false,
+    "require_manual_source_review": true,
+    "require_free_space_check": true,
+    "minimum_free_space_after_acquisition_gib": 25,
+    "raw_root": "installed",
+    "processed_root": "processed",
+    "report_root": "reports",
+    "commit_raw_datasets": false,
+    "commit_generated_full_annotations": false
+  },
+  "datasets": [
+    {
+      "id": "mot17",
+      "local_root": "installed/mot17",
+      "admissible_splits": [
+        "train"
+      ],
+      "scene_deduplication": {
+        "canonical_variant": "FRCNN"
+      }
+    },
+    {
+      "id": "dancetrack",
+      "local_root": "installed/dancetrack",
+      "admissible_splits": [
+        "train",
+        "val"
+      ],
+      "scene_deduplication": {
+        "canonical_variant": null
+      }
+    },
+    {
+      "id": "visdrone_mot",
+      "local_root": "installed/visdrone_mot",
+      "admissible_splits": [
+        "train",
+        "val"
+      ],
+      "scene_deduplication": {
+        "canonical_variant": null
+      }
+    }
+  ]
+}

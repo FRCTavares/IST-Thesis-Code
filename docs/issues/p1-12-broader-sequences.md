@@ -437,3 +437,20 @@ A tracked source registry now defines:
 The registry deliberately contains no guessed direct-download URLs. Dataset
 acquisition remains a reviewed manual action. No archive has been downloaded,
 hashed or marked as verified.
+
+### Slice 6 — read-only local dataset catalogue
+
+A deterministic catalogue scanner now inspects locally installed dataset
+folders and records:
+
+- dataset, split and sequence identity;
+- source, metadata, annotation and image-directory paths;
+- available sequence metadata;
+- image counts;
+- structure-validation errors;
+- MOT17 scene keys and duplicate detector variants;
+- the canonical MOT17 FRCNN folder used to avoid repeated scenes.
+
+The scanner is read-only. It neither downloads datasets nor selects benchmark
+targets. Synthetic directory fixtures validate MOT17, DanceTrack and
+VisDrone-MOT layouts.
