@@ -420,3 +420,20 @@ from the selection records.
 
 This slice uses synthetic annotations only. No real sequence, identity or frame
 range was selected or frozen.
+
+### Slice 5 — dataset source and acquisition registry
+
+A tracked source registry now defines:
+
+- the official landing page and source authority for each dataset;
+- admissible splits with locally available official ground truth;
+- manual acquisition and terms-review requirements;
+- local ignored storage paths;
+- archive filename and SHA-256 fields to populate after acquisition;
+- a minimum remaining-free-space rule;
+- MOT17 scene deduplication across DPM, FRCNN and SDP folders;
+- the separation between oracle ground truth and thesis detector output.
+
+The registry deliberately contains no guessed direct-download URLs. Dataset
+acquisition remains a reviewed manual action. No archive has been downloaded,
+hashed or marked as verified.

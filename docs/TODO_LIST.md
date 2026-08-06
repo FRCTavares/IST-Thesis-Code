@@ -139,6 +139,9 @@ Open executable issues: **24**.
     - selection slice 4: deterministic annotation-derived target-candidate
       analysis covering visibility, initialization quality, border contact and
       person competition without using TIM-MARS outcomes.
+    - acquisition slice 5: tracked official-source, admissible-split, storage,
+      free-space, archive-hash and MOT17 scene-deduplication contract; downloads
+      remain manual and no archive has been acquired.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY

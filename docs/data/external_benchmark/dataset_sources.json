@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "purpose": "Issue #30 external pedestrian-tracking benchmark acquisition contract",
+  "large_data_policy": {
+    "download_automatically": false,
+    "require_manual_source_review": true,
+    "require_free_space_check": true,
+    "minimum_free_space_after_acquisition_gib": 25,
+    "raw_root": "data/datasets/external",
+    "processed_root": "data/datasets/processed",
+    "report_root": "artifacts/reports/p030_broader_sequences",
+    "commit_raw_datasets": false,
+    "commit_generated_full_annotations": false
+  },
+  "datasets": [
+    {
+      "id": "mot17",
+      "display_name": "MOT17",
+      "official_reference": "https://motchallenge.net/data/MOT17/",
+      "source_authority": "MOTChallenge",
+      "acquisition_method": "manual_from_official_reference",
+      "usage_scope": "research benchmark",
+      "license_or_terms": "Review and accept the terms presented by MOTChallenge before download.",
+      "local_root": "data/datasets/external/mot17",
+      "admissible_splits": [
+        "train"
+      ],
+      "ground_truth_policy": "Only splits with locally available official ground truth may be used for target selection or correctness evaluation.",
+      "expected_sequence_metadata": "seqinfo.ini",
+      "expected_annotation_path": "gt/gt.txt",
+      "source_frame_index_base": 1,
+      "scene_deduplication": {
+        "enabled": true,
+        "variant_suffixes": [
+          "DPM",
+          "FRCNN",
+          "SDP"
+        ],
+        "scene_key_rule": "Remove the final detector suffix from MOT17-XX-SUFFIX.",
+        "canonical_variant": "FRCNN",
+        "reason": "The three detector-labelled folders represent the same underlying image scene. Issue #30 must not count them as three independent sequences."
+      },
+      "public_detection_policy": "Ignore MOT17 public detections for detector-ByteTrack mode. Use the thesis detector output. The canonical variant only identifies one non-duplicated image/ground-truth folder.",
+      "archive_sha256": null,
+      "archive_filename": null,
+      "acquisition_status": "not_downloaded"
+    },
+    {
+      "id": "dancetrack",
+      "display_name": "DanceTrack",
+      "official_reference": "https://github.com/DanceTrack/DanceTrack",
+      "source_authority": "DanceTrack authors",
+      "acquisition_method": "manual_from_official_reference",
+      "usage_scope": "non-commercial research only",
+      "license_or_terms": "Annotations are CC BY 4.0. Dataset images and videos are available for non-commercial research only. Review the official agreement before download.",
+      "local_root": "data/datasets/external/dancetrack",
+      "admissible_splits": [
+        "train",
+        "val"
+      ],
+      "ground_truth_policy": "Only splits containing official local ground-truth identities may be selected.",
+      "expected_sequence_metadata": "seqinfo.ini",
+      "expected_annotation_path": "gt/gt.txt",
+      "source_frame_index_base": 1,
+      "scene_deduplication": {
+        "enabled": false,
+        "variant_suffixes": [],
+        "scene_key_rule": "Use the official sequence directory name.",
+        "canonical_variant": null,
+        "reason": "No MOT17-style detector-folder duplication is expected."
+      },
+      "public_detection_policy": "Not used. Oracle mode uses official ground truth; end-to-end mode uses the thesis detector and ByteTrack.",
+      "archive_sha256": null,
+      "archive_filename": null,
+      "acquisition_status": "not_downloaded"
+    },
+    {
+      "id": "visdrone_mot",
+      "display_name": "VisDrone2019-MOT",
+      "official_reference": "https://github.com/VisDrone/VisDrone-Dataset",
+      "source_authority": "AISKYEYE team, Tianjin University",
+      "acquisition_method": "manual_from_official_reference",
+      "usage_scope": "research benchmark",
+      "license_or_terms": "Review the official VisDrone repository and download terms before acquisition.",
+      "local_root": "data/datasets/external/visdrone_mot",
+      "admissible_splits": [
+        "train",
+        "val"
+      ],
+      "ground_truth_policy": "Use only official multi-object-tracking splits with identity annotations. Test splits without released ground truth are not admissible for target correctness.",
+      "expected_sequence_metadata": null,
+      "expected_annotation_path": "annotations/<sequence>.txt",
+      "source_frame_index_base": 1,
+      "scene_deduplication": {
+        "enabled": false,
+        "variant_suffixes": [],
+        "scene_key_rule": "Use the official sequence name.",
+        "canonical_variant": null,
+        "reason": "No MOT17-style detector-folder duplication is expected."
+      },
+      "public_detection_policy": "Not used. Oracle mode uses official ground truth; end-to-end mode uses the thesis detector and ByteTrack.",
+      "archive_sha256": null,
+      "archive_filename": null,
+      "acquisition_status": "not_downloaded"
+    }
+  ]
+}
