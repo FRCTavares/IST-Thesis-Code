@@ -142,11 +142,19 @@ Open executable issues: **24**.
       full scale (Slice 19). A read-only aggregate-report step across all 13
       sequences now exists (Slice 20). Operator authorized continuing
       autonomously through the rest of Issue #30 without further check-ins;
-      report back before any PR/merge. Remaining work: finish running the
-      capture-and-resolve-and-report path for the other eight external
-      sequences (batch capture in progress), run the oracle-candidate path
-      per sequence, and produce the complete first-phase benchmark report
-      and thesis-ready evidence.
+      report back before any PR/merge. The development Pi crashed twice
+      under batch memory load; the compressed-bag decompression OOM cause is
+      fixed, tested and confirmed safe on the real large-sequence case, but
+      a second, separate image-preloading memory limitation in
+      `run_deterministic_tim_replay.py` remains unfixed for large/high-
+      resolution sequences (Slice 21). Per operator instruction, the
+      first-phase batch stays paused while the `uav0000339_00001_v` result
+      (raw 0 / TIM 7 wrong-person frames) is forensically verified before
+      any further batch sequences run. Remaining work after that: fix the
+      image-preloading limitation, finish the capture-and-resolve-and-report
+      path for the other eight external sequences, run the oracle-candidate
+      path per sequence, and produce the complete first-phase benchmark
+      report and thesis-ready evidence.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
@@ -246,6 +254,31 @@ Open executable issues: **24**.
       sequences (external frame-level reports plus ROS 2 Issue #26 reports),
       reporting evaluated/initialization-failure/missing status per sequence
       without silently dropping any.
+    - reliability slice 21: the 8 GB RAM / zero-swap development Pi crashed
+      and rebooted twice while running the first-phase batch (2026-08-07,
+      ~12:39 and ~15:01). Root cause 1 (fixed, tested, committed):
+      `rosbag2_py.SequentialCompressionReader` decompresses an entire
+      compressed mcap file up front (a 1.7 GB compressed capture produced a
+      7.5 GB in-flight file), and this happened independently in both the
+      resolve and replay steps for the same sequence. Fixed by explicit,
+      controlled, single streaming decompression via the `zstd` CLI
+      (`ensure_uncompressed_bag`, confirmed ~7 MB peak RSS for the
+      decompression subprocess against the real 7.5 GB dancetrack0004 case),
+      reused across both steps and cleaned up afterward; direct compressed-
+      bag use now fails with a clear error instead of silently risking OOM.
+      Root cause 2 (found, NOT yet fixed): separately,
+      `run_deterministic_tim_replay.py` preloads every appearance image as a
+      full decoded array into one in-memory list before processing
+      (`images.append((stamp_ns, image_bgr))`); this was only ever exercised
+      against the small ROS 2 sequences (<=807 images at 640x640, ~1 GB) and
+      is unsafe for the larger/higher-resolution external sequences
+      (dancetrack0004: 1203 images at 1920x1080, ~7.1 GB). Repo integrity
+      verified intact after both crashes (clean `git status`, all commits
+      present, no corruption). Per operator instruction, the first-phase
+      batch is paused; before resuming, the `uav0000339_00001_v` result
+      (raw 0 / TIM 7 wrong-person frames) is being forensically verified,
+      since it completed before either crash and needs independent
+      confirmation the new external evaluation path is trustworthy.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
