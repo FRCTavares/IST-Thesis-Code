@@ -153,12 +153,16 @@ Open executable issues: **24**.
       deterministic replay tool, causing TIM-MARS to run its geometry
       against a wrong 640x640 assumption; fixed, tested and reverified
       deterministic -- `uav0000339_00001_v` now shows 0 wrong-person frames
-      post-fix, not 7 (Slice 22). One more fix remains before the batch may
-      resume: `run_external_sequence_report.py` currently passes
-      `candidates_by_frame={}` to the frame classifier, so the
-      candidate-absence/ambiguity/safe-suppression side of the outcome
-      taxonomy is not yet trustworthy for any external result generated so
-      far, including the new `dancetrack0004` data (Slice 24, in progress).
+      post-fix, not 7 (Slice 22). The remaining gap the operator flagged is
+      also fixed and validated: `run_external_sequence_report.py` now feeds
+      the real captured ByteTrack candidate stream to the frame classifier
+      instead of an empty placeholder, correctly splitting the lumped
+      "candidate absent" total into genuine detector/tracker misses versus
+      safe suppression on both already-generated external results (Slice
+      24). All three pipeline bugs found during the operator-directed
+      forensic review are now fixed, tested and confirmed against real
+      sequences; the batch was intentionally kept paused throughout per
+      operator instruction and awaits explicit go-ahead to resume.
       Remaining work after that: finish the capture-and-resolve-and-report
       path for the other seven external sequences, run the oracle-candidate
       path per sequence, and produce the complete first-phase benchmark
@@ -325,6 +329,26 @@ Open executable issues: **24**.
       yet interpreted, since Slice 21's `candidates_by_frame={}` gap
       (tracked as Slice 24) still makes the lost/suppressed side of the
       taxonomy untrustworthy. Batch stays paused pending Slice 24.
+    - correctness slice 24: fixed the remaining Slice 21 gap.
+      `run_external_sequence_report.py` passed `candidates_by_frame={}` to
+      the frame classifier, so every "no output" frame's oracle check saw
+      zero candidates and was always classified `target_candidate_absent`;
+      `safe_suppression` was structurally unreachable, and the lumped total
+      obscured the real split between a genuine detector/tracker miss and a
+      confident candidate that went unpublished. `build_report` now reads
+      the same recorded `/tracks` stream `resolve()` already uses (while
+      the decompressed capture bag still exists, before cleanup) and feeds
+      it grouped by frame to both the raw and TIM `classify_sequence`
+      calls. 2 new regression tests. Rerunning both already-generated
+      external results confirms the fix only redistributes the existing
+      lumped total, not the underlying classification:
+      `uav0000339_00001_v` raw 249/249 candidate-absent split into
+      107 candidate-absent + 142 safe-suppression (TIM: 107 + 96);
+      `dancetrack0004` raw 1077 split into 652 candidate-absent +
+      424 safe-suppression + 1 ambiguous (TIM 973 into 644 + 329);
+      wrong-person and correct-target counts unchanged on both, as
+      expected. Both Slice 21 root causes (memory and candidate-stream)
+      are now fixed, tested and validated against real sequences.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY

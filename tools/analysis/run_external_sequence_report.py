@@ -42,6 +42,7 @@ from evaluate_external_frame_outcomes import (  # noqa: E402
 )
 from external_target_initialization import (  # noqa: E402
     InitializationConfig,
+    TrackerCandidateObservation,
 )
 from external_tracking_dataset import (  # noqa: E402
     SequenceGeometry,
@@ -53,6 +54,7 @@ from resolve_external_candidate_stream import (  # noqa: E402
     annotation_path_for,
     ensure_uncompressed_bag,
     load_manifest_entry,
+    load_tracker_candidates,
     open_bag_reader,
     resolve,
 )
@@ -220,6 +222,9 @@ def build_report(
 
     uncompressed_bag = ensure_uncompressed_bag(capture_bag)
     created_temp_copy = uncompressed_bag != Path(capture_bag)
+    candidates_by_frame: dict[
+        int, list[TrackerCandidateObservation]
+    ] = {}
 
     try:
         resolution = resolve(
@@ -234,6 +239,24 @@ def build_report(
                 "status": "initialization_failure",
                 "resolution": resolution,
             }
+
+        frame_rate = entry["frame_contract"]["frame_rate"]
+
+        # Read while the (possibly temporary, decompressed) capture bag
+        # still exists, before the finally block below removes it. This
+        # is the same recorded ByteTrack /tracks stream resolve() already
+        # read to confirm the frozen physical target's tracker identity
+        # (Slice 17); grouping it by frame here lets the frame classifier
+        # distinguish candidate-absence/ambiguity/safe-suppression from a
+        # missing output, instead of the placeholder empty dict used
+        # before this fix, which made every "no output" frame look like
+        # candidate absence and made safe-suppression unreachable.
+        for candidate in load_tracker_candidates(
+            uncompressed_bag, frame_rate_hz=frame_rate
+        ):
+            candidates_by_frame.setdefault(
+                candidate.normalized_frame_index, []
+            ).append(candidate)
 
         replay_output_root = replay_output_root or (
             repo_root
@@ -256,7 +279,6 @@ def build_report(
         if created_temp_copy and uncompressed_bag.exists():
             shutil.rmtree(uncompressed_bag)
 
-    frame_rate = entry["frame_contract"]["frame_rate"]
     raw_outputs = read_target_stream(
         replay_bag, topic="/target", frame_rate_hz=frame_rate
     )
@@ -307,7 +329,7 @@ def build_report(
     raw_outcomes = classify_sequence(
         frame_indices=frame_indices,
         target_by_frame=target_by_frame,
-        candidates_by_frame={},
+        candidates_by_frame=candidates_by_frame,
         other_people_by_frame=other_people_by_frame,
         outputs_by_frame=raw_outputs,
         match_config=match_config,
@@ -315,7 +337,7 @@ def build_report(
     tim_outcomes = classify_sequence(
         frame_indices=frame_indices,
         target_by_frame=target_by_frame,
-        candidates_by_frame={},
+        candidates_by_frame=candidates_by_frame,
         other_people_by_frame=other_people_by_frame,
         outputs_by_frame=tim_outputs,
         match_config=match_config,

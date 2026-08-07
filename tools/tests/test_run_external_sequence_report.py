@@ -205,6 +205,12 @@ class TestRunDeterministicReplayPassesSourceDimensions:
         def fake_load_all_annotations(entry):
             return []
 
+        def fake_load_tracker_candidates(*args, **kwargs):
+            captured["candidates_frame_rate_hz"] = kwargs[
+                "frame_rate_hz"
+            ]
+            return []
+
         monkeypatch.setattr(MODULE, "resolve", fake_resolve)
         monkeypatch.setattr(
             MODULE, "load_manifest_entry", fake_load_manifest_entry
@@ -218,6 +224,11 @@ class TestRunDeterministicReplayPassesSourceDimensions:
         monkeypatch.setattr(
             MODULE, "load_all_annotations", fake_load_all_annotations
         )
+        monkeypatch.setattr(
+            MODULE,
+            "load_tracker_candidates",
+            fake_load_tracker_candidates,
+        )
 
         MODULE.build_report(
             sequence_id="visdrone_mot_val_uav0000339_00001_v",
@@ -227,3 +238,133 @@ class TestRunDeterministicReplayPassesSourceDimensions:
 
         assert captured["image_width"] == 1904
         assert captured["image_height"] == 1071
+        assert captured["candidates_frame_rate_hz"] == 24.0
+
+
+class TestBuildReportFeedsRealCandidateStream:
+    def test_candidates_are_grouped_by_frame_and_passed_to_classifier(
+        self, monkeypatch, tmp_path
+    ):
+        # Regression test for Slice 24: build_report used to call
+        # classify_sequence with candidates_by_frame={}, so every "no
+        # output" frame looked like a detector/tracker miss
+        # (target_candidate_absent) and safe_suppression was unreachable,
+        # regardless of whether a real ByteTrack candidate actually
+        # confirmed the target that frame. It must now feed the same
+        # /tracks stream resolve() already reads.
+        from external_target_initialization import (
+            TrackerCandidateObservation,
+        )
+
+        captured = {}
+
+        fake_candidates = [
+            TrackerCandidateObservation(
+                normalized_frame_index=0,
+                tracker_identity=1,
+                bbox_xyxy=(0.0, 0.0, 10.0, 10.0),
+                score=0.9,
+            ),
+            TrackerCandidateObservation(
+                normalized_frame_index=0,
+                tracker_identity=2,
+                bbox_xyxy=(50.0, 50.0, 60.0, 60.0),
+                score=0.8,
+            ),
+            TrackerCandidateObservation(
+                normalized_frame_index=1,
+                tracker_identity=1,
+                bbox_xyxy=(1.0, 1.0, 11.0, 11.0),
+                score=0.9,
+            ),
+        ]
+
+        def fake_resolve(**kwargs):
+            return {
+                "sequence_id": kwargs["sequence_id"],
+                "success": True,
+                "initial_tracker_identity": 1,
+            }
+
+        def fake_load_manifest_entry(*args, **kwargs):
+            return {
+                "id": "visdrone_mot_val_uav0000339_00001_v",
+                "dataset": "visdrone_mot",
+                "sequence_name": "uav0000339_00001_v",
+                "split": "val",
+                "image": {"width": 1904, "height": 1071},
+                "frame_contract": {
+                    "frame_rate": 24.0,
+                    "normalized_start_index": 0,
+                    "normalized_end_index_inclusive": 1,
+                },
+                "target": {
+                    "dataset_identity": 17,
+                    "minimum_match_iou": 0.5,
+                    "minimum_match_margin": 0.1,
+                    "confirmation_frames": 2,
+                    "initialization_start_frame": 0,
+                    "initialization_end_frame_inclusive": 9,
+                },
+            }
+
+        def fake_load_tracker_candidates(*args, **kwargs):
+            return fake_candidates
+
+        def fake_run_replay(**kwargs):
+            pass
+
+        def fake_read_target_stream(*args, **kwargs):
+            return {}
+
+        def fake_load_all_annotations(entry):
+            return []
+
+        def fake_classify_sequence(**kwargs):
+            captured.setdefault("calls", []).append(
+                kwargs["candidates_by_frame"]
+            )
+            return []
+
+        def fake_summarize(outcomes):
+            return {}
+
+        monkeypatch.setattr(MODULE, "resolve", fake_resolve)
+        monkeypatch.setattr(
+            MODULE, "load_manifest_entry", fake_load_manifest_entry
+        )
+        monkeypatch.setattr(
+            MODULE,
+            "load_tracker_candidates",
+            fake_load_tracker_candidates,
+        )
+        monkeypatch.setattr(
+            MODULE, "run_deterministic_replay", fake_run_replay
+        )
+        monkeypatch.setattr(
+            MODULE, "read_target_stream", fake_read_target_stream
+        )
+        monkeypatch.setattr(
+            MODULE, "load_all_annotations", fake_load_all_annotations
+        )
+        monkeypatch.setattr(
+            MODULE, "classify_sequence", fake_classify_sequence
+        )
+        monkeypatch.setattr(MODULE, "summarize", fake_summarize)
+
+        MODULE.build_report(
+            sequence_id="visdrone_mot_val_uav0000339_00001_v",
+            capture_bag=tmp_path / "capture",
+            replay_output_root=tmp_path / "replay",
+        )
+
+        assert len(captured["calls"]) == 2  # raw and TIM
+
+        for candidates_by_frame in captured["calls"]:
+            assert set(candidates_by_frame.keys()) == {0, 1}
+            assert {
+                c.tracker_identity for c in candidates_by_frame[0]
+            } == {1, 2}
+            assert {
+                c.tracker_identity for c in candidates_by_frame[1]
+            } == {1}

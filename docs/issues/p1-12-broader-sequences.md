@@ -1225,4 +1225,50 @@ untrustworthy for every case run so far, and per operator instruction that
 must be fixed and validated (Slice 24) before any external result -- this
 one included -- is treated as a trustworthy finding.
 
-The external batch stays paused pending Slice 24.
+### Slice 24 — real candidate stream fed to the frame classifier
+
+Fixed Slice 21/23's remaining gap: `run_external_sequence_report.py` passed
+`candidates_by_frame={}` to `evaluate_external_frame_outcomes.classify_sequence`
+for both the raw and TIM-MARS streams. With no candidates ever present, every
+"no output" frame's `match_frame` oracle check always returned
+`no_tracker_candidates`, so every such frame was classified
+`target_candidate_absent` and `safe_suppression` was structurally
+unreachable -- the lost/suppressed side of the outcome taxonomy was reporting
+a real number (`target_candidate_absent`) that was actually the sum of two
+different, scientifically distinct situations (a genuine detector/tracker
+miss vs. a confident candidate that went unpublished).
+
+`resolve()` already reads this same recorded `/tracks` stream internally
+(via `resolve_external_candidate_stream.load_tracker_candidates`) to confirm
+the frozen physical target's live tracker identity. `build_report` now calls
+it a second time -- while the (possibly temporary, decompressed) capture bag
+still exists, before the `finally` block that removes it -- and groups the
+result by frame, passing the real `candidates_by_frame` to both
+`classify_sequence` calls.
+
+Two focused regression tests: one confirms `load_tracker_candidates` is
+called with the sequence's own frame rate; a second constructs synthetic
+`TrackerCandidateObservation`s across two frames and confirms
+`classify_sequence` receives them correctly grouped by
+`normalized_frame_index`, for both the raw and TIM-MARS calls.
+
+Rerunning both already-generated external results with the fix (wrong-person
+and correct-target counts are unaffected, as expected, since those never
+depended on `candidates_by_frame`; only the "no output" breakdown changes):
+
+| Sequence | Stream | Candidate absent before | Candidate absent after | Safe suppression after |
+|---|---|---:|---:|---:|
+| `uav0000339_00001_v` | raw | 249 | 107 | 142 |
+| `uav0000339_00001_v` | TIM | 249 | 107 | 96 |
+| `dancetrack0004` | raw | 1077 | 652 (+1 ambiguous) | 424 |
+| `dancetrack0004` | TIM | 973 | 644 | 329 |
+
+Both sequences' `candidate_absent + safe_suppression (+ ambiguous_candidate)`
+sums match the old lumped `target_candidate_absent` totals exactly,
+confirming the fix redistributes an already-correct total into the right
+categories rather than changing the underlying frame-by-frame classification
+logic.
+
+With both Slice 23 (memory-safe replay) and this slice validated, both
+outstanding pipeline bugs identified during the operator-directed forensic
+review are now fixed, tested, and confirmed against real sequences.
