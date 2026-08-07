@@ -52,6 +52,7 @@ from resolve_external_candidate_stream import (  # noqa: E402
     DEFAULT_MANIFEST,
     annotation_path_for,
     load_manifest_entry,
+    open_bag_reader,
     resolve,
 )
 
@@ -94,14 +95,7 @@ def read_target_stream(
 
     period_ns = round(1_000_000_000 / frame_rate_hz)
 
-    reader = rosbag2_py.SequentialReader()
-    reader.open(
-        rosbag2_py.StorageOptions(uri=str(bag_path), storage_id="mcap"),
-        rosbag2_py.ConverterOptions(
-            input_serialization_format="cdr",
-            output_serialization_format="cdr",
-        ),
-    )
+    reader = open_bag_reader(bag_path)
     reader.set_filter(rosbag2_py.StorageFilter(topics=[topic]))
 
     outputs: dict[int, SystemOutput] = {}

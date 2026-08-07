@@ -179,8 +179,35 @@ def detect_storage_id(bag_path: Path) -> str:
     raise RuntimeError(f"Could not determine bag storage type: {bag_path}")
 
 
+def is_compressed_bag(bag_path: Path) -> bool:
+    """Detect file/message-level bag compression from metadata.yaml.
+
+    A plain ``SequentialReader`` cannot open a compressed mcap file (it
+    fails trying to parse compressed bytes as an uncompressed mcap stream);
+    a compressed bag needs ``SequentialCompressionReader`` instead. The
+    ``ros2 bag`` CLI handles this transparently; the raw Python bindings do
+    not.
+    """
+
+    metadata = bag_path / "metadata.yaml"
+
+    if not metadata.is_file():
+        return False
+
+    text = metadata.read_text(encoding="utf-8", errors="ignore")
+
+    return (
+        "compression_mode: FILE" in text
+        or "compression_mode: MESSAGE" in text
+    )
+
+
 def open_reader(bag_path: Path) -> rosbag2_py.SequentialReader:
-    reader = rosbag2_py.SequentialReader()
+    reader = (
+        rosbag2_py.SequentialCompressionReader()
+        if is_compressed_bag(bag_path)
+        else rosbag2_py.SequentialReader()
+    )
     reader.open(
         rosbag2_py.StorageOptions(
             uri=str(bag_path),

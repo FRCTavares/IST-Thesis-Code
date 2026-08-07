@@ -48,6 +48,50 @@ DEFAULT_MANIFEST = (
 )
 
 
+def is_compressed_bag(bag_path: Path) -> bool:
+    """Detect file-level bag compression from metadata.yaml.
+
+    Plain ``rosbag2_py.SequentialReader`` cannot open a compressed mcap file
+    directly (it fails with an "invalid magic bytes" error trying to parse
+    compressed bytes as an uncompressed mcap stream); a compressed bag needs
+    ``SequentialCompressionReader`` instead. The CLI tools (``ros2 bag
+    play``/``info``) handle this transparently; the raw Python bindings do
+    not, so every reader in this evaluation pipeline must check explicitly.
+    """
+
+    metadata_path = Path(bag_path) / "metadata.yaml"
+
+    if not metadata_path.is_file():
+        return False
+
+    text = metadata_path.read_text(encoding="utf-8", errors="ignore")
+
+    return (
+        "compression_mode: FILE" in text
+        or "compression_mode: MESSAGE" in text
+    )
+
+
+def open_bag_reader(bag_path: Path):
+    """Open ``bag_path`` with the reader class its compression needs."""
+
+    import rosbag2_py
+
+    reader = (
+        rosbag2_py.SequentialCompressionReader()
+        if is_compressed_bag(bag_path)
+        else rosbag2_py.SequentialReader()
+    )
+    reader.open(
+        rosbag2_py.StorageOptions(uri=str(bag_path), storage_id="mcap"),
+        rosbag2_py.ConverterOptions(
+            input_serialization_format="cdr",
+            output_serialization_format="cdr",
+        ),
+    )
+    return reader
+
+
 def load_manifest_entry(
     manifest_path: Path, *, sequence_id: str
 ) -> dict[str, Any]:
@@ -151,15 +195,7 @@ def load_tracker_candidates(
 
     period_ns = round(1_000_000_000 / frame_rate_hz)
 
-    reader = rosbag2_py.SequentialReader()
-    storage_options = rosbag2_py.StorageOptions(
-        uri=str(capture_bag), storage_id="mcap"
-    )
-    converter_options = rosbag2_py.ConverterOptions(
-        input_serialization_format="cdr",
-        output_serialization_format="cdr",
-    )
-    reader.open(storage_options, converter_options)
+    reader = open_bag_reader(capture_bag)
     reader.set_filter(
         rosbag2_py.StorageFilter(topics=[tracks_topic])
     )
