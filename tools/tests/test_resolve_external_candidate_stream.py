@@ -265,9 +265,14 @@ class TestEnsureUncompressedBag:
         assert MODULE.is_compressed_bag(result) is False
         assert (result / "bag_0.mcap").read_bytes() == original_payload
 
-    def test_decompressed_metadata_has_no_compression_fields(
+    def test_decompressed_metadata_marks_compression_empty(
         self, tmp_path
     ):
+        # A genuinely uncompressed bag written by the real rosbag2 writer
+        # still carries compression_format/compression_mode as empty
+        # strings, not absent -- confirmed against a real uncompressed bag's
+        # metadata.yaml. An earlier version of this fix removed the keys
+        # entirely, which the strict metadata parser rejected.
         import yaml
 
         bag_dir = tmp_path / "bag"
@@ -280,8 +285,8 @@ class TestEnsureUncompressedBag:
         )
         info = rewritten["rosbag2_bagfile_information"]
 
-        assert "compression_format" not in info
-        assert "compression_mode" not in info
+        assert info["compression_format"] == ""
+        assert info["compression_mode"] == ""
         assert info["relative_file_paths"] == ["bag_0.mcap"]
 
     def test_refuses_when_insufficient_disk_space(

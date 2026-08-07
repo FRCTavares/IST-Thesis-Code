@@ -167,8 +167,12 @@ def ensure_uncompressed_bag(
         }
         for entry in info["files"]
     ]
-    info.pop("compression_format", None)
-    info.pop("compression_mode", None)
+    # An uncompressed bag written by the real rosbag2 writer still carries
+    # these keys with empty-string values; the metadata schema requires
+    # their presence (a genuinely uncompressed bag was checked to confirm
+    # this rather than assumed), so they are set, not removed.
+    info["compression_format"] = ""
+    info["compression_mode"] = ""
 
     (dest_dir / "metadata.yaml").write_text(
         yaml.safe_dump(metadata, sort_keys=False),
