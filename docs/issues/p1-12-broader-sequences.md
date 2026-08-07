@@ -649,14 +649,24 @@ the `development` set in `docs/data/splits/tim_mars_split_v1.json`:
 These are exactly the four sequences used as Issue #26's canonical
 event-and-recovery evidence
 (`reports/p026_event_recovery_b50f914a_2026_08_05`), so their raw-versus-TIM
-evaluation path already exists and is validated: the recorded bags contain
-both the raw selected-target stream (`/target`) and the TIM-MARS stream
+evaluation path already exists: the recorded bags contain both the raw
+selected-target stream (`/target`) and the TIM-MARS stream
 (`/target_memory_mars`) recorded together from one run against one shared
 detector/tracker candidate stream, and `tools/analysis/tim_evaluation.py`
 plus `tools/analysis/evaluate_tim_event_recovery.py` already score both
-streams against the same annotation oracle. This satisfies the Issue #30
-requirement that the raw and TIM branches share identical detector and
-tracker output.
+streams against the same annotation oracle.
+
+**Correction (Slice 15): this is only true for May and June Seq01 as
+originally written here.** Tracing each Issue #26 report's `input_bag`
+provenance chain found that the June Seq03 and Seq04 evidence was generated
+against an **OC-SORT**-tracked replay chain
+(`bags/replay/p018_ocsort_sequences_305578f3_2026_07_19/...`), not
+ByteTrack. Issue #30 explicitly requires a raw **ByteTrack** baseline, so
+that existing Seq03/Seq04 evidence does not satisfy it. Slice 15 regenerates
+both from their official ByteTrack `full_pipeline` bags instead. See Slice 15
+for the fix and the corrected picture: only after that regeneration do all
+four sequences share identical detector/ByteTrack output between their raw
+and TIM branches.
 
 The June `seq02` (target re-entry) sequence is deliberately excluded. It is
 classified `legacy_validation` in `tim_mars_split_v1.json`, explicitly
@@ -732,3 +742,116 @@ entry against `manifest.schema.json`. The pre-existing 353-test non-ROS suite
 was confirmed unaffected (11 failures present both with and without this
 slice's changes, all in unrelated documentation-hash and ROS-environment
 areas).
+
+### Slice 15 — corrected ByteTrack replay for June Seq03 and Seq04
+
+While assembling ROS 2 manifest provenance, each Issue #26 canonical
+report's `provenance.bag_path` was traced back through its
+`tim_replay_metadata.json` `input_bag` chain to find the true underlying
+tracker:
+
+- May (`bags/reference/tim_good/...bytetrack...`) and June Seq01
+  (`.../seq01_clean_four_person/full_pipeline/...yolov8s_bytetrack_tim_mars`)
+  are confirmed ByteTrack;
+- June Seq03 and Seq04's existing evidence traced back to
+  `bags/replay/p018_ocsort_sequences_305578f3_2026_07_19/seq0{3,4}_ocsort_freeze_r1`
+  — an **OC-SORT** replay chain, not ByteTrack.
+
+Issue #30 requires "a raw ByteTrack baseline using the same detections,
+candidate tracks, target initialization, frames, and evaluation ground
+truth" as the TIM-MARS branch. The existing Seq03/Seq04 OC-SORT-based
+evidence does not satisfy that, so it is not reused for Issue #30.
+
+Both sequences' official ByteTrack `full_pipeline` bags already exist
+(`.../seq03_crossing_ambiguity/full_pipeline/...yolov8s_bytetrack_tim_mars`,
+`.../seq04_occlusion_no_exit/full_pipeline/...yolov8s_bytetrack_tim_mars`)
+with `/tracks`, `/target` and `/camera/dashboard` already recorded live.
+`tools/experiments/run_deterministic_tim_replay.py` — the same tool and
+canonical TIM-MARS config already used for May and Seq01 — was run against
+each, using `--raw-target-mode source` (the raw baseline is the live
+ByteTrack-selected `/target` output, unmodified) and `--selected-track-id`
+set to each sequence's own initial `correct_target_track_id` from its
+official ByteTrack annotation CSV (`seq03_bytetrack.csv`: 2;
+`seq04_bytetrack.csv`: 1). Output bags:
+
+- `bags/replay/p030_broader_sequences_bytetrack_2026_08_07/seq03_crossing`
+- `bags/replay/p030_broader_sequences_bytetrack_2026_08_07/seq04_occlusion`
+
+Both were generated twice; the tool's own `generated_semantic_sha256`
+determinism digest was identical across both runs for each sequence,
+confirming reproducibility. `tools/analysis/evaluate_tim_event_recovery.py`
+was then run against each new bag with its correct ByteTrack annotation CSV
+(`seq03_bytetrack.csv`, `seq04_bytetrack.csv`), matching the same evaluator
+settings as the May/Seq01 canonical evidence
+(`--timebase header --step-s 0.05 --max-output-age-s 0.9
+--stable-recovery-duration-s 0.25`), producing
+`artifacts/reports/p030_broader_sequences/seq0{3,4}_*_bytetrack/`.
+
+Resulting selected-target summary (raw ByteTrack vs. TIM-MARS, same shared
+candidate stream):
+
+| Sequence | Correct [s] raw → TIM | Wrong [s] raw → TIM | Wrong bursts raw → TIM |
+|---|---:|---:|---:|
+| Seq03 crossing | 12.457 → 73.892 | 54.020 → 6.053 | 24 → 9 |
+| Seq04 occlusion | 5.993 → 39.593 | 0.700 → 0.000 | 3 → 0 |
+
+TIM-MARS substantially increases correct-target duration and reduces
+wrong-target duration and bursts on both sequences versus the raw ByteTrack
+baseline sharing the same detections and tracker candidates. Seq03 also
+recorded 121 memory-contamination events under TIM-MARS (Seq04 recorded 0);
+this is reported as-is and is not interpreted or explained away here — it is
+a fact for the eventual thesis discussion, not a benchmark-selection input,
+since it was observed only after the sequence, target and frame range were
+already fixed by Slice 13.
+
+These generated bags and reports are local, ignored artifacts (matching the
+existing `bags/` and `artifacts/reports/p030_broader_sequences/` ignore
+policy); this section is the tracked record of how they were produced and
+their exact hashes, consistent with how the May/Seq01 evidence is documented
+in Issue #26.
+
+### Slice 16 — first-phase manifest population and freeze
+
+Added `tools/analysis/add_ros2_first_phase_sequences.py`, which encodes the
+four verified ROS 2 sequence records above (bag paths, corrected-ByteTrack
+provenance, annotation paths, initial tracker identity, measured image
+count and bag duration) and appends them as schema-validated
+`sequence_manifest.json` entries.
+
+Per-sequence facts are hand-verified rather than derived from a shared
+profiler, because there are exactly four fixed sequences with a one-off
+provenance correction (Slice 15), unlike the generically discoverable
+external datasets. `target.dataset_identity` and
+`target.initial_tracker_identity` are both set to the sequence's own
+official annotation's initial `correct_target_track_id` — a value already
+fixed by the existing annotation, not a new selection made from TIM-MARS
+outcomes. `frame_contract.frame_rate` is the sequence's measured
+`images_loaded / bag_duration_s` from its replay provenance (5.3–7.5 Hz for
+these `/camera/dashboard`-topic replays), reported instead of the nominal
+30 FPS capture rate documented in `flight_metadata.txt`, since the dashboard
+topic is a throttled preview stream and the measured rate is what the
+evaluator actually uses for timing. `image.width`/`height` are `640x640`,
+matching the letterboxed resolution the deterministic replay tool was
+actually run with, not the `640x480` `camera_publish` label.
+
+With the four ROS 2 entries merged into the nine DanceTrack/VisDrone-MOT
+entries from Slice 14, the manifest holds all 13 first-phase sequences. The
+tool's `--freeze` flag then sets every sequence's `status` to `frozen`, sets
+the manifest root `status` to `frozen`, records `frozen_date` and
+`manifest_commit`, and the result is validated against
+`manifest.schema.json` before being written.
+
+This is the deterministic pre-outcome freeze for the first benchmark phase:
+sequence, split, physical target identity, initialization window, frame
+range and timing provenance are now fixed for all 13 cases before any
+TIM-MARS versus raw-ByteTrack comparison outcome (beyond the already-fixed
+May/Seq01/Seq03/Seq04 evidence cited for provenance in Slice 15, which did
+not influence which sequences, targets or frame ranges were selected) is
+used to run the remaining benchmark. MOT17 is not part of this freeze and
+remains a later supplementary phase per Slice 12.
+
+7 focused tests cover schema validity of all four built entries, the
+frame-rate computation, confirmation that Seq03/Seq04 use their corrected
+ByteTrack annotation (not the split's original OC-SORT one), that
+`dataset_identity` and `initial_tracker_identity` agree, and manifest-entry
+merge replacement semantics.

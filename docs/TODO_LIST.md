@@ -124,12 +124,17 @@ Open executable issues: **24**.
       internet access unaffected on both). No mirror was substituted. MOT17
       stays in scope as a later supplementary phase; see Slice 12 in
       `docs/issues/p1-12-broader-sequences.md`.
-    - current milestone: DanceTrack and VisDrone-MOT first-phase sequences
-      and physical targets are selected and populated into
-      `sequence_manifest.json` (Slice 14, status `selected`, root manifest
-      still `draft_not_frozen`); next add the four ROS 2 development
-      sequences to the same manifest, then freeze it before running the
-      first paired raw-versus-TIM-MARS benchmark.
+    - current milestone: the first-phase benchmark manifest is FROZEN
+      (13 sequences: 5 DanceTrack, 4 VisDrone-MOT, 4 ROS 2 development;
+      Slices 14 and 16). First genuine paired raw-ByteTrack-versus-TIM-MARS
+      evidence exists for all four ROS 2 sequences (Slice 15 corrected
+      Seq03/Seq04, which had only OC-SORT-based evidence). Remaining work:
+      extend the outcome taxonomy beyond Issue #26's event vocabulary
+      (distractor selection vs. stale-ID transfer, ambiguous candidate,
+      initialization failure), implement the oracle-candidate path, build
+      the DanceTrack/VisDrone end-to-end candidate-stream execution path
+      (no offline detector+ByteTrack-over-image-folder runner exists yet),
+      then run and report the complete first-phase benchmark.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
@@ -187,6 +192,20 @@ Open executable issues: **24**.
       populate schema-validated `sequence_manifest.json` entries
       (status `selected`); no tracker or TIM-MARS outcome was inspected and
       the manifest root status remains `draft_not_frozen`.
+    - correction slice 15: found by tracing Issue #26 report provenance that
+      June Seq03/Seq04 evidence was generated on an OC-SORT replay chain,
+      not ByteTrack; regenerated both deterministically against their
+      official ByteTrack `full_pipeline` bags (verified reproducible twice)
+      and produced fresh raw-versus-TIM-MARS event/recovery reports. TIM-MARS
+      raised correct-target duration substantially on both (Seq03
+      12.5s→73.9s, Seq04 6.0s→39.6s) and cut wrong-target duration/bursts;
+      Seq03 also showed 121 memory-contamination events under TIM-MARS,
+      recorded as-is for the thesis discussion.
+    - freeze slice 16: added the four corrected ROS 2 sequences to
+      `sequence_manifest.json` and froze the complete 13-sequence first-phase
+      manifest (root status `frozen`, every sequence `status: frozen`).
+      Physical target identity for each ROS 2 sequence is its own official
+      annotation's initial `correct_target_track_id`, not a new selection.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY

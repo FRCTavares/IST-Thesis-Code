@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "benchmark_id": "tim_mars_broader_sequences_v1",
-  "status": "draft_not_frozen",
+  "status": "frozen",
   "created_date": "2026-08-06",
-  "frozen_date": null,
+  "frozen_date": "2026-08-07",
   "baseline_commit": "f1f02ebb8742e69bf6a1a5e416da2061b8efb1c4",
-  "manifest_commit": null,
+  "manifest_commit": "124118b362ea1f44c8211722378c2347a84d4cfc",
   "policy": {
     "canonical_policy_changes_allowed": false,
     "external_outcome_tuning_allowed": false,
@@ -27,7 +27,7 @@
       "sequence_name": "dancetrack0004",
       "split": "val",
       "role": "external_stress_test",
-      "status": "selected",
+      "status": "frozen",
       "source": {
         "official_reference": "https://github.com/DanceTrack/DanceTrack",
         "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0004",
@@ -90,7 +90,7 @@
       "sequence_name": "dancetrack0019",
       "split": "val",
       "role": "external_stress_test",
-      "status": "selected",
+      "status": "frozen",
       "source": {
         "official_reference": "https://github.com/DanceTrack/DanceTrack",
         "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0019",
@@ -153,7 +153,7 @@
       "sequence_name": "dancetrack0063",
       "split": "val",
       "role": "external_stress_test",
-      "status": "selected",
+      "status": "frozen",
       "source": {
         "official_reference": "https://github.com/DanceTrack/DanceTrack",
         "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0063",
@@ -216,7 +216,7 @@
       "sequence_name": "dancetrack0073",
       "split": "val",
       "role": "external_stress_test",
-      "status": "selected",
+      "status": "frozen",
       "source": {
         "official_reference": "https://github.com/DanceTrack/DanceTrack",
         "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0073",
@@ -279,7 +279,7 @@
       "sequence_name": "dancetrack0094",
       "split": "val",
       "role": "external_stress_test",
-      "status": "selected",
+      "status": "frozen",
       "source": {
         "official_reference": "https://github.com/DanceTrack/DanceTrack",
         "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0094",
@@ -337,12 +337,258 @@
       }
     },
     {
+      "id": "ros2_internal_development_may_hard_reentry",
+      "dataset": "ros2_internal",
+      "sequence_name": "may_hard_reentry",
+      "split": "development",
+      "role": "development_evidence",
+      "status": "frozen",
+      "source": {
+        "official_reference": "docs/data/splits/tim_mars_split_v1.json#dev_may_hard_reentry",
+        "local_relative_path": "bags/replay/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/may_hard_reentry",
+        "version": "deterministic_tim_replay:836d73cbf2a47ddb",
+        "archive_sha256": null
+      },
+      "frame_contract": {
+        "source_index_base": 0,
+        "source_start_frame": 0,
+        "source_end_frame_inclusive": 359,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 359,
+        "frame_rate": 5.3246175159867795
+      },
+      "image": {
+        "width": 640,
+        "height": 640,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 1,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_fixed_to_annotated_initial_correct_target_track_id_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": 1,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 4,
+        "primary_challenge": "reentry"
+      },
+      "event_categories": [
+        "reentry",
+        "tracker_fragmentation"
+      ],
+      "evaluation_modes": [
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "One of the four sequences already frozen as the `development` set in docs/data/splits/tim_mars_split_v1.json, reused here as the fixed internal ROS 2 benchmark case set. The physical target identity is the initial correct_target_track_id from the sequence's own official ByteTrack annotation CSV, not a TIM-MARS outcome. Only ByteTrack-tracked bags are used; where the split's existing replay chain used OC-SORT instead (seq03, seq04), a fresh deterministic TIM-MARS replay was generated against the sequence's official ByteTrack full_pipeline bag (Slice 15) so the raw baseline is genuinely ByteTrack, matching Issue #30's explicit requirement.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "run_deterministic_tim_replay.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "fd0ee62693696c467968127fb4d6af0f6524487384a4b9509958076f84ed8625",
+        "repository_commit": "124118b362ea1f44c8211722378c2347a84d4cfc"
+      }
+    },
+    {
+      "id": "ros2_internal_development_seq01_clean",
+      "dataset": "ros2_internal",
+      "sequence_name": "seq01_clean",
+      "split": "development",
+      "role": "development_evidence",
+      "status": "frozen",
+      "source": {
+        "official_reference": "docs/data/splits/tim_mars_split_v1.json#dev_june_seq01",
+        "local_relative_path": "bags/replay/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/seq01_clean",
+        "version": "deterministic_tim_replay:55ab81da4e4b9687",
+        "archive_sha256": null
+      },
+      "frame_contract": {
+        "source_index_base": 0,
+        "source_start_frame": 0,
+        "source_end_frame_inclusive": 806,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 806,
+        "frame_rate": 7.474812829910312
+      },
+      "image": {
+        "width": 640,
+        "height": 640,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 1,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_fixed_to_annotated_initial_correct_target_track_id_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": 1,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 4,
+        "primary_challenge": "clean_tracking"
+      },
+      "event_categories": [
+        "clean_tracking"
+      ],
+      "evaluation_modes": [
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "One of the four sequences already frozen as the `development` set in docs/data/splits/tim_mars_split_v1.json, reused here as the fixed internal ROS 2 benchmark case set. The physical target identity is the initial correct_target_track_id from the sequence's own official ByteTrack annotation CSV, not a TIM-MARS outcome. Only ByteTrack-tracked bags are used; where the split's existing replay chain used OC-SORT instead (seq03, seq04), a fresh deterministic TIM-MARS replay was generated against the sequence's official ByteTrack full_pipeline bag (Slice 15) so the raw baseline is genuinely ByteTrack, matching Issue #30's explicit requirement.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "run_deterministic_tim_replay.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "487c80e472f7c0c74c60a42a5b01a261572e8089471b8d8c0b966b5f703c8bf4",
+        "repository_commit": "124118b362ea1f44c8211722378c2347a84d4cfc"
+      }
+    },
+    {
+      "id": "ros2_internal_development_seq03_crossing",
+      "dataset": "ros2_internal",
+      "sequence_name": "seq03_crossing",
+      "split": "development",
+      "role": "development_evidence",
+      "status": "frozen",
+      "source": {
+        "official_reference": "docs/data/splits/tim_mars_split_v1.json#dev_june_seq03_ocsort(re-evaluated on the ByteTrack full_pipeline bag; the split's own OC-SORT replay chain does not satisfy Issue #30's ByteTrack-baseline requirement, see Slice 15)",
+        "local_relative_path": "bags/replay/p030_broader_sequences_bytetrack_2026_08_07/seq03_crossing",
+        "version": "deterministic_tim_replay:d90b8da37ba77f51",
+        "archive_sha256": null
+      },
+      "frame_contract": {
+        "source_index_base": 0,
+        "source_start_frame": 0,
+        "source_end_frame_inclusive": 678,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 678,
+        "frame_rate": 6.965758287268074
+      },
+      "image": {
+        "width": 640,
+        "height": 640,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 2,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_fixed_to_annotated_initial_correct_target_track_id_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": 2,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 4,
+        "primary_challenge": "crowd_crossing"
+      },
+      "event_categories": [
+        "crowd_crossing",
+        "identity_confusion",
+        "tracker_fragmentation"
+      ],
+      "evaluation_modes": [
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "One of the four sequences already frozen as the `development` set in docs/data/splits/tim_mars_split_v1.json, reused here as the fixed internal ROS 2 benchmark case set. The physical target identity is the initial correct_target_track_id from the sequence's own official ByteTrack annotation CSV, not a TIM-MARS outcome. Only ByteTrack-tracked bags are used; where the split's existing replay chain used OC-SORT instead (seq03, seq04), a fresh deterministic TIM-MARS replay was generated against the sequence's official ByteTrack full_pipeline bag (Slice 15) so the raw baseline is genuinely ByteTrack, matching Issue #30's explicit requirement.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "run_deterministic_tim_replay.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "712665aee6d40ff2d060761896c6f8e82037fe4f596f951f42b41c2a8042e43b",
+        "repository_commit": "124118b362ea1f44c8211722378c2347a84d4cfc"
+      }
+    },
+    {
+      "id": "ros2_internal_development_seq04_occlusion",
+      "dataset": "ros2_internal",
+      "sequence_name": "seq04_occlusion",
+      "split": "development",
+      "role": "development_evidence",
+      "status": "frozen",
+      "source": {
+        "official_reference": "docs/data/splits/tim_mars_split_v1.json#dev_june_seq04_ocsort(re-evaluated on the ByteTrack full_pipeline bag; the split's own OC-SORT replay chain does not satisfy Issue #30's ByteTrack-baseline requirement, see Slice 15)",
+        "local_relative_path": "bags/replay/p030_broader_sequences_bytetrack_2026_08_07/seq04_occlusion",
+        "version": "deterministic_tim_replay:3f61a24494cc242d",
+        "archive_sha256": null
+      },
+      "frame_contract": {
+        "source_index_base": 0,
+        "source_start_frame": 0,
+        "source_end_frame_inclusive": 466,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 466,
+        "frame_rate": 7.052626589380576
+      },
+      "image": {
+        "width": 640,
+        "height": 640,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 1,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_fixed_to_annotated_initial_correct_target_track_id_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": 1,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 4,
+        "primary_challenge": "long_occlusion"
+      },
+      "event_categories": [
+        "long_occlusion",
+        "physical_absence",
+        "reentry",
+        "tracker_fragmentation"
+      ],
+      "evaluation_modes": [
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "One of the four sequences already frozen as the `development` set in docs/data/splits/tim_mars_split_v1.json, reused here as the fixed internal ROS 2 benchmark case set. The physical target identity is the initial correct_target_track_id from the sequence's own official ByteTrack annotation CSV, not a TIM-MARS outcome. Only ByteTrack-tracked bags are used; where the split's existing replay chain used OC-SORT instead (seq03, seq04), a fresh deterministic TIM-MARS replay was generated against the sequence's official ByteTrack full_pipeline bag (Slice 15) so the raw baseline is genuinely ByteTrack, matching Issue #30's explicit requirement.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "run_deterministic_tim_replay.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "27ba56dcbfcfffbdaf4027cae3806193c07de949e7601cb4fc16196e06d92428",
+        "repository_commit": "124118b362ea1f44c8211722378c2347a84d4cfc"
+      }
+    },
+    {
       "id": "visdrone_mot_val_uav0000117_02622_v",
       "dataset": "visdrone_mot",
       "sequence_name": "uav0000117_02622_v",
       "split": "val",
       "role": "external_stress_test",
-      "status": "selected",
+      "status": "frozen",
       "source": {
         "official_reference": "https://github.com/VisDrone/VisDrone-Dataset",
         "local_relative_path": "data/datasets/external/visdrone_mot/val",
@@ -404,7 +650,7 @@
       "sequence_name": "uav0000137_00458_v",
       "split": "val",
       "role": "external_stress_test",
-      "status": "selected",
+      "status": "frozen",
       "source": {
         "official_reference": "https://github.com/VisDrone/VisDrone-Dataset",
         "local_relative_path": "data/datasets/external/visdrone_mot/val",
@@ -465,7 +711,7 @@
       "sequence_name": "uav0000268_05773_v",
       "split": "val",
       "role": "external_stress_test",
-      "status": "selected",
+      "status": "frozen",
       "source": {
         "official_reference": "https://github.com/VisDrone/VisDrone-Dataset",
         "local_relative_path": "data/datasets/external/visdrone_mot/val",
@@ -528,7 +774,7 @@
       "sequence_name": "uav0000339_00001_v",
       "split": "val",
       "role": "external_stress_test",
-      "status": "selected",
+      "status": "frozen",
       "source": {
         "official_reference": "https://github.com/VisDrone/VisDrone-Dataset",
         "local_relative_path": "data/datasets/external/visdrone_mot/val",
