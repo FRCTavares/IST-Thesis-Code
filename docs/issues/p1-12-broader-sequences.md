@@ -1419,3 +1419,142 @@ tests, including the new excluded-sequence coverage),
 `test_add_ros2_first_phase_sequences.py` all pass (25 tests total).
 
 MOT17 remains deferred per Slice 12, unaffected by this scope change.
+
+### Slice 26 — oracle-candidate evaluation completed for the retained sequences
+
+Completed the oracle-candidate evaluation path for the 7 sequences retained
+in the primary Issue #30 benchmark after Slice 25's scope decision, per
+operator instruction to keep oracle and full-pipeline results scientifically
+separate and to only run oracle mode where the repository already has a
+defensible oracle/GT candidate-generation contract.
+
+**Scope of this slice.** The frozen manifest's `evaluation_modes` field
+already declares which sequences have that contract:
+`ros2_internal` sequences declare only `detector_bytetrack_tim` (no
+ground-truth multi-person annotation exists for them, only live
+detector/tracker output, so there is no defensible way to build an oracle
+candidate stream); DanceTrack and VisDrone-MOT sequences declare both
+`oracle_candidate` and `detector_bytetrack_tim`. Combined with Slice 25's
+exclusions, this leaves exactly the 3 retained VisDrone sequences
+(`uav0000117_02622_v`, `uav0000137_00458_v`, `uav0000339_00001_v`) eligible
+for oracle evaluation. No new oracle protocol was invented for the 4 ROS2
+sequences to fill out the table, per operator instruction.
+
+**Oracle bags.** Built via the existing, Slice-19-validated
+`build_oracle_candidate_bag.py` against each sequence's own official
+VisDrone-MOT annotations -- unmodified tooling, no new oracle logic. All
+three built with 100% frame coverage (`uav0000117_02622_v`: 349/349 images,
+7815 oracle boxes, 95 distinct oracle IDs; `uav0000137_00458_v`: 233/233,
+3792 oracle boxes, 41 IDs; `uav0000339_00001_v`: 275/275, 3273 oracle boxes,
+18 IDs). Because the resulting bag has the same `/camera/image_raw` +
+`/tracks` shape as a live capture bag, `run_external_sequence_report.py`'s
+`build_report` applied to it unmodified, using a separate
+`bags/replay/p030_broader_sequences_oracle_replay_2026_08_07/` replay
+output root and saving reports to
+`artifacts/reports/p030_broader_sequences/oracle_frame_reports/`, entirely
+separate directories from the full-pipeline replay/report paths.
+
+**Keeping the two modes separate.** Added
+`tools/analysis/aggregate_oracle_report.py`, a sibling to (not a
+modification of) `aggregate_first_phase_report.py`. It reads only
+sequences whose manifest entry both declares `"oracle_candidate"` in
+`evaluation_modes` and is not `status: "excluded"`, and never writes into
+or reads from the full-pipeline aggregate. Sequences it skips are listed
+with an explicit reason (`excluded_from_primary_scope` or
+`no_oracle_candidate_contract_declared`) rather than silently omitted. 2
+focused tests cover the eligibility filter and the missing-report case.
+Running it against the current reports confirms exactly the expected split:
+3 evaluated, 0 initialization failures, 0 missing, and the other 10
+manifest sequences correctly skipped with the correct reason each.
+
+**Full-pipeline results (primary benchmark, 7 sequences).**
+
+| Sequence | Vocabulary | Status | Raw correct | Raw wrong | TIM correct | TIM wrong | Notes |
+|---|---|---|---:|---:|---:|---:|---|
+| `may_hard_reentry` | event_recovery (duration ratios) | evaluated | 56.5% | 11.7% | 92.3% | 0.1% | TIM lost/suppressed 7.5% |
+| `seq01_clean` | event_recovery (duration ratios) | evaluated | 45.4% | 0.0% | 88.9% | 0.0% | both raw/TIM carry 13.6 s of stale output |
+| `seq03_crossing` | event_recovery (duration ratios) | evaluated | 13.0% | 56.4% | 77.2% | 6.3% | raw is wrong-heavy on this crossing case |
+| `seq04_occlusion` | event_recovery (duration ratios) | evaluated | 10.5% | 1.2% | 69.7% | 0.0% | long occlusion; 8.987 s target-not-visible on both |
+| `uav0000117_02622_v` | frame taxonomy | **initialization_failure** | -- | -- | -- | -- | 0 tracker candidates anywhere in the init window; genuine detector miss on a 32x83 px target in an 88-person scene |
+| `uav0000137_00458_v` | frame taxonomy | **initialization_failure** | -- | -- | -- | -- | 1515 candidates exist in the capture but none pass the frozen IoU/margin/confirmation rule in the init window |
+| `uav0000339_00001_v` | frame taxonomy | evaluated | 26/275 (9.5%) | 0/275 (0.0%) | 72/275 (26.2%)&sup1; | 0/275 (0.0%) | TIM: 2 `correct_same_person_recovery`, 96 `safe_suppression`; both streams: 107 `target_candidate_absent` (shared candidate stream), 0 distractor/stale-ID |
+
+&sup1; `70 correct_target + 2 correct_same_person_recovery`, matching the
+operator's independently-confirmed positive forensic figures for this
+sequence (constraint check in this slice's request: raw 26/0, TIM 72/0 --
+both hold exactly).
+
+Every ROS2 sequence and the one evaluable VisDrone sequence shows the same
+pattern: TIM-MARS raises correct-target time/fraction substantially over
+raw ByteTrack *and* reduces or matches wrong-person time/fraction --
+correctness and safety improve together, not at each other's expense. The
+two `initialization_failure` cases are preserved as failures in the primary
+denominator (evaluated_count=5, initialization_failure_count=2 of 7), not
+removed or reinterpreted, per operator instruction.
+
+**Oracle-candidate results (diagnostic mode, 3 sequences).**
+
+| Sequence | Status | Raw correct | Raw wrong | TIM correct | TIM wrong | TIM safe-suppression | TIM same-person recovery | Candidate absent / ambiguous / distractor / stale-ID |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+| `uav0000117_02622_v` | evaluated | 349/349 (100%) | 0 | 1/349 (0.3%) | 0 | 348 | 0 | 0 / 0 / 0 / 0 |
+| `uav0000137_00458_v` | evaluated | 233/233 (100%) | 0 | 226/233 (97.0%) | 0 | 7 | 0 | 0 / 0 / 0 / 0 |
+| `uav0000339_00001_v` | evaluated | 275/275 (100%) | 0 | 61/275 (22.2%) | 0 | 214 | 0 | 0 / 0 / 0 / 0 |
+
+`physical_absence_correct` and `wrong_output_during_physical_absence` are 0
+for every oracle run (no genuine annotated absence gap fell inside the
+selected target's segment for these three sequences).
+
+Raw is trivially 100% correct in oracle mode by construction: the frozen
+raw baseline follows one fixed oracle ID for the whole sequence, and that
+ID never switches identity (the ground truth itself is the candidate
+stream), so this number measures the oracle contract's internal
+consistency, not tracking skill, and must not be read as "raw achieves
+perfect tracking." TIM-MARS's correct-target fraction varies drastically by
+scene (0.3% / 97.0% / 22.2%) and in every case the non-correct remainder is
+almost entirely `safe_suppression`, never a wrong output: TIM-MARS held 0
+wrong-person frames across all three oracle runs, the same invariant as the
+full pipeline.
+
+**The `uav0000117_02622_v` oracle result (0.3% correct, 99.7%
+`safe_suppression`) was investigated before acceptance**, per operator
+instruction to inspect any surprising oracle result without tuning the
+algorithm. Checked: the passed image dimensions were correct
+(2720x1530, matching the manifest, not a repeat of Slice 22's bug);
+initialization succeeded cleanly at frame 1 with 7815 oracle candidates
+available across the sequence; wrong-person count is 0, ruling out a
+coordinate-type defect. This sequence's target has the smallest annotated
+box of any retained sequence (32x83 px, ~1.2% of frame width) in the
+densest scene (~88 people). The coherent, non-tuned explanation is that
+TIM-MARS's appearance-based re-confirmation essentially never reaches
+sufficient confidence on a crop this small in a scene this dense, so it
+defaults to withholding output rather than guessing -- consistent with, not
+contradicting, the zero-wrong-person behaviour seen everywhere else. No
+code was changed in response to this result.
+
+**Interpretation -- what the two modes each show, and do not show.** The
+full pipeline (real detector -> real ByteTrack -> raw/TIM) measures what
+this thesis is actually about: deployed behaviour under real detector and
+tracker imperfection. There, TIM-MARS improves both correctness and safety
+over raw ByteTrack on every evaluable sequence, and the two genuine
+initialization failures mark the honest limit of any anchored-identity
+system when the physical target never produces a confirmable candidate at
+all. Oracle mode removes the detector and tracker from the loop entirely to
+isolate a different, narrower question: given a perfect, always-available,
+unambiguous candidate, what does TIM-MARS's own identity-memory and
+appearance-confirmation logic do on its own? The answer is that it never
+once produces a wrong-person output under ideal candidate conditions
+either, but its willingness to actively commit to an answer (versus safely
+suppressing) is scene-dependent and, on the hardest scene, very low. Oracle
+mode is therefore evidence about TIM-MARS's own confirmation threshold
+behaviour in isolation, not a second, competing measurement of "real"
+accuracy, and the two numbers must not be averaged, combined, or presented
+as a single headline figure.
+
+Validation: `test_aggregate_oracle_report.py` (2 new tests) passes;
+`test_aggregate_first_phase_report.py`, `test_select_first_phase_benchmark.py`,
+and `test_add_ros2_first_phase_sequences.py` (the primary-scope tests
+already covered in Slice 25) continue to pass unchanged, confirming this
+slice added a new, separate read path rather than touching the primary
+aggregate. No TIM-MARS threshold, detector setting, ByteTrack parameter, or
+sequence selection was changed while producing or interpreting any of the
+above.

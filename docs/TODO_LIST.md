@@ -197,10 +197,29 @@ Open executable issues: **24**.
       aggregate was recomputed on the retained 7 in-scope sequences: 5
       evaluated, 2 genuine initialization failures, 0 missing reports; the 6
       excluded sequences are reported separately and are not counted in
-      these totals.
-      Remaining work: run the oracle-candidate path per retained sequence,
-      and produce the complete first-phase benchmark report and thesis-ready
-      evidence.
+      these totals. The oracle-candidate path is now complete for every
+      sequence the manifest already declares a defensible oracle contract
+      for (Slice 26): the 3 retained VisDrone sequences
+      (`uav0000117_02622_v`, `uav0000137_00458_v`, `uav0000339_00001_v`);
+      no oracle protocol was invented for the 4 ROS2 sequences, which
+      declare no such contract. Kept fully separate from the full-pipeline
+      aggregate via a new sibling script,
+      `tools/analysis/aggregate_oracle_report.py`, writing to its own
+      `artifacts/reports/p030_broader_sequences/oracle_frame_reports/`
+      directory -- the two evaluation modes are never combined into one
+      headline metric. Full-pipeline result: TIM-MARS raises correct-target
+      fraction and reduces or matches wrong-person fraction versus raw
+      ByteTrack on every evaluable sequence (all 4 ROS2 plus
+      `uav0000339_00001_v`); the two initialization failures remain failures
+      in the primary denominator. Oracle result (diagnostic, isolates
+      TIM-MARS's own confirmation behaviour from detector/tracker
+      availability): 0 wrong-person frames across all 3 oracle runs, but
+      correct-target fraction varies sharply by scene (0.3% / 97.0% / 22.2%)
+      with the remainder almost entirely safe suppression -- the 0.3% case
+      (`uav0000117_02622_v`, the sequence's smallest annotated target in its
+      densest scene) was inspected and found to be a genuine, non-bug
+      result, not tuned. Remaining work: produce the complete thesis-ready
+      writeup synthesizing both modes' evidence.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
