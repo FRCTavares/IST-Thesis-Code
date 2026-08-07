@@ -512,7 +512,12 @@ Open executable issues: **24**.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
-    - phase 7; experiment.
+    - phase 7; experiment. In progress: the frozen 7-dimension, 29-configuration
+      OFAT sensitivity protocol and deterministic sweep tooling are committed
+      (`docs/issues/p1-13-parameter-sensitivity.md`,
+      `docs/data/parameter_sensitivity/tim_mars_parameter_sensitivity_v1.yaml`,
+      `tools/experiments/run_tim_parameter_sensitivity.py`); the 116 TIM
+      replay experiments have not been run yet and this item is not DONE.
 
 16. [ ] [#58 — P1.13+ Compare lightweight tracker + TIM-MARS against integrated appearance-aware tracking](https://github.com/FRCTavares/IST-Thesis-Code/issues/58) — HIGHEST PRIORITY
     - phase 7; experiment; compare separately calibrated lightweight
