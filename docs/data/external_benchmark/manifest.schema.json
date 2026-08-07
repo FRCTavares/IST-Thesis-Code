@@ -1,0 +1,463 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frctavares.github.io/IST-Thesis-Code/p030-sequence-manifest.schema.json",
+  "title": "TIM-MARS Issue 30 broader-sequence manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark_id",
+    "status",
+    "created_date",
+    "baseline_commit",
+    "policy",
+    "coordinate_contract",
+    "sequences"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "benchmark_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "draft_not_frozen",
+        "frozen",
+        "superseded"
+      ]
+    },
+    "created_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "frozen_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "baseline_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "manifest_commit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_policy_changes_allowed",
+        "external_outcome_tuning_allowed",
+        "issue_27_held_out_allowed",
+        "selection_before_outcome_review"
+      ],
+      "properties": {
+        "canonical_policy_changes_allowed": {
+          "const": false
+        },
+        "external_outcome_tuning_allowed": {
+          "const": false
+        },
+        "issue_27_held_out_allowed": {
+          "const": false
+        },
+        "selection_before_outcome_review": {
+          "const": true
+        }
+      }
+    },
+    "coordinate_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "representation",
+        "space",
+        "x2_y2_semantics",
+        "clipping",
+        "normalized_frame_index",
+        "timestamp_rule"
+      ],
+      "properties": {
+        "representation": {
+          "const": "xyxy"
+        },
+        "space": {
+          "const": "original_source_image_pixels"
+        },
+        "x2_y2_semantics": {
+          "const": "geometric_edge"
+        },
+        "clipping": {
+          "const": "clip_to_zero_width_and_zero_height_bounds"
+        },
+        "normalized_frame_index": {
+          "const": "zero_based"
+        },
+        "timestamp_rule": {
+          "const": "normalized_frame_index_divided_by_frame_rate"
+        }
+      }
+    },
+    "sequences": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sequence"
+      }
+    }
+  },
+  "$defs": {
+    "mode": {
+      "enum": [
+        "oracle_candidate",
+        "detector_bytetrack_tim"
+      ]
+    },
+    "role": {
+      "enum": [
+        "integration_check",
+        "development_evidence",
+        "external_stress_test",
+        "future_held_out"
+      ]
+    },
+    "event_category": {
+      "enum": [
+        "clean_tracking",
+        "candidate_loss",
+        "identity_confusion",
+        "tracker_fragmentation",
+        "short_occlusion",
+        "long_occlusion",
+        "physical_absence",
+        "reentry",
+        "crowd_crossing",
+        "similar_clothing",
+        "partial_crop",
+        "small_target",
+        "illumination_change",
+        "camera_motion",
+        "appearance_separation",
+        "appearance_ambiguity"
+      ]
+    },
+    "sequence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "dataset",
+        "sequence_name",
+        "split",
+        "role",
+        "status",
+        "source",
+        "frame_contract",
+        "image",
+        "target",
+        "scene",
+        "event_categories",
+        "evaluation_modes",
+        "selection_reason",
+        "exclusions",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dataset": {
+          "enum": [
+            "ros2_internal",
+            "mot17",
+            "dancetrack",
+            "visdrone_mot"
+          ]
+        },
+        "sequence_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "split": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "$ref": "#/$defs/role"
+        },
+        "status": {
+          "enum": [
+            "proposed",
+            "selected",
+            "excluded",
+            "frozen"
+          ]
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "official_reference",
+            "local_relative_path",
+            "version",
+            "archive_sha256"
+          ],
+          "properties": {
+            "official_reference": {
+              "type": "string",
+              "minLength": 1
+            },
+            "local_relative_path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "archive_sha256": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "frame_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_index_base",
+            "source_start_frame",
+            "source_end_frame_inclusive",
+            "normalized_start_index",
+            "normalized_end_index_inclusive",
+            "frame_rate"
+          ],
+          "properties": {
+            "source_index_base": {
+              "enum": [
+                0,
+                1
+              ]
+            },
+            "source_start_frame": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "source_end_frame_inclusive": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "normalized_start_index": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "normalized_end_index_inclusive": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "frame_rate": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "width",
+            "height",
+            "camera_motion"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "camera_motion": {
+              "enum": [
+                "static",
+                "moving",
+                "mixed",
+                "unknown"
+              ]
+            }
+          }
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dataset_identity",
+            "initialization_start_frame",
+            "initialization_end_frame_inclusive",
+            "initialization_rule",
+            "candidate_match_rule",
+            "minimum_match_iou",
+            "minimum_match_margin",
+            "confirmation_frames",
+            "initial_tracker_identity",
+            "fixed_after_initialization",
+            "reselection_enabled",
+            "minimum_visible_frames",
+            "selected_before_outcome_review"
+          ],
+          "properties": {
+            "dataset_identity": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "initialization_start_frame": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "initialization_end_frame_inclusive": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "initialization_rule": {
+              "type": "string",
+              "minLength": 1
+            },
+            "candidate_match_rule": {
+              "const": "frozen_target_unique_iou_confirmation_v1"
+            },
+            "minimum_match_iou": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "minimum_match_margin": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "confirmation_frames": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "initial_tracker_identity": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "fixed_after_initialization": {
+              "const": true
+            },
+            "reselection_enabled": {
+              "const": false
+            },
+            "minimum_visible_frames": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "selected_before_outcome_review": {
+              "const": true
+            }
+          }
+        },
+        "scene": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "approximate_people",
+            "primary_challenge"
+          ],
+          "properties": {
+            "approximate_people": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "primary_challenge": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "event_categories": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/event_category"
+          }
+        },
+        "evaluation_modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/mode"
+          }
+        },
+        "selection_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exclusions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "adapter",
+            "adapter_schema_version",
+            "annotation_sha256",
+            "repository_commit"
+          ],
+          "properties": {
+            "adapter": {
+              "type": "string",
+              "minLength": 1
+            },
+            "adapter_schema_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "annotation_sha256": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "repository_commit": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          }
+        }
+      }
+    }
+  }
+}

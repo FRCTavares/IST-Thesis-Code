@@ -1,0 +1,845 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "tim_mars_broader_sequences_v1",
+  "status": "frozen",
+  "created_date": "2026-08-06",
+  "frozen_date": "2026-08-07",
+  "baseline_commit": "f1f02ebb8742e69bf6a1a5e416da2061b8efb1c4",
+  "manifest_commit": "124118b362ea1f44c8211722378c2347a84d4cfc",
+  "policy": {
+    "canonical_policy_changes_allowed": false,
+    "external_outcome_tuning_allowed": false,
+    "issue_27_held_out_allowed": false,
+    "selection_before_outcome_review": true
+  },
+  "coordinate_contract": {
+    "representation": "xyxy",
+    "space": "original_source_image_pixels",
+    "x2_y2_semantics": "geometric_edge",
+    "clipping": "clip_to_zero_width_and_zero_height_bounds",
+    "normalized_frame_index": "zero_based",
+    "timestamp_rule": "normalized_frame_index_divided_by_frame_rate"
+  },
+  "sequences": [
+    {
+      "id": "dancetrack_val_dancetrack0004",
+      "dataset": "dancetrack",
+      "sequence_name": "dancetrack0004",
+      "split": "val",
+      "role": "external_stress_test",
+      "status": "excluded",
+      "source": {
+        "official_reference": "https://github.com/DanceTrack/DanceTrack",
+        "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0004",
+        "version": "val:2026-08-06",
+        "archive_sha256": "90ba30973761ce0b81a9654c11086d87537392475ac8bc666d842e645641277c"
+      },
+      "frame_contract": {
+        "source_index_base": 1,
+        "source_start_frame": 1,
+        "source_end_frame_inclusive": 1203,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 1202,
+        "frame_rate": 20.0
+      },
+      "image": {
+        "width": 1920,
+        "height": 1080,
+        "camera_motion": "unknown"
+      },
+      "target": {
+        "dataset_identity": 3,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_selected_by_max_visible_frame_count_among_eligible_annotation_candidates_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": null,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 3,
+        "primary_challenge": "crowd_crossing"
+      },
+      "event_categories": [
+        "appearance_ambiguity",
+        "crowd_crossing",
+        "similar_clothing"
+      ],
+      "evaluation_modes": [
+        "oracle_candidate",
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "Selected by stratified candidate_count density sampling across the dancetrack:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: DanceTrack (indoor, ground-level, close-range dance/performance footage) is substantially out-of-domain for this thesis's selected-person UAV-following objective; excluded as a pre-outcome, domain-relevance scope decision, not based on any tracker or TIM-MARS result. This sequence's report was already generated before exclusion and is retained as exploratory/auditable evidence, not part of the primary Issue #30 aggregate."
+      ],
+      "provenance": {
+        "adapter": "external_tracking_dataset.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "a6ce73e1eedb04f299943f92231aa4b6b7ce177af500f3862cd12a690b86fc86",
+        "repository_commit": "3bd4cb4e426b5719807ce197385e1701e926f3d9"
+      }
+    },
+    {
+      "id": "dancetrack_val_dancetrack0019",
+      "dataset": "dancetrack",
+      "sequence_name": "dancetrack0019",
+      "split": "val",
+      "role": "external_stress_test",
+      "status": "excluded",
+      "source": {
+        "official_reference": "https://github.com/DanceTrack/DanceTrack",
+        "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0019",
+        "version": "val:2026-08-06",
+        "archive_sha256": "90ba30973761ce0b81a9654c11086d87537392475ac8bc666d842e645641277c"
+      },
+      "frame_contract": {
+        "source_index_base": 1,
+        "source_start_frame": 1,
+        "source_end_frame_inclusive": 2402,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 2401,
+        "frame_rate": 20.0
+      },
+      "image": {
+        "width": 1280,
+        "height": 720,
+        "camera_motion": "unknown"
+      },
+      "target": {
+        "dataset_identity": 2,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_selected_by_max_visible_frame_count_among_eligible_annotation_candidates_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": null,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 6,
+        "primary_challenge": "crowd_crossing"
+      },
+      "event_categories": [
+        "appearance_ambiguity",
+        "crowd_crossing",
+        "similar_clothing"
+      ],
+      "evaluation_modes": [
+        "oracle_candidate",
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "Selected by stratified candidate_count density sampling across the dancetrack:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: DanceTrack (indoor, ground-level, close-range dance/performance footage) is substantially out-of-domain for this thesis's selected-person UAV-following objective; excluded as a pre-outcome, domain-relevance scope decision, not based on any tracker or TIM-MARS result. No report was generated for this sequence before exclusion."
+      ],
+      "provenance": {
+        "adapter": "external_tracking_dataset.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "eef3d602c3a515d37eeb88c6f401de01646fd5b569dae584535de57431dbcd72",
+        "repository_commit": "3bd4cb4e426b5719807ce197385e1701e926f3d9"
+      }
+    },
+    {
+      "id": "dancetrack_val_dancetrack0063",
+      "dataset": "dancetrack",
+      "sequence_name": "dancetrack0063",
+      "split": "val",
+      "role": "external_stress_test",
+      "status": "excluded",
+      "source": {
+        "official_reference": "https://github.com/DanceTrack/DanceTrack",
+        "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0063",
+        "version": "val:2026-08-06",
+        "archive_sha256": "90ba30973761ce0b81a9654c11086d87537392475ac8bc666d842e645641277c"
+      },
+      "frame_contract": {
+        "source_index_base": 1,
+        "source_start_frame": 1,
+        "source_end_frame_inclusive": 1000,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 999,
+        "frame_rate": 20.0
+      },
+      "image": {
+        "width": 1920,
+        "height": 1080,
+        "camera_motion": "unknown"
+      },
+      "target": {
+        "dataset_identity": 7,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_selected_by_max_visible_frame_count_among_eligible_annotation_candidates_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": null,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 7,
+        "primary_challenge": "crowd_crossing"
+      },
+      "event_categories": [
+        "appearance_ambiguity",
+        "crowd_crossing",
+        "similar_clothing"
+      ],
+      "evaluation_modes": [
+        "oracle_candidate",
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "Selected by stratified candidate_count density sampling across the dancetrack:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: DanceTrack (indoor, ground-level, close-range dance/performance footage) is substantially out-of-domain for this thesis's selected-person UAV-following objective; excluded as a pre-outcome, domain-relevance scope decision, not based on any tracker or TIM-MARS result. No report was generated for this sequence before exclusion."
+      ],
+      "provenance": {
+        "adapter": "external_tracking_dataset.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "cdbe63f53b65fc9f817623488119ce7e5887ab2b98bdfee4ef405ec0ada9d51c",
+        "repository_commit": "3bd4cb4e426b5719807ce197385e1701e926f3d9"
+      }
+    },
+    {
+      "id": "dancetrack_val_dancetrack0073",
+      "dataset": "dancetrack",
+      "sequence_name": "dancetrack0073",
+      "split": "val",
+      "role": "external_stress_test",
+      "status": "excluded",
+      "source": {
+        "official_reference": "https://github.com/DanceTrack/DanceTrack",
+        "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0073",
+        "version": "val:2026-08-06",
+        "archive_sha256": "90ba30973761ce0b81a9654c11086d87537392475ac8bc666d842e645641277c"
+      },
+      "frame_contract": {
+        "source_index_base": 1,
+        "source_start_frame": 1,
+        "source_end_frame_inclusive": 703,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 702,
+        "frame_rate": 20.0
+      },
+      "image": {
+        "width": 1920,
+        "height": 1080,
+        "camera_motion": "unknown"
+      },
+      "target": {
+        "dataset_identity": 2,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_selected_by_max_visible_frame_count_among_eligible_annotation_candidates_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": null,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 13,
+        "primary_challenge": "crowd_crossing"
+      },
+      "event_categories": [
+        "appearance_ambiguity",
+        "crowd_crossing",
+        "similar_clothing"
+      ],
+      "evaluation_modes": [
+        "oracle_candidate",
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "Selected by stratified candidate_count density sampling across the dancetrack:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: DanceTrack (indoor, ground-level, close-range dance/performance footage) is substantially out-of-domain for this thesis's selected-person UAV-following objective; excluded as a pre-outcome, domain-relevance scope decision, not based on any tracker or TIM-MARS result. No report was generated for this sequence before exclusion."
+      ],
+      "provenance": {
+        "adapter": "external_tracking_dataset.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "e4666c17a91307fbb7d0a319997fdab81bb3fe4bb216a078a08450d6443810ea",
+        "repository_commit": "3bd4cb4e426b5719807ce197385e1701e926f3d9"
+      }
+    },
+    {
+      "id": "dancetrack_val_dancetrack0094",
+      "dataset": "dancetrack",
+      "sequence_name": "dancetrack0094",
+      "split": "val",
+      "role": "external_stress_test",
+      "status": "excluded",
+      "source": {
+        "official_reference": "https://github.com/DanceTrack/DanceTrack",
+        "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0094",
+        "version": "val:2026-08-06",
+        "archive_sha256": "90ba30973761ce0b81a9654c11086d87537392475ac8bc666d842e645641277c"
+      },
+      "frame_contract": {
+        "source_index_base": 1,
+        "source_start_frame": 1,
+        "source_end_frame_inclusive": 603,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 602,
+        "frame_rate": 20.0
+      },
+      "image": {
+        "width": 1920,
+        "height": 1080,
+        "camera_motion": "unknown"
+      },
+      "target": {
+        "dataset_identity": 3,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_selected_by_max_visible_frame_count_among_eligible_annotation_candidates_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": null,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 24,
+        "primary_challenge": "crowd_crossing"
+      },
+      "event_categories": [
+        "appearance_ambiguity",
+        "crowd_crossing",
+        "similar_clothing"
+      ],
+      "evaluation_modes": [
+        "oracle_candidate",
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "Selected by stratified candidate_count density sampling across the dancetrack:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: DanceTrack (indoor, ground-level, close-range dance/performance footage) is substantially out-of-domain for this thesis's selected-person UAV-following objective; excluded as a pre-outcome, domain-relevance scope decision, not based on any tracker or TIM-MARS result. No report was generated for this sequence before exclusion."
+      ],
+      "provenance": {
+        "adapter": "external_tracking_dataset.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "6ce8a8e56860d094dd8c1fa9735019a38c2b7218355ae2003a1423c9fa6587d2",
+        "repository_commit": "3bd4cb4e426b5719807ce197385e1701e926f3d9"
+      }
+    },
+    {
+      "id": "ros2_internal_development_may_hard_reentry",
+      "dataset": "ros2_internal",
+      "sequence_name": "may_hard_reentry",
+      "split": "development",
+      "role": "development_evidence",
+      "status": "frozen",
+      "source": {
+        "official_reference": "docs/data/splits/tim_mars_split_v1.json#dev_may_hard_reentry",
+        "local_relative_path": "bags/replay/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/may_hard_reentry",
+        "version": "deterministic_tim_replay:836d73cbf2a47ddb",
+        "archive_sha256": null
+      },
+      "frame_contract": {
+        "source_index_base": 0,
+        "source_start_frame": 0,
+        "source_end_frame_inclusive": 359,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 359,
+        "frame_rate": 5.3246175159867795
+      },
+      "image": {
+        "width": 640,
+        "height": 640,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 1,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_fixed_to_annotated_initial_correct_target_track_id_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": 1,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 4,
+        "primary_challenge": "reentry"
+      },
+      "event_categories": [
+        "reentry",
+        "tracker_fragmentation"
+      ],
+      "evaluation_modes": [
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "One of the four sequences already frozen as the `development` set in docs/data/splits/tim_mars_split_v1.json, reused here as the fixed internal ROS 2 benchmark case set. The physical target identity is the initial correct_target_track_id from the sequence's own official ByteTrack annotation CSV, not a TIM-MARS outcome. Only ByteTrack-tracked bags are used; where the split's existing replay chain used OC-SORT instead (seq03, seq04), a fresh deterministic TIM-MARS replay was generated against the sequence's official ByteTrack full_pipeline bag (Slice 15) so the raw baseline is genuinely ByteTrack, matching Issue #30's explicit requirement.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "run_deterministic_tim_replay.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "fd0ee62693696c467968127fb4d6af0f6524487384a4b9509958076f84ed8625",
+        "repository_commit": "124118b362ea1f44c8211722378c2347a84d4cfc"
+      }
+    },
+    {
+      "id": "ros2_internal_development_seq01_clean",
+      "dataset": "ros2_internal",
+      "sequence_name": "seq01_clean",
+      "split": "development",
+      "role": "development_evidence",
+      "status": "frozen",
+      "source": {
+        "official_reference": "docs/data/splits/tim_mars_split_v1.json#dev_june_seq01",
+        "local_relative_path": "bags/replay/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/seq01_clean",
+        "version": "deterministic_tim_replay:55ab81da4e4b9687",
+        "archive_sha256": null
+      },
+      "frame_contract": {
+        "source_index_base": 0,
+        "source_start_frame": 0,
+        "source_end_frame_inclusive": 806,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 806,
+        "frame_rate": 7.474812829910312
+      },
+      "image": {
+        "width": 640,
+        "height": 640,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 1,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_fixed_to_annotated_initial_correct_target_track_id_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": 1,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 4,
+        "primary_challenge": "clean_tracking"
+      },
+      "event_categories": [
+        "clean_tracking"
+      ],
+      "evaluation_modes": [
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "One of the four sequences already frozen as the `development` set in docs/data/splits/tim_mars_split_v1.json, reused here as the fixed internal ROS 2 benchmark case set. The physical target identity is the initial correct_target_track_id from the sequence's own official ByteTrack annotation CSV, not a TIM-MARS outcome. Only ByteTrack-tracked bags are used; where the split's existing replay chain used OC-SORT instead (seq03, seq04), a fresh deterministic TIM-MARS replay was generated against the sequence's official ByteTrack full_pipeline bag (Slice 15) so the raw baseline is genuinely ByteTrack, matching Issue #30's explicit requirement.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "run_deterministic_tim_replay.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "487c80e472f7c0c74c60a42a5b01a261572e8089471b8d8c0b966b5f703c8bf4",
+        "repository_commit": "124118b362ea1f44c8211722378c2347a84d4cfc"
+      }
+    },
+    {
+      "id": "ros2_internal_development_seq03_crossing",
+      "dataset": "ros2_internal",
+      "sequence_name": "seq03_crossing",
+      "split": "development",
+      "role": "development_evidence",
+      "status": "frozen",
+      "source": {
+        "official_reference": "docs/data/splits/tim_mars_split_v1.json#dev_june_seq03_ocsort(re-evaluated on the ByteTrack full_pipeline bag; the split's own OC-SORT replay chain does not satisfy Issue #30's ByteTrack-baseline requirement, see Slice 15)",
+        "local_relative_path": "bags/replay/p030_broader_sequences_bytetrack_2026_08_07/seq03_crossing",
+        "version": "deterministic_tim_replay:d90b8da37ba77f51",
+        "archive_sha256": null
+      },
+      "frame_contract": {
+        "source_index_base": 0,
+        "source_start_frame": 0,
+        "source_end_frame_inclusive": 678,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 678,
+        "frame_rate": 6.965758287268074
+      },
+      "image": {
+        "width": 640,
+        "height": 640,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 2,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_fixed_to_annotated_initial_correct_target_track_id_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": 2,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 4,
+        "primary_challenge": "crowd_crossing"
+      },
+      "event_categories": [
+        "crowd_crossing",
+        "identity_confusion",
+        "tracker_fragmentation"
+      ],
+      "evaluation_modes": [
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "One of the four sequences already frozen as the `development` set in docs/data/splits/tim_mars_split_v1.json, reused here as the fixed internal ROS 2 benchmark case set. The physical target identity is the initial correct_target_track_id from the sequence's own official ByteTrack annotation CSV, not a TIM-MARS outcome. Only ByteTrack-tracked bags are used; where the split's existing replay chain used OC-SORT instead (seq03, seq04), a fresh deterministic TIM-MARS replay was generated against the sequence's official ByteTrack full_pipeline bag (Slice 15) so the raw baseline is genuinely ByteTrack, matching Issue #30's explicit requirement.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "run_deterministic_tim_replay.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "712665aee6d40ff2d060761896c6f8e82037fe4f596f951f42b41c2a8042e43b",
+        "repository_commit": "124118b362ea1f44c8211722378c2347a84d4cfc"
+      }
+    },
+    {
+      "id": "ros2_internal_development_seq04_occlusion",
+      "dataset": "ros2_internal",
+      "sequence_name": "seq04_occlusion",
+      "split": "development",
+      "role": "development_evidence",
+      "status": "frozen",
+      "source": {
+        "official_reference": "docs/data/splits/tim_mars_split_v1.json#dev_june_seq04_ocsort(re-evaluated on the ByteTrack full_pipeline bag; the split's own OC-SORT replay chain does not satisfy Issue #30's ByteTrack-baseline requirement, see Slice 15)",
+        "local_relative_path": "bags/replay/p030_broader_sequences_bytetrack_2026_08_07/seq04_occlusion",
+        "version": "deterministic_tim_replay:3f61a24494cc242d",
+        "archive_sha256": null
+      },
+      "frame_contract": {
+        "source_index_base": 0,
+        "source_start_frame": 0,
+        "source_end_frame_inclusive": 466,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 466,
+        "frame_rate": 7.052626589380576
+      },
+      "image": {
+        "width": 640,
+        "height": 640,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 1,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_fixed_to_annotated_initial_correct_target_track_id_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": 1,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 4,
+        "primary_challenge": "long_occlusion"
+      },
+      "event_categories": [
+        "long_occlusion",
+        "physical_absence",
+        "reentry",
+        "tracker_fragmentation"
+      ],
+      "evaluation_modes": [
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "One of the four sequences already frozen as the `development` set in docs/data/splits/tim_mars_split_v1.json, reused here as the fixed internal ROS 2 benchmark case set. The physical target identity is the initial correct_target_track_id from the sequence's own official ByteTrack annotation CSV, not a TIM-MARS outcome. Only ByteTrack-tracked bags are used; where the split's existing replay chain used OC-SORT instead (seq03, seq04), a fresh deterministic TIM-MARS replay was generated against the sequence's official ByteTrack full_pipeline bag (Slice 15) so the raw baseline is genuinely ByteTrack, matching Issue #30's explicit requirement.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "run_deterministic_tim_replay.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "27ba56dcbfcfffbdaf4027cae3806193c07de949e7601cb4fc16196e06d92428",
+        "repository_commit": "124118b362ea1f44c8211722378c2347a84d4cfc"
+      }
+    },
+    {
+      "id": "visdrone_mot_val_uav0000117_02622_v",
+      "dataset": "visdrone_mot",
+      "sequence_name": "uav0000117_02622_v",
+      "split": "val",
+      "role": "external_stress_test",
+      "status": "frozen",
+      "source": {
+        "official_reference": "https://github.com/VisDrone/VisDrone-Dataset",
+        "local_relative_path": "data/datasets/external/visdrone_mot/val",
+        "version": "val:2026-08-06",
+        "archive_sha256": "e53571990dfc79229e0a8ae10264bc4fa604a027c44b06e3a097417e4fa55705"
+      },
+      "frame_contract": {
+        "source_index_base": 1,
+        "source_start_frame": 1,
+        "source_end_frame_inclusive": 349,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 348,
+        "frame_rate": 24.0
+      },
+      "image": {
+        "width": 2720,
+        "height": 1530,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 1,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_selected_by_max_visible_frame_count_among_eligible_annotation_candidates_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": null,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 88,
+        "primary_challenge": "crowd_crossing"
+      },
+      "event_categories": [
+        "camera_motion",
+        "crowd_crossing"
+      ],
+      "evaluation_modes": [
+        "oracle_candidate",
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "Selected by stratified candidate_count density sampling across the visdrone_mot:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "external_tracking_dataset.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "31658130cfc9a03b86c6cdb888d6655bff80917a872a72c49d9265a2370815c1",
+        "repository_commit": "3bd4cb4e426b5719807ce197385e1701e926f3d9"
+      }
+    },
+    {
+      "id": "visdrone_mot_val_uav0000137_00458_v",
+      "dataset": "visdrone_mot",
+      "sequence_name": "uav0000137_00458_v",
+      "split": "val",
+      "role": "external_stress_test",
+      "status": "frozen",
+      "source": {
+        "official_reference": "https://github.com/VisDrone/VisDrone-Dataset",
+        "local_relative_path": "data/datasets/external/visdrone_mot/val",
+        "version": "val:2026-08-06",
+        "archive_sha256": "e53571990dfc79229e0a8ae10264bc4fa604a027c44b06e3a097417e4fa55705"
+      },
+      "frame_contract": {
+        "source_index_base": 1,
+        "source_start_frame": 1,
+        "source_end_frame_inclusive": 233,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 232,
+        "frame_rate": 24.0
+      },
+      "image": {
+        "width": 2688,
+        "height": 1512,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 41,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_selected_by_max_visible_frame_count_among_eligible_annotation_candidates_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": null,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 37,
+        "primary_challenge": "moderate_visibility_tracking"
+      },
+      "event_categories": [
+        "camera_motion"
+      ],
+      "evaluation_modes": [
+        "oracle_candidate",
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "Selected by stratified candidate_count density sampling across the visdrone_mot:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "external_tracking_dataset.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "f055c20516df44a7092500e868830ac3a07f24e02f3241992ff211e3438887cc",
+        "repository_commit": "3bd4cb4e426b5719807ce197385e1701e926f3d9"
+      }
+    },
+    {
+      "id": "visdrone_mot_val_uav0000268_05773_v",
+      "dataset": "visdrone_mot",
+      "sequence_name": "uav0000268_05773_v",
+      "split": "val",
+      "role": "external_stress_test",
+      "status": "excluded",
+      "source": {
+        "official_reference": "https://github.com/VisDrone/VisDrone-Dataset",
+        "local_relative_path": "data/datasets/external/visdrone_mot/val",
+        "version": "val:2026-08-06",
+        "archive_sha256": "e53571990dfc79229e0a8ae10264bc4fa604a027c44b06e3a097417e4fa55705"
+      },
+      "frame_contract": {
+        "source_index_base": 1,
+        "source_start_frame": 1,
+        "source_end_frame_inclusive": 978,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 977,
+        "frame_rate": 24.0
+      },
+      "image": {
+        "width": 3840,
+        "height": 2160,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 40,
+        "initialization_start_frame": 773,
+        "initialization_end_frame_inclusive": 782,
+        "initialization_rule": "physical_identity_selected_by_max_visible_frame_count_among_eligible_annotation_candidates_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": null,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 4,
+        "primary_challenge": "crowd_crossing"
+      },
+      "event_categories": [
+        "camera_motion",
+        "crowd_crossing",
+        "small_target"
+      ],
+      "evaluation_modes": [
+        "oracle_candidate",
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "Selected by stratified candidate_count density sampling across the visdrone_mot:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: 4K (3840x2160) source resolution made capture disproportionately expensive on the development Pi (8GB RAM, zero swap) relative to this sequence's thesis value -- an initial capture attempt was OOM-killed (ros2 bag play's default 1000-message read-ahead queue tried to buffer ~25GB of 4K frames) and a second attempt lost 31% of image messages to recorder cache-flush backpressure under disk pressure; excluded as a pre-outcome, resource-cost scope decision, not based on any tracker or TIM-MARS result. A clean, complete capture (978/978 frames) was eventually obtained after fixing the capture tooling, but no frame-level report was generated before the capture bag and source images were removed as part of this exclusion's disk cleanup: the decompression safety guard (6x compressed size + 25GiB floor, hardened after a prior OOM crash) needed ~75GiB free and only ~70GiB was available even after freeing DanceTrack's heavy data. See docs/issues/p1-12-broader-sequences.md for full status; a report could be produced later via a fresh capture if this sequence is ever revisited."
+      ],
+      "provenance": {
+        "adapter": "external_tracking_dataset.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "0ec45408deafc855d4d1e06cddff24c002e7423f27ca28dedd0becedff978ec7",
+        "repository_commit": "3bd4cb4e426b5719807ce197385e1701e926f3d9"
+      }
+    },
+    {
+      "id": "visdrone_mot_val_uav0000339_00001_v",
+      "dataset": "visdrone_mot",
+      "sequence_name": "uav0000339_00001_v",
+      "split": "val",
+      "role": "external_stress_test",
+      "status": "frozen",
+      "source": {
+        "official_reference": "https://github.com/VisDrone/VisDrone-Dataset",
+        "local_relative_path": "data/datasets/external/visdrone_mot/val",
+        "version": "val:2026-08-06",
+        "archive_sha256": "e53571990dfc79229e0a8ae10264bc4fa604a027c44b06e3a097417e4fa55705"
+      },
+      "frame_contract": {
+        "source_index_base": 1,
+        "source_start_frame": 1,
+        "source_end_frame_inclusive": 275,
+        "normalized_start_index": 0,
+        "normalized_end_index_inclusive": 274,
+        "frame_rate": 24.0
+      },
+      "image": {
+        "width": 1904,
+        "height": 1071,
+        "camera_motion": "moving"
+      },
+      "target": {
+        "dataset_identity": 17,
+        "initialization_start_frame": 0,
+        "initialization_end_frame_inclusive": 9,
+        "initialization_rule": "physical_identity_selected_by_max_visible_frame_count_among_eligible_annotation_candidates_v1",
+        "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+        "minimum_match_iou": 0.5,
+        "minimum_match_margin": 0.1,
+        "confirmation_frames": 2,
+        "initial_tracker_identity": null,
+        "fixed_after_initialization": true,
+        "reselection_enabled": false,
+        "minimum_visible_frames": 30,
+        "selected_before_outcome_review": true
+      },
+      "scene": {
+        "approximate_people": 18,
+        "primary_challenge": "moderate_visibility_tracking"
+      },
+      "event_categories": [
+        "camera_motion"
+      ],
+      "evaluation_modes": [
+        "oracle_candidate",
+        "detector_bytetrack_tim"
+      ],
+      "selection_reason": "Selected by stratified candidate_count density sampling across the visdrone_mot:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
+      "exclusions": [],
+      "provenance": {
+        "adapter": "external_tracking_dataset.py",
+        "adapter_schema_version": 1,
+        "annotation_sha256": "e7f17b7132ef3c08b1f4818f6931af8c76228f7c3b0958f3e974341c4bc53a2a",
+        "repository_commit": "3bd4cb4e426b5719807ce197385e1701e926f3d9"
+      }
+    }
+  ]
+}

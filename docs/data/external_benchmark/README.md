@@ -1,0 +1,157 @@
+# External benchmark data contract
+
+This directory contains tracked contracts and manifests for Issue #30.
+
+It does not contain external dataset images or large generated outputs.
+
+## Tracked files
+
+- `manifest.schema.json`: schema for the frozen benchmark manifest.
+- `sequence_manifest.json`: current benchmark manifest.
+- future small normalized annotation or provenance files when justified.
+
+## Local ignored storage
+
+- `data/datasets/external/`: original downloaded datasets.
+- `data/datasets/processed/`: normalized adapter outputs and caches.
+- `artifacts/reports/p030_broader_sequences/`: generated evaluation reports.
+- `ros2_ws/log/p030_broader_sequences/`: generated logs.
+
+## Current status
+
+The manifest is **frozen** (`status: "frozen"`, `frozen_date: 2026-08-07`,
+`manifest_commit: 124118b362ea1f44c8211722378c2347a84d4cfc`). Sequence
+names, target identities, and frame ranges for every entry are final.
+
+Final Issue #30 evaluation is complete; the issue is closed. The canonical,
+thesis-facing result is
+`docs/results/selected_target_tracking/p030_broader_sequences_summary.md`.
+The full chronological engineering record is
+`docs/issues/p1-12-broader-sequences.md`.
+
+## Post-freeze scope exclusions
+
+After freezing, and before final results were promoted, the operator made
+two explicit, pre-outcome scope decisions -- neither based on any tracker
+or TIM-MARS result:
+
+- all 5 DanceTrack sequences are excluded from the primary benchmark as
+  substantially out-of-domain for this thesis's selected-person
+  UAV-following objective;
+- `visdrone_mot_val_uav0000268_05773_v` (the 4K VisDrone sequence) is
+  excluded as a disproportionate resource-cost outlier.
+
+Both remain in `sequence_manifest.json` with `status: "excluded"` and an
+explicit `exclusions` reason each -- kept as auditable record, not deleted.
+The primary Issue #30 benchmark is the remaining 7 sequences: the 4 ROS 2
+development sequences plus `uav0000117_02622_v`, `uav0000137_00458_v`, and
+`uav0000339_00001_v`. See
+`docs/issues/p1-12-broader-sequences.md`, Slice 25, for the full rationale.
+
+## Split-level acquisition provenance
+
+`dataset_sources.json` schema version 2 records verified archives per split.
+
+A dataset may therefore be:
+
+- `not_downloaded` when no admissible split is verified;
+- `partially_verified` when only some admissible splits are verified;
+- `fully_verified` only when every admissible split is verified.
+
+Each acquisition record retains the archive filename, SHA-256, byte size,
+installed split path, verification date, sequence count, annotation count and
+image count. Large archives and extracted images remain ignored.
+
+The tracked verifier checks those fields against local storage without selecting
+a sequence, target identity or frame range.
+
+## Annotation-only sequence profiles
+
+`profile_external_tracking_dataset.py` creates deterministic profiles from the
+tracked source registry, local catalogue, normalized annotations and existing
+candidate-selection policy.
+
+Profiles contain sequence geometry, annotation counts, explicit exclusion
+reasons and physical-target candidate facts. They do not contain tracker IDs,
+TIM-MARS scores, recovery outcomes or benchmark selections.
+
+MOT17 and DanceTrack use the official frame rate in `seqinfo.ini`. A dataset
+without source timing metadata, including the installed VisDrone layout, must
+receive `--frame-rate` explicitly. Such an input is labelled
+`explicit_cli_unfrozen` and remains unfrozen until its provenance is resolved
+and the benchmark manifest is deliberately frozen.
+
+## VisDrone timing provenance
+
+The official VisDrone FAQ states that the original videos were captured at
+24 FPS and that only part of their frames was extracted for annotation.
+
+These are separate facts:
+
+- `original_capture_frame_rate_hz` is `24.0`;
+- `exported_sequence_frame_rate_hz` remains unavailable;
+- adjacent exported images are not assumed to be consecutive original-video
+  frames;
+- exported-frame indices therefore do not define authoritative physical time.
+
+An explicit profiler `--frame-rate` remains an unfrozen deterministic analysis
+or replay input. For VisDrone it must not be described as source metadata,
+exported cadence or physical timestamp evidence. Sequence selection remains
+frame-index-only until exported cadence is authoritatively resolved.
+
+## Verified DanceTrack validation acquisition
+
+The official DanceTrack validation archive is installed locally for
+non-commercial research evaluation.
+
+Verified acquisition facts:
+
+- split: `val`;
+- archive: `val.zip`;
+- archive size: `4,209,785,614` bytes;
+- archive SHA-256:
+  `90ba30973761ce0b81a9654c11086d87537392475ac8bc666d842e645641277c`;
+- installed sequences: 25;
+- ground-truth files: 25;
+- source images: 25,508;
+- source frame rate: 20 FPS from each sequence's `seqinfo.ini`;
+- verification date: 6 August 2026.
+
+The DanceTrack training split remains absent. Therefore, the dataset
+acquisition status is `partially_verified`, not `fully_verified`.
+
+The acquisition does not select a benchmark sequence, physical identity,
+initialization window or frame range. It does not modify the benchmark
+manifest or inspect tracker and TIM-MARS outcomes.
+
+## MOT17 acquisition deferral
+
+MOT17 acquisition is deferred. The official MOTChallenge source
+(`https://motchallenge.net/data/MOT17/`, resolving to the TUM-hosted
+`131.159.19.34` / `2a09:80c0:18::1034`) is currently unreachable from the
+development network.
+
+Diagnosis on 7 August 2026 found:
+
+- DNS resolution for `motchallenge.net` and `www.motchallenge.net` succeeds
+  and returns the same host;
+- IPv6 fails immediately with no local route;
+- IPv4 fails with a routing-level error (`No route to host` /
+  `Network is unreachable`) on both port 80 and port 443, distinct from a TLS
+  or application-layer failure;
+- general internet access from the same network is unaffected (for example
+  `https://github.com` succeeds);
+- the same TUM host is independently unreachable from a second, unrelated
+  network, while general internet access from that network also succeeds.
+
+This pattern indicates a routing or peering gap to the TUM-hosted network (or
+a possible outage on their end), not a local misconfiguration, and it does
+not justify substituting an unofficial mirror.
+
+`dataset_sources.json` keeps the `mot17` entry as `acquisition_status:
+"not_downloaded"` with an empty `acquisitions` list, which remains literally
+accurate. MOT17 stays in scope as a later supplementary benchmark once the
+official source is reachable or the archive is obtained through another
+official-source download performed by the repository owner. It is excluded
+from the first benchmark phase (see `docs/issues/p1-12-broader-sequences.md`
+and `docs/TODO_LIST.md`).

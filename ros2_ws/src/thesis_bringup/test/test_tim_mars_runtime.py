@@ -140,6 +140,76 @@ def test_equal_timestamp_image_is_selected():
     assert selected.stamp_ns == 200
 
 
+def test_streaming_add_image_matches_bulk_replace_images():
+    # Regression coverage for the deterministic-replay memory fix
+    # (Slice 23): run_deterministic_tim_replay.py used to preload every
+    # decoded image into one Python list before calling replace_images()
+    # once, which exhausted memory on long/high-resolution external
+    # sequences. It now streams images into the runtime one at a time via
+    # add_image() (the same bounded, live-mode-safe method the real ROS
+    # node uses), releasing each sorted track event for processing only
+    # once every image at or before its timestamp has been added.
+    #
+    # This proves the two approaches select identical causal images for
+    # every query in a representative timeline: a gap between images, a
+    # duplicate timestamp (last-write-wins per replace_images'
+    # documented contract), a query before the first image, a query
+    # exactly on an image timestamp, a query strictly between two images,
+    # and a query after the last image.
+    image_stamps = [100, 100, 250, 250, 400, 900, 900, 1500]
+    images = [
+        (stamp_ns, np.full((4, 4, 3), index, dtype=np.uint8))
+        for index, stamp_ns in enumerate(image_stamps)
+    ]
+
+    query_timestamps = [50, 100, 175, 250, 300, 899, 900, 901, 5000]
+
+    bulk = TimMarsRuntime(runtime_config())
+    bulk.replace_images(images)
+    bulk_selection = [
+        (
+            frame.stamp_ns
+            if (frame := bulk.select_causal_image(query))
+            else None
+        )
+        for query in query_timestamps
+    ]
+
+    streaming = TimMarsRuntime(runtime_config())
+    sorted_unique_images = sorted(
+        dict(images).items()
+    )
+    streaming_selection = []
+
+    image_index = 0
+    for query in query_timestamps:
+        while (
+            image_index < len(sorted_unique_images)
+            and sorted_unique_images[image_index][0] <= query
+        ):
+            stamp_ns, image = sorted_unique_images[image_index]
+            streaming.add_image(stamp_ns, image)
+            image_index += 1
+
+        frame = streaming.select_causal_image(query)
+        streaming_selection.append(
+            frame.stamp_ns if frame else None
+        )
+
+    assert streaming_selection == bulk_selection
+    assert bulk_selection == [
+        None,  # before any image
+        100,  # exactly on the (deduplicated, last-write-wins) first image
+        100,  # strictly between images, gap included
+        250,  # exactly on the deduplicated second image
+        250,  # strictly between images
+        400,  # just before the 900 duplicate pair
+        900,  # exactly on the deduplicated third image
+        900,  # strictly after 900, before 1500
+        1500,  # after the last image
+    ]
+
+
 def test_process_tracks_selects_requested_visible_target():
     runtime = TimMarsRuntime(runtime_config(selected_track_id=7))
 

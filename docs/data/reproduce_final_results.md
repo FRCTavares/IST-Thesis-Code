@@ -96,6 +96,39 @@ The final annotation CSVs are:
 Non-final annotations kept for provenance are listed in
 `docs/data/final_experiment_inventory.md`.
 
+## Final P030 broader-sequence evidence (Issue #30)
+
+Canonical thesis-facing summary:
+`docs/results/selected_target_tracking/p030_broader_sequences_summary.md`.
+Full engineering record: `docs/issues/p1-12-broader-sequences.md`. The
+full list of promoted P030 report/manifest/figure paths is in
+`docs/data/final_experiment_inventory.md`; they are covered by the same
+`Local verification` check below (its path-prefix filter includes
+`docs/data/external_benchmark/` and `artifacts/reports/`).
+
+To regenerate the P030 evidence from the frozen manifest and existing
+capture/replay bags (read-only with respect to TIM-MARS/detector/
+ByteTrack/sequence-selection; this does not rerun any Hailo capture):
+
+    cd ~/Desktop/Thesis-Code
+    python3 tools/analysis/aggregate_first_phase_report.py \
+      --output artifacts/reports/p030_broader_sequences/first_phase_aggregate.json
+    python3 tools/analysis/aggregate_oracle_report.py \
+      --output artifacts/reports/p030_broader_sequences/oracle_aggregate.json
+    python3 tools/analysis/bbox_size_stratified_report.py \
+      --output artifacts/reports/p030_broader_sequences/bbox_size_stratified_report.json
+    python3 tools/analysis/render_bbox_size_report_outputs.py
+
+Regenerating a specific sequence's underlying frame report (only needed if
+a report file is missing, not for routine verification) uses
+`tools/analysis/run_external_sequence_report.py`'s `build_report()`
+against that sequence's existing capture bag under
+`bags/replay/p030_broader_sequences_external_2026_08_07/` (full pipeline)
+or `bags/replay/p030_broader_sequences_oracle_2026_08_07/` (oracle,
+built from `tools/analysis/build_oracle_candidate_bag.py`); see
+`docs/issues/p1-12-broader-sequences.md` for the exact per-sequence
+commands used.
+
 ## Local verification
 
 Run from the repository root:
@@ -112,7 +145,13 @@ Run from the repository root:
     missing = []
     for match in re.finditer(r"`([^`]+)`", text):
         value = match.group(1)
-        if not value.startswith(("bags/", "reports/", "docs/data/annotations/")):
+        if not value.startswith((
+            "bags/",
+            "reports/",
+            "docs/data/annotations/",
+            "docs/data/external_benchmark/",
+            "artifacts/reports/",
+        )):
             continue
         if "*" in value:
             continue
