@@ -27,7 +27,7 @@
       "sequence_name": "dancetrack0004",
       "split": "val",
       "role": "external_stress_test",
-      "status": "frozen",
+      "status": "excluded",
       "source": {
         "official_reference": "https://github.com/DanceTrack/DanceTrack",
         "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0004",
@@ -76,7 +76,9 @@
         "detector_bytetrack_tim"
       ],
       "selection_reason": "Selected by stratified candidate_count density sampling across the dancetrack:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
-      "exclusions": [],
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: DanceTrack (indoor, ground-level, close-range dance/performance footage) is substantially out-of-domain for this thesis's selected-person UAV-following objective; excluded as a pre-outcome, domain-relevance scope decision, not based on any tracker or TIM-MARS result. This sequence's report was already generated before exclusion and is retained as exploratory/auditable evidence, not part of the primary Issue #30 aggregate."
+      ],
       "provenance": {
         "adapter": "external_tracking_dataset.py",
         "adapter_schema_version": 1,
@@ -90,7 +92,7 @@
       "sequence_name": "dancetrack0019",
       "split": "val",
       "role": "external_stress_test",
-      "status": "frozen",
+      "status": "excluded",
       "source": {
         "official_reference": "https://github.com/DanceTrack/DanceTrack",
         "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0019",
@@ -139,7 +141,9 @@
         "detector_bytetrack_tim"
       ],
       "selection_reason": "Selected by stratified candidate_count density sampling across the dancetrack:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
-      "exclusions": [],
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: DanceTrack (indoor, ground-level, close-range dance/performance footage) is substantially out-of-domain for this thesis's selected-person UAV-following objective; excluded as a pre-outcome, domain-relevance scope decision, not based on any tracker or TIM-MARS result. No report was generated for this sequence before exclusion."
+      ],
       "provenance": {
         "adapter": "external_tracking_dataset.py",
         "adapter_schema_version": 1,
@@ -153,7 +157,7 @@
       "sequence_name": "dancetrack0063",
       "split": "val",
       "role": "external_stress_test",
-      "status": "frozen",
+      "status": "excluded",
       "source": {
         "official_reference": "https://github.com/DanceTrack/DanceTrack",
         "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0063",
@@ -202,7 +206,9 @@
         "detector_bytetrack_tim"
       ],
       "selection_reason": "Selected by stratified candidate_count density sampling across the dancetrack:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
-      "exclusions": [],
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: DanceTrack (indoor, ground-level, close-range dance/performance footage) is substantially out-of-domain for this thesis's selected-person UAV-following objective; excluded as a pre-outcome, domain-relevance scope decision, not based on any tracker or TIM-MARS result. No report was generated for this sequence before exclusion."
+      ],
       "provenance": {
         "adapter": "external_tracking_dataset.py",
         "adapter_schema_version": 1,
@@ -216,7 +222,7 @@
       "sequence_name": "dancetrack0073",
       "split": "val",
       "role": "external_stress_test",
-      "status": "frozen",
+      "status": "excluded",
       "source": {
         "official_reference": "https://github.com/DanceTrack/DanceTrack",
         "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0073",
@@ -265,7 +271,9 @@
         "detector_bytetrack_tim"
       ],
       "selection_reason": "Selected by stratified candidate_count density sampling across the dancetrack:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
-      "exclusions": [],
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: DanceTrack (indoor, ground-level, close-range dance/performance footage) is substantially out-of-domain for this thesis's selected-person UAV-following objective; excluded as a pre-outcome, domain-relevance scope decision, not based on any tracker or TIM-MARS result. No report was generated for this sequence before exclusion."
+      ],
       "provenance": {
         "adapter": "external_tracking_dataset.py",
         "adapter_schema_version": 1,
@@ -279,7 +287,7 @@
       "sequence_name": "dancetrack0094",
       "split": "val",
       "role": "external_stress_test",
-      "status": "frozen",
+      "status": "excluded",
       "source": {
         "official_reference": "https://github.com/DanceTrack/DanceTrack",
         "local_relative_path": "data/datasets/external/dancetrack/val/dancetrack0094",
@@ -328,7 +336,9 @@
         "detector_bytetrack_tim"
       ],
       "selection_reason": "Selected by stratified candidate_count density sampling across the dancetrack:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
-      "exclusions": [],
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: DanceTrack (indoor, ground-level, close-range dance/performance footage) is substantially out-of-domain for this thesis's selected-person UAV-following objective; excluded as a pre-outcome, domain-relevance scope decision, not based on any tracker or TIM-MARS result. No report was generated for this sequence before exclusion."
+      ],
       "provenance": {
         "adapter": "external_tracking_dataset.py",
         "adapter_schema_version": 1,
@@ -711,7 +721,7 @@
       "sequence_name": "uav0000268_05773_v",
       "split": "val",
       "role": "external_stress_test",
-      "status": "frozen",
+      "status": "excluded",
       "source": {
         "official_reference": "https://github.com/VisDrone/VisDrone-Dataset",
         "local_relative_path": "data/datasets/external/visdrone_mot/val",
@@ -760,7 +770,9 @@
         "detector_bytetrack_tim"
       ],
       "selection_reason": "Selected by stratified candidate_count density sampling across the visdrone_mot:val catalogue (annotation-derived crowd density proxy only); physical target chosen as the eligible, initialization-eligible candidate with the greatest total visible-frame count. No tracker or TIM-MARS outcome was inspected.",
-      "exclusions": [],
+      "exclusions": [
+        "excluded_2026-08-07_post_freeze_scope_decision: 4K (3840x2160) source resolution made capture disproportionately expensive on the development Pi (8GB RAM, zero swap) relative to this sequence's thesis value -- an initial capture attempt was OOM-killed (ros2 bag play's default 1000-message read-ahead queue tried to buffer ~25GB of 4K frames) and a second attempt lost 31% of image messages to recorder cache-flush backpressure under disk pressure; excluded as a pre-outcome, resource-cost scope decision, not based on any tracker or TIM-MARS result. A clean, complete capture (978/978 frames) was eventually obtained after fixing the capture tooling, but no frame-level report was generated before the capture bag and source images were removed as part of this exclusion's disk cleanup: the decompression safety guard (6x compressed size + 25GiB floor, hardened after a prior OOM crash) needed ~75GiB free and only ~70GiB was available even after freeing DanceTrack's heavy data. See docs/issues/p1-12-broader-sequences.md for full status; a report could be produced later via a fresh capture if this sequence is ever revisited."
+      ],
       "provenance": {
         "adapter": "external_tracking_dataset.py",
         "adapter_schema_version": 1,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate all 13 frozen first-phase sequences into one Issue #30 report.
+"""Aggregate the frozen first-phase sequences into one Issue #30 report.
 
 External (DanceTrack/VisDrone) sequences are scored by
 ``run_external_sequence_report.py``'s frame-level outcome taxonomy. ROS 2
@@ -7,6 +7,14 @@ sequences use the existing Issue #26 event-and-recovery vocabulary
 (``evaluate_tim_event_recovery.py``) -- a related but not identical
 taxonomy, as documented in Slice 13 -- read from their already-generated
 reports rather than recomputed here.
+
+Sequences whose manifest entry has ``status: "excluded"`` (a pre-outcome
+scope decision, e.g. domain relevance or capture cost -- never based on a
+tracker or TIM-MARS result) are kept out of the primary aggregate counts
+(``sequences``/``evaluated_count``/etc.) and reported separately under
+``excluded_sequences`` with their manifest exclusion reasons, so the primary
+Issue #30 result reflects only in-scope sequences while excluded ones remain
+auditable.
 
 This script does not run anything itself beyond reading already-generated
 report.json files for external sequences (one per sequence, produced by
@@ -89,6 +97,23 @@ def summarize_external_report(report_path: Path) -> dict[str, Any]:
     return report
 
 
+def summarize_sequence_report(
+    entry: dict[str, Any], *, external_report_dir: Path
+) -> dict[str, Any]:
+    sequence_id = entry["id"]
+
+    if entry["dataset"] == "ros2_internal":
+        report_path = ROS2_EVENT_RECOVERY_REPORTS.get(sequence_id)
+        return (
+            summarize_ros2_report(report_path)
+            if report_path is not None
+            else {"status": "no_report_mapping"}
+        )
+
+    report_path = external_report_dir / f"{sequence_id}.json"
+    return summarize_external_report(report_path)
+
+
 def build_aggregate(
     *,
     manifest_path: Path,
@@ -97,20 +122,25 @@ def build_aggregate(
     manifest = load_manifest(manifest_path)
 
     sequences: list[dict[str, Any]] = []
+    excluded_sequences: list[dict[str, Any]] = []
 
     for entry in manifest["sequences"]:
         sequence_id = entry["id"]
+        summary = summarize_sequence_report(
+            entry, external_report_dir=external_report_dir
+        )
 
-        if entry["dataset"] == "ros2_internal":
-            report_path = ROS2_EVENT_RECOVERY_REPORTS.get(sequence_id)
-            summary = (
-                summarize_ros2_report(report_path)
-                if report_path is not None
-                else {"status": "no_report_mapping"}
+        if entry.get("status") == "excluded":
+            excluded_sequences.append(
+                {
+                    "id": sequence_id,
+                    "dataset": entry["dataset"],
+                    "sequence_name": entry["sequence_name"],
+                    "exclusions": entry.get("exclusions", []),
+                    "report": summary,
+                }
             )
-        else:
-            report_path = external_report_dir / f"{sequence_id}.json"
-            summary = summarize_external_report(report_path)
+            continue
 
         sequences.append(
             {
@@ -143,7 +173,9 @@ def build_aggregate(
         "evaluated_count": len(evaluated),
         "initialization_failure_count": len(init_failures),
         "missing_report_count": len(missing),
+        "excluded_count": len(excluded_sequences),
         "sequences": sequences,
+        "excluded_sequences": excluded_sequences,
     }
 
 

@@ -109,3 +109,58 @@ class TestBuildAggregate:
             by_id["dancetrack_val_seqA"]["report"]["status"]
             == "missing_report"
         )
+
+    def test_excluded_sequence_is_kept_out_of_primary_counts(
+        self, tmp_path, monkeypatch
+    ):
+        manifest = {
+            "status": "frozen",
+            "frozen_date": "2026-08-07",
+            "sequences": [
+                {
+                    "id": "dancetrack_val_seqA",
+                    "dataset": "dancetrack",
+                    "sequence_name": "seqA",
+                    "status": "excluded",
+                    "exclusions": ["out_of_domain_for_uav_person_following"],
+                },
+                {
+                    "id": "visdrone_mot_val_seqB",
+                    "dataset": "visdrone_mot",
+                    "sequence_name": "seqB",
+                },
+            ],
+        }
+        manifest_path = tmp_path / "manifest.json"
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+        report_dir = tmp_path / "reports"
+        report_dir.mkdir()
+        (report_dir / "dancetrack_val_seqA.json").write_text(
+            json.dumps({"status": "evaluated", "raw": {}, "tim_mars": {}}),
+            encoding="utf-8",
+        )
+        (report_dir / "visdrone_mot_val_seqB.json").write_text(
+            json.dumps({"status": "evaluated", "raw": {}, "tim_mars": {}}),
+            encoding="utf-8",
+        )
+
+        aggregate = MODULE.build_aggregate(
+            manifest_path=manifest_path,
+            external_report_dir=report_dir,
+        )
+
+        assert aggregate["total_sequences"] == 1
+        assert aggregate["evaluated_count"] == 1
+        assert aggregate["excluded_count"] == 1
+        assert [s["id"] for s in aggregate["sequences"]] == [
+            "visdrone_mot_val_seqB"
+        ]
+
+        excluded = aggregate["excluded_sequences"]
+        assert len(excluded) == 1
+        assert excluded[0]["id"] == "dancetrack_val_seqA"
+        assert excluded[0]["exclusions"] == [
+            "out_of_domain_for_uav_person_following"
+        ]
+        assert excluded[0]["report"]["status"] == "evaluated"

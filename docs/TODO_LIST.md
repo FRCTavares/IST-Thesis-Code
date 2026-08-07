@@ -118,6 +118,16 @@ Open executable issues: **24**.
       candidate loss, identity confusion, tracker fragmentation, integrated
       appearance association, and selective TIM-MARS recovery fairly.
     - external benchmark scope: freeze a manageable subset of approximately four MOT17, four to six DanceTrack, and four VisDrone-MOT sequences; evaluate both oracle-candidate and detector–ByteTrack–TIM-MARS modes alongside the four ROS 2 sequences.
+      Post-freeze (Slice 25), the operator made an explicit, pre-outcome scope
+      decision, unrelated to any tracker or TIM-MARS result: all five frozen
+      DanceTrack sequences are excluded as substantially out-of-domain for
+      this thesis's selected-person UAV-following objective, and
+      `uav0000268_05773_v` (4K VisDrone) is excluded as a disproportionate
+      resource-cost outlier. The primary Issue #30 benchmark is now 7
+      sequences (4 ROS 2 development + 3 VisDrone-MOT); the 6 excluded
+      sequences remain in the manifest with `status: "excluded"` and an
+      explicit `exclusions` reason each, kept as auditable exploratory
+      evidence rather than deleted from the record.
     - MOT17 deferral: the official MOTChallenge source is currently
       unreachable from the development network (routing-level failure to the
       TUM-hosted server, confirmed from two independent networks; general
@@ -161,12 +171,36 @@ Open executable issues: **24**.
       safe suppression on both already-generated external results (Slice
       24). All three pipeline bugs found during the operator-directed
       forensic review are now fixed, tested and confirmed against real
-      sequences; the batch was intentionally kept paused throughout per
-      operator instruction and awaits explicit go-ahead to resume.
-      Remaining work after that: finish the capture-and-resolve-and-report
-      path for the other seven external sequences, run the oracle-candidate
-      path per sequence, and produce the complete first-phase benchmark
-      report and thesis-ready evidence.
+      sequences. The operator then authorized resuming the frozen batch
+      (Slice 25). `dancetrack0004`'s Slice-24 wrong-person signal was
+      investigated per operator instruction (no coordinate-clamp red flags;
+      sample frames show genuine ID-confusion/tracking-drift in a crowded
+      dance scene, not a pipeline bug) and is retained as exploratory
+      evidence under the scope decision below rather than in the primary
+      aggregate. `uav0000137_00458_v` and `uav0000117_02622_v` reconfirm as
+      genuine `initialization_failure` under the corrected pipeline (the
+      latter forensically checked: zero tracker candidates anywhere in its
+      init window, target GT box 32x83 px in a 2720x1530 frame). Capturing
+      `uav0000268_05773_v` (4K VisDrone, the largest source resolution in
+      the manifest) required two further capture-tooling fixes: a
+      `ros2 bag play --read-ahead-queue-size` default of 1000 messages was
+      attempting to buffer ~25 GB of 4K frames and triggered a confirmed
+      kernel OOM-kill on the first attempt; a second attempt (fixed
+      read-ahead size, but still under disk pressure from concurrent
+      compression) lost 31% of image messages to recorder cache-flush
+      backpressure; a third attempt (slower playback rate, disk headroom
+      restored first) produced a clean, complete capture. Generating that
+      sequence's report then exceeded the Slice-21 decompression safety
+      margin even after reclaiming disk space, leading to the scope decision
+      above (see external benchmark scope, and Slice 25 for full detail
+      including exact disk numbers and what was deleted). The primary
+      aggregate was recomputed on the retained 7 in-scope sequences: 5
+      evaluated, 2 genuine initialization failures, 0 missing reports; the 6
+      excluded sequences are reported separately and are not counted in
+      these totals.
+      Remaining work: run the oracle-candidate path per retained sequence,
+      and produce the complete first-phase benchmark report and thesis-ready
+      evidence.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit

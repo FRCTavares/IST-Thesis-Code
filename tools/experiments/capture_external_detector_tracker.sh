@@ -32,6 +32,7 @@ TRACKER="${5:-bytetrack}"
 THESIS_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}"
 ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 PLAY_RATE="${PLAY_RATE:-0.1}"
+READ_AHEAD_QUEUE_SIZE="${READ_AHEAD_QUEUE_SIZE:-20}"
 NODE_STARTUP_WAIT_S="${NODE_STARTUP_WAIT_S:-6}"
 RECORDER_START_WAIT_S="${RECORDER_START_WAIT_S:-2}"
 RECORDER_STOP_WAIT_S="${RECORDER_STOP_WAIT_S:-5}"
@@ -115,9 +116,18 @@ ros2 bag record -s mcap -o "$OUT_BAG" \
 REC_PID=$!
 sleep "$RECORDER_START_WAIT_S"
 
-echo "[info] playing source bag at rate=$PLAY_RATE"
+echo "[info] playing source bag at rate=$PLAY_RATE (read-ahead-queue-size=$READ_AHEAD_QUEUE_SIZE)"
 ros2 bag play "$SOURCE_BAG" --topics /camera/image_raw --rate "$PLAY_RATE" \
+  --read-ahead-queue-size "$READ_AHEAD_QUEUE_SIZE" \
   > "$LOG_DIR/play.log" 2>&1
+PLAY_STATUS=$?
+if [[ $PLAY_STATUS -ne 0 ]]; then
+  echo "[error] ros2 bag play exited with status $PLAY_STATUS, see $LOG_DIR/play.log"
+  kill -INT "$REC_PID" 2>/dev/null
+  wait "$REC_PID" 2>/dev/null
+  rm -rf "$SOURCE_BAG"
+  exit 7
+fi
 
 sleep "$RECORDER_STOP_WAIT_S"
 kill -INT "$REC_PID" 2>/dev/null

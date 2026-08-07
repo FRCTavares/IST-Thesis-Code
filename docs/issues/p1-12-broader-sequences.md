@@ -1272,3 +1272,150 @@ logic.
 With both Slice 23 (memory-safe replay) and this slice validated, both
 outstanding pipeline bugs identified during the operator-directed forensic
 review are now fixed, tested, and confirmed against real sequences.
+
+### Slice 25 — batch resumption, capture-tooling fixes, and a post-freeze scope decision
+
+With both fixes validated, the operator authorized resuming the frozen
+first-phase external batch using the existing captures.
+
+**`dancetrack0004`'s wrong-person signal, investigated.** Before continuing,
+Slice 24's still-open `dancetrack0004` finding (TIM-MARS 119 wrong-person
+frames versus raw's 25, on the corrected pipeline) was investigated per
+operator instruction to stop and investigate any suspicious result rather
+than tuning TIM or blindly aggregating. A scan of every wrong-person-category
+output box for the Slice 22 coordinate-clamp signature (a coordinate exactly
+at `640.0` or `0.0`) found zero matches. Sample `distractor_selection`
+frames (544-549) show TIM's output consistently and cleanly matching a
+different, spatially distinct real person (IoU 0.62-0.71 against dataset
+identity 2) while the true target sits in a clearly different image region.
+Sample `wrong_unmatched_output` frames (616-620) show TIM's output box
+partially overlapping the target with a correctness IoU declining from 0.30
+to 0.11 over five frames -- consistent with tracking drift during a
+crossing/occlusion event, not a coordinate artifact. Both patterns are
+genuine ID-confusion/drift behaviour in a crowded, similarly-dressed dance
+scene, not a residual pipeline bug. This result is reproducible: an
+independent `build_report` run produced identical outcome counts.
+
+**Re-verification of `uav0000137_00458_v` and `uav0000117_02622_v` under the
+corrected pipeline.** Both reconfirm as `initialization_failure`, unchanged
+from their pre-fix results (expected, since resolution runs before either
+fixed code path). `uav0000117_02622_v` was additionally forensically
+checked, since its capture bag holds only 27 tracker-candidate observations
+across the entire 349-frame sequence -- unusually low next to the
+hundreds-to-low-thousands seen on other sequences. The target's own GT box
+in this sequence is 32x83 px in a 2720x1530 frame (about 1.2% of frame
+width), and zero tracker candidates exist anywhere in the frames 0-9
+initialization window. This is a genuine detector miss on a real, tagged
+`external_stress_test` sequence (`crowd_crossing`, ~88 people), not a
+capture defect.
+
+**`uav0000268_05773_v` (4K VisDrone) capture required two additional
+tooling fixes.** This sequence's 3840x2160 source resolution is far larger
+than any other frozen sequence (next largest: 2720x1530).
+
+1. *OOM on first capture attempt.* `ros2 bag play`'s
+   `--read-ahead-queue-size` defaults to 1000 messages; at ~25 MB per
+   uncompressed 4K `bgr8` frame, that is an attempted ~25 GB read-ahead
+   buffer on an 8 GB, zero-swap host. `journalctl -k` confirmed the kernel
+   OOM-killer terminated the `ros2 bag play` process
+   (`anon-rss:7066940kB` at kill time). Fixed in
+   `tools/experiments/capture_external_detector_tracker.sh` by adding a
+   configurable `READ_AHEAD_QUEUE_SIZE` (default 20) passed through to
+   `ros2 bag play`, and by checking the play command's exit status instead
+   of silently reporting `[ok]` on a killed/failed player (the original
+   script's `set +e` plus an unchecked exit code is exactly how the first,
+   fully empty (`message_count: 0` on every topic) capture was reported as
+   successful).
+2. *Frame loss on second capture attempt.* With the OOM fixed, a second
+   attempt completed without crashing but recorded only 675/978 image
+   messages (69%) and 81/978 tracks/detections (8.3%), versus 100% image
+   coverage on both other already-validated captures
+   (`uav0000339_00001_v`: 275/275; `dancetrack0004`: 1203/1203). The
+   recorder's own log showed `Cache buffers lost messages` (302 image
+   messages) during the final cache flush, coinciding with disk usage
+   peaking at 96% (9.7 GiB free) while the 16.8 GB uncompressed `.mcap` was
+   being compressed concurrently with live capture. A third attempt, run
+   with a 5x slower playback rate (`PLAY_RATE=0.02`) and with disk headroom
+   restored to 54 GiB free beforehand (by first deleting artifacts from the
+   two failed attempts), completed cleanly: 978/978 images (100%), 607/978
+   tracks/detections (comparable to other sequences' natural detector
+   sparsity), zero lost messages, zero queue-starved warnings.
+
+**Post-freeze scope decision (operator-directed, pre-outcome).** After the
+clean `uav0000268_05773_v` capture, generating its frame-level report
+required `ensure_uncompressed_bag`'s safety guard (6x compressed size + 25
+GiB floor, hardened in Slice 21 after a real OOM crash) -- for this
+sequence's 8.3 GiB compressed bag, ~75 GiB free, versus 46 GiB actually
+free. Rather than weaken that safety margin, the operator was asked how to
+proceed and made an explicit, pre-outcome scope decision, unrelated to any
+tracker or TIM-MARS result:
+
+- All five DanceTrack sequences (`dancetrack0004`, `0019`, `0063`, `0073`,
+  `0094`) are excluded from the primary Issue #30 benchmark as
+  substantially out-of-domain for this thesis's selected-person
+  UAV-following objective (DanceTrack is indoor, ground-level, close-range
+  dance/performance footage).
+- `uav0000268_05773_v` is excluded as a disproportionate resource-cost
+  outlier: its 4K capture required two tooling fixes and its report
+  generation exceeds the current disk-safety margin.
+- These sequences' manifest entries are marked `"status": "excluded"` (a
+  value the schema already defined) with an explicit reason recorded per
+  entry in each `exclusions` array, rather than deleted from the manifest,
+  keeping the exclusion itself auditable in the frozen manifest's history.
+  No replacement sequences were selected to backfill the excluded slots.
+- `tools/analysis/aggregate_first_phase_report.py` was updated to route any
+  sequence with `status: "excluded"` into a separate `excluded_sequences`
+  list (with its manifest exclusion reasons and, where one exists, its
+  report) rather than counting it in the primary
+  `sequences`/`evaluated_count`/etc. aggregate. A new regression test
+  (`test_excluded_sequence_is_kept_out_of_primary_counts`) covers this; the
+  three pre-existing tests are unaffected since they use fixture manifests
+  with no `status` field, which continues to mean "included" for backward
+  compatibility.
+- Heavy local (git-ignored) data for the excluded sequences was deleted:
+  the DanceTrack dataset (`data/datasets/external/dancetrack/`, 8.1 GB),
+  all five DanceTrack capture bags (7.4 GB), the `dancetrack0004` replay bag
+  (7 MB) and oracle-mode bag (7.0 GB), and for `uav0000268_05773_v` its
+  source images (1.1 GB) and its capture bag (8.9 GB, deleted after the
+  clean-capture confirmation above since no report was generated from it).
+  Total reclaimed: roughly 32.5 GB (46 GiB &rarr; 79 GiB free). This did not
+  reach the ~75 GiB the decompression guard would need for
+  `uav0000268_05773_v` at the time DanceTrack alone was removed (only
+  brought free space to ~70 GiB); no frame-level report exists for this
+  sequence. `dancetrack0004`'s report (generated before the exclusion
+  decision, Slice 24) is retained in
+  `artifacts/reports/p030_broader_sequences/external_frame_reports/` and
+  surfaced under `excluded_sequences` as auditable, out-of-primary-scope
+  evidence; `dancetrack0019/0063/0073/0094` were never evaluated before the
+  exclusion and have no report.
+- No sibling repository copies or unrelated prior-work bags
+  (`bags/replay/p044_*`, `p008_*`, `p019_*`, `p006b_*`, `p017_*`, `p028_*`,
+  `p009_*`, `p018_*`, and the `Thesis-Code-p028/p033/p034`/`Desktop/old`
+  checkouts) were touched.
+
+**Primary aggregate, recomputed on the retained in-scope sequences.**
+Running `aggregate_first_phase_report.py` against the amended manifest now
+covers 7 primary sequences (the 4 frozen `ros2_internal` sequences plus the
+3 retained VisDrone-MOT sequences) and reports the other 6 separately under
+`excluded_sequences`:
+
+| Metric | Value |
+|---|---:|
+| `total_sequences` (primary) | 7 |
+| `evaluated_count` | 5 |
+| `initialization_failure_count` | 2 (`uav0000117_02622_v`, `uav0000137_00458_v`) |
+| `missing_report_count` | 0 |
+| `excluded_count` | 6 |
+
+Saved to
+`artifacts/reports/p030_broader_sequences/first_phase_aggregate.json`
+(git-ignored generated artifact, per the existing `artifacts/reports/`
+convention).
+
+Validation: the amended manifest re-validates against
+`manifest.schema.json`; `test_aggregate_first_phase_report.py` (now 3
+tests, including the new excluded-sequence coverage),
+`test_select_first_phase_benchmark.py`, and
+`test_add_ros2_first_phase_sequences.py` all pass (25 tests total).
+
+MOT17 remains deferred per Slice 12, unaffected by this scope change.
