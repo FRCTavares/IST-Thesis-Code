@@ -992,3 +992,59 @@ Remaining: run this report for every captured sequence once the batch
 capture (Slice 17) finishes, and aggregate the per-sequence reports (plus
 the four ROS 2 sequences' Issue #26-vocabulary evidence) into the first
 complete first-phase benchmark report.
+
+### Slice 19 — oracle-candidate mode
+
+Added `tools/analysis/build_oracle_candidate_bag.py` for the
+`oracle_candidate` evaluation mode: it replaces the detector and tracker
+with an idealized candidate stream built directly from official ground-truth
+boxes, isolating TIM-MARS identity-memory and recovery behaviour from
+detector/tracker failure.
+
+The physical identity is never disclosed to TIM-MARS as a shortcut. Every
+physical person -- the target and every distractor alike -- receives a
+synthetic oracle tracker ID from a single global incrementing counter
+assigned in frame order, never derived from or equal to the dataset
+identity. A new oracle ID begins whenever a physical identity's own
+annotated frame indices have a gap (the ground truth itself records the
+person absent and then present again), so real re-entry/occlusion structure
+already in the source data becomes controlled candidate-identity
+fragmentation, per Issue #30's oracle-mode requirement, without inventing
+synthetic failures. TIM-MARS must still discover which oracle ID is the
+frozen physical target through the existing blind IoU/margin/confirmation
+initialization rule -- identical to how it discovers a real tracker's ID --
+not through direct identity disclosure.
+
+Real images are written alongside the synthetic `/tracks` stream (not boxes
+alone), because the canonical TIM-MARS configuration has
+`appearance_enabled: true`, and Issue #30 forbids changing that policy for
+this evaluation; oracle mode isolates detector/tracker failure, not
+appearance-matching behaviour.
+
+6 focused tests cover the oracle-ID assignment logic: continuous visibility
+keeps one ID, a visibility gap starts a new one, different physical
+identities never share an ID, excluded/ineligible rows do not join a
+segment, oracle IDs never equal the dataset identity, and IDs are globally
+unique across identities and segments.
+
+Verified at full scale on the real `dancetrack0004` sequence (1203 frames):
+1203 images and 1203 track messages written, 3499 total oracle boxes across
+17 distinct oracle-ID segments for that sequence's physical identities.
+
+The resulting bag has the same `/camera/image_raw` + `/tracks` shape as a
+live capture bag, so `run_deterministic_tim_replay.py` and
+`run_external_sequence_report.py`'s downstream resolve/replay/classify
+pipeline (Slices 17-18) apply to it unmodified.
+
+### Slice 20 — first-phase aggregate report
+
+Added `tools/analysis/aggregate_first_phase_report.py`, a read-only
+aggregation step over the frozen 13-sequence manifest: for each sequence it
+reads the already-generated per-sequence report (external sequences from
+`run_external_sequence_report.py`'s frame-level taxonomy; ROS 2 sequences
+from the existing Issue #26 event-recovery reports) and rolls up
+evaluated/initialization-failure/missing counts across the whole first
+phase. It does not recompute anything itself and does not silently skip a
+sequence with a missing report -- every sequence appears in the output with
+an explicit status. 2 focused tests cover the counting logic and the
+missing-report case.

@@ -136,10 +136,17 @@ Open executable issues: **24**.
       taxonomy evaluator and full per-sequence report pipeline (resolve ->
       deterministic raw/TIM replay -> classify -> summarize) now exist and
       are tested, including against the real initialization-failure case
-      (Slice 18). Remaining work: finish running the capture-and-resolve-
-      and-report path for the other eight external sequences (batch capture
-      in progress) and aggregate all 13 sequences into the complete
-      first-phase benchmark report.
+      (Slice 18). Oracle-candidate mode (ground-truth-derived candidates,
+      identity never disclosed to TIM-MARS, controlled fragmentation from
+      real annotated absence/reappearance) now exists and is validated at
+      full scale (Slice 19). A read-only aggregate-report step across all 13
+      sequences now exists (Slice 20). Operator authorized continuing
+      autonomously through the rest of Issue #30 without further check-ins;
+      report back before any PR/merge. Remaining work: finish running the
+      capture-and-resolve-and-report path for the other eight external
+      sequences (batch capture in progress), run the oracle-candidate path
+      per sequence, and produce the complete first-phase benchmark report
+      and thesis-ready evidence.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
@@ -228,6 +235,17 @@ Open executable issues: **24**.
       -> classify -> summarize), reusing `run_deterministic_tim_replay.py`
       unmodified. Covers 7 of 8 required outcome categories directly;
       initialization failure is the existing sequence-level Slice 17 result.
+    - oracle slice 19: added ground-truth-derived oracle-candidate bag
+      construction. Physical identity is never disclosed to TIM-MARS: every
+      person gets a synthetic globally-unique oracle tracker ID, a new one
+      per annotated visibility gap (real re-entry/occlusion structure
+      preserved as controlled fragmentation), and real images are included
+      since appearance matching stays enabled per policy. Validated at full
+      scale on `dancetrack0004` (1203 frames, 17 oracle-ID segments).
+    - aggregate slice 20: added a read-only rollup across all 13 frozen
+      sequences (external frame-level reports plus ROS 2 Issue #26 reports),
+      reporting evaluated/initialization-failure/missing status per sequence
+      without silently dropping any.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
