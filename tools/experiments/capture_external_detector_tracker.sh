@@ -99,8 +99,17 @@ ros2 run thesis_tracker tracker_node --ros-args \
 
 sleep "$NODE_STARTUP_WAIT_S"
 
-echo "[info] starting recorder"
+echo "[info] checking free disk space"
+MIN_FREE_GIB="${MIN_FREE_GIB:-25}"
+AVAILABLE_GIB=$(df -BG --output=avail / | tail -1 | tr -dc '0-9')
+if (( AVAILABLE_GIB < MIN_FREE_GIB )); then
+  echo "[error] only ${AVAILABLE_GIB}GiB free, refusing to record (minimum ${MIN_FREE_GIB}GiB)"
+  exit 6
+fi
+
+echo "[info] starting recorder (zstd-compressed)"
 ros2 bag record -s mcap -o "$OUT_BAG" \
+  --compression-mode file --compression-format zstd \
   --topics /camera/image_raw /detections /tracks \
   > "$LOG_DIR/record.log" 2>&1 &
 REC_PID=$!
