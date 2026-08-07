@@ -12,6 +12,7 @@ Use:
 - `selected_target_tracking/p028_component_ablation_development/README.md`
 - `selected_target_tracking/hard_reentry_compute_throughput_summary.md`
 - `selected_target_tracking/p023_output_freshness_validation.md`
+- `selected_target_tracking/p030_broader_sequences_summary.md`
 
 The evidence-version authority is:
 

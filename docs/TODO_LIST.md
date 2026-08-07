@@ -301,8 +301,32 @@ Open executable issues: **24**.
       the GitHub issue text is either covered by retained-benchmark
       evidence or explicitly rejected/deferred with repository-grounded
       rationale.
-    - **Issue #30 status: acceptance criteria satisfied; closing.** See the
-      GitHub closing comment for the full completion-contract walkthrough.
+    - **Issue #30 status: acceptance criteria satisfied; closed
+      (`https://github.com/FRCTavares/IST-Thesis-Code/issues/30`,
+      closing comment
+      `issuecomment-5222291234`).** See the GitHub closing comment for the
+      full completion-contract walkthrough.
+    - evidence promotion: the closed evidence is now promoted into the
+      canonical thesis result set, separate from the chronological issue
+      log. New canonical summary:
+      `docs/results/selected_target_tracking/p030_broader_sequences_summary.md`
+      (indexed in `docs/results/README.md`). Final report/manifest/figure
+      paths registered in `docs/data/final_experiment_inventory.md`, with
+      reproduction commands and a path-existence check in
+      `docs/data/reproduce_final_results.md` (its generic verification
+      script's prefix filter was extended to also cover
+      `docs/data/external_benchmark/` and `artifacts/reports/`, so the new
+      P030 entries are actually checked, not silently skipped).
+      `docs/data/external_benchmark/README.md`'s stale "manifest begins as
+      draft_not_frozen" status section was corrected to reflect the actual
+      frozen/closed state and the post-freeze DanceTrack/`uav0000268`
+      exclusions. `docs/issues/p1-12-broader-sequences.md` remains the
+      detailed engineering record; nothing there was reorganized or
+      shortened. Unrelated finding surfaced while extending the
+      verification script (not fixed, out of scope): 4 pre-existing
+      `bags/replay/paper_final_*` paths already listed in
+      `final_experiment_inventory.md` do not exist on this development
+      Pi; this predates and is unrelated to Issue #30.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit

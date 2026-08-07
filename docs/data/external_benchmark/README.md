@@ -19,11 +19,34 @@ It does not contain external dataset images or large generated outputs.
 
 ## Current status
 
-The manifest begins as `draft_not_frozen`.
+The manifest is **frozen** (`status: "frozen"`, `frozen_date: 2026-08-07`,
+`manifest_commit: 124118b362ea1f44c8211722378c2347a84d4cfc`). Sequence
+names, target identities, and frame ranges for every entry are final.
 
-Sequence names, target identities and frame ranges must not be treated as final until the manifest status becomes `frozen`.
+Final Issue #30 evaluation is complete; the issue is closed. The canonical,
+thesis-facing result is
+`docs/results/selected_target_tracking/p030_broader_sequences_summary.md`.
+The full chronological engineering record is
+`docs/issues/p1-12-broader-sequences.md`.
 
-The freeze must occur before final benchmark evaluation and before any parameter tuning based on external outcomes.
+## Post-freeze scope exclusions
+
+After freezing, and before final results were promoted, the operator made
+two explicit, pre-outcome scope decisions -- neither based on any tracker
+or TIM-MARS result:
+
+- all 5 DanceTrack sequences are excluded from the primary benchmark as
+  substantially out-of-domain for this thesis's selected-person
+  UAV-following objective;
+- `visdrone_mot_val_uav0000268_05773_v` (the 4K VisDrone sequence) is
+  excluded as a disproportionate resource-cost outlier.
+
+Both remain in `sequence_manifest.json` with `status: "excluded"` and an
+explicit `exclusions` reason each -- kept as auditable record, not deleted.
+The primary Issue #30 benchmark is the remaining 7 sequences: the 4 ROS 2
+development sequences plus `uav0000117_02622_v`, `uav0000137_00458_v`, and
+`uav0000339_00001_v`. See
+`docs/issues/p1-12-broader-sequences.md`, Slice 25, for the full rationale.
 
 ## Split-level acquisition provenance
 
