@@ -138,8 +138,25 @@ def run_deterministic_replay(
     capture_bag: Path,
     output_bag: Path,
     selected_track_id: int,
+    image_width: int,
+    image_height: int,
     repo_root: Path,
 ) -> None:
+    """Run the deterministic TIM-MARS replay for one sequence.
+
+    ``image_width``/``image_height`` must be the sequence's own frozen
+    source resolution (``manifest entry["image"]["width"/"height"]``), not
+    left to ``run_deterministic_tim_replay.py``'s 640x640 default. That
+    default matches the ROS 2 field sequences it was built for, but external
+    sequences (e.g. VisDrone at 1904x1071) are a different source
+    resolution; omitting these flags made TIM-MARS clip candidate boxes to
+    640x640, normalize geometry against the wrong image diagonal, and
+    rescale appearance crops incorrectly, while the raw baseline was
+    unaffected because it copies boxes through unchanged. This produced a
+    false wrong-person signal for TIM-MARS on `uav0000339_00001_v` (7
+    frames) that was not a genuine tracking failure -- see Slice 22.
+    """
+
     config_path = (
         repo_root
         / "ros2_ws"
@@ -177,6 +194,10 @@ def run_deterministic_replay(
             "/target",
             "--raw-target-mode",
             "selected_id",
+            "--image-width",
+            str(image_width),
+            "--image-height",
+            str(image_height),
             "--overwrite",
             "--compact-output",
         ],
@@ -227,6 +248,8 @@ def build_report(
             capture_bag=uncompressed_bag,
             output_bag=replay_bag,
             selected_track_id=resolution["initial_tracker_identity"],
+            image_width=entry["image"]["width"],
+            image_height=entry["image"]["height"],
             repo_root=repo_root,
         )
     finally:

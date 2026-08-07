@@ -147,14 +147,19 @@ Open executable issues: **24**.
       fixed, tested and confirmed safe on the real large-sequence case, but
       a second, separate image-preloading memory limitation in
       `run_deterministic_tim_replay.py` remains unfixed for large/high-
-      resolution sequences (Slice 21). Per operator instruction, the
-      first-phase batch stays paused while the `uav0000339_00001_v` result
-      (raw 0 / TIM 7 wrong-person frames) is forensically verified before
-      any further batch sequences run. Remaining work after that: fix the
-      image-preloading limitation, finish the capture-and-resolve-and-report
-      path for the other eight external sequences, run the oracle-candidate
-      path per sequence, and produce the complete first-phase benchmark
-      report and thesis-ready evidence.
+      resolution sequences (Slice 21). Forensic investigation of the one
+      completed external result found and fixed a real pipeline bug: source
+      image dimensions were never passed through to the deterministic
+      replay tool, causing TIM-MARS to run its geometry against a wrong
+      640x640 assumption; fixed, tested and reverified deterministic --
+      `uav0000339_00001_v` now shows 0 wrong-person frames post-fix, not 7
+      (Slice 22). The first-phase batch stays paused pending the operator's
+      go-ahead to resume, which additionally needs the Slice 21
+      image-preloading fix before any sequence larger than the ones already
+      captured can run safely. Remaining work after that: finish the
+      capture-and-resolve-and-report path for the other eight external
+      sequences, run the oracle-candidate path per sequence, and produce
+      the complete first-phase benchmark report and thesis-ready evidence.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
@@ -274,11 +279,27 @@ Open executable issues: **24**.
       is unsafe for the larger/higher-resolution external sequences
       (dancetrack0004: 1203 images at 1920x1080, ~7.1 GB). Repo integrity
       verified intact after both crashes (clean `git status`, all commits
-      present, no corruption). Per operator instruction, the first-phase
-      batch is paused; before resuming, the `uav0000339_00001_v` result
-      (raw 0 / TIM 7 wrong-person frames) is being forensically verified,
-      since it completed before either crash and needs independent
-      confirmation the new external evaluation path is trustworthy.
+      present, no corruption).
+    - correctness slice 22: forensically verified `uav0000339_00001_v`'s
+      reported 7 TIM-MARS wrong-person frames (operator independently
+      reached the same diagnosis). Root cause: `run_deterministic_replay`
+      never passed `--image-width`/`--image-height` to
+      `run_deterministic_tim_replay.py`, which defaulted to `640x640` (the
+      ROS 2 sequences' resolution) instead of this VisDrone sequence's real
+      `1904x1071`, so TIM-MARS clipped/normalized geometry against the
+      wrong frame size (confirmed at frame 26: TIM's published box bottom
+      edge clamped to exactly `640.0` against a `~686` ground truth,
+      dropping IoU just under the correctness threshold) while raw
+      ByteTrack was unaffected (it copies boxes through unchanged). Not a
+      genuine TIM-MARS failure. Fixed by wiring the manifest's frozen
+      `image.width`/`image.height` through; added a regression test; reran
+      `uav0000339_00001_v` twice (byte-identical
+      `generated_semantic_sha256` both times): TIM-MARS now shows 0
+      wrong-person frames and a correct fraction of 0.262 versus raw's
+      0.095 (previously 0.069 under the bug) -- the opposite conclusion
+      from the pre-fix number. The first-phase batch stays paused pending
+      the operator's go-ahead to resume with the (still open) image-
+      preloading memory fix from Slice 21.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY

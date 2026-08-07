@@ -1048,3 +1048,106 @@ phase. It does not recompute anything itself and does not silently skip a
 sequence with a missing report -- every sequence appears in the output with
 an explicit status. 2 focused tests cover the counting logic and the
 missing-report case.
+
+### Slice 21 — development-host memory crashes
+
+The 8 GB RAM / zero-swap development Raspberry Pi crashed and rebooted twice
+while running the first-phase batch (2026-08-07, ~12:39 and ~15:01).
+
+Root cause 1, fixed in this slice:
+`rosbag2_py.SequentialCompressionReader` decompresses an entire compressed
+mcap file up front (observed: a 1.7 GB compressed capture produced a 7.5 GB
+decompressed file), and this happened independently in both the resolve
+step and the deterministic-replay step for the same sequence. Fixed with
+explicit, single, controlled streaming decompression via the `zstd` CLI
+(`resolve_external_candidate_stream.ensure_uncompressed_bag`), reused across
+both steps and deleted afterward; direct use of a still-compressed bag now
+fails with a clear error (`open_bag_reader` / `run_deterministic_tim_replay.py`
+`open_reader`) instead of silently risking OOM. Confirmed on the real 7.5 GB
+`dancetrack0004` case: the `zstd` subprocess peaked at ~7 MB RSS, available
+memory stayed at 7.0 GiB throughout, and the sequence's report generated
+successfully with no crash.
+
+A second decompression-metadata bug surfaced during that fix: a genuinely
+uncompressed bag written by the real rosbag2 writer still carries
+`compression_format`/`compression_mode` as empty strings, not absent: the
+first version of this fix removed the keys entirely, which the strict
+metadata parser rejected (confirmed by inspecting a real uncompressed bag's
+`metadata.yaml` rather than guessing). Fixed by setting empty strings
+instead of removing the keys.
+
+Root cause 2, found but deliberately NOT fixed in this slice (out of scope
+here; tracked for the next slice): `run_deterministic_tim_replay.py`
+preloads every appearance image as a full decoded array into one in-memory
+list before processing at all (`images.append((stamp_ns, image_bgr))`).
+This was only ever exercised against the small ROS 2 sequences (<=807
+images at 640x640, ~1 GB) and is unsafe for larger/higher-resolution
+external sequences (`dancetrack0004`: 1203 images at 1920x1080, ~7.1 GB).
+
+Repo integrity was verified intact after both crashes (`git status` clean,
+`git fsck` showed only harmless dangling blobs, all commits present).
+
+Per operator instruction, the first-phase batch was paused after this slice
+so the one already-generated external result
+(`visdrone_mot_val_uav0000339_00001_v`, small enough to be unaffected by
+either crash) could be forensically verified before trusting or extending
+it -- see Slice 22.
+
+### Slice 22 — false wrong-person signal: missing source-resolution flags
+
+Forensic investigation (requested by the operator, who independently
+reached the same diagnosis) of `visdrone_mot_val_uav0000339_00001_v`'s
+reported 7 TIM-MARS `wrong_unmatched_output` frames (raw: 0) found this was
+**not** a genuine TIM-MARS tracking failure but a pipeline coordinate-space
+bug.
+
+`run_external_sequence_report.py`'s `run_deterministic_replay` never passed
+`--image-width`/`--image-height` to `run_deterministic_tim_replay.py`, which
+defaults both to `640.0` -- the resolution the ROS 2 field sequences it was
+built for use, not this VisDrone sequence's actual `1904x1071` source
+resolution (frozen in the manifest's `image.width`/`image.height`). Tracing
+the flagged frames directly: at frame 26 the ByteTrack candidate box was
+`(153.38, 616.81, 186.76, 683.39)` and the target ground truth was
+`(152.0, 618.0, 185.0, 686.0)`, but TIM-MARS's published box was
+`(153.38, 616.81, 186.76, 640.0)` -- the bottom edge clamped to exactly
+`640.0`, the wrong assumed frame height. That clamp alone dropped the
+correctness IoU from what would otherwise be a match to `0.2995`, just under
+the `0.30` threshold, misclassifying a geometry bug as a wrong-person
+selection. Frame 25 (classified correct) showed the identical clamp with
+IoU `0.3131`, just above threshold by chance -- confirming the clamp was
+present continuously, not something that started at frame 26. The raw
+baseline was unaffected because it copies ByteTrack boxes through unchanged
+and never passes through TIM-MARS's (wrongly-scaled) geometry pipeline.
+
+Fixed by passing the manifest's own frozen `image.width`/`image.height` from
+`build_report` through to `run_deterministic_replay`, which now requires
+these as explicit arguments (no silent default). A focused regression test
+verifies both that `run_deterministic_replay`'s subprocess command includes
+the correct `--image-width`/`--image-height`, and that `build_report` wires
+the manifest entry's own `image` dimensions through end to end.
+
+Rerunning `visdrone_mot_val_uav0000339_00001_v` after the fix (verified
+reproducible across two runs, identical `generated_semantic_sha256`):
+
+| Metric | Raw | TIM-MARS before fix | TIM-MARS after fix |
+|---|---:|---:|---:|
+| Correct target [frames] | 26 | 19 | 70 |
+| Correct same-person recovery | 0 | 0 | 2 |
+| Wrong person (any category) | 0 | 7 | 0 |
+| Candidate absent | 249 | 249 | 203 |
+| Correct fraction | 0.095 | 0.069 | 0.262 |
+
+With the bug fixed, TIM-MARS shows zero wrong-person frames and a
+substantially higher correct fraction than raw ByteTrack on this sequence --
+the opposite conclusion from the pre-fix number, and a result now consistent
+with the "wrong is worse than lost" invariant holding and TIM-MARS
+genuinely improving over the raw baseline here.
+
+This was not caught before Slice 17-18's real-hardware validation because
+that validation used the smallest VisDrone capture successfully but did not
+independently cross-check TIM's *published box geometry* against ground
+truth at the pixel level -- only the aggregate outcome counts. Every
+external-sequence result generated before this fix (only
+`visdrone_mot_val_uav0000339_00001_v`, since the batch crashed before
+producing others) must be treated as unreliable and is superseded by the
+post-fix rerun above.

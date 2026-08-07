@@ -123,3 +123,107 @@ class TestBuildReportInitializationFailure:
 
         assert report["status"] == "initialization_failure"
         assert called["replay_ran"] is False
+
+
+class TestRunDeterministicReplayPassesSourceDimensions:
+    def test_subprocess_command_includes_frozen_image_dimensions(
+        self, monkeypatch, tmp_path
+    ):
+        # Regression test for the uav0000339_00001_v false wrong-person
+        # signal (2026-08-07): run_deterministic_tim_replay.py defaults to
+        # 640x640 (the ROS 2 field sequences' resolution) when these flags
+        # are omitted. External sequences have a different source
+        # resolution (e.g. VisDrone at 1904x1071); omitting the flags made
+        # TIM-MARS clip candidate boxes, normalize geometry against the
+        # wrong diagonal, and rescale appearance crops incorrectly, while
+        # the unaffected raw baseline just copies boxes through -- producing
+        # a spurious TIM-only "wrong person" signal that was actually a
+        # pipeline coordinate-space bug, not a tracking failure.
+        captured_argv = {}
+
+        def fake_run(argv, cwd, check):
+            captured_argv["argv"] = argv
+
+        monkeypatch.setattr(MODULE.subprocess, "run", fake_run)
+
+        MODULE.run_deterministic_replay(
+            capture_bag=tmp_path / "capture",
+            output_bag=tmp_path / "output",
+            selected_track_id=1,
+            image_width=1904,
+            image_height=1071,
+            repo_root=tmp_path,
+        )
+
+        argv = captured_argv["argv"]
+        assert "--image-width" in argv
+        assert argv[argv.index("--image-width") + 1] == "1904"
+        assert "--image-height" in argv
+        assert argv[argv.index("--image-height") + 1] == "1071"
+
+    def test_build_report_passes_manifest_image_dimensions_through(
+        self, monkeypatch, tmp_path
+    ):
+        captured = {}
+
+        def fake_resolve(**kwargs):
+            return {
+                "sequence_id": kwargs["sequence_id"],
+                "success": True,
+                "initial_tracker_identity": 1,
+            }
+
+        def fake_load_manifest_entry(*args, **kwargs):
+            return {
+                "id": "visdrone_mot_val_uav0000339_00001_v",
+                "dataset": "visdrone_mot",
+                "sequence_name": "uav0000339_00001_v",
+                "split": "val",
+                "image": {"width": 1904, "height": 1071},
+                "frame_contract": {
+                    "frame_rate": 24.0,
+                    "normalized_start_index": 0,
+                    "normalized_end_index_inclusive": 1,
+                },
+                "target": {
+                    "dataset_identity": 17,
+                    "minimum_match_iou": 0.5,
+                    "minimum_match_margin": 0.1,
+                    "confirmation_frames": 2,
+                    "initialization_start_frame": 0,
+                    "initialization_end_frame_inclusive": 9,
+                },
+            }
+
+        def fake_run_replay(**kwargs):
+            captured["image_width"] = kwargs["image_width"]
+            captured["image_height"] = kwargs["image_height"]
+
+        def fake_read_target_stream(*args, **kwargs):
+            return {}
+
+        def fake_load_all_annotations(entry):
+            return []
+
+        monkeypatch.setattr(MODULE, "resolve", fake_resolve)
+        monkeypatch.setattr(
+            MODULE, "load_manifest_entry", fake_load_manifest_entry
+        )
+        monkeypatch.setattr(
+            MODULE, "run_deterministic_replay", fake_run_replay
+        )
+        monkeypatch.setattr(
+            MODULE, "read_target_stream", fake_read_target_stream
+        )
+        monkeypatch.setattr(
+            MODULE, "load_all_annotations", fake_load_all_annotations
+        )
+
+        MODULE.build_report(
+            sequence_id="visdrone_mot_val_uav0000339_00001_v",
+            capture_bag=tmp_path / "capture",
+            replay_output_root=tmp_path / "replay",
+        )
+
+        assert captured["image_width"] == 1904
+        assert captured["image_height"] == 1071
