@@ -1947,12 +1947,14 @@ here for the closing evidence trail rather than silently dropped):
 
 **Validation.** No source code changed in this slice -- purely a
 documentation correction and an explicit scope decision -- so no new tests
-were added and no package/workspace build is implicated (every commit in
-Issue #30's history touched only Python analysis/test files, JSON/CSV
-data, and Markdown docs; no ROS 2 message or C++ file was ever modified).
-The previously-existing full Issue #30 test suite (71 tests) was rerun
-unchanged. `git diff --check` and a root-level runtime-noise check both
-pass. The frozen 7-sequence primary manifest, canonical TIM-MARS
+were added and no package/workspace build is implicated: no ROS 2 message,
+C++, `CMakeLists.txt` or `package.xml` file was ever modified anywhere in
+Issue #30's history (one regression test was added inside
+`ros2_ws/src/thesis_bringup/test/` in Slice 23, proving streaming/bulk
+image-selection equivalence; that package's own test suite, 17 tests,
+passes). The previously-existing full Issue #30 test suite (71 tests) was
+rerun unchanged. `git diff --check` and a root-level runtime-noise check
+both pass. The frozen 7-sequence primary manifest, canonical TIM-MARS
 config/model hashes, and the DanceTrack/`uav0000268_05773_v` exclusions
 are untouched.
 
