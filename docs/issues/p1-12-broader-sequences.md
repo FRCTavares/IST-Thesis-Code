@@ -1518,27 +1518,59 @@ full pipeline.
 **The `uav0000117_02622_v` oracle result (0.3% correct, 99.7%
 `safe_suppression`) was investigated before acceptance**, per operator
 instruction to inspect any surprising oracle result without tuning the
-algorithm. Checked: the passed image dimensions were correct
-(2720x1530, matching the manifest, not a repeat of Slice 22's bug);
-initialization succeeded cleanly at frame 1 with 7815 oracle candidates
-available across the sequence; wrong-person count is 0, ruling out a
-coordinate-type defect. This sequence's target has the smallest annotated
-box of any retained sequence (32x83 px, ~1.2% of frame width) in the
-densest scene (~88 people). The coherent, non-tuned explanation is that
-TIM-MARS's appearance-based re-confirmation essentially never reaches
-sufficient confidence on a crop this small in a scene this dense, so it
-defaults to withholding output rather than guessing -- consistent with, not
-contradicting, the zero-wrong-person behaviour seen everywhere else. No
-code was changed in response to this result.
+algorithm, and per a later operator correction not to attribute the cause to
+appearance confidence unless the recorded diagnostics actually prove it.
+Checked: the passed image dimensions were correct (2720x1530, matching the
+manifest, not a repeat of Slice 22's bug); initialization succeeded cleanly
+at frame 1 with 7815 oracle candidates available across the sequence;
+wrong-person count is 0, ruling out a coordinate-type defect.
+
+The mechanism *is* provable from the recorded per-frame TIM-MARS status
+diagnostics (`/target_memory_mars/status`, read back from the oracle replay
+bag), not asserted from the crop size alone. Across the 348 frames where the
+target's own oracle candidate had a recorded appearance-crop-quality entry:
+`encoding_eligible` is `True` on all 348 -- the crop is never too small or
+low-quality for the appearance encoder to run at all, so "crop too small to
+encode" is not the mechanism. `group_centre_too_close` appears in
+`rejection_reasons` on all 348 frames and `overlap_with_person` on 211/348
+(61%); together these gate the appearance-*memory-update* step, so the
+system persistently treats this target's crop as too close to (frequently
+overlapping) the surrounding crowd to trust as a clean identity-memory
+update, independent of the crop's raw size or encodability. Consistent with
+that starvation of trusted updates, `publication_suppressed_reason` is
+`same_id_reacquisition_reject:no_candidate_appearance` (no currently-trusted
+appearance available to compare against) on 181/349 frames (52%) and
+`best_below_threshold` on roughly 130/349 frames (37%, with the computed
+match score sitting in the 0.43-0.52 range against a required 0.52-0.60
+depending on state), i.e. a minority of frames do reach an appearance
+comparison and it genuinely falls short of the match threshold; the
+remainder are `recovery_persistence_pending` (36 frames, awaiting
+confirmation) and two single-frame edge cases. `appearance_skip_reason` is
+`cached_interval` on 290/349 frames (83%), confirming most frames do not
+even attempt a fresh appearance computation because of the configured
+250 ms minimum recompute interval, and rely on whatever was last trusted.
+
+So the defensible, diagnostics-backed account is: the correct oracle
+candidate was continuously available and TIM-MARS produced zero
+wrong-person outputs, but suppressed 348/349 frames; the proximate,
+recorded cause is not an inability to encode a small crop, but this
+scene's persistent crowd-proximity/overlap gating of the appearance-memory
+update combined with the appearance-recompute interval, which together
+leave few frames with a currently-trusted comparison and, on the few
+frames a fresh score is computed, that score falls just under the required
+threshold. This is consistent with, not contradicting, the zero-wrong-person
+behaviour seen everywhere else. No code was changed in response to this
+result.
 
 **Interpretation -- what the two modes each show, and do not show.** The
 full pipeline (real detector -> real ByteTrack -> raw/TIM) measures what
 this thesis is actually about: deployed behaviour under real detector and
 tracker imperfection. There, TIM-MARS improves both correctness and safety
 over raw ByteTrack on every evaluable sequence, and the two genuine
-initialization failures mark the honest limit of any anchored-identity
-system when the physical target never produces a confirmable candidate at
-all. Oracle mode removes the detector and tracker from the loop entirely to
+initialization failures mark a limitation of this frozen
+detector/ByteTrack/initialization pipeline on these two specific sequences
+-- not a general limit of anchored-identity systems as a class. Oracle mode
+removes the detector and tracker from the loop entirely to
 isolate a different, narrower question: given a perfect, always-available,
 unambiguous candidate, what does TIM-MARS's own identity-memory and
 appearance-confirmation logic do on its own? The answer is that it never

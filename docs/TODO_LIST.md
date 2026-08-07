@@ -117,17 +117,30 @@ Open executable issues: **24**.
       from #50 when available and must expose the event types needed to compare
       candidate loss, identity confusion, tracker fragmentation, integrated
       appearance association, and selective TIM-MARS recovery fairly.
-    - external benchmark scope: freeze a manageable subset of approximately four MOT17, four to six DanceTrack, and four VisDrone-MOT sequences; evaluate both oracle-candidate and detector–ByteTrack–TIM-MARS modes alongside the four ROS 2 sequences.
-      Post-freeze (Slice 25), the operator made an explicit, pre-outcome scope
-      decision, unrelated to any tracker or TIM-MARS result: all five frozen
-      DanceTrack sequences are excluded as substantially out-of-domain for
-      this thesis's selected-person UAV-following objective, and
-      `uav0000268_05773_v` (4K VisDrone) is excluded as a disproportionate
-      resource-cost outlier. The primary Issue #30 benchmark is now 7
-      sequences (4 ROS 2 development + 3 VisDrone-MOT); the 6 excluded
-      sequences remain in the manifest with `status: "excluded"` and an
-      explicit `exclusions` reason each, kept as auditable exploratory
-      evidence rather than deleted from the record.
+    - **final primary scope (post Slice 25/26): 7 sequences -- 4 ROS 2
+      development sequences (`may_hard_reentry`, `seq01_clean`,
+      `seq03_crossing`, `seq04_occlusion`) + 3 VisDrone-MOT sequences
+      (`uav0000117_02622_v`, `uav0000137_00458_v`, `uav0000339_00001_v`).**
+      Full-pipeline accounting on this primary scope: 5 evaluated, 2
+      genuine `initialization_failure` (`uav0000117_02622_v`,
+      `uav0000137_00458_v`), 0 missing. This is the number to cite for
+      Issue #30's primary result; it does not run or aggregate 9 external
+      sequences and does not include DanceTrack.
+    - external benchmark scope (as originally planned before the sequences
+      were run): freeze a manageable subset of approximately four MOT17,
+      four to six DanceTrack, and four VisDrone-MOT sequences; evaluate both
+      oracle-candidate and detector–ByteTrack–TIM-MARS modes alongside the
+      four ROS 2 sequences. This original plan was revised post-freeze
+      (Slice 25): the operator made an explicit, pre-outcome scope decision,
+      unrelated to any tracker or TIM-MARS result, to exclude all five
+      frozen DanceTrack sequences as substantially out-of-domain for this
+      thesis's selected-person UAV-following objective, and to exclude
+      `uav0000268_05773_v` (4K VisDrone) as a disproportionate
+      resource-cost outlier. MOT17 was never run (see deferral below). The
+      6 excluded sequences (5 DanceTrack + `uav0000268_05773_v`) remain in
+      `sequence_manifest.json` with `status: "excluded"` and an explicit
+      `exclusions` reason each -- kept as auditable exploratory evidence,
+      not deleted from the record, and not part of the primary aggregate.
     - MOT17 deferral: the official MOTChallenge source is currently
       unreachable from the development network (routing-level failure to the
       TUM-hosted server, confirmed from two independent networks; general
@@ -218,8 +231,26 @@ Open executable issues: **24**.
       with the remainder almost entirely safe suppression -- the 0.3% case
       (`uav0000117_02622_v`, the sequence's smallest annotated target in its
       densest scene) was inspected and found to be a genuine, non-bug
-      result, not tuned. Remaining work: produce the complete thesis-ready
-      writeup synthesizing both modes' evidence.
+      result, not tuned.
+    - Issue #30 acceptance-criteria check against the GitHub issue text
+      (Slice 27): two required-reporting items from the issue's own
+      "Required reporting" list are not yet built anywhere in the
+      repository -- detector/tracker/TIM runtime cost, and results
+      stratified by target bounding-box size. The former is reasonably
+      deferred to the separate, dedicated #32 (P1.14 runtime/onboard-cost
+      characterisation, still open); the latter has no such home and is a
+      genuine open item specific to #30. The original issue text's request
+      for "four to six DanceTrack" sequences and MOT17 coverage are not
+      met by the primary result as an oversight -- they are explicit,
+      pre-outcome, documented exclusions/deferrals (Slice 25, Slice 12)
+      that the issue's own completion contract permits ("explicitly
+      rejected with repository-grounded evidence"), not silent gaps.
+      Pending operator confirmation on how to close these items, Issue #30
+      is not yet being closed on GitHub. Remaining work: resolve the
+      bbox-size-stratification gap (build it, or explicitly reject it with
+      justification), get explicit sign-off that the DanceTrack/MOT17/
+      runtime-cost deviations are acceptable as documented, then produce
+      the thesis-ready writeup synthesizing both modes' evidence.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
