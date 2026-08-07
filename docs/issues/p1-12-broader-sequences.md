@@ -855,3 +855,79 @@ frame-rate computation, confirmation that Seq03/Seq04 use their corrected
 ByteTrack annotation (not the split's original OC-SORT one), that
 `dataset_identity` and `initial_tracker_identity` agree, and manifest-entry
 merge replacement semantics.
+
+### Slice 17 — DanceTrack/VisDrone-MOT execution path
+
+DanceTrack and VisDrone-MOT have no existing way to run the real thesis
+detector/tracker pipeline: unlike the ROS 2 sequences, they are plain image
+folders, not ROS bags. Three new tools close that gap:
+
+- `tools/experiments/images_to_camera_bag.py` writes a sorted external-dataset
+  image sequence into a ROS 2 bag as `sensor_msgs/msg/Image` (`bgr8`) on
+  `/camera/image_raw`, timestamped at an explicit frame rate. It performs no
+  detection, tracking or resizing; the live detector node resizes internally.
+- `tools/experiments/capture_external_detector_tracker.sh` builds that source
+  bag, then launches the real `perception_pipeline_node` (Hailo YOLOv6n) and
+  `tracker_node` (ByteTrack) exactly as
+  `run_one_detector_tim_replay.sh` does for recorded flight bags, plays the
+  source bag through them, and records `/camera/image_raw`, `/detections` and
+  `/tracks` into one output bag. No TIM-MARS, dashboard bridge or live target
+  selection runs here: this produces one shared detector/ByteTrack candidate
+  stream per benchmark case, satisfying Issue #30's requirement that the raw
+  baseline and TIM-MARS branches consume identical detections and tracks.
+  `tools/experiments/run_deterministic_tim_replay.py` (already proven in
+  Slice 15) is the next step, run separately against this output bag, to
+  deterministically generate the paired raw-versus-TIM-MARS streams from that
+  one candidate stream.
+- `tools/analysis/resolve_external_candidate_stream.py` reads a frozen
+  manifest entry's `target.dataset_identity` and initialization window,
+  loads the sequence's official ground-truth box for that identity across
+  the initialization frames, reads the recorded `/tracks` stream from a
+  capture bag (recovering each message's original frame index from its
+  `src_stamp_ns`, since the live pipeline can drop frames), and applies
+  `external_target_initialization.py`'s existing
+  `frozen_target_unique_iou_confirmation_v1` rule -- using the manifest's
+  own already-frozen `minimum_match_iou`/`minimum_match_margin`/
+  `confirmation_frames` -- to resolve `target.initial_tracker_identity`. This
+  does not reopen sequence, physical-identity or frame-range selection; it
+  mechanically resolves which live tracker ID that already-frozen physical
+  identity corresponds to in one specific capture.
+
+**Real-hardware validation.** The full mechanism was run end-to-end on
+`visdrone_mot_val_uav0000137_00458_v` (233 source images, the smallest
+selected VisDrone sequence): all 233 images were captured; the live
+detector/tracker processed 188 of them (80.7%; the remainder dropped during
+normal real-time inference queueing, the same characteristic already visible
+in the ROS 2 flight recordings). Detection coordinates correctly carried
+source-pixel provenance
+(`source=2688x1512;inference=640x640;scale=...;pad=...`), matching the
+manifest's `original_source_image_pixels` coordinate contract without any
+extra remapping.
+
+Resolving the frozen target (`dataset_identity=41`) against this capture
+returned `success: false, reason: no_confirmed_initial_tracker_match`: no
+recorded track matched the target's ground-truth box during the frozen
+initialization window (frames 0-9). This was verified to be a genuine result,
+not a coordinate or alignment bug: the target's own VisDrone annotation flags
+`occlusion=1` in those exact frames, and a full-capture IoU/distance search
+found the same physical location picked up by the tracker only much later
+(frames ~74-86 as one tracker ID, frames ~171-174 as another after an ID
+switch) -- i.e. the live detector genuinely did not see this specific,
+partially-occluded target during its first ten frames. This is a legitimate
+instance of Issue #30's `initialization failure` outcome category, produced
+by the pipeline running for real, not injected or cherry-picked.
+
+This is evaluation-relevant evidence in its own right (the annotation-derived
+selection policy's `maximum_initialization_occlusion=1` tolerance can select
+a physical target that a real detector still fails to confirm), and it will
+be recorded as such rather than discarded once the outcome-taxonomy evaluator
+(next slice) exists to classify it formally.
+
+Remaining before a full first-phase report: run this capture-and-resolve path
+for the other eight external sequences, and build the frame-level MOT-style
+evaluator implementing Issue #30's full outcome taxonomy (distractor
+selection, stale-ID transfer, ambiguous candidate, initialization failure,
+etc.) against oracle and end-to-end candidate streams -- distinct from
+`tim_evaluation.py`/`evaluate_tim_event_recovery.py`, which are built for the
+ROS 2 sequences' interval-annotation format, not per-frame MOT-style ground
+truth.

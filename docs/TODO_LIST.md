@@ -128,13 +128,17 @@ Open executable issues: **24**.
       (13 sequences: 5 DanceTrack, 4 VisDrone-MOT, 4 ROS 2 development;
       Slices 14 and 16). First genuine paired raw-ByteTrack-versus-TIM-MARS
       evidence exists for all four ROS 2 sequences (Slice 15 corrected
-      Seq03/Seq04, which had only OC-SORT-based evidence). Remaining work:
-      extend the outcome taxonomy beyond Issue #26's event vocabulary
-      (distractor selection vs. stale-ID transfer, ambiguous candidate,
-      initialization failure), implement the oracle-candidate path, build
-      the DanceTrack/VisDrone end-to-end candidate-stream execution path
-      (no offline detector+ByteTrack-over-image-folder runner exists yet),
-      then run and report the complete first-phase benchmark.
+      Seq03/Seq04, which had only OC-SORT-based evidence). The DanceTrack/
+      VisDrone execution path (image-folder -> live detector/ByteTrack
+      capture -> frozen-target resolution) now exists and was validated on
+      real Hailo hardware against a real sequence, including one genuine
+      `initialization failure` case caught organically (Slice 17). Remaining
+      work: run the capture-and-resolve path for the other eight external
+      sequences, extend the outcome taxonomy beyond Issue #26's event
+      vocabulary (distractor selection vs. stale-ID transfer, ambiguous
+      candidate, initialization failure), implement the frame-level
+      oracle-candidate and end-to-end MOT-style evaluator, then run and
+      report the complete first-phase benchmark.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
@@ -206,6 +210,15 @@ Open executable issues: **24**.
       manifest (root status `frozen`, every sequence `status: frozen`).
       Physical target identity for each ROS 2 sequence is its own official
       annotation's initial `correct_target_track_id`, not a new selection.
+    - execution slice 17: built and real-hardware-validated the DanceTrack/
+      VisDrone-MOT execution path: image folder -> `/camera/image_raw` bag ->
+      live Hailo YOLOv6n detector + ByteTrack capture (one shared candidate
+      stream, no TIM/dashboard/live selection) -> frozen-target resolution
+      via the existing IoU/margin/confirmation rule. Validated end-to-end on
+      `uav0000137_00458_v` (233/233 images captured, 188/233 processed);
+      correctly produced a genuine `initialization failure` result, verified
+      by full-capture spatial search to be a real detector miss on an
+      annotation-flagged partially-occluded target, not a coordinate bug.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
