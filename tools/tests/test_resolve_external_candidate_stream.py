@@ -169,3 +169,150 @@ class TestLoadTargetObservationsFiltering:
 
         assert len(selected) == 2
         assert {row.normalized_frame_index for row in selected} == {0, 1}
+
+
+def write_fake_bag(bag_dir, *, compressed):
+    import yaml
+
+    bag_dir.mkdir(parents=True)
+    payload = b"not a real mcap file, just bytes for the test" * 1000
+
+    metadata = {
+        "rosbag2_bagfile_information": {
+            "version": 9,
+            "storage_identifier": "mcap",
+            "duration": {"nanoseconds": 0},
+            "starting_time": {"nanoseconds_since_epoch": 0},
+            "message_count": 0,
+            "topics_with_message_count": [],
+            "relative_file_paths": [
+                "bag_0.mcap.zstd" if compressed else "bag_0.mcap"
+            ],
+            "files": [
+                {
+                    "path": "bag_0.mcap",
+                    "starting_time": {"nanoseconds_since_epoch": 0},
+                    "duration": {"nanoseconds": 0},
+                    "message_count": 0,
+                }
+            ],
+            "custom_data": None,
+            "ros_distro": "jazzy",
+        }
+    }
+
+    if compressed:
+        metadata["rosbag2_bagfile_information"]["compression_format"] = (
+            "zstd"
+        )
+        metadata["rosbag2_bagfile_information"]["compression_mode"] = "FILE"
+
+        raw_path = bag_dir / "bag_0.mcap"
+        raw_path.write_bytes(payload)
+        import subprocess
+
+        subprocess.run(
+            ["zstd", "-f", str(raw_path), "-o", str(bag_dir / "bag_0.mcap.zstd")],
+            check=True,
+        )
+        raw_path.unlink()
+    else:
+        (bag_dir / "bag_0.mcap").write_bytes(payload)
+
+    (bag_dir / "metadata.yaml").write_text(
+        yaml.safe_dump(metadata, sort_keys=False), encoding="utf-8"
+    )
+
+    return payload
+
+
+class TestIsCompressedBag:
+    def test_uncompressed_bag_is_false(self, tmp_path):
+        bag_dir = tmp_path / "bag"
+        write_fake_bag(bag_dir, compressed=False)
+
+        assert MODULE.is_compressed_bag(bag_dir) is False
+
+    def test_compressed_bag_is_true(self, tmp_path):
+        bag_dir = tmp_path / "bag"
+        write_fake_bag(bag_dir, compressed=True)
+
+        assert MODULE.is_compressed_bag(bag_dir) is True
+
+    def test_missing_metadata_is_false(self, tmp_path):
+        bag_dir = tmp_path / "empty"
+        bag_dir.mkdir()
+
+        assert MODULE.is_compressed_bag(bag_dir) is False
+
+
+class TestEnsureUncompressedBag:
+    def test_uncompressed_bag_returned_unchanged(self, tmp_path):
+        bag_dir = tmp_path / "bag"
+        write_fake_bag(bag_dir, compressed=False)
+
+        result = MODULE.ensure_uncompressed_bag(bag_dir)
+
+        assert result == bag_dir
+
+    def test_compressed_bag_is_decompressed_correctly(self, tmp_path):
+        bag_dir = tmp_path / "bag"
+        original_payload = write_fake_bag(bag_dir, compressed=True)
+
+        result = MODULE.ensure_uncompressed_bag(bag_dir)
+
+        assert result != bag_dir
+        assert MODULE.is_compressed_bag(result) is False
+        assert (result / "bag_0.mcap").read_bytes() == original_payload
+
+    def test_decompressed_metadata_has_no_compression_fields(
+        self, tmp_path
+    ):
+        import yaml
+
+        bag_dir = tmp_path / "bag"
+        write_fake_bag(bag_dir, compressed=True)
+
+        result = MODULE.ensure_uncompressed_bag(bag_dir)
+
+        rewritten = yaml.safe_load(
+            (result / "metadata.yaml").read_text(encoding="utf-8")
+        )
+        info = rewritten["rosbag2_bagfile_information"]
+
+        assert "compression_format" not in info
+        assert "compression_mode" not in info
+        assert info["relative_file_paths"] == ["bag_0.mcap"]
+
+    def test_refuses_when_insufficient_disk_space(
+        self, tmp_path, monkeypatch
+    ):
+        import shutil
+
+        import pytest
+
+        bag_dir = tmp_path / "bag"
+        write_fake_bag(bag_dir, compressed=True)
+
+        class FakeUsage:
+            free = 1 * (1024**3)  # 1 GiB, far below any real requirement
+            total = 0
+            used = 0
+
+        monkeypatch.setattr(
+            shutil, "disk_usage", lambda _path: FakeUsage()
+        )
+
+        with pytest.raises(RuntimeError, match="refusing to decompress"):
+            MODULE.ensure_uncompressed_bag(bag_dir)
+
+
+class TestOpenBagReaderRefusesCompressed:
+    def test_raises_on_compressed_bag(self, tmp_path):
+        import pytest
+
+        bag_dir = tmp_path / "bag"
+        write_fake_bag(bag_dir, compressed=True)
+
+        with pytest.raises(ValueError, match="still compressed"):
+            MODULE.open_bag_reader(bag_dir)

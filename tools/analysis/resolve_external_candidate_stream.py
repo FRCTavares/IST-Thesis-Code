@@ -48,16 +48,12 @@ DEFAULT_MANIFEST = (
 )
 
 
-def is_compressed_bag(bag_path: Path) -> bool:
-    """Detect file-level bag compression from metadata.yaml.
+MINIMUM_FREE_GIB_AFTER_DECOMPRESSION = 25
+DECOMPRESSED_SIZE_SAFETY_MULTIPLIER = 6
 
-    Plain ``rosbag2_py.SequentialReader`` cannot open a compressed mcap file
-    directly (it fails with an "invalid magic bytes" error trying to parse
-    compressed bytes as an uncompressed mcap stream); a compressed bag needs
-    ``SequentialCompressionReader`` instead. The CLI tools (``ros2 bag
-    play``/``info``) handle this transparently; the raw Python bindings do
-    not, so every reader in this evaluation pipeline must check explicitly.
-    """
+
+def is_compressed_bag(bag_path: Path) -> bool:
+    """Detect file-level bag compression from metadata.yaml."""
 
     metadata_path = Path(bag_path) / "metadata.yaml"
 
@@ -72,16 +68,134 @@ def is_compressed_bag(bag_path: Path) -> bool:
     )
 
 
+def _free_space_gib(path: Path) -> float:
+    import shutil as _shutil
+
+    usage = _shutil.disk_usage(path)
+    return usage.free / (1024**3)
+
+
+def ensure_uncompressed_bag(
+    bag_path: Path,
+    *,
+    work_root: Path | None = None,
+) -> Path:
+    """Return an uncompressed bag directory usable by a plain reader.
+
+    ``rosbag2_py.SequentialCompressionReader`` decompresses the *entire*
+    mcap file to a full uncompressed copy up front (observed: a 1.7 GB
+    compressed capture produced a 7.5 GB decompressed file), and doing this
+    independently in both the resolve step and the deterministic replay step
+    for the same sequence contributed to an out-of-memory crash and full
+    reboot of the (8 GB RAM, zero swap) development Pi on 2026-08-07. This
+    function instead decompresses once, explicitly, via the ``zstd`` CLI
+    (which streams in small fixed buffers regardless of file size, unlike
+    the observed rosbag2_py behaviour), and the caller is expected to reuse
+    the returned path for every step that needs to read this bag, then
+    delete it when done.
+
+    If ``bag_path`` is already uncompressed, it is returned unchanged (no
+    copy, no cleanup obligation) -- callers should only delete the returned
+    path if it differs from the input.
+    """
+
+    import shutil
+    import subprocess
+
+    import yaml
+
+    bag_path = Path(bag_path)
+
+    if not is_compressed_bag(bag_path):
+        return bag_path
+
+    metadata_path = bag_path / "metadata.yaml"
+    metadata = yaml.safe_load(metadata_path.read_text(encoding="utf-8"))
+    info = metadata["rosbag2_bagfile_information"]
+
+    relative_paths = info["relative_file_paths"]
+    if len(relative_paths) != 1:
+        raise ValueError(
+            f"{bag_path}: expected exactly one compressed file, "
+            f"found {relative_paths}"
+        )
+
+    compressed_file = bag_path / relative_paths[0]
+    if not compressed_file.name.endswith(".zstd"):
+        raise ValueError(
+            f"{bag_path}: expected a .zstd compressed file, "
+            f"found {compressed_file.name}"
+        )
+
+    uncompressed_name = compressed_file.name[: -len(".zstd")]
+
+    work_root = work_root or bag_path.parent
+    dest_dir = work_root / f"{bag_path.name}__decompressed_tmp"
+
+    compressed_size_gib = compressed_file.stat().st_size / (1024**3)
+    required_gib = (
+        compressed_size_gib * DECOMPRESSED_SIZE_SAFETY_MULTIPLIER
+        + MINIMUM_FREE_GIB_AFTER_DECOMPRESSION
+    )
+    available_gib = _free_space_gib(work_root)
+
+    if available_gib < required_gib:
+        raise RuntimeError(
+            f"refusing to decompress {bag_path}: only "
+            f"{available_gib:.1f} GiB free, need an estimated "
+            f"{required_gib:.1f} GiB (compressed size "
+            f"{compressed_size_gib:.1f} GiB x"
+            f"{DECOMPRESSED_SIZE_SAFETY_MULTIPLIER} + "
+            f"{MINIMUM_FREE_GIB_AFTER_DECOMPRESSION} GiB floor)"
+        )
+
+    if dest_dir.exists():
+        shutil.rmtree(dest_dir)
+    dest_dir.mkdir(parents=True)
+
+    dest_mcap = dest_dir / uncompressed_name
+    subprocess.run(
+        ["zstd", "-d", "--long=31", str(compressed_file), "-o", str(dest_mcap)],
+        check=True,
+    )
+
+    info["relative_file_paths"] = [uncompressed_name]
+    info["files"] = [
+        {
+            **entry,
+            "path": uncompressed_name,
+        }
+        for entry in info["files"]
+    ]
+    info.pop("compression_format", None)
+    info.pop("compression_mode", None)
+
+    (dest_dir / "metadata.yaml").write_text(
+        yaml.safe_dump(metadata, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    return dest_dir
+
+
 def open_bag_reader(bag_path: Path):
-    """Open ``bag_path`` with the reader class its compression needs."""
+    """Open an already-uncompressed ``bag_path`` for reading.
+
+    Callers must pass a bag that ``ensure_uncompressed_bag`` has already
+    processed; this function deliberately does not fall back to
+    ``SequentialCompressionReader`` (see ``ensure_uncompressed_bag`` for
+    why that path is unsafe on this hardware).
+    """
+
+    if is_compressed_bag(bag_path):
+        raise ValueError(
+            f"{bag_path} is still compressed; call "
+            "ensure_uncompressed_bag() first"
+        )
 
     import rosbag2_py
 
-    reader = (
-        rosbag2_py.SequentialCompressionReader()
-        if is_compressed_bag(bag_path)
-        else rosbag2_py.SequentialReader()
-    )
+    reader = rosbag2_py.SequentialReader()
     reader.open(
         rosbag2_py.StorageOptions(uri=str(bag_path), storage_id="mcap"),
         rosbag2_py.ConverterOptions(
@@ -195,7 +309,7 @@ def load_tracker_candidates(
 
     period_ns = round(1_000_000_000 / frame_rate_hz)
 
-    reader = open_bag_reader(capture_bag)
+    reader = open_bag_reader(ensure_uncompressed_bag(capture_bag))
     reader.set_filter(
         rosbag2_py.StorageFilter(topics=[tracks_topic])
     )

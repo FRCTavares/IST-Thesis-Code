@@ -51,6 +51,7 @@ from external_tracking_dataset import (  # noqa: E402
 from resolve_external_candidate_stream import (  # noqa: E402
     DEFAULT_MANIFEST,
     annotation_path_for,
+    ensure_uncompressed_bag,
     load_manifest_entry,
     open_bag_reader,
     resolve,
@@ -194,34 +195,43 @@ def build_report(
 ) -> dict[str, Any]:
     entry = load_manifest_entry(manifest_path, sequence_id=sequence_id)
 
-    resolution = resolve(
-        sequence_id=sequence_id,
-        capture_bag=capture_bag,
-        manifest_path=manifest_path,
-    )
+    import shutil
 
-    if not resolution["success"]:
-        return {
-            "sequence_id": sequence_id,
-            "status": "initialization_failure",
-            "resolution": resolution,
-        }
+    uncompressed_bag = ensure_uncompressed_bag(capture_bag)
+    created_temp_copy = uncompressed_bag != Path(capture_bag)
 
-    replay_output_root = replay_output_root or (
-        repo_root
-        / "bags"
-        / "replay"
-        / "p030_broader_sequences_external_replay_2026_08_07"
-    )
-    replay_output_root.mkdir(parents=True, exist_ok=True)
-    replay_bag = replay_output_root / entry["sequence_name"]
+    try:
+        resolution = resolve(
+            sequence_id=sequence_id,
+            capture_bag=uncompressed_bag,
+            manifest_path=manifest_path,
+        )
 
-    run_deterministic_replay(
-        capture_bag=capture_bag,
-        output_bag=replay_bag,
-        selected_track_id=resolution["initial_tracker_identity"],
-        repo_root=repo_root,
-    )
+        if not resolution["success"]:
+            return {
+                "sequence_id": sequence_id,
+                "status": "initialization_failure",
+                "resolution": resolution,
+            }
+
+        replay_output_root = replay_output_root or (
+            repo_root
+            / "bags"
+            / "replay"
+            / "p030_broader_sequences_external_replay_2026_08_07"
+        )
+        replay_output_root.mkdir(parents=True, exist_ok=True)
+        replay_bag = replay_output_root / entry["sequence_name"]
+
+        run_deterministic_replay(
+            capture_bag=uncompressed_bag,
+            output_bag=replay_bag,
+            selected_track_id=resolution["initial_tracker_identity"],
+            repo_root=repo_root,
+        )
+    finally:
+        if created_temp_copy and uncompressed_bag.exists():
+            shutil.rmtree(uncompressed_bag)
 
     frame_rate = entry["frame_contract"]["frame_rate"]
     raw_outputs = read_target_stream(

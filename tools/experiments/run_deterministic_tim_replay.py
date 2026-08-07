@@ -203,11 +203,24 @@ def is_compressed_bag(bag_path: Path) -> bool:
 
 
 def open_reader(bag_path: Path) -> rosbag2_py.SequentialReader:
-    reader = (
-        rosbag2_py.SequentialCompressionReader()
-        if is_compressed_bag(bag_path)
-        else rosbag2_py.SequentialReader()
-    )
+    if is_compressed_bag(bag_path):
+        # rosbag2_py.SequentialCompressionReader decompresses the entire
+        # mcap file up front (observed: a 1.7 GB compressed capture produced
+        # a 7.5 GB decompressed file). On the 8 GB RAM / zero-swap
+        # development Pi this contributed to an out-of-memory crash and full
+        # reboot on 2026-08-07. Callers must decompress explicitly first
+        # (see resolve_external_candidate_stream.ensure_uncompressed_bag,
+        # which streams via the zstd CLI instead) rather than relying on
+        # this tool to do it implicitly.
+        raise RuntimeError(
+            f"{bag_path} is compressed; decompress it explicitly before "
+            "passing it to run_deterministic_tim_replay.py (see "
+            "resolve_external_candidate_stream.ensure_uncompressed_bag) "
+            "rather than relying on SequentialCompressionReader, which has "
+            "caused an out-of-memory crash on this hardware"
+        )
+
+    reader = rosbag2_py.SequentialReader()
     reader.open(
         rosbag2_py.StorageOptions(
             uri=str(bag_path),
