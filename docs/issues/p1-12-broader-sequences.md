@@ -1151,3 +1151,78 @@ external-sequence result generated before this fix (only
 `visdrone_mot_val_uav0000339_00001_v`, since the batch crashed before
 producing others) must be treated as unreliable and is superseded by the
 post-fix rerun above.
+
+### Slice 23 — memory-safe causal image selection
+
+Fixed Slice 21's root cause 2 (`run_deterministic_tim_replay.py` preloading
+every decoded appearance image into one in-memory list before processing),
+preserving exact causal image selection.
+
+The shared `TimMarsRuntime` (`ros2_ws/src/thesis_bringup/thesis_bringup/
+tim_mars/runtime.py`) already exposes two ways to populate its causal-image
+timeline: `replace_images()` (unbounded, offline-only, used before this
+slice) and `add_image()` (bounded via `image_buffer_size`, already used by
+the live ROS node, never previously used by offline replay).
+`select_causal_image()` performs a binary search (`bisect_right`) for the
+single latest image at or before a query timestamp -- it never needs more
+than one image per query. Because `run_deterministic_tim_replay.py` already
+sorts every track event into non-decreasing semantic-time order before
+processing, the sequence of causally-selected images across all track
+events is itself non-decreasing: a bounded buffer populated in timestamp
+order is mathematically sufficient for identical results to full preload,
+provided every image at or before a track event's timestamp is added before
+that event is processed.
+
+Implementation: pass 1 (unchanged read-order and `sequence_index`
+numbering, so track-event tie-breaking is byte-identical to before) now
+only collects `track_events`; it still reads every message to preserve the
+exact original sequencing, but no longer decodes or retains image pixel
+data. A second, fresh reader pass -- filtered to only the image topic --
+streams images in timestamp order, calling `runtime.add_image()` for each
+and discarding the local reference immediately, releasing (processing) each
+sorted track event as soon as every image at or before its timestamp has
+been added. Any track events after the last image are processed against
+whatever the runtime's buffer currently holds, exactly as
+`select_causal_image` would already resolve them. The per-track-event
+processing body (raw-target generation, TIM target/status message
+construction, semantic digest updates) is unchanged, just extracted into a
+nested function so both the merge loop and any trailing events can call it.
+
+Validation, in order:
+
+- the pre-existing 35 `test_run_deterministic_tim_replay.py` tests and the
+  pre-existing 16 `test_tim_mars_runtime.py` tests pass unchanged;
+- a new focused regression test,
+  `test_streaming_add_image_matches_bulk_replace_images`, directly proves
+  the mathematical property against the real `TimMarsRuntime` class: a
+  representative timeline (a gap, a duplicate timestamp resolved
+  last-write-wins, a query before the first image, on an image timestamp,
+  strictly between images, and after the last image) yields identical
+  `select_causal_image` results whether populated via one `replace_images()`
+  call or via interleaved `add_image()` streaming;
+- rerunning `visdrone_mot_val_uav0000339_00001_v` (small, already known-good
+  post-Slice-22 result) end to end produced an outcome-count match *and* a
+  byte-identical `generated_semantic_sha256` determinism digest
+  (`391eb11385768621dce3cf011474d3ebc8e817f3e000e5d7352650aa0208c5e0`) to the
+  pre-streaming-refactor run;
+- rerunning `dancetrack0004` -- the exact sequence that crashed the
+  development Pi twice under the old preload approach -- completed
+  successfully with available memory staying at ~7.0 GiB throughout (versus
+  the ~7.1 GB single-sequence preload that previously exhausted an 8 GB,
+  zero-swap host).
+
+`dancetrack0004`'s post-fix result is new data (this sequence never
+completed before this slice): raw 99/1203 correct (25 wrong-person, all
+`stale_id_transfer`), TIM-MARS 107/1203 correct but 119 wrong-person (23
+`distractor_selection`, 6 `stale_id_transfer`, 89 `wrong_unmatched_output`,
+1 `wrong_output_during_physical_absence`) -- TIM-MARS shows *more*
+wrong-person frames than raw on this crowded dance sequence. This is
+recorded here as raw output only, not yet interpreted: Slice 21's still-open
+`candidates_by_frame={}` gap (`run_external_sequence_report.py` does not yet
+feed the captured ByteTrack candidate stream into the frame classifier)
+makes the candidate-absence/ambiguity/safe-suppression side of the taxonomy
+untrustworthy for every case run so far, and per operator instruction that
+must be fixed and validated (Slice 24) before any external result -- this
+one included -- is treated as a trustworthy finding.
+
+The external batch stays paused pending Slice 24.

@@ -143,23 +143,26 @@ Open executable issues: **24**.
       sequences now exists (Slice 20). Operator authorized continuing
       autonomously through the rest of Issue #30 without further check-ins;
       report back before any PR/merge. The development Pi crashed twice
-      under batch memory load; the compressed-bag decompression OOM cause is
-      fixed, tested and confirmed safe on the real large-sequence case, but
-      a second, separate image-preloading memory limitation in
-      `run_deterministic_tim_replay.py` remains unfixed for large/high-
-      resolution sequences (Slice 21). Forensic investigation of the one
-      completed external result found and fixed a real pipeline bug: source
-      image dimensions were never passed through to the deterministic
-      replay tool, causing TIM-MARS to run its geometry against a wrong
-      640x640 assumption; fixed, tested and reverified deterministic --
-      `uav0000339_00001_v` now shows 0 wrong-person frames post-fix, not 7
-      (Slice 22). The first-phase batch stays paused pending the operator's
-      go-ahead to resume, which additionally needs the Slice 21
-      image-preloading fix before any sequence larger than the ones already
-      captured can run safely. Remaining work after that: finish the
-      capture-and-resolve-and-report path for the other eight external
-      sequences, run the oracle-candidate path per sequence, and produce
-      the complete first-phase benchmark report and thesis-ready evidence.
+      under batch memory load; both root causes are now fixed and tested:
+      compressed-bag decompression (Slice 21) and image-preloading during
+      deterministic replay (Slice 23, confirmed on the exact sequence that
+      crashed the Pi twice, with a byte-identical determinism digest on a
+      known-good case proving no behaviour change). Forensic investigation
+      of the one completed external result found and fixed a real pipeline
+      bug: source image dimensions were never passed through to the
+      deterministic replay tool, causing TIM-MARS to run its geometry
+      against a wrong 640x640 assumption; fixed, tested and reverified
+      deterministic -- `uav0000339_00001_v` now shows 0 wrong-person frames
+      post-fix, not 7 (Slice 22). One more fix remains before the batch may
+      resume: `run_external_sequence_report.py` currently passes
+      `candidates_by_frame={}` to the frame classifier, so the
+      candidate-absence/ambiguity/safe-suppression side of the outcome
+      taxonomy is not yet trustworthy for any external result generated so
+      far, including the new `dancetrack0004` data (Slice 24, in progress).
+      Remaining work after that: finish the capture-and-resolve-and-report
+      path for the other seven external sequences, run the oracle-candidate
+      path per sequence, and produce the complete first-phase benchmark
+      report and thesis-ready evidence.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
@@ -300,6 +303,28 @@ Open executable issues: **24**.
       from the pre-fix number. The first-phase batch stays paused pending
       the operator's go-ahead to resume with the (still open) image-
       preloading memory fix from Slice 21.
+    - reliability slice 23: fixed Slice 21's remaining root cause. TIM-MARS'
+      shared runtime already offered a bounded, live-mode-safe image method
+      (`add_image`, `image_buffer_size`-limited) alongside the unbounded
+      offline-only one (`replace_images`) that was in use;
+      `select_causal_image` only ever needs the single latest image at or
+      before a query time, and track events are already processed in
+      non-decreasing time order, so a bounded buffer populated in timestamp
+      order is mathematically sufficient for identical results. Replaced
+      the full-preload pass with a second, image-topic-only streaming pass
+      that adds images via `add_image` and releases each sorted track event
+      once every image at or before its time has been added; pass 1's
+      read-order and tie-break numbering are unchanged. New regression test
+      proves the equivalence directly against the real `TimMarsRuntime`
+      class; pre-existing 35+16 tests pass unchanged;
+      `uav0000339_00001_v` reran with a byte-identical determinism digest to
+      the pre-refactor run; `dancetrack0004` -- which crashed the Pi twice
+      under the old approach -- completed successfully with available
+      memory holding at ~7.0 GiB throughout. `dancetrack0004`'s result
+      (raw 25 wrong-person vs. TIM 119) is recorded as raw data only, not
+      yet interpreted, since Slice 21's `candidates_by_frame={}` gap
+      (tracked as Slice 24) still makes the lost/suppressed side of the
+      taxonomy untrustworthy. Batch stays paused pending Slice 24.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY

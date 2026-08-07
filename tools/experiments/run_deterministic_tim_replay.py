@@ -1494,12 +1494,12 @@ def main() -> int:
     }
 
     bridge = CvBridge()
-    images: list[tuple[int, Any]] = []
     track_events: list[
         tuple[int, int, int, int, Track2DArray]
     ] = []
 
     sequence_index = 0
+    image_message_count = 0
 
     while reader.has_next():
         topic, serialized, bag_time_ns = reader.read_next()
@@ -1512,6 +1512,11 @@ def main() -> int:
             continue
 
         if topic == image_topic:
+            # Pass 1 deliberately does not decode or retain image pixel
+            # data (see the streaming pass below): it only needs to know
+            # at least one valid image exists, and must still advance
+            # sequence_index identically to before so track_events'
+            # tie-break ordering is unchanged.
             message = deserialize_message(
                 serialized,
                 message_types[topic],
@@ -1521,11 +1526,7 @@ def main() -> int:
             if stamp_ns <= 0:
                 continue
 
-            image_bgr = bridge.imgmsg_to_cv2(
-                message,
-                desired_encoding="bgr8",
-            )
-            images.append((stamp_ns, image_bgr))
+            image_message_count += 1
 
         elif topic == args.tracks_topic:
             message = deserialize_message(
@@ -1544,7 +1545,7 @@ def main() -> int:
                 )
             )
 
-    if not images:
+    if image_message_count == 0:
         raise RuntimeError(
             f"No valid images found on {image_topic}"
         )
@@ -1553,8 +1554,6 @@ def main() -> int:
         raise RuntimeError(
             f"No track messages found on {args.tracks_topic}"
         )
-
-    runtime.replace_images(images)
 
     track_events.sort(
         key=lambda event: (
@@ -1580,13 +1579,21 @@ def main() -> int:
     raw_target_messages_written = 0
     raw_target_valid_messages_written = 0
 
-    for (
-        _semantic_time_ns,
-        _frame_id,
-        bag_time_ns,
-        _source_sequence,
-        tracks_message,
-    ) in track_events:
+    def process_one_track_event(
+        event: tuple[int, int, int, int, Track2DArray],
+    ) -> None:
+        nonlocal generated_sequence
+        nonlocal raw_target_messages_written
+        nonlocal raw_target_valid_messages_written
+
+        (
+            _semantic_time_ns,
+            _frame_id,
+            bag_time_ns,
+            _source_sequence,
+            tracks_message,
+        ) = event
+
         result = runtime.process_tracks(tracks_message)
 
         if replace_raw_target:
@@ -1672,6 +1679,74 @@ def main() -> int:
             )
         )
         generated_sequence += 1
+
+    # Stream images from a fresh, image-topic-only reader pass, feeding
+    # them into the runtime's bounded causal-image buffer (add_image,
+    # the same method the live ROS node uses) one at a time instead of
+    # decoding the complete timeline into memory up front
+    # (replace_images). On the 8 GB RAM / zero-swap development host,
+    # preloading every decoded frame for a long, high-resolution external
+    # sequence (e.g. 1203 frames at 1920x1080, ~7.1 GB) exhausted memory
+    # and crashed the host; see Slice 23.
+    #
+    # Correctness: track_events is sorted by non-decreasing semantic
+    # time, and select_causal_image always returns the single latest
+    # image at or before a query time, so the sequence of causally
+    # selected images is itself non-decreasing. Adding images in
+    # timestamp order and releasing each track event only once every
+    # image at or before its semantic time has been added therefore
+    # produces results identical to preloading the complete timeline,
+    # without ever needing to hold more than the buffer's worth of
+    # decoded images at once.
+    image_reader = open_reader(input_bag)
+    image_reader.set_filter(
+        rosbag2_py.StorageFilter(topics=[image_topic])
+    )
+
+    pending_index = 0
+    images_loaded = 0
+
+    while image_reader.has_next():
+        _topic, serialized, _bag_time_ns = (
+            image_reader.read_next()
+        )
+        message = deserialize_message(
+            serialized,
+            message_types[image_topic],
+        )
+        stamp_ns = image_time_ns(message)
+
+        if stamp_ns <= 0:
+            continue
+
+        image_bgr = bridge.imgmsg_to_cv2(
+            message,
+            desired_encoding="bgr8",
+        )
+        runtime.add_image(stamp_ns, image_bgr)
+        images_loaded += 1
+        del image_bgr
+        del message
+
+        while (
+            pending_index < len(track_events)
+            and track_events[pending_index][0] <= stamp_ns
+        ):
+            process_one_track_event(
+                track_events[pending_index]
+            )
+            pending_index += 1
+
+    del image_reader
+
+    # Any remaining track events (semantic time after the last image, or
+    # a non-positive/unavailable semantic time, sorted first) are
+    # processed against whatever is currently the latest buffered image,
+    # exactly as select_causal_image would resolve them against the
+    # complete preloaded timeline.
+    while pending_index < len(track_events):
+        process_one_track_event(track_events[pending_index])
+        pending_index += 1
 
     writer = rosbag2_py.SequentialWriter()
     writer.open(
@@ -1926,7 +2001,7 @@ def main() -> int:
             ),
         },
         "counts": {
-            "images_loaded": len(images),
+            "images_loaded": images_loaded,
             "source_messages_streamed": (
                 source_messages_written
             ),
