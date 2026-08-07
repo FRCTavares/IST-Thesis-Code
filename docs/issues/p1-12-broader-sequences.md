@@ -931,3 +931,64 @@ etc.) against oracle and end-to-end candidate streams -- distinct from
 `tim_evaluation.py`/`evaluate_tim_event_recovery.py`, which are built for the
 ROS 2 sequences' interval-annotation format, not per-frame MOT-style ground
 truth.
+
+### Slice 18 — frame-level outcome taxonomy and end-to-end report
+
+Added `tools/analysis/evaluate_external_frame_outcomes.py`, the per-frame
+MOT-style physical-target classifier the external (DanceTrack/VisDrone)
+sequences need.
+
+Design:
+
+- primary correctness is IoU between a stream's output box and the
+  sequence's own ground-truth box for the frozen physical identity --
+  tracker-ID continuity is never the correctness signal, matching the core
+  invariant that tracker IDs are temporary candidate labels;
+- `external_target_initialization.match_frame` (already frozen and used for
+  initialization) is reused, unmodified, as the per-frame "spatial oracle"
+  that explains *why* a frame is wrong or empty: no candidate near the
+  target, an ambiguous margin between two candidates, or a confident
+  candidate that went unpublished;
+- a same-person recovery across a tracker-ID change is distinguished from
+  plain continuation by tracking the last tracker ID that was actually
+  correct;
+- a wrong output is classified as `stale_id_transfer` if its tracker ID was
+  previously correct and now spatially matches a different real person, or
+  `distractor_selection` if that ID was never correct;
+- wrong-person outcomes (`distractor_selection`, `stale_id_transfer`,
+  `wrong_unmatched_output`, `wrong_output_during_physical_absence`) are a
+  disjoint set from lost/suppressed/absent outcomes
+  (`safe_suppression`, `target_candidate_absent`, `physical_absence_correct`,
+  `ambiguous_candidate`) and are never merged, per Issue #30's "wrong is
+  worse than lost" invariant.
+
+This covers seven of the eight required outcome categories directly
+(correct target, correct same-person recovery, safe suppression/lost,
+distractor selection, stale-ID transfer, target-candidate-absent, ambiguous
+candidate); `initialization failure` is a sequence-level outcome, already
+produced by `resolve_external_candidate_stream.py` when no live tracker
+candidate confirms the frozen physical identity within the initialization
+window (Slice 17). 13 focused tests cover every outcome category and confirm
+the wrong/lost disjointness invariant directly.
+
+Added `tools/analysis/run_external_sequence_report.py`, which chains the
+whole per-sequence pipeline: resolve the frozen tracker identity from a
+capture bag; if that fails, report `initialization_failure` and stop (there
+is no valid stream to score); otherwise run
+`run_deterministic_tim_replay.py` unmodified (`--raw-target-mode
+selected_id`, the resolved ID) to deterministically generate the paired
+raw-versus-TIM-MARS streams from the one captured candidate stream; read
+both `/target` and `/target_memory_mars` back (recovering each message's
+original frame index from `src_stamp_ns`, matching Slice 17's approach for
+`/tracks`); classify every evaluation frame for both streams; and report
+both streams' outcome summaries side by side.
+
+Verified against the real `visdrone_mot_val_uav0000137_00458_v` capture from
+Slice 17: correctly reports `initialization_failure` and does not attempt a
+replay, since there is no confirmed tracker identity to seed either the raw
+baseline or TIM-MARS.
+
+Remaining: run this report for every captured sequence once the batch
+capture (Slice 17) finishes, and aggregate the per-sequence reports (plus
+the four ROS 2 sequences' Issue #26-vocabulary evidence) into the first
+complete first-phase benchmark report.

@@ -131,14 +131,15 @@ Open executable issues: **24**.
       Seq03/Seq04, which had only OC-SORT-based evidence). The DanceTrack/
       VisDrone execution path (image-folder -> live detector/ByteTrack
       capture -> frozen-target resolution) now exists and was validated on
-      real Hailo hardware against a real sequence, including one genuine
-      `initialization failure` case caught organically (Slice 17). Remaining
-      work: run the capture-and-resolve path for the other eight external
-      sequences, extend the outcome taxonomy beyond Issue #26's event
-      vocabulary (distractor selection vs. stale-ID transfer, ambiguous
-      candidate, initialization failure), implement the frame-level
-      oracle-candidate and end-to-end MOT-style evaluator, then run and
-      report the complete first-phase benchmark.
+      real Hailo hardware, including one genuine `initialization failure`
+      case caught organically (Slice 17). The frame-level MOT-style outcome
+      taxonomy evaluator and full per-sequence report pipeline (resolve ->
+      deterministic raw/TIM replay -> classify -> summarize) now exist and
+      are tested, including against the real initialization-failure case
+      (Slice 18). Remaining work: finish running the capture-and-resolve-
+      and-report path for the other eight external sequences (batch capture
+      in progress) and aggregate all 13 sequences into the complete
+      first-phase benchmark report.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit
@@ -219,6 +220,14 @@ Open executable issues: **24**.
       correctly produced a genuine `initialization failure` result, verified
       by full-capture spatial search to be a real detector miss on an
       annotation-flagged partially-occluded target, not a coordinate bug.
+    - taxonomy slice 18: added the frame-level physical-target outcome
+      classifier (IoU-against-ground-truth correctness; reuses the frozen
+      `match_frame` spatial oracle to explain wrong/empty frames; disjoint
+      wrong-person vs. lost/suppressed outcome sets) and the end-to-end
+      per-sequence report pipeline (resolve -> deterministic raw/TIM replay
+      -> classify -> summarize), reusing `run_deterministic_tim_replay.py`
+      unmodified. Covers 7 of 8 required outcome categories directly;
+      initialization failure is the existing sequence-level Slice 17 result.
 
 
 15. [ ] [#31 — P1.13 Parameter sensitivity](https://github.com/FRCTavares/IST-Thesis-Code/issues/31) — HIGHEST PRIORITY
