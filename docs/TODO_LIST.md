@@ -229,9 +229,12 @@ Open executable issues: **24**.
       availability): 0 wrong-person frames across all 3 oracle runs, but
       correct-target fraction varies sharply by scene (0.3% / 97.0% / 22.2%)
       with the remainder almost entirely safe suppression -- the 0.3% case
-      (`uav0000117_02622_v`, the sequence's smallest annotated target in its
-      densest scene) was inspected and found to be a genuine, non-bug
-      result, not tuned.
+      (`uav0000117_02622_v`, in its densest scene) was inspected and found
+      to be a genuine, non-bug result, not tuned; Slice 28's size
+      stratification later showed this sequence's target height (83-124px)
+      is not this sample's smallest -- the earlier "smallest annotated
+      target" framing conflated bbox width with height and is corrected
+      there.
     - Issue #30 acceptance-criteria check against the GitHub issue text
       (Slice 27): two required-reporting items from the issue's own
       "Required reporting" list are not yet built anywhere in the
@@ -246,11 +249,41 @@ Open executable issues: **24**.
       that the issue's own completion contract permits ("explicitly
       rejected with repository-grounded evidence"), not silent gaps.
       Pending operator confirmation on how to close these items, Issue #30
-      is not yet being closed on GitHub. Remaining work: resolve the
-      bbox-size-stratification gap (build it, or explicitly reject it with
-      justification), get explicit sign-off that the DanceTrack/MOT17/
-      runtime-cost deviations are acceptable as documented, then produce
-      the thesis-ready writeup synthesizing both modes' evidence.
+      was not yet closed on GitHub at that point.
+    - bbox-height-stratified reporting (Slice 28): built and run, closing
+      the one genuine reporting gap left open by Slice 27 (the
+      DanceTrack/MOT17/runtime-cost items are documented exclusions/
+      deferrals, not gaps). Stratifies the 3 retained VisDrone sequences by
+      ground-truth target bbox height using data-driven bins (`<70px,
+      70-89px, 90-109px, 110-129px, >=130px`; the originally proposed
+      `<20/20-39/40-79/80-159/>=160` scheme would have put 100% of every
+      sequence's frames in one bin -- observed range is 66-132px). The 4
+      ROS 2 sequences are explicitly excluded from this analysis (no
+      per-frame multi-person GT bbox contract exists for them; no
+      pseudo-annotation was invented). Key result: zero wrong-person frames
+      in every bin, every sequence, every mode, matching Slices 25-26 at a
+      finer grain. `uav0000117_02622_v`'s near-total suppression is uniform
+      across all of its size bins (not concentrated in a "too small" bin),
+      while `uav0000137_00458_v` performs well across nearly all of its
+      oracle-mode bins -- the two initialization failures are shown to not
+      share a size-based root cause. Full-pipeline stratification only has
+      real outcome data from `uav0000339_00001_v` (the two initialization
+      failures contribute distribution/candidate-availability data only, as
+      required); there, TIM's improvement over raw concentrates in the
+      `70-89px` bin (2.5%->25.2%) where raw is not already at its
+      candidate-availability ceiling. 12 new tests; reuses existing,
+      already-tested pipeline building blocks and already-generated replay
+      bags -- no new capture or replay, no TIM-MARS/detector/tracker/
+      selection change. Artifacts: `bbox_size_stratified_report.{json,csv}`
+      and two PNG figures under `artifacts/reports/p030_broader_sequences/`
+      (git-ignored generated outputs); builder scripts
+      `tools/analysis/bbox_size_stratified_report.py` and
+      `render_bbox_size_report_outputs.py` are tracked.
+      Remaining work: get explicit sign-off that the DanceTrack/MOT17/
+      runtime-cost deviations are acceptable as documented and that the
+      bbox-size-stratification result satisfies the issue's reporting
+      requirement, then produce the thesis-ready writeup synthesizing all
+      evidence.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit

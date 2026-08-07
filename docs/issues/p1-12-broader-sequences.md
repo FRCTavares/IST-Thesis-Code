@@ -1590,3 +1590,248 @@ slice added a new, separate read path rather than touching the primary
 aggregate. No TIM-MARS threshold, detector setting, ByteTrack parameter, or
 sequence selection was changed while producing or interpreting any of the
 above.
+
+### Slice 27 — Issue #30 acceptance-criteria check
+
+Checked the primary Issue #30 result against the GitHub issue's own literal
+text (commit `4b4ea885`). Two corrections to Slice 26's prose, both
+requested by the operator:
+
+- the two genuine initialization failures are now described as a
+  limitation of this frozen detector/ByteTrack/initialization pipeline on
+  these two specific sequences, not (as originally written) a general limit
+  of anchored-identity systems as a class;
+- the `uav0000117_02622_v` oracle-mode 0.3%-correct result is no longer
+  attributed to "appearance confidence" as an assertion. The actual
+  per-frame `/target_memory_mars/status` diagnostics were read back from the
+  oracle replay bag: `encoding_eligible` is `True` on all 348 frames with a
+  crop-quality entry (the crop is never too small to encode), while
+  `group_centre_too_close` fires on all 348 and `overlap_with_person` on
+  211/348 -- gating the appearance-*memory-update* step on crowd proximity,
+  not crop size. `publication_suppressed_reason` is
+  `same_id_reacquisition_reject:no_candidate_appearance` on 181/349 frames
+  and `best_below_threshold` on ~130/349 (scores 0.43-0.52 against a
+  required 0.52-0.60); `appearance_skip_reason` is `cached_interval` on
+  290/349, confirming most frames never attempt a fresh appearance
+  computation at all because of the 250 ms recompute interval. The
+  diagnostics-backed account replaces the earlier vague one.
+
+Checked the issue's "Required reporting" list against what exists in the
+repository: two items were not built anywhere -- detector/tracker/TIM
+runtime cost, and results stratified by target bounding-box size. The
+former is reasonably deferred to the separate, dedicated, still-open #32
+(P1.14, which covers TIM/MARS latency, cache hit rate, CPU, memory and
+temperature in more depth than #30 asks for). The latter had no home
+elsewhere and was a genuine open item, addressed in Slice 28 below. MOT17
+and DanceTrack, both explicitly requested in the issue's original text, are
+not silent gaps: MOT17 is deferred with documented network-unreachability
+evidence (Slice 12) and DanceTrack is excluded with documented
+domain-relevance evidence (Slice 25), both of which the issue's own
+completion contract explicitly permits ("explicitly rejected with
+repository-grounded evidence"). Posted a progress comment to GitHub Issue
+#30 summarizing the primary result, the oracle result, the documented
+exclusions, and the two open reporting items; did not close the issue.
+
+### Slice 28 — bbox-height-stratified reporting
+
+Built the bounding-box-size-stratified reporting Issue #30's own acceptance
+criteria call for, closing Slice 27's remaining reporting gap. Evaluation/
+reporting addition only: no TIM-MARS threshold, detector setting, ByteTrack
+setting, or sequence selection was changed. Everything in this slice reuses
+the existing, already-tested resolve/candidate-stream/classification
+building blocks unmodified and reads already-generated replay bags; it does
+not rerun any capture or replay.
+
+**Scope.** The 3 retained VisDrone-MOT sequences
+(`uav0000117_02622_v`, `uav0000137_00458_v`, `uav0000339_00001_v`) are the
+only primary-scope sequences with a per-frame, multi-person ground-truth
+bounding-box annotation. The 4 ROS 2 development sequences have only live
+detector/tracker output plus each sequence's own single official
+`correct_target_track_id` annotation, not dense per-frame boxes for every
+person -- there is no defensible frame-level GT bbox mapping to stratify
+by, so bbox-size stratification applies only to the 3 VisDrone sequences;
+no pseudo-annotation was invented for ROS 2 to fill the table. DanceTrack
+and `uav0000268_05773_v` remain excluded exactly as in Slice 25 -- nothing
+here reintroduces them.
+
+**Target-size measure and bins.** Primary measure is the ground-truth
+target bbox height in source-image pixels (normalized height,
+`bbox_height / image_height`, is also retained per frame in the underlying
+data). The originally proposed `<20px / 20-39px / 40-79px / 80-159px /
+>=160px` scheme was checked against the actual pooled distribution first,
+per instruction: minimum observed height is 66px, maximum 132px, across
+all three sequences combined (857 GT-visible frames) -- that scheme would
+put 100% of every sequence's frames into the single 80-159px bin. Replaced
+with a data-driven scheme covering the observed range:
+
+| Bin | Pooled GT-visible frames |
+|---|---:|
+| `<70px` | 33 |
+| `70-89px` | 443 |
+| `90-109px` | 245 |
+| `110-129px` | 120 |
+| `>=130px` | 16 |
+
+`>=130px` has low support (16 frames, entirely from `uav0000137_00458_v`)
+and is flagged as such below; every bin has at least some support from at
+least one sequence.
+
+**Target-size distribution per sequence** (GT-visible frames; shown before
+any performance interpretation, per instruction):
+
+| Sequence | `<70px` | `70-89px` | `90-109px` | `110-129px` | `>=130px` | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| `uav0000117_02622_v` | 0 | 214 | 90 | 45 | 0 | 349 |
+| `uav0000137_00458_v` | 0 | 27 | 115 | 75 | 16 | 233 |
+| `uav0000339_00001_v` | 33 | 202 | 40 | 0 | 0 | 275 |
+
+Note the correction this immediately forces versus earlier anecdotal
+framing in this document: `uav0000117_02622_v`'s target height is 83-124px
+(comfortably inside `70-89px`/`90-109px`/`110-129px`), not below the
+existing `>=20px` operating-guideline floor as the earlier "32x83 px"
+citation could be misread to imply -- that 32 was the target's bbox
+*width*, not height. By height, this is not this sample's smallest target;
+`uav0000339_00001_v` (the one sequence that evaluates successfully) has
+33 frames below even the `<70px` floor.
+
+**Full-pipeline candidate availability by bin** (fraction of GT-visible
+frames where a real detector/ByteTrack candidate confidently matches the
+target's own GT box, using the same frozen IoU/margin rule as
+initialization -- computed for all three sequences regardless of whether
+the sequence as a whole ever initialized):
+
+| Sequence | `<70px` | `70-89px` | `90-109px` | `110-129px` | `>=130px` |
+|---|---:|---:|---:|---:|---:|
+| `uav0000117_02622_v` (init_failure) | n/a (0 frames) | 0.0% (0/214) | 0.0% (0/90) | 0.0% (0/45) | n/a (0 frames) |
+| `uav0000137_00458_v` (init_failure) | n/a (0 frames) | 0.0% (0/27) | 7.8% (9/115) | 6.7% (5/75) | 0.0% (0/16) |
+| `uav0000339_00001_v` (evaluated) | 69.7% (23/33) | 69.8% (141/202) | 10.0% (4/40) | n/a (0 frames) | n/a (0 frames) |
+
+**Full-pipeline outcome by bin** (aggregate across sequences; denominator
+is GT-visible frames in that bin). Only `uav0000339_00001_v` contributes --
+`uav0000117_02622_v` and `uav0000137_00458_v` are `initialization_failure`
+and contribute no raw/TIM outcome data here, only to the two tables above:
+
+| Bin | Frames | Raw correct | Raw suppressed | Raw candidate-absent | TIM correct | TIM suppressed | TIM candidate-absent | TIM wrong |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `<70px` | 33 | 21 (63.6%) | 2 | 10 | 21 (63.6%) | 2 | 10 | 0 |
+| `70-89px` | 202 | 5 (2.5%) | 136 | 61 | 51 (25.2%) | 90 | 61 | 0 |
+| `90-109px` | 40 | 0 (0.0%) | 4 | 36 | 0 (0.0%) | 4 | 36 | 0 |
+| `110-129px` | 0 | -- | -- | -- | -- | -- | -- | -- |
+| `>=130px` | 0 | -- | -- | -- | -- | -- | -- | -- |
+
+Zero wrong-person, zero distractor-selection, zero stale-ID-transfer and
+zero ambiguous-candidate frames in every bin for both streams (this
+sequence's full report, Slice 26, already established this at the whole-
+sequence level; the stratification does not change it). Same-person
+recovery does not occur in this sequence's full-pipeline run.
+
+**Oracle-candidate outcome by bin** (aggregate across all 3 sequences --
+all three initialize successfully in oracle mode, so, unlike the
+full-pipeline table, every sequence contributes real per-bin data here.
+Raw is 100% correct in every bin by oracle-mode construction, Slice 26 --
+not a tracking-performance baseline):
+
+| Bin | Frames | Raw correct | TIM correct | TIM wrong | TIM suppressed |
+|---|---:|---:|---:|---:|---:|
+| `<70px` | 33 | 100% | 97.0% (32/33) | 0 | 1 |
+| `70-89px` | 443 | 100% | 12.9% (57/443) | 0 | 386 |
+| `90-109px` | 245 | 100% | 46.9% (115/245) | 0 | 130 |
+| `110-129px` | 120 | 100% | 57.5% (69/120) | 0 | 51 |
+| `>=130px` (low support) | 16 | 100% | 93.8% (15/16) | 0 | 1 |
+
+Zero wrong-person in every oracle bin, for every sequence, matching Slice
+26's whole-sequence result.
+
+**Verifying the three cases explicitly** (per instruction, checking
+whether the stratified evidence distinguishes these rather than relying on
+anecdotal bbox examples):
+
+- `uav0000117_02622_v`: 0.0% full-pipeline candidate availability in
+  *every* bin it has frames in (`70-89px`, `90-109px`, `110-129px` alike),
+  and in oracle mode TIM is correct on only 1 of 349 frames, again
+  uniformly poor across all three of its bins (1/214, 0/90, 0/45) rather
+  than concentrated in its smallest. If target size were the dominant
+  driver, performance should improve in this sequence's *larger* bins
+  (up to 124px); it does not. The stratified evidence does not support a
+  size-based explanation for this sequence and is consistent with Slice
+  27's diagnostics-backed account (crowd-proximity gating of the
+  appearance-memory update, not crop size or absolute target height).
+- `uav0000137_00458_v`: full-pipeline candidate availability is low but not
+  uniformly zero (7.8% at 90-109px, 6.7% at 110-129px, versus 0.0%
+  elsewhere) -- consistent with a marginal, borderline case where a
+  candidate occasionally exists but not reliably enough, in the frozen
+  10-frame initialization window, to satisfy the confirmation-frame rule.
+  In oracle mode this sequence performs well in most of its bins (100% at
+  70-89px and 90-109px, 92% at 110-129px, 93.75% at >=130px) -- markedly
+  better than `uav0000117_02622_v` at comparable or larger sizes, again
+  showing the two initialization failures are not the same failure mode
+  just because both are labelled `initialization_failure`.
+- `uav0000339_00001_v`: full-pipeline candidate availability is high in its
+  two dominant bins (69.7%/69.8%) and low in its smallest-support bin
+  (10.0% at 90-109px, only 40 frames) -- here a real, if partial,
+  size-linked pattern is visible, though the 90-109px bin's near-total
+  absence in this sequence (raw and TIM both 0/40 correct) reflects a
+  candidate-availability gap rather than a TIM behaviour difference (TIM
+  and raw agree exactly in this bin). TIM's improvement over raw is
+  concentrated in `70-89px` (2.5% to 25.2%) and absent in `<70px`, where
+  raw is already at its ceiling given candidate availability (63.6%
+  correct, matching TIM exactly).
+
+**Low-support caution.** The `>=130px` bin (16 pooled frames, all from
+`uav0000137_00458_v`) and the full-pipeline `90-109px` bin for
+`uav0000339_00001_v` (40 frames, of which only 4 ever had a candidate) are
+too thin to support a general claim; both are reported as computed, not
+suppressed, but should not be read as strong evidence on their own. The
+pooled oracle `70-89px` bin's low correct-fraction (12.9%) is also a
+composition effect worth flagging explicitly: it pools 214 frames from
+`uav0000117_02622_v` (near-zero throughout) with 202 from
+`uav0000339_00001_v` (mixed) and only 27 from `uav0000137_00458_v` (100%
+correct there) -- reading it as "TIM is uniquely bad at 70-89px" would
+misattribute one sequence's overall behaviour to a size effect.
+
+**Interpretation, bounded as instructed.** Does selected-target performance
+degrade as the physical target becomes smaller, and does TIM-MARS change
+the balance between correct publication, wrong-person publication and
+conservative suppression across size regimes? In the one sequence with
+real full-pipeline evaluated data, yes for candidate availability (69-70%
+in the two smaller bins versus 10% in the sparse 90-109px bin), and
+TIM-MARS's improvement over raw is concentrated where a candidate exists
+but raw alone leaves correctness low (`70-89px`), not where raw is already
+near its own ceiling. In oracle mode, size shows a much weaker, noisier
+relationship to TIM's correct-vs-suppress balance than sequence identity
+does: `uav0000117_02622_v` is poor across every one of its bins and
+`uav0000137_00458_v` is good across nearly all of its bins, so whatever is
+driving the difference between these two initialization failures is not
+primarily target height. Zero wrong-person frames hold in every bin, every
+sequence, every mode -- the safety invariant established in Slices 25-26
+survives this finer-grained view unchanged. This is a 3-sequence, 857-frame
+external sample; the existing `>=20px` target-height operating guideline is
+not validated or invalidated as a universal minimum-detectable-size
+threshold by this analysis -- the sample's smallest observed target (66px)
+never goes below it, so this data cannot speak to behaviour under it at
+all.
+
+**Artifacts.** `tools/analysis/bbox_size_stratified_report.py` (the
+stratified-report builder) and
+`tools/analysis/render_bbox_size_report_outputs.py` (deterministic CSV/PNG
+rendering from the already-generated JSON) are new, tracked scripts.
+Generated (git-ignored, per the existing `artifacts/reports/` convention):
+`artifacts/reports/p030_broader_sequences/bbox_size_stratified_report.json`,
+`bbox_size_stratified_report.csv`, `bbox_size_outcome_fractions.png`
+(raw-vs-TIM correct fraction by bin, full pipeline and oracle side by
+side), and `bbox_size_candidate_availability.png` (full-pipeline candidate
+availability by bin and sequence).
+
+**Validation.** 12 new focused tests
+(`test_bbox_size_stratified_report.py`) cover bin-boundary behaviour
+(inclusive lower edge, open-ended top bin), denominator accounting (counts
+and fractions sum correctly, empty input does not crash), candidate-
+presence computation, raw/TIM outcome bucketing by bin (including frames
+with no GT row being excluded rather than crashing), cross-sequence
+aggregation pooling raw outcomes before summarizing, private-field
+stripping before JSON output, and that the sequence scope is exactly the 3
+retained VisDrone sequences (explicitly asserting DanceTrack, the excluded
+4K VisDrone sequence, and the 4 ROS 2 sequences are not present). All
+previously-existing Issue #30 tests continue to pass unchanged. Canonical
+TIM-MARS config/model hashes, the frozen sequence manifest, and the
+DanceTrack/`uav0000268_05773_v` exclusions are untouched by this slice.
