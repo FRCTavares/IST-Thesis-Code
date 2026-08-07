@@ -110,7 +110,7 @@ Open executable issues: **24**.
     - canonical four-sequence evidence at `b50f914a` passed all stored hashes, an identical deterministic rerun and 81 focused tests.
     - tracked interpretation: `docs/results/selected_target_tracking/p026_event_recovery_metrics.md`.
 
-14. [ ] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30) — IN PROGRESS — HIGHEST PRIORITY
+14. [x] [#30 — P1.12 Add broader sequences](https://github.com/FRCTavares/IST-Thesis-Code/issues/30) — DONE
     - started on 6 August 2026 from baseline `f1f02ebb` on branch
       `issue-30-broader-sequences`.
     - phase 7; experiment; includes properly qualified held-out live evidence
@@ -279,11 +279,30 @@ Open executable issues: **24**.
       (git-ignored generated outputs); builder scripts
       `tools/analysis/bbox_size_stratified_report.py` and
       `render_bbox_size_report_outputs.py` are tracked.
-      Remaining work: get explicit sign-off that the DanceTrack/MOT17/
-      runtime-cost deviations are acceptable as documented and that the
-      bbox-size-stratification result satisfies the issue's reporting
-      requirement, then produce the thesis-ready writeup synthesizing all
-      evidence.
+    - scenario-coverage correction and final rejections (Slice 29,
+      documentation-only, no code/capture/replay/config change): the
+      earlier "short occlusion: zero coverage" finding (Slice 27) was
+      wrong -- it only checked top-level manifest `event_categories` tags.
+      The retained `may_hard_reentry` and `seq03_crossing` sequences'
+      authoritative annotation CSVs both contain multiple short
+      `occlusion_ambiguity` intervals (target-visible, brief tracking
+      ambiguity, distinct from `seq04_occlusion`'s separate `target_absent`
+      long-occlusion coverage): `may_hard_reentry` has 8 intervals
+      (0.234-2.34s, matching the operator's cited ~0.24s/~0.77s events
+      exactly); `seq03_crossing` has 7 more (0.855-6.53s), where raw is
+      0.0% correct / 96.1% wrong and TIM-MARS is 69.1% correct / 5.6% wrong
+      specifically during those intervals. `partial crops` and
+      `illumination change` are formally, explicitly rejected from Issue
+      #30's final scope (not silently dropped): frozen pre-outcome
+      selection, anti-cherry-picking, not central to the identity-memory
+      research question, retained as valid future-work limitations. No new
+      sequences added; the 7-sequence primary manifest is unchanged. With
+      this slice, every "Required work" and "Required reporting" item in
+      the GitHub issue text is either covered by retained-benchmark
+      evidence or explicitly rejected/deferred with repository-grounded
+      rationale.
+    - **Issue #30 status: acceptance criteria satisfied; closing.** See the
+      GitHub closing comment for the full completion-contract walkthrough.
     - implementation plan: `docs/issues/p1-12-broader-sequences.md`.
     - adapter slice 1: dataset-neutral MOTChallenge and VisDrone annotation
       parsing with source-row and source-geometry provenance, explicit

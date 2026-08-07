@@ -1835,3 +1835,132 @@ retained VisDrone sequences (explicitly asserting DanceTrack, the excluded
 previously-existing Issue #30 tests continue to pass unchanged. Canonical
 TIM-MARS config/model hashes, the frozen sequence manifest, and the
 DanceTrack/`uav0000268_05773_v` exclusions are untouched by this slice.
+
+### Slice 29 — scenario-coverage audit: short-occlusion correction, partial-crops/illumination-change rejection
+
+Documentation-only slice (no code, no new capture/replay, no TIM-MARS/
+detector/ByteTrack/sequence-selection change). Corrects a scenario-coverage
+audit error and formally rejects the two remaining Required-work categories
+from the GitHub issue text without adding new sequences to the frozen
+primary benchmark.
+
+**Short occlusion was miscategorized as uncovered.** The earlier audit
+(Slice 27) checked only each retained sequence's top-level manifest
+`event_categories` tags and found no `short_occlusion` label, so it was
+reported alongside `illumination_change`/`partial_crops` as having "zero
+coverage anywhere." That check was checking the wrong artifact. The
+operator pointed to the retained `may_hard_reentry` sequence's own
+authoritative annotation file, which does contain short occlusion-adjacent
+events under a differently-named event type. Corrected by reading the
+interval-level annotation CSVs directly (not the report-level aggregates,
+which only total time per event type without exposing individual
+intervals):
+
+- `docs/data/annotations/may_hard_reentry/bytetrack_hard_reentry.csv`
+  (the exact file `reports/p026_event_recovery_b50f914a_2026_08_05/
+  may_hard_reentry/report.json`'s own `provenance.annotation_path` cites)
+  contains 8 `occlusion_ambiguity` intervals, `target_visible: true`
+  throughout every one of them (the target stays visible; tracking becomes
+  ambiguous, not physically absent) -- durations 0.234s, 0.700s, 0.770s,
+  0.810s, 0.960s, 0.997s, 1.470s, 2.340s (total 8.281s, matching
+  `events.csv`'s aggregate exactly). This includes the two intervals the
+  operator specifically cited: 49.999-50.233s (0.234s) and
+  58.16-58.93s (0.770s).
+- `docs/data/annotations/june_hard_sequences/seq03_bytetrack.csv` (the
+  corrected ByteTrack annotation behind
+  `artifacts/reports/p030_broader_sequences/seq03_crossing_bytetrack/
+  report.json`) contains 7 more `occlusion_ambiguity` intervals, also
+  `target_visible: true` throughout, durations 0.855s-6.53s (total
+  20.491s).
+- `docs/data/annotations/june_hard_sequences/seq01_bytetrack.csv` contains
+  none at all (100% `clean_visible`), confirming this is a real, present-
+  or-absent distinction the annotation actually carries, not an artifact
+  of always finding *something* on every sequence.
+
+This is a categorically different, complementary phenomenon to
+`seq04_occlusion`'s existing "long occlusion" coverage, not a duplicate of
+it: `seq04_bytetrack.csv` separately tags 3 `target_absent` intervals
+(`target_visible: false` -- the target is genuinely out of view) totalling
+8.987s, which is what the manifest's `long_occlusion`/`physical_absence`
+tags refer to, alongside its own 2 shorter `occlusion_ambiguity`
+intervals (0.846s, 3.654s) that were not previously surfaced either.
+`occlusion_ambiguity` (brief, visibility-preserved tracking ambiguity,
+frequently occlusion-adjacent) and `target_absent` (the target physically
+out of view) are both present across the retained ROS 2 sequences and are
+now both recorded.
+
+Raw-versus-TIM behaviour specifically during these short
+`occlusion_ambiguity` intervals (from each sequence's own
+`events.csv`, already-generated Issue #26 evidence, not recomputed here):
+
+| Sequence | Stream | Correct | Wrong | Lost | Interval count / total |
+|---|---|---:|---:|---:|---|
+| `may_hard_reentry` | raw | 56.2% (4.654s) | 23.6% (1.957s) | 20.2% (1.670s) | 8 intervals / 8.281s |
+| `may_hard_reentry` | TIM | 69.4% (5.744s) | 1.2% (0.100s) | 29.4% (2.437s) | 8 intervals / 8.281s |
+| `seq03_crossing` | raw | 0.0% (0.000s) | 96.1% (19.691s) | 3.9% (0.800s) | 7 intervals / 20.491s |
+| `seq03_crossing` | TIM | 69.1% (14.159s) | 5.6% (1.150s) | 25.3% (5.182s) | 7 intervals / 20.491s |
+
+On `seq03_crossing`'s short occlusion-ambiguity intervals specifically, raw
+is correct on 0.0% of the time and wrong 96.1% of the time; TIM-MARS
+recovers to 69.1% correct, 5.6% wrong. This is consistent with, not a
+reinterpretation of, the whole-sequence Slice 15/26 result for this
+sequence.
+
+**Corrected scenario-coverage matrix** for the GitHub issue's "Required
+work" list, against the 7 retained primary sequences plus the documented
+exclusions:
+
+| Category | Status | Evidence |
+|---|---|---|
+| Clean multi-person tracking | Covered | `seq01_clean`: 100% `clean_visible`, zero occlusion/fragmentation events |
+| Repeated crossings | Covered | `seq03_crossing` (evaluated, `crowd_crossing`/`identity_confusion`); `uav0000117_02622_v` (attempted, `crowd_crossing`-tagged, genuine `initialization_failure`) |
+| Short occlusion | **Covered (corrected this slice)** | `may_hard_reentry`: 8 `occlusion_ambiguity` intervals, 0.234-2.34s, target-visible; `seq03_crossing`: 7 more, 0.855-6.53s |
+| Long occlusion | Covered | `seq04_occlusion`: 3 `target_absent` (target not visible) intervals, 8.987s total |
+| Exit and re-entry | Covered | `may_hard_reentry`, `seq04_occlusion` (both `reentry`-tagged) |
+| Similar clothing | Explicitly excluded | Present only in the excluded DanceTrack sequences (Slice 25, domain-relevance exclusion, not primary scope) |
+| Small/distant people | Partially covered | Slice 28's bbox-height stratification characterizes the 66-132px range on the 3 retained VisDrone sequences; the deliberately-selected `small_target` category exists only on the excluded `uav0000268_05773_v` |
+| Partial crops | **Explicitly rejected (this slice)** | See rationale below |
+| Illumination change | **Explicitly rejected (this slice)** | See rationale below |
+| UAV or camera motion | Covered | All 3 retained VisDrone sequences `camera_motion`-tagged |
+
+**`partial crops` and `illumination change`, explicitly rejected from
+final Issue #30 scope** (operator decision, not a new finding, recorded
+here for the closing evidence trail rather than silently dropped):
+
+1. The benchmark and target identities were frozen (Slice 16, `frozen_date:
+   2026-08-07`) before final outcome inspection; the 7-sequence primary
+   scope is not reopened by this slice.
+2. Adding new sequences now, specifically to fill checklist categories
+   after seeing results, risks post-outcome selection bias -- the same
+   concern already governing why DanceTrack's exclusion (Slice 25) did not
+   get backfilled with an easier replacement.
+3. Neither partial-crop stress nor controlled illumination variation is
+   central to the frozen selected-person UAV identity-memory research
+   question this issue exists to answer.
+4. The retained benchmark already exercises the core mechanisms the thesis
+   claim rests on: clean tracking, crossing/identity confusion, short and
+   long occlusion, tracker fragmentation, absence/re-entry, candidate loss
+   (the two genuine initialization failures), small/distant external
+   targets (Slice 28), crowded scenes, and UAV/camera-motion evidence.
+5. Partial-crop and illumination robustness remain valid limitations and
+   future-work items, not claims Issue #30 establishes either way.
+
+**Validation.** No source code changed in this slice -- purely a
+documentation correction and an explicit scope decision -- so no new tests
+were added and no package/workspace build is implicated (every commit in
+Issue #30's history touched only Python analysis/test files, JSON/CSV
+data, and Markdown docs; no ROS 2 message or C++ file was ever modified).
+The previously-existing full Issue #30 test suite (71 tests) was rerun
+unchanged. `git diff --check` and a root-level runtime-noise check both
+pass. The frozen 7-sequence primary manifest, canonical TIM-MARS
+config/model hashes, and the DanceTrack/`uav0000268_05773_v` exclusions
+are untouched.
+
+With this slice, every item in the GitHub issue's "Required work" and
+"Required reporting" lists is either satisfied by retained-benchmark
+evidence or explicitly rejected/deferred with repository-grounded
+rationale (MOT17: Slice 12; DanceTrack, `uav0000268_05773_v`: Slice 25;
+runtime cost: deferred to the separate #32; bbox-size stratification:
+Slice 28; short occlusion: this slice; partial crops, illumination change:
+this slice). See the closing GitHub comment for the full completion-
+contract walkthrough.
