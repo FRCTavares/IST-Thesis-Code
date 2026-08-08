@@ -119,9 +119,14 @@ canonical config hash
 - Generated aggregate tables and figures (git-ignored, regenerable):
   `reports/p031_parameter_sensitivity_5b340c2b_2026-08-08/aggregate/`
 - Tracked copies of the lock file, final-invocation provenance, all four
-  per-batch execution logs, aggregate CSV/JSON tables, and figures, with
+  per-batch execution logs, and aggregate CSV/JSON tables, with
   `SHA256SUMS`:
   `docs/results/selected_target_tracking/p031_parameter_sensitivity_development/`
+- Final retained thesis-ready figures (explicitly force-added past the
+  repository's blanket `figures/` gitignore rule; the only two files under
+  that rule that are tracked):
+  `docs/results/selected_target_tracking/p031_parameter_sensitivity_development/figures/p031_all_dimensions_wrong_lost.png`,
+  `docs/results/selected_target_tracking/p031_parameter_sensitivity_development/figures/p031_confirmation_time_tradeoff.png`
 - Sweep/replay/evaluation tooling (reused unmodified, no TIM-MARS algorithm
   logic duplicated):
   `tools/experiments/run_tim_parameter_sensitivity.py`,

@@ -151,6 +151,13 @@ respect to TIM-MARS/detector/ByteTrack/sequence-selection):
     thesis_env/bin/python3 tools/analysis/aggregate_parameter_sensitivity_report.py
     thesis_env/bin/python3 tools/analysis/plot_parameter_sensitivity.py
 
+This writes the two figures to
+`reports/p031_parameter_sensitivity_5b340c2b_2026-08-08/aggregate/figures/`;
+they should be byte-identical to the tracked copies at
+`docs/results/selected_target_tracking/p031_parameter_sensitivity_development/figures/`
+(verify against `SHA256SUMS` in that directory) since the plot script is
+deterministic given the same `matrix_aggregate.csv`.
+
 The aggregator refuses to run if any of the 116 expected
 (configuration, sequence) cells is missing (`MissingCellError`), using the
 same `expected_cells`/`missing_cells` helpers the runner itself uses, so the
