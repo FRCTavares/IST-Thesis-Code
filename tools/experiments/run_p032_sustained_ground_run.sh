@@ -109,7 +109,7 @@ section() {
 
 matching_runtime_pids() {
   pgrep -f \
-    '/thesis_bringup/perception_pipeline_node|/thesis_tracker/tracker_node|/thesis_bringup/target_memory_mars_node|p044_soak_input_relay.py|collect_live_timing_stats.py|sample_process_groups.py|sample_p044_hardware_health.py|ros2 bag play|ros2 bag record' \
+    '/thesis_bringup/perception_pipeline_node|/thesis_tracker/tracker_node|/thesis_bringup/target_memory_mars_node|/thesis_bringup/dashboard_bridge_node|p044_soak_input_relay.py|collect_live_timing_stats.py|sample_process_groups.py|sample_p044_hardware_health.py|ros2 bag play|ros2 bag record' \
     2>/dev/null |
     awk -v self="$$" '$1 != self {print}' ||
     true
@@ -491,6 +491,31 @@ if ! wait_for_log \
   exit 1
 fi
 
+# The final controller-facing target-publication latency (/timing_target,
+# e2e_target_ms) is published only by dashboard_bridge_node, not by
+# target_memory_mars_node itself. Run it headless (ephemeral ws/api ports,
+# matching the existing eval_replay.launch.py precedent that already pairs
+# tracker_node with dashboard_bridge_node this way) so that stage is
+# genuinely measured rather than reported unavailable by omission.
+setsid ros2 run thesis_bringup dashboard_bridge_node \
+  --ros-args \
+  -p ws_port:=0 \
+  -p api_port:=0 \
+  > "$LOG_DIR/dashboard_bridge.log" 2>&1 &
+dashboard_pid=$!
+
+register_process "$dashboard_pid" "dashboard bridge" || exit 1
+dashboard_pgid="$(resolve_pgid "$dashboard_pid")" || exit 1
+
+if ! wait_for_log \
+  "$LOG_DIR/dashboard_bridge.log" \
+  "dashboard_bridge_node started" \
+  "$dashboard_pid"; then
+  printf 'ERROR: dashboard bridge did not become ready.\n'
+  cat "$LOG_DIR/dashboard_bridge.log"
+  exit 1
+fi
+
 section "3. Start recording and resource/health sampling"
 
 # Recording and resource/health sampling must be running before playback
@@ -520,6 +545,7 @@ setsid "$THESIS_ROOT/thesis_env/bin/python" \
   --group "perception=$perception_pgid" \
   --group "tracker=$tracker_pgid" \
   --group "tim=$tim_pgid" \
+  --group "dashboard=$dashboard_pgid" \
   --group "relay=$relay_pgid" \
   --interval-s 1.0 \
   > "$LOG_DIR/resources.log" 2>&1 &
@@ -665,6 +691,7 @@ for entry in \
   "perception:$perception_pid" \
   "tracker:$tracker_pid" \
   "tim:$tim_pid" \
+  "dashboard:$dashboard_pid" \
   "recorder:$recorder_pid" \
   "resources:$resource_pid" \
   "health:$health_pid"
