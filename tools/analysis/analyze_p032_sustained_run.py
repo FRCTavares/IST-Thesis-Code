@@ -180,7 +180,7 @@ def main() -> int:
     resource_groups = resources.get("groups", {})
     resource_windows: dict[str, Any] = {}
 
-    for group_name in ("perception", "tim", "relay"):
+    for group_name in ("perception", "tracker", "tim", "relay"):
         group = resource_groups.get(group_name)
         require(
             isinstance(group, dict),

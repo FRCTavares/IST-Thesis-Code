@@ -53,6 +53,7 @@ EXPECTED_BRANCH="issue-32-runtime-resource-characterization"
 DETECTOR_HEF="$THESIS_ROOT/models/hef/yolov8s.hef"
 MARS_MODEL="$THESIS_ROOT/models/reid/mars-small128.pb"
 TIM_CONFIG="$THESIS_ROOT/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+TRACKER_CONFIG="$THESIS_ROOT/ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml"
 
 TIMING_COLLECTOR="$THESIS_ROOT/tools/analysis/collect_live_timing_stats.py"
 INVARIANT_CHECKER="$THESIS_ROOT/tools/analysis/check_live_timing_invariants.py"
@@ -66,6 +67,13 @@ SOURCE_IMAGE_TOPIC="/p032/ground_run/source/image"
 SOURCE_TRACKS_TOPIC="/p032/ground_run/source/tracks"
 IMAGE_TOPIC="/camera/image_raw"
 TRACKS_TOPIC="/tracks"
+# The relay's replayed /tracks source is not used to drive TIM-MARS here --
+# a live tracker_node computes real /tracks from the live detector output
+# instead, so genuine track_ms / /timing_tracker evidence exists. The
+# relay still consumes and republishes the source bag's recorded /tracks
+# (its CLI requires an input/output tracks pair) onto this unused topic so
+# no publisher collides with the live tracker's /tracks.
+UNUSED_RELAYED_TRACKS_TOPIC="/p032/ground_run/unused_relayed_tracks"
 RELAY_STATUS_TOPIC="/p032/ground_run/input_relay/status"
 
 APPEARANCE_POLICY="ambiguity_guarded"
@@ -101,7 +109,7 @@ section() {
 
 matching_runtime_pids() {
   pgrep -f \
-    '/thesis_bringup/perception_pipeline_node|/thesis_bringup/target_memory_mars_node|p044_soak_input_relay.py|collect_live_timing_stats.py|sample_process_groups.py|sample_p044_hardware_health.py|ros2 bag play|ros2 bag record' \
+    '/thesis_bringup/perception_pipeline_node|/thesis_tracker/tracker_node|/thesis_bringup/target_memory_mars_node|p044_soak_input_relay.py|collect_live_timing_stats.py|sample_process_groups.py|sample_p044_hardware_health.py|ros2 bag play|ros2 bag record' \
     2>/dev/null |
     awk -v self="$$" '$1 != self {print}' ||
     true
@@ -272,6 +280,7 @@ for path in \
   "$DETECTOR_HEF" \
   "$MARS_MODEL" \
   "$TIM_CONFIG" \
+  "$TRACKER_CONFIG" \
   "$TIMING_COLLECTOR" \
   "$INVARIANT_CHECKER" \
   "$INPUT_RELAY" \
@@ -363,6 +372,8 @@ cat > "$REPORT_DIR/run_metadata.json" <<EOF
   "source_tracks_topic": "$SOURCE_TRACKS_TOPIC",
   "output_image_topic": "$IMAGE_TOPIC",
   "output_tracks_topic": "$TRACKS_TOPIC",
+  "tracks_producer": "live_tracker_node",
+  "tracker_config": "$TRACKER_CONFIG",
   "detector_hef": "$DETECTOR_HEF",
   "appearance_backend": "cpu_mars",
   "appearance_request_policy": "$APPEARANCE_POLICY",
@@ -383,7 +394,7 @@ setsid "$THESIS_ROOT/thesis_env/bin/python" \
   --input-image-topic "$SOURCE_IMAGE_TOPIC" \
   --output-image-topic "$IMAGE_TOPIC" \
   --input-tracks-topic "$SOURCE_TRACKS_TOPIC" \
-  --output-tracks-topic "$TRACKS_TOPIC" \
+  --output-tracks-topic "$UNUSED_RELAYED_TRACKS_TOPIC" \
   --status-topic "$RELAY_STATUS_TOPIC" \
   --summary-path "$REPORT_DIR/input_relay_summary.json" \
   > "$LOG_DIR/input_relay.log" 2>&1 &
@@ -427,6 +438,26 @@ if ! wait_for_log \
   "$perception_pid"; then
   printf 'ERROR: perception did not become ready.\n'
   cat "$LOG_DIR/perception.log"
+  exit 1
+fi
+
+setsid ros2 run thesis_tracker tracker_node \
+  --ros-args \
+  --params-file "$TRACKER_CONFIG" \
+  -p image_topic:="$IMAGE_TOPIC" \
+  -p publish_timing_topic:=true \
+  > "$LOG_DIR/tracker.log" 2>&1 &
+tracker_pid=$!
+
+register_process "$tracker_pid" "tracker" || exit 1
+tracker_pgid="$(resolve_pgid "$tracker_pid")" || exit 1
+
+if ! wait_for_log \
+  "$LOG_DIR/tracker.log" \
+  "Tracker node ready" \
+  "$tracker_pid"; then
+  printf 'ERROR: tracker did not become ready.\n'
+  cat "$LOG_DIR/tracker.log"
   exit 1
 fi
 
@@ -487,6 +518,7 @@ setsid "$THESIS_ROOT/thesis_env/bin/python" \
   "$RESOURCE_SAMPLER" \
   --output-dir "$REPORT_DIR/resources" \
   --group "perception=$perception_pgid" \
+  --group "tracker=$tracker_pgid" \
   --group "tim=$tim_pgid" \
   --group "relay=$relay_pgid" \
   --interval-s 1.0 \
@@ -631,6 +663,7 @@ section "7. Pre-cleanup liveness"
 for entry in \
   "relay:$relay_pid" \
   "perception:$perception_pid" \
+  "tracker:$tracker_pid" \
   "tim:$tim_pid" \
   "recorder:$recorder_pid" \
   "resources:$resource_pid" \

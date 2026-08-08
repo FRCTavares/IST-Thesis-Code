@@ -42,7 +42,9 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
 
 
 def _resource_samples(
-    *, cpu_late_spike: bool = False, groups=("perception", "tim", "relay")
+    *,
+    cpu_late_spike: bool = False,
+    groups=("perception", "tracker", "tim", "relay"),
 ) -> list[dict]:
     rows = []
     for i in range(SAMPLE_COUNT):
@@ -118,6 +120,7 @@ def _resources_summary() -> dict:
     return {
         "groups": {
             "perception": {"sample_count": SAMPLE_COUNT},
+            "tracker": {"sample_count": SAMPLE_COUNT},
             "tim": {"sample_count": SAMPLE_COUNT},
             "relay": {"sample_count": SAMPLE_COUNT},
         }
