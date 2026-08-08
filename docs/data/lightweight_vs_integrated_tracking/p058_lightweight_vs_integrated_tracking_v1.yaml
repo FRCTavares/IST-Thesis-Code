@@ -1,0 +1,207 @@
+# Issue #58 (P1.13+): lightweight tracker + TIM-MARS vs. integrated
+# appearance-aware tracking -- frozen architecture-comparison manifest.
+#
+# Scope decisions frozen 2026-08-08 (operator-directed, recorded here for
+# provenance, not just in chat history):
+#   - "Stronger appearance-free tracker" role filled by ByteTrack (the
+#     existing frozen canonical thesis architecture, #26/#30/#31), not a
+#     fresh OC-SORT calibration. No retuning of canonical ByteTrack+TIM.
+#   - "Minimal appearance-free tracker" role filled by SORT (required by the
+#     live #58 contract's "Required systems" list, not optional).
+#   - DeepSORT raw is the integrated appearance-aware reference; DeepSORT+TIM
+#     is retained as diagnostic only (duplicated appearance reasoning), never
+#     promoted as the intended architecture, per the issue's own text.
+#   - OC-SORT, StrongSORT, BoT-SORT are explicitly out of scope for this
+#     matrix (optional per the issue text; would displace higher-priority
+#     work). #43's historical OC-SORT evidence remains available separately.
+#   - H01-H03 held-out evaluation is out of scope: owned by Issue #27,
+#     deferred to September 2026. This manifest covers development-set
+#     comparison only.
+schema_version: 1
+issue: 58
+manifest_id: p058_lightweight_vs_integrated_tracking_v1
+
+canonical_config:
+  path: ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml
+  sha256: e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931
+
+development_sequences:
+  - id: dev_may_hard_reentry
+    split_membership_id: dev_may_hard_reentry
+  - id: dev_june_seq01
+    split_membership_id: dev_june_seq01
+  - id: dev_june_seq03
+    split_membership_id: dev_june_seq03
+  - id: dev_june_seq04
+    split_membership_id: dev_june_seq04
+
+architectures:
+  - id: bytetrack_raw
+    role: lightweight_raw_baseline
+    tracker_type: bytetrack
+    tim_enabled: false
+    tim_config_role: none
+    data_source: reuse_p031
+    note: >
+      Raw-stream metrics already embedded in every Issue #31 cell's
+      report.json (duration_metrics.raw_target); no new execution.
+
+  - id: bytetrack_tim
+    role: intended_architecture
+    tracker_type: bytetrack
+    tim_enabled: true
+    tim_config_role: canonical
+    data_source: reuse_p031
+    note: >
+      The primary proposed thesis architecture. Reuses the Issue #31
+      canonical baseline cell directly (tim_target_memory metrics); the
+      canonical TIM-MARS configuration is not retuned for this issue.
+
+  - id: sort_raw
+    role: lightweight_raw_minimal
+    tracker_type: sort
+    tim_enabled: false
+    tim_config_role: none
+    data_source: run_fresh
+    note: >
+      Extracted from the same cell as sort_tim's baseline configuration
+      (duration_metrics.raw_target is identical across all 29 calibration
+      configs within a sequence, verified by the reused raw-invariance
+      check).
+
+  - id: sort_tim
+    role: lightweight_minimal_plus_tim
+    tracker_type: sort
+    tim_enabled: true
+    tim_config_role: calibrated
+    data_source: run_fresh
+    calibration_source: docs/data/lightweight_vs_integrated_tracking/p058_sort_tim_calibration_v1.yaml
+    note: >
+      Configuration selected from the 29-point SORT calibration sweep via
+      the asymmetric safety gate, not retuned after inspecting the final
+      comparison outcome.
+
+  - id: deepsort_raw
+    role: integrated_appearance_reference
+    tracker_type: deepsort
+    tim_enabled: false
+    tim_config_role: none
+    data_source: run_fresh
+    note: Real MARS ReID verified active (models/reid/mars-small128.pb).
+
+  - id: deepsort_tim
+    role: diagnostic
+    tracker_type: deepsort
+    tim_enabled: true
+    tim_config_role: canonical
+    data_source: run_fresh
+    note: >
+      Diagnostic only per the issue's own architecture boundary text: not
+      the intended architecture, duplicates appearance-based identity
+      reasoning. Never promoted as competitive with bytetrack_tim.
+
+# Per-(architecture, sequence) annotation availability. "available" cells
+# are executed/reused now; "pending_annotation" cells are explicitly
+# accounted for, never fabricated, never silently dropped.
+#
+# Correction (2026-08-08, second audit pass): seq03_deepsort.csv and
+# seq04_deepsort.csv were found to reference a *different* source bag
+# (an earlier "image_raw"-only diagnostic capture, 12-55-58 / 12-59-53)
+# than the canonical full_pipeline bag (12-57-48 / 13-01-36) this manifest
+# uses -- confirmed empirically: the annotation's first-interval
+# correct_target_track_id (5, for Seq04) never appears anywhere in a fresh
+# deterministic replay of the canonical source. Reusing these annotations
+# would silently evaluate against the wrong ground truth. Both therefore
+# move to pending_annotation, joining Seq01. May's sort/deepsort
+# annotations were separately verified to reference the correct, sole
+# source bag (no alternate timestamped capture exists for May) before
+# being trusted.
+annotation_availability:
+  dev_may_hard_reentry:
+    bytetrack: available
+    sort: available
+    deepsort: available
+  dev_june_seq01:
+    bytetrack: available
+    sort: pending_annotation
+    deepsort: pending_annotation
+  dev_june_seq03:
+    bytetrack: available
+    sort: pending_annotation      # no SORT annotation exists for Seq03
+    deepsort: pending_annotation  # existing annotation references the wrong source bag
+  dev_june_seq04:
+    bytetrack: available
+    sort: pending_annotation      # no SORT annotation exists for Seq04
+    deepsort: pending_annotation  # existing annotation references the wrong source bag
+
+pending_annotation_files:
+  - path: docs/data/annotations/june_hard_sequences/seq01_sort.csv
+    blocks: [[sort_raw, dev_june_seq01], [sort_tim, dev_june_seq01]]
+    reason: no_annotation_exists
+  - path: docs/data/annotations/june_hard_sequences/seq01_deepsort.csv
+    blocks: [[deepsort_raw, dev_june_seq01], [deepsort_tim, dev_june_seq01]]
+    reason: no_annotation_exists
+  - path: docs/data/annotations/june_hard_sequences/seq03_sort.csv
+    blocks: [[sort_raw, dev_june_seq03], [sort_tim, dev_june_seq03]]
+    reason: no_annotation_exists
+  - path: docs/data/annotations/june_hard_sequences/seq04_sort.csv
+    blocks: [[sort_raw, dev_june_seq04], [sort_tim, dev_june_seq04]]
+    reason: no_annotation_exists
+  - path: docs/data/annotations/june_hard_sequences/seq03_deepsort.csv
+    blocks: [[deepsort_raw, dev_june_seq03], [deepsort_tim, dev_june_seq03]]
+    reason: existing_annotation_references_wrong_source_bag
+    existing_file_status: stale_do_not_use
+    stale_source_bag: bags/source/official_flights/2026-06-19/seq03_crossing_ambiguity/image_raw/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw
+    canonical_source_bag: bags/source/official_flights/2026-06-19/seq03_crossing_ambiguity/full_pipeline/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars
+  - path: docs/data/annotations/june_hard_sequences/seq04_deepsort.csv
+    blocks: [[deepsort_raw, dev_june_seq04], [deepsort_tim, dev_june_seq04]]
+    reason: existing_annotation_references_wrong_source_bag
+    existing_file_status: stale_do_not_use
+    stale_source_bag: bags/source/official_flights/2026-06-19/seq04_occlusion_no_exit/image_raw/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw
+    canonical_source_bag: bags/source/official_flights/2026-06-19/seq04_occlusion_no_exit/full_pipeline/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars
+
+held_out_boundary:
+  owner_issue: 27
+  status_at_freeze: "final_ready=0/3, deferred to September 2026"
+  note: >
+    This manifest never references H01/H02/H03. Held-out promotion of any
+    architecture pairing is separate future work gated by Issue #27.
+
+excluded_scope:
+  - id: ocsort_tim_fresh_calibration
+    reason: >
+      Operator scope decision 2026-08-08: ByteTrack fills the "stronger
+      appearance-free tracker" contract role; a fresh OC-SORT calibration
+      sweep would answer a portability question beyond #58's core scope.
+      Historical OC-SORT evidence from Issue #43 remains available
+      separately and is not reused here as promoted #58 evidence (it used
+      one shared canonical preset, not tracker-specific calibration).
+  - id: strongsort_botsort_reference
+    reason: >
+      Optional per the live issue text ("only if integration and
+      reproduction do not displace higher-priority thesis work"); not
+      pursued to keep #58 time-boxed per the roadmap priority order.
+
+cost_evidence_schema:
+  note: >
+    Fields below are always present in cell output; unavailable measurements
+    are recorded as null with source "unavailable_pending_issue_32", never
+    as zero or omitted.
+  measured_now:
+    - replay_operation_count
+    - reid_invocation_count_deepsort
+    - tim_appearance_backend_call_count
+  deferred_to_issue_32:
+    - wall_clock_latency_p50_p95_p99
+    - cpu_service_time
+    - rss_peak_memory
+    - hailo_utilisation_contention
+    - sustained_thermal_throttling
+    - reproducible_power
+  deferred_to_issue_44:
+    items:
+      - hailo_appearance_backend_promoted_decision_path
+    note: >
+      Issue #44 closed with the Hailo RepVGG ReID path explicitly
+      observational-only (CPU MARS remains authoritative); no promoted
+      Hailo decision-path evidence exists yet for this ablation.

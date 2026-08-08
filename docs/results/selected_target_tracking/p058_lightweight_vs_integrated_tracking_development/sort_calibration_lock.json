@@ -1,0 +1,329 @@
+{
+  "calibration_sequence_ids": [
+    "dev_may_hard_reentry"
+  ],
+  "canonical_config": {
+    "path": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+    "sha256": "e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931"
+  },
+  "created_at_utc": "2026-08-08T14:21:48.341780+00:00",
+  "dimension_grid_source": {
+    "note": "reused verbatim from Issue #31; never copied or edited",
+    "path": "/home/francisco/Desktop/Thesis-Code/docs/data/parameter_sensitivity/tim_mars_parameter_sensitivity_v1.yaml",
+    "sha256": "a9f2a0602d8d607de1d1a70c03ab7a24fe4ddc08028fe1f58ed00195cdfb4ab5"
+  },
+  "expected_counts": {
+    "calibration_sequences": 1,
+    "total_replay_runs": 29,
+    "unique_configurations": 29
+  },
+  "issue": 58,
+  "manifest_id": "p058_sort_tim_calibration_v1",
+  "materialized_configs": [
+    {
+      "dimension_id": null,
+      "id": "baseline",
+      "order": 0,
+      "overrides": {},
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/baseline.yaml",
+      "sha256": "e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931"
+    },
+    {
+      "dimension_id": "acceptance_pair",
+      "id": "acceptance_pair_lower_2",
+      "order": 1,
+      "overrides": {
+        "accept_score_locked": 0.42,
+        "accept_score_lost": 0.5
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/acceptance_pair_lower_2.yaml",
+      "sha256": "25e2191c5caadf4883af8a06f55d92663058e856e4d511300b91edd60614efc1"
+    },
+    {
+      "dimension_id": "acceptance_pair",
+      "id": "acceptance_pair_lower_1",
+      "order": 2,
+      "overrides": {
+        "accept_score_locked": 0.47,
+        "accept_score_lost": 0.55
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/acceptance_pair_lower_1.yaml",
+      "sha256": "7c4076f336d242599184b990add3e49305da134e29dc474d4445037a012af116"
+    },
+    {
+      "dimension_id": "acceptance_pair",
+      "id": "acceptance_pair_higher_1",
+      "order": 3,
+      "overrides": {
+        "accept_score_locked": 0.57,
+        "accept_score_lost": 0.65
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/acceptance_pair_higher_1.yaml",
+      "sha256": "975ea9c8aa373f7a0ddb0886220750a78bd63f45bae1fb9f625d4a187369658a"
+    },
+    {
+      "dimension_id": "acceptance_pair",
+      "id": "acceptance_pair_higher_2",
+      "order": 4,
+      "overrides": {
+        "accept_score_locked": 0.62,
+        "accept_score_lost": 0.7
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/acceptance_pair_higher_2.yaml",
+      "sha256": "d1e4827fab5ec9f94bcf9c8b9db7f299ea1c0117c509f5c7d2da4747b2252242"
+    },
+    {
+      "dimension_id": "ambiguity_margin",
+      "id": "ambiguity_margin_lower_2",
+      "order": 5,
+      "overrides": {
+        "ambiguity_margin": 0.03
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/ambiguity_margin_lower_2.yaml",
+      "sha256": "b16e083e3244a77235f31a5b0f12c9565f101dc52760a6b24edd279057c4e8e4"
+    },
+    {
+      "dimension_id": "ambiguity_margin",
+      "id": "ambiguity_margin_lower_1",
+      "order": 6,
+      "overrides": {
+        "ambiguity_margin": 0.05
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/ambiguity_margin_lower_1.yaml",
+      "sha256": "8275413d428aaeda0d86cbe3f534f93aab07f45aaaf050d8dacd72d879b13704"
+    },
+    {
+      "dimension_id": "ambiguity_margin",
+      "id": "ambiguity_margin_higher_1",
+      "order": 7,
+      "overrides": {
+        "ambiguity_margin": 0.09
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/ambiguity_margin_higher_1.yaml",
+      "sha256": "fb1962a93a85ae94ab6c69c9658ffa46a3934fba997dcd0bd3f5c44680befff5"
+    },
+    {
+      "dimension_id": "ambiguity_margin",
+      "id": "ambiguity_margin_higher_2",
+      "order": 8,
+      "overrides": {
+        "ambiguity_margin": 0.11
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/ambiguity_margin_higher_2.yaml",
+      "sha256": "9357bf67212fd4e484ada97cd714e294dc553f09cec57a43b25fe5718e58bd69"
+    },
+    {
+      "dimension_id": "appearance_conservative_min_similarity",
+      "id": "appearance_conservative_min_similarity_lower_2",
+      "order": 9,
+      "overrides": {
+        "appearance_conservative_min_similarity": 0.55
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/appearance_conservative_min_similarity_lower_2.yaml",
+      "sha256": "dea9dfc907acb04f11d54099488a0fb90cfcc8c8404fcc5e4e21331645c7c15c"
+    },
+    {
+      "dimension_id": "appearance_conservative_min_similarity",
+      "id": "appearance_conservative_min_similarity_lower_1",
+      "order": 10,
+      "overrides": {
+        "appearance_conservative_min_similarity": 0.6
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/appearance_conservative_min_similarity_lower_1.yaml",
+      "sha256": "ad97760e49dc6db60adea1b435c6b6fb0c1b4aa64c1cfe3f30b456ebf0e83772"
+    },
+    {
+      "dimension_id": "appearance_conservative_min_similarity",
+      "id": "appearance_conservative_min_similarity_higher_1",
+      "order": 11,
+      "overrides": {
+        "appearance_conservative_min_similarity": 0.7
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/appearance_conservative_min_similarity_higher_1.yaml",
+      "sha256": "28c20f08697d63d939acee1c1ceeaa5d1118c255bc920934d6d5670a46b54768"
+    },
+    {
+      "dimension_id": "appearance_conservative_min_similarity",
+      "id": "appearance_conservative_min_similarity_higher_2",
+      "order": 12,
+      "overrides": {
+        "appearance_conservative_min_similarity": 0.75
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/appearance_conservative_min_similarity_higher_2.yaml",
+      "sha256": "caf8d44bdf3093794df8261ee7fae9f7ae84033160843ad52e1431f35f35f92e"
+    },
+    {
+      "dimension_id": "appearance_conservative_margin",
+      "id": "appearance_conservative_margin_lower_2",
+      "order": 13,
+      "overrides": {
+        "appearance_conservative_margin": 0.01
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/appearance_conservative_margin_lower_2.yaml",
+      "sha256": "9be3bda897231d4e5e5341a3a83c2f354a71823f9e34f817600e55ae3b1786a0"
+    },
+    {
+      "dimension_id": "appearance_conservative_margin",
+      "id": "appearance_conservative_margin_lower_1",
+      "order": 14,
+      "overrides": {
+        "appearance_conservative_margin": 0.03
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/appearance_conservative_margin_lower_1.yaml",
+      "sha256": "2f8c2601446eac8f6f9119555fe848fdf5fc2f0392ae2a327e4577d7d5312413"
+    },
+    {
+      "dimension_id": "appearance_conservative_margin",
+      "id": "appearance_conservative_margin_higher_1",
+      "order": 15,
+      "overrides": {
+        "appearance_conservative_margin": 0.07
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/appearance_conservative_margin_higher_1.yaml",
+      "sha256": "1bd72bce691621b01d012514f9ba64b3f8c57e43b5559347185523a91c7b8dfe"
+    },
+    {
+      "dimension_id": "appearance_conservative_margin",
+      "id": "appearance_conservative_margin_higher_2",
+      "order": 16,
+      "overrides": {
+        "appearance_conservative_margin": 0.09
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/appearance_conservative_margin_higher_2.yaml",
+      "sha256": "91184806f144be6229e1f638f13474c86950e7608257ecd04eb1b81c6d1d829e"
+    },
+    {
+      "dimension_id": "hard_negative_reject_similarity",
+      "id": "hard_negative_reject_similarity_lower_2",
+      "order": 17,
+      "overrides": {
+        "hard_negative_reject_similarity": 0.7
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/hard_negative_reject_similarity_lower_2.yaml",
+      "sha256": "d769634fceab5a0a5ea1dd8bef29af4483c2e05b666acfdcf19e500c09a4f6d7"
+    },
+    {
+      "dimension_id": "hard_negative_reject_similarity",
+      "id": "hard_negative_reject_similarity_lower_1",
+      "order": 18,
+      "overrides": {
+        "hard_negative_reject_similarity": 0.75
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/hard_negative_reject_similarity_lower_1.yaml",
+      "sha256": "a657c49de08fe54118e02bb3fe07e38b296bc83e102cf036e645a0709e244c41"
+    },
+    {
+      "dimension_id": "hard_negative_reject_similarity",
+      "id": "hard_negative_reject_similarity_higher_1",
+      "order": 19,
+      "overrides": {
+        "hard_negative_reject_similarity": 0.85
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/hard_negative_reject_similarity_higher_1.yaml",
+      "sha256": "c237ebb0a16c326bf4c275cca83c55136d04bf4673418c096c13cc36f9376c0f"
+    },
+    {
+      "dimension_id": "hard_negative_reject_similarity",
+      "id": "hard_negative_reject_similarity_higher_2",
+      "order": 20,
+      "overrides": {
+        "hard_negative_reject_similarity": 0.9
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/hard_negative_reject_similarity_higher_2.yaml",
+      "sha256": "863d41a09ee3587cb147b57c3ccad50332e1d79d3f274fadcabad4266a2b8684"
+    },
+    {
+      "dimension_id": "hard_negative_reject_margin",
+      "id": "hard_negative_reject_margin_lower_2",
+      "order": 21,
+      "overrides": {
+        "hard_negative_reject_margin": 0.0
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/hard_negative_reject_margin_lower_2.yaml",
+      "sha256": "064f852044e882b77e354dc7f99e943baaa9d14442055a43612bd1c53cf59548"
+    },
+    {
+      "dimension_id": "hard_negative_reject_margin",
+      "id": "hard_negative_reject_margin_lower_1",
+      "order": 22,
+      "overrides": {
+        "hard_negative_reject_margin": 0.015
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/hard_negative_reject_margin_lower_1.yaml",
+      "sha256": "e306dd2f10f8f914ae1f038275b5c5a211f9175973bd2ae52dc861c97d704c48"
+    },
+    {
+      "dimension_id": "hard_negative_reject_margin",
+      "id": "hard_negative_reject_margin_higher_1",
+      "order": 23,
+      "overrides": {
+        "hard_negative_reject_margin": 0.045
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/hard_negative_reject_margin_higher_1.yaml",
+      "sha256": "e1778bd7b95f2796d2d4acc3e5da6998d9f3fe9f5e1d71c670d08599eda4985c"
+    },
+    {
+      "dimension_id": "hard_negative_reject_margin",
+      "id": "hard_negative_reject_margin_higher_2",
+      "order": 24,
+      "overrides": {
+        "hard_negative_reject_margin": 0.06
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/hard_negative_reject_margin_higher_2.yaml",
+      "sha256": "20841cd9bb353ea257f714815d710a4d8047201350008aefae0ccb149c49d47a"
+    },
+    {
+      "dimension_id": "confirmation_time",
+      "id": "confirmation_time_lower_1",
+      "order": 25,
+      "overrides": {
+        "min_confirm_frames_after_reacquire": 0
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/confirmation_time_lower_1.yaml",
+      "sha256": "302043fe4c9bf40e821f904e5f697c9e4af1bc959d0e995f37df49867c9f0b50"
+    },
+    {
+      "dimension_id": "confirmation_time",
+      "id": "confirmation_time_higher_1",
+      "order": 26,
+      "overrides": {
+        "min_confirm_frames_after_reacquire": 2
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/confirmation_time_higher_1.yaml",
+      "sha256": "407e72ea5cb0bcfade68a9082a79a6e4e940a547e5da80ee6b93289108158e08"
+    },
+    {
+      "dimension_id": "confirmation_time",
+      "id": "confirmation_time_higher_2",
+      "order": 27,
+      "overrides": {
+        "min_confirm_frames_after_reacquire": 3
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/confirmation_time_higher_2.yaml",
+      "sha256": "d840bbc27d23206face616d1c432279245e86a2c1a4b12ef9e3d38681f8e3f07"
+    },
+    {
+      "dimension_id": "confirmation_time",
+      "id": "confirmation_time_higher_3",
+      "order": 28,
+      "overrides": {
+        "min_confirm_frames_after_reacquire": 4
+      },
+      "path": "/home/francisco/Desktop/Thesis-Code/reports/p058_sort_tim_calibration_6231fdc1_2026_08_08/configs/confirmation_time_higher_3.yaml",
+      "sha256": "d917657e563b207249bf85e07858ab9499f3550c92efd96d284bc34bf818e321"
+    }
+  ],
+  "purpose": "sort_tim_calibration",
+  "repository": {
+    "branch": "main",
+    "commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+    "dirty": true,
+    "root": "/home/francisco/Desktop/Thesis-Code",
+    "status_short": [
+      "?? docs/data/lightweight_vs_integrated_tracking/",
+      "?? tools/experiments/run_tim_tracker_calibration.py"
+    ]
+  },
+  "schema_version": 1,
+  "tracker_type": "sort"
+}

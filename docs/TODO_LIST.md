@@ -533,12 +533,28 @@ Open executable issues: **24**.
       #31 has not been closed.
 
 16. [ ] [#58 — P1.13+ Compare lightweight tracker + TIM-MARS against integrated appearance-aware tracking](https://github.com/FRCTavares/IST-Thesis-Code/issues/58) — HIGHEST PRIORITY
-    - phase 7; experiment; compare separately calibrated lightweight
-      appearance-free tracker + TIM-MARS systems against integrated
-      appearance-aware tracker references using held-out controller-facing
-      safety metrics and the canonical Issue #32 safety–availability–cost
-      methodology. DeepSORT + TIM-MARS is diagnostic rather than the intended
-      architecture.
+    - phase 7; experiment. In progress: development-set architecture
+      comparison frozen and partially executed
+      (`docs/results/selected_target_tracking/p058_lightweight_vs_integrated_tracking_summary.md`,
+      full record in
+      `docs/issues/p1-13-plus-lightweight-vs-integrated-tracking.md`).
+      24/24 (architecture x sequence) cells accounted for: 11 available, 12
+      pending_annotation (SORT has no annotation on Seq01/Seq03/Seq04; the
+      existing Seq03/Seq04 DeepSORT annotations were found to reference the
+      wrong source bag and are flagged stale, not used), 1
+      no_safe_configuration_found (SORT+TIM fails the asymmetric safety
+      gate on May across the full reused Issue #31 parameter grid -- a
+      genuine lower-operational-boundary finding, not a tooling failure).
+      On May (the only sequence with complete cross-architecture evidence),
+      ByteTrack + canonical TIM-MARS is both safest and most available;
+      DeepSORT is the least-safe raw tracker measured. DeepSORT + TIM-MARS
+      remains diagnostic, never promoted as the intended architecture.
+      Held-out evaluation blocked on Issue #27 (September 2026); canonical
+      Issue #32 safety-availability-cost methodology does not exist yet
+      (Issue #32 open) so no cost claim is made -- a join-ready schema for
+      #32's eventual measurements is frozen in the manifest instead. Not
+      yet DONE: 6 pending annotation files, cost evidence, thesis figures,
+      and full runner-tooling parity remain.
 
 17. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54) — THESIS-CRITICAL DEPENDENCY
     - phase 10; live-system; feeds #32, #37, and #50; owns the missing integrated-camera `/camera/fps` publisher and recording-contract repair, deferred until the P0 authority/coordinate/freshness blockers are complete.

@@ -1,0 +1,54 @@
+# Issue #58 (P1.13+): SORT + TIM-MARS calibration manifest.
+#
+# Reuses the frozen Issue #31 7-dimension / 29-configuration OFAT parameter
+# grid verbatim (docs/data/parameter_sensitivity/tim_mars_parameter_sensitivity_v1.yaml)
+# against SORT's own /tracks stream instead of ByteTrack's, searching for a
+# SORT-specific configuration that passes the same asymmetric wrong-target
+# safety gate Issue #31 used. This does not retune canonical ByteTrack +
+# TIM-MARS and never writes to the canonical YAML.
+#
+# Scope correction (2026-08-08): SORT physical-target annotations exist only
+# for dev_may_hard_reentry (docs/data/annotations/may_hard_reentry/
+# sort_f17cdf80_autonomous.csv). dev_june_seq03 and dev_june_seq04 have no
+# SORT annotation (only bytetrack/deepsort/ocsort). This manifest therefore
+# calibrates on May alone (29 cells, not 87) rather than fabricate or
+# silently skip the missing annotations. dev_june_seq03 and dev_june_seq04
+# SORT cells are pending_annotation in the main p058 comparison manifest,
+# same status as dev_june_seq01.
+schema_version: 1
+issue: 58
+manifest_id: p058_sort_tim_calibration_v1
+tracker_type: sort
+
+dimension_grid_source:
+  path: docs/data/parameter_sensitivity/tim_mars_parameter_sensitivity_v1.yaml
+  note: >
+    Reused verbatim, never copied or edited. The 7 TIM-MARS decision
+    dimensions are a property of TIM-MARS itself, not of ByteTrack.
+
+canonical_config:
+  path: ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml
+  sha256: e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931
+
+calibration_sequences:
+  - id: dev_may_hard_reentry
+    split_membership_id: dev_may_hard_reentry
+    sort_tracks_bag: bags/replay/p058_lightweight_vs_integrated_6231fdc1_2026_08_08/tracker_bags/dev_may_hard_reentry/sort
+    annotation_path: docs/data/annotations/may_hard_reentry/sort_f17cdf80_autonomous.csv
+    selected_track_id: 1
+
+asymmetric_safety_gate:
+  description: >
+    Mirrors the Issue #31/P0.4 asymmetric criterion: a candidate SORT+TIM
+    configuration is only promotable if it does not increase wrong-target
+    duration, and does not increase target-absence-but-output-valid
+    duration, relative to raw SORT on the same sequence, beyond the
+    one-evaluator-step tolerance already established by the P0.4 matrix.
+  wrong_target_tolerance_s: 0.05
+  absence_output_tolerance_s: 0.05
+  primary_criterion: wrong_target_duration_s
+  secondary_criterion: target_absent_but_output_valid_duration_s
+  note: >
+    Safety and availability are never compressed into one weighted scalar.
+    A configuration that reduces wrong-target duration is preferred over
+    one that only improves correct/lost availability.

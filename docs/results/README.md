@@ -14,6 +14,9 @@ Use:
 - `selected_target_tracking/p023_output_freshness_validation.md`
 - `selected_target_tracking/p030_broader_sequences_summary.md`
 - `selected_target_tracking/p031_parameter_sensitivity_summary.md`
+- `selected_target_tracking/p058_lightweight_vs_integrated_tracking_summary.md`
+  (partial: 11/24 cells available, 12 pending manual annotation, cost axis
+  blocked on Issue #32 -- not a completion claim)
 
 The evidence-version authority is:
 

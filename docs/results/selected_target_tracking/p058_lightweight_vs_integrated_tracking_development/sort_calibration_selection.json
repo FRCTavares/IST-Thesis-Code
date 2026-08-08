@@ -1,0 +1,21 @@
+{
+  "config_id": null,
+  "status": "no_safe_configuration_found",
+  "message": "no SORT+TIM calibration configuration passes the asymmetric safety gate on dev_may_hard_reentry (raw_wrong_s=0.0, closest candidate confirmation_time_higher_3 still has tim_wrong_s=15.331)",
+  "closest_candidate": {
+    "config_id": "confirmation_time_higher_3",
+    "dimension_id": "confirmation_time",
+    "order": 28,
+    "overrides": "{\"min_confirm_frames_after_reacquire\": 4}",
+    "raw_correct_s": 29.286,
+    "raw_wrong_s": 0.0,
+    "raw_lost_s": 37.032,
+    "raw_absent_valid_s": 0.15,
+    "tim_correct_s": 44.068,
+    "tim_wrong_s": 15.331,
+    "tim_lost_s": 6.919,
+    "tim_absent_valid_s": 0.3,
+    "delta_wrong_s_vs_baseline": -0.8,
+    "delta_lost_s_vs_baseline": 2.05
+  }
+}
