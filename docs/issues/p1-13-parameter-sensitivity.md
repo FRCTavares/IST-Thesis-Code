@@ -223,7 +223,77 @@ produced 29 materialized configuration files plus a lock file recording
 `unique_configurations: 29` and `total_replay_runs: 116`, with the
 canonical YAML unchanged before/after (`sha256` identical).
 
-**Not yet done.** No replay or evaluation command was executed (`--run` was
-never passed). No sensitivity outcome exists yet. `docs/TODO_LIST.md` item
-15 is updated to record that the protocol/tooling stage is underway, but
-Issue #31 is not marked complete.
+**Not yet done (at end of Slice 1).** No replay or evaluation command was
+executed (`--run` was never passed). No sensitivity outcome exists yet.
+`docs/TODO_LIST.md` item 15 is updated to record that the protocol/tooling
+stage is underway, but Issue #31 is not marked complete.
+
+### Slice 2 -- Phase B execution (116 cells) and Phase C aggregation
+
+All 116 deterministic TIM replay + event-recovery evaluation cells (29
+configurations x 4 development sequences) were executed with `tools/
+experiments/run_tim_parameter_sensitivity.py --run --resume`, one sequence
+batch at a time, against the lock and manifest frozen in commit `5b340c2b`.
+The canonical config hash
+(`e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931`) was
+re-verified by `sha256sum` directly against the live file on the
+authoritative Pi repository after every batch and never drifted.
+
+**Execution accounting.**
+
+| Sequence | Cells | Missing | Duplicated | Notes |
+|---|---:|---:|---:|---|
+| `dev_may_hard_reentry` | 29/29 | 0 | 0 | 2 cells (`baseline`, `ambiguity_margin_lower_2`) pre-existed from an earlier smoke test and were correctly resumed/skipped, not re-executed or duplicated -- confirmed via the run's `child_commands` count (54 = 27x2, not 58 = 29x2) |
+| `dev_june_seq01` | 29/29 | 0 | 0 | first launch attempt crashed on cell 1 with `ModuleNotFoundError: No module named 'rosbag2_py'`; zero cells had been written at that point; root cause was that the invoking non-interactive SSH shell did not source `/opt/ros/jazzy/setup.bash` + the workspace overlay (`.bashrc` is not sourced for non-interactive SSH command execution); `/opt/ros/jazzy` and the workspace overlay were confirmed present and importable once sourced, and `dpkg`/`unattended-upgrades` logs showed no relevant package change near the failure time, ruling out environment corruption; the invocation was corrected and the full sequence re-run cleanly (58 = 29x2 fresh commands, 0 failures) |
+| `dev_june_seq03` | 29/29 | 0 | 0 | clean run, 58 = 29x2 fresh commands |
+| `dev_june_seq04` | 29/29 | 0 | 0 | clean run, 58 = 29x2 fresh commands |
+
+**Total: 116/116 cells, 0 missing, 0 duplicated, 1 tooling-invocation retry
+that wrote no cells before being corrected, 0 data/evidence-affecting
+failures.**
+
+The raw/ByteTrack reference stream invariance the runner enforces per
+sequence (`assert_raw_invariant`) was independently re-verified across all
+116 cells after execution by hashing `duration_metrics.raw_target` and the
+per-cell `provenance.source_manifest` (reference bag name/hash/size): both
+hash to a single value across all 29 configurations within every one of the
+4 sequences.
+
+**Aggregation.** `tools/analysis/aggregate_parameter_sensitivity_report.py`
+(new; imports `expected_cells`/`missing_cells` from the frozen runner rather
+than reimplementing the completeness check, and refuses to run while any
+cell is missing) combines all 116 per-cell `report.json` files into a
+116-row all-cells table and a 29-row cross-sequence aggregate table (durations
+summed across the 4 sequences per configuration), then reshapes the
+aggregate into a per-dimension trade-off table sorted by true parameter
+value with canonical inserted at its correct monotonic position (not
+positionally first -- an early version of the figure script prepended
+canonical unconditionally, which silently mislabelled the x-axis order for
+every dimension; caught by inspecting the rendered figure before promotion,
+not by a test). `tools/analysis/plot_parameter_sensitivity.py` renders two
+deterministic figures (Agg backend, fixed styling) from the aggregate CSV
+only.
+
+**Sensitivity outcome.** Four of the seven dimensions (acceptance-pair
+thresholds, conservative-appearance minimum similarity, hard-negative reject
+similarity, hard-negative reject margin) produced zero measurable change on
+any of the 4 development sequences at any tested perturbation level: the
+canonical safety/correctness conclusion is robust to reasonable OFAT
+perturbation of these four parameters in this development set. Ambiguity
+margin has a real but narrow effect entirely localized to
+`dev_june_seq03` (the crossing-ambiguity sequence, which also carries almost
+all of this development set's raw wrong-target duration), consistent with
+the parameter's role and evidence this is genuine TIM-MARS behaviour rather
+than a replay/evaluator/tooling artifact. Conservative-appearance margin
+trades availability only and never safety across the tested range.
+Confirmation time is the dominant trade-off, monotonic in the expected
+direction on both metrics, with canonical sitting inside the trend rather
+than at an extremum. No tested perturbation reduces both wrong-target and
+lost-target duration simultaneously relative to canonical. Full tables and
+figures: `docs/results/selected_target_tracking/p031_parameter_sensitivity_summary.md`.
+
+**Not yet done (at end of Slice 2).** Held-out generalisation (H01-H03)
+remains required before the final thesis claim is frozen; this slice only
+closes the development-set OFAT sensitivity/robustness question the issue
+was scoped to answer. The branch has not been merged and Issue #31 has not
+been closed.

@@ -99,3 +99,37 @@ generated output, regenerable from the tracked scripts above against the
 frozen manifest and existing capture/replay bags; it is not duplicated
 into version control.
 
+## Final Issue #31 / P031 parameter-sensitivity evidence
+
+Canonical thesis-facing summary:
+`docs/results/selected_target_tracking/p031_parameter_sensitivity_summary.md`.
+Full chronological engineering record:
+`docs/issues/p1-13-parameter-sensitivity.md`.
+
+116 deterministic TIM replay + event-recovery evaluation cells (29
+configurations x 4 development sequences: `dev_may_hard_reentry`,
+`dev_june_seq01`, `dev_june_seq03`, `dev_june_seq04`), all executed under
+canonical config hash
+`e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931`.
+
+- Frozen sweep manifest, lock, and matrix:
+  `docs/data/parameter_sensitivity/tim_mars_parameter_sensitivity_v1.yaml`
+- Generated per-cell reports (git-ignored, regenerable):
+  `reports/p031_parameter_sensitivity_5b340c2b_2026-08-08/sequences/`
+- Generated aggregate tables and figures (git-ignored, regenerable):
+  `reports/p031_parameter_sensitivity_5b340c2b_2026-08-08/aggregate/`
+- Tracked copies of the lock file, final-invocation provenance, all four
+  per-batch execution logs, aggregate CSV/JSON tables, and figures, with
+  `SHA256SUMS`:
+  `docs/results/selected_target_tracking/p031_parameter_sensitivity_development/`
+- Sweep/replay/evaluation tooling (reused unmodified, no TIM-MARS algorithm
+  logic duplicated):
+  `tools/experiments/run_tim_parameter_sensitivity.py`,
+  `tools/analysis/aggregate_parameter_sensitivity_report.py`,
+  `tools/analysis/plot_parameter_sensitivity.py`
+
+The `reports/p031_parameter_sensitivity_5b340c2b_2026-08-08/` directory is
+git-ignored generated output, regenerable from the tracked scripts above
+against the frozen manifest, canonical config, and existing source bags; it
+is not duplicated into version control beyond the tracked copies above.
+
