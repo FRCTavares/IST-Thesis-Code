@@ -460,24 +460,10 @@ if ! wait_for_log \
   exit 1
 fi
 
-section "3. Pre-run smoke: live timing invariants"
+section "3. Start recording and resource/health sampling"
 
-"$THESIS_ROOT/thesis_env/bin/python" \
-  "$INVARIANT_CHECKER" \
-  --once \
-  --topic-timeout 30 \
-  > "$LOG_DIR/smoke_invariants.log" 2>&1
-smoke_status=$?
-
-cat "$LOG_DIR/smoke_invariants.log"
-
-if [ "$smoke_status" -ne 0 ]; then
-  printf 'ERROR: pre-run timing-invariant smoke check failed. Aborting before the long sustained run.\n'
-  overall_status=1
-  exit 1
-fi
-
-printf 'PASS: pre-run smoke confirmed /timing, /timing_tracker, /timing_target invariants and topic wiring.\n'
+# Recording and resource/health sampling must be running before playback
+# starts so warm-up settling is captured, not skipped.
 
 setsid ros2 bag record \
   -s mcap \
@@ -549,9 +535,49 @@ setsid timeout \
 playback_pid=$!
 
 register_process "$playback_pid" "bag playback" || exit 1
+playback_started_monotonic="$(date +%s)"
 
-printf 'Warm-up window: %ss. Latency percentile collection starts after warm-up so steady-state statistics exclude pipeline warm-up; resource and health sampling cover the full run including warm-up.\n' "$WARM_UP_S"
-sleep "$WARM_UP_S"
+section "5. Pre-run smoke: live timing invariants"
+
+# Playback is now flowing, so the live topics the smoke check subscribes
+# to have a real publisher. This must run after playback starts (running
+# it before playback begins observes zero samples on every topic and
+# fails closed for a reason unrelated to actual pipeline health).
+
+if ! kill -0 "$playback_pid" 2>/dev/null; then
+  printf 'ERROR: bag playback exited immediately after launch.\n'
+  overall_status=1
+  exit 1
+fi
+
+"$THESIS_ROOT/thesis_env/bin/python" \
+  "$INVARIANT_CHECKER" \
+  --once \
+  --topic-timeout 30 \
+  > "$LOG_DIR/smoke_invariants.log" 2>&1
+smoke_status=$?
+
+cat "$LOG_DIR/smoke_invariants.log"
+
+if [ "$smoke_status" -ne 0 ]; then
+  printf 'ERROR: pre-run timing-invariant smoke check failed. Aborting before the long sustained run.\n'
+  overall_status=1
+  exit 1
+fi
+
+printf 'PASS: pre-run smoke confirmed /timing, /timing_tracker, /timing_target invariants and topic wiring.\n'
+
+section "6. Warm-up"
+
+elapsed_since_playback="$(($(date +%s) - playback_started_monotonic))"
+remaining_warm_up="$(
+  "$THESIS_ROOT/thesis_env/bin/python" -c \
+    "print(max(0.0, float(\"$WARM_UP_S\") - float($elapsed_since_playback)))"
+)"
+
+printf 'Warm-up window: %ss total, measured from playback start (smoke check already consumed %ss). Sleeping %ss more. Latency percentile collection starts after warm-up so steady-state statistics exclude pipeline warm-up; resource and health sampling cover the full run including warm-up.\n' \
+  "$WARM_UP_S" "$elapsed_since_playback" "$remaining_warm_up"
+sleep "$remaining_warm_up"
 
 if ! kill -0 "$playback_pid" 2>/dev/null; then
   printf 'ERROR: bag playback exited during the warm-up window.\n'
@@ -600,7 +626,7 @@ fi
 
 sleep 5
 
-section "5. Pre-cleanup liveness"
+section "7. Pre-cleanup liveness"
 
 for entry in \
   "relay:$relay_pid" \
@@ -621,7 +647,7 @@ do
   fi
 done
 
-section "6. Controlled cleanup"
+section "8. Controlled cleanup"
 
 cleanup_registered
 cleanup_unmatched
@@ -641,7 +667,7 @@ do
   fi
 done
 
-section "7. Appearance-budget analysis"
+section "9. Appearance-budget analysis"
 
 "$THESIS_ROOT/thesis_env/bin/python" \
   "$APPEARANCE_ANALYSER" \
@@ -661,7 +687,7 @@ if [ "$appearance_status" -ne 0 ]; then
   overall_status=1
 fi
 
-section "8. Sustained evidence analysis"
+section "10. Sustained evidence analysis"
 
 "$THESIS_ROOT/thesis_env/bin/python" \
   "$SUSTAINED_ANALYSER" \
@@ -684,7 +710,7 @@ if [ "$analysis_status" -ne 0 ]; then
   overall_status=1
 fi
 
-section "9. Log and hygiene validation"
+section "11. Log and hygiene validation"
 
 rg -n -i \
   'traceback|segmentation fault|fatal|uncaught exception|error:' \
@@ -738,7 +764,7 @@ if [ -e log ] || [ -e hailort.log ]; then
   overall_status=1
 fi
 
-section "10. Result"
+section "12. Result"
 
 printf 'playback_raw_status:%s\n' "$playback_raw_status"
 printf 'playback_status:    %s\n' "$playback_status"
