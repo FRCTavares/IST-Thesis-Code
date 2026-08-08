@@ -609,13 +609,16 @@ if ! kill -0 "$playback_pid" 2>/dev/null; then
 fi
 
 # tracker_node and dashboard_bridge_node each publish one placeholder
-# Timing message with frame_id=0 before their first real callback -- a
-# genuine startup transient, not a pipeline defect. QoS here is
-# best-effort with no transient-local durability, so a subscriber that
-# starts listening after that placeholder has already gone out will not
-# receive it. Settle briefly before subscribing so the smoke check
-# observes steady-state messages only.
-sleep 8
+# Timing message with frame_id=0 before their first real callback, and
+# the cadence-consistency check compares pub_dt_ms against a 3-second
+# rolling-window FPS estimate (DET_OUT_FPS_WINDOW_SECONDS) that is still
+# noisy until that window has genuinely filled with steady-state
+# inter-arrival samples -- both are startup transients, not pipeline
+# defects. QoS here is best-effort with no transient-local durability, so
+# a subscriber that starts listening after the transient period has
+# passed will not observe it. Settle before subscribing so the smoke
+# check observes steady-state messages only.
+sleep 15
 
 "$THESIS_ROOT/thesis_env/bin/python" \
   "$INVARIANT_CHECKER" \
