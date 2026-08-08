@@ -1,0 +1,780 @@
+{
+  "acceptance_thresholds": {
+    "maximum_temperature_c": 80.0,
+    "minimum_memory_available_mib": 512.0,
+    "resource_cpu_maximum_mean_ratio": 1.75,
+    "resource_rss_maximum_mean_ratio": 1.5,
+    "temperature_maximum_mean_ratio": 1.35
+  },
+  "analysis_end_monotonic_ns": 105477080139078,
+  "analysis_start_monotonic_ns": 104271650910298,
+  "claim_boundary": {
+    "measurement_mode": "live_sustained",
+    "physically_live_camera": false,
+    "source_category": "replayed_bag_via_timestamp_refresh_relay",
+    "warm_up_excluded_from_latency_percentiles": true,
+    "warm_up_included_in_resource_and_thermal_windows": true
+  },
+  "health": {
+    "arm_frequency_hz": {
+      "count": 240,
+      "maximum": 2400037120.0,
+      "mean": 1940855116.2666667,
+      "minimum": 1500009472.0
+    },
+    "core_voltage_v": {
+      "count": 240,
+      "maximum": 0.8989,
+      "mean": 0.835435,
+      "minimum": 0.72
+    },
+    "maximum_throttle_value": 0,
+    "mem_available_kib": {
+      "count": 240,
+      "maximum": 6587868.0,
+      "mean": 5987773.483333333,
+      "minimum": 5950552.0
+    },
+    "nonzero_throttle_sample_count": 0,
+    "runtime_s": 1205.589033737,
+    "sample_count": 240,
+    "samples_with_errors": 0,
+    "schema": "p044_hardware_health_summary_v1",
+    "temperature_c": {
+      "count": 240,
+      "maximum": 60.9,
+      "mean": 57.724583333333335,
+      "minimum": 55.4
+    },
+    "throttle_sample_count": 240
+  },
+  "observed_duration_s": 1205.42922878,
+  "passed": true,
+  "relay": {
+    "claim_boundary": {
+      "canonical_policy_changed": false,
+      "cpu_mars_authoritative": true,
+      "experiment_only_timestamp_refresh": true,
+      "production_nodes_modified": false,
+      "replayed_host_timing_cleared": true,
+      "repvgg_observational": true,
+      "source_image_pixels_retained": true,
+      "source_timing_metadata_rewritten": true,
+      "source_track_non_timing_payload_retained": true,
+      "tracker_ids_retained": true
+    },
+    "counters": {
+      "image_publication_errors": 0,
+      "images_published": 4579,
+      "images_received": 4579,
+      "track_publication_errors": 0,
+      "tracks_published": 16696,
+      "tracks_received": 16696
+    },
+    "input_image_topic": "/p032/ground_run/source/image",
+    "input_tracks_topic": "/p032/ground_run/source/tracks",
+    "last_fresh_stamp_ns": 1786216760931163932,
+    "output_image_topic": "/camera/image_raw",
+    "output_tracks_topic": "/p032/ground_run/unused_relayed_tracks",
+    "runtime_s": 1222.947618653,
+    "schema": "p044_soak_input_relay_summary_v1",
+    "source_image_rewinds": 17,
+    "source_track_rewinds": 17,
+    "timestamp_monotonic_ns": 105484577993974
+  },
+  "requested_duration_s": 1200.0,
+  "resources": {
+    "completed_monotonic_ns": 105477314192491,
+    "groups": {
+      "dashboard": {
+        "cpu_percent": {
+          "count": 1205,
+          "maximum": 7.999281312569754,
+          "mean": 5.217991513519569,
+          "p50": 4.9995011647722825,
+          "p95": 6.990982715244239
+        },
+        "maximum_member_count": 2,
+        "member_count": {
+          "count": 1206,
+          "maximum": 2.0,
+          "mean": 2.0,
+          "p50": 2.0,
+          "p95": 2.0
+        },
+        "observed_commands": [
+          "/usr/bin/python3 /home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_bringup/lib/thesis_bringup/dashboard_bridge_node --ros-args -p ws_port:=0 -p api_port:=0",
+          "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup dashboard_bridge_node --ros-args -p ws_port:=0 -p api_port:=0"
+        ],
+        "observed_pids": [
+          86381,
+          86401
+        ],
+        "pgid": 86381,
+        "rss_kib": {
+          "count": 1206,
+          "maximum": 106160.0,
+          "mean": 106112.49087893864,
+          "p50": 106140.0,
+          "p95": 106160.0
+        },
+        "sample_count": 1206
+      },
+      "perception": {
+        "cpu_percent": {
+          "count": 1205,
+          "maximum": 17.998249616230073,
+          "mean": 7.1970862375114875,
+          "p50": 6.999304269155646,
+          "p95": 11.976863012032354
+        },
+        "maximum_member_count": 2,
+        "member_count": {
+          "count": 1206,
+          "maximum": 2.0,
+          "mean": 2.0,
+          "p50": 2.0,
+          "p95": 2.0
+        },
+        "observed_commands": [
+          "/usr/bin/python3 /home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_bringup/lib/thesis_bringup/perception_pipeline_node --ros-args -p image_topic:=/camera/image_raw -p image_reliability:=best_effort -p image_qos_depth:=2 -p img_w:=640 -p img_h:=640 -p inference_backend:=hailo_direct -p hailo_hef_path:=/home/francisco/Desktop/Thesis-Code/models/hef/yolov8s.hef -p allow_stub_fallback:=false -p publish_timing:=true -p reid_enabled:=false",
+          "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup perception_pipeline_node --ros-args -p image_topic:=/camera/image_raw -p image_reliability:=best_effort -p image_qos_depth:=2 -p img_w:=640 -p img_h:=640 -p inference_backend:=hailo_direct -p hailo_hef_path:=/home/francisco/Desktop/Thesis-Code/models/hef/yolov8s.hef -p allow_stub_fallback:=false -p publish_timing:=true -p reid_enabled:=false"
+        ],
+        "observed_pids": [
+          86114,
+          86134
+        ],
+        "pgid": 86114,
+        "rss_kib": {
+          "count": 1206,
+          "maximum": 222348.0,
+          "mean": 218860.4543946932,
+          "p50": 218872.0,
+          "p95": 221366.0
+        },
+        "sample_count": 1206
+      },
+      "relay": {
+        "cpu_percent": {
+          "count": 1205,
+          "maximum": 10.998495108909733,
+          "mean": 4.762489486961755,
+          "p50": 4.999350349420144,
+          "p95": 6.999274751949416
+        },
+        "maximum_member_count": 1,
+        "member_count": {
+          "count": 1206,
+          "maximum": 1.0,
+          "mean": 1.0,
+          "p50": 1.0,
+          "p95": 1.0
+        },
+        "observed_commands": [
+          "/home/francisco/Desktop/Thesis-Code/thesis_env/bin/python /home/francisco/Desktop/Thesis-Code/tools/experiments/p044_soak_input_relay.py --input-image-topic /p032/ground_run/source/image --output-image-topic /camera/image_raw --input-tracks-topic /p032/ground_run/source/tracks --output-tracks-topic /p032/ground_run/unused_relayed_tracks --status-topic /p032/ground_run/input_relay/status --summary-path /home/francisco/Desktop/Thesis-Code/reports/p032_ground_run_331ccc24_2026_08_08_dev_may_hard_reentry/input_relay_summary.json"
+        ],
+        "observed_pids": [
+          86072
+        ],
+        "pgid": 86072,
+        "rss_kib": {
+          "count": 1206,
+          "maximum": 78808.0,
+          "mean": 76500.46766169154,
+          "p50": 76488.0,
+          "p95": 76532.0
+        },
+        "sample_count": 1206
+      },
+      "tim": {
+        "cpu_percent": {
+          "count": 1205,
+          "maximum": 37.99518354055848,
+          "mean": 13.960422983821594,
+          "p50": 12.99867609783811,
+          "p95": 23.997073873610773
+        },
+        "maximum_member_count": 2,
+        "member_count": {
+          "count": 1206,
+          "maximum": 2.0,
+          "mean": 2.0,
+          "p50": 2.0,
+          "p95": 2.0
+        },
+        "observed_commands": [
+          "/usr/bin/python3 /home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_bringup/lib/thesis_bringup/target_memory_mars_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml -p tracks_topic:=/tracks -p target_topic:=/target_memory_mars -p status_topic:=/target_memory_mars/status -p select_topic:=/target_memory_mars/select -p selected_track_id:=1 -p mirror_raw_target_selection:=false -p appearance_enabled:=true -p appearance_image_topic:=/camera/image_raw -p appearance_request_policy:=ambiguity_guarded -p appearance_compute_min_interval_ms:=250.0 -p mars_model_path:=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb -p appearance_async_reid_enabled:=false",
+          "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup target_memory_mars_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml -p tracks_topic:=/tracks -p target_topic:=/target_memory_mars -p status_topic:=/target_memory_mars/status -p select_topic:=/target_memory_mars/select -p selected_track_id:=1 -p mirror_raw_target_selection:=false -p appearance_enabled:=true -p appearance_image_topic:=/camera/image_raw -p appearance_request_policy:=ambiguity_guarded -p appearance_compute_min_interval_ms:=250.0 -p mars_model_path:=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb -p appearance_async_reid_enabled:=false"
+        ],
+        "observed_pids": [
+          86247,
+          86267
+        ],
+        "pgid": 86247,
+        "rss_kib": {
+          "count": 1206,
+          "maximum": 837400.0,
+          "mean": 824461.7512437811,
+          "p50": 827640.0,
+          "p95": 836596.0
+        },
+        "sample_count": 1206
+      },
+      "tracker": {
+        "cpu_percent": {
+          "count": 1205,
+          "maximum": 188.98162097041575,
+          "mean": 78.46573151382016,
+          "p50": 74.99233525839024,
+          "p95": 131.58672479077458
+        },
+        "maximum_member_count": 2,
+        "member_count": {
+          "count": 1206,
+          "maximum": 2.0,
+          "mean": 2.0,
+          "p50": 2.0,
+          "p95": 2.0
+        },
+        "observed_commands": [
+          "/usr/bin/python3 /home/francisco/Desktop/Thesis-Code/ros2_ws/install/thesis_tracker/lib/thesis_tracker/tracker_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml -p image_topic:=/camera/image_raw -p publish_timing_topic:=true",
+          "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_tracker tracker_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml -p image_topic:=/camera/image_raw -p publish_timing_topic:=true"
+        ],
+        "observed_pids": [
+          86187,
+          86207
+        ],
+        "pgid": 86187,
+        "rss_kib": {
+          "count": 1206,
+          "maximum": 140336.0,
+          "mean": 136682.08623548923,
+          "p50": 136720.0,
+          "p95": 137960.0
+        },
+        "sample_count": 1206
+      }
+    },
+    "interval_s": 1.0,
+    "schema": "p044_process_group_resources_v1",
+    "started_monotonic_ns": 104271650786241
+  },
+  "schema": "p032_sustained_run_analysis_v1",
+  "timing": {
+    "cadence_consistency": {
+      "det_out_fps_hz": 3.398045358220281,
+      "fps_from_pub_dt_p50": 4.312491095978524,
+      "pub_dt_p50_ms": 231.88453674316406,
+      "relative_delta": 0.2120458262768311,
+      "relative_delta_max": 0.35,
+      "within_tolerance": true
+    },
+    "contract": {
+      "metric_thresholds_ms": {
+        "container_queue_ms": 100.0,
+        "e2e_det_ms": 120.0,
+        "e2e_target_ms": 150.0,
+        "infer_ms": 20.0,
+        "pub_dt_ms": 120.0,
+        "track_ms": 25.0
+      },
+      "metric_windows": {
+        "det_out_fps_seconds": 3.0
+      },
+      "metrics_schema_version": 3
+    },
+    "detection_stream": {
+      "count": 3874,
+      "detections_per_msg": {
+        "max": 7.0,
+        "mean": 3.459473412493547,
+        "min": 1.0,
+        "n": 3874.0,
+        "p50": 3.0,
+        "p95": 5.0,
+        "p99": 6.0,
+        "zero_ratio": 0.0
+      },
+      "hz": 3.398045358220281
+    },
+    "duration_s": 1140.0671832200023,
+    "health": {
+      "cadence_component": 0.0,
+      "e2e_det_p95_ms": 14.923908281326295,
+      "latency_component": 100.0,
+      "pub_dt_p95_ms": 657.9169006347656,
+      "score": 80.0,
+      "throughput_component": 100.0,
+      "throughput_ratio": 1.0
+    },
+    "metrics": {
+      "/timing": {
+        "container_queue_ms": {
+          "max": 1.6343859434127808,
+          "mean": 0.4211384059691097,
+          "min": 0.33263298869132996,
+          "n": 3874.0,
+          "p50": 0.4006054997444153,
+          "p95": 0.54045270383358,
+          "p99": 0.6503152227401733
+        },
+        "e2e_det_ms": {
+          "max": 31.658838272094727,
+          "mean": 12.748538718373737,
+          "min": 11.200413703918457,
+          "n": 3874.0,
+          "p50": 12.328898906707764,
+          "p95": 14.923908281326295,
+          "p99": 18.983172817230226
+        },
+        "infer_ms": {
+          "max": 25.077150344848633,
+          "mean": 10.098250890061236,
+          "min": 9.424811363220215,
+          "n": 3874.0,
+          "p50": 9.962380409240723,
+          "p95": 10.57243185043335,
+          "p99": 14.110228195190425
+        },
+        "pre_ms": {
+          "max": 4.231834888458252,
+          "mean": 0.6217695283071245,
+          "min": 0.35146600008010864,
+          "n": 3874.0,
+          "p50": 0.570580005645752,
+          "p95": 0.8640200585126876,
+          "p99": 1.708076294660568
+        },
+        "pub_dt_ms": {
+          "max": 2230.203857421875,
+          "mean": 294.1206274401852,
+          "min": 20.98042106628418,
+          "n": 3874.0,
+          "p50": 231.88453674316406,
+          "p95": 657.9169006347656,
+          "p99": 996.6752178955078
+        },
+        "zmq_roundtrip_ms": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3874.0,
+          "p50": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        }
+      },
+      "/timing_target": {
+        "e2e_target_ms": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 3867.0,
+          "p50": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        }
+      },
+      "/timing_tracker": {
+        "track_ms": {
+          "max": 24.921804428100586,
+          "mean": 4.451545513999077,
+          "min": 0.6914330124855042,
+          "n": 3875.0,
+          "p50": 3.7880520820617676,
+          "p95": 10.435027980804435,
+          "p99": 12.790439510345447
+        }
+      }
+    },
+    "run_label": "p032_ground_run_331ccc24_2026_08_08_dev_may_hard_reentry",
+    "topics": {
+      "/timing": {
+        "count": 3874,
+        "frame_id_duplicates": 0,
+        "frame_id_gaps": 0,
+        "frame_id_max": 4063,
+        "frame_id_min": 190,
+        "frame_id_missing_estimate": 0,
+        "frame_id_unique": 3874,
+        "hz": 3.398045358220281
+      },
+      "/timing_target": {
+        "count": 3867,
+        "frame_id_duplicates": 0,
+        "frame_id_gaps": 0,
+        "frame_id_max": 4063,
+        "frame_id_min": 197,
+        "frame_id_missing_estimate": 0,
+        "frame_id_unique": 3867,
+        "hz": 3.391905369188908
+      },
+      "/timing_tracker": {
+        "count": 3875,
+        "frame_id_duplicates": 0,
+        "frame_id_gaps": 0,
+        "frame_id_max": 4063,
+        "frame_id_min": 189,
+        "frame_id_missing_estimate": 0,
+        "frame_id_unique": 3875,
+        "hz": 3.3989224995104776
+      }
+    }
+  },
+  "violations": [],
+  "warm_up_s": 60.0,
+  "windows": {
+    "health": {
+      "arm_frequency_hz": {
+        "early": {
+          "count": 80,
+          "maximum": 2400033792.0,
+          "mean": 1996272436.8,
+          "minimum": 1500012800.0,
+          "p50": 1900017856.0,
+          "p95": 2400033792.0
+        },
+        "late": {
+          "count": 80,
+          "maximum": 2400037120.0,
+          "mean": 1940021627.2,
+          "minimum": 1500012800.0,
+          "p50": 1700022784.0,
+          "p95": 2400033792.0
+        },
+        "middle": {
+          "count": 80,
+          "maximum": 2400037120.0,
+          "mean": 1886271284.8,
+          "minimum": 1500009472.0,
+          "p50": 1700021120.0,
+          "p95": 2400033792.0
+        }
+      },
+      "mem_available_kib": {
+        "early": {
+          "count": 80,
+          "maximum": 6587868.0,
+          "mean": 6010503.15,
+          "minimum": 5967180.0,
+          "p50": 6000802.0,
+          "p95": 6057534.199999999
+        },
+        "late": {
+          "count": 80,
+          "maximum": 6356924.0,
+          "mean": 5973263.95,
+          "minimum": 5950552.0,
+          "p50": 5968156.0,
+          "p95": 5982695.800000001
+        },
+        "middle": {
+          "count": 80,
+          "maximum": 6089536.0,
+          "mean": 5979553.35,
+          "minimum": 5959192.0,
+          "p50": 5977090.0,
+          "p95": 5988494.4
+        }
+      },
+      "temperature_c": {
+        "early": {
+          "count": 80,
+          "maximum": 59.8,
+          "mean": 57.9625,
+          "minimum": 56.0,
+          "p50": 58.2,
+          "p95": 59.324999999999996
+        },
+        "late": {
+          "count": 80,
+          "maximum": 59.8,
+          "mean": 57.22375000000001,
+          "minimum": 56.0,
+          "p50": 57.1,
+          "p95": 58.225
+        },
+        "middle": {
+          "count": 80,
+          "maximum": 60.9,
+          "mean": 57.9875,
+          "minimum": 55.4,
+          "p50": 57.6,
+          "p95": 59.324999999999996
+        }
+      }
+    },
+    "resources": {
+      "dashboard": {
+        "cpu_percent": {
+          "early": {
+            "count": 401,
+            "maximum": 7.999281312569754,
+            "mean": 5.2425799293330195,
+            "minimum": 2.9996254097784525,
+            "p50": 4.999501909623747,
+            "p95": 6.998717037185045
+          },
+          "late": {
+            "count": 402,
+            "maximum": 7.999222051657809,
+            "mean": 5.206898659604919,
+            "minimum": 2.99965991655662,
+            "p50": 4.999499502604547,
+            "p95": 6.998991660880736
+          },
+          "middle": {
+            "count": 402,
+            "maximum": 7.999265867375022,
+            "mean": 5.204557116834234,
+            "minimum": 2.9997041511783857,
+            "p50": 4.999501992107314,
+            "p95": 5.999447819521971
+          }
+        },
+        "rss_kib": {
+          "early": {
+            "count": 402,
+            "maximum": 106112.0,
+            "mean": 106043.19402985074,
+            "minimum": 104736.0,
+            "p50": 106100.0,
+            "p95": 106112.0
+          },
+          "late": {
+            "count": 402,
+            "maximum": 106160.0,
+            "mean": 106154.05970149254,
+            "minimum": 105828.0,
+            "p50": 106156.0,
+            "p95": 106160.0
+          },
+          "middle": {
+            "count": 402,
+            "maximum": 106148.0,
+            "mean": 106140.21890547263,
+            "minimum": 106112.0,
+            "p50": 106140.0,
+            "p95": 106148.0
+          }
+        }
+      },
+      "perception": {
+        "cpu_percent": {
+          "early": {
+            "count": 401,
+            "maximum": 13.99874229699707,
+            "mean": 7.149456131960216,
+            "minimum": 0.0,
+            "p50": 6.999309105197535,
+            "p95": 11.963467363092269
+          },
+          "late": {
+            "count": 402,
+            "maximum": 17.998249616230073,
+            "mean": 7.208278097427932,
+            "minimum": 0.0,
+            "p50": 6.999309024713453,
+            "p95": 11.91690146923897
+          },
+          "middle": {
+            "count": 402,
+            "maximum": 14.998623501328165,
+            "mean": 7.233406000296684,
+            "minimum": 0.9998617241228624,
+            "p50": 6.999297029102909,
+            "p95": 11.998540569352697
+          }
+        },
+        "rss_kib": {
+          "early": {
+            "count": 402,
+            "maximum": 222168.0,
+            "mean": 218548.75621890547,
+            "minimum": 206484.0,
+            "p50": 218528.0,
+            "p95": 221551.80000000002
+          },
+          "late": {
+            "count": 402,
+            "maximum": 222348.0,
+            "mean": 219018.07960199006,
+            "minimum": 218536.0,
+            "p50": 218872.0,
+            "p95": 218872.0
+          },
+          "middle": {
+            "count": 402,
+            "maximum": 222348.0,
+            "mean": 219014.52736318408,
+            "minimum": 218692.0,
+            "p50": 218872.0,
+            "p95": 220588.8
+          }
+        }
+      },
+      "relay": {
+        "cpu_percent": {
+          "early": {
+            "count": 401,
+            "maximum": 7.999281312569754,
+            "mean": 4.7589148129726535,
+            "minimum": 0.0,
+            "p50": 4.999336533049362,
+            "p95": 6.999300916823729
+          },
+          "late": {
+            "count": 402,
+            "maximum": 10.96777899049507,
+            "mean": 4.7318506631027075,
+            "minimum": 0.0,
+            "p50": 4.999185120389821,
+            "p95": 6.998877023372107
+          },
+          "middle": {
+            "count": 402,
+            "maximum": 10.998495108909733,
+            "mean": 4.7966940925860495,
+            "minimum": 1.9977835171234737,
+            "p50": 4.999393703543692,
+            "p95": 6.999287538671838
+          }
+        },
+        "rss_kib": {
+          "early": {
+            "count": 402,
+            "maximum": 78764.0,
+            "mean": 76453.28358208956,
+            "minimum": 70644.0,
+            "p50": 76488.0,
+            "p95": 76488.0
+          },
+          "late": {
+            "count": 402,
+            "maximum": 78808.0,
+            "mean": 76541.65174129354,
+            "minimum": 75736.0,
+            "p50": 76516.0,
+            "p95": 76536.0
+          },
+          "middle": {
+            "count": 402,
+            "maximum": 78764.0,
+            "mean": 76506.46766169154,
+            "minimum": 76488.0,
+            "p50": 76488.0,
+            "p95": 76496.0
+          }
+        }
+      },
+      "tim": {
+        "cpu_percent": {
+          "early": {
+            "count": 401,
+            "maximum": 35.996412093620975,
+            "mean": 14.039682415957229,
+            "minimum": 0.0,
+            "p50": 12.99867318643184,
+            "p95": 23.997080923085274
+          },
+          "late": {
+            "count": 402,
+            "maximum": 32.900896150920474,
+            "mean": 13.75030297767603,
+            "minimum": 0.0,
+            "p50": 12.998675188025459,
+            "p95": 22.997785263885298
+          },
+          "middle": {
+            "count": 402,
+            "maximum": 37.99518354055848,
+            "mean": 14.091480720598026,
+            "minimum": 0.0,
+            "p50": 12.99867841136765,
+            "p95": 24.94669397758719
+          }
+        },
+        "rss_kib": {
+          "early": {
+            "count": 402,
+            "maximum": 823812.0,
+            "mean": 811281.5621890547,
+            "minimum": 647696.0,
+            "p50": 816480.0,
+            "p95": 823385.4
+          },
+          "late": {
+            "count": 402,
+            "maximum": 837400.0,
+            "mean": 834541.2039800995,
+            "minimum": 831640.0,
+            "p50": 834380.0,
+            "p95": 837006.7999999999
+          },
+          "middle": {
+            "count": 402,
+            "maximum": 831612.0,
+            "mean": 827562.4875621891,
+            "minimum": 823836.0,
+            "p50": 827640.0,
+            "p95": 830856.0
+          }
+        }
+      },
+      "tracker": {
+        "cpu_percent": {
+          "early": {
+            "count": 401,
+            "maximum": 171.9845482202497,
+            "mean": 77.86022215168937,
+            "minimum": 0.0,
+            "p50": 74.99262162594346,
+            "p95": 128.6072741532419
+          },
+          "late": {
+            "count": 402,
+            "maximum": 188.98162097041575,
+            "mean": 78.63056101264803,
+            "minimum": 0.0,
+            "p50": 74.98198176009612,
+            "p95": 132.98618885943918
+          },
+          "middle": {
+            "count": 402,
+            "maximum": 179.98242759566412,
+            "mean": 78.90490513492874,
+            "minimum": 0.0,
+            "p50": 73.99293134510629,
+            "p95": 129.97066842729512
+          }
+        },
+        "rss_kib": {
+          "early": {
+            "count": 402,
+            "maximum": 138580.0,
+            "mean": 135686.60696517414,
+            "minimum": 131968.0,
+            "p50": 135778.0,
+            "p95": 136159.4
+          },
+          "late": {
+            "count": 402,
+            "maximum": 140336.0,
+            "mean": 137652.74626865672,
+            "minimum": 137164.0,
+            "p50": 137636.0,
+            "p95": 138024.0
+          },
+          "middle": {
+            "count": 402,
+            "maximum": 139864.0,
+            "mean": 136706.9054726368,
+            "minimum": 136208.0,
+            "p50": 136704.0,
+            "p95": 137135.8
+          }
+        }
+      }
+    }
+  }
+}

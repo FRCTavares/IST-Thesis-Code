@@ -552,6 +552,27 @@ Open executable issues: **24**.
       and reproducible power measurements where available. It also measures the
       incremental cost of TIM-MARS and supplies the runtime contract for the
       lightweight-versus-integrated tracker comparison.
+    - Canonical methodology frozen and a first evidence slice executed and
+      promoted: `docs/data/runtime_characterization/p032_runtime_characterization_v1.yaml`,
+      `docs/issues/p1-14-runtime-resource-characterization.md`,
+      `docs/results/selected_target_tracking/p032_runtime_characterization_summary.md`.
+      Deterministic replay algorithmic-cost matrix executed for all six #58
+      architectures on the May sequence (DeepSORT's tracker stage costs
+      ~12x ByteTrack/SORT's; TIM-MARS adds a consistent ~42-46s CPU
+      regardless of tracker). One ~20-minute live sustained ground run
+      executed for the canonical `bytetrack_tim` architecture (real
+      latency/cadence/thermal/CPU/memory evidence, zero throttling,
+      appearance-budget evidence) after reaching a frozen protocol required
+      five methodology-preserving script fixes across six attempts (root
+      noise, smoke-check ordering, a missing live tracker node, a missing
+      dashboard-bridge node, and a startup-transient settle -- documented in
+      the engineering record). The sustained run surfaced a genuine live-only
+      finding: `e2e_target_ms` is unavailable due to a `perception_pipeline_node`
+      publish-order gap (detections published before timing), diagnosed and
+      documented, not silently reported as a real near-zero latency. Not yet
+      DONE: Seq01/Seq03/Seq04 runtime characterisation, a full six-architecture
+      live comparison, the `e2e_target_ms` publish-order fix, and power (no
+      calibrated sensor).
 
 19. [x] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35) — DONE
     - Completed on 25 July 2026.

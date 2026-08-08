@@ -1,0 +1,49 @@
+{
+  "architecture_id": "deepsort_tim",
+  "command": [
+    "/home/francisco/Desktop/Thesis-Code/thesis_env/bin/python",
+    "/home/francisco/Desktop/Thesis-Code/tools/experiments/run_deterministic_tracker_replay.py",
+    "/home/francisco/Desktop/Thesis-Code/bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+    "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/deepsort_tim/tracks.bag",
+    "--config",
+    "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml",
+    "--selection-mode",
+    "fixed_id",
+    "--selected-track-id",
+    "1",
+    "--model",
+    "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+  ],
+  "frame_count": 953,
+  "mean_cpu_ms_per_frame": 361.58643126967473,
+  "measurement_mode": "replay_algorithmic_cost",
+  "peak_rss_kib": 792024,
+  "provenance": {
+    "git_branch": "issue-32-runtime-resource-characterization",
+    "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+    "git_status_short": [
+      "?? docs/data/runtime_characterization/",
+      "?? tools/analysis/aggregate_p032_runtime_report.py",
+      "?? tools/analysis/analyse_p032_appearance_budget.py",
+      "?? tools/analysis/analyze_p032_sustained_run.py",
+      "?? tools/experiments/measure_p032_replay_cost.py",
+      "?? tools/experiments/run_p032_sustained_ground_run.sh",
+      "?? tools/tests/test_aggregate_p032_runtime_report.py",
+      "?? tools/tests/test_analyse_p032_appearance_budget.py",
+      "?? tools/tests/test_analyze_p032_sustained_run.py",
+      "?? tools/tests/test_measure_p032_replay_cost.py"
+    ],
+    "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw_0.mcap",
+    "source_sha256": "becad555aa8150ea969448316f1478786743a76cde266b20b574d32af7602839",
+    "tracker_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml",
+    "tracker_config_sha256": "d586e2e04c283313606cb366b64c0e7bad19692207f185d7dd9b89c89e33efb0",
+    "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/deepsort_tim/tracks.bag"
+  },
+  "schema": "p032_replay_cost_v1",
+  "sequence_id": "dev_may_hard_reentry",
+  "stage": "tracker",
+  "sys_cpu_s": 6.989683,
+  "total_cpu_s": 344.59186900000003,
+  "user_cpu_s": 337.602186,
+  "wall_s": 112.43706761300564
+}

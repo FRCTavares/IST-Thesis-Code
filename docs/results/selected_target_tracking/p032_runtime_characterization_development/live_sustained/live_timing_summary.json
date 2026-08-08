@@ -1,0 +1,161 @@
+{
+  "run_label": "p032_ground_run_331ccc24_2026_08_08_dev_may_hard_reentry",
+  "duration_s": 1140.0671832200023,
+  "contract": {
+    "metrics_schema_version": 3,
+    "metric_windows": {
+      "det_out_fps_seconds": 3.0
+    },
+    "metric_thresholds_ms": {
+      "e2e_det_ms": 120.0,
+      "pub_dt_ms": 120.0,
+      "infer_ms": 20.0,
+      "container_queue_ms": 100.0,
+      "track_ms": 25.0,
+      "e2e_target_ms": 150.0
+    }
+  },
+  "topics": {
+    "/timing": {
+      "count": 3874,
+      "hz": 3.398045358220281,
+      "frame_id_min": 190,
+      "frame_id_max": 4063,
+      "frame_id_unique": 3874,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_tracker": {
+      "count": 3875,
+      "hz": 3.3989224995104776,
+      "frame_id_min": 189,
+      "frame_id_max": 4063,
+      "frame_id_unique": 3875,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    },
+    "/timing_target": {
+      "count": 3867,
+      "hz": 3.391905369188908,
+      "frame_id_min": 197,
+      "frame_id_max": 4063,
+      "frame_id_unique": 3867,
+      "frame_id_duplicates": 0,
+      "frame_id_gaps": 0,
+      "frame_id_missing_estimate": 0
+    }
+  },
+  "metrics": {
+    "/timing": {
+      "pre_ms": {
+        "n": 3874.0,
+        "p50": 0.570580005645752,
+        "p95": 0.8640200585126876,
+        "p99": 1.708076294660568,
+        "mean": 0.6217695283071245,
+        "min": 0.35146600008010864,
+        "max": 4.231834888458252
+      },
+      "container_queue_ms": {
+        "n": 3874.0,
+        "p50": 0.4006054997444153,
+        "p95": 0.54045270383358,
+        "p99": 0.6503152227401733,
+        "mean": 0.4211384059691097,
+        "min": 0.33263298869132996,
+        "max": 1.6343859434127808
+      },
+      "zmq_roundtrip_ms": {
+        "n": 3874.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "infer_ms": {
+        "n": 3874.0,
+        "p50": 9.962380409240723,
+        "p95": 10.57243185043335,
+        "p99": 14.110228195190425,
+        "mean": 10.098250890061236,
+        "min": 9.424811363220215,
+        "max": 25.077150344848633
+      },
+      "e2e_det_ms": {
+        "n": 3874.0,
+        "p50": 12.328898906707764,
+        "p95": 14.923908281326295,
+        "p99": 18.983172817230226,
+        "mean": 12.748538718373737,
+        "min": 11.200413703918457,
+        "max": 31.658838272094727
+      },
+      "pub_dt_ms": {
+        "n": 3874.0,
+        "p50": 231.88453674316406,
+        "p95": 657.9169006347656,
+        "p99": 996.6752178955078,
+        "mean": 294.1206274401852,
+        "min": 20.98042106628418,
+        "max": 2230.203857421875
+      }
+    },
+    "/timing_tracker": {
+      "track_ms": {
+        "n": 3875.0,
+        "p50": 3.7880520820617676,
+        "p95": 10.435027980804435,
+        "p99": 12.790439510345447,
+        "mean": 4.451545513999077,
+        "min": 0.6914330124855042,
+        "max": 24.921804428100586
+      }
+    },
+    "/timing_target": {
+      "e2e_target_ms": {
+        "n": 3867.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    }
+  },
+  "detection_stream": {
+    "count": 3874,
+    "hz": 3.398045358220281,
+    "detections_per_msg": {
+      "n": 3874.0,
+      "p50": 3.0,
+      "p95": 5.0,
+      "p99": 6.0,
+      "mean": 3.459473412493547,
+      "min": 1.0,
+      "max": 7.0,
+      "zero_ratio": 0.0
+    }
+  },
+  "cadence_consistency": {
+    "det_out_fps_hz": 3.398045358220281,
+    "pub_dt_p50_ms": 231.88453674316406,
+    "fps_from_pub_dt_p50": 4.312491095978524,
+    "relative_delta": 0.2120458262768311,
+    "within_tolerance": true,
+    "relative_delta_max": 0.35
+  },
+  "health": {
+    "score": 80.0,
+    "latency_component": 100.0,
+    "cadence_component": 0.0,
+    "throughput_component": 100.0,
+    "throughput_ratio": 1.0,
+    "e2e_det_p95_ms": 14.923908281326295,
+    "pub_dt_p95_ms": 657.9169006347656
+  }
+}

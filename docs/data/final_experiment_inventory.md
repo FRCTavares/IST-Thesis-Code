@@ -138,3 +138,44 @@ git-ignored generated output, regenerable from the tracked scripts above
 against the frozen manifest, canonical config, and existing source bags; it
 is not duplicated into version control beyond the tracked copies above.
 
+## Issue #32 / P032 runtime/resource characterization evidence (partial slice)
+
+Canonical thesis-facing summary:
+`docs/results/selected_target_tracking/p032_runtime_characterization_summary.md`.
+Full engineering record:
+`docs/issues/p1-14-runtime-resource-characterization.md`.
+
+May-only replay-cost matrix across all six Issue #58 architectures plus one
+canonical-architecture (`bytetrack_tim`) ~20-minute live sustained ground
+run. Not a complete six-architecture x four-sequence characterization; see
+the engineering record's "Not yet done" section.
+
+- Frozen manifest, architecture/config hashes, live-vs-replay measurement
+  modes:
+  `docs/data/runtime_characterization/p032_runtime_characterization_v1.yaml`
+- Tracked compact evidence (per-architecture replay-cost JSON,
+  appearance-budget JSON/Markdown, the aggregate JSON/CSV/Markdown, and
+  the live sustained run's metadata/analysis/timing/appearance/resource/
+  health summaries), with `SHA256SUMS`:
+  `docs/results/selected_target_tracking/p032_runtime_characterization_development/`
+- Live evidence bag:
+  `bags/replay/p032_ground_run_331ccc24_2026_08_08_dev_may_hard_reentry/evidence`,
+  SHA-256
+  `6a67cb9324a9cfb785a638fbe9893f711f772406fd3f1e628f871cb1f61c7c49`
+- Runner/analysis tooling (reuses existing validated instrumentation --
+  `collect_live_timing_stats.py`, `check_live_timing_invariants.py`,
+  `sample_process_groups.py`, `sample_p044_hardware_health.py`,
+  `analyse_tim_reid_workload.py`, `p044_soak_input_relay.py` -- rather than
+  duplicating it):
+  `tools/experiments/measure_p032_replay_cost.py`,
+  `tools/experiments/run_p032_sustained_ground_run.sh`,
+  `tools/analysis/analyse_p032_appearance_budget.py`,
+  `tools/analysis/analyze_p032_sustained_run.py`,
+  `tools/analysis/aggregate_p032_runtime_report.py`
+
+Generated per-architecture replay reports (large tracks/TIM bags), the live
+evidence `.mcap` bag, and raw per-sample JSONL streams are git-ignored,
+regenerable from the tracked manifest and scripts against the frozen
+source/reference bags; not duplicated into version control beyond the
+tracked compact copies above.
+

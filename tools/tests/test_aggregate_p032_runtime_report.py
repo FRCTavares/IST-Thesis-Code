@@ -200,6 +200,50 @@ def test_build_live_row_missing_file_is_status_missing(tmp_path: Path) -> None:
     assert row["status"] == "missing"
 
 
+def test_build_live_row_flags_e2e_target_known_limitation(tmp_path: Path) -> None:
+    """e2e_target_ms is a genuine field this pipeline always publishes as
+    0.0 due to a diagnosed upstream propagation gap, not a real
+    near-zero latency. The aggregator must carry a documented caveat
+    alongside the raw value so it is never mistaken for a real
+    measurement downstream (e.g. by Issue #58's join)."""
+    module = load_module()
+
+    analysis_path = tmp_path / "sustained_analysis.json"
+    analysis_path.write_text(
+        json.dumps(
+            {
+                "passed": True,
+                "violations": [],
+                "observed_duration_s": 1200.0,
+                "warm_up_s": 60.0,
+                "timing": {
+                    "metrics": {
+                        "/timing": {"e2e_det_ms": {"p50": 12.0}},
+                        "/timing_tracker": {"track_ms": {"p50": 3.8}},
+                        "/timing_target": {
+                            "e2e_target_ms": {
+                                "n": 100,
+                                "mean": 0.0,
+                                "p50": 0.0,
+                                "max": 0.0,
+                            }
+                        },
+                    },
+                    "cadence_consistency": {"within_tolerance": True},
+                },
+                "windows": {"resources": {}, "health": {}},
+                "claim_boundary": {},
+            }
+        )
+    )
+
+    row = module.build_live_row(analysis_path)
+
+    assert row["latency_ms"]["e2e_target"]["mean"] == 0.0
+    assert "e2e_target_ms_known_limitation" in row
+    assert "t_cam_msg_seen_ns" in row["e2e_target_ms_known_limitation"]
+
+
 def test_comparative_overhead_computes_delta_when_both_present() -> None:
     module = load_module()
 

@@ -1,0 +1,33 @@
+{
+  "arm_frequency_hz": {
+    "count": 240,
+    "maximum": 2400037120.0,
+    "mean": 1940855116.2666667,
+    "minimum": 1500009472.0
+  },
+  "core_voltage_v": {
+    "count": 240,
+    "maximum": 0.8989,
+    "mean": 0.835435,
+    "minimum": 0.72
+  },
+  "maximum_throttle_value": 0,
+  "mem_available_kib": {
+    "count": 240,
+    "maximum": 6587868.0,
+    "mean": 5987773.483333333,
+    "minimum": 5950552.0
+  },
+  "nonzero_throttle_sample_count": 0,
+  "runtime_s": 1205.589033737,
+  "sample_count": 240,
+  "samples_with_errors": 0,
+  "schema": "p044_hardware_health_summary_v1",
+  "temperature_c": {
+    "count": 240,
+    "maximum": 60.9,
+    "mean": 57.724583333333335,
+    "minimum": 55.4
+  },
+  "throttle_sample_count": 240
+}

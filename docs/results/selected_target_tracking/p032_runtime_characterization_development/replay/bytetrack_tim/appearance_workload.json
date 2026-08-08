@@ -1,0 +1,28 @@
+{
+  "appearance_backend_wall_ms": null,
+  "bag_path": "/home/francisco/Desktop/Thesis-Code/reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/bytetrack_tim/tim.bag",
+  "cache_hit_rate": 0.7534097108565194,
+  "cache_hit_rate_definition": "features_valid in excess of fresh backend_valid, as a fraction of total valid features; an estimate derived from already-published counters, not a dedicated cache-hit counter.",
+  "cache_served_total": 1381,
+  "candidates_encoded_per_second": 6.685656042909995,
+  "candidates_encoded_total": 452,
+  "duration_s": 67.607426571,
+  "embeddings_per_second": 6.685656042909995,
+  "embeddings_valid_total": 452,
+  "fraction_frames_invoking_appearance": 0.23714585519412382,
+  "frames_invoking_appearance": 226,
+  "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+  "latency_unavailable_reason": "tools/experiments/run_deterministic_tim_replay.py hardcodes lat_ms=0.0 and appearance_backend_wall_ms=0.0 (verified in source): deterministic replay never measures wall time. Reporting these as zero would silently fabricate an implausible zero-latency claim. Genuine TIM core / MARS extraction latency percentiles come only from measurement_mode=live_sustained.",
+  "measurement_mode": "replay_algorithmic_cost",
+  "record_count": 953,
+  "run_name": "bytetrack_tim_dev_may_hard_reentry",
+  "schema": "p032_appearance_budget_v1",
+  "skip_reason_counts": {
+    "cached_interval": 613,
+    "cached_same_image": 111,
+    "ok": 226,
+    "stale_image": 3
+  },
+  "status_topic": "/target_memory_mars/status",
+  "tim_core_latency_ms": null
+}

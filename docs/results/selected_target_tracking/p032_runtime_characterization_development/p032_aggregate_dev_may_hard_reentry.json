@@ -1,0 +1,872 @@
+{
+  "comparative_overhead": [
+    {
+      "delta_peak_rss_kib": 696128,
+      "delta_total_cpu_s": 44.802707999999996,
+      "raw_architecture_id": "bytetrack_raw",
+      "source": "replay_algorithmic_cost",
+      "tim_architecture_id": "bytetrack_tim",
+      "tracker_type": "bytetrack"
+    },
+    {
+      "delta_peak_rss_kib": 642944,
+      "delta_total_cpu_s": 46.121226,
+      "raw_architecture_id": "sort_raw",
+      "source": "replay_algorithmic_cost",
+      "tim_architecture_id": "sort_tim",
+      "tracker_type": "sort"
+    },
+    {
+      "delta_peak_rss_kib": 5940,
+      "delta_total_cpu_s": 42.971153000000015,
+      "raw_architecture_id": "deepsort_raw",
+      "source": "replay_algorithmic_cost",
+      "tim_architecture_id": "deepsort_tim",
+      "tracker_type": "deepsort"
+    }
+  ],
+  "issue_58_join": {
+    "architecture_id_values": [
+      "bytetrack_raw",
+      "bytetrack_tim",
+      "sort_raw",
+      "sort_tim",
+      "deepsort_raw",
+      "deepsort_tim"
+    ],
+    "contract": "#58 owns safety/availability/recovery outcome rows keyed by the same (architecture_id, sequence_id) pair. #32 outputs are joinable by that pair without rerunning or manually re-interpreting either issue's logs. #32 does not read, modify, or depend on the issue-58-* branch; the join is a schema contract, not a file dependency.\n",
+    "join_keys": [
+      "architecture_id",
+      "sequence_id"
+    ],
+    "sequence_id_values": [
+      "dev_may_hard_reentry",
+      "dev_june_seq01",
+      "dev_june_seq03",
+      "dev_june_seq04"
+    ]
+  },
+  "power": {
+    "reason": "No INA219/INA226-class calibrated power sensor is installed on this hardware. Software-estimated power from CPU/clock state is explicitly rejected by the issue's own instruction (mark unavailable rather than estimate). Revisit only if calibrated hardware is added.\n",
+    "status": "unavailable_no_calibrated_sensor"
+  },
+  "rows": [
+    {
+      "architecture_id": "bytetrack_raw",
+      "live": {
+        "source": "live_sustained",
+        "status": "not_measured_live_this_session"
+      },
+      "replay": {
+        "combined_peak_rss_kib": 119332,
+        "combined_total_cpu_s": 28.696619,
+        "provenance": {
+          "git_branch": "issue-32-runtime-resource-characterization",
+          "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+          "git_status_short": [
+            "?? docs/data/runtime_characterization/",
+            "?? tools/analysis/aggregate_p032_runtime_report.py",
+            "?? tools/analysis/analyse_p032_appearance_budget.py",
+            "?? tools/analysis/analyze_p032_sustained_run.py",
+            "?? tools/experiments/measure_p032_replay_cost.py",
+            "?? tools/experiments/run_p032_sustained_ground_run.sh"
+          ],
+          "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw_0.mcap",
+          "source_sha256": "becad555aa8150ea969448316f1478786743a76cde266b20b574d32af7602839",
+          "tracker_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+          "tracker_config_sha256": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906",
+          "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/bytetrack_raw/tracks.bag"
+        },
+        "source": "replay_algorithmic_cost",
+        "status": "measured",
+        "tim": {
+          "status": "not_applicable_tim_disabled"
+        },
+        "tracker": {
+          "frame_count": 953,
+          "mean_cpu_ms_per_frame": 30.11187722980063,
+          "peak_rss_kib": 119332,
+          "sys_cpu_s": 3.246695,
+          "total_cpu_s": 28.696619,
+          "user_cpu_s": 25.449924,
+          "wall_s": 13.540899369996623
+        }
+      },
+      "sequence_id": "dev_may_hard_reentry",
+      "tim_enabled": false,
+      "tracker_type": "bytetrack"
+    },
+    {
+      "architecture_id": "bytetrack_tim",
+      "live": {
+        "cadence_consistency": {
+          "det_out_fps_hz": 3.398045358220281,
+          "fps_from_pub_dt_p50": 4.312491095978524,
+          "pub_dt_p50_ms": 231.88453674316406,
+          "relative_delta": 0.2120458262768311,
+          "relative_delta_max": 0.35,
+          "within_tolerance": true
+        },
+        "claim_boundary": {
+          "measurement_mode": "live_sustained",
+          "physically_live_camera": false,
+          "source_category": "replayed_bag_via_timestamp_refresh_relay",
+          "warm_up_excluded_from_latency_percentiles": true,
+          "warm_up_included_in_resource_and_thermal_windows": true
+        },
+        "duration_s": 1205.42922878,
+        "e2e_target_ms_known_limitation": "e2e_target_ms is published as exactly 0.0 on every sample in this pipeline configuration, not a genuine sub-millisecond measurement. dashboard_bridge_node only sets it when the incoming /tracks message's t_cam_msg_seen_ns is > 0 (dashboard_bridge_node.py _publish_target_from_tracks); that field is populated in tracker_node from a frame_context dictionary keyed by frame_id and filled by a separate /timing subscription callback. perception_pipeline_node publishes /detections before /timing for the same frame (perception_pipeline_node.py: pub_dets.publish before pub_timing.publish), so tracker_node's on_detections handler almost always pops an empty (0, 0) frame_context entry before the matching /timing message has been processed, and t_cam_msg_seen_ns never propagates downstream. This is a genuine live-pipeline finding this issue's sustained run surfaced; it is not visible from deterministic replay (no live topic ordering) and is not fixed here -- fixing perception_pipeline_node's publish order is a live-node behaviour change outside Issue #32's scope. Treat e2e_target_ms and sensor_to_target_ms as unavailable, not as a genuine near-zero final-target-publication latency, until a future issue corrects the publish order.",
+        "health": {
+          "arm_frequency_hz": {
+            "early": {
+              "count": 80,
+              "maximum": 2400033792.0,
+              "mean": 1996272436.8,
+              "minimum": 1500012800.0,
+              "p50": 1900017856.0,
+              "p95": 2400033792.0
+            },
+            "late": {
+              "count": 80,
+              "maximum": 2400037120.0,
+              "mean": 1940021627.2,
+              "minimum": 1500012800.0,
+              "p50": 1700022784.0,
+              "p95": 2400033792.0
+            },
+            "middle": {
+              "count": 80,
+              "maximum": 2400037120.0,
+              "mean": 1886271284.8,
+              "minimum": 1500009472.0,
+              "p50": 1700021120.0,
+              "p95": 2400033792.0
+            }
+          },
+          "mem_available_kib": {
+            "early": {
+              "count": 80,
+              "maximum": 6587868.0,
+              "mean": 6010503.15,
+              "minimum": 5967180.0,
+              "p50": 6000802.0,
+              "p95": 6057534.199999999
+            },
+            "late": {
+              "count": 80,
+              "maximum": 6356924.0,
+              "mean": 5973263.95,
+              "minimum": 5950552.0,
+              "p50": 5968156.0,
+              "p95": 5982695.800000001
+            },
+            "middle": {
+              "count": 80,
+              "maximum": 6089536.0,
+              "mean": 5979553.35,
+              "minimum": 5959192.0,
+              "p50": 5977090.0,
+              "p95": 5988494.4
+            }
+          },
+          "temperature_c": {
+            "early": {
+              "count": 80,
+              "maximum": 59.8,
+              "mean": 57.9625,
+              "minimum": 56.0,
+              "p50": 58.2,
+              "p95": 59.324999999999996
+            },
+            "late": {
+              "count": 80,
+              "maximum": 59.8,
+              "mean": 57.22375000000001,
+              "minimum": 56.0,
+              "p50": 57.1,
+              "p95": 58.225
+            },
+            "middle": {
+              "count": 80,
+              "maximum": 60.9,
+              "mean": 57.9875,
+              "minimum": 55.4,
+              "p50": 57.6,
+              "p95": 59.324999999999996
+            }
+          }
+        },
+        "latency_ms": {
+          "e2e_det": {
+            "max": 31.658838272094727,
+            "mean": 12.748538718373737,
+            "min": 11.200413703918457,
+            "n": 3874.0,
+            "p50": 12.328898906707764,
+            "p95": 14.923908281326295,
+            "p99": 18.983172817230226
+          },
+          "e2e_target": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "n": 3867.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "p99": 0.0
+          },
+          "pub_dt": {
+            "max": 2230.203857421875,
+            "mean": 294.1206274401852,
+            "min": 20.98042106628418,
+            "n": 3874.0,
+            "p50": 231.88453674316406,
+            "p95": 657.9169006347656,
+            "p99": 996.6752178955078
+          },
+          "track": {
+            "max": 24.921804428100586,
+            "mean": 4.451545513999077,
+            "min": 0.6914330124855042,
+            "n": 3875.0,
+            "p50": 3.7880520820617676,
+            "p95": 10.435027980804435,
+            "p99": 12.790439510345447
+          }
+        },
+        "report_path": "reports/p032_ground_run_331ccc24_2026_08_08_dev_may_hard_reentry/sustained_analysis.json",
+        "resources": {
+          "dashboard": {
+            "cpu_percent": {
+              "early": {
+                "count": 401,
+                "maximum": 7.999281312569754,
+                "mean": 5.2425799293330195,
+                "minimum": 2.9996254097784525,
+                "p50": 4.999501909623747,
+                "p95": 6.998717037185045
+              },
+              "late": {
+                "count": 402,
+                "maximum": 7.999222051657809,
+                "mean": 5.206898659604919,
+                "minimum": 2.99965991655662,
+                "p50": 4.999499502604547,
+                "p95": 6.998991660880736
+              },
+              "middle": {
+                "count": 402,
+                "maximum": 7.999265867375022,
+                "mean": 5.204557116834234,
+                "minimum": 2.9997041511783857,
+                "p50": 4.999501992107314,
+                "p95": 5.999447819521971
+              }
+            },
+            "rss_kib": {
+              "early": {
+                "count": 402,
+                "maximum": 106112.0,
+                "mean": 106043.19402985074,
+                "minimum": 104736.0,
+                "p50": 106100.0,
+                "p95": 106112.0
+              },
+              "late": {
+                "count": 402,
+                "maximum": 106160.0,
+                "mean": 106154.05970149254,
+                "minimum": 105828.0,
+                "p50": 106156.0,
+                "p95": 106160.0
+              },
+              "middle": {
+                "count": 402,
+                "maximum": 106148.0,
+                "mean": 106140.21890547263,
+                "minimum": 106112.0,
+                "p50": 106140.0,
+                "p95": 106148.0
+              }
+            }
+          },
+          "perception": {
+            "cpu_percent": {
+              "early": {
+                "count": 401,
+                "maximum": 13.99874229699707,
+                "mean": 7.149456131960216,
+                "minimum": 0.0,
+                "p50": 6.999309105197535,
+                "p95": 11.963467363092269
+              },
+              "late": {
+                "count": 402,
+                "maximum": 17.998249616230073,
+                "mean": 7.208278097427932,
+                "minimum": 0.0,
+                "p50": 6.999309024713453,
+                "p95": 11.91690146923897
+              },
+              "middle": {
+                "count": 402,
+                "maximum": 14.998623501328165,
+                "mean": 7.233406000296684,
+                "minimum": 0.9998617241228624,
+                "p50": 6.999297029102909,
+                "p95": 11.998540569352697
+              }
+            },
+            "rss_kib": {
+              "early": {
+                "count": 402,
+                "maximum": 222168.0,
+                "mean": 218548.75621890547,
+                "minimum": 206484.0,
+                "p50": 218528.0,
+                "p95": 221551.80000000002
+              },
+              "late": {
+                "count": 402,
+                "maximum": 222348.0,
+                "mean": 219018.07960199006,
+                "minimum": 218536.0,
+                "p50": 218872.0,
+                "p95": 218872.0
+              },
+              "middle": {
+                "count": 402,
+                "maximum": 222348.0,
+                "mean": 219014.52736318408,
+                "minimum": 218692.0,
+                "p50": 218872.0,
+                "p95": 220588.8
+              }
+            }
+          },
+          "relay": {
+            "cpu_percent": {
+              "early": {
+                "count": 401,
+                "maximum": 7.999281312569754,
+                "mean": 4.7589148129726535,
+                "minimum": 0.0,
+                "p50": 4.999336533049362,
+                "p95": 6.999300916823729
+              },
+              "late": {
+                "count": 402,
+                "maximum": 10.96777899049507,
+                "mean": 4.7318506631027075,
+                "minimum": 0.0,
+                "p50": 4.999185120389821,
+                "p95": 6.998877023372107
+              },
+              "middle": {
+                "count": 402,
+                "maximum": 10.998495108909733,
+                "mean": 4.7966940925860495,
+                "minimum": 1.9977835171234737,
+                "p50": 4.999393703543692,
+                "p95": 6.999287538671838
+              }
+            },
+            "rss_kib": {
+              "early": {
+                "count": 402,
+                "maximum": 78764.0,
+                "mean": 76453.28358208956,
+                "minimum": 70644.0,
+                "p50": 76488.0,
+                "p95": 76488.0
+              },
+              "late": {
+                "count": 402,
+                "maximum": 78808.0,
+                "mean": 76541.65174129354,
+                "minimum": 75736.0,
+                "p50": 76516.0,
+                "p95": 76536.0
+              },
+              "middle": {
+                "count": 402,
+                "maximum": 78764.0,
+                "mean": 76506.46766169154,
+                "minimum": 76488.0,
+                "p50": 76488.0,
+                "p95": 76496.0
+              }
+            }
+          },
+          "tim": {
+            "cpu_percent": {
+              "early": {
+                "count": 401,
+                "maximum": 35.996412093620975,
+                "mean": 14.039682415957229,
+                "minimum": 0.0,
+                "p50": 12.99867318643184,
+                "p95": 23.997080923085274
+              },
+              "late": {
+                "count": 402,
+                "maximum": 32.900896150920474,
+                "mean": 13.75030297767603,
+                "minimum": 0.0,
+                "p50": 12.998675188025459,
+                "p95": 22.997785263885298
+              },
+              "middle": {
+                "count": 402,
+                "maximum": 37.99518354055848,
+                "mean": 14.091480720598026,
+                "minimum": 0.0,
+                "p50": 12.99867841136765,
+                "p95": 24.94669397758719
+              }
+            },
+            "rss_kib": {
+              "early": {
+                "count": 402,
+                "maximum": 823812.0,
+                "mean": 811281.5621890547,
+                "minimum": 647696.0,
+                "p50": 816480.0,
+                "p95": 823385.4
+              },
+              "late": {
+                "count": 402,
+                "maximum": 837400.0,
+                "mean": 834541.2039800995,
+                "minimum": 831640.0,
+                "p50": 834380.0,
+                "p95": 837006.7999999999
+              },
+              "middle": {
+                "count": 402,
+                "maximum": 831612.0,
+                "mean": 827562.4875621891,
+                "minimum": 823836.0,
+                "p50": 827640.0,
+                "p95": 830856.0
+              }
+            }
+          },
+          "tracker": {
+            "cpu_percent": {
+              "early": {
+                "count": 401,
+                "maximum": 171.9845482202497,
+                "mean": 77.86022215168937,
+                "minimum": 0.0,
+                "p50": 74.99262162594346,
+                "p95": 128.6072741532419
+              },
+              "late": {
+                "count": 402,
+                "maximum": 188.98162097041575,
+                "mean": 78.63056101264803,
+                "minimum": 0.0,
+                "p50": 74.98198176009612,
+                "p95": 132.98618885943918
+              },
+              "middle": {
+                "count": 402,
+                "maximum": 179.98242759566412,
+                "mean": 78.90490513492874,
+                "minimum": 0.0,
+                "p50": 73.99293134510629,
+                "p95": 129.97066842729512
+              }
+            },
+            "rss_kib": {
+              "early": {
+                "count": 402,
+                "maximum": 138580.0,
+                "mean": 135686.60696517414,
+                "minimum": 131968.0,
+                "p50": 135778.0,
+                "p95": 136159.4
+              },
+              "late": {
+                "count": 402,
+                "maximum": 140336.0,
+                "mean": 137652.74626865672,
+                "minimum": 137164.0,
+                "p50": 137636.0,
+                "p95": 138024.0
+              },
+              "middle": {
+                "count": 402,
+                "maximum": 139864.0,
+                "mean": 136706.9054726368,
+                "minimum": 136208.0,
+                "p50": 136704.0,
+                "p95": 137135.8
+              }
+            }
+          }
+        },
+        "source": "live_sustained",
+        "status": "measured",
+        "violations": [],
+        "warm_up_s": 60.0
+      },
+      "replay": {
+        "combined_peak_rss_kib": 815460,
+        "combined_total_cpu_s": 73.499327,
+        "provenance": {
+          "git_branch": "issue-32-runtime-resource-characterization",
+          "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+          "git_status_short": [
+            "?? docs/data/runtime_characterization/",
+            "?? tools/analysis/aggregate_p032_runtime_report.py",
+            "?? tools/analysis/analyse_p032_appearance_budget.py",
+            "?? tools/analysis/analyze_p032_sustained_run.py",
+            "?? tools/experiments/measure_p032_replay_cost.py",
+            "?? tools/experiments/run_p032_sustained_ground_run.sh"
+          ],
+          "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw_0.mcap",
+          "source_sha256": "becad555aa8150ea969448316f1478786743a76cde266b20b574d32af7602839",
+          "tracker_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+          "tracker_config_sha256": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906",
+          "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/bytetrack_tim/tracks.bag"
+        },
+        "source": "replay_algorithmic_cost",
+        "status": "measured",
+        "tim": {
+          "appearance_budget": {
+            "appearance_backend_wall_ms": null,
+            "bag_path": "/home/francisco/Desktop/Thesis-Code/reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/bytetrack_tim/tim.bag",
+            "cache_hit_rate": 0.7534097108565194,
+            "cache_hit_rate_definition": "features_valid in excess of fresh backend_valid, as a fraction of total valid features; an estimate derived from already-published counters, not a dedicated cache-hit counter.",
+            "cache_served_total": 1381,
+            "candidates_encoded_per_second": 6.685656042909995,
+            "candidates_encoded_total": 452,
+            "duration_s": 67.607426571,
+            "embeddings_per_second": 6.685656042909995,
+            "embeddings_valid_total": 452,
+            "fraction_frames_invoking_appearance": 0.23714585519412382,
+            "frames_invoking_appearance": 226,
+            "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+            "latency_unavailable_reason": "tools/experiments/run_deterministic_tim_replay.py hardcodes lat_ms=0.0 and appearance_backend_wall_ms=0.0 (verified in source): deterministic replay never measures wall time. Reporting these as zero would silently fabricate an implausible zero-latency claim. Genuine TIM core / MARS extraction latency percentiles come only from measurement_mode=live_sustained.",
+            "measurement_mode": "replay_algorithmic_cost",
+            "record_count": 953,
+            "run_name": "bytetrack_tim_dev_may_hard_reentry",
+            "schema": "p032_appearance_budget_v1",
+            "skip_reason_counts": {
+              "cached_interval": 613,
+              "cached_same_image": 111,
+              "ok": 226,
+              "stale_image": 3
+            },
+            "status_topic": "/target_memory_mars/status",
+            "tim_core_latency_ms": null
+          },
+          "peak_rss_kib": 815460,
+          "provenance": {
+            "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+            "mars_model": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb",
+            "mars_model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "tim_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/bytetrack_tim/tim.bag",
+            "tim_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+            "tim_config_sha256": "e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931",
+            "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/bytetrack_tim/tracks.bag"
+          },
+          "status": "measured",
+          "sys_cpu_s": 5.100889,
+          "total_cpu_s": 44.609115,
+          "user_cpu_s": 39.508226,
+          "wall_s": 40.986578411000664
+        },
+        "tracker": {
+          "frame_count": 953,
+          "mean_cpu_ms_per_frame": 30.315017838405037,
+          "peak_rss_kib": 119344,
+          "sys_cpu_s": 3.136013,
+          "total_cpu_s": 28.890212,
+          "user_cpu_s": 25.754199,
+          "wall_s": 20.732279366988223
+        }
+      },
+      "sequence_id": "dev_may_hard_reentry",
+      "tim_enabled": true,
+      "tracker_type": "bytetrack"
+    },
+    {
+      "architecture_id": "sort_raw",
+      "live": {
+        "source": "live_sustained",
+        "status": "not_measured_live_this_session"
+      },
+      "replay": {
+        "combined_peak_rss_kib": 119216,
+        "combined_total_cpu_s": 28.214903,
+        "provenance": {
+          "git_branch": "issue-32-runtime-resource-characterization",
+          "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+          "git_status_short": [
+            "?? docs/data/runtime_characterization/",
+            "?? tools/analysis/aggregate_p032_runtime_report.py",
+            "?? tools/analysis/analyse_p032_appearance_budget.py",
+            "?? tools/analysis/analyze_p032_sustained_run.py",
+            "?? tools/experiments/measure_p032_replay_cost.py",
+            "?? tools/experiments/run_p032_sustained_ground_run.sh"
+          ],
+          "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw_0.mcap",
+          "source_sha256": "becad555aa8150ea969448316f1478786743a76cde266b20b574d32af7602839",
+          "tracker_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_sort.yaml",
+          "tracker_config_sha256": "78051b9606cae6d2f6c8de25bffe38d26697e2edf153a9961bbf31934016319c",
+          "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/sort_raw/tracks.bag"
+        },
+        "source": "replay_algorithmic_cost",
+        "status": "measured",
+        "tim": {
+          "status": "not_applicable_tim_disabled"
+        },
+        "tracker": {
+          "frame_count": 953,
+          "mean_cpu_ms_per_frame": 29.606403987408182,
+          "peak_rss_kib": 119216,
+          "sys_cpu_s": 3.20888,
+          "total_cpu_s": 28.214903,
+          "user_cpu_s": 25.006023,
+          "wall_s": 15.898950153990882
+        }
+      },
+      "sequence_id": "dev_may_hard_reentry",
+      "tim_enabled": false,
+      "tracker_type": "sort"
+    },
+    {
+      "architecture_id": "sort_tim",
+      "live": {
+        "source": "live_sustained",
+        "status": "not_measured_live_this_session"
+      },
+      "replay": {
+        "combined_peak_rss_kib": 762160,
+        "combined_total_cpu_s": 74.336129,
+        "provenance": {
+          "git_branch": "issue-32-runtime-resource-characterization",
+          "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+          "git_status_short": [
+            "?? docs/data/runtime_characterization/",
+            "?? tools/analysis/aggregate_p032_runtime_report.py",
+            "?? tools/analysis/analyse_p032_appearance_budget.py",
+            "?? tools/analysis/analyze_p032_sustained_run.py",
+            "?? tools/experiments/measure_p032_replay_cost.py",
+            "?? tools/experiments/run_p032_sustained_ground_run.sh"
+          ],
+          "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw_0.mcap",
+          "source_sha256": "becad555aa8150ea969448316f1478786743a76cde266b20b574d32af7602839",
+          "tracker_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_sort.yaml",
+          "tracker_config_sha256": "78051b9606cae6d2f6c8de25bffe38d26697e2edf153a9961bbf31934016319c",
+          "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/sort_tim/tracks.bag"
+        },
+        "source": "replay_algorithmic_cost",
+        "status": "measured",
+        "tim": {
+          "appearance_budget": {
+            "appearance_backend_wall_ms": null,
+            "bag_path": "/home/francisco/Desktop/Thesis-Code/reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/sort_tim/tim.bag",
+            "cache_hit_rate": 0.7506956037840846,
+            "cache_hit_rate_definition": "features_valid in excess of fresh backend_valid, as a fraction of total valid features; an estimate derived from already-published counters, not a dedicated cache-hit counter.",
+            "cache_served_total": 1349,
+            "candidates_encoded_per_second": 6.626490945185129,
+            "candidates_encoded_total": 448,
+            "duration_s": 67.607426571,
+            "embeddings_per_second": 6.626490945185129,
+            "embeddings_valid_total": 448,
+            "fraction_frames_invoking_appearance": 0.236096537250787,
+            "frames_invoking_appearance": 225,
+            "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+            "latency_unavailable_reason": "tools/experiments/run_deterministic_tim_replay.py hardcodes lat_ms=0.0 and appearance_backend_wall_ms=0.0 (verified in source): deterministic replay never measures wall time. Reporting these as zero would silently fabricate an implausible zero-latency claim. Genuine TIM core / MARS extraction latency percentiles come only from measurement_mode=live_sustained.",
+            "measurement_mode": "replay_algorithmic_cost",
+            "record_count": 953,
+            "run_name": "sort_tim_dev_may_hard_reentry",
+            "schema": "p032_appearance_budget_v1",
+            "skip_reason_counts": {
+              "cached_interval": 614,
+              "cached_same_image": 109,
+              "no_candidates": 2,
+              "ok": 225,
+              "stale_image": 3
+            },
+            "status_topic": "/target_memory_mars/status",
+            "tim_core_latency_ms": null
+          },
+          "peak_rss_kib": 762160,
+          "provenance": {
+            "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+            "mars_model": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb",
+            "mars_model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "tim_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/sort_tim/tim.bag",
+            "tim_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+            "tim_config_sha256": "e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931",
+            "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/sort_tim/tracks.bag"
+          },
+          "status": "measured",
+          "sys_cpu_s": 4.6433409999999995,
+          "total_cpu_s": 45.572578,
+          "user_cpu_s": 40.929237,
+          "wall_s": 40.95231696899282
+        },
+        "tracker": {
+          "frame_count": 953,
+          "mean_cpu_ms_per_frame": 30.18211017838405,
+          "peak_rss_kib": 119100,
+          "sys_cpu_s": 3.369103,
+          "total_cpu_s": 28.763551,
+          "user_cpu_s": 25.394448,
+          "wall_s": 22.87300164300541
+        }
+      },
+      "sequence_id": "dev_may_hard_reentry",
+      "tim_enabled": true,
+      "tracker_type": "sort"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "live": {
+        "source": "live_sustained",
+        "status": "not_measured_live_this_session"
+      },
+      "replay": {
+        "combined_peak_rss_kib": 786084,
+        "combined_total_cpu_s": 345.645458,
+        "provenance": {
+          "git_branch": "issue-32-runtime-resource-characterization",
+          "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+          "git_status_short": [
+            "?? docs/data/runtime_characterization/",
+            "?? tools/analysis/aggregate_p032_runtime_report.py",
+            "?? tools/analysis/analyse_p032_appearance_budget.py",
+            "?? tools/analysis/analyze_p032_sustained_run.py",
+            "?? tools/experiments/measure_p032_replay_cost.py",
+            "?? tools/experiments/run_p032_sustained_ground_run.sh",
+            "?? tools/tests/test_aggregate_p032_runtime_report.py",
+            "?? tools/tests/test_analyse_p032_appearance_budget.py",
+            "?? tools/tests/test_analyze_p032_sustained_run.py",
+            "?? tools/tests/test_measure_p032_replay_cost.py"
+          ],
+          "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw_0.mcap",
+          "source_sha256": "becad555aa8150ea969448316f1478786743a76cde266b20b574d32af7602839",
+          "tracker_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml",
+          "tracker_config_sha256": "d586e2e04c283313606cb366b64c0e7bad19692207f185d7dd9b89c89e33efb0",
+          "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/deepsort_raw/tracks.bag"
+        },
+        "source": "replay_algorithmic_cost",
+        "status": "measured",
+        "tim": {
+          "status": "not_applicable_tim_disabled"
+        },
+        "tracker": {
+          "frame_count": 953,
+          "mean_cpu_ms_per_frame": 362.69198111227706,
+          "peak_rss_kib": 786084,
+          "sys_cpu_s": 7.72564,
+          "total_cpu_s": 345.645458,
+          "user_cpu_s": 337.919818,
+          "wall_s": 118.14503760599473
+        }
+      },
+      "sequence_id": "dev_may_hard_reentry",
+      "tim_enabled": false,
+      "tracker_type": "deepsort"
+    },
+    {
+      "architecture_id": "deepsort_tim",
+      "live": {
+        "source": "live_sustained",
+        "status": "not_measured_live_this_session"
+      },
+      "replay": {
+        "combined_peak_rss_kib": 792024,
+        "combined_total_cpu_s": 388.61661100000003,
+        "provenance": {
+          "git_branch": "issue-32-runtime-resource-characterization",
+          "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+          "git_status_short": [
+            "?? docs/data/runtime_characterization/",
+            "?? tools/analysis/aggregate_p032_runtime_report.py",
+            "?? tools/analysis/analyse_p032_appearance_budget.py",
+            "?? tools/analysis/analyze_p032_sustained_run.py",
+            "?? tools/experiments/measure_p032_replay_cost.py",
+            "?? tools/experiments/run_p032_sustained_ground_run.sh",
+            "?? tools/tests/test_aggregate_p032_runtime_report.py",
+            "?? tools/tests/test_analyse_p032_appearance_budget.py",
+            "?? tools/tests/test_analyze_p032_sustained_run.py",
+            "?? tools/tests/test_measure_p032_replay_cost.py"
+          ],
+          "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw_0.mcap",
+          "source_sha256": "becad555aa8150ea969448316f1478786743a76cde266b20b574d32af7602839",
+          "tracker_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml",
+          "tracker_config_sha256": "d586e2e04c283313606cb366b64c0e7bad19692207f185d7dd9b89c89e33efb0",
+          "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/deepsort_tim/tracks.bag"
+        },
+        "source": "replay_algorithmic_cost",
+        "status": "measured",
+        "tim": {
+          "appearance_budget": {
+            "appearance_backend_wall_ms": null,
+            "bag_path": "/home/francisco/Desktop/Thesis-Code/reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/deepsort_tim/tim.bag",
+            "cache_hit_rate": 0.752599890530925,
+            "cache_hit_rate_definition": "features_valid in excess of fresh backend_valid, as a fraction of total valid features; an estimate derived from already-published counters, not a dedicated cache-hit counter.",
+            "cache_served_total": 1375,
+            "candidates_encoded_per_second": 6.685656042909995,
+            "candidates_encoded_total": 452,
+            "duration_s": 67.607426571,
+            "embeddings_per_second": 6.685656042909995,
+            "embeddings_valid_total": 452,
+            "fraction_frames_invoking_appearance": 0.236096537250787,
+            "frames_invoking_appearance": 225,
+            "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+            "latency_unavailable_reason": "tools/experiments/run_deterministic_tim_replay.py hardcodes lat_ms=0.0 and appearance_backend_wall_ms=0.0 (verified in source): deterministic replay never measures wall time. Reporting these as zero would silently fabricate an implausible zero-latency claim. Genuine TIM core / MARS extraction latency percentiles come only from measurement_mode=live_sustained.",
+            "measurement_mode": "replay_algorithmic_cost",
+            "record_count": 953,
+            "run_name": "deepsort_tim_dev_may_hard_reentry",
+            "schema": "p032_appearance_budget_v1",
+            "skip_reason_counts": {
+              "cached_interval": 614,
+              "cached_same_image": 109,
+              "no_candidates": 5,
+              "ok": 225
+            },
+            "status_topic": "/target_memory_mars/status",
+            "tim_core_latency_ms": null
+          },
+          "peak_rss_kib": 758888,
+          "provenance": {
+            "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+            "mars_model": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb",
+            "mars_model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "tim_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/deepsort_tim/tim.bag",
+            "tim_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+            "tim_config_sha256": "e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931",
+            "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/deepsort_tim/tracks.bag"
+          },
+          "status": "measured",
+          "sys_cpu_s": 4.561865,
+          "total_cpu_s": 44.024741999999996,
+          "user_cpu_s": 39.462877,
+          "wall_s": 42.43985532100487
+        },
+        "tracker": {
+          "frame_count": 953,
+          "mean_cpu_ms_per_frame": 361.58643126967473,
+          "peak_rss_kib": 792024,
+          "sys_cpu_s": 6.989683,
+          "total_cpu_s": 344.59186900000003,
+          "user_cpu_s": 337.602186,
+          "wall_s": 112.43706761300564
+        }
+      },
+      "sequence_id": "dev_may_hard_reentry",
+      "tim_enabled": true,
+      "tracker_type": "deepsort"
+    }
+  ],
+  "schema": "p032_runtime_characterization_report_v1",
+  "sequence_id": "dev_may_hard_reentry"
+}

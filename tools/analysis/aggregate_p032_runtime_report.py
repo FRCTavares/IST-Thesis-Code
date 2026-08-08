@@ -148,10 +148,37 @@ def build_live_row(live_analysis_path: Path | None) -> dict[str, Any]:
             "e2e_det": metrics.get("/timing", {}).get("e2e_det_ms"),
             "pub_dt": metrics.get("/timing", {}).get("pub_dt_ms"),
             "track": metrics.get("/timing_tracker", {}).get("track_ms"),
+            # Not null: dashboard_bridge_node genuinely publishes this
+            # field, but only ever with the value 0.0. See
+            # e2e_target_ms_known_limitation below before using it.
             "e2e_target": metrics.get("/timing_target", {}).get(
                 "e2e_target_ms"
             ),
         },
+        "e2e_target_ms_known_limitation": (
+            "e2e_target_ms is published as exactly 0.0 on every sample in "
+            "this pipeline configuration, not a genuine sub-millisecond "
+            "measurement. dashboard_bridge_node only sets it when the "
+            "incoming /tracks message's t_cam_msg_seen_ns is > 0 "
+            "(dashboard_bridge_node.py _publish_target_from_tracks); that "
+            "field is populated in tracker_node from a frame_context "
+            "dictionary keyed by frame_id and filled by a separate /timing "
+            "subscription callback. perception_pipeline_node publishes "
+            "/detections before /timing for the same frame "
+            "(perception_pipeline_node.py: pub_dets.publish before "
+            "pub_timing.publish), so tracker_node's on_detections handler "
+            "almost always pops an empty (0, 0) frame_context entry before "
+            "the matching /timing message has been processed, and "
+            "t_cam_msg_seen_ns never propagates downstream. This is a "
+            "genuine live-pipeline finding this issue's sustained run "
+            "surfaced; it is not visible from deterministic replay (no "
+            "live topic ordering) and is not fixed here -- fixing "
+            "perception_pipeline_node's publish order is a live-node "
+            "behaviour change outside Issue #32's scope. Treat "
+            "e2e_target_ms and sensor_to_target_ms as unavailable, not as "
+            "a genuine near-zero final-target-publication latency, until a "
+            "future issue corrects the publish order."
+        ),
         "cadence_consistency": timing.get("cadence_consistency"),
         "resources": analysis.get("windows", {}).get("resources"),
         "health": analysis.get("windows", {}).get("health"),
@@ -219,7 +246,9 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     ]
 
     with path.open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fieldnames)
+        writer = csv.DictWriter(
+            stream, fieldnames=fieldnames, lineterminator="\n"
+        )
         writer.writeheader()
 
         for row in rows:

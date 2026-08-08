@@ -1,0 +1,43 @@
+{
+  "architecture_id": "bytetrack_tim",
+  "command": [
+    "/home/francisco/Desktop/Thesis-Code/thesis_env/bin/python",
+    "/home/francisco/Desktop/Thesis-Code/tools/experiments/run_deterministic_tracker_replay.py",
+    "/home/francisco/Desktop/Thesis-Code/bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+    "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/bytetrack_tim/tracks.bag",
+    "--config",
+    "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+    "--selection-mode",
+    "fixed_id",
+    "--selected-track-id",
+    "1"
+  ],
+  "frame_count": 953,
+  "mean_cpu_ms_per_frame": 30.315017838405037,
+  "measurement_mode": "replay_algorithmic_cost",
+  "peak_rss_kib": 119344,
+  "provenance": {
+    "git_branch": "issue-32-runtime-resource-characterization",
+    "git_commit": "6231fdc1370b78a55ffeee9a403adbbddf4fb424",
+    "git_status_short": [
+      "?? docs/data/runtime_characterization/",
+      "?? tools/analysis/aggregate_p032_runtime_report.py",
+      "?? tools/analysis/analyse_p032_appearance_budget.py",
+      "?? tools/analysis/analyze_p032_sustained_run.py",
+      "?? tools/experiments/measure_p032_replay_cost.py",
+      "?? tools/experiments/run_p032_sustained_ground_run.sh"
+    ],
+    "source_bag": "/home/francisco/Desktop/Thesis-Code/bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw_0.mcap",
+    "source_sha256": "becad555aa8150ea969448316f1478786743a76cde266b20b574d32af7602839",
+    "tracker_config": "/home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+    "tracker_config_sha256": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906",
+    "tracks_bag": "reports/p032_runtime_characterization_6231fdc1_2026_08_08/replay/bytetrack_tim/tracks.bag"
+  },
+  "schema": "p032_replay_cost_v1",
+  "sequence_id": "dev_may_hard_reentry",
+  "stage": "tracker",
+  "sys_cpu_s": 3.136013,
+  "total_cpu_s": 28.890212,
+  "user_cpu_s": 25.754199,
+  "wall_s": 20.732279366988223
+}

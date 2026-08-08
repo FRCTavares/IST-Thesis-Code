@@ -1,0 +1,7 @@
+architecture_id,sequence_id,tracker_type,tim_enabled,replay_tracker_total_cpu_s,replay_tracker_peak_rss_kib,replay_tim_total_cpu_s,replay_tim_peak_rss_kib,replay_combined_total_cpu_s,replay_combined_peak_rss_kib,live_status,live_e2e_det_p95_ms,live_e2e_target_p95_ms
+bytetrack_raw,dev_may_hard_reentry,bytetrack,False,28.696619,119332,,,28.696619,119332,not_measured_live_this_session,,
+bytetrack_tim,dev_may_hard_reentry,bytetrack,True,28.890212,119344,44.609115,815460,73.499327,815460,measured,14.923908281326295,0.0
+sort_raw,dev_may_hard_reentry,sort,False,28.214903,119216,,,28.214903,119216,not_measured_live_this_session,,
+sort_tim,dev_may_hard_reentry,sort,True,28.763551,119100,45.572578,762160,74.336129,762160,not_measured_live_this_session,,
+deepsort_raw,dev_may_hard_reentry,deepsort,False,345.645458,786084,,,345.645458,786084,not_measured_live_this_session,,
+deepsort_tim,dev_may_hard_reentry,deepsort,True,344.59186900000003,792024,44.024741999999996,758888,388.61661100000003,792024,not_measured_live_this_session,,

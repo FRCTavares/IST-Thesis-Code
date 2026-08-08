@@ -1,0 +1,43 @@
+{
+  "appearance_backend_wall_ms": {
+    "count": 2472,
+    "maximum": 461.280383,
+    "p50": 46.513655,
+    "p90": 76.2305696,
+    "p95": 79.9462056,
+    "p99": 83.61768977
+  },
+  "bag_path": "/home/francisco/Desktop/Thesis-Code/bags/replay/p032_ground_run_331ccc24_2026_08_08_dev_may_hard_reentry/evidence",
+  "cache_hit_rate": 0.3689278835865611,
+  "cache_hit_rate_definition": "features_valid in excess of fresh backend_valid, as a fraction of total valid features; an estimate derived from already-published counters, not a dedicated cache-hit counter.",
+  "cache_served_total": 1724,
+  "candidates_encoded_per_second": 2.4666588010206025,
+  "candidates_encoded_total": 2949,
+  "duration_s": 1195.544352863,
+  "embeddings_per_second": 2.4666588010206025,
+  "embeddings_valid_total": 2949,
+  "fraction_frames_invoking_appearance": 0.6082677165354331,
+  "frames_invoking_appearance": 2472,
+  "git_commit": "331ccc24634f21fc95746d3e0d1423cb55597950",
+  "latency_unavailable_reason": null,
+  "measurement_mode": "live_sustained",
+  "record_count": 4064,
+  "run_name": "p032_ground_run_331ccc24_2026_08_08_dev_may_hard_reentry",
+  "schema": "p032_appearance_budget_v1",
+  "skip_reason_counts": {
+    "cached_interval": 1267,
+    "cached_same_image": 111,
+    "no_candidates": 45,
+    "ok": 2472,
+    "stale_image": 169
+  },
+  "status_topic": "/target_memory_mars/status",
+  "tim_core_latency_ms": {
+    "count": 4064,
+    "maximum": 462.931122,
+    "p50": 41.637356499999996,
+    "p90": 67.80289450000001,
+    "p95": 78.8739435,
+    "p99": 83.80688808
+  }
+}
