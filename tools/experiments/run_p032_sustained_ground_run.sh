@@ -608,6 +608,15 @@ if ! kill -0 "$playback_pid" 2>/dev/null; then
   exit 1
 fi
 
+# tracker_node and dashboard_bridge_node each publish one placeholder
+# Timing message with frame_id=0 before their first real callback -- a
+# genuine startup transient, not a pipeline defect. QoS here is
+# best-effort with no transient-local durability, so a subscriber that
+# starts listening after that placeholder has already gone out will not
+# receive it. Settle briefly before subscribing so the smoke check
+# observes steady-state messages only.
+sleep 8
+
 "$THESIS_ROOT/thesis_env/bin/python" \
   "$INVARIANT_CHECKER" \
   --once \
