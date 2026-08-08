@@ -4,14 +4,17 @@ into one report.
 Mirrors the structure of aggregate_first_phase_report.py: it reads the
 already-generated, already-evaluated per-cell report.json files produced by
 tools/experiments/run_tim_parameter_sensitivity.py --run, and combines them
-into per-sequence, all-cell, and cross-sequence-aggregate tables plus
-per-dimension baseline-relative trade-off tables. It does not rerun TIM-MARS,
+into per-sequence, all-cell, and cross-sequence-aggregate tables plus a
+per-dimension baseline-relative trade-off table. It does not rerun TIM-MARS,
 does not re-evaluate any bag, and does not alter any per-cell report.
 
-Refuses to run if any of the 116 expected cells is missing, using the same
-frozen expected_cells()/missing_cells() helpers the runner itself uses, so
-the completeness contract cannot silently drift between the runner and this
-aggregator.
+Refuses to run if any of the 116 expected cells is missing OR if any
+unexpected (config, sequence) cell exists on disk, using the same frozen
+expected_cells()/missing_cells() helpers the runner itself uses for the
+missing side, so the completeness contract cannot silently drift between the
+runner and this aggregator. Also refuses to run if the raw/ByteTrack
+reference stream is not identical across all configurations within a
+sequence, mirroring the runner's own assert_raw_invariant contract.
 """
 from __future__ import annotations
 
@@ -42,6 +45,30 @@ DURATION_FIELDS = [
     "no_target_selected_duration_s",
 ]
 
+# The 7 frozen sensitivity dimensions, in manifest declaration order.
+DIMENSION_ORDER = [
+    "acceptance_pair",
+    "ambiguity_margin",
+    "appearance_conservative_min_similarity",
+    "appearance_conservative_margin",
+    "hard_negative_reject_similarity",
+    "hard_negative_reject_margin",
+    "confirmation_time",
+]
+
+# Canonical value per dimension, from docs/issues/p1-13-parameter-sensitivity.md
+# (the baseline configuration's overrides are {}, so its true per-dimension
+# value must come from the frozen protocol doc, not be assumed positionally).
+CANONICAL_VALUE: dict[str, float] = {
+    "acceptance_pair": 0.52,
+    "ambiguity_margin": 0.07,
+    "appearance_conservative_min_similarity": 0.65,
+    "appearance_conservative_margin": 0.05,
+    "hard_negative_reject_similarity": 0.80,
+    "hard_negative_reject_margin": 0.03,
+    "confirmation_time": 1,
+}
+
 
 def load_lock() -> dict[str, Any]:
     return json.loads(LOCK_PATH.read_text())
@@ -56,17 +83,49 @@ def duration_row(stream_metrics: dict[str, Any]) -> dict[str, float]:
     return {field: float(stream_metrics[field]) for field in DURATION_FIELDS}
 
 
+def assert_raw_invariant_within_sequence(
+    reference_raw_by_sequence: dict[str, dict[str, Any]],
+    sequence_id: str,
+    config_id: str,
+    current_raw: dict[str, Any],
+) -> None:
+    """Fail loudly if a cell's raw/ByteTrack stream drifted from the first
+    cell observed for its sequence.
+
+    Mirrors run_tim_parameter_sensitivity.assert_raw_invariant's contract
+    (the raw stream is a property of the source bag/detector/tracker only
+    and must not change as TIM-MARS parameters are perturbed) but operates
+    on the duration_metrics.raw_target dict already loaded from report.json,
+    rather than re-reading each cell's summary.csv.
+    """
+    reference = reference_raw_by_sequence.get(sequence_id)
+    if reference is None:
+        reference_raw_by_sequence[sequence_id] = current_raw
+        return
+    if current_raw != reference:
+        raise ValueError(
+            f"raw/ByteTrack reference stream changed for {sequence_id} "
+            f"at configuration {config_id}; this indicates a tooling or "
+            "non-determinism bug, not new evidence"
+        )
+
+
 def build_all_cells_table(
     lock: dict[str, Any],
 ) -> list[dict[str, Any]]:
     sequences = lock["development_sequence_ids"]
     configs = lock["materialized_configs"]
     rows: list[dict[str, Any]] = []
+    reference_raw_by_sequence: dict[str, dict[str, Any]] = {}
     for sequence_id in sequences:
         for config in configs:
             config_id = config["id"]
             report = load_cell_report(sequence_id, config_id)
-            raw = duration_row(report["duration_metrics"]["raw_target"])
+            raw_target_full = report["duration_metrics"]["raw_target"]
+            assert_raw_invariant_within_sequence(
+                reference_raw_by_sequence, sequence_id, config_id, raw_target_full
+            )
+            raw = duration_row(raw_target_full)
             tim = duration_row(report["duration_metrics"]["tim_target_memory"])
             ep_tim = report["episode_metrics"]["tim_target_memory"]
             status = report.get("status_recovery_metrics", {})
@@ -82,10 +141,10 @@ def build_all_cells_table(
                     "raw_wrong_s": raw["wrong_target_duration_s"],
                     "raw_lost_s": raw["lost_target_duration_s"],
                     "raw_wrong_ratio": float(
-                        report["duration_metrics"]["raw_target"]["wrong_target_ratio"]
+                        raw_target_full["wrong_target_ratio"]
                     ),
                     "raw_lost_ratio": float(
-                        report["duration_metrics"]["raw_target"]["lost_target_ratio"]
+                        raw_target_full["lost_target_ratio"]
                     ),
                     "tim_correct_s": tim["correct_target_duration_s"],
                     "tim_wrong_s": tim["wrong_target_duration_s"],
@@ -210,22 +269,56 @@ def build_aggregate_table(
     return agg_rows
 
 
+def dimension_value(row: dict[str, Any], dimension_id: str) -> float:
+    """The true numeric perturbation value for a row within a dimension.
+
+    The baseline/canonical row's overrides are always {} (it is not itself
+    a perturbation of any one dimension), so its value must come from
+    CANONICAL_VALUE, not from the row's own overrides.
+    """
+    if row["config_id"] == "baseline":
+        return float(CANONICAL_VALUE[dimension_id])
+    overrides = json.loads(row["overrides"])
+    return float(next(iter(overrides.values())))
+
+
 def build_dimension_table(agg_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    by_order = sorted(agg_rows, key=lambda r: r["order"])
-    return [
-        {
-            "order": r["order"],
-            "dimension_id": r["dimension_id"] or "canonical",
-            "config_id": r["config_id"],
-            "tim_wrong_s": r["tim_wrong_s"],
-            "tim_lost_s": r["tim_lost_s"],
-            "tim_wrong_ratio": r["tim_wrong_ratio"],
-            "tim_lost_ratio": r["tim_lost_ratio"],
-            "delta_wrong_s_vs_baseline": r["delta_wrong_s_vs_baseline"],
-            "delta_lost_s_vs_baseline": r["delta_lost_s_vs_baseline"],
-        }
-        for r in by_order
-    ]
+    """One block per frozen dimension, each sorted by true numeric parameter
+    value with canonical inserted at its correct monotonic position (not
+    positionally first). Canonical is therefore repeated once per dimension
+    (7 times total) since it is simultaneously the reference point for all 7
+    dimensions; this differs from matrix_aggregate.csv, which lists each of
+    the 29 unique configurations exactly once.
+    """
+    baseline = next(r for r in agg_rows if r["config_id"] == "baseline")
+    by_dimension: dict[str, list[dict[str, Any]]] = {
+        dimension_id: [] for dimension_id in DIMENSION_ORDER
+    }
+    for row in agg_rows:
+        if row["dimension_id"] in by_dimension:
+            by_dimension[row["dimension_id"]].append(row)
+
+    dim_rows: list[dict[str, Any]] = []
+    for dimension_id in DIMENSION_ORDER:
+        block = [baseline] + by_dimension[dimension_id]
+        block = sorted(block, key=lambda r: dimension_value(r, dimension_id))
+        for position, row in enumerate(block):
+            dim_rows.append(
+                {
+                    "dimension_id": dimension_id,
+                    "position_in_dimension": position,
+                    "value": dimension_value(row, dimension_id),
+                    "config_id": row["config_id"],
+                    "is_canonical": row["config_id"] == "baseline",
+                    "tim_wrong_s": row["tim_wrong_s"],
+                    "tim_lost_s": row["tim_lost_s"],
+                    "tim_wrong_ratio": row["tim_wrong_ratio"],
+                    "tim_lost_ratio": row["tim_lost_ratio"],
+                    "delta_wrong_s_vs_baseline": row["delta_wrong_s_vs_baseline"],
+                    "delta_lost_s_vs_baseline": row["delta_lost_s_vs_baseline"],
+                }
+            )
+    return dim_rows
 
 
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -255,6 +348,17 @@ def scan_completed_cells(sequences: list[str]) -> set[tuple[str, str]]:
     return completed
 
 
+def unexpected_cells(
+    expected: set[tuple[str, str]], completed: set[tuple[str, str]]
+) -> set[tuple[str, str]]:
+    """(config, sequence) cells present on disk but not in the frozen
+    manifest/lock. These must never be silently pooled into the aggregate:
+    an unexpected cell is either stray state from a prior run or a
+    materialization bug, not new evidence.
+    """
+    return completed - expected
+
+
 def main() -> int:
     lock = load_lock()
     sequences = lock["development_sequence_ids"]
@@ -264,10 +368,18 @@ def main() -> int:
         configurations, [{"id": s} for s in sequences]
     )
     completed = scan_completed_cells(sequences)
+
     missing = missing_cells(expected, completed)
     if missing:
         print(f"[error] {len(missing)} missing cells, refusing to aggregate:")
         for cfg, seq in sorted(missing):
+            print(f"  {seq}/{cfg}")
+        return 1
+
+    extra = unexpected_cells(expected, completed)
+    if extra:
+        print(f"[error] {len(extra)} unexpected cells, refusing to aggregate:")
+        for cfg, seq in sorted(extra):
             print(f"  {seq}/{cfg}")
         return 1
 
@@ -285,6 +397,7 @@ def main() -> int:
     write_json(OUT_DIR / "matrix_aggregate.json", agg_rows)
 
     dim_rows = build_dimension_table(agg_rows)
+    assert len(dim_rows) == 35, f"expected 35 dimension rows, got {len(dim_rows)}"
     write_csv(OUT_DIR / "dimension_tradeoff.csv", dim_rows)
     write_json(OUT_DIR / "dimension_tradeoff.json", dim_rows)
 

@@ -292,8 +292,23 @@ than at an extremum. No tested perturbation reduces both wrong-target and
 lost-target duration simultaneously relative to canonical. Full tables and
 figures: `docs/results/selected_target_tracking/p031_parameter_sensitivity_summary.md`.
 
-**Not yet done (at end of Slice 2).** Held-out generalisation (H01-H03)
-remains required before the final thesis claim is frozen; this slice only
-closes the development-set OFAT sensitivity/robustness question the issue
-was scoped to answer. The branch has not been merged and Issue #31 has not
-been closed.
+**Issue #31 scope is complete.** The development-set OFAT
+sensitivity/robustness question this issue was scoped to answer (this
+document's own Objective, and the live GitHub issue #31 completion
+contract) is answered: all 116 cells executed, aggregated, and interpreted
+above.
+
+**Held-out H01-H03 is not remaining Issue #31 work.** Per
+`docs/research_question.md`, Issue #27 owns the prospective H01-H03
+held-out recordings and remains deferred to September 2026 by the
+operator's 23 July 2026 decision -- a decision that predates and is
+independent of Issue #31. Held-out evidence remains required later, but
+only for the thesis-wide final generalisation claim (gated through Issue
+#39 on #27, #58, #32, and #44), not for closing this issue. This is a
+scope clarification, not a weakening of the held-out requirement itself:
+nothing about the eventual thesis-wide claim's dependence on H01-H03 has
+changed.
+
+**Not yet done (at end of Slice 2).** Only process items outside this
+issue's scientific scope remain: the branch has not been reviewed/merged
+and Issue #31 has not been closed.

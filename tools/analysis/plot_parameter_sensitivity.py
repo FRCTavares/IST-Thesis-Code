@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import json
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -16,6 +17,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "tools" / "analysis"))
+
+from aggregate_parameter_sensitivity_report import (  # noqa: E402
+    CANONICAL_VALUE,
+    DIMENSION_ORDER,
+)
+
 AGG_DIR = (
     REPO_ROOT
     / "reports"
@@ -23,16 +31,6 @@ AGG_DIR = (
     / "aggregate"
 )
 FIG_DIR = AGG_DIR / "figures"
-
-DIMENSION_ORDER = [
-    "acceptance_pair",
-    "ambiguity_margin",
-    "appearance_conservative_min_similarity",
-    "appearance_conservative_margin",
-    "hard_negative_reject_similarity",
-    "hard_negative_reject_margin",
-    "confirmation_time",
-]
 
 DIMENSION_LABELS = {
     "acceptance_pair": "Acceptance pair\n(locked/lost)",
@@ -42,19 +40,6 @@ DIMENSION_LABELS = {
     "hard_negative_reject_similarity": "Hard-negative reject\nsimilarity",
     "hard_negative_reject_margin": "Hard-negative reject\nmargin",
     "confirmation_time": "Confirmation time\n(effective frames)",
-}
-
-# Canonical value per dimension, from docs/issues/p1-13-parameter-sensitivity.md
-# (the baseline row's overrides are {}, so its true value must come from the
-# frozen protocol doc, not be assumed positionally).
-CANONICAL_VALUE = {
-    "acceptance_pair": 0.52,
-    "ambiguity_margin": 0.07,
-    "appearance_conservative_min_similarity": 0.65,
-    "appearance_conservative_margin": 0.05,
-    "hard_negative_reject_similarity": 0.80,
-    "hard_negative_reject_margin": 0.03,
-    "confirmation_time": 1,
 }
 
 

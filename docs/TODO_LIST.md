@@ -520,9 +520,17 @@ Open executable issues: **24**.
       `docs/issues/p1-13-parameter-sensitivity.md` Slice 2. Canonical robust
       to 4 of 7 dimensions in this development set; the other 3 show
       mechanism-consistent, non-overlapping safety-availability trade-offs.
-      Not yet DONE: held-out generalisation (H01-H03) is still required
-      before the final thesis claim is frozen, and the branch has not been
-      reviewed/merged.
+      Issue #31's own development-set OFAT sensitivity/robustness
+      requirement is complete. Held-out H01-H03 generalisation is *not*
+      remaining Issue #31 work: it is owned by
+      [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
+      (item 1 above) and remains deferred to September per the operator's
+      23 July 2026 decision, which predates and is independent of this
+      issue. Held-out evidence is required later only for the thesis-wide
+      final generalisation claim (`docs/research_question.md`; gated
+      through #39 on #27/#58/#32/#44), not for closing Issue #31. Not yet
+      DONE only because the branch has not been reviewed/merged and Issue
+      #31 has not been closed.
 
 16. [ ] [#58 — P1.13+ Compare lightweight tracker + TIM-MARS against integrated appearance-aware tracking](https://github.com/FRCTavares/IST-Thesis-Code/issues/58) — HIGHEST PRIORITY
     - phase 7; experiment; compare separately calibrated lightweight
