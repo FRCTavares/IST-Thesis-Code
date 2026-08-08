@@ -1,0 +1,183 @@
+schema: p032_runtime_characterization_manifest_v1
+issue: 32
+purpose: canonical_embedded_runtime_resource_characterization
+canonical_methodology_version: 1
+
+# This manifest is intentionally self-contained on `main`. It does not read
+# or depend on any file that lives only on the parked `issue-58-*` branch.
+# Architecture IDs match Issue #58's naming exactly so results can be joined
+# later without re-deriving identifiers.
+
+frozen_boundary:
+  description: >
+    This manifest freezes the runtime/resource measurement protocol before
+    any comparative result is inspected. The protocol (stages measured,
+    warm-up, sampling cadence, duration, acceptance gates) must not change
+    after seeing which architecture measures faster or cheaper.
+  canonical_tim_mars_config: ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml
+  canonical_tim_mars_config_sha256: e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931
+  mars_model_path: models/reid/mars-small128.pb
+  mars_model_sha256: e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1
+
+hardware_identity:
+  platform: Raspberry Pi 5 Model B Rev 1.0
+  cpu_cores: 4
+  ram_gib: 7.8
+  accelerator: Hailo-8
+  hailort_version: "4.23.0"
+  os: Ubuntu 24.04.4 LTS (noble)
+  kernel: "6.8.0-1060-raspi"
+  ros_distro: jazzy
+
+architectures:
+  - id: bytetrack_raw
+    tracker_type: bytetrack
+    tim_enabled: false
+    tracker_config: ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml
+    tracker_config_sha256: e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906
+    requires_model: false
+
+  - id: bytetrack_tim
+    tracker_type: bytetrack
+    tim_enabled: true
+    tracker_config: ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml
+    tracker_config_sha256: e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906
+    requires_model: false
+    role: intended_architecture
+
+  - id: sort_raw
+    tracker_type: sort
+    tim_enabled: false
+    tracker_config: ros2_ws/src/thesis_bringup/config/tracker_sort.yaml
+    tracker_config_sha256: 78051b9606cae6d2f6c8de25bffe38d26697e2edf153a9961bbf31934016319c
+    requires_model: false
+
+  - id: sort_tim
+    tracker_type: sort
+    tim_enabled: true
+    tracker_config: ros2_ws/src/thesis_bringup/config/tracker_sort.yaml
+    tracker_config_sha256: 78051b9606cae6d2f6c8de25bffe38d26697e2edf153a9961bbf31934016319c
+    requires_model: false
+    note: >
+      Issue #58 found no SORT+TIM configuration that passes the safety gate
+      on this sequence (no_safe_configuration_found). Runtime/cost evidence
+      is still measured for this pairing: a rejected safety outcome does not
+      exempt it from cost characterisation, and the calibration-time cost
+      itself is part of the record.
+
+  - id: deepsort_raw
+    tracker_type: deepsort
+    tim_enabled: false
+    tracker_config: ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml
+    tracker_config_sha256: d586e2e04c283313606cb366b64c0e7bad19692207f185d7dd9b89c89e33efb0
+    requires_model: true
+    model_role: appearance_association_internal
+    role: integrated_appearance_reference
+
+  - id: deepsort_tim
+    tracker_type: deepsort
+    tim_enabled: true
+    tracker_config: ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml
+    tracker_config_sha256: d586e2e04c283313606cb366b64c0e7bad19692207f185d7dd9b89c89e33efb0
+    requires_model: true
+    model_role: appearance_association_internal
+    role: diagnostic_only
+
+sequences:
+  - id: dev_may_hard_reentry
+    source_path: bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw
+    source_bag_file: 2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw_0.mcap
+    source_sha256: becad555aa8150ea969448316f1478786743a76cde266b20b574d32af7602839
+    selected_target_id: 1
+    reference_bytetrack_tim_bag_path: bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1
+    reference_bytetrack_tim_bag_file: 2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_bytetrack__tim_mars__target_1__r2__tracker_bytetrack__tim_mars__target_1_0.mcap
+    reference_bytetrack_tim_bag_sha256: 93d5b413de85eb6ccff5bbbc9c0b9e224734d0ab65046961632aabdefe77c1c3
+    note: >
+      This is the only development sequence with complete cross-architecture
+      annotation evidence in Issue #58 (May-only finding). Runtime
+      characterisation is scoped to this sequence first so it is directly
+      joinable with #58's completed safety/availability comparison. Seq01/
+      Seq03/Seq04 runtime characterisation remains future #32 work, tracked
+      explicitly rather than silently implied complete.
+
+measurement_modes:
+  replay_algorithmic_cost:
+    schema: p032_replay_cost_v1
+    description: >
+      Deterministic, non-real-time batch replay of the tracker (and TIM,
+      where enabled) backend against the frozen source bag's existing
+      /detections stream. No ROS executor scheduling or playback pacing is
+      involved. Valid for: reproducibility, algorithm CPU-service-time,
+      peak memory, and fair architecture-to-architecture comparison under
+      identical input. NOT valid for: real-time latency, cadence, jitter,
+      backlog, or any live wall-clock claim.
+    executed_via: tools/experiments/measure_p032_replay_cost.py
+    reuses:
+      - thesis_tracker.backends.* (unmodified tracker backend classes)
+      - tools/experiments/run_deterministic_tim_replay.py (TIM stage, subprocess)
+      - tools/timing_contract.py
+    known_limitation: >
+      tools/experiments/run_deterministic_tim_replay.py hardcodes
+      lat_ms=0.0 and appearance_backend_wall_ms=0.0 (verified by source
+      inspection) because it performs no real-time wall-clock measurement.
+      tools/analysis/analyse_p032_appearance_budget.py therefore reports
+      TIM core / MARS extraction latency percentiles as null (not zero) for
+      this measurement mode. Only the live_sustained mode below carries
+      genuine per-frame TIM/MARS latency percentiles.
+
+  live_sustained:
+    schema: p032_live_sustained_v1
+    description: >
+      Real ROS 2 nodes (perception detector, tracker, TIM) executing live on
+      the target hardware for a bounded sustained duration. Source imagery
+      is supplied through the established Issue #44 timestamp-refresh replay
+      relay (tools/experiments/p044_soak_input_relay.py), which republishes
+      recorded frames and tracks onto the live topics the real nodes consume
+      at realistic cadence -- this is not a physically live camera capture,
+      and is not offline batch replay. Valid for: true end-to-end wall-clock
+      latency distributions, real cadence/jitter, queue/backlog, detector/
+      Hailo contention, sustained thermal/frequency behaviour, sustained
+      CPU/memory behaviour. Warm-up window is excluded from steady-state
+      statistics.
+    executed_via: tools/experiments/run_p032_sustained_ground_run.sh
+    reuses:
+      - tools/experiments/p044_soak_input_relay.py
+      - tools/analysis/collect_live_timing_stats.py
+      - tools/analysis/check_live_timing_invariants.py
+      - tools/experiments/sample_process_groups.py
+      - tools/experiments/sample_p044_hardware_health.py
+      - tools/analysis/analyse_tim_reid_workload.py
+    warm_up_s: 60.0
+    minimum_sustained_duration_s: 900.0
+    sampling_cadence_s:
+      process_groups: 1.0
+      hardware_health: 5.0
+
+power:
+  status: unavailable_no_calibrated_sensor
+  reason: >
+    No INA219/INA226-class calibrated power sensor is installed on this
+    hardware. Software-estimated power from CPU/clock state is explicitly
+    rejected by the issue's own instruction (mark unavailable rather than
+    estimate). Revisit only if calibrated hardware is added.
+
+issue_58_join:
+  join_keys: [architecture_id, sequence_id]
+  architecture_id_values:
+    - bytetrack_raw
+    - bytetrack_tim
+    - sort_raw
+    - sort_tim
+    - deepsort_raw
+    - deepsort_tim
+  sequence_id_values:
+    - dev_may_hard_reentry
+    - dev_june_seq01
+    - dev_june_seq03
+    - dev_june_seq04
+  contract: >
+    #58 owns safety/availability/recovery outcome rows keyed by the same
+    (architecture_id, sequence_id) pair. #32 outputs are joinable by that
+    pair without rerunning or manually re-interpreting either issue's logs.
+    #32 does not read, modify, or depend on the issue-58-* branch; the join
+    is a schema contract, not a file dependency.
