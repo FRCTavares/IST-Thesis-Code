@@ -248,10 +248,16 @@ omitted.
 ## Not yet done
 
 - Seq01/Seq03/Seq04 SORT and DeepSORT annotations (6 files) --
-  `pending_annotation`, explicitly not fabricated. See
-  `docs/results/selected_target_tracking/p058_lightweight_vs_integrated_tracking_summary.md`
-  for the exact package of replay paths/hashes handed off for manual
-  annotation.
+  `pending_annotation`, explicitly not fabricated. The complete workload
+  (replay bags, full provenance/hashes, recommended annotation order,
+  per-sequence physical-target/ID-switch/target-absence instructions, and
+  a fail-closed stale-source-bag validator with 15 tests) is prepared in
+  `docs/results/selected_target_tracking/p058_lightweight_vs_integrated_tracking_development/PENDING_ANNOTATION_QUEUE.md`
+  for a later manual-annotation session; inserting a completed CSV requires
+  no protocol, calibration, or architecture change (Section "Inserting a
+  completed annotation later requires no protocol change" in that file).
+  Until then, the May-only results above are a development finding, not a
+  general architecture conclusion.
 - Held-out evaluation -- blocked on Issue #27 (September 2026).
 - Canonical cost/resource evidence -- blocked on Issue #32 (open).
 - Promoted Hailo appearance-backend ablation -- blocked on Issue #44's

@@ -552,9 +552,17 @@ Open executable issues: **24**.
       Held-out evaluation blocked on Issue #27 (September 2026); canonical
       Issue #32 safety-availability-cost methodology does not exist yet
       (Issue #32 open) so no cost claim is made -- a join-ready schema for
-      #32's eventual measurements is frozen in the manifest instead. Not
-      yet DONE: 6 pending annotation files, cost evidence, thesis figures,
-      and full runner-tooling parity remain.
+      #32's eventual measurements is frozen in the manifest instead. This
+      is a May-only development finding, not a general architecture
+      conclusion, until the remaining sequences are annotated. The full
+      replay/annotation workload for the 6 pending cells (bags, hashes,
+      recommended order, per-sequence physical-target/ID-switch/absence
+      instructions, and a fail-closed stale-source-bag validator with
+      tests) is prepared and waiting in
+      `docs/results/selected_target_tracking/p058_lightweight_vs_integrated_tracking_development/PENDING_ANNOTATION_QUEUE.md`
+      for a later manual-annotation session. Not yet DONE: 6 pending
+      annotation files, cost evidence, thesis figures, and full
+      runner-tooling parity remain.
 
 17. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54) — THESIS-CRITICAL DEPENDENCY
     - phase 10; live-system; feeds #32, #37, and #50; owns the missing integrated-camera `/camera/fps` publisher and recording-contract repair, deferred until the P0 authority/coordinate/freshness blockers are complete.

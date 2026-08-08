@@ -1,6 +1,12 @@
 # Lightweight tracker + TIM-MARS vs. integrated appearance-aware tracking (Issue #58 / P1.13+)
 
-Status: promoted development evidence; not held out; not complete (6 cells pending manual annotation, cost axis blocked on Issue #32)
+Status: promoted development evidence; not held out; not complete. This is
+a **May-only development finding, not a general architecture conclusion**
+-- one of four development sequences has complete cross-architecture
+evidence, 12/24 cells remain `pending_annotation` (workload prepared, not
+annotated: see
+[`PENDING_ANNOTATION_QUEUE.md`](p058_lightweight_vs_integrated_tracking_development/PENDING_ANNOTATION_QUEUE.md)),
+and the cost axis is blocked on Issue #32.
 
 ## Purpose
 
@@ -21,6 +27,8 @@ This does not reopen the rejected one-preset-portability claim from Issue
 - [Calibration runner](../../../tools/experiments/run_tim_tracker_calibration.py)
 - [Comparison aggregator](../../../tools/analysis/aggregate_lightweight_vs_integrated_report.py)
 - [Copied evidence, SHA256SUMS](p058_lightweight_vs_integrated_tracking_development/)
+- [Pending annotation queue: 6 replay bags, hashes, quarantine evidence, annotation-session instructions](p058_lightweight_vs_integrated_tracking_development/PENDING_ANNOTATION_QUEUE.md)
+- [Annotation validator (fail-closed stale-source-bag guard)](../../../tools/analysis/validate_p058_annotation.py)
 
 ## Execution summary
 
