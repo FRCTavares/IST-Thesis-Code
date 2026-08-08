@@ -129,6 +129,48 @@ built from `tools/analysis/build_oracle_candidate_bag.py`); see
 `docs/issues/p1-12-broader-sequences.md` for the exact per-sequence
 commands used.
 
+## Final P031 parameter-sensitivity evidence (Issue #31)
+
+Canonical thesis-facing summary:
+`docs/results/selected_target_tracking/p031_parameter_sensitivity_summary.md`.
+Full engineering record: `docs/issues/p1-13-parameter-sensitivity.md`. Tracked
+provenance/aggregate/figure copies (with `SHA256SUMS`) are in
+`docs/results/selected_target_tracking/p031_parameter_sensitivity_development/`.
+
+To regenerate the 116-cell matrix, aggregate tables, and figures from the
+frozen manifest, canonical config, and existing source bags (read-only with
+respect to TIM-MARS/detector/ByteTrack/sequence-selection):
+
+    cd ~/Desktop/Thesis-Code
+    source /opt/ros/jazzy/setup.bash
+    source ros2_ws/install/setup.bash
+    for seq in dev_may_hard_reentry dev_june_seq01 dev_june_seq03 dev_june_seq04; do
+      thesis_env/bin/python3 tools/experiments/run_tim_parameter_sensitivity.py \
+        --run --resume --sequence "$seq"
+    done
+    thesis_env/bin/python3 tools/analysis/aggregate_parameter_sensitivity_report.py
+    thesis_env/bin/python3 tools/analysis/plot_parameter_sensitivity.py
+
+This writes the two figures to
+`reports/p031_parameter_sensitivity_5b340c2b_2026-08-08/aggregate/figures/`;
+they should be byte-identical to the tracked copies at
+`docs/results/selected_target_tracking/p031_parameter_sensitivity_development/figures/`
+(verify against `SHA256SUMS` in that directory) since the plot script is
+deterministic given the same `matrix_aggregate.csv`.
+
+The aggregator refuses to run if any of the 116 expected
+(configuration, sequence) cells is missing (`MissingCellError`), using the
+same `expected_cells`/`missing_cells` helpers the runner itself uses, so the
+completeness contract cannot silently drift between execution and
+aggregation.
+
+Sourcing the ROS 2 overlay before invoking the runner is required in a
+non-interactive shell (SSH command execution does not source `.bashrc`); the
+first `dev_june_seq01` attempt during this run failed with
+`ModuleNotFoundError: No module named 'rosbag2_py'` for exactly this reason,
+before any cell was written, and was corrected by sourcing the overlay
+explicitly rather than by changing any experiment parameter.
+
 ## Local verification
 
 Run from the repository root:
