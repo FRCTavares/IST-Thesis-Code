@@ -1,0 +1,68 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "contract_version": "tim_physical_target_bbox_v1",
+    "sequence_id": "example_sequence",
+    "source_bag_name": "example__source__image_raw",
+    "source_bag_path": "bags/source/curated/example__source__image_raw",
+    "source_image_topic": "/camera/image_raw",
+    "source_width": 640,
+    "source_height": 480,
+    "coordinate_convention": "source_pixels_historical_pre_p53",
+    "coordinate_convention_evidence": "Example only: real artifacts must cite direct bag/header inspection evidence, see docs/issues/p1-10-improve-bbox-evaluation.md section F.",
+    "selected_physical_target_label": "black_shirt_person",
+    "annotator": "example_annotator",
+    "created_date": "2026-08-09",
+    "notes": "Template/example artifact for tim_physical_target_bbox_v1. Not real annotated evidence."
+  },
+  "samples": [
+    {
+      "t_s": 0.0,
+      "identity_state": "absent",
+      "target_bbox_xyxy": null,
+      "distractor_bboxes_xyxy": [],
+      "interpolate_from_previous": false,
+      "notes": "target not yet in frame"
+    },
+    {
+      "t_s": 5.0,
+      "identity_state": "present_scored",
+      "target_bbox_xyxy": [120.0, 80.0, 220.0, 300.0],
+      "distractor_bboxes_xyxy": [],
+      "interpolate_from_previous": false,
+      "notes": "clean, unambiguous"
+    },
+    {
+      "t_s": 6.0,
+      "identity_state": "present_scored",
+      "target_bbox_xyxy": [130.0, 82.0, 228.0, 302.0],
+      "distractor_bboxes_xyxy": [],
+      "interpolate_from_previous": true,
+      "notes": "may be interpolated against the previous keyframe"
+    },
+    {
+      "t_s": 9.0,
+      "identity_state": "present_ambiguous",
+      "target_bbox_xyxy": [180.0, 90.0, 260.0, 300.0],
+      "distractor_bboxes_xyxy": [[175.0, 88.0, 258.0, 298.0]],
+      "interpolate_from_previous": false,
+      "notes": "crossing another person; distractor bbox recorded to disambiguate"
+    },
+    {
+      "t_s": 10.0,
+      "identity_state": "present_reference_unavailable",
+      "target_bbox_xyxy": null,
+      "distractor_bboxes_xyxy": [],
+      "interpolate_from_previous": false,
+      "notes": "heavy occlusion, no reliable box can be drawn"
+    },
+    {
+      "t_s": 14.0,
+      "identity_state": "present_scored",
+      "target_bbox_xyxy": [200.0, 85.0, 300.0, 305.0],
+      "distractor_bboxes_xyxy": [],
+      "interpolate_from_previous": false,
+      "notes": "re-entry after occlusion; not interpolated from the earlier keyframe"
+    }
+  ]
+}
