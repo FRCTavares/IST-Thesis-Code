@@ -1,0 +1,18 @@
+{
+  "coverage_rate": 0.252616208323193,
+  "coverage_rate_definition": "Fraction of /timing_target samples with e2e_target_ms > 0. e2e_target_ms == 0.0 is dashboard_bridge_node's schema-default sentinel for missing same-frame timing correlation (t_cam_msg_seen_ns <= 0 on the incoming /tracks message), not a genuine near-zero latency. See docs/issues/p1-14-runtime-resource-characterization.md for the diagnosed root cause.",
+  "e2e_target_ms": {
+    "count": 1038,
+    "maximum": 52.386268615722656,
+    "mean": 21.119548594561156,
+    "minimum": 15.214151382446289,
+    "p50": 19.662649154663086,
+    "p90": 26.896564674377448,
+    "p95": 30.595842361450195,
+    "p99": 39.280841369628895
+  },
+  "genuine_measurement_count": 1038,
+  "schema": "p032_e2e_target_latency_v1",
+  "total_samples": 4109,
+  "unavailable_sentinel_count": 3071
+}

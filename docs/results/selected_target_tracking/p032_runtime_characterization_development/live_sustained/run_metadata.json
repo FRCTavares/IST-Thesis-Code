@@ -1,6 +1,6 @@
 {
   "schema": "p032_live_sustained_run_v1",
-  "execution_commit": "331ccc24634f21fc95746d3e0d1423cb55597950",
+  "execution_commit": "7e51e79a12481e0cea591e022352d1804a7bd95f",
   "source_bag": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
   "target_id": 1,
   "rate": 1.0,

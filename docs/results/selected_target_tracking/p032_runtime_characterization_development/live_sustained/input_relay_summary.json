@@ -13,20 +13,20 @@
   },
   "counters": {
     "image_publication_errors": 0,
-    "images_published": 4579,
-    "images_received": 4579,
+    "images_published": 4616,
+    "images_received": 4616,
     "track_publication_errors": 0,
-    "tracks_published": 16696,
-    "tracks_received": 16696
+    "tracks_published": 16732,
+    "tracks_received": 16732
   },
   "input_image_topic": "/p032/ground_run/source/image",
   "input_tracks_topic": "/p032/ground_run/source/tracks",
-  "last_fresh_stamp_ns": 1786216760931163932,
+  "last_fresh_stamp_ns": 1786282127710487630,
   "output_image_topic": "/camera/image_raw",
   "output_tracks_topic": "/p032/ground_run/unused_relayed_tracks",
-  "runtime_s": 1222.947618653,
+  "runtime_s": 1224.105218086,
   "schema": "p044_soak_input_relay_summary_v1",
   "source_image_rewinds": 17,
   "source_track_rewinds": 17,
-  "timestamp_monotonic_ns": 105484577993974
+  "timestamp_monotonic_ns": 170852127483487
 }

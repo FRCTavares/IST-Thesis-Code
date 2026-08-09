@@ -200,11 +200,14 @@ def test_build_live_row_missing_file_is_status_missing(tmp_path: Path) -> None:
     assert row["status"] == "missing"
 
 
-def test_build_live_row_flags_e2e_target_known_limitation(tmp_path: Path) -> None:
-    """e2e_target_ms is a genuine field this pipeline always publishes as
-    0.0 due to a diagnosed upstream propagation gap, not a real
-    near-zero latency. The aggregator must carry a documented caveat
-    alongside the raw value so it is never mistaken for a real
+def test_build_live_row_flags_e2e_target_known_limitation_without_correction(
+    tmp_path: Path,
+) -> None:
+    """Without a --live-e2e-target-latency correction file, the raw
+    collect_live_timing_stats.py percentiles may mix the
+    correlation-miss unavailable sentinel (0.0) with genuine
+    measurements. The aggregator must carry a documented caveat
+    alongside the raw value so it is never mistaken for a trustworthy
     measurement downstream (e.g. by Issue #58's join)."""
     module = load_module()
 
@@ -241,7 +244,77 @@ def test_build_live_row_flags_e2e_target_known_limitation(tmp_path: Path) -> Non
 
     assert row["latency_ms"]["e2e_target"]["mean"] == 0.0
     assert "e2e_target_ms_known_limitation" in row
-    assert "t_cam_msg_seen_ns" in row["e2e_target_ms_known_limitation"]
+    assert "no corrected" in row["e2e_target_ms_known_limitation"].lower()
+
+
+def test_build_live_row_uses_corrected_e2e_target_percentiles_when_supplied(
+    tmp_path: Path,
+) -> None:
+    """When a corrected e2e_target_ms analysis is supplied, its
+    genuine-measurement-only percentiles must be used instead of the raw
+    (possibly sentinel-contaminated) collect_live_timing_stats.py value,
+    and the row must report the coverage rate explicitly."""
+    module = load_module()
+
+    analysis_path = tmp_path / "sustained_analysis.json"
+    analysis_path.write_text(
+        json.dumps(
+            {
+                "passed": True,
+                "violations": [],
+                "observed_duration_s": 1200.0,
+                "warm_up_s": 60.0,
+                "timing": {
+                    "metrics": {
+                        "/timing": {"e2e_det_ms": {"p50": 12.0}},
+                        "/timing_tracker": {"track_ms": {"p50": 3.8}},
+                        "/timing_target": {
+                            "e2e_target_ms": {
+                                "n": 100,
+                                "mean": 0.0,
+                                "p50": 0.0,
+                                "max": 0.0,
+                            }
+                        },
+                    },
+                    "cadence_consistency": {"within_tolerance": True},
+                },
+                "windows": {"resources": {}, "health": {}},
+                "claim_boundary": {},
+            }
+        )
+    )
+
+    e2e_target_path = tmp_path / "e2e_target_latency.json"
+    e2e_target_path.write_text(
+        json.dumps(
+            {
+                "total_samples": 4109,
+                "genuine_measurement_count": 1038,
+                "unavailable_sentinel_count": 3071,
+                "coverage_rate": 0.2526,
+                "e2e_target_ms": {
+                    "count": 1038,
+                    "p50": 19.66,
+                    "p90": 26.90,
+                    "p95": 30.60,
+                    "p99": 39.28,
+                    "maximum": 52.39,
+                    "minimum": 15.21,
+                    "mean": 21.12,
+                },
+            }
+        )
+    )
+
+    row = module.build_live_row(analysis_path, e2e_target_path)
+
+    assert row["latency_ms"]["e2e_target"]["p50"] == 19.66
+    assert row["latency_ms"]["e2e_target"]["p95"] == 30.60
+    assert row["e2e_target_ms_coverage"]["coverage_rate"] == pytest.approx(0.2526)
+    assert row["e2e_target_ms_coverage"]["genuine_measurement_count"] == 1038
+    assert "e2e_target_ms_known_limitation" in row
+    assert "fixed" in row["e2e_target_ms_known_limitation"].lower()
 
 
 def test_comparative_overhead_computes_delta_when_both_present() -> None:

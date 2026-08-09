@@ -1,13 +1,13 @@
 {
-  "completed_monotonic_ns": 105477314192491,
+  "completed_monotonic_ns": 170844551162805,
   "groups": {
     "dashboard": {
       "cpu_percent": {
         "count": 1205,
-        "maximum": 7.999281312569754,
-        "mean": 5.217991513519569,
-        "p50": 4.9995011647722825,
-        "p95": 6.990982715244239
+        "maximum": 7.999205086993686,
+        "mean": 5.278415636309297,
+        "p50": 4.999505918828065,
+        "p95": 6.999287377354699
       },
       "maximum_member_count": 2,
       "member_count": {
@@ -22,26 +22,26 @@
         "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup dashboard_bridge_node --ros-args -p ws_port:=0 -p api_port:=0"
       ],
       "observed_pids": [
-        86381,
-        86401
+        137516,
+        137553
       ],
-      "pgid": 86381,
+      "pgid": 137516,
       "rss_kib": {
         "count": 1206,
-        "maximum": 106160.0,
-        "mean": 106112.49087893864,
-        "p50": 106140.0,
-        "p95": 106160.0
+        "maximum": 106356.0,
+        "mean": 106309.41293532339,
+        "p50": 106332.0,
+        "p95": 106352.0
       },
       "sample_count": 1206
     },
     "perception": {
       "cpu_percent": {
         "count": 1205,
-        "maximum": 17.998249616230073,
-        "mean": 7.1970862375114875,
-        "p50": 6.999304269155646,
-        "p95": 11.976863012032354
+        "maximum": 15.998507099310029,
+        "mean": 7.443366722450138,
+        "p50": 6.999337876635546,
+        "p95": 11.998858807737069
       },
       "maximum_member_count": 2,
       "member_count": {
@@ -56,26 +56,26 @@
         "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup perception_pipeline_node --ros-args -p image_topic:=/camera/image_raw -p image_reliability:=best_effort -p image_qos_depth:=2 -p img_w:=640 -p img_h:=640 -p inference_backend:=hailo_direct -p hailo_hef_path:=/home/francisco/Desktop/Thesis-Code/models/hef/yolov8s.hef -p allow_stub_fallback:=false -p publish_timing:=true -p reid_enabled:=false"
       ],
       "observed_pids": [
-        86114,
-        86134
+        136800,
+        136820
       ],
-      "pgid": 86114,
+      "pgid": 136800,
       "rss_kib": {
         "count": 1206,
-        "maximum": 222348.0,
-        "mean": 218860.4543946932,
-        "p50": 218872.0,
-        "p95": 221366.0
+        "maximum": 222512.0,
+        "mean": 219030.70978441127,
+        "p50": 219036.0,
+        "p95": 222040.0
       },
       "sample_count": 1206
     },
     "relay": {
       "cpu_percent": {
         "count": 1205,
-        "maximum": 10.998495108909733,
-        "mean": 4.762489486961755,
-        "p50": 4.999350349420144,
-        "p95": 6.999274751949416
+        "maximum": 9.999066937068768,
+        "mean": 5.011229217390345,
+        "p50": 4.999483013460544,
+        "p95": 6.999310637895304
       },
       "maximum_member_count": 1,
       "member_count": {
@@ -86,28 +86,28 @@
         "p95": 1.0
       },
       "observed_commands": [
-        "/home/francisco/Desktop/Thesis-Code/thesis_env/bin/python /home/francisco/Desktop/Thesis-Code/tools/experiments/p044_soak_input_relay.py --input-image-topic /p032/ground_run/source/image --output-image-topic /camera/image_raw --input-tracks-topic /p032/ground_run/source/tracks --output-tracks-topic /p032/ground_run/unused_relayed_tracks --status-topic /p032/ground_run/input_relay/status --summary-path /home/francisco/Desktop/Thesis-Code/reports/p032_ground_run_331ccc24_2026_08_08_dev_may_hard_reentry/input_relay_summary.json"
+        "/home/francisco/Desktop/Thesis-Code/thesis_env/bin/python /home/francisco/Desktop/Thesis-Code/tools/experiments/p044_soak_input_relay.py --input-image-topic /p032/ground_run/source/image --output-image-topic /camera/image_raw --input-tracks-topic /p032/ground_run/source/tracks --output-tracks-topic /p032/ground_run/unused_relayed_tracks --status-topic /p032/ground_run/input_relay/status --summary-path /home/francisco/Desktop/Thesis-Code/reports/p032_ground_run_7e51e79a_2026_08_09_dev_may_hard_reentry_corrected/input_relay_summary.json"
       ],
       "observed_pids": [
-        86072
+        136758
       ],
-      "pgid": 86072,
+      "pgid": 136758,
       "rss_kib": {
         "count": 1206,
-        "maximum": 78808.0,
-        "mean": 76500.46766169154,
-        "p50": 76488.0,
-        "p95": 76532.0
+        "maximum": 79072.0,
+        "mean": 76781.87064676617,
+        "p50": 76768.0,
+        "p95": 76820.0
       },
       "sample_count": 1206
     },
     "tim": {
       "cpu_percent": {
         "count": 1205,
-        "maximum": 37.99518354055848,
-        "mean": 13.960422983821594,
-        "p50": 12.99867609783811,
-        "p95": 23.997073873610773
+        "maximum": 51.995035306048834,
+        "mean": 14.196642470897531,
+        "p50": 12.998739200290007,
+        "p95": 23.997337498130168
       },
       "maximum_member_count": 2,
       "member_count": {
@@ -122,26 +122,26 @@
         "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_bringup target_memory_mars_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml -p tracks_topic:=/tracks -p target_topic:=/target_memory_mars -p status_topic:=/target_memory_mars/status -p select_topic:=/target_memory_mars/select -p selected_track_id:=1 -p mirror_raw_target_selection:=false -p appearance_enabled:=true -p appearance_image_topic:=/camera/image_raw -p appearance_request_policy:=ambiguity_guarded -p appearance_compute_min_interval_ms:=250.0 -p mars_model_path:=/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb -p appearance_async_reid_enabled:=false"
       ],
       "observed_pids": [
-        86247,
-        86267
+        136956,
+        136979
       ],
-      "pgid": 86247,
+      "pgid": 136956,
       "rss_kib": {
         "count": 1206,
-        "maximum": 837400.0,
-        "mean": 824461.7512437811,
-        "p50": 827640.0,
-        "p95": 836596.0
+        "maximum": 843572.0,
+        "mean": 827597.9469320066,
+        "p50": 832308.0,
+        "p95": 842907.0
       },
       "sample_count": 1206
     },
     "tracker": {
       "cpu_percent": {
         "count": 1205,
-        "maximum": 188.98162097041575,
-        "mean": 78.46573151382016,
-        "p50": 74.99233525839024,
-        "p95": 131.58672479077458
+        "maximum": 188.814918330235,
+        "mean": 79.03415414565893,
+        "p50": 75.99211141089866,
+        "p95": 132.98771302582958
       },
       "maximum_member_count": 2,
       "member_count": {
@@ -156,21 +156,21 @@
         "/usr/bin/python3 /opt/ros/jazzy/bin/ros2 run thesis_tracker tracker_node --ros-args --params-file /home/francisco/Desktop/Thesis-Code/ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml -p image_topic:=/camera/image_raw -p publish_timing_topic:=true"
       ],
       "observed_pids": [
-        86187,
-        86207
+        136873,
+        136893
       ],
-      "pgid": 86187,
+      "pgid": 136873,
       "rss_kib": {
         "count": 1206,
-        "maximum": 140336.0,
-        "mean": 136682.08623548923,
-        "p50": 136720.0,
-        "p95": 137960.0
+        "maximum": 139540.0,
+        "mean": 136960.81260364843,
+        "p50": 137016.0,
+        "p95": 138215.0
       },
       "sample_count": 1206
     }
   },
   "interval_s": 1.0,
   "schema": "p044_process_group_resources_v1",
-  "started_monotonic_ns": 104271650786241
+  "started_monotonic_ns": 169638449643364
 }

@@ -119,7 +119,10 @@ def build_replay_row(
     return row
 
 
-def build_live_row(live_analysis_path: Path | None) -> dict[str, Any]:
+def build_live_row(
+    live_analysis_path: Path | None,
+    e2e_target_latency_path: Path | None = None,
+) -> dict[str, Any]:
     if live_analysis_path is None:
         return {
             "source": "live_sustained",
@@ -138,7 +141,13 @@ def build_live_row(live_analysis_path: Path | None) -> dict[str, Any]:
     timing = analysis.get("timing", {})
     metrics = timing.get("metrics", {})
 
-    return {
+    e2e_target_latency = (
+        read_json_optional(e2e_target_latency_path)
+        if e2e_target_latency_path is not None
+        else None
+    )
+
+    row: dict[str, Any] = {
         "source": "live_sustained",
         "status": "measured" if analysis.get("passed") else "measured_with_violations",
         "violations": analysis.get("violations", []),
@@ -148,43 +157,74 @@ def build_live_row(live_analysis_path: Path | None) -> dict[str, Any]:
             "e2e_det": metrics.get("/timing", {}).get("e2e_det_ms"),
             "pub_dt": metrics.get("/timing", {}).get("pub_dt_ms"),
             "track": metrics.get("/timing_tracker", {}).get("track_ms"),
-            # Not null: dashboard_bridge_node genuinely publishes this
-            # field, but only ever with the value 0.0. See
-            # e2e_target_ms_known_limitation below before using it.
-            "e2e_target": metrics.get("/timing_target", {}).get(
-                "e2e_target_ms"
-            ),
         },
-        "e2e_target_ms_known_limitation": (
-            "e2e_target_ms is published as exactly 0.0 on every sample in "
-            "this pipeline configuration, not a genuine sub-millisecond "
-            "measurement. dashboard_bridge_node only sets it when the "
-            "incoming /tracks message's t_cam_msg_seen_ns is > 0 "
-            "(dashboard_bridge_node.py _publish_target_from_tracks); that "
-            "field is populated in tracker_node from a frame_context "
-            "dictionary keyed by frame_id and filled by a separate /timing "
-            "subscription callback. perception_pipeline_node publishes "
-            "/detections before /timing for the same frame "
-            "(perception_pipeline_node.py: pub_dets.publish before "
-            "pub_timing.publish), so tracker_node's on_detections handler "
-            "almost always pops an empty (0, 0) frame_context entry before "
-            "the matching /timing message has been processed, and "
-            "t_cam_msg_seen_ns never propagates downstream. This is a "
-            "genuine live-pipeline finding this issue's sustained run "
-            "surfaced; it is not visible from deterministic replay (no "
-            "live topic ordering) and is not fixed here -- fixing "
-            "perception_pipeline_node's publish order is a live-node "
-            "behaviour change outside Issue #32's scope. Treat "
-            "e2e_target_ms and sensor_to_target_ms as unavailable, not as "
-            "a genuine near-zero final-target-publication latency, until a "
-            "future issue corrects the publish order."
-        ),
         "cadence_consistency": timing.get("cadence_consistency"),
         "resources": analysis.get("windows", {}).get("resources"),
         "health": analysis.get("windows", {}).get("health"),
         "claim_boundary": analysis.get("claim_boundary"),
         "report_path": str(live_analysis_path),
     }
+
+    if e2e_target_latency is not None:
+        # Corrected same-frame correlation (Issue #32, 09-08-26 fix):
+        # e2e_target_ms == 0.0 is dashboard_bridge_node's schema-default
+        # unavailable sentinel, not a genuine measurement. This file's
+        # percentiles are computed only over samples with a genuine
+        # correlated timing context; unavailable_sentinel_count/
+        # coverage_rate report how much of the run that subset covers.
+        row["latency_ms"]["e2e_target"] = e2e_target_latency["e2e_target_ms"]
+        row["e2e_target_ms_coverage"] = {
+            "total_samples": e2e_target_latency["total_samples"],
+            "genuine_measurement_count": e2e_target_latency[
+                "genuine_measurement_count"
+            ],
+            "unavailable_sentinel_count": e2e_target_latency[
+                "unavailable_sentinel_count"
+            ],
+            "coverage_rate": e2e_target_latency["coverage_rate"],
+        }
+        row["e2e_target_ms_known_limitation"] = (
+            "Same-frame timing correlation was fixed (tracker_node "
+            "subscribes to /timing before /detections, matching rclpy "
+            "SingleThreadedExecutor's registration-order dispatch), which "
+            "changed e2e_target_ms from always exactly 0.0 to a genuine "
+            "measurement on this run's coverage_rate fraction of frames. "
+            "Full 100% coverage is not achieved: correlation still misses "
+            "when tracker_node's executor dispatches on_detections in an "
+            "isolated wait-cycle before perception_pipeline_node has even "
+            "published the matching /timing message -- a producer-side "
+            "temporal gap that cannot be closed by a consumer-side fix "
+            "alone (see docs/issues/p1-14-runtime-resource-characterization.md). "
+            "The reported e2e_target_ms percentiles are computed only over "
+            "the genuine-measurement subset, never mixed with the "
+            "unavailable-sentinel zeros. Representativeness was tested "
+            "(tools/analysis/analyse_p032_e2e_target_correlation_representativeness.py): "
+            "misses show no association with detector-side latency/cadence "
+            "(e2e_det_ms, pub_dt_ms) but do show a real association with "
+            "tracker compute latency (track_ms roughly 2x higher median in "
+            "misses than hits), and the coverage rate is stable over time "
+            "(no warm-up or drift effect). This means the reported "
+            "percentiles are conditional evidence, likely a mild "
+            "underestimate of the true unconditional tail latency, not an "
+            "unqualified pipeline-wide measurement -- see the engineering "
+            "record's acceptance audit before citing a pass/fail against "
+            "any latency threshold."
+        )
+    else:
+        row["latency_ms"]["e2e_target"] = metrics.get("/timing_target", {}).get(
+            "e2e_target_ms"
+        )
+        row["e2e_target_ms_known_limitation"] = (
+            "No corrected e2e_target_ms analysis was supplied for this "
+            "row; the raw collect_live_timing_stats.py percentiles above "
+            "mix any unavailable-sentinel zeros with genuine measurements "
+            "and must not be trusted at face value. Run "
+            "tools/analysis/analyse_p032_e2e_target_latency.py against "
+            "this run's evidence bag and re-aggregate with "
+            "--live-e2e-target-latency."
+        )
+
+    return row
 
 
 def comparative_overhead(rows: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
@@ -374,6 +414,18 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Architecture id the --live-analysis evidence applies to.",
     )
+    parser.add_argument(
+        "--live-e2e-target-latency",
+        type=Path,
+        default=None,
+        help=(
+            "Optional output of analyse_p032_e2e_target_latency.py, "
+            "carrying e2e_target_ms percentiles computed only over "
+            "genuinely-correlated samples (never mixed with the "
+            "unavailable-sentinel zeros collect_live_timing_stats.py's "
+            "raw percentiles would otherwise include)."
+        ),
+    )
     parser.add_argument("--json-out", required=True, type=Path)
     parser.add_argument("--csv-out", required=True, type=Path)
     parser.add_argument("--markdown-out", required=True, type=Path)
@@ -393,13 +445,15 @@ def main() -> int:
         replay = build_replay_row(architecture, args.sequence_id, replay_dir)
 
         live_analysis_path = None
+        e2e_target_latency_path = None
         if (
             args.live_analysis is not None
             and args.live_architecture_id == architecture_id
         ):
             live_analysis_path = args.live_analysis
+            e2e_target_latency_path = args.live_e2e_target_latency
 
-        live = build_live_row(live_analysis_path)
+        live = build_live_row(live_analysis_path, e2e_target_latency_path)
 
         row = {
             "architecture_id": architecture_id,

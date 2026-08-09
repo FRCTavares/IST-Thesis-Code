@@ -567,11 +567,23 @@ Open executable issues: **24**.
       noise, smoke-check ordering, a missing live tracker node, a missing
       dashboard-bridge node, and a startup-transient settle -- documented in
       the engineering record). The sustained run surfaced a genuine live-only
-      finding: `e2e_target_ms` is unavailable due to a `perception_pipeline_node`
-      publish-order gap (detections published before timing), diagnosed and
-      documented, not silently reported as a real near-zero latency. Not yet
-      DONE: Seq01/Seq03/Seq04 runtime characterisation, a full six-architecture
-      live comparison, the `e2e_target_ms` publish-order fix, and power (no
+      finding: `e2e_target_ms` was unavailable (always exactly 0.0) due to
+      tracker_node registering its `/detections` subscription before
+      `/timing` -- proven via rclpy's installed SingleThreadedExecutor
+      source to be a deterministic registration-order dispatch bug, not an
+      occasional race. Fixed 09-08-26 (`f9746979`, `7e51e79a`) with 14 new
+      focused tests and a rerun of the corrected sustained ground run under
+      the identical frozen protocol. Coverage rose from 0% to a genuine,
+      representativeness-tested 25.26% (1038/4109 samples); the residual
+      gap is a producer-side temporal dependency documented as out of scope
+      for a timing-only fix (closing it would require delaying live
+      `/tracks` publication). Conditional `e2e_target_ms` percentiles (p50
+      19.66/p95 30.60/p99 39.28 ms) are genuine measured evidence, shown
+      unbiased with respect to detector cadence/latency but mildly biased
+      toward lower tracker latency -- reported as conditional, not an
+      unqualified pipeline-wide result. Not yet DONE: Seq01/Seq03/Seq04
+      runtime characterisation, a full six-architecture live comparison,
+      near-complete `e2e_target_ms` correlation coverage, and power (no
       calibrated sensor).
 
 19. [x] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35) — DONE

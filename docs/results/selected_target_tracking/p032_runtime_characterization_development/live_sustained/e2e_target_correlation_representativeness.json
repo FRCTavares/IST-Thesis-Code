@@ -1,0 +1,113 @@
+{
+  "covariate_comparison_hit_vs_miss": {
+    "e2e_det_ms": {
+      "hit_mean": 12.680657430880332,
+      "hit_median": 12.06293773651123,
+      "hit_n": 1038,
+      "miss_mean": 12.675615470908589,
+      "miss_median": 12.242461204528809,
+      "miss_n": 3071
+    },
+    "pub_dt_ms": {
+      "hit_mean": 291.7490494163969,
+      "hit_median": 225.47483825683594,
+      "hit_n": 1038,
+      "miss_mean": 291.06208455636346,
+      "miss_median": 229.8581085205078,
+      "miss_n": 3071
+    },
+    "track_ms": {
+      "hit_mean": 3.2396625183336076,
+      "hit_median": 1.7733669877052307,
+      "hit_n": 1038,
+      "miss_mean": 4.847276911813947,
+      "miss_median": 4.132054805755615,
+      "miss_n": 3071
+    }
+  },
+  "coverage_rate": 0.252616208323193,
+  "coverage_rate_drift": {
+    "first_window": 0.2760416666666667,
+    "last_window": 0.24937655860349128,
+    "max_window": 0.2813953488372093,
+    "min_window": 0.2146341463414634,
+    "ratio_last_over_first": 0.9034018726767985
+  },
+  "frame_id_gap_count": 0,
+  "genuine_measurement_count": 1038,
+  "schema": "p032_e2e_target_correlation_representativeness_v1",
+  "total_timing_target_samples": 4109,
+  "unavailable_sentinel_count": 3071,
+  "windows": [
+    {
+      "coverage_rate": 0.2760416666666667,
+      "hits": 106,
+      "index": 0,
+      "start_offset_s": 0.0,
+      "total": 384
+    },
+    {
+      "coverage_rate": 0.2146341463414634,
+      "hits": 88,
+      "index": 1,
+      "start_offset_s": 119.6698101835,
+      "total": 410
+    },
+    {
+      "coverage_rate": 0.2813953488372093,
+      "hits": 121,
+      "index": 2,
+      "start_offset_s": 239.339620367,
+      "total": 430
+    },
+    {
+      "coverage_rate": 0.25059101654846333,
+      "hits": 106,
+      "index": 3,
+      "start_offset_s": 359.0094305505,
+      "total": 423
+    },
+    {
+      "coverage_rate": 0.2581453634085213,
+      "hits": 103,
+      "index": 4,
+      "start_offset_s": 478.679240734,
+      "total": 399
+    },
+    {
+      "coverage_rate": 0.24757281553398058,
+      "hits": 102,
+      "index": 5,
+      "start_offset_s": 598.3490509175,
+      "total": 412
+    },
+    {
+      "coverage_rate": 0.24249422632794457,
+      "hits": 105,
+      "index": 6,
+      "start_offset_s": 718.018861101,
+      "total": 433
+    },
+    {
+      "coverage_rate": 0.25,
+      "hits": 104,
+      "index": 7,
+      "start_offset_s": 837.6886712845,
+      "total": 416
+    },
+    {
+      "coverage_rate": 0.256857855361596,
+      "hits": 103,
+      "index": 8,
+      "start_offset_s": 957.358481468,
+      "total": 401
+    },
+    {
+      "coverage_rate": 0.24937655860349128,
+      "hits": 100,
+      "index": 9,
+      "start_offset_s": 1077.0282916515,
+      "total": 401
+    }
+  ]
+}

@@ -100,10 +100,10 @@
       "architecture_id": "bytetrack_tim",
       "live": {
         "cadence_consistency": {
-          "det_out_fps_hz": 3.398045358220281,
-          "fps_from_pub_dt_p50": 4.312491095978524,
-          "pub_dt_p50_ms": 231.88453674316406,
-          "relative_delta": 0.2120458262768311,
+          "det_out_fps_hz": 3.4524686630868833,
+          "fps_from_pub_dt_p50": 4.361278295885874,
+          "pub_dt_p50_ms": 229.2905731201172,
+          "relative_delta": 0.20838148156156375,
           "relative_delta_max": 0.35,
           "within_tolerance": true
         },
@@ -114,179 +114,186 @@
           "warm_up_excluded_from_latency_percentiles": true,
           "warm_up_included_in_resource_and_thermal_windows": true
         },
-        "duration_s": 1205.42922878,
-        "e2e_target_ms_known_limitation": "e2e_target_ms is published as exactly 0.0 on every sample in this pipeline configuration, not a genuine sub-millisecond measurement. dashboard_bridge_node only sets it when the incoming /tracks message's t_cam_msg_seen_ns is > 0 (dashboard_bridge_node.py _publish_target_from_tracks); that field is populated in tracker_node from a frame_context dictionary keyed by frame_id and filled by a separate /timing subscription callback. perception_pipeline_node publishes /detections before /timing for the same frame (perception_pipeline_node.py: pub_dets.publish before pub_timing.publish), so tracker_node's on_detections handler almost always pops an empty (0, 0) frame_context entry before the matching /timing message has been processed, and t_cam_msg_seen_ns never propagates downstream. This is a genuine live-pipeline finding this issue's sustained run surfaced; it is not visible from deterministic replay (no live topic ordering) and is not fixed here -- fixing perception_pipeline_node's publish order is a live-node behaviour change outside Issue #32's scope. Treat e2e_target_ms and sensor_to_target_ms as unavailable, not as a genuine near-zero final-target-publication latency, until a future issue corrects the publish order.",
+        "duration_s": 1205.466259642,
+        "e2e_target_ms_coverage": {
+          "coverage_rate": 0.252616208323193,
+          "genuine_measurement_count": 1038,
+          "total_samples": 4109,
+          "unavailable_sentinel_count": 3071
+        },
+        "e2e_target_ms_known_limitation": "Same-frame timing correlation was fixed (tracker_node subscribes to /timing before /detections, matching rclpy SingleThreadedExecutor's registration-order dispatch), which changed e2e_target_ms from always exactly 0.0 to a genuine measurement on this run's coverage_rate fraction of frames. Full 100% coverage is not achieved: correlation still misses when tracker_node's executor dispatches on_detections in an isolated wait-cycle before perception_pipeline_node has even published the matching /timing message -- a producer-side temporal gap that cannot be closed by a consumer-side fix alone (see docs/issues/p1-14-runtime-resource-characterization.md). The reported e2e_target_ms percentiles are computed only over the genuine-measurement subset, never mixed with the unavailable-sentinel zeros. Representativeness was tested (tools/analysis/analyse_p032_e2e_target_correlation_representativeness.py): misses show no association with detector-side latency/cadence (e2e_det_ms, pub_dt_ms) but do show a real association with tracker compute latency (track_ms roughly 2x higher median in misses than hits), and the coverage rate is stable over time (no warm-up or drift effect). This means the reported percentiles are conditional evidence, likely a mild underestimate of the true unconditional tail latency, not an unqualified pipeline-wide measurement -- see the engineering record's acceptance audit before citing a pass/fail against any latency threshold.",
         "health": {
           "arm_frequency_hz": {
             "early": {
               "count": 80,
-              "maximum": 2400033792.0,
-              "mean": 1996272436.8,
-              "minimum": 1500012800.0,
-              "p50": 1900017856.0,
+              "maximum": 2400037120.0,
+              "mean": 2063773513.6,
+              "minimum": 1500009472.0,
+              "p50": 2350021888.0,
               "p95": 2400033792.0
             },
             "late": {
               "count": 80,
               "maximum": 2400037120.0,
-              "mean": 1940021627.2,
+              "mean": 1881271648.0,
               "minimum": 1500012800.0,
-              "p50": 1700022784.0,
+              "p50": 1700017792.0,
               "p95": 2400033792.0
             },
             "middle": {
               "count": 80,
               "maximum": 2400037120.0,
-              "mean": 1886271284.8,
+              "mean": 1930021816.0,
               "minimum": 1500009472.0,
-              "p50": 1700021120.0,
+              "p50": 1700022784.0,
               "p95": 2400033792.0
             }
           },
           "mem_available_kib": {
             "early": {
               "count": 80,
-              "maximum": 6587868.0,
-              "mean": 6010503.15,
-              "minimum": 5967180.0,
-              "p50": 6000802.0,
-              "p95": 6057534.199999999
+              "maximum": 6551804.0,
+              "mean": 6005036.5,
+              "minimum": 5974208.0,
+              "p50": 5992476.0,
+              "p95": 6038747.0
             },
             "late": {
               "count": 80,
-              "maximum": 6356924.0,
-              "mean": 5973263.95,
-              "minimum": 5950552.0,
-              "p50": 5968156.0,
-              "p95": 5982695.800000001
+              "maximum": 6361660.0,
+              "mean": 5965719.65,
+              "minimum": 5945212.0,
+              "p50": 5959216.0,
+              "p95": 5975307.2
             },
             "middle": {
               "count": 80,
-              "maximum": 6089536.0,
-              "mean": 5979553.35,
-              "minimum": 5959192.0,
-              "p50": 5977090.0,
-              "p95": 5988494.4
+              "maximum": 6068920.0,
+              "mean": 5969407.85,
+              "minimum": 5939720.0,
+              "p50": 5966778.0,
+              "p95": 5986502.6
             }
           },
           "temperature_c": {
             "early": {
               "count": 80,
-              "maximum": 59.8,
-              "mean": 57.9625,
-              "minimum": 56.0,
-              "p50": 58.2,
-              "p95": 59.324999999999996
+              "maximum": 62.0,
+              "mean": 58.67125,
+              "minimum": 56.5,
+              "p50": 58.7,
+              "p95": 60.9
             },
             "late": {
               "count": 80,
-              "maximum": 59.8,
-              "mean": 57.22375000000001,
-              "minimum": 56.0,
-              "p50": 57.1,
-              "p95": 58.225
+              "maximum": 60.4,
+              "mean": 58.161249999999995,
+              "minimum": 56.5,
+              "p50": 58.2,
+              "p95": 59.8
             },
             "middle": {
               "count": 80,
-              "maximum": 60.9,
-              "mean": 57.9875,
+              "maximum": 59.3,
+              "mean": 57.45125,
               "minimum": 55.4,
               "p50": 57.6,
-              "p95": 59.324999999999996
+              "p95": 58.7
             }
           }
         },
         "latency_ms": {
           "e2e_det": {
-            "max": 31.658838272094727,
-            "mean": 12.748538718373737,
-            "min": 11.200413703918457,
-            "n": 3874.0,
-            "p50": 12.328898906707764,
-            "p95": 14.923908281326295,
-            "p99": 18.983172817230226
+            "max": 31.840906143188477,
+            "mean": 12.677679032571916,
+            "min": 11.215543746948242,
+            "n": 3936.0,
+            "p50": 12.198540687561035,
+            "p95": 14.898680448532104,
+            "p99": 19.99958248138428
           },
           "e2e_target": {
-            "max": 0.0,
-            "mean": 0.0,
-            "min": 0.0,
-            "n": 3867.0,
-            "p50": 0.0,
-            "p95": 0.0,
-            "p99": 0.0
+            "count": 1038,
+            "maximum": 52.386268615722656,
+            "mean": 21.119548594561156,
+            "minimum": 15.214151382446289,
+            "p50": 19.662649154663086,
+            "p90": 26.896564674377448,
+            "p95": 30.595842361450195,
+            "p99": 39.280841369628895
           },
           "pub_dt": {
-            "max": 2230.203857421875,
-            "mean": 294.1206274401852,
-            "min": 20.98042106628418,
-            "n": 3874.0,
-            "p50": 231.88453674316406,
-            "p95": 657.9169006347656,
-            "p99": 996.6752178955078
+            "max": 1393.716552734375,
+            "mean": 289.48748619818105,
+            "min": 20.504146575927734,
+            "n": 3936.0,
+            "p50": 229.2905731201172,
+            "p95": 658.1433563232422,
+            "p99": 963.5343170166054
           },
           "track": {
-            "max": 24.921804428100586,
-            "mean": 4.451545513999077,
-            "min": 0.6914330124855042,
-            "n": 3875.0,
-            "p50": 3.7880520820617676,
-            "p95": 10.435027980804435,
-            "p99": 12.790439510345447
+            "max": 23.90202522277832,
+            "mean": 4.407150982233502,
+            "min": 0.692080020904541,
+            "n": 3931.0,
+            "p50": 3.6658830642700195,
+            "p95": 10.710676670074463,
+            "p99": 13.346651649475096
           }
         },
-        "report_path": "reports/p032_ground_run_331ccc24_2026_08_08_dev_may_hard_reentry/sustained_analysis.json",
+        "report_path": "reports/p032_ground_run_7e51e79a_2026_08_09_dev_may_hard_reentry_corrected/sustained_analysis.json",
         "resources": {
           "dashboard": {
             "cpu_percent": {
               "early": {
                 "count": 401,
-                "maximum": 7.999281312569754,
-                "mean": 5.2425799293330195,
-                "minimum": 2.9996254097784525,
-                "p50": 4.999501909623747,
-                "p95": 6.998717037185045
+                "maximum": 7.999190289962089,
+                "mean": 5.289781895491313,
+                "minimum": 2.999631912168426,
+                "p50": 4.999502844437647,
+                "p95": 6.999275260043199
               },
               "late": {
                 "count": 402,
-                "maximum": 7.999222051657809,
-                "mean": 5.206898659604919,
-                "minimum": 2.99965991655662,
-                "p50": 4.999499502604547,
-                "p95": 6.998991660880736
+                "maximum": 7.999205086993686,
+                "mean": 5.271225813570251,
+                "minimum": 2.999630229582339,
+                "p50": 4.999504406627429,
+                "p95": 6.999285136411788
               },
               "middle": {
                 "count": 402,
-                "maximum": 7.999265867375022,
-                "mean": 5.204557116834234,
-                "minimum": 2.9997041511783857,
-                "p50": 4.999501992107314,
-                "p95": 5.999447819521971
+                "maximum": 7.999197048599458,
+                "mean": 5.2742674741428965,
+                "minimum": 2.9994557517533,
+                "p50": 4.999509445633452,
+                "p95": 6.999298959665544
               }
             },
             "rss_kib": {
               "early": {
                 "count": 402,
-                "maximum": 106112.0,
-                "mean": 106043.19402985074,
-                "minimum": 104736.0,
-                "p50": 106100.0,
-                "p95": 106112.0
+                "maximum": 106328.0,
+                "mean": 106250.60696517413,
+                "minimum": 104028.0,
+                "p50": 106308.0,
+                "p95": 106328.0
               },
               "late": {
                 "count": 402,
-                "maximum": 106160.0,
-                "mean": 106154.05970149254,
-                "minimum": 105828.0,
-                "p50": 106156.0,
-                "p95": 106160.0
+                "maximum": 106356.0,
+                "mean": 106347.56218905473,
+                "minimum": 106072.0,
+                "p50": 106352.0,
+                "p95": 106352.0
               },
               "middle": {
                 "count": 402,
-                "maximum": 106148.0,
-                "mean": 106140.21890547263,
-                "minimum": 106112.0,
-                "p50": 106140.0,
-                "p95": 106148.0
+                "maximum": 106332.0,
+                "mean": 106330.06965174129,
+                "minimum": 106328.0,
+                "p50": 106332.0,
+                "p95": 106332.0
               }
             }
           },
@@ -294,53 +301,53 @@
             "cpu_percent": {
               "early": {
                 "count": 401,
-                "maximum": 13.99874229699707,
-                "mean": 7.149456131960216,
+                "maximum": 15.998507099310029,
+                "mean": 7.443363289766619,
                 "minimum": 0.0,
-                "p50": 6.999309105197535,
-                "p95": 11.963467363092269
+                "p50": 6.999346219067062,
+                "p95": 11.998771877703229
               },
               "late": {
                 "count": 402,
-                "maximum": 17.998249616230073,
-                "mean": 7.208278097427932,
+                "maximum": 14.998516676697706,
+                "mean": 7.416843335898378,
                 "minimum": 0.0,
-                "p50": 6.999309024713453,
-                "p95": 11.91690146923897
+                "p50": 6.999327406632315,
+                "p95": 11.9988666044589
               },
               "middle": {
                 "count": 402,
-                "maximum": 14.998623501328165,
-                "mean": 7.233406000296684,
-                "minimum": 0.9998617241228624,
-                "p50": 6.999297029102909,
-                "p95": 11.998540569352697
+                "maximum": 15.984331710496084,
+                "mean": 7.469893533146405,
+                "minimum": 0.0,
+                "p50": 6.999345519198458,
+                "p95": 11.998875662755559
               }
             },
             "rss_kib": {
               "early": {
                 "count": 402,
-                "maximum": 222168.0,
-                "mean": 218548.75621890547,
-                "minimum": 206484.0,
-                "p50": 218528.0,
-                "p95": 221551.80000000002
+                "maximum": 222316.0,
+                "mean": 218622.44776119402,
+                "minimum": 206628.0,
+                "p50": 218672.0,
+                "p95": 218859.80000000002
               },
               "late": {
                 "count": 402,
-                "maximum": 222348.0,
-                "mean": 219018.07960199006,
-                "minimum": 218536.0,
-                "p50": 218872.0,
-                "p95": 218872.0
+                "maximum": 222512.0,
+                "mean": 219253.40298507462,
+                "minimum": 218700.0,
+                "p50": 219036.0,
+                "p95": 222510.8
               },
               "middle": {
                 "count": 402,
-                "maximum": 222348.0,
-                "mean": 219014.52736318408,
-                "minimum": 218692.0,
-                "p50": 218872.0,
-                "p95": 220588.8
+                "maximum": 222512.0,
+                "mean": 219216.27860696518,
+                "minimum": 218856.0,
+                "p50": 219036.0,
+                "p95": 222372.0
               }
             }
           },
@@ -348,53 +355,53 @@
             "cpu_percent": {
               "early": {
                 "count": 401,
-                "maximum": 7.999281312569754,
-                "mean": 4.7589148129726535,
-                "minimum": 0.0,
-                "p50": 4.999336533049362,
-                "p95": 6.999300916823729
+                "maximum": 9.999066937068768,
+                "mean": 5.07528532671111,
+                "minimum": 1.999790331982643,
+                "p50": 4.999491066807873,
+                "p95": 6.999313619309237
               },
               "late": {
                 "count": 402,
-                "maximum": 10.96777899049507,
-                "mean": 4.7318506631027075,
+                "maximum": 8.999105722867897,
+                "mean": 4.975289603476089,
                 "minimum": 0.0,
-                "p50": 4.999185120389821,
-                "p95": 6.998877023372107
+                "p50": 4.999490221980025,
+                "p95": 6.9992954498703055
               },
               "middle": {
                 "count": 402,
-                "maximum": 10.998495108909733,
-                "mean": 4.7966940925860495,
-                "minimum": 1.9977835171234737,
-                "p50": 4.999393703543692,
-                "p95": 6.999287538671838
+                "maximum": 9.999065607317126,
+                "mean": 4.98327206553936,
+                "minimum": 0.9998657150348736,
+                "p50": 4.999464967258159,
+                "p95": 6.999325257346106
               }
             },
             "rss_kib": {
               "early": {
                 "count": 402,
-                "maximum": 78764.0,
-                "mean": 76453.28358208956,
-                "minimum": 70644.0,
-                "p50": 76488.0,
-                "p95": 76488.0
+                "maximum": 79036.0,
+                "mean": 76715.08457711442,
+                "minimum": 70688.0,
+                "p50": 76760.0,
+                "p95": 76760.0
               },
               "late": {
                 "count": 402,
-                "maximum": 78808.0,
-                "mean": 76541.65174129354,
-                "minimum": 75736.0,
-                "p50": 76516.0,
-                "p95": 76536.0
+                "maximum": 79072.0,
+                "mean": 76803.10447761194,
+                "minimum": 76024.0,
+                "p50": 76804.0,
+                "p95": 76820.0
               },
               "middle": {
                 "count": 402,
-                "maximum": 78764.0,
-                "mean": 76506.46766169154,
-                "minimum": 76488.0,
-                "p50": 76488.0,
-                "p95": 76496.0
+                "maximum": 79060.0,
+                "mean": 76827.42288557214,
+                "minimum": 76760.0,
+                "p50": 76768.0,
+                "p95": 76784.0
               }
             }
           },
@@ -402,53 +409,53 @@
             "cpu_percent": {
               "early": {
                 "count": 401,
-                "maximum": 35.996412093620975,
-                "mean": 14.039682415957229,
+                "maximum": 51.995035306048834,
+                "mean": 14.32096399516051,
                 "minimum": 0.0,
-                "p50": 12.99867318643184,
-                "p95": 23.997080923085274
+                "p50": 12.998802758270752,
+                "p95": 23.997465363710823
               },
               "late": {
                 "count": 402,
-                "maximum": 32.900896150920474,
-                "mean": 13.75030297767603,
+                "maximum": 32.99659640108123,
+                "mean": 13.936188696134847,
                 "minimum": 0.0,
-                "p50": 12.998675188025459,
-                "p95": 22.997785263885298
+                "p50": 12.99870931915585,
+                "p95": 22.99783930825997
               },
               "middle": {
                 "count": 402,
-                "maximum": 37.99518354055848,
-                "mean": 14.091480720598026,
+                "maximum": 31.996736972763518,
+                "mean": 14.333083978920282,
                 "minimum": 0.0,
-                "p50": 12.99867841136765,
-                "p95": 24.94669397758719
+                "p50": 12.998733741358729,
+                "p95": 23.9957187007281
               }
             },
             "rss_kib": {
               "early": {
                 "count": 402,
-                "maximum": 823812.0,
-                "mean": 811281.5621890547,
-                "minimum": 647696.0,
-                "p50": 816480.0,
-                "p95": 823385.4
+                "maximum": 826628.0,
+                "mean": 810741.1243781095,
+                "minimum": 647568.0,
+                "p50": 815518.0,
+                "p95": 823208.0
               },
               "late": {
                 "count": 402,
-                "maximum": 837400.0,
-                "mean": 834541.2039800995,
-                "minimum": 831640.0,
-                "p50": 834380.0,
-                "p95": 837006.7999999999
+                "maximum": 843572.0,
+                "mean": 840154.1393034826,
+                "minimum": 836800.0,
+                "p50": 840072.0,
+                "p95": 843246.0
               },
               "middle": {
                 "count": 402,
-                "maximum": 831612.0,
-                "mean": 827562.4875621891,
-                "minimum": 823836.0,
-                "p50": 827640.0,
-                "p95": 830856.0
+                "maximum": 836800.0,
+                "mean": 831898.5771144278,
+                "minimum": 826632.0,
+                "p50": 832308.0,
+                "p95": 836381.2
               }
             }
           },
@@ -456,53 +463,53 @@
             "cpu_percent": {
               "early": {
                 "count": 401,
-                "maximum": 171.9845482202497,
-                "mean": 77.86022215168937,
+                "maximum": 169.97535459343607,
+                "mean": 78.26670348293585,
                 "minimum": 0.0,
-                "p50": 74.99262162594346,
-                "p95": 128.6072741532419
+                "p50": 75.83906457543173,
+                "p95": 128.98798399536292
               },
               "late": {
                 "count": 402,
-                "maximum": 188.98162097041575,
-                "mean": 78.63056101264803,
+                "maximum": 168.98328789079417,
+                "mean": 78.4761870414361,
                 "minimum": 0.0,
-                "p50": 74.98198176009612,
-                "p95": 132.98618885943918
+                "p50": 74.99241620453978,
+                "p95": 134.88479353776708
               },
               "middle": {
                 "count": 402,
-                "maximum": 179.98242759566412,
-                "mean": 78.90490513492874,
+                "maximum": 188.814918330235,
+                "mean": 80.3576628313543,
                 "minimum": 0.0,
-                "p50": 73.99293134510629,
-                "p95": 129.97066842729512
+                "p50": 77.49235508395967,
+                "p95": 136.97999262555547
               }
             },
             "rss_kib": {
               "early": {
                 "count": 402,
-                "maximum": 138580.0,
-                "mean": 135686.60696517414,
-                "minimum": 131968.0,
-                "p50": 135778.0,
-                "p95": 136159.4
+                "maximum": 139540.0,
+                "mean": 135971.05472636817,
+                "minimum": 132032.0,
+                "p50": 136032.0,
+                "p95": 136475.6
               },
               "late": {
                 "count": 402,
-                "maximum": 140336.0,
-                "mean": 137652.74626865672,
-                "minimum": 137164.0,
-                "p50": 137636.0,
-                "p95": 138024.0
+                "maximum": 138320.0,
+                "mean": 137900.32835820896,
+                "minimum": 137496.0,
+                "p50": 137900.0,
+                "p95": 138276.0
               },
               "middle": {
                 "count": 402,
-                "maximum": 139864.0,
-                "mean": 136706.9054726368,
-                "minimum": 136208.0,
-                "p50": 136704.0,
-                "p95": 137135.8
+                "maximum": 139388.0,
+                "mean": 137011.05472636817,
+                "minimum": 136516.0,
+                "p50": 137000.0,
+                "p95": 137403.8
               }
             }
           }

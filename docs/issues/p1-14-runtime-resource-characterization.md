@@ -300,25 +300,170 @@ for ByteTrack at this cadence -- a genuine live-vs-replay divergence
 rather than a discrepancy to reconcile; the two measurement modes are
 reported separately and must not be blended into one number.
 
-**Known limitation surfaced by this run:** `/timing_target`'s
-`e2e_target_ms` (and `sensor_to_target_ms`) is published as exactly `0.0`
-on every one of 3867 samples. Source inspection found the cause:
-`dashboard_bridge_node._publish_target_from_tracks` only sets
-`e2e_target_ms` when the incoming `/tracks` message's `t_cam_msg_seen_ns`
-is `> 0`; that field is populated in `tracker_node` from a
-`frame_context` dictionary keyed by `frame_id` and filled by a *separate*
-`/timing` subscription callback. `perception_pipeline_node` publishes
-`/detections` before `/timing` for the same frame
-(`pub_dets.publish(...)` precedes `pub_timing.publish(...)`), so
-`tracker_node`'s detection handler almost always pops an empty `(0, 0)`
-context entry before the matching `/timing` message has been processed,
-and `t_cam_msg_seen_ns` never reaches `dashboard_bridge_node`. This is a
-genuine live-pipeline finding only a live sustained run could surface (it
-is invisible to deterministic replay, which has no live topic ordering).
-Fixing `perception_pipeline_node`'s publish order is a live-node
-behaviour change outside this issue's scope; `e2e_target_ms` is recorded
-as unavailable (with this documented reason), never as a genuine
-near-zero final-target-publication latency.
+## Superseded evidence
+
+The first sustained run (tag `p032_ground_run_331ccc24_2026_08_08_dev_may_hard_reentry`,
+commit `be19b16c`, promoted at the same commit) is superseded **only for
+`e2e_target_ms`/`sensor_to_target_ms`**, which that run recorded as always
+exactly `0.0` due to the bug diagnosed and fixed below. Every other metric
+from that run (`e2e_det_ms`, `track_ms`, TIM core/MARS extraction latency,
+appearance budget, CPU, RSS, thermal, cadence) is unaffected by this bug
+and remains valid; it is not re-promoted here only because the corrected
+run (`dev_may_hard_reentry_corrected`, commit `7e51e79a`/`f9746979`)
+reproduces it under the identical frozen protocol with the additional
+correct `e2e_target_ms` evidence. The original run's promoted files and
+this record's git history (commit `be19b16c`) remain available and are
+not deleted or rewritten.
+
+## e2e_target_ms: root cause, fix, and corrected sustained run (09-08-26)
+
+### Diagnosis
+
+The first sustained run (08-08-26) found `/timing_target`'s `e2e_target_ms`
+(and `sensor_to_target_ms`) published as exactly `0.0` on every one of 3867
+samples. Source inspection: `dashboard_bridge_node._publish_target_from_tracks`
+only sets `e2e_target_ms` when the incoming `/tracks` message's
+`t_cam_msg_seen_ns` is `> 0`; that field is populated in `tracker_node`
+from a `frame_context` dictionary keyed by `frame_id` and filled by a
+*separate* `/timing` subscription callback.
+
+Inspecting the installed rclpy `SingleThreadedExecutor` source
+(`/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py`,
+`Executor._wait_for_ready_callbacks`) showed it dispatches ready callbacks
+in `node.subscriptions` *registration* order, not message-arrival order:
+`for sub in node.subscriptions: if sub.handle.pointer in subs_ready: ...
+yield`. `tracker_node` registered `/detections` before `/timing`, so
+`on_detections` was *always* dispatched first whenever both were ready
+together -- deterministic, not an occasional race. This ruled out
+reordering `perception_pipeline_node`'s publish calls as a fix (the
+consumer's dispatch order was the actual point of control, not the
+producer's send order).
+
+### Fix
+
+- `tracker_node` now registers `/timing` before `/detections`
+  (`f9746979`), so `on_timing` populates `frame_context` before
+  `on_detections` needs it whenever both are ready in the same executor
+  cycle. Dict lookup by exact integer `frame_id` already made
+  mismatched-frame pairing structurally impossible; the defect was purely
+  silent unavailability.
+- Widened `/timing`'s subscription queue depth 1 -> 20 (`7e51e79a`) on the
+  hypothesis that BEST_EFFORT depth=1 could silently evict an
+  arrived-but-unprocessed `/timing` message under CPU contention; smoke
+  testing showed this made no measurable difference (ruling out queue
+  eviction as the dominant cause) but was kept as a strictly-safer
+  defensive change.
+- Extracted the correlation write path (`_store_frame_context`) and the
+  `e2e_target_ms` computation (`dashboard_bridge_node._compute_e2e_target_ms`)
+  into pure, directly-testable functions with 14 new focused tests,
+  including a static check that `/timing` is registered before
+  `/detections` and a static check that the tracking `backend.update()`
+  call never references timing-context state (tracker/TIM decisions
+  unchanged).
+
+### Residual gap: not fully closed, and why
+
+Live smoke testing after the fix showed genuine non-zero `e2e_target_ms`
+values for the first time, but only on a partial fraction of frames
+(smoke: ~20-25%). Investigation found this is a **producer-side temporal
+gap**, not a dispatch-order or queue problem: `/timing`'s own fields
+(`t_det_pub_start_ns`, `t_det_pub_end_ns`, `e2e_det_ms`) are only known
+*after* `/detections` has already been published, so `/timing`
+structurally cannot be published before `/detections` without
+restructuring what fields it carries. When `tracker_node`'s executor
+dispatches `on_detections` in an isolated wait-cycle before
+`perception_pipeline_node` has even sent the matching `/timing` message
+(not merely before it has been read), no consumer-side fix -- dispatch
+order or queue depth -- can help, because the needed message does not
+exist yet at dispatch time.
+
+Confirmed `Detection2DArray.header.stamp` cannot substitute as a
+correlation source: it carries the *source camera's wall-clock*
+timestamp (`frame.stamp_sec`/`stamp_nanosec`, from the original Image
+message's own header), not the host-monotonic arrival time
+(`t_cam_msg_seen_ns`) the tracker/TIM measurement chain requires --
+substituting it would silently change what is being measured.
+
+A frame-keyed buffering/join mechanism was considered (deferring
+`/tracks` publication in `on_detections` until the matching `/timing`
+message arrives, rather than publishing immediately with whatever
+context is available). This was **not implemented**: it would delay
+`/tracks` publication -- the live control-path signal TIM-MARS and
+ultimately the flight controller depend on -- which is a materially
+larger, real-time-behaviour-affecting architectural change, not a
+timing-only instrumentation fix, and was assessed as out of scope for
+this issue rather than expanded into indefinitely.
+
+### Corrected sustained run and representativeness (`dev_may_hard_reentry_corrected`, 09-08-26)
+
+Same frozen protocol (`bytetrack_tim`, 1200 s requested / 1205.5 s
+observed, 60 s warm-up, same workload/config/sampling cadence). All
+acceptance gates passed (`passed: true`, zero violations). Evidence bag
+SHA-256
+`0c95ec33fa554ab4bb28ee2269aa6005761b5af94c5b9ad6956a42350a8644fb`;
+report:
+`reports/p032_ground_run_7e51e79a_2026_08_09_dev_may_hard_reentry_corrected`.
+
+`tools/analysis/analyse_p032_e2e_target_latency.py` computes percentiles
+only over genuinely-correlated samples (`e2e_target_ms > 0`), never mixed
+with the unavailable-sentinel zeros -- `collect_live_timing_stats.py`'s
+raw percentiles would otherwise report a misleading `p50 = 0.0 ms`
+(median falling inside the ~75% zero block).
+
+| Metric | Value |
+|---|---:|
+| Total `/timing_target` samples | 4109 |
+| Genuine (correlated) measurements | 1038 |
+| Unavailable-sentinel samples | 3071 |
+| Coverage rate | 25.26% |
+| `e2e_target_ms` p50 (conditional) | 19.66 ms |
+| `e2e_target_ms` p90 (conditional) | 26.90 ms |
+| `e2e_target_ms` p95 (conditional) | 30.60 ms |
+| `e2e_target_ms` p99 (conditional) | 39.28 ms |
+| `e2e_target_ms` max (conditional) | 52.39 ms |
+
+**Representativeness** (`tools/analysis/analyse_p032_e2e_target_correlation_representativeness.py`,
+same-`frame_id` exact lookups within the recorded bag, no cross-clock-domain
+joining involved):
+
+- *Temporal stability*: coverage rate across 10 equal-duration windows
+  spanning the full run ranged 21.5%-28.1% (mean ~25%), with a
+  last-window/first-window ratio of 0.90 -- within sampling noise for
+  ~400 samples/window (expected binomial std dev ~2.2 points), no
+  monotonic drift, no warm-up-specific effect (the first window, which
+  includes the tail of warm-up, measured 27.6%, *above* the run mean).
+  Zero `/timing_target` frame-ID gaps (no backlog/drops).
+- *Covariate association*: misses show **no** association with
+  detector-side latency or cadence -- `e2e_det_ms` hit-mean 12.68 ms vs
+  miss-mean 12.68 ms; `pub_dt_ms` hit-mean 291.7 ms vs miss-mean 291.1 ms
+  (both essentially identical). Misses show a **real** association with
+  tracker compute latency -- `track_ms` hit-median 1.77 ms vs miss-median
+  4.13 ms (~2.3x), hit-mean 3.24 ms vs miss-mean 4.85 ms (~1.5x).
+
+**Classification** (Option C, qualified): coverage remains moderate
+(25.26%) and the valid subset is **not fully representative** -- it is
+demonstrably unbiased with respect to detector cadence/latency but
+demonstrably skewed toward *lower*-tracker-latency frames. Since higher
+`track_ms` frames are undersampled in the measured (hit) group and
+plausibly correlate with genuinely higher end-to-end latency, the
+reported conditional percentiles are treated as a **likely mild
+underestimate** of the true unconditional tail latency, not a validated
+unconditional measurement. `p95/p99 target latency` is therefore recorded
+as **NOT YET MET** as an unqualified pipeline-wide criterion, while the
+conditional evidence above is retained as genuine, useful, non-fabricated
+measurement (a real improvement over the prior always-zero state).
+
+**`end-to-end target p95 <= 200 ms`**: no such threshold is documented
+anywhere in this repository (`grep`-verified against `docs/`). The closest
+documented reference is `tools/timing_contract.py`'s
+`METRIC_WARN_THRESHOLDS["e2e_target_ms"] = 150.0` -- a soft dashboard
+*warn* indicator, not a formal acceptance gate. The measured conditional
+p95 (30.60 ms) and p99 (39.28 ms) are comfortably under both the
+suggested 200 ms and the documented 150 ms warn threshold, with enough
+margin (4-6x) that the discovered track_ms-based bias is very unlikely to
+change this qualitative picture -- but per the representativeness finding
+above, this is reported as directionally reassuring evidence, not a
+certified pass against an undocumented or informal threshold.
 
 ## Not yet done
 
@@ -329,8 +474,14 @@ near-zero final-target-publication latency.
   technical; simply not yet executed).
 - Any cross-architecture live-latency claim (only replay CPU-cost is
   measured across all six architectures in this slice).
-- `e2e_target_ms` / `sensor_to_target_ms` (blocked on a
-  `perception_pipeline_node` publish-order fix outside this issue's
-  scope; see the known-limitation note above).
+- Full (near-100%) `e2e_target_ms` correlation coverage: the residual gap
+  is a producer-side temporal dependency; closing it fully would require
+  restructuring `perception_pipeline_node`'s publish sequencing or a
+  frame-keyed deferred-publish buffer in `tracker_node`, either of which
+  is a live control-path behaviour change outside a timing-only
+  instrumentation fix (see the residual-gap analysis above).
+- An unqualified/unconditional `e2e_target_ms` p95/p99 acceptance claim
+  (conditional evidence exists and is documented; representativeness is
+  partially, not fully, established).
 - Power (no calibrated sensor installed).
 - Raw-image DDS/QoS bandwidth transport cost (tracked by Issue #54).
