@@ -171,8 +171,13 @@ async function updatePhysicalRefFrame() {
     // physicalRefCanvasToSourceCoords() below divides back out.
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
-    physicalRefRepaint();
     physicalRefSetStatus("");
+    // Draft geometry is frame-local: every frame change resolves the
+    // current frame's own state (a saved sample's geometry, or nothing)
+    // before repainting -- an unsaved box drawn on a previous frame must
+    // never silently reappear here.
+    physicalRefSyncDraftToCurrentFrame();
+    physicalRefRepaint();
   };
   img.src = physicalRefFrameUrl(idx);
 }
@@ -493,7 +498,47 @@ function physicalRefUpdateActiveSample() {
   physicalRefRenderSampleList();
 }
 
-function physicalRefLoadSampleIntoForm(i) {
+// --- Frame-local draft geometry ----------------------------------------------
+//
+// Unsaved target/distractor boxes belong to exactly one source frame. On
+// every frame change (updatePhysicalRefFrame's img.onload, above) this is
+// resolved before repainting: if the newly displayed frame already has a
+// saved physical-reference sample, that sample's own geometry is loaded for
+// editing (physicalRefLoadSampleIntoForm); otherwise any leftover draft
+// geometry from whichever frame was previously displayed is discarded. A
+// box drawn on frame A must never silently reappear as draft geometry on
+// frame B -- there is no automatic carry-forward path anywhere in this file.
+
+function physicalRefFindSampleAtCurrentFrame() {
+  const t = currentTimeS();
+  return physicalRefSamples.findIndex((s) => Math.abs(s.t_s - t) < 1e-6);
+}
+
+function physicalRefSyncDraftToCurrentFrame() {
+  const idx = physicalRefFindSampleAtCurrentFrame();
+
+  if (idx >= 0) {
+    physicalRefLoadSampleIntoForm(idx, /* viaNavigation */ true);
+    return;
+  }
+
+  const hadUnsavedDraft =
+    !!physicalRefDrawnTarget || physicalRefDrawnDistractors.length > 0;
+
+  physicalRefActiveIndex = -1;
+  physicalRefDrawnTarget = null;
+  physicalRefDrawnDistractors = [];
+  physicalRefRenderDistractorList();
+
+  if (hadUnsavedDraft) {
+    physicalRefSetStatus(
+      "Unsaved draft geometry from the previous frame was discarded " +
+        "(draft boxes are frame-local and are never carried forward)."
+    );
+  }
+}
+
+function physicalRefLoadSampleIntoForm(i, viaNavigation) {
   const s = physicalRefSamples[i];
   if (!s) return;
   physicalRefActiveIndex = i;
@@ -506,8 +551,10 @@ function physicalRefLoadSampleIntoForm(i) {
   physicalRefOnStateChange();
   physicalRefRepaint();
   physicalRefSetFormStatus(
-    "Editing sample at t_s=" + s.t_s.toFixed(3) +
-      ". Step the frame stepper to that time if you want to redraw its box."
+    viaNavigation
+      ? "Loaded this frame's saved sample (t_s=" + s.t_s.toFixed(3) + ")."
+      : "Editing sample at t_s=" + s.t_s.toFixed(3) +
+          ". Step the frame stepper to that time if you want to redraw its box."
   );
 }
 
