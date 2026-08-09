@@ -518,7 +518,9 @@ def serialize_physical_reference(artifact: PhysicalReferenceArtifact) -> dict:
 
 def write_physical_reference(path: Path, artifact: PhysicalReferenceArtifact) -> None:
     payload = serialize_physical_reference(artifact)
-    Path(path).write_text(
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
 

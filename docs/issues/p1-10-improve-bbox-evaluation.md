@@ -610,18 +610,136 @@ never references the legacy annotation's tracker-ID field, and that
 `OutputSample.track_id` is not read by any of the join/classify
 functions.
 
+## R. Milestone 3 -- annotation UI
+
+Adds a third `tools/bag_annotation_ui/static/tim_clean_ui.html` workspace
+mode, "Physical reference (Issue #25)", alongside (not replacing) the
+existing "Evaluation viewer" and "Annotation editor" modes. All new
+frontend logic lives in a separate file,
+`tools/bag_annotation_ui/static/tim_physical_reference_ui.js`, so the
+existing 2400-line `tim_clean_ui.js` is touched only additively (two small
+branches: one in `setLoadedWorkspaceVisible` to show/hide the new
+workspace div, one in `updateFrame` to dispatch to the new mode's frame
+renderer -- both feature-detected via `typeof window.X === "function"`,
+so the legacy modes degrade to their exact original behaviour if the new
+file is ever absent). The new mode reuses the existing bag-loading,
+`/frame.jpg` rendering, and frame-stepping machinery (`loadedFrames`,
+`loadedBag`, `frameTimesS`, `currentFrameIndex()`, `currentTimeS()`) --
+no frame-navigation or source-image pipeline is duplicated.
+
+**Backend**: `tools/bag_annotation_ui/tim_ui_physical_reference.py` is a
+thin adapter, not a second schema implementation -- `load_physical_reference_for_ui`/
+`save_physical_reference_for_ui` call `physical_target_reference.py`'s
+`parse_physical_reference`/`validate_physical_reference`/
+`write_physical_reference`/`serialize_physical_reference` directly. The
+one new piece of logic is `normalize_rect` (reverse-drag normalisation,
+zero-area rejection) -- a backend-side safety net applied to whatever
+rectangle the frontend submits, on top of (not instead of) the schema
+validator's own bounds checking. Three new routes in `tim_clean_ui.py`
+(`/api/physical_reference/list`, `/load`, `/save`, plus a best-effort
+`/image_topic_hint` for provenance display) mirror the existing
+`/api/annotation/load`/`save` pattern exactly. **The backend validator is
+authoritative**: `save_physical_reference_for_ui` never writes a file
+before `validate_physical_reference` has accepted it, verified directly
+against the running server (an artifact with a bare-integer physical
+label was rejected with no file written, section 20 verification).
+
+Also fixed as part of this milestone: `physical_target_reference.write_physical_reference`
+did not create parent directories, which the schema's own frozen save
+destination (`docs/data/physical_target_references/`, not yet existing in
+the repository) requires. This is an additive robustness fix (`path.parent.mkdir(parents=True,
+exist_ok=True)`), not a schema or scoring semantics change.
+
+**Coordinate mapping** (section 5's core requirement): the canvas's
+internal pixel buffer (`canvas.width`/`height`) is set to the loaded
+frame's *natural* pixel dimensions the instant it loads
+(`updatePhysicalRefFrame`), not a CSS-scaled size. A pointer event is
+converted from CSS/display pixels to that buffer's pixel space via
+`canvas.width / canvas.getBoundingClientRect().width` (and the `y`
+equivalent) -- because the buffer already equals the source image size,
+this single ratio *is* the entire display-to-source mapping, and it is
+applied at every `pointerdown`/`pointermove`/`pointerup`, before any
+box is stored. Saved boxes are therefore always source-image pixels;
+raw CSS/canvas display coordinates are never saved, regardless of how
+the browser renders the canvas element visually. `physicalRefNormalizeDrag`
+handles reverse-drag direction (drag from any corner) and rejects
+sub-1px boxes at the frontend, mirrored by the backend's `normalize_rect`.
+
+**Bbox drawing interaction**: pointer-event-based (not legacy mouse
+events), a draw-mode selector (Target / Distractor), live drag preview,
+an explicit "Clear drawn box" action, and a distractor list with
+per-item remove buttons. Target boxes render green, distractor boxes
+orange, both labelled -- not colour-only.
+
+**State/context controls**: `identity_state` (`present_scored` /
+`present_reference_unavailable` / `absent` -- `present_ambiguous` is not
+offered, matching its removal from the frozen schema) and
+`identity_context` (`target_only` / `distractors_complete`, shown only
+for `present_scored`) are plain `<select>` elements wired to enforce the
+frozen rules client-side as *convenience*: switching to `target_only`
+clears any drawn distractors; drawing a distractor while in
+`target_only` is refused with a status message; drawing any box while
+`identity_state != present_scored` is refused. None of this is
+authoritative -- the backend validator re-checks everything
+independently before any file is written.
+
+**Interpolation**: a single `interpolate_from_previous` checkbox. The UI
+does not attempt to pre-compute or grey out illegal transitions (that
+would require the frontend to reimplement the validator's adjacency
+logic); instead, an artifact with an illegal transition is rejected by
+the backend validator at save time with the same error message the
+Milestone 1 test suite already exercises, and no partial file is
+written.
+
+**Save/load**: the in-memory sample list is edited entirely client-side
+(new/update/delete/edit actions on `physicalRefSamples`, kept sorted by
+`t_s`) and only reaches the backend on explicit "Save JSON". Loading an
+existing artifact re-populates both the sample list and the provenance
+form fields. Saving to a path that already holds a different, valid
+artifact overwrites it explicitly (there is no silent overwrite outside
+this normal, deliberate save action -- the destination path is always
+visible and editable in the form before the button is clicked).
+
+**Provenance**: `source_width`/`source_height` are read directly from
+the decoded frame's natural pixel dimensions (never typed by hand);
+`source_bag_name`/`source_bag_path` are read from the already-loaded bag
+path; `source_image_topic` is a best-effort hint from a new endpoint that
+inspects the bag's topic list (preferring `/camera/image_raw`) purely for
+display -- it never changes which frames `tim_ui_bag_cache.load_bag_cache`
+serves, so the existing frame pipeline is untouched. `coordinate_convention`
+supports `source_pixels_historical_pre_p53` with a required evidence
+field (shown/hidden based on the selected convention), satisfying the
+May/June historical-provenance requirement without fabricating a modern
+header into old data.
+
+**Tracker overlays**: a "show tracker overlays" checkbox toggles
+`draw_tracks` on the existing `/frame.jpg` endpoint -- pixels baked into
+the served JPEG for visual context only. They are never read back out of
+the canvas or serialized; `physicalRefSamples` objects have no field that
+could hold one, and a dedicated backend test walks every key in a saved
+artifact asserting none contains the substring "track".
+
+**Legacy UI**: `tools/bag_annotation_ui/tim_ui_annotations.py` (the CSV
+schema/validator) is not modified at all. The existing tracker-ID
+annotation editor and its `/api/annotation/load`/`save` routes were
+verified against the live running server after this milestone's changes,
+round-tripping a CSV exactly as before.
+
 ## This milestone's scope
 
 Milestone 1 (frozen, corrected): this document (sections A-P) plus
 `tools/analysis/physical_target_reference.py` (schema, validator, Stage A
 classifier) and its 42 focused tests, plus a template artifact.
 
-Milestone 2 (this update, section Q): the executable evaluation core, CLI
-wrapper, and 35 further focused tests described above, proven entirely
-against synthetic data. **Not** implemented: the drawing UI, any real
-sequence annotation, any replay run against a real bag, any TIM-MARS
-configuration change, any modification to the legacy evaluators or
-existing annotation files.
+Milestone 2 (frozen, section Q): the executable evaluation core, CLI
+wrapper, and 35 further focused tests, proven entirely against synthetic
+data.
+
+Milestone 3 (this update, section R): the annotation UI mode, its
+backend adapter, and 17 further focused tests (94 total for Issue #25).
+**Not** implemented: any real sequence annotation, any canonical
+evaluation run, any TIM-MARS configuration change, any modification to
+the legacy evaluators or existing tracker-ID annotation files.
 
 ## Revision note
 
