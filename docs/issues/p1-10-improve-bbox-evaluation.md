@@ -512,20 +512,116 @@ deleted by this milestone**. They remain documented, explicitly, as:
   this contract is the actual fix that statement was gesturing at.
 
 A new, identity-independent evaluator path consuming this schema is
-future, flag-gated work (implementation plan step 4 in the accepted
-audit), introduced only after this contract and its validator are
-reviewed and accepted.
+implemented in Milestone 2 (section Q), introduced alongside the legacy
+evaluator rather than replacing it.
+
+## Q. Milestone 2 -- evaluator implementation
+
+Three new files, none of them modifying the legacy evaluator:
+
+- `tools/analysis/physical_target_bbox_evaluation.py` -- the pure
+  evaluation core: timebase join, Stage A/B, duration buckets,
+  aggregation, report assembly. No bag I/O, so it is fully exercisable
+  with synthetic data.
+- `tools/analysis/evaluate_physical_target_bbox.py` -- the CLI/bag-reading
+  wrapper. Its `--help` text and module docstring explicitly state it is
+  **not** the legacy evaluator and does not use
+  `correct_target_track_id`/`/tracks` lookups, and name
+  `evaluate_tim_target_bbox_correctness.py` as the tracker-ID-dependent
+  alternative, satisfying the "impossible to accidentally believe legacy
+  evaluation is identity-independent" requirement.
+- Focused tests in `tools/tests/test_physical_target_bbox_evaluation.py`
+  (core, 26 tests) and `tools/tests/test_evaluate_physical_target_bbox.py`
+  (CLI helpers + `--help` distinctiveness, 9 tests).
+
+**Timebase join** (section D): physical-reference keyframes are resolved
+at an arbitrary `t_s` as a step function (holding the enclosing
+keyframe's `identity_state`/`identity_context`/`distractor_bboxes_xyxy`
+constant across `[keyframe.t_s, next_keyframe.t_s)`), with
+`target_bbox_xyxy` additionally linearly interpolated across that span
+only when the successor keyframe's `interpolate_from_previous` is `true`
+(itself only legal, per the schema validator, between two
+`present_scored`/`target_only` keyframes). Time outside
+`[samples[0].t_s, samples[-1].t_s)` is never evaluated. The
+controller-facing output stream is sampled by latest-preceding-sample
+with the existing shared freshness contract
+(`thesis_bringup.freshness.classify_relative_freshness`,
+`DEFAULT_MAX_OUTPUT_AGE_S`) -- the same primitive `tim_evaluation.py`
+already uses, not a new validity definition.
+
+**Evaluation state machine**, per fixed-step grid tick (default
+`step_s=0.05`, matching `tim_evaluation.py`'s existing default):
+
+1. `absent` -> `target_absent_duration_s`; additionally
+   `target_absent_with_output_duration_s` when a valid output exists at
+   that instant (the safety-relevant sub-condition from section 13 --
+   never collapsed into ordinary localisation error).
+2. `present_reference_unavailable` -> `reference_unavailable_duration_s`,
+   unconditionally on output (section 14: an output existing during this
+   period does not fabricate identity/localisation).
+3. `present_scored` with no fresh/valid output ->
+   `lost_or_suppressed_duration_s`.
+4. `present_scored` with a fresh/valid output -> `classify_identity_stage_a`
+   (imported, not reimplemented) decides `identity_target` ->
+   `correct_target_output_duration_s` (+`localisation_scored_duration_s`,
+   + Stage B numeric metrics, unconditionally, no quality gate),
+   `wrong_person` -> `wrong_person_output_duration_s`, or
+   `identity_unresolved` -> `identity_unresolved_duration_s`.
+
+**Duration buckets**: the six outcomes above
+(`correct_target_output_duration_s`, `wrong_person_output_duration_s`,
+`identity_unresolved_duration_s`, `lost_or_suppressed_duration_s`,
+`target_absent_duration_s`, `reference_unavailable_duration_s`) are
+primary and mutually exclusive; `DurationBuckets.primary_total_s()` sums
+them, and the evaluator asserts this equals
+`total_evaluated_duration_s` within `1e-6`s (`reconciliation_ok`/
+`reconciliation_residual_s`), reported in every output JSON.
+`localisation_scored_duration_s` and
+`target_absent_with_output_duration_s` are conditional subset metrics
+(always `<=` their parent bucket) and are never added into the
+reconciliation total a second time.
+
+**Stage B formulas** (section L/M, unchanged from Milestone 1, now
+executable): IoU via `external_target_initialization.bbox_iou` (reused,
+not reimplemented). Centre error in pixels: Euclidean distance between
+bbox centres. Centre error, normalised: divided by the **target**
+(reference) bbox height specifically -- `centre_error_ref_h`, verified by
+a dedicated test that the same formula gives a different, wrong answer if
+divided by the output bbox's height instead. Aggregation: duration-weighted
+mean (primary), plus min/max/median/p10/p90 (secondary/diagnostic),
+computed only over `identity_target` samples -- no IoU/centre-error
+threshold gates membership in this population.
+
+**Report** (`build_report`): JSON containing schema/contract version,
+evaluator name/mode, stream name, source bag identity/topic/dimensions,
+coordinate convention (+evidence where historical), selected physical
+target label, physical-reference path and SHA-256, repository commit and
+dirty state (`None` if ungettable, never fabricated), all duration
+buckets, full Stage B aggregate, and the reconciliation block. A Markdown
+companion is written alongside for human review.
+
+**Regenerated-tracker-ID invariance**: proven both at the Stage A level
+(Milestone 1) and now end-to-end through the full join/bucket/aggregate
+pipeline (`test_regenerated_tracker_id_invariance_end_to_end`) -- two
+synthetic runs, identical geometry and timing, disjoint `track_id`
+values, assert identical `DurationBuckets` and `LocalisationAggregate`.
+A structural test additionally confirms the evaluation core's source
+never references the legacy annotation's tracker-ID field, and that
+`OutputSample.track_id` is not read by any of the join/classify
+functions.
 
 ## This milestone's scope
 
-Implemented: this document, plus `tools/analysis/physical_target_reference.py`
-(schema dataclasses, deterministic load/validate/serialize, and the pure
-Stage A identity-attribution function `classify_identity_stage_a`) and
-its focused tests, plus a template artifact. **Not** implemented: the
-drawing UI, the evaluator refactor (Stage B duration accounting, bag
-reading, reports), any real sequence annotation, any replay run, any
-TIM-MARS configuration change, any modification to existing evaluators or
-annotation files.
+Milestone 1 (frozen, corrected): this document (sections A-P) plus
+`tools/analysis/physical_target_reference.py` (schema, validator, Stage A
+classifier) and its 42 focused tests, plus a template artifact.
+
+Milestone 2 (this update, section Q): the executable evaluation core, CLI
+wrapper, and 35 further focused tests described above, proven entirely
+against synthetic data. **Not** implemented: the drawing UI, any real
+sequence annotation, any replay run against a real bag, any TIM-MARS
+configuration change, any modification to the legacy evaluators or
+existing annotation files.
 
 ## Revision note
 
