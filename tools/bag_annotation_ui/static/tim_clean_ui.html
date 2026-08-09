@@ -258,20 +258,41 @@
         <div class="annotationQuickEditor">
           <label>
             output JSON
-            <input id="physicalRefOutputPath" value="docs/data/physical_target_references/ui_created/new_physical_reference.json">
+            <input
+              id="physicalRefOutputPath"
+              value="docs/data/physical_target_references/_scratch/example.json"
+            >
           </label>
+          <div class="physicalRefHint">
+            The path above is a disposable smoke-test example, not a real
+            sequence destination. For a real canonical artifact, set a
+            deliberate path (e.g.
+            <code>docs/data/physical_target_references/dev_may_hard_reentry.json</code>)
+            together with a real, non-empty sequence_id below -- the backend
+            rejects saves with an empty sequence_id.
+          </div>
           <select id="physicalRefExisting"></select>
 
           <div class="physicalRefProvenanceGrid">
-            <label>sequence_id <input id="physicalRefSequenceId" value=""></label>
-            <label>selected physical target label <input id="physicalRefTargetLabel" value=""></label>
-            <label>annotator <input id="physicalRefAnnotator" value=""></label>
+            <label>
+              sequence_id (required, deliberate)
+              <input id="physicalRefSequenceId" value="" placeholder="e.g. dev_may_hard_reentry">
+            </label>
+            <label>
+              selected physical target label
+              <input id="physicalRefTargetLabel" value="" placeholder="e.g. black_shirt_person">
+            </label>
+            <label>annotator <input id="physicalRefAnnotator" value="" placeholder="your name"></label>
             <label>
               coordinate convention
               <select id="physicalRefCoordConvention" onchange="physicalRefOnCoordConventionChange()">
+                <option value="" selected>-- unresolved, choose deliberately --</option>
                 <option value="source_pixels_p53_contract">source_pixels_p53_contract</option>
                 <option value="source_pixels_historical_pre_p53">source_pixels_historical_pre_p53</option>
               </select>
+              <div id="physicalRefCoordResolvedNote" class="physicalRefHint">
+                Load a bag to auto-resolve this from its capture date/header.
+              </div>
             </label>
             <label id="physicalRefEvidenceLabel" hidden>
               coordinate convention evidence
@@ -295,10 +316,12 @@
                 <option value="distractors_complete">distractors_complete</option>
               </select>
             </label>
-            <label>
-              <input type="checkbox" id="physicalRefInterpolate"> interpolate_from_previous
-            </label>
           </div>
+
+          <label class="physicalRefInterpolateRow">
+            <input type="checkbox" id="physicalRefInterpolate">
+            Interpolate from previous keyframe
+          </label>
 
           <div id="physicalRefDistractorList" class="physicalRefDistractorList"></div>
 

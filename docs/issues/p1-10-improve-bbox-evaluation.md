@@ -753,3 +753,36 @@ worst-localised target-attributed samples. The corrected contract
 (`identity_context`: `target_only` / `distractors_complete`, and a
 threshold-free relative-comparison Stage A rule) is frozen here; see
 sections G and J for the full corrected semantics and the reasoning.
+
+## Milestone 3 corrective follow-up
+
+A browser smoke test against the real May hard-reentry bag found that the
+UI's `coordinate_convention` control defaulted to
+`source_pixels_p53_contract` regardless of source, silently mis-labelling
+a historical pre-#53 bag as modern unless the annotator remembered to
+change it by hand. Fixed with a deterministic auto-resolver
+(`tim_ui_physical_reference.resolve_coordinate_convention`): a bag whose
+own directory name embeds a capture date before Issue #53's 2026-07-22
+contract closure resolves to `source_pixels_historical_pre_p53` with
+generated evidence text (a logical certainty from the date, not a guess);
+a bag with a genuine `tim_mars_source_pixels_resize_v1` header match on
+`/detections` resolves to `source_pixels_p53_contract`; anything else
+resolves to nothing, and the UI leaves the control on an explicit
+"unresolved, choose deliberately" placeholder that the backend validator
+already rejects if left unchanged at save time. Verified live against the
+real May bag path. Section E/F's frozen coordinate semantics themselves
+are unchanged -- this only decides which of the two applies to a given
+source, automatically where possible.
+
+The same smoke test flagged the default output-path placeholder
+(`.../ui_created/new_physical_reference.json`) as too easy to mistake for
+a real destination during casual testing. The output-path default is now
+under an explicitly named `_scratch/` example path, and
+`physical_target_reference.parse_provenance` now additionally requires a
+non-empty `sequence_id` (mirroring the existing
+`selected_physical_target_label` non-empty check) -- a save with a
+placeholder-empty identity is rejected before any file (or even the
+output directory) is created, verified live.
+
+`interpolate_from_previous`'s visible checkbox label is now "Interpolate
+from previous keyframe"; the field name and schema are unchanged.

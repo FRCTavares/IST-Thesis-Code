@@ -368,6 +368,21 @@ def test_descriptive_physical_label_is_accepted():
     assert artifact.provenance.selected_physical_target_label == "black_shirt_person"
 
 
+def test_empty_sequence_id_is_rejected():
+    """A physical-reference artifact must carry a deliberate sequence
+    identity -- an empty sequence_id (e.g. a smoke-test artifact saved
+    without filling in the form) is never valid, regardless of path."""
+    data = _artifact([_sample(0.0, PTR.STATE_ABSENT)], sequence_id="")
+    with pytest.raises(PTR.PhysicalReferenceValidationError, match="sequence_id"):
+        PTR.parse_physical_reference(data)
+
+
+def test_whitespace_only_sequence_id_is_rejected():
+    data = _artifact([_sample(0.0, PTR.STATE_ABSENT)], sequence_id="   ")
+    with pytest.raises(PTR.PhysicalReferenceValidationError, match="sequence_id"):
+        PTR.parse_physical_reference(data)
+
+
 def test_classify_identity_stage_a_signature_has_no_tracker_id_or_threshold_parameter():
     params = set(inspect.signature(PTR.classify_identity_stage_a).parameters)
     assert not any("track" in name.lower() or name.lower() == "id" for name in params)
