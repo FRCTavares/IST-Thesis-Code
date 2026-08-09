@@ -467,13 +467,74 @@ def test_tracker_overlay_toggle_is_independent_of_draft_geometry():
     assert "physicalRefSamples" not in body
 
 
-def test_navigation_does_not_touch_interpolate_checkbox_state():
+# --- interpolate_from_previous is per-sample, never inherited across navigation
+#
+# Corrected requirement (supersedes the M3 frame-local-geometry commit's
+# original behaviour, which deliberately left this checkbox untouched):
+# interpolate_from_previous is a deliberate per-sample decision, exactly
+# like target/distractor geometry -- it must reset to false on navigation
+# to a frame with no saved sample, and must restore exactly (true or
+# false) when navigating to a frame that does have one.
+
+
+def test_unsaved_frame_navigation_resets_interpolate_checkbox_to_false():
+    """1/2: a checked interpolation flag must never survive navigation to
+    an unsaved frame -- it cannot be inherited from whatever frame or
+    sample was previously displayed."""
     body = _extract_js_function_body(JS_SOURCE, "physicalRefSyncDraftToCurrentFrame")
-    # In the no-saved-sample (clear) branch specifically, only geometry is
-    # touched -- the interpolate checkbox is a user-controlled setting for
-    # what they are about to annotate next, not a property of the previous
-    # frame's geometry, and section 6 of the request explicitly limited
-    # this fix to geometry.
     idx_branch_pos = body.index("if (idx >= 0)")
     clear_branch = body[body.index("}", idx_branch_pos) :]
-    assert "physicalRefInterpolate" not in clear_branch
+    assert "interpolateCheckbox.checked = false" in clear_branch
+
+
+def test_interpolate_reset_happens_in_the_no_saved_sample_branch_only():
+    """The reset statement must be strictly after the idx>=0 early-return
+    branch (i.e. only reachable when there is no saved sample at this
+    frame), never before it or inside the restore branch."""
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefSyncDraftToCurrentFrame")
+    idx_branch_end = body.index("}", body.index("if (idx >= 0)"))
+    reset_pos = body.index("interpolateCheckbox.checked = false")
+    assert reset_pos > idx_branch_end
+
+
+def test_saved_sample_with_interpolation_true_is_restored_exactly():
+    """3: navigating to a saved sample whose interpolate_from_previous is
+    true must set the checkbox to true (restore, not the reset path)."""
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefLoadSampleIntoForm")
+    assert (
+        'document.getElementById("physicalRefInterpolate").checked = '
+        "!!s.interpolate_from_previous;" in body
+    )
+    # This is the *only* place a saved sample's flag is written into the
+    # checkbox, and it uses the sample's own field verbatim (via !!),
+    # so both true and false are restored exactly -- not hardcoded either
+    # way.
+
+
+def test_saved_sample_with_interpolation_false_is_restored_exactly():
+    """4: same code path as the true case above (!!s.interpolate_from_previous
+    naturally yields false for a falsy saved value) -- verified here as its
+    own explicit requirement rather than assumed from the true case."""
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefLoadSampleIntoForm")
+    # A hardcoded `= true` anywhere in this function would violate "restore
+    # exactly"; the only assignment must be the sample-driven one asserted
+    # above.
+    assert '.checked = true;' not in body
+    assert '.checked = !!s.interpolate_from_previous;' in body
+
+
+def test_geometry_frame_local_behaviour_from_7712c487_is_unchanged():
+    """5: the prior fix's own guarantees (sync-before-repaint, geometry
+    cleared/restored, no carry-forward) still hold after this change."""
+    onload_start = JS_SOURCE.index("img.onload = function () {")
+    onload_body = _extract_js_function_body_from(JS_SOURCE, onload_start)
+    assert onload_body.index(
+        "physicalRefSyncDraftToCurrentFrame();"
+    ) < onload_body.index("physicalRefRepaint();")
+
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefSyncDraftToCurrentFrame")
+    idx_branch_pos = body.index("if (idx >= 0)")
+    clear_branch = body[body.index("}", idx_branch_pos) :]
+    assert "physicalRefDrawnTarget = null;" in clear_branch
+    assert "physicalRefDrawnDistractors = [];" in clear_branch
+    assert "physicalRefLoadSampleIntoForm(idx" in body[:idx_branch_pos + 200]
