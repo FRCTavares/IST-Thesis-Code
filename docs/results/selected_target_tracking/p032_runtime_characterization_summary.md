@@ -143,8 +143,16 @@ It does not support:
   of frames, with a demonstrated mild bias toward lower-tracker-latency
   samples -- conditional evidence only, see above);
 - a power claim (no calibrated sensor);
-- a raw-image transport/bandwidth claim (Issue #54 scope);
 - Issue #32 completion.
+
+The previously excluded raw-image transport/bandwidth claim is now backed
+by independently merged Issue #54 evidence (PR #73): at `640x480 bgr8`,
+nominal 30 FPS, `/camera/image_raw` achieved `29.63 Hz` and measured
+`27.10 MB/s` DDS traffic when enabled. The distinct analytical payload
+estimate is `27.65 MB/s` (`26.37 MiB/s`). Enabling raw publication added
+`7.08` percentage points of one CPU core and approximately `326 KiB` RSS.
+This is camera-transport evidence, not a six-architecture tracker/TIM
+runtime comparison, and therefore does not by itself complete Issue #32.
 
 ## Provenance preservation
 

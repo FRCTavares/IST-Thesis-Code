@@ -6,7 +6,7 @@ closing evidence.
 
 Last reconciled with GitHub: **5 August 2026**.
 
-Open executable issues: **24**.
+Open executable issues: **23**.
 
 ## Execution rules
 
@@ -540,8 +540,10 @@ Open executable issues: **24**.
       methodology. DeepSORT + TIM-MARS is diagnostic rather than the intended
       architecture.
 
-17. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54) — THESIS-CRITICAL DEPENDENCY
-    - phase 10; live-system; feeds #32, #37, and #50; owns the missing integrated-camera `/camera/fps` publisher and recording-contract repair, deferred until the P0 authority/coordinate/freshness blockers are complete.
+17. [x] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54) — DONE
+    - Completed on 9 August 2026 through PR #73, merge commit `49744968a8c8189a83add20740c3f688a95fe21a`.
+    - Raw `/camera/image_raw` publication is now explicit and defaults off during normal live operation; recording modes that require it enable it deliberately. `/camera/fps`, dataset-recording truthfulness, and schema-v1 live-run provenance were also repaired.
+    - Onboard Pi evidence at `640x480 bgr8` and nominal 30 FPS measured 29.63 Hz and 27.10 MB/s DDS traffic with raw publication enabled, versus a distinct analytical payload estimate of 27.65 MB/s; enabling the stream added 7.08 percentage points of one CPU core and approximately 326 KiB RSS. Canonical evidence: `docs/results/live/p054_raw_image_transport_cost.md`.
 
 18. [ ] [#32 — P1.14 End-to-end runtime, compute budget, and onboard resource characterisation](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
     - phase 7; live-system; owns the canonical per-stage latency and queueing
@@ -585,6 +587,11 @@ Open executable issues: **24**.
       runtime characterisation, a full six-architecture live comparison,
       near-complete `e2e_target_ms` correlation coverage, and power (no
       calibrated sensor).
+      Raw-image DDS/QoS transport cost is no longer an outstanding #32
+      dependency: merged Issue #54 / PR #73 measured `/camera/image_raw`
+      at 29.63 Hz, 27.10 MB/s DDS traffic, +7.08 percentage points of one
+      CPU core, and approximately +326 KiB RSS at `640x480 bgr8`; the
+      analytical payload estimate remains separately reported as 27.65 MB/s.
 
 19. [x] [#35 — P1.15 Remove unsupported experimental runner parameters](https://github.com/FRCTavares/IST-Thesis-Code/issues/35) — DONE
     - Completed on 25 July 2026.

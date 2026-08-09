@@ -484,4 +484,15 @@ certified pass against an undocumented or informal threshold.
   (conditional evidence exists and is documented; representativeness is
   partially, not fully, established).
 - Power (no calibrated sensor installed).
-- Raw-image DDS/QoS bandwidth transport cost (tracked by Issue #54).
+**Resolved external dependency — raw-image DDS/QoS transport.**
+Issue #54 was completed and merged through PR #73
+(`49744968a8c8189a83add20740c3f688a95fe21a`). Its independent onboard
+camera-transport experiment measured `/camera/image_raw` at `29.63 Hz`
+and `27.10 MB/s` DDS traffic for `640x480 bgr8`, nominal 30 FPS, with
+`+7.08` percentage points of one CPU core and approximately `+326 KiB`
+RSS when publication was enabled. The analytical raw-payload estimate
+(`27.65 MB/s`, `26.37 MiB/s`) remains explicitly distinct from measured
+DDS bandwidth. This transport-layer result is not retroactively treated
+as part of Issue #32's sustained `bytetrack_tim` run; it is joined as
+independent canonical evidence from
+`docs/results/live/p054_raw_image_transport_cost.md`.

@@ -161,6 +161,35 @@ power:
     rejected by the issue's own instruction (mark unavailable rather than
     estimate). Revisit only if calibrated hardware is added.
 
+raw_image_transport_external_evidence:
+  status: resolved_by_merged_issue_54
+  source_issue: 54
+  source_pr: 73
+  merge_commit: "49744968a8c8189a83add20740c3f688a95fe21a"
+  capture_commit: "2964fa90f6c954fc6e3c554768f07771f5613a92"
+  engineering_record: docs/issues/p1-21-raw-image-transport-provenance.md
+  result_summary: docs/results/live/p054_raw_image_transport_cost.md
+  scope: camera_transport_layer_independent_of_tracker_architecture
+  topic: /camera/image_raw
+  camera:
+    width_px: 640
+    height_px: 480
+    encoding: bgr8
+    nominal_fps: 30.0
+    achieved_fps: 29.63
+  measured:
+    dds_bandwidth_mb_s: 27.10
+    perception_camera_cpu_delta_percentage_points: 7.08
+    perception_camera_rss_delta_kib: 326
+  analytical_payload:
+    bandwidth_mb_s: 27.65
+    bandwidth_mib_s: 26.37
+  interpretation: >
+    Issue #54 resolves Issue #32's raw-image DDS/QoS transport-cost
+    dependency with independent onboard evidence. These measurements are
+    not part of the Issue #32 sustained bytetrack_tim run and must not be
+    interpreted as architecture-specific tracker/TIM overhead.
+
 issue_58_join:
   join_keys: [architecture_id, sequence_id]
   architecture_id_values:
