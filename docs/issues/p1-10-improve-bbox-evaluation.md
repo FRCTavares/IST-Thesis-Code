@@ -165,47 +165,70 @@ predates the header that would say so explicitly).
 
 ## G. Physical target state
 
-Each sample carries exactly one `identity_state`:
+**Corrected after review of the first version of this contract**, which
+conflated two independent questions -- "does a trustworthy reference
+bbox exist" and "how confident is the geometric identity match" -- into
+one `identity_state` axis (`present_scored` vs `present_ambiguous`), and
+let a Stage A IoU threshold decide identity, which silently turned poor
+*localisation* into a *wrong-person*/unscored verdict. The corrected
+schema separates these into two independent fields.
+
+**Reference availability -- `identity_state`** (whether a trustworthy
+`target_bbox_xyxy` exists at all):
 
 | State | Bbox required? | Meaning |
 |---|---|---|
-| `present_scored` | `target_bbox_xyxy` required | Physically visible; the annotator is confident this bbox is unambiguously the selected person, with no realistic risk of confusion with anyone else at this instant. Safe for automatic single-box geometric identity scoring (section J). |
-| `present_ambiguous` | `target_bbox_xyxy` required | Physically visible, but this instant is judged a genuine identity-confusion risk (crossing, heavy occlusion boundary, near-duplicate distractor). `distractor_bboxes_xyxy` *should* be populated when feasible (section J/section H). Automatic geometry alone must never resolve this state; see section J for the exact rule. |
+| `present_scored` | `target_bbox_xyxy` required | Physically visible and a trustworthy reference bbox can be drawn. Says nothing about whether a nearby person could be confused with the output -- that is `identity_context`, below. |
 | `present_reference_unavailable` | none allowed | Physically visible in principle, but no reliable bbox can be drawn (near-total occlusion, motion blur, or any case where the annotator cannot commit to a specific box). Unscored, not zero-IoU, not absent. |
 | `absent` | none allowed | Not physically present in the source frame. Not a localisation failure; excluded from the localisation-scored denominator entirely. |
 
-`present_ambiguous` exists specifically to satisfy the non-negotiable
-rule from this issue: **a wrong physical person must never become
-"correct" merely because its bbox geometrically overlaps the reference.**
-It is the schema's mechanism for a human to say "do not trust a single
-IoU threshold here" independently of what the evaluator later computes --
-see section J.
+There is no separate `present_ambiguous` reference state in v1: it was
+removed because its only job -- flagging a contested instant -- is now
+carried, more precisely, by `identity_context`.
 
-Explicitly, per this issue's constraint:
+**Competitive context -- `identity_context`** (required on every
+`present_scored` sample, forbidden otherwise): an explicit **completeness
+assertion** about competing physical identities at this instant, never
+inferred from whatever happens to be in `distractor_bboxes_xyxy`.
+
+| Context | `distractor_bboxes_xyxy` | Meaning |
+|---|---|---|
+| `target_only` | must be empty | The annotator asserts **no other physical person could plausibly be confused with the controller-facing output** at this instant. Stage A then attributes *any* output to the target regardless of its IoU -- see section J. This is what lets a badly localised but genuinely target-attributed output reach Stage B instead of being misclassified. |
+| `distractors_complete` | must contain at least one box | The annotator asserts **every plausible competing physical person visible at this instant has been boxed**. Stage A resolves identity by relative comparison against exactly these references -- see section J. |
+
+An empty `distractor_bboxes_xyxy` can therefore only ever mean "asserted
+`target_only`"; it can never mean "distractors were not annotated". The
+validator enforces this structurally (`distractors_complete` requires
+`>= 1` distractor box; `target_only` requires zero) -- see section 4.
+
+Explicitly, per this issue's constraints:
 
 ```
 absent != unscored (present_reference_unavailable)
-unscored != lost output (an evaluator/output-side concept, not this schema)
-lost output != wrong person (also output-side, not this schema)
+unscored (present_reference_unavailable) != identity_unresolved (a Stage A
+    attribution outcome, section J -- the reference existed and was
+    usable, but geometry alone could not resolve who the output belongs to)
+identity_unresolved != wrong_person (attribution to a different
+    recorded physical person, never a synonym for "could not decide")
+wrong_person != poor localisation of the correct person (section J/K)
 ```
 
 `distractor_bboxes_xyxy` (list of `[x1,y1,x2,y2]`, same format/bounds
-rules as `target_bbox_xyxy`, may be empty) is optional on every state but
-only meaningful on `present_ambiguous` and `present_scored`; it must be
-empty/omitted on `present_reference_unavailable` and `absent`. Each
-distractor box represents one other physically distinct visible person at
-that instant -- never a tracker ID, never the target itself.
+rules as `target_bbox_xyxy`) is only present on `present_scored` samples,
+governed by `identity_context` above; it must be empty/omitted on
+`present_reference_unavailable` and `absent`. Each distractor box
+represents one other physically distinct visible person at that instant
+-- never a tracker ID, never the target itself.
 
-No partial/heavy occlusion sub-taxonomy is added beyond
-`present_ambiguous` vs `present_reference_unavailable`: the two questions
-that matter operationally are already separated ("can I draw a
-trustworthy box at all" vs "could that box be confused with someone
-else"), and multiplying occlusion categories further is not required by
-the four canonical sequences audited.
+No partial/heavy occlusion sub-taxonomy is added: the two questions that
+matter operationally are already separated (`identity_state`: can I draw
+a trustworthy box at all; `identity_context`: could that box be confused
+with someone else), and multiplying occlusion categories further is not
+required by the four canonical sequences audited.
 
 ## H. Occlusion bbox policy
 
-When a valid box is drawn (`present_scored` or `present_ambiguous`), it
+When a valid box is drawn (`present_scored`, any `identity_context`), it
 encloses the **visible pixels of the person only** -- never an inferred
 full-body extent under occlusion. This matches the convention already
 implicit in the existing detector/tracker pipeline (Hailo person-detector
@@ -227,18 +250,23 @@ the issue. Every sample carries a required boolean field
   no reference exists between the previous sample and this one; an
   evaluator must not synthesise one.
 - `true`: only legal when **both** this sample and the immediately
-  preceding sample in the array have `identity_state == "present_scored"`.
-  The validator rejects `true` on the first sample (no predecessor), and
-  rejects it whenever either endpoint is not `present_scored` --
-  concretely enforcing every one of:
+  preceding sample in the array have
+  `identity_state == "present_scored"` **and**
+  `identity_context == "target_only"`. The validator rejects `true` on
+  the first sample (no predecessor), and rejects it whenever either
+  endpoint fails that check -- concretely enforcing every one of:
   - no interpolation through `absent`;
   - no interpolation through `present_reference_unavailable`;
-  - no interpolation across a `present_ambiguous` boundary;
+  - no interpolation across (or between) a `distractors_complete`
+    instant, even if both surrounding keyframes are `present_scored` --
+    distractor geometry cannot be safely linearly interpolated, and
+    `distractors_complete` exists precisely to mark an instant that
+    needs explicit, not synthesised, evidence;
   - no interpolation across a discontinuous re-entry unless the
-    annotator explicitly re-asserts `present_scored` on both sides *and*
-    sets the flag -- a hard cut the annotator does not want bridged is
-    handled simply by leaving the flag `false`, which is also the
-    default an annotator gets by doing nothing.
+    annotator explicitly re-asserts `present_scored`/`target_only` on
+    both sides *and* sets the flag -- a hard cut the annotator does not
+    want bridged is handled simply by leaving the flag `false`, which is
+    also the default an annotator gets by doing nothing.
   When `true`, the evaluator (later milestone) may linearly interpolate
   `target_bbox_xyxy` between the two keyframes for output timestamps that
   fall strictly between them. Interpolation must never be extrapolated
@@ -249,85 +277,136 @@ the issue. Every sample carries a required boolean field
   boxes is itself always in-bounds, this is a property of the
   interpolation rule rather than a separate runtime check.
 
-## J. Identity correctness versus localisation correctness
+## J. Identity attribution versus localisation quality
 
-Two strictly separate stages. Stage B never feeds back into Stage A.
+**Corrected after review.** The first version of this section made a
+minimum target-IoU (`identity_iou_threshold`) a *prerequisite* for
+Stage A identity correctness, even in the no-distractor case. That was
+scientifically wrong: it meant a controller-facing output that genuinely
+belonged to the selected physical person, but was badly localised (e.g.
+target IoU 0.25 against a 0.5 threshold), would have been classified an
+*identity* failure and its poor IoU excluded from Stage B -- both turning
+poor localisation into a fabricated identity error, and biasing Stage B
+upward by censoring exactly the worst-localised target-attributed
+samples out of the statistics meant to measure localisation quality.
 
-**Stage A -- physical identity outcome** (per output sample, joined to
-the nearest applicable physical-reference keyframe/interpolated span):
+The corrected principle, frozen here:
 
-1. Reference state `absent` -> not identity-scored against a bbox at all
-   (handled by the existing absence/output-during-absence accounting,
-   unaffected by this contract).
-2. Reference state `present_reference_unavailable` -> sample is
-   **unscored** for identity, regardless of what the output published.
-3. Reference state `present_scored` (exact or validly interpolated) with
-   **no distractor boxes** recorded for that sample: output is
-   identity-correct iff
-   `bbox_iou(output_bbox, target_bbox) >= identity_iou_threshold`.
-   This single-threshold rule is safe here specifically *because* the
-   annotator already asserted, by choosing `present_scored`, that there
-   was no realistic confusion risk at this instant -- the human judgment
-   call is what licenses using a bare threshold, not the geometry alone.
-4. Reference state `present_ambiguous`, **or** `present_scored` with one
-   or more `distractor_bboxes_xyxy` recorded: output is identity-correct
-   iff **both**
-   (a) `bbox_iou(output_bbox, target_bbox) >= identity_iou_threshold`,
-   **and**
-   (b) for every distractor box `d`,
-   `bbox_iou(output_bbox, target_bbox) > bbox_iou(output_bbox, d)`.
-   This is the same best-match/margin principle already proven in
-   `external_target_initialization.match_frame` (`best_iou`/`second_iou`/
-   `margin`), generalised from anonymous tracker candidates to named
-   physical-reference boxes. If (a) holds but (b) fails for some
-   distractor, the output is identity-**wrong** (it matches a distractor
-   at least as well as the target) -- not "correct because IoU was high."
-5. `present_ambiguous` with **no** distractor boxes recorded: **unscored**
-   for identity. The annotator's ambiguity flag alone withholds an
-   automatic verdict even when no distractor geometry is available to
-   adjudicate it -- this is the concrete mechanism that prevents "high
-   IoU with the target reference" from ever being used, by itself, as a
-   sufficient identity oracle during a genuinely contested moment.
+> Stage A physical-identity attribution must not impose a minimum
+> localisation-quality threshold that censors poor target localisation
+> from Stage B. `wrong_person` requires evidence that the output is
+> attributable to a *different* annotated physical person -- failure to
+> obtain good overlap with the selected target alone is not evidence of
+> wrong identity.
 
-**Stage B -- localisation quality** (computed only for samples Stage A
-returned identity-correct on): `bbox_iou(output_bbox, target_bbox)` and
-centre error (section M) against the target box. This is the *same*
-target-IoU value that may already have been computed inside Stage A step
-3; it is reported as a distinct field because it answers a different
-question (how good is the match, given identity is already established),
-and the causal direction is strictly one-way: identity gates localisation
-reporting, localisation numbers never redefine or override the identity
+Two strictly separate stages, using the same `bbox_iou` primitive for
+different purposes and never feeding Stage B's numbers back into Stage A:
+
+- **Stage A resolves WHICH annotated physical reference the output
+  belongs to** -- identity attribution, not quality.
+- **Stage B measures HOW ACCURATELY a target-attributed output localises
+  the target** -- computed only after, and never influencing, Stage A's
+  verdict.
+
+**Stage A outcomes** (`tools/analysis/physical_target_reference.py`):
+
+| Outcome | Meaning |
+|---|---|
+| `identity_target` | The output is attributed to the selected physical person. Says nothing about localisation quality -- see Stage B. |
+| `wrong_person` | The output is attributed to a *different*, specifically recorded physical person. Never used for poor target IoU, large centre error, a missing reference, an unresolved tie, no output, or target absence -- those are separate outcomes (section N). |
+| `identity_unresolved` | A target reference existed and was usable, but geometry alone could not defensibly attribute the output to the target or to any specific distractor (a tie, including zero overlap with everyone). Not a synonym for `wrong_person`, and not a synonym for `present_reference_unavailable` (section G) -- the reference was available; only the *attribution* is unresolved. |
+
+Reference-availability outcomes (`absent`, `present_reference_unavailable`,
+no controller-facing output) are handled entirely upstream of Stage A,
+by the caller inspecting `identity_state` and output validity directly --
+`classify_identity_stage_a` is only invoked for a `present_scored`
+sample that also has a valid controller-facing output to classify.
+
+**Stage A algorithm**, per `identity_context` (section G):
+
+1. **`target_only`** -- no plausible competing physical person was
+   recorded for this instant. Any valid controller-facing output is
+   attributed to the target: **always `identity_target`**, independent
+   of `bbox_iou(output, target)`. There is no absolute IoU threshold
+   anywhere in this branch, by construction (the function has no such
+   parameter) -- a target-attributed output with IoU 0.02 and a
+   target-attributed output with IoU 0.95 both return `identity_target`
+   here; only Stage B distinguishes them.
+2. **`distractors_complete`** -- attribution is the *relative* winner of
+   `target_iou = bbox_iou(output, target)` versus
+   `best_distractor_iou = max(bbox_iou(output, d) for d in distractors)`:
+   - `target_iou` strictly greater (beyond a `1e-9` floating-point tie
+     guard, not a scientific margin) -> `identity_target`, **regardless
+     of the absolute value** -- a target that wins 0.08 to 0.02 is still
+     the target, and its 0.08 IoU still reaches Stage B;
+   - `best_distractor_iou` strictly greater -> `wrong_person`;
+   - a tie (including the all-zero case, where the output overlaps
+     nobody) -> `identity_unresolved`. This is the same best-match
+     principle already proven in
+     `external_target_initialization.match_frame`
+     (`best_iou`/`second_iou`/`margin`), generalised from anonymous
+     tracker candidates to named physical references, but used purely
+     for *relative* attribution -- never gated by an absolute pass/fail
+     value on either side.
+
+This is the concrete mechanism that satisfies both halves of the
+non-negotiable rule: (a) a wrong physical person cannot become "correct"
+merely because it overlaps the target reference (the crossing test in
+section 5 -- distractor beats target on relative comparison ->
+`wrong_person`, no threshold involved); and (b) a badly localised but
+genuinely target-attributed output cannot become a fabricated identity
+failure (the `target_only` branch, and the `distractors_complete`
+relative-win branch, both attribute low-IoU target outputs to the target
+whenever the geometry genuinely still favours the target over every
+recorded alternative).
+
+**No absolute IoU threshold remains anywhere in `classify_identity_stage_a`.**
+The only numeric constant is `_TIE_EPSILON = 1e-9`, a floating-point
+equality guard, not a localisation-quality bar.
+
+**Stage B -- localisation quality**, computed for every sample Stage A
+returned `identity_target` on, **without exception and without any
+further quality gate**: `bbox_iou(output_bbox, target_bbox)` and centre
+error (section M) against the target box. A target-attributed sample
+with IoU 0.02 contributes IoU 0.02 (and a correspondingly large centre
+error) to Stage B's statistics; it is not filtered, clipped, or excluded.
+This is what "Stage B measures how well the target-attributed output
+localises the target" means concretely: the measurement is honest about
+bad localisation instead of hiding it behind a manufactured identity
 verdict.
 
-`identity_iou_threshold` (Stage A) and the localisation IoU/centre-error
-*reporting* thresholds (Stage B, e.g. for a "good localisation" summary
-bucket) are documented here as **conceptually independent knobs**; their
-exact numeric values are evaluator-calibration work for the next
-milestone, not frozen by this schema. As a continuity anchor, the
-existing bbox evaluator's defaults (`iou_threshold=0.5`,
-`centre_distance_threshold=0.5`) are a reasonable starting point to
-revisit then, not a value this document binds.
+A future evaluator may *additionally* report a binary "good localisation"
+summary bucket (e.g. IoU >= 0.5) purely as a descriptive statistic over
+the Stage B numbers -- that threshold, if used at all, is
+Stage-B-internal, evaluator-calibration work for the next milestone, and
+must never be allowed to influence which samples are *members* of the
+Stage B population in the first place.
 
 ## K. Localisation scoring subset
 
 A sample contributes to the localisation-scored duration/count iff **all**
 of the following hold:
 
-1. the selected physical target's reference state is `present_scored` or
-   `present_ambiguous` for that sample (exactly or via valid
-   interpolation);
+1. the selected physical target's reference state is `present_scored`
+   for that sample (exactly or via valid interpolation);
 2. a valid `target_bbox_xyxy` is available (exact or interpolated);
 3. a controller-facing output bbox exists and is valid (non-zero ID,
    finite, positive width/height) at that sample;
-4. Stage A (section J) classified that sample identity-correct.
+4. Stage A (section J) attributed that sample `identity_target`.
 
-Any sample failing (1)-(3) falls into `reference_unscored_duration_s` or
-`target_absent_duration_s`/`lost_duration_s` per section N, never into the
-localisation numerator or denominator. A sample failing only (4) (a
-confirmed wrong-person or ambiguous-and-unresolved output) contributes to
-`wrong_target_duration_s`, never to localisation statistics -- geometry
-computed on a wrong-person sample is not "worse localisation", it does
-not exist as a localisation sample at all.
+Condition 4 is a **membership** test, not a **quality** test: it asks
+only whether the output belongs to the target, never how well it
+localises the target. A sample satisfying (1)-(4) enters Stage B with
+whatever IoU/centre-error it actually has, including near-zero values --
+see section J's Stage B paragraph. Any sample failing (1)-(3) falls into
+`target_absent_duration_s`/`reference_unavailable_duration_s`/
+`lost_duration_s` per section N, never into the localisation numerator or
+denominator. A sample failing only (4) (`wrong_person` or
+`identity_unresolved`) contributes to `wrong_target_duration_s` or
+`identity_unresolved_duration_s` respectively, never to localisation
+statistics -- geometry computed on a wrong-person or unresolved sample is
+not "worse localisation", it does not exist as a localisation sample at
+all.
 
 ## L. IoU
 
@@ -364,25 +443,41 @@ section L.
 The future evaluator reports, at minimum, these **mutually exclusive**
 totals covering the full evaluated span:
 
-- `correct_target_duration_s` -- Stage A identity-correct.
-- `wrong_target_duration_s` -- Stage A identity-wrong (output exists but
-  fails Stage A: distractor match, or fails the plain threshold with no
-  distractor evidence to save it).
-- `lost_duration_s` -- reference available/scorable (`present_scored` or
-  resolvable `present_ambiguous`) but no valid output published.
+- `correct_target_duration_s` -- Stage A `identity_target`.
+- `wrong_target_duration_s` -- Stage A `wrong_person`: the output is
+  attributed to a *different*, specifically recorded physical person.
+  Never populated by poor target IoU, large centre error, a missing
+  reference, an unresolved tie, no output, or target absence.
+- `identity_unresolved_duration_s` -- Stage A `identity_unresolved`: a
+  target reference was available and an output existed, but geometry
+  could not defensibly attribute it to the target or to any specific
+  distractor (a tie, including zero overlap with everyone).
+- `lost_duration_s` -- reference available/scorable (`present_scored`,
+  either context) but no valid output published.
 - `target_absent_duration_s` -- reference state `absent`.
-- `reference_unscored_duration_s` -- reference state
-  `present_reference_unavailable`, or `present_ambiguous` with no
-  distractor evidence (section J step 5), regardless of what the output
-  did.
+- `reference_unavailable_duration_s` -- reference state
+  `present_reference_unavailable`, regardless of what the output did.
 
-`localisation_scored_duration_s` is **conditional, not a sixth disjoint
+Per the required distinction between the two reasons a sample can be
+excluded from identity/localisation statistics:
+`reference_unavailable_duration_s` means **no trustworthy reference bbox
+existed to compare against at all** (an annotation-side gap);
+`identity_unresolved_duration_s` means **a reference existed and a
+comparison was attempted, but the geometry itself did not defensibly
+resolve who the output belongs to** (an attribution-side indeterminacy).
+Both are excluded from `correct_target_duration_s`/`wrong_target_duration_s`
+and from Stage B's localisation statistics, but they are never merged
+into one number -- a report may total them for a headline "unscored"
+figure, but the per-reason breakdown must remain available.
+
+`localisation_scored_duration_s` is **conditional, not a seventh disjoint
 bucket**: it is the portion of `correct_target_duration_s` that also
 satisfies section K's four conditions (in practice, all of
-`correct_target_duration_s` by construction, since Stage A correctness
+`correct_target_duration_s` by construction, since `identity_target`
 already implies (1)-(4) -- it is named separately only so a future report
 can state the localisation-statistics denominator explicitly rather than
-leaving it implicit).
+leaving it implicit). It is **not** further filtered by IoU or
+centre-error quality -- section J/K.
 
 ## O. Regenerated tracker-ID invariance (formal invariant)
 
@@ -424,8 +519,23 @@ reviewed and accepted.
 ## This milestone's scope
 
 Implemented: this document, plus `tools/analysis/physical_target_reference.py`
-(schema dataclasses + deterministic load/validate/serialize) and its
-focused tests, plus a template artifact. **Not** implemented: the drawing
-UI, the evaluator refactor, any real sequence annotation, any replay run,
-any TIM-MARS configuration change, any modification to existing
-evaluators or annotation files.
+(schema dataclasses, deterministic load/validate/serialize, and the pure
+Stage A identity-attribution function `classify_identity_stage_a`) and
+its focused tests, plus a template artifact. **Not** implemented: the
+drawing UI, the evaluator refactor (Stage B duration accounting, bag
+reading, reports), any real sequence annotation, any replay run, any
+TIM-MARS configuration change, any modification to existing evaluators or
+annotation files.
+
+## Revision note
+
+This document's sections G and J were corrected after review of the
+milestone's first version (commit `fcfbe0c5`), which let a minimum
+target-IoU threshold gate Stage A identity correctness even with no
+competing physical person recorded -- silently turning poor localisation
+of the *correct* person into a fabricated identity failure, and biasing
+any future Stage B statistics upward by excluding exactly the
+worst-localised target-attributed samples. The corrected contract
+(`identity_context`: `target_only` / `distractors_complete`, and a
+threshold-free relative-comparison Stage A rule) is frozen here; see
+sections G and J for the full corrected semantics and the reasoning.

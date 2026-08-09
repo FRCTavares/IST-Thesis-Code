@@ -19,6 +19,7 @@
     {
       "t_s": 0.0,
       "identity_state": "absent",
+      "identity_context": null,
       "target_bbox_xyxy": null,
       "distractor_bboxes_xyxy": [],
       "interpolate_from_previous": false,
@@ -27,30 +28,34 @@
     {
       "t_s": 5.0,
       "identity_state": "present_scored",
+      "identity_context": "target_only",
       "target_bbox_xyxy": [120.0, 80.0, 220.0, 300.0],
       "distractor_bboxes_xyxy": [],
       "interpolate_from_previous": false,
-      "notes": "clean, unambiguous"
+      "notes": "clean, only person in frame -- localisation quality does not affect identity attribution"
     },
     {
       "t_s": 6.0,
       "identity_state": "present_scored",
+      "identity_context": "target_only",
       "target_bbox_xyxy": [130.0, 82.0, 228.0, 302.0],
       "distractor_bboxes_xyxy": [],
       "interpolate_from_previous": true,
-      "notes": "may be interpolated against the previous keyframe"
+      "notes": "may be interpolated against the previous keyframe: both endpoints are target_only"
     },
     {
       "t_s": 9.0,
-      "identity_state": "present_ambiguous",
+      "identity_state": "present_scored",
+      "identity_context": "distractors_complete",
       "target_bbox_xyxy": [180.0, 90.0, 260.0, 300.0],
       "distractor_bboxes_xyxy": [[175.0, 88.0, 258.0, 298.0]],
       "interpolate_from_previous": false,
-      "notes": "crossing another person; distractor bbox recorded to disambiguate"
+      "notes": "crossing another person; every plausible competing physical identity is boxed, so Stage A can resolve attribution by relative comparison"
     },
     {
       "t_s": 10.0,
       "identity_state": "present_reference_unavailable",
+      "identity_context": null,
       "target_bbox_xyxy": null,
       "distractor_bboxes_xyxy": [],
       "interpolate_from_previous": false,
@@ -59,6 +64,7 @@
     {
       "t_s": 14.0,
       "identity_state": "present_scored",
+      "identity_context": "target_only",
       "target_bbox_xyxy": [200.0, 85.0, 300.0, 305.0],
       "distractor_bboxes_xyxy": [],
       "interpolate_from_previous": false,

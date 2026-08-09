@@ -103,7 +103,7 @@ Open executable issues: **24**.
 
 12. [ ] [#25 — P1.10 Improve bbox evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/25) — HIGHEST PRIORITY
    - phase 6; experiment; use the transform contract from #53.
-   - Branch `issue-25-improve-bbox-evaluation` active. Milestone 1 (physical-reference annotation/scoring contract) landed: docs/issues/p1-10-improve-bbox-evaluation.md freezes the tim_physical_target_bbox_v1 schema and the Stage A identity rule; tools/analysis/physical_target_reference.py is the deterministic schema validator plus the tracker-ID-independent Stage A classifier, with 30 focused tests. Not yet done: drawing UI, evaluator refactor, sequence annotation, canonical evidence.
+   - Branch `issue-25-improve-bbox-evaluation` active. Milestone 1 (physical-reference annotation/scoring contract) landed and corrected on review: docs/issues/p1-10-improve-bbox-evaluation.md freezes the tim_physical_target_bbox_v1 schema (identity_context: target_only/distractors_complete) and a threshold-free Stage A identity rule that never lets poor localisation of the correct person masquerade as a wrong-person or unresolved outcome; tools/analysis/physical_target_reference.py is the deterministic schema validator plus the tracker-ID-independent Stage A classifier, with 42 focused tests. Not yet done: drawing UI, evaluator refactor, sequence annotation, canonical evidence.
 
 13. [x] [#26 — P1.11 Add event and recovery metrics](https://github.com/FRCTavares/IST-Thesis-Code/issues/26) — DONE
     - completed and promoted for merge on 6 August 2026; the promotion commit is recorded in Git history.

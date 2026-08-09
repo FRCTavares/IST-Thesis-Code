@@ -1,24 +1,34 @@
 #!/usr/bin/env python3
-"""Schema, deterministic parsing, validation, and the Stage A identity rule
-for the physical-reference bbox annotation contract
+"""Schema, deterministic parsing, validation, and the Stage A identity
+attribution rule for the physical-reference bbox annotation contract
 ``tim_physical_target_bbox_v1``.
 
 Full semantics are frozen in
 ``docs/issues/p1-10-improve-bbox-evaluation.md`` (sections C-N). This
 module owns the data shapes, deterministic load/validate/serialize
-behaviour, and the pure Stage A identity classifier (section J) that a
-later evaluator-refactor milestone will call while reading real bags. It
-does not itself read bags, accumulate durations, or produce reports.
+behaviour, and the pure Stage A identity-attribution function (section J)
+that a later evaluator-refactor milestone will call while reading real
+bags. It does not itself read bags, accumulate durations, or produce
+reports.
 
-The core scientific point this schema and classifier exist to enforce:
-the reference identity of the selected physical person is independent of
-any tracker ID (``classify_identity_stage_a`` below has no tracker-ID
-parameter at all), and genuinely ambiguous instants (a nearby distractor,
-a crossing) are represented explicitly (``present_ambiguous`` plus
-optional distractor boxes) rather than left for a bare IoU threshold to
-silently resolve. A high IoU against the target reference is correct only
-when it also beats every recorded distractor; ties or a distractor match
-are never "correct".
+Two things this schema and classifier exist to enforce, corrected after
+review of the first version of this module:
+
+1. The reference identity of the selected physical person is independent
+   of any tracker ID -- ``classify_identity_stage_a`` below has no
+   tracker-ID parameter at all.
+2. Stage A physical-identity attribution (WHO does this output belong to)
+   is answered *without* imposing any minimum localisation-quality
+   threshold. ``classify_identity_stage_a`` has no IoU-threshold
+   parameter: identity is either contextually certain (no plausible
+   competing physical person, section G's ``target_only``) or resolved by
+   *relative* comparison against explicitly recorded competing references
+   (``distractors_complete``), never by asking whether the target overlap
+   alone clears some bar. A controller-facing output that genuinely
+   belongs to the selected person but is badly localised must remain
+   ``identity_target`` and expose its poor IoU/centre-error to Stage B --
+   it must never be miscounted as a wrong-person or unresolved outcome
+   merely because the bbox is a bad fit.
 """
 
 from __future__ import annotations
@@ -40,28 +50,52 @@ from external_target_initialization import BBoxXYXY, bbox_iou  # noqa: E402,F401
 SCHEMA_VERSION = 1
 CONTRACT_VERSION = "tim_physical_target_bbox_v1"
 
+# --- Reference-availability states (section G) ------------------------------
+#
+# Whether a trustworthy target_bbox_xyxy exists at all for this sample.
+# This is a *reference* question, answered by the annotator once, before
+# any Stage A attribution logic runs. present_ambiguous does not exist as
+# a separate reference state in v1: a contested/crossing instant is
+# represented by identity_context (below), not by withholding the
+# reference itself.
+
 STATE_PRESENT_SCORED = "present_scored"
-STATE_PRESENT_AMBIGUOUS = "present_ambiguous"
 STATE_PRESENT_REFERENCE_UNAVAILABLE = "present_reference_unavailable"
 STATE_ABSENT = "absent"
 
 ALL_STATES = frozenset(
     {
         STATE_PRESENT_SCORED,
-        STATE_PRESENT_AMBIGUOUS,
         STATE_PRESENT_REFERENCE_UNAVAILABLE,
         STATE_ABSENT,
     }
 )
 
-# States where a target_bbox_xyxy is mandatory vs. forbidden.
-STATES_REQUIRING_BBOX = frozenset({STATE_PRESENT_SCORED, STATE_PRESENT_AMBIGUOUS})
+STATES_REQUIRING_BBOX = frozenset({STATE_PRESENT_SCORED})
 STATES_FORBIDDING_BBOX = frozenset(
     {STATE_PRESENT_REFERENCE_UNAVAILABLE, STATE_ABSENT}
 )
 
-# Only these two states are interpolation endpoints (section I).
+# --- Competitive context (section G/J) --------------------------------------
+#
+# Only meaningful (required) on present_scored samples. This is an
+# explicit *completeness assertion* by the annotator, not an inference
+# from whatever happens to be in distractor_bboxes_xyxy: an empty
+# distractor list can only ever mean "asserted target_only", never
+# "distractors were simply not annotated".
+
+CONTEXT_TARGET_ONLY = "target_only"
+CONTEXT_DISTRACTORS_COMPLETE = "distractors_complete"
+
+ALL_CONTEXTS = frozenset({CONTEXT_TARGET_ONLY, CONTEXT_DISTRACTORS_COMPLETE})
+
+# Only these two states/contexts are interpolation endpoints (section I).
+# A distractors_complete instant is never bridged by interpolation, even
+# between two present_scored keyframes: distractor geometry cannot be
+# safely interpolated, and the whole point of distractors_complete is
+# that this instant needs explicit, not synthesised, evidence.
 INTERPOLATION_ELIGIBLE_STATE = STATE_PRESENT_SCORED
+INTERPOLATION_ELIGIBLE_CONTEXT = CONTEXT_TARGET_ONLY
 
 COORDINATE_CONVENTIONS = frozenset(
     {
@@ -88,6 +122,7 @@ REQUIRED_PROVENANCE_FIELDS = (
 REQUIRED_SAMPLE_FIELDS = (
     "t_s",
     "identity_state",
+    "identity_context",
     "target_bbox_xyxy",
     "distractor_bboxes_xyxy",
     "interpolate_from_previous",
@@ -116,6 +151,7 @@ class PhysicalReferenceProvenance:
 class PhysicalReferenceSample:
     t_s: float
     identity_state: str
+    identity_context: str | None
     target_bbox_xyxy: BBoxXYXY | None
     distractor_bboxes_xyxy: tuple[BBoxXYXY, ...] = field(default_factory=tuple)
     interpolate_from_previous: bool = False
@@ -276,13 +312,48 @@ def parse_sample(data: dict, index: int) -> PhysicalReferenceSample:
             f"expected one of {sorted(ALL_STATES)}"
         )
 
+    raw_context = data["identity_context"]
     raw_bbox = data["target_bbox_xyxy"]
-    raw_distractors = data["distractor_bboxes_xyxy"]
+    raw_distractors = data["distractor_bboxes_xyxy"] or []
 
-    if identity_state in STATES_REQUIRING_BBOX and raw_bbox is None:
-        raise PhysicalReferenceValidationError(
-            f"sample[{index}] state {identity_state!r} requires target_bbox_xyxy"
-        )
+    if identity_state in STATES_REQUIRING_BBOX:
+        if raw_bbox is None:
+            raise PhysicalReferenceValidationError(
+                f"sample[{index}] state {identity_state!r} requires target_bbox_xyxy"
+            )
+        if raw_context is None:
+            raise PhysicalReferenceValidationError(
+                f"sample[{index}] state {identity_state!r} requires identity_context "
+                f"(one of {sorted(ALL_CONTEXTS)}) -- an empty distractor list must "
+                "never be ambiguous between 'no competing person' and "
+                "'distractors not annotated'"
+            )
+        identity_context = str(raw_context)
+        if identity_context not in ALL_CONTEXTS:
+            raise PhysicalReferenceValidationError(
+                f"sample[{index}].identity_context {identity_context!r} is invalid; "
+                f"expected one of {sorted(ALL_CONTEXTS)}"
+            )
+        if identity_context == CONTEXT_TARGET_ONLY and raw_distractors:
+            raise PhysicalReferenceValidationError(
+                f"sample[{index}] context {CONTEXT_TARGET_ONLY!r} asserts no "
+                "competing physical person exists and must not carry "
+                "distractor_bboxes_xyxy"
+            )
+        if identity_context == CONTEXT_DISTRACTORS_COMPLETE and not raw_distractors:
+            raise PhysicalReferenceValidationError(
+                f"sample[{index}] context {CONTEXT_DISTRACTORS_COMPLETE!r} "
+                "requires at least one distractor_bboxes_xyxy entry -- use "
+                f"{CONTEXT_TARGET_ONLY!r} if no competing physical person exists"
+            )
+    else:
+        identity_context = None
+        if raw_context is not None:
+            raise PhysicalReferenceValidationError(
+                f"sample[{index}] state {identity_state!r} must not carry "
+                "identity_context"
+            )
+
     if identity_state in STATES_FORBIDDING_BBOX:
         if raw_bbox is not None:
             raise PhysicalReferenceValidationError(
@@ -302,7 +373,7 @@ def parse_sample(data: dict, index: int) -> PhysicalReferenceSample:
     )
     distractor_boxes = tuple(
         _parse_bbox(d, f"sample[{index}].distractor_bboxes_xyxy[{j}]")
-        for j, d in enumerate(raw_distractors or [])
+        for j, d in enumerate(raw_distractors)
     )
 
     interpolate_from_previous = bool(data["interpolate_from_previous"])
@@ -310,6 +381,7 @@ def parse_sample(data: dict, index: int) -> PhysicalReferenceSample:
     return PhysicalReferenceSample(
         t_s=t_s,
         identity_state=identity_state,
+        identity_context=identity_context,
         target_bbox_xyxy=target_bbox,
         distractor_bboxes_xyxy=distractor_boxes,
         interpolate_from_previous=interpolate_from_previous,
@@ -343,6 +415,7 @@ def validate_physical_reference(artifact: PhysicalReferenceArtifact) -> None:
     provenance = artifact.provenance
     previous_t_s: float | None = None
     previous_state: str | None = None
+    previous_context: str | None = None
 
     for index, sample in enumerate(artifact.samples):
         if previous_t_s is not None and sample.t_s <= previous_t_s:
@@ -372,19 +445,25 @@ def validate_physical_reference(artifact: PhysicalReferenceArtifact) -> None:
                     f"sample[{index}] cannot set interpolate_from_previous=true; "
                     "it has no predecessor"
                 )
-            if (
-                previous_state != INTERPOLATION_ELIGIBLE_STATE
-                or sample.identity_state != INTERPOLATION_ELIGIBLE_STATE
-            ):
+            endpoints_eligible = (
+                previous_state == INTERPOLATION_ELIGIBLE_STATE
+                and previous_context == INTERPOLATION_ELIGIBLE_CONTEXT
+                and sample.identity_state == INTERPOLATION_ELIGIBLE_STATE
+                and sample.identity_context == INTERPOLATION_ELIGIBLE_CONTEXT
+            )
+            if not endpoints_eligible:
                 raise PhysicalReferenceValidationError(
                     f"sample[{index}] sets interpolate_from_previous=true but "
-                    f"the endpoint states are "
-                    f"({previous_state!r}, {sample.identity_state!r}); both "
-                    f"must be {INTERPOLATION_ELIGIBLE_STATE!r}"
+                    "both endpoints must be "
+                    f"({INTERPOLATION_ELIGIBLE_STATE!r}, "
+                    f"{INTERPOLATION_ELIGIBLE_CONTEXT!r}); got "
+                    f"previous=({previous_state!r}, {previous_context!r}), "
+                    f"current=({sample.identity_state!r}, {sample.identity_context!r})"
                 )
 
         previous_t_s = sample.t_s
         previous_state = sample.identity_state
+        previous_context = sample.identity_context
 
 
 def load_physical_reference(path: Path) -> PhysicalReferenceArtifact:
@@ -420,6 +499,7 @@ def serialize_physical_reference(artifact: PhysicalReferenceArtifact) -> dict:
             {
                 "t_s": sample.t_s,
                 "identity_state": sample.identity_state,
+                "identity_context": sample.identity_context,
                 "target_bbox_xyxy": (
                     list(sample.target_bbox_xyxy)
                     if sample.target_bbox_xyxy is not None
@@ -443,58 +523,81 @@ def write_physical_reference(path: Path, artifact: PhysicalReferenceArtifact) ->
     )
 
 
-# --- Stage A identity classification (section J) ---------------------------
+# --- Stage A identity attribution (section J) -------------------------------
 #
 # Deliberately the only scoring logic this milestone implements: a pure
-# function with no bag I/O, no duration accounting, and critically no
-# tracker-ID parameter. It assumes the caller already established that a
-# target_bbox_xyxy exists for this sample (identity_state is
-# present_scored, or present_ambiguous with at least one distractor
-# recorded); the caller is responsible for routing present_ambiguous
-# samples with zero distractors straight to IDENTITY_UNSCORED without
-# calling this function at all, and for routing present_reference_unavailable
-# / absent samples elsewhere entirely (section J steps 1-2).
+# function with no bag I/O, no duration accounting, no tracker-ID
+# parameter, and -- after correction -- no localisation-quality/IoU
+# threshold parameter either. It assumes the caller already established
+# that a target_bbox_xyxy and identity_context exist for this sample
+# (identity_state == present_scored); the caller is responsible for
+# routing present_reference_unavailable / absent samples, and samples
+# with no controller-facing output at all, to their own outcomes without
+# calling this function.
+#
+# WHO the output belongs to (this function) and HOW WELL that output is
+# localised (Stage B, computed separately downstream using the same
+# bbox_iou primitive) are answered independently. Stage A never discards
+# a target-attributed sample for having a poor IoU -- it has no basis to,
+# since it never computes a pass/fail threshold on the target overlap at
+# all.
 
-IDENTITY_CORRECT = "identity_correct"
-IDENTITY_WRONG = "identity_wrong"
-IDENTITY_UNMATCHED = "identity_unmatched"
-IDENTITY_UNSCORED = "identity_unscored"
+IDENTITY_TARGET = "identity_target"
+IDENTITY_WRONG_PERSON = "wrong_person"
+IDENTITY_UNRESOLVED = "identity_unresolved"
 
-DEFAULT_IDENTITY_IOU_THRESHOLD = 0.5
+# Not a scientific margin: purely a floating-point-equality guard so two
+# geometrically identical IoUs (most commonly 0.0 vs 0.0, "no overlap with
+# anyone") are treated as the tie they are, rather than an arbitrary
+# comparison-order artefact.
+_TIE_EPSILON = 1e-9
 
 
 def classify_identity_stage_a(
     *,
+    identity_context: str,
     target_bbox_xyxy: BBoxXYXY,
     distractor_bboxes_xyxy: Sequence[BBoxXYXY],
     output_bbox_xyxy: BBoxXYXY,
-    identity_iou_threshold: float = DEFAULT_IDENTITY_IOU_THRESHOLD,
 ) -> str:
-    """Section J, steps 3-4: identity-correct iff the output matches the
-    target reference AND (when distractors are recorded) beats every one
-    of them -- never merely "IoU with the target is high"."""
+    """Section J: WHO does this output belong to, independent of how well
+    it is localised.
 
-    target_iou = bbox_iou(output_bbox_xyxy, target_bbox_xyxy)
+    - ``target_only``: no plausible competing physical person was
+      recorded for this instant. Any controller-facing output is
+      attributed to the target -- always ``IDENTITY_TARGET`` -- because
+      there is no alternative physical identity it could defensibly be.
+      Localisation quality (Stage B) is a completely separate question,
+      answered elsewhere.
+    - ``distractors_complete``: attribution is the *relative* winner of
+      target-IoU versus the best distractor-IoU. A strict win for the
+      target is ``IDENTITY_TARGET`` regardless of the absolute value (a
+      target that wins 0.08 to 0.02 is still the target); a strict win
+      for a distractor is ``IDENTITY_WRONG_PERSON``; a tie (including
+      zero overlap with everyone) is ``IDENTITY_UNRESOLVED`` -- there is
+      no geometric basis to prefer either explanation.
+    """
 
+    if identity_context == CONTEXT_TARGET_ONLY:
+        return IDENTITY_TARGET
+
+    if identity_context != CONTEXT_DISTRACTORS_COMPLETE:
+        raise PhysicalReferenceValidationError(
+            f"unknown identity_context {identity_context!r}"
+        )
     if not distractor_bboxes_xyxy:
-        return (
-            IDENTITY_CORRECT
-            if target_iou >= identity_iou_threshold
-            else IDENTITY_WRONG
+        raise PhysicalReferenceValidationError(
+            f"{CONTEXT_DISTRACTORS_COMPLETE!r} requires at least one distractor bbox"
         )
 
+    target_iou = bbox_iou(output_bbox_xyxy, target_bbox_xyxy)
     best_distractor_iou = max(
         bbox_iou(output_bbox_xyxy, distractor)
         for distractor in distractor_bboxes_xyxy
     )
-    target_passes = target_iou >= identity_iou_threshold
-    target_beats_best_distractor = target_iou > best_distractor_iou
 
-    if target_passes and target_beats_best_distractor:
-        return IDENTITY_CORRECT
-    if target_passes or best_distractor_iou >= identity_iou_threshold:
-        # Either the target passed but a distractor matched at least as
-        # well (tie goes to "cannot trust it"), or the target failed while
-        # some distractor clearly matched the output instead.
-        return IDENTITY_WRONG
-    return IDENTITY_UNMATCHED
+    if target_iou > best_distractor_iou + _TIE_EPSILON:
+        return IDENTITY_TARGET
+    if best_distractor_iou > target_iou + _TIE_EPSILON:
+        return IDENTITY_WRONG_PERSON
+    return IDENTITY_UNRESOLVED
