@@ -184,8 +184,26 @@ class TrackerNode(Node):
         # that frame will not exist yet when on_detections looks it up --
         # deterministically, not as an occasional race. Publish order at the
         # source does not control this.
+        #
+        # /timing also needs a deeper queue than the shared depth=1 QoS
+        # below. With depth=1 BEST_EFFORT, if this node's executor is ever
+        # briefly busy (GC, another callback, CPU contention with the other
+        # four nodes and Hailo inference sharing this host), an
+        # already-arrived-but-not-yet-processed /timing message for frame N
+        # is silently evicted and replaced the moment /timing for frame N+1
+        # arrives -- frame N's context is then permanently unavailable
+        # regardless of subscription order, and correlation degrades to a
+        # partial hit rate instead of failing closed or succeeding fully.
+        # /detections and the image topic keep the existing shared depth=1
+        # QoS unchanged; only the timing-correlation subscription's queue is
+        # widened.
+        timing_qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=20,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+        )
         self.sub_timing = self.create_subscription(
-            Timing, "/timing", self.on_timing, qos
+            Timing, "/timing", self.on_timing, timing_qos
         )
         self.sub = self.create_subscription(
             Detection2DArray, "/detections", self.on_detections, qos
