@@ -1,0 +1,17 @@
+Subscribed to [/camera/image_raw]
+28.62 MB/s from 29 messages
+	Message size mean: 0.92 MB min: 0.92 MB max: 0.92 MB
+28.12 MB/s from 59 messages
+	Message size mean: 0.92 MB min: 0.92 MB max: 0.92 MB
+27.64 MB/s from 88 messages
+	Message size mean: 0.92 MB min: 0.92 MB max: 0.92 MB
+27.37 MB/s from 100 messages
+	Message size mean: 0.92 MB min: 0.92 MB max: 0.92 MB
+27.36 MB/s from 100 messages
+	Message size mean: 0.92 MB min: 0.92 MB max: 0.92 MB
+26.83 MB/s from 100 messages
+	Message size mean: 0.92 MB min: 0.92 MB max: 0.92 MB
+26.83 MB/s from 100 messages
+	Message size mean: 0.92 MB min: 0.92 MB max: 0.92 MB
+27.10 MB/s from 100 messages
+	Message size mean: 0.92 MB min: 0.92 MB max: 0.92 MB

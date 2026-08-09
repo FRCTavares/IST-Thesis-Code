@@ -542,6 +542,7 @@ Open executable issues: **24**.
 
 17. [ ] [#54 — P1.21 Make raw-image transport, dataset recording, and live provenance explicit](https://github.com/FRCTavares/IST-Thesis-Code/issues/54) — THESIS-CRITICAL DEPENDENCY
     - phase 10; live-system; feeds #32, #37, and #50; owns the missing integrated-camera `/camera/fps` publisher and recording-contract repair, deferred until the P0 authority/coordinate/freshness blockers are complete.
+    - Branch `issue-54-image-transport-bandwidth` pushed with the protocol/audit record, the raw-image-configurability and --record-dataset truthfulness fixes, a real `/camera/fps` publisher, a schema-v1 live-run provenance writer/validator, 23 new focused tests, and measured onboard cost evidence (docs/results/live/p054_raw_image_transport_cost.md). Not yet merged; not yet reviewed against a final acceptance audit.
 
 18. [ ] [#32 — P1.14 End-to-end runtime, compute budget, and onboard resource characterisation](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
     - phase 7; live-system; owns the canonical per-stage latency and queueing
