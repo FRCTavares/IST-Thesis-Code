@@ -522,12 +522,20 @@ function physicalRefSyncDraftToCurrentFrame() {
     return;
   }
 
+  const interpolateCheckbox = document.getElementById("physicalRefInterpolate");
   const hadUnsavedDraft =
-    !!physicalRefDrawnTarget || physicalRefDrawnDistractors.length > 0;
+    !!physicalRefDrawnTarget ||
+    physicalRefDrawnDistractors.length > 0 ||
+    (interpolateCheckbox && interpolateCheckbox.checked);
 
   physicalRefActiveIndex = -1;
   physicalRefDrawnTarget = null;
   physicalRefDrawnDistractors = [];
+  // interpolate_from_previous is a deliberate per-sample decision; it must
+  // never remain checked merely because the previously displayed frame (or
+  // sample) used interpolation -- that would risk silently creating an
+  // interpolated sample on ordinary frame navigation.
+  if (interpolateCheckbox) interpolateCheckbox.checked = false;
   physicalRefRenderDistractorList();
 
   if (hadUnsavedDraft) {
