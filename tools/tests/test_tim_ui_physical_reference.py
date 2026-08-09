@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -313,3 +314,166 @@ def test_p53_contract_closure_date_matches_frozen_documentation():
     # honest against docs/issues/p1-10-improve-bbox-evaluation.md section F
     # if that document is ever revised.
     assert UI.P53_CONTRACT_CLOSURE_DATE.isoformat() == "2026-07-22"
+
+
+# --- Frame-local draft geometry (M3 corrective follow-up) -------------------
+#
+# There is no JS execution environment in this repository (no Node.js), so
+# this frontend logic cannot be run directly. Following the same fallback
+# used for the coordinate-mapping formula earlier in this milestone, these
+# are structural checks against the actual shipped source: they extract
+# each named function's real body with a balanced-brace scanner (not a
+# fragile single-line regex) and assert on its content and on call order
+# between functions.
+
+JS_PATH = REPO_ROOT / "tools/bag_annotation_ui/static/tim_physical_reference_ui.js"
+JS_SOURCE = JS_PATH.read_text(encoding="utf-8")
+
+
+def _extract_js_function_body(source: str, function_name: str) -> str:
+    """Return the full body (including braces) of the first
+    `function <function_name>(...) { ... }` declaration in `source`,
+    found by balanced-brace scanning rather than a regex that could be
+    fooled by nested braces."""
+
+    marker = f"function {function_name}("
+    start = source.index(marker)
+    brace_start = source.index("{", start)
+    depth = 0
+    for i in range(brace_start, len(source)):
+        if source[i] == "{":
+            depth += 1
+        elif source[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[brace_start : i + 1]
+    raise AssertionError(f"unbalanced braces while extracting {function_name}")
+
+
+def test_js_source_contains_the_frame_local_functions():
+    # Fails loudly (via .index() raising) if either function is missing --
+    # a much stronger signal than a plain substring search would give.
+    _extract_js_function_body(JS_SOURCE, "physicalRefFindSampleAtCurrentFrame")
+    _extract_js_function_body(JS_SOURCE, "physicalRefSyncDraftToCurrentFrame")
+
+
+def test_frame_change_syncs_draft_before_repaint():
+    """updatePhysicalRefFrame's img.onload must resolve this frame's own
+    state (sync) strictly before drawing (repaint), never the reverse --
+    repainting first would draw the stale frame's geometry for one frame."""
+
+    onload_start = JS_SOURCE.index("img.onload = function () {")
+    onload_body = _extract_js_function_body_from(JS_SOURCE, onload_start)
+
+    sync_pos = onload_body.index("physicalRefSyncDraftToCurrentFrame();")
+    repaint_pos = onload_body.index("physicalRefRepaint();")
+    assert sync_pos < repaint_pos
+
+
+def _extract_js_function_body_from(source: str, marker_pos: int) -> str:
+    brace_start = source.index("{", marker_pos)
+    depth = 0
+    for i in range(brace_start, len(source)):
+        if source[i] == "{":
+            depth += 1
+        elif source[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[brace_start : i + 1]
+    raise AssertionError("unbalanced braces")
+
+
+def test_sync_restores_saved_sample_geometry_when_frame_has_one():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefSyncDraftToCurrentFrame")
+    assert "physicalRefFindSampleAtCurrentFrame()" in body
+    assert "if (idx >= 0)" in body
+    assert "physicalRefLoadSampleIntoForm(idx" in body
+
+
+def test_sync_clears_draft_geometry_when_frame_has_no_saved_sample():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefSyncDraftToCurrentFrame")
+    # The clearing statements must appear after the early-return for the
+    # "has a saved sample" branch, i.e. in the no-match path.
+    idx_branch_pos = body.index("if (idx >= 0)")
+    clear_target_pos = body.index("physicalRefDrawnTarget = null;")
+    clear_distractors_pos = body.index("physicalRefDrawnDistractors = [];")
+    assert clear_target_pos > idx_branch_pos
+    assert clear_distractors_pos > idx_branch_pos
+
+
+def test_sync_discards_unsaved_draft_with_a_visible_status_message():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefSyncDraftToCurrentFrame")
+    assert "hadUnsavedDraft" in body
+    assert "discarded" in body.lower()
+
+
+def test_find_sample_matches_by_current_time_not_frame_index_identity():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefFindSampleAtCurrentFrame")
+    assert "currentTimeS()" in body
+    assert "physicalRefSamples.findIndex" in body
+    # A tolerance comparison, not exact floating-point equality.
+    assert "Math.abs" in body and "<" in body
+
+
+def test_no_carry_forward_every_target_assignment_is_in_an_expected_function():
+    """The only places physicalRefDrawnTarget may be assigned a *new* value
+    (drawing, loading a saved sample, or clearing) are enumerated here. If a
+    future edit adds a path that copies frame A's box into frame B's draft
+    without going through the saved-sample restore or the explicit clear,
+    this test's coverage will not include that function and will fail."""
+
+    allowed_functions = {
+        "physicalRefOnPointerUp",         # user draws a new box
+        "physicalRefLoadSampleIntoForm",  # restore a saved sample's own box
+        "physicalRefSyncDraftToCurrentFrame",  # clear on frame change with no saved sample
+        "physicalRefClearCurrentBox",     # explicit clear action
+        "physicalRefOnStateChange",       # clear when leaving present_scored
+        "physicalRefNewSampleAtCurrentFrame",  # explicit new-sample reset
+    }
+
+    # Excludes the single module-level `let physicalRefDrawnTarget = null;`
+    # declaration (the initial state, not a reassignment / carry-forward
+    # risk) -- every *re*assignment must still be inside an allow-listed
+    # function.
+    assignment_positions = [
+        m.start()
+        for m in re.finditer(r"(?<!let )physicalRefDrawnTarget\s*=", JS_SOURCE)
+    ]
+    assert assignment_positions, "expected at least one reassignment in the source"
+
+    function_spans = []
+    for name in allowed_functions:
+        marker = f"function {name}("
+        start = JS_SOURCE.index(marker)
+        body_start = JS_SOURCE.index("{", start)
+        body = _extract_js_function_body_from(JS_SOURCE, start)
+        function_spans.append((name, body_start, body_start + len(body)))
+
+    for pos in assignment_positions:
+        containing = [
+            name for name, s, e in function_spans if s <= pos < e
+        ]
+        assert containing, (
+            "physicalRefDrawnTarget assignment at char "
+            f"{pos} is outside every allow-listed function "
+            f"{sorted(allowed_functions)} -- possible new carry-forward path"
+        )
+
+
+def test_tracker_overlay_toggle_is_independent_of_draft_geometry():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefFrameUrl")
+    assert "physicalRefShowOverlays" in body
+    assert "physicalRefDrawnTarget" not in body
+    assert "physicalRefSamples" not in body
+
+
+def test_navigation_does_not_touch_interpolate_checkbox_state():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefSyncDraftToCurrentFrame")
+    # In the no-saved-sample (clear) branch specifically, only geometry is
+    # touched -- the interpolate checkbox is a user-controlled setting for
+    # what they are about to annotate next, not a property of the previous
+    # frame's geometry, and section 6 of the request explicitly limited
+    # this fix to geometry.
+    idx_branch_pos = body.index("if (idx >= 0)")
+    clear_branch = body[body.index("}", idx_branch_pos) :]
+    assert "physicalRefInterpolate" not in clear_branch
