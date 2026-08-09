@@ -32,6 +32,10 @@ if [[ -z "${PI_IP// }" ]]; then
     PI_IP="127.0.0.1"
 fi
 
+# Captured before any argument parsing consumes "$@", for Issue #54 run
+# provenance (the exact invocation belongs in every retained run's metadata).
+ORIGINAL_INVOCATION="$(printf '%q ' "start_live_stack.sh" "$@")"
+
 LOG_ROOT="$ROS_WS/log/live_stack"
 RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
 RUN_DIR="$LOG_ROOT/$RUN_ID"
@@ -337,6 +341,73 @@ write_video_bag_metadata() {
     } > "$metadata_file"
 }
 
+# Issue #54 schema-v1 provenance record: git commit/state, exact invocation,
+# hardware/software versions, model/config hashes, resolved ROS parameters,
+# topic/QoS inventory, selected target, and runtime switch history. Written
+# atomically alongside the plain-text summary above. Best-effort: a failure
+# here degrades provenance for this run but must not take down live
+# recording, so it never calls stop_stack.
+write_live_run_provenance() {
+    local bag_kind="$1"
+    local output_path="$2"
+    shift 2
+    local -a topics=("$@")
+
+    local -a recorded_topic_args=()
+    local topic
+    for topic in "${topics[@]}"; do
+        recorded_topic_args+=(--recorded-topic "$topic")
+    done
+
+    local -a param_args=()
+    local p
+    if [[ -n "${PERCEPTION_CAMERA_RESOLVED_PARAMS+x}" ]]; then
+        for p in "${PERCEPTION_CAMERA_RESOLVED_PARAMS[@]}"; do
+            param_args+=(--param "perception_camera_node:${p}")
+        done
+    fi
+    if [[ -n "${TRACKER_RESOLVED_PARAMS+x}" ]]; then
+        for p in "${TRACKER_RESOLVED_PARAMS[@]}"; do
+            param_args+=(--param "tracker_node:${p}")
+        done
+    fi
+    if [[ -n "${DASHBOARD_BRIDGE_RESOLVED_PARAMS+x}" ]]; then
+        for p in "${DASHBOARD_BRIDGE_RESOLVED_PARAMS[@]}"; do
+            param_args+=(--param "dashboard_bridge_node:${p}")
+        done
+    fi
+
+    local -a hash_args=()
+    if [[ -n "${PERCEPTION_HAILO_HEF_PATH:-}" ]]; then
+        hash_args+=(--hash-file "detector_hef=$PERCEPTION_HAILO_HEF_PATH")
+    fi
+    if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
+        hash_args+=(--hash-file "tim_mars_reid_model=$TARGET_MEMORY_MARS_MODEL_PATH")
+        hash_args+=(--hash-file "tim_mars_config=$TARGET_MEMORY_MARS_CONFIG")
+    fi
+
+    local -a switch_log_args=()
+    if [[ -f "${TARGET_AUTHORITY_EVENT_LOG:-}" ]]; then
+        switch_log_args=(--switch-history-log "$TARGET_AUTHORITY_EVENT_LOG")
+    fi
+
+    if ! python3 "$THESIS_ROOT/tools/live/write_live_run_metadata.py" \
+        --output "$output_path" \
+        --run-id "$RUN_ID" \
+        --scenario-tag "${BAG_TAG:-}" \
+        --command "$ORIGINAL_INVOCATION" \
+        --repo-root "$THESIS_ROOT" \
+        --ros-distro "${ROS_DISTRO:-}" \
+        --bag-kind "$bag_kind" \
+        --bag-out-dir "$(dirname "$output_path")" \
+        "${recorded_topic_args[@]}" \
+        "${hash_args[@]}" \
+        "${param_args[@]}" \
+        "${switch_log_args[@]}"; then
+        echo "[warn] failed to write live-run provenance record: $output_path"
+    fi
+}
+
 post_target_selection() {
     local target_value="$1"
 
@@ -476,7 +547,11 @@ log_info "ros: domain=$ROS_DOMAIN_ID log_dir=$ROS_LOG_DIR"
 # Phase 3: integrated camera + perception readiness.
 log_step "integrated camera perception mode selected"
 log_info "integrated mode will run perception_camera_node only"
-log_info "full-rate raw image publishing is disabled in live operation"
+if [[ "$CAMERA_PUBLISH_IMAGE_RAW_BOOL" == "true" ]]; then
+    log_info "full-rate /camera/image_raw publishing is ENABLED (a raw-image recording flag is active or was explicitly requested)"
+else
+    log_info "full-rate /camera/image_raw publishing is disabled (no active recording path requires it)"
+fi
 
 if [[ "$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL" == "true" ]]; then
     log_hint "host Hailo init failures will fallback to stub backend (override enabled)"
@@ -572,6 +647,9 @@ while true; do
         -p publish_dashboard_topic:=true \
         -p dashboard_topic:=/camera/dashboard \
         -p dashboard_fps:=$CAMERA_DASHBOARD_FPS \
+        -p publish_image_raw:=$CAMERA_PUBLISH_IMAGE_RAW_BOOL \
+        -p publish_fps_topic:=true \
+        -p fps_topic:=/camera/fps \
         -p startup_frame_timeout_s:=$CAMERA_STARTUP_FRAME_TIMEOUT_S \
         -p stall_timeout_s:=$CAMERA_STALL_TIMEOUT_S
 
@@ -608,6 +686,40 @@ while true; do
     stop_stack
     exit 1
 done
+
+# Snapshot of the exact resolved parameters used for the successful
+# perception_camera_node launch above, for Issue #54 run-metadata capture.
+PERCEPTION_CAMERA_RESOLVED_PARAMS=(
+    "width=$CAMERA_WIDTH"
+    "height=$CAMERA_HEIGHT"
+    "fps=$CAMERA_FPS"
+    "img_w=640"
+    "img_h=640"
+    "frame_queue_size=$INFER_QUEUE_SIZE"
+    "num_workers=$INFER_WORKERS"
+    "image_qos_depth=$PERCEPTION_IMAGE_QOS_DEPTH"
+    "hailo_queue_max_buffers=$PERCEPTION_HAILO_QUEUE_BUFFERS"
+    "async_max_inflight=$PERCEPTION_ASYNC_MAX_INFLIGHT"
+    "hailo_use_videoconvert=$PERCEPTION_HAILO_USE_VIDEOCONVERT_BOOL"
+    "disable_python_gc=$PERCEPTION_GC_DISABLE_BOOL"
+    "label=person"
+    "min_score=0.35"
+    "inference_backend=$PERCEPTION_INFERENCE_BACKEND"
+    "hailo_hef_path=$PERCEPTION_HAILO_HEF_PATH"
+    "allow_stub_fallback=$PERCEPTION_ALLOW_STUB_FALLBACK_BOOL"
+    "infer_timeout_ms=$INFER_TIMEOUT_MS"
+    "timeout_log_every=$INFER_TIMEOUT_LOG_EVERY"
+    "publish_timing=$INFER_PUBLISH_TIMING_BOOL"
+    "log_every=$INFER_PRINT_EVERY"
+    "publish_dashboard_topic=true"
+    "dashboard_topic=/camera/dashboard"
+    "dashboard_fps=$CAMERA_DASHBOARD_FPS"
+    "publish_image_raw=$CAMERA_PUBLISH_IMAGE_RAW_BOOL"
+    "publish_fps_topic=true"
+    "fps_topic=/camera/fps"
+    "startup_frame_timeout_s=$CAMERA_STARTUP_FRAME_TIMEOUT_S"
+    "stall_timeout_s=$CAMERA_STALL_TIMEOUT_S"
+)
 
 # Phase 4: bring up downstream nodes after camera + perception are healthy.
 if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
@@ -654,6 +766,23 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
         stop_stack
         exit 1
     fi
+
+    TRACKER_RESOLVED_PARAMS=(
+        "tracker_type=$TRACKER_TYPE"
+        "reid_model_path=$REID_MODEL_PATH"
+        "reid_batch_size=32"
+        "max_cosine_distance=0.2"
+        "max_iou_distance=0.7"
+        "nn_budget=100"
+        "only_position_gating=false"
+        "iou_threshold=$TRACKER_IOU_THRESHOLD"
+        "max_age=$TRACKER_MAX_AGE"
+        "min_hits=$TRACKER_MIN_HITS"
+        "centre_gate=$TRACKER_CENTRE_GATE"
+        "publish_tracks=$TRACKER_PUBLISH_TRACKS_BOOL"
+        "publish_tracks_requires_subscribers=$TRACKER_PUBLISH_TRACKS_REQUIRES_SUBSCRIBERS_BOOL"
+        "publish_timing_topic=$TRACKER_PUBLISH_TIMING_BOOL"
+    )
 fi
 
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
@@ -680,6 +809,18 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         stop_stack
         exit 1
     fi
+
+    DASHBOARD_BRIDGE_RESOLVED_PARAMS=(
+        "img_w=640"
+        "img_h=640"
+        "camera_ref_w=$CAMERA_WIDTH"
+        "camera_ref_h=$CAMERA_HEIGHT"
+        "enable_container_model_switch_api=$DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL"
+        "runtime_reconfiguration_enabled=$DASHBOARD_RUNTIME_RECONFIGURATION_BOOL"
+        "validated_target_topic=/target_memory_mars"
+        "target_select_topic=/target_memory_mars/select"
+        "target_clear_topic=/target_memory_mars/clear"
+    )
 
     if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
         if [[ ! -f "$TARGET_MEMORY_MARS_CONFIG" ]]; then
@@ -945,6 +1086,7 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     if [[ -d "$VIDEO_BAG_OUT_DIR" ]]; then
         write_video_bag_metadata "$VIDEO_BAG_OUT_DIR/flight_metadata.txt" "${VIDEO_BAG_TOPICS[@]}"
         echo "[ok] video bag metadata: $VIDEO_BAG_OUT_DIR/flight_metadata.txt"
+        write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json" "${VIDEO_BAG_TOPICS[@]}"
     else
         echo "[warn] video bag output directory not visible yet; metadata was not written"
     fi
@@ -968,8 +1110,8 @@ if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
     DATASET_BAG_OUT_DIR="$DATASET_BAG_OUT_ROOT/$DATASET_BAG_NAME"
 
     DATASET_BAG_TOPICS=(
+        /camera/image_raw
         /camera/fps
-        /camera/camera_info
         /detections
         /tracks
         /target
@@ -1014,6 +1156,7 @@ if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
 
     if [[ -d "$DATASET_BAG_OUT_DIR" ]]; then
         write_video_bag_metadata "$DATASET_BAG_OUT_DIR/dataset_metadata.txt" "${DATASET_BAG_TOPICS[@]}"
+        write_live_run_provenance dataset "$DATASET_BAG_OUT_DIR/run_metadata.json" "${DATASET_BAG_TOPICS[@]}"
         echo "[ok] dataset bag metadata: $DATASET_BAG_OUT_DIR/dataset_metadata.txt"
     else
         echo "[warn] dataset bag output directory not visible yet; metadata not written"
@@ -1071,6 +1214,7 @@ if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
 
     if [[ -d "$RAW_IMAGE_BAG_OUT_DIR" ]]; then
         write_video_bag_metadata "$RAW_IMAGE_BAG_OUT_DIR/raw_image_metadata.txt" /camera/image_raw
+        write_live_run_provenance raw_image "$RAW_IMAGE_BAG_OUT_DIR/run_metadata.json" /camera/image_raw
         {
             echo "paired_video_bag=$VIDEO_BAG_OUT_DIR"
             echo "raw_image_expected_rate_hz=$CAMERA_FPS"
@@ -1149,6 +1293,19 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
             echo "[error] source raw image recorder failed"
             stop_stack
             exit 1
+        fi
+
+        for _ in {1..20}; do
+            if [[ -d "$SOURCE_RAW_BAG_OUT_DIR" ]]; then
+                break
+            fi
+            sleep 0.1
+        done
+
+        if [[ -d "$SOURCE_RAW_BAG_OUT_DIR" ]]; then
+            write_live_run_provenance source "$SOURCE_RAW_BAG_OUT_DIR/run_metadata.json" /camera/image_raw
+        else
+            echo "[warn] source raw image bag output directory not visible yet; provenance not written"
         fi
     fi
 

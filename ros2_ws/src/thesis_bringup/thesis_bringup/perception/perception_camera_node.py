@@ -7,6 +7,7 @@ development and validation workflows.
 
 from __future__ import annotations
 
+from collections import deque
 import os
 from pathlib import Path
 import shutil
@@ -24,6 +25,7 @@ from rclpy.qos import (
     ReliabilityPolicy,
 )
 from sensor_msgs.msg import Image
+from std_msgs.msg import Float32
 from thesis_bringup.perception.perception_pipeline_node import PerceptionPipelineNode
 
 
@@ -76,6 +78,19 @@ class PerceptionCameraNode(PerceptionPipelineNode):
         self.declare_parameter("dashboard_topic", "/camera/dashboard")
         self.declare_parameter("dashboard_fps", 10.0)
 
+        # /camera/image_raw is not required by the detector (inference stays
+        # in-process), the tracker, TIM-MARS (which uses dashboard_topic), or
+        # the dashboard UI (which has no image subscription at all). It exists
+        # only for operator-requested recording/replay evidence, so it is off
+        # by default and must be explicitly enabled -- see Issue #54.
+        self.declare_parameter("publish_image_raw", False)
+
+        # Canonical measured camera-cadence metric. The dashboard bridge and
+        # the live/dataset bag recorders already expect this topic to exist
+        # for the integrated camera path; this is the owner -- see Issue #54.
+        self.declare_parameter("publish_fps_topic", True)
+        self.declare_parameter("fps_topic", "/camera/fps")
+
         self._device = str(self.get_parameter("device").value)
         self._media_dev = str(self.get_parameter("media_dev").value)
         self._sensor_subdev = str(self.get_parameter("sensor_subdev").value)
@@ -127,6 +142,18 @@ class PerceptionCameraNode(PerceptionPipelineNode):
         )
         self._last_dashboard_pub_monotonic = 0.0
 
+        self._publish_image_raw = bool(self.get_parameter("publish_image_raw").value)
+
+        self._publish_fps_topic = bool(self.get_parameter("publish_fps_topic").value)
+        self._fps_topic = str(self.get_parameter("fps_topic").value)
+        self._fps_pub = (
+            self.create_publisher(Float32, self._fps_topic, 10)
+            if self._publish_fps_topic
+            else None
+        )
+        self._fps_window_ns: deque[int] = deque(maxlen=240)
+        self._last_fps_pub_ns = 0
+
         dashboard_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
@@ -139,10 +166,16 @@ class PerceptionCameraNode(PerceptionPipelineNode):
             else None
         )
 
-        # Publish the live camera frame stream for recording and replay.
-        # The integrated perception path normally only publishes semantic outputs
-        # plus /camera/dashboard; /camera/image_raw is required for field bags.
-        self._image_raw_pub = self.create_publisher(Image, "/camera/image_raw", dashboard_qos)
+        # Publish the live camera frame stream for recording and replay only.
+        # No perception/tracking/TIM/dashboard consumer subscribes to this
+        # topic (see Issue #54's engineering record); it is created only when
+        # explicitly requested so the frozen flight profile does not pay for
+        # full-rate raw-image DDS transport it does not use.
+        self._image_raw_pub = (
+            self.create_publisher(Image, "/camera/image_raw", dashboard_qos)
+            if self._publish_image_raw
+            else None
+        )
 
         self._cap = None
         self._camera_stop = threading.Event()
@@ -166,7 +199,11 @@ class PerceptionCameraNode(PerceptionPipelineNode):
             f"fps={self._fps:.2f}, "
             f"infer={self.img_w}x{self.img_h}, "
             f"dashboard={'on' if self._publish_dashboard_topic else 'off'} "
-            f"topic={self._dashboard_topic} fps={self._dashboard_fps:.2f}"
+            f"topic={self._dashboard_topic} fps={self._dashboard_fps:.2f}, "
+            f"image_raw={'on' if self._publish_image_raw else 'off'} "
+            f"topic=/camera/image_raw fps={self._fps:.2f}, "
+            f"fps_topic={'on' if self._publish_fps_topic else 'off'} "
+            f"topic={self._fps_topic}"
         )
 
     def _check_binaries(self) -> None:
@@ -377,6 +414,30 @@ class PerceptionCameraNode(PerceptionPipelineNode):
         self._dashboard_pub.publish(msg)
         self._last_dashboard_pub_monotonic = now_monotonic
 
+    def _maybe_publish_fps(self) -> None:
+        if self._fps_pub is None:
+            return
+
+        now_ns = self.get_clock().now().nanoseconds
+        self._fps_window_ns.append(now_ns)
+
+        window_ns = 3_000_000_000
+        cutoff_ns = now_ns - window_ns
+        while self._fps_window_ns and self._fps_window_ns[0] < cutoff_ns:
+            self._fps_window_ns.popleft()
+
+        if (now_ns - self._last_fps_pub_ns) < 200_000_000 or len(self._fps_window_ns) < 2:
+            return
+
+        dt_ns = self._fps_window_ns[-1] - self._fps_window_ns[0]
+        if dt_ns <= 0:
+            return
+
+        fps_msg = Float32()
+        fps_msg.data = float(len(self._fps_window_ns) - 1) / (dt_ns / 1e9)
+        self._fps_pub.publish(fps_msg)
+        self._last_fps_pub_ns = now_ns
+
     def _frame_to_msg(self, frame) -> Image:
         stamp = self.get_clock().now().to_msg()
 
@@ -415,8 +476,10 @@ class PerceptionCameraNode(PerceptionPipelineNode):
             self._camera_frame_id += 1
 
             msg = self._frame_to_msg(frame)
-            self._image_raw_pub.publish(msg)
+            if self._image_raw_pub is not None:
+                self._image_raw_pub.publish(msg)
             self._maybe_publish_dashboard_frame(msg, now_monotonic=time.monotonic())
+            self._maybe_publish_fps()
             self.on_image(msg)
 
             if self._fps > 0.0:
