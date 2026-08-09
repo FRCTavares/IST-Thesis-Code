@@ -62,6 +62,27 @@ METRIC_WARN_THRESHOLDS_MS = {
 }
 
 
+def _compute_e2e_target_ms(
+    t_cam_msg_seen_ns: int,
+    t_target_cb_end_ns: int,
+) -> float | None:
+    """Compute the final controller-facing target-publication latency.
+
+    Returns None when the incoming /tracks message carries no valid
+    same-frame timing context (t_cam_msg_seen_ns <= 0, Issue #32's
+    frame_context correlation-miss sentinel) -- the caller must leave the
+    Timing message's e2e_target_ms field unset (its schema default) rather
+    than publish a fabricated zero-latency measurement.
+    """
+    t_cam_msg_seen_ns = int(t_cam_msg_seen_ns)
+    t_target_cb_end_ns = int(t_target_cb_end_ns)
+
+    if t_cam_msg_seen_ns <= 0 or t_target_cb_end_ns < t_cam_msg_seen_ns:
+        return None
+
+    return float((t_target_cb_end_ns - t_cam_msg_seen_ns) / 1e6)
+
+
 class DashboardBridgeNode(Node):
     def __init__(self) -> None:
         super().__init__("dashboard_bridge_node")
@@ -922,10 +943,11 @@ exit 1
         timing_msg.t_target_cb_start_ns = int(t_target_cb_start_ns)
         timing_msg.t_target_cb_end_ns = int(t_target_cb_end_ns)
         timing_msg.target_ms = float((t_target_cb_end_ns - t_target_cb_start_ns) / 1e6)
-        if timing_msg.t_cam_msg_seen_ns > 0 and t_target_cb_end_ns >= timing_msg.t_cam_msg_seen_ns:
-            timing_msg.e2e_target_ms = float(
-                (t_target_cb_end_ns - timing_msg.t_cam_msg_seen_ns) / 1e6
-            )
+        e2e_target_ms = _compute_e2e_target_ms(
+            timing_msg.t_cam_msg_seen_ns, t_target_cb_end_ns
+        )
+        if e2e_target_ms is not None:
+            timing_msg.e2e_target_ms = e2e_target_ms
         sensor_ms = self._sensor_to_target_ms_if_comparable(
             int(msg.src_stamp_ns),
             t_target_cb_end_ns,

@@ -76,6 +76,33 @@ def _resolve_source_stamp_ns(context_stamp_ns: int, header: object) -> int:
     )
 
 
+def _store_frame_context(
+    frame_context: dict,
+    frame_context_order,
+    max_context: int,
+    frame_id: int,
+    src_stamp_ns: int,
+    t_cam_msg_seen_ns: int,
+) -> None:
+    """Record same-frame timing context, keyed exactly by frame_id.
+
+    Rejects placeholder/invalid frame_id<=0 (startup messages use frame_id=0
+    and must not pollute the cache). Storage is keyed by exact integer
+    frame_id, so a later lookup for frame_id=N can only ever return data
+    stored under frame_id=N -- it cannot be paired with N-1 or N+1.
+    """
+    if frame_id <= 0:
+        return
+
+    if frame_id not in frame_context:
+        frame_context_order.append(frame_id)
+        if len(frame_context_order) > max_context:
+            oldest = frame_context_order.popleft()
+            frame_context.pop(oldest, None)
+
+    frame_context[frame_id] = (int(src_stamp_ns), int(t_cam_msg_seen_ns))
+
+
 def now_ns() -> int:
     """Return the current monotonic timestamp in nanoseconds."""
     return time.monotonic_ns()
@@ -145,6 +172,21 @@ class TrackerNode(Node):
             reliability=ReliabilityPolicy.BEST_EFFORT,
         )
 
+        # Subscription creation order matters here, not just publish order.
+        # rclpy's SingleThreadedExecutor (used by this node's main()) dispatches
+        # ready callbacks in node.subscriptions registration order whenever
+        # multiple subscriptions are ready in the same wait-set cycle
+        # (rclpy/executors.py Executor._wait_for_ready_callbacks: "for sub in
+        # node.subscriptions: ... yield"). /timing and /detections for the same
+        # frame are published microseconds apart by perception_pipeline_node
+        # and are almost always ready together in one cycle, so on_timing must
+        # be registered before on_detections or its frame_context entry for
+        # that frame will not exist yet when on_detections looks it up --
+        # deterministically, not as an occasional race. Publish order at the
+        # source does not control this.
+        self.sub_timing = self.create_subscription(
+            Timing, "/timing", self.on_timing, qos
+        )
         self.sub = self.create_subscription(
             Detection2DArray, "/detections", self.on_detections, qos
         )
@@ -152,9 +194,6 @@ class TrackerNode(Node):
         self.image_topic = str(self.get_parameter("image_topic").value)
         self.sub_image = self.create_subscription(
             Image, self.image_topic, self.on_image, qos
-        )
-        self.sub_timing = self.create_subscription(
-            Timing, "/timing", self.on_timing, qos
         )
         self.pub = self.create_publisher(Track2DArray, "/tracks", qos)
         self.pub_timing = self.create_publisher(Timing, "/timing_tracker", qos)
@@ -192,6 +231,12 @@ class TrackerNode(Node):
         self.profiling_gc_probe = bool(self.get_parameter("profiling_gc_probe").value)
         self._frame_counter = 0
         self._gc_collections_seen = 0
+        # Observability for the same-frame timing correlation contract
+        # (see the subscription-order comment above). A sustained nonzero
+        # miss rate here means correlation is failing again, not that a
+        # sample genuinely has no timing context.
+        self.frame_context_hits = 0
+        self.frame_context_misses = 0
 
         if self.profiling_serialize_sample_every_n > 0:
             self.get_logger().warn(
@@ -416,17 +461,14 @@ class TrackerNode(Node):
 
     def on_timing(self, msg: Timing) -> None:
         """Store source timing context for a tracker frame."""
-        frame_id = int(msg.frame_id)
-        if frame_id <= 0:
-            return
-
-        if frame_id not in self.frame_context:
-            self._frame_context_order.append(frame_id)
-            if len(self._frame_context_order) > self.max_context:
-                oldest = self._frame_context_order.popleft()
-                self.frame_context.pop(oldest, None)
-
-        self.frame_context[frame_id] = (int(msg.src_stamp_ns), int(msg.t_cam_msg_seen_ns))
+        _store_frame_context(
+            self.frame_context,
+            self._frame_context_order,
+            self.max_context,
+            int(msg.frame_id),
+            int(msg.src_stamp_ns),
+            int(msg.t_cam_msg_seen_ns),
+        )
 
     def on_detections(self, msg: Detection2DArray) -> None:
         """Process detection message and publish tracks."""
@@ -502,10 +544,20 @@ class TrackerNode(Node):
         should_publish_tracks = self.publish_tracks and self._has_track_subscribers()
         should_build_track_msg = should_publish_tracks or should_sample_serialize
 
-        # Convert tracks to ROS message
+        # Convert tracks to ROS message. /detections and /timing are separate
+        # subscriptions; on_timing is registered first (see __init__) so its
+        # frame_context entry for this exact frame_id is populated before
+        # on_detections needs it whenever both are ready in the same executor
+        # cycle. A miss here means no matching /timing message has been
+        # processed for this frame_id at all (not a different frame's data --
+        # dict lookup by exact frame_id cannot pair mismatched frames), and
+        # the resulting t_cam_msg_seen_ns=0 is correctly treated as
+        # unavailable downstream, never as a genuine zero-latency reading.
         src_stamp_ns, t_cam_msg_seen_ns = self.frame_context.pop(frame_id, (0, 0))
-        # /detections and /timing are separate subscriptions, so detections may
-        # arrive before timing context. Both carry the same source-image stamp.
+        if t_cam_msg_seen_ns > 0:
+            self.frame_context_hits += 1
+        else:
+            self.frame_context_misses += 1
         src_stamp_ns = _resolve_source_stamp_ns(src_stamp_ns, msg.header)
         queue_delay_ms = 0.0
         if t_cam_msg_seen_ns > 0:
@@ -640,6 +692,8 @@ class TrackerNode(Node):
                 f"det_count={len(det_boxes)} "
                 f"track_count={len(tracks)} "
                 f"queue_delay_ms={queue_delay_ms:.3f} "
+                f"frame_context_hits={self.frame_context_hits} "
+                f"frame_context_misses={self.frame_context_misses} "
                 f"tracker_update_ms={profiler.ms('tracker_update'):.3f} "
                 f"per_track_loop_ms={profiler.ms('per_track_loop'):.3f} "
                 f"build_msg_ms={profiler.ms('build_msg'):.3f} "
