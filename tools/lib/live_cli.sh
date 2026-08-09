@@ -554,6 +554,16 @@ while [[ $# -gt 0 ]]; do
             FIELD_RAW_IMAGE_RECORD=0
             shift
             ;;
+        --camera-publish-image-raw)
+            CAMERA_PUBLISH_IMAGE_RAW_EXPLICIT=1
+            CAMERA_PUBLISH_IMAGE_RAW_BOOL="true"
+            shift
+            ;;
+        --camera-no-publish-image-raw)
+            CAMERA_PUBLISH_IMAGE_RAW_EXPLICIT=1
+            CAMERA_PUBLISH_IMAGE_RAW_BOOL="false"
+            shift
+            ;;
         --source-record)
             SOURCE_RECORD_MODE=1
             SOURCE_RAW_IMAGE_RECORD=1
@@ -873,6 +883,24 @@ fi
 
 if ! [[ "$RECORD_MAVROS" =~ ^[01]$ ]]; then
     echo "[error] RECORD_MAVROS must be 0 or 1"
+    exit 1
+fi
+
+# /camera/image_raw has no perception/tracking/TIM/dashboard consumer (see
+# Issue #54); it is published only when a recording path that genuinely
+# needs it is active, or when the operator explicitly asks for it.
+REQUIRES_IMAGE_RAW=0
+if [[ "$FIELD_RAW_IMAGE_RECORD" -eq 1 || "$ENABLE_DATASET_BAG" -eq 1 || "${SOURCE_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
+    REQUIRES_IMAGE_RAW=1
+fi
+
+if [[ "$CAMERA_PUBLISH_IMAGE_RAW_EXPLICIT" -eq 0 ]]; then
+    if [[ "$REQUIRES_IMAGE_RAW" -eq 1 ]]; then
+        CAMERA_PUBLISH_IMAGE_RAW_BOOL="true"
+    fi
+elif [[ "$CAMERA_PUBLISH_IMAGE_RAW_BOOL" == "false" && "$REQUIRES_IMAGE_RAW" -eq 1 ]]; then
+    echo "[error] --camera-no-publish-image-raw conflicts with an active raw-image recording flag"
+    echo "        (--record-raw / --record-dataset / --source-record all require /camera/image_raw)"
     exit 1
 fi
 

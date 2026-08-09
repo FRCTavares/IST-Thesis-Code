@@ -165,6 +165,13 @@ apply_resolution_selector() {
 FIELD_MAVROS_RECORD=0
 FIELD_RAW_IMAGE_RECORD=0
 
+# /camera/image_raw is off by default (no perception/tracking/TIM/dashboard
+# consumer needs it); it is auto-enabled by --record-raw, --record-dataset,
+# or --source-record, or forced explicitly via --camera-publish-image-raw /
+# --camera-no-publish-image-raw. See Issue #54.
+CAMERA_PUBLISH_IMAGE_RAW_BOOL="false"
+CAMERA_PUBLISH_IMAGE_RAW_EXPLICIT=0
+
 SOURCE_RECORD_MODE=0
 SOURCE_MAVROS_RECORD=0
 SOURCE_RAW_IMAGE_RECORD=0
