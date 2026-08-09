@@ -1,0 +1,67 @@
+{
+  "bandwidth": {
+    "analytical_payload_only": {
+      "bytes_per_s": 27648000.0,
+      "caveat": "NOT a measured DDS bandwidth claim -- raw payload size only, ignores serialization/DDS/transport overhead",
+      "formula": "width*height*bytes_per_pixel*fps",
+      "mb_s": 27.648,
+      "mib_s": 26.367
+    },
+    "measured_ros2_topic_bw": {
+      "message_size_mean_mb": 0.92,
+      "note": "decimal MB (1e6 bytes); converges toward the analytical estimate as the averaging window grows, slightly below it due to real publish-timing jitter",
+      "stable_window_mb_s": 27.1,
+      "tool": "ros2 topic bw /camera/image_raw",
+      "window_s": 10
+    },
+    "measured_ros2_topic_hz": {
+      "nominal_fps": 30.0,
+      "stable_window_avg_rate_hz": 29.63,
+      "tool": "ros2 topic hz /camera/image_raw",
+      "window_s": 10
+    }
+  },
+  "camera_config": {
+    "encoding": "bgr8",
+    "height": 480,
+    "nominal_fps": 30.0,
+    "width": 640
+  },
+  "conditions": {
+    "off": {
+      "flag": "(default)",
+      "publish_image_raw": false
+    },
+    "on": {
+      "flag": "--camera-publish-image-raw",
+      "publish_image_raw": true
+    }
+  },
+  "cpu_rss": {
+    "cpu_percent_delta_stable_window_pp": 7.08,
+    "note": "cpu_percent is ps %cpu for the perception_camera_node process alone (single-core-normalized; can exceed 100% on multi-core hosts, not observed here)",
+    "off": {
+      "cpu_percent_mean": 81.53,
+      "cpu_percent_stable_window_mean": 83.14,
+      "n_samples": 20,
+      "rss_kib_mean": 171276.8,
+      "rss_kib_stable_window_mean": 171328.0
+    },
+    "on": {
+      "cpu_percent_mean": 89.75,
+      "cpu_percent_stable_window_mean": 90.22,
+      "n_samples": 20,
+      "rss_kib_mean": 171581.2,
+      "rss_kib_stable_window_mean": 171653.6
+    },
+    "rss_kib_delta_stable_window": 325.6
+  },
+  "issue": 54,
+  "required_work_item": 9,
+  "scenario": "perception_camera_node integrated-camera path, minimal downstream (tracker/dashboard/control/web-video disabled)",
+  "schema_version": 1,
+  "topic_existence": {
+    "off_has_image_raw": false,
+    "on_has_image_raw": true
+  }
+}
