@@ -258,6 +258,13 @@ def parse_provenance(data: dict) -> PhysicalReferenceProvenance:
             "source_width and source_height must be positive integers"
         )
 
+    sequence_id = str(data["sequence_id"])
+    if not sequence_id.strip():
+        raise PhysicalReferenceValidationError(
+            "sequence_id must be non-empty -- a physical-reference artifact "
+            "must carry a deliberate sequence identity, not a placeholder"
+        )
+
     selected_physical_target_label = str(data["selected_physical_target_label"])
     if not selected_physical_target_label.strip():
         raise PhysicalReferenceValidationError(
@@ -273,7 +280,7 @@ def parse_provenance(data: dict) -> PhysicalReferenceProvenance:
     return PhysicalReferenceProvenance(
         schema_version=schema_version,
         contract_version=contract_version,
-        sequence_id=str(data["sequence_id"]),
+        sequence_id=sequence_id,
         source_bag_name=str(data["source_bag_name"]),
         source_bag_path=str(data["source_bag_path"]),
         source_image_topic=str(data["source_image_topic"]),

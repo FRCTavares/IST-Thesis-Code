@@ -236,3 +236,80 @@ def test_discover_physical_references_finds_json_files(tmp_path):
 
 def test_discover_physical_references_empty_when_root_missing(tmp_path):
     assert UI.discover_physical_references(tmp_path) == []
+
+
+# --- coordinate-convention auto-resolution --------------------------------------
+#
+# The core safety property under test: a historical source must never
+# silently resolve to (or default to) the modern convention, an unknown
+# source must never silently resolve to either convention, and a genuinely
+# modern source must resolve to the modern convention only on positive
+# evidence (a real contract-header match), never merely because its date is
+# recent.
+
+
+def test_resolve_coordinate_convention_may_hard_reentry_style_source_is_historical():
+    resolved = UI.resolve_coordinate_convention(
+        "bags/source/curated/2026-05-14__11-03-26__dataset__"
+        "tim_v1_hard_reentry_id_switch_raw"
+    )
+    assert resolved is not None
+    assert resolved["coordinate_convention"] == "source_pixels_historical_pre_p53"
+    assert resolved["coordinate_convention_evidence"]
+    assert "2026-05-14" in resolved["coordinate_convention_evidence"]
+
+
+def test_resolve_coordinate_convention_june_canonical_style_source_is_historical():
+    resolved = UI.resolve_coordinate_convention(
+        "bags/source/curated/2026-06-19__12-55-58__source__2026-06-19__official__"
+        "seq03__four_person_crossing_ambiguity__image_raw"
+    )
+    assert resolved is not None
+    assert resolved["coordinate_convention"] == "source_pixels_historical_pre_p53"
+    assert "2026-06-19" in resolved["coordinate_convention_evidence"]
+
+
+def test_resolve_coordinate_convention_modern_source_requires_positive_header_evidence(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        UI,
+        "_detections_header_frame_id",
+        lambda bag_path: (
+            "tim_mars_source_pixels_resize_v1;frame=1;source=640x480;"
+            "inference=640x640;scale=1,1.0;pad=0,0"
+        ),
+    )
+    resolved = UI.resolve_coordinate_convention(
+        "bags/source/curated/2026-08-09__12-00-00__modern_source"
+    )
+    assert resolved is not None
+    assert resolved["coordinate_convention"] == "source_pixels_p53_contract"
+    assert resolved["coordinate_convention_evidence"] is None
+
+
+def test_resolve_coordinate_convention_unresolvable_source_is_none_not_a_default(
+    monkeypatch,
+):
+    """A post-closure-dated bag with no header evidence must not silently
+    become modern, and must not become historical either -- unresolved."""
+    monkeypatch.setattr(UI, "_detections_header_frame_id", lambda bag_path: None)
+    resolved = UI.resolve_coordinate_convention(
+        "bags/source/curated/2026-08-09__12-00-00__unknown_source"
+    )
+    assert resolved is None
+
+
+def test_resolve_coordinate_convention_no_embedded_date_and_no_header_is_none(
+    monkeypatch,
+):
+    monkeypatch.setattr(UI, "_detections_header_frame_id", lambda bag_path: None)
+    resolved = UI.resolve_coordinate_convention("bags/source/curated/no_date_here")
+    assert resolved is None
+
+
+def test_p53_contract_closure_date_matches_frozen_documentation():
+    # The one place this date is allowed to be asserted; keeps this module
+    # honest against docs/issues/p1-10-improve-bbox-evaluation.md section F
+    # if that document is ever revised.
+    assert UI.P53_CONTRACT_CLOSURE_DATE.isoformat() == "2026-07-22"

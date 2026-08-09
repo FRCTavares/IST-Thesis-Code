@@ -27,6 +27,7 @@ from tim_ui_physical_reference import (
     discover_physical_references,
     image_topic_hint,
     load_physical_reference_for_ui,
+    resolve_coordinate_convention,
     save_physical_reference_for_ui,
 )
 from physical_target_reference import (  # noqa: E402  (path set up by tim_ui_physical_reference)
@@ -171,6 +172,18 @@ async def physical_reference_image_topic_hint_api(request: Request):
 
     bag_path = REPO_ROOT / bag_text
     return {"ok": True, "topic": image_topic_hint(bag_path)}
+
+
+@app.post("/api/physical_reference/resolve_coordinate_convention")
+async def physical_reference_resolve_coordinate_convention_api(request: Request):
+    payload = await request.json()
+    bag_text = str(payload.get("bag", "")).strip()
+    if not bag_text:
+        return {"ok": False, "error": "No bag path provided."}
+
+    bag_path = REPO_ROOT / bag_text
+    resolved = resolve_coordinate_convention(str(bag_path))
+    return {"ok": True, "resolved": resolved}
 
 
 @app.get("/")

@@ -19,7 +19,9 @@ submits, before physical_target_reference.py's own bounds validation runs.
 
 from __future__ import annotations
 
+import re
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -153,4 +155,104 @@ def image_topic_hint(bag_path: Path) -> str | None:
         return "/camera/image_raw"
     if "/camera/dashboard" in topics:
         return "/camera/dashboard"
+    return None
+
+
+# --- Coordinate-convention auto-resolution ----------------------------------
+#
+# Issue #53's tim_mars_source_pixels_resize_v1 contract closed on this date.
+# Any bag whose own capture date (embedded in its directory name, per this
+# repository's established RUN_ID convention YYYY-MM-DD__HH-MM-SS__...)
+# predates this date cannot carry that contract's header -- it did not exist
+# yet -- so source_pixels_historical_pre_p53 is not a guess for such a bag,
+# it is a logical certainty given a genuine embedded date. This is the same
+# rule already verified by direct header inspection for the May hard-reentry
+# sequence in docs/issues/p1-10-improve-bbox-evaluation.md section F.
+P53_CONTRACT_CLOSURE_DATE = date(2026, 7, 22)
+
+_MODERN_CONTRACT_HEADER_PREFIX = "tim_mars_source_pixels_resize_v1"
+_BAG_DATE_PATTERN = re.compile(r"(\d{4})-(\d{2})-(\d{2})")
+
+
+def _extract_bag_capture_date(bag_path: str) -> date | None:
+    """Best-effort extraction of a YYYY-MM-DD capture date embedded in the
+    bag's own directory name."""
+
+    name = Path(bag_path).name
+    match = _BAG_DATE_PATTERN.search(name) or _BAG_DATE_PATTERN.search(str(bag_path))
+    if not match:
+        return None
+    try:
+        return date(int(match.group(1)), int(match.group(2)), int(match.group(3)))
+    except ValueError:
+        return None
+
+
+def _detections_header_frame_id(bag_path: str) -> str | None:
+    """Best-effort read of the first /detections header.frame_id, used only
+    to check for the modern contract string -- never to guess a resolution
+    when it is absent (absence is not evidence of the historical case)."""
+
+    try:
+        import rosbag2_py
+        from rclpy.serialization import deserialize_message
+        from rosidl_runtime_py.utilities import get_message
+
+        reader = rosbag2_py.SequentialReader()
+        reader.open(
+            rosbag2_py.StorageOptions(uri=str(bag_path), storage_id="mcap"),
+            rosbag2_py.ConverterOptions(
+                input_serialization_format="cdr", output_serialization_format="cdr"
+            ),
+        )
+        topic_types = {t.name: t.type for t in reader.get_all_topics_and_types()}
+        if "/detections" not in topic_types:
+            return None
+        msg_type = get_message(topic_types["/detections"])
+        while reader.has_next():
+            topic, data, _t = reader.read_next()
+            if topic == "/detections":
+                msg = deserialize_message(data, msg_type)
+                return str(msg.header.frame_id)
+    except Exception:
+        return None
+    return None
+
+
+def resolve_coordinate_convention(bag_path: str) -> dict[str, str | None] | None:
+    """Deterministically resolve a bag's coordinate_convention and, where
+    applicable, its required historical evidence.
+
+    Returns None when resolution is not deterministic -- callers (the UI)
+    must never silently substitute a default in that case; the annotator
+    must choose deliberately. This never overrides
+    docs/issues/p1-10-improve-bbox-evaluation.md section E/F's frozen
+    coordinate semantics; it only decides which of the two frozen values
+    applies to a given source.
+    """
+
+    capture_date = _extract_bag_capture_date(bag_path)
+    if capture_date is not None and capture_date < P53_CONTRACT_CLOSURE_DATE:
+        return {
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": (
+                f"Bag directory name embeds capture date {capture_date.isoformat()}, "
+                "before Issue #53's tim_mars_source_pixels_resize_v1 contract "
+                f"closed on {P53_CONTRACT_CLOSURE_DATE.isoformat()}; a bag captured "
+                "on this date cannot carry that header. Automatically resolved by "
+                "tools/bag_annotation_ui/tim_ui_physical_reference.py"
+                ".resolve_coordinate_convention; see "
+                "docs/issues/p1-10-improve-bbox-evaluation.md section F for the "
+                "May hard-reentry sequence's direct header-inspection confirmation "
+                "of this same rule."
+            ),
+        }
+
+    header = _detections_header_frame_id(bag_path)
+    if header and header.startswith(_MODERN_CONTRACT_HEADER_PREFIX):
+        return {
+            "coordinate_convention": "source_pixels_p53_contract",
+            "coordinate_convention_evidence": None,
+        }
+
     return None

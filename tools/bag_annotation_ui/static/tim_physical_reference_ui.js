@@ -33,6 +33,8 @@ let physicalRefFrameImage = null;
 let physicalRefDrag = null; // {start:[x,y], current:[x,y]} in source pixels, while dragging
 let physicalRefImageTopicHint = null;
 let physicalRefImageTopicHintForBag = null;
+let physicalRefResolvedConvention = null; // {coordinate_convention, coordinate_convention_evidence} or null
+let physicalRefResolvedConventionForBag = null;
 
 function shouldOpenPhysicalRefWorkspace() {
   const checkedRadio = document.querySelector('input[name="workspaceMode"]:checked');
@@ -80,6 +82,59 @@ async function physicalRefEnsureImageTopicHint() {
   }
 }
 
+// Deterministic coordinate_convention resolution (docs/issues/p1-10-improve-bbox-evaluation.md
+// section F). A historical May/June-style source must never silently default
+// to the modern contract, and an unresolvable source must never silently
+// default to either -- physicalRefApplyResolvedConvention() below always
+// leaves the "-- unresolved, choose deliberately --" option selected unless
+// the backend returned an actual resolution.
+async function physicalRefEnsureCoordinateConvention() {
+  if (physicalRefResolvedConventionForBag === loadedBag) return;
+  physicalRefResolvedConventionForBag = loadedBag;
+  try {
+    const res = await fetch("/api/physical_reference/resolve_coordinate_convention", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bag: loadedBag }),
+    });
+    const data = await res.json();
+    physicalRefResolvedConvention = data.ok ? data.resolved : null;
+  } catch (e) {
+    physicalRefResolvedConvention = null;
+  }
+  physicalRefApplyResolvedConvention();
+}
+
+function physicalRefApplyResolvedConvention() {
+  const sel = document.getElementById("physicalRefCoordConvention");
+  const note = document.getElementById("physicalRefCoordResolvedNote");
+  const evidenceField = document.getElementById("physicalRefCoordEvidence");
+  if (!sel) return;
+
+  if (physicalRefResolvedConvention) {
+    sel.value = physicalRefResolvedConvention.coordinate_convention;
+    if (evidenceField && physicalRefResolvedConvention.coordinate_convention_evidence) {
+      evidenceField.value = physicalRefResolvedConvention.coordinate_convention_evidence;
+    }
+    if (note) {
+      note.innerText =
+        "Resolved automatically from the loaded source: " +
+        physicalRefResolvedConvention.coordinate_convention +
+        ". Verify before relying on it; override below if this source is not " +
+        "what the automatic rule assumed.";
+    }
+  } else {
+    sel.value = "";
+    if (note) {
+      note.innerText =
+        "Could not resolve automatically from this source -- choose the " +
+        "correct coordinate convention deliberately before saving. The " +
+        "backend rejects an unresolved (empty) value.";
+    }
+  }
+  physicalRefOnCoordConventionChange();
+}
+
 async function updatePhysicalRefFrame() {
   if (!shouldOpenPhysicalRefWorkspace()) return;
 
@@ -92,6 +147,7 @@ async function updatePhysicalRefFrame() {
   }
 
   physicalRefEnsureImageTopicHint();
+  physicalRefEnsureCoordinateConvention();
 
   const idx = currentFrameIndex();
   const meta = document.getElementById("physicalRefFrameMeta");
@@ -562,10 +618,19 @@ async function physicalRefLoadSelected() {
     document.getElementById("physicalRefSequenceId").value = provenance.sequence_id || "";
     document.getElementById("physicalRefTargetLabel").value = provenance.selected_physical_target_label || "";
     document.getElementById("physicalRefAnnotator").value = provenance.annotator || "";
+    // A loaded artifact always carries a validated, non-empty
+    // coordinate_convention (the backend validator guarantees this); the ""
+    // fallback here only guards a malformed response and deliberately does
+    // NOT default to either real convention -- same rule as
+    // physicalRefApplyResolvedConvention().
     document.getElementById("physicalRefCoordConvention").value =
-      provenance.coordinate_convention || "source_pixels_p53_contract";
+      provenance.coordinate_convention || "";
     document.getElementById("physicalRefCoordEvidence").value =
       provenance.coordinate_convention_evidence || "";
+    const note = document.getElementById("physicalRefCoordResolvedNote");
+    if (note) {
+      note.innerText = "Loaded from " + data.path + ".";
+    }
     physicalRefOnCoordConventionChange();
   }
 
