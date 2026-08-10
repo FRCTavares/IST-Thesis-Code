@@ -36,7 +36,7 @@
       </label>
       <label>
         <input type="radio" name="workspaceMode" value="physical">
-        Physical reference (Issue #25)
+        Physical reference v2 (Issue #25)
       </label>
       <input id="annotationEditMode" type="checkbox" checked hidden>
     </div>
@@ -212,7 +212,7 @@
         <div class="annotationPanelHeader">
           <div>
             <div class="annotationPanelKicker">Physical reference (Issue #25)</div>
-            <h3>tim_physical_target_bbox_v1</h3>
+            <h3>tim_physical_target_bbox_v2 <span class="physicalRefV2Badge">v2</span></h3>
           </div>
           <div id="physicalRefFrameMeta" class="annotationFrameMeta">frame 0</div>
         </div>
@@ -222,12 +222,16 @@
         </div>
 
         <div id="physicalRefFrameStatus" class="annotationFrameStatus"></div>
+        <div id="physicalRefEvalWindow" class="physicalRefHint">
+          Evaluation window: load a bag to derive it from the source frame timeline.
+        </div>
         <div class="annotationHelp">
           Draw the selected physical person's bbox directly on the image below.
           Tracker IDs are never used to create this reference -- this mode is
           identity-independent by construction. Existing tracker/detection
           overlays may be shown for visual context only; they are never saved
           into the physical-reference artifact.
+          <span class="physicalRefHint">&larr; / &rarr; step frame (ignored while typing in a field)</span>
         </div>
 
         <div class="physicalRefDrawControls">
@@ -244,6 +248,8 @@
             show tracker overlays (visual aid only, never saved)
           </label>
         </div>
+
+        <div id="physicalRefPersonRefPalette" class="physicalRefPersonRefPalette"></div>
       </section>
 
       <section class="annotationTablePanel">
@@ -322,6 +328,7 @@
             <input type="checkbox" id="physicalRefInterpolate">
             Interpolate from previous keyframe
           </label>
+          <div id="physicalRefInterpolateNote" class="physicalRefHint"></div>
 
           <div id="physicalRefDistractorList" class="physicalRefDistractorList"></div>
 
@@ -487,7 +494,7 @@ window.TIM_CLEAN_UI_BAGS = __BAGS_JSON__;
 window.TIM_CLEAN_UI_ANNOTATIONS = __ANNOTATIONS_JSON__;
 </script>
 <script src="/static/tim_clean_ui.js?v=annotation_workspace_14"></script>
-<script src="/static/tim_physical_reference_ui.js?v=issue25_m3_1"></script>
+<script src="/static/tim_physical_reference_v2_ui.js?v=issue25_m3v2_1"></script>
 
   </div>
 </body>

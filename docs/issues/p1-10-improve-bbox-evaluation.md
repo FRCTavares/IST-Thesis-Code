@@ -851,6 +851,37 @@ is honestly reported as a new `reference_gap_duration_s` bucket, never
 silently scored. Interpolation, where legal, is per physical person
 (target linearly; each `distractors_complete` entry matched by
 `person_ref`, never by list position). Stage A (`classify_identity_stage_a`)
-and Stage B (`bbox_iou`, centre-error) are reused unchanged from v1. The
-v2 UI is not yet implemented (a separate, later milestone), and no real
-canonical annotation has started under either contract version.
+and Stage B (`bbox_iou`, centre-error) are reused unchanged from v1.
+
+**M3-v2 landed (2026-08-10):** the browser "Physical reference" annotation
+workspace now creates and edits `tim_physical_target_bbox_v2` artifacts
+directly, additively alongside the untouched v1 workspace code. A new
+backend adapter (`tools/bag_annotation_ui/tim_ui_physical_reference_v2.py`)
+and frontend (`tools/bag_annotation_ui/static/tim_physical_reference_v2_ui.js`)
+never duplicate schema/validator semantics -- both defer to
+`physical_target_reference_v2.py` as the sole authority, matching the
+established v1 pattern. A v1-shaped artifact is never silently migrated
+or edited by this workspace: it is rejected up front with an explicit
+message directing the annotator to start a new v2 artifact instead.
+`evaluation_window` is derived deterministically and read-only from the
+loaded bag's own frame timeline (`start_s`/`end_s` = first/last
+`frame_times_s`), exactly matching the boundary-anchor semantics frozen
+in commit `4ab33ec1` -- a sample at `t_s == end_s` remains a legal
+right-boundary interpolation anchor. `person_ref` identifiers
+(`phys_dNNN`) are annotation-local and never derived from a tracker or
+detector; "+ New physical person" allocates the lowest currently unused
+ordinal (not monotonic-next), implemented identically as independent
+pure functions in Python and JS and covered by dedicated tests. The only
+productivity feature added is keyboard frame-stepping (ArrowLeft/
+ArrowRight, suppressed while a form control has focus), which drives the
+existing slider/`seek()` navigation path rather than any parallel logic,
+so the pre-existing frame-local draft-safety behaviour (an unsaved
+frame's target bbox, distractor bboxes, `person_ref` associations, and
+interpolation flag are all cleared on navigation) applies automatically
+and was extended to cover the new per-sample `person_ref` state.
+Copy-previous-bbox, tracker-assisted or detector-assisted bbox
+suggestion, optical flow, and auto-propagation were explicitly not
+implemented in this milestone. No real canonical May/June annotation has
+started under either contract version; the v2 UI is verified by 56
+automated backend/frontend structural tests plus a live server/API smoke
+test, not yet by human browser interaction.
