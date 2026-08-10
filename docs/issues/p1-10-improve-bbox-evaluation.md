@@ -156,12 +156,36 @@ This contract does **not** fabricate a modern header into these bags.
 `coordinate_convention` for both must be set to
 `source_pixels_historical_pre_p53`, with `coordinate_convention_evidence`
 recording: the direct header inspection above (or the equivalent for the
-specific bag being annotated), the known 640x480 capture resolution
-already used and cross-checked by the completed #26/#30/#31 evidence over
-these same sequences, and an explicit statement that the frame is
-interpreted as plain source-image pixels (no letterbox padding, matching
-the anisotropic-resize contract's own geometry even though this bag
-predates the header that would say so explicitly).
+specific bag being annotated), the source frame's own actual pixel
+dimensions as read directly from the bag being annotated, and an explicit
+statement that the frame is interpreted as plain source-image pixels (no
+letterbox padding, matching the anisotropic-resize contract's own geometry
+even though this bag predates the header that would say so explicitly).
+
+**Corrected 2026-08-10 (Issue #25 Milestone 4A):** an earlier version of
+this section generalised a single "known 640x480 capture resolution...
+cross-checked by the completed #26/#30/#31 evidence over these same
+sequences" to both May and June without checking May's own bag directly.
+Direct inspection of the first `/camera/image_raw` message
+(`sensor_msgs/msg/Image.width`/`.height`) in each of the four canonical
+raw source bags, via `rosbag2_py.SequentialReader`, establishes:
+
+| Sequence | Verified `width x height` |
+|---|---|
+| May hard-reentry (`2026-05-14__11-03-26__...raw`) | **640 x 640** |
+| June Seq01 (`...12-48-17__...seq01...image_raw`) | 640 x 480 |
+| June Seq03 (`...12-55-58__...seq03...image_raw`) | 640 x 480 |
+| June Seq04 (`...12-59-53__...seq04...image_raw`) | 640 x 480 |
+
+The June figure was correct; the May figure was not -- May's own capture
+was square, not 4:3. This does not change any schema semantics:
+`source_width`/`source_height` on every artifact are, and always were,
+read from the annotated frame's own decoded pixel dimensions (section C;
+enforced in the UI per section R, "read directly from the decoded frame's
+natural pixel dimensions, never typed by hand"), never from this
+document's prose. The correction here is to the provenance narrative only,
+so a reader of this section does not carry a wrong assumption about May
+into a manual calculation or a hand-written artifact.
 
 ## G. Physical target state
 
