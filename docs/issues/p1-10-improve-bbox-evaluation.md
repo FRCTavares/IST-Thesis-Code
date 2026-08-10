@@ -835,6 +835,22 @@ never a tracker ID) so that `distractors_complete` can interpolate safely,
 plus an explicit, validated evaluation horizon. v1
 (`physical_target_reference.py`, `physical_target_bbox_evaluation.py`, and
 this document) is unmodified and remains fully valid; v2 is additive, not
-a replacement written in place. The v2 evaluator and UI are not yet
-implemented (separate, later milestones), and no real canonical annotation
-has started under either contract version.
+a replacement written in place.
+
+**M2-v2 landed (2026-08-10):** `tools/analysis/physical_target_bbox_evaluation_v2.py`
+is the v2 evaluation core and `tools/analysis/evaluate_physical_target_bbox_v2.py`
+its CLI, both additive alongside (not replacing) the v1 evaluator/CLI.
+Reference resolution is interval-based, not v1's step-hold lookup: the
+declared `evaluation_window` is partitioned at every sample timestamp and
+the window's own bounds, so a reference-semantic transition can never be
+hidden inside one evaluated tick; an isolated keyframe with no legal
+interpolation into or out of it contributes exactly zero duration of
+scored reference; time before the first sample, after a `present_scored`
+last sample, or between two non-interpolated `present_scored` keyframes
+is honestly reported as a new `reference_gap_duration_s` bucket, never
+silently scored. Interpolation, where legal, is per physical person
+(target linearly; each `distractors_complete` entry matched by
+`person_ref`, never by list position). Stage A (`classify_identity_stage_a`)
+and Stage B (`bbox_iou`, centre-error) are reused unchanged from v1. The
+v2 UI is not yet implemented (a separate, later milestone), and no real
+canonical annotation has started under either contract version.
