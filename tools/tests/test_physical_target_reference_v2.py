@@ -181,14 +181,42 @@ def test_sample_before_evaluation_window_rejected():
         PTR2.validate_physical_reference(artifact)
 
 
-def test_sample_at_or_after_evaluation_window_end_rejected():
+def test_sample_strictly_after_evaluation_window_end_rejected():
     data = _artifact(
-        [_target_only_sample(5.0, [10.0, 10.0, 20.0, 30.0])],
+        [_target_only_sample(5.5, [10.0, 10.0, 20.0, 30.0])],
         evaluation_window={"start_s": 0.0, "end_s": 5.0},
     )
     artifact = PTR2.parse_physical_reference(data)
     with pytest.raises(PTR2.PhysicalReferenceValidationError, match="evaluation_window"):
         PTR2.validate_physical_reference(artifact)
+
+
+def test_sample_exactly_at_evaluation_window_end_is_legal_anchor():
+    """Corrected 2026-08-10: t_s == end_s is a legal right-boundary
+    interpolation anchor (contract section I) -- the sample anchor domain
+    is the closed [start_s, end_s], distinct from the half-open evaluated
+    duration domain [start_s, end_s)."""
+    data = _artifact(
+        [_target_only_sample(5.0, [10.0, 10.0, 20.0, 30.0])],
+        evaluation_window={"start_s": 0.0, "end_s": 5.0},
+    )
+    artifact = PTR2.parse_physical_reference(data)
+    PTR2.validate_physical_reference(artifact)  # must not raise
+    assert artifact.samples[0].t_s == artifact.provenance.evaluation_window.end_s
+
+
+def test_interpolation_into_a_sample_exactly_at_evaluation_window_end_is_legal():
+    data = _artifact(
+        [
+            _target_only_sample(0.0, [10.0, 10.0, 20.0, 30.0]),
+            _target_only_sample(
+                5.0, [12.0, 10.0, 22.0, 30.0], interpolate_from_previous=True
+            ),
+        ],
+        evaluation_window={"start_s": 0.0, "end_s": 5.0},
+    )
+    artifact = PTR2.parse_physical_reference(data)
+    PTR2.validate_physical_reference(artifact)  # must not raise
 
 
 def test_sample_exactly_at_window_start_is_valid():

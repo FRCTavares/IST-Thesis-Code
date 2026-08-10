@@ -799,6 +799,105 @@ def test_reconciliation_holds_for_non_grid_aligned_evaluation_end():
     assert result.duration_buckets.primary_total_s() == pytest.approx(1.13)
 
 
+# --- Right-boundary anchor at t_s == evaluation_window.end_s -------------------
+#
+# Corrected 2026-08-10, before any M3-v2 UI work: the sample anchor domain is
+# the closed [start_s, end_s], distinct from the half-open evaluated duration
+# domain [start_s, end_s). No evaluator code changed for this correction --
+# these tests exist to prove that is genuinely true, not just claimed.
+
+
+def test_isolated_sample_exactly_at_evaluation_window_end_is_zero_duration():
+    reference = _artifact(
+        [_ref_sample(5.0, SCORED, TARGET_ONLY, (0.0, 0.0, 10.0, 10.0))],
+        evaluation_window=PTR2.EvaluationWindow(start_s=0.0, end_s=5.0),
+    )
+    result = EV2.evaluate_physical_target_bbox_v2(
+        reference=reference, output_samples=[], step_s=0.5
+    )
+    assert result.duration_buckets.reference_covered_duration_s() == pytest.approx(0.0)
+    assert result.duration_buckets.reference_gap_duration_s == pytest.approx(5.0)
+    assert result.reconciliation_ok is True
+
+
+def test_legal_interpolation_to_right_boundary_anchor_covers_exactly_to_horizon():
+    a = (0.0, 0.0, 10.0, 10.0)
+    b = (50.0, 0.0, 60.0, 10.0)
+    reference = _artifact(
+        [
+            _ref_sample(0.0, SCORED, TARGET_ONLY, a),
+            _ref_sample(5.0, SCORED, TARGET_ONLY, b, interpolate=True),
+        ],
+        evaluation_window=PTR2.EvaluationWindow(start_s=0.0, end_s=5.0),
+    )
+    result = EV2.evaluate_physical_target_bbox_v2(
+        reference=reference, output_samples=[], step_s=0.5
+    )
+    buckets = result.duration_buckets
+    assert buckets.interpolated_reference_duration_s == pytest.approx(5.0)
+    assert buckets.reference_covered_duration_s() == pytest.approx(5.0)
+    assert buckets.reference_gap_duration_s == pytest.approx(0.0)
+    assert result.reconciliation_ok is True
+    assert result.total_evaluated_duration_s == pytest.approx(5.0)
+    assert buckets.primary_total_s() == pytest.approx(5.0)
+
+    # And the interpolated geometry right up to (but not including) end_s is
+    # correct, not merely "some" coverage.
+    resolved_near_end = EV2.resolve_reference_interval(reference.samples, 4.5)
+    assert resolved_near_end.condition == EV2.REF_COVERED
+    expected_fraction = 4.5 / 5.0
+    expected_x1 = a[0] + (b[0] - a[0]) * expected_fraction
+    assert resolved_near_end.target_bbox_xyxy[0] == pytest.approx(expected_x1)
+
+
+def test_non_interpolated_right_boundary_anchor_creates_no_coverage_after_itself():
+    reference = _artifact(
+        [
+            _ref_sample(0.0, SCORED, TARGET_ONLY, (0.0, 0.0, 10.0, 10.0)),
+            _ref_sample(5.0, SCORED, TARGET_ONLY, (50.0, 0.0, 60.0, 10.0)),  # not interpolated
+        ],
+        evaluation_window=PTR2.EvaluationWindow(start_s=0.0, end_s=5.0),
+    )
+    result = EV2.evaluate_physical_target_bbox_v2(
+        reference=reference, output_samples=[], step_s=0.5
+    )
+    buckets = result.duration_buckets
+    assert buckets.reference_gap_duration_s == pytest.approx(5.0)
+    assert buckets.reference_covered_duration_s() == pytest.approx(0.0)
+    assert result.reconciliation_ok is True
+
+
+def test_distractors_complete_interpolation_to_right_boundary_anchor():
+    """The same right-boundary-anchor coverage guarantee holds for
+    distractors_complete, matched by person_ref, not just target_only."""
+    reference = _artifact(
+        [
+            _ref_sample(
+                0.0,
+                SCORED,
+                DIST_COMPLETE,
+                (0.0, 0.0, 10.0, 10.0),
+                [_distractor("phys_d001", (100.0, 0.0, 110.0, 10.0))],
+            ),
+            _ref_sample(
+                4.0,
+                SCORED,
+                DIST_COMPLETE,
+                (40.0, 0.0, 50.0, 10.0),
+                [_distractor("phys_d001", (140.0, 0.0, 150.0, 10.0))],
+                interpolate=True,
+            ),
+        ],
+        evaluation_window=PTR2.EvaluationWindow(start_s=0.0, end_s=4.0),
+    )
+    result = EV2.evaluate_physical_target_bbox_v2(
+        reference=reference, output_samples=[], step_s=0.4
+    )
+    assert result.duration_buckets.interpolated_reference_duration_s == pytest.approx(4.0)
+    assert result.duration_buckets.reference_gap_duration_s == pytest.approx(0.0)
+    assert result.reconciliation_ok is True
+
+
 # 27/28/29/30. coverage metrics ---------------------------------------------------
 
 
