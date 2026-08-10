@@ -747,3 +747,143 @@ def test_v2_js_source_never_references_tracker_id_fields():
 def test_v2_js_exposes_the_same_feature_detection_globals_tim_clean_ui_expects():
     assert "window.shouldOpenPhysicalRefWorkspace = shouldOpenPhysicalRefWorkspace" in JS_SOURCE
     assert "window.updatePhysicalRefFrame = updatePhysicalRefFrame" in JS_SOURCE
+
+
+# =============================================================================
+# Human-smoke corrective fix: tracker overlay toggle must be a pure
+# presentation operation and must never mutate/discard an unsaved
+# physical-reference draft (target bbox, distractor bboxes, person_ref
+# associations/selection, identity_state/context, draw mode, or the
+# interpolation flag). Only an actual frame change may reset the draft --
+# see physicalRefSyncDraftToCurrentFrame, still invoked only from
+# updatePhysicalRefFrame (real navigation), never from
+# physicalRefRefreshOverlayImage (overlay-visibility-only redraw).
+# =============================================================================
+
+
+# --- 1/2/3/4/10. overlay refresh never resyncs/clears the frame-local draft -
+
+
+def test_overlay_refresh_never_resyncs_frame_local_draft():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRefreshOverlayImage")
+    assert "physicalRefSyncDraftToCurrentFrame" not in body
+    # Not just "doesn't call the sync function" -- also never re-implements
+    # its clearing assignments inline.
+    assert "physicalRefDrawnTarget = null" not in body
+    assert "physicalRefDrawnDistractors = []" not in body
+
+
+# --- 5. pending newly-created phys_dNNN selection survives the toggle -------
+
+
+def test_overlay_refresh_preserves_active_person_ref_selection():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRefreshOverlayImage")
+    assert "physicalRefV2ActivePersonRef" not in body
+
+
+# --- 6/8. identity_state/context and draw mode survive the toggle ----------
+
+
+def test_overlay_refresh_never_touches_state_context_or_draw_mode_controls():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRefreshOverlayImage")
+    assert "physicalRefState" not in body
+    assert "physicalRefContext" not in body
+    assert "physicalRefDrawMode" not in body
+
+
+# --- 7. interpolation checkbox state survives the toggle --------------------
+
+
+def test_overlay_refresh_never_touches_interpolate_checkbox():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRefreshOverlayImage")
+    assert "physicalRefInterpolate" not in body
+
+
+# --- 9. overlay toggle never autosaves ---------------------------------------
+
+
+def test_overlay_refresh_never_calls_save():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRefreshOverlayImage")
+    assert "physicalRefSave(" not in body
+
+
+# --- 11/12/13. overlays actually change, physical annotations stay visible -
+
+
+def test_overlay_refresh_reloads_image_and_repaints():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRefreshOverlayImage")
+    # Re-fetches the frame (tracker-overlay pixels are baked server-side into
+    # the JPEG by physicalRefFrameUrl's draw_tracks param, so a real image
+    # reload -- not a pure canvas re-render -- is genuinely required), then
+    # repaints from the *current, untouched* draft/saved state, which is
+    # exactly what makes physical Target/phys_dNNN boxes and labels remain
+    # visible regardless of overlay visibility (physicalRefRepaint already
+    # draws them unconditionally -- see test_canvas_labels_use_person_ref_not_positional_labels
+    # and test_canvas_labels_function_does_not_depend_on_overlay_visibility).
+    assert "physicalRefLoadFrameImage(idx" in body
+    assert "physicalRefRepaint()" in body
+
+
+# --- root cause / fix: the checkbox is wired to the pure-repaint path ------
+
+
+def test_overlay_checkbox_wired_to_pure_refresh_not_frame_update():
+    checkbox_marker = 'id="physicalRefShowOverlays"'
+    assert checkbox_marker in HTML_SOURCE
+    start = HTML_SOURCE.index(checkbox_marker)
+    tag_end = HTML_SOURCE.index(">", start)
+    tag = HTML_SOURCE[start:tag_end]
+    assert 'onchange="physicalRefRefreshOverlayImage()"' in tag
+    # This is the exact root cause of the human-verified bug: the checkbox
+    # used to call the frame-navigation function directly, which discarded
+    # any unsaved draft via physicalRefSyncDraftToCurrentFrame.
+    assert "onchange=\"updatePhysicalRefFrame()\"" not in tag
+
+
+# --- 14/15. real frame navigation is NOT weakened ----------------------------
+
+
+def test_update_physical_ref_frame_still_resyncs_draft_on_real_navigation():
+    body = _extract_js_function_body(JS_SOURCE, "updatePhysicalRefFrame")
+    assert "physicalRefSyncDraftToCurrentFrame()" in body
+
+
+def test_sync_draft_clear_branch_still_resets_interpolation_checkbox():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefSyncDraftToCurrentFrame")
+    idx_branch_pos = body.index("if (idx >= 0)")
+    clear_branch = body[body.index("}", idx_branch_pos) :]
+    assert "interpolateCheckbox.checked = false" in clear_branch
+
+
+# --- structural separation: image loading is pure fetch/buffer mechanics ---
+
+
+def test_load_frame_image_helper_has_no_draft_state_coupling():
+    """physicalRefLoadFrameImage is the one place both the real-navigation
+    path and the overlay-only-redraw path fetch the frame JPEG. It must stay
+    pure image-fetch/canvas-buffer-sizing mechanics -- draft-state decisions
+    (resync vs. leave alone) belong entirely to each caller's onReady
+    callback, never to the shared loader itself."""
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefLoadFrameImage")
+    assert "physicalRefSyncDraftToCurrentFrame" not in body
+    assert "physicalRefDrawnTarget" not in body
+    assert "physicalRefDrawnDistractors" not in body
+    assert "physicalRefV2ActivePersonRef" not in body
+    assert "physicalRefInterpolate" not in body
+
+
+def test_both_frame_update_and_overlay_refresh_share_the_image_loading_helper():
+    """No duplicated fetch/canvas-sizing logic between the two call sites --
+    both funnel through the same physicalRefLoadFrameImage helper, so the
+    coordinate contract (canvas buffer = natural image size) can never drift
+    between the navigation path and the overlay-toggle path."""
+    nav_body = _extract_js_function_body(JS_SOURCE, "updatePhysicalRefFrame")
+    overlay_body = _extract_js_function_body(JS_SOURCE, "physicalRefRefreshOverlayImage")
+    assert "physicalRefLoadFrameImage(idx" in nav_body
+    assert "physicalRefLoadFrameImage(idx" in overlay_body
+    assert "new Image()" not in nav_body
+    assert "new Image()" not in overlay_body
+
+
+def test_overlay_refresh_exposed_as_feature_detection_global():
+    assert "window.physicalRefRefreshOverlayImage = physicalRefRefreshOverlayImage" in JS_SOURCE

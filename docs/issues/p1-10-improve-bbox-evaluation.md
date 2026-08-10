@@ -885,3 +885,27 @@ implemented in this milestone. No real canonical May/June annotation has
 started under either contract version; the v2 UI is verified by 56
 automated backend/frontend structural tests plus a live server/API smoke
 test, not yet by human browser interaction.
+
+**Human-smoke corrective fix (2026-08-10):** the first human browser
+smoke test of M3-v2 (June Seq01) found that unchecking "show tracker
+overlays" discarded the entire unsaved physical-reference draft (target
+bbox, distractor bboxes, `person_ref` associations/selection). Root
+cause: the checkbox's `onchange` called `updatePhysicalRefFrame()`
+directly -- the exact same function real frame navigation uses, which
+unconditionally calls `physicalRefSyncDraftToCurrentFrame()` and, on a
+frame with no saved sample, resets all draft state as a conservative
+navigation safeguard. Toggling the checkbox re-triggered that safeguard
+even though the displayed frame had not changed. Fix: image-fetch/
+canvas-buffer mechanics were extracted into a shared
+`physicalRefLoadFrameImage()` helper with no draft-state coupling; the
+checkbox now calls a new `physicalRefRefreshOverlayImage()`, which
+reloads the frame JPEG (tracker-overlay pixels are baked in server-side,
+so a re-fetch is genuinely needed to change what's drawn) and repaints
+from whatever draft/saved state already exists, without ever calling
+`physicalRefSyncDraftToCurrentFrame()`. Real frame navigation is
+unchanged and still resets the frame-local draft exactly as before. 12
+new focused tests cover both directions of the toggle, all draft fields
+(target bbox, distractor bboxes, pending/reused `person_ref`,
+`identity_state`/`identity_context`, draw mode, interpolation flag), the
+absence of autosave, and that real navigation's reset path is untouched.
+Human browser verification is still required before M3-v2 is frozen.

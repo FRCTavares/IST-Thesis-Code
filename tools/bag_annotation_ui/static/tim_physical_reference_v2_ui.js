@@ -186,11 +186,42 @@ function physicalRefV2RenderEvaluationWindow(windowOverride) {
     "interpolation anchor and contributes zero duration by itself.";
 }
 
+// Loads the frame-image JPEG (which may have server-baked tracker-overlay
+// pixels per physicalRefFrameUrl's draw_tracks param) into the canvas's
+// backing buffer and invokes onReady() once it is ready to be painted on.
+// This is pure image-fetch/buffer-sizing mechanics -- it never touches
+// physicalRefDrawnTarget/physicalRefDrawnDistractors/physicalRefV2ActivePersonRef
+// or the interpolate checkbox. Callers decide separately whether the new
+// image represents an actual frame change (and therefore must resync the
+// frame-local draft, see updatePhysicalRefFrame) or the same frame redrawn
+// only because overlay visibility changed (see physicalRefRefreshOverlayImage,
+// which must never resync the draft).
+function physicalRefLoadFrameImage(idx, onReady) {
+  const canvas = document.getElementById("physicalRefCanvas");
+  if (!canvas) return;
+  const img = new Image();
+  img.onerror = function () {
+    physicalRefSetStatus("Failed to load source frame.");
+  };
+  img.onload = function () {
+    physicalRefFrameImage = img;
+    physicalRefSourceWidth = img.naturalWidth;
+    physicalRefSourceHeight = img.naturalHeight;
+    // Internal buffer resolution = source image resolution. CSS/layout may
+    // still scale the element visually; that scaling is exactly what
+    // physicalRefCanvasToSourceCoords() below divides back out.
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    physicalRefSetStatus("");
+    onReady();
+  };
+  img.src = physicalRefFrameUrl(idx);
+}
+
 async function updatePhysicalRefFrame() {
   if (!shouldOpenPhysicalRefWorkspace()) return;
 
-  const canvas = document.getElementById("physicalRefCanvas");
-  if (!canvas) return;
+  if (!document.getElementById("physicalRefCanvas")) return;
 
   if (!loadedFrames) {
     physicalRefSetStatus("No frames loaded.");
@@ -215,31 +246,37 @@ async function updatePhysicalRefFrame() {
         : "");
   }
 
-  const img = new Image();
-  img.onerror = function () {
-    physicalRefSetStatus("Failed to load source frame.");
-  };
-  img.onload = function () {
-    physicalRefFrameImage = img;
-    physicalRefSourceWidth = img.naturalWidth;
-    physicalRefSourceHeight = img.naturalHeight;
-    // Internal buffer resolution = source image resolution. CSS/layout may
-    // still scale the element visually; that scaling is exactly what
-    // physicalRefCanvasToSourceCoords() below divides back out.
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    physicalRefSetStatus("");
+  physicalRefLoadFrameImage(idx, function () {
     // Draft geometry (including any active person_ref selection) is
     // frame-local: every frame change resolves the current frame's own
     // state (a saved sample's geometry, or nothing) before repainting --
     // an unsaved box drawn on a previous frame must never silently
-    // reappear here.
+    // reappear here. This runs only on an actual frame change, never on
+    // an overlay-visibility-only redraw (physicalRefRefreshOverlayImage).
     physicalRefSyncDraftToCurrentFrame();
     physicalRefRepaint();
-  };
-  img.src = physicalRefFrameUrl(idx);
+  });
 }
 window.updatePhysicalRefFrame = updatePhysicalRefFrame;
+
+// Tracker-overlay visibility is a pure presentation toggle. The overlay
+// pixels are baked server-side into the JPEG (physicalRefFrameUrl's
+// draw_tracks param), so the image genuinely must be re-fetched -- but the
+// displayed frame itself has not changed, so this must never run the
+// frame-navigation draft-reset path (physicalRefSyncDraftToCurrentFrame).
+// Any unsaved target/distractor/person_ref/interpolation draft state is
+// left completely untouched; only the repainted pixels change.
+function physicalRefRefreshOverlayImage() {
+  if (!shouldOpenPhysicalRefWorkspace()) return;
+  if (!document.getElementById("physicalRefCanvas")) return;
+  if (!loadedFrames) return;
+
+  const idx = currentFrameIndex();
+  physicalRefLoadFrameImage(idx, function () {
+    physicalRefRepaint();
+  });
+}
+window.physicalRefRefreshOverlayImage = physicalRefRefreshOverlayImage;
 
 function physicalRefDrawBox(ctx, box, colour, label) {
   if (!box) return;
