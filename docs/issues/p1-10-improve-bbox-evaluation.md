@@ -810,3 +810,31 @@ output directory) is created, verified live.
 
 `interpolate_from_previous`'s visible checkbox label is now "Interpolate
 from previous keyframe"; the field name and schema are unchanged.
+
+## v2 status note (2026-08-10)
+
+A read-only feasibility audit (Issue #25 Milestone M4A.2) found that this
+frozen `tim_physical_target_bbox_v1` contract, as implemented, cannot
+support scientifically valid duration-representative coverage once
+`distractors_complete` is the dominant regime across a sequence rather than
+a brief instant -- `distractors_complete` samples cannot interpolate under
+v1 (section I), and the v1 evaluator instead silently step-holds the
+previous keyframe's stale geometry across the gap, which the corrected
+Milestone 4A workload plan (`docs/issues/p1-10-physical-reference-annotation-plan.md`)
+established is now the situation for all four canonical sequences, not an
+edge case. This is a real, sequence-wide limitation of v1 as implemented,
+not a defect in this document's own frozen semantics, which remain valid
+and unchanged on their own terms.
+
+A new contract, `tim_physical_target_bbox_v2` (`schema_version = 2`), is
+now frozen in `docs/issues/p1-10-physical-reference-v2-contract.md` and
+implemented at the schema/validator layer
+(`tools/analysis/physical_target_reference_v2.py`), introducing
+annotation-local physical-person correspondence identifiers (`person_ref`,
+never a tracker ID) so that `distractors_complete` can interpolate safely,
+plus an explicit, validated evaluation horizon. v1
+(`physical_target_reference.py`, `physical_target_bbox_evaluation.py`, and
+this document) is unmodified and remains fully valid; v2 is additive, not
+a replacement written in place. The v2 evaluator and UI are not yet
+implemented (separate, later milestones), and no real canonical annotation
+has started under either contract version.
