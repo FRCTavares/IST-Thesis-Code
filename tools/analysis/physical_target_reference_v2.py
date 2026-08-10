@@ -142,7 +142,19 @@ REQUIRED_SAMPLE_FIELDS = (
 @dataclass(frozen=True)
 class EvaluationWindow:
     """Contract section I: the declared bag-relative evaluation horizon,
-    independent of which timestamps happen to carry keyframes."""
+    independent of which timestamps happen to carry keyframes.
+
+    Two related but distinct domains (corrected 2026-08-10, before any
+    M3-v2 UI work): the *evaluated duration* domain is the half-open
+    ``[start_s, end_s)`` -- no duration at or after end_s is ever
+    fabricated. The *sample anchor* domain is the closed
+    ``[start_s, end_s]`` -- a sample at exactly ``t_s == end_s`` is a
+    legal right-boundary interpolation anchor (so the final source frame
+    can be used to close out interpolation coverage all the way to the
+    end of the evaluated horizon), but it is a measure-zero point like
+    any other exact keyframe and never itself contributes positive
+    duration -- see ``validate_physical_reference`` and
+    ``physical_target_bbox_evaluation_v2.py``."""
 
     start_s: float
     end_s: float
@@ -500,10 +512,14 @@ def validate_physical_reference(artifact: PhysicalReferenceArtifact) -> None:
                 f"than the previous sample's t_s={previous_sample.t_s}"
             )
 
-        if sample.t_s < window.start_s or sample.t_s >= window.end_s:
+        if sample.t_s < window.start_s or sample.t_s > window.end_s:
             raise PhysicalReferenceValidationError(
                 f"sample[{index}].t_s={sample.t_s} lies outside the declared "
-                f"evaluation_window [{window.start_s}, {window.end_s})"
+                f"evaluation_window anchor domain [{window.start_s}, "
+                f"{window.end_s}] (t_s == end_s is legal as a right-boundary "
+                "interpolation anchor; the *evaluated duration* domain "
+                "remains the half-open [start_s, end_s) -- see contract "
+                "section I)"
             )
 
         if sample.target_bbox_xyxy is not None:

@@ -157,13 +157,25 @@ Placed inside `provenance` (alongside the other artifact-scope declarations, e.g
 - `start_s` and `end_s` both required, finite;
 - `start_s >= 0.0`;
 - `end_s > start_s`;
-- every sample's `t_s` must satisfy `evaluation_window.start_s <= t_s < evaluation_window.end_s` -- the same half-open interval convention v1 already uses for `[samples[0].t_s, samples[-1].t_s)`, extended to the whole declared window. A sample outside the window is rejected at validation time, not silently ignored.
+- every sample's `t_s` must satisfy `evaluation_window.start_s <= t_s <= evaluation_window.end_s` -- see the corrected boundary note below. A sample outside this closed anchor domain is rejected at validation time, not silently ignored.
 
 **Frozen for M2-v2 (not implemented in M1-v2):** the evaluator must reconcile the **full** declared `evaluation_window`, not merely `samples[0].t_s -> samples[-1].t_s`. Concretely:
 - time strictly before `samples[0].t_s` or at/after `samples[-1].t_s` but still inside `[evaluation_window.start_s, evaluation_window.end_s)` must **not** silently vanish from the report the way it does in v1 today;
 - an explicit `absent` or `present_reference_unavailable` state, if it is the first/last sample and extends to the window boundary, propagates through that boundary exactly as it would through any other interval (Section G);
 - legally interpolated `present_scored` geometry provides valid reference wherever it applies;
 - everything else uncovered by the above becomes `reference_gap_duration_s` (Section J) -- including any span between the window boundary and the nearest keyframe that carries no interval-propagating state.
+
+**Corrected 2026-08-10 (discovered before M3-v2 UI work, before any UI code was written): the sample anchor domain and the evaluated duration domain are two related but distinct things, and the original text above conflated them.**
+
+The *evaluated duration* domain remains, and must always remain, the half-open `[start_s, end_s)` -- no duration at or after `end_s` is ever fabricated, unchanged from the original text.
+
+The *sample anchor* domain is the **closed** `[start_s, end_s]` -- a sample at exactly `t_s == end_s` is legal, specifically as a right-boundary interpolation anchor. This was found to be necessary, not optional, once the UI needed to derive `evaluation_window` deterministically from a loaded source-image timeline: the only deterministic value available is the final source frame's own relative timestamp (`frame_times_s[-1]`), and the original half-open sample rule (`t_s < end_s`, strict) would have made that exact instant impossible to annotate at all -- the last available source frame could never become a keyframe. The fix is not to invent a margin past the last frame (no `DEFAULT_STEP_S` addition, no estimated/median frame period, no epsilon, no manually-typed duration -- the evaluation grid's cadence and the source recording's horizon are separate concepts and must stay separate); it is to recognise that `end_s` itself, like any other timestamp, is a legitimate instant to place a keyframe at.
+
+This does **not** grant the right-boundary anchor any positive duration by itself -- it remains a measure-zero point exactly like every other exact keyframe (Section H). Concretely, for two `present_scored` keyframes A (before `end_s`) and B (exactly at `end_s`):
+- if `B.interpolate_from_previous = true` and correspondence is legal, the interpolated span `[A.t_s, end_s)` is fully covered -- the evaluation horizon's last instant of *duration* is included in coverage, even though the anchor point `end_s` itself contributes none;
+- if `B.interpolate_from_previous = false` (or no such B exists at all), the tail up to `end_s` is `reference_gap_duration_s`, exactly as any other non-interpolated or absent stretch would be -- a non-interpolated final anchor never manufactures coverage after itself, because no evaluated interval ever starts at `t_s == end_s` (there is nothing left in `[start_s, end_s)` beyond it).
+
+No change to M2-v2's evaluator code was required by this correction -- `physical_target_bbox_evaluation_v2.py`'s interval partitioning already treats `evaluation_window.end_s` as the final breakpoint and never evaluates a tick starting there, so a sample legally placed at `end_s` automatically satisfies "zero duration by itself" and "full coverage when legally interpolated into" without any special-casing. Only `physical_target_reference_v2.py`'s validator needed to change (`t_s > end_s` rejected, `t_s == end_s` accepted), a one-line correction. v1 semantics are entirely unaffected -- v1 has no `evaluation_window` concept at all.
 
 ## J. Frozen duration-bucket contract for M2-v2 (not implemented in M1-v2)
 
