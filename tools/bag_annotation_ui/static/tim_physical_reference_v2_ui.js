@@ -1021,10 +1021,25 @@ async function physicalRefLoadSelected() {
     }
   }
 
-  physicalRefActiveIndex = -1;
-  physicalRefV2ActivePersonRef = null;
+  // Loading a new artifact replaces the ENTIRE physical-reference editing
+  // state, not just the sample table: the known-person palette is
+  // re-derived from physicalRefSamples (already replaced above), and the
+  // current-frame draft must be reconstructed strictly from the newly
+  // loaded artifact -- never left over from whatever was on the canvas
+  // before the load (which may be a backend-rejected, never-persisted
+  // draft; a stale draft displaying as if it belonged to the freshly
+  // loaded artifact is misleading regardless of how it got there).
+  // physicalRefSyncDraftToCurrentFrame() is the exact function real frame
+  // navigation already uses for this: it loads the (now-loaded)
+  // artifact's own sample at the current frame's timestamp if one exists,
+  // or otherwise clears the target/distractor/person_ref/interpolation
+  // draft -- so, for the current frame, an explicit load behaves exactly
+  // like navigating onto a frame of the freshly loaded artifact. It also
+  // sets physicalRefActiveIndex/physicalRefV2ActivePersonRef correctly and
+  // re-renders the person-ref palette itself, so no separate reset is
+  // needed here.
+  physicalRefSyncDraftToCurrentFrame();
   physicalRefRenderSampleList();
-  physicalRefV2RenderPersonRefPalette();
   physicalRefSetFormStatus(
     "Loaded " + physicalRefSamples.length + " sample(s) from " + data.path +
       " (tim_physical_target_bbox_v2, schema_version=" +

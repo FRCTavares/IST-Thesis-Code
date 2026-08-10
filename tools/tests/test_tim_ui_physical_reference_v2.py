@@ -1036,3 +1036,118 @@ def test_next_person_ref_policy_untouched_by_the_status_suffix_fix():
     assert "phys_d" in body
     assert "physicalRefV2ActivePersonRefStatusSuffix" not in body
     assert "physicalRefDrawnDistractors" not in body
+
+
+# =============================================================================
+# Human-smoke corrective fix #3: an explicit "Load selected JSON" must fully
+# replace the physical-reference editing state, not just the in-memory
+# sample table. Before this fix, physicalRefLoadSelected() replaced
+# physicalRefSamples but never resynced the current-frame draft, so a stale
+# (possibly backend-rejected, never-persisted) unsaved Target bbox,
+# distractor bboxes, and interpolation checkbox kept displaying on the
+# canvas as though they belonged to the freshly loaded artifact. Fixed by
+# having physicalRefLoadSelected() call physicalRefSyncDraftToCurrentFrame()
+# -- the same function real frame navigation already uses -- after
+# replacing physicalRefSamples, so the current frame's draft is
+# reconstructed strictly from the newly loaded artifact: its own saved
+# sample if one exists at this timestamp, otherwise a fully cleared draft.
+# =============================================================================
+
+
+def _load_selected_body():
+    return _extract_js_function_body(JS_SOURCE, "physicalRefLoadSelected")
+
+
+# --- 1/9. successful load replaces (never merges/appends to) the samples ---
+
+
+def test_load_selected_replaces_the_sample_collection_wholesale():
+    body = _load_selected_body()
+    assert "physicalRefSamples = data.samples || []" in body
+    # Assignment, never appended/merged -- a stale in-memory (e.g.
+    # backend-rejected) sample can never survive a load alongside the
+    # freshly loaded ones.
+    assert "physicalRefSamples.push(" not in body
+    assert "physicalRefSamples.concat(" not in body
+
+
+def test_load_selected_never_preserves_any_pre_load_sample_state():
+    body = _load_selected_body()
+    assert "...physicalRefSamples" not in body
+    assert "physicalRefSamples.filter(" not in body
+
+
+# --- 2-6. current-frame draft is resynced strictly from the loaded artifact
+
+
+def test_load_selected_resyncs_the_current_frame_draft_after_replacing_samples():
+    body = _load_selected_body()
+    samples_pos = body.index("physicalRefSamples = data.samples || []")
+    sync_pos = body.index("physicalRefSyncDraftToCurrentFrame()")
+    assert samples_pos < sync_pos
+
+
+def test_load_selected_does_not_duplicate_the_draft_clearing_logic():
+    """The clearing/restoring logic itself lives in exactly one place
+    (physicalRefSyncDraftToCurrentFrame) -- physicalRefLoadSelected must
+    delegate to it rather than re-implementing a second, potentially
+    diverging, reset (which is exactly the class of bug this fix
+    corrects: a second, forgotten code path that didn't get updated)."""
+    body = _load_selected_body()
+    assert "physicalRefDrawnTarget = null" not in body
+    assert "physicalRefDrawnDistractors = []" not in body
+    assert "interpolateCheckbox.checked = false" not in body
+
+
+def test_load_selected_known_person_palette_reflects_only_loaded_samples():
+    """physicalRefV2RenderPersonRefPalette derives its 'known' list from the
+    global physicalRefSamples, which physicalRefLoadSelected reassigns to
+    data.samples before the palette is re-rendered (via
+    physicalRefSyncDraftToCurrentFrame(), called after the reassignment) --
+    so a stale pre-load palette entry can never survive a load."""
+    palette_body = _extract_js_function_body(JS_SOURCE, "physicalRefV2RenderPersonRefPalette")
+    assert "physicalRefV2KnownPersonRefsFromSamples(physicalRefSamples)" in palette_body
+    load_body = _load_selected_body()
+    assign_pos = load_body.index("physicalRefSamples = data.samples || []")
+    sync_pos = load_body.index("physicalRefSyncDraftToCurrentFrame()")
+    assert assign_pos < sync_pos
+
+
+# --- 7/8. a loaded saved sample at the current frame restores exactly -----
+
+
+def test_sync_draft_restores_saved_sample_geometry_and_interpolation_exactly():
+    """The restore logic real navigation already relies on, and which the
+    load path now reuses verbatim (see
+    test_load_selected_resyncs_the_current_frame_draft_after_replacing_samples)
+    -- proven directly here for traceability against this fix's own
+    requirement list."""
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefLoadSampleIntoForm")
+    assert "physicalRefDrawnTarget = s.target_bbox_xyxy" in body
+    assert "physicalRefDrawnDistractors = (s.distractors || [])" in body
+    assert 'physicalRefInterpolate").checked = !!s.interpolate_from_previous' in body
+
+
+# --- 10. overlay refresh (already human-verified) is not regressed --------
+
+
+def test_overlay_refresh_still_never_calls_load_selected_or_sync():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRefreshOverlayImage")
+    assert "physicalRefLoadSelected" not in body
+    assert "physicalRefSyncDraftToCurrentFrame" not in body
+
+
+# --- 11. real frame navigation (already human-verified) is not regressed --
+
+
+def test_update_physical_ref_frame_still_resyncs_draft_via_the_same_shared_function():
+    body = _extract_js_function_body(JS_SOURCE, "updatePhysicalRefFrame")
+    assert "physicalRefSyncDraftToCurrentFrame()" in body
+
+
+# --- 12. explicit load never autosaves --------------------------------------
+
+
+def test_load_selected_never_calls_save():
+    body = _load_selected_body()
+    assert "physicalRefSave(" not in body
