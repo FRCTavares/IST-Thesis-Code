@@ -4,6 +4,35 @@ GitHub Issue: #25
 Branch: `issue-25-improve-bbox-evaluation`
 Companion to: `docs/issues/p1-10-improve-bbox-evaluation.md` (frozen `tim_physical_target_bbox_v1` contract, Milestones 1-3)
 
+## Corrective re-audit (2026-08-10)
+
+The version of this plan first landed for Milestone 4A classified several
+regions -- most notably all of June Seq01 -- as `target_only` on the basis
+that the target was clearly identifiable and well separated from the other
+people on screen. On review, that is the wrong test. The frozen contract's
+`target_only` requires the annotator to assert that **no other visible
+physical person could plausibly explain a controller-facing person bbox**,
+not merely that the target is easy to recognise or that people are not
+overlapping. A person-detector-driven controller can plausibly attach its
+output to *any* clearly visible, reasonably sized person in frame, whether
+or not they are near the target -- separation reduces the chance of a
+*localisation* mix-up (two boxes overlapping), but it does nothing to rule
+out a *detection/tracking* mix-up (the system latching onto the wrong
+person entirely), which is exactly what `identity_context` exists to
+capture.
+
+Every region in the original version of Section E was re-examined against
+this corrected test, using additional frame samples specifically targeted
+at the previously-proposed `target_only` windows (Section A). The result:
+**no region in any of the four sequences survives the corrected test.** At
+every additional sampled instant, at least one other physically distinct,
+clearly resolvable person was simultaneously visible in frame -- all four
+sequences are now planned as `distractors_complete` throughout. Section E
+below is the corrected region table; Section F is the corrected, larger
+workload estimate that results. Interpolation is consequently not used
+anywhere in this revised plan (Section F.1) -- there is no confirmed
+`target_only` interval left for it to apply to.
+
 ## Purpose
 
 This is a **planning** document, not an annotation artifact. It answers, for
@@ -35,7 +64,11 @@ written under `/tmp` on the annotation host, never under
   contaminated by the very tracker output Issue #25 exists to evaluate
   independently of). 6-7 frames spread across each sequence's full duration
   were fetched to `/tmp` on the annotation host and inspected directly, one
-  at a time, not as a single composite contact sheet.
+  at a time, not as a single composite contact sheet. The corrective
+  re-audit above added further samples specifically inside the windows
+  originally proposed as `target_only`, at finer granularity (every 2-5 s),
+  to check specifically for the presence of any other visible person, not
+  just for target separation.
 - Existing tracker-ID annotation CSVs (`docs/data/annotations/`) were read
   for event timing, but never treated as physical ground truth -- Section C
   records, per sequence, whether that CSV's second-level timing is actually
@@ -60,20 +93,19 @@ re-implemented here.
 **Two findings worth recording:**
 
 1. **May's source frame is 640x640, not 640x480.** The frozen contract
-   document's section F states "the known 640x480 capture resolution
-   already used and cross-checked by the completed #26/#30/#31 evidence
-   over these same sequences" for the May bag specifically. Direct
+   document's section F previously stated "the known 640x480 capture
+   resolution already used and cross-checked by the completed #26/#30/#31
+   evidence over these same sequences" for the May bag specifically. Direct
    inspection of the first `/camera/image_raw` message in the actual May bag
-   (this milestone) shows `640x640`. June's three bags are genuinely
-   640x480. This does not block anything -- the UI already reads
-   `source_width`/`source_height` from the decoded frame's natural pixel
-   dimensions rather than from typed-in or assumed values (Milestone 3,
-   section R), so a real annotation session would record the correct value
-   regardless. It is flagged here because section F's prose is a factual
-   claim that is now known to be wrong for May and should be corrected in a
-   small follow-up **when Milestone 4B or later touches that section** --
-   not in this milestone, per the instruction not to reopen M1-M3 semantics
-   without a blocking defect, and this is not blocking.
+   (`sensor_msgs/msg/Image.width`/`.height`, via `rosbag2_py.SequentialReader`)
+   shows `640x640`. June's three bags are genuinely 640x480 by the same
+   direct check. **Corrected in `docs/issues/p1-10-improve-bbox-evaluation.md`
+   section F as part of this corrective pass** (a per-sequence verified
+   dimensions table replaces the old blanket claim): this is a factual
+   provenance correction, not a schema or semantics change --
+   `source_width`/`source_height` on every artifact were always read from
+   the decoded frame's natural pixel dimensions (Milestone 3, section R),
+   never from this prose, so no annotation behaviour changes as a result.
 2. **June Seq01 has two candidate raw bags; only one shows the actual
    scenario.** `bag_inventory.md` lists two `raw_image_source` entries for
    Seq01: one at `12-38-13` (29.0 s, 759 frames) and one at `12-48-17`
@@ -104,7 +136,7 @@ tracker replay **of that same raw bag**, not an independent capture. Because
 `t_s` in both the legacy CSV and the future physical reference is
 bag-relative "seconds since first message," May's CSV event boundaries
 (occlusion windows, the ID-switch instant) transfer directly onto the raw
-bag's own timebase and are used as-is in Section D.1 below.
+bag's own timebase and are used as-is in Section E.1 below.
 `deepsort_hard_reentry.csv`'s `target_label` column additionally records
 `BLACK_SHIRT` for the physical target -- a real, repository-recorded
 physical description, used as the proposed `selected_physical_target_label`
@@ -229,163 +261,237 @@ Boundaries for the three June sequences are stated to the nearest sampled
 instant and rounded to whole seconds for readability -- this is a workload
 **plan**, not the annotation itself, so region edges will move a little once
 an annotator works through every second directly; that is expected and
-fine.
+fine. Every region below is now `distractors_complete` -- see the
+corrective re-audit note above -- with a stated **average distractor count
+per sample**, since "one distractor box per sample" (the simplifying
+assumption used in the original version of this plan) understated the
+June sequences in particular, where all four people are typically
+mutually visible at once.
 
 ### E.1 May hard re-entry (67.86 s, target = `black_shirt_person`)
 
 A second person (`distractor_track_ids=2` in the legacy CSV, present in
-nearly every row) is visible near the target through most of the sequence,
-which is why most of this sequence is `distractors_complete` rather than
-`target_only`, despite being labelled "clean" in the tracker CSV's own
-`event_type` column -- a direct instance of "tracker evidence and physical
-evidence disagree, physical evidence wins" (Section 6 of the brief). Only
-the first ~24.8 s, where the two people are clearly separated at both
-sampled instants (t=0, t≈17.4 s), is treated as safely `target_only`.
+nearly every row) is visible **immediately adjacent** to the target at
+every sampled instant across the entire duration, including the opening
+seconds -- re-audit samples at t=0, 3, 6, 9, 12, 15, 18, 21, 24 s (dense
+sampling specifically inside the previously-proposed `target_only` window)
+all show the two people standing side by side, both clearly resolvable and
+equally prominent. There is no sub-interval in this sequence where the
+target is not accompanied by at least one other clearly visible person.
+Distractor count: 1 per sample throughout (the CSV's own
+`distractor_track_ids` column records exactly one companion almost
+everywhere; occasional distant third/fourth figures near the frame edge at
+t≈17.4s and t≈66.9s are small and not consistently present, so are not
+counted as a second guaranteed distractor, but a real annotator should
+check them at those specific instants).
 
-| Region | start_s | end_s | dur (s) | Regime | Interp? | Distractors? | Reason |
-|---|---:|---:|---:|---|---|---|---|
-| R1 | 0.00 | 24.77 | 24.77 | TARGET_ONLY_INTERPOLATABLE | yes | no | Two people clearly separated at both sampled instants (t=0, t≈17.4s); CSV `clean_visible`. |
-| E1 | 24.77 | 25.47 | 0.70 | DISTRACTORS_COMPLETE (transition) | no | yes | CSV `occlusion_ambiguity`. |
-| R2 | 25.47 | 29.37 | 3.90 | DISTRACTORS_COMPLETE | no | yes | Companion still nearby (distractor_track_ids=2 continuous); conservative call. |
-| E2 | 29.37 | 30.18 | 0.81 | DISTRACTORS_COMPLETE (transition) | no | yes | CSV `occlusion_ambiguity`. |
-| R3 | 30.18 | 33.93 | 3.75 | DISTRACTORS_COMPLETE | no | yes | Same as R2. |
-| E3 | 33.93 | 36.27 | 2.34 | DISTRACTORS_COMPLETE (transition, hard re-entry) | no | yes | CSV `occlusion_ambiguity` spanning the tracker ID-switch instant (35.8s DeepSORT / 50.2s ByteTrack -- different per tracker, itself evidence the switch is a tracker artifact, not a physical event); visual sample at t≈34s shows the two people directly adjacent. |
-| R4 | 36.27 | 40.03 | 3.76 | DISTRACTORS_COMPLETE | no | yes | Same as R2. |
-| E4 | 40.03 | 41.50 | 1.47 | DISTRACTORS_COMPLETE (transition) | no | yes | CSV `occlusion_ambiguity`. |
-| R5 | 41.50 | 49.64 | 8.14 | DISTRACTORS_COMPLETE | no | yes | Visual sample at t≈48.7s shows both people close/adjacent, distinguishable but near. |
-| E5 | 49.64 | 51.23 | 1.59 | DISTRACTORS_COMPLETE (transition) | no | yes | CSV occlusion window + ByteTrack tracker handover (physical target continuous per the CSV's own 2026-07-27 visual-review note). |
-| R6 | 51.23 | 55.07 | 3.84 | DISTRACTORS_COMPLETE | no | yes | Same as R2. |
-| E6 | 55.07 | 56.03 | 0.96 | DISTRACTORS_COMPLETE (transition) | no | yes | CSV `occlusion_ambiguity`. |
-| R7 | 56.03 | 58.16 | 2.13 | DISTRACTORS_COMPLETE | no | yes | Same as R2. |
-| E7 | 58.16 | 58.93 | 0.77 | DISTRACTORS_COMPLETE (transition) | no | yes | CSV `occlusion_ambiguity`. |
-| R8 | 58.93 | 67.70 | 8.77 | DISTRACTORS_COMPLETE | no | yes | Visual sample at t≈66.9s shows up to 4 people visible (2 main + 2 distant). |
+| Region | start_s | end_s | dur (s) | Regime | Avg distractors/sample | Reason |
+|---|---:|---:|---:|---:|---|
+| R1 | 0.00 | 24.77 | 24.77 | DISTRACTORS_COMPLETE | 1 | **Reclassified from TARGET_ONLY_INTERPOLATABLE.** Re-audit samples at t=0,3,6,9,12,15,18,21,24s all show the companion person immediately adjacent to the target, not merely "visible somewhere in frame" -- clearly a plausible alternative detection at every instant. |
+| E1 | 24.77 | 25.47 | 0.70 | DISTRACTORS_COMPLETE (transition) | 1 | CSV `occlusion_ambiguity`. |
+| R2 | 25.47 | 29.37 | 3.90 | DISTRACTORS_COMPLETE | 1 | Companion continuously nearby (distractor_track_ids=2). |
+| E2 | 29.37 | 30.18 | 0.81 | DISTRACTORS_COMPLETE (transition) | 1 | CSV `occlusion_ambiguity`. |
+| R3 | 30.18 | 33.93 | 3.75 | DISTRACTORS_COMPLETE | 1 | Same as R2. |
+| E3 | 33.93 | 36.27 | 2.34 | DISTRACTORS_COMPLETE (transition, hard re-entry) | 1 | CSV `occlusion_ambiguity` spanning the tracker ID-switch instant (35.8s DeepSORT / 50.2s ByteTrack -- different per tracker, itself evidence the switch is a tracker artifact, not a physical event); visual sample at t≈34s shows the two people directly adjacent. |
+| R4 | 36.27 | 40.03 | 3.76 | DISTRACTORS_COMPLETE | 1 | Same as R2. |
+| E4 | 40.03 | 41.50 | 1.47 | DISTRACTORS_COMPLETE (transition) | 1 | CSV `occlusion_ambiguity`. |
+| R5 | 41.50 | 49.64 | 8.14 | DISTRACTORS_COMPLETE | 1 | Visual sample at t≈48.7s shows both people close/adjacent. |
+| E5 | 49.64 | 51.23 | 1.59 | DISTRACTORS_COMPLETE (transition) | 1 | CSV occlusion window + ByteTrack tracker handover (physical target continuous per the CSV's own 2026-07-27 visual-review note). |
+| R6 | 51.23 | 55.07 | 3.84 | DISTRACTORS_COMPLETE | 1 | Same as R2. |
+| E6 | 55.07 | 56.03 | 0.96 | DISTRACTORS_COMPLETE (transition) | 1 | CSV `occlusion_ambiguity`. |
+| R7 | 56.03 | 58.16 | 2.13 | DISTRACTORS_COMPLETE | 1 | Same as R2. |
+| E7 | 58.16 | 58.93 | 0.77 | DISTRACTORS_COMPLETE (transition) | 1 | CSV `occlusion_ambiguity`. |
+| R8 | 58.93 | 67.70 | 8.77 | DISTRACTORS_COMPLETE | 1 | Visual sample at t≈66.9s shows up to 4 people visible (2 main + 2 distant); 1 counted as guaranteed, distant pair flagged for annotator check. |
 
 ### E.2 June Seq01 -- clean four-person (61.20 s, target = `black_shirt_person`, proposed)
 
-All 7 sampled instants (t = 0, 8.1, 20.3, 30.5, 44.7, 54.7, 60.8 s), spread
-across the entire duration, show 4 people well separated across the court
-with the proposed target clearly distinguishable every time. No crossing or
-occlusion observed at any sampled instant.
+**Reclassified in full.** The original version of this plan called this
+entire sequence `target_only` because the 4 people are well spread across
+the court and never cross paths. That is the wrong test: a fresh,
+close look at all 7 original samples (t = 0, 8.1, 20.3, 30.5, 44.7, 54.7,
+60.8 s) plus a further confirmation sample shows **all 4 people
+simultaneously visible, individually resolvable, and reasonably sized** at
+every single one of the 8 sampled instants spanning the full duration --
+none of them is a background speck. Separation prevents a crossing/overlap
+mix-up, but does not prevent a detector/controller from latching onto any
+of the other 3 people instead of the target; that is exactly what
+`distractors_complete` exists to cover. This is the sequence the milestone
+brief specifically flagged as suspicious, and the closer look confirms the
+suspicion was warranted.
 
-| Region | start_s | end_s | dur (s) | Regime | Interp? | Distractors? | Reason |
-|---|---:|---:|---:|---|---|---|---|
-| R1 | 0.00 | 61.20 | 61.20 | TARGET_ONLY_INTERPOLATABLE | yes | no | 7 samples spanning the full duration all show clear separation; matches the scenario's own "clean_four_person" name and the legacy CSV's single `clean_visible` label. |
+| Region | start_s | end_s | dur (s) | Regime | Avg distractors/sample | Reason |
+|---|---:|---:|---:|---:|---|
+| R1 | 0.00 | 61.20 | 61.20 | DISTRACTORS_COMPLETE | 3 | **Reclassified from TARGET_ONLY_INTERPOLATABLE (entire region).** All 4 people simultaneously visible and individually resolvable at all 8 sampled instants across the full duration -- every other person is a plausible alternative detection throughout, not just during any single moment. |
 
-This is the only region in any of the four sequences confidently classified
-as `target_only` for its entire span. Because it is based on 7 discrete
-samples rather than exhaustive review, a small number of extra spot-check
-keyframes are still budgeted in Section F as a safety margin, not because
-any specific event was observed.
+No region in this sequence is `target_only`. This is the largest single
+correction in this re-audit, both scientifically (this was the sequence
+literally named "clean_four_person," and it is still not `target_only`)
+and in workload terms (Section F).
 
 ### E.3 June Seq03 -- crossing ambiguity (83.87 s, target = `black_shirt_person`, proposed)
 
-Genuinely different character across the duration: starts separated, builds
-into a sustained multi-person cluster by the second half, matching the
-scenario's own name.
+The originally-proposed 0-20s `target_only` opening did not survive
+re-audit: dense re-sampling at t=0, 5, 10, 15, 20s shows two other people
+already visible near the right edge of frame from the very first sampled
+frame (t=0) onward, closing in on the target as the sequence progresses --
+never absent, only more distant early on. Given the explicit instruction
+to be conservative, and that these two people are part of the same
+choreographed four-person scenario (not incidental background pedestrians)
+and visibly converging rather than static, the opening is reclassified.
 
-| Region | start_s | end_s | dur (s) | Regime | Interp? | Distractors? | Reason |
-|---|---:|---:|---:|---|---|---|---|
-| R1 | 0 | 20 | 20 | TARGET_ONLY_INTERPOLATABLE | yes | no | t=0, t≈17.4s: target alone/dominant, other people at the frame edge, not plausibly confusable. |
-| R2 | 20 | 45 | 25 | DISTRACTORS_COMPLETE | no | yes | t≈34.8s: target and a second person directly adjacent/overlapping -- a genuine crossing. CSV independently confirms an `occlusion_ambiguity`/`id_switch_fragmentation` cluster in this scenario type. |
-| R3 | 45 | 60 | 15 | DISTRACTORS_COMPLETE | no | yes | t≈52.1s: all 4 people visible simultaneously, moderate but real proximity. |
-| R4 | 60 | 83.87 | 23.87 | DISTRACTORS_COMPLETE (denser) | no | yes | t≈69.5s, t≈82.5s: all 4 people tightly clustered in the centre circle at both instants -- sustained, not momentary. |
+| Region | start_s | end_s | dur (s) | Regime | Avg distractors/sample | Reason |
+|---|---:|---:|---:|---:|---|
+| R1 | 0 | 20 | 20 | DISTRACTORS_COMPLETE | 2 | **Reclassified from TARGET_ONLY_INTERPOLATABLE.** Re-audit samples at t=0,5,10,15,20s all show 2 other people already visible near the frame edge, closing in over time -- not absent, just more distant early on; conservatively still a plausible alternative detection, not "reasonably irrelevant." |
+| R2 | 20 | 45 | 25 | DISTRACTORS_COMPLETE | 3 | t≈34.8s: target and a second person directly adjacent/overlapping -- a genuine crossing; a 3rd/4th person also visible per the original sampling. CSV independently confirms an `occlusion_ambiguity`/`id_switch_fragmentation` cluster in this scenario type. |
+| R3 | 45 | 60 | 15 | DISTRACTORS_COMPLETE | 3 | t≈52.1s: all 4 people visible simultaneously, moderate but real proximity. |
+| R4 | 60 | 83.87 | 23.87 | DISTRACTORS_COMPLETE (denser) | 3 | t≈69.5s, t≈82.5s: all 4 people tightly clustered in the centre circle at both instants -- sustained, not momentary. |
 
 ### E.4 June Seq04 -- occlusion, no exit (86.50 s, target = `black_shirt_person`, proposed)
 
-The densest of the four sequences: even the opening instant shows 5 people
-already loosely clustered (not spread out the way Seq01 is), and the
-cluster becomes near-total by the midpoint.
+The originally-proposed 0-15s `target_only` opening also did not survive
+re-audit: a fresh sample at t=2s (inside that window) shows **5 people
+already tightly clustered together**, immediately adjacent to the target,
+not spread out the way Seq01's opening is. The legacy CSV's own
+`clean_visible` label for this span describes tracker behaviour (a track
+was held without an ID switch), not physical isolation, and physical
+evidence overrides it per the frozen rule.
 
-| Region | start_s | end_s | dur (s) | Regime | Interp? | Distractors? | Reason |
-|---|---:|---:|---:|---|---|---|---|
-| R1 | 0 | 15 | 15 | TARGET_ONLY_INTERPOLATABLE | yes | no | Matches the legacy CSV's own `clean_visible` label for its opening portion; target individually distinguishable at t=0 despite 5 people being in frame. |
-| R2 | 15 | 35 | 20 | DISTRACTORS_COMPLETE | no | yes | t≈17.4s, t≈34.7s: cluster persists; conservative call given persistent multi-person proximity even though the (non-time-joinable) legacy CSV calls this whole span `clean_visible`. |
-| R3 | 35 | 60 | 25 | DISTRACTORS_COMPLETE + anticipated absence/unavailable episodes | no | yes | t≈52.1s: heaviest cluster of all four sequences, near-total overlap of 5 people. The legacy CSV (different bag, not time-joinable, Section C.2) records two genuine `target_absent` tracker windows in this same scenario type; annotator should specifically check whether the target becomes genuinely `absent` or `present_reference_unavailable` for any sub-interval here -- **not confirmed by this milestone's sampling, flagged for verification at real-annotation time.** |
-| R4 | 60 | 75 | 15 | DISTRACTORS_COMPLETE | no | yes | t≈69.5s: spreading out again, but a closer foreground bystander adds a 5th/6th plausible person. |
-| R5 | 75 | 86.50 | 11.50 | DISTRACTORS_COMPLETE (denser) | no | yes | t≈86.9s: clustered tightly again near the end. |
+| Region | start_s | end_s | dur (s) | Regime | Avg distractors/sample | Reason |
+|---|---:|---:|---:|---:|---|
+| R1 | 0 | 15 | 15 | DISTRACTORS_COMPLETE | 3 | **Reclassified from TARGET_ONLY_INTERPOLATABLE.** Re-audit sample at t=2s shows 5 people already tightly clustered, immediately adjacent to the target -- the legacy CSV's `clean_visible` label describes tracker-ID stability, not physical isolation. |
+| R2 | 15 | 35 | 20 | DISTRACTORS_COMPLETE | 3 | t≈17.4s, t≈34.7s: cluster persists. |
+| R3 | 35 | 60 | 25 | DISTRACTORS_COMPLETE + anticipated absence/unavailable episodes | 4 | t≈52.1s: heaviest cluster of all four sequences, near-total overlap of 5 people. The legacy CSV (different bag, not time-joinable, Section C.2) records two genuine `target_absent` tracker windows in this same scenario type; annotator should specifically check whether the target becomes genuinely `absent` or `present_reference_unavailable` for any sub-interval here -- **not confirmed by this milestone's sampling, flagged for verification at real-annotation time.** State-only samples (4, unchanged) remain budgeted for this. |
+| R4 | 60 | 75 | 15 | DISTRACTORS_COMPLETE | 3 | t≈69.5s: spreading out again, but a closer foreground bystander adds a further plausible person. |
+| R5 | 75 | 86.50 | 11.50 | DISTRACTORS_COMPLETE (denser) | 3 | t≈86.9s: clustered tightly again near the end. |
 
 ## F. Workload estimate
 
-Method: manual target boxes = ceil(region duration / spacing) in
-`TARGET_ONLY_INTERPOLATABLE` regions (0 distractor boxes, interpolation
-fills the gaps); manual target **and** distractor boxes per sample in
-`DISTRACTORS_COMPLETE` regions (no interpolation credit). "Conservative
-upper bound" halves the spacing used in the expected case (i.e. assumes a
-more cautious annotator or a harder-than-sampled interior); state-only
-`absent`/`reference_unavailable` samples are boundary pairs, unaffected by
-spacing.
+### F.1 Interpolation after the re-audit
+
+**No region in any of the four sequences is used as `target_only` any
+longer, so `interpolate_from_previous` is not used anywhere in this
+revised plan.** There is consequently no boundary to "split" (Section 6 of
+this corrective brief) -- there is no surviving `target_only` interval on
+either side of a reclassified region to split in the first place. If real,
+frame-by-frame annotation later confirms a genuinely isolated single-person
+interval that this milestone's bounded sampling did not happen to catch
+(none was confirmed by any sample taken, including the additional
+re-audit sampling specifically aimed at finding one), `target_only` plus
+interpolation could legitimately be used there, bounded by explicit event
+anchors at its entry and exit -- but this plan does not assume one exists
+pre-emptively, per the instruction not to artificially minimize the
+workload.
+
+### F.2 Method
+
+Manual target and distractor boxes per sample = `ceil(region duration /
+spacing)` x `(1 target + average distractors/sample)`, using the
+per-region spacing and distractor-count columns in Section E (no
+interpolation credit anywhere, per F.1). "Conservative upper bound" halves
+the spacing used in the expected case (a more cautious annotator, or a
+harder-than-sampled interior) while keeping the same distractor-count
+assumptions. State-only `absent`/`reference_unavailable` samples are
+boundary pairs, unaffected by spacing (Seq04 R3 only, unchanged at 4).
 
 | Sequence | Frames | Duration | Expected target boxes | Expected distractor boxes | State-only samples | **Expected total actions** | **Conservative upper bound** |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| May hard re-entry | 974 | 67.9 s | 75 | 50 | 0 | **125** | ~230 |
-| June Seq01 | 1520 | 61.2 s | 61 | 0 | 0 | **61** | ~120 |
-| June Seq03 | 1931 | 83.9 s | 116 | 96 | 0 | **212** | ~420 |
-| June Seq04 | 2047 | 86.5 s | 128 | 113 | 4 | **245** | ~490 |
-| **Total** | **6472** | **299.5 s** | **380** | **259** | **4** | **~643** | **~1260** |
+| May hard re-entry | 974 | 67.9 s | 75 | 75 | 0 | **150** | ~282 |
+| June Seq01 | 1520 | 61.2 s | 82 | 246 | 0 | **328** | ~656 |
+| June Seq03 | 1931 | 83.9 s | 116 | 328 | 0 | **444** | ~888 |
+| June Seq04 | 2047 | 86.5 s | 128 | 434 | 4 | **566** | ~1128 |
+| **Total** | **6472** | **299.5 s** | **401** | **1083** | **4** | **~1488** | **~2954** |
 
-For scale: 643 expected manual actions against 6472 total source frames is
-roughly **10%** of frames getting any manual treatment at all (roughly
-**19%** even in the conservative case) -- solidly in the "low hundreds, not
-thousands" band this milestone asked to confirm, not remotely close to one
-box per frame for any sequence.
+For scale: ~1488 expected manual actions against 6472 total source frames
+is roughly **23%** of frames getting some manual treatment (roughly **46%**
+in the conservative case). This is markedly higher than the original
+version of this plan (~643 / ~1260), but it is important to be precise
+about *why*: the number of manual **samples** (keyframes) barely changed --
+401 target boxes now versus 380 before, a 5.5% increase -- because sparse
+keyframing spacing (Section D) is essentially unchanged and still discards
+92-95% of native frames per sequence (75/974 for May, 82/1520 for Seq01,
+116/1931 for Seq03, 128/2047 for Seq04). What changed is that every one of
+those samples now also carries its full distractor set (1083 distractor
+boxes, versus 259 before) instead of the "0 distractors, interpolation
+fills the gap" discount that `target_only` regions used to receive. The
+workload roughly doubled not because sparse keyframing got less effective,
+but because the reclassification removed a discount that should never have
+applied in the first place.
 
 ## G. Answers to the specific workload questions
 
-- **Is interpolation doing most of the workload reduction?** Yes, and
-  decisively: if every one of the 6472 source frames needed a manual target
-  box (the naive alternative), the total would be an order of magnitude
-  higher than the ~380 target boxes this plan proposes across all four
-  sequences combined -- a ~94% reduction on the target side alone, entirely
-  from sparse keyframing plus `interpolate_from_previous`, before counting
-  the `distractors_complete` regions where interpolation is legitimately
-  disallowed by the frozen schema.
-- **Is any sequence unexpectedly expensive?** No. Seq04 (245 expected / ~490
-  conservative) and Seq03 (212 / ~420) are the two most expensive, and both
-  are expensive for the reason their own names advertise --
-  "occlusion_no_exit" and "crossing_ambiguity" are literally descriptions of
-  sustained multi-person proximity, confirmed independently by both visual
-  inspection and (qualitatively) their legacy CSVs. Seq01 ("clean") is the
-  cheapest, also exactly as its name would suggest. Nothing here surprised
-  the plan.
+- **Is interpolation doing most of the workload reduction?** **No --
+  interpolation contributes nothing now, because it is not used anywhere in
+  this revised plan** (Section F.1). But that does not mean sparse
+  keyframing stopped working: keyframe density is essentially unchanged
+  from the original plan (401 target-box samples now versus 380 before,
+  only +5.5%), and still discards 92-95% of native frames per sequence
+  (Section F.2) -- sparse keyframing was, and remains, the dominant
+  reduction mechanism throughout. What actually drove the ~2.3x increase in
+  total actions is narrower and more specific than "less reduction overall":
+  every sample now also carries its full distractor set, because the
+  `target_only` regions that used to carry zero distractor cost did not
+  survive the corrected test. Conflating "interpolation is no longer used"
+  with "sparse sampling got less effective" would itself be an inaccurate
+  reading of these numbers.
+- **Is any sequence unexpectedly expensive?** No, and the ranking is
+  unchanged: Seq04 (566 expected / ~1128 conservative) and Seq03 (444 /
+  ~888) remain the two most expensive, for the same reason as before --
+  "occlusion_no_exit" and "crossing_ambiguity" describe sustained
+  multi-person proximity, now correctly reflected in *every* region of
+  both sequences rather than just their second halves. Seq01 (328 / ~656)
+  is no longer the cheapest sequence by a wide margin the way it looked in
+  the original plan -- correcting its `target_only` misclassification was
+  the single largest contributor to the overall increase -- though May
+  (150 / ~282, single-companion for almost all of its duration) remains
+  the least expensive of the four.
 
-## H. UI recommendation
+## H. UI recommendation (unchanged from the original plan, not acted on)
 
-**Worth one small follow-up before real annotation, not urgent enough to
-block starting it.** At ~643 expected manual samples (up to ~1260 in the
-conservative case) spread across four separate sessions, the current UI
-(mouse-driven frame stepping via the existing slider, one box drawn and
-saved at a time) is functionally sufficient -- nothing in this plan requires
-a UI change to be *possible*. But the dominant remaining friction at this
-volume is timeline navigation, not box-drawing itself: an annotator working
-through ~15-50 keyframes per region, region after region, will spend a
-disproportionate share of time locating the *next* intended keyframe on the
-slider.
+This section is carried over from the original Milestone 4A report,
+unchanged in substance, and **not implemented in this corrective pass** --
+the instruction for this pass was explicitly to freeze the corrected
+workload first and decide on any UI follow-up afterward, separately. It is
+retained here only for continuity; the higher, corrected workload estimate
+in Section F if anything strengthens rather than weakens the case for it,
+since there are now more distractor boxes to draw per sample across every
+region, not fewer.
 
-Recommended, if a small pre-annotation follow-up is approved:
+At ~1488 expected manual actions (up to ~2954 in the conservative case)
+spread across four separate sessions, the current UI (mouse-driven frame
+stepping via the existing slider, one box drawn and saved at a time) is
+functionally sufficient -- nothing in this plan requires a UI change to be
+*possible*. The dominant remaining friction at this volume is timeline
+navigation, not box-drawing itself.
+
+If a small pre-annotation follow-up is approved (a decision for after this
+corrected plan is reviewed, not part of this pass):
 - **keyboard next/previous-frame stepping** -- the single highest-value,
-  lowest-risk addition given the above.
+  lowest-risk candidate.
 - **jump forward/back by N frames** -- secondary, same justification.
 
-Explicitly **not** recommended for now: "copy previous human bbox as
-editable draft." Section 11's constraint (previous HUMAN annotation only,
-never auto-saved, never carrying tracker/detector geometry, never silent
-across frames) is achievable, but in every `DISTRACTORS_COMPLETE` region in
-this plan -- which is most of the expensive part of the workload -- people
-are actively moving relative to each other, so a copied previous box would
-usually need to be redrawn anyway rather than lightly nudged; the feature's
-main payoff would land in `TARGET_ONLY_INTERPOLATABLE` regions, which are
-already the cheapest part of the workload. Revisit only if real annotation
-turns out slower than this plan expects.
+Still explicitly **not** recommended: "copy previous human bbox as
+editable draft" -- not implemented, and per this pass's own instruction,
+not to be added. With almost every region now `distractors_complete`,
+people are moving relative to each other in essentially all of them, so a
+copied previous box would usually need to be redrawn rather than lightly
+nudged, further weakening the case for this specific feature versus the
+original plan.
 
 No UI code is changed in this milestone.
 
-## I. What this milestone does not do
+## I. What this milestone (and this corrective pass) does not do
 
 No real physical-reference JSON was created. No sample was saved through
 the annotation UI. No evaluator, schema, validator, or annotation UI code
-was modified. No TIM-MARS configuration or runtime file was touched. No
-existing tracker-ID annotation CSV was modified. The region boundaries in
-Section E are a planning estimate from a bounded number of sampled frames,
-not an exhaustive per-frame review -- real annotation will refine, and may
-locally contradict, the exact seconds above; the regime classifications and
-overall workload order-of-magnitude are expected to hold.
+was modified in either the original Milestone 4A pass or this corrective
+re-audit -- the only code-adjacent change across both is the factual
+provenance correction to `docs/issues/p1-10-improve-bbox-evaluation.md`
+section F (Section B, finding 1), which does not alter any schema
+semantics. No TIM-MARS configuration or runtime file was touched. No
+existing tracker-ID annotation CSV was modified. No UI productivity
+feature (Section H) was implemented. The region boundaries in Section E
+are a planning estimate from a bounded number of sampled frames, not an
+exhaustive per-frame review -- real annotation will refine, and may locally
+contradict, the exact seconds above; after this corrective pass, the
+`distractors_complete`-everywhere conclusion is expected to hold even if
+individual region boundaries move.
