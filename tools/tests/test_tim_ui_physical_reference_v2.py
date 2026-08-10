@@ -887,3 +887,152 @@ def test_both_frame_update_and_overlay_refresh_share_the_image_loading_helper():
 
 def test_overlay_refresh_exposed_as_feature_detection_global():
     assert "window.physicalRefRefreshOverlayImage = physicalRefRefreshOverlayImage" in JS_SOURCE
+
+
+# =============================================================================
+# Human-smoke corrective fix #2: the active-person status chip must reflect
+# CURRENT UI STATE (whether the active person_ref already has a bbox in the
+# current draft/sample), not merely how it was originally created. Two
+# independent concepts must never be conflated:
+#   - historically known (person_ref appears in a SAVED sample somewhere in
+#     the artifact) vs. brand new (not saved anywhere yet);
+#   - drawn on the current frame right now (has a bbox in
+#     physicalRefDrawnDistractors) vs. not drawn on the current frame.
+# See physicalRefV2ActivePersonRefStatusSuffix.
+# =============================================================================
+
+
+def _status_suffix_body():
+    return _extract_js_function_body(JS_SOURCE, "physicalRefV2ActivePersonRefStatusSuffix")
+
+
+# --- 1/6. not-drawn wording, new vs. historically known ----------------------
+
+
+def test_status_suffix_new_person_not_drawn_says_new_not_yet_drawn():
+    body = _status_suffix_body()
+    assert '" (new, not yet drawn)"' in body
+
+
+def test_status_suffix_historically_known_not_drawn_says_not_drawn_on_this_frame():
+    body = _status_suffix_body()
+    assert '" (not drawn on this frame)"' in body
+    # The two wordings are the two arms of one ternary keyed on
+    # isHistoricallyKnown -- never two independently-computed strings that
+    # could drift apart.
+    assert "isHistoricallyKnown ?" in body
+
+
+# --- 2/7. once drawn, "not yet drawn" can never be shown, regardless of ----
+# --- whether the person is new or historically known -----------------------
+
+
+def test_status_suffix_drawn_now_never_says_not_drawn_regardless_of_history():
+    body = _status_suffix_body()
+    guard_pos = body.index("if (drawnNow)")
+    ternary_pos = body.index("isHistoricallyKnown ?")
+    # The drawn-now guard is checked, and returns, strictly before the
+    # historically-known ternary is ever reached -- so a drawn box can never
+    # fall through into either "not drawn" wording, whether the identity is
+    # brand new or historically known.
+    assert guard_pos < ternary_pos
+    return_pos = body.index("return \"\";", guard_pos)
+    assert guard_pos < return_pos < ternary_pos
+
+
+def test_status_suffix_checks_the_current_draft_not_saved_samples():
+    body = _status_suffix_body()
+    assert "physicalRefDrawnDistractors.some" in body
+    # Drawn-status must never be derived from physicalRefSamples (saved
+    # data) -- it is purely a current-draft/current-frame question,
+    # independent of whether a save has happened.
+    assert "physicalRefSamples" not in body
+
+
+# --- 3. status updates immediately after drawing, no save required --------
+
+
+def test_drawing_a_distractor_rerenders_palette_immediately_without_saving():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefOnPointerUp")
+    push_pos = body.index("physicalRefDrawnDistractors.push(")
+    render_pos = body.index("physicalRefV2RenderPersonRefPalette();", push_pos)
+    assert push_pos < render_pos
+    between = body[push_pos:render_pos]
+    assert "physicalRefSave(" not in between
+    assert "fetch(" not in between
+
+
+# --- 4. removing the current-frame bbox returns status to not-drawn -------
+
+
+def test_removing_a_distractor_rerenders_palette_immediately_without_saving():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRemoveDistractor")
+    splice_pos = body.index("physicalRefDrawnDistractors.splice(")
+    render_pos = body.index("physicalRefV2RenderPersonRefPalette();", splice_pos)
+    assert splice_pos < render_pos
+    between = body[splice_pos:render_pos]
+    assert "physicalRefSave(" not in between
+
+
+# --- 5. historically known chips are never wired through the "new" branch --
+
+
+def test_known_chip_loop_passes_historically_known_true_to_status_suffix():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefV2RenderPersonRefPalette")
+    known_loop = body[: body.index("if (physicalRefV2ActivePersonRef && known.indexOf")]
+    assert "physicalRefV2ActivePersonRefStatusSuffix(ref, true)" in known_loop
+
+
+def test_pending_new_chip_passes_historically_known_false_to_status_suffix():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefV2RenderPersonRefPalette")
+    pending_branch = body[body.index("if (physicalRefV2ActivePersonRef && known.indexOf") :]
+    assert "physicalRefV2ActivePersonRefStatusSuffix(physicalRefV2ActivePersonRef, false)" in pending_branch
+
+
+def test_only_the_active_selection_receives_a_drawn_status_suffix():
+    """Non-active known chips stay plain -- per-frame drawn status is only
+    meaningful, and only shown, for whichever person_ref the annotator has
+    actually selected right now."""
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefV2RenderPersonRefPalette")
+    known_loop = body[: body.index("if (physicalRefV2ActivePersonRef && known.indexOf")]
+    assert "isActive ? physicalRefV2ActivePersonRefStatusSuffix(ref, true) : \"\"" in known_loop
+
+
+# --- 8. overlay refresh must not alter or recompute person_ref status ------
+
+
+def test_overlay_refresh_still_never_touches_the_person_ref_palette():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRefreshOverlayImage")
+    assert "physicalRefV2RenderPersonRefPalette" not in body
+    assert "physicalRefV2ActivePersonRefStatusSuffix" not in body
+
+
+# --- 9. real frame navigation recalculates status from the new frame ------
+
+
+def test_sync_draft_to_frame_rerenders_palette_in_both_branches():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefSyncDraftToCurrentFrame")
+    idx_branch_pos = body.index("if (idx >= 0)")
+    saved_sample_branch = body[idx_branch_pos : body.index("}", idx_branch_pos)]
+    clear_branch = body[body.index("}", idx_branch_pos) :]
+    # Saved-sample branch delegates to physicalRefLoadSampleIntoForm, which
+    # itself re-renders the palette (checked below) -- the no-saved-sample
+    # (clear) branch re-renders it directly.
+    assert "physicalRefLoadSampleIntoForm(idx" in saved_sample_branch
+    assert "physicalRefV2RenderPersonRefPalette();" in clear_branch
+
+
+def test_load_sample_into_form_rerenders_palette_for_the_new_frame():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefLoadSampleIntoForm")
+    assert "physicalRefV2RenderPersonRefPalette();" in body
+
+
+# --- 10. deterministic person_ref generation policy is unchanged -----------
+
+
+def test_next_person_ref_policy_untouched_by_the_status_suffix_fix():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefV2NextPersonRef")
+    assert "used.has(n)" in body
+    assert "phys_d" in body
+    assert "physicalRefV2ActivePersonRefStatusSuffix" not in body
+    assert "physicalRefDrawnDistractors" not in body

@@ -548,6 +548,21 @@ function physicalRefV2NewPersonRef() {
 }
 window.physicalRefV2NewPersonRef = physicalRefV2NewPersonRef;
 
+// The active person_ref's drawn/not-drawn status is two independent
+// questions -- "does this identity already exist in the saved artifact"
+// (isHistoricallyKnown) and "does it have a bbox in the CURRENT draft/
+// sample right now" (physicalRefDrawnDistractors, frontend-only, updated
+// immediately on draw/remove, never requiring a save/reload/navigation/
+// overlay-toggle round trip) -- and must never conflate them: a brand-new
+// identity becomes "drawn" the instant its box is drawn, and a
+// historically-known identity reused on a later frame is never mislabeled
+// "new" merely because this particular frame hasn't been drawn yet.
+function physicalRefV2ActivePersonRefStatusSuffix(ref, isHistoricallyKnown) {
+  const drawnNow = physicalRefDrawnDistractors.some((d) => d.person_ref === ref);
+  if (drawnNow) return "";
+  return isHistoricallyKnown ? " (not drawn on this frame)" : " (new, not yet drawn)";
+}
+
 function physicalRefV2RenderPersonRefPalette() {
   const host = document.getElementById("physicalRefPersonRefPalette");
   if (!host) return;
@@ -559,17 +574,24 @@ function physicalRefV2RenderPersonRefPalette() {
     '<div class="physicalRefPersonRefChips">';
 
   known.forEach((ref) => {
-    const activeClass = ref === physicalRefV2ActivePersonRef ? " physicalRefPersonRefChipActive" : "";
+    const isActive = ref === physicalRefV2ActivePersonRef;
+    const activeClass = isActive ? " physicalRefPersonRefChipActive" : "";
+    // Drawn/not-drawn status is only shown for the currently active
+    // selection -- annotating every known person in the palette with
+    // per-frame drawn status would be noise for identities the annotator
+    // isn't working with right now.
+    const suffix = isActive ? physicalRefV2ActivePersonRefStatusSuffix(ref, true) : "";
     html +=
       '<button type="button" class="physicalRefPersonRefChip' + activeClass + '" ' +
-      'onclick="physicalRefV2SelectPersonRef(\'' + ref + '\')">' + ref + "</button>";
+      'onclick="physicalRefV2SelectPersonRef(\'' + ref + '\')">' + ref + suffix + "</button>";
   });
 
   if (physicalRefV2ActivePersonRef && known.indexOf(physicalRefV2ActivePersonRef) === -1) {
+    const suffix = physicalRefV2ActivePersonRefStatusSuffix(physicalRefV2ActivePersonRef, false);
     html +=
       '<button type="button" class="physicalRefPersonRefChip physicalRefPersonRefChipActive ' +
       'physicalRefPersonRefChipPending" disabled>' +
-      physicalRefV2ActivePersonRef + " (new, not yet drawn)</button>";
+      physicalRefV2ActivePersonRef + suffix + "</button>";
   }
 
   html +=
