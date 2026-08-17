@@ -22,7 +22,7 @@ TIM-MARS is a control-facing selected-target identity validation layer for RGB-o
 
 The canonical operational definitions, evidence dependencies, and claim exclusions are maintained in `docs/research_question.md`.
 
-The algorithmic and embedded-system contributions must be evaluated separately. Current development results do not close the held-out, Hailo appearance-offload, runtime, thermal, power, or final-claim obligations.
+The algorithmic and embedded-system contributions must be evaluated separately. The dedicated Hailo appearance-offload work under Issue #44 is complete, but current development results do not close the held-out, end-to-end runtime, thermal, power, comparison, or final-claim obligations.
 
 It is not:
 
@@ -162,10 +162,11 @@ This creates a testable embedded-systems hypothesis:
 > or exceed the controller-facing selected-target reliability of integrated
 > appearance-aware tracking while requiring less onboard computation.
 
-This is not currently a supported result. It requires the controlled
-tracker-efficiency comparison, complete latency decomposition, appearance
-invocation accounting, sustained resource measurements, and Hailo appearance
-validation tracked by Issue #58, Issue #32, and Issue #44.
+This is not currently a supported result. The dedicated Hailo appearance
+validation work has been completed under Issue #44, but the efficiency claim
+still requires the controlled tracker comparison under Issue #58 and the
+complete latency, invocation, sustained-resource, thermal, power, and
+safety–availability–cost characterisation under Issue #32.
 
 ## 5. Minimal defensible final algorithm
 
