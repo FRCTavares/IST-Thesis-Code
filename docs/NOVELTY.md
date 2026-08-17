@@ -53,7 +53,7 @@ The selected-target objective is therefore asymmetric:
 2. retain correct-target publication;
 3. accept temporary loss when identity evidence is insufficient.
 
-The central safety principle is:
+The central controller-facing design principle is:
 
 > A temporarily lost target is preferable to a confidently published wrong target.
 
@@ -65,355 +65,406 @@ subject to:
 
     C_wrong > C_lost
 
-This expresses the safety ordering. The coefficients must not be presented as universal constants unless experimentally justified.
+This expresses the asymmetric controller-facing cost ordering. It is not a formal safety proof, and the coefficients must not be presented as universal constants unless experimentally justified.
 
 ## 3. Research gap
 
-Detectors and multi-object trackers maintain observations and identities for all candidates.
+The thesis does not claim novelty from the mere combination of object
+detection, multi-object tracking, person ReID, geometric consistency, temporal
+memory, state machines, or appearance comparison. Those mechanisms are
+established, and recent work on target-person tracking and robot person-following
+already addresses designated-person persistence, occlusion, disappearance,
+reappearance, and appearance-supported re-identification.
 
-They do not directly certify that one operator-selected person remains safe to publish to a controller.
+The narrower problem is the **authority gap** between generic multi-object
+association and controller-facing target authority for one operator-selected
+physical person.
 
-A tracker ID is an association label, not an identity guarantee.
+A tracker maintains candidate trajectories and temporary association labels.
+For selected-person UAV following, however, a plausible tracker output is not
+by itself sufficient evidence that the same physical person originally
+selected by the operator should retain controller-facing target authority.
 
-TIM-MARS addresses the narrower problem of deciding whether one selected target is sufficiently trusted for controller-facing publication.
+The research gap investigated here is therefore whether a resource-constrained
+UAV architecture can:
+
+1. keep generic multi-object association computationally practical;
+2. treat tracker identity as evidence rather than controller-facing target
+   authority;
+3. maintain persistent evidence about one selected physical person across
+   tracker-ID instability;
+4. deliberately abstain from publication when identity evidence is
+   insufficient;
+5. recover controller-facing authority only after bounded confirmation; and
+6. achieve a useful wrong-target–availability–compute trade-off fully
+   onboard.
+
+This framing must be positioned against target-person tracking,
+person-following, MOT-plus-ReID, appearance-aware trackers, and embedded UAV
+perception systems. The thesis does not claim that these neighbouring research
+problems are new.
 
 ## 4. Intended contribution
 
-The strongest defensible contribution is the combination of the following ideas into a selected-target safety layer.
+The intended contribution is a **controller-facing selected-person
+identity-validation architecture**, not a new detector, tracker, or ReID
+network.
 
-### 4.1 Modular selected-target validation
+Its central design decision is to decouple generic association continuity
+from physical-target publication authority: the tracker estimates candidate
+trajectories and temporary identities, while TIM-MARS separately decides
+whether one candidate may represent the operator-selected physical person to
+the downstream controller.
 
-TIM-MARS is placed after:
+### 4.1 Association is evidence, not authority
 
-1. person detection;
-2. multi-object tracking;
-3. raw target selection.
+TIM-MARS operates after person detection, multi-object tracking, and raw target
+selection.
 
-It separates tracker association from controller-facing identity validation.
+The tracker proposes candidate observations and temporary identities. TIM-MARS
+independently determines whether a candidate is sufficiently supported as the
+operator-selected physical person for controller-facing publication.
 
-### 4.2 Persistent selected-target memory
+A tracker ID may contribute evidence, but it does not automatically obtain or
+retain controller authority.
 
-TIM-MARS keeps memory of the selected person across tracker instability using:
+### 4.2 Persistent physical-target evidence
 
-- the last trusted tracker ID;
-- trusted target geometry;
-- target quality;
-- temporal state;
-- positive appearance evidence;
-- optional distractor evidence.
+TIM-MARS maintains trusted evidence about the selected person across
+recoverable tracker instability.
 
-### 4.3 Conservative publication
+The implemented evidence may include:
 
-TIM-MARS may suppress output even when the tracker provides plausible candidates.
+- trusted tracker-lineage information;
+- target geometry and quality;
+- temporal state and continuity;
+- positive selected-person appearance evidence;
+- distractor or hard-negative appearance evidence.
 
-Only a trusted `LOCKED` target should be considered controller-valid.
+These mechanisms are implementation components. The novelty claim is not that
+any one of them is individually new, but how they support the authority
+decision for one selected physical person.
 
-`UNCERTAIN`, `LOST`, and `REACQUIRED` represent states where publication is suppressed or confirmation is still required.
+### 4.3 Conservative abstention and bounded recovery
 
-### 4.4 Appearance-supported identity validation
+TIM-MARS is permitted to suppress output even when the detector or tracker
+provides a plausible candidate.
 
-A pretrained MARS-small128 model provides appearance evidence.
+This is deliberate. Under the thesis objective, temporary loss of target
+authority is preferable to publishing a distractor when identity evidence is
+insufficient.
 
-The novelty is not MARS itself.
+Recovery is therefore not simply the first plausible reassociation. Candidate
+authority must be re-established according to the implemented evidence and
+confirmation policy.
 
-The intended contribution is how pretrained appearance evidence is combined with geometry, temporal memory, distractor evidence, and conservative publication for one selected target.
+Issue #74 extends this same authority principle into the state-aware
+controller-facing following and bounded visual-recovery path. That work must
+not create an alternative source of selected-person identity authority.
 
-### 4.5 Distractor-aware identity evidence
+### 4.4 Asymmetric controller-facing evaluation
 
-TIM-MARS can compare a candidate against:
+The evaluation separates:
 
-- positive selected-target appearance memory;
-- hard-negative or distractor appearance memory.
+- correct-target publication;
+- wrong-target publication;
+- lost or intentionally suppressed output;
+- target-absent-but-output behaviour;
+- reacquisition and recovery delay;
+- unsafe handovers and wrong-target bursts;
+- event-specific failure and recovery behaviour.
 
-The intended acceptance condition is not merely that a candidate resembles the target, but that it resembles the target more strongly than plausible distractors.
+This differs from treating generic MOT accuracy as sufficient evidence for a
+person-following controller.
 
-### 4.6 Selected-target safety evaluation
+The terminology is safety-oriented but not a formal safety claim. Here,
+*safety* refers specifically to controller-facing wrong-person risk and its
+trade-off with temporary target unavailability.
 
-TIM-MARS is evaluated using control-facing metrics:
+### 4.5 Embedded selected-person architecture
 
-- correct-target duration;
-- wrong-target duration;
-- lost-target duration;
-- target-absent-but-output duration;
-- reacquisition delay;
-- unsafe handover count;
-- event-specific performance.
+The intended deployment pairs TIM-MARS with a computationally practical,
+appearance-free tracker and performs appearance reasoning selectively at the
+selected-person validation layer.
 
-This is different from reporting only generic MOT metrics.
+The dedicated Hailo appearance-offload implementation and validation under
+Issue #44 are complete.
 
-### 4.7 Selective embedded identity reasoning
+The remaining embedded-systems hypothesis is:
 
-The intended embedded architecture places TIM-MARS above computationally
-lightweight, appearance-free trackers.
+> A lightweight tracker paired with selective selected-person validation can
+> provide a competitive or preferable controller-facing
+> wrong-target–availability–compute operating point relative to integrated
+> appearance-aware tracking.
 
-Unlike an appearance-aware tracker that may compute identity embeddings for many
-detections during routine association, TIM-MARS is intended to request
-appearance evidence selectively for:
-
-- the trusted selected target;
-- plausible competing candidates;
-- uncertain or recovery states;
-- bounded refresh intervals;
-- crossings, occlusions, re-entry, and other identity-critical events.
-
-This creates a testable embedded-systems hypothesis:
-
-> A lightweight tracker paired with selective TIM-MARS validation can approach
-> or exceed the controller-facing selected-target reliability of integrated
-> appearance-aware tracking while requiring less onboard computation.
-
-This is not currently a supported result. The dedicated Hailo appearance
-validation work has been completed under Issue #44, but the efficiency claim
-still requires the controlled tracker comparison under Issue #58 and the
-complete latency, invocation, sustained-resource, thermal, power, and
-safety–availability–cost characterisation under Issue #32.
+This is still a hypothesis, not a supported final result. Issue #58 owns the
+controlled tracker comparison, and Issue #32 owns the final end-to-end
+latency, invocation, resource, thermal, power, and sustained-operation
+characterisation.
 
 ## 5. Minimal defensible final algorithm
 
-The final thesis algorithm should contain only:
+The final algorithmic claim should contain only mechanisms that survive the
+remaining controlled evaluation and final implementation freeze.
 
-1. trusted target memory;
+The core authority structure is:
+
+1. one persistent trusted selected-person memory;
 2. geometric candidate plausibility;
-3. positive appearance similarity;
-4. distractor-aware appearance margin;
-5. temporal recovery confirmation;
-6. one unified final safety gate;
-7. conservative state transition and publication;
-8. trusted-only memory updates.
+3. positive appearance evidence;
+4. distractor-aware appearance comparison where retained by evidence;
+5. temporal confirmation for recovery;
+6. one final controller-authority decision;
+7. conservative state transition and publication; and
+8. trusted-only memory adaptation.
 
-Parallel recovery paths and unevaluated experimental policies should not remain part of the final algorithm claim.
+Motion evidence under Issue #21 and higher-resolution appearance evidence
+under Issue #64 are additions only if they improve the supported
+wrong-target–availability trade-off without creating unacceptable complexity
+or new failure modes.
 
-## 6. Current evidence
+Parallel recovery paths or experimental policies that do not survive the final
+evaluation must not remain part of the thesis contribution.
 
-The promoted cross-tracker evidence uses:
+## 6. Evidence status
 
-- canonical TIM-MARS configuration SHA-256
-  `16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655`;
-- MARS model SHA-256
-  `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`;
-- clean replay commit
-  `1b7dc4002c19e5235703913826e174df1025f1d0`;
-- replay metadata schema `3` and resolved-runtime schema `2`;
-- image-header-time evaluation with a `0.05 s` step and safety tolerance.
+Exact numeric results, hashes, configuration fingerprints, and
+evidence-version relationships do not belong in this novelty contract.
 
-### 6.1 Canonical hard-reentry tracker matrix
+Their authorities are:
 
-| Tracker | Raw C/W/L | TIM-MARS C/W/L | Wrong delta | Absence-output delta | Safety verdict |
-|---|---:|---:|---:|---:|---|
-| ByteTrack | 0.514 / 0.000 / 0.486 | 0.920 / 0.010 / 0.069 | +0.700 s | +0.000 s | Reject |
-| SORT | 0.442 / 0.000 / 0.558 | 0.786 / 0.080 / 0.134 | +5.300 s | +0.150 s | Reject |
-| OC-SORT | 0.509 / 0.000 / 0.491 | 0.936 / 0.000 / 0.064 | +0.000 s | +0.200 s | Reject |
-| DeepSORT | 0.366 / 0.001 / 0.633 | 0.755 / 0.225 / 0.020 | +15.203 s | +0.000 s | Reject |
+- `docs/results/`;
+- `docs/algorithm/tim_mars_evidence_versions.md`;
+- frozen experiment and split contracts under `docs/data/`;
+- exact GitHub issue closure evidence where applicable.
 
-The canonical report is:
+This document records only the scientific interpretation and claim boundary.
 
-- `reports/p004_tim_matrix_1b7dc400_2026_07_20/`.
+### 6.1 Evidence already established
 
-Within-tracker raw-versus-TIM comparisons are valid. Absolute cross-tracker ranking is qualified because each tracker autonomously selected its own physical target.
+The repository already contains development evidence showing that:
 
-All four tracker pairings failed promotion with the single canonical preset. Motion-only trackers were not automatically safe, and DeepSORT showed the largest wrong-target increase.
+- TIM-MARS can substantially change the controller-facing
+  correct/wrong/lost operating point relative to the paired raw selected-target
+  stream;
+- appearance evidence is necessary in evaluated difficult cases where geometry
+  or persistence alone can authorise the wrong lineage;
+- software-interface modularity does not imply one-preset safety portability
+  across trackers;
+- some availability improvements can be unacceptable when they also increase
+  wrong-target publication;
+- event/recovery metrics and promoted development ablations exist;
+- broader-sequence evaluation has been completed;
+- parameter-sensitivity evaluation has been completed;
+- the dedicated Hailo appearance-offload work under Issue #44 has been
+  completed.
 
-### 6.2 Required OC-SORT crossing and occlusion sequences
+These are development and implementation findings. They do not by themselves
+close the final prospective held-out or full embedded-deployment claims.
 
-| Sequence | Raw C/W/L | OC-SORT + TIM-MARS C/W/L | Correct delta | Wrong delta | Lost delta |
-|---|---:|---:|---:|---:|---:|
-| Seq03 crossing ambiguity | 0.340 / 0.001 / 0.659 | 0.850 / 0.015 / 0.135 | +48.831 s | +1.350 s | -50.181 s |
-| Seq04 occlusion/no-exit | 0.644 / 0.002 / 0.354 | 0.702 / 0.003 / 0.295 | +3.297 s | +0.050 s | -3.347 s |
+### 6.2 Evidence still required before the final claim
 
-The repeated deterministic report is:
+The remaining scientific gates are:
 
-- `reports/p004_ocsort_tim_1b7dc400_2026_07_20/`.
+- **Issue #25** -- strengthen identity-independent bounding-box evaluation;
+- **Issue #64** -- determine whether higher-resolution source imagery
+  materially improves selected-person appearance evidence;
+- **Issue #21** -- retain motion evidence only if controlled evaluation shows
+  a useful contribution;
+- **Issue #58** -- compare the intended lightweight-tracker-plus-TIM-MARS
+  architecture with integrated appearance-aware tracking;
+- **Issue #74** -- complete and validate the state-aware controller-facing
+  architecture without weakening TIM-MARS identity authority;
+- **Issue #32** -- complete end-to-end onboard runtime, resource, thermal,
+  power, invocation, and sustained-operation characterisation;
+- **Issue #27** -- capture, freeze, and evaluate the prospective H01--H03
+  held-out sequences without leakage;
+- **Issue #39** -- freeze the final thesis contribution only after the
+  preceding evidence is available.
 
-Seq03 substantially improves availability but exceeds the wrong-target safety tolerance. Seq04 lies exactly at the one-step wrong-target tolerance boundary. Neither sequence increases target-absence valid output.
-
-Both sequence repetitions match in semantic output, authoritative evaluation, configuration and model fingerprints, runtime contract, and clean repository provenance. Corrected event-level aggregates match the authoritative evaluator within `0.004 s`.
-
-Earlier sequence-specific ByteTrack and exploratory multi-tracker results remain useful as historical evidence, but they do not override these promoted canonical safety decisions.
+Thesis method, limitations, figures, and final prose under Issues #40--#42 must
+then describe the implementation and evidence that actually survives these
+gates.
 
 ## 7. Claim currently supported
 
-The evidence supports the following bounded claim:
+The current evidence supports a bounded claim:
 
-> TIM-MARS is a lightweight selected-target validation layer that can improve correct-target availability in some recoverable tracker-instability cases. Its message-level architecture can be paired with different trackers, but safety is tracker-, sequence-, and configuration-dependent. The current canonical preset is not safety-portable across the evaluated tracker pairings and is not promoted as a universal cross-tracker preset.
+> TIM-MARS implements a separate controller-facing selected-person
+> identity-validation decision above an existing tracking pipeline. Development
+> evidence shows that this additional authority layer can materially alter
+> correct-target availability and wrong-target publication under recoverable
+> tracker identity instability, while also showing that its behaviour is
+> tracker-, sequence-, and configuration-dependent.
 
-The architecture additionally motivates, but does not yet prove, an embedded
-efficiency hypothesis: selective TIM-MARS appearance validation above a
-lightweight appearance-free tracker may provide a more favourable
-safety–availability–cost operating point than continuous appearance association
-inside a heavier tracker.
+Two conclusions are already important:
 
-The evidence therefore separates two claims:
+- modularity at the tracker-output interface is established;
+- universal one-preset safety portability is not established and has been
+  rejected by development evidence.
 
-- interface modularity is established;
-- universal safety portability is rejected.
+The evidence does **not** yet support a final claim that TIM-MARS generalises
+across unseen people and scenarios, nor that the complete
+lightweight-tracker-plus-TIM-MARS architecture is computationally preferable
+to integrated appearance-aware tracking.
 
-The evidence does not support:
+## 8. Novelty risks and scientific limitations
 
-> TIM-MARS generally improves selected-person tracking across trackers, crossings, occlusions, disappearance, and re-entry.
+### 8.1 Individual mechanisms are established
 
-## 8. Novelty fragilities
+Geometry, tracker continuity, cosine similarity, person ReID, temporal
+confirmation, state machines, and distractor memories are not individually
+claimed as novel.
 
-### 8.1 Combination may be viewed as incremental
+The thesis contribution must therefore be defended at the level of the
+controller-authority formulation, asymmetric objective, architecture,
+decision policy, and measured system trade-offs.
 
-The individual components are established:
+### 8.2 Abstention creates a real safety–availability trade-off
 
-- geometric consistency;
-- tracker-ID continuity;
-- cosine similarity;
-- person ReID;
-- state machines;
-- temporal confirmation;
-- hard-negative memory.
+Reducing wrong-person publication by suppressing uncertain output can reduce
+target availability.
 
-The thesis must demonstrate that the control-facing problem formulation, asymmetric objective, unified policy, and measured safety benefit form a meaningful contribution.
+Conversely, aggressively recovering continuity can increase wrong-target
+authority.
 
-### 8.2 Availability gains remain sequence-specific
+Results must therefore report both dimensions. An availability improvement is
+not automatically a successful result when wrong-target publication worsens.
 
-TIM-MARS can produce large correct-target and LOST-duration improvements, including on OC-SORT Seq03.
+### 8.3 Interface modularity is not behavioural portability
 
-Those gains are not sufficient for promotion when wrong-target output also increases. Seq03 improves correct duration by `48.831 s` but adds `1.350 s` of wrong-target output.
+TIM-MARS can consume a common tracker-output contract, but its decisions depend
+on the candidate trajectories produced by the upstream detector and tracker.
 
-The final evaluation must therefore preserve the asymmetric objective: wrong-target degradation blocks promotion even when continuity and aggregate correctness improve.
+Every promoted tracker/configuration pairing therefore requires its own
+evidence. Results from one tracker must not be generalized to untested
+trackers.
 
-### 8.3 Architectural modularity does not establish safety portability
+### 8.4 Selected-person evidence has perceptual limits
 
-TIM-MARS accepts a tracker-independent message contract, but the behaviour of its geometry, continuity, appearance, and recovery logic depends on the candidate trajectories produced by the base tracker.
+Appearance evidence can become unreliable under poor crops, limited
+resolution, viewpoint change, occlusion, visually similar clothing, or
+insufficient observations.
 
-The canonical P0.4 clean-freeze evidence rejects one-preset portability:
+Issue #64 specifically tests whether better source resolution improves this
+evidence. The thesis must retain only limitations that remain true after that
+work is complete.
 
-- ByteTrack increases wrong-target output by `0.700 s`;
-- SORT increases wrong-target output by `5.300 s` and target-absence valid output by `0.150 s`;
-- OC-SORT increases target-absence valid output by `0.200 s` on hard re-entry and wrong-target output by `1.350 s` on Seq03;
-- DeepSORT increases wrong-target output by `15.203 s`.
+No appearance method used here establishes biometric identity.
 
-This is not only an appearance-association conflict: the motion-only trackers also show unsafe degradation with the same preset.
+### 8.5 Evaluation authority must become more identity-independent
 
-The safe thesis boundary is therefore:
+Development evaluation includes tracker-ID-dependent annotation paths and
+complementary spatial evaluation.
 
-- TIM-MARS is modular at the software interface;
-- every tracker and configuration pairing requires calibration and held-out safety evaluation;
-- only pairings that satisfy the asymmetric wrong-target criterion may be promoted;
-- appearance-based association trackers remain outside the current safe layering claim;
-- results for DeepSORT must not be generalised to untested StrongSORT, BoT-SORT, or Deep-OC-SORT combinations.
+Issue #25 exists because the final thesis should rely as little as practical
+on the same tracker identity labels whose instability TIM-MARS is designed to
+handle.
 
-### 8.4 A canonical evidence configuration is frozen, not universal
+The final claim must state exactly which oracle and annotation contract support
+each result.
 
-The P0.4 clean tracker matrix and repeated OC-SORT sequence evidence use one recorded canonical configuration with SHA-256:
+### 8.6 Embedded-cost superiority remains unproven
 
-- `16f21b2032135858d2ea7d5d8081536eb24204a3ef0f12efb05a628d626a0655`.
+The intended architecture is motivated partly by selective appearance
+reasoning rather than continuous appearance association for every candidate.
 
-This establishes reproducibility for those experiments. It does not establish that the preset is a universal runtime default or is safe for another tracker, sequence, detector, or operating domain.
+That does not establish a computational advantage.
 
-Tracker-specific calibration remains necessary, and any replacement preset must pass the same held-out wrong-target and target-absence safety criteria.
+Issue #58 and Issue #32 must jointly measure the relevant
+wrong-target–availability–compute trade-off using comparable workloads and
+clearly separated runtime/resource measurements.
 
-### 8.5 Current thesis text must follow the current implementation and evidence
+### 8.7 Formal flight safety is outside scope
 
-The obsolete paper is not an authoritative description of the current
-TIM-MARS algorithm and must not constrain implementation or evaluation values.
+TIM-MARS can reduce or suppress controller-facing wrong-person target
+publication, but it does not formally verify aircraft safety.
 
-The repository source of truth is:
-
-- the current TIM-MARS implementation;
-- `tim_mars_canonical.yaml`;
-- deterministic replay metadata and resolved-runtime fingerprints;
-- the promoted clean P0.4 evidence catalogue and reports.
-
-No current thesis source is tracked in this repository. When the final thesis
-methodology and result tables are written, they must be derived from these
-current sources rather than forced to reproduce the obsolete paper.
-
-### 8.6 Appearance evidence is fragile
-
-Current limitations include:
-
-- latest-image rather than exact timestamp synchronization;
-- appearance cache indexed only by tracker ID;
-- stale cached embeddings;
-- no strong crop-quality validation;
-- possible positive-memory drift;
-- possible hard-negative contamination.
-
-### 8.7 Evaluation remains partly ID-dependent
-
-The primary evaluator depends on tracker IDs matching manual annotations.
-
-The bbox evaluator is spatial, but still uses annotated tracker IDs to locate the reference target box in `/tracks`.
-
-A genuinely identity-independent reference is still required for robust full-pipeline reruns.
-
-### 8.8 Embedded-cost superiority is not established
-
-TIM-MARS is described as lightweight because its state logic is small and its
-appearance work is intended to be selective. The current evidence does not yet
-demonstrate that a complete lightweight-tracker-plus-TIM system is cheaper than
-an integrated appearance-aware tracker.
-
-A valid efficiency claim requires:
-
-- identical source workload and evaluation semantics;
-- per-stage wall-clock and CPU-service-time measurements;
-- queueing, DDS transport, and scheduling-delay separation;
-- ReID invocation and candidate-encoding counts;
-- cache hit, miss, expiry, and reuse statistics;
-- process and relevant thread CPU utilisation;
-- RSS and peak-memory measurements;
-- detector and ReID Hailo contention;
-- sustained temperature, frequency, throttling, and cadence measurements;
-- reproducible power evidence when suitable instrumentation is available;
-- safety and availability results reported jointly with computational cost.
-
-DeepSORT, StrongSORT, BoT-SORT, and related appearance-aware trackers are
-comparison architectures, not the intended TIM-MARS layering. DeepSORT +
-TIM-MARS remains diagnostic because it duplicates appearance-based identity
-reasoning.
+The thesis does not claim certified functional safety, collision avoidance,
+formal controller stability, or elimination of all unsafe commands.
 
 ## 9. Non-claims
 
 TIM-MARS does not claim to:
 
-- recover a person when no correct candidate exists;
-- solve arbitrary long absences;
-- distinguish identical-looking people in all conditions;
-- improve every tracker;
-- improve generic MOT performance;
+- invent generic target-person tracking;
+- invent person ReID or appearance embeddings;
+- replace the multi-object tracker;
+- improve generic MOT metrics in every setting;
+- recover a target when no correct candidate exists;
+- solve arbitrary long-term person re-identification;
+- distinguish identical-looking people in every condition;
 - eliminate all wrong-target publication;
-- provide formal safety guarantees;
-- generalise beyond evaluated people, scenes, and hardware.
+- provide universal tracker portability;
+- provide formal flight-safety guarantees;
+- generalise beyond the evaluated evidence;
+- outperform all appearance-aware trackers;
+- be computationally cheaper than integrated appearance-aware tracking before
+  Issues #58 and #32 provide the required evidence.
 
-## 10. Evidence required for the final thesis claim
+## 10. Final claim gates
 
-Before freezing the complete thesis contribution, complete:
+### Completed or already promoted
 
-1. one final canonical implementation and runtime configuration;
-2. final thesis methodology and result tables derived from the canonical implementation and promoted evidence;
-3. the remaining annotation and evidence-chain consolidation;
-4. geometry-only and appearance ablations;
-5. hard-negative ablation;
-6. recovery-confirmation ablation;
-7. broader identities and held-out sequences;
-8. identity-independent spatial evaluation;
-9. parameter sensitivity analysis;
-10. complete per-stage latency, queueing, cadence, and onboard resource
-    measurements;
-11. selective-appearance invocation, cache, and candidate-encoding accounting;
-12. sustained CPU, memory, thermal, Hailo-contention, transport, and power
-    characterisation where reproducible;
-13. controlled lightweight-tracker-plus-TIM versus integrated
-    appearance-aware-tracker evaluation;
-14. explicit failure-case analysis.
+The final thesis may build on the repository's existing:
 
-The P0.4 clean evidence freeze is complete. It establishes interface modularity, rejects the single-preset safety-portability claim, and defines tracker-specific validation as a design boundary.
+- event and recovery evaluation framework;
+- development component-ablation evidence;
+- broader-sequence evaluation;
+- parameter-sensitivity study;
+- evidence-version and provenance contracts;
+- Hailo appearance-offload implementation and validation from Issue #44;
+- existing controller-authority, coordinate, freshness, and live-system
+  validation evidence.
+
+Exact values and version boundaries must be taken from the promoted evidence
+documents rather than copied into this novelty contract.
+
+### Still open
+
+Before Issue #39 freezes the contribution, the thesis still requires the
+remaining evidence owned by:
+
+1. Issue #25;
+2. Issue #64;
+3. Issue #21, if motion evidence is retained;
+4. Issue #58;
+5. Issue #74;
+6. Issue #32;
+7. Issue #27.
+
+A completed item must not remain described as future work merely because it
+appeared in an older planning version of this document.
 
 ## 11. Target contribution statement
 
-A defensible contribution statement is:
+The target contribution statement is:
 
-> This thesis introduces TIM-MARS, a lightweight selected-target identity validation layer for RGB-only UAV person following. TIM-MARS operates above an existing detector, tracker, and target selector, and combines trusted temporal memory, geometric candidate plausibility, pretrained person appearance evidence, distractor-aware comparison, and conservative publication. Its objective is not generic multi-object tracking accuracy, but reducing unsafe controller-facing wrong-target output under recoverable tracker identity instability.
+> This thesis introduces TIM-MARS, a controller-facing selected-person
+> identity-validation layer for RGB-only UAV person following. Rather than
+> treating a tracker identity as sufficient controller-facing target authority,
+> TIM-MARS decouples generic multi-object association from the decision to
+> publish one operator-selected physical person to the downstream controller.
+> It maintains trusted selected-person evidence across recoverable tracker
+> identity instability and combines temporal continuity, geometric
+> plausibility, pretrained appearance evidence, distractor evidence, and
+> conservative confirmation to either
+> authorise a candidate or abstain from publication when identity evidence is
+> insufficient.
 
-The layer is modular at the tracker-output interface, but safety is not portable by default. Scientific and deployment claims must remain limited to tracker, configuration, and sequence combinations that pass the asymmetric wrong-target and target-absence criteria.
+The associated algorithmic evaluation uses an asymmetric controller-facing
+objective in which wrong-person publication is reported separately from
+temporary target unavailability, together with recovery and failure behaviour.
 
-The intended deployment pairs TIM-MARS with an appearance-free lightweight
-tracker and uses appearance selectively at the validation layer. Any claim that
-this architecture matches or exceeds the safety of integrated appearance-aware
-tracking at lower onboard cost must remain provisional until the controlled
-comparison and expanded embedded-resource evidence are complete.
+The embedded contribution evaluates whether selective identity reasoning above
+a computationally practical tracker can operate fully onboard and provide a
+useful wrong-target–availability–compute operating point relative to
+integrated appearance-aware tracking.
+
+The first paragraph describes the intended architectural contribution. The
+second describes the evaluation contribution. The third remains provisional
+until Issues #58 and #32 provide the required comparative and embedded-system
+evidence.
+
+Final wording must be frozen only under Issue #39 after the prospective
+held-out evidence and remaining embedded-system results are available.

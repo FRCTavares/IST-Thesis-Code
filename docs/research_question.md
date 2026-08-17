@@ -30,8 +30,9 @@ The intended benefit has two parts:
 - reduce controller-facing wrong-target publication.
 
 Temporary lost or suppressed output is acceptable when identity evidence is
-insufficient because publishing no target is safer than publishing a plausible
-distractor.
+insufficient because, for the controller-facing identity objective considered
+here, abstaining from target publication is preferable to authorising a
+plausible distractor.
 
 ## Embedded-deployment subquestion
 
@@ -101,6 +102,22 @@ corresponds to a person other than the operator-selected physical target.
 
 Ground-truth annotations and evaluation oracles are used offline only. The
 live system does not receive a reference identity or evaluation oracle.
+
+### Safety-oriented controller-facing terminology
+
+Throughout this repository, terms such as *safer*, *safety criterion*, and
+*safety–availability trade-off* refer specifically to the measured risk of
+publishing the wrong physical person to the downstream controller.
+
+They do not imply formal verification, certified functional safety, collision
+avoidance, complete vehicle safety, or a proof that the aircraft cannot issue
+an unsafe command.
+
+The controller-facing identity objective is asymmetric: wrong-person
+publication is treated as more undesirable than temporary suppression or loss
+of target authority. The thesis must therefore report wrong-target and
+lost/suppressed behaviour separately rather than collapsing them into one
+generic tracking score.
 
 ### Recoverable identity instability
 
@@ -185,20 +202,46 @@ embedded-deployment evidence is complete.
 
 ## Literature-gap boundary
 
-The intended literature gap is the combination of:
+The literature gap is not claimed to arise merely from combining person
+detection, multi-object tracking, appearance embeddings, temporal memory, or
+re-identification. These are established research areas, and recent
+target-person tracking and robot-following work already addresses designated
+person persistence, occlusion, reappearance, and appearance-supported
+re-identification.
 
-- fully onboard RGB selected-person following;
-- a Raspberry Pi 5-class companion computer;
-- Hailo-accelerated neural inference;
-- a computationally lightweight tracker;
-- appearance-supported selected-target identity recovery;
-- controller-facing output without external inference.
+The narrower thesis question is whether generic multi-object association can
+be separated from **controller-facing selected-person authority** on a
+resource-constrained UAV.
 
-The thesis must support this gap using a documented literature review.
+In the investigated architecture, a tracker ID is treated as association
+evidence rather than as sufficient authority for controller-facing target publication.
+TIM-MARS independently decides whether the currently proposed target is
+sufficiently supported as the operator-selected physical person and may
+deliberately abstain from publication when identity evidence is insufficient.
 
-It must use wording such as "to the best of our knowledge" unless the search
-method justifies a stronger statement. It must not claim that no related
-Raspberry Pi, Jetson, UAV-tracking, ReID, or edge-inference system exists.
+The research position is therefore defined by:
+
+- separation between tracker association and selected-person controller
+  authority;
+- persistent evidence about one operator-selected physical person across
+  tracker-ID instability;
+- conservative abstention and bounded recovery when identity is ambiguous;
+- asymmetric controller-facing evaluation that distinguishes wrong-person
+  publication from temporary target unavailability;
+- selective appearance reasoning within a fully onboard,
+  resource-constrained UAV perception architecture;
+- measured safety–availability–compute trade-offs against relevant tracking
+  alternatives.
+
+The thesis must position this contribution against target-person tracking,
+person-following, MOT-plus-ReID, appearance-aware tracking, and embedded UAV
+perception literature.
+
+Any novelty statement based on literature coverage must remain qualified, for
+example with "to the best of our knowledge", unless the documented search
+method supports a stronger statement. The thesis must not claim that no
+related target-person, Raspberry Pi, Jetson, UAV-tracking, ReID, or
+edge-inference system exists.
 
 ## Claim exclusions
 
@@ -216,13 +259,29 @@ The frozen questions do not assert:
 
 ## Final framing
 
-The thesis investigates whether a resource-constrained onboard platform can
-achieve useful selected-person following by combining:
+The thesis investigates whether a resource-constrained onboard UAV can use a
+computationally practical multi-object tracker without granting tracker
+association labels direct controller-facing target authority.
 
-- fast neural inference on a dedicated accelerator;
-- a computationally practical tracker;
-- conservative post-tracker identity memory.
+The proposed architecture separates two decisions:
 
-The contribution is the complete architecture and its measured trade-offs,
-not an unsupported claim that every lightweight tracker becomes reliable in
-every environment.
+1. the tracker estimates candidate trajectories and temporary association
+   identities;
+2. TIM-MARS decides whether one candidate is sufficiently supported as the
+   operator-selected physical person for controller-facing publication.
+
+TIM-MARS therefore treats tracker identity as evidence rather than authority.
+It combines persistent selected-person evidence with conservative publication:
+when the available evidence is insufficient, the system may intentionally
+withhold target authority instead of forcing a plausible association.
+
+The algorithmic contribution must be judged through the resulting
+wrong-target, correct-target, suppression, recovery, and failure behaviour.
+The embedded contribution must be judged separately through measured
+throughput, latency, resource use, thermal behaviour, power, and comparison
+with relevant appearance-aware tracking architectures.
+
+The final contribution is the architecture, decision policy, evaluation
+framing, and measured trade-offs. It is not a claim that every lightweight
+tracker becomes reliable, that TIM-MARS is universally portable, or that the
+system provides formal flight-safety guarantees.
