@@ -124,13 +124,15 @@ candidate exists.
 The target deployment extends Hailo use from detector inference to
 appearance-embedding inference.
 
-The Hailo appearance claim is not complete until Issue #44 demonstrates:
+Issue #44 owned the dedicated Hailo appearance-offload implementation and
+validation work and is now closed as completed. Its evidence must therefore be
+treated as completed embedded-system evidence rather than as a future
+requirement.
 
-- model conversion and deployment;
-- acceptable quantisation or embedding degradation;
-- stable identity-ranking behaviour;
-- detector and appearance scheduling on the accelerator;
-- no unacceptable wrong-target regression.
+The final embedded-deployment conclusion remains broader than Issue #44 alone:
+the complete promoted onboard architecture still requires the end-to-end
+runtime, resource, thermal, power, and sustained-operation evidence owned by
+Issue #32.
 
 ## Evidence and dependency boundaries
 
@@ -167,11 +169,14 @@ for those measurements.
 
 ### Hailo appearance evidence
 
-Issue #44 owns selection of the appearance approach and promotion of the
-selected model to Hailo.
+Issue #44 owned selection of the appearance approach, promotion to Hailo, and
+the associated quantisation, scheduling, contention, and safety validation.
+That issue is closed as completed.
 
-Until Issue #44 closes, the thesis may describe Hailo appearance offload as a
-research objective and implementation target, not a completed result.
+This closes the dedicated appearance-offload implementation dependency, but it
+does not by itself establish the complete embedded-deployment subquestion.
+Issue #32 still owns the final end-to-end throughput, latency, CPU, accelerator,
+memory, thermal, power, and sustained-runtime characterisation.
 
 ### Final thesis claim
 
@@ -205,7 +210,6 @@ The frozen questions do not assert:
 - recovery through arbitrary long absence;
 - discrimination between identical-looking people in every condition;
 - formal flight-safety guarantees;
-- completed Hailo appearance inference;
 - completed held-out generalisation;
 - completed runtime, thermal, or power validation;
 - superiority over all Jetson- or workstation-based systems.
