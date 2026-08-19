@@ -4,7 +4,7 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
-Last reconciled with GitHub: **17 August 2026**.
+Last reconciled with GitHub: **19 August 2026**.
 
 Open executable issues: **21**.
 
@@ -68,6 +68,7 @@ Open executable issues: **21**.
 
 4. [ ] [#25 — P1.10 Improve bbox evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/25) — HIGHEST PRIORITY
    - phase 6; experiment; use the transform contract from #53.
+   - 19 August priority boundary: #25 remains thesis-critical for the identity-independent evaluator, physical-target reference contract, and valid physical-target annotations. Further annotation-UI feature work, refactoring, convenience work, bag-browser improvements, and visual polish are paused. The current UI is an annotation instrument, not a thesis contribution; modify it again only when a concrete defect blocks scientifically valid #25 evidence. Manual annotation may proceed in parallel once the existing tool is sufficient.
 
 5. [ ] [#64 — P1.9+ Evaluate higher-resolution source frames for appearance crops while retaining 640x640 Hailo detection](https://github.com/FRCTavares/IST-Thesis-Code/issues/64) — HIGHEST PRIORITY
 
@@ -81,6 +82,7 @@ Open executable issues: **21**.
       safety metrics and the canonical Issue #32 safety–availability–cost
       methodology. DeepSORT + TIM-MARS is diagnostic rather than the intended
       architecture.
+    - add one deliberately simple literature-aligned post-MOT Target-ReID baseline: ByteTrack candidates; the same MARS model and crop/preprocessing contract used by TIM-MARS; highest target-appearance similarity above a development-calibrated threshold; LOST otherwise. Exclude TIM-MARS geometry fusion, hard-negative policy, temporal recovery confirmation, state-machine authority, and trusted-only memory-update logic. This isolates whether full TIM-MARS provides controller-facing value beyond ordinary Target-ReID rather than merely beyond the raw tracker.
 
 8. [ ] [#74 — P1.x State-aware selected-person following and bounded visual recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/74) — HIGHEST PRIORITY
     - phase 10; live-system; execute after #25 → #64 → #21 → #58 and before #32.
