@@ -104,6 +104,21 @@ person-following, MOT-plus-ReID, appearance-aware trackers, and embedded UAV
 perception systems. The thesis does not claim that these neighbouring research
 problems are new.
 
+Open-set person ReID provides an additional prior-art boundary. Liao et al.
+(2014) already separate determining whether a queried identity is present from
+identifying which accepted gallery identity matches it. Robot person-following
+work such as Ye et al. (2024) further establishes target/non-target appearance
+experience, confidence-threshold target designation, online adaptation, and an
+explicit target-ReID lifecycle.
+
+The thesis therefore does not claim novelty from representing target absence,
+rejecting all visible candidates, maintaining target/non-target appearance
+evidence, or adapting target appearance memory in isolation. The remaining
+question is whether the complete controller-facing authority policy, asymmetric
+correct/wrong/LOST evaluation, and selectively executed embedded architecture
+together provide a useful and experimentally demonstrated contribution.
+
+
 ## 4. Intended contribution
 
 The intended contribution is a **controller-facing selected-person
