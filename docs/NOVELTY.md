@@ -119,6 +119,24 @@ correct/wrong/LOST evaluation, and selectively executed embedded architecture
 together provide a useful and experimentally demonstrated contribution.
 
 
+Broader perception-assurance literature provides another important prior-art
+boundary. Runtime-assurance and supervisory architectures already separate
+high-performance or difficult-to-verify autonomy from a distinct layer that
+decides when intervention is required. Perception Simplex applies this principle
+directly to autonomous-vehicle perception using a verifiable safety layer, while
+task-aware perception-risk work evaluates perception failures according to their
+effect on downstream motion planning.
+
+TIM-MARS therefore does not claim novelty from supervisory separation itself,
+nor from the general idea that perception failures should be weighted according
+to downstream task consequences. It is not a Runtime Assurance or Perception
+Simplex architecture: it provides no verified backup perception system, proven
+safe invariant, deterministic fault-tolerance guarantee, or formal safety
+assurance. Its narrower scientific question remains whether selected-person
+identity evidence and conservative publication at the tracker-to-controller
+boundary provide a useful empirically measured wrong-target--availability--
+compute trade-off.
+
 ## 4. Intended contribution
 
 The intended contribution is a **controller-facing selected-person
