@@ -16,7 +16,9 @@ frontend file.
 
 from __future__ import annotations
 
+import copy
 import importlib.util
+import inspect
 import json
 import sys
 from pathlib import Path
@@ -1151,3 +1153,260 @@ def test_update_physical_ref_frame_still_resyncs_draft_via_the_same_shared_funct
 def test_load_selected_never_calls_save():
     body = _load_selected_body()
     assert "physicalRefSave(" not in body
+
+
+# =============================================================================
+# Assisted M4B review: evaluator-backed effective preview
+# =============================================================================
+
+
+def _two_anchor_preview_payload(*, interpolate=True, changed_set=False):
+    provenance = _artifact_payload()["provenance"]
+    provenance["evaluation_window"] = {"start_s": 0.0, "end_s": 10.0}
+    first_distractors = [
+        _distractor("phys_d001", [20.0, 0.0, 30.0, 10.0]),
+        _distractor("phys_d002", [40.0, 0.0, 50.0, 10.0]),
+    ]
+    last_distractors = [
+        _distractor("phys_d001", [30.0, 10.0, 40.0, 20.0]),
+        _distractor("phys_d002", [50.0, 10.0, 60.0, 20.0]),
+    ]
+    if changed_set:
+        last_distractors = last_distractors[:1]
+    return {
+        "provenance": provenance,
+        "samples": [
+            {
+                "t_s": 0.0,
+                "identity_state": "present_scored",
+                "identity_context": "distractors_complete",
+                "target_bbox_xyxy": [0.0, 0.0, 10.0, 10.0],
+                "distractors": first_distractors,
+                "interpolate_from_previous": False,
+                "notes": "",
+            },
+            {
+                "t_s": 10.0,
+                "identity_state": "present_scored",
+                "identity_context": "distractors_complete",
+                "target_bbox_xyxy": [10.0, 10.0, 20.0, 20.0],
+                "distractors": last_distractors,
+                "interpolate_from_previous": interpolate,
+                "notes": "",
+            },
+        ],
+    }
+
+
+def test_preview_reuses_the_evaluator_canonical_resolver():
+    evaluator = sys.modules["physical_target_bbox_evaluation_v2"]
+    assert UI2.resolve_reference_interval is evaluator.resolve_reference_interval
+    source = inspect.getsource(UI2.resolve_effective_reference_preview)
+    assert "resolve_reference_interval(artifact.samples, t)" in source
+
+
+def test_preview_classifies_exact_keyframes_and_final_right_boundary():
+    payload = _two_anchor_preview_payload()
+    previews = UI2.build_effective_reference_previews(payload, [0.0, 10.0])
+    assert [item["classification"] for item in previews] == [
+        "explicit_keyframe",
+        "explicit_keyframe",
+    ]
+    assert previews[1]["t_s"] == 10.0
+    assert previews[1]["target_bbox_xyxy"] == [10.0, 10.0, 20.0, 20.0]
+
+
+def test_preview_interpolates_target_with_evaluator_geometry():
+    payload = _two_anchor_preview_payload()
+    preview = UI2.build_effective_reference_previews(payload, [5.0])[0]
+    assert preview["classification"] == "interpolated"
+    assert preview["target_bbox_xyxy"] == pytest.approx([5.0, 5.0, 15.0, 15.0])
+
+
+def test_preview_interpolates_distractors_by_stable_person_ref():
+    payload = _two_anchor_preview_payload()
+    preview = UI2.build_effective_reference_previews(payload, [5.0])[0]
+    by_ref = {
+        entry["person_ref"]: entry["bbox_xyxy"]
+        for entry in preview["distractors"]
+    }
+    assert sorted(by_ref) == ["phys_d001", "phys_d002"]
+    assert by_ref["phys_d001"] == pytest.approx([25.0, 5.0, 35.0, 15.0])
+    assert by_ref["phys_d002"] == pytest.approx([45.0, 5.0, 55.0, 15.0])
+
+
+def test_changed_person_set_without_interpolation_is_previewed_as_gap():
+    payload = _two_anchor_preview_payload(interpolate=False, changed_set=True)
+    preview = UI2.build_effective_reference_previews(payload, [5.0])[0]
+    assert preview["classification"] == "reference_gap"
+    assert preview["target_bbox_xyxy"] is None
+    assert preview["distractors"] == []
+
+
+def test_changed_person_set_cannot_claim_preview_interpolation():
+    payload = _two_anchor_preview_payload(interpolate=True, changed_set=True)
+    with pytest.raises(PTR2.PhysicalReferenceValidationError, match="correspondence"):
+        UI2.build_effective_reference_previews(payload, [5.0])
+
+
+def test_preview_classifies_absent_unavailable_and_gap_without_geometry():
+    provenance = _artifact_payload()["provenance"]
+    provenance["evaluation_window"] = {"start_s": 0.0, "end_s": 6.0}
+    payload = {
+        "provenance": provenance,
+        "samples": [
+            {
+                "t_s": 0.0,
+                "identity_state": "absent",
+                "identity_context": None,
+                "target_bbox_xyxy": None,
+                "distractors": [],
+                "interpolate_from_previous": False,
+                "notes": "",
+            },
+            {
+                "t_s": 2.0,
+                "identity_state": "present_reference_unavailable",
+                "identity_context": None,
+                "target_bbox_xyxy": None,
+                "distractors": [],
+                "interpolate_from_previous": False,
+                "notes": "",
+            },
+            {
+                "t_s": 4.0,
+                "identity_state": "present_scored",
+                "identity_context": "target_only",
+                "target_bbox_xyxy": [0.0, 0.0, 10.0, 10.0],
+                "distractors": [],
+                "interpolate_from_previous": False,
+                "notes": "",
+            },
+            {
+                "t_s": 6.0,
+                "identity_state": "present_scored",
+                "identity_context": "target_only",
+                "target_bbox_xyxy": [2.0, 0.0, 12.0, 10.0],
+                "distractors": [],
+                "interpolate_from_previous": False,
+                "notes": "",
+            },
+        ],
+    }
+    previews = UI2.build_effective_reference_previews(payload, [1.0, 3.0, 5.0])
+    assert [item["classification"] for item in previews] == [
+        "absent",
+        "present_reference_unavailable",
+        "reference_gap",
+    ]
+    assert all(item["target_bbox_xyxy"] is None for item in previews)
+
+
+def test_preview_batch_does_not_mutate_artifact_payload():
+    payload = _two_anchor_preview_payload()
+    original = copy.deepcopy(payload)
+    UI2.build_effective_reference_previews(payload, [0.0, 1.0, 5.0, 10.0])
+    assert payload == original
+
+
+# =============================================================================
+# Assisted M4B review: ephemeral optical-flow geometry proposals
+# =============================================================================
+
+
+def test_optical_flow_proposal_preserves_human_refs_and_translates_geometry():
+    rng = UI2.np.random.default_rng(25)
+    base = rng.integers(0, 256, size=(90, 120), dtype=UI2.np.uint8)
+    first = UI2.cv2.cvtColor(base, UI2.cv2.COLOR_GRAY2BGR)
+    transform = UI2.np.float32([[1.0, 0.0, 4.0], [0.0, 1.0, 3.0]])
+    second = UI2.cv2.warpAffine(first, transform, (120, 90))
+
+    target = [10.0, 10.0, 40.0, 50.0]
+    distractors = [
+        _distractor("phys_d002", [70.0, 20.0, 105.0, 60.0]),
+        _distractor("phys_d001", [45.0, 30.0, 65.0, 70.0]),
+    ]
+    original_target = copy.deepcopy(target)
+    original_distractors = copy.deepcopy(distractors)
+
+    proposal = UI2.propose_geometry_with_optical_flow(
+        [first, second], 0, 1, target, distractors
+    )
+
+    assert proposal["method"] == "sparse_lk_median_translation"
+    assert proposal["accepted"] is False
+    assert proposal["identity_source"] == "human_anchor_person_refs_only"
+    assert proposal["target_bbox_xyxy"] == pytest.approx(
+        [14.0, 13.0, 44.0, 53.0], abs=0.8
+    )
+    assert [d["person_ref"] for d in proposal["distractors"]] == [
+        "phys_d001",
+        "phys_d002",
+    ]
+    assert target == original_target
+    assert distractors == original_distractors
+
+
+def test_optical_flow_proposal_refuses_long_unreviewed_jump():
+    image = UI2.np.zeros((20, 20, 3), dtype=UI2.np.uint8)
+    images = [image] * (UI2.MAX_OPTICAL_FLOW_FRAME_DISTANCE + 2)
+    with pytest.raises(UI2.PhysicalReferenceUIError, match="maximum"):
+        UI2.propose_geometry_with_optical_flow(
+            images,
+            0,
+            UI2.MAX_OPTICAL_FLOW_FRAME_DISTANCE + 1,
+            [1.0, 1.0, 10.0, 15.0],
+            [],
+        )
+
+
+def test_proposal_request_cannot_modify_or_save_reference():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRequestProposal")
+    assert "physicalRefSamples" not in body
+    assert "physicalRefUpdateActiveSample" not in body
+    assert "physicalRefSave" not in body
+    assert 'fetch("/api/physical_reference_v2/propose"' in body
+
+
+def test_preview_request_cannot_modify_samples_or_save_reference():
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefRefreshEffectivePreview")
+    assert "physicalRefSamples[" not in body
+    assert "physicalRefSamples =" not in body
+    assert "physicalRefSave" not in body
+    assert 'fetch("/api/physical_reference_v2/preview"' in body
+
+
+def test_proposal_acceptance_is_explicit_in_memory_and_never_saves_json():
+    assert 'onclick="physicalRefAcceptProposalAsAnchor()"' in HTML_SOURCE
+    body = _extract_js_function_body(JS_SOURCE, "physicalRefAcceptProposalAsAnchor")
+    assert "physicalRefCopyProposalToDraft()" in body
+    assert "physicalRefUpdateActiveSample()" in body
+    assert "physicalRefSave" not in body
+    assert "JSON is still unchanged" in body
+
+
+def test_effective_preview_toggle_defaults_on_and_styles_are_distinct():
+    marker = 'id="physicalRefShowEffective"'
+    assert marker in HTML_SOURCE
+    tag_start = HTML_SOURCE.rfind("<input", 0, HTML_SOURCE.index(marker))
+    tag_end = HTML_SOURCE.index(">", HTML_SOURCE.index(marker))
+    tag = HTML_SOURCE[tag_start:tag_end]
+    assert "checked" in tag
+    assert 'onchange="physicalRefOnEffectiveToggle()"' in tag
+
+    repaint = _extract_js_function_body(JS_SOURCE, "physicalRefRepaint")
+    assert '"#22d3ee"' in repaint
+    assert '"#ffe066"' in repaint
+    assert "ctx.setLineDash([10, 7])" in repaint
+    assert "ctx.setLineDash([3, 6])" in repaint
+
+
+def test_proposal_backend_has_no_tracker_or_detector_identity_inputs():
+    signature = inspect.signature(UI2.propose_geometry_with_optical_flow)
+    assert set(signature.parameters) == {
+        "images",
+        "anchor_frame_index",
+        "target_frame_index",
+        "target_bbox_xyxy",
+        "distractors",
+    }

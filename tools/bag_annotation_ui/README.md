@@ -38,6 +38,16 @@ renderers under `tools/bag/`.
 The UI helps the user create and edit annotation files, but annotation choices
 must remain manual. Do not generate final annotation CSVs automatically.
 
+The Issue #25 `Physical reference v2` workspace can display the evaluator's
+effective interpolated reference during normal playback. It can also generate a
+paused-frame, image-only optical-flow bbox proposal from a nearby explicit
+human anchor. The proposal preserves human-established `phys_dNNN`
+correspondence, is visually distinct from accepted geometry, and is never
+accepted or saved automatically. Its IoU/centre/scale disagreement indicators
+prioritise human review only; they are not evaluation criteria. No detector,
+tracker identity, RAW/TIM target output, or TIM-MARS output constructs the
+physical reference.
+
 ## Typical launch command
 
 Use the project-standard annotation UI command from the repository root after

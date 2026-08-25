@@ -3706,6 +3706,88 @@ body.annotationWorkspaceMode .annMiniDelete {
   vertical-align: middle;
 }
 
+.physicalRefReviewPanel {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #2f3c45;
+  border-radius: 9px;
+  background: #111820;
+}
+
+.physicalRefReviewToggleRow,
+.physicalRefAssistActions,
+.physicalRefReviewThresholds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.physicalRefLegend {
+  color: #a8b6c2;
+  font-size: 11px;
+}
+
+.physicalRefEffectiveStatus,
+.physicalRefProposalStatus {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: #171717;
+  color: #d7d7d7;
+  font-size: 12px;
+}
+
+.physicalRefStatus-interpolated {
+  border-left: 4px solid #22d3ee;
+}
+
+.physicalRefStatus-explicit-keyframe {
+  border-left: 4px solid #33ff66;
+}
+
+.physicalRefStatus-reference-gap,
+.physicalRefStatus-present-reference-unavailable {
+  border-left: 4px solid #ff9f43;
+}
+
+.physicalRefStatus-absent {
+  border-left: 4px solid #a78bfa;
+}
+
+.physicalRefStatusPending {
+  opacity: 0.8;
+}
+
+.physicalRefAssistActions {
+  margin-top: 9px;
+}
+
+.physicalRefReviewThresholds {
+  margin-top: 8px;
+  color: #bfc7ce;
+  font-size: 11px;
+}
+
+.physicalRefReviewThresholds label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.physicalRefReviewThresholds input {
+  width: 72px;
+}
+
+.physicalRefProposalWarning {
+  border-left: 4px solid #ff5d5d;
+  color: #ffd7d7;
+}
+
+.physicalRefProposalAvailable {
+  border-left: 4px solid #ffe066;
+}
+
 .physicalRefPersonRefPalette {
   margin-top: 10px;
 }
