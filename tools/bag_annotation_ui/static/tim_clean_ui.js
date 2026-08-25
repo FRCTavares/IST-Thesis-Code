@@ -104,6 +104,7 @@ function changeLoadedBag() {
 function setLoadedWorkspaceVisible(isVisible) {
   const normalWorkspace = document.getElementById("loadedWorkspace");
   const annotationWorkspace = document.getElementById("annotationWorkspace");
+  const physicalRefWorkspace = document.getElementById("physicalRefWorkspace");
   const playbackDock = document.getElementById("playbackDock");
 
   document.body.classList.toggle("bagLoaded", !!isVisible);
@@ -116,25 +117,40 @@ function setLoadedWorkspaceVisible(isVisible) {
   if (!isVisible) {
     if (normalWorkspace) normalWorkspace.hidden = true;
     if (annotationWorkspace) annotationWorkspace.hidden = true;
+    if (physicalRefWorkspace) physicalRefWorkspace.hidden = true;
     document.body.classList.remove("annotationWorkspaceMode");
+    document.body.classList.remove("physicalRefWorkspaceMode");
     return;
   }
 
-  const annotationMode = shouldOpenAnnotationWorkspace();
+  // Issue #25's mode is handled by tim_physical_reference_ui.js when present;
+  // this file only needs to know whether to hide the two pre-existing panels.
+  const physicalMode = (
+    typeof window.shouldOpenPhysicalRefWorkspace === "function"
+    && window.shouldOpenPhysicalRefWorkspace()
+  );
+  const annotationMode = !physicalMode && shouldOpenAnnotationWorkspace();
 
   if (normalWorkspace) {
-    normalWorkspace.hidden = annotationMode;
+    normalWorkspace.hidden = annotationMode || physicalMode;
   }
   if (annotationWorkspace) {
     annotationWorkspace.hidden = !annotationMode;
   }
+  if (physicalRefWorkspace) {
+    physicalRefWorkspace.hidden = !physicalMode;
+  }
 
   document.body.classList.toggle("annotationWorkspaceMode", annotationMode);
+  document.body.classList.toggle("physicalRefWorkspaceMode", physicalMode);
 
   updateLoadedSummary();
 
   if (annotationMode) {
     setTimeout(updateAnnotationFrame, 0);
+  }
+  if (physicalMode && typeof window.updatePhysicalRefFrame === "function") {
+    setTimeout(window.updatePhysicalRefFrame, 0);
   }
 }
 
@@ -894,6 +910,14 @@ function updateFrame() {
 
   if (document.body.classList.contains("annotationWorkspaceMode")) {
     updateAnnotationFrame();
+    return;
+  }
+
+  if (
+    document.body.classList.contains("physicalRefWorkspaceMode")
+    && typeof window.updatePhysicalRefFrame === "function"
+  ) {
+    window.updatePhysicalRefFrame();
     return;
   }
 

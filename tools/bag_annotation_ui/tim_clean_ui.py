@@ -22,6 +22,27 @@ from tim_ui_annotations import (
     load_annotation_rows,
     save_annotation_rows,
 )
+from tim_ui_physical_reference import (
+    PhysicalReferenceUIError,
+    discover_physical_references,
+    image_topic_hint,
+    load_physical_reference_for_ui,
+    resolve_coordinate_convention,
+    save_physical_reference_for_ui,
+)
+from tim_ui_physical_reference_v2 import (
+    load_physical_reference_v2_for_ui,
+    next_person_ref,
+    save_physical_reference_v2_for_ui,
+)
+from physical_target_reference import (  # noqa: E402  (path set up by tim_ui_physical_reference)
+    CONTRACT_VERSION as PHYSICAL_REFERENCE_CONTRACT_VERSION,
+    PhysicalReferenceValidationError,
+)
+from physical_target_reference_v2 import (  # noqa: E402  (path set up by tim_ui_physical_reference_v2)
+    CONTRACT_VERSION as PHYSICAL_REFERENCE_V2_CONTRACT_VERSION,
+    SCHEMA_VERSION as PHYSICAL_REFERENCE_V2_SCHEMA_VERSION,
+)
 import uvicorn
 
 # Import the backend API routes used by the clean annotation UI.
@@ -99,6 +120,150 @@ async def annotation_save_api(request: Request):
         "message": f"Saved {len(normalised)} annotation intervals to {rel}",
     }
 
+
+
+@app.get("/api/physical_reference/list")
+def physical_reference_list_api():
+    return {
+        "paths": discover_physical_references(REPO_ROOT),
+        "contract_version": PHYSICAL_REFERENCE_CONTRACT_VERSION,
+    }
+
+
+@app.post("/api/physical_reference/load")
+async def physical_reference_load_api(request: Request):
+    payload = await request.json()
+    path_text = str(payload.get("path", "")).strip()
+    if not path_text:
+        return {"ok": False, "error": "No physical-reference path provided."}
+
+    try:
+        data = load_physical_reference_for_ui(path_text, REPO_ROOT)
+    except (
+        PhysicalReferenceUIError,
+        PhysicalReferenceValidationError,
+        FileNotFoundError,
+    ) as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {"ok": True, **data}
+
+
+@app.post("/api/physical_reference/save")
+async def physical_reference_save_api(request: Request):
+    payload = await request.json()
+    path_text = str(payload.get("path", "")).strip()
+    artifact = payload.get("artifact")
+
+    if not path_text:
+        return {"ok": False, "error": "No output physical-reference path provided."}
+    if not isinstance(artifact, dict):
+        return {"ok": False, "error": "artifact must be an object."}
+
+    try:
+        result = save_physical_reference_for_ui(path_text, artifact, REPO_ROOT)
+    except (PhysicalReferenceUIError, PhysicalReferenceValidationError) as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {
+        "ok": True,
+        **result,
+        "message": f"Saved {result['sample_count']} physical-reference samples to {result['path']}",
+    }
+
+
+@app.post("/api/physical_reference/image_topic_hint")
+async def physical_reference_image_topic_hint_api(request: Request):
+    payload = await request.json()
+    bag_text = str(payload.get("bag", "")).strip()
+    if not bag_text:
+        return {"ok": False, "error": "No bag path provided."}
+
+    bag_path = REPO_ROOT / bag_text
+    return {"ok": True, "topic": image_topic_hint(bag_path)}
+
+
+@app.post("/api/physical_reference/resolve_coordinate_convention")
+async def physical_reference_resolve_coordinate_convention_api(request: Request):
+    payload = await request.json()
+    bag_text = str(payload.get("bag", "")).strip()
+    if not bag_text:
+        return {"ok": False, "error": "No bag path provided."}
+
+    bag_path = REPO_ROOT / bag_text
+    resolved = resolve_coordinate_convention(str(bag_path))
+    return {"ok": True, "resolved": resolved}
+
+
+# --- v2 (tim_physical_target_bbox_v2) routes --------------------------------
+#
+# Additive alongside the v1 routes above, not a replacement -- v1's own
+# routes remain reachable and untouched. New physical-reference artifacts
+# created through the normal UI workflow use these v2 routes exclusively.
+# Discovery (/api/physical_reference/list), the coordinate-convention
+# resolver, and the image-topic hint above are schema-version-independent
+# (they inspect the bag or the filesystem, not an artifact's own schema
+# version) and are reused as-is -- not duplicated here.
+
+
+@app.get("/api/physical_reference_v2/info")
+def physical_reference_v2_info_api():
+    return {
+        "contract_version": PHYSICAL_REFERENCE_V2_CONTRACT_VERSION,
+        "schema_version": PHYSICAL_REFERENCE_V2_SCHEMA_VERSION,
+    }
+
+
+@app.post("/api/physical_reference_v2/load")
+async def physical_reference_v2_load_api(request: Request):
+    payload = await request.json()
+    path_text = str(payload.get("path", "")).strip()
+    if not path_text:
+        return {"ok": False, "error": "No physical-reference path provided."}
+
+    try:
+        data = load_physical_reference_v2_for_ui(path_text, REPO_ROOT)
+    except (
+        PhysicalReferenceUIError,
+        PhysicalReferenceValidationError,
+        FileNotFoundError,
+    ) as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {"ok": True, **data}
+
+
+@app.post("/api/physical_reference_v2/save")
+async def physical_reference_v2_save_api(request: Request):
+    payload = await request.json()
+    path_text = str(payload.get("path", "")).strip()
+    artifact = payload.get("artifact")
+
+    if not path_text:
+        return {"ok": False, "error": "No output physical-reference path provided."}
+    if not isinstance(artifact, dict):
+        return {"ok": False, "error": "artifact must be an object."}
+
+    try:
+        result = save_physical_reference_v2_for_ui(path_text, artifact, REPO_ROOT)
+    except (PhysicalReferenceUIError, PhysicalReferenceValidationError) as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {
+        "ok": True,
+        **result,
+        "message": f"Saved {result['sample_count']} physical-reference samples to {result['path']}",
+    }
+
+
+@app.post("/api/physical_reference_v2/next_person_ref")
+async def physical_reference_v2_next_person_ref_api(request: Request):
+    payload = await request.json()
+    known_refs = payload.get("known_refs")
+    if not isinstance(known_refs, list):
+        return {"ok": False, "error": "known_refs must be a list."}
+
+    return {"ok": True, "person_ref": next_person_ref([str(r) for r in known_refs])}
 
 
 @app.get("/")
