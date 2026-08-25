@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <title>TIM-MARS Clean UI</title>
-  <link rel="stylesheet" href="/static/tim_clean_ui.css?v=issue25_assisted_review_1">
+  <link rel="stylesheet" href="/static/tim_clean_ui.css?v=issue25_sequence_propagation_1">
 
 </head>
 <body>
@@ -269,15 +269,37 @@
             No physical-reference artifact loaded.
           </div>
 
+          <div class="physicalRefSequenceAssist">
+            <div class="physicalRefAssistActions">
+              <button type="button" onclick="physicalRefStartSequenceProposals()">
+                Generate/refresh sequence proposals
+              </button>
+              <button type="button" onclick="physicalRefPreviousReviewRegion()">
+                Previous review region
+              </button>
+              <button type="button" onclick="physicalRefNextReviewRegion()">
+                Next review region
+              </button>
+              <button type="button" onclick="physicalRefClearSequenceProposals()">
+                Clear cached proposals
+              </button>
+            </div>
+            <progress id="physicalRefSequenceProgress" max="1" value="0"></progress>
+            <div id="physicalRefSequenceStatus" class="physicalRefSequenceStatus">
+              Sequence proposals have not been generated.
+            </div>
+            <div id="physicalRefSuggestedAnchors" class="physicalRefSuggestedAnchors"></div>
+          </div>
+
           <div class="physicalRefAssistActions">
             <button type="button" onclick="physicalRefRequestProposal()">
               Generate nearby optical-flow proposal
             </button>
             <button type="button" onclick="physicalRefCopyProposalToDraft()">
-              Use proposal as editable draft
+              Use current proposal as editable draft
             </button>
             <button type="button" onclick="physicalRefAcceptProposalAsAnchor()">
-              Accept proposal as in-memory anchor
+              Accept current proposal as in-memory anchor
             </button>
           </div>
           <div class="physicalRefReviewThresholds">
@@ -298,9 +320,10 @@
             No automatic proposal generated for this frame.
           </div>
           <div class="physicalRefHint">
-            Optical flow uses only source images and geometry from a nearby
-            explicit human anchor. It never assigns identity, never reads
-            tracker/TIM output, and never changes or saves JSON without
+            Sequential and nearby optical flow use only cached source images
+            and geometry from explicit human anchors. They preserve the exact
+            target / phys_dNNN labels, stop on insufficient evidence, never
+            read tracker/RAW/TIM identity, and never change or save JSON without
             separate explicit human actions.
           </div>
         </div>
@@ -550,7 +573,7 @@ window.TIM_CLEAN_UI_BAGS = __BAGS_JSON__;
 window.TIM_CLEAN_UI_ANNOTATIONS = __ANNOTATIONS_JSON__;
 </script>
 <script src="/static/tim_clean_ui.js?v=annotation_workspace_14"></script>
-<script src="/static/tim_physical_reference_v2_ui.js?v=issue25_assisted_review_1"></script>
+<script src="/static/tim_physical_reference_v2_ui.js?v=issue25_sequence_propagation_1"></script>
 
   </div>
 </body>

@@ -3759,6 +3759,33 @@ body.annotationWorkspaceMode .annMiniDelete {
   opacity: 0.8;
 }
 
+.physicalRefSequenceAssist {
+  margin-top: 9px;
+  padding: 8px;
+  border: 1px solid #344653;
+  border-radius: 7px;
+  background: #0d141a;
+}
+
+.physicalRefSequenceAssist progress {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.physicalRefSequenceStatus,
+.physicalRefSuggestedAnchors {
+  margin-top: 6px;
+  color: #c8d5df;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.physicalRefSuggestedAnchors button {
+  min-height: 24px;
+  margin: 3px 4px 0 0;
+  padding: 2px 7px;
+}
+
 .physicalRefAssistActions {
   margin-top: 9px;
 }

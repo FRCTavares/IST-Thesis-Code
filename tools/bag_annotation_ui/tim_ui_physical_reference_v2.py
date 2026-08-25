@@ -7,13 +7,13 @@ adapter and routes remain valid and untouched (no real v1 artifacts exist
 to migrate). This module is the v2-specific analogue: a thin adapter
 between the UI and ``tools/analysis/physical_target_reference_v2.py``,
 which is the schema authority. It never duplicates that module's
-parsing/validation/serialization rules -- the two new pieces of pure logic
-below (``next_person_ref``, ``known_person_refs``) are UI-convenience
-concerns the schema module has no reason to own: the backend validator
-does not care what generated a ``person_ref``, only that it matches the
-frozen namespace, and "which person_refs exist in this artifact" is
-always re-derived from the artifact's own samples, never stored
-separately.
+parsing/validation/serialization rules. UI-only helpers cover deterministic
+``person_ref`` allocation, evaluator-backed effective preview, and ephemeral
+image-space proposal/review computation. None of those helpers changes the
+frozen v2 artifact contract or writes canonical evidence: the backend validator
+does not care what generated a ``person_ref``, only that it matches the frozen
+namespace, and "which person_refs exist in this artifact" is always re-derived
+from the artifact's own samples, never stored separately.
 
 ``normalize_rect`` and ``safe_physical_reference_relpath`` are reused
 directly from ``tim_ui_physical_reference`` (v1) -- reverse-drag/zero-area
@@ -23,6 +23,7 @@ schema-version dependency at all.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import sys
@@ -274,15 +275,23 @@ def _propagate_one_box(
         return None, {"point_count": int(len(displacement)), "median_error": None}
 
     dx, dy = np.median(displacement, axis=0)
-    shifted = _clip_box_to_image((x1 + dx, y1 + dy, x2 + dx, y2 + dy), width, height)
+    raw_shifted = (x1 + dx, y1 + dy, x2 + dx, y2 + dy)
+    shifted = _clip_box_to_image(raw_shifted, width, height)
     median_error = (
         float(np.median(valid_errors[finite]))
         if valid_errors is not None
         else None
     )
+    boundary_truncated = bool(
+        shifted is not None
+        and any(abs(float(a) - float(b)) > 1e-6 for a, b in zip(raw_shifted, shifted))
+    )
     return shifted, {
         "point_count": int(len(displacement)),
+        "initial_point_count": int(len(points)),
+        "tracked_fraction": float(len(displacement) / max(1, len(points))),
         "median_error": median_error,
+        "boundary_truncated": boundary_truncated,
     }
 
 
@@ -384,6 +393,736 @@ def propose_geometry_with_optical_flow(
         "accepted": False,
     }
 
+
+
+CONFIDENCE_HIGH = "high"
+CONFIDENCE_MEDIUM = "medium"
+CONFIDENCE_REVIEW = "review"
+CONFIDENCE_AMBIGUOUS = "ambiguous"
+CONFIDENCE_LOST = "lost"
+CONFIDENCE_ORDER = {
+    CONFIDENCE_HIGH: 0,
+    CONFIDENCE_MEDIUM: 1,
+    CONFIDENCE_REVIEW: 2,
+    CONFIDENCE_AMBIGUOUS: 3,
+    CONFIDENCE_LOST: 4,
+}
+SEQUENCE_PROPAGATION_METHOD = "bidirectional_sparse_lk_human_anchors_v1"
+DEFAULT_REVIEW_THRESHOLDS = {
+    "iou_below": 0.65,
+    "centre_ref_height_above": 0.25,
+    "scale_delta_above": 0.25,
+}
+
+
+def bbox_comparison_metrics(
+    reference_box: list[float] | tuple[float, float, float, float],
+    proposal_box: list[float] | tuple[float, float, float, float],
+) -> dict[str, float]:
+    """Deterministic annotation-review disagreement metrics."""
+
+    a = [float(v) for v in reference_box]
+    b = [float(v) for v in proposal_box]
+    ix1, iy1 = max(a[0], b[0]), max(a[1], b[1])
+    ix2, iy2 = min(a[2], b[2]), min(a[3], b[3])
+    intersection = max(0.0, ix2 - ix1) * max(0.0, iy2 - iy1)
+    area_a = max(0.0, a[2] - a[0]) * max(0.0, a[3] - a[1])
+    area_b = max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1])
+    union = area_a + area_b - intersection
+    iou = intersection / union if union > 0.0 else 0.0
+    ref_h = max(1e-9, a[3] - a[1])
+    ref_w = max(1e-9, a[2] - a[0])
+    prop_h = max(1e-9, b[3] - b[1])
+    prop_w = max(1e-9, b[2] - b[0])
+    dx = ((b[0] + b[2]) - (a[0] + a[2])) / 2.0
+    dy = ((b[1] + b[3]) - (a[1] + a[3])) / 2.0
+    return {
+        "iou": float(iou),
+        "centre_ref_height": float(math.hypot(dx, dy) / ref_h),
+        "scale_delta": float(
+            max(abs(math.log(prop_w / ref_w)), abs(math.log(prop_h / ref_h)))
+        ),
+    }
+
+
+def _metrics_exceed_thresholds(
+    metrics: dict[str, float], thresholds: dict[str, float]
+) -> bool:
+    return bool(
+        metrics["iou"] < thresholds["iou_below"]
+        or metrics["centre_ref_height"]
+        > thresholds["centre_ref_height_above"]
+        or metrics["scale_delta"] > thresholds["scale_delta_above"]
+    )
+
+
+def _metrics_severity(
+    metrics: dict[str, float], thresholds: dict[str, float]
+) -> float:
+    terms = [0.0]
+    if metrics["iou"] < thresholds["iou_below"]:
+        terms.append(
+            (thresholds["iou_below"] - metrics["iou"])
+            / max(1e-9, thresholds["iou_below"])
+        )
+    terms.append(
+        metrics["centre_ref_height"]
+        / max(1e-9, thresholds["centre_ref_height_above"])
+        - 1.0
+    )
+    terms.append(
+        metrics["scale_delta"] / max(1e-9, thresholds["scale_delta_above"])
+        - 1.0
+    )
+    return float(max(terms))
+
+
+def refine_box_with_anonymous_detections(
+    propagated_box: list[float], anonymous_detection_boxes: list[list[float]]
+) -> dict[str, Any]:
+    """Optionally refine geometry using anonymous person boxes only.
+
+    The API deliberately accepts no class IDs, tracker IDs, physical-person
+    labels, or detector object identity. A close scoring tie is surfaced as
+    ambiguity and the propagated geometry is retained rather than guessed.
+    """
+
+    base = normalize_rect(*[float(v) for v in propagated_box])
+    if base is None:
+        raise PhysicalReferenceUIError("Propagated bbox is invalid.")
+    ranked: list[tuple[float, tuple[float, float, float, float], dict[str, float]]] = []
+    for raw_candidate in anonymous_detection_boxes or []:
+        if not isinstance(raw_candidate, list) or len(raw_candidate) != 4:
+            raise PhysicalReferenceUIError(
+                "Anonymous detector candidates must be bbox coordinate lists only."
+            )
+        candidate = normalize_rect(*[float(v) for v in raw_candidate])
+        if candidate is None:
+            continue
+        metrics = bbox_comparison_metrics(base, candidate)
+        if (
+            metrics["iou"] < 0.20
+            or metrics["centre_ref_height"] > 0.65
+            or metrics["scale_delta"] > 0.60
+        ):
+            continue
+        score = (
+            0.65 * metrics["iou"]
+            + 0.20 * max(0.0, 1.0 - metrics["centre_ref_height"])
+            + 0.15 * max(0.0, 1.0 - metrics["scale_delta"])
+        )
+        ranked.append((float(score), candidate, metrics))
+
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    if not ranked:
+        return {
+            "bbox_xyxy": list(base),
+            "status": "no_match",
+            "candidate_count": 0,
+            "used_detector_geometry": False,
+        }
+    if len(ranked) > 1 and ranked[0][0] - ranked[1][0] < 0.08:
+        return {
+            "bbox_xyxy": list(base),
+            "status": CONFIDENCE_AMBIGUOUS,
+            "candidate_count": len(ranked),
+            "used_detector_geometry": False,
+        }
+    best = ranked[0]
+    return {
+        "bbox_xyxy": list(best[1]),
+        "status": "refined",
+        "candidate_count": len(ranked),
+        "used_detector_geometry": True,
+        "match_score": best[0],
+        "match_metrics": best[2],
+    }
+
+
+def _flow_confidence(quality: dict[str, Any]) -> str:
+    points = int(quality.get("point_count") or 0)
+    tracked_fraction = float(quality.get("tracked_fraction", 1.0 if points else 0.0))
+    median_error = quality.get("median_error")
+    error = float(median_error) if median_error is not None else float("inf")
+    if points < 3:
+        return CONFIDENCE_LOST
+    if quality.get("boundary_truncated"):
+        return CONFIDENCE_REVIEW
+    if points >= 12 and tracked_fraction >= 0.65 and error <= 12.0:
+        return CONFIDENCE_HIGH
+    if points >= 6 and tracked_fraction >= 0.40 and error <= 25.0:
+        return CONFIDENCE_MEDIUM
+    return CONFIDENCE_REVIEW
+
+
+def _boxes_from_sample(sample: ptr2.PhysicalReferenceSample) -> dict[str, list[float]]:
+    boxes = {"target": list(sample.target_bbox_xyxy)}
+    boxes.update({d.person_ref: list(d.bbox_xyxy) for d in sample.distractors})
+    return boxes
+
+
+def _frame_index_for_time(times_s: list[float], t_s: float) -> int:
+    if not times_s:
+        raise PhysicalReferenceUIError("No source-frame timestamps are loaded.")
+    return min(range(len(times_s)), key=lambda i: abs(float(times_s[i]) - float(t_s)))
+
+
+def _propagate_direction(
+    gray_images: list[np.ndarray],
+    anchor_index: int,
+    end_index: int,
+    anchor_boxes: dict[str, list[float]],
+    anonymous_detections_by_frame: dict[int, list[list[float]]] | None,
+    progress_callback: Any = None,
+) -> dict[int, dict[str, dict[str, Any]]]:
+    direction = 1 if end_index > anchor_index else -1
+    current = {label: tuple(box) for label, box in anchor_boxes.items()}
+    active = {label: True for label in current}
+    accumulated_confidence = {label: CONFIDENCE_HIGH for label in current}
+    output: dict[int, dict[str, dict[str, Any]]] = {}
+    for previous_index in range(anchor_index, end_index, direction):
+        next_index = previous_index + direction
+        frame_people: dict[str, dict[str, Any]] = {}
+        used_detector_boxes: set[tuple[float, float, float, float]] = set()
+        for label in sorted(current):
+            if not active[label]:
+                frame_people[label] = {
+                    "bbox_xyxy": None,
+                    "confidence": CONFIDENCE_LOST,
+                    "reason": "propagation_stopped_after_uncertain_frame",
+                }
+                continue
+            moved, quality = _propagate_one_box(
+                gray_images[previous_index], gray_images[next_index], current[label]
+            )
+            confidence = _flow_confidence(quality)
+            if moved is None or confidence == CONFIDENCE_LOST:
+                active[label] = False
+                frame_people[label] = {
+                    "bbox_xyxy": None,
+                    "confidence": CONFIDENCE_LOST,
+                    "reason": "insufficient_optical_flow_evidence",
+                    "flow_quality": quality,
+                }
+                continue
+
+            detector_result = None
+            candidates = (
+                (anonymous_detections_by_frame or {}).get(next_index)
+                if anonymous_detections_by_frame is not None
+                else None
+            )
+            if candidates:
+                detector_result = refine_box_with_anonymous_detections(
+                    list(moved), candidates
+                )
+                if detector_result["status"] == CONFIDENCE_AMBIGUOUS:
+                    active[label] = False
+                    frame_people[label] = {
+                        "bbox_xyxy": None,
+                        "confidence": CONFIDENCE_AMBIGUOUS,
+                        "reason": "multiple_plausible_anonymous_detections",
+                        "flow_quality": quality,
+                        "detector_refinement": detector_result,
+                    }
+                    continue
+                if detector_result["used_detector_geometry"]:
+                    detector_box = tuple(float(v) for v in detector_result["bbox_xyxy"])
+                    if detector_box in used_detector_boxes:
+                        active[label] = False
+                        frame_people[label] = {
+                            "bbox_xyxy": None,
+                            "confidence": CONFIDENCE_AMBIGUOUS,
+                            "reason": "anonymous_detection_already_matches_another_person",
+                            "flow_quality": quality,
+                            "detector_refinement": detector_result,
+                        }
+                        continue
+                    used_detector_boxes.add(detector_box)
+                    moved = detector_box
+
+            accumulated_confidence[label] = _worse_confidence(
+                accumulated_confidence[label], confidence
+            )
+            current[label] = moved
+            frame_people[label] = {
+                "bbox_xyxy": list(moved),
+                "confidence": accumulated_confidence[label],
+                "reason": "image_continuity",
+                "flow_quality": quality,
+                "detector_refinement": detector_result,
+            }
+        output[next_index] = frame_people
+        if progress_callback is not None:
+            progress_callback()
+    return output
+
+
+def _worse_confidence(*values: str) -> str:
+    return max(values, key=lambda value: CONFIDENCE_ORDER.get(value, 99))
+
+
+def _merge_directional_people(
+    forward: dict[str, dict[str, Any]] | None,
+    backward: dict[str, dict[str, Any]] | None,
+    alpha: float,
+) -> dict[str, dict[str, Any]]:
+    labels = sorted(set((forward or {}).keys()) | set((backward or {}).keys()))
+    merged: dict[str, dict[str, Any]] = {}
+    for label in labels:
+        left = (forward or {}).get(label)
+        right = (backward or {}).get(label)
+        left_box = left.get("bbox_xyxy") if left else None
+        right_box = right.get("bbox_xyxy") if right else None
+        if left_box is not None and right_box is not None:
+            agreement = bbox_comparison_metrics(left_box, right_box)
+            if agreement["iou"] < 0.05 and agreement["centre_ref_height"] > 1.0:
+                merged[label] = {
+                    "bbox_xyxy": None,
+                    "confidence": CONFIDENCE_AMBIGUOUS,
+                    "reason": "forward_backward_hypotheses_disagree",
+                    "direction_agreement": agreement,
+                }
+                continue
+            box = [
+                (1.0 - alpha) * float(a) + alpha * float(b)
+                for a, b in zip(left_box, right_box)
+            ]
+            confidence = _worse_confidence(
+                left["confidence"], right["confidence"]
+            )
+            if _metrics_exceed_thresholds(agreement, DEFAULT_REVIEW_THRESHOLDS):
+                confidence = _worse_confidence(confidence, CONFIDENCE_REVIEW)
+            merged[label] = {
+                "bbox_xyxy": box,
+                "confidence": confidence,
+                "reason": "bidirectional_image_continuity",
+                "direction_agreement": agreement,
+                "forward_quality": left.get("flow_quality"),
+                "backward_quality": right.get("flow_quality"),
+            }
+        elif left_box is not None or right_box is not None:
+            source = left if left_box is not None else right
+            confidence = source["confidence"]
+            if confidence == CONFIDENCE_HIGH:
+                confidence = CONFIDENCE_MEDIUM
+            elif confidence == CONFIDENCE_MEDIUM:
+                confidence = CONFIDENCE_REVIEW
+            merged[label] = {
+                **source,
+                "confidence": confidence,
+                "reason": "single_direction_image_continuity",
+            }
+        else:
+            states = [
+                item["confidence"]
+                for item in (left, right)
+                if item is not None and item.get("confidence")
+            ]
+            merged[label] = {
+                "bbox_xyxy": None,
+                "confidence": _worse_confidence(*states)
+                if states
+                else CONFIDENCE_LOST,
+                "reason": "human_correspondence_confirmation_required",
+            }
+    return merged
+
+
+def _serialize_proposal_frame(
+    frame_index: int,
+    t_s: float,
+    people: dict[str, dict[str, Any]],
+    classification: str,
+) -> dict[str, Any]:
+    target = people.get("target") or {
+        "bbox_xyxy": None,
+        "confidence": CONFIDENCE_LOST,
+    }
+    distractors = [
+        {
+            "person_ref": label,
+            "bbox_xyxy": people[label].get("bbox_xyxy"),
+            "confidence": people[label]["confidence"],
+            "reason": people[label].get("reason"),
+        }
+        for label in sorted(people)
+        if label != "target"
+    ]
+    confidence = _worse_confidence(
+        target["confidence"], *[entry["confidence"] for entry in distractors]
+    )
+    return {
+        "frame_index": int(frame_index),
+        "t_s": float(t_s),
+        "classification": classification,
+        "target_bbox_xyxy": target.get("bbox_xyxy"),
+        "target_confidence": target["confidence"],
+        "distractors": distractors,
+        "per_person": people,
+        "overall_confidence": confidence,
+        "identity_source": "explicit_human_anchor_person_refs_only",
+        "accepted": classification == "explicit_anchor",
+    }
+
+
+def _proposal_boxes(frame: dict[str, Any]) -> dict[str, list[float]]:
+    boxes: dict[str, list[float]] = {}
+    if frame.get("target_bbox_xyxy") is not None:
+        boxes["target"] = frame["target_bbox_xyxy"]
+    for entry in frame.get("distractors") or []:
+        if entry.get("bbox_xyxy") is not None:
+            boxes[str(entry["person_ref"])] = entry["bbox_xyxy"]
+    return boxes
+
+
+def compute_review_regions(
+    proposals: list[dict[str, Any]],
+    effective_previews: list[dict[str, Any]],
+    thresholds: dict[str, float] | None = None,
+    max_clean_gap_frames: int = 2,
+) -> list[dict[str, Any]]:
+    """Compare propagation with evaluator preview and group adjacent flags."""
+
+    limits = {**DEFAULT_REVIEW_THRESHOLDS, **(thresholds or {})}
+    flagged: list[dict[str, Any]] = []
+    for frame, effective in zip(proposals, effective_previews):
+        if frame["classification"] in {"explicit_anchor", "explicit_state"}:
+            continue
+        reasons: list[str] = []
+        labels: set[str] = set()
+        severity = 0.0
+        if frame["overall_confidence"] in {
+            CONFIDENCE_REVIEW,
+            CONFIDENCE_AMBIGUOUS,
+            CONFIDENCE_LOST,
+        }:
+            reasons.append("low propagation confidence")
+        proposed_boxes = _proposal_boxes(frame)
+        effective_boxes: dict[str, list[float]] = {}
+        if effective.get("target_bbox_xyxy") is not None:
+            effective_boxes["target"] = effective["target_bbox_xyxy"]
+        effective_boxes.update(
+            {
+                str(entry["person_ref"]): entry["bbox_xyxy"]
+                for entry in effective.get("distractors") or []
+            }
+        )
+        for label in sorted(set(effective_boxes) | set(proposed_boxes)):
+            if label not in effective_boxes or label not in proposed_boxes:
+                labels.add(label)
+                reasons.append(f"{label} geometry unavailable")
+                severity = max(severity, 10.0)
+                continue
+            metrics = bbox_comparison_metrics(
+                effective_boxes[label], proposed_boxes[label]
+            )
+            local_severity = _metrics_severity(metrics, limits)
+            if local_severity > 0.0:
+                labels.add(label)
+                reasons.append(f"{label} interpolation drift")
+                severity = max(severity, local_severity)
+        if reasons:
+            flagged.append(
+                {
+                    "frame_index": frame["frame_index"],
+                    "t_s": frame["t_s"],
+                    "labels": sorted(labels),
+                    "reasons": sorted(set(reasons)),
+                    "severity": float(severity),
+                }
+            )
+
+    regions: list[list[dict[str, Any]]] = []
+    for item in flagged:
+        if (
+            not regions
+            or item["frame_index"] - regions[-1][-1]["frame_index"]
+            > max_clean_gap_frames + 1
+        ):
+            regions.append([item])
+        else:
+            regions[-1].append(item)
+    result = []
+    for index, items in enumerate(regions):
+        peak = max(items, key=lambda item: item["severity"])
+        result.append(
+            {
+                "region_index": index,
+                "start_frame_index": items[0]["frame_index"],
+                "end_frame_index": items[-1]["frame_index"],
+                "start_t_s": items[0]["t_s"],
+                "end_t_s": items[-1]["t_s"],
+                "peak_frame_index": peak["frame_index"],
+                "peak_t_s": peak["t_s"],
+                "labels": sorted({label for item in items for label in item["labels"]}),
+                "reasons": sorted({reason for item in items for reason in item["reasons"]}),
+                "flagged_frame_count": len(items),
+            }
+        )
+    return result
+
+
+def suggest_adaptive_anchor_frames(
+    proposals: list[dict[str, Any]],
+    explicit_anchor_indices: list[int],
+    thresholds: dict[str, float] | None = None,
+    min_span_frames: int = 12,
+    max_suggestions: int = 24,
+) -> list[dict[str, Any]]:
+    """Recursively split spans at the worst proposal/linear disagreement."""
+
+    limits = {**DEFAULT_REVIEW_THRESHOLDS, **(thresholds or {})}
+    by_index = {int(frame["frame_index"]): frame for frame in proposals}
+    suggestions: dict[int, dict[str, Any]] = {}
+
+    def inspect_span(left_index: int, right_index: int) -> None:
+        if len(suggestions) >= max_suggestions or right_index - left_index < 2 * min_span_frames:
+            return
+        left_boxes = _proposal_boxes(by_index[left_index])
+        right_boxes = _proposal_boxes(by_index[right_index])
+        if not left_boxes or set(left_boxes) != set(right_boxes):
+            return
+        worst: tuple[float, int, list[str]] | None = None
+        for frame_index in range(left_index + min_span_frames, right_index - min_span_frames + 1):
+            frame = by_index.get(frame_index)
+            if frame is None or frame["overall_confidence"] in {
+                CONFIDENCE_AMBIGUOUS,
+                CONFIDENCE_LOST,
+            }:
+                continue
+            boxes = _proposal_boxes(frame)
+            if set(boxes) != set(left_boxes):
+                continue
+            alpha = (frame_index - left_index) / float(right_index - left_index)
+            labels: list[str] = []
+            severity = 0.0
+            for label in sorted(boxes):
+                linear = [
+                    (1.0 - alpha) * float(a) + alpha * float(b)
+                    for a, b in zip(left_boxes[label], right_boxes[label])
+                ]
+                metrics = bbox_comparison_metrics(linear, boxes[label])
+                local = _metrics_severity(metrics, limits)
+                if local > 0.0:
+                    labels.append(label)
+                    severity = max(severity, local)
+            if labels and (worst is None or severity > worst[0]):
+                worst = (severity, frame_index, labels)
+        if worst is None:
+            return
+        _, split_index, labels = worst
+        frame = by_index[split_index]
+        suggestions[split_index] = {
+            "frame_index": split_index,
+            "t_s": frame["t_s"],
+            "labels": labels,
+            "confidence": frame["overall_confidence"],
+            "all_high_confidence": frame["overall_confidence"] == CONFIDENCE_HIGH,
+            "accepted": False,
+        }
+        inspect_span(left_index, split_index)
+        inspect_span(split_index, right_index)
+
+    anchors = sorted(set(int(value) for value in explicit_anchor_indices))
+    for left_index, right_index in zip(anchors, anchors[1:]):
+        if left_index in by_index and right_index in by_index:
+            inspect_span(left_index, right_index)
+    return [suggestions[index] for index in sorted(suggestions)]
+
+
+def sequence_proposal_cache_key(
+    artifact_payload: dict[str, Any], times_s: list[float], image_count: int
+) -> str:
+    material = json.dumps(
+        {
+            "artifact": artifact_payload,
+            "times_s": [float(value) for value in times_s],
+            "image_count": int(image_count),
+            "method": SEQUENCE_PROPAGATION_METHOD,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(material).hexdigest()
+
+
+def generate_sequence_proposals(
+    images: list[np.ndarray],
+    times_s: list[float],
+    artifact_payload: dict[str, Any],
+    anonymous_detections_by_frame: dict[int, list[list[float]]] | None = None,
+    progress_callback: Any = None,
+) -> dict[str, Any]:
+    """Generate an ephemeral full-sequence proposal cache from human anchors."""
+
+    if len(images) != len(times_s) or not images:
+        raise PhysicalReferenceUIError(
+            "Loaded source images and frame timestamps must be non-empty and aligned."
+        )
+    artifact = ptr2.parse_physical_reference(artifact_payload)
+    ptr2.validate_physical_reference(artifact)
+    payload_snapshot = json.dumps(artifact_payload, sort_keys=True)
+    human_anchors = [
+        sample
+        for sample in artifact.samples
+        if sample.identity_state == ptr2.STATE_PRESENT_SCORED
+        and sample.target_bbox_xyxy is not None
+    ]
+    if not human_anchors:
+        raise PhysicalReferenceUIError(
+            "At least one explicit present_scored human anchor is required."
+        )
+    gray_images = [cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) for image in images]
+    proposals: list[dict[str, Any] | None] = [None] * len(images)
+    sample_indices: list[int] = []
+    anchor_indices: list[int] = []
+    anchor_samples: dict[int, ptr2.PhysicalReferenceSample] = {}
+    for sample in artifact.samples:
+        index = _frame_index_for_time(times_s, sample.t_s)
+        sample_indices.append(index)
+        anchor_samples[index] = sample
+        if sample.identity_state == ptr2.STATE_PRESENT_SCORED:
+            anchor_indices.append(index)
+            people = {
+                label: {
+                    "bbox_xyxy": box,
+                    "confidence": CONFIDENCE_HIGH,
+                    "reason": "explicit_human_anchor",
+                }
+                for label, box in _boxes_from_sample(sample).items()
+            }
+            proposals[index] = _serialize_proposal_frame(
+                index, times_s[index], people, "explicit_anchor"
+            )
+        else:
+            proposals[index] = _serialize_proposal_frame(
+                index,
+                times_s[index],
+                {
+                    "target": {
+                        "bbox_xyxy": None,
+                        "confidence": CONFIDENCE_LOST,
+                        "reason": f"explicit_human_state_{sample.identity_state}",
+                    }
+                },
+                "explicit_state",
+            )
+
+    sample_indices = sorted(set(sample_indices))
+    anchor_indices = sorted(set(anchor_indices))
+
+    def supported_span(left_index: int, right_index: int) -> bool:
+        left = anchor_samples[left_index]
+        right = anchor_samples[right_index]
+        return bool(
+            left.identity_state == ptr2.STATE_PRESENT_SCORED
+            and right.identity_state == ptr2.STATE_PRESENT_SCORED
+            and right.interpolate_from_previous
+            and set(_boxes_from_sample(left)) == set(_boxes_from_sample(right))
+        )
+
+    supported_step_count = sum(
+        2 * (right_index - left_index)
+        for left_index, right_index in zip(sample_indices, sample_indices[1:])
+        if supported_span(left_index, right_index)
+    )
+    completed_steps = 0
+
+    def on_step() -> None:
+        nonlocal completed_steps
+        completed_steps += 1
+        if progress_callback is not None:
+            progress_callback(completed_steps, max(1, supported_step_count))
+
+    for left_index, right_index in zip(sample_indices, sample_indices[1:]):
+        left_sample = anchor_samples[left_index]
+        right_sample = anchor_samples[right_index]
+        left_boxes = (
+            _boxes_from_sample(left_sample)
+            if left_sample.identity_state == ptr2.STATE_PRESENT_SCORED
+            else {}
+        )
+        right_boxes = (
+            _boxes_from_sample(right_sample)
+            if right_sample.identity_state == ptr2.STATE_PRESENT_SCORED
+            else {}
+        )
+        if not supported_span(left_index, right_index):
+            labels = sorted(set(left_boxes) | set(right_boxes) | {"target"})
+            for frame_index in range(left_index + 1, right_index):
+                people = {
+                    label: {
+                        "bbox_xyxy": None,
+                        "confidence": CONFIDENCE_LOST,
+                        "reason": "human_correspondence_confirmation_required",
+                    }
+                    for label in labels
+                }
+                proposals[frame_index] = _serialize_proposal_frame(
+                    frame_index, times_s[frame_index], people, "unsupported_reference_span"
+                )
+            continue
+        forward = _propagate_direction(
+            gray_images,
+            left_index,
+            right_index,
+            left_boxes,
+            anonymous_detections_by_frame,
+            on_step,
+        )
+        backward = _propagate_direction(
+            gray_images,
+            right_index,
+            left_index,
+            right_boxes,
+            anonymous_detections_by_frame,
+            on_step,
+        )
+        for frame_index in range(left_index + 1, right_index):
+            alpha = (frame_index - left_index) / float(right_index - left_index)
+            people = _merge_directional_people(
+                forward.get(frame_index), backward.get(frame_index), alpha
+            )
+            proposals[frame_index] = _serialize_proposal_frame(
+                frame_index, times_s[frame_index], people, "automatic_proposal"
+            )
+
+    for frame_index, proposal in enumerate(proposals):
+        if proposal is None:
+            proposals[frame_index] = _serialize_proposal_frame(
+                frame_index,
+                times_s[frame_index],
+                {
+                    "target": {
+                        "bbox_xyxy": None,
+                        "confidence": CONFIDENCE_LOST,
+                        "reason": "outside_human_anchor_span",
+                    }
+                },
+                "outside_human_anchor_span",
+            )
+
+    final_proposals = [proposal for proposal in proposals if proposal is not None]
+    effective = build_effective_reference_previews(artifact_payload, times_s)
+    regions = compute_review_regions(final_proposals, effective)
+    suggestions = suggest_adaptive_anchor_frames(
+        final_proposals, anchor_indices
+    )
+    if json.dumps(artifact_payload, sort_keys=True) != payload_snapshot:
+        raise AssertionError("Sequence proposal generation mutated its artifact input.")
+    return {
+        "method": SEQUENCE_PROPAGATION_METHOD,
+        "identity_source": "explicit_human_anchor_person_refs_only",
+        "detector_refinement_used": bool(anonymous_detections_by_frame),
+        "frame_count": len(final_proposals),
+        "source_anchor_frames": anchor_indices,
+        "proposals": final_proposals,
+        "review_regions": regions,
+        "suggested_anchors": suggestions,
+        "accepted": False,
+        "saved": False,
+    }
 
 def load_physical_reference_v2_for_ui(path_text: str, repo_root: Path) -> dict[str, Any]:
     """Load and validate a v2 physical-reference artifact for UI

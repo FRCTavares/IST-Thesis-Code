@@ -106,22 +106,83 @@ frame 0 to frame 107 (5.00004372 s) succeeded for target plus all three
 distractors and likewise left the artifact unchanged. This proves tooling
 operation only; it does **not** validate the long interpolation visually.
 
+### Sequential propagation added after real nonlinear-motion review
+
+During real M4B playback Francisco stopped near frame 190
+(`t_s = 7.833641125 s`) because the dashed endpoint-linear boxes remained on
+the legal evaluator path while the four people had followed nonlinear image
+motion. This is not an evaluator defect; it demonstrates that the two endpoint
+anchors are scientifically insufficient.
+
+The assisted-review instrument now provides a second, strictly non-canonical
+layer:
+
+- `Generate/refresh sequence proposals` propagates each target / `phys_dNNN`
+  geometry hypothesis frame by frame in both directions between compatible
+  explicit human anchors. Sparse Lucas--Kanade feature displacement is computed
+  independently inside each preceding bbox. A person's chain stops on
+  insufficient visual evidence; no other person, tracker trajectory, drawing
+  order, or detector identity can replace it.
+- Each per-person proposal records tracked feature count/fraction, maximum LK
+  residual over the propagated direction, boundary truncation, directional
+  agreement and a deterministic `high` / `medium` / `review` / `ambiguous` /
+  `lost` status. These labels are review categories, not probabilities.
+- The server computes once in a background worker, exposes progress, and caches
+  the complete result only in process/session memory. Scrubbing and playback
+  then paint dotted yellow boxes without further optical-flow work.
+- IoU, centre/ref-height and scale disagreement against the evaluator's cyan
+  reference create flagged frames. Adjacent flags are grouped into review
+  regions. `Previous review region` / `Next review region` jump to each
+  region's worst frame.
+- Adaptive anchor selection recursively finds the largest proposal-versus-
+  piecewise-linear disagreement, proposes that frame as a virtual split, and
+  repeats until thresholds, minimum spacing, or the 24-suggestion safety cap is
+  reached. Suggested anchors are buttons for inspection, never samples.
+- A pure anonymous-detection geometry matcher is available for a future source
+  of person boxes. It accepts bbox coordinates only, can refine x/y/width/
+  height when one candidate is clearly best, and returns `ambiguous` on a close
+  tie. The Seq01 pilot does **not** use it because this curated-source session
+  supplies no appropriate anonymous detector stream; no production detector,
+  RAW/TIM selected target, tracker ID, or TIM-MARS decision enters propagation.
+
+The read-only two-anchor Seq01 pilot produced 1,520 frame records in 152.2 s
+after a 5.3 s bag-cache load (about 1.96 GB peak process RSS). At frame 190 it
+retained `target`, `phys_d001`, `phys_d002`, and `phys_d003` and reported
+proposal-versus-cyan IoUs of 0.341, 0.338, 0.248, and 0.431 respectively. The
+current conservative thresholds group the continuously inadequate endpoint
+span into one review region (frames 1--1518) and hit the 24-suggestion cap. One
+suggestion is frame 188 / 7.767 s, directly covering the observed nonlinear
+motion. A live browser check confirmed progress reporting, cached yellow-box
+playback, suggestion navigation, and continuous updates from frame 190 to 207.
+This is evidence that the tool exposes and prioritises the motion; it is **not**
+human approval of any proposed geometry.
+
+No bulk acceptance is offered for this pilot: every current suggestion is
+`review`, so the conservative workflow exposes only single-frame Copy/Accept
+operations. `Accept current proposal as in-memory anchor` is explicit; JSON is
+still changed only by the separate `Save JSON` action. After an in-memory sample
+changes, the sequence cache is invalidated and must be regenerated.
+
 ### Seq01 review workflow
 
 1. Load the exact `12-48-17` source and `seq01_clean.json`; leave **Show
-   effective v2 reference** enabled.
-2. Play the whole sequence and stop whenever dashed boxes leave the visible
-   extent of any physical person, correspondence becomes uncertain, or the
-   status reports a gap/state boundary.
-3. At a paused frame within 150 frames of an explicit anchor, request an
-   optical-flow proposal. Treat the dotted boxes and disagreement metrics only
-   as review aids.
-4. Copy the proposal to a draft for correction, or explicitly accept it as an
-   in-memory anchor only after visually checking target and every
-   `phys_dNNN`. Check the interpolation checkbox deliberately.
-5. Save JSON separately, reload it through the v2 loader, and continue. Accept
-   honest gaps or explicit unavailable/absence boundaries where visual
-   judgement cannot support geometry/correspondence.
+   effective v2 reference** enabled and click **Generate/refresh sequence
+   proposals** once.
+2. Inspect the suggested anchors, starting with 7.767 s, and use **Next review
+   region** plus ordinary playback to compare the cyan evaluator geometry,
+   dotted yellow proposal, and visible people. Treat all current suggestions as
+   `review`, not approved geometry.
+3. At each useful suggestion, verify target and every `phys_dNNN`. Use **Use
+   current proposal as editable draft** when correction is needed, or **Accept
+   current proposal as in-memory anchor** only after that complete human check.
+   Check interpolation deliberately.
+4. Regenerate the invalidated proposal cache after each accepted/corrected
+   anchor; the adaptive suggestions should then re-evaluate the smaller spans.
+   Stop and create a trusted human anchor/state boundary wherever correspondence
+   is ambiguous or a person is lost.
+5. Save JSON separately only after deliberate review, reload it through the v2
+   loader, and continue. Accept honest gaps or explicit unavailable/absence
+   boundaries where visual judgement cannot support geometry/correspondence.
 
 Seq01 M4B remains incomplete until Francisco completes this full visual review.
 M4B globally remains incomplete, and M5 must not begin.
