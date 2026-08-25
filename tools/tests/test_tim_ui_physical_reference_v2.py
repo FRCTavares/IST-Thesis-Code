@@ -1410,3 +1410,265 @@ def test_proposal_backend_has_no_tracker_or_detector_identity_inputs():
         "target_bbox_xyxy",
         "distractors",
     }
+
+
+# =============================================================================
+# M4B sequential image-only proposal propagation
+# =============================================================================
+
+
+def _sequence_fixture(frame_count=31, dx_per_frame=1, with_distractor=True):
+    rng = UI2.np.random.default_rng(2508)
+    target_patch = rng.integers(0, 256, size=(24, 20, 3), dtype=UI2.np.uint8)
+    distractor_patch = rng.integers(0, 256, size=(22, 18, 3), dtype=UI2.np.uint8)
+    images = []
+    for frame_index in range(frame_count):
+        image = UI2.np.zeros((100, 140, 3), dtype=UI2.np.uint8)
+        x = 10 + dx_per_frame * frame_index
+        image[20:44, x : x + 20] = target_patch
+        if with_distractor:
+            image[58:80, 95 - frame_index : 113 - frame_index] = distractor_patch
+        images.append(image)
+    end_s = float(frame_count - 1) / 10.0
+    first_distractors = (
+        [_distractor("phys_d001", [95.0, 58.0, 113.0, 80.0])]
+        if with_distractor
+        else []
+    )
+    last_distractors = (
+        [
+            _distractor(
+                "phys_d001",
+                [95.0 - (frame_count - 1), 58.0, 113.0 - (frame_count - 1), 80.0],
+            )
+        ]
+        if with_distractor
+        else []
+    )
+    context = "distractors_complete" if with_distractor else "target_only"
+    artifact = _artifact_payload()
+    artifact["provenance"]["source_width"] = 140
+    artifact["provenance"]["source_height"] = 100
+    artifact["provenance"]["evaluation_window"] = {"start_s": 0.0, "end_s": end_s}
+    artifact["samples"] = [
+        {
+            "t_s": 0.0,
+            "identity_state": "present_scored",
+            "identity_context": context,
+            "target_bbox_xyxy": [10.0, 20.0, 30.0, 44.0],
+            "distractors": first_distractors,
+            "interpolate_from_previous": False,
+            "notes": "",
+        },
+        {
+            "t_s": end_s,
+            "identity_state": "present_scored",
+            "identity_context": context,
+            "target_bbox_xyxy": [
+                10.0 + dx_per_frame * (frame_count - 1),
+                20.0,
+                30.0 + dx_per_frame * (frame_count - 1),
+                44.0,
+            ],
+            "distractors": last_distractors,
+            "interpolate_from_previous": True,
+            "notes": "",
+        },
+    ]
+    return images, [index / 10.0 for index in range(frame_count)], artifact
+
+
+def test_sequential_optical_flow_propagates_every_frame_and_preserves_labels():
+    images, times_s, artifact = _sequence_fixture()
+    result = UI2.generate_sequence_proposals(images, times_s, artifact)
+
+    assert result["method"] == UI2.SEQUENCE_PROPAGATION_METHOD
+    assert result["identity_source"] == "explicit_human_anchor_person_refs_only"
+    assert result["detector_refinement_used"] is False
+    assert len(result["proposals"]) == len(images)
+    middle = result["proposals"][15]
+    assert middle["classification"] == "automatic_proposal"
+    assert middle["target_bbox_xyxy"] == pytest.approx([25, 20, 45, 44], abs=1.5)
+    assert [item["person_ref"] for item in middle["distractors"]] == ["phys_d001"]
+    assert middle["distractors"][0]["bbox_xyxy"] == pytest.approx(
+        [80, 58, 98, 80], abs=1.5
+    )
+    assert result["proposals"][0]["classification"] == "explicit_anchor"
+    assert result["proposals"][-1]["classification"] == "explicit_anchor"
+
+
+def test_sequential_generation_normalizes_and_clips_boxes_to_source_bounds():
+    image = UI2.np.zeros((40, 40, 3), dtype=UI2.np.uint8)
+    clipped = UI2._clip_box_to_image((38.0, 35.0, 20.0, 50.0), 40, 40)
+    assert clipped == (20.0, 35.0, 38.0, 40.0)
+    assert UI2._clip_box_to_image((50.0, 50.0, 60.0, 60.0), 40, 40) is None
+    assert image.shape == (40, 40, 3)
+
+
+def test_anonymous_detector_geometry_can_refine_size_but_not_identity():
+    result = UI2.refine_box_with_anonymous_detections(
+        [10.0, 10.0, 30.0, 50.0], [[9.0, 8.0, 33.0, 54.0]]
+    )
+    assert result["status"] == "refined"
+    assert result["bbox_xyxy"] == [9.0, 8.0, 33.0, 54.0]
+    assert result["used_detector_geometry"] is True
+    signature = inspect.signature(UI2.refine_box_with_anonymous_detections)
+    assert set(signature.parameters) == {
+        "propagated_box",
+        "anonymous_detection_boxes",
+    }
+    with pytest.raises(UI2.PhysicalReferenceUIError, match="coordinate lists only"):
+        UI2.refine_box_with_anonymous_detections(
+            [10.0, 10.0, 30.0, 50.0],
+            [{"tracker_id": 7, "bbox_xyxy": [9.0, 8.0, 33.0, 54.0]}],
+        )
+
+
+def test_multiple_plausible_anonymous_detections_are_ambiguous_not_guessed():
+    result = UI2.refine_box_with_anonymous_detections(
+        [10.0, 10.0, 30.0, 50.0],
+        [[11.0, 10.0, 31.0, 50.0], [9.0, 10.0, 29.0, 50.0]],
+    )
+    assert result["status"] == "ambiguous"
+    assert result["used_detector_geometry"] is False
+    assert result["bbox_xyxy"] == [10.0, 10.0, 30.0, 50.0]
+
+
+def test_sequence_cache_key_is_deterministic_and_artifact_sensitive():
+    _, times_s, artifact = _sequence_fixture(frame_count=5, with_distractor=False)
+    first = UI2.sequence_proposal_cache_key(artifact, times_s, 5)
+    assert UI2.sequence_proposal_cache_key(copy.deepcopy(artifact), times_s, 5) == first
+    changed = copy.deepcopy(artifact)
+    changed["samples"][0]["target_bbox_xyxy"][0] += 1.0
+    assert UI2.sequence_proposal_cache_key(changed, times_s, 5) != first
+
+
+def test_full_sequence_generation_does_not_mutate_reference_artifact():
+    images, times_s, artifact = _sequence_fixture(frame_count=15)
+    before = copy.deepcopy(artifact)
+    result = UI2.generate_sequence_proposals(images, times_s, artifact)
+    assert artifact == before
+    assert result["accepted"] is False
+    assert result["saved"] is False
+
+
+def _proposal_frame(index, box, confidence="high", classification="automatic_proposal"):
+    return {
+        "frame_index": index,
+        "t_s": index / 10.0,
+        "classification": classification,
+        "target_bbox_xyxy": list(box) if box is not None else None,
+        "target_confidence": confidence,
+        "distractors": [],
+        "overall_confidence": confidence,
+    }
+
+
+def _effective_frame(box):
+    return {
+        "classification": "interpolated",
+        "target_bbox_xyxy": list(box) if box is not None else None,
+        "distractors": [],
+    }
+
+
+def test_review_frames_are_grouped_into_regions_with_peak_navigation_frame():
+    proposals = [_proposal_frame(i, [i, 0, i + 10, 20]) for i in range(10)]
+    effective = [_effective_frame([i, 0, i + 10, 20]) for i in range(10)]
+    for index in (2, 3, 4, 8):
+        effective[index] = _effective_frame([index + 20, 0, index + 30, 20])
+    regions = UI2.compute_review_regions(proposals, effective, max_clean_gap_frames=0)
+    assert [(r["start_frame_index"], r["end_frame_index"]) for r in regions] == [
+        (2, 4),
+        (8, 8),
+    ]
+    assert all("target" in region["labels"] for region in regions)
+    assert regions[0]["peak_frame_index"] in {2, 3, 4}
+
+
+def test_adaptive_anchor_selection_recursively_splits_nonlinear_span():
+    proposals = []
+    for index in range(41):
+        shift = 18.0 * UI2.math.sin(UI2.math.pi * index / 40.0)
+        classification = "explicit_anchor" if index in {0, 40} else "automatic_proposal"
+        proposals.append(
+            _proposal_frame(index, [shift, 0.0, shift + 10.0, 20.0], classification=classification)
+        )
+    suggestions = UI2.suggest_adaptive_anchor_frames(
+        proposals, [0, 40], min_span_frames=3, max_suggestions=8
+    )
+    assert suggestions
+    assert any(abs(item["frame_index"] - 20) <= 2 for item in suggestions)
+    assert all(item["accepted"] is False for item in suggestions)
+
+
+def test_changed_person_sets_and_absence_stop_sequence_identity_propagation():
+    images = [UI2.np.zeros((50, 50, 3), dtype=UI2.np.uint8) for _ in range(21)]
+    artifact = _artifact_payload()
+    artifact["provenance"]["source_width"] = 50
+    artifact["provenance"]["source_height"] = 50
+    artifact["provenance"]["evaluation_window"] = {"start_s": 0.0, "end_s": 2.0}
+    artifact["samples"] = [
+        {
+            "t_s": 0.0,
+            "identity_state": "present_scored",
+            "identity_context": "target_only",
+            "target_bbox_xyxy": [5.0, 5.0, 20.0, 30.0],
+            "distractors": [],
+            "interpolate_from_previous": False,
+            "notes": "",
+        },
+        {
+            "t_s": 1.0,
+            "identity_state": "absent",
+            "identity_context": None,
+            "target_bbox_xyxy": None,
+            "distractors": [],
+            "interpolate_from_previous": False,
+            "notes": "",
+        },
+        {
+            "t_s": 2.0,
+            "identity_state": "present_scored",
+            "identity_context": "distractors_complete",
+            "target_bbox_xyxy": [10.0, 5.0, 25.0, 30.0],
+            "distractors": [_distractor("phys_d001", [30.0, 5.0, 45.0, 30.0])],
+            "interpolate_from_previous": False,
+            "notes": "",
+        },
+    ]
+    result = UI2.generate_sequence_proposals(
+        images, [index / 10.0 for index in range(21)], artifact
+    )
+    assert result["proposals"][10]["classification"] == "explicit_state"
+    assert result["proposals"][5]["classification"] == "unsupported_reference_span"
+    assert result["proposals"][15]["classification"] == "unsupported_reference_span"
+    assert result["proposals"][5]["target_bbox_xyxy"] is None
+
+
+def test_sequence_ui_requires_explicit_acceptance_and_keeps_save_separate():
+    assert 'onclick="physicalRefStartSequenceProposals()"' in HTML_SOURCE
+    assert 'onclick="physicalRefNextReviewRegion()"' in HTML_SOURCE
+    assert 'onclick="physicalRefPreviousReviewRegion()"' in HTML_SOURCE
+    start_body = _extract_js_function_body(JS_SOURCE, "physicalRefStartSequenceProposals")
+    assert "physicalRefUpdateActiveSample" not in start_body
+    assert "physicalRefSave" not in start_body
+    assert "/api/physical_reference_v2/sequence_proposals/start" in start_body
+    accept_body = _extract_js_function_body(JS_SOURCE, "physicalRefAcceptProposalAsAnchor")
+    assert "physicalRefUpdateActiveSample()" in accept_body
+    assert "physicalRefSave" not in accept_body
+
+
+def test_sequence_backend_has_no_tracker_identity_or_tim_target_inputs():
+    signature = inspect.signature(UI2.generate_sequence_proposals)
+    assert set(signature.parameters) == {
+        "images",
+        "times_s",
+        "artifact_payload",
+        "anonymous_detections_by_frame",
+        "progress_callback",
+    }
+    source = inspect.getsource(UI2.generate_sequence_proposals)
+    assert "tracker_id" not in source
+    assert "selected_target" not in source
+    assert "TIM-MARS" not in source

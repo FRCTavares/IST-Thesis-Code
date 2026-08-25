@@ -60,7 +60,10 @@ let physicalRefResolvedConventionForBag = null;
 let physicalRefEffectivePreviews = []; // read-only backend-resolved preview, indexed by source frame
 let physicalRefPreviewGeneration = 0;
 let physicalRefPreviewPending = false;
-let physicalRefProposal = null; // ephemeral image-only proposal; never serialized
+let physicalRefProposal = null; // one paused-frame proposal; never serialized
+let physicalRefSequenceProposalResult = null; // ephemeral backend cache result; never serialized
+let physicalRefSequencePollTimer = null;
+let physicalRefReviewRegionCursor = -1;
 
 function shouldOpenPhysicalRefWorkspace() {
   const checkedRadio = document.querySelector('input[name="workspaceMode"]:checked');
@@ -326,6 +329,210 @@ function physicalRefNearestProposalAnchor() {
   return best;
 }
 
+
+function physicalRefCurrentAutomaticProposal() {
+  const current = currentFrameIndex();
+  if (physicalRefProposal && physicalRefProposal.target_frame_index === current) {
+    return physicalRefProposal;
+  }
+  const proposals = physicalRefSequenceProposalResult &&
+    physicalRefSequenceProposalResult.proposals;
+  const proposal = Array.isArray(proposals) ? proposals[current] : null;
+  if (!proposal || proposal.classification === "explicit_anchor") return null;
+  return {
+    ...proposal,
+    target_frame_index: proposal.frame_index,
+  };
+}
+
+function physicalRefGoToFrame(frameIndex) {
+  const slider = document.getElementById("progress");
+  if (!slider || !loadedFrames) return;
+  slider.value = String(Math.max(0, Math.min(loadedFrames - 1, Number(frameIndex))));
+  seek();
+}
+
+function physicalRefRenderSequencePanel(message) {
+  const result = physicalRefSequenceProposalResult;
+  const status = document.getElementById("physicalRefSequenceStatus");
+  const suggested = document.getElementById("physicalRefSuggestedAnchors");
+  if (status) {
+    if (message) {
+      status.innerText = message;
+    } else if (result) {
+      const regions = result.review_regions || [];
+      const anchors = result.suggested_anchors || [];
+      status.innerText =
+        result.frame_count + " cached frame proposals; " + regions.length +
+        " grouped review region(s); " + anchors.length +
+        " suggested intermediate anchor(s). Proposals are unaccepted session data.";
+    } else {
+      status.innerText = "Sequence proposals have not been generated.";
+    }
+  }
+  if (!suggested) return;
+  suggested.innerHTML = "";
+  if (!result || !(result.suggested_anchors || []).length) return;
+  const label = document.createElement("span");
+  label.innerText = "Suggested anchors (click to inspect): ";
+  suggested.appendChild(label);
+  result.suggested_anchors.forEach((anchor) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.innerText = Number(anchor.t_s).toFixed(3) + " s · " + anchor.confidence;
+    button.onclick = function () { physicalRefGoToFrame(anchor.frame_index); };
+    suggested.appendChild(button);
+  });
+}
+
+function physicalRefInstallSequenceResult(result) {
+  physicalRefSequenceProposalResult = result || null;
+  physicalRefReviewRegionCursor = -1;
+  const progress = document.getElementById("physicalRefSequenceProgress");
+  if (progress) progress.value = result ? 1 : 0;
+  physicalRefRenderSequencePanel();
+  physicalRefRenderProposalStatus();
+  physicalRefRepaint();
+}
+
+async function physicalRefPollSequenceProposals() {
+  let data;
+  try {
+    const response = await fetch("/api/physical_reference_v2/sequence_proposals/status");
+    data = await response.json();
+  } catch (error) {
+    physicalRefRenderSequencePanel("Sequence proposal status failed: " + error);
+    return;
+  }
+  const progress = document.getElementById("physicalRefSequenceProgress");
+  if (progress) progress.value = Number(data.progress || 0);
+  if (data.state === "running") {
+    physicalRefRenderSequencePanel(
+      "Generating image-only sequence proposals: " +
+      Math.round(100 * Number(data.progress || 0)) + "% (" +
+      Number(data.completed_steps || 0) + "/" + Number(data.total_steps || 0) +
+      " directional frame steps)."
+    );
+    physicalRefSequencePollTimer = window.setTimeout(
+      physicalRefPollSequenceProposals, 500
+    );
+    return;
+  }
+  physicalRefSequencePollTimer = null;
+  if (data.state === "complete") {
+    physicalRefInstallSequenceResult(data.result);
+    physicalRefSetFormStatus(
+      "Sequence proposal cache ready. Yellow boxes remain unaccepted; review regions " +
+      "and suggested anchors are annotation aids only."
+    );
+  } else if (data.state === "error") {
+    physicalRefRenderSequencePanel("Sequence proposal generation failed: " + data.error);
+  }
+}
+
+async function physicalRefStartSequenceProposals() {
+  if (!loadedFrames || !physicalRefSamples.length) {
+    physicalRefSetFormStatus("Load a source and physical-reference artifact first.");
+    return;
+  }
+  if (physicalRefSequencePollTimer !== null) {
+    physicalRefSetFormStatus("Sequence proposal generation is already running.");
+    return;
+  }
+  physicalRefInstallSequenceResult(null);
+  physicalRefRenderSequencePanel("Starting sequential image-only propagation...");
+  const artifact = {
+    provenance: physicalRefGatherProvenance(),
+    samples: physicalRefSamples,
+  };
+  let data;
+  try {
+    const response = await fetch(
+      "/api/physical_reference_v2/sequence_proposals/start",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({artifact: artifact, refresh: false}),
+      }
+    );
+    data = await response.json();
+  } catch (error) {
+    physicalRefRenderSequencePanel("Sequence proposal start failed: " + error);
+    return;
+  }
+  if (!data.ok) {
+    physicalRefRenderSequencePanel("Sequence proposal rejected: " + data.error);
+    return;
+  }
+  await physicalRefPollSequenceProposals();
+}
+window.physicalRefStartSequenceProposals = physicalRefStartSequenceProposals;
+
+async function physicalRefClearSequenceProposals() {
+  if (physicalRefSequencePollTimer !== null) {
+    physicalRefSetFormStatus("Wait for the current generation job before clearing it.");
+    return;
+  }
+  let data;
+  try {
+    const response = await fetch(
+      "/api/physical_reference_v2/sequence_proposals/clear", {method: "POST"}
+    );
+    data = await response.json();
+  } catch (error) {
+    physicalRefSetFormStatus("Clearing sequence proposals failed: " + error);
+    return;
+  }
+  if (!data.ok) {
+    physicalRefSetFormStatus("Clearing sequence proposals failed: " + data.error);
+    return;
+  }
+  physicalRefInstallSequenceResult(null);
+  physicalRefSetFormStatus("Ephemeral sequence proposals cleared; JSON was not changed.");
+}
+window.physicalRefClearSequenceProposals = physicalRefClearSequenceProposals;
+
+function physicalRefNavigateReviewRegion(direction) {
+  const regions = (physicalRefSequenceProposalResult &&
+    physicalRefSequenceProposalResult.review_regions) || [];
+  if (!regions.length) {
+    physicalRefSetFormStatus("No cached review regions. Generate sequence proposals first.");
+    return;
+  }
+  if (physicalRefReviewRegionCursor < 0) {
+    const current = currentFrameIndex();
+    physicalRefReviewRegionCursor = direction > 0
+      ? regions.findIndex((region) => region.peak_frame_index > current)
+      : regions.map((region) => region.peak_frame_index).findLastIndex((frame) => frame < current);
+    if (physicalRefReviewRegionCursor < 0) {
+      physicalRefReviewRegionCursor = direction > 0 ? 0 : regions.length - 1;
+    }
+  } else {
+    physicalRefReviewRegionCursor =
+      (physicalRefReviewRegionCursor + direction + regions.length) % regions.length;
+  }
+  const region = regions[physicalRefReviewRegionCursor];
+  physicalRefGoToFrame(region.peak_frame_index);
+  physicalRefSetFormStatus(
+    "Review region " + (physicalRefReviewRegionCursor + 1) + "/" + regions.length +
+    ": " + Number(region.start_t_s).toFixed(3) + "–" +
+    Number(region.end_t_s).toFixed(3) + " s; " + region.reasons.join(", ") + "."
+  );
+}
+
+function physicalRefNextReviewRegion() { physicalRefNavigateReviewRegion(1); }
+function physicalRefPreviousReviewRegion() { physicalRefNavigateReviewRegion(-1); }
+window.physicalRefNextReviewRegion = physicalRefNextReviewRegion;
+window.physicalRefPreviousReviewRegion = physicalRefPreviousReviewRegion;
+
+function physicalRefInvalidateSequenceProposals() {
+  physicalRefSequenceProposalResult = null;
+  physicalRefReviewRegionCursor = -1;
+  physicalRefRenderSequencePanel(
+    "In-memory anchors changed; regenerate sequence proposals to revalidate spans."
+  );
+}
+
 function physicalRefClearProposal() {
   physicalRefProposal = null;
   const el = document.getElementById("physicalRefProposalStatus");
@@ -384,14 +591,20 @@ function physicalRefProposalMetrics(proposal, effective) {
 function physicalRefRenderProposalStatus() {
   const el = document.getElementById("physicalRefProposalStatus");
   if (!el) return;
-  if (!physicalRefProposal) {
-    el.innerText = "No automatic proposal generated for this frame.";
+  const currentProposal = physicalRefCurrentAutomaticProposal();
+  if (!currentProposal) {
+    const effective = physicalRefCurrentEffectivePreview();
+    el.innerText = effective && effective.classification === "explicit_keyframe"
+      ? "Current frame is an explicit human anchor; no automatic proposal is drawn over it."
+      : (physicalRefSequenceProposalResult
+        ? "No usable automatic proposal at this frame; human correspondence confirmation may be required."
+        : "No automatic proposal generated for this frame.");
     el.className = "physicalRefProposalStatus";
     return;
   }
 
   const effective = physicalRefCurrentEffectivePreview();
-  const metrics = physicalRefProposalMetrics(physicalRefProposal, effective);
+  const metrics = physicalRefProposalMetrics(currentProposal, effective);
   const iouLimit = Number(document.getElementById("physicalRefReviewIou").value);
   const centreLimit = Number(document.getElementById("physicalRefReviewCenter").value);
   const scaleLimit = Number(document.getElementById("physicalRefReviewScale").value);
@@ -468,16 +681,21 @@ async function physicalRefRequestProposal() {
 window.physicalRefRequestProposal = physicalRefRequestProposal;
 
 function physicalRefCopyProposalToDraft() {
+  const currentProposal = physicalRefCurrentAutomaticProposal();
   if (
-    !physicalRefProposal ||
-    physicalRefProposal.target_frame_index !== currentFrameIndex()
+    !currentProposal ||
+    currentProposal.target_frame_index !== currentFrameIndex() ||
+    !currentProposal.target_bbox_xyxy ||
+    (currentProposal.distractors || []).some((entry) => !entry.bbox_xyxy)
   ) {
-    physicalRefSetFormStatus("Generate a proposal for the current frame first.");
+    physicalRefSetFormStatus(
+      "No complete proposal is available; human correspondence confirmation/correction is required."
+    );
     return false;
   }
   physicalRefActiveIndex = -1;
-  physicalRefDrawnTarget = physicalRefProposal.target_bbox_xyxy.slice();
-  physicalRefDrawnDistractors = (physicalRefProposal.distractors || []).map((entry) => ({
+  physicalRefDrawnTarget = currentProposal.target_bbox_xyxy.slice();
+  physicalRefDrawnDistractors = (currentProposal.distractors || []).map((entry) => ({
     person_ref: entry.person_ref,
     bbox_xyxy: entry.bbox_xyxy.slice(),
   }));
@@ -676,18 +894,18 @@ function physicalRefRepaint() {
 
   // Automatic image-space proposals are always dotted yellow and are never
   // copied into a draft/sample without an explicit user action.
-  if (
-    physicalRefProposal &&
-    physicalRefProposal.target_frame_index === currentFrameIndex()
-  ) {
+  const automaticProposal = physicalRefCurrentAutomaticProposal();
+  if (automaticProposal) {
     ctx.save();
     ctx.setLineDash([3, 6]);
     physicalRefDrawBox(
-      ctx, physicalRefProposal.target_bbox_xyxy, "#ffe066", "Proposal Target"
+      ctx, automaticProposal.target_bbox_xyxy, "#ffe066",
+      "Proposal Target (" + automaticProposal.target_confidence + ")"
     );
-    (physicalRefProposal.distractors || []).forEach((entry) => {
+    (automaticProposal.distractors || []).forEach((entry) => {
       physicalRefDrawBox(
-        ctx, entry.bbox_xyxy, "#ffd43b", "Proposal " + entry.person_ref
+        ctx, entry.bbox_xyxy, "#ffd43b",
+        "Proposal " + entry.person_ref + " (" + entry.confidence + ")"
       );
     });
     ctx.restore();
@@ -1203,6 +1421,7 @@ function physicalRefUpdateActiveSample() {
   physicalRefV2ActivePersonRef = null;
   physicalRefRenderSampleList();
   physicalRefV2RenderPersonRefPalette();
+  physicalRefInvalidateSequenceProposals();
   physicalRefRefreshEffectivePreview();
 }
 
@@ -1294,6 +1513,7 @@ function physicalRefDeleteActive() {
   physicalRefActiveIndex = -1;
   physicalRefRenderSampleList();
   physicalRefV2RenderPersonRefPalette();
+  physicalRefInvalidateSequenceProposals();
   physicalRefRefreshEffectivePreview();
 }
 
@@ -1434,6 +1654,7 @@ async function physicalRefLoadSelected() {
   // sets physicalRefActiveIndex/physicalRefV2ActivePersonRef correctly and
   // re-renders the person-ref palette itself, so no separate reset is
   // needed here.
+  physicalRefInvalidateSequenceProposals();
   physicalRefSyncDraftToCurrentFrame();
   physicalRefRenderSampleList();
   physicalRefRefreshEffectivePreview();

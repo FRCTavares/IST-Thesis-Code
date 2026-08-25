@@ -34,10 +34,12 @@ from tim_ui_physical_reference import (
 )
 from tim_ui_physical_reference_v2 import (
     build_effective_reference_previews,
+    generate_sequence_proposals,
     load_physical_reference_v2_for_ui,
     next_person_ref,
     propose_geometry_with_optical_flow,
     save_physical_reference_v2_for_ui,
+    sequence_proposal_cache_key,
 )
 from physical_target_reference import (  # noqa: E402  (path set up by tim_ui_physical_reference)
     CONTRACT_VERSION as PHYSICAL_REFERENCE_CONTRACT_VERSION,
@@ -294,6 +296,133 @@ async def physical_reference_v2_preview_api(request: Request):
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     return {"ok": True, "previews": previews}
+
+
+PHYSICAL_REFERENCE_SEQUENCE_CACHE: dict[str, dict] = {}
+PHYSICAL_REFERENCE_SEQUENCE_JOB: dict = {
+    "state": "idle",
+    "progress": 0.0,
+    "completed_steps": 0,
+    "total_steps": 0,
+    "cache_key": None,
+    "result": None,
+    "error": None,
+}
+
+
+def _sequence_job_progress(completed: int, total: int) -> None:
+    PHYSICAL_REFERENCE_SEQUENCE_JOB["completed_steps"] = int(completed)
+    PHYSICAL_REFERENCE_SEQUENCE_JOB["total_steps"] = int(total)
+    PHYSICAL_REFERENCE_SEQUENCE_JOB["progress"] = min(
+        1.0, float(completed) / max(1, int(total))
+    )
+
+
+async def _run_physical_reference_sequence_job(
+    *, cache_key: str, images: list, times_s: list[float], artifact: dict
+) -> None:
+    try:
+        result = await asyncio.to_thread(
+            generate_sequence_proposals,
+            images=images,
+            times_s=times_s,
+            artifact_payload=artifact,
+            # The loaded curated source supplies images only. Detector refinement
+            # remains an optional anonymous-box helper and is not silently fed
+            # tracker/RAW/TIM output here.
+            anonymous_detections_by_frame=None,
+            progress_callback=_sequence_job_progress,
+        )
+        PHYSICAL_REFERENCE_SEQUENCE_CACHE[cache_key] = result
+        PHYSICAL_REFERENCE_SEQUENCE_JOB.update(
+            state="complete", progress=1.0, result=result, error=None
+        )
+    except Exception as exc:
+        PHYSICAL_REFERENCE_SEQUENCE_JOB.update(
+            state="error", result=None, error=str(exc)
+        )
+
+
+@app.post("/api/physical_reference_v2/sequence_proposals/start")
+async def physical_reference_v2_sequence_proposals_start_api(request: Request):
+    """Start or reuse ephemeral full-sequence image-only proposals."""
+
+    payload = await request.json()
+    artifact = payload.get("artifact")
+    if not isinstance(artifact, dict):
+        return JSONResponse(
+            {"ok": False, "error": "artifact must be an object."}, status_code=400
+        )
+    if PHYSICAL_REFERENCE_SEQUENCE_JOB.get("state") == "running":
+        return JSONResponse(
+            {"ok": False, "error": "Sequence proposal generation is already running."},
+            status_code=409,
+        )
+    cached_images = list(backend.CACHE.get("images", []))
+    images = [image for _timestamp, image in cached_images]
+    if not images:
+        return JSONResponse(
+            {"ok": False, "error": "No source frames are loaded."}, status_code=400
+        )
+    first_timestamp = cached_images[0][0]
+    times_s = [float((timestamp - first_timestamp) / 1e9) for timestamp, _ in cached_images]
+    cache_key = sequence_proposal_cache_key(artifact, times_s, len(images))
+    if not bool(payload.get("refresh")) and cache_key in PHYSICAL_REFERENCE_SEQUENCE_CACHE:
+        result = PHYSICAL_REFERENCE_SEQUENCE_CACHE[cache_key]
+        PHYSICAL_REFERENCE_SEQUENCE_JOB.update(
+            state="complete",
+            progress=1.0,
+            completed_steps=1,
+            total_steps=1,
+            cache_key=cache_key,
+            result=result,
+            error=None,
+        )
+        return {"ok": True, "state": "complete", "cached": True}
+
+    PHYSICAL_REFERENCE_SEQUENCE_JOB.update(
+        state="running",
+        progress=0.0,
+        completed_steps=0,
+        total_steps=0,
+        cache_key=cache_key,
+        result=None,
+        error=None,
+    )
+    asyncio.create_task(
+        _run_physical_reference_sequence_job(
+            cache_key=cache_key,
+            images=images,
+            times_s=times_s,
+            artifact=artifact,
+        )
+    )
+    return {"ok": True, "state": "running", "cached": False}
+
+
+@app.get("/api/physical_reference_v2/sequence_proposals/status")
+def physical_reference_v2_sequence_proposals_status_api():
+    return {"ok": True, **PHYSICAL_REFERENCE_SEQUENCE_JOB}
+
+
+@app.post("/api/physical_reference_v2/sequence_proposals/clear")
+def physical_reference_v2_sequence_proposals_clear_api():
+    if PHYSICAL_REFERENCE_SEQUENCE_JOB.get("state") == "running":
+        return JSONResponse(
+            {"ok": False, "error": "Cannot clear proposals while generation is running."},
+            status_code=409,
+        )
+    PHYSICAL_REFERENCE_SEQUENCE_CACHE.clear()
+    PHYSICAL_REFERENCE_SEQUENCE_JOB.update(
+        state="idle",
+        progress=0.0,
+        completed_steps=0,
+        total_steps=0,
+        cache_key=None,
+        result=None,
+        error=None,
+    )
+    return {"ok": True, "state": "idle"}
 
 
 @app.post("/api/physical_reference_v2/propose")

@@ -38,15 +38,19 @@ renderers under `tools/bag/`.
 The UI helps the user create and edit annotation files, but annotation choices
 must remain manual. Do not generate final annotation CSVs automatically.
 
-The Issue #25 `Physical reference v2` workspace can display the evaluator's
-effective interpolated reference during normal playback. It can also generate a
-paused-frame, image-only optical-flow bbox proposal from a nearby explicit
-human anchor. The proposal preserves human-established `phys_dNNN`
-correspondence, is visually distinct from accepted geometry, and is never
-accepted or saved automatically. Its IoU/centre/scale disagreement indicators
-prioritise human review only; they are not evaluation criteria. No detector,
-tracker identity, RAW/TIM target output, or TIM-MARS output constructs the
-physical reference.
+The Issue #25 `Physical reference v2` workspace displays the evaluator's
+effective interpolated reference during normal playback. It can precompute
+frame-by-frame, bidirectional sparse-optical-flow proposals between compatible
+explicit human anchors, cache them in server/session memory, group conservative
+review regions, and recursively suggest efficient intermediate anchors. A
+short-range paused-frame proposal remains available as a fallback. Yellow
+proposals preserve human-established `phys_dNNN` correspondence, stop on
+insufficient evidence, and are never accepted or saved automatically.
+IoU/centre/scale disagreement and deterministic flow-confidence categories
+prioritise human review only; they are not evaluation criteria. The current
+Seq01 path uses no detector. An optional anonymous-box geometry matcher accepts
+coordinates only and refuses ambiguous matches; no detector/tracker identity,
+RAW/TIM target output, or TIM-MARS output constructs the physical reference.
 
 ## Typical launch command
 
