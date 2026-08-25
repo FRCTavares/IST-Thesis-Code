@@ -8,6 +8,8 @@ annotation editing, and evaluation triggering.
 Run this file directly when opening the local annotation UI.
 """
 
+import asyncio
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -31,8 +33,10 @@ from tim_ui_physical_reference import (
     save_physical_reference_for_ui,
 )
 from tim_ui_physical_reference_v2 import (
+    build_effective_reference_previews,
     load_physical_reference_v2_for_ui,
     next_person_ref,
+    propose_geometry_with_optical_flow,
     save_physical_reference_v2_for_ui,
 )
 from physical_target_reference import (  # noqa: E402  (path set up by tim_ui_physical_reference)
@@ -264,6 +268,60 @@ async def physical_reference_v2_next_person_ref_api(request: Request):
         return {"ok": False, "error": "known_refs must be a list."}
 
     return {"ok": True, "person_ref": next_person_ref([str(r) for r in known_refs])}
+
+
+@app.post("/api/physical_reference_v2/preview")
+async def physical_reference_v2_preview_api(request: Request):
+    """Resolve a read-only frame batch with the canonical v2 evaluator."""
+
+    payload = await request.json()
+    artifact = payload.get("artifact")
+    times_s = payload.get("times_s")
+    if not isinstance(artifact, dict):
+        return JSONResponse(
+            {"ok": False, "error": "artifact must be an object."}, status_code=400
+        )
+    if not isinstance(times_s, list):
+        return JSONResponse(
+            {"ok": False, "error": "times_s must be a list."}, status_code=400
+        )
+
+    try:
+        previews = build_effective_reference_previews(
+            artifact, [float(value) for value in times_s]
+        )
+    except (TypeError, ValueError, PhysicalReferenceValidationError) as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {"ok": True, "previews": previews}
+
+
+@app.post("/api/physical_reference_v2/propose")
+async def physical_reference_v2_propose_api(request: Request):
+    """Generate an ephemeral image-only bbox proposal from a human anchor."""
+
+    payload = await request.json()
+    images = [image for _timestamp, image in backend.CACHE.get("images", [])]
+    try:
+        proposal = await asyncio.to_thread(
+            propose_geometry_with_optical_flow,
+            images=images,
+            anchor_frame_index=int(payload.get("anchor_frame_index")),
+            target_frame_index=int(payload.get("target_frame_index")),
+            target_bbox_xyxy=payload.get("target_bbox_xyxy"),
+            distractors=payload.get("distractors") or [],
+        )
+    except (TypeError, ValueError, PhysicalReferenceUIError) as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {
+        "ok": True,
+        "proposal": proposal,
+        "message": (
+            "Image-only proposal generated. It is not accepted reference "
+            "geometry and has not modified or saved any artifact."
+        ),
+    }
 
 
 @app.get("/")

@@ -52,6 +52,80 @@ non-blocking observation, not a reproduced defect; no UI code was changed. If
 it recurs, capture the browser console error and exact click/loading state
 before considering a narrowly scoped fix.
 
+## M4B Seq01 in progress: assisted interpolation review (2026-08-25)
+
+Francisco has started the canonical June Seq01 artifact at
+`docs/data/physical_target_references/seq01_clean.json` with sequence ID
+`june_seq01_clean`. It currently exists locally as an **untracked,
+human-created in-progress artifact** and was deliberately not edited, staged, or
+committed by the tooling work described here. Its two explicit
+`present_scored` / `distractors_complete` endpoint anchors retain the target
+plus `phys_d001`, `phys_d002`, and `phys_d003`; the final anchor claims
+interpolation from the first.
+
+That interpolation claim is not yet accepted as scientifically valid across
+the whole 61.201 s span. The following annotation assistance was added so the
+human can review it efficiently while preserving the frozen v2 contract:
+
+- **Effective preview:** the backend validates the in-memory v2 artifact and
+  batch-resolves every source-frame timestamp through the evaluator's actual
+  `resolve_reference_interval` helper. Exact anchors are classified
+  separately, including the final right boundary. The frontend only caches and
+  paints the returned geometry; it contains no second interpolation
+  implementation.
+- **Playback display:** effective preview is enabled by default. Solid
+  green/orange boxes are explicit accepted/draft geometry, dashed cyan boxes
+  are interpolated effective reference, and dotted yellow boxes are unaccepted
+  image-only proposals. Status text distinguishes `explicit_keyframe`,
+  `interpolated`, `reference_gap`, `absent`, and
+  `present_reference_unavailable` continuously while scrubbing or playing.
+- **Geometry proposals:** a proposal is requested manually while paused and is
+  propagated from the nearest explicit human anchor by sparse Lucas--Kanade
+  optical flow with median translation. It is capped at 150 source frames,
+  runs off the FastAPI event loop, retains the anchor's target role and exact
+  `phys_dNNN` labels, and refuses insufficient visual evidence rather than
+  guessing. It reads only cached source images and human anchor geometry: no
+  detector, tracker ID, RAW/TIM selected target, or TIM-MARS output participates.
+- **Review assistance:** proposal/effective disagreement is shown per physical
+  person using IoU, centre displacement normalised by effective-reference
+  height, and logarithmic width/height scale delta. The default 0.65 / 0.25 /
+  0.25 thresholds only trigger `Possible interpolation drift -- review
+  recommended`; they are annotation-tool parameters, never evaluation or
+  TIM-MARS thresholds.
+- **Explicit acceptance boundary:** generating or previewing a proposal changes
+  neither samples nor disk. The human may copy it into an editable draft or
+  explicitly accept it as an in-memory anchor. JSON still changes only after a
+  separate explicit Save action through the authoritative v2 validator.
+
+A deterministic read-only pilot against the real in-progress artifact resolved
+0.000 s and 61.200516816 s as explicit anchors and 5, 15, 30, 45, and 55 s as
+interpolated target-plus-three-distractor frames with the same
+`phys_d001`--`phys_d003` correspondence. The artifact SHA-256 was identical
+before and after. On the real cached source frames, an image-only proposal from
+frame 0 to frame 107 (5.00004372 s) succeeded for target plus all three
+distractors and likewise left the artifact unchanged. This proves tooling
+operation only; it does **not** validate the long interpolation visually.
+
+### Seq01 review workflow
+
+1. Load the exact `12-48-17` source and `seq01_clean.json`; leave **Show
+   effective v2 reference** enabled.
+2. Play the whole sequence and stop whenever dashed boxes leave the visible
+   extent of any physical person, correspondence becomes uncertain, or the
+   status reports a gap/state boundary.
+3. At a paused frame within 150 frames of an explicit anchor, request an
+   optical-flow proposal. Treat the dotted boxes and disagreement metrics only
+   as review aids.
+4. Copy the proposal to a draft for correction, or explicitly accept it as an
+   in-memory anchor only after visually checking target and every
+   `phys_dNNN`. Check the interpolation checkbox deliberately.
+5. Save JSON separately, reload it through the v2 loader, and continue. Accept
+   honest gaps or explicit unavailable/absence boundaries where visual
+   judgement cannot support geometry/correspondence.
+
+Seq01 M4B remains incomplete until Francisco completes this full visual review.
+M4B globally remains incomplete, and M5 must not begin.
+
 ## M4A-v2 re-plan (2026-08-25)
 
 This section supersedes the v1 workload estimate below for execution planning.

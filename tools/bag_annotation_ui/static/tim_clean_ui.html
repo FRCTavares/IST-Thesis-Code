@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <title>TIM-MARS Clean UI</title>
-  <link rel="stylesheet" href="/static/tim_clean_ui.css?v=annotation_workspace_13">
+  <link rel="stylesheet" href="/static/tim_clean_ui.css?v=issue25_assisted_review_1">
 
 </head>
 <body>
@@ -247,6 +247,62 @@
             <input type="checkbox" id="physicalRefShowOverlays" checked onchange="physicalRefRefreshOverlayImage()">
             show tracker overlays (visual aid only, never saved)
           </label>
+        </div>
+
+        <div class="physicalRefReviewPanel">
+          <div class="physicalRefReviewToggleRow">
+            <label>
+              <input
+                type="checkbox"
+                id="physicalRefShowEffective"
+                checked
+                onchange="physicalRefOnEffectiveToggle()"
+              >
+              Show effective v2 reference
+            </label>
+            <span class="physicalRefLegend">
+              solid = explicit/draft &nbsp; dashed cyan = interpolated effective
+              &nbsp; dotted yellow = unaccepted proposal
+            </span>
+          </div>
+          <div id="physicalRefEffectiveStatus" class="physicalRefEffectiveStatus">
+            No physical-reference artifact loaded.
+          </div>
+
+          <div class="physicalRefAssistActions">
+            <button type="button" onclick="physicalRefRequestProposal()">
+              Generate nearby optical-flow proposal
+            </button>
+            <button type="button" onclick="physicalRefCopyProposalToDraft()">
+              Use proposal as editable draft
+            </button>
+            <button type="button" onclick="physicalRefAcceptProposalAsAnchor()">
+              Accept proposal as in-memory anchor
+            </button>
+          </div>
+          <div class="physicalRefReviewThresholds">
+            <label>review IoU below
+              <input id="physicalRefReviewIou" type="number" value="0.65" min="0" max="1" step="0.05"
+                     onchange="physicalRefRenderProposalStatus()">
+            </label>
+            <label>centre/ref-height above
+              <input id="physicalRefReviewCenter" type="number" value="0.25" min="0" step="0.05"
+                     onchange="physicalRefRenderProposalStatus()">
+            </label>
+            <label>scale-delta above
+              <input id="physicalRefReviewScale" type="number" value="0.25" min="0" step="0.05"
+                     onchange="physicalRefRenderProposalStatus()">
+            </label>
+          </div>
+          <div id="physicalRefProposalStatus" class="physicalRefProposalStatus">
+            No automatic proposal generated for this frame.
+          </div>
+          <div class="physicalRefHint">
+            Optical flow uses only source images and geometry from a nearby
+            explicit human anchor. It never assigns identity, never reads
+            tracker/TIM output, and never changes or saves JSON without
+            separate explicit human actions.
+          </div>
         </div>
 
         <div id="physicalRefPersonRefPalette" class="physicalRefPersonRefPalette"></div>
@@ -494,7 +550,7 @@ window.TIM_CLEAN_UI_BAGS = __BAGS_JSON__;
 window.TIM_CLEAN_UI_ANNOTATIONS = __ANNOTATIONS_JSON__;
 </script>
 <script src="/static/tim_clean_ui.js?v=annotation_workspace_14"></script>
-<script src="/static/tim_physical_reference_v2_ui.js?v=issue25_m3v2_1"></script>
+<script src="/static/tim_physical_reference_v2_ui.js?v=issue25_assisted_review_1"></script>
 
   </div>
 </body>
