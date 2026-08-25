@@ -4,6 +4,54 @@ GitHub Issue: #25
 Branch: `issue-25-bbox-evaluation-continuation-20260825`
 Companion to: `docs/issues/p1-10-improve-bbox-evaluation.md` (frozen `tim_physical_target_bbox_v1` contract, Milestones 1-3)
 
+## M3-v2 human browser acceptance (2026-08-25)
+
+Francisco completed the pending six-item human acceptance checkpoint using the
+live `Physical reference v2 (Issue #25)` workspace and the canonical June Seq01
+raw curated-source bag `2026-06-19__12-48-17` (1520 frames). These results are
+human-observed browser evidence; they are not substitutes for M4B physical-person
+annotation.
+
+1. **PASS -- explicit JSON reload after a rejected draft.** A valid scratch
+   artifact was saved as sequence `m3_smoke_seq01_20260825`; after clearing
+   `sequence_id`, changing the visible bbox draft, and receiving the expected
+   backend save rejection, explicit Load-selected-JSON restored the saved
+   metadata/sample and removed the rejected changed draft.
+2. **PASS -- distractor correspondence after save/reload.** A
+   `distractors_complete` sample assigned `phys_d001` and `phys_d002` to two
+   distinct physical distractors. Reload preserved the same person
+   correspondences and deterministic ordering.
+3. **PASS -- reverse-direction drawing.** A target box drawn bottom-right to
+   top-left was normalised around the intended person and remained correct
+   after save/reload.
+4. **PASS -- resize alignment.** Resizing the browser from a very narrow window
+   to full width left target and distractor boxes visually aligned with the
+   same physical people, with no observable source-pixel coordinate drift.
+5. **PASS -- final-frame right-boundary anchor.** At source frame `1519 / 1519`,
+   the UI reported `t_s = 61.201 s` and the valid right-boundary-anchor hint.
+   Save/reload preserved samples at `0.000 s` and the exact final timestamp,
+   including the final target bbox.
+6. **PASS -- legacy editor independence.** After returning to the loader, the
+   same source bag opened in `Annotation editor`; Tracker IDs, interval/CSV
+   controls, and video playback remained functional independently of the v2
+   physical-reference workspace.
+
+### Non-blocking loader-navigation observation
+
+During that session, `Change bag / annotation` appeared to do nothing once
+from a loaded workspace; refreshing returned to the loader and allowed the
+legacy-editor check above. A deterministic source audit found the button is
+`type="button"` and directly calls `changeLoadedBag()`, which pauses playback,
+hides all three loaded workspaces plus the summary/playback dock, removes the
+`bagLoaded` body class that hides the loader, resets load progress, and scrolls
+to the top. The corresponding CSS exposes the loader when that class is absent.
+No conflicting handler or state transition was found, and the ended browser
+state could not be reproduced deterministically on the Pi (no browser-automation
+runtime is installed). Therefore this is recorded as an unconfirmed,
+non-blocking observation, not a reproduced defect; no UI code was changed. If
+it recurs, capture the browser console error and exact click/loading state
+before considering a narrowly scoped fix.
+
 ## M4A-v2 re-plan (2026-08-25)
 
 This section supersedes the v1 workload estimate below for execution planning.
@@ -101,16 +149,20 @@ human judgement supports it and report the remaining reference gaps honestly.
 
 ### M4B entry and stopping rule
 
-Begin real annotation only after the short M3-v2 human browser regression.
-Start with June Seq01 as the low-risk correspondence/interpolation pilot, then
-May, Seq03, and Seq04. After each sequence, validate the JSON with the real v2
-loader and inspect the planned M5 report's reference coverage before investing
-in the next sequence. Stop and reassess if coverage is dominated by gaps or if
-correspondence cannot be maintained without tracker-ID inference.
+M3-v2 human browser acceptance is complete. M4B June Seq01 is now the next
+active Issue #25 step: annotate the low-risk correspondence/interpolation pilot
+from the exact `12-48-17` raw source, then proceed to May, Seq03, and Seq04 only
+after reviewing the pilot. After each sequence, validate the JSON with the real
+v2 loader and, once same-capture outputs exist, inspect the planned M5 report's
+reference coverage before investing in the next sequence. Stop and reassess if
+coverage is dominated by gaps or if correspondence cannot be maintained
+without tracker-ID inference.
 
-M4B remains human work. This re-plan creates no physical-reference JSON and
-does not confirm the proposed June target labels, physical absence, or any
-`phys_dNNN` identity.
+M4B remains incomplete human work. This plan and the M3 smoke checkpoint create
+no canonical physical-reference JSON and do not confirm the proposed June
+target labels, physical absence, or any `phys_dNNN` identity. M5 also remains
+incomplete and must not start until required real annotations and matching
+same-capture regenerated outputs exist.
 
 ## Corrective re-audit (2026-08-10)
 
