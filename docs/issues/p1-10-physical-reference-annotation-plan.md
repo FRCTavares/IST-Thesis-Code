@@ -1,8 +1,116 @@
-# P1.10 Physical-reference annotation workload plan (Milestone 4A)
+# P1.10 Physical-reference annotation workload plan (M4A-v2)
 
 GitHub Issue: #25
-Branch: `issue-25-improve-bbox-evaluation`
+Branch: `issue-25-bbox-evaluation-continuation-20260825`
 Companion to: `docs/issues/p1-10-improve-bbox-evaluation.md` (frozen `tim_physical_target_bbox_v1` contract, Milestones 1-3)
+
+## M4A-v2 re-plan (2026-08-25)
+
+This section supersedes the v1 workload estimate below for execution planning.
+The older sections remain as historical evidence of why v2 was required. No
+new visual identity judgement was made in this re-plan: it uses the existing
+10 August frame review, direct bag/topic/timestamp inspection, the frozen v2
+contract, and existing event annotations only.
+
+### Evidence-path correction
+
+The four physical-reference sources remain the raw captures listed below, but
+a reference is scientifically usable only against output regenerated from the
+**same capture and timebase**. The current `tim_mars_split_v1` June output
+bags cannot be paired directly with these references:
+
+- May's promoted replay embeds the exact `11-03-26` raw-capture name and
+  contains `/camera/image_raw`; its provenance is joinable.
+- June Seq01's split entry is the independent `12-45-45` live capture,
+  whereas the usable raw-image sequence is `12-48-17`.
+- June Seq03/Seq04 split entries are image-less downstream replays whose
+  preserved lineage points through now-missing OC-SORT replay inputs; the
+  annotatable raw captures are `12-55-58` and `12-59-53`.
+- The June live `full_pipeline` captures and the raw-image captures have
+  different durations and were recorded independently. Scenario names are
+  not a timebase join.
+
+Therefore M5 must first regenerate full-pipeline outputs from the exact
+annotated raw bag for each sequence and record that source relationship.
+Applying a raw-bag reference to a different live capture is prohibited.
+
+### Exact v2 evaluation windows
+
+These are first-to-last `/camera/image_raw` message timestamps, which are
+the UI-derived v2 horizons, not bag-level prose estimates.
+
+| Sequence | Frames | Exact `evaluation_window` | Effective cadence | Dimensions |
+|---|---:|---:|---:|---:|
+| May hard re-entry | 974 | `[0.0, 67.866525700]` s | 14.337 fps | 640x640 |
+| June Seq01 | 1520 | `[0.0, 61.200893630]` s | 24.820 fps | 640x480 |
+| June Seq03 | 1931 | `[0.0, 83.866288839]` s | 23.013 fps | 640x480 |
+| June Seq04 | 2047 | `[0.0, 86.501604967]` s | 23.653 fps | 640x480 |
+
+Every artifact needs an anchor at the first source frame and may use the final
+source frame as the legal right-boundary anchor. The final anchor contributes
+no duration by itself.
+
+### Final-semantics annotation policy
+
+All four sequences remain conservatively `distractors_complete` wherever
+the target is scored. v2 changes the workload because those samples may now
+interpolate per physical person, but only when both endpoints have the exact
+same `person_ref` set and the annotator judges every trajectory and
+visible-extent box to be locally linear.
+
+- Use about 1.0 s anchor spacing in calm, separated motion. Interpolate only
+  after checking the whole span, not merely its endpoints.
+- Add anchors at every entry, exit, correspondence change, abrupt motion or
+  scale change, and occlusion/crossing onset and offset.
+- Review difficult regions at about 0.25–0.5 s spacing. Split them into short
+  interpolable spans only where the correspondence and geometry are genuinely
+  unambiguous. Do not bridge overlaps, uncertain re-entry, or changing visible
+  extent just to improve coverage.
+- If one physical person disappears, omit that `person_ref`; the set change
+  deliberately blocks interpolation. Mint a new `person_ref` after uncertain
+  re-entry. Never use a tracker ID to settle correspondence.
+- Use `absent` or `present_reference_unavailable` boundary samples only
+  after direct human judgement. Existing tracker-ID absence rows are navigation
+  hints, not physical-state truth.
+- Accept honest `reference_gap_duration_s` where no legal interpolation or
+  trustworthy state claim exists. The plan does not invent a coverage target;
+  M5 must report the achieved fraction.
+
+### Sequence plan and workload
+
+The ranges count bbox drawings (target plus all plausible distractors), not
+mouse clicks or native frames. They assume 1 s anchors in accepted calm spans
+and 0.25–0.5 s review in the existing high-risk regions; they will move when
+the annotator inspects every span. They are not a reuse of the old 1488-action
+estimate.
+
+| Sequence | Existing evidence and risk regions | Correspondence / state requirements | Approximate workload |
+|---|---|---|---:|
+| May hard re-entry | One prominent companion throughout; seven transferable ambiguity windows at 24.77–25.47, 29.37–30.18, 33.93–36.27, 40.03–41.50, 49.64–51.23, 55.07–56.03, and 58.16–58.93 s; occasional distant people near 17.4 and 66.9 s need checking. | Reuse one companion `person_ref` only while visually certain; split at any actual occlusion/correspondence change. Tracker handovers are not identity boundaries. | 70–90 keyframes; about 140–200 bbox drawings. |
+| June Seq01 | Four people were simultaneously visible and separated throughout every prior sample; no crossing was observed. Lowest-risk interpolation pilot, but the physical target label still requires Francisco's confirmation. | Establish three distractor correspondences at the start and preserve them only by visual judgement. Check frame edges/entries before treating the set as constant. | 62–70 keyframes; about 248–280 bbox drawings. |
+| June Seq03 | Two people approach during 0–20 s; crossing/overlap risk is concentrated around 20–45 s; all four are visible around 45–60 s; sustained central clustering occurs from about 60 s to the end. | Dense event anchors and short spans through approach/crossing; do not interpolate across overlapping boxes or uncertain correspondence. | 90–170 keyframes; about 330–680 bbox drawings. |
+| June Seq04 | Tight multi-person cluster from the opening, heaviest overlap around 35–60 s, spreading around 60–75 s, and renewed clustering near the end; a possible fifth person and possible target absence/unavailability require direct review. | Highest correspondence churn risk. Use explicit state boundaries for genuine absence/unavailability; changed person sets must stop interpolation. | 110–220 keyframes; about 450–1100 bbox drawings, plus roughly 4–8 state-only boundary samples if the suspected episodes are confirmed. |
+| **Total** | 299.435 s across 6472 source frames. | Identity-independent `phys_dNNN` correspondence only. | **332–550 keyframes; about 1168–2260 bbox drawings, plus confirmed state boundaries.** |
+
+The upper end is still not a full-coverage guarantee. Under the v2 evaluator's
+default 0.05 s grid, a non-interpolated exact keyframe supports only its own
+grid interval. Full coverage of every difficult span without interpolation
+would approach frame/grid-rate annotation and could exceed ten thousand bbox
+drawings. That is not recommended: use legal short-span interpolation where
+human judgement supports it and report the remaining reference gaps honestly.
+
+### M4B entry and stopping rule
+
+Begin real annotation only after the short M3-v2 human browser regression.
+Start with June Seq01 as the low-risk correspondence/interpolation pilot, then
+May, Seq03, and Seq04. After each sequence, validate the JSON with the real v2
+loader and inspect the planned M5 report's reference coverage before investing
+in the next sequence. Stop and reassess if coverage is dominated by gaps or if
+correspondence cannot be maintained without tracker-ID inference.
+
+M4B remains human work. This re-plan creates no physical-reference JSON and
+does not confirm the proposed June target labels, physical absence, or any
+`phys_dNNN` identity.
 
 ## Corrective re-audit (2026-08-10)
 
