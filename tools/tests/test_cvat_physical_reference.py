@@ -121,3 +121,75 @@ def test_validate_command_reconciles_provenance(tmp_path):
  assert C.validate_against(out,mp)["converted_samples"]==3
  bad=manifest();bad["sequence_id"]="other";(tmp_path/"bad.json").write_text(json.dumps(bad))
  with pytest.raises(C.CvatBridgeError,match="sequence"):C.validate_against(out,tmp_path/"bad.json")
+
+
+def image_xml(n=3, *, duplicate=False, missing=False, missing_ref=False,
+              label="person", wrong_name=False, wrong_dimensions=False,
+              bad_bbox=False, incomplete=False, unsupported_shape=False):
+ images=[]
+ for frame in range(n-(1 if incomplete else 0)):
+  name=f"frame_{frame:06d}.png"
+  if wrong_name and frame==1: name="frame_000002.png"
+  width="320" if wrong_dimensions and frame==1 else "640"
+  children=[]
+  roles=["target","phys_d001"]
+  if missing and frame==1: roles=["target"]
+  if duplicate and frame==1: roles=["target","phys_d001","target"]
+  for physical_role in roles:
+   attribute="" if missing_ref and frame==1 and physical_role=="target" else f'<attribute name="physical_ref">{physical_role}</attribute>'
+   xbr="700" if bad_bbox and frame==1 and physical_role=="target" else ("20" if physical_role=="target" else "120")
+   x1="10" if physical_role=="target" else "100"
+   children.append(f'<box label="{label}" source="manual" occluded="0" xtl="{x1}" ytl="10" xbr="{xbr}" ybr="40" z_order="0">{attribute}</box>')
+  if unsupported_shape and frame==1: children.append('<polygon label="person" points="1,1;2,2;3,3"/>')
+  images.append(f'<image id="{frame}" name="{name}" width="{width}" height="480">{"".join(children)}</image>')
+ return f'<annotations><version>1.1</version>{"".join(images)}</annotations>'
+
+def test_valid_image_sequence_export_maps_manifest_frames_and_roles(tmp_path):
+ xp,mp,_=write_inputs(tmp_path,xml=image_xml())
+ geometry=C.geometry(xp,C.load_manifest(mp))
+ assert sorted(geometry)==[0,1,2]
+ assert geometry[0]["target"]==pytest.approx((10,10,20,40))
+ assert geometry[2]["phys_d001"]==pytest.approx((100,10,120,40))
+
+def test_image_sequence_conversion_uses_exact_manifest_timestamps(tmp_path):
+ xp,mp,cp=write_inputs(tmp_path,xml=image_xml());out=tmp_path/"image-v2.json"
+ result=C.convert(xp,mp,cp,out);data=json.loads(out.read_text())
+ assert result["converted_samples"]==3
+ assert [sample["t_s"] for sample in data["samples"]]==pytest.approx([0,.04,.09])
+ assert data["samples"][-1]["interpolate_from_previous"] is True
+
+@pytest.mark.parametrize("kwargs,match",[
+ ({"duplicate":True},"duplicate physical role"),
+ ({"missing_ref":True},"physical_ref"),
+ ({"label":"car"},"unsupported label"),
+ ({"wrong_name":True},"frame/name mismatch"),
+ ({"wrong_dimensions":True},"dimensions mismatch"),
+ ({"bad_bbox":True},"invalid frame/bbox"),
+ ({"incomplete":True},"incomplete image frame coverage"),
+ ({"unsupported_shape":True},"unsupported image shape"),
+])
+def test_invalid_image_sequence_exports_are_rejected(tmp_path,kwargs,match):
+ xp,mp,_=write_inputs(tmp_path,xml=image_xml(**kwargs))
+ with pytest.raises(C.CvatBridgeError,match=match):
+  C.geometry(xp,C.load_manifest(mp))
+
+def test_image_sequence_missing_present_scored_role_is_rejected(tmp_path):
+ xp,mp,cp=write_inputs(tmp_path,xml=image_xml(missing=True));out=tmp_path/"out.json"
+ with pytest.raises(C.CvatBridgeError,match="frame 1 role mismatch"):
+  C.convert(xp,mp,cp,out)
+ assert not out.exists()
+
+def test_existing_track_representation_remains_supported(tmp_path):
+ xp,mp,_=write_inputs(tmp_path,xml=xml_text(target_id="991",distractor_id="882"))
+ geometry=C.geometry(xp,C.load_manifest(mp))
+ assert geometry[1]["target"]==pytest.approx((15,15,25,35))
+ assert geometry[1]["phys_d001"]==pytest.approx((105,105,125,145))
+ assert "991" not in geometry[1] and "882" not in geometry[1]
+
+def test_ordered_image_task_config_uses_validated_export_format():
+ task=C.cvat_task_config(["target","phys_d001"])
+ assert task["export"]=="CVAT for images 1.1"
+ assert task["supported_alternate_export"]=="CVAT for video 1.1 native track representation"
+ assert "physical_ref only" in task["identity_authority"]
+ assert "never nominal FPS" in task["timestamp_authority"]
+ assert task["review_authority"]=="human review remains authoritative"

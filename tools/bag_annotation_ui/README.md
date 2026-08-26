@@ -55,7 +55,12 @@ RAW/TIM target output, or TIM-MARS output constructs the physical reference.
 For M4B production annotation, CVAT is now preferred over further expansion of
 this custom UI. `tools/analysis/cvat_physical_reference.py` exports exact
 ordered source frames and timestamps, then fail-closed converts human-reviewed
-CVAT rectangle tracks back to frozen v2. This UI remains the fallback,
+CVAT rectangle annotations back to frozen v2. Ordered PNG tasks use **CVAT for
+images 1.1**; CVAT may expand track interpolation into one `<image><box>` per
+frame, while native `<track>` CVAT 1.1 remains supported. `physical_ref`,
+never numeric CVAT IDs or drawing order, defines identity; source times come
+from `frame_manifest.json`, never nominal FPS, and human review remains
+authoritative. This UI remains the fallback,
 schema/debug viewer, effective-reference inspector, and final visual validation
 instrument; its assisted-propagation implementation is intentionally retained.
 
