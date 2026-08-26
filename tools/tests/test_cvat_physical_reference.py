@@ -187,9 +187,45 @@ def test_existing_track_representation_remains_supported(tmp_path):
  assert "991" not in geometry[1] and "882" not in geometry[1]
 
 def test_ordered_image_task_config_uses_validated_export_format():
- task=C.cvat_task_config(["target","phys_d001"])
+ task=C.cvat_task_config(["target","phys_d001"],"dev_may_hard_reentry",974)
+ assert task["task_name"]=="dev_may_hard_reentry"
+ assert task["frame_count"]==974
  assert task["export"]=="CVAT for images 1.1"
  assert task["supported_alternate_export"]=="CVAT for video 1.1 native track representation"
  assert "physical_ref only" in task["identity_authority"]
  assert "never nominal FPS" in task["timestamp_authority"]
  assert task["review_authority"]=="human review remains authoritative"
+
+
+def test_seedless_preparation_config_preserves_roles_and_requires_human_semantics(tmp_path):
+ cfg={"preparation_config_version":C.PV,"sequence_id":"dev_may_hard_reentry",
+  "source_bag_path":"bags/source/may","source_image_topic":"/camera/image_raw",
+  "source_width":640,"source_height":640,
+  "coordinate_convention":"source_pixels_historical_pre_p53",
+  "coordinate_convention_evidence":"direct bag inspection","selected_physical_target_label":"black_shirt_person",
+  "annotator":"Francisco","allowed_roles":["target","phys_d001"]}
+ path=tmp_path/"prep.json";path.write_text(json.dumps(cfg))
+ loaded,roles=C.preparation_config(path)
+ assert loaded==cfg
+ assert roles==["target","phys_d001"]
+ task=C.cvat_task_config(roles)
+ assert task["resize"]=="none; exact source pixels"
+ assert task["attribute"]["mutable"] is False
+
+
+@pytest.mark.parametrize("change,match",[
+ ({"allowed_roles":["phys_d001","target"]},"start with unique target"),
+ ({"allowed_roles":["target","phys_d001","phys_d001"]},"start with unique target"),
+ ({"allowed_roles":["target","1"]},"invalid physical_ref"),
+ ({"source_width":0},"dimensions"),
+ ({"coordinate_convention":"unknown"},"coordinate convention"),
+])
+def test_seedless_preparation_config_rejects_unsafe_metadata(tmp_path,change,match):
+ cfg={"preparation_config_version":C.PV,"sequence_id":"dev_may_hard_reentry",
+  "source_bag_path":"bags/source/may","source_image_topic":"/camera/image_raw",
+  "source_width":640,"source_height":640,
+  "coordinate_convention":"source_pixels_historical_pre_p53",
+  "coordinate_convention_evidence":"direct bag inspection","selected_physical_target_label":"black_shirt_person",
+  "annotator":"Francisco","allowed_roles":["target","phys_d001"]}
+ cfg.update(change);path=tmp_path/"prep.json";path.write_text(json.dumps(cfg))
+ with pytest.raises(C.CvatBridgeError,match=match): C.preparation_config(path)

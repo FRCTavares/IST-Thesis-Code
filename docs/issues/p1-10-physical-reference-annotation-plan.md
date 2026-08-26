@@ -327,13 +327,15 @@ Applying a raw-bag reference to a different live capture is prohibited.
 
 ### Exact v2 evaluation windows
 
-These are first-to-last `/camera/image_raw` message timestamps, which are
-the UI-derived v2 horizons, not bag-level prose estimates.
+These are first-to-last `/camera/image_raw` scientific source timestamps:
+positive `sensor_msgs/Image.header.stamp`, with bag-record time used only when
+the header stamp is not positive. They are not nominal-FPS or bag-level prose
+estimates.
 
 | Sequence | Frames | Exact `evaluation_window` | Effective cadence | Dimensions |
 |---|---:|---:|---:|---:|
-| May hard re-entry | 974 | `[0.0, 67.866525700]` s | 14.337 fps | 640x640 |
-| June Seq01 | 1520 | `[0.0, 61.200893630]` s | 24.820 fps | 640x480 |
+| May hard re-entry | 974 | `[0.0, 67.864909774]` s | 14.337 fps | 640x640 |
+| June Seq01 | 1520 | `[0.0, 61.200516816]` s | 24.820 fps | 640x480 |
 | June Seq03 | 1931 | `[0.0, 83.866288839]` s | 23.013 fps | 640x480 |
 | June Seq04 | 2047 | `[0.0, 86.501604967]` s | 23.653 fps | 640x480 |
 
@@ -377,7 +379,7 @@ estimate.
 
 | Sequence | Existing evidence and risk regions | Correspondence / state requirements | Approximate workload |
 |---|---|---|---:|
-| May hard re-entry | One prominent companion throughout; seven transferable ambiguity windows at 24.77–25.47, 29.37–30.18, 33.93–36.27, 40.03–41.50, 49.64–51.23, 55.07–56.03, and 58.16–58.93 s; occasional distant people near 17.4 and 66.9 s need checking. | Reuse one companion `person_ref` only while visually certain; split at any actual occlusion/correspondence change. Tracker handovers are not identity boundaries. | 70–90 keyframes; about 140–200 bbox drawings. |
+| May hard re-entry | Exactly two physical people: the selected target and one companion throughout; seven transferable ambiguity windows at 24.77–25.47, 29.37–30.18, 33.93–36.27, 40.03–41.50, 49.64–51.23, 55.07–56.03, and 58.16–58.93 s. | Preserve the single companion as `phys_d001` only while visually certain; split at any actual occlusion/correspondence change. Tracker handovers are not identity boundaries. | 70–90 keyframes; about 140–200 bbox drawings. |
 | June Seq01 | Four people were simultaneously visible and separated throughout every prior sample; no crossing was observed. Lowest-risk interpolation pilot, but the physical target label still requires Francisco's confirmation. | Establish three distractor correspondences at the start and preserve them only by visual judgement. Check frame edges/entries before treating the set as constant. | 62–70 keyframes; about 248–280 bbox drawings. |
 | June Seq03 | Two people approach during 0–20 s; crossing/overlap risk is concentrated around 20–45 s; all four are visible around 45–60 s; sustained central clustering occurs from about 60 s to the end. | Dense event anchors and short spans through approach/crossing; do not interpolate across overlapping boxes or uncertain correspondence. | 90–170 keyframes; about 330–680 bbox drawings. |
 | June Seq04 | Tight multi-person cluster from the opening, heaviest overlap around 35–60 s, spreading around 60–75 s, and renewed clustering near the end; a possible fifth person and possible target absence/unavailability require direct review. | Highest correspondence churn risk. Use explicit state boundaries for genuine absence/unavailability; changed person sets must stop interpolation. | 110–220 keyframes; about 450–1100 bbox drawings, plus roughly 4–8 state-only boundary samples if the suspected episodes are confirmed. |
@@ -400,11 +402,52 @@ reference coverage before investing in the next sequence. Stop and reassess if
 coverage is dominated by gaps or if correspondence cannot be maintained
 without tracker-ID inference.
 
-Global M4B remains incomplete human work. Seq01 now has a completed,
-converted, validated generated v2 artifact, but it has not yet been promoted
-over the existing local canonical-path draft; May, Seq03, and Seq04 remain
-unannotated. M5 also remains incomplete and must not start until all required
-real annotations and matching same-capture regenerated outputs exist.
+### May hard re-entry preparation checkpoint (2026-08-26)
+
+The exact-frame ordered-PNG package is prepared under the ignored path
+`data/datasets/processed/cvat/physical_reference/dev_may_hard_reentry/`
+using the established `tools/analysis/cvat_physical_reference.py prepare`
+entry point. Direct source-bag inspection found 974 positive Image header
+stamps, so the authoritative window is `[0.0, 67.864909774]` s. The older
+`67.866525700` s M4A figure was the first-to-last bag-record span; it is
+1.615926 ms longer and is not the scientific timestamp source while positive
+headers exist.
+
+No pre-existing human v2 May bbox or correspondence seed was found. The bridge
+therefore supports a preparation-only metadata input and generated this package
+without `seed_annotations.xml`; deriving a seed from historical tracker boxes
+would violate the identity-independent contract. The May sequence contains exactly two physical people, so the task permits
+exactly `target` (the black-shirt selected physical person) and
+`phys_d001` (the only other physical person). The earlier speculative
+`phys_d002`/`phys_d003` reservations based on uncertain distant-image
+observations were incorrect and have been removed before annotation. Numeric
+CVAT IDs and drawing order remain meaningless.
+
+Francisco completed human review in CVAT on 26 August. The returned **CVAT
+for images 1.1** export (SHA-256
+`1ac380f10d66df08d779a70696188d2823c013bdaf6c0a649e340d9e721384e4`)
+contains 974 image elements and exactly one `person` box for each of
+`target` and `phys_d001` on every frame. There are no outside/occluded
+boxes, missing frames, duplicate roles, unsupported labels or shapes, invalid
+coordinates, or discontinuities. Image-mode CVAT export does not retain the
+original track keyframe flags.
+
+The reviewed conversion sidecar now records the full window as
+`present_scored` / `distractors_complete` with exactly those two required
+roles. Exact-manifest conversion produced 974 per-frame frozen-v2 samples,
+zero gaps, full two-role coverage, and a valid final right-boundary anchor at
+67.864909774 s. Frozen evaluator reconciliation covers the complete
+67.864909774 s window with zero residual. The generated candidate and promoted
+canonical file are byte-identical with SHA-256
+`45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c`.
+
+Canonical May reference:
+
+`docs/data/physical_target_references/dev_may_hard_reentry.json`
+
+June Seq01 and May hard re-entry M4B are complete. Seq03 and Seq04 remain
+unannotated, so global M4B remains incomplete. M5 must not start until those
+references and matching same-capture regenerated outputs exist.
 
 ## Corrective re-audit (2026-08-10)
 
@@ -680,12 +723,12 @@ sampling specifically inside the previously-proposed `target_only` window)
 all show the two people standing side by side, both clearly resolvable and
 equally prominent. There is no sub-interval in this sequence where the
 target is not accompanied by at least one other clearly visible person.
-Distractor count: 1 per sample throughout (the CSV's own
-`distractor_track_ids` column records exactly one companion almost
-everywhere; occasional distant third/fourth figures near the frame edge at
-t≈17.4s and t≈66.9s are small and not consistently present, so are not
-counted as a second guaranteed distractor, but a real annotator should
-check them at those specific instants).
+Distractor count: exactly 1 per sample throughout. The sequence contains
+only the target and one other physical person; an earlier interpretation of
+uncertain distant image content as possible third/fourth people was incorrect
+and is superseded by this confirmed two-person contract. The legacy CSV's
+numeric distractor ID remains timing evidence only and does not define
+`phys_d001`.
 
 | Region | start_s | end_s | dur (s) | Regime | Avg distractors/sample | Reason |
 |---|---:|---:|---:|---:|---|
@@ -703,7 +746,7 @@ check them at those specific instants).
 | E6 | 55.07 | 56.03 | 0.96 | DISTRACTORS_COMPLETE (transition) | 1 | CSV `occlusion_ambiguity`. |
 | R7 | 56.03 | 58.16 | 2.13 | DISTRACTORS_COMPLETE | 1 | Same as R2. |
 | E7 | 58.16 | 58.93 | 0.77 | DISTRACTORS_COMPLETE (transition) | 1 | CSV `occlusion_ambiguity`. |
-| R8 | 58.93 | 67.70 | 8.77 | DISTRACTORS_COMPLETE | 1 | Visual sample at t≈66.9s shows up to 4 people visible (2 main + 2 distant); 1 counted as guaranteed, distant pair flagged for annotator check. |
+| R8 | 58.93 | 67.70 | 8.77 | DISTRACTORS_COMPLETE | 1 | The same two physical people remain; preserve the companion as `phys_d001` by human correspondence, not tracker identity. |
 
 ### E.2 June Seq01 -- clean four-person (61.20 s, target = `black_shirt_person`, proposed)
 

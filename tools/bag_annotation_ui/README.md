@@ -60,7 +60,11 @@ images 1.1**; CVAT may expand track interpolation into one `<image><box>` per
 frame, while native `<track>` CVAT 1.1 remains supported. `physical_ref`,
 never numeric CVAT IDs or drawing order, defines identity; source times come
 from `frame_manifest.json`, never nominal FPS, and human review remains
-authoritative. This UI remains the fallback,
+authoritative. If a sequence has no prior human v2 bbox evidence, the bridge's
+`prepare --preparation-config` mode produces a seedless task and leaves the
+semantic sidecar empty so conversion fails until the annotator explicitly
+records reviewed state/context/role intervals; tracker boxes are never used as
+identity seeds. This UI remains the fallback,
 schema/debug viewer, effective-reference inspector, and final visual validation
 instrument; its assisted-propagation implementation is intentionally retained.
 
