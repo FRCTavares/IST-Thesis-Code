@@ -36,6 +36,9 @@ def validate_manifest(m,media=None):
  if media and [p.name for p in sorted(Path(media).glob("frame_*.png"))]!=[r["media_filename"] for r in rows]: raise CvatBridgeError("media count/order mismatch")
  return m
 def load_manifest(p,media=None): return validate_manifest(json.loads(Path(p).read_text()),media)
+def cvat_task_config(roles):
+ return {"task_type":"ordered image sequence/interpolation","sorting":"lexicographical","frame_step":1,"label":"person","attribute":{"name":ATTR,"type":"select","mutable":False,"values":roles},"export":"CVAT for images 1.1","supported_alternate_export":"CVAT for video 1.1 native track representation","identity_authority":"physical_ref only; never numeric CVAT IDs or drawing order","timestamp_authority":"frame_manifest.json exact source timestamps; never nominal FPS","review_authority":"human review remains authoritative"}
+
 def seed(path,m,refp,roles):
  s=load_physical_reference(refp).samples[0];boxes={TARGET:s.target_bbox_xyxy}|{d.person_ref:d.bbox_xyxy for d in s.distractors}
  if s.t_s!=0 or set(boxes)!=set(roles): raise CvatBridgeError("seed mismatch")
@@ -76,7 +79,7 @@ def prepare(bag,refp,out):
  roles=[TARGET]+[d.person_ref for d in ref.samples[0].distractors]
  cfg={"config_version":CV,"sequence_id":p.sequence_id,"annotator":p.annotator,"created_date":str(date.today()),"selected_physical_target_label":p.selected_physical_target_label,"coordinate_convention_evidence":p.coordinate_convention_evidence,"required_roles":roles,"allow_occluded_geometry":False,"semantic_intervals":[{"start_frame":0,"end_frame":len(rows)-1,"identity_state":"present_scored","identity_context":"distractors_complete","required_roles":roles,"human_assertion":"Seq01 only; confirm during complete CVAT review"}]}
  dump(out/"conversion_config.json",cfg);seed(out/"seed_annotations.xml",m,refp,roles)
- dump(out/"cvat_task.json",{"task_type":"ordered image sequence/interpolation","sorting":"lexicographical","frame_step":1,"label":"person","attribute":{"name":ATTR,"type":"select","mutable":False,"values":roles},"export":"CVAT for video 1.1","warning":"numeric CVAT track IDs discarded"})
+ dump(out/"cvat_task.json",cvat_task_config(roles))
  arc=out/f"{p.sequence_id}_cvat_images.zip"
  with zipfile.ZipFile(arc,"w",zipfile.ZIP_DEFLATED,compresslevel=1) as z:
   for r in rows:z.write(images/r["media_filename"],r["media_filename"])
@@ -91,8 +94,8 @@ def xml(path):
    root=ET.fromstring(z.read(names[0]))
  else: root=ET.fromstring(raw)
  return root,hashlib.sha256(raw).hexdigest()
-def geometry(path,m,allow=False):
- root,_=xml(path);w,h=m["source_width"],m["source_height"];xw=root.findtext("./meta/task/original_size/width");xh=root.findtext("./meta/task/original_size/height")
+def _track_geometry(root,m,allow=False):
+ w,h=m["source_width"],m["source_height"];xw=root.findtext("./meta/task/original_size/width");xh=root.findtext("./meta/task/original_size/height")
  if xw and (int(xw),int(xh))!=(w,h): raise CvatBridgeError("coordinate transform unproven")
  out={i:{} for i in range(m["frame_count"])};owners={}
  for tr in root.findall("./track"):
@@ -116,8 +119,46 @@ def geometry(path,m,allow=False):
    for f in range(a[0],b[0] if b else m["frame_count"]):
     q=(f-a[0])/(b[0]-a[0]) if b and not b[3] else 0
     out[f][r]=tuple(x+q*(y-x) for x,y in zip(a[2],b[2] if b else a[2]))
- if not owners: raise CvatBridgeError("no tracks; export CVAT for video 1.1")
  return out
+
+def _image_geometry(root,m,allow=False):
+ images=root.findall("./image");rows=m["frames"];width=m["source_width"];height=m["source_height"]
+ if len(images)!=len(rows): raise CvatBridgeError(f"incomplete image frame coverage: export has {len(images)}, manifest has {len(rows)}")
+ by_frame={}
+ for image in images:
+  try: frame=int(image.get("id",""))
+  except (TypeError,ValueError) as exc: raise CvatBridgeError("invalid CVAT image id") from exc
+  if frame in by_frame: raise CvatBridgeError(f"duplicate CVAT image frame {frame}")
+  if not 0<=frame<len(rows): raise CvatBridgeError(f"CVAT image frame {frame} outside manifest")
+  row=rows[frame]
+  if image.get("name")!=row["media_filename"]: raise CvatBridgeError(f"image frame/name mismatch at {frame}")
+  try: image_size=(int(image.get("width","")),int(image.get("height","")))
+  except (TypeError,ValueError) as exc: raise CvatBridgeError(f"invalid image dimensions at frame {frame}") from exc
+  if image_size!=(row["width"],row["height"]) or image_size!=(width,height): raise CvatBridgeError(f"image dimensions mismatch at frame {frame}")
+  unsupported=[child.tag for child in image if child.tag!="box"]
+  if unsupported: raise CvatBridgeError(f"unsupported image shape at frame {frame}: {unsupported[0]}")
+  frame_geometry={}
+  for box in image.findall("./box"):
+   if box.get("label")!="person": raise CvatBridgeError(f"unsupported label at frame {frame}")
+   attrs=[(a.text or "").strip() for a in box.findall(f"./attribute[@name='{ATTR}']")]
+   if len(attrs)!=1 or not attrs[0]: raise CvatBridgeError(f"missing or duplicate physical_ref at frame {frame}")
+   physical_role=role(attrs[0])
+   if physical_role in frame_geometry: raise CvatBridgeError(f"duplicate physical role {physical_role} at frame {frame}")
+   try: bbox=tuple(float(box.get(k,"")) for k in ("xtl","ytl","xbr","ybr"))
+   except (TypeError,ValueError) as exc: raise CvatBridgeError(f"malformed bbox at frame {frame}") from exc
+   x1,y1,x2,y2=bbox
+   if any(not math.isfinite(v) for v in bbox) or not(0<=x1<x2<=width and 0<=y1<y2<=height): raise CvatBridgeError(f"invalid frame/bbox at frame {frame}")
+   if flag(box.get("occluded","0")) and not allow: raise CvatBridgeError("occluded geometry needs explicit approval")
+   frame_geometry[physical_role]=bbox
+  by_frame[frame]=frame_geometry
+ if sorted(by_frame)!=list(range(len(rows))): raise CvatBridgeError("image frames must be unique contiguous and match the manifest")
+ return {frame:by_frame[frame] for frame in range(len(rows))}
+
+def geometry(path,m,allow=False):
+ root,_=xml(path)
+ if root.findall("./track"): return _track_geometry(root,m,allow)
+ if root.findall("./image"): return _image_geometry(root,m,allow)
+ raise CvatBridgeError("no supported CVAT track or image annotations")
 def semantics(cfg,m):
  if cfg.get("config_version")!=CV or cfg.get("sequence_id")!=m["sequence_id"]: raise CvatBridgeError("invalid config")
  out=[None]*m["frame_count"]
@@ -149,7 +190,7 @@ def convert(export,manifest,config,output):
    if gg[i]: raise CvatBridgeError("state/geometry conflict")
    sample={"t_s":row["t_s"],"identity_state":st,"identity_context":None,"target_bbox_xyxy":None,"distractors":[],"interpolate_from_previous":False,"notes":"explicit sidecar state"}
   samples.append(sample);prev=(i,sample)
- p={"schema_version":SCHEMA_VERSION,"contract_version":CONTRACT_VERSION,"sequence_id":m["sequence_id"],"source_bag_name":m["source_bag_name"],"source_bag_path":m["source_bag_path"],"source_image_topic":m["source_bag_provenance"]["source_image_topic"],"source_width":m["source_width"],"source_height":m["source_height"],"coordinate_convention":m["coordinate_convention"],"coordinate_convention_evidence":cfg["coordinate_convention_evidence"],"selected_physical_target_label":cfg["selected_physical_target_label"],"annotator":cfg["annotator"],"created_date":cfg["created_date"],"evaluation_window":m["evaluation_window"],"notes":f"Human-reviewed CVAT tracks; numeric IDs discarded. Export SHA-256 {esh}; config SHA-256 {hashlib.sha256(raw).hexdigest()}."}
+ p={"schema_version":SCHEMA_VERSION,"contract_version":CONTRACT_VERSION,"sequence_id":m["sequence_id"],"source_bag_name":m["source_bag_name"],"source_bag_path":m["source_bag_path"],"source_image_topic":m["source_bag_provenance"]["source_image_topic"],"source_width":m["source_width"],"source_height":m["source_height"],"coordinate_convention":m["coordinate_convention"],"coordinate_convention_evidence":cfg["coordinate_convention_evidence"],"selected_physical_target_label":cfg["selected_physical_target_label"],"annotator":cfg["annotator"],"created_date":cfg["created_date"],"evaluation_window":m["evaluation_window"],"notes":f"Human-reviewed CVAT annotations; numeric IDs discarded. Export SHA-256 {esh}; config SHA-256 {hashlib.sha256(raw).hexdigest()}."}
  a=parse_physical_reference({"provenance":p,"samples":samples});validate_physical_reference(a);Path(output).parent.mkdir(parents=True,exist_ok=True);write_physical_reference(output,a);return summary(a,m)
 def validate_against(reference,manifest):
  m=load_manifest(manifest);a=load_physical_reference(reference)

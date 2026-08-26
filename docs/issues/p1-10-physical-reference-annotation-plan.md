@@ -52,7 +52,7 @@ non-blocking observation, not a reproduced defect; no UI code was changed. If
 it recurs, capture the browser console error and exact click/loading state
 before considering a narrowly scoped fix.
 
-## M4B Seq01 in progress: assisted interpolation review (2026-08-25)
+## M4B Seq01 development history: assisted interpolation review (2026-08-25)
 
 Francisco has started the canonical June Seq01 artifact at
 `docs/data/physical_target_references/seq01_clean.json` with sequence ID
@@ -215,11 +215,18 @@ available AI/OpenCV tracker may propose motion, but the human must play through
 and correct all four tracks. Optional hosted/enterprise SAM2 is not required
 and polygon/mask output is outside this rectangle converter.
 
-Export annotations as **CVAT for video 1.1**. The converter accepts only native
-rectangle tracks with a stable `physical_ref`, exact 640x480 coordinates, and
-frames in the manifest. It rejects missing/duplicate roles, role changes,
-unapproved occlusion, unsupported labels/states, out-of-range boxes, and any
-unproven coordinate transform. State/context comes from the separate
+Export an ordered PNG task as **CVAT for images 1.1**, the representation
+validated on completed Seq01. CVAT may expand track interpolation into one
+`<image><box>` annotation per source frame. The converter maps each image ID
+and zero-padded filename exactly through the manifest and reads identity only
+from the box's stable `physical_ref`; numeric CVAT IDs and drawing order are
+never identity. Native video-style CVAT 1.1 `<track>` exports remain a
+supported alternate representation. Both paths require exact source-pixel
+coordinates and reject missing/duplicate roles, role changes, unapproved
+occlusion, unsupported labels/shapes/states, out-of-range boxes, incomplete
+frame coverage, and any unproven coordinate transform. Exact source timestamps
+come from `frame_manifest.json`, never nominal FPS, and human review remains
+authoritative. State/context comes from the separate
 `conversion_config.json`, because CVAT `outside`/`occluded` cannot
 scientifically imply v2 `absent`, `present_reference_unavailable`, or a
 reference gap. Seq01's generated sidecar records Francisco's sequence-specific
@@ -265,8 +272,28 @@ The converted artifact remains generated until Francisco inspects it in the
 custom physical-reference workspace and deliberately promotes it. The existing
 human `seq01_clean.json` is never an implicit output target.
 
-Seq01 M4B remains incomplete until Francisco completes the CVAT playback review.
-M4B globally remains incomplete, and M5 must not begin.
+### Seq01 M4B completion checkpoint (2026-08-26)
+
+Francisco completed human review of the four physical-person tracks in the
+ordered PNG CVAT task. The **CVAT for images 1.1** export contains 1,520 images
+and exactly one `person` box for each of `target`, `phys_d001`,
+`phys_d002`, and `phys_d003` on every frame. The exact-manifest conversion
+and frozen-v2 validation both pass with 1,520 `present_scored` samples, zero
+missing frames, complete four-role coverage, and the 61.200516816 s final
+right-boundary anchor. The completed export SHA-256 is
+`5df00afc58f993b5c07f4a1f06755cff1610ff5cbf1a02eb3fabee80a2c86529`;
+the generated v2 SHA-256 is
+`c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d`.
+The superseded two-anchor canonical-path draft had SHA-256
+`4bc30dea99bba4b5a3ecd93dea9306a8002b59e605135ac97a740fe5a7e5b249`.
+No established physical-reference backup-file convention exists, so no ad-hoc
+backup file was created. The validated full reference was promoted directly to
+`docs/data/physical_target_references/seq01_clean.json`, with SHA-256
+`c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d`.
+
+June Seq01 M4B is complete. Global M4B remains incomplete until May, Seq03, and
+Seq04 receive equivalent human annotation and validation. M5 must not begin
+until all required real references and matching same-capture outputs exist.
 
 ## M4A-v2 re-plan (2026-08-25)
 
@@ -365,20 +392,19 @@ human judgement supports it and report the remaining reference gaps honestly.
 
 ### M4B entry and stopping rule
 
-M3-v2 human browser acceptance is complete. M4B June Seq01 is now the next
-active Issue #25 step: annotate the low-risk correspondence/interpolation pilot
-from the exact `12-48-17` raw source, then proceed to May, Seq03, and Seq04 only
-after reviewing the pilot. After each sequence, validate the JSON with the real
+M3-v2 human browser acceptance and June Seq01 M4B are complete. The next
+active M4B work is May, then Seq03 and Seq04, using the exact-frame CVAT bridge
+and fresh sequence-specific semantic evidence. After each sequence, validate the JSON with the real
 v2 loader and, once same-capture outputs exist, inspect the planned M5 report's
 reference coverage before investing in the next sequence. Stop and reassess if
 coverage is dominated by gaps or if correspondence cannot be maintained
 without tracker-ID inference.
 
-M4B remains incomplete human work. This plan and the M3 smoke checkpoint create
-no canonical physical-reference JSON and do not confirm the proposed June
-target labels, physical absence, or any `phys_dNNN` identity. M5 also remains
-incomplete and must not start until required real annotations and matching
-same-capture regenerated outputs exist.
+Global M4B remains incomplete human work. Seq01 now has a completed,
+converted, validated generated v2 artifact, but it has not yet been promoted
+over the existing local canonical-path draft; May, Seq03, and Seq04 remain
+unannotated. M5 also remains incomplete and must not start until all required
+real annotations and matching same-capture regenerated outputs exist.
 
 ## Corrective re-audit (2026-08-10)
 
