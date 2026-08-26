@@ -184,7 +184,88 @@ changes, the sequence cache is invalidated and must be regenerated.
    loader, and continue. Accept honest gaps or explicit unavailable/absence
    boundaries where visual judgement cannot support geometry/correspondence.
 
-Seq01 M4B remains incomplete until Francisco completes this full visual review.
+## Preferred M4B frontend: exact-frame CVAT bridge (2026-08-26)
+
+The endpoint-linear failure and the cost of maintaining a bespoke tracking
+frontend motivate a workflow change: CVAT is now the preferred human
+annotation/tracking interface, while Thesis-Code remains authoritative for
+source provenance, scientific states, validation, and the frozen v2 artifact.
+
+The interchange deliberately uses an **ordered lossless PNG sequence**, not an
+encoded video. Filenames are zero-padded (`frame_000000.png` onward), task
+sorting is lexicographical, and frame step is one. This avoids introducing a
+codec/container decode path whose dropped, duplicated, or reordered frames
+would need separate proof. A JSON and CSV manifest records every CVAT index,
+source-frame index, positive ROS Image header timestamp (falling back to bag
+record time only if absent), exact integer relative nanoseconds, source
+dimensions, coordinate convention, evaluation window, bag metadata hash, and
+extracting repository HEAD. Nominal FPS never supplies a timestamp.
+
+Create one immutable/select annotation attribute named `physical_ref` on the
+single `person` rectangle label. Seq01 values are `target`, `phys_d001`,
+`phys_d002`, and `phys_d003`. CVAT numeric track IDs are transport details
+and are discarded. The seed XML imports only the four human frame-zero boxes
+and marks each track outside at frame one, avoiding a fabricated long endpoint
+trajectory; the annotator deliberately resumes/tracks each identity.
+
+Use rectangle **Track** mode. Correct keyframes when geometry drifts; use
+`Outside` only when the same person is genuinely not visible, and `Occluded`
+only after deliberate review. CVAT's ordinary rectangle interpolation or an
+available AI/OpenCV tracker may propose motion, but the human must play through
+and correct all four tracks. Optional hosted/enterprise SAM2 is not required
+and polygon/mask output is outside this rectangle converter.
+
+Export annotations as **CVAT for video 1.1**. The converter accepts only native
+rectangle tracks with a stable `physical_ref`, exact 640x480 coordinates, and
+frames in the manifest. It rejects missing/duplicate roles, role changes,
+unapproved occlusion, unsupported labels/states, out-of-range boxes, and any
+unproven coordinate transform. State/context comes from the separate
+`conversion_config.json`, because CVAT `outside`/`occluded` cannot
+scientifically imply v2 `absent`, `present_reference_unavailable`, or a
+reference gap. Seq01's generated sidecar records Francisco's sequence-specific
+full-window `present_scored` / `distractors_complete` assertion; this must
+not be copied to Seq02--Seq04 without fresh human evidence.
+
+Conversion defaults to one explicit v2 sample per manifest frame (apart from
+explicit sidecar reference gaps), with interpolation only between adjacent
+compatible source frames. This preserves the human-reviewed CVAT trajectory
+and avoids recreating nonlinear error through sparse endpoint simplification.
+No adaptive simplification is performed.
+
+Generated Seq01 package location (ignored by Git):
+
+`data/datasets/processed/cvat/physical_reference/june_seq01_clean/`
+
+Preparation:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ros2_ws/install/setup.bash
+thesis_env/bin/python tools/analysis/cvat_physical_reference.py prepare \
+  --bag bags/source/curated/2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw \
+  --reference docs/data/physical_target_references/seq01_clean.json \
+  --output-dir data/datasets/processed/cvat/physical_reference/june_seq01_clean
+```
+
+After returning the CVAT export to the package directory:
+
+```bash
+thesis_env/bin/python tools/analysis/cvat_physical_reference.py convert \
+  --cvat-export data/datasets/processed/cvat/physical_reference/june_seq01_clean/cvat_export.zip \
+  --manifest data/datasets/processed/cvat/physical_reference/june_seq01_clean/frame_manifest.json \
+  --config data/datasets/processed/cvat/physical_reference/june_seq01_clean/conversion_config.json \
+  --output data/datasets/processed/cvat/physical_reference/june_seq01_clean/seq01_clean_converted.json
+
+thesis_env/bin/python tools/analysis/cvat_physical_reference.py validate \
+  --reference data/datasets/processed/cvat/physical_reference/june_seq01_clean/seq01_clean_converted.json \
+  --manifest data/datasets/processed/cvat/physical_reference/june_seq01_clean/frame_manifest.json
+```
+
+The converted artifact remains generated until Francisco inspects it in the
+custom physical-reference workspace and deliberately promotes it. The existing
+human `seq01_clean.json` is never an implicit output target.
+
+Seq01 M4B remains incomplete until Francisco completes the CVAT playback review.
 M4B globally remains incomplete, and M5 must not begin.
 
 ## M4A-v2 re-plan (2026-08-25)

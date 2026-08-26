@@ -52,6 +52,13 @@ Seq01 path uses no detector. An optional anonymous-box geometry matcher accepts
 coordinates only and refuses ambiguous matches; no detector/tracker identity,
 RAW/TIM target output, or TIM-MARS output constructs the physical reference.
 
+For M4B production annotation, CVAT is now preferred over further expansion of
+this custom UI. `tools/analysis/cvat_physical_reference.py` exports exact
+ordered source frames and timestamps, then fail-closed converts human-reviewed
+CVAT rectangle tracks back to frozen v2. This UI remains the fallback,
+schema/debug viewer, effective-reference inspector, and final visual validation
+instrument; its assisted-propagation implementation is intentionally retained.
+
 ## Typical launch command
 
 Use the project-standard annotation UI command from the repository root after
