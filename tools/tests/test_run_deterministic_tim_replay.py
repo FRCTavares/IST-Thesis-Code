@@ -1147,3 +1147,61 @@ def test_resolve_appearance_compute_interval_rejects_negative_value():
             {},
             args,
         )
+
+
+def test_p064_alternate_appearance_mode_is_default_off(monkeypatch):
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        [
+            "run_deterministic_tim_replay.py",
+            "input",
+            "output",
+            "--config",
+            "config.yaml",
+            "--model",
+            "model.pb",
+            "--selected-track-id",
+            "7",
+        ],
+    )
+
+    arguments = MODULE.parse_args()
+
+    assert arguments.appearance_bag is None
+    assert arguments.appearance_provenance is None
+    assert arguments.appearance_image_topic == "auto"
+    assert arguments.expected_candidate_stream_sha256 is None
+
+
+def test_p064_alternate_appearance_options_are_explicit(monkeypatch):
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        [
+            "run_deterministic_tim_replay.py",
+            "input",
+            "output",
+            "--config",
+            "config.yaml",
+            "--model",
+            "model.pb",
+            "--selected-track-id",
+            "7",
+            "--appearance-bag",
+            "appearance",
+            "--appearance-image-topic",
+            "/camera/dashboard",
+            "--appearance-provenance",
+            "variant.json",
+            "--expected-candidate-stream-sha256",
+            "a" * 64,
+        ],
+    )
+
+    arguments = MODULE.parse_args()
+
+    assert arguments.appearance_bag == Path("appearance")
+    assert arguments.appearance_provenance == Path("variant.json")
+    assert arguments.appearance_image_topic == "/camera/dashboard"
+    assert arguments.expected_candidate_stream_sha256 == "a" * 64
