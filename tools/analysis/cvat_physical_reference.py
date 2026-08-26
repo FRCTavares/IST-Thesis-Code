@@ -5,8 +5,8 @@ import xml.etree.ElementTree as ET
 from datetime import date
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from physical_target_reference_v2 import CONTRACT_VERSION,SCHEMA_VERSION,load_physical_reference,parse_physical_reference,validate_physical_reference,write_physical_reference
-MV="tim_cvat_frame_manifest_v1";CV="tim_cvat_physical_reference_config_v1";TARGET="target";GAP="reference_gap";ATTR="physical_ref"
+from physical_target_reference_v2 import CONTRACT_VERSION,SCHEMA_VERSION,COORDINATE_CONVENTIONS,load_physical_reference,parse_physical_reference,validate_physical_reference,write_physical_reference
+MV="tim_cvat_frame_manifest_v1";CV="tim_cvat_physical_reference_config_v1";PV="tim_cvat_preparation_config_v1";TARGET="target";GAP="reference_gap";ATTR="physical_ref"
 class CvatBridgeError(ValueError): pass
 def sha(p):
  h=hashlib.sha256()
@@ -36,8 +36,23 @@ def validate_manifest(m,media=None):
  if media and [p.name for p in sorted(Path(media).glob("frame_*.png"))]!=[r["media_filename"] for r in rows]: raise CvatBridgeError("media count/order mismatch")
  return m
 def load_manifest(p,media=None): return validate_manifest(json.loads(Path(p).read_text()),media)
-def cvat_task_config(roles):
- return {"task_type":"ordered image sequence/interpolation","sorting":"lexicographical","frame_step":1,"label":"person","attribute":{"name":ATTR,"type":"select","mutable":False,"values":roles},"export":"CVAT for images 1.1","supported_alternate_export":"CVAT for video 1.1 native track representation","identity_authority":"physical_ref only; never numeric CVAT IDs or drawing order","timestamp_authority":"frame_manifest.json exact source timestamps; never nominal FPS","review_authority":"human review remains authoritative"}
+def cvat_task_config(roles,task_name=None,frame_count=None):
+ out={"task_type":"ordered image sequence/interpolation","sorting":"lexicographical","frame_step":1,"resize":"none; exact source pixels","label":"person","attribute":{"name":ATTR,"type":"select","mutable":False,"values":roles},"export":"CVAT for images 1.1","supported_alternate_export":"CVAT for video 1.1 native track representation","identity_authority":"physical_ref only; never numeric CVAT IDs or drawing order","timestamp_authority":"frame_manifest.json exact source timestamps; never nominal FPS","review_authority":"human review remains authoritative"}
+ if task_name is not None:out["task_name"]=task_name
+ if frame_count is not None:out["frame_count"]=frame_count
+ return out
+
+def preparation_config(path):
+ x=json.loads(Path(path).read_text())
+ if x.get("preparation_config_version")!=PV: raise CvatBridgeError("invalid preparation config version")
+ required=("sequence_id","source_bag_path","source_image_topic","source_width","source_height","coordinate_convention","coordinate_convention_evidence","selected_physical_target_label","annotator","allowed_roles")
+ if any(k not in x for k in required): raise CvatBridgeError("preparation config missing required field")
+ roles=[role(r) for r in x["allowed_roles"]]
+ if not roles or roles[0]!=TARGET or len(roles)!=len(set(roles)): raise CvatBridgeError("allowed_roles must start with unique target")
+ if not all(str(x[k]).strip() for k in ("sequence_id","source_bag_path","source_image_topic","coordinate_convention","coordinate_convention_evidence","selected_physical_target_label","annotator")): raise CvatBridgeError("preparation metadata must be non-empty")
+ if not isinstance(x["source_width"],int) or not isinstance(x["source_height"],int) or x["source_width"]<=0 or x["source_height"]<=0: raise CvatBridgeError("invalid preparation dimensions")
+ if x["coordinate_convention"] not in COORDINATE_CONVENTIONS: raise CvatBridgeError("invalid preparation coordinate convention")
+ return x,roles
 
 def seed(path,m,refp,roles):
  s=load_physical_reference(refp).samples[0];boxes={TARGET:s.target_bbox_xyxy}|{d.person_ref:d.bbox_xyxy for d in s.distractors}
@@ -49,12 +64,19 @@ def seed(path,m,refp,roles):
   for frame,out in ((0,0),(1,1)):
    x1,y1,x2,y2=boxes[r];b=ET.SubElement(tr,"box",{"frame":str(frame),"outside":str(out),"occluded":"0","keyframe":"1","xtl":str(x1),"ytl":str(y1),"xbr":str(x2),"ybr":str(y2),"z_order":"0"});ET.SubElement(b,"attribute",{"name":ATTR}).text=r
  ET.indent(root);ET.ElementTree(root).write(path,encoding="utf-8",xml_declaration=True)
-def prepare(bag,refp,out):
+def prepare(bag,refp,out,prepp=None):
  import cv2,rosbag2_py
  from cv_bridge import CvBridge
  from rclpy.serialization import deserialize_message
  from rosidl_runtime_py.utilities import get_message
- ref=load_physical_reference(refp);p=ref.provenance;bag=Path(bag).resolve();out=Path(out)
+ from types import SimpleNamespace
+ if (refp is None)==(prepp is None): raise CvatBridgeError("choose exactly one reference or preparation config")
+ if refp is not None:
+  ref=load_physical_reference(refp);p=ref.provenance;roles=[TARGET]+[d.person_ref for d in ref.samples[0].distractors];seed_ref=refp;prep=None
+ else:
+  prep,roles=preparation_config(prepp);p=SimpleNamespace(**prep);seed_ref=None
+ bag=Path(bag).resolve();out=Path(out);root=Path(__file__).resolve().parents[2]
+ if (root/p.source_bag_path).resolve()!=bag: raise CvatBridgeError("bag path differs from preparation/reference provenance")
  if out.exists() and any(out.iterdir()): raise CvatBridgeError("output must be empty/absent")
  images=out/"images";images.mkdir(parents=True,exist_ok=True);rd=rosbag2_py.SequentialReader()
  rd.open(rosbag2_py.StorageOptions(uri=str(bag),storage_id="mcap"),rosbag2_py.ConverterOptions(input_serialization_format="cdr",output_serialization_format="cdr"))
@@ -72,19 +94,26 @@ def prepare(bag,refp,out):
  head=subprocess.run(["git","rev-parse","HEAD"],cwd=Path(__file__).resolve().parents[2],text=True,check=True,stdout=subprocess.PIPE).stdout.strip()
  m={"manifest_version":MV,"sequence_id":p.sequence_id,"source_bag_path":p.source_bag_path,"source_bag_resolved_path":str(bag),"source_bag_name":bag.name,"source_bag_provenance":{"metadata_yaml_sha256":sha(bag/"metadata.yaml"),"storage_id":"mcap","source_image_topic":p.source_image_topic},"source_width":p.source_width,"source_height":p.source_height,"coordinate_convention":p.coordinate_convention,"coordinate_convention_evidence":p.coordinate_convention_evidence,"evaluation_window":{"start_s":0.0,"end_s":rows[-1]["t_s"]},"frame_count":len(rows),"extraction":{"tool":"tools/analysis/cvat_physical_reference.py","version":"1","repository_head":head,"media":"lossless source-resolution PNG, no resize","timestamp":"positive Image.header.stamp else bag record"},"frames":rows}
  validate_manifest(m,images)
- if not math.isclose(rows[-1]["t_s"],p.evaluation_window.end_s,abs_tol=5e-10): raise CvatBridgeError("bag/reference end mismatch")
+ if refp is not None and not math.isclose(rows[-1]["t_s"],p.evaluation_window.end_s,abs_tol=5e-10): raise CvatBridgeError("bag/reference end mismatch")
  dump(out/"frame_manifest.json",m)
  with (out/"frame_manifest.csv").open("w",newline="") as f:
   w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
- roles=[TARGET]+[d.person_ref for d in ref.samples[0].distractors]
- cfg={"config_version":CV,"sequence_id":p.sequence_id,"annotator":p.annotator,"created_date":str(date.today()),"selected_physical_target_label":p.selected_physical_target_label,"coordinate_convention_evidence":p.coordinate_convention_evidence,"required_roles":roles,"allow_occluded_geometry":False,"semantic_intervals":[{"start_frame":0,"end_frame":len(rows)-1,"identity_state":"present_scored","identity_context":"distractors_complete","required_roles":roles,"human_assertion":"Seq01 only; confirm during complete CVAT review"}]}
- dump(out/"conversion_config.json",cfg);seed(out/"seed_annotations.xml",m,refp,roles)
- dump(out/"cvat_task.json",cvat_task_config(roles))
+ if refp is not None:
+  cfg={"config_version":CV,"sequence_id":p.sequence_id,"annotator":p.annotator,"created_date":str(date.today()),"selected_physical_target_label":p.selected_physical_target_label,"coordinate_convention_evidence":p.coordinate_convention_evidence,"required_roles":roles,"allow_occluded_geometry":False,"semantic_intervals":[{"start_frame":0,"end_frame":len(rows)-1,"identity_state":"present_scored","identity_context":"distractors_complete","required_roles":roles,"human_assertion":"Seq01 only; confirm during complete CVAT review"}]}
+ else:
+  cfg={"config_version":CV,"sequence_id":p.sequence_id,"annotator":p.annotator,"created_date":str(date.today()),"selected_physical_target_label":p.selected_physical_target_label,"coordinate_convention_evidence":p.coordinate_convention_evidence,"allowed_roles":roles,"allow_occluded_geometry":False,"preparation_status":"human_review_required","conversion_blocker":"Populate complete, human-validated semantic_intervals and required_roles after CVAT review; conversion intentionally fails while this list is empty.","semantic_intervals":[]}
+  dump(out/"preparation_config.json",prep)
+ dump(out/"conversion_config.json",cfg)
+ if seed_ref is not None: seed(out/"seed_annotations.xml",m,seed_ref,roles)
+ task=cvat_task_config(roles,p.sequence_id,len(rows));task["seed_annotations"]="seed_annotations.xml" if seed_ref is not None else "none; establish every physical_ref manually in CVAT";task["media_archive"]=f"{p.sequence_id}_cvat_images.zip";dump(out/"cvat_task.json",task)
  arc=out/f"{p.sequence_id}_cvat_images.zip"
  with zipfile.ZipFile(arc,"w",zipfile.ZIP_DEFLATED,compresslevel=1) as z:
   for r in rows:z.write(images/r["media_filename"],r["media_filename"])
- sums={x:sha(out/x) for x in ("frame_manifest.json","frame_manifest.csv","conversion_config.json","seed_annotations.xml","cvat_task.json",arc.name)};dump(out/"SHA256SUMS.json",sums)
- return {"archive_path":str(arc),"archive_size_bytes":arc.stat().st_size,"archive_sha256":sums[arc.name],"frame_count":len(rows),"dimensions":[p.source_width,p.source_height],"first_timestamp_ns":rows[0]["source_timestamp_ns"],"final_timestamp_ns":rows[-1]["source_timestamp_ns"],"evaluation_end_s":rows[-1]["t_s"]}
+ names=["frame_manifest.json","frame_manifest.csv","conversion_config.json","cvat_task.json",arc.name]
+ if seed_ref is not None:names.append("seed_annotations.xml")
+ else:names.append("preparation_config.json")
+ sums={x:sha(out/x) for x in names};dump(out/"SHA256SUMS.json",sums)
+ return {"archive_path":str(arc),"archive_size_bytes":arc.stat().st_size,"archive_sha256":sums[arc.name],"frame_count":len(rows),"dimensions":[p.source_width,p.source_height],"first_timestamp_ns":rows[0]["source_timestamp_ns"],"final_timestamp_ns":rows[-1]["source_timestamp_ns"],"evaluation_end_s":rows[-1]["t_s"],"seed_annotations_path":str(out/"seed_annotations.xml") if seed_ref is not None else None}
 def xml(path):
  raw=Path(path).read_bytes()
  if zipfile.is_zipfile(path):
@@ -200,11 +229,11 @@ def validate_against(reference,manifest):
  return summary(a,m)
 def main():
  p=argparse.ArgumentParser();s=p.add_subparsers(dest="cmd",required=True)
- a=s.add_parser("prepare");a.add_argument("--bag",type=Path,required=True);a.add_argument("--reference",type=Path,required=True);a.add_argument("--output-dir",type=Path,required=True)
+ a=s.add_parser("prepare");a.add_argument("--bag",type=Path,required=True);g=a.add_mutually_exclusive_group(required=True);g.add_argument("--reference",type=Path);g.add_argument("--preparation-config",type=Path);a.add_argument("--output-dir",type=Path,required=True)
  a=s.add_parser("convert");a.add_argument("--cvat-export",type=Path,required=True);a.add_argument("--manifest",type=Path,required=True);a.add_argument("--config",type=Path,required=True);a.add_argument("--output",type=Path,required=True)
  a=s.add_parser("validate");a.add_argument("--reference",type=Path,required=True);a.add_argument("--manifest",type=Path,required=True)
  x=p.parse_args()
- if x.cmd=="prepare": r=prepare(x.bag,x.reference,x.output_dir)
+ if x.cmd=="prepare": r=prepare(x.bag,x.reference,x.output_dir,x.preparation_config)
  elif x.cmd=="convert": r=convert(x.cvat_export,x.manifest,x.config,x.output)
  else: r=validate_against(x.reference,x.manifest)
  print(json.dumps(r,indent=2,sort_keys=True))
