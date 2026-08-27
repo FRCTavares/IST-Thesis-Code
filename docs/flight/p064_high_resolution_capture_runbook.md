@@ -78,6 +78,32 @@ view, physical-reference annotations, detector/tracker candidate evidence and
 evaluation window. Existing Issue #64 replay provenance and tracker-evidence
 digest guards remain authoritative.
 
+The native-HD acquisition bag must contain both `/camera/image_raw` and
+`/detections`. Detector evidence is recorded once from the live Hailo path.
+`run_deterministic_tracker_replay.py` then generates one frozen ByteTrack
+`/tracks` stream while preserving the source image and detection messages.
+Both TIM-MARS resolution conditions consume that exact same frozen candidate
+stream; only the appearance-image pixels differ.
+
+For native-HD evidence acquisition on the Raspberry Pi, the source bag must
+be recorded to RAM-backed `/dev/shm` via `SOURCE_RECORD_ROOT` and copied to
+`bags/source_video/` only after the recorder has stopped. The microSD-backed
+source path produced repeated approximately 0.6--1.0 s synchronized
+image/detection stalls during the 27 August smoke despite approximately 27 Hz
+average cadence, so that storage path is not acceptable for final Gate-2
+acquisition.
+
+The validated Issue #64 recorder configuration uses the MCAP `fastwrite`
+storage preset and a 512 MiB rosbag cache. A 27 August HD validation smoke
+showed startup transients during the first approximately 2 s, followed by a
+clean steady-state interval. After a predeclared 3.0 s warm-up, the retained
+29.933 s interval contained exactly 899 `/camera/image_raw` messages and 899
+`/detections` messages at 30.000 Hz, with exact timestamp pairing, a maximum
+inter-message gap of 33.924 ms on both topics, and zero gaps greater than or
+equal to 67 ms. Final Gate-2 acquisition must therefore discard the first
+3.0 s and must pass the same retained-window checks before annotation or
+identity evaluation.
+
 The 640x360 condition is an aspect-matched resolution control; it is not
 evidence of a native TEVS 640x360 camera mode.
 
