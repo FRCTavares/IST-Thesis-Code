@@ -43,6 +43,26 @@ def make_track(
     return track
 
 
+def test_parse_frame_id_accepts_legacy_and_versioned_contracts():
+    """Match live tracker parsing for supported detection frame IDs."""
+    versioned = (
+        'tim_mars_source_pixels_resize_v1;frame=42;source=1280x720;'
+        'inference=640x640;scale=0.5,0.888888889;pad=0,0'
+    )
+
+    assert MODULE.parse_frame_id('frame_41') == 41
+    assert MODULE.parse_frame_id(versioned) == 42
+    assert MODULE.parse_frame_id('camera') == 0
+
+
+def test_parse_frame_id_rejects_malformed_frame_fields():
+    """Return zero rather than accepting malformed frame identifiers."""
+    assert MODULE.parse_frame_id('frame_bad') == 0
+    assert MODULE.parse_frame_id(
+        'tim_mars_source_pixels_resize_v1;frame=bad;source=1280x720'
+    ) == 0
+
+
 def test_select_largest_track_uses_area_score_then_lowest_id():
     """Choose area, score, and lowest-ID deterministic tie breakers."""
     message = Track2DArray()

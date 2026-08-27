@@ -360,16 +360,20 @@ def header_time_ns(message: Any) -> int:
 
 
 def parse_frame_id(value: str) -> int:
-    """Parse a numeric frame ID from frame_<number>."""
+    """Parse legacy or versioned coordinate-contract frame identifiers."""
     text = str(value)
 
-    if not text.startswith('frame_'):
-        return 0
-
     try:
-        return int(text.split('_', 1)[1])
-    except ValueError:
-        return 0
+        if text.startswith('frame_'):
+            return int(text.split('_', 1)[1])
+
+        for field in text.split(';'):
+            if field.startswith('frame='):
+                return int(field.split('=', 1)[1])
+    except Exception:
+        pass
+
+    return 0
 
 
 def detection_inputs(
