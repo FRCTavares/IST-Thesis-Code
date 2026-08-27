@@ -155,12 +155,33 @@ Native 1280x720 and deterministic 640x360 appearance bags are prepared with an
 identical 923-frame header-timestamp digest. The 837-frame seedless CVAT package
 is at `artifacts/reports/p064_gate2_hd_master_r3_cvat/`; archive SHA-256 is
 `5ef0a238b52ddc0294db9efe937f36f366809a04dd5391e179271e8d32ce123e`.
-Human physical roles `target` and `phys_d001`, the target-absence semantics,
-and the selected transport ID remain to be confirmed before TIM replay.
+Corrected human roles `target` and `phys_d001` cover all 837 frames. The
+canonical reference is
+`docs/data/physical_target_references/p064_gate2_hd_master_r3.json` with
+SHA-256 `814a5fed32b296da4f50e090979f7bdf0b748a95658afdc309a7c4dd666a93f4`;
+the selected initial transport ID is 2.
 
-Only if native HD produces a material controller-facing identity improvement
-should the stronger repeated Stage-B live characterization be run for the
-VGA/HD operating range.
+### Gate-2 controlled result -- 27 August 2026
+
+The corrected 837-frame human physical reference passed exact-manifest
+validation. Native 1280x720 and deterministic 640x360 appearance conditions
+produced identical controller-facing results: 2.700 s correct, 0 wrong,
+25.167092 s lost/suppressed, 0 absent-with-output, and no hard-event
+reacquisition. The frozen materiality criterion therefore returns **NO material
+HD benefit in controlled R3**. Additional repeated HD Stage-B characterization
+is not warranted by this result.
+
+This conclusion is bounded by target scale. Human target height was
+534.64--561.11 px (median 549.72 px, 76.35% of image height), far above the
+approximately 20 px operating-floor requirement and not representative of the
+expected airborne following distribution. One native-HD representative
+drone-POV / flight-geometry validation remains within Issue #64 before a
+general source-resolution recommendation. See
+`docs/results/selected_target_tracking/p064_gate2_resolution_evaluation.md`.
+
+The predeclared conditional Stage-B gate was not reached: native HD produced
+no material controller-facing improvement, so no additional repeated HD
+runtime characterization is scheduled from this controlled result.
 
 ## 1. Preflight
 

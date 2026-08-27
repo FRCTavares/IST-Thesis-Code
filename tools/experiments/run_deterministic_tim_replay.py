@@ -130,6 +130,25 @@ def parse_args() -> argparse.Namespace:
             "Fail unless frozen tracker evidence matches this digest."
         ),
     )
+    parser.add_argument(
+        "--process-start-timestamp-ns",
+        type=int,
+        default=None,
+        help=(
+            "Inclusive semantic timestamp lower bound for generated TIM "
+            "messages. Requires --process-end-timestamp-ns. The complete "
+            "candidate stream digest is verified before filtering."
+        ),
+    )
+    parser.add_argument(
+        "--process-end-timestamp-ns",
+        type=int,
+        default=None,
+        help=(
+            "Inclusive semantic timestamp upper bound for generated TIM "
+            "messages. Requires --process-start-timestamp-ns."
+        ),
+    )
     parser.add_argument("--raw-target-topic", default="/target")
     parser.add_argument(
         "--raw-target-mode",
@@ -204,6 +223,31 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     return parser.parse_args()
+
+
+def filter_track_events_by_timestamp(
+    events: list[tuple],
+    start_timestamp_ns: int | None,
+    end_timestamp_ns: int | None,
+) -> list[tuple]:
+    """Apply an inclusive processing window after full-stream digest validation."""
+    if (start_timestamp_ns is None) != (end_timestamp_ns is None):
+        raise ValueError(
+            "processing window requires both start and end timestamps"
+        )
+    if start_timestamp_ns is None:
+        return list(events)
+    start = int(start_timestamp_ns)
+    end = int(end_timestamp_ns)
+    if start <= 0 or end < start:
+        raise ValueError("invalid processing timestamp window")
+    filtered = [
+        event for event in events
+        if start <= int(event[0]) <= end
+    ]
+    if not filtered:
+        raise ValueError("processing timestamp window contains no tracks")
+    return filtered
 
 
 def detect_storage_id(bag_path: Path) -> str:
@@ -1396,6 +1440,12 @@ def build_resolved_runtime_payload(
             "compact_output": bool(
                 args.compact_output
             ),
+            "process_start_timestamp_ns": getattr(
+                args, "process_start_timestamp_ns", None
+            ),
+            "process_end_timestamp_ns": getattr(
+                args, "process_end_timestamp_ns", None
+            ),
         },
         "experiment_fields": {
             "raw_target_mode": (
@@ -1490,6 +1540,12 @@ def build_resolved_runtime_payload(
             ),
             "compact_output": argument_source(
                 "--compact-output"
+            ),
+            "process_start_timestamp_ns": argument_source(
+                "--process-start-timestamp-ns"
+            ),
+            "process_end_timestamp_ns": argument_source(
+                "--process-end-timestamp-ns"
             ),
         },
     }
@@ -1695,6 +1751,15 @@ def main() -> int:
         candidate_sha256,
         args.expected_candidate_stream_sha256,
     )
+    input_track_event_count = len(track_events)
+    try:
+        track_events = filter_track_events_by_timestamp(
+            track_events,
+            args.process_start_timestamp_ns,
+            args.process_end_timestamp_ns,
+        )
+    except ValueError as exc:
+        raise RuntimeError(str(exc)) from exc
 
     appearance_metadata = None
     appearance_message_types = message_types
@@ -2265,6 +2330,9 @@ def main() -> int:
             "source_messages_streamed": (
                 source_messages_written
             ),
+            "input_track_messages": (
+                input_track_event_count
+            ),
             "track_messages_processed": (
                 len(track_events)
             ),
@@ -2310,6 +2378,12 @@ def main() -> int:
             "complete_image_timeline_preloaded": (
                 True
             ),
+            "processing_timestamp_window": {
+                "start_ns": args.process_start_timestamp_ns,
+                "end_ns": args.process_end_timestamp_ns,
+                "inclusive": True,
+                "candidate_digest_scope": "complete input track stream",
+            },
         },
         "determinism": {
             "candidate_stream_digest_schema": (
