@@ -25,14 +25,16 @@ def flag(v):
 def validate_manifest(m,media=None):
  rows=m.get("frames",[]);n=len(rows)
  if m.get("manifest_version")!=MV or not rows or n!=m.get("frame_count"): raise CvatBridgeError("invalid manifest/count")
- stamps=[int(r["source_timestamp_ns"]) for r in rows]
- if [r["cvat_frame_index"] for r in rows]!=list(range(n)) or [r["source_frame_index"] for r in rows]!=list(range(n)): raise CvatBridgeError("frame indices not unique contiguous")
+ stamps=[int(r["source_timestamp_ns"]) for r in rows];source_indices=[int(r["source_frame_index"]) for r in rows]
+ if [r["cvat_frame_index"] for r in rows]!=list(range(n)) or len(set(source_indices))!=n or any(b!=a+1 for a,b in zip(source_indices,source_indices[1:])): raise CvatBridgeError("frame indices not unique contiguous")
  if any(b<=a for a,b in zip(stamps,stamps[1:])): raise CvatBridgeError("timestamps not strictly increasing")
+ origin=int(m.get("source_time_origin_ns",stamps[0]));window=m["evaluation_window"]
+ if origin<=0 or not(0<=float(window["start_s"])<float(window["end_s"])): raise CvatBridgeError("invalid manifest time origin/window")
  for i,r in enumerate(rows):
-  rel=stamps[i]-stamps[0]
+  rel=stamps[i]-origin
   if r["media_filename"]!=f"frame_{i:06d}.png" or (r["width"],r["height"])!=(m["source_width"],m["source_height"]): raise CvatBridgeError("media metadata mismatch")
   if r["bag_relative_timestamp_ns"]!=rel or not math.isclose(r["t_s"],rel/1e9,abs_tol=5e-13): raise CvatBridgeError("timestamp mismatch")
- if not math.isclose(m["evaluation_window"]["end_s"],rows[-1]["t_s"],abs_tol=5e-13): raise CvatBridgeError("right boundary mismatch")
+ if rows[0]["t_s"]<float(window["start_s"])-5e-13 or not math.isclose(float(window["end_s"]),rows[-1]["t_s"],abs_tol=5e-13): raise CvatBridgeError("evaluation boundary mismatch")
  if media and [p.name for p in sorted(Path(media).glob("frame_*.png"))]!=[r["media_filename"] for r in rows]: raise CvatBridgeError("media count/order mismatch")
  return m
 def load_manifest(p,media=None): return validate_manifest(json.loads(Path(p).read_text()),media)
@@ -52,6 +54,14 @@ def preparation_config(path):
  if not all(str(x[k]).strip() for k in ("sequence_id","source_bag_path","source_image_topic","coordinate_convention","coordinate_convention_evidence","selected_physical_target_label","annotator")): raise CvatBridgeError("preparation metadata must be non-empty")
  if not isinstance(x["source_width"],int) or not isinstance(x["source_height"],int) or x["source_width"]<=0 or x["source_height"]<=0: raise CvatBridgeError("invalid preparation dimensions")
  if x["coordinate_convention"] not in COORDINATE_CONVENTIONS: raise CvatBridgeError("invalid preparation coordinate convention")
+ if ("source_time_origin_ns" in x)!=("evaluation_window" in x): raise CvatBridgeError("source_time_origin_ns and evaluation_window must be supplied together")
+ if "source_time_origin_ns" in x and (not isinstance(x["source_time_origin_ns"],int) or x["source_time_origin_ns"]<=0): raise CvatBridgeError("invalid source_time_origin_ns")
+ if "evaluation_window" in x:
+  w=x["evaluation_window"]
+  if "source_time_origin_ns" not in x or not isinstance(w,dict) or set(w)!={"start_s","end_s"}: raise CvatBridgeError("filtered preparation needs source_time_origin_ns and evaluation_window")
+  try: start=float(w["start_s"]);end=float(w["end_s"])
+  except (TypeError,ValueError) as exc: raise CvatBridgeError("invalid preparation evaluation window") from exc
+  if not math.isfinite(start) or not math.isfinite(end) or start<0 or end<=start: raise CvatBridgeError("invalid preparation evaluation window")
  return x,roles
 
 def seed(path,m,refp,roles):
@@ -80,19 +90,28 @@ def prepare(bag,refp,out,prepp=None):
  if out.exists() and any(out.iterdir()): raise CvatBridgeError("output must be empty/absent")
  images=out/"images";images.mkdir(parents=True,exist_ok=True);rd=rosbag2_py.SequentialReader()
  rd.open(rosbag2_py.StorageOptions(uri=str(bag),storage_id="mcap"),rosbag2_py.ConverterOptions(input_serialization_format="cdr",output_serialization_format="cdr"))
- types={x.name:x.type for x in rd.get_all_topics_and_types()};cls=get_message(types[p.source_image_topic]);bridge=CvBridge();rows=[];first=prev=None
+ types={x.name:x.type for x in rd.get_all_topics_and_types()};cls=get_message(types[p.source_image_topic]);bridge=CvBridge();rows=[];first=prev=None;source_frame_index=-1
+ explicit_origin=getattr(p,"source_time_origin_ns",None);window=getattr(p,"evaluation_window",None)
+ start_ns=(explicit_origin+round(float(window["start_s"])*1e9)) if window else None
+ end_ns=(explicit_origin+round(float(window["end_s"])*1e9)) if window else None
  while rd.has_next():
   topic,raw,record=rd.read_next()
   if topic!=p.source_image_topic: continue
+  source_frame_index+=1
   msg=deserialize_message(raw,cls);st=msg.header.stamp;header=int(st.sec)*10**9+int(st.nanosec);ts=header or int(record)
   if prev is not None and ts<=prev: raise CvatBridgeError("timestamps not increasing")
-  first=ts if first is None else first;prev=ts;im=bridge.imgmsg_to_cv2(msg,desired_encoding="bgr8");h,w=im.shape[:2]
+  first=ts if first is None else first;prev=ts
+  if start_ns is not None and (ts<start_ns or ts>end_ns): continue
+  im=bridge.imgmsg_to_cv2(msg,desired_encoding="bgr8");h,w=im.shape[:2]
   if (w,h)!=(p.source_width,p.source_height): raise CvatBridgeError("resolution mismatch")
   i=len(rows);name=f"frame_{i:06d}.png"
   if not cv2.imwrite(str(images/name),im,[cv2.IMWRITE_PNG_COMPRESSION,3]): raise CvatBridgeError("PNG write failed")
-  rel=ts-first;rows.append({"cvat_frame_index":i,"source_frame_index":i,"source_timestamp_ns":ts,"bag_record_timestamp_ns":int(record),"header_timestamp_ns":header or None,"bag_relative_timestamp_ns":rel,"t_s":rel/1e9,"media_filename":name,"width":w,"height":h})
+  origin=explicit_origin if explicit_origin is not None else first;rel=ts-origin
+  rows.append({"cvat_frame_index":i,"source_frame_index":source_frame_index,"source_timestamp_ns":ts,"bag_record_timestamp_ns":int(record),"header_timestamp_ns":header or None,"bag_relative_timestamp_ns":rel,"t_s":rel/1e9,"media_filename":name,"width":w,"height":h})
+ if not rows: raise CvatBridgeError("evaluation window contains no source images")
  head=subprocess.run(["git","rev-parse","HEAD"],cwd=Path(__file__).resolve().parents[2],text=True,check=True,stdout=subprocess.PIPE).stdout.strip()
- m={"manifest_version":MV,"sequence_id":p.sequence_id,"source_bag_path":p.source_bag_path,"source_bag_resolved_path":str(bag),"source_bag_name":bag.name,"source_bag_provenance":{"metadata_yaml_sha256":sha(bag/"metadata.yaml"),"storage_id":"mcap","source_image_topic":p.source_image_topic},"source_width":p.source_width,"source_height":p.source_height,"coordinate_convention":p.coordinate_convention,"coordinate_convention_evidence":p.coordinate_convention_evidence,"evaluation_window":{"start_s":0.0,"end_s":rows[-1]["t_s"]},"frame_count":len(rows),"extraction":{"tool":"tools/analysis/cvat_physical_reference.py","version":"1","repository_head":head,"media":"lossless source-resolution PNG, no resize","timestamp":"positive Image.header.stamp else bag record"},"frames":rows}
+ evaluation_window={"start_s":float(window["start_s"]),"end_s":float(window["end_s"])} if window else {"start_s":0.0,"end_s":rows[-1]["t_s"]}
+ m={"manifest_version":MV,"sequence_id":p.sequence_id,"source_bag_path":p.source_bag_path,"source_bag_resolved_path":str(bag),"source_bag_name":bag.name,"source_bag_provenance":{"metadata_yaml_sha256":sha(bag/"metadata.yaml"),"storage_id":"mcap","source_image_topic":p.source_image_topic},"source_time_origin_ns":explicit_origin if explicit_origin is not None else rows[0]["source_timestamp_ns"],"source_width":p.source_width,"source_height":p.source_height,"coordinate_convention":p.coordinate_convention,"coordinate_convention_evidence":p.coordinate_convention_evidence,"evaluation_window":evaluation_window,"frame_count":len(rows),"extraction":{"tool":"tools/analysis/cvat_physical_reference.py","version":"2","repository_head":head,"media":"lossless source-resolution PNG, no resize","timestamp":"positive Image.header.stamp else bag record","source_frame_filter":"inclusive evaluation window in exact source-header time" if window else "all source frames"},"frames":rows}
  validate_manifest(m,images)
  if refp is not None and not math.isclose(rows[-1]["t_s"],p.evaluation_window.end_s,abs_tol=5e-10): raise CvatBridgeError("bag/reference end mismatch")
  dump(out/"frame_manifest.json",m)
@@ -206,7 +225,7 @@ def summary(a,m):
  for s in present:
   counts[TARGET]=counts.get(TARGET,0)+1
   for d in s.distractors: counts[d.person_ref]=counts.get(d.person_ref,0)+1
- return {"manifest_frames":m["frame_count"],"converted_samples":len(a.samples),"present_scored_samples":len(present),"missing_frames":m["frame_count"]-len(a.samples),"role_frame_coverage":counts,"target_coverage_duration_s":m["evaluation_window"]["end_s"] if len(present)==m["frame_count"] else None,"first_timestamp_s":a.samples[0].t_s,"final_timestamp_s":a.samples[-1].t_s,"evaluation_window":m["evaluation_window"],"right_boundary_anchor_present":math.isclose(a.samples[-1].t_s,m["evaluation_window"]["end_s"],abs_tol=5e-13)}
+ return {"manifest_frames":m["frame_count"],"converted_samples":len(a.samples),"present_scored_samples":len(present),"missing_frames":m["frame_count"]-len(a.samples),"role_frame_coverage":counts,"target_coverage_duration_s":m["evaluation_window"]["end_s"]-a.samples[0].t_s if len(present)==m["frame_count"] else None,"first_timestamp_s":a.samples[0].t_s,"final_timestamp_s":a.samples[-1].t_s,"evaluation_window":m["evaluation_window"],"right_boundary_anchor_present":math.isclose(a.samples[-1].t_s,m["evaluation_window"]["end_s"],abs_tol=5e-13)}
 def convert(export,manifest,config,output):
  m=load_manifest(manifest);raw=Path(config).read_bytes();cfg=json.loads(raw);ss=semantics(cfg,m);gg=geometry(export,m,cfg.get("allow_occluded_geometry",False));_,esh=xml(export);samples=[];prev=None
  for i,(row,s) in enumerate(zip(m["frames"],ss)):

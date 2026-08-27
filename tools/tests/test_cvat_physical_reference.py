@@ -213,12 +213,34 @@ def test_seedless_preparation_config_preserves_roles_and_requires_human_semantic
  assert task["attribute"]["mutable"] is False
 
 
+def test_filtered_manifest_preserves_source_origin_and_original_indices(tmp_path):
+ m=manifest()
+ m["source_time_origin_ns"]=900000000
+ m["evaluation_window"]={"start_s":0.09,"end_s":0.19}
+ for index,row in enumerate(m["frames"]):
+  row["source_frame_index"]=85+index
+  row["bag_relative_timestamp_ns"]=row["source_timestamp_ns"]-m["source_time_origin_ns"]
+  row["t_s"]=row["bag_relative_timestamp_ns"]/1e9
+ mp=tmp_path/"manifest.json";mp.write_text(json.dumps(m))
+ loaded=C.load_manifest(mp)
+ assert [row["source_frame_index"] for row in loaded["frames"]]==[85,86,87]
+ assert [row["t_s"] for row in loaded["frames"]]==pytest.approx([0.10,0.14,0.19])
+ xp,_,cp=write_inputs(tmp_path,xml=image_xml(),m=m)
+ out=tmp_path/"filtered-v2.json"
+ result=C.convert(xp,mp,cp,out)
+ assert result["evaluation_window"]=={"start_s":0.09,"end_s":0.19}
+ assert result["first_timestamp_s"]==pytest.approx(0.10)
+ assert result["target_coverage_duration_s"]==pytest.approx(0.09)
+
+
 @pytest.mark.parametrize("change,match",[
  ({"allowed_roles":["phys_d001","target"]},"start with unique target"),
  ({"allowed_roles":["target","phys_d001","phys_d001"]},"start with unique target"),
  ({"allowed_roles":["target","1"]},"invalid physical_ref"),
  ({"source_width":0},"dimensions"),
  ({"coordinate_convention":"unknown"},"coordinate convention"),
+ ({"source_time_origin_ns":0},"supplied together"),
+ ({"evaluation_window":{"start_s":1.0,"end_s":2.0}},"supplied together"),
 ])
 def test_seedless_preparation_config_rejects_unsafe_metadata(tmp_path,change,match):
  cfg={"preparation_config_version":C.PV,"sequence_id":"dev_may_hard_reentry",
