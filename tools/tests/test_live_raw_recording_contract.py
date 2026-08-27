@@ -52,3 +52,37 @@ def test_raw_mode_has_field_storage_gate_and_operator_documentation():
     assert '"$RAW_RECORDING_MIN_FREE_GIB" || exit 1' in launcher
     assert "--field-record --record-raw --tag flight1" in usage
     assert "separate synchronized /camera/image_raw" in usage
+
+
+def test_source_record_no_mavros_is_raw_only_and_never_requests_mavros():
+    cli = CLI.read_text(encoding="utf-8")
+
+    block = _case_block(cli, "--source-record-no-mavros", "--tag")
+
+    assert "SOURCE_RECORD_MODE=1" in block
+    assert "SOURCE_RAW_IMAGE_RECORD=1" in block
+    assert "SOURCE_MAVROS_RECORD=0" in block
+    assert "ENABLE_ROSBAG=0" in block
+    assert "ENABLE_DATASET_BAG=0" in block
+    assert "ENABLE_CONTROL=0" in block
+    assert "ENABLE_DASHBOARD_BRIDGE=0" in block
+    assert "ENABLE_WEB_VIDEO=0" in block
+    assert "ENABLE_TRACKER=0" in block
+    assert 'TARGET_MEMORY_MODE="off"' in block
+
+
+def test_source_raw_recording_has_storage_gate_and_camera_qos_override():
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    assert '"${SOURCE_RAW_IMAGE_RECORD:-0}" -eq 1' in launcher
+    assert '"$THESIS_ROOT/bags/source_video"' in launcher
+    assert '"$RAW_RECORDING_MIN_FREE_GIB" || exit 1' in launcher
+    assert 'SOURCE_QOS_OVERRIDE_FILE="/etc/thesis/live_record_qos_overrides.yaml"' in launcher
+    assert '--qos-profile-overrides-path "$SOURCE_QOS_OVERRIDE_FILE"' in launcher
+
+
+def test_source_record_no_mavros_is_documented():
+    usage = USAGE.read_text(encoding="utf-8")
+
+    assert "--source-record-no-mavros" in usage
+    assert "no MAVROS or network-mode change" in usage

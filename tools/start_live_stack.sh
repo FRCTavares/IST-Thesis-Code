@@ -497,6 +497,11 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     fi
 fi
 log_step "preflight checks"
+if [[ "${SOURCE_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
+    ensure_recording_storage_available \
+        "$THESIS_ROOT/bags/source_video" \
+        "$RAW_RECORDING_MIN_FREE_GIB" || exit 1
+fi
 if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
     ensure_recording_storage_available \
         "$BAG_OUT_ROOT" \
@@ -1283,10 +1288,20 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
         echo "[source] starting source raw image recorder: $SOURCE_RAW_BAG_OUT_DIR"
         sleep 3
 
-        start_ros_bg source_raw_image_bag ros2 bag record \
-            --storage mcap \
-            -o "$SOURCE_RAW_BAG_OUT_DIR" \
-            --topics /camera/image_raw
+        SOURCE_QOS_OVERRIDE_FILE="/etc/thesis/live_record_qos_overrides.yaml"
+
+        if [[ -f "$SOURCE_QOS_OVERRIDE_FILE" ]]; then
+            start_ros_bg source_raw_image_bag ros2 bag record \
+                --storage mcap \
+                --qos-profile-overrides-path "$SOURCE_QOS_OVERRIDE_FILE" \
+                -o "$SOURCE_RAW_BAG_OUT_DIR" \
+                --topics /camera/image_raw
+        else
+            start_ros_bg source_raw_image_bag ros2 bag record \
+                --storage mcap \
+                -o "$SOURCE_RAW_BAG_OUT_DIR" \
+                --topics /camera/image_raw
+        fi
 
         sleep 1
         if ! check_proc_alive source_raw_image_bag; then

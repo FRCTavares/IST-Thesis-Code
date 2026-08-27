@@ -101,7 +101,7 @@ Options:
     --camera-publish-image-raw          Force-enable /camera/image_raw publishing (default: off; no
                                          perception/tracking/TIM/dashboard consumer needs it -- see
                                          Issue #54). Auto-enabled by --record-raw, --record-dataset,
-                                         and --source-record. At the default capture geometry
+                                         and source-record modes. At the default capture geometry
                                          (640x480 bgr8 @ 30 FPS) this is an analytical payload of
                                          ~26.4 MiB/s of DDS traffic; see docs/issues/
                                          p1-21-raw-image-transport-provenance.md for measured cost.
@@ -139,7 +139,9 @@ Common options:
     --record                 Record video/perception/tracking/control bag
     --field-record           Record full live pipeline and separate MAVROS telemetry
     --record-raw             Also record /camera/image_raw in a separate synchronized bag
-    --source-record          Record source dataset only: /camera/image_raw and MAVROS telemetry
+    --source-record          Record source dataset: /camera/image_raw and MAVROS telemetry
+    --source-record-no-mavros
+                             Record only /camera/image_raw; no MAVROS or network-mode change
     --tag NAME               Add a tag to the recorded bag folder
     --dash N                 Set dashboard target FPS
     --detector-model NAME    Detector HEF model, e.g. yolov6n, yolov8n, yolov8s
