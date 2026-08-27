@@ -568,6 +568,7 @@ while [[ $# -gt 0 ]]; do
             SOURCE_RECORD_MODE=1
             SOURCE_RAW_IMAGE_RECORD=1
             SOURCE_MAVROS_RECORD=1
+            SOURCE_DETECTIONS_RECORD=0
 
             # Source capture is camera-only plus MAVROS telemetry.
             ENABLE_ROSBAG=0
@@ -587,8 +588,11 @@ while [[ $# -gt 0 ]]; do
             SOURCE_RECORD_MODE=1
             SOURCE_RAW_IMAGE_RECORD=1
             SOURCE_MAVROS_RECORD=0
+            SOURCE_DETECTIONS_RECORD=1
 
-            # Raw source capture without MAVROS or network-mode changes.
+            # Issue #64 source-evidence capture without MAVROS or
+            # network-mode changes. Preserve native imagery and the
+            # corresponding live Hailo detector evidence in one bag.
             ENABLE_ROSBAG=0
             ENABLE_DATASET_BAG=0
             ENABLE_CONTROL=0

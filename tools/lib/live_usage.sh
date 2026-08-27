@@ -141,7 +141,9 @@ Common options:
     --record-raw             Also record /camera/image_raw in a separate synchronized bag
     --source-record          Record source dataset: /camera/image_raw and MAVROS telemetry
     --source-record-no-mavros
-                             Record only /camera/image_raw; no MAVROS or network-mode change
+                             Record /camera/image_raw + /detections for deterministic
+                             Issue #64 tracker/TIM replay; no MAVROS or network-mode change
+                             SOURCE_RECORD_ROOT may override the source evidence output root
     --tag NAME               Add a tag to the recorded bag folder
     --dash N                 Set dashboard target FPS
     --detector-model NAME    Detector HEF model, e.g. yolov6n, yolov8n, yolov8s
