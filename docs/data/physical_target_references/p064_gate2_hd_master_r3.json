@@ -9,7 +9,7 @@
       "end_s": 30.900267443,
       "start_s": 3.0
     },
-    "notes": "Human-reviewed CVAT annotations; numeric IDs discarded. Export SHA-256 d8a85c0b2dfbf84c1cb6c0bd693eb03d84782bb623c584c3d021603a684a53ff; config SHA-256 3e4aa28cf46581357a11a1101b8d4511a162441444394a528ed0078068409c17.",
+    "notes": "Human-reviewed CVAT annotations; numeric IDs discarded. Export SHA-256 e06b8c38d5717efed6e21cdaa47e3893f293d08d7535b2f0041e9af0a52bb5b2; config SHA-256 13e675bb6be5db7cfb858ee183ace16c5f78ae2c14a3d88697f49b62d7a380fd.",
     "schema_version": 2,
     "selected_physical_target_label": "Francisco-human-annotated Gate-2 laptop-carrying target",
     "sequence_id": "p064_gate2_hd_master_r3",
@@ -2253,100 +2253,40 @@
       ]
     },
     {
-      "distractors": [
-        {
-          "bbox_xyxy": [
-            446.08,
-            55.84,
-            906.92,
-            718.0
-          ],
-          "person_ref": "phys_d001"
-        }
-      ],
-      "identity_context": "distractors_complete",
-      "identity_state": "present_scored",
-      "interpolate_from_previous": true,
-      "notes": "CVAT-reviewed frame via exact manifest",
+      "distractors": [],
+      "identity_context": null,
+      "identity_state": "present_reference_unavailable",
+      "interpolate_from_previous": false,
+      "notes": "explicit sidecar state",
       "t_s": 6.133259028,
-      "target_bbox_xyxy": [
-        511.27,
-        167.63,
-        750.3,
-        718.49
-      ]
+      "target_bbox_xyxy": null
     },
     {
-      "distractors": [
-        {
-          "bbox_xyxy": [
-            437.72,
-            52.32,
-            881.85,
-            717.94
-          ],
-          "person_ref": "phys_d001"
-        }
-      ],
-      "identity_context": "distractors_complete",
-      "identity_state": "present_scored",
-      "interpolate_from_previous": true,
-      "notes": "CVAT-reviewed frame via exact manifest",
+      "distractors": [],
+      "identity_context": null,
+      "identity_state": "present_reference_unavailable",
+      "interpolate_from_previous": false,
+      "notes": "explicit sidecar state",
       "t_s": 6.166471934,
-      "target_bbox_xyxy": [
-        518.56,
-        167.25,
-        757.59,
-        718.12
-      ]
+      "target_bbox_xyxy": null
     },
     {
-      "distractors": [
-        {
-          "bbox_xyxy": [
-            429.36,
-            48.8,
-            856.78,
-            717.87
-          ],
-          "person_ref": "phys_d001"
-        }
-      ],
-      "identity_context": "distractors_complete",
-      "identity_state": "present_scored",
-      "interpolate_from_previous": true,
-      "notes": "CVAT-reviewed frame via exact manifest",
+      "distractors": [],
+      "identity_context": null,
+      "identity_state": "present_reference_unavailable",
+      "interpolate_from_previous": false,
+      "notes": "explicit sidecar state",
       "t_s": 6.199834187,
-      "target_bbox_xyxy": [
-        525.85,
-        166.87,
-        764.88,
-        717.74
-      ]
+      "target_bbox_xyxy": null
     },
     {
-      "distractors": [
-        {
-          "bbox_xyxy": [
-            421.01,
-            45.28,
-            831.71,
-            717.8
-          ],
-          "person_ref": "phys_d001"
-        }
-      ],
-      "identity_context": "distractors_complete",
-      "identity_state": "present_scored",
-      "interpolate_from_previous": true,
-      "notes": "CVAT-reviewed frame via exact manifest",
+      "distractors": [],
+      "identity_context": null,
+      "identity_state": "present_reference_unavailable",
+      "interpolate_from_previous": false,
+      "notes": "explicit sidecar state",
       "t_s": 6.233166071,
-      "target_bbox_xyxy": [
-        533.14,
-        166.5,
-        772.16,
-        717.36
-      ]
+      "target_bbox_xyxy": null
     },
     {
       "distractors": [
@@ -2362,7 +2302,7 @@
       ],
       "identity_context": "distractors_complete",
       "identity_state": "present_scored",
-      "interpolate_from_previous": true,
+      "interpolate_from_previous": false,
       "notes": "CVAT-reviewed frame via exact manifest",
       "t_s": 6.266419031,
       "target_bbox_xyxy": [

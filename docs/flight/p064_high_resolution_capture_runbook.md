@@ -150,7 +150,7 @@ at least 67 ms. The single later image at `30.933606996 s` is a shutdown-edge
 surplus and is excluded.
 
 ByteTrack `/tracks` is frozen once with candidate digest
-`23e7388edd50e341ef325efef30de45a70cb59701bfab9d1a726f868edfd32d9`.
+`615ed6abf0083f8cbe86a47257fdc71f4c62c2e16fa314997c57ed34a1a99578`.
 Native 1280x720 and deterministic 640x360 appearance bags are prepared with an
 identical 923-frame header-timestamp digest. The 837-frame seedless CVAT package
 is at `artifacts/reports/p064_gate2_hd_master_r3_cvat/`; archive SHA-256 is
@@ -158,30 +158,61 @@ is at `artifacts/reports/p064_gate2_hd_master_r3_cvat/`; archive SHA-256 is
 Corrected human roles `target` and `phys_d001` cover all 837 frames. The
 canonical reference is
 `docs/data/physical_target_references/p064_gate2_hd_master_r3.json` with
-SHA-256 `814a5fed32b296da4f50e090979f7bdf0b748a95658afdc309a7c4dd666a93f4`;
+SHA-256 `0d9f4148f67b610d5cd012db4d3613f6fc559aec63c2ae705adc50595e8db147`;
 the selected initial transport ID is 2.
 
-### Gate-2 controlled result -- 27 August 2026
+### Corrected Gate-2 controlled R3 result -- 27 August 2026
 
-The corrected 837-frame human physical reference passed exact-manifest
-validation. Native 1280x720 and deterministic 640x360 appearance conditions
-produced identical controller-facing results: 2.700 s correct, 0 wrong,
-25.167092 s lost/suppressed, 0 absent-with-output, and no hard-event
-reacquisition. The frozen materiality criterion therefore returns **NO material
-HD benefit in controlled R3**. Additional repeated HD Stage-B characterization
-is not warranted by this result.
+The audit defects are resolved.
 
-This conclusion is bounded by target scale. Human target height was
-534.64--561.11 px (median 549.72 px, 76.35% of image height), far above the
-approximately 20 px operating-floor requirement and not representative of the
-expected airborne following distribution. One native-HD representative
-drone-POV / flight-geometry validation remains within Issue #64 before a
-general source-resolution recommendation. See
-`docs/results/selected_target_tracking/p064_gate2_resolution_evaluation.md`.
+Human frames 93--96 are now encoded as
+`present_reference_unavailable`, and the deterministic tracker replay parses
+the versioned `;frame=<n>;` source-coordinate contract instead of emitting
+numeric `frame_id=0`. The corrected tracker candidate-stream SHA-256 is
+`615ed6abf0083f8cbe86a47257fdc71f4c62c2e16fa314997c57ed34a1a99578`.
 
-The predeclared conditional Stage-B gate was not reached: native HD produced
-no material controller-facing improvement, so no additional repeated HD
-runtime characterization is scheduled from this controlled result.
+The promoted canonical physical reference is
+`docs/data/physical_target_references/p064_gate2_hd_master_r3.json`, SHA-256
+`0d9f4148f67b610d5cd012db4d3613f6fc559aec63c2ae705adc50595e8db147`.
+It contains 833 scored target/distractor frames plus four
+`present_reference_unavailable` frames.
+
+The corrected native 1280x720 and deterministic 640x360 TIM replays use the
+same detector/tracker evidence. Their generated TIM semantic digests differ
+(`9178c9985d96ee42ea3af8934ca462a731ea41b562a9dbe03a3fd2f053d86e7c`
+versus
+`03532a5a3d0e94703212616c2e9e0d222da2ab2ebcca1fa6e4e227a1c39544ad`),
+showing that the appearance-pixel condition reaches the algorithm. Their v2
+physical-target reports are nevertheless byte-identical:
+
+- correct-target output: 18.600459426 s;
+- wrong-person output: 0 s;
+- lost/suppressed: 9.100239419 s;
+- target-absent duration: 0 s;
+- reference-unavailable: 0.133160003 s;
+- reference gap: 0.066408595 s;
+- total evaluated duration: 27.900267443 s.
+
+The controlled R3 native-HD resolution benefit is therefore **NO MATERIAL
+BENEFIT**: 0 percentage-point controller-facing improvement over the exact
+640x360 control. Additional repeated HD Stage-B runtime characterization is
+not justified by R3.
+
+The earlier zero-difference replay produced with `frame_id=0` and the original
+frames-93--96 physical-reference state is retained only as superseded audit
+history and must not be cited as the accepted result.
+
+This conclusion remains bounded by target scale. R3 target height is
+534.64--561.11 px (median 549.72 px, 76.35% of image height), so it does not
+represent the distant/small-person geometry expected from the aircraft.
+
+**Issue #64 is therefore PAUSED, not closed, pending one representative
+drone-POV / flight-geometry capture.**
+
+The completed R3 experiment remains frozen on YOLOv6n so its controlled
+resolution comparison is not changed retrospectively. The future
+representative drone capture uses YOLOv8s + ByteTrack + TIM-MARS, matching the
+established June live-system path, while detector inference remains 640x640.
 
 ## 1. Preflight
 
@@ -288,27 +319,60 @@ The master is valid for Gate 2 only if every retained source image is genuine
 1280x720 imagery. Do not use interpolation or an upsampled source as
 high-resolution evidence.
 
-## 5. UAV / Flight Capture Is Deferred
+## 5. Representative Drone-POV Capture — Next Action
 
-Do not perform a high-bandwidth dual full-resolution flight recording merely
-because HD passed the Stage-A live smoke.
+Do not perform more controlled-R3 or repeated Stage-B work. The only remaining
+Issue #64 evidence is one representative small-target drone-POV sequence.
 
-First complete the controlled Gate 2 identity comparison. If HD does not
-materially improve identity robustness, no additional high-resolution flight
-capture is justified for Issue #64.
+The field command is intentionally one line:
 
-If HD does materially improve identity robustness, define the minimum flight
-evidence needed while respecting the existing flight-readiness procedure and
-the measured raw-recording bandwidth limits.
+    cd ~/Desktop/Thesis-Code || exit 1
+    tools/record_p064_drone_sequence.sh small_target_r1
+
+The helper automatically uses:
+
+- native 1280x720 HD source imagery;
+- YOLOv8s Hailo detection with detector inference still fixed at 640x640;
+- ByteTrack;
+- canonical TIM-MARS;
+- `/camera/image_raw` plus `/detections`;
+- RAM-backed recording under `/dev/shm`;
+- MCAP `fastwrite` plus the existing 512 MiB rosbag cache;
+- no MAVROS and no network-mode change;
+- logs under `ros2_ws/log/`.
+
+It never requests `--camera-preflight-stream-probe-on`.
+
+At the `live-stack>` prompt, perform one short sequence:
+
+1. target clearly visible with at least one distractor;
+2. begin with a larger or medium target;
+3. increase realistic drone following distance until the target is genuinely
+   small in the image;
+4. include a crossing or partial occlusion;
+5. include target exit/disappearance;
+6. include re-entry while the distractor is visible;
+7. continue for a few seconds after reacquisition;
+8. type `stop`.
+
+After `stop`, the helper copies the completed RAM-backed bag into
+`bags/source_video/` and prints its final path. The RAM copy is deliberately
+retained until validation succeeds.
+
+Prefer several short attempts rather than one long recording. The existing
+3.0 s startup warm-up rule still applies when selecting the retained
+evaluation window.
 
 ## Final rule
 
-The current evidence supports VGA and HD as live-feasible Stage-A candidates
-and rejects FHD under the current appearance-image transport architecture.
+Current evidence establishes:
 
-The next scientific question is not whether HD can run. It is whether native
-HD appearance information materially improves identity robustness over the
-aspect-matched lower-resolution control.
+- VGA is live-feasible;
+- HD is live-feasible;
+- FHD fails the current appearance-freshness screen;
+- close-range R3 shows no material native-HD identity benefit over the exact
+  640x360 control;
+- R3 is not representative of small-person airborne geometry.
 
-Do not make a final source-resolution recommendation until that controlled
-identity comparison is complete.
+No general source-resolution recommendation is made until the representative
+drone-POV sequence is evaluated.
