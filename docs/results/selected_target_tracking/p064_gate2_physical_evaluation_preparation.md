@@ -1,7 +1,7 @@
 # Issue #64 Gate-2 physical-evaluation preparation
 
-Status: machine preparation complete; human physical annotation and comparative
-TIM-MARS evaluation not started
+Status: superseded by the completed controlled result in
+`p064_gate2_resolution_evaluation.md`
 
 Date: 27 August 2026
 
@@ -187,9 +187,9 @@ The 1280x720 values are the master coordinate system for both runs. Only the
 appearance bag differs; the existing attachment code maps master boxes into the
 actual 640x360 appearance image.
 
-## Stopping boundary
+## Corrected export resolution
 
-No comparative TIM-MARS output has been generated or interpreted. No physical
-bbox has been fabricated. Gate 2 remains open until Francisco returns a
-human-reviewed CVAT for images 1.1 export, the v2 reference is converted and
-validated, both frozen replays are run, and the predeclared criterion is applied.
+Francisco corrected frames 0--7 and returned a second CVAT export. Full
+validation then passed with complete target and distractor coverage on all 837
+frames. The authoritative outcome and provenance are recorded in
+`docs/results/selected_target_tracking/p064_gate2_resolution_evaluation.md`.

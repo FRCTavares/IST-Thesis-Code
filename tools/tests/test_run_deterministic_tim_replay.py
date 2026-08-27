@@ -824,6 +824,8 @@ def test_build_resolved_runtime_payload_records_sources(
         tracks_topic="/custom/tracks",
         raw_target_topic="/target",
         compact_output=True,
+        process_start_timestamp_ns=100,
+        process_end_timestamp_ns=200,
     )
 
     payload = (
@@ -858,6 +860,8 @@ def test_build_resolved_runtime_payload_records_sources(
         "appearance_request_policy": "all_candidates",
         "appearance_compute_min_interval_ms": 250.0,
         "compact_output": True,
+        "process_start_timestamp_ns": 100,
+        "process_end_timestamp_ns": 200,
     }
 
     sources = payload["value_sources"]
@@ -906,6 +910,12 @@ def test_build_resolved_runtime_payload_records_sources(
     )
     assert sources["compact_output"] == (
         "command_line"
+    )
+    assert sources["process_start_timestamp_ns"] == (
+        "runner_default"
+    )
+    assert sources["process_end_timestamp_ns"] == (
+        "runner_default"
     )
 
 
@@ -1172,6 +1182,8 @@ def test_p064_alternate_appearance_mode_is_default_off(monkeypatch):
     assert arguments.appearance_provenance is None
     assert arguments.appearance_image_topic == "auto"
     assert arguments.expected_candidate_stream_sha256 is None
+    assert arguments.process_start_timestamp_ns is None
+    assert arguments.process_end_timestamp_ns is None
 
 
 def test_p064_alternate_appearance_options_are_explicit(monkeypatch):
@@ -1205,3 +1217,38 @@ def test_p064_alternate_appearance_options_are_explicit(monkeypatch):
     assert arguments.appearance_provenance == Path("variant.json")
     assert arguments.appearance_image_topic == "/camera/dashboard"
     assert arguments.expected_candidate_stream_sha256 == "a" * 64
+
+
+def test_processing_timestamp_window_is_inclusive_and_default_off():
+    events = [
+        (100, 1, 10, 1, object()),
+        (200, 2, 20, 2, object()),
+        (300, 3, 30, 3, object()),
+    ]
+
+    assert MODULE.filter_track_events_by_timestamp(
+        events, None, None
+    ) == events
+    assert MODULE.filter_track_events_by_timestamp(
+        events, 100, 200
+    ) == events[:2]
+
+
+@pytest.mark.parametrize(
+    ("start", "end", "message"),
+    [
+        (100, None, "requires both"),
+        (None, 200, "requires both"),
+        (0, 200, "invalid processing"),
+        (300, 200, "invalid processing"),
+        (400, 500, "contains no tracks"),
+    ],
+)
+def test_processing_timestamp_window_rejects_invalid_contract(
+    start, end, message
+):
+    events = [(100, 1, 10, 1, object())]
+    with pytest.raises(ValueError, match=message):
+        MODULE.filter_track_events_by_timestamp(
+            events, start, end
+        )
