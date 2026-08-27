@@ -107,6 +107,57 @@ identity evaluation.
 The 640x360 condition is an aspect-matched resolution control; it is not
 evidence of a native TEVS 640x360 camera mode.
 
+### Predeclared Gate-2 materiality criterion
+
+Freeze this rule before generating or inspecting either comparative TIM-MARS
+output.
+
+The v2 evaluator's target-present denominator is:
+
+`correct_target_output_duration_s + wrong_person_output_duration_s +
+identity_unresolved_duration_s + lost_or_suppressed_duration_s`.
+
+It excludes target-absent, reference-unavailable, and reference-gap duration.
+The primary metrics are those four controller-facing duration buckets plus the
+safety subset `target_absent_with_output_duration_s`; localization is
+secondary and cosine similarity is not a primary result.
+
+Native HD first must not increase wrong-person duration or absent-with-output
+duration beyond the evaluator's `1e-6 s` reconciliation tolerance. Subject to
+that safety gate, native HD is materially better if either:
+
+- correct-target fraction increases by at least 5 percentage points, or
+  lost-or-suppressed fraction decreases by at least 5 percentage points, using
+  the frozen target-present denominator; or
+- the human-annotated hard exit/re-entry becomes a correct reacquisition within
+  1.0 s without a safety regression.
+
+### Canonical Gate-2 R3 checkpoint — 27 August 2026
+
+The retained master is
+`bags/source_video/2026-08-27__16-34-50__source__p064_gate2_hd_master_r3__image_raw_detections`;
+its MCAP SHA-256 is
+`5580e25f4fef27d3d01c47cfd1e176c56b43449831b62285b6eae2a33aaed34b`.
+It contains native 1280x720 images and live Hailo detections at fixed 640x640
+inference.
+
+The exact source-header evaluation window is
+`[3.000000000, 30.900267443] s`, with absolute origin
+`1787844897072285865 ns` and final detection
+`1787844927972553308 ns`. There are 837 retained detection timestamps and
+837 exact source-image matches at 30 Hz, maximum gap 34.106 ms, and zero gaps
+at least 67 ms. The single later image at `30.933606996 s` is a shutdown-edge
+surplus and is excluded.
+
+ByteTrack `/tracks` is frozen once with candidate digest
+`23e7388edd50e341ef325efef30de45a70cb59701bfab9d1a726f868edfd32d9`.
+Native 1280x720 and deterministic 640x360 appearance bags are prepared with an
+identical 923-frame header-timestamp digest. The 837-frame seedless CVAT package
+is at `artifacts/reports/p064_gate2_hd_master_r3_cvat/`; archive SHA-256 is
+`5ef0a238b52ddc0294db9efe937f36f366809a04dd5391e179271e8d32ce123e`.
+Human physical roles `target` and `phys_d001`, the target-absence semantics,
+and the selected transport ID remain to be confirmed before TIM replay.
+
 Only if native HD produces a material controller-facing identity improvement
 should the stronger repeated Stage-B live characterization be run for the
 VGA/HD operating range.
