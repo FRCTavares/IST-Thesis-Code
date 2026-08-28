@@ -116,6 +116,10 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("min_confirm_frames_after_reacquire", 1)
     node.declare_parameter("min_candidate_score", 0.10)
 
+    # Experimental Issue #21 short-gap motion reference.
+    node.declare_parameter("motion_prediction_enabled", False)
+    node.declare_parameter("motion_prediction_max_horizon_s", 0.25)
+
     # Controlled ID-switch recovery and short-gap protection.
     node.declare_parameter("allow_id_switch_recovery", True)
     node.declare_parameter("same_id_accept_relief", 0.08)
@@ -488,6 +492,17 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
             node.get_parameter("min_confirm_frames_after_reacquire").value
         ),
         min_candidate_score=float(node.get_parameter("min_candidate_score").value),
+        motion_prediction_enabled=bool(
+            node.get_parameter("motion_prediction_enabled").value
+        ),
+        motion_prediction_max_horizon_s=max(
+            0.0,
+            float(
+                node.get_parameter(
+                    "motion_prediction_max_horizon_s"
+                ).value
+            ),
+        ),
         allow_id_switch_recovery=bool(node.get_parameter("allow_id_switch_recovery").value),
         same_id_accept_relief=float(node.get_parameter("same_id_accept_relief").value),
         id_switch_spatial_gate_enabled=bool(

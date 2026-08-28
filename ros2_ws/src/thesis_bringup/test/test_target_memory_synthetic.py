@@ -11,8 +11,13 @@ from thesis_bringup.tim_mars.target_memory import (
 )
 
 
-def tr(track_id, bbox, score=0.9):
-    return CandidateTrack(track_id=track_id, bbox=bbox, score=score)
+def tr(track_id, bbox, score=0.9, timestamp_ns=None):
+    return CandidateTrack(
+        track_id=track_id,
+        bbox=bbox,
+        score=score,
+        tracker_timestamp_ns=timestamp_ns,
+    )
 
 
 def cfg(**overrides):
@@ -65,6 +70,133 @@ def test_same_id_update_remains_locked():
     assert out.target_track_id == 5
     assert out.visible
     assert out.reason == "accepted_candidate"
+
+
+def test_motion_prediction_is_default_off():
+    tim = TargetIdentityMemory(cfg())
+    tim.select(
+        tr(
+            5,
+            (100, 100, 150, 220),
+            timestamp_ns=1_000_000_000,
+        )
+    )
+    tim.update(
+        [
+            tr(
+                5,
+                (120, 100, 170, 220),
+                timestamp_ns=2_000_000_000,
+            )
+        ]
+    )
+    tim.update([], timestamp_ns=2_200_000_000)
+
+    assert tim._motion_reference_bbox() == (
+        120,
+        100,
+        170,
+        220,
+    )
+
+
+def test_motion_prediction_translates_centre_only_after_gap():
+    tim = TargetIdentityMemory(
+        cfg(
+            motion_prediction_enabled=True,
+            motion_prediction_max_horizon_s=0.25,
+        )
+    )
+    tim.select(
+        tr(
+            5,
+            (100, 100, 150, 220),
+            timestamp_ns=1_000_000_000,
+        )
+    )
+    tim.update(
+        [
+            tr(
+                5,
+                (120, 100, 170, 220),
+                timestamp_ns=2_000_000_000,
+            )
+        ]
+    )
+
+    # A committed miss activates Stage-A prediction.
+    tim.update([], timestamp_ns=2_500_000_000)
+
+    # Velocity is +20 px/s in x; the 0.25 s cap therefore translates
+    # the trusted bbox by exactly +5 px while preserving width/height.
+    assert tim._motion_reference_bbox() == (
+        125.0,
+        100.0,
+        175.0,
+        220.0,
+    )
+
+
+def test_motion_prediction_resets_history_after_accepted_id_change():
+    tim = TargetIdentityMemory(
+        cfg(
+            motion_prediction_enabled=True,
+            motion_prediction_max_horizon_s=0.25,
+            max_uncertain_frames=0,
+            min_confirm_frames_after_reacquire=1,
+        )
+    )
+    tim.select(
+        tr(
+            5,
+            (100, 100, 150, 220),
+            timestamp_ns=1_000_000_000,
+        )
+    )
+    tim.update(
+        [
+            tr(
+                5,
+                (110, 100, 160, 220),
+                timestamp_ns=2_000_000_000,
+            )
+        ]
+    )
+    tim.update([], timestamp_ns=2_100_000_000)
+
+    pending = tim.update(
+        [
+            tr(
+                12,
+                (112, 100, 162, 220),
+                timestamp_ns=2_200_000_000,
+            )
+        ]
+    )
+    assert pending.state == TargetState.REACQUIRED
+
+    committed = tim.update(
+        [
+            tr(
+                12,
+                (114, 100, 164, 220),
+                timestamp_ns=2_300_000_000,
+            )
+        ]
+    )
+    assert committed.state == TargetState.LOCKED
+    assert committed.target_track_id == 12
+
+    tim.update([], timestamp_ns=2_400_000_000)
+
+    # The accepted ID change starts a fresh trusted lineage. With only one
+    # accepted observation on ID 12, prediction must fail closed.
+    assert tim._motion_reference_bbox() == (
+        114,
+        100,
+        164,
+        220,
+    )
 
 
 def test_id_switch_recovery_uses_memory_not_raw_tracker_id():
