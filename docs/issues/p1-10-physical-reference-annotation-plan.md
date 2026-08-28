@@ -445,9 +445,22 @@ Canonical May reference:
 
 `docs/data/physical_target_references/dev_may_hard_reentry.json`
 
-June Seq01 and May hard re-entry M4B are complete. Seq03 and Seq04 remain
-unannotated, so global M4B remains incomplete. M5 must not start until those
-references and matching same-capture regenerated outputs exist.
+June Seq01, May hard re-entry, and June Seq03 M4B are complete. Seq04 remains
+unannotated, so global M4B remains incomplete. M5 must not start until the
+Seq04 reference and matching same-capture regenerated outputs exist.
+
+June Seq03 was completed by human-reviewed CVAT for images 1.1 and converted
+through the exact-frame manifest into 1,931 per-frame frozen-v2 samples. Every
+sample is `present_scored` / `distractors_complete`; the target is present on
+all 1,931 frames, `phys_d001` on frames 0--1930, `phys_d002` on frames
+350--1930, and `phys_d003` on frames 400--1930. Exact source timestamps use
+positive `Image.header.stamp` as defined by the CVAT bridge, giving the
+authoritative evaluation window `[0.0, 83.867251154] s`. The ROS bag metadata
+duration `83.866288839 s` is based on bag-record timestamps and differs by
+0.962315 ms; it is therefore not the physical-reference timing authority.
+The promoted canonical artifact is
+`docs/data/physical_target_references/seq03_crossing.json` with SHA-256
+`9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71`.
 
 ## Corrective re-audit (2026-08-10)
 
