@@ -1,0 +1,176 @@
+rosbag2_bagfile_information:
+  version: 9
+  storage_identifier: mcap
+  duration:
+    nanoseconds: 172974757419
+  starting_time:
+    nanoseconds_since_epoch: 1782470523621294704
+  message_count: 8839
+  topics_with_message_count:
+    - topic_metadata:
+        name: /timing
+        type: thesis_msgs/msg/Timing
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: unknown
+            depth: 0
+            reliability: best_effort
+            durability: volatile
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_0071f9d445b2cb2da5d9c8a7d74a35523532f828ef2a122a66dd260ec50ea827
+      message_count: 1456
+    - topic_metadata:
+        name: /detections
+        type: vision_msgs/msg/Detection2DArray
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: unknown
+            depth: 0
+            reliability: best_effort
+            durability: volatile
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_214274120007f4a683866481336b70310268cfa107aebe9d594a6acf75bda968
+      message_count: 1456
+    - topic_metadata:
+        name: /camera/image_raw
+        type: sensor_msgs/msg/Image
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: unknown
+            depth: 0
+            reliability: best_effort
+            durability: volatile
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_d31d41a9a4c4bc8eae9be757b0beed306564f7526c88ea6a4588fb9582527d47
+      message_count: 1557
+    - topic_metadata:
+        name: /tracks
+        type: thesis_msgs/msg/Track2DArray
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: unknown
+            depth: 0
+            reliability: best_effort
+            durability: volatile
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_02edde94f5123754baadb4d4bbfc1a36d23bacd23f58cda41e8256b9dc1bd466
+      message_count: 1456
+    - topic_metadata:
+        name: /timing_target
+        type: thesis_msgs/msg/Timing
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: unknown
+            depth: 0
+            reliability: best_effort
+            durability: volatile
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_0071f9d445b2cb2da5d9c8a7d74a35523532f828ef2a122a66dd260ec50ea827
+      message_count: 1457
+    - topic_metadata:
+        name: /timing_tracker
+        type: thesis_msgs/msg/Timing
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: unknown
+            depth: 0
+            reliability: best_effort
+            durability: volatile
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_0071f9d445b2cb2da5d9c8a7d74a35523532f828ef2a122a66dd260ec50ea827
+      message_count: 0
+    - topic_metadata:
+        name: /target
+        type: thesis_msgs/msg/TargetState
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: unknown
+            depth: 0
+            reliability: best_effort
+            durability: volatile
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_ea00a51492cdff8c36a6989156516452fe9158546b6e31afcf5a85e8a3342868
+      message_count: 1457
+  compression_format: ""
+  compression_mode: ""
+  relative_file_paths:
+    - 2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw__detector_yolov8s__tracker_bytetrack__tim_off__target_largest__r1_0.mcap
+  files:
+    - path: 2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw__detector_yolov8s__tracker_bytetrack__tim_off__target_largest__r1_0.mcap
+      starting_time:
+        nanoseconds_since_epoch: 1782470523621294704
+      duration:
+        nanoseconds: 172974757419
+      message_count: 8839
+  custom_data: ~
+  ros_distro: jazzy

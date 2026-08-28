@@ -7,6 +7,8 @@ traceability but is not current thesis authority.
 
 - `results/` — superseded algorithm-version and comparison interpretations.
 - `data_catalogue_cleanup/` — historical bag and artefact cleanup records.
+- `bag_cleanup_2026_07_09/` — the 2026-07-09 bag-deletion audit trail: which
+  bags were removed, why, and their per-bag `metadata.yaml` sidecars.
 
 ## Use restrictions
 
