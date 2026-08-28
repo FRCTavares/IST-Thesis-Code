@@ -77,7 +77,9 @@ def test_open_evidence_dependencies_are_explicit():
         "Issue #32",
         "Issue #44",
         "Issue #39",
-        "not a completed result",
+        # Issue #44 closed as completed on 2026-08-04; the doc now states this
+        # explicitly rather than hedging it as "not a completed result".
+        "closed as completed",
         "not final held-out evidence",
     )
 
@@ -85,15 +87,23 @@ def test_open_evidence_dependencies_are_explicit():
         assert phrase in text
 
 
-def test_hailo_appearance_is_not_claimed_complete():
+def test_embedded_deployment_conclusion_still_gated_on_issue_32():
+    # Issue #44 is closed, so the pre-closure hedge ("Until Issue #44 closes ...
+    # not a completed result") was removed. The embedded-deployment subquestion
+    # is still not claimed complete: it is now gated on Issue #32.
     text = QUESTION_PATH.read_text(encoding="utf-8")
     normalized = " ".join(text.split())
 
+    assert "Issue #44 owned the dedicated Hailo appearance-offload" in normalized
     assert (
-        "Until Issue #44 closes, the thesis may describe Hailo appearance "
-        "offload as a research objective and implementation target, not a "
-        "completed result."
+        "The final embedded-deployment conclusion remains broader than "
+        "Issue #44 alone"
     ) in normalized
+    assert (
+        "runtime, resource, thermal, power, and sustained-operation evidence "
+        "owned by Issue #32"
+    ) in normalized
+
 
 def test_absolute_literature_claim_is_rejected():
     text = QUESTION_PATH.read_text(encoding="utf-8")
@@ -101,8 +111,9 @@ def test_absolute_literature_claim_is_rejected():
 
     assert '"to the best of our knowledge"' in text
     assert (
-        "It must not claim that no related Raspberry Pi, Jetson, "
-        "UAV-tracking, ReID, or edge-inference system exists."
+        "The thesis must not claim that no related target-person, "
+        "Raspberry Pi, Jetson, UAV-tracking, ReID, or edge-inference "
+        "system exists."
     ) in normalized
 
 def test_documentation_navigation_links_the_contract():
@@ -117,5 +128,9 @@ def test_closed_issue_is_removed_and_final_claim_is_blocked():
     assert "[#38 —" not in text
     assert text.count("[#39 —") == 1
     assert "under #32" in text
-    assert "#44 are complete" in text
+    # The final claim (#39) stays blocked on the held-out (#27), tracker
+    # comparison (#58), and embedded-deployment (#32) evidence. Issue #44 is
+    # now closed and folded in as completed evidence, not a pending dependency.
+    assert "#32 are complete" in text
+    assert "#44 is already closed" in text
     assert "#58" in text

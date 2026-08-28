@@ -1,0 +1,44 @@
+rosbag2_bagfile_information:
+  version: 9
+  storage_identifier: mcap
+  duration:
+    nanoseconds: 98334160442
+  starting_time:
+    nanoseconds_since_epoch: 1781866574188126790
+  message_count: 2796
+  topics_with_message_count:
+    - topic_metadata:
+        name: /camera/image_raw
+        type: sensor_msgs/msg/Image
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: unknown
+            depth: 0
+            reliability: best_effort
+            durability: volatile
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_d31d41a9a4c4bc8eae9be757b0beed306564f7526c88ea6a4588fb9582527d47
+      message_count: 2796
+  compression_format: ""
+  compression_mode: ""
+  relative_file_paths:
+    - 2026-06-19__11-56-07__source__2026-06-19__seq01__clean_four_person__image_raw_0.mcap
+  files:
+    - path: 2026-06-19__11-56-07__source__2026-06-19__seq01__clean_four_person__image_raw_0.mcap
+      starting_time:
+        nanoseconds_since_epoch: 1781866574188126790
+      duration:
+        nanoseconds: 98334160442
+      message_count: 2796
+  custom_data: ~
+  ros_distro: jazzy

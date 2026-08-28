@@ -165,21 +165,83 @@ target_memory_mars_node.py is ROS glue around the pure algorithm. It owns:
 The node should not contain core selection policy. Core policy belongs in
 target_memory.py and supporting modules.
 
-## File map
+## Module map
 
-- target_memory.py: core selected-target memory state machine.
-- types.py: shared dataclasses, enums, and configuration.
-- memory_state.py: private internal memory state and control-mode mapping.
-- geometry_scoring.py: stateless bbox geometry and base candidate scoring.
-- appearance_memory.py: crop, cosine-similarity, and feature-memory update helpers.
-- appearance_policy.py: appearance scoring policy and appearance gate logic.
-- appearance_attachment.py: runtime MARS embedding attachment, caching, and diagnostics.
-- mars_reid_backend.py: thin wrapper around the DeepSORT MARS-small128 extractor.
-- hard_negative_memory.py: bounded distractor appearance memory.
-- reacquisition_policy.py: confirmation counters and ambiguity/absence helper policies.
-- ros_params.py: ROS parameter declaration and conversion to TargetMemoryConfig.
-- ros_messages.py: conversion from pure TIM outputs to ROS messages and JSON diagnostics.
-- target_memory_mars_node.py: ROS 2 node wiring the full TIM-MARS runtime path.
+Modules are grouped by responsibility. Everything except the ROS layer is
+ROS-free and Hailo-free.
+
+### Selected-target state machine
+
+- `target_memory.py`: core `TargetIdentityMemory` state machine (accept, reject,
+  reacquire, miss, memory commit).
+- `types.py`: public dataclasses, enums, and `TargetMemoryConfig`.
+- `memory_state.py`: private `_Memory` dataclass and state-to-control-mode
+  mapping.
+- `candidate_safety_policy.py`: stateless candidate-acceptance safety checks
+  lifted out of the state machine.
+- `reacquisition_policy.py`: confirmation counters and uncertain/lost/reacquire
+  helpers (candidate-belief, absence-aware recovery, appearance-margin,
+  geometry-strength, scene-ambiguity risk).
+
+### Scoring
+
+- `geometry_scoring.py`: stateless bbox overlap, centre distance, scale
+  similarity, and the base geometric `CandidateScore` (primary safety gate).
+- `appearance_policy.py`: how optional appearance evidence modifies a geometric
+  score (positive similarity, hard-negative similarity, appearance gating).
+
+### Positive and negative appearance memory
+
+- `positive_appearance_memory.py`: protected anchor, trusted gallery, and
+  adaptive prototype (the P1.4 protected/adaptive positive-memory work).
+- `hard_negative_memory.py`: bounded distractor-appearance memory.
+- `appearance_memory.py`: low-level crop, HSV feature, cosine-similarity, and
+  exponential feature-update helpers.
+- `crop_quality.py`: pure crop-quality measurement in appearance-image pixels.
+
+### Appearance embedding attachment (in-process, canonical)
+
+- `appearance_attachment.py`: attaches MARS embeddings to `CandidateTrack`
+  objects before the state machine; owns image-age checks, crop scheduling,
+  identity-safe embedding-cache reuse, and diagnostics.
+- `mars_reid_backend.py`: thin wrapper around the DeepSORT MARS-small128
+  extractor (`models/reid/mars-small128.pb`, 128-D, CPU).
+
+### Asynchronous Hailo RepVGG offload (optional, Issue #44)
+
+Off by default (`appearance_async_reid_enabled=false`). CPU MARS stays
+authoritative for TIM-MARS decisions; this path is used for embedded
+appearance-offload measurement. Request flow:
+
+`appearance_request_policy` (which candidates need an embedding)
+-> `appearance_request_producer` (stage owned immutable BGR crops)
+-> `appearance_request_transport` (causal in-flight ledger over the async boundary)
+-> `appearance_ros_transport` (strict ROS message conversion)
+-> `AppearanceEmbeddingRequest` on `/appearance/reid/request`
+-> `perception_pipeline_node` Hailo RepVGG worker
+-> `AppearanceEmbeddingResult` on `/appearance/reid/result`.
+
+- `appearance_async.py`: ROS-free causal request/result lifecycle contract.
+- `appearance_request_policy.py`: pure per-candidate request decision.
+- `appearance_request_producer.py`: pure staging of causally identified crops.
+- `appearance_request_transport.py`: TIM-owned causal ledger for RepVGG
+  transport.
+- `appearance_ros_transport.py`: strict ROS conversion for the async messages.
+- `appearance_worker.py`: hardware-independent worker boundary (injected
+  preprocess/infer/postprocess; used for deterministic tests).
+- `repvgg_reid_adapter.py`: pure RepVGG pre/post-processing and the tracked-HEF
+  tensor contract (UINT8 NHWC 256x128x3 in, 512-D out).
+
+### Shared runtime and ROS layer
+
+- `runtime.py`: ROS-free processing runtime — tracker messages to
+  `CandidateTrack`, causal image selection, appearance attachment, and
+  `TargetIdentityMemory.update()`.
+- `ros_params.py`: ROS parameter declaration and conversion to
+  `TargetMemoryConfig`.
+- `ros_messages.py`: pure TIM outputs to ROS messages and JSON diagnostics.
+- `target_memory_mars_node.py`: the ROS 2 node wiring subscriptions,
+  publications, image handling, and the async ReID transport.
 
 ## Final thesis note
 
