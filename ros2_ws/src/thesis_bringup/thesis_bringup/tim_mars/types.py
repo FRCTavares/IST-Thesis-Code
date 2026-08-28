@@ -190,6 +190,13 @@ class TargetMemoryConfig:
     max_uncertain_frames: int = 6
     min_confirm_frames_after_reacquire: int = 1
 
+    # Experimental short-gap motion reference (Issue #21).
+    # Disabled by default. When enabled, a centre-only constant-velocity
+    # reference may replace the frozen last trusted bbox after at least one
+    # committed miss. Prediction is capped in elapsed tracker time.
+    motion_prediction_enabled: bool = False
+    motion_prediction_max_horizon_s: float = 0.25
+
     # Identity continuity and controlled ID-switch recovery.
     # Same-ID continuity receives a small score relief. New tracker IDs are
     # accepted only when recovery is enabled and any configured spatial gate
