@@ -1,11 +1,37 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "authority_date": "2026-07-23",
+  "current_runtime_as_of": "2026-08-28",
   "current_runtime": {
+    "description": "The configuration the repository currently treats as canonical. This is NOT the configuration any frozen evidence version was evaluated with; see latest_frozen_evidence_version and canonical_changes_since_latest_frozen_evidence.",
     "config_path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
-    "config_sha256": "e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff",
-    "last_evaluated_algorithm_commit": "c5ba9d30997e47c7f555baee5257bc687698508a",
-    "evidence_version": "p028_dual_oracle_development"
+    "config_sha256": "e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931",
+    "config_established_commit": "bd5eeb4ebb79988bce2fa18b8889550d5f497306",
+    "latest_frozen_evidence_version": "p028_dual_oracle_development",
+    "differs_from_latest_frozen_evidence": true,
+    "canonical_changes_since_latest_frozen_evidence": [
+      {
+        "parameters": ["hard_negative_max_positive_similarity"],
+        "change": "1.01 (exclusion disabled) -> 0.95",
+        "promotion_commit": "f10492637163e2b25cd72155deffd8c12d5fb69d",
+        "evidence_path": "reports/p017_fragment_safety_f1049263_2026_07_27/",
+        "claim_boundary": "P1.6 / Issue #17. 0.95 is the lowest tested safe positive-similarity fragment-exclusion threshold over the four frozen development sequences (deterministic 0.95-1.01 sweep, all annotated-ID/spatial/absent-output gates PASS, repeatable). Development-only; no absolute-performance, tracker-independent, or held-out claim."
+      },
+      {
+        "parameters": ["hard_negative_max_age_frames", "hard_negative_decay_policy"],
+        "change": "added: 247 tracker frames, none_until_expiry",
+        "promotion_commit": "6ba28c6133ff2e105ca6db4c17d0b0759c27b565",
+        "evidence_path": "reports/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/",
+        "claim_boundary": "P1.7 / Issue #18. 247 is the largest tested finite maximum age that exercised committed-prototype expiry with zero annotated-ID or spatial safety degradation over the four frozen development sequences (age sweep 62/93/247/394/427, repeatable). Development-only. Appearance vectors remain full-strength; expiry only during uninterrupted trusted LOCKED->LOCKED continuity."
+      },
+      {
+        "parameters": ["appearance_request_policy"],
+        "change": "added: all_candidates",
+        "promotion_commit": "bd5eeb4ebb79988bce2fa18b8889550d5f497306",
+        "evidence_path": null,
+        "claim_boundary": "Behaviour-neutral. Makes the pre-existing encode-all appearance-request default an explicit parameter so controlled Issue #44 experiments can override it with geometry_winner. No change to the canonical decision path."
+      }
+    ]
   },
   "active_parameters": {
     "appearance_conservative_margin": 0.05,
@@ -65,7 +91,7 @@
     },
     {
       "id": "p028_dual_oracle_development",
-      "configuration_role": "current development configuration with freshness and same-ID hijack protection",
+      "configuration_role": "frozen development configuration with freshness and same-ID hijack protection; latest evidence version for the headline development claim, but superseded as the canonical runtime by the parameter promotions in current_runtime.canonical_changes_since_latest_frozen_evidence",
       "algorithm_commit": "c5ba9d30997e47c7f555baee5257bc687698508a",
       "config_sha256": "e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff",
       "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
