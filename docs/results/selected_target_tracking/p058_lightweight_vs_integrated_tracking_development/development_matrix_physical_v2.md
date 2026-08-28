@@ -2,13 +2,17 @@
 
 ## Status
 
-Development-only evidence on `dev_may_hard_reentry`.
+Development-only evidence currently covers `dev_may_hard_reentry` and the
+additional frozen June Seq03 crossing-ambiguity validation.
 
-This matrix is not held-out evidence and must not be used as the final Issue #58
-generalisation result.
+These results are not held-out evidence and must not be used as the final Issue
+#58 generalisation result. No thresholds or architecture settings were retuned
+after observing the Seq03 physical-v2 outcome.
 
-All cells use the same physical-target v2 reference and the same evaluated
-duration of `67.864909774 s`.
+The May matrix uses an evaluated duration of `67.864909774 s`. The Seq03 matrix
+uses an evaluated duration of `83.867251154 s`, including a common
+`0.100453371 s` physical-reference gap that is excluded from the correct /
+wrong / lost identity buckets.
 
 ## Architecture matrix
 
@@ -104,6 +108,86 @@ Simple Target-ReID:
 - calibrated threshold: `0.90`
 - calibration contract:
   `docs/results/selected_target_tracking/p058_lightweight_vs_integrated_tracking_development/target_reid_baseline_physical_v2.md`
+
+## Additional frozen development validation: June Seq03 crossing
+
+June Seq03 uses the newly promoted physical-v2 reference for the exact canonical
+raw capture `2026-06-19__12-55-58`. The detector evidence was regenerated once
+from that raw capture and frozen before tracker fan-out. The common input contains
+exactly 1,931 source images and 1,931 YOLOv8s detection messages with one-to-one
+equality of all image and detection header timestamps.
+
+ByteTrack, SORT, and DeepSORT were then regenerated deterministically from that
+same image/detection stream. Their selected bootstrap tracks were independently
+checked against the physical target and passed with initial physical-target IoU
+of `0.924555`, `0.865869`, and `0.875631`, respectively. DeepSORT consumed the
+same-timestamp source image on all 1,931 frames (`0 ms` image age), so its result
+is not attributable to a stale appearance-image stream.
+
+The simple Target-ReID threshold remained frozen at `0.90` from May development
+calibration. Canonical TIM-MARS also remained unchanged. No Seq03 tuning was
+performed.
+
+| Architecture | Correct target | Wrong person | Identity unresolved | Lost / suppressed |
+| --- | ---: | ---: | ---: | ---: |
+| ByteTrack raw | 33.831624313 s (40.34%) | 0.100206111 s (0.12%) | 0 s | 49.834967359 s (59.42%) |
+| SORT raw | 27.432422908 s (32.71%) | 0 s (0.00%) | 0 s | 56.334374875 s (67.17%) |
+| Simple Target-ReID, threshold 0.90 | 13.962779010 s (16.65%) | 0 s (0.00%) | 0 s | 69.804018773 s (83.23%) |
+| ByteTrack + canonical TIM-MARS | 22.532686264 s (26.87%) | 0 s (0.00%) | 0 s | 61.234111519 s (73.01%) |
+| DeepSORT raw | 27.547623858 s (32.85%) | 35.350991550 s (42.15%) | 0 s | 20.868182375 s (24.88%) |
+
+All five cells reconcile exactly over `83.867251154 s`. Each has
+`0.100453371 s` reference-gap duration and zero target-absent duration, so Seq03
+does not test open-set target-absence publication safety.
+
+Relative to raw ByteTrack, canonical TIM-MARS on Seq03:
+
+- reduces wrong-person output by `0.100206111 s`, to zero;
+- reduces correct-target output by `11.298938049 s`;
+- increases lost/suppressed duration by `11.399144160 s`.
+
+Relative to the frozen simple Target-ReID baseline, canonical TIM-MARS:
+
+- has the same zero measured wrong-person duration;
+- increases correct-target output by `8.569907254 s`;
+- reduces lost/suppressed duration by `8.569907254 s`.
+
+Relative to integrated DeepSORT, canonical TIM-MARS:
+
+- reduces wrong-person output by `35.350991550 s`;
+- has `5.014937594 s` less correct-target output;
+- increases lost/suppressed duration by `40.365929144 s`.
+
+The Seq03 result therefore does not support a blanket availability advantage for
+TIM-MARS over raw ByteTrack. Instead, it demonstrates the intended asymmetric
+safety trade-off: TIM-MARS suppresses the small residual ByteTrack wrong-person
+publication at a material availability cost, while retaining substantially more
+correct-target availability than the conservative fixed-template Target-ReID
+baseline. On this controlled crossing sequence, integrated DeepSORT exhibits a
+large physical wrong-person failure despite identical detector evidence,
+same-capture imagery, correct target bootstrap, and zero appearance-image age.
+
+Seq03 provenance:
+
+- physical reference:
+  `docs/data/physical_target_references/seq03_crossing.json`
+  (SHA-256 `9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71`);
+- frozen common image/detection input SHA-256:
+  `fe5dc3b01e8bf31fee5a73aacffa0cf91d1bc7c7151130b83b3600451cd449b2`;
+- deterministic ByteTrack replay SHA-256:
+  `619a99183181826dfaa278691db0c5f7523b5b32b34b18fd2dc574b392717c77`;
+- deterministic SORT replay SHA-256:
+  `c2eaaa4c6bbb1816909adcdb96b8649e23d2fecd371eda19538e4a7d15115dc7`;
+- deterministic DeepSORT replay SHA-256:
+  `bb65f7e160215d0ff1bfff682680a4013d24a3a387d32c335dba786f832d3a73`;
+- frozen Target-ReID replay SHA-256:
+  `e0bca9c5aee11f91b04c14399633632b8c10071a80b33f7abee7c0879a7f8681`;
+- canonical TIM-MARS replay SHA-256:
+  `69f0260c7a53604047258020b5eb5c5bb7363c6bb767dd6cbe7e4972e009ef59`;
+- canonical TIM-MARS config SHA-256:
+  `e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931`;
+- MARS model SHA-256:
+  `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`.
 
 ## Minimal appearance-free tracker arm: SORT
 
