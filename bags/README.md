@@ -17,14 +17,14 @@ This directory stores large ROS bag data. Keep it organized by data role, not by
 
 Source/raw bags are precious. Replay/tmp/UI bags are disposable unless explicitly promoted.
 
-After the 2026-07-09 cleanup, old lab archive bags, failed tuning replays, duplicate full-pipeline bags, annotation-input bags, and MAVROS-only support bags were removed. The cleanup record is retained locally in:
+After the 2026-07-09 cleanup, old lab archive bags, failed tuning replays, duplicate full-pipeline bags, annotation-input bags, and MAVROS-only support bags were removed. The cleanup audit trail is tracked at:
 
-- `reports/bag_cleanup_2026_07_09/`
+- `docs/archive/bag_cleanup_2026_07_09/`
 
-This is an untracked working directory, consistent with the `reports/` retention
-policy. It preserves the deleted bag names, their per-bag `metadata.yaml`
-sidecars, and the keep/delete lists. The same record was tracked under a
-docs/ path until 2026-07-20, when it was removed from version control.
+It preserves the deleted bag names, the deletion rationale, and a per-bag
+`metadata.yaml` sidecar for every removed bag. A local
+`reports/bag_cleanup_2026_07_09/` working directory holds the same content plus
+a few uncurated scratch listings.
 
 ## Current protected structure
 
@@ -101,7 +101,7 @@ The `paper_final_*` names are frozen for traceability and should not be used as 
 Do not treat other replay folders as final evidence unless they are documented in:
 
 - `docs/data/final_experiment_inventory.md`
-- `reports/bag_cleanup_2026_07_09/keep_bags.txt` (retained locally, untracked)
+- `docs/archive/bag_cleanup_2026_07_09/keep_bags.txt`
 
 ## Reference aliases
 
