@@ -1,25 +1,57 @@
 # TIM-MARS evidence-version map
 
-Date: 2026-07-23
+Date: 2026-07-23. Current runtime identity refreshed 2026-08-28.
 
 The machine-readable authority is
 `docs/data/catalogue/tim_evidence_versions.json`. A TIM-MARS result is valid
 only for the configuration hash, algorithm commit, model, bags, annotations,
 oracles, and claim boundary recorded by its evidence version.
 
-## Current runtime identity
+Two different things are recorded separately and must not be conflated:
+
+- the **current canonical runtime** — the configuration the repository treats
+  as canonical now (this section);
+- **frozen evidence versions** — the exact configuration and algorithm commit
+  a particular result set was evaluated with, kept immutable (the version map
+  below).
+
+The current canonical runtime is **not** the configuration of any frozen
+evidence version. It has moved forward from the latest frozen evidence
+version through narrowly-scoped parameter promotions, each with its own
+tracked evidence (see "Current canonical runtime vs frozen evidence").
+
+## Current canonical runtime
 
 - Configuration:
   `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
 - SHA-256:
-  `e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff`
-- Last evaluated algorithm commit:
-  `c5ba9d30997e47c7f555baee5257bc687698508a`
-- Current evidence version: `p028_dual_oracle_development`
+  `e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931`
+- Established by commit:
+  `bd5eeb4ebb79988bce2fa18b8889550d5f497306` (2026-07-29); byte-stable since.
+- Latest frozen evidence version: `p028_dual_oracle_development` (evaluated
+  with an **earlier** configuration, `e7620313…` — see the version map).
 
-“Canonical” means the current reproducible runtime configuration. It does not
-mean that every historical report used the same bytes or that the current
-configuration has a universal safety guarantee.
+"Canonical" means the current reproducible runtime configuration. It does not
+mean that every historical report used the same bytes, that the current
+configuration has been re-evaluated end-to-end as a new evidence version, or
+that it has a universal safety guarantee.
+
+## Current canonical runtime vs frozen evidence
+
+The latest frozen evidence version, `p028_dual_oracle_development`, was
+evaluated at algorithm commit `c5ba9d30…` and configuration `e7620313…`. Since
+then the canonical runtime advanced through three changes. Each is a
+narrowly-scoped parameter decision with its own tracked evidence; none of them
+re-establishes or supersedes the P0.17 headline development claim.
+
+| Parameter | Change | Promotion commit | Evidence | Claim boundary |
+| --- | --- | --- | --- | --- |
+| `hard_negative_max_positive_similarity` | `1.01` (exclusion off) → `0.95` | `f10492637163e2b25cd72155deffd8c12d5fb69d` | `reports/p017_fragment_safety_f1049263_2026_07_27/` (P1.6, Issue #17) | Lowest tested safe positive-similarity fragment-exclusion threshold over the four frozen development sequences; deterministic `0.95–1.01` sweep, all annotated-ID / spatial / absent-output gates PASS, repeatable. Development-only; no absolute-performance, tracker-independent, or held-out claim. |
+| `hard_negative_max_age_frames`, `hard_negative_decay_policy` | added: `247` frames, `none_until_expiry` | `6ba28c6133ff2e105ca6db4c17d0b0759c27b565` | `reports/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/` (P1.7, Issue #18) | Largest tested finite maximum age that exercised committed-prototype expiry with zero annotated-ID or spatial safety degradation over the four frozen development sequences (age sweep `62/93/247/394/427`, repeatable). Development-only. Appearance vectors stay full-strength; expiry only during uninterrupted trusted `LOCKED → LOCKED` continuity. |
+| `appearance_request_policy` | added: `all_candidates` | `bd5eeb4ebb79988bce2fa18b8889550d5f497306` | — | Behaviour-neutral. Makes the pre-existing encode-all default an explicit parameter so controlled Issue #44 experiments can override it. No change to the canonical decision path. |
+
+None of the nine `active_parameters` tracked in the machine-readable map were
+changed by these promotions.
 
 ## Version map
 
@@ -29,6 +61,9 @@ configuration has a universal safety guarantee.
 | P0.6b hard-negative structure | `03409564f5107d6808054dac12294b004d9d4381` | `55332935fe859edff60bedf910f126487b5da6a8e13bbe5bb7662f2645359dbc` | Structural promotion and behavior preservation |
 | P0.7 rank-aware preservation | `add2b8b87963ac26ae2551762ecccfaf119a7780` | `55332935fe859edff60bedf910f126487b5da6a8e13bbe5bb7662f2645359dbc` | Confirmation fix with preserved development outcomes |
 | P0.17 dual-oracle development | `c5ba9d30997e47c7f555baee5257bc687698508a` | `e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff` | Improves over raw; not zero-wrong and not held-out |
+
+These rows are immutable historical fingerprints. The current canonical runtime
+is not one of them — it is `e9dc78c8…` (see "Current canonical runtime").
 
 All versions use MARS model SHA-256
 `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`.
@@ -44,6 +79,12 @@ P0.6b/P0.7 → P0.17 added:
 - `freshness_max_output_age_s: 0.90`
 - `freshness_future_tolerance_s: 0.05`
 - `same_id_hijack_protection_enabled: true`
+
+P0.17 evidence config → current canonical runtime: the three parameter
+promotions in "Current canonical runtime vs frozen evidence" above
+(`hard_negative_max_positive_similarity` to `0.95`,
+`hard_negative_max_age_frames`/`hard_negative_decay_policy`,
+`appearance_request_policy`).
 
 The active margins are:
 
