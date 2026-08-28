@@ -445,9 +445,15 @@ Canonical May reference:
 
 `docs/data/physical_target_references/dev_may_hard_reentry.json`
 
-June Seq01 and May hard re-entry M4B are complete. Seq03 and Seq04 remain
-unannotated, so global M4B remains incomplete. M5 must not start until those
-references and matching same-capture regenerated outputs exist.
+June Seq01, May hard re-entry, and June Seq03 M4B are complete. Seq04 remains
+unannotated, so global M4B remains incomplete. M5 must not start until that
+reference and matching same-capture regenerated outputs exist.
+
+Canonical Seq03 reference:
+
+`docs/data/physical_target_references/seq03_crossing_ambiguity.json`
+
+Accepted Seq03 CVAT export SHA-256: `fa0e2afca272c370fa377cdc785891069f764e0286ad896f038d08f706d90389`. Final conversion config SHA-256: `b27069b0ad551d4f20de02715b90cac642d9e331dbec4dd597dc441e9dbab3f4`. Canonical physical-reference SHA-256: `9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71`.
 
 ## Corrective re-audit (2026-08-10)
 
@@ -623,7 +629,7 @@ not to plan from CSV timestamps alone.
 |---|---|---|
 | May | `black_shirt_person` | Repository-recorded: `deepsort_hard_reentry.csv`'s `target_label` column reads `BLACK_SHIRT` for every row. |
 | Seq01 | `black_shirt_person` (**proposed, not repository-confirmed**) | No June CSV records a physical description (`CORRECT_TARGET` is generic). Visual inspection of all 7 sampled frames shows one consistent person in a black/dark t-shirt and light trousers, clearly distinguishable from the other three (lighter clothing) at every sampled instant. |
-| Seq03 | `black_shirt_person` (**proposed, not repository-confirmed**) | Same visual basis as Seq01; same `june19_four_person_group_A` per the split file, so plausibly the same individual across the day, but this is an inference, not a repository fact. |
+| Seq03 | `black_shirt_person` (**human-confirmed during M4B annotation**) | The inspection-based proposal was explicitly retained by the annotator during the complete 28 August 2026 CVAT physical-reference review; `physical_ref=target` is the identity authority. |
 | Seq04 | `black_shirt_person` (**proposed, not repository-confirmed**) | Same visual basis as Seq01/Seq03. |
 
 Per the instruction not to invent a label where evidence is ambiguous: the
@@ -773,7 +779,7 @@ correction in this re-audit, both scientifically (this was the sequence
 literally named "clean_four_person," and it is still not `target_only`)
 and in workload terms (Section F).
 
-### E.3 June Seq03 -- crossing ambiguity (83.87 s, target = `black_shirt_person`, proposed)
+### E.3 June Seq03 -- crossing ambiguity (83.87 s, target = `black_shirt_person`, human-confirmed)
 
 The originally-proposed 0-20s `target_only` opening did not survive
 re-audit: dense re-sampling at t=0, 5, 10, 15, 20s shows two other people
