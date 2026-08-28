@@ -348,7 +348,10 @@ Clock-domain note:
 - `src_stamp_ns` is source or sensor clock metadata and may not be directly comparable to host monotonic timing without synchronization.
 - `pub_dt_ms`, `det_out_fps`, and `camera_input_fps` are cadence-derived metrics.
 
-Full old-to-new mapping, producers/consumers, and deprecation status is in `TIMING_FIELD_AUDIT.md`.
+The canonical field list, the legacy alias-to-canonical mapping, metric tiers,
+warning thresholds, and the alias-removal plan are defined in
+`tools/timing_contract.py`. Per-field deprecation notes are in
+`ros2_ws/src/thesis_msgs/msg/Timing.msg`.
 
 Freeze note:
 

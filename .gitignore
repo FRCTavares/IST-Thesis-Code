@@ -49,8 +49,6 @@ pnpm-debug.log*
 
 # Common frontend build outputs
 coverage/
-user-interface/dist/
-deprecated/user-interface/dist/
 
 # ------------------------------
 # Logs and runtime files
@@ -70,31 +68,18 @@ ros2_ws/log/
 # ------------------------------
 # Project-specific generated artifacts
 # ------------------------------
-# Hailo local examples/assets downloaded or generated locally
-# preferred location is deprecated/hailo-rpi5-examples/
-deprecated/hailo-rpi5-examples/
+# Hailo rpi5 examples, optionally cloned into the repo root and picked up by
+# tools/setup/install_host_hailo_bindings.sh
 hailo-rpi5-examples/
 
-# Inference runtime outputs
-# infer_service/gstshark_*/
-# infer_service/opt/
-# infer_service/resources/
+# Local model binaries (tracking policy is documented in models/README.md)
 models/reid/*.pb
 models/reid/*.hef
-
-# ROS bag recordings, generated during live/replay/flight experiments
-artifacts/bags/live_camera/
-artifacts/bags/raw/
-artifacts/bags/eval/
-artifacts/bags/archive/
 
 # Rendered bag videos and generated media outputs
 artifacts/reports/videos/
 artifacts/reports/flight_summaries/
 artifacts/figures/
-
-# Birds experiment workspace (local runs, logs, benchmarks)
-deprecated/
 
 # Local report outputs
 artifacts/reports/compare/tmp_*/
@@ -141,12 +126,6 @@ artifacts/videos/
 artifacts/logs/
 
 # ------------------------------
-# Thesis datasets
-# ------------------------------
-data/datasets/external/
-data/datasets/processed/
-
-# ------------------------------
 # Generated experiment artifacts
 # ------------------------------
 artifacts/bags/**
@@ -181,19 +160,13 @@ tools/visualization/.tim_audit_favourites.json
 
 # Local Python environments
 .venv-tim-ui/
-.venv/
 
 # Local build/runtime logs
 log/
-ros2_ws/log/
 
 # Frontend local dependencies/build outputs
 live-ui/node_modules/
 live-ui/dist/
-user-interface/node_modules/
-user-interface/dist/
-
-# Local ROS 2 bag data
 
 # Local ROS 2 bag data
 /bags/*
@@ -202,6 +175,7 @@ user-interface/dist/
 # Generated local reports
 /reports/*
 !/reports/README.md
+!/reports/PROMOTED.md
 
 thesis_env/
 reports/local_env_snapshots/
