@@ -43,6 +43,7 @@ def evidence_by_id() -> dict[str, dict]:
 
 
 def test_current_runtime_hash_and_parameters_match_canonical_yaml():
+    """current_runtime must describe the actual current canonical YAML."""
     evidence = load_map()
     current = evidence["current_runtime"]
     assert current["config_path"] == str(
@@ -64,9 +65,61 @@ def test_current_runtime_hash_and_parameters_match_canonical_yaml():
     }
 
 
+def test_current_runtime_is_separated_from_frozen_evidence_identity():
+    """current_runtime must not carry a frozen evidence version's identity."""
+    evidence = load_map()
+    current = evidence["current_runtime"]
+
+    # The old schema copied a frozen evidence version's commit/version into
+    # current_runtime, which conflated "canonical now" with "what p028 was
+    # evaluated with". Those keys must not come back.
+    assert "last_evaluated_algorithm_commit" not in current
+    assert "evidence_version" not in current
+
+    # current_runtime references the latest frozen evidence version by id only.
+    ids = {entry["id"] for entry in evidence["evidence_versions"]}
+    assert current["latest_frozen_evidence_version"] in ids
+
+    frozen = evidence_by_id()[current["latest_frozen_evidence_version"]]
+    diverged = current["config_sha256"] != frozen["config_sha256"]
+    assert current["differs_from_latest_frozen_evidence"] is diverged
+
+    # When the canonical runtime has moved past the latest frozen evidence
+    # version, every promotion since is recorded with a real evidence package.
+    changes = current["canonical_changes_since_latest_frozen_evidence"]
+    if diverged:
+        assert changes
+    for change in changes:
+        assert change["parameters"] and change["promotion_commit"]
+        assert change["claim_boundary"]
+        if change["evidence_path"] is not None:
+            assert (REPO_ROOT / change["evidence_path"]).is_dir()
+
+
+def test_frozen_evidence_identity_is_immutable():
+    """The P0.17/p028 historical fingerprint must never be silently rewritten."""
+    p028 = evidence_by_id()["p028_dual_oracle_development"]
+    # p028 evidence was produced with exactly this config and algorithm commit.
+    # These are historical facts, not the current runtime; do not update them.
+    assert (
+        p028["config_sha256"]
+        == "e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff"
+    )
+    assert (
+        p028["algorithm_commit"]
+        == "c5ba9d30997e47c7f555baee5257bc687698508a"
+    )
+    evidence_doc = EVIDENCE_DOC.read_text(encoding="utf-8")
+    assert (
+        "| P0.17 dual-oracle development | "
+        "`c5ba9d30997e47c7f555baee5257bc687698508a` | "
+        "`e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff` |"
+    ) in evidence_doc
+
+
 def test_every_versioned_report_exists_and_rejects_broad_claims():
     evidence = load_map()
-    assert evidence["schema_version"] == 1
+    assert evidence["schema_version"] == 2
     entries = evidence["evidence_versions"]
     assert len(entries) == 4
     assert len({entry["id"] for entry in entries}) == len(entries)

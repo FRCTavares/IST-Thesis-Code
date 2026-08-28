@@ -327,7 +327,7 @@ Issue #64 evidence is one representative small-target drone-POV sequence.
 The field command is intentionally one line:
 
     cd ~/Desktop/Thesis-Code || exit 1
-    tools/record_p064_drone_sequence.sh small_target_r1
+    tools/experiments/record_p064_drone_sequence.sh small_target_r1
 
 The helper automatically uses:
 

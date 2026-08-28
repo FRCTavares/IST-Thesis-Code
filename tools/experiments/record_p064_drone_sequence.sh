@@ -6,8 +6,8 @@ cd "$THESIS_ROOT" || exit 1
 scenario="${1:-}"
 
 if [[ -z "$scenario" ]]; then
-    echo "Usage: tools/record_p064_drone_sequence.sh <scenario>"
-    echo "Example: tools/record_p064_drone_sequence.sh small_target_r1"
+    echo "Usage: tools/experiments/record_p064_drone_sequence.sh <scenario>"
+    echo "Example: tools/experiments/record_p064_drone_sequence.sh small_target_r1"
     exit 1
 fi
 
