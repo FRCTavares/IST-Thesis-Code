@@ -295,14 +295,6 @@ class TargetIdentityMemory:
             if track.appearance_memory_update_eligible
             else None
         )
-        selected_timestamp_ns = (
-            int(track.tracker_timestamp_ns)
-            if (
-                track.tracker_timestamp_ns is not None
-                and int(track.tracker_timestamp_ns) > 0
-            )
-            else self._current_tracker_timestamp_ns
-        )
         protected_mode = bool(
             self.cfg.appearance_protected_memory_enabled
         )
@@ -323,9 +315,6 @@ class TargetIdentityMemory:
                     alpha=1.0,
                 )
             ),
-            motion_previous_bbox=None,
-            motion_previous_timestamp_ns=None,
-            motion_latest_timestamp_ns=selected_timestamp_ns,
         )
 
         self._positive_appearance.clear()
@@ -1381,101 +1370,6 @@ class TargetIdentityMemory:
 
         return None, None
 
-    def _motion_reference_bbox(self) -> BBox:
-        """Return the Stage-A geometry reference for the current update.
-
-        Canonical behaviour is the frozen last trusted bbox. The experimental
-        treatment translates only the centre, only after at least one
-        committed miss, from two trusted same-lineage observations using
-        tracker/source time. Any invalid history fails closed to the canonical
-        frozen reference.
-        """
-        reference_bbox = self._m.bbox
-        if reference_bbox is None:
-            raise RuntimeError(
-                "motion reference requested without selected bbox"
-            )
-
-        if not self.cfg.motion_prediction_enabled:
-            return reference_bbox
-        if self._m.frames_since_seen < 1:
-            return reference_bbox
-
-        previous_bbox = self._m.motion_previous_bbox
-        previous_timestamp_ns = (
-            self._m.motion_previous_timestamp_ns
-        )
-        latest_timestamp_ns = self._m.motion_latest_timestamp_ns
-        current_timestamp_ns = self._current_tracker_timestamp_ns
-
-        if (
-            previous_bbox is None
-            or previous_timestamp_ns is None
-            or latest_timestamp_ns is None
-            or current_timestamp_ns is None
-        ):
-            return reference_bbox
-
-        observation_dt_ns = (
-            int(latest_timestamp_ns)
-            - int(previous_timestamp_ns)
-        )
-        prediction_dt_ns = (
-            int(current_timestamp_ns)
-            - int(latest_timestamp_ns)
-        )
-        if observation_dt_ns <= 0 or prediction_dt_ns <= 0:
-            return reference_bbox
-
-        horizon_s = max(
-            0.0,
-            float(self.cfg.motion_prediction_max_horizon_s),
-        )
-        if horizon_s <= 0.0:
-            return reference_bbox
-
-        observation_dt_s = observation_dt_ns / 1_000_000_000.0
-        prediction_dt_s = min(
-            prediction_dt_ns / 1_000_000_000.0,
-            horizon_s,
-        )
-
-        previous_cx, previous_cy = bbox_centre(previous_bbox)
-        latest_cx, latest_cy = bbox_centre(reference_bbox)
-        velocity_x = (
-            latest_cx - previous_cx
-        ) / observation_dt_s
-        velocity_y = (
-            latest_cy - previous_cy
-        ) / observation_dt_s
-
-        predicted_cx = latest_cx + velocity_x * prediction_dt_s
-        predicted_cy = latest_cy + velocity_y * prediction_dt_s
-
-        x1, y1, x2, y2 = reference_bbox
-        width = max(0.0, float(x2) - float(x1))
-        height = max(0.0, float(y2) - float(y1))
-        half_width = 0.5 * width
-        half_height = 0.5 * height
-
-        if width <= float(self.cfg.image_width):
-            predicted_cx = min(
-                max(predicted_cx, half_width),
-                float(self.cfg.image_width) - half_width,
-            )
-        if height <= float(self.cfg.image_height):
-            predicted_cy = min(
-                max(predicted_cy, half_height),
-                float(self.cfg.image_height) - half_height,
-            )
-
-        return (
-            predicted_cx - half_width,
-            predicted_cy - half_height,
-            predicted_cx + half_width,
-            predicted_cy + half_height,
-        )
-
     def _prepare_update_candidates(
         self,
         candidates: Sequence[CandidateTrack],
@@ -1484,10 +1378,8 @@ class TargetIdentityMemory:
         if not candidates:
             return None
 
-        reference_bbox = self._motion_reference_bbox()
-
         base_scores = [
-            score_candidate(reference_bbox, c, self._m.track_id, self.cfg)
+            score_candidate(self._m.bbox, c, self._m.track_id, self.cfg)
             for c in candidates
         ]
         base_sorted = sorted(
@@ -1503,11 +1395,7 @@ class TargetIdentityMemory:
         use_appearance = self._should_use_appearance(base_ambiguous=base_ambiguous)
 
         scores = [
-            self._score_candidate(
-                reference_bbox,
-                c,
-                use_appearance=use_appearance,
-            )
+            self._score_candidate(self._m.bbox, c, use_appearance=use_appearance)
             for c in candidates
         ]
         scores_sorted = sorted(
@@ -2177,41 +2065,8 @@ class TargetIdentityMemory:
         candidate: CandidateTrack,
         best_score: CandidateScore,
         new_state: TargetState,
-        previous_track_id: Optional[int],
     ) -> None:
         """Commit the accepted observation into authoritative target state."""
-        accepted_timestamp_ns = (
-            int(candidate.tracker_timestamp_ns)
-            if (
-                candidate.tracker_timestamp_ns is not None
-                and int(candidate.tracker_timestamp_ns) > 0
-            )
-            else self._current_tracker_timestamp_ns
-        )
-        id_changed = bool(
-            previous_track_id is not None
-            and int(candidate.track_id) != int(previous_track_id)
-        )
-
-        if (
-            id_changed
-            or accepted_timestamp_ns is None
-            or self._m.motion_latest_timestamp_ns is None
-            or int(accepted_timestamp_ns)
-            <= int(self._m.motion_latest_timestamp_ns)
-        ):
-            self._m.motion_previous_bbox = None
-            self._m.motion_previous_timestamp_ns = None
-            self._m.motion_latest_timestamp_ns = accepted_timestamp_ns
-        else:
-            self._m.motion_previous_bbox = self._m.bbox
-            self._m.motion_previous_timestamp_ns = (
-                self._m.motion_latest_timestamp_ns
-            )
-            self._m.motion_latest_timestamp_ns = (
-                accepted_timestamp_ns
-            )
-
         self._m.selected = True
         self._m.state = new_state
         self._m.track_id = candidate.track_id
@@ -2427,7 +2282,6 @@ class TargetIdentityMemory:
             candidate=candidate,
             best_score=best_score,
             new_state=new_state,
-            previous_track_id=previous_track_id,
         )
         self._update_accept_appearance_memory(
             candidate=candidate,

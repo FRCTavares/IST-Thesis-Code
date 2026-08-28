@@ -25,14 +25,6 @@ class _Memory:
     frames_since_seen: int = 0
     appearance: Optional[Any] = None
 
-    # Trusted observation history for the Issue #21 motion experiment.
-    # `bbox` is the latest accepted bbox. Motion history is updated only
-    # after trusted selection/acceptance and is never learned from rejected
-    # or confirmation-pending candidates.
-    motion_previous_bbox: Optional[BBox] = None
-    motion_previous_timestamp_ns: Optional[int] = None
-    motion_latest_timestamp_ns: Optional[int] = None
-
 
 def _control_mode_for_state(state: TargetState) -> ControlMode:
     if state == TargetState.NO_TARGET:

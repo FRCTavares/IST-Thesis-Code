@@ -4,9 +4,9 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
-Last reconciled with GitHub: **21 August 2026**.
+Last reconciled with GitHub: **28 August 2026**.
 
-Open executable issues: **21**.
+Open executable issues: **20**.
 
 ## Execution rules
 
@@ -77,10 +77,7 @@ Open executable issues: **21**.
    - **PAUSED — representative drone-POV footage required.** Stage-A live feasibility on 27 August 2026 kept Hailo detector inference fixed at 640x640: VGA 640x480 PASS, HD 1280x720 PASS, while FHD 1920x1080 FAILS the current appearance-image freshness requirement despite adequate detector/tracker throughput. The controlled R3 comparison was audited and corrected before acceptance: CVAT frames 93--96 are now `present_reference_unavailable`; the deterministic tracker replay now parses the versioned `;frame=<n>;` coordinate contract instead of emitting numeric `frame_id=0`; corrected candidate-stream SHA-256 is `615ed6abf0083f8cbe86a47257fdc71f4c62c2e16fa314997c57ed34a1a99578`; and the promoted physical reference is `docs/data/physical_target_references/p064_gate2_hd_master_r3.json` with SHA-256 `0d9f4148f67b610d5cd012db4d3613f6fc559aec63c2ae705adc50595e8db147`.
    - Corrected native 1280x720 and deterministic 640x360 appearance replays use identical detector/tracker evidence and produce different TIM semantic digests, proving that the appearance-pixel condition reaches TIM, but their v2 physical-target reports are byte-identical: 18.600459426 s correct-target output, 0 wrong-person output, 9.100239419 s lost/suppressed, 0 target-absent duration, 0.133160003 s reference-unavailable and 0.066408595 s reference-gap over 27.900267443 s total evaluated duration. The resolution-specific material benefit is therefore 0 percentage points and the predeclared Stage-B repeat gate is not reached for R3.
    - This R3 result is intentionally not generalized to airborne operation: target height is 534.64--561.11 px (median 549.72 px), far larger than the intended distant/small-person drone distribution. Issue #64 remains open but paused until one representative native-HD drone-POV sequence is recorded. Future representative capture uses the already established live `YOLOv8s + ByteTrack + TIM-MARS` path while keeping detector inference at 640x640; this does not retrospectively alter the completed R3 experiment, which remains frozen on YOLOv6n. Field command: `tools/record_p064_drone_sequence.sh small_target_r1`.
-6. [ ] [#21 — P1.9 Add motion evidence only if it helps](https://github.com/FRCTavares/IST-Thesis-Code/issues/21) — HIGHEST PRIORITY
-   - **IN PROGRESS — bounded Stage-A experiment.** Current TIM-MARS geometry compares candidates against the last trusted bbox and adds no independent velocity estimator; ByteTrack motion prediction is internal to tracker association and lost predictions are not published to TIM. Stage A therefore tests only a flag-gated, centre-only constant-velocity trusted-reference prediction after at least one committed TIM miss, using two accepted same-lineage observations and tracker/source timestamps. Box size, existing geometry weights, appearance policy, acceptance thresholds and tracker evidence remain unchanged. Canonical behaviour keeps `motion_prediction_enabled: false`; the treatment uses a frozen 0.25 s maximum prediction horizon. May hard re-entry is the development sequence; clean/no-regression evidence must use a physically matched sequence rather than the unmatched historical Seq01 full-pipeline capture.
-
-7. [ ] [#58 — P1.13+ Compare lightweight tracker + TIM-MARS against integrated appearance-aware tracking](https://github.com/FRCTavares/IST-Thesis-Code/issues/58) — HIGHEST PRIORITY
+6. [ ] [#58 — P1.13+ Compare lightweight tracker + TIM-MARS against integrated appearance-aware tracking](https://github.com/FRCTavares/IST-Thesis-Code/issues/58) — HIGHEST PRIORITY
     - phase 7; experiment; compare separately calibrated lightweight
       appearance-free tracker + TIM-MARS systems against integrated
       appearance-aware tracker references using held-out controller-facing
@@ -90,12 +87,12 @@ Open executable issues: **21**.
     - add one deliberately simple literature-aligned post-MOT Target-ReID baseline: ByteTrack candidates; the same MARS model and crop/preprocessing contract used by TIM-MARS; highest target-appearance similarity above a development-calibrated threshold; LOST otherwise. Exclude TIM-MARS geometry fusion, hard-negative policy, temporal recovery confirmation, state-machine authority, and trusted-only memory-update logic. This isolates whether full TIM-MARS provides controller-facing value beyond ordinary Target-ReID rather than merely beyond the raw tracker.
     - Target-absence false publication must be reported explicitly for this baseline,       together with confirmed reacquisition delay after the physical target returns.       Treat genuine target absence as an open-set case in which LOST is a valid outcome;       do not force publication of the highest-ranked visible candidate. Liao et al.       (2014), Ye et al. (2024), TPT-Bench, and Bayar and Aker (2024) are prior-art       boundaries rather than standalone TIM-MARS novelty claims.
 
-8. [ ] [#74 — P1.x State-aware selected-person following and bounded visual recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/74) — HIGHEST PRIORITY
+7. [ ] [#74 — P1.x State-aware selected-person following and bounded visual recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/74) — HIGHEST PRIORITY
     - phase 10; live-system; execute after #25 → #64 → #21 → #58 and before #32.
     - TIM-MARS remains the sole selected-person identity authority. Add only a conservative state-aware following policy plus tightly bounded yaw-only visual recovery from trusted TIM-MARS history; raw `/target`, `/tracks`, detector candidates, and unconfirmed candidates must never obtain controller authority.
     - retain the extension only if deterministic safety tests and closed-loop evidence show useful recovery without unacceptable wrong-person non-zero command duration. Physical-aircraft validation remains owned by #50/#51.
 
-9. [ ] [#32 — P1.14 End-to-end runtime, compute budget, and onboard resource characterisation](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
+8. [ ] [#32 — P1.14 End-to-end runtime, compute budget, and onboard resource characterisation](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
     - phase 7; live-system; owns the canonical per-stage latency and queueing
       timebase, wall-clock versus CPU-service-time separation, p50/p90/p95/p99
       and maximum distributions, cadence/jitter/drop accounting, selective-ReID

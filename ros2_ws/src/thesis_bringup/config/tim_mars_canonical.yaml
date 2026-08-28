@@ -26,11 +26,6 @@ target_memory_mars_node:
     min_confirm_frames_after_reacquire: 1
     min_candidate_score: 0.10
 
-    # Issue #21 experimental motion reference. Canonical treatment remains
-    # disabled until the frozen Stage-A promotion gate is passed.
-    motion_prediction_enabled: false
-    motion_prediction_max_horizon_s: 0.25
-
     # Tracker-ID recovery and short-gap identity protection
     allow_id_switch_recovery: true
     same_id_accept_relief: 0.08

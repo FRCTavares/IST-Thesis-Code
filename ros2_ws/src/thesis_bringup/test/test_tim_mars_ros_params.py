@@ -31,7 +31,7 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 110
+    assert len(node.values) == 108
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["appearance_enabled"] is True
@@ -148,8 +148,6 @@ def test_tim_mars_ros_params_declares_expected_interface():
     assert node.values["candidate_belief_min_score"] == 0.45
     assert node.values["candidate_belief_confirm_frames"] == 2
     assert node.values["absence_recovery_enabled"] is False
-    assert node.values["motion_prediction_enabled"] is False
-    assert node.values["motion_prediction_max_horizon_s"] == 0.25
 
 
 def test_tim_mars_ros_params_builds_config_from_ros_values():
@@ -343,8 +341,6 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
         "max_uncertain_frames",
         "min_confirm_frames_after_reacquire",
         "min_candidate_score",
-        "motion_prediction_enabled",
-        "motion_prediction_max_horizon_s",
         "allow_id_switch_recovery",
         "same_id_accept_relief",
         "id_switch_spatial_gate_enabled",
