@@ -140,7 +140,7 @@ Open executable issues: **20**.
 
 4. [ ] [#49 — P2: Consolidate replay bags and define evidence retention policy](https://github.com/FRCTavares/IST-Thesis-Code/issues/49)
    - phase 8; engineering; includes the 4.52 GiB Git pack/model-artifact inventory; no history rewrite without a separate migration plan.
-   - 28 August 2026: the model-artifact inventory is drafted in `models/README.md` (family, purpose, consumers, SHA-256, tracked/ignored state; provenance recorded as unknown where not established). The `reports/` promoted-package register is drafted in `reports/PROMOTED.md`. The tracked-vs-untracked model decision, bag consolidation, retention policy, and any pack migration remain open.
+   - 28 August 2026: the model-artifact inventory is drafted in `models/README.md` (family, purpose, consumers, SHA-256, tracked/ignored state; provenance recorded as unknown where not established). The `reports/` promoted-package register is drafted in `reports/PROMOTED.md`. The 2026-07-09 bag-deletion audit trail (removed 2026-07-20) is restored to tracked provenance at `docs/archive/bag_cleanup_2026_07_09/`. The tracked-vs-untracked model decision, bag consolidation, retention policy, and any pack migration remain open.
 
 ## P3 — Optional or stretch work
 
