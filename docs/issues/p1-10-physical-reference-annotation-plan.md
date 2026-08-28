@@ -336,8 +336,8 @@ estimates.
 |---|---:|---:|---:|---:|
 | May hard re-entry | 974 | `[0.0, 67.864909774]` s | 14.337 fps | 640x640 |
 | June Seq01 | 1520 | `[0.0, 61.200516816]` s | 24.820 fps | 640x480 |
-| June Seq03 | 1931 | `[0.0, 83.866288839]` s | 23.013 fps | 640x480 |
-| June Seq04 | 2047 | `[0.0, 86.501604967]` s | 23.653 fps | 640x480 |
+| June Seq03 | 1931 | `[0.0, 83.867251154]` s | 23.013 fps | 640x480 |
+| June Seq04 | 2047 | `[0.0, 86.500955726]` s | 23.653 fps | 640x480 |
 
 Every artifact needs an anchor at the first source frame and may use the final
 source frame as the legal right-boundary anchor. The final anchor contributes
@@ -445,9 +445,10 @@ Canonical May reference:
 
 `docs/data/physical_target_references/dev_may_hard_reentry.json`
 
-June Seq01, May hard re-entry, and June Seq03 M4B are complete. Seq04 remains
-unannotated, so global M4B remains incomplete. M5 must not start until the
-Seq04 reference and matching same-capture regenerated outputs exist.
+June Seq01, May hard re-entry, June Seq03, and June Seq04 M4B physical-reference
+annotation are complete. Global M4B physical-reference annotation is therefore
+complete. M5 remains incomplete until the required same-capture regenerated
+outputs are produced and evaluated against the frozen references.
 
 June Seq03 was completed by human-reviewed CVAT for images 1.1 and converted
 through the exact-frame manifest into 1,931 per-frame frozen-v2 samples. Every
@@ -461,6 +462,32 @@ duration `83.866288839 s` is based on bag-record timestamps and differs by
 The promoted canonical artifact is
 `docs/data/physical_target_references/seq03_crossing.json` with SHA-256
 `9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71`.
+
+June Seq04 was completed by human-reviewed CVAT for images 1.1 and converted
+through the exact-frame manifest into 2,047 per-frame frozen-v2 samples. The
+selected physical target is `present_scored` on 1,717 frames and explicitly
+`absent` on 330 frames. Human review confirmed two genuine target exits:
+frames 1382--1571 (`57.900253872`--`65.966844627` s) and frames 1682--1821
+(`70.866680698`--`76.633535472` s). `phys_d001`, `phys_d002`, and
+`phys_d003` cover every scored frame. `phys_d004` covers scored frames through
+frame 2001 and exits the camera frame from frame 2002 onward. Every scored
+sample is `distractors_complete`; there are no
+`present_reference_unavailable` samples or reference gaps.
+
+Exact positive `Image.header.stamp` timing gives the authoritative evaluation
+window `[0.0, 86.500955726] s`. The earlier `86.501604967 s` planning value
+came from bag-record timing and is not the physical-reference clock. The
+original human CVAT export has SHA-256
+`c7ffe383e7700c658d2ad6adbf4ec8a7aeba1c041813d3cbe8a091e28221e7b4`.
+A deterministic conversion-only derivative removes distractor geometry during
+the two explicit target-absence intervals, as required by the frozen v2
+non-present-state contract; its SHA-256 is
+`bd53375a6a28143f7abb6b2bebda253c0899a3b62593e25353e2428607e4be30`.
+
+The promoted canonical artifact is
+`docs/data/physical_target_references/seq04_occlusion_no_exit.json` with
+SHA-256
+`a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b`.
 
 ## Corrective re-audit (2026-08-10)
 
