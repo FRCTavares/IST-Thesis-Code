@@ -12,7 +12,13 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 GENERATOR_PATH = ROOT / "tools/catalogue/build_tim_eval_catalogue.py"
 CATALOGUE_PATH = ROOT / "docs/data/catalogue/tim_eval_catalogue.yaml"
-NOVELTY_PATH = ROOT / "docs" / "NOVELTY.md"
+# The numeric P004 comparison tables were moved out of docs/NOVELTY.md (which is
+# now qualitative claim language) into the promoted evidence summary by commit
+# 2f397f29. The numbers were unchanged; only the document location moved.
+PROMOTED_MATRIX_PATH = (
+    ROOT
+    / "docs/results/selected_target_tracking/hard_reentry_multi_tracker_summary.md"
+)
 
 
 def load_generator():
@@ -176,10 +182,10 @@ def test_legacy_valid_for_evaluation_flag_is_removed():
     assert "recommended_annotation" not in text
 
 
-def test_novelty_tables_match_promoted_p004_reports():
-    """Curated thesis-facing tables must match the promoted report rows."""
+def test_promoted_matrix_tables_match_catalogue_rows():
+    """The promoted evidence summary tables must match the catalogue rows."""
     catalogue = load_catalogue()
-    novelty = NOVELTY_PATH.read_text(encoding="utf-8")
+    summary = PROMOTED_MATRIX_PATH.read_text(encoding="utf-8")
 
     matrix_rows = {
         row["tracker"]: row
@@ -206,7 +212,7 @@ def test_novelty_tables_match_promoted_p004_reports():
             f"{tim['wrong_ratio']:.3f} / "
             f"{tim['lost_ratio']:.3f} |"
         )
-        assert expected in novelty
+        assert expected in summary
 
     sequence_rows = {
         row["sequence"]: row
@@ -227,5 +233,5 @@ def test_novelty_tables_match_promoted_p004_reports():
 
     assert sequence_rows["seq03"]["result"]["tim"]["correct_ratio"] == 0.85
     assert sequence_rows["seq04"]["result"]["tim"]["correct_ratio"] == 0.702
-    assert expected_seq03 in novelty
-    assert expected_seq04 in novelty
+    assert expected_seq03 in summary
+    assert expected_seq04 in summary

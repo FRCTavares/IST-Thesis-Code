@@ -1,0 +1,73 @@
+# Bag cleanup manifest
+
+Generated: 2026-07-09T10:30:33+01:00
+
+## Protected bags
+
+- bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1
+- bags/replay/paper_final_deepsort_june_full_2026_07_04/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw__detector_yolov8s__tracker_deepsort__tim_off__target_1
+- bags/replay/paper_final_deepsort_june_full_2026_07_04/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw__detector_yolov8s__tracker_deepsort__tim_off__target_1
+- bags/replay/paper_final_deepsort_june_memory_2026_07_04/final_seq03_deepsort_annotation_mirror_memory
+- bags/replay/paper_final_deepsort_june_memory_2026_07_04/final_seq04_deepsort_annotation_mirror_memory
+- bags/replay/paper_final_deepsort_may_2026_07_03/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_off__target_1
+- bags/replay/paper_final_tim_results_2026_07_03/final_may_hard_reentry_selected_id
+- bags/replay/paper_final_tim_results_2026_07_03/final_seq01_clean_visible_selected_id
+- bags/replay/paper_final_tim_results_2026_07_03/final_seq03_crossing_ambiguity_selected_id
+- bags/replay/paper_final_tim_results_2026_07_03/final_seq04_occlusion_no_exit_annotation_mirror
+- bags/replay/paper_final_tim_results_2026_07_03/final_seq04_occlusion_no_exit_selected_id
+- bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw
+- bags/source/curated/2026-06-19__12-38-13__source__2026-06-19__official__seq01__clean_four_person__image_raw
+- bags/source/curated/2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw
+- bags/source/curated/2026-06-19__12-52-30__source__2026-06-19__official__seq02__four_person_target_reentry__full_pipeline
+- bags/source/curated/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw
+- bags/source/curated/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw
+- bags/source/official_flights/2026-06-19/seq01_clean_four_person/full_pipeline/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
+- bags/source/official_flights/2026-06-19/seq01_clean_four_person/image_raw/2026-06-19__12-38-13__source__2026-06-19__official__seq01__clean_four_person__image_raw
+- bags/source/official_flights/2026-06-19/seq01_clean_four_person/image_raw/2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw
+- bags/source/official_flights/2026-06-19/seq01_clean_four_person/mavros/2026-06-19__12-38-13__source__2026-06-19__official__seq01__clean_four_person__mavros
+- bags/source/official_flights/2026-06-19/seq01_clean_four_person/mavros/2026-06-19__12-45-45__video__2026-06-19__official__seq01__clean_four_person__yolov8s_bytetrack_tim_mars__mavros
+- bags/source/official_flights/2026-06-19/seq01_clean_four_person/mavros/2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__mavros
+- bags/source/official_flights/2026-06-19/seq02_target_reentry/full_pipeline/2026-06-19__12-50-03__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars
+- bags/source/official_flights/2026-06-19/seq02_target_reentry/full_pipeline/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars
+- bags/source/official_flights/2026-06-19/seq02_target_reentry/mavros/2026-06-19__12-50-03__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__mavros
+- bags/source/official_flights/2026-06-19/seq02_target_reentry/mavros/2026-06-19__12-52-30__video__2026-06-19__official__seq02__four_person_target_reentry__yolov8s_bytetrack_tim_mars__mavros
+- bags/source/official_flights/2026-06-19/seq03_crossing_ambiguity/full_pipeline/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars
+- bags/source/official_flights/2026-06-19/seq03_crossing_ambiguity/image_raw/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw
+- bags/source/official_flights/2026-06-19/seq03_crossing_ambiguity/mavros/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__mavros
+- bags/source/official_flights/2026-06-19/seq03_crossing_ambiguity/mavros/2026-06-19__12-57-48__video__2026-06-19__official__seq03__four_person_crossing_ambiguity__yolov8s_bytetrack_tim_mars__mavros
+- bags/source/official_flights/2026-06-19/seq04_occlusion_no_exit/full_pipeline/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars
+- bags/source/official_flights/2026-06-19/seq04_occlusion_no_exit/image_raw/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw
+- bags/source/official_flights/2026-06-19/seq04_occlusion_no_exit/mavros/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__mavros
+- bags/source/official_flights/2026-06-19/seq04_occlusion_no_exit/mavros/2026-06-19__13-01-36__video__2026-06-19__official__seq04__four_person_occlusion_no_exit__yolov8s_bytetrack_tim_mars__mavros
+
+## Deleted bags
+
+- bags/annotation_inputs/2026-06-19__seq01__clean_four_person__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest
+- bags/annotation_inputs/2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest
+- bags/annotation_inputs/2026-06-19__seq03__crossing_ambiguity__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest
+- bags/annotation_inputs/2026-06-19__seq04__occlusion_no_exit__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest
+- bags/replay/paper_final_deepsort_may_2026_07_03/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_mars__target_1
+- bags/replay/paper_final_deepsort_may_memory_2026_07_03/final_may_deepsort_annotation_mirror_memory
+- bags/replay/paper_final_deepsort_may_memory_2026_07_03/final_may_deepsort_selected_id_1_memory
+- bags/source/archive/lab_old/curated_inputs/hard_reentry_2026-05-14/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw
+- bags/source/archive/lab_old/curated_inputs/two_person_2026-05-14/2026-05-14__10-59-01__dataset__tim_v1_two_person_no_crossing_raw
+- bags/source/archive/lab_old/full_pipeline/2026-03-29__control_validation_clean
+- bags/source/archive/lab_old/full_pipeline/2026-04-29__10-26-03__video__clean_walk_yolov6n_ocsort
+- bags/source/archive/lab_old/full_pipeline/2026-04-29__10-28-08__video__single_person_occlusion_yolov6n_ocsort
+- bags/source/archive/lab_old/full_pipeline/2026-04-29__10-30-08__video__fov_exit_reentry_yolov6n_ocsort
+- bags/source/archive/lab_old/full_pipeline/2026-04-30__10-52-20__video__flight_01
+- bags/source/archive/lab_old/full_pipeline/2026-04-30__12-29-33__video__oficial_flight_01
+- bags/source/archive/lab_old/full_pipeline/2026-04-30__12-42-17__video__oficial_flight_02
+- bags/source/archive/lab_old/full_pipeline/2026-05-11__10-44-58__video__tim_v1j_two_person_ambiguity
+- bags/source/archive/lab_old/full_pipeline/2026-05-11__11-30-18__video__tim_v1m_appearance_critical_crossing
+- bags/source/archive/lab_old/full_pipeline/2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing
+- bags/source/archive/lab_old/full_pipeline/2026-05-14__11-03-26__video__hard_reentry_bytetrack_tim_mars_v4_margin010_target1
+- bags/source/archive/lab_old/full_pipeline/2026-06-17__11-19-06__video__two_person_tim_mars
+- bags/source/archive/lab_old/full_pipeline/2026-06-17__12-34-54__video__integrated_vga_dash30_full
+- bags/source/archive/lab_old/full_pipeline/2026-06-19__10-27-03__video__2026-06-19__seq01__clean_two_person__yolov8s_bytetrack_tim_mars
+- bags/source/archive/lab_old/full_pipeline/2026-06-19__11-58-02__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
+- bags/source/archive/lab_old/full_pipeline/2026-06-19__11-59-23__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars
+- bags/source/archive/lab_old/image_raw/2026-06-19__11-56-07__source__2026-06-19__seq01__clean_four_person__image_raw
+- bags/source/archive/lab_old/mavros/2026-06-19__11-56-07__source__2026-06-19__seq01__clean_four_person__mavros
+- bags/source/archive/lab_old/mavros/2026-06-19__11-58-02__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars__mavros
+- bags/source/archive/lab_old/mavros/2026-06-19__11-59-23__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars__mavros
