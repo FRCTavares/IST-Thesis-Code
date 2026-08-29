@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <title>TIM-MARS Clean UI</title>
-  <link rel="stylesheet" href="/static/tim_clean_ui.css?v=annotation_workspace_13">
+  <link rel="stylesheet" href="/static/tim_clean_ui.css?v=issue25_sequence_propagation_1">
 
 </head>
 <body>
@@ -33,6 +33,10 @@
       <label>
         <input type="radio" name="workspaceMode" value="annotation" checked>
         Annotation editor
+      </label>
+      <label>
+        <input type="radio" name="workspaceMode" value="physical">
+        Physical reference v2 (Issue #25)
       </label>
       <input id="annotationEditMode" type="checkbox" checked hidden>
     </div>
@@ -202,6 +206,228 @@
     </div>
   </div>
 
+  <div id="physicalRefWorkspace" hidden>
+    <div class="annotationSplitLayout">
+      <section class="annotationVideoPanel">
+        <div class="annotationPanelHeader">
+          <div>
+            <div class="annotationPanelKicker">Physical reference (Issue #25)</div>
+            <h3>tim_physical_target_bbox_v2 <span class="physicalRefV2Badge">v2</span></h3>
+          </div>
+          <div id="physicalRefFrameMeta" class="annotationFrameMeta">frame 0</div>
+        </div>
+
+        <div class="annotationVideoCard">
+          <canvas id="physicalRefCanvas" class="physicalRefCanvas"></canvas>
+        </div>
+
+        <div id="physicalRefFrameStatus" class="annotationFrameStatus"></div>
+        <div id="physicalRefEvalWindow" class="physicalRefHint">
+          Evaluation window: load a bag to derive it from the source frame timeline.
+        </div>
+        <div class="annotationHelp">
+          Draw the selected physical person's bbox directly on the image below.
+          Tracker IDs are never used to create this reference -- this mode is
+          identity-independent by construction. Existing tracker/detection
+          overlays may be shown for visual context only; they are never saved
+          into the physical-reference artifact.
+          <span class="physicalRefHint">&larr; / &rarr; step frame (ignored while typing in a field)</span>
+        </div>
+
+        <div class="physicalRefDrawControls">
+          <label>
+            Draw mode
+            <select id="physicalRefDrawMode">
+              <option value="target">Target</option>
+              <option value="distractor">Distractor</option>
+            </select>
+          </label>
+          <button type="button" onclick="physicalRefClearCurrentBox()">Clear drawn box</button>
+          <label>
+            <input type="checkbox" id="physicalRefShowOverlays" checked onchange="physicalRefRefreshOverlayImage()">
+            show tracker overlays (visual aid only, never saved)
+          </label>
+        </div>
+
+        <div class="physicalRefReviewPanel">
+          <div class="physicalRefReviewToggleRow">
+            <label>
+              <input
+                type="checkbox"
+                id="physicalRefShowEffective"
+                checked
+                onchange="physicalRefOnEffectiveToggle()"
+              >
+              Show effective v2 reference
+            </label>
+            <span class="physicalRefLegend">
+              solid = explicit/draft &nbsp; dashed cyan = interpolated effective
+              &nbsp; dotted yellow = unaccepted proposal
+            </span>
+          </div>
+          <div id="physicalRefEffectiveStatus" class="physicalRefEffectiveStatus">
+            No physical-reference artifact loaded.
+          </div>
+
+          <div class="physicalRefSequenceAssist">
+            <div class="physicalRefAssistActions">
+              <button type="button" onclick="physicalRefStartSequenceProposals()">
+                Generate/refresh sequence proposals
+              </button>
+              <button type="button" onclick="physicalRefPreviousReviewRegion()">
+                Previous review region
+              </button>
+              <button type="button" onclick="physicalRefNextReviewRegion()">
+                Next review region
+              </button>
+              <button type="button" onclick="physicalRefClearSequenceProposals()">
+                Clear cached proposals
+              </button>
+            </div>
+            <progress id="physicalRefSequenceProgress" max="1" value="0"></progress>
+            <div id="physicalRefSequenceStatus" class="physicalRefSequenceStatus">
+              Sequence proposals have not been generated.
+            </div>
+            <div id="physicalRefSuggestedAnchors" class="physicalRefSuggestedAnchors"></div>
+          </div>
+
+          <div class="physicalRefAssistActions">
+            <button type="button" onclick="physicalRefRequestProposal()">
+              Generate nearby optical-flow proposal
+            </button>
+            <button type="button" onclick="physicalRefCopyProposalToDraft()">
+              Use current proposal as editable draft
+            </button>
+            <button type="button" onclick="physicalRefAcceptProposalAsAnchor()">
+              Accept current proposal as in-memory anchor
+            </button>
+          </div>
+          <div class="physicalRefReviewThresholds">
+            <label>review IoU below
+              <input id="physicalRefReviewIou" type="number" value="0.65" min="0" max="1" step="0.05"
+                     onchange="physicalRefRenderProposalStatus()">
+            </label>
+            <label>centre/ref-height above
+              <input id="physicalRefReviewCenter" type="number" value="0.25" min="0" step="0.05"
+                     onchange="physicalRefRenderProposalStatus()">
+            </label>
+            <label>scale-delta above
+              <input id="physicalRefReviewScale" type="number" value="0.25" min="0" step="0.05"
+                     onchange="physicalRefRenderProposalStatus()">
+            </label>
+          </div>
+          <div id="physicalRefProposalStatus" class="physicalRefProposalStatus">
+            No automatic proposal generated for this frame.
+          </div>
+          <div class="physicalRefHint">
+            Sequential and nearby optical flow use only cached source images
+            and geometry from explicit human anchors. They preserve the exact
+            target / phys_dNNN labels, stop on insufficient evidence, never
+            read tracker/RAW/TIM identity, and never change or save JSON without
+            separate explicit human actions.
+          </div>
+        </div>
+
+        <div id="physicalRefPersonRefPalette" class="physicalRefPersonRefPalette"></div>
+      </section>
+
+      <section class="annotationTablePanel">
+        <div class="annotationPanelHeader">
+          <div>
+            <div class="annotationPanelKicker">Physical reference artifact</div>
+            <h3>Samples</h3>
+          </div>
+          <button type="button" onclick="physicalRefLoadSelected()">Load selected JSON</button>
+        </div>
+
+        <div class="annotationQuickEditor">
+          <label>
+            output JSON
+            <input
+              id="physicalRefOutputPath"
+              value="docs/data/physical_target_references/_scratch/example.json"
+            >
+          </label>
+          <div class="physicalRefHint">
+            The path above is a disposable smoke-test example, not a real
+            sequence destination. For a real canonical artifact, set a
+            deliberate path (e.g.
+            <code>docs/data/physical_target_references/dev_may_hard_reentry.json</code>)
+            together with a real, non-empty sequence_id below -- the backend
+            rejects saves with an empty sequence_id.
+          </div>
+          <select id="physicalRefExisting"></select>
+
+          <div class="physicalRefProvenanceGrid">
+            <label>
+              sequence_id (required, deliberate)
+              <input id="physicalRefSequenceId" value="" placeholder="e.g. dev_may_hard_reentry">
+            </label>
+            <label>
+              selected physical target label
+              <input id="physicalRefTargetLabel" value="" placeholder="e.g. black_shirt_person">
+            </label>
+            <label>annotator <input id="physicalRefAnnotator" value="" placeholder="your name"></label>
+            <label>
+              coordinate convention
+              <select id="physicalRefCoordConvention" onchange="physicalRefOnCoordConventionChange()">
+                <option value="" selected>-- unresolved, choose deliberately --</option>
+                <option value="source_pixels_p53_contract">source_pixels_p53_contract</option>
+                <option value="source_pixels_historical_pre_p53">source_pixels_historical_pre_p53</option>
+              </select>
+              <div id="physicalRefCoordResolvedNote" class="physicalRefHint">
+                Load a bag to auto-resolve this from its capture date/header.
+              </div>
+            </label>
+            <label id="physicalRefEvidenceLabel" hidden>
+              coordinate convention evidence
+              <textarea id="physicalRefCoordEvidence" rows="2"></textarea>
+            </label>
+          </div>
+
+          <div class="physicalRefStateGrid">
+            <label>
+              reference state
+              <select id="physicalRefState" onchange="physicalRefOnStateChange()">
+                <option value="present_scored">present_scored</option>
+                <option value="present_reference_unavailable">present_reference_unavailable</option>
+                <option value="absent">absent</option>
+              </select>
+            </label>
+            <label id="physicalRefContextLabel">
+              identity context
+              <select id="physicalRefContext" onchange="physicalRefOnContextChange()">
+                <option value="target_only">target_only</option>
+                <option value="distractors_complete">distractors_complete</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="physicalRefInterpolateRow">
+            <input type="checkbox" id="physicalRefInterpolate">
+            Interpolate from previous keyframe
+          </label>
+          <div id="physicalRefInterpolateNote" class="physicalRefHint"></div>
+
+          <div id="physicalRefDistractorList" class="physicalRefDistractorList"></div>
+
+          <textarea id="physicalRefNotes" rows="2" placeholder="notes"></textarea>
+
+          <div class="annotationActionRow">
+            <button type="button" onclick="physicalRefNewSampleAtCurrentFrame()">+ New sample at current frame</button>
+            <button type="button" onclick="physicalRefUpdateActiveSample()">Add / update sample</button>
+            <button type="button" onclick="physicalRefDeleteActive()">Delete active sample</button>
+            <button type="button" onclick="physicalRefSave()">Save JSON</button>
+          </div>
+
+          <div class="hint" id="physicalRefStatus">No physical-reference samples loaded.</div>
+        </div>
+
+        <div id="physicalRefRows"></div>
+      </section>
+    </div>
+  </div>
+
 <div id="loadedWorkspace" hidden>
   <div class="panel">
     <h3>Viewer</h3>
@@ -347,6 +573,7 @@ window.TIM_CLEAN_UI_BAGS = __BAGS_JSON__;
 window.TIM_CLEAN_UI_ANNOTATIONS = __ANNOTATIONS_JSON__;
 </script>
 <script src="/static/tim_clean_ui.js?v=annotation_workspace_14"></script>
+<script src="/static/tim_physical_reference_v2_ui.js?v=issue25_sequence_propagation_1"></script>
 
   </div>
 </body>
