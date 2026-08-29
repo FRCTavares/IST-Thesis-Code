@@ -920,3 +920,17 @@ physical target box (IoU 0). ID 1 is the physical target (initial IoU
 0.935017) and was fixed for the deterministic tracker derivative and canonical
 TIM-MARS with `mars-small128.pb`. Physical-v2 evaluation reports, at
 `reports/p025_physical_target_bbox_v2/p025_seq01_physical_v2_tim_mars_2026_08_29`, reconcile exactly for both `/target` and `/target_memory_mars`: 61.200516816 s correct target, and 0 s wrong person, unresolved, lost/suppressed, target absent, unavailable, or reference gap. Seq01 M5 is therefore complete; May and Seq03 M5 completion audits still prevent Issue #25 closure.
+
+## M5 global closure audit (2026-08-29)
+
+All four required same-capture physical-v2 M5 sequences are audited complete.
+May hard re-entry uses the preserved exact `2026-05-14__11-03-26` capture
+lineage and its frozen reference; its 67.864909774 s window has coverage 1.0
+and zero reconciliation residual. Seq01 is recorded in commit `867778b6`.
+Seq03 required no replay: the frozen p058 TIM bag has 1,931 `/target` and 1,931
+`/target_memory_mars` samples over 83.867251154 s. The Issue #25 reports at
+`reports/p025_physical_target_bbox_v2/p058_seq03_physical_v2_tim_mars_2026_08_28`
+use reference SHA `9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71`,
+retain the 0.100453371 s reference gap, and reconcile (raw residual
+1.42e-14 s; TIM residual 0). Seq04 was already complete. M5 no longer blocks
+Issue #25 closure.
