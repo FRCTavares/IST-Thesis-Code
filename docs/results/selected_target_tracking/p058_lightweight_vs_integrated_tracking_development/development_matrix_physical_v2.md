@@ -2,17 +2,21 @@
 
 ## Status
 
-Development-only evidence currently covers `dev_may_hard_reentry` and the
-additional frozen June Seq03 crossing-ambiguity validation.
+Development-only evidence currently covers `dev_may_hard_reentry`, the
+frozen June Seq03 crossing-ambiguity validation, and the frozen June Seq04
+occlusion/physical-absence validation.
 
 These results are not held-out evidence and must not be used as the final Issue
 #58 generalisation result. No thresholds or architecture settings were retuned
-after observing the Seq03 physical-v2 outcome.
+after observing the Seq03 or Seq04 physical-v2 outcomes.
 
 The May matrix uses an evaluated duration of `67.864909774 s`. The Seq03 matrix
 uses an evaluated duration of `83.867251154 s`, including a common
 `0.100453371 s` physical-reference gap that is excluded from the correct /
-wrong / lost identity buckets.
+wrong / lost identity buckets. Seq04 uses an evaluated duration of
+`86.500955726 s`, including `72.500041772 s` of physically scored target-present
+time, `13.900030159 s` of explicit physical target absence, and a common
+`0.100883795 s` physical-reference gap.
 
 ## Architecture matrix
 
@@ -189,6 +193,122 @@ Seq03 provenance:
 - MARS model SHA-256:
   `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`.
 
+## Additional frozen development validation: June Seq04 physical absence
+
+June Seq04 adds the first Issue #58 development comparison with explicit,
+human-reviewed physical target absence. The frozen physical-v2 reference covers
+the exact canonical `2026-06-19__12-59-53` capture with 2,047 per-frame samples:
+1,717 `present_scored` frames and 330 explicit `absent` frames. The target is
+absent during frames 1382--1571 and 1682--1821.
+
+The common detector evidence was frozen before architecture comparison. Raw
+ByteTrack, SORT, DeepSORT, the simple Target-ReID baseline, and canonical
+ByteTrack + TIM-MARS were evaluated against the same identity-independent
+physical-v2 reference. The Target-ReID acceptance threshold remained frozen at
+`0.90`; canonical TIM-MARS was unchanged. No Seq04 tuning was performed.
+
+| Architecture                       |          Correct target |            Wrong person | Identity unresolved |       Lost / suppressed | Target absent with output |
+| ---------------------------------- | ----------------------: | ----------------------: | ------------------: | ----------------------: | ------------------------: |
+| ByteTrack raw                      | 26.567002669 s (36.64%) | 37.500838682 s (51.73%) |                 0 s |   8.432200421 s (11.63%) | 13.100381659 s |
+| SORT raw                           | 14.833643862 s (20.46%) |             0 s (0.00%) |                 0 s | 57.666397910 s (79.54%) | 0 s |
+| Simple Target-ReID, threshold 0.90 |   1.166866685 s (1.61%) |             0 s (0.00%) |                 0 s | 71.333175087 s (98.39%) | 0 s |
+| ByteTrack + canonical TIM-MARS     | 35.068442774 s (48.37%) |             0 s (0.00%) |                 0 s | 37.431598998 s (51.63%) | 0 s |
+| DeepSORT raw                       | 36.833999479 s (50.81%) |             0 s (0.00%) |                 0 s | 35.666042293 s (49.19%) | 0 s |
+
+Percentages in the correct / wrong / lost columns use the common
+`72.500041772 s` physically scored target-present duration as denominator.
+Target-absent-with-output is reported separately over the
+`13.900030159 s` explicit absence duration.
+
+The Seq04 result shows a different trade-off from Seq03. Relative to raw
+ByteTrack, canonical TIM-MARS:
+
+- eliminates `37.500838682 s` of wrong-person output;
+- eliminates all `13.100381659 s` of target-absent false publication;
+- increases correct-target output by `8.501440105 s`;
+- increases lost/suppressed duration by `28.999398577 s`.
+
+Relative to the frozen simple Target-ReID baseline, canonical TIM-MARS:
+
+- preserves the same zero wrong-person and zero target-absence-output result;
+- increases correct-target output by `33.901576089 s`;
+- reduces lost/suppressed duration by `33.901576089 s`.
+
+Relative to integrated DeepSORT, canonical TIM-MARS:
+
+- has the same zero measured wrong-person and zero target-absence-output duration;
+- has `1.765556705 s` less correct-target output;
+- has `1.765556705 s` more lost/suppressed duration.
+
+Therefore Seq04 does **not** support an availability claim that TIM-MARS
+outperforms DeepSORT. DeepSORT has the highest correct-target duration among the
+zero-wrong architectures on this sequence. The stronger controller-facing result
+is instead the change relative to the underlying ByteTrack tracker: TIM-MARS
+converts prolonged wrong-person publication and open-set false publication into
+conservative suppression while retaining substantial correct-target
+availability.
+
+### Physical-return recovery
+
+Seq04 contains two explicit physical-return opportunities. Recovery was evaluated
+using the same physical-v2 Stage-A identity attribution and output-freshness
+contract as the duration evaluation. A stable recovery follows the existing
+Issue #26 convention of requiring `0.25 s` of continuously correct output; this
+stability duration is only a persistence convention and does not redefine
+physical-v2 correctness.
+
+The physical target returns at:
+
+- return 1: `66.000222738 s`, with the opportunity ending at the next physical
+  absence at `70.866680698 s`;
+- return 2: `76.666741991 s`, with observation ending at the sequence boundary
+  `86.500955726 s`.
+
+| Architecture | Return 1 | Return 2 | Stable successes |
+|---|---|---|---:|
+| ByteTrack raw | failure before next absence; no correct output; `4.166819295 s` wrong-person before cutoff | no correct recovery observed before sequence end; right-censored; `2.699997183 s` wrong-person before cutoff | 0/2 |
+| SORT raw | failure before next absence; no correct output | no correct recovery observed before sequence end; right-censored | 0/2 |
+| DeepSORT raw | failure before next absence; no correct output | no correct recovery observed before sequence end; right-censored | 0/2 |
+| Simple Target-ReID, threshold 0.90 | failure before next absence; no correct output | no correct recovery observed before sequence end; right-censored | 0/2 |
+| ByteTrack + canonical TIM-MARS | failure before next absence; no correct output | no correct recovery observed before sequence end; right-censored | 0/2 |
+
+No architecture produced even a transient physically correct output after either
+return, so there is no finite first-correct or stable-reacquisition latency to
+report. In particular, the second opportunity must not be labelled a definitive
+failure: observation terminates at the sequence boundary and is therefore
+right-censored.
+
+The recovery comparison also exposes the asymmetric safety behavior. ByteTrack
+continues publishing a physically wrong person for substantial portions of both
+post-return windows. SORT, DeepSORT, Target-ReID and TIM-MARS instead remain
+LOST/suppressed for the physically scored intervals. Thus Seq04 provides useful
+open-set rejection evidence, but it provides no positive reacquisition-success
+evidence for any architecture.
+
+Seq04 provenance:
+
+- physical reference:
+  `docs/data/physical_target_references/seq04_occlusion_no_exit.json`
+  (SHA-256 `a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b`);
+- frozen common detector/input lineage:
+  `bags/replay/p058_seq04_physical_v2_common_input_2026_08_28`;
+- canonical ByteTrack + TIM-MARS replay:
+  `bags/replay/p058_seq04_physical_v2_tim_mars_2026_08_28`;
+- SORT physical-target derivative:
+  `bags/replay/p058_seq04_physical_v2_sort_fixed_id5_2026_08_29`;
+- DeepSORT physical-target derivative:
+  `bags/replay/p058_seq04_physical_v2_deepsort_fixed_id5_2026_08_29`;
+- frozen Target-ReID replay:
+  `bags/replay/p058_seq04_physical_v2_target_reid_2026_08_29`;
+- Target-ReID replay MCAP SHA-256:
+  `073e8bc0e40102ea3b4f48769e9a26d549454ac078cf53cf8d81719868529a23`;
+- Target-ReID provenance sidecar SHA-256:
+  `df95d488502ed9856e458374a798024c80ab3911f5a9e83ddf2a83d25d098c13`;
+- canonical TIM-MARS config SHA-256:
+  `e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931`;
+- MARS model SHA-256:
+  `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`.
+
 ## Minimal appearance-free tracker arm: SORT
 
 The frozen Issue #58 SORT calibration search contained 29 configurations,
@@ -221,6 +341,17 @@ configuration search and failed the controller-safety promotion criterion.
 This matrix supports a development-sequence comparison only.
 
 It does not establish that TIM-MARS generally outperforms DeepSORT or simple
-Target-ReID. Issue #58 still requires the remaining architecture cells and
-held-out physical-reference evaluation before any final comparative claim is
-frozen.
+Target-ReID. In particular, DeepSORT has slightly higher zero-wrong
+correct-target availability than TIM-MARS on Seq04, while Seq03 shows a severe
+DeepSORT wrong-person failure. The sequence-specific differences reinforce the
+need for the held-out comparison rather than supporting a universal architecture
+ranking.
+
+Seq04 now supplies the previously missing development-only open-set
+target-absence evidence and physical-return recovery accounting. It does not
+supply positive reacquisition-success evidence: none of the five evaluated
+architectures physically reacquired the selected target after either Seq04
+return.
+
+Issue #58 still requires held-out physical-reference evaluation and the
+canonical embedded-cost evidence before any final comparative claim is frozen.
