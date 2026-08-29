@@ -53,6 +53,24 @@ from thesis_bringup.tim_mars.runtime import (
 )
 from thesis_bringup.tim_mars.types import TargetMemoryConfig
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from p064_appearance_contract import (  # noqa: E402
+    CANDIDATE_DIGEST_SCHEMA,
+    candidate_stream_digest,
+    image_record,
+    image_stream_digest,
+    load_variant_provenance,
+    timestamp_digest,
+    validate_candidate_digest,
+    validate_exact_correspondence,
+    validate_image_records,
+    validate_track_timestamps,
+    validate_variant_streams,
+)
+
 
 TIM_TARGET_TOPIC = "/target_memory_mars"
 TIM_STATUS_TOPIC = "/target_memory_mars/status"
@@ -82,6 +100,55 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--tracks-topic", default="/tracks")
+    parser.add_argument(
+        "--appearance-bag",
+        type=Path,
+        default=None,
+        help=(
+            "Opt-in Issue #64 appearance-only image bag. Tracks and all "
+            "candidate geometry remain sourced from input_bag."
+        ),
+    )
+    parser.add_argument(
+        "--appearance-image-topic",
+        default="auto",
+        help="Image topic in --appearance-bag.",
+    )
+    parser.add_argument(
+        "--appearance-provenance",
+        type=Path,
+        default=None,
+        help=(
+            "Variant provenance JSON. Defaults to "
+            "<appearance-bag>/p064_appearance_variant.json."
+        ),
+    )
+    parser.add_argument(
+        "--expected-candidate-stream-sha256",
+        default=None,
+        help=(
+            "Fail unless frozen tracker evidence matches this digest."
+        ),
+    )
+    parser.add_argument(
+        "--process-start-timestamp-ns",
+        type=int,
+        default=None,
+        help=(
+            "Inclusive semantic timestamp lower bound for generated TIM "
+            "messages. Requires --process-end-timestamp-ns. The complete "
+            "candidate stream digest is verified before filtering."
+        ),
+    )
+    parser.add_argument(
+        "--process-end-timestamp-ns",
+        type=int,
+        default=None,
+        help=(
+            "Inclusive semantic timestamp upper bound for generated TIM "
+            "messages. Requires --process-start-timestamp-ns."
+        ),
+    )
     parser.add_argument("--raw-target-topic", default="/target")
     parser.add_argument(
         "--raw-target-mode",
@@ -156,6 +223,31 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     return parser.parse_args()
+
+
+def filter_track_events_by_timestamp(
+    events: list[tuple],
+    start_timestamp_ns: int | None,
+    end_timestamp_ns: int | None,
+) -> list[tuple]:
+    """Apply an inclusive processing window after full-stream digest validation."""
+    if (start_timestamp_ns is None) != (end_timestamp_ns is None):
+        raise ValueError(
+            "processing window requires both start and end timestamps"
+        )
+    if start_timestamp_ns is None:
+        return list(events)
+    start = int(start_timestamp_ns)
+    end = int(end_timestamp_ns)
+    if start <= 0 or end < start:
+        raise ValueError("invalid processing timestamp window")
+    filtered = [
+        event for event in events
+        if start <= int(event[0]) <= end
+    ]
+    if not filtered:
+        raise ValueError("processing timestamp window contains no tracks")
+    return filtered
 
 
 def detect_storage_id(bag_path: Path) -> str:
@@ -1298,6 +1390,23 @@ def build_resolved_runtime_payload(
     output_bag: Path,
 ) -> dict[str, Any]:
     """Build exact deterministic replay runtime provenance."""
+    alternate_appearance = dict(
+        summary.get(
+            "alternate_appearance",
+            {
+                "enabled": False,
+                "bag": None,
+                "topic": image_topic,
+            },
+        )
+    )
+    candidate_sha256 = str(
+        summary.get("determinism", {}).get(
+            "candidate_stream_sha256",
+            "",
+        )
+    )
+
     return {
         "schema_version": 3,
         "canonical_config": dict(
@@ -1331,6 +1440,12 @@ def build_resolved_runtime_payload(
             "compact_output": bool(
                 args.compact_output
             ),
+            "process_start_timestamp_ns": getattr(
+                args, "process_start_timestamp_ns", None
+            ),
+            "process_end_timestamp_ns": getattr(
+                args, "process_end_timestamp_ns", None
+            ),
         },
         "experiment_fields": {
             "raw_target_mode": (
@@ -1346,6 +1461,12 @@ def build_resolved_runtime_payload(
             ),
             "input_bag": str(input_bag),
             "output_bag": str(output_bag),
+            "alternate_appearance": (
+                alternate_appearance
+            ),
+            "candidate_stream_sha256": (
+                candidate_sha256
+            ),
         },
         "value_sources": {
             "input_bag": (
@@ -1353,6 +1474,16 @@ def build_resolved_runtime_payload(
             ),
             "output_bag": (
                 "command_line_required"
+            ),
+            "alternate_appearance": (
+                "command_line"
+                if alternate_appearance[
+                    "enabled"
+                ]
+                else "disabled_default"
+            ),
+            "candidate_stream_sha256": (
+                "derived_frozen_tracks"
             ),
             "selected_track_id": (
                 "command_line_required"
@@ -1410,6 +1541,12 @@ def build_resolved_runtime_payload(
             "compact_output": argument_source(
                 "--compact-output"
             ),
+            "process_start_timestamp_ns": argument_source(
+                "--process-start-timestamp-ns"
+            ),
+            "process_end_timestamp_ns": argument_source(
+                "--process-end-timestamp-ns"
+            ),
         },
     }
 
@@ -1421,6 +1558,25 @@ def main() -> int:
     output_bag = args.output_bag.expanduser().resolve()
     args.config = args.config.expanduser().resolve()
     args.model = args.model.expanduser().resolve()
+    appearance_bag = (
+        args.appearance_bag.expanduser().resolve()
+        if args.appearance_bag is not None
+        else None
+    )
+    appearance_provenance_path = (
+        args.appearance_provenance.expanduser().resolve()
+        if args.appearance_provenance is not None
+        else (
+            appearance_bag / "p064_appearance_variant.json"
+            if appearance_bag is not None
+            else None
+        )
+    )
+
+    if args.appearance_provenance is not None and appearance_bag is None:
+        raise RuntimeError(
+            "--appearance-provenance requires --appearance-bag"
+        )
 
     if not (input_bag / "metadata.yaml").is_file():
         raise RuntimeError(
@@ -1431,6 +1587,19 @@ def main() -> int:
         raise RuntimeError(
             f"Canonical configuration does not exist: {args.config}"
         )
+
+    if appearance_bag is not None:
+        if not (appearance_bag / "metadata.yaml").is_file():
+            raise RuntimeError(
+                f"Alternate appearance bag is invalid: {appearance_bag}"
+            )
+        if (
+            appearance_provenance_path is None
+            or not appearance_provenance_path.is_file()
+        ):
+            raise RuntimeError(
+                "Controlled appearance replay requires variant provenance"
+            )
 
     if output_bag.exists():
         if not args.overwrite:
@@ -1500,6 +1669,7 @@ def main() -> int:
 
     sequence_index = 0
     image_message_count = 0
+    master_image_records = []
 
     while reader.has_next():
         topic, serialized, bag_time_ns = reader.read_next()
@@ -1527,6 +1697,10 @@ def main() -> int:
                 continue
 
             image_message_count += 1
+            if appearance_bag is not None:
+                master_image_records.append(
+                    image_record(message, stamp_ns)
+                )
 
         elif topic == args.tracks_topic:
             message = deserialize_message(
@@ -1564,6 +1738,103 @@ def main() -> int:
             event[3],
         )
     )
+
+    candidate_sha256 = candidate_stream_digest(
+        (
+            event[0],
+            event[2],
+            event[4],
+        )
+        for event in track_events
+    )
+    validate_candidate_digest(
+        candidate_sha256,
+        args.expected_candidate_stream_sha256,
+    )
+    input_track_event_count = len(track_events)
+    try:
+        track_events = filter_track_events_by_timestamp(
+            track_events,
+            args.process_start_timestamp_ns,
+            args.process_end_timestamp_ns,
+        )
+    except ValueError as exc:
+        raise RuntimeError(str(exc)) from exc
+
+    appearance_metadata = None
+    appearance_message_types = message_types
+    appearance_stream_bag = input_bag
+    appearance_stream_topic = image_topic
+    appearance_records = None
+    variant_provenance = None
+
+    if appearance_bag is not None:
+        master_image_records = validate_image_records(
+            master_image_records
+        )
+        appearance_reader = open_reader(appearance_bag)
+        appearance_metadata = topic_metadata_map(
+            appearance_reader
+        )
+        appearance_stream_topic = choose_image_topic(
+            appearance_metadata,
+            args.appearance_image_topic,
+        )
+        appearance_message_types = {
+            topic: get_message(metadata.type)
+            for topic, metadata in appearance_metadata.items()
+        }
+        appearance_records = []
+        appearance_reader.set_filter(
+            rosbag2_py.StorageFilter(
+                topics=[appearance_stream_topic]
+            )
+        )
+        while appearance_reader.has_next():
+            _topic, serialized, _bag_time_ns = (
+                appearance_reader.read_next()
+            )
+            message = deserialize_message(
+                serialized,
+                appearance_message_types[
+                    appearance_stream_topic
+                ],
+            )
+            stamp_ns = image_time_ns(message)
+            if stamp_ns <= 0:
+                raise RuntimeError(
+                    "Alternate appearance image has non-positive timestamp"
+                )
+            appearance_records.append(
+                image_record(message, stamp_ns)
+            )
+        (
+            master_image_records,
+            appearance_records,
+        ) = validate_exact_correspondence(
+            master_image_records,
+            appearance_records,
+        )
+        try:
+            validate_track_timestamps(
+                (event[0] for event in track_events),
+                master_image_records,
+            )
+        except ValueError as exc:
+            raise RuntimeError(str(exc)) from exc
+
+        variant_provenance = load_variant_provenance(
+            appearance_provenance_path
+        )
+        try:
+            validate_variant_streams(
+                variant_provenance,
+                master_image_records,
+                appearance_records,
+            )
+        except ValueError as exc:
+            raise RuntimeError(str(exc)) from exc
+        appearance_stream_bag = appearance_bag
 
     generated_messages: list[
         tuple[int, int, str, bytes]
@@ -1698,13 +1969,16 @@ def main() -> int:
     # produces results identical to preloading the complete timeline,
     # without ever needing to hold more than the buffer's worth of
     # decoded images at once.
-    image_reader = open_reader(input_bag)
+    image_reader = open_reader(appearance_stream_bag)
     image_reader.set_filter(
-        rosbag2_py.StorageFilter(topics=[image_topic])
+        rosbag2_py.StorageFilter(
+            topics=[appearance_stream_topic]
+        )
     )
 
     pending_index = 0
     images_loaded = 0
+    previous_image_stamp = None
 
     while image_reader.has_next():
         _topic, serialized, _bag_time_ns = (
@@ -1712,12 +1986,24 @@ def main() -> int:
         )
         message = deserialize_message(
             serialized,
-            message_types[image_topic],
+            appearance_message_types[
+                appearance_stream_topic
+            ],
         )
         stamp_ns = image_time_ns(message)
 
         if stamp_ns <= 0:
             continue
+        if (
+            appearance_bag is not None
+            and previous_image_stamp is not None
+            and stamp_ns <= previous_image_stamp
+        ):
+            raise RuntimeError(
+                "Controlled appearance bag is not strictly "
+                "timestamp ordered"
+            )
+        previous_image_stamp = stamp_ns
 
         image_bgr = bridge.imgmsg_to_cv2(
             message,
@@ -1895,6 +2181,45 @@ def main() -> int:
         "command": " ".join(sys.argv),
         "input_bag": str(input_bag),
         "output_bag": str(output_bag),
+        "alternate_appearance": (
+            {
+                "enabled": True,
+                "bag": str(appearance_stream_bag),
+                "topic": appearance_stream_topic,
+                "provenance": str(
+                    appearance_provenance_path
+                ),
+                "source_manifest": source_manifest(
+                    appearance_stream_bag,
+                    hash_files=(
+                        not args.skip_source_hash
+                    ),
+                ),
+                "master_image_stream_sha256": (
+                    image_stream_digest(
+                        master_image_records
+                    )
+                ),
+                "appearance_image_stream_sha256": (
+                    image_stream_digest(
+                        appearance_records
+                    )
+                ),
+                "timestamp_sha256": timestamp_digest(
+                    appearance_records
+                ),
+                "frame_count": len(
+                    appearance_records
+                ),
+                "variant": variant_provenance,
+            }
+            if appearance_bag is not None
+            else {
+                "enabled": False,
+                "bag": None,
+                "topic": image_topic,
+            }
+        ),
         "source_manifest": source_manifest(
             input_bag,
             hash_files=(
@@ -2005,6 +2330,9 @@ def main() -> int:
             "source_messages_streamed": (
                 source_messages_written
             ),
+            "input_track_messages": (
+                input_track_event_count
+            ),
             "track_messages_processed": (
                 len(track_events)
             ),
@@ -2050,8 +2378,29 @@ def main() -> int:
             "complete_image_timeline_preloaded": (
                 True
             ),
+            "processing_timestamp_window": {
+                "start_ns": args.process_start_timestamp_ns,
+                "end_ns": args.process_end_timestamp_ns,
+                "inclusive": True,
+                "candidate_digest_scope": "complete input track stream",
+            },
         },
         "determinism": {
+            "candidate_stream_digest_schema": (
+                CANDIDATE_DIGEST_SCHEMA
+            ),
+            "candidate_stream_sha256": (
+                candidate_sha256
+            ),
+            "expected_candidate_stream_sha256": (
+                args.expected_candidate_stream_sha256
+            ),
+            "candidate_stream_matches_expected": (
+                True
+                if args.expected_candidate_stream_sha256
+                is not None
+                else None
+            ),
             "semantic_digest_schema": (
                 SEMANTIC_DIGEST_SCHEMA
             ),

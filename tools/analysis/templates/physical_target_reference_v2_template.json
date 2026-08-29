@@ -1,0 +1,91 @@
+{
+  "provenance": {
+    "schema_version": 2,
+    "contract_version": "tim_physical_target_bbox_v2",
+    "sequence_id": "example_sequence",
+    "source_bag_name": "example__source__image_raw",
+    "source_bag_path": "bags/source/curated/example__source__image_raw",
+    "source_image_topic": "/camera/image_raw",
+    "source_width": 640,
+    "source_height": 480,
+    "coordinate_convention": "source_pixels_historical_pre_p53",
+    "coordinate_convention_evidence": "Example only: real artifacts must cite direct bag/header inspection evidence, see docs/issues/p1-10-improve-bbox-evaluation.md section F.",
+    "selected_physical_target_label": "black_shirt_person",
+    "annotator": "example_annotator",
+    "created_date": "2026-08-10",
+    "evaluation_window": {
+      "start_s": 0.0,
+      "end_s": 20.0
+    },
+    "notes": "Template/example artifact for tim_physical_target_bbox_v2. Not real annotated evidence."
+  },
+  "samples": [
+    {
+      "t_s": 0.0,
+      "identity_state": "absent",
+      "identity_context": null,
+      "target_bbox_xyxy": null,
+      "distractors": [],
+      "interpolate_from_previous": false,
+      "notes": "target not yet in frame; state propagates until the next transition, no geometry is held"
+    },
+    {
+      "t_s": 5.0,
+      "identity_state": "present_scored",
+      "identity_context": "target_only",
+      "target_bbox_xyxy": [120.0, 80.0, 220.0, 300.0],
+      "distractors": [],
+      "interpolate_from_previous": false,
+      "notes": "clean, only person in frame -- localisation quality does not affect identity attribution"
+    },
+    {
+      "t_s": 6.0,
+      "identity_state": "present_scored",
+      "identity_context": "target_only",
+      "target_bbox_xyxy": [130.0, 82.0, 228.0, 302.0],
+      "distractors": [],
+      "interpolate_from_previous": true,
+      "notes": "legal target_only interpolation: both endpoints are present_scored/target_only"
+    },
+    {
+      "t_s": 9.0,
+      "identity_state": "present_scored",
+      "identity_context": "distractors_complete",
+      "target_bbox_xyxy": [180.0, 90.0, 260.0, 300.0],
+      "distractors": [
+        {"person_ref": "phys_d001", "bbox_xyxy": [175.0, 88.0, 258.0, 298.0]}
+      ],
+      "interpolate_from_previous": false,
+      "notes": "another physical person becomes plausibly confusable; every relevant person is boxed and given an annotation-local person_ref, never a tracker ID; not interpolated from the previous (target_only) keyframe -- illegal context change"
+    },
+    {
+      "t_s": 9.5,
+      "identity_state": "present_scored",
+      "identity_context": "distractors_complete",
+      "target_bbox_xyxy": [183.0, 90.0, 263.0, 300.0],
+      "distractors": [
+        {"person_ref": "phys_d001", "bbox_xyxy": [178.0, 88.0, 261.0, 298.0]}
+      ],
+      "interpolate_from_previous": true,
+      "notes": "legal distractors_complete interpolation: the person_ref set ({phys_d001}) is exactly equal at both endpoints"
+    },
+    {
+      "t_s": 10.0,
+      "identity_state": "present_reference_unavailable",
+      "identity_context": null,
+      "target_bbox_xyxy": null,
+      "distractors": [],
+      "interpolate_from_previous": false,
+      "notes": "heavy occlusion, no reliable box can be drawn -- an explicit annotator assertion, propagated as a state interval, never a stale geometry hold"
+    },
+    {
+      "t_s": 14.0,
+      "identity_state": "present_scored",
+      "identity_context": "target_only",
+      "target_bbox_xyxy": [200.0, 85.0, 300.0, 305.0],
+      "distractors": [],
+      "interpolate_from_previous": false,
+      "notes": "re-entry after occlusion; not interpolated from the earlier keyframe -- the gap between 9.5s and 14.0s is an honest reference_gap under the frozen v2 contract (docs/issues/p1-10-physical-reference-v2-contract.md section H), never stale-held geometry"
+    }
+  ]
+}

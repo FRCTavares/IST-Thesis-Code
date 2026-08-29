@@ -568,8 +568,9 @@ while [[ $# -gt 0 ]]; do
             SOURCE_RECORD_MODE=1
             SOURCE_RAW_IMAGE_RECORD=1
             SOURCE_MAVROS_RECORD=1
+            SOURCE_DETECTIONS_RECORD=0
 
-            # Source capture must be camera-only plus MAVROS.
+            # Source capture is camera-only plus MAVROS telemetry.
             ENABLE_ROSBAG=0
             ENABLE_DATASET_BAG=0
             ENABLE_CONTROL=0
@@ -577,6 +578,29 @@ while [[ $# -gt 0 ]]; do
             ENABLE_WEB_VIDEO=0
 
             # Do not run tracker or TIM-MARS during source capture.
+            ENABLE_TRACKER=0
+            TARGET_MEMORY_MODE="off"
+            RUN_TARGET_MEMORY_MARS=0
+
+            shift
+            ;;
+        --source-record-no-mavros)
+            SOURCE_RECORD_MODE=1
+            SOURCE_RAW_IMAGE_RECORD=1
+            SOURCE_MAVROS_RECORD=0
+            SOURCE_DETECTIONS_RECORD=1
+
+            # Issue #64 source-evidence capture without MAVROS or
+            # network-mode changes. Preserve native imagery and the
+            # corresponding live Hailo detector evidence in one bag.
+            ENABLE_ROSBAG=0
+            ENABLE_DATASET_BAG=0
+            ENABLE_CONTROL=0
+            ENABLE_DASHBOARD_BRIDGE=0
+            ENABLE_WEB_VIDEO=0
+
+            # Preserve the integrated camera + detector path, but remove
+            # tracker/TIM consumers and all secondary image recording.
             ENABLE_TRACKER=0
             TARGET_MEMORY_MODE="off"
             RUN_TARGET_MEMORY_MARS=0

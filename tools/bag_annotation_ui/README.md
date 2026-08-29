@@ -38,6 +38,36 @@ renderers under `tools/bag/`.
 The UI helps the user create and edit annotation files, but annotation choices
 must remain manual. Do not generate final annotation CSVs automatically.
 
+The Issue #25 `Physical reference v2` workspace displays the evaluator's
+effective interpolated reference during normal playback. It can precompute
+frame-by-frame, bidirectional sparse-optical-flow proposals between compatible
+explicit human anchors, cache them in server/session memory, group conservative
+review regions, and recursively suggest efficient intermediate anchors. A
+short-range paused-frame proposal remains available as a fallback. Yellow
+proposals preserve human-established `phys_dNNN` correspondence, stop on
+insufficient evidence, and are never accepted or saved automatically.
+IoU/centre/scale disagreement and deterministic flow-confidence categories
+prioritise human review only; they are not evaluation criteria. The current
+Seq01 path uses no detector. An optional anonymous-box geometry matcher accepts
+coordinates only and refuses ambiguous matches; no detector/tracker identity,
+RAW/TIM target output, or TIM-MARS output constructs the physical reference.
+
+For M4B production annotation, CVAT is now preferred over further expansion of
+this custom UI. `tools/analysis/cvat_physical_reference.py` exports exact
+ordered source frames and timestamps, then fail-closed converts human-reviewed
+CVAT rectangle annotations back to frozen v2. Ordered PNG tasks use **CVAT for
+images 1.1**; CVAT may expand track interpolation into one `<image><box>` per
+frame, while native `<track>` CVAT 1.1 remains supported. `physical_ref`,
+never numeric CVAT IDs or drawing order, defines identity; source times come
+from `frame_manifest.json`, never nominal FPS, and human review remains
+authoritative. If a sequence has no prior human v2 bbox evidence, the bridge's
+`prepare --preparation-config` mode produces a seedless task and leaves the
+semantic sidecar empty so conversion fails until the annotator explicitly
+records reviewed state/context/role intervals; tracker boxes are never used as
+identity seeds. This UI remains the fallback,
+schema/debug viewer, effective-reference inspector, and final visual validation
+instrument; its assisted-propagation implementation is intentionally retained.
+
 ## Typical launch command
 
 Use the project-standard annotation UI command from the repository root after

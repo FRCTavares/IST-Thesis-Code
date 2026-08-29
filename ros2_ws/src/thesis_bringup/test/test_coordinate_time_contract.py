@@ -134,3 +134,65 @@ def test_live_tim_and_control_use_source_camera_dimensions():
     assert "-p image_height:=${CAMERA_HEIGHT}.0" in tim_block
     assert "-p img_w:=${CAMERA_WIDTH}.0" in control_block
     assert "-p img_h:=${CAMERA_HEIGHT}.0" in control_block
+
+
+@pytest.mark.parametrize(
+    ("source_size", "expected_size"),
+    [
+        ((1280, 720), (640.0, 360.0)),
+        ((1920, 1080), (960.0, 540.0)),
+    ],
+)
+def test_p064_detection_publication_stays_in_high_resolution_source_pixels(
+    source_size,
+    expected_size,
+):
+    transform = ImageTransform.direct_resize(
+        source_width=source_size[0],
+        source_height=source_size[1],
+        inference_width=640,
+        inference_height=640,
+    )
+    frame = SimpleNamespace(
+        frame_id=64,
+        stamp_sec=12,
+        stamp_nanosec=34,
+        transform=transform,
+    )
+    node = object.__new__(PerceptionPipelineNode)
+    node.img_w = 640
+    node.img_h = 640
+    node.min_score = 0.35
+    node.label = "person"
+    result = {
+        "detections": [
+            {
+                "x": 0.25,
+                "y": 0.25,
+                "w": 0.5,
+                "h": 0.5,
+                "score": 0.9,
+                "label": "person",
+            },
+        ],
+    }
+
+    output = PerceptionPipelineNode._build_detection_array(
+        node, frame, result
+    )
+    detection = output.detections[0]
+
+    assert detection.bbox.center.position.x == pytest.approx(
+        source_size[0] / 2
+    )
+    assert detection.bbox.center.position.y == pytest.approx(
+        source_size[1] / 2
+    )
+    assert detection.bbox.size_x == pytest.approx(expected_size[0])
+    assert detection.bbox.size_y == pytest.approx(expected_size[1])
+    expected_source = (
+        f"source={source_size[0]}x{source_size[1]}"
+    )
+    assert expected_source in output.header.frame_id
+    assert "inference=640x640" in output.header.frame_id
+    assert "pad=0,0" in output.header.frame_id

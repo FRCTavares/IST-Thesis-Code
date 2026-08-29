@@ -497,6 +497,11 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
     fi
 fi
 log_step "preflight checks"
+if [[ "${SOURCE_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
+    ensure_recording_storage_available \
+        "${SOURCE_RECORD_ROOT:-$THESIS_ROOT/bags/source_video}" \
+        "$RAW_RECORDING_MIN_FREE_GIB" || exit 1
+fi
 if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
     ensure_recording_storage_available \
         "$BAG_OUT_ROOT" \
@@ -1269,24 +1274,63 @@ else
 fi
 
 if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
-    SOURCE_ROOT="$THESIS_ROOT/bags/source_video"
+    SOURCE_ROOT="${SOURCE_RECORD_ROOT:-$THESIS_ROOT/bags/source_video}"
     MAVROS_BAG_ROOT="$THESIS_ROOT/bags/mavros"
     mkdir -p "$SOURCE_ROOT" "$MAVROS_BAG_ROOT"
+
+    echo "[source] source evidence root: $SOURCE_ROOT"
 
     SOURCE_TAG_SAFE="${BAG_TAG:-source_record}"
     SOURCE_RUN_ID="${RUN_ID:-$(date +%F__%H-%M-%S)}"
 
-    SOURCE_RAW_BAG_OUT_DIR="$SOURCE_ROOT/${SOURCE_RUN_ID}__source__${SOURCE_TAG_SAFE}__image_raw"
+    SOURCE_RAW_BAG_SUFFIX="image_raw"
+    if [[ "${SOURCE_DETECTIONS_RECORD:-0}" -eq 1 ]]; then
+        SOURCE_RAW_BAG_SUFFIX="image_raw_detections"
+    fi
+
+    SOURCE_RAW_BAG_OUT_DIR="$SOURCE_ROOT/${SOURCE_RUN_ID}__source__${SOURCE_TAG_SAFE}__${SOURCE_RAW_BAG_SUFFIX}"
     SOURCE_MAVROS_BAG_OUT_DIR="$MAVROS_BAG_ROOT/${SOURCE_RUN_ID}__source__${SOURCE_TAG_SAFE}__mavros"
 
     if [[ "${SOURCE_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
-        echo "[source] starting source raw image recorder: $SOURCE_RAW_BAG_OUT_DIR"
+        SOURCE_RECORD_TOPICS=(
+            /camera/image_raw
+        )
+        if [[ "${SOURCE_DETECTIONS_RECORD:-0}" -eq 1 ]]; then
+            SOURCE_RECORD_TOPICS+=(
+                /detections
+            )
+        fi
+
+        echo "[source] starting source evidence recorder: $SOURCE_RAW_BAG_OUT_DIR"
         sleep 3
 
-        start_ros_bg source_raw_image_bag ros2 bag record \
-            --storage mcap \
-            -o "$SOURCE_RAW_BAG_OUT_DIR" \
-            --topics /camera/image_raw
+        SOURCE_QOS_OVERRIDE_FILE="/etc/thesis/live_record_qos_overrides.yaml"
+
+        SOURCE_ROSBAG_EXTRA_ARGS=()
+        if [[ "${SOURCE_DETECTIONS_RECORD:-0}" -eq 1 ]]; then
+            # Issue #64 high-bandwidth evidence capture. Keep DDS/image
+            # semantics unchanged while reducing recorder-side serialization
+            # pressure. 512 MiB is roughly several seconds of HD source data.
+            SOURCE_ROSBAG_EXTRA_ARGS+=(
+                --storage-preset-profile fastwrite
+                --max-cache-size 536870912
+            )
+        fi
+
+        if [[ -f "$SOURCE_QOS_OVERRIDE_FILE" ]]; then
+            start_ros_bg source_raw_image_bag ros2 bag record \
+                --storage mcap \
+                "${SOURCE_ROSBAG_EXTRA_ARGS[@]}" \
+                --qos-profile-overrides-path "$SOURCE_QOS_OVERRIDE_FILE" \
+                -o "$SOURCE_RAW_BAG_OUT_DIR" \
+                --topics "${SOURCE_RECORD_TOPICS[@]}"
+        else
+            start_ros_bg source_raw_image_bag ros2 bag record \
+                --storage mcap \
+                "${SOURCE_ROSBAG_EXTRA_ARGS[@]}" \
+                -o "$SOURCE_RAW_BAG_OUT_DIR" \
+                --topics "${SOURCE_RECORD_TOPICS[@]}"
+        fi
 
         sleep 1
         if ! check_proc_alive source_raw_image_bag; then
@@ -1303,7 +1347,7 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
         done
 
         if [[ -d "$SOURCE_RAW_BAG_OUT_DIR" ]]; then
-            write_live_run_provenance source "$SOURCE_RAW_BAG_OUT_DIR/run_metadata.json" /camera/image_raw
+            write_live_run_provenance source "$SOURCE_RAW_BAG_OUT_DIR/run_metadata.json" "${SOURCE_RECORD_TOPICS[@]}"
         else
             echo "[warn] source raw image bag output directory not visible yet; provenance not written"
         fi

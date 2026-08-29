@@ -691,3 +691,70 @@ def test_invalid_request_mask_is_rejected(requested_indices):
                 requested_candidate_indices=requested_indices,
             ),
         )
+
+
+@pytest.mark.parametrize(
+    ("image_size", "expected"),
+    [
+        ((640, 360), (320.0, 180.0, 640.0, 360.0)),
+        ((1280, 720), (640.0, 360.0, 1280.0, 720.0)),
+        ((1920, 1080), (960.0, 540.0, 1920.0, 1080.0)),
+    ],
+)
+def test_p064_master_bbox_maps_to_requested_appearance_resolution(
+    image_size,
+    expected,
+):
+    mapped = map_bbox_to_appearance_image(
+        (960.0, 540.0, 1920.0, 1080.0),
+        candidate_frame_width=1920.0,
+        candidate_frame_height=1080.0,
+        image_width=image_size[0],
+        image_height=image_size[1],
+    )
+
+    assert mapped == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    ("bbox", "expected_width", "expected_height"),
+    [
+        ((-30.0, 100.0, 300.0, 500.0), 200.0, 266.6666667),
+        ((1620.0, 100.0, 1950.0, 500.0), 200.0, 266.6666667),
+        ((100.0, -30.0, 500.0, 300.0), 266.6666667, 200.0),
+        ((100.0, 780.0, 500.0, 1110.0), 266.6666667, 200.0),
+    ],
+)
+def test_p064_mapped_crop_clips_at_every_appearance_boundary(
+    bbox,
+    expected_width,
+    expected_height,
+):
+    from thesis_bringup.tim_mars.crop_quality import (
+        CropQualityThresholds,
+        measure_crop_qualities,
+    )
+
+    mapped = map_bbox_to_appearance_image(
+        bbox,
+        candidate_frame_width=1920.0,
+        candidate_frame_height=1080.0,
+        image_width=1280,
+        image_height=720,
+    )
+    quality = measure_crop_qualities(
+        [mapped],
+        image_width=1280,
+        image_height=720,
+        thresholds=CropQualityThresholds(
+            min_width_px=0.0,
+            min_height_px=0.0,
+            max_clipping_fraction=1.0,
+            min_aspect_ratio=0.0,
+            max_aspect_ratio=10.0,
+        ),
+    )[0]
+
+    assert quality.crop_width_px == pytest.approx(expected_width)
+    assert quality.crop_height_px == pytest.approx(expected_height)
+    assert quality.clipping_fraction > 0.0

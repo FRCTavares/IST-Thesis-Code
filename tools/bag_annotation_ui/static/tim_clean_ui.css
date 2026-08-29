@@ -3589,3 +3589,288 @@ body.annotationWorkspaceMode .annMiniDelete {
     grid-template-columns: 1fr;
   }
 }
+
+/* Issue #25 physical-reference annotation mode -------------------------- */
+
+.physicalRefCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #000;
+  cursor: crosshair;
+}
+
+.physicalRefDrawControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #cfcfcf;
+}
+
+.physicalRefDrawControls select {
+  min-height: 30px;
+}
+
+.physicalRefProvenanceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.physicalRefProvenanceGrid label {
+  display: grid;
+  gap: 5px;
+  color: #cfcfcf;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.physicalRefProvenanceGrid input,
+.physicalRefProvenanceGrid select,
+.physicalRefProvenanceGrid textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.physicalRefStateGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: end;
+}
+
+.physicalRefStateGrid label {
+  display: grid;
+  gap: 5px;
+  color: #cfcfcf;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.physicalRefInterpolateRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: #cfcfcf;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.physicalRefHint {
+  color: #999;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.physicalRefDistractorList {
+  margin-top: 10px;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  padding: 8px;
+  min-height: 32px;
+  font-size: 12px;
+  color: #cfcfcf;
+}
+
+.physicalRefDistractorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.physicalRefDistractorRow button {
+  min-height: 24px;
+  padding: 2px 8px;
+}
+
+.physicalRefV2Badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #1c3a2c;
+  color: #5cff9d;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
+.physicalRefReviewPanel {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #2f3c45;
+  border-radius: 9px;
+  background: #111820;
+}
+
+.physicalRefReviewToggleRow,
+.physicalRefAssistActions,
+.physicalRefReviewThresholds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.physicalRefLegend {
+  color: #a8b6c2;
+  font-size: 11px;
+}
+
+.physicalRefEffectiveStatus,
+.physicalRefProposalStatus {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: #171717;
+  color: #d7d7d7;
+  font-size: 12px;
+}
+
+.physicalRefStatus-interpolated {
+  border-left: 4px solid #22d3ee;
+}
+
+.physicalRefStatus-explicit-keyframe {
+  border-left: 4px solid #33ff66;
+}
+
+.physicalRefStatus-reference-gap,
+.physicalRefStatus-present-reference-unavailable {
+  border-left: 4px solid #ff9f43;
+}
+
+.physicalRefStatus-absent {
+  border-left: 4px solid #a78bfa;
+}
+
+.physicalRefStatusPending {
+  opacity: 0.8;
+}
+
+.physicalRefSequenceAssist {
+  margin-top: 9px;
+  padding: 8px;
+  border: 1px solid #344653;
+  border-radius: 7px;
+  background: #0d141a;
+}
+
+.physicalRefSequenceAssist progress {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.physicalRefSequenceStatus,
+.physicalRefSuggestedAnchors {
+  margin-top: 6px;
+  color: #c8d5df;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.physicalRefSuggestedAnchors button {
+  min-height: 24px;
+  margin: 3px 4px 0 0;
+  padding: 2px 7px;
+}
+
+.physicalRefAssistActions {
+  margin-top: 9px;
+}
+
+.physicalRefReviewThresholds {
+  margin-top: 8px;
+  color: #bfc7ce;
+  font-size: 11px;
+}
+
+.physicalRefReviewThresholds label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.physicalRefReviewThresholds input {
+  width: 72px;
+}
+
+.physicalRefProposalWarning {
+  border-left: 4px solid #ff5d5d;
+  color: #ffd7d7;
+}
+
+.physicalRefProposalAvailable {
+  border-left: 4px solid #ffe066;
+}
+
+.physicalRefPersonRefPalette {
+  margin-top: 10px;
+}
+
+.physicalRefPersonRefChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.physicalRefPersonRefChip {
+  min-height: 26px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #cfcfcf;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.physicalRefPersonRefChipActive {
+  border-color: #5cff9d;
+  color: #5cff9d;
+  background: #10241a;
+}
+
+.physicalRefPersonRefChipPending {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.physicalRefPersonRefChipNew {
+  border-style: dashed;
+}
+
+body.physicalRefWorkspaceMode #loadedWorkspace,
+body.physicalRefWorkspaceMode #annotationWorkspace {
+  display: none !important;
+}
+
+body.physicalRefWorkspaceMode #physicalRefWorkspace:not([hidden]) {
+  display: block !important;
+}
+
+body.physicalRefWorkspaceMode #physicalRefRows {
+  max-height: calc(100vh - 620px);
+  overflow: auto;
+  border: 1px solid #262626;
+  border-radius: 8px;
+}
+
+@media (max-width: 1100px) {
+  .physicalRefProvenanceGrid,
+  .physicalRefStateGrid {
+    grid-template-columns: 1fr;
+  }
+}
