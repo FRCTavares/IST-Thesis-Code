@@ -909,3 +909,14 @@ new focused tests cover both directions of the toggle, all draft fields
 `identity_state`/`identity_context`, draw mode, interpolation flag), the
 absence of autosave, and that real navigation's reset path is untouched.
 Human browser verification is still required before M3-v2 is frozen.
+
+## M5 Seq01 same-capture regeneration (2026-08-29)
+
+The June Seq01 M5 result is regenerated from the exact annotated raw capture
+`2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw`, never the provenance-invalid independent `12-45-45` capture. Hailo YOLOv8s detections (`1,520`) and canonical source images (`1,520`) have exact positive `header.stamp` equality in `bags/replay/p025_seq01_physical_v2_common_input_2026_08_29`; its 61.200516816 s header-time horizon exactly matches `seq01_clean.json`.
+
+ByteTrack's autonomous largest eligible ID 2 was rejected against the first
+physical target box (IoU 0). ID 1 is the physical target (initial IoU
+0.935017) and was fixed for the deterministic tracker derivative and canonical
+TIM-MARS with `mars-small128.pb`. Physical-v2 evaluation reports, at
+`reports/p025_physical_target_bbox_v2/p025_seq01_physical_v2_tim_mars_2026_08_29`, reconcile exactly for both `/target` and `/target_memory_mars`: 61.200516816 s correct target, and 0 s wrong person, unresolved, lost/suppressed, target absent, unavailable, or reference gap. Seq01 M5 is therefore complete; May and Seq03 M5 completion audits still prevent Issue #25 closure.
