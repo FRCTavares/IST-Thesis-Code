@@ -107,6 +107,7 @@ Open executable issues: **21**.
 
 11. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
     - phase 10; engineering; coordinate target-control behavior with #52 and path documentation with #33.
+    - UI repository extraction is governed by `docs/issues/ui-repository-extraction-master-plan.md`: Phase A extracts only the live React dashboard into `IST-Thesis-UI`; the ROS dashboard bridge, target authority, runtime API, scientific tooling, and annotation backend remain in `IST-Thesis-Code`. Annotation-UI extraction is explicitly deferred.
 
 12. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
     - phase 9; experiment/documentation.
