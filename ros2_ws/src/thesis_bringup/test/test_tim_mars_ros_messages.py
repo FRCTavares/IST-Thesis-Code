@@ -276,7 +276,7 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
         status_json_from_output(
             _output(),
             frame_id=42,
-            lat_ms=1.5,
+            tim_mars_processing_ms=1.5,
             num_tracks=3,
             appearance_enabled=True,
             appearance_candidates=2,
@@ -296,6 +296,11 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
             appearance_compute_min_interval_ms=250.0,
             appearance_cache_ttl_ms=750.0,
             appearance_cache_size=4,
+            appearance_cache_lookups=7,
+            appearance_cache_hits=3,
+            appearance_cache_misses=2,
+            appearance_cache_expired=1,
+            appearance_cache_invalidated=1,
             appearance_embedding_age_ms_by_track_id={
                 7: 0.0,
                 8: 125.0,
@@ -333,7 +338,8 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     )
 
     assert payload["frame_id"] == 42
-    assert payload["lat_ms"] == 1.5
+    assert payload["tim_mars_processing_ms"] == 1.5
+    assert "lat_ms" not in payload
     assert payload["num_tracks"] == 3
     assert payload["appearance_enabled"] is True
     assert payload["appearance_request_policy"] == "geometry_winner"
@@ -345,6 +351,17 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
         == 1
     )
     assert payload["appearance_cache_size"] == 4
+    assert payload["appearance_cache_lookups"] == 7
+    assert payload["appearance_cache_hits"] == 3
+    assert payload["appearance_cache_misses"] == 2
+    assert payload["appearance_cache_expired"] == 1
+    assert payload["appearance_cache_invalidated"] == 1
+    assert payload["appearance_cache_lookups"] == (
+        payload["appearance_cache_hits"]
+        + payload["appearance_cache_misses"]
+        + payload["appearance_cache_expired"]
+        + payload["appearance_cache_invalidated"]
+    )
     assert payload["appearance_embedding_age_ms_by_track_id"] == {
         "7": 0.0,
         "8": 125.0,

@@ -65,6 +65,7 @@ def test_detection_publication_maps_inference_box_to_source_pixels():
         frame_id=17,
         stamp_sec=12,
         stamp_nanosec=34,
+        t_cam_msg_seen_ns=123456789,
         transform=transform,
     )
     node = object.__new__(PerceptionPipelineNode)
@@ -102,6 +103,7 @@ def test_detection_publication_maps_inference_box_to_source_pixels():
     )
     assert "source=640x480" in output.header.frame_id
     assert "inference=640x640" in output.header.frame_id
+    assert "t_cam_msg_seen_ns=123456789" in output.header.frame_id
 
 
 def test_dashboard_normalizes_source_pixel_boxes_without_second_transform():
@@ -157,6 +159,7 @@ def test_p064_detection_publication_stays_in_high_resolution_source_pixels(
         frame_id=64,
         stamp_sec=12,
         stamp_nanosec=34,
+        t_cam_msg_seen_ns=987654321,
         transform=transform,
     )
     node = object.__new__(PerceptionPipelineNode)
@@ -196,3 +199,4 @@ def test_p064_detection_publication_stays_in_high_resolution_source_pixels(
     assert expected_source in output.header.frame_id
     assert "inference=640x640" in output.header.frame_id
     assert "pad=0,0" in output.header.frame_id
+    assert "t_cam_msg_seen_ns=987654321" in output.header.frame_id

@@ -26,7 +26,7 @@ fi
 IMAGE_DIR="$1"
 FRAME_RATE="$2"
 OUT_BAG="$3"
-DETECTOR_MODEL="${4:-yolov6n}"
+DETECTOR_MODEL="${4:-yolov8s}"
 TRACKER="${5:-bytetrack}"
 
 THESIS_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}"

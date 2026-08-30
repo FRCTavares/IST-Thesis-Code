@@ -83,7 +83,7 @@ class PerceptionPipelineNode(Node):
         self.declare_parameter("num_workers", 2)
 
         thesis_root = os.getenv("THESIS_ROOT", "/home/francisco/Desktop/Thesis-Code")
-        default_hef = f"{thesis_root}/models/hef/yolov6n.hef"
+        default_hef = f"{thesis_root}/models/hef/yolov8s.hef"
         self.declare_parameter("hailo_fps", 30)
         self.declare_parameter("hailo_hef_path", default_hef)
         self.declare_parameter(
@@ -292,7 +292,6 @@ class PerceptionPipelineNode(Node):
         self.frames_overwritten = 0
         self.frames_prepared_enqueued = 0
         self.frames_prepared_overwritten = 0
-        self.last_roundtrip_ms = 0.0
         self.last_det_pub_ns: int | None = None
         self.pub_dt_hist_ms: deque[float] = deque(maxlen=600)
 
@@ -1086,7 +1085,10 @@ class PerceptionPipelineNode(Node):
         frame: PreparedFrame,
         result: dict[str, Any],
     ) -> Detection2DArray:
-        det_header_frame_id = frame.transform.detection_frame_id(frame.frame_id)
+        det_header_frame_id = (
+            f"{frame.transform.detection_frame_id(frame.frame_id)};"
+            f"t_cam_msg_seen_ns={int(frame.t_cam_msg_seen_ns)}"
+        )
 
         det_arr = Detection2DArray()
         det_arr.header.stamp.sec = int(frame.stamp_sec)
@@ -1225,12 +1227,11 @@ class PerceptionPipelineNode(Node):
         if t_post_end_ns <= 0:
             t_post_end_ns = t_infer_end_ns
 
-        container_queue_ms = _ms(t_infer_start_ns - frame.t_pre_end_ns)
-        if container_queue_ms < 0.0:
-            container_queue_ms = 0.0
+        pre_infer_wait_ms = _ms(t_infer_start_ns - frame.t_pre_end_ns)
+        if pre_infer_wait_ms < 0.0:
+            pre_infer_wait_ms = 0.0
 
-        roundtrip_ms = _ms(t_engine_end_ns - t_engine_start_ns)
-        self.last_roundtrip_ms = roundtrip_ms
+        engine_call_ms = _ms(t_engine_end_ns - t_engine_start_ns)
 
         t_det_pub_start_ns = now_ns()
         det_arr = self._build_detection_array(frame, result)
@@ -1276,22 +1277,12 @@ class PerceptionPipelineNode(Node):
             tmsg.ros_to_np_ms = _ms(frame.t_ros_to_np_end_ns - frame.t_ros_to_np_start_ns)
             tmsg.resize_ms = _ms(frame.t_resize_end_ns - frame.t_resize_start_ns)
             tmsg.color_ms = _ms(frame.t_color_end_ns - frame.t_color_start_ns)
-            tmsg.pack_ms = 0.0
-            tmsg.container_queue_ms = float(container_queue_ms)
+            tmsg.pre_infer_wait_ms = float(pre_infer_wait_ms)
             tmsg.infer_ms = _ms(t_infer_end_ns - t_infer_start_ns)
             tmsg.post_ms = _ms(t_post_end_ns - t_post_start_ns)
-
             tmsg.det_pub_ms = _ms(t_det_pub_end_ns - t_det_pub_start_ns)
             tmsg.e2e_det_ms = _ms(t_det_pub_end_ns - frame.t_cam_msg_seen_ns)
-
-            t_loop1 = now_ns()
-            tmsg.loop_ms = _ms(t_loop1 - frame.t_loop0)
             tmsg.pub_dt_ms = float(pub_dt_ms)
-
-            # Deprecated alias writes kept for schema <=2 consumers.
-            tmsg.pts_ns = int(frame.src_stamp_ns)
-            tmsg.t_pub_ns = int(t_engine_start_ns)
-            tmsg.lat_ms = tmsg.e2e_det_ms
 
             try:
                 self.pub_timing.publish(tmsg)
@@ -1322,8 +1313,8 @@ class PerceptionPipelineNode(Node):
                 f"timeouts={self.frames_timeouts} "
                 f"backend={self.active_backend} "
                 f"dets={len(det_arr.detections)} "
-                f"rt_ms={roundtrip_ms:.2f} "
-                f"container_queue_ms={container_queue_ms:.2f} "
+                f"engine_call_ms={engine_call_ms:.2f} "
+                f"pre_infer_wait_ms={pre_infer_wait_ms:.2f} "
                 f"pub_dt_ms={pub_dt_ms:.2f} "
                 f"pub_dt_p50_ms={pub_dt_p50:.2f} "
                 f"pub_dt_p95_ms={pub_dt_p95:.2f}"

@@ -64,6 +64,7 @@ from thesis_msgs.msg import (
     AppearanceEmbeddingRequest,
     AppearanceEmbeddingResult,
     TargetState,
+    Timing,
     Track2DArray,
 )
 
@@ -102,6 +103,7 @@ class TargetMemoryMarsNode(Node):
 
         self._tracks_topic = params.tracks_topic
         self._target_topic = params.target_topic
+        self._timing_target_topic = params.timing_target_topic
         self._status_topic = params.status_topic
         self._select_topic = params.select_topic
         self._clear_topic = params.clear_topic
@@ -236,6 +238,7 @@ class TargetMemoryMarsNode(Node):
         self.get_logger().info(
             "TIM-MARS node ready: "
             f"tracks={self._tracks_topic}, target={self._target_topic}, "
+            f"timing_target={self._timing_target_topic}, "
             f"select={self._select_topic}, clear={self._clear_topic}, "
             f"normalised_tracks={self._tracks_are_normalized}, "
             f"mirror_raw_target_selection={self._mirror_raw_target_selection}, "
@@ -301,6 +304,11 @@ class TargetMemoryMarsNode(Node):
             reliability=ReliabilityPolicy.RELIABLE,
         )
         self._target_pub = self.create_publisher(TargetState, self._target_topic, qos)
+        self._timing_target_pub = self.create_publisher(
+            Timing,
+            self._timing_target_topic,
+            qos,
+        )
         self._status_pub = self.create_publisher(String, self._status_topic, qos)
 
         self._tracks_sub = self.create_subscription(
@@ -840,17 +848,37 @@ class TargetMemoryMarsNode(Node):
                 f"{result.diagnostics.appearance_warning}"
             )
 
-        t_end_ns = time.monotonic_ns()
-
         target_msg = self._target_msg_from_output(msg, out)
         target_msg.t_target_cb_start_ns = int(t_start_ns)
-        target_msg.t_target_cb_end_ns = int(t_end_ns)
+        t_process_end_ns = time.monotonic_ns()
+        target_msg.t_target_cb_end_ns = int(t_process_end_ns)
         self._target_pub.publish(target_msg)
+        t_target_pub_end_ns = time.monotonic_ns()
+
+        timing_msg = Timing()
+        timing_msg.frame_id = int(msg.frame_id)
+        timing_msg.src_stamp_ns = int(target_msg.src_stamp_ns)
+        timing_msg.t_cam_msg_seen_ns = int(msg.t_cam_msg_seen_ns)
+        timing_msg.t_target_cb_start_ns = int(t_start_ns)
+        timing_msg.t_target_process_end_ns = int(t_process_end_ns)
+        timing_msg.t_target_pub_end_ns = int(t_target_pub_end_ns)
+        timing_msg.tim_mars_processing_ms = float(
+            (t_process_end_ns - t_start_ns) / 1e6
+        )
+        if (
+            timing_msg.t_cam_msg_seen_ns > 0
+            and t_target_pub_end_ns >= timing_msg.t_cam_msg_seen_ns
+        ):
+            timing_msg.e2e_validated_target_ms = float(
+                (t_target_pub_end_ns - timing_msg.t_cam_msg_seen_ns) / 1e6
+            )
+        self._timing_target_pub.publish(timing_msg)
+
         self._publish_status(
             result,
             msg,
             t_start_ns,
-            t_end_ns,
+            t_process_end_ns,
         )
 
     def _target_msg_from_output(
@@ -917,7 +945,9 @@ class TargetMemoryMarsNode(Node):
         base_status_json = status_json_from_output(
             result.output,
             frame_id=int(tracks_msg.frame_id),
-            lat_ms=float(t_end_ns - t_start_ns) / 1e6,
+            tim_mars_processing_ms=float(
+                t_end_ns - t_start_ns
+            ) / 1e6,
             num_tracks=len(tracks_msg.tracks),
             appearance_enabled=self._appearance_enabled,
             appearance_candidates=diagnostics.appearance_candidates,
@@ -950,6 +980,21 @@ class TargetMemoryMarsNode(Node):
             appearance_compute_min_interval_ms=self._appearance_compute_min_interval_ms,
             appearance_cache_ttl_ms=self._appearance_cache_ttl_ms,
             appearance_cache_size=diagnostics.appearance_cache_size,
+            appearance_cache_lookups=(
+                diagnostics.appearance_cache_lookups
+            ),
+            appearance_cache_hits=(
+                diagnostics.appearance_cache_hits
+            ),
+            appearance_cache_misses=(
+                diagnostics.appearance_cache_misses
+            ),
+            appearance_cache_expired=(
+                diagnostics.appearance_cache_expired
+            ),
+            appearance_cache_invalidated=(
+                diagnostics.appearance_cache_invalidated
+            ),
             appearance_embedding_age_ms_by_track_id=(
                 diagnostics.appearance_embedding_age_ms_by_track_id
             ),

@@ -109,6 +109,57 @@ Open executable issues: **20**.
       and reproducible power measurements where available. It also measures the
       incremental cost of TIM-MARS and supplies the runtime contract for the
       lightweight-versus-integrated tracker comparison.
+    - 30 Aug 2026: pre-#58 instrumentation implementation now includes the
+      direct-Hailo Timing schema v4, TIM-MARS ownership of `/timing_target`,
+      exact selective-ReID cache lookup/hit/miss/expiry/invalidation telemetry,
+      and the schema-v3 TIM-MARS ReID workload summary. Retired container/ZMQ
+      timing compatibility fields remain intentionally unsupported. YOLOv8s is
+      now the canonical Pi 5 + Hailo detector for current runtime defaults and
+      new experiments; historical detector evidence retains its original model
+      identity. The first current-schema smoke exposed a cross-topic delivery
+      race: `/detections` could reach the tracker before its matching `/timing`,
+      dropping the downstream camera-arrival monotonic timestamp. The detection
+      contract now carries that causal timestamp directly, without a blocking
+      tracker join, and tracker timing is enabled by default. The runner audit
+      additionally exposed an incompatible duplicate BEST_EFFORT target command;
+      the full-pipeline runner now uses only the dashboard authority API's RELIABLE
+      TIM-MARS command path, explicitly enables tracker/target timing, and
+      propagates input/setup/provenance/startup/playback/selection failures. The
+      second dirty-tree smoke
+      then confirmed causal camera timing on 1109/1109 detector, tracker, and
+      validated-target samples, with positive validated target end-to-end latency
+      on 1109/1109 samples. `/timing_target` intentionally owns TIM-MARS timestamps
+      rather than duplicating `t_track_cb_*`; those tracker timestamps remain owned
+      by `/timing_tracker`. That smoke also exposed PID-only cleanup as insufficient
+      because `ros2 run` children survive their wrapper process. The runner now uses
+      a runner-owned supervisor PID whose forked child creates an isolated process
+      group and receives forwarded shutdown signals. Isolated validation confirmed
+      that signalling only the supervisor terminates both the command leader and its
+      descendants. The next dirty-tree run confirmed the lifecycle repair leaves
+      zero runtime descendants and independently passed the schema-v4 causal timing
+      audit on 1086 detector/tracker/target samples, but exposed repeated short-lived
+      `ros2 topic echo /tracks --once` discovery as an unreliable target-resolution
+      mechanism despite all 1086 recorded `/tracks` messages being non-empty. The
+      full-pipeline runner now resolves the target through a persistent typed
+      BEST_EFFORT, KEEP_LAST depth-1 `/tracks` subscriber matching the tracker
+      publisher QoS; isolated ROS validation covers both largest-track and explicit-ID
+      selection. The final dirty-tree canonical YOLOv8s full-pipeline smoke then
+      confirmed typed target resolution, authoritative TIM-MARS selection, schema-v4
+      detector/tracker/target causal timing, provenance generation, and zero surviving
+      runner descendants. Replay documentation now distinguishes the persistent
+      typed full-pipeline resolver from the older text-echo support path, and Hailo
+      recovery guidance avoids broad process-name termination. A final active-runtime
+      architecture audit also removed the retired dashboard Docker/container model-switch
+      fallback and its launcher wiring; model switching now has only the direct in-process
+      perception parameter-service path when runtime reconfiguration is explicitly enabled,
+      while the frozen live profile continues to disable runtime reconfiguration. The
+      dashboard WebSocket metrics schema remains independently versioned from Timing schema
+      v4. The remaining pre-#58 gate is promotion of the coherent implementation followed by
+      retained clean-tree provenance/report evidence.
+      Execution
+      dependency remains:
+      #32 instrumentation → #58 → #74 → #32 final sustained characterization.
+      Do not close #32 before the post-#74 sustained resource evidence.
 
 10. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
    - phase 5; engineering.

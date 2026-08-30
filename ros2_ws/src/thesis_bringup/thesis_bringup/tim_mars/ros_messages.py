@@ -653,7 +653,7 @@ def status_json_from_output(
     out: TargetMemoryOutput,
     *,
     frame_id: int,
-    lat_ms: float,
+    tim_mars_processing_ms: float,
     num_tracks: int,
     appearance_enabled: bool,
     appearance_candidates: int,
@@ -673,6 +673,11 @@ def status_json_from_output(
     appearance_compute_min_interval_ms: float,
     appearance_cache_ttl_ms: float,
     appearance_cache_size: int,
+    appearance_cache_lookups: int,
+    appearance_cache_hits: int,
+    appearance_cache_misses: int,
+    appearance_cache_expired: int,
+    appearance_cache_invalidated: int,
     appearance_embedding_age_ms_by_track_id: dict[int, float],
     appearance_crop_quality_by_track_id: dict[int, object],
     appearance_encoding_rejected: int,
@@ -695,7 +700,9 @@ def status_json_from_output(
     payload.update(
         {
             "frame_id": int(frame_id),
-            "lat_ms": float(lat_ms),
+            "tim_mars_processing_ms": float(
+                tim_mars_processing_ms
+            ),
             "num_tracks": int(num_tracks),
             "appearance_enabled": bool(appearance_enabled),
             "appearance_candidates": int(appearance_candidates),
@@ -729,6 +736,13 @@ def status_json_from_output(
             "appearance_compute_min_interval_ms": float(appearance_compute_min_interval_ms),
             "appearance_cache_ttl_ms": float(appearance_cache_ttl_ms),
             "appearance_cache_size": int(appearance_cache_size),
+            "appearance_cache_lookups": int(appearance_cache_lookups),
+            "appearance_cache_hits": int(appearance_cache_hits),
+            "appearance_cache_misses": int(appearance_cache_misses),
+            "appearance_cache_expired": int(appearance_cache_expired),
+            "appearance_cache_invalidated": int(
+                appearance_cache_invalidated
+            ),
             "appearance_embedding_age_ms_by_track_id": {
                 str(int(track_id)): float(age_ms)
                 for track_id, age_ms in sorted(

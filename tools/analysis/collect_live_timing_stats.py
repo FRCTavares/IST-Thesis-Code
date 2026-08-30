@@ -16,6 +16,7 @@ import math
 import os
 from pathlib import Path
 import signal
+import statistics
 import sys
 import time
 from dataclasses import dataclass, asdict
@@ -286,14 +287,21 @@ def calc_topic_stats(frame_ids: List[int], count: int, duration_s: float) -> Top
 
 
 def summarize_fields(samples: Dict[str, List[float]]) -> Dict[str, Dict[str, float]]:
+    """Summarize one observed timing window.
+
+    std is the population standard deviation over the observed samples.
+    For pub_dt_ms, std is the inter-publication jitter measure.
+    """
     out: Dict[str, Dict[str, float]] = {}
     for field, vals in samples.items():
         out[field] = {
             "n": float(len(vals)),
+            "mean": (sum(vals) / len(vals)) if vals else float("nan"),
+            "std": statistics.pstdev(vals) if vals else float("nan"),
             "p50": percentile(vals, 50.0),
+            "p90": percentile(vals, 90.0),
             "p95": percentile(vals, 95.0),
             "p99": percentile(vals, 99.0),
-            "mean": (sum(vals) / len(vals)) if vals else float("nan"),
             "min": min(vals) if vals else float("nan"),
             "max": max(vals) if vals else float("nan"),
         }
@@ -305,12 +313,14 @@ def print_section(title: str) -> None:
 
 
 def print_field_table(fields: Dict[str, Dict[str, float]]) -> None:
-    print("field                         n      p50      p95      p99      mean")
+    print("field                         n     mean      std      p50      p90      p95      p99      max")
     for f in sorted(fields.keys()):
         s = fields[f]
         print(
             f"{f:28s} {int(s['n']):6d} "
-            f"{s['p50']:8.3f} {s['p95']:8.3f} {s['p99']:8.3f} {s['mean']:8.3f}"
+            f"{s['mean']:8.3f} {s['std']:8.3f} "
+            f"{s['p50']:8.3f} {s['p90']:8.3f} "
+            f"{s['p95']:8.3f} {s['p99']:8.3f} {s['max']:8.3f}"
         )
 
 
@@ -352,12 +362,8 @@ def main() -> int:
             "metrics_schema_version": METRICS_SCHEMA_VERSION,
             "metric_windows": dict(METRIC_WINDOWS),
             "metric_thresholds_ms": {
-                "e2e_det_ms": float(METRIC_WARN_THRESHOLDS["e2e_det_ms"]),
-                "pub_dt_ms": float(METRIC_WARN_THRESHOLDS["pub_dt_ms"]),
-                "infer_ms": float(METRIC_WARN_THRESHOLDS["infer_ms"]),
-                "container_queue_ms": float(METRIC_WARN_THRESHOLDS["container_queue_ms"]),
-                "track_ms": float(METRIC_WARN_THRESHOLDS["track_ms"]),
-                "e2e_target_ms": float(METRIC_WARN_THRESHOLDS["e2e_target_ms"]),
+                field: float(value)
+                for field, value in METRIC_WARN_THRESHOLDS.items()
             },
         },
         "topics": {k: asdict(v) for k, v in topic_stats.items()},

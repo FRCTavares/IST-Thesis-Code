@@ -5,7 +5,10 @@ from __future__ import annotations
 import numpy as np
 
 from thesis_tracker.backends.deepsort_core_backend import CausalImageBuffer
-from thesis_tracker.nodes.tracker_node import _parse_frame_id
+from thesis_tracker.nodes.tracker_node import (
+    _parse_frame_id,
+    _parse_t_cam_msg_seen_ns,
+)
 
 
 def _image(value: int) -> np.ndarray:
@@ -63,9 +66,16 @@ def test_causal_buffer_is_bounded_by_timestamp_order():
 def test_tracker_parses_legacy_and_versioned_frame_ids():
     versioned = (
         "tim_mars_source_pixels_resize_v1;frame=42;source=640x480;"
-        "inference=640x640;scale=1,1.33333333;pad=0,0"
+        "inference=640x640;scale=1,1.33333333;pad=0,0;"
+        "t_cam_msg_seen_ns=123456789"
     )
 
     assert _parse_frame_id("frame_41") == 41
     assert _parse_frame_id(versioned) == 42
     assert _parse_frame_id("camera") == 0
+    assert _parse_t_cam_msg_seen_ns(versioned) == 123456789
+    assert _parse_t_cam_msg_seen_ns("frame_41") == 0
+    assert _parse_t_cam_msg_seen_ns(
+        "tim_mars_source_pixels_resize_v1;frame=42;"
+        "t_cam_msg_seen_ns=bad"
+    ) == 0

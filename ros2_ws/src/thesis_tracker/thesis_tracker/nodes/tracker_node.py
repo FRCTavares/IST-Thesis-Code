@@ -61,6 +61,18 @@ def _parse_frame_id(frame_id_str: str) -> int:
     return 0
 
 
+def _parse_t_cam_msg_seen_ns(frame_id_str: str) -> int:
+    """Parse causal camera-arrival timing from the versioned detection contract."""
+    try:
+        for field in frame_id_str.split(";"):
+            if field.startswith("t_cam_msg_seen_ns="):
+                value = int(field.split("=", 1)[1])
+                return value if value > 0 else 0
+    except Exception:
+        pass
+    return 0
+
+
 def _resolve_source_stamp_ns(context_stamp_ns: int, header: object) -> int:
     """Prefer timing context, falling back to the detection source header."""
     context_stamp_ns = int(context_stamp_ns)
@@ -172,7 +184,7 @@ class TrackerNode(Node):
         self.publish_tracks_requires_subscribers = bool(
             self.get_parameter("publish_tracks_requires_subscribers").value
         )
-        self.declare_parameter("publish_timing_topic", False)
+        self.declare_parameter("publish_timing_topic", True)
         self.publish_timing_topic = bool(self.get_parameter("publish_timing_topic").value)
 
         # Instrumentation controls
@@ -504,8 +516,12 @@ class TrackerNode(Node):
 
         # Convert tracks to ROS message
         src_stamp_ns, t_cam_msg_seen_ns = self.frame_context.pop(frame_id, (0, 0))
-        # /detections and /timing are separate subscriptions, so detections may
-        # arrive before timing context. Both carry the same source-image stamp.
+        # /detections and /timing are separate subscriptions and have no
+        # cross-topic delivery-order guarantee. The versioned detection contract
+        # therefore carries the causal camera-arrival monotonic timestamp so the
+        # tracker does not need to block waiting for /timing.
+        if t_cam_msg_seen_ns <= 0:
+            t_cam_msg_seen_ns = _parse_t_cam_msg_seen_ns(msg.header.frame_id)
         src_stamp_ns = _resolve_source_stamp_ns(src_stamp_ns, msg.header)
         queue_delay_ms = 0.0
         if t_cam_msg_seen_ns > 0:
@@ -612,11 +628,8 @@ class TrackerNode(Node):
         tmsg.t_track_cb_end_ns = int(t_track_cb_end_ns)
         tmsg.track_ms = float(tracker_update_ms)
 
-        # Structured detailed breakdown reuses explicit stage fields so downstream
-        # tooling can consume one timing stream without extra message types.
-        if self.profiling_publish_details:
-            tmsg.ros_wait_ms = float(queue_delay_ms)
-            # Keep detailed non-canonical profiling local to logs only.
+        # Detailed tracker profiling remains local to tracker_profile logs.
+        # /timing_tracker publishes only the canonical tracker timing fields.
 
         if self.publish_timing_topic:
             self.pub_timing.publish(tmsg)
