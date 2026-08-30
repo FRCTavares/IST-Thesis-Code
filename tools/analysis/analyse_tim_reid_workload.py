@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Analyse CPU ReID workload recorded in TIM-MARS status messages."""
+"""Analyse TIM-MARS ReID workload recorded in status messages."""
 
 from __future__ import annotations
 
@@ -13,10 +13,10 @@ from typing import Any, Sequence
 
 
 DEFAULT_TOPIC = "/target_memory_mars/status"
-SUMMARY_SCHEMA = "p044_cpu_reid_workload_summary_v2"
+SUMMARY_SCHEMA = "p032_tim_mars_reid_workload_summary_v3"
 
 REQUIRED_FIELDS = (
-    "lat_ms",
+    "tim_mars_processing_ms",
     "appearance_candidates",
     "appearance_features_valid",
     "appearance_encoding_eligible",
@@ -25,6 +25,11 @@ REQUIRED_FIELDS = (
     "appearance_backend_returned",
     "appearance_backend_valid",
     "appearance_backend_wall_ms",
+    "appearance_cache_lookups",
+    "appearance_cache_hits",
+    "appearance_cache_misses",
+    "appearance_cache_expired",
+    "appearance_cache_invalidated",
 )
 
 
@@ -68,7 +73,9 @@ def descriptive_stats(
         return {
             "n": 0,
             "mean": None,
+            "std": None,
             "p50": None,
+            "p90": None,
             "p95": None,
             "p99": None,
             "min": None,
@@ -78,7 +85,9 @@ def descriptive_stats(
     return {
         "n": len(cleaned),
         "mean": float(statistics.fmean(cleaned)),
+        "std": float(statistics.pstdev(cleaned)),
         "p50": percentile(cleaned, 0.50),
+        "p90": percentile(cleaned, 0.90),
         "p95": percentile(cleaned, 0.95),
         "p99": percentile(cleaned, 0.99),
         "min": float(min(cleaned)),
@@ -265,7 +274,7 @@ def analyse_records(
         wall_ms = float(
             payload["appearance_backend_wall_ms"]
         )
-        latency_ms = float(payload["lat_ms"])
+        processing_ms = float(payload["tim_mars_processing_ms"])
 
         calls.append(
             {
@@ -281,8 +290,8 @@ def analyse_records(
                     payload["appearance_backend_valid"]
                 ),
                 "wall_ms": wall_ms,
-                "latency_ms": latency_ms,
-                "callback_overhead_ms": latency_ms - wall_ms,
+                "processing_ms": processing_ms,
+                "non_backend_processing_ms": processing_ms - wall_ms,
                 "wall_ms_per_crop": (
                     wall_ms / requested
                     if requested > 0
@@ -301,20 +310,20 @@ def analyse_records(
         float(call["wall_ms"])
         for call in calls
     ]
-    latency_all = [
-        float(payload["lat_ms"])
+    processing_all = [
+        float(payload["tim_mars_processing_ms"])
         for _timestamp_ns, payload in ordered_records
     ]
-    latency_calls = [
-        float(payload["lat_ms"])
+    processing_calls = [
+        float(payload["tim_mars_processing_ms"])
         for payload in call_payloads
     ]
-    latency_non_calls = [
-        float(payload["lat_ms"])
+    processing_non_calls = [
+        float(payload["tim_mars_processing_ms"])
         for payload in non_call_payloads
     ]
-    callback_overhead = [
-        float(call["callback_overhead_ms"])
+    non_backend_processing = [
+        float(call["non_backend_processing_ms"])
         for call in calls
     ]
 
@@ -406,18 +415,38 @@ def analyse_records(
             int(payload["appearance_backend_valid"])
             for _timestamp_ns, payload in ordered_records
         ),
+        "appearance_cache_lookups": sum(
+            int(payload["appearance_cache_lookups"])
+            for _timestamp_ns, payload in ordered_records
+        ),
+        "appearance_cache_hits": sum(
+            int(payload["appearance_cache_hits"])
+            for _timestamp_ns, payload in ordered_records
+        ),
+        "appearance_cache_misses": sum(
+            int(payload["appearance_cache_misses"])
+            for _timestamp_ns, payload in ordered_records
+        ),
+        "appearance_cache_expired": sum(
+            int(payload["appearance_cache_expired"])
+            for _timestamp_ns, payload in ordered_records
+        ),
+        "appearance_cache_invalidated": sum(
+            int(payload["appearance_cache_invalidated"])
+            for _timestamp_ns, payload in ordered_records
+        ),
     }
 
     total_backend_wall_ms = sum(wall_all)
     steady_backend_wall_ms = sum(steady_wall)
 
-    latency_call_stats = descriptive_stats(latency_calls)
-    latency_non_call_stats = descriptive_stats(
-        latency_non_calls
+    processing_call_stats = descriptive_stats(processing_calls)
+    processing_non_call_stats = descriptive_stats(
+        processing_non_calls
     )
 
-    call_mean = latency_call_stats["mean"]
-    non_call_mean = latency_non_call_stats["mean"]
+    call_mean = processing_call_stats["mean"]
+    non_call_mean = processing_non_call_stats["mean"]
 
     displacement_mean_ms = (
         float(call_mean) - float(non_call_mean)
@@ -474,6 +503,17 @@ def analyse_records(
             if totals["appearance_backend_requested"] > 0
             else None
         ),
+        "valid_embeddings_per_second": (
+            totals["appearance_backend_valid"] / duration_s
+            if duration_s > 0.0
+            else None
+        ),
+        "cache_hit_rate": (
+            totals["appearance_cache_hits"]
+            / totals["appearance_cache_lookups"]
+            if totals["appearance_cache_lookups"] > 0
+            else None
+        ),
         "backend_wall_fraction_of_run_all": (
             (total_backend_wall_ms / 1000.0) / duration_s
             if duration_s > 0.0
@@ -496,9 +536,9 @@ def analyse_records(
             requested_counts,
             wall_all,
         ),
-        "backend_wall_vs_callback_latency": pearson(
+        "backend_wall_vs_tim_mars_processing": pearson(
             wall_all,
-            latency_calls,
+            processing_calls,
         ),
     }
 
@@ -524,6 +564,25 @@ def analyse_records(
             totals["appearance_backend_valid"]
             <= totals["appearance_backend_returned"]
         ),
+        "cache_accounting_identity_totals": (
+            totals["appearance_cache_lookups"]
+            == (
+                totals["appearance_cache_hits"]
+                + totals["appearance_cache_misses"]
+                + totals["appearance_cache_expired"]
+                + totals["appearance_cache_invalidated"]
+            )
+        ),
+        "cache_accounting_identity_all_records": all(
+            int(payload["appearance_cache_lookups"])
+            == (
+                int(payload["appearance_cache_hits"])
+                + int(payload["appearance_cache_misses"])
+                + int(payload["appearance_cache_expired"])
+                + int(payload["appearance_cache_invalidated"])
+            )
+            for _timestamp_ns, payload in ordered_records
+        ),
     }
 
     return {
@@ -543,19 +602,19 @@ def analyse_records(
         "total_backend_wall_ms_steady_state": (
             steady_backend_wall_ms
         ),
-        "tim_mars_latency_all_ms": descriptive_stats(
-            latency_all
+        "tim_mars_processing_all_ms": descriptive_stats(
+            processing_all
         ),
-        "tim_mars_latency_backend_call_ms": (
-            latency_call_stats
+        "tim_mars_processing_backend_call_ms": (
+            processing_call_stats
         ),
-        "tim_mars_latency_non_call_ms": (
-            latency_non_call_stats
+        "tim_mars_processing_non_call_ms": (
+            processing_non_call_stats
         ),
-        "callback_overhead_ms": descriptive_stats(
-            callback_overhead
+        "non_backend_processing_ms": descriptive_stats(
+            non_backend_processing
         ),
-        "callback_latency_displacement_mean_ms": (
+        "processing_displacement_mean_ms": (
             displacement_mean_ms
         ),
         "grouped_backend_wall_ms_by_requested_crops": (
@@ -610,7 +669,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     integrity = summary["integrity"]
 
     lines = [
-        "# TIM-MARS CPU ReID workload",
+        "# TIM-MARS ReID workload",
         "",
         f"- Run: `{summary['run_name']}`",
         f"- Commit: `{summary.get('git_commit')}`",
@@ -632,8 +691,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "",
             "## Backend timing",
             "",
-            "| Population | n | Mean | p50 | p95 | p99 | Max |",
-            "|---|---:|---:|---:|---:|---:|---:|",
+            "| Population | n | Mean | Std | p50 | p90 | p95 | p99 | Max |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
 
@@ -649,7 +708,9 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"| {label} "
             f"| {_format_value(values['n'])} "
             f"| {_format_value(values['mean'])} "
+            f"| {_format_value(values['std'])} "
             f"| {_format_value(values['p50'])} "
+            f"| {_format_value(values['p90'])} "
             f"| {_format_value(values['p95'])} "
             f"| {_format_value(values['p99'])} "
             f"| {_format_value(values['max'])} |"
@@ -658,29 +719,71 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-            "## Callback displacement",
+            "## Exact appearance-cache accounting",
             "",
             "| Metric | Value |",
             "|---|---:|",
             (
-                "| backend-call latency mean (ms) | "
-                f"{_format_value(summary['tim_mars_latency_backend_call_ms']['mean'])} |"
+                "| lookups | "
+                f"{totals['appearance_cache_lookups']} |"
             ),
             (
-                "| non-call latency mean (ms) | "
-                f"{_format_value(summary['tim_mars_latency_non_call_ms']['mean'])} |"
+                "| hits | "
+                f"{totals['appearance_cache_hits']} |"
             ),
             (
-                "| mean displacement (ms) | "
-                f"{_format_value(summary['callback_latency_displacement_mean_ms'])} |"
+                "| misses | "
+                f"{totals['appearance_cache_misses']} |"
             ),
             (
-                "| callback overhead mean (ms) | "
-                f"{_format_value(summary['callback_overhead_ms']['mean'])} |"
+                "| expired | "
+                f"{totals['appearance_cache_expired']} |"
             ),
             (
-                "| backend/callback correlation | "
-                f"{_format_value(summary['correlations']['backend_wall_vs_callback_latency'], digits=6)} |"
+                "| invalidated | "
+                f"{totals['appearance_cache_invalidated']} |"
+            ),
+            (
+                "| hit rate | "
+                f"{_format_value(ratios['cache_hit_rate'], digits=6)} |"
+            ),
+            (
+                "| accounting identity, totals | "
+                f"{_format_value(integrity['cache_accounting_identity_totals'])} |"
+            ),
+            (
+                "| accounting identity, every record | "
+                f"{_format_value(integrity['cache_accounting_identity_all_records'])} |"
+            ),
+        ]
+    )
+
+    lines.extend(
+        [
+            "",
+            "## TIM-MARS processing impact",
+            "",
+            "| Metric | Value |",
+            "|---|---:|",
+            (
+                "| backend-call processing mean (ms) | "
+                f"{_format_value(summary['tim_mars_processing_backend_call_ms']['mean'])} |"
+            ),
+            (
+                "| non-call processing mean (ms) | "
+                f"{_format_value(summary['tim_mars_processing_non_call_ms']['mean'])} |"
+            ),
+            (
+                "| mean processing displacement (ms) | "
+                f"{_format_value(summary['processing_displacement_mean_ms'])} |"
+            ),
+            (
+                "| non-backend processing mean (ms) | "
+                f"{_format_value(summary['non_backend_processing_ms']['mean'])} |"
+            ),
+            (
+                "| backend/processing correlation | "
+                f"{_format_value(summary['correlations']['backend_wall_vs_tim_mars_processing'], digits=6)} |"
             ),
             "",
             "## Derived load",
@@ -745,7 +848,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Analyse synchronous CPU ReID workload from "
+            "Analyse TIM-MARS ReID workload from "
             "/target_memory_mars/status."
         )
     )
@@ -848,6 +951,16 @@ def main() -> int:
     if not integrity["valid_not_greater_than_returned"]:
         raise SystemExit(
             "ERROR: valid embeddings exceed returned embeddings."
+        )
+
+    if not integrity["cache_accounting_identity_totals"]:
+        raise SystemExit(
+            "ERROR: aggregate cache accounting identity failed."
+        )
+
+    if not integrity["cache_accounting_identity_all_records"]:
+        raise SystemExit(
+            "ERROR: per-record cache accounting identity failed."
         )
 
     if (

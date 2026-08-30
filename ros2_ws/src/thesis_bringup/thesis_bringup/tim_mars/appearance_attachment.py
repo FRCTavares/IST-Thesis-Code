@@ -102,6 +102,17 @@ class AppearanceAttachmentState:
     last_bbox_by_track_id: dict[int, BBox] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class AppearanceCacheLookupDiagnostics:
+    """Exact classification of candidate cache lookups."""
+
+    lookups: int = 0
+    hits: int = 0
+    misses: int = 0
+    expired: int = 0
+    invalidated: int = 0
+
+
 @dataclass
 class AppearanceAttachmentDiagnostics:
     candidates: int = 0
@@ -109,6 +120,15 @@ class AppearanceAttachmentDiagnostics:
     image_age_ms: float | None = None
     skip_reason: str = "disabled"
     cache_size: int = 0
+
+    # Exact lookup-time cache telemetry. Freshly encoded candidates are
+    # excluded so a just-written embedding cannot be reported as reuse.
+    cache_lookups: int = 0
+    cache_hits: int = 0
+    cache_misses: int = 0
+    cache_expired: int = 0
+    cache_invalidated: int = 0
+
     warning: str | None = None
     embedding_age_ms_by_track_id: dict[int, float] = field(
         default_factory=dict
@@ -310,17 +330,24 @@ def _result_with_cached_features(
         AppearanceCropQuality,
     ] | None = None,
 ) -> AppearanceAttachmentResult:
-    enriched, valid, ages = attach_cached_appearance_features(
-        candidates=data.candidates,
-        state=state,
-        now_ns=data.now_ns,
-        cache_ttl_ms=config.cache_ttl_ms,
-        crop_quality_by_track_id=crop_quality_by_track_id,
+    enriched, valid, ages, cache_diagnostics = (
+        attach_cached_appearance_features(
+            candidates=data.candidates,
+            state=state,
+            now_ns=data.now_ns,
+            cache_ttl_ms=config.cache_ttl_ms,
+            crop_quality_by_track_id=crop_quality_by_track_id,
+        )
     )
 
     diagnostics.features_valid = valid
     diagnostics.cache_size = len(state.cache_by_track_id)
     diagnostics.embedding_age_ms_by_track_id = ages
+    diagnostics.cache_lookups = cache_diagnostics.lookups
+    diagnostics.cache_hits = cache_diagnostics.hits
+    diagnostics.cache_misses = cache_diagnostics.misses
+    diagnostics.cache_expired = cache_diagnostics.expired
+    diagnostics.cache_invalidated = cache_diagnostics.invalidated
 
     if crop_quality_by_track_id is not None:
         diagnostics.crop_quality_by_track_id = dict(
@@ -718,14 +745,19 @@ def attach_appearance_features(
             data.now_ns
         )
 
-    enriched, _, ages = attach_cached_appearance_features(
-        candidates=data.candidates,
-        state=state,
-        now_ns=data.now_ns,
-        cache_ttl_ms=config.cache_ttl_ms,
-        crop_quality_by_track_id=(
-            crop_quality_by_track_id
-        ),
+    enriched, _, ages, cache_diagnostics = (
+        attach_cached_appearance_features(
+            candidates=data.candidates,
+            state=state,
+            now_ns=data.now_ns,
+            cache_ttl_ms=config.cache_ttl_ms,
+            crop_quality_by_track_id=(
+                crop_quality_by_track_id
+            ),
+            telemetry_excluded_track_ids=frozenset(
+                fresh_appearance_by_track_id
+            ),
+        )
     )
 
     final_candidates: list[CandidateTrack] = []
@@ -761,6 +793,11 @@ def attach_appearance_features(
         state.cache_by_track_id
     )
     diagnostics.embedding_age_ms_by_track_id = ages
+    diagnostics.cache_lookups = cache_diagnostics.lookups
+    diagnostics.cache_hits = cache_diagnostics.hits
+    diagnostics.cache_misses = cache_diagnostics.misses
+    diagnostics.cache_expired = cache_diagnostics.expired
+    diagnostics.cache_invalidated = cache_diagnostics.invalidated
 
     return AppearanceAttachmentResult(
         final_candidates,
@@ -779,14 +816,22 @@ def attach_cached_appearance_features(
         int,
         AppearanceCropQuality,
     ] | None = None,
+    telemetry_excluded_track_ids: frozenset[int] = frozenset(),
 ) -> tuple[
     list[CandidateTrack],
     int,
     dict[int, float],
+    AppearanceCacheLookupDiagnostics,
 ]:
     enriched: list[CandidateTrack] = []
     valid_features = 0
     embedding_ages: dict[int, float] = {}
+
+    cache_lookups = 0
+    cache_hits = 0
+    cache_misses = 0
+    cache_expired = 0
+    cache_invalidated = 0
 
     active_track_ids = {
         int(candidate.track_id)
@@ -810,6 +855,12 @@ def attach_cached_appearance_features(
 
     for candidate in candidates:
         track_id = int(candidate.track_id)
+        count_for_telemetry = (
+            track_id not in telemetry_excluded_track_ids
+        )
+        if count_for_telemetry:
+            cache_lookups += 1
+
         cached = state.cache_by_track_id.get(
             track_id
         )
@@ -870,6 +921,19 @@ def attach_cached_appearance_features(
 
                 if cache_valid:
                     appearance = cached
+
+        if count_for_telemetry:
+            if cached is None:
+                cache_misses += 1
+            elif cache_valid:
+                cache_hits += 1
+            elif (
+                cache_age_ms is not None
+                and cache_age_ms > float(cache_ttl_ms)
+            ):
+                cache_expired += 1
+            else:
+                cache_invalidated += 1
 
         if cache_valid and cache_age_ms is not None:
             valid_features += 1
@@ -955,4 +1019,11 @@ def attach_cached_appearance_features(
         enriched,
         valid_features,
         embedding_ages,
+        AppearanceCacheLookupDiagnostics(
+            lookups=cache_lookups,
+            hits=cache_hits,
+            misses=cache_misses,
+            expired=cache_expired,
+            invalidated=cache_invalidated,
+        ),
     )

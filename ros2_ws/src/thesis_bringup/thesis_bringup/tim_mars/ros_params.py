@@ -28,6 +28,7 @@ class TimMarsRosParams:
 
     tracks_topic: str
     target_topic: str
+    timing_target_topic: str
     status_topic: str
     select_topic: str
     clear_topic: str
@@ -76,6 +77,7 @@ def declare_tim_mars_parameters(node: Any) -> None:
     # ROS topic wiring.
     node.declare_parameter("tracks_topic", "/tracks")
     node.declare_parameter("target_topic", "/target_memory_mars")
+    node.declare_parameter("timing_target_topic", "/timing_target")
     node.declare_parameter("status_topic", "/target_memory_mars/status")
     node.declare_parameter("select_topic", "/target_memory_mars/select")
     node.declare_parameter("clear_topic", "/target_memory_mars/clear")
@@ -311,6 +313,7 @@ def read_tim_mars_ros_params(node: Any) -> TimMarsRosParams:
     return TimMarsRosParams(
         tracks_topic=str(node.get_parameter("tracks_topic").value),
         target_topic=str(node.get_parameter("target_topic").value),
+        timing_target_topic=str(node.get_parameter("timing_target_topic").value),
         status_topic=str(node.get_parameter("status_topic").value),
         select_topic=str(node.get_parameter("select_topic").value),
         clear_topic=str(node.get_parameter("clear_topic").value),

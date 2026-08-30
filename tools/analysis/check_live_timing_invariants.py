@@ -48,28 +48,17 @@ NS_FIELDS = [
     "t_cam_msg_seen_ns",
     "t_pre_start_ns",
     "t_pre_end_ns",
-    "t_zmq_send_start_ns",
-    "t_zmq_send_end_ns",
-    "t_zmq_recv_start_ns",
-    "t_zmq_recv_end_ns",
-    "t_decode_start_ns",
-    "t_decode_end_ns",
-    "t_det_pub_start_ns",
-    "t_det_pub_end_ns",
-    "t_req_recv_ns",
-    "t_frame_unpack_start_ns",
-    "t_frame_unpack_end_ns",
     "t_infer_start_ns",
     "t_infer_end_ns",
     "t_post_start_ns",
     "t_post_end_ns",
-    "t_reply_send_ns",
+    "t_det_pub_start_ns",
+    "t_det_pub_end_ns",
     "t_track_cb_start_ns",
     "t_track_cb_end_ns",
     "t_target_cb_start_ns",
-    "t_target_cb_end_ns",
-    "pts_ns",
-    "t_pub_ns",
+    "t_target_process_end_ns",
+    "t_target_pub_end_ns",
 ]
 
 @dataclass
@@ -215,10 +204,37 @@ class TimingInvariantNode(Node):
                 f"{topic}: " + ", ".join(f"{f}={v}" for f, v in zip(fields, vals)),
             )
 
+    def _check_metric_matches_delta(
+        self,
+        topic: str,
+        name: str,
+        metric_value: float,
+        start_ns: int,
+        end_ns: int,
+    ) -> None:
+        """Check one derived millisecond metric against its timestamp delta."""
+        if start_ns <= 0 or end_ns <= 0:
+            return
+
+        expected_ms = float(end_ns - start_ns) / 1e6
+        tolerance_ms = 0.1
+
+        self.inv.check(
+            name,
+            math.isfinite(metric_value)
+            and abs(metric_value - expected_ms) <= tolerance_ms,
+            (
+                f"{topic}: metric_ms={_fmt_val(metric_value)} "
+                f"expected_ms={_fmt_val(expected_ms)} "
+                f"abs_delta_ms={_fmt_val(abs(metric_value - expected_ms))}"
+            ),
+        )
+
     def _on_timing(self, msg: Timing) -> None:
         topic = "/timing"
         self.counts[topic] += 1
         self.frame_seen[topic].add(int(msg.frame_id))
+
         if float(msg.e2e_det_ms) > 0.0 and int(msg.frame_id) > 0:
             self.e2e_det_by_frame[int(msg.frame_id)] = float(msg.e2e_det_ms)
 
@@ -226,80 +242,109 @@ class TimingInvariantNode(Node):
 
         self._check_order_chain(
             topic,
-            "B.host_chain.cam_pre",
-            ["t_cam_msg_seen_ns", "t_pre_start_ns", "t_pre_end_ns"],
-            msg,
-        )
-        self._check_order_chain(
-            topic,
-            "B.host_chain.pre_send",
-            ["t_pre_end_ns", "t_zmq_send_start_ns", "t_zmq_send_end_ns"],
-            msg,
-        )
-        self._check_order_chain(
-            topic,
-            "B.host_chain.send_recv",
-            ["t_zmq_send_end_ns", "t_zmq_recv_start_ns", "t_zmq_recv_end_ns"],
-            msg,
-        )
-        self._check_order_chain(
-            topic,
-            "B.host_chain.recv_decode",
-            ["t_zmq_recv_end_ns", "t_decode_start_ns", "t_decode_end_ns"],
-            msg,
-        )
-        self._check_order_chain(
-            topic,
-            "B.host_chain.decode_pub",
-            ["t_decode_end_ns", "t_det_pub_start_ns", "t_det_pub_end_ns"],
+            "B.direct_hailo_chain",
+            [
+                "t_cam_msg_seen_ns",
+                "t_pre_start_ns",
+                "t_pre_end_ns",
+                "t_infer_start_ns",
+                "t_infer_end_ns",
+                "t_post_start_ns",
+                "t_post_end_ns",
+                "t_det_pub_start_ns",
+                "t_det_pub_end_ns",
+            ],
             msg,
         )
 
-        if _is_populated_number(float(msg.e2e_det_ms)) and _is_populated_number(float(msg.infer_ms)):
+        self._check_metric_matches_delta(
+            topic,
+            "B.ros_wait_matches_timestamps",
+            float(msg.ros_wait_ms),
+            int(msg.t_cam_msg_seen_ns),
+            int(msg.t_pre_start_ns),
+        )
+        self._check_metric_matches_delta(
+            topic,
+            "B.pre_matches_timestamps",
+            float(msg.pre_ms),
+            int(msg.t_pre_start_ns),
+            int(msg.t_pre_end_ns),
+        )
+        self._check_metric_matches_delta(
+            topic,
+            "B.pre_infer_wait_matches_timestamps",
+            float(msg.pre_infer_wait_ms),
+            int(msg.t_pre_end_ns),
+            int(msg.t_infer_start_ns),
+        )
+        self._check_metric_matches_delta(
+            topic,
+            "B.infer_matches_timestamps",
+            float(msg.infer_ms),
+            int(msg.t_infer_start_ns),
+            int(msg.t_infer_end_ns),
+        )
+        self._check_metric_matches_delta(
+            topic,
+            "B.post_matches_timestamps",
+            float(msg.post_ms),
+            int(msg.t_post_start_ns),
+            int(msg.t_post_end_ns),
+        )
+        self._check_metric_matches_delta(
+            topic,
+            "B.det_pub_matches_timestamps",
+            float(msg.det_pub_ms),
+            int(msg.t_det_pub_start_ns),
+            int(msg.t_det_pub_end_ns),
+        )
+        self._check_metric_matches_delta(
+            topic,
+            "B.e2e_det_matches_timestamps",
+            float(msg.e2e_det_ms),
+            int(msg.t_cam_msg_seen_ns),
+            int(msg.t_det_pub_end_ns),
+        )
+
+        if (
+            _is_populated_number(float(msg.e2e_det_ms))
+            and _is_populated_number(float(msg.infer_ms))
+        ):
             self.inv.check(
                 "B.e2e_det_ge_infer",
                 float(msg.e2e_det_ms) >= float(msg.infer_ms),
-                f"{topic}: e2e_det_ms={_fmt_val(float(msg.e2e_det_ms))}, infer_ms={_fmt_val(float(msg.infer_ms))}",
+                (
+                    f"{topic}: e2e_det_ms="
+                    f"{_fmt_val(float(msg.e2e_det_ms))}, "
+                    f"infer_ms={_fmt_val(float(msg.infer_ms))}"
+                ),
             )
 
-        if _is_populated_number(float(msg.pub_dt_ms)) and self._det_out_fps_latest is not None and self._det_out_fps_latest > 0.0:
+        if (
+            _is_populated_number(float(msg.pub_dt_ms))
+            and self._det_out_fps_latest is not None
+            and self._det_out_fps_latest > 0.0
+        ):
             pub_dt_ms = float(msg.pub_dt_ms)
             expected_ms = 1000.0 / float(self._det_out_fps_latest)
-            rel_delta = abs(pub_dt_ms - expected_ms) / max(expected_ms, 1e-9)
+            rel_delta = (
+                abs(pub_dt_ms - expected_ms)
+                / max(expected_ms, 1e-9)
+            )
+
             self.inv.check(
                 "B.pub_dt_vs_det_out_fps_consistent",
                 rel_delta <= FPS_INTERVAL_RELATIVE_DELTA_MAX,
                 (
-                    f"{topic}: pub_dt_ms={_fmt_val(pub_dt_ms)} expected_from_det_out_fps_ms={_fmt_val(expected_ms)} "
-                    f"det_out_fps={_fmt_val(self._det_out_fps_latest)} rel_delta={_fmt_val(rel_delta)}"
+                    f"{topic}: pub_dt_ms={_fmt_val(pub_dt_ms)} "
+                    f"expected_from_det_out_fps_ms="
+                    f"{_fmt_val(expected_ms)} "
+                    f"det_out_fps="
+                    f"{_fmt_val(self._det_out_fps_latest)} "
+                    f"rel_delta={_fmt_val(rel_delta)}"
                 ),
             )
-
-        self._check_order_chain(
-            topic,
-            "C.container_chain.req_unpack",
-            ["t_req_recv_ns", "t_frame_unpack_start_ns", "t_frame_unpack_end_ns"],
-            msg,
-        )
-        self._check_order_chain(
-            topic,
-            "C.container_chain.unpack_infer",
-            ["t_frame_unpack_end_ns", "t_infer_start_ns", "t_infer_end_ns"],
-            msg,
-        )
-        self._check_order_chain(
-            topic,
-            "C.container_chain.infer_post",
-            ["t_infer_end_ns", "t_post_start_ns", "t_post_end_ns"],
-            msg,
-        )
-        self._check_order_pair(
-            topic,
-            "C.container_pair.post_reply",
-            int(msg.t_post_end_ns),
-            int(msg.t_reply_send_ns),
-            "t_post_end_ns<=t_reply_send_ns",
-        )
 
     def _on_timing_tracker(self, msg: Timing) -> None:
         topic = "/timing_tracker"
@@ -307,6 +352,7 @@ class TimingInvariantNode(Node):
         self.frame_seen[topic].add(int(msg.frame_id))
 
         self._check_basic_sanity(topic, msg)
+
         self._check_order_pair(
             topic,
             "D.tracker_order",
@@ -314,11 +360,31 @@ class TimingInvariantNode(Node):
             int(msg.t_track_cb_end_ns),
             "t_track_cb_start_ns<=t_track_cb_end_ns",
         )
+
         if _is_populated_number(float(msg.track_ms)):
             self.inv.check(
                 "D.track_ms_non_negative",
                 float(msg.track_ms) >= 0.0,
                 f"{topic}: track_ms={_fmt_val(float(msg.track_ms))}",
+            )
+
+        if (
+            int(msg.t_track_cb_start_ns) > 0
+            and int(msg.t_track_cb_end_ns) > 0
+        ):
+            callback_ms = (
+                int(msg.t_track_cb_end_ns)
+                - int(msg.t_track_cb_start_ns)
+            ) / 1e6
+
+            self.inv.check(
+                "D.track_compute_le_callback",
+                float(msg.track_ms) <= callback_ms + 0.1,
+                (
+                    f"{topic}: track_ms="
+                    f"{_fmt_val(float(msg.track_ms))} "
+                    f"callback_ms={_fmt_val(callback_ms)}"
+                ),
             )
 
     def _on_timing_target(self, msg: Timing) -> None:
@@ -327,36 +393,78 @@ class TimingInvariantNode(Node):
         self.frame_seen[topic].add(int(msg.frame_id))
 
         self._check_basic_sanity(topic, msg)
-        self._check_order_pair(
+
+        self._check_order_chain(
             topic,
-            "E.target_order",
-            int(msg.t_target_cb_start_ns),
-            int(msg.t_target_cb_end_ns),
-            "t_target_cb_start_ns<=t_target_cb_end_ns",
+            "E.validated_target_chain",
+            [
+                "t_target_cb_start_ns",
+                "t_target_process_end_ns",
+                "t_target_pub_end_ns",
+            ],
+            msg,
         )
 
-        if _is_populated_number(float(msg.target_ms)):
+        self._check_metric_matches_delta(
+            topic,
+            "E.tim_mars_processing_matches_timestamps",
+            float(msg.tim_mars_processing_ms),
+            int(msg.t_target_cb_start_ns),
+            int(msg.t_target_process_end_ns),
+        )
+
+        if _is_populated_number(float(msg.tim_mars_processing_ms)):
             self.inv.check(
-                "E.target_ms_non_negative",
-                float(msg.target_ms) >= 0.0,
-                f"{topic}: target_ms={_fmt_val(float(msg.target_ms))}",
+                "E.tim_mars_processing_non_negative",
+                float(msg.tim_mars_processing_ms) >= 0.0,
+                (
+                    f"{topic}: tim_mars_processing_ms="
+                    f"{_fmt_val(float(msg.tim_mars_processing_ms))}"
+                ),
             )
 
-        if _is_populated_number(float(msg.e2e_target_ms)):
+        if _is_populated_number(
+            float(msg.e2e_validated_target_ms)
+        ):
             self.inv.check(
-                "E.e2e_target_ms_non_negative",
-                float(msg.e2e_target_ms) >= 0.0,
-                f"{topic}: e2e_target_ms={_fmt_val(float(msg.e2e_target_ms))}",
+                "E.e2e_validated_target_non_negative",
+                float(msg.e2e_validated_target_ms) >= 0.0,
+                (
+                    f"{topic}: e2e_validated_target_ms="
+                    f"{_fmt_val(float(msg.e2e_validated_target_ms))}"
+                ),
+            )
+
+            self._check_metric_matches_delta(
+                topic,
+                "E.e2e_validated_target_matches_timestamps",
+                float(msg.e2e_validated_target_ms),
+                int(msg.t_cam_msg_seen_ns),
+                int(msg.t_target_pub_end_ns),
             )
 
         fid = int(msg.frame_id)
-        if fid > 0 and _is_populated_number(float(msg.e2e_target_ms)) and fid in self.e2e_det_by_frame:
+        if (
+            fid > 0
+            and _is_populated_number(
+                float(msg.e2e_validated_target_ms)
+            )
+            and fid in self.e2e_det_by_frame
+        ):
             det_ms = float(self.e2e_det_by_frame[fid])
-            tgt_ms = float(msg.e2e_target_ms)
+            validated_target_ms = float(
+                msg.e2e_validated_target_ms
+            )
+
             self.inv.check(
-                "E.e2e_target_ge_e2e_det",
-                tgt_ms >= det_ms,
-                f"frame_id={fid}: e2e_target_ms={_fmt_val(tgt_ms)}, e2e_det_ms={_fmt_val(det_ms)}",
+                "E.e2e_validated_target_ge_e2e_det",
+                validated_target_ms >= det_ms,
+                (
+                    f"frame_id={fid}: "
+                    f"e2e_validated_target_ms="
+                    f"{_fmt_val(validated_target_ms)}, "
+                    f"e2e_det_ms={_fmt_val(det_ms)}"
+                ),
             )
 
     def has_one_each(self) -> bool:

@@ -4,11 +4,9 @@ Offline bag timing analysis for thesis ROS 2 slice.
 
 Reads a rosbag2 directory (MCAP expected) and:
 - Defines base window as [first /timing msg, last /timing msg] using bag timestamps.
-- Computes stats for canonical /timing fields:
-    mean, p50, p95, p99, min, max for:
-        pre_ms, container_queue_ms, zmq_roundtrip_ms, infer_ms, e2e_det_ms, pub_dt_ms
-    where legacy alias fallback is compatibility-only and deprecated:
-        e2e_det_ms <- lat_ms, zmq_roundtrip_ms <- recv_ms
+- Computes schema-v4 stats for the canonical direct-Hailo /timing fields:
+    mean, std, p50, p90, p95, p99, min, max.
+- Historical Timing layouts are intentionally not interpreted through schema v4.
 - Computes achieved Hz for topics using counts within the base window.
 - Computes "active-only" window by excluding restart gaps using pub_dt_ms threshold:
     keep samples with pub_dt_ms <= gap-ms
@@ -33,6 +31,7 @@ import argparse
 import math
 import os
 from pathlib import Path
+import statistics
 import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
@@ -45,7 +44,7 @@ from tools.timing_contract import (  # noqa: E402
     METRICS_SCHEMA_VERSION,
     METRIC_WARN_THRESHOLDS,
     METRIC_WINDOWS,
-    candidates_for,
+    topic_fields,
 )
 
 
@@ -70,7 +69,9 @@ def _percentile(sorted_vals: List[float], q: float) -> float:
 @dataclass
 class FieldStats:
     mean: float
+    std: float
     p50: float
+    p90: float
     p95: float
     p99: float
     vmin: float
@@ -81,12 +82,24 @@ class FieldStats:
 def _compute_stats(vals: List[float]) -> FieldStats:
     if not vals:
         nan = float("nan")
-        return FieldStats(nan, nan, nan, nan, nan, nan, 0)
+        return FieldStats(
+            mean=nan,
+            std=nan,
+            p50=nan,
+            p90=nan,
+            p95=nan,
+            p99=nan,
+            vmin=nan,
+            vmax=nan,
+            n=0,
+        )
+
     s = sorted(vals)
-    mean = sum(s) / len(s)
     return FieldStats(
-        mean=mean,
+        mean=sum(s) / len(s),
+        std=statistics.pstdev(s),
         p50=_percentile(s, 50.0),
+        p90=_percentile(s, 90.0),
         p95=_percentile(s, 95.0),
         p99=_percentile(s, 99.0),
         vmin=s[0],
@@ -147,12 +160,8 @@ def _read_bag_timing_and_counts(
     timing_msg_type = get_message(type_map[timing_topic])
 
     field_candidates: Dict[str, List[str]] = {
-        "pre_ms": candidates_for("pre_ms"),
-        "container_queue_ms": candidates_for("container_queue_ms"),
-        "zmq_roundtrip_ms": candidates_for("zmq_roundtrip_ms"),
-        "infer_ms": candidates_for("infer_ms"),
-        "e2e_det_ms": candidates_for("e2e_det_ms"),
-        "pub_dt_ms": candidates_for("pub_dt_ms"),
+        field: [field]
+        for field in topic_fields("/timing")
     }
     timing_vals: Dict[str, List[float]] = {k: [] for k in field_candidates}
     timing_ts_ns: List[int] = []
@@ -373,7 +382,15 @@ def _write_markdown(
     gap_removed_s: Optional[float] = None,
 ):
     DEFAULT_STATS = FieldStats(
-        float("nan"), float("nan"), float("nan"), float("nan"), float("nan"), float("nan"), 0
+        mean=float("nan"),
+        std=float("nan"),
+        p50=float("nan"),
+        p90=float("nan"),
+        p95=float("nan"),
+        p99=float("nan"),
+        vmin=float("nan"),
+        vmax=float("nan"),
+        n=0,
     )
 
     base_duration_s = (base_end_ns - base_start_ns) * 1e-9
@@ -388,8 +405,7 @@ def _write_markdown(
     lines.append(f"Contract schema: `v{METRICS_SCHEMA_VERSION}`\n")
     lines.append(f"- metric_windows: `{METRIC_WINDOWS}`\n")
     lines.append(
-        "- metric_thresholds_ms: "
-        f"`{{'e2e_det_ms': {METRIC_WARN_THRESHOLDS['e2e_det_ms']}, 'pub_dt_ms': {METRIC_WARN_THRESHOLDS['pub_dt_ms']}, 'infer_ms': {METRIC_WARN_THRESHOLDS['infer_ms']}, 'container_queue_ms': {METRIC_WARN_THRESHOLDS['container_queue_ms']}, 'track_ms': {METRIC_WARN_THRESHOLDS['track_ms']}, 'e2e_target_ms': {METRIC_WARN_THRESHOLDS['e2e_target_ms']}}}`\n"
+        f"- metric_thresholds_ms: `{dict(METRIC_WARN_THRESHOLDS)}`\n"
     )
     lines.append("Base window: first to last `/timing` message (bag timestamps)\n")
     lines.append(f"- start_ns: `{base_start_ns}`\n")
@@ -397,12 +413,14 @@ def _write_markdown(
     lines.append(f"- duration_s: `{_fmt(base_duration_s)}`\n")
 
     lines.append("## Per-field stats (/timing)\n")
-    lines.append("| field | n | mean | p50 | p95 | p99 | min | max |\n")
-    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|\n")
-    for field in ["pre_ms", "container_queue_ms", "zmq_roundtrip_ms", "infer_ms", "e2e_det_ms", "pub_dt_ms"]:
+    lines.append("| field | n | mean | std | p50 | p90 | p95 | p99 | min | max |\n")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n")
+    for field in topic_fields("/timing"):
         st = timing_stats.get(field, DEFAULT_STATS)
         lines.append(
-            f"| {field} | {st.n} | {_fmt(st.mean)} | {_fmt(st.p50)} | {_fmt(st.p95)} | {_fmt(st.p99)} | {_fmt(st.vmin)} | {_fmt(st.vmax)} |\n"
+            f"| {field} | {st.n} | {_fmt(st.mean)} | {_fmt(st.std)} | "
+            f"{_fmt(st.p50)} | {_fmt(st.p90)} | {_fmt(st.p95)} | "
+            f"{_fmt(st.p99)} | {_fmt(st.vmin)} | {_fmt(st.vmax)} |\n"
         )
 
     lines.append("\n## Achieved Hz (counts over base window)\n")
@@ -443,12 +461,14 @@ def _write_markdown(
             pass
 
         lines.append("\n### Per-field stats (/timing), active-only\n")
-        lines.append("| field | n | mean | p50 | p95 | p99 | min | max |\n")
-        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|\n")
-        for field in ["pre_ms", "container_queue_ms", "zmq_roundtrip_ms", "infer_ms", "e2e_det_ms", "pub_dt_ms"]:
+        lines.append("| field | n | mean | std | p50 | p90 | p95 | p99 | min | max |\n")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n")
+        for field in topic_fields("/timing"):
             st = timing_stats_active.get(field, DEFAULT_STATS)
             lines.append(
-                f"| {field} | {st.n} | {_fmt(st.mean)} | {_fmt(st.p50)} | {_fmt(st.p95)} | {_fmt(st.p99)} | {_fmt(st.vmin)} | {_fmt(st.vmax)} |\n"
+                f"| {field} | {st.n} | {_fmt(st.mean)} | {_fmt(st.std)} | "
+                f"{_fmt(st.p50)} | {_fmt(st.p90)} | {_fmt(st.p95)} | "
+                f"{_fmt(st.p99)} | {_fmt(st.vmin)} | {_fmt(st.vmax)} |\n"
             )
 
         lines.append("\n### Achieved Hz (active-only window)\n")
@@ -468,7 +488,9 @@ def _write_markdown(
         lines.append("|---|---:|\n")
         lines.append(f"| n | {tracker_stats.n} |\n")
         lines.append(f"| mean (ms) | {_fmt(tracker_stats.mean)} |\n")
+        lines.append(f"| std (ms) | {_fmt(tracker_stats.std)} |\n")
         lines.append(f"| p50 (ms) | {_fmt(tracker_stats.p50)} |\n")
+        lines.append(f"| p90 (ms) | {_fmt(tracker_stats.p90)} |\n")
         lines.append(f"| p95 (ms) | {_fmt(tracker_stats.p95)} |\n")
         lines.append(f"| p99 (ms) | {_fmt(tracker_stats.p99)} |\n")
         lines.append(f"| max (ms) | {_fmt(tracker_stats.vmax)} |\n")
@@ -478,12 +500,17 @@ def _write_markdown(
     if target_stats is not None:
         lines.append("\n## Target end-to-end runtime\n")
         if timing_target_topic:
-            lines.append(f"Topic: `{timing_target_topic}` (field: `e2e_target_ms`)\n")
+            lines.append(
+                f"Topic: `{timing_target_topic}` "
+                "(field: `e2e_validated_target_ms`)\n"
+            )
         lines.append("| metric | value |\n")
         lines.append("|---|---:|\n")
         lines.append(f"| n | {target_stats.n} |\n")
         lines.append(f"| mean (ms) | {_fmt(target_stats.mean)} |\n")
+        lines.append(f"| std (ms) | {_fmt(target_stats.std)} |\n")
         lines.append(f"| p50 (ms) | {_fmt(target_stats.p50)} |\n")
+        lines.append(f"| p90 (ms) | {_fmt(target_stats.p90)} |\n")
         lines.append(f"| p95 (ms) | {_fmt(target_stats.p95)} |\n")
         lines.append(f"| p99 (ms) | {_fmt(target_stats.p99)} |\n")
         lines.append(f"| max (ms) | {_fmt(target_stats.vmax)} |\n")
@@ -516,7 +543,10 @@ def main():
     ap.add_argument(
         "--timing-target-topic",
         default="/timing_target",
-        help="Topic publishing target timing Timing messages (e2e_target_ms).",
+        help=(
+            "Topic publishing validated TIM-MARS target timing messages "
+            "(e2e_validated_target_ms)."
+        ),
     )
     ap.add_argument("--plot-timeseries", action="store_true", help="Also save pub_dt_ms time series plot")
     ap.add_argument(
@@ -639,7 +669,7 @@ def main():
     target_e2e_vals, _target_ts = _read_metric_in_segments(
         bag_dir=bag_dir,
         topic_name=args.timing_target_topic,
-        field_name="e2e_target_ms",
+        field_name="e2e_validated_target_ms",
         segments_ns=active_segments_ns if active_segments_ns else [],
         type_map=type_map,
         storage_id="",

@@ -791,7 +791,6 @@ if [[ "$ENABLE_TRACKER" -eq 1 ]]; then
 fi
 
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
-    DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL="false"
     DASHBOARD_RUNTIME_RECONFIGURATION_BOOL="false"
 
     start_ros_bg dashboard_bridge ros2 run thesis_bringup dashboard_bridge_node --ros-args \
@@ -799,7 +798,6 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         -p img_h:=640 \
         -p camera_ref_w:=$CAMERA_WIDTH \
         -p camera_ref_h:=$CAMERA_HEIGHT \
-        -p enable_container_model_switch_api:=$DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL \
         -p runtime_reconfiguration_enabled:=$DASHBOARD_RUNTIME_RECONFIGURATION_BOOL \
         -p target_authority_event_log_path:="$TARGET_AUTHORITY_EVENT_LOG" \
         -p validated_target_topic:=/target_memory_mars \
@@ -820,7 +818,6 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         "img_h=640"
         "camera_ref_w=$CAMERA_WIDTH"
         "camera_ref_h=$CAMERA_HEIGHT"
-        "enable_container_model_switch_api=$DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL"
         "runtime_reconfiguration_enabled=$DASHBOARD_RUNTIME_RECONFIGURATION_BOOL"
         "validated_target_topic=/target_memory_mars"
         "target_select_topic=/target_memory_mars/select"

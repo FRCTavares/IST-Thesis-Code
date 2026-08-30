@@ -106,6 +106,17 @@ def test_no_image_attaches_valid_cached_features():
     assert result.diagnostics.features_valid == 1
     assert result.candidates[0].appearance == "feat-1"
     assert result.candidates[1].appearance is None
+    assert result.diagnostics.cache_lookups == 2
+    assert result.diagnostics.cache_hits == 1
+    assert result.diagnostics.cache_misses == 1
+    assert result.diagnostics.cache_expired == 0
+    assert result.diagnostics.cache_invalidated == 0
+    assert result.diagnostics.cache_lookups == (
+        result.diagnostics.cache_hits
+        + result.diagnostics.cache_misses
+        + result.diagnostics.cache_expired
+        + result.diagnostics.cache_invalidated
+    )
 
 
 def test_stale_image_uses_cache_and_reports_age():
@@ -158,6 +169,20 @@ def test_successful_mars_encode_updates_cache_and_attaches_features():
     assert result.diagnostics.skip_reason == "ok"
     assert result.diagnostics.features_valid == 2
     assert result.diagnostics.cache_size == 2
+
+    # Tracks 1 and 3 received fresh embeddings. They must not be counted
+    # as cache reuse merely because the fresh embeddings were just written.
+    assert result.diagnostics.cache_lookups == 1
+    assert result.diagnostics.cache_hits == 0
+    assert result.diagnostics.cache_misses == 1
+    assert result.diagnostics.cache_expired == 0
+    assert result.diagnostics.cache_invalidated == 0
+    assert result.diagnostics.cache_lookups == (
+        result.diagnostics.cache_hits
+        + result.diagnostics.cache_misses
+        + result.diagnostics.cache_expired
+        + result.diagnostics.cache_invalidated
+    )
     assert result.candidates[0].appearance == "feat-1"
     assert result.candidates[1].appearance is None
     assert result.candidates[2].appearance == "feat-3"
@@ -267,6 +292,17 @@ def test_same_image_uses_cache_without_reencoding():
     assert result.diagnostics.skip_reason == "cached_same_image"
     assert result.candidates[0].appearance == "cached-feat"
     assert backend.calls == []
+    assert result.diagnostics.cache_lookups == 1
+    assert result.diagnostics.cache_hits == 1
+    assert result.diagnostics.cache_misses == 0
+    assert result.diagnostics.cache_expired == 0
+    assert result.diagnostics.cache_invalidated == 0
+    assert result.diagnostics.cache_lookups == (
+        result.diagnostics.cache_hits
+        + result.diagnostics.cache_misses
+        + result.diagnostics.cache_expired
+        + result.diagnostics.cache_invalidated
+    )
 
 
 def test_compute_interval_uses_cache_without_reencoding():
@@ -328,6 +364,47 @@ def test_expired_cache_is_removed():
     assert result.candidates[0].appearance is None
     assert state.cache_by_track_id == {}
     assert state.cache_seen_ns == {}
+    assert result.diagnostics.cache_lookups == 1
+    assert result.diagnostics.cache_hits == 0
+    assert result.diagnostics.cache_misses == 0
+    assert result.diagnostics.cache_expired == 1
+    assert result.diagnostics.cache_invalidated == 0
+    assert result.diagnostics.cache_lookups == (
+        result.diagnostics.cache_hits
+        + result.diagnostics.cache_misses
+        + result.diagnostics.cache_expired
+        + result.diagnostics.cache_invalidated
+    )
+
+
+def test_cache_without_valid_age_metadata_is_invalidated():
+    state = AppearanceAttachmentState(
+        cache_by_track_id={1: "legacy-feature"},
+    )
+
+    result = attach_appearance_features(
+        config=cfg(),
+        state=state,
+        data=data(
+            [tr(1)],
+            latest_image_bgr=None,
+            latest_image_seen_ns=None,
+        ),
+    )
+
+    assert result.candidates[0].appearance is None
+    assert result.diagnostics.cache_lookups == 1
+    assert result.diagnostics.cache_hits == 0
+    assert result.diagnostics.cache_misses == 0
+    assert result.diagnostics.cache_expired == 0
+    assert result.diagnostics.cache_invalidated == 1
+    assert result.diagnostics.cache_lookups == (
+        result.diagnostics.cache_hits
+        + result.diagnostics.cache_misses
+        + result.diagnostics.cache_expired
+        + result.diagnostics.cache_invalidated
+    )
+    assert state.cache_by_track_id == {}
 
 
 def test_inactive_track_cache_is_pruned():
