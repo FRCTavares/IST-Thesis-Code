@@ -10,6 +10,8 @@ import pytest
 
 from thesis_bringup.dashboard.dashboard_bridge_node import DashboardBridgeNode
 from thesis_bringup.perception.perception_pipeline_node import (
+    FIRST_CAUSAL_FRAME_ID,
+    INFERENCE_SEQUENCE_START,
     PerceptionPipelineNode,
 )
 from thesis_bringup.perception.preprocessing import (
@@ -19,6 +21,17 @@ from thesis_bringup.perception.preprocessing import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
+
+
+def test_live_pipeline_reserves_numeric_frame_zero_for_noncausal_events():
+    assert INFERENCE_SEQUENCE_START == 0
+    assert FIRST_CAUSAL_FRAME_ID == 1
+
+    transform = ImageTransform.direct_resize(640, 480, 640, 640)
+    causal_header = transform.detection_frame_id(FIRST_CAUSAL_FRAME_ID)
+
+    assert ";frame=1;" in causal_header
+    assert ";frame=0;" not in causal_header
 
 
 @pytest.mark.parametrize(

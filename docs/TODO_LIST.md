@@ -164,8 +164,16 @@ Open executable issues: **20**.
       cross-topic inequality while retaining per-topic causal timestamp checks, excludes only
       no-frame/no-workload control-status records while keeping partial workload records
       fail-closed, and records SHA-256 identities for both runtime models in the experiment
-      provenance. The remaining pre-#58 gate is a new retained clean-tree provenance/report
-      replay from the follow-up commit.
+      provenance. The first retained clean-tree replay from follow-up commit
+`5672d14995156ed24d8726a19567802968d70377` exposed one additional
+cross-layer contract inconsistency: the live perception pipeline emitted
+causal numeric `frame_id=0`, while tracker timing, TIM-MARS appearance
+lifecycle handling, controller-facing target resets, and the accepted
+deterministic replay contract reserve numeric zero for invalid, reset, or
+otherwise noncausal lifecycle events. Inference sequencing therefore remains
+zero-based for legacy Gst PTS compatibility, while published causal pipeline
+frame IDs start at one. A replacement retained clean-tree provenance/report
+replay from this corrected frame-ID contract remains the final pre-#58 gate.
       Execution
       dependency remains:
       #32 instrumentation → #58 → #74 → #32 final sustained characterization.

@@ -52,6 +52,10 @@ from vision_msgs.msg import (
 )
 
 
+
+INFERENCE_SEQUENCE_START = 0
+FIRST_CAUSAL_FRAME_ID = 1
+
 class PerceptionPipelineNode(Node):
     """Single-process perception node with optional in-process Hailo backend."""
 
@@ -283,8 +287,11 @@ class PerceptionPipelineNode(Node):
         self._setup_reid_service()
         self._setup_reid_status_publisher()
 
-        self.seq_counter = 0
-        self.frame_counter = 0
+        # Keep inference sequencing zero-based for the legacy Gst PTS
+        # contract, while reserving numeric frame_id=0 for invalid, reset,
+        # or otherwise noncausal lifecycle events downstream.
+        self.seq_counter = INFERENCE_SEQUENCE_START
+        self.frame_counter = FIRST_CAUSAL_FRAME_ID
         self.frames_received = 0
         self.frames_processed = 0
         self.frames_timeouts = 0
@@ -1328,8 +1335,9 @@ class PerceptionPipelineNode(Node):
         self.frames_received += 1
 
         raw_frame = RawFrame(
-            # Assigned on dequeue in _infer_worker_loop.
-            seq=0,
+            # Ingress placeholders only; both values are assigned before
+            # preprocessing/inference in _infer_worker_loop.
+            seq=INFERENCE_SEQUENCE_START,
             frame_id=0,
             src_stamp_ns=int(src_stamp_ns),
             stamp_sec=int(msg.header.stamp.sec),
