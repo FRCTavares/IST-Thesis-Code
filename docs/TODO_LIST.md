@@ -154,8 +154,18 @@ Open executable issues: **20**.
       perception parameter-service path when runtime reconfiguration is explicitly enabled,
       while the frozen live profile continues to disable runtime reconfiguration. The
       dashboard WebSocket metrics schema remains independently versioned from Timing schema
-      v4. The remaining pre-#58 gate is promotion of the coherent implementation followed by
-      retained clean-tree provenance/report evidence.
+      v4. The first post-promotion clean-tree replay then exposed three audit-contract issues
+      before retained evidence could be accepted: the cross-topic
+      `e2e_validated_target_ms >= e2e_det_ms` comparison incorrectly ordered two independent
+      ROS publication-return endpoints; one immediate `operator_clear` status-only event was
+      correctly non-frame control telemetry but was being interpreted as a malformed ReID
+      workload sample; and replay provenance recorded the YOLOv8s/MARS model paths without
+      their content hashes. The follow-up instrumentation patch removes the invalid
+      cross-topic inequality while retaining per-topic causal timestamp checks, excludes only
+      no-frame/no-workload control-status records while keeping partial workload records
+      fail-closed, and records SHA-256 identities for both runtime models in the experiment
+      provenance. The remaining pre-#58 gate is a new retained clean-tree provenance/report
+      replay from the follow-up commit.
       Execution
       dependency remains:
       #32 instrumentation → #58 → #74 → #32 final sustained characterization.

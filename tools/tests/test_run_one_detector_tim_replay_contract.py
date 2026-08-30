@@ -126,3 +126,15 @@ def test_runner_forces_schema_v4_timing_topics():
 
 def test_runner_example_uses_canonical_yolov8s():
     assert "yolov8s largest bytetrack mars" in RUNNER
+
+def test_runner_records_content_hashes_for_runtime_models():
+    assert 'sha256sum "$HEF_PATH"' in RUNNER
+    assert 'sha256sum "$TIM_MARS_MODEL_PATH"' in RUNNER
+    assert (
+        '--field "detector_hef_sha256=$DETECTOR_HEF_SHA256"'
+        in RUNNER
+    )
+    assert (
+        '--field "mars_model_sha256=$TIM_MARS_MODEL_SHA256"'
+        in RUNNER
+    )

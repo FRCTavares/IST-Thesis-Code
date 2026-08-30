@@ -83,6 +83,10 @@ def test_metadata_records_effective_command_and_value_sources(tmp_path):
         "RAW_TARGET_MODE=source "
     )
     assert metadata["value_sources"] == expected_sources
+    assert metadata["experiment_fields"] == {
+        "raw_target_mode": "source",
+        "run_name": "run",
+    }
 
     assert resolved["schema_version"] == 2
     assert resolved["value_sources"] == expected_sources

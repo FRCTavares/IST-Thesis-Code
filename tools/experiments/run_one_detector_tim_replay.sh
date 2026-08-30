@@ -266,6 +266,25 @@ if [[ "$RUN_TIM_MARS" == "true" && ! -f "$TIM_MARS_MODEL_PATH" ]]; then
   exit 17
 fi
 
+DETECTOR_HEF_SHA_LINE=""
+DETECTOR_HEF_SHA256=""
+TIM_MARS_MODEL_SHA_LINE=""
+TIM_MARS_MODEL_SHA256=""
+
+if ! DETECTOR_HEF_SHA_LINE="$(sha256sum "$HEF_PATH")"; then
+  echo "[error] failed to hash detector HEF: $HEF_PATH" >&2
+  exit 18
+fi
+DETECTOR_HEF_SHA256="${DETECTOR_HEF_SHA_LINE%% *}"
+
+if [[ "$RUN_TIM_MARS" == "true" ]]; then
+  if ! TIM_MARS_MODEL_SHA_LINE="$(sha256sum "$TIM_MARS_MODEL_PATH")"; then
+    echo "[error] failed to hash TIM-MARS appearance model: $TIM_MARS_MODEL_PATH" >&2
+    exit 18
+  fi
+  TIM_MARS_MODEL_SHA256="${TIM_MARS_MODEL_SHA_LINE%% *}"
+fi
+
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
   if ! python3 "$TIM_METADATA_HELPER" \
     --repo-root "$THESIS_ROOT" \
@@ -287,6 +306,8 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     --field "output_bag=$OUT_BAG" \
     --field "detector_model=$DETECTOR_MODEL" \
     --field "detector_hef=$HEF_PATH" \
+    --field "detector_hef_sha256=$DETECTOR_HEF_SHA256" \
+    --field "mars_model_sha256=$TIM_MARS_MODEL_SHA256" \
     --field "target_id=$TARGET_ID" \
     --field "tracker=$TRACKER" \
     --field "tim_mode=$TIM_MODE" \

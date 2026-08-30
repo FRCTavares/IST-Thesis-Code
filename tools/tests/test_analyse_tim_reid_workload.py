@@ -300,3 +300,63 @@ def test_render_markdown_contains_steady_state_contract():
     assert "steady state" in markdown
     assert "## Warm-up classification" in markdown
     assert MODULE.SUMMARY_SCHEMA in markdown
+
+def test_excludes_non_frame_status_only_control_record():
+    records = [
+        (
+            0,
+            payload(
+                processing_ms=1.0,
+                backend_calls=0,
+            ),
+        ),
+        (
+            500_000_000,
+            {
+                "state": "NO_TARGET",
+                "reason": "operator_clear",
+            },
+        ),
+        (
+            1_000_000_000,
+            payload(
+                processing_ms=21.0,
+                backend_calls=1,
+                requested=1,
+                returned=1,
+                valid=1,
+                wall_ms=20.0,
+            ),
+        ),
+    ]
+
+    result = MODULE.analyse_records(
+        records,
+        run_name="synthetic",
+    )
+
+    assert result["status_records_total"] == 3
+    assert result["excluded_non_frame_status_records"] == 1
+    assert result["totals"]["status_records"] == 2
+    assert result["totals"]["status_records_total"] == 3
+    assert (
+        result["totals"]["excluded_non_frame_status_records"]
+        == 1
+    )
+
+
+def test_partial_workload_record_still_fails_closed():
+    incomplete = payload(
+        processing_ms=1.0,
+        backend_calls=0,
+    )
+    del incomplete["appearance_cache_hits"]
+
+    with pytest.raises(
+        ValueError,
+        match="missing required workload fields",
+    ):
+        MODULE.analyse_records(
+            [(0, incomplete)],
+            run_name="synthetic",
+        )
