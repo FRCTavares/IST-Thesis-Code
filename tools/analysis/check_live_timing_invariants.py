@@ -118,7 +118,6 @@ class TimingInvariantNode(Node):
             "/timing_tracker": set(),
             "/timing_target": set(),
         }
-        self.e2e_det_by_frame: Dict[int, float] = {}
         self.detection_msg_count = 0
         self._det_arrival_ns: deque[int] = deque(maxlen=240)
         self._det_out_fps_latest: Optional[float] = None
@@ -234,9 +233,6 @@ class TimingInvariantNode(Node):
         topic = "/timing"
         self.counts[topic] += 1
         self.frame_seen[topic].add(int(msg.frame_id))
-
-        if float(msg.e2e_det_ms) > 0.0 and int(msg.frame_id) > 0:
-            self.e2e_det_by_frame[int(msg.frame_id)] = float(msg.e2e_det_ms)
 
         self._check_basic_sanity(topic, msg)
 
@@ -443,29 +439,13 @@ class TimingInvariantNode(Node):
                 int(msg.t_target_pub_end_ns),
             )
 
-        fid = int(msg.frame_id)
-        if (
-            fid > 0
-            and _is_populated_number(
-                float(msg.e2e_validated_target_ms)
-            )
-            and fid in self.e2e_det_by_frame
-        ):
-            det_ms = float(self.e2e_det_by_frame[fid])
-            validated_target_ms = float(
-                msg.e2e_validated_target_ms
-            )
-
-            self.inv.check(
-                "E.e2e_validated_target_ge_e2e_det",
-                validated_target_ms >= det_ms,
-                (
-                    f"frame_id={fid}: "
-                    f"e2e_validated_target_ms="
-                    f"{_fmt_val(validated_target_ms)}, "
-                    f"e2e_det_ms={_fmt_val(det_ms)}"
-                ),
-            )
+        # Do not compare e2e_validated_target_ms against e2e_det_ms as
+        # an ordering invariant. Both start from the same causal camera
+        # observation, but their endpoints are captured after independent ROS
+        # publish() calls return in different processes. A downstream consumer
+        # can therefore complete its target publication before the upstream
+        # detector publish() call has returned. Per-topic timestamp/delta
+        # invariants remain authoritative for causal timing validation.
 
     def has_one_each(self) -> bool:
         return all(self.counts[t] > 0 for t in self.counts)

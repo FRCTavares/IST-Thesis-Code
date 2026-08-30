@@ -243,10 +243,42 @@ def analyse_records(
     if not records:
         raise ValueError("No TIM-MARS status records were supplied.")
 
-    ordered_records = sorted(
+    ordered_all_records = sorted(
         records,
         key=lambda record: record[0],
     )
+
+    ordered_records: list[tuple[int, dict[str, Any]]] = []
+    excluded_non_frame_status_records: list[
+        tuple[int, dict[str, Any]]
+    ] = []
+
+    for record in ordered_all_records:
+        _timestamp_ns, payload = record
+        present_required = {
+            field
+            for field in REQUIRED_FIELDS
+            if field in payload
+        }
+
+        # TIM-MARS can emit immediate operator-control status messages that
+        # are not caused by a track frame (for example operator_clear).
+        # They deliberately have no frame_id and no workload telemetry.
+        # Exclude only that exact status-only shape. A frame record or a
+        # partially populated workload record must still fail closed below.
+        if (
+            not present_required
+            and "frame_id" not in payload
+        ):
+            excluded_non_frame_status_records.append(record)
+            continue
+
+        ordered_records.append(record)
+
+    if not ordered_records:
+        raise ValueError(
+            "No frame/workload TIM-MARS status records were supplied."
+        )
 
     _validate_fields(ordered_records)
 
@@ -387,6 +419,10 @@ def analyse_records(
 
     totals = {
         "status_records": len(ordered_records),
+        "status_records_total": len(ordered_all_records),
+        "excluded_non_frame_status_records": len(
+            excluded_non_frame_status_records
+        ),
         "appearance_candidates": sum(
             int(payload["appearance_candidates"])
             for _timestamp_ns, payload in ordered_records
@@ -588,6 +624,10 @@ def analyse_records(
     return {
         "schema": SUMMARY_SCHEMA,
         "run_name": run_name,
+        "status_records_total": len(ordered_all_records),
+        "excluded_non_frame_status_records": len(
+            excluded_non_frame_status_records
+        ),
         "git_commit": git_commit,
         "bag_path": bag_path,
         "status_topic": status_topic,
