@@ -578,20 +578,24 @@ select_target() {
   return 0
 }
 
-if [[ "${TARGET_ID,,}" == "largest" ]]; then
-  if ! resolve_largest_target; then
-    exit 9
+if [[ "$RUN_TIM_MARS" == "true" ]]; then
+  if [[ "${TARGET_ID,,}" == "largest" ]]; then
+    if ! resolve_largest_target; then
+      exit 9
+    fi
+  else
+    if ! wait_for_target_id "$TARGET_ID" "$TARGET_WAIT_TIMEOUT"; then
+      exit 10
+    fi
+  fi
+
+  sleep 2
+
+  if ! select_target "$TARGET_ID"; then
+    exit 11
   fi
 else
-  if ! wait_for_target_id "$TARGET_ID" "$TARGET_WAIT_TIMEOUT"; then
-    exit 10
-  fi
-fi
-
-sleep 2
-
-if ! select_target "$TARGET_ID"; then
-  exit 11
+  echo "[info] TIM-MARS disabled; skipping selected-target authority bootstrap"
 fi
 
 echo "[info] waiting for playback to finish"
