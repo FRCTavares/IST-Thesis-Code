@@ -355,3 +355,91 @@ return.
 
 Issue #58 still requires held-out physical-reference evaluation and the
 canonical embedded-cost evidence before any final comparative claim is frozen.
+
+## Canonical embedded-cost development evidence — 31 Aug 2026
+
+This section records the retained development-only onboard cost comparison for
+Issue #58. It is not held-out identity evidence and does not replace the
+H01--H03 physical-v2 evaluation required for final Issue #58 closure.
+
+### Experimental contract
+
+- Retained matrix:
+  `ros2_ws/log/p058_retained_cost_matrix_92d123e3_20260831_130450`
+- Git commit: `92d123e3d8e45d6fc3a8c386194d6f0ca85fc181`
+- Working tree at execution: clean
+- Platform: Raspberry Pi 5, `aarch64`, kernel `6.8.0-1063-raspi`
+- ROS: Jazzy
+- HailoRT: `4.23.0`
+- Detector: direct/in-process Hailo YOLOv8s
+- Detector HEF SHA-256:
+  `69540ff855740371d229f4caca1ab908635a72fec55fdc1541e73f2fc17ec43b`
+- TIM-MARS appearance model: CPU MARS `mars-small128.pb`
+- MARS SHA-256:
+  `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`
+- Source: June Seq03 four-person crossing/ambiguity raw image bag
+- Playback rate: `1.0x`
+- Repetitions: three per architecture
+- Execution order: rotated across repetitions
+- Inter-cell cooldown: 20 s
+- Process-group CPU/RSS sampling: 1 s
+- Hardware-health sampling: 1 s
+- Retained cells: 9/9 successful
+- Throttling: zero non-zero throttling samples in every retained cell
+- Hardware sampler errors: zero in every retained cell
+
+Process CPU percentage is Linux process CPU usage and can exceed 100% because a
+process can consume more than one CPU core.
+
+The primary *architecture-specific* comparison excludes the detector because
+the same YOLOv8s detector is common to all three cells. For ByteTrack + TIM-MARS,
+architecture CPU and RSS are the sum of the ByteTrack tracker process and the
+separate TIM-MARS process. DeepSORT's integrated appearance extraction is
+already contained inside the DeepSORT tracker process.
+
+### Retained resource result
+
+| Architecture | Architecture CPU [%] | Mean architecture RSS [MiB] | Full-system CPU [%] | Mean full-system RSS [MiB] | Mean SoC temp. [C] | Highest observed temp. [C] |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ByteTrack raw | 227.2 +/- 0.6 | 134.6 +/- 0.2 | 254.5 +/- 0.6 | 353.1 +/- 0.3 | 60.8 +/- 0.6 | 63.1 |
+| ByteTrack + TIM-MARS | 243.3 +/- 10.3 | 919.6 +/- 7.8 | 267.8 +/- 11.9 | 1138.6 +/- 7.9 | 63.1 +/- 0.7 | 67.0 |
+| DeepSORT raw | 267.0 +/- 3.0 | 767.2 +/- 1.9 | 291.9 +/- 3.2 | 985.5 +/- 1.8 | 65.0 +/- 0.4 | 69.2 |
+
+Values reported as `mean +/- sample standard deviation` are calculated across
+the three retained run-level means.
+
+Relative to DeepSORT raw, ByteTrack + TIM-MARS used approximately `8.9%` less
+architecture-specific CPU on this controlled development workload, while using
+approximately `19.9%` more mean architecture-specific RSS. When the common
+detector is included, the corresponding differences are approximately `8.3%`
+less full-perception CPU and `15.5%` more mean full-perception RSS.
+
+Raw ByteTrack remains substantially lighter than either appearance-enabled
+architecture, but the frozen May/Seq03/Seq04 physical-v2 development evidence
+already shows why raw lightweight tracking alone is not an adequate selected-
+person identity solution.
+
+DeepSORT also ran hotter than the other two architectures in this matrix, but
+none of the nine retained runs produced a non-zero throttling sample. Therefore
+the CPU comparison is not explained by observed thermal throttling.
+
+### Timing/throughput claim gate
+
+The retained bags contain `/timing` and `/timing_tracker` for every
+architecture and `/timing_target` for ByteTrack + TIM-MARS. The raw message
+counts differ across architectures, particularly for DeepSORT. Those counts are
+not treated here as a final throughput or dropped-frame result because message
+counts alone do not establish the causal timing distribution.
+
+Before a timing/throughput statement is added to the Issue #58 conclusion,
+aggregate the retained timing messages and report the relevant sample counts,
+effective frequencies, p50/p95/p99 processing times and causal frame coverage.
+The resource result above is valid independently of that remaining timing
+aggregation.
+
+### Current Issue #58 status
+
+The development architecture evidence now contains both the frozen
+safety/availability comparisons and a retained canonical onboard cost
+comparison. The remaining final evidence gate is the held-out H01--H03
+physical-v2 evaluation under Issue #27. Issue #58 therefore remains open.
