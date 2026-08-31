@@ -353,8 +353,9 @@ supply positive reacquisition-success evidence: none of the five evaluated
 architectures physically reacquired the selected target after either Seq04
 return.
 
-Issue #58 still requires held-out physical-reference evaluation and the
-canonical embedded-cost evidence before any final comparative claim is frozen.
+Issue #58 still requires held-out physical-reference evaluation before any
+final comparative claim is frozen. The canonical embedded-cost and timing
+development evidence is complete below.
 
 ## Canonical embedded-cost development evidence — 31 Aug 2026
 
@@ -423,23 +424,65 @@ DeepSORT also ran hotter than the other two architectures in this matrix, but
 none of the nine retained runs produced a non-zero throttling sample. Therefore
 the CPU comparison is not explained by observed thermal throttling.
 
-### Timing/throughput claim gate
+### Retained timing and causal-throughput result
 
-The retained bags contain `/timing` and `/timing_tracker` for every
-architecture and `/timing_target` for ByteTrack + TIM-MARS. The raw message
-counts differ across architectures, particularly for DeepSORT. Those counts are
-not treated here as a final throughput or dropped-frame result because message
-counts alone do not establish the causal timing distribution.
+The nine retained bags were analysed with the canonical schema-v4 offline timing
+analyser using the same active-window definition for every architecture:
+`pub_dt_ms <= 100 ms`. Values reported as `mean +/- sample standard deviation`
+below are calculated across the three retained run-level values.
 
-Before a timing/throughput statement is added to the Issue #58 conclusion,
-aggregate the retained timing messages and report the relevant sample counts,
-effective frequencies, p50/p95/p99 processing times and causal frame coverage.
-The resource result above is valid independently of that remaining timing
-aggregation.
+| Architecture | Tracker timing [Hz] | `track_ms` p50 [ms] | `track_ms` p95 [ms] | `track_ms` p99 [ms] | Validated-target timing [Hz] | Validated-target p95 [ms] | Active detector-to-tracker coverage [%] |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| ByteTrack raw | 18.612 +/- 0.403 | 1.201 +/- 0.013 | 6.218 +/- 0.362 | 11.732 +/- 0.850 | NA | NA | 100.000 +/- 0.000 |
+| ByteTrack + TIM-MARS | 18.100 +/- 0.351 | 2.019 +/- 0.380 | 22.841 +/- 2.001 | 30.487 +/- 3.321 | 17.561 +/- 0.549 | 181.785 +/- 15.445 | 99.963 +/- 0.064 |
+| DeepSORT raw | 9.796 +/- 0.180 | 79.100 +/- 7.181 | 150.816 +/- 3.433 | 167.987 +/- 6.063 | NA | NA | 68.154 +/- 1.087 |
 
+The ByteTrack + TIM-MARS controller-facing validated-target path exceeds the
+preferred `15 Hz` rate in all three retained runs and its validated-target p95
+latency remains at or below the thesis `200 ms` target in all three runs. The
+three run-level validated-target p95 values are `172.949 ms`, `172.788 ms`, and
+`199.619 ms`.
+
+DeepSORT's integrated appearance tracker is materially slower on the same
+controlled workload: its tracker stage averages `9.796 Hz`, versus
+`18.100 Hz` for the ByteTrack tracker when TIM-MARS is enabled. Its tracker p95
+compute time is `150.816 +/- 3.433 ms`, compared with
+`22.841 +/- 2.001 ms` for the ByteTrack tracker in the TIM-MARS architecture.
+Only `68.154 +/- 1.087%` of active detector frame IDs reach the DeepSORT tracker
+timing stream, whereas ByteTrack raw and ByteTrack + TIM-MARS retain essentially
+complete active detector-to-tracker causal coverage.
+
+This does not turn the raw DeepSORT cell into a controller-facing latency
+measurement. DeepSORT raw intentionally has no TIM-MARS selected-target
+authority, so its reported rate and latency describe the integrated tracker
+stage. Conversely, `e2e_validated_target_ms` for ByteTrack + TIM-MARS is a
+controller-facing selected-target authority measurement.
+
+Together with the retained resource evidence, this establishes the development
+compute trade-off: raw ByteTrack is cheapest but is insufficient as a
+selected-person identity solution in the frozen physical-v2 development
+evidence; adding TIM-MARS preserves a controller-usable rate and bounded p95
+latency while strongly improving the selected-target safety behaviour; and
+integrated DeepSORT is slower at the tracker stage and does not eliminate the
+severe Seq03 wrong-person failure. These are development-sequence findings, not
+a held-out universal architecture ranking.
+
+Corrected aggregate analysis provenance:
+
+- timing schema: `4`;
+- active-gap threshold: `100 ms`;
+- aggregate JSON SHA-256:
+  `faf56e6c76f742ef37d9f72245d5081f970d21c755f953c7d6bafce04889ab73`;
+- aggregate Markdown SHA-256:
+  `450dbbc99c2ba49856b9c793c4a46e94158371789cd5ae5d13b9563c92e48851`;
+- analysis was derived from the existing nine retained bags; no replay or
+  measurement was repeated for the latency-aggregation correction.
 ### Current Issue #58 status
 
-The development architecture evidence now contains both the frozen
-safety/availability comparisons and a retained canonical onboard cost
-comparison. The remaining final evidence gate is the held-out H01--H03
-physical-v2 evaluation under Issue #27. Issue #58 therefore remains open.
+The development architecture evidence now contains the frozen
+safety/availability comparisons plus the retained canonical onboard resource,
+timing, causal-coverage, and controller-rate comparison. No additional Issue #58
+development architecture experiment is currently required. The remaining final
+evidence gate is the held-out H01--H03 physical-v2 evaluation under Issue #27.
+Issue #58 therefore remains open, while the active implementation critical path
+advances to Issue #74.
