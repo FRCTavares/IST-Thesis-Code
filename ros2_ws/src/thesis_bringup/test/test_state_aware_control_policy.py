@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from thesis_bringup.control.state_aware_policy import (
+    resolve_bounded_recovery_yaw,
     resolve_state_aware_policy,
     StateAwarePolicyConfig,
     StateAwarePolicyInput,
@@ -241,3 +242,64 @@ def test_exhausted_recovery_budget_returns_zero():
     assert decision.mode == "HOVER"
     assert decision.reason == "recovery_yaw_budget_exhausted"
     assert decision.recovery_yaw_z == 0.0
+
+
+def test_consumed_trusted_history_cannot_restart_recovery():
+    decision = resolve_state_aware_policy(
+        policy_input(
+            state="LOST",
+            control_mode="HOVER",
+            target_valid=False,
+            recovery_history_consumed=True,
+        ),
+        enabled_config(),
+    )
+
+    assert decision.mode == "HOVER"
+    assert decision.reason == "trusted_history_already_consumed"
+    assert decision.recovery_yaw_z == 0.0
+
+
+def test_recovery_command_respects_yaw_slew_from_zero():
+    command = resolve_bounded_recovery_yaw(
+        desired_yaw_z=0.10,
+        previous_yaw_z=0.0,
+        invert_yaw=False,
+        max_yaw_z=0.10,
+        max_delta_yaw_z=0.03,
+        dt_s=1.0 / 30.0,
+        remaining_integrated_yaw_rad=0.10,
+    )
+
+    assert not command.budget_exhausted
+    assert command.yaw_z == pytest.approx(0.03)
+
+
+def test_recovery_command_respects_inverted_yaw_convention():
+    command = resolve_bounded_recovery_yaw(
+        desired_yaw_z=0.10,
+        previous_yaw_z=0.0,
+        invert_yaw=True,
+        max_yaw_z=0.10,
+        max_delta_yaw_z=0.03,
+        dt_s=1.0 / 30.0,
+        remaining_integrated_yaw_rad=0.10,
+    )
+
+    assert not command.budget_exhausted
+    assert command.yaw_z == pytest.approx(-0.03)
+
+
+def test_recovery_command_never_exceeds_integrated_budget():
+    command = resolve_bounded_recovery_yaw(
+        desired_yaw_z=0.10,
+        previous_yaw_z=0.03,
+        invert_yaw=False,
+        max_yaw_z=0.10,
+        max_delta_yaw_z=0.03,
+        dt_s=0.10,
+        remaining_integrated_yaw_rad=0.001,
+    )
+
+    assert command.budget_exhausted
+    assert command.yaw_z == 0.0

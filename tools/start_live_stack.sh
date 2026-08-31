@@ -866,6 +866,7 @@ if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
     start_ros_bg control ros2 run thesis_bringup control_ref_node --ros-args \
         -p target_topic:=/target_memory_mars \
         -p status_topic:=/target_memory_mars/status \
+        -p enable_yaw_recovery:=false \
         -p img_w:=${CAMERA_WIDTH}.0 \
         -p img_h:=${CAMERA_HEIGHT}.0 \
         -p enable_mavros:=$CONTROL_MAVROS_BOOL \

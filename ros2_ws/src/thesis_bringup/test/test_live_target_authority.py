@@ -57,6 +57,7 @@ def test_live_control_consumes_only_validated_tim_target():
     assert block is not None
     assert "-p target_topic:=/target_memory_mars" in block.group(0)
     assert "-p status_topic:=/target_memory_mars/status" in block.group(0)
+    assert "-p enable_yaw_recovery:=false" in block.group(0)
     assert "-p target_topic:=/target " not in block.group(0)
 
 
