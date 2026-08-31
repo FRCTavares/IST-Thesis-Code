@@ -29,25 +29,40 @@ When TIM-MARS does not grant `control_valid`, the controller-facing
 The existing controller freshness checks, saturation, slew limiting,
 body-frame command convention, and optional MAVROS publication remain in force.
 
-## Selection generation
+## Authority session and selection generation
 
-TIM-MARS owns the controller-facing `selection_generation`.
+TIM-MARS owns the controller-facing authority epoch:
 
-The generation:
+- `selection_session_id` identifies one TIM-MARS node instance;
+- `selection_generation` identifies select/clear transactions within that
+  session.
 
-- starts from zero for a TIM-MARS node instance;
+The session identifier is newly generated when the TIM-MARS node starts.
+
+Within one session, the generation:
+
+- starts from zero;
 - increments on every explicit select;
 - increments on every explicit clear;
 - increments for any mirrored positive selection accepted by TIM-MARS;
-- is included in `/target_memory_mars/status`.
+- never moves backwards.
 
-The controller treats any generation change, including a decrease after a
-TIM-MARS restart, as an authority discontinuity.
+Both fields are included in `/target_memory_mars/status`.
 
-A generation change immediately:
+The controller:
+
+- accepts a generation advance within the current session as an authority
+  discontinuity;
+- rejects generation rollback within the same session;
+- accepts a previously unseen TIM-MARS session as a hard authority reset;
+- retires the previous session when a new session is accepted;
+- rejects delayed status from retired sessions.
+
+Any accepted authority discontinuity immediately:
 
 - cancels recovery;
 - invalidates last-trusted recovery history;
+- clears the cached target;
 - commands zero until fresh trusted authority is established again.
 
 The dashboard's existing target-authority generation remains UI/provenance
@@ -58,9 +73,12 @@ metadata and is not a separate controller identity authority.
 Normal translational following is allowed only when all of the following hold:
 
 - controller-authoritative `TargetState` is valid and fresh;
+- TIM-MARS status is fresh;
 - TIM-MARS state is `LOCKED`;
 - TIM-MARS control mode is `NORMAL`;
-- target and status belong to the current selection generation.
+- status belongs to the current TIM-MARS session and selection generation;
+- target and status have the same positive causal `frame_id`;
+- target and status have the same positive source timestamp.
 
 Normal following reuses the existing controller:
 

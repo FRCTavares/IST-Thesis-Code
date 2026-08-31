@@ -52,9 +52,9 @@ from vision_msgs.msg import (
 )
 
 
-
 INFERENCE_SEQUENCE_START = 0
 FIRST_CAUSAL_FRAME_ID = 1
+
 
 class PerceptionPipelineNode(Node):
     """Single-process perception node with optional in-process Hailo backend."""

@@ -526,10 +526,17 @@ def _hard_negative_snapshot_payload(
     }
 
 
-def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
+def status_payload_base(
+    out: TargetMemoryOutput,
+    *,
+    selection_generation: int = 0,
+    selection_session_id: str = "",
+) -> dict[str, object]:
     return {
         "state": _value_text(out.state),
         "control_mode": _value_text(out.control_mode),
+        "selection_generation": int(selection_generation),
+        "selection_session_id": str(selection_session_id),
         "target_track_id": out.target_track_id,
         "visible": bool(out.visible),
         "reacquired": bool(out.reacquired),
@@ -645,8 +652,20 @@ def status_payload_base(out: TargetMemoryOutput) -> dict[str, object]:
     }
 
 
-def status_only_json(out: TargetMemoryOutput) -> str:
-    return json.dumps(status_payload_base(out), sort_keys=True)
+def status_only_json(
+    out: TargetMemoryOutput,
+    *,
+    selection_generation: int = 0,
+    selection_session_id: str = "",
+) -> str:
+    return json.dumps(
+        status_payload_base(
+            out,
+            selection_generation=selection_generation,
+            selection_session_id=selection_session_id,
+        ),
+        sort_keys=True,
+    )
 
 
 def status_json_from_output(
@@ -689,6 +708,8 @@ def status_json_from_output(
     appearance_backend_valid: int,
     appearance_backend_wall_ms: float,
     appearance_update_cooldown_remaining: int,
+    selection_generation: int = 0,
+    selection_session_id: str = "",
     freshness_contract: str = "unknown",
     freshness_status: str = "unknown",
     freshness_is_fresh: bool = False,
@@ -696,7 +717,11 @@ def status_json_from_output(
     freshness_max_output_age_ms: float | None = None,
 ) -> str:
     best = out.best_score
-    payload = status_payload_base(out)
+    payload = status_payload_base(
+        out,
+        selection_generation=selection_generation,
+        selection_session_id=selection_session_id,
+    )
     payload.update(
         {
             "frame_id": int(frame_id),

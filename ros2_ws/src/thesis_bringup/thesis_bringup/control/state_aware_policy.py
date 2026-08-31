@@ -37,6 +37,8 @@ class StateAwarePolicyInput:
     recovery_elapsed_s: float = 0.0
     recovery_integrated_yaw_rad: float = 0.0
     dt_s: float = 0.0
+    target_source_stamp_ns: int = 0
+    status_source_stamp_ns: int = 0
 
 
 @dataclass(frozen=True)
@@ -65,36 +67,15 @@ def resolve_state_aware_policy(
     config: StateAwarePolicyConfig,
 ) -> StateAwarePolicyDecision:
     """Resolve the controller-authority mode without using candidate geometry."""
-
     causal_pair = (
         policy_input.target_frame_id > 0
         and policy_input.status_frame_id > 0
         and policy_input.target_frame_id == policy_input.status_frame_id
+        and policy_input.target_source_stamp_ns > 0
+        and policy_input.status_source_stamp_ns > 0
+        and policy_input.target_source_stamp_ns
+        == policy_input.status_source_stamp_ns
     )
-
-    trusted_normal = (
-        policy_input.status_fresh
-        and causal_pair
-        and policy_input.target_valid
-        and policy_input.state == "LOCKED"
-        and policy_input.control_mode == "NORMAL"
-    )
-
-    if trusted_normal:
-        return StateAwarePolicyDecision(
-            mode="NORMAL_FOLLOW",
-            reason="trusted_locked_normal",
-            allow_normal_follow=True,
-            update_last_trusted=True,
-        )
-
-    if not config.recovery_enabled:
-        return StateAwarePolicyDecision(
-            mode="HOVER",
-            reason="recovery_disabled",
-            allow_normal_follow=False,
-            update_last_trusted=False,
-        )
 
     if not policy_input.status_fresh:
         return StateAwarePolicyDecision(
@@ -104,10 +85,48 @@ def resolve_state_aware_policy(
             update_last_trusted=False,
         )
 
+    if (
+        policy_input.state == "LOCKED"
+        and policy_input.control_mode == "NORMAL"
+    ):
+        if not causal_pair:
+            return StateAwarePolicyDecision(
+                mode="HOVER",
+                reason="authority_frame_mismatch",
+                allow_normal_follow=False,
+                update_last_trusted=False,
+            )
+
+        if not policy_input.target_valid:
+            return StateAwarePolicyDecision(
+                mode="HOVER",
+                reason="trusted_target_not_valid",
+                allow_normal_follow=False,
+                update_last_trusted=False,
+            )
+
+        return StateAwarePolicyDecision(
+            mode="NORMAL_FOLLOW",
+            reason="trusted_locked_normal",
+            allow_normal_follow=True,
+            update_last_trusted=True,
+        )
+
     if policy_input.state != "LOST":
         return StateAwarePolicyDecision(
             mode="HOVER",
-            reason=f"state_not_recoverable:{policy_input.state}",
+            reason=(
+                "state_not_trusted:"
+                f"{policy_input.state}/{policy_input.control_mode}"
+            ),
+            allow_normal_follow=False,
+            update_last_trusted=False,
+        )
+
+    if not config.recovery_enabled:
+        return StateAwarePolicyDecision(
+            mode="HOVER",
+            reason="recovery_disabled",
             allow_normal_follow=False,
             update_last_trusted=False,
         )
