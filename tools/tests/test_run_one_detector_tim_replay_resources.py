@@ -114,3 +114,29 @@ def test_resource_sampling_stops_before_recorder_shutdown():
 
     assert playback_wait < health_stop < recorder_stop
     assert playback_wait < resource_stop < recorder_stop
+
+
+def test_tim_off_skips_selected_target_authority_bootstrap():
+    content = text()
+
+    wait_marker = 'echo "[info] waiting for playback to finish"'
+    wait_index = content.index(wait_marker)
+
+    skip_marker = (
+        'echo "[info] TIM-MARS disabled; skipping '
+        'selected-target authority bootstrap"'
+    )
+    skip_index = content.index(skip_marker)
+
+    selection_index = content.index(
+        'if ! select_target "$TARGET_ID"; then'
+    )
+
+    gate_index = content.rfind(
+        'if [[ "$RUN_TIM_MARS" == "true" ]]; then',
+        0,
+        selection_index,
+    )
+
+    assert gate_index >= 0
+    assert gate_index < selection_index < skip_index < wait_index
