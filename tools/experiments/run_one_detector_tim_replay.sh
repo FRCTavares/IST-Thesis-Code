@@ -118,6 +118,15 @@ DASHBOARD_PID=""
 TIM_PID=""
 REC_PID=""
 PLAY_PID=""
+RESOURCE_SAMPLER_PID=""
+HARDWARE_HEALTH_PID=""
+
+RESOURCE_SAMPLING_ENABLED="${RESOURCE_SAMPLING_ENABLED:-false}"
+RESOURCE_SAMPLE_INTERVAL_S="${RESOURCE_SAMPLE_INTERVAL_S:-1.0}"
+HARDWARE_HEALTH_INTERVAL_S="${HARDWARE_HEALTH_INTERVAL_S:-1.0}"
+
+RESOURCE_SAMPLER="$THESIS_ROOT/tools/experiments/sample_process_groups.py"
+HARDWARE_HEALTH_SAMPLER="$THESIS_ROOT/tools/experiments/sample_p044_hardware_health.py"
 
 PROCESS_GROUP_SUPERVISOR=(
   "$THESIS_ROOT/tools/lib/run_in_owned_process_group.py"
@@ -166,8 +175,38 @@ stop_owned_process() {
   wait "$pid" 2>/dev/null || true
 }
 
+resolve_owned_pgid() {
+    local label="$1"
+    local supervisor_pid="$2"
+    local children_path="/proc/$supervisor_pid/task/$supervisor_pid/children"
+    local child_pid=""
+    local pgid=""
+
+    for _ in $(seq 1 50); do
+        if [[ -r "$children_path" ]]; then
+            read -r child_pid _ < "$children_path" || true
+
+            if [[ "$child_pid" =~ ^[0-9]+$ ]] && kill -0 "$child_pid" >/dev/null 2>&1; then
+                pgid="$(ps -o pgid= -p "$child_pid" 2>/dev/null | tr -d '[:space:]')"
+
+                if [[ "$pgid" == "$child_pid" ]]; then
+                    printf '%s\n' "$pgid"
+                    return 0
+                fi
+            fi
+        fi
+
+        sleep 0.1
+    done
+
+    echo "[error] failed to resolve owned process group for $label supervisor pid=$supervisor_pid" >&2
+    return 1
+}
+
 cleanup() {
   echo "[info] cleaning up runner-owned supervised processes"
+stop_owned_process "hardware health sampler" "${HARDWARE_HEALTH_PID:-}"
+stop_owned_process "resource sampler" "${RESOURCE_SAMPLER_PID:-}"
   stop_owned_process "playback" "${PLAY_PID:-}"
   stop_owned_process "recorder" "${REC_PID:-}"
   stop_owned_process "TIM-MARS" "${TIM_PID:-}"
@@ -373,6 +412,63 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     exit 5
   fi
 fi
+
+case "${RESOURCE_SAMPLING_ENABLED,,}" in
+true)
+    if [[ ! -f "$RESOURCE_SAMPLER" ]]; then
+        echo "[error] resource sampler not found: $RESOURCE_SAMPLER" >&2
+        exit 19
+    fi
+
+    if [[ ! -f "$HARDWARE_HEALTH_SAMPLER" ]]; then
+        echo "[error] hardware-health sampler not found: $HARDWARE_HEALTH_SAMPLER" >&2
+        exit 19
+    fi
+
+    DETECTOR_PGID="$(resolve_owned_pgid "detector" "$DETECTOR_PID")" || exit 19
+    TRACKER_PGID="$(resolve_owned_pgid "tracker" "$TRACKER_PID")" || exit 19
+
+    RESOURCE_GROUP_ARGS=(
+        --group "detector=$DETECTOR_PGID"
+        --group "tracker=$TRACKER_PGID"
+    )
+
+    echo "[info] resource detector pgid=$DETECTOR_PGID"
+    echo "[info] resource tracker pgid=$TRACKER_PGID"
+
+    if [[ "$RUN_TIM_MARS" == "true" ]]; then
+        TIM_PGID="$(resolve_owned_pgid "TIM-MARS" "$TIM_PID")" || exit 19
+        RESOURCE_GROUP_ARGS+=(--group "tim=$TIM_PGID")
+        echo "[info] resource TIM-MARS pgid=$TIM_PGID"
+    fi
+
+    mkdir -p         "$REPORT_DIR/resources"         "$REPORT_DIR/hardware_health"
+
+    echo "[info] starting process-group resource sampler"
+    "${PROCESS_GROUP_SUPERVISOR[@]}"         "$THESIS_ROOT/thesis_env/bin/python"         "$RESOURCE_SAMPLER"         --output-dir "$REPORT_DIR/resources"         "${RESOURCE_GROUP_ARGS[@]}"         --interval-s "$RESOURCE_SAMPLE_INTERVAL_S"         > "$LOG_DIR/resources.log" 2>&1 &
+    RESOURCE_SAMPLER_PID=$!
+
+    echo "[info] starting hardware-health sampler"
+    "${PROCESS_GROUP_SUPERVISOR[@]}"         "$THESIS_ROOT/thesis_env/bin/python"         "$HARDWARE_HEALTH_SAMPLER"         --output-dir "$REPORT_DIR/hardware_health"         --interval-s "$HARDWARE_HEALTH_INTERVAL_S"         --duration-s 0         > "$LOG_DIR/hardware_health.log" 2>&1 &
+    HARDWARE_HEALTH_PID=$!
+
+    sleep 1
+
+    if ! require_alive         "resource sampler"         "$RESOURCE_SAMPLER_PID"         "$LOG_DIR/resources.log"; then
+        exit 19
+    fi
+
+    if ! require_alive         "hardware health sampler"         "$HARDWARE_HEALTH_PID"         "$LOG_DIR/hardware_health.log"; then
+        exit 19
+    fi
+    ;;
+false)
+    ;;
+*)
+    echo "[error] RESOURCE_SAMPLING_ENABLED must be true or false" >&2
+    exit 19
+    ;;
+esac
 
 echo "[info] nodes before playback"
 ros2 node list | sort | tee "$LOG_DIR/nodes_before_play.txt" || true
