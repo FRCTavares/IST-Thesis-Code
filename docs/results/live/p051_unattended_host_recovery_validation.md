@@ -235,6 +235,44 @@ bounded reconnect that restores both LAN and Tailscale reachability.
 This same-home-network Tailscale reconnection does not replace the still-open
 requirement for a fresh Tailnet SSH test from a genuinely external network.
 
+### 31 August 2026 external Tailnet SSH and firewall cleanup
+
+The temporary LAN-only SSH exception used during Issue #51 recovery testing was
+removed after first proving that the active operator shell was using Tailscale:
+
+- the active shell was
+  `100.105.37.101 -> 100.69.42.62:22`, confirming Mac-to-Pi Tailnet transport;
+- the exact temporary UFW rule
+  `22/tcp on wlan0 ALLOW IN 192.168.1.213`
+  (`temporary P051 LAN SSH test`) was uniquely identified and removed;
+- UFW remained active with default-deny inbound, Tailnet service access on
+  `tailscale0`, Tailscale UDP 41641 on `wlan0`, and Pixhawk MAVLink UDP 14550
+  restricted to `eth0`;
+- the existing Tailnet SSH session survived the firewall change;
+- a fresh second SSH session to `100.69.42.62` succeeded afterward, proving that
+  access did not depend on the removed LAN exception.
+
+A genuinely external Tailnet SSH test was then performed with the Raspberry Pi
+left on the home network and the operator Mac moved to a separate phone-hotspot
+network:
+
+- Mac host: `Franciscos-Mac.local`, Darwin;
+- Mac hotspot IPv4: `172.20.10.3`;
+- Mac default gateway: `172.20.10.1`;
+- the Mac was therefore outside the Pi's `192.168.1.0/24` home LAN;
+- a fresh SSH connection from the Mac to the Pi Tailscale address
+  `100.69.42.62` succeeded;
+- the Pi reported
+  `SSH_CONNECTION=100.105.37.101 59081 100.69.42.62 22`;
+- the Pi remained on `netplan-wlan0-Wi-Fi MC` with physical address
+  `192.168.1.110` and default gateway `192.168.1.1`;
+- the Pi's Tailscale peer state showed the external Mac reachable directly via
+  `148.69.202.51:20044`.
+
+Result: PASS. Fresh SSH through the Tailnet works while the operator computer is
+on a genuinely separate external network, and no direct LAN SSH firewall
+exception is required.
+
 ## Diagnostics and cleanliness
 
 - recent previous-boot journal is available;
@@ -251,8 +289,11 @@ Do not close Issue #51 until all of these are recorded:
 
 1. storage-safe poweroff, physical power removal, restoration, and automatic
    Tailscale/SSH recovery;
-2. a fresh Tailscale SSH connection while the operator computer is outside the
-   home network (for example, on a phone hotspot);
+2. [RESOLVED 31 Aug 2026] a fresh Tailscale SSH connection passed while the
+   operator Mac was on a phone-hotspot network (`172.20.10.3`, gateway
+   `172.20.10.1`) and the Pi remained on the home LAN (`192.168.1.110`,
+   gateway `192.168.1.1`). The Pi observed the SSH source as the Mac Tailnet
+   address `100.105.37.101`;
 3. confirmation that a tested smart plug or UPS is available, or a locally
    supervised destructive watchdog-recovery test with the runbook safeguards;
 4. [RESOLVED 31 Aug 2026] live Tailscale status reports the node online with
