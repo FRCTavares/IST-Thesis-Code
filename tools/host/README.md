@@ -30,15 +30,18 @@ sudo ./tools/host/set_pi_network_mode.sh pixhawk
 sudo ./tools/host/set_pi_network_mode.sh unattended
 ```
 
-Entering `pixhawk` mode intentionally changes Wi-Fi to `ISR Aero.Next GCS` and
-stops/disables Tailscale. Run that transition locally because a remote
-Tailscale shell is expected to disconnect.
+Entering `pixhawk` mode first attempts `ISR Aero.Next GCS`. If that profile
+cannot be activated, it may use the explicitly configured approved AERONEXT
+local-router fallback profile. If neither field profile works, the transition
+fails closed. Successful field mode stops/disables Tailscale, so run the
+transition locally because a remote Tailscale shell is expected to disconnect.
 
 ## Safety contract
 
 - Host recovery must never start ROS, MAVROS, perception, control, recording,
   arming, or any aircraft-facing service.
-- Pixhawk mode must fail closed unless the required AERONEXT and Ethernet
-  NetworkManager profiles exist and AERONEXT becomes active.
+- Pixhawk mode must fail closed unless the Pixhawk Ethernet profile exists
+  and either the primary ISR field Wi-Fi or explicitly configured AERONEXT
+  fallback profile becomes active. ISR is always attempted first.
 - Never commit Wi-Fi credentials, Tailscale state/auth keys, or SSH keys.
 - Run `python3 -m pytest -q tools/tests/test_host_health.py` after changes.

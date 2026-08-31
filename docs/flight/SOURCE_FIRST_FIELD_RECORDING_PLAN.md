@@ -18,8 +18,10 @@ Do not use `--record-raw` during this session.
 4. Live V01: one representative full-stack run without raw imagery.
 
 Run every command from the Pi's local terminal. Connecting the Pixhawk over
-Ethernet requires the `ISR Aero.Next GCS` router and Pixhawk network mode;
-Tailscale must not be used.
+Ethernet requires Pixhawk network mode. Field Wi-Fi first attempts
+`ISR Aero.Next GCS`; if ISR cannot be activated, the explicitly configured
+approved AERONEXT local-router fallback may be used. If neither approved field
+Wi-Fi works, stop. Tailscale must not be used.
 
 ## One-time preflight
 
@@ -40,7 +42,8 @@ Required results:
 - the Git worktree is clean;
 - at least 40 GiB is free;
 - the camera, media, and Hailo devices exist;
-- the active Wi-Fi is `ISR Aero.Next GCS`;
+- the active Wi-Fi is an approved field profile, with `ISR Aero.Next GCS`
+  preferred whenever it is available;
 - `tailscaled` reports `inactive`;
 - batteries, manual takeover, test area, and spotter are ready;
 - the aircraft is never armed automatically.
@@ -189,7 +192,7 @@ annotation work offline.
 
 ## Quick failure rules
 
-- No AERONEXT connection or Tailscale still active: stop.
+- No approved field Wi-Fi connection or Tailscale still active: stop.
 - Less than 40 GiB free: stop.
 - Camera, Hailo, raw-image recorder, or MAVROS error: stop and diagnose.
 - Wrong-target lock: clear the target, return to manual control, and stop.

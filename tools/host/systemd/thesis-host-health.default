@@ -2,6 +2,8 @@
 THESIS_HOST_MODE=unattended
 THESIS_HOST_INTERFACE=wlan0
 THESIS_HOST_PIXHAWK_WIFI_CONNECTION="ISR Aero.Next GCS"
+# Optional approved AERONEXT local-router profile. ISR remains first priority.
+THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION=""
 THESIS_HOST_PIXHAWK_ETHERNET_CONNECTION=pixhawk-apm
 THESIS_HOST_STATE_DIR=/var/lib/thesis-host-health
 # Three failed checks trigger a device reconnect. Six failed checks escalate
