@@ -116,32 +116,52 @@ LOST state, or confirmation state.
 
 ## Bounded yaw-only recovery
 
-Active recovery is feature-gated and defaults OFF.
+Active recovery is feature-gated and defaults OFF. The live-stack launcher
+explicitly passes `enable_yaw_recovery=false`; deterministic implementation
+does not by itself promote recovery for aircraft use.
+
+The implemented development bounds are:
+
+- requested recovery yaw rate: `0.10 rad/s`;
+- maximum recovery duration: `1.0 s`;
+- maximum integrated absolute yaw-command budget: `0.10 rad`;
+- maximum last-trusted observation age: `1.0 s`;
+- yaw magnitude additionally obeys the existing `max_yaw_z` limit;
+- yaw command changes additionally obey the existing `max_delta_yaw_z`
+  slew limit.
 
 When enabled, recovery may begin only when:
 
 - TIM-MARS reports `LOST`;
 - a recent last-trusted observation exists;
 - its selection generation is still current;
-- source/status timing remains valid.
+- TIM authority status remains fresh;
+- the last trusted horizontal error provides a non-zero search direction;
+- the same trusted observation has not already been consumed by a previous
+  recovery attempt.
 
-During recovery:
+A recovery attempt starts from a hard-zero command. During recovery:
 
 - `vx = 0`;
 - `vy = 0`;
 - only bounded yaw rate is permitted;
 - yaw direction is the sign of the last trusted horizontal error;
-- yaw magnitude is capped;
+- candidate, tracker, and detector geometry cannot steer recovery;
+- yaw saturation remains capped;
 - yaw slew remains capped;
 - recovery duration is capped;
 - integrated absolute yaw-command budget is capped;
 - last-trusted observation age is capped.
 
+One trusted observation can authorize at most one bounded recovery attempt.
+A new trusted `LOCKED` + `NORMAL` observation re-arms recovery.
+
 Recovery terminates immediately on:
 
-- trusted reacquisition;
+- trusted reacquisition or another non-recovery authority state;
 - explicit selection clear;
 - selection-generation change;
+- TIM authority session change;
 - stale/future/non-monotonic authority information;
 - timeout;
 - yaw/search budget exhaustion;
@@ -154,22 +174,27 @@ mapping, planning, MPC, or RL control is introduced.
 
 ## Diagnostics
 
-The controller must expose enough diagnostics to reconstruct each decision,
-including:
+Controller diagnostics make the authority and recovery decision auditable.
+The deterministic implementation reports:
 
-- resolved mode;
-- reason;
-- TIM-MARS state;
-- TIM-MARS control mode;
-- selection generation;
-- target/status freshness;
-- recovery enabled/active;
-- last-trusted age;
+- resolved policy mode and reason;
+- TIM-MARS state and control mode;
+- selection generation and authority session;
+- authority-status freshness;
+- recovery enabled/active state;
+- last-trusted observation age;
 - recovery direction;
 - recovery elapsed time;
-- used/remaining yaw budget;
-- saturation state;
-- final command values.
+- integrated absolute yaw command;
+- remaining integrated yaw budget;
+- yaw saturation state;
+- final post-shaping `(vx, vy, yaw_z)` command.
+
+Recovery entry, budget exhaustion, and termination emit forced diagnostics.
+Active recovery also emits diagnostics according to the controller debug
+cadence.
+
+Diagnostics provide observability only and never motion authority.
 
 ## Promotion boundary
 

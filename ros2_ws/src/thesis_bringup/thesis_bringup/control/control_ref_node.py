@@ -18,6 +18,7 @@ from rclpy.qos import (
 )
 from std_msgs.msg import String
 from thesis_bringup.control.state_aware_policy import (
+    resolve_bounded_recovery_yaw,
     resolve_state_aware_policy,
     StateAwarePolicyConfig,
     StateAwarePolicyInput,
@@ -175,6 +176,20 @@ class ControlRefNode(Node):
         self.declare_parameter('ambiguity_warn_every_n', 30)
         self.declare_parameter('saturation_warn_every_n', 90)
 
+        # Issue #74 bounded LOST recovery. Keep disabled until
+        # deterministic and closed-loop validation explicitly promotes it.
+        self.declare_parameter('enable_yaw_recovery', False)
+        self.declare_parameter('recovery_yaw_rate', 0.10)
+        self.declare_parameter('recovery_max_duration_s', 1.0)
+        self.declare_parameter(
+            'recovery_max_integrated_yaw_rad',
+            0.10,
+        )
+        self.declare_parameter(
+            'recovery_last_trusted_max_age_s',
+            1.0,
+        )
+
         target_topic = str(self.get_parameter('target_topic').value)
         status_topic = str(self.get_parameter('status_topic').value)
         cmd_topic = str(self.get_parameter('cmd_topic').value)
@@ -191,6 +206,39 @@ class ControlRefNode(Node):
         )
         self.ambiguity_warn_every_n = int(self.get_parameter('ambiguity_warn_every_n').value)
         self.saturation_warn_every_n = int(self.get_parameter('saturation_warn_every_n').value)
+
+        self.enable_yaw_recovery = bool(
+            self.get_parameter('enable_yaw_recovery').value
+        )
+        self.recovery_yaw_rate = float(
+            self.get_parameter('recovery_yaw_rate').value
+        )
+        self.recovery_max_duration_s = float(
+            self.get_parameter('recovery_max_duration_s').value
+        )
+        self.recovery_max_integrated_yaw_rad = float(
+            self.get_parameter(
+                'recovery_max_integrated_yaw_rad'
+            ).value
+        )
+        self.recovery_last_trusted_max_age_s = float(
+            self.get_parameter(
+                'recovery_last_trusted_max_age_s'
+            ).value
+        )
+
+        if self.recovery_yaw_rate <= 0.0:
+            raise ValueError('recovery_yaw_rate must be > 0')
+        if self.recovery_max_duration_s <= 0.0:
+            raise ValueError('recovery_max_duration_s must be > 0')
+        if self.recovery_max_integrated_yaw_rad <= 0.0:
+            raise ValueError(
+                'recovery_max_integrated_yaw_rad must be > 0'
+            )
+        if self.recovery_last_trusted_max_age_s <= 0.0:
+            raise ValueError(
+                'recovery_last_trusted_max_age_s must be > 0'
+            )
 
         self.stale_timeout_s = float(self.get_parameter('stale_timeout_s').value)
         self.future_tolerance_s = float(
@@ -244,10 +292,22 @@ class ControlRefNode(Node):
         self.last_trusted_stamp_ns: Optional[int] = None
         self.last_trusted_generation: Optional[int] = None
 
-        # Recovery is intentionally disconnected in this implementation
-        # slice. Later #74 validation must explicitly promote it.
+        self.recovery_active = False
+        self.recovery_start_ns: Optional[int] = None
+        self.recovery_last_update_ns: Optional[int] = None
+        self.recovery_integrated_yaw_rad = 0.0
+        self.recovery_consumed_trusted_stamp_ns: Optional[int] = None
+
         self.state_aware_policy_config = StateAwarePolicyConfig(
-            recovery_enabled=False,
+            recovery_enabled=self.enable_yaw_recovery,
+            recovery_yaw_rate=self.recovery_yaw_rate,
+            recovery_max_duration_s=self.recovery_max_duration_s,
+            recovery_max_integrated_yaw_rad=(
+                self.recovery_max_integrated_yaw_rad
+            ),
+            last_trusted_max_age_s=(
+                self.recovery_last_trusted_max_age_s
+            ),
         )
 
         self.prev_vx = 0.0
@@ -308,10 +368,182 @@ class ControlRefNode(Node):
             f'on {self.mavros_topic}'
         )
 
+    def reset_recovery_state(
+        self,
+        *,
+        clear_consumed: bool = False,
+    ) -> None:
+        self.recovery_active = False
+        self.recovery_start_ns = None
+        self.recovery_last_update_ns = None
+        self.recovery_integrated_yaw_rad = 0.0
+
+        if clear_consumed:
+            self.recovery_consumed_trusted_stamp_ns = None
+
+    def consume_current_trusted_history(self) -> None:
+        if self.last_trusted_stamp_ns is not None:
+            self.recovery_consumed_trusted_stamp_ns = (
+                self.last_trusted_stamp_ns
+            )
+
     def clear_trusted_history(self) -> None:
         self.last_trusted_horizontal_error = None
         self.last_trusted_stamp_ns = None
         self.last_trusted_generation = None
+        self.reset_recovery_state(clear_consumed=True)
+
+    def recovery_elapsed_s(self, now_ns: int) -> float:
+        if (
+            not self.recovery_active
+            or self.recovery_start_ns is None
+        ):
+            return 0.0
+
+        return max(
+            0.0,
+            (now_ns - self.recovery_start_ns) * 1e-9,
+        )
+
+    def recovery_dt_s(self, now_ns: int) -> float:
+        if (
+            not self.recovery_active
+            or self.recovery_last_update_ns is None
+        ):
+            return 0.0
+
+        return max(
+            0.0,
+            (now_ns - self.recovery_last_update_ns) * 1e-9,
+        )
+
+    def recovery_history_consumed(self) -> bool:
+        return (
+            not self.recovery_active
+            and self.last_trusted_stamp_ns is not None
+            and self.recovery_consumed_trusted_stamp_ns
+            == self.last_trusted_stamp_ns
+        )
+
+    def begin_recovery(self, now_ns: int) -> None:
+        self.recovery_active = True
+        self.recovery_start_ns = now_ns
+        self.recovery_last_update_ns = now_ns
+        self.recovery_integrated_yaw_rad = 0.0
+        self.consume_current_trusted_history()
+
+        # Never inherit translation or prior yaw into a recovery attempt.
+        self.prev_vx = 0.0
+        self.prev_vy = 0.0
+        self.prev_yaw_z = 0.0
+
+    def stop_recovery(self) -> None:
+        self.recovery_active = False
+        self.recovery_start_ns = None
+        self.recovery_last_update_ns = None
+        self.recovery_integrated_yaw_rad = 0.0
+
+    def handle_recovery_yaw(
+        self,
+        *,
+        decision,
+        now,
+    ) -> None:
+        now_ns = now.nanoseconds
+
+        if not self.recovery_active:
+            self.begin_recovery(now_ns)
+            self.update_mode('RECOVERY_YAW_ONLY')
+            self.maybe_log_policy_reason(
+                decision.mode,
+                decision.reason,
+                self.last_status,
+            )
+
+            # First recovery tick is deliberately hard-zero.
+            self.maybe_log_recovery_diagnostics(
+                now_ns=now_ns,
+                mode=decision.mode,
+                reason=decision.reason,
+                final_vx=0.0,
+                final_vy=0.0,
+                final_yaw_z=0.0,
+                force=True,
+            )
+            self.publish_zero()
+            return
+
+        dt_s = self.recovery_dt_s(now_ns)
+        remaining_budget = max(
+            0.0,
+            self.recovery_max_integrated_yaw_rad
+            - self.recovery_integrated_yaw_rad,
+        )
+
+        command = resolve_bounded_recovery_yaw(
+            desired_yaw_z=decision.recovery_yaw_z,
+            previous_yaw_z=self.prev_yaw_z,
+            invert_yaw=self.invert_yaw,
+            max_yaw_z=self.max_yaw_z,
+            max_delta_yaw_z=self.max_delta_yaw_z,
+            dt_s=dt_s,
+            remaining_integrated_yaw_rad=remaining_budget,
+        )
+
+        if command.budget_exhausted:
+            self.maybe_log_recovery_diagnostics(
+                now_ns=now_ns,
+                mode='HOVER',
+                reason='recovery_yaw_budget_exhausted',
+                final_vx=0.0,
+                final_vy=0.0,
+                final_yaw_z=0.0,
+                force=True,
+            )
+            self.stop_recovery()
+            self.update_mode('HOVER')
+            self.maybe_log_policy_reason(
+                'HOVER',
+                'recovery_yaw_budget_exhausted',
+                self.last_status,
+            )
+            self.publish_zero()
+            return
+
+        # Translation is a hard invariant during recovery.
+        self.prev_vx = 0.0
+        self.prev_vy = 0.0
+        self.prev_yaw_z = command.yaw_z
+
+        if dt_s > 0.0:
+            self.recovery_integrated_yaw_rad += (
+                abs(command.yaw_z) * dt_s
+            )
+
+        self.recovery_last_update_ns = now_ns
+
+        self.maybe_log_recovery_diagnostics(
+            now_ns=now_ns,
+            mode=decision.mode,
+            reason=decision.reason,
+            final_vx=0.0,
+            final_vy=0.0,
+            final_yaw_z=self.prev_yaw_z,
+        )
+
+        self.update_mode('RECOVERY_YAW_ONLY')
+        self.maybe_log_policy_reason(
+            decision.mode,
+            decision.reason,
+            self.last_status,
+        )
+
+        self.publish_pair(
+            now.to_msg(),
+            0.0,
+            0.0,
+            self.prev_yaw_z,
+        )
 
     def last_trusted_age_s(self, now_ns: int) -> Optional[float]:
         if self.last_trusted_stamp_ns is None:
@@ -320,6 +552,99 @@ class ControlRefNode(Node):
         if age_s < 0.0:
             return None
         return age_s
+
+    def recovery_direction_label(self) -> str:
+        error = self.last_trusted_horizontal_error
+
+        if error is None:
+            return 'unknown'
+        if error > 0.0:
+            return 'right'
+        if error < 0.0:
+            return 'left'
+        return 'center'
+
+    def maybe_log_recovery_diagnostics(
+        self,
+        *,
+        now_ns: int,
+        mode: str,
+        reason: str,
+        final_vx: float,
+        final_vy: float,
+        final_yaw_z: float,
+        force: bool = False,
+    ) -> None:
+        if not force:
+            if self.debug_log_every_n <= 0:
+                return
+            if self.tick_count % self.debug_log_every_n != 0:
+                return
+
+        status = self.last_status
+        trusted_age_s = self.last_trusted_age_s(now_ns)
+        trusted_age_text = (
+            f'{trusted_age_s:.3f}'
+            if trusted_age_s is not None
+            else 'none'
+        )
+
+        elapsed_s = self.recovery_elapsed_s(now_ns)
+        remaining_budget_rad = max(
+            0.0,
+            self.recovery_max_integrated_yaw_rad
+            - self.recovery_integrated_yaw_rad,
+        )
+
+        tim_state = (
+            status.state
+            if status is not None
+            else 'NO_STATUS'
+        )
+        tim_control_mode = (
+            status.control_mode
+            if status is not None
+            else 'NO_STATUS'
+        )
+        generation = (
+            status.selection_generation
+            if status is not None
+            else -1
+        )
+        session_id = (
+            status.selection_session_id
+            if status is not None
+            else 'none'
+        )
+
+        yaw_saturated = (
+            self.max_yaw_z > 0.0
+            and abs(final_yaw_z) >= 0.99 * self.max_yaw_z
+        )
+
+        self.get_logger().info(
+            'recovery_diagnostics '
+            f'mode={mode} '
+            f'reason={reason} '
+            f'tim_state={tim_state} '
+            f'tim_control_mode={tim_control_mode} '
+            f'selection_generation={generation} '
+            f'selection_session={session_id} '
+            f'status_fresh={self.status_is_fresh(now_ns)} '
+            f'recovery_enabled={self.enable_yaw_recovery} '
+            f'recovery_active={self.recovery_active} '
+            f'trusted_history_age_s={trusted_age_text} '
+            f'recovery_direction={self.recovery_direction_label()} '
+            f'recovery_elapsed_s={elapsed_s:.3f} '
+            f'recovery_integrated_yaw_rad='
+            f'{self.recovery_integrated_yaw_rad:.4f} '
+            f'recovery_budget_remaining_rad='
+            f'{remaining_budget_rad:.4f} '
+            f'saturation={yaw_saturated} '
+            'final_command='
+            f'(vx={final_vx:.4f},vy={final_vy:.4f},'
+            f'yaw_z={final_yaw_z:.4f})'
+        )
 
     def status_is_fresh(self, now_ns: Optional[int] = None) -> bool:
         status = self.last_status
@@ -734,9 +1059,49 @@ class ControlRefNode(Node):
                 last_trusted_age_s=self.last_trusted_age_s(
                     now.nanoseconds
                 ),
+                recovery_elapsed_s=self.recovery_elapsed_s(
+                    now.nanoseconds
+                ),
+                recovery_integrated_yaw_rad=(
+                    self.recovery_integrated_yaw_rad
+                ),
+                dt_s=self.recovery_dt_s(
+                    now.nanoseconds
+                ),
+                recovery_history_consumed=(
+                    self.recovery_history_consumed()
+                ),
             ),
             self.state_aware_policy_config,
         )
+
+        if decision.mode == 'RECOVERY_YAW_ONLY':
+            self.valid_prev_tick = False
+            self.handle_recovery_yaw(
+                decision=decision,
+                now=now,
+            )
+            return
+
+        if self.recovery_active:
+            self.maybe_log_recovery_diagnostics(
+                now_ns=now.nanoseconds,
+                mode=decision.mode,
+                reason=decision.reason,
+                final_vx=0.0,
+                final_vy=0.0,
+                final_yaw_z=0.0,
+                force=True,
+            )
+            self.stop_recovery()
+
+        if (
+            status is not None
+            and status.state in {'REACQUIRED', 'NO_TARGET'}
+        ):
+            # Confirmation or no-target state terminates this trusted
+            # observation's one recovery opportunity.
+            self.consume_current_trusted_history()
 
         if not decision.allow_normal_follow:
             self.valid_prev_tick = False
@@ -827,6 +1192,9 @@ class ControlRefNode(Node):
                 if status is not None
                 else None
             )
+            # A genuinely new trusted observation re-arms exactly one
+            # subsequent bounded LOST recovery attempt.
+            self.recovery_consumed_trusted_stamp_ns = None
 
         self.prev_vx = self.slew(
             vx_cmd,

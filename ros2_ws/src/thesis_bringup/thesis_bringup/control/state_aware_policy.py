@@ -37,6 +37,7 @@ class StateAwarePolicyInput:
     recovery_elapsed_s: float = 0.0
     recovery_integrated_yaw_rad: float = 0.0
     dt_s: float = 0.0
+    recovery_history_consumed: bool = False
     target_source_stamp_ns: int = 0
     status_source_stamp_ns: int = 0
 
@@ -52,6 +53,65 @@ class StateAwarePolicyDecision:
     @property
     def translation_allowed(self) -> bool:
         return self.allow_normal_follow
+
+
+@dataclass(frozen=True)
+class RecoveryYawCommandDecision:
+    yaw_z: float
+    budget_exhausted: bool
+
+
+def resolve_bounded_recovery_yaw(
+    *,
+    desired_yaw_z: float,
+    previous_yaw_z: float,
+    invert_yaw: bool,
+    max_yaw_z: float,
+    max_delta_yaw_z: float,
+    dt_s: float,
+    remaining_integrated_yaw_rad: float,
+) -> RecoveryYawCommandDecision:
+    """Apply direction, saturation, slew and hard integrated-yaw budget."""
+    desired = float(desired_yaw_z)
+    if invert_yaw:
+        desired = -desired
+
+    max_yaw = max(0.0, abs(float(max_yaw_z)))
+    desired = max(-max_yaw, min(max_yaw, desired))
+
+    previous = float(previous_yaw_z)
+    max_delta = max(0.0, abs(float(max_delta_yaw_z)))
+    delta = max(
+        -max_delta,
+        min(max_delta, desired - previous),
+    )
+    candidate = previous + delta
+
+    if desired != 0.0 and candidate * desired < 0.0:
+        candidate = 0.0
+
+    remaining = max(
+        0.0,
+        float(remaining_integrated_yaw_rad),
+    )
+    dt = max(0.0, float(dt_s))
+
+    if remaining <= 0.0:
+        return RecoveryYawCommandDecision(
+            yaw_z=0.0,
+            budget_exhausted=True,
+        )
+
+    if dt > 0.0 and abs(candidate) * dt > remaining + 1e-12:
+        return RecoveryYawCommandDecision(
+            yaw_z=0.0,
+            budget_exhausted=True,
+        )
+
+    return RecoveryYawCommandDecision(
+        yaw_z=candidate,
+        budget_exhausted=False,
+    )
 
 
 def _finite_nonnegative(value: float | None) -> bool:
@@ -127,6 +187,14 @@ def resolve_state_aware_policy(
         return StateAwarePolicyDecision(
             mode="HOVER",
             reason="recovery_disabled",
+            allow_normal_follow=False,
+            update_last_trusted=False,
+        )
+
+    if policy_input.recovery_history_consumed:
+        return StateAwarePolicyDecision(
+            mode="HOVER",
+            reason="trusted_history_already_consumed",
             allow_normal_follow=False,
             update_last_trusted=False,
         )

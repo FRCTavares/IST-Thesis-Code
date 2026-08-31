@@ -203,3 +203,70 @@ def test_delayed_retired_tim_session_is_rejected():
     assert not decision.accepted
     assert decision.reset_authority
     assert decision.reason == "retired_session"
+
+
+def test_recovery_feature_defaults_off():
+    source = CONTROL_SOURCE.read_text(encoding="utf-8")
+
+    assert "declare_parameter('enable_yaw_recovery', False)" in source
+    assert "recovery_enabled=self.enable_yaw_recovery" in source
+
+
+def test_recovery_path_hard_zeros_translation():
+    source = CONTROL_SOURCE.read_text(encoding="utf-8")
+
+    assert "def handle_recovery_yaw(" in source
+    assert "self.prev_vx = 0.0" in source
+    assert "self.prev_vy = 0.0" in source
+    assert (
+        "self.publish_pair(\n"
+        "            now.to_msg(),\n"
+        "            0.0,\n"
+        "            0.0,\n"
+        "            self.prev_yaw_z,"
+    ) in source
+
+
+def test_recovery_starts_from_hard_zero():
+    source = CONTROL_SOURCE.read_text(encoding="utf-8")
+
+    assert "def begin_recovery(" in source
+    assert "self.prev_vx = 0.0" in source
+    assert "self.prev_vy = 0.0" in source
+    assert "self.prev_yaw_z = 0.0" in source
+
+
+def test_new_trusted_observation_rearms_recovery():
+    source = CONTROL_SOURCE.read_text(encoding="utf-8")
+
+    assert "self.recovery_consumed_trusted_stamp_ns = None" in source
+    assert "self.recovery_history_consumed()" in source
+    assert "self.consume_current_trusted_history()" in source
+
+
+def test_recovery_diagnostics_cover_required_fields():
+    source = CONTROL_SOURCE.read_text(encoding="utf-8")
+
+    required_tokens = {
+        "mode=",
+        "reason=",
+        "tim_state=",
+        "tim_control_mode=",
+        "selection_generation=",
+        "selection_session=",
+        "status_fresh=",
+        "recovery_enabled=",
+        "recovery_active=",
+        "trusted_history_age_s=",
+        "recovery_direction=",
+        "recovery_elapsed_s=",
+        "recovery_integrated_yaw_rad=",
+        "recovery_budget_remaining_rad=",
+        "saturation=",
+        "final_command=",
+    }
+
+    for token in required_tokens:
+        assert token in source
+
+    assert "def maybe_log_recovery_diagnostics(" in source
