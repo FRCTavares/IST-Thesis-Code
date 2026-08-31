@@ -93,3 +93,24 @@ def test_samplers_are_cleaned_up():
         'stop_owned_process "hardware health sampler"'
         in cleanup
     )
+
+
+def test_resource_sampling_stops_before_recorder_shutdown():
+    content = text()
+
+    playback_wait = content.index('wait "$PLAY_PID"')
+    health_stop = content.index(
+        'stop_owned_process "hardware health sampler"',
+        playback_wait,
+    )
+    resource_stop = content.index(
+        'stop_owned_process "resource sampler"',
+        playback_wait,
+    )
+    recorder_stop = content.index(
+        'echo "[info] stopping recorder"',
+        playback_wait,
+    )
+
+    assert playback_wait < health_stop < recorder_stop
+    assert playback_wait < resource_stop < recorder_stop

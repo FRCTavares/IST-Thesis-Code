@@ -599,6 +599,18 @@ wait "$PLAY_PID"
 PLAY_EXIT=$?
 PLAY_PID=""
 
+# Resource/health measurements intentionally cover the active replay window,
+# not recorder shutdown or other post-playback cleanup latency.
+if [[ -n "${HARDWARE_HEALTH_PID:-}" ]]; then
+    stop_owned_process "hardware health sampler" "$HARDWARE_HEALTH_PID"
+    HARDWARE_HEALTH_PID=""
+fi
+
+if [[ -n "${RESOURCE_SAMPLER_PID:-}" ]]; then
+    stop_owned_process "resource sampler" "$RESOURCE_SAMPLER_PID"
+    RESOURCE_SAMPLER_PID=""
+fi
+
 if [[ "$PLAY_EXIT" -ne 0 ]]; then
   echo "[error] ros2 bag playback exited with status $PLAY_EXIT"
   tail -n 80 "$LOG_DIR/play.log" 2>/dev/null || true
