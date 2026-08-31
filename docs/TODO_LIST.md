@@ -4,7 +4,7 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
-Last reconciled with GitHub: **30 August 2026**.
+Last reconciled with GitHub: **31 August 2026**.
 
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
@@ -48,7 +48,7 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 ## P1 — Major algorithmic, scientific, engineering, and documentation work
 
 
-**Immediate thesis-critical implementation and evaluation path:** #32 pre-#58 retained evidence → #58 development architecture/compute comparison → #74 deterministic state-aware controller → #51 remaining physical readiness → #27 prospective held-out freeze/evaluation → #50 closed-loop ground/flight validation → #64 representative drone-POV resolution decision → #58 final held-out closure → #32 final sustained onboard characterisation → #39 final claim freeze. Issues #25 and #21 are closed. Paused #64 does not block the current #58 development comparison or #74 deterministic controller work.
+**Immediate thesis-critical implementation and evaluation path:** #58 development architecture/compute comparison → #74 deterministic state-aware controller → #51 remaining physical readiness → #27 prospective held-out freeze/evaluation → #50 closed-loop ground/flight validation → #64 representative drone-POV resolution decision → #58 final held-out closure → #32 final sustained onboard characterisation → #39 final claim freeze. The pre-#58 #32 instrumentation/evidence gate completed on 31 August 2026. Issues #25 and #21 are closed. Paused #64 does not block the current #58 development comparison or #74 deterministic controller work.
 
 **Parallel thesis-writing workstream:** the thesis is not postponed until the code is finished. Complete the architecture and evidence-safe method catch-up by 7 September, the supervisor-ready full draft by 30 September, and the review/submission work by 31 October alongside the algorithm and evaluation schedule.
 
@@ -166,12 +166,26 @@ lifecycle handling, controller-facing target resets, and the accepted
 deterministic replay contract reserve numeric zero for invalid, reset, or
 otherwise noncausal lifecycle events. Inference sequencing therefore remains
 zero-based for legacy Gst PTS compatibility, while published causal pipeline
-frame IDs start at one. A replacement retained clean-tree provenance/report
-replay from this corrected frame-ID contract remains the final pre-#58 gate.
-      Execution
-      dependency remains:
-      #32 instrumentation → #58 → #74 → #32 final sustained characterization.
-      Do not close #32 before the post-#74 sustained resource evidence.
+frame IDs start at one.
+    - 31 Aug 2026: the replacement retained clean-tree Seq03 replay from
+      `67311f2097f6dbea54f98498a564bfc50463fc7c` completed the pre-#58
+      instrumentation/evidence gate. Provenance records a clean repository,
+      canonical YOLOv8s and CPU MARS identities, and the direct-Hailo runtime.
+      Schema-v4 causal invariants pass with zero failures: `/timing` and
+      `/timing_tracker` use causal frame IDs 1--1019, while `/timing_target`
+      uses 92--1019; no causal timing path contains frame ID zero. The single
+      controller-facing target frame zero is the expected noncausal
+      `operator_clear` lifecycle event. Gap-filtered active results are
+      detector e2e p95 35.184 ms, tracker p95 21.297 ms, target e2e p95
+      192.727 ms and p99 235.360 ms at 15.732 Hz target timing. Selective
+      CPU-MARS workload remains stable: cache hit rate 0.86837, 3.309 backend
+      calls/s, 9.661 requested crops/s, steady-state backend p95 181.189 ms,
+      with one first-call warm-up outlier at 676.132 ms. The runner and audit
+      both leave zero surviving runtime descendants and no repository-root
+      runtime noise.
+    - Pre-#58 #32 work is therefore complete. Execution now proceeds
+      #58 → #74 → #32 final sustained characterization. Do not close #32
+      before the post-#74 sustained resource evidence.
 
 8. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
    - phase 5; engineering.
