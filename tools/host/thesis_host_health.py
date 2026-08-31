@@ -78,6 +78,7 @@ def inspect_host(
     pixhawk_wifi_connection: str,
     root_path: Path,
     min_free_bytes: int,
+    pixhawk_wifi_fallback_connection: str = "",
     runner: Callable[..., subprocess.CompletedProcess[str]] = run_command,
 ) -> dict[str, Any]:
     """Collect the minimal host state needed for safe recovery decisions."""
@@ -155,9 +156,17 @@ def inspect_host(
     )
 
     network_connected = nm_state.startswith("100")
+    approved_field_wifi = {
+        connection
+        for connection in (
+            pixhawk_wifi_connection,
+            pixhawk_wifi_fallback_connection,
+        )
+        if connection
+    }
     expected_wifi_active = (
         mode != "pixhawk"
-        or active_wifi_connection == pixhawk_wifi_connection
+        or active_wifi_connection in approved_field_wifi
     )
     network_config_ok = (
         network_manager_active
@@ -321,6 +330,7 @@ def execute_actions(
     interface: str,
     mode: str = "unattended",
     pixhawk_wifi_connection: str = "",
+    pixhawk_wifi_fallback_connection: str = "",
     dry_run: bool,
     runner: Callable[..., subprocess.CompletedProcess[str]] = run_command,
 ) -> dict[str, int]:
@@ -328,21 +338,46 @@ def execute_actions(
     results: dict[str, int] = {}
     for action in actions:
         command = list(ACTION_COMMANDS[action])
-        if action == "network_reconnect":
-            if mode == "pixhawk":
-                command = [
-                    "nmcli",
-                    "connection",
-                    "up",
+        if action == "network_reconnect" and mode == "pixhawk":
+            candidates = [
+                connection
+                for connection in (
                     pixhawk_wifi_connection,
-                    "ifname",
-                    interface,
-                ]
-            else:
-                command.append(interface)
+                    pixhawk_wifi_fallback_connection,
+                )
+                if connection
+            ]
+
+            if dry_run:
+                results[action] = 0
+                continue
+
+            result_code = 1
+            for connection in candidates:
+                result_code = runner(
+                    [
+                        "nmcli",
+                        "connection",
+                        "up",
+                        connection,
+                        "ifname",
+                        interface,
+                    ],
+                    timeout=45.0,
+                ).returncode
+                if result_code == 0:
+                    break
+
+            results[action] = result_code
+            continue
+
+        if action == "network_reconnect":
+            command.append(interface)
+
         if dry_run:
             results[action] = 0
             continue
+
         results[action] = runner(command, timeout=45.0).returncode
     return results
 
@@ -363,6 +398,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--pixhawk-wifi-connection",
         default=os.environ.get(
             "THESIS_HOST_PIXHAWK_WIFI_CONNECTION", "ISR Aero.Next GCS"
+        ),
+    )
+    parser.add_argument(
+        "--pixhawk-wifi-fallback-connection",
+        default=os.environ.get(
+            "THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION", ""
         ),
     )
     parser.add_argument(
@@ -415,6 +456,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         pixhawk_wifi_connection=args.pixhawk_wifi_connection,
         root_path=args.root_path,
         min_free_bytes=int(args.min_free_gib * 1024**3),
+        pixhawk_wifi_fallback_connection=(
+            args.pixhawk_wifi_fallback_connection
+        ),
     )
     updated = update_failure_counters(snapshot, state)
     now_epoch = int(time.time())
@@ -431,6 +475,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         interface=args.interface,
         mode=args.mode,
         pixhawk_wifi_connection=args.pixhawk_wifi_connection,
+        pixhawk_wifi_fallback_connection=(
+            args.pixhawk_wifi_fallback_connection
+        ),
         dry_run=args.dry_run,
     )
 

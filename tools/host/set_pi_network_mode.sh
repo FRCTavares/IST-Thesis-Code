@@ -8,8 +8,9 @@ usage() {
     cat <<'EOF'
 Usage: sudo set_pi_network_mode.sh unattended|pixhawk|status
 
-pixhawk: require ISR Aero.Next GCS Wi-Fi, stop/disable Tailscale, and activate
-         the dedicated Pixhawk Ethernet profile without a default route.
+pixhawk: prefer ISR Aero.Next GCS Wi-Fi, optionally fall back to the configured
+         AERONEXT local-router profile, stop/disable Tailscale, and activate the
+         dedicated Pixhawk Ethernet profile without a default route.
 unattended: enable/start Tailscale and leave NetworkManager to recover Wi-Fi.
 status: report the configured mode and active connections without secrets.
 EOF
@@ -25,6 +26,7 @@ set +a
 
 INTERFACE="${THESIS_HOST_INTERFACE:-wlan0}"
 PIXHAWK_WIFI="${THESIS_HOST_PIXHAWK_WIFI_CONNECTION:-ISR Aero.Next GCS}"
+PIXHAWK_WIFI_FALLBACK="${THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION:-}"
 PIXHAWK_ETHERNET="${THESIS_HOST_PIXHAWK_ETHERNET_CONNECTION:-pixhawk-apm}"
 
 set_mode() {
@@ -36,29 +38,57 @@ connection_exists() {
     nmcli -t -f NAME connection show | grep -Fxq -- "$1"
 }
 
+activate_field_wifi() {
+    local candidate=""
+    local active_wifi=""
+
+    for candidate in "$PIXHAWK_WIFI" "$PIXHAWK_WIFI_FALLBACK"; do
+        [ -n "$candidate" ] || continue
+
+        if ! connection_exists "$candidate"; then
+            echo "[warn] missing field Wi-Fi profile: $candidate" >&2
+            continue
+        fi
+
+        echo "[field] trying Wi-Fi profile: $candidate" >&2
+
+        if nmcli connection up "$candidate" ifname "$INTERFACE"; then
+            active_wifi="$(
+                nmcli -g GENERAL.CONNECTION device show "$INTERFACE"
+            )"
+
+            if [ "$active_wifi" = "$candidate" ]; then
+                echo "$candidate"
+                return 0
+            fi
+        fi
+
+        echo "[warn] field Wi-Fi activation failed: $candidate" >&2
+    done
+
+    return 1
+}
+
 case "$MODE" in
     status)
         echo "configured_mode=${THESIS_HOST_MODE:-unattended}"
         echo "wifi_interface=$INTERFACE"
         echo "wifi_connection=$(nmcli -g GENERAL.CONNECTION device show "$INTERFACE" 2>/dev/null || true)"
+        echo "field_wifi_primary=$PIXHAWK_WIFI"
+        echo "field_wifi_fallback=${PIXHAWK_WIFI_FALLBACK:-none}"
         echo "ethernet_connection=$(nmcli -g GENERAL.CONNECTION device show eth0 2>/dev/null || true)"
         echo "tailscaled=$(systemctl is-active tailscaled.service 2>/dev/null || true)"
         ;;
     pixhawk)
-        connection_exists "$PIXHAWK_WIFI" || {
-            echo "[error] missing NetworkManager profile: $PIXHAWK_WIFI"
-            exit 1
-        }
         connection_exists "$PIXHAWK_ETHERNET" || {
             echo "[error] missing NetworkManager profile: $PIXHAWK_ETHERNET"
             exit 1
         }
 
-        # Establish the required physical path before disabling remote recovery.
-        nmcli connection up "$PIXHAWK_WIFI" ifname "$INTERFACE"
-        active_wifi="$(nmcli -g GENERAL.CONNECTION device show "$INTERFACE")"
-        [[ "$active_wifi" == "$PIXHAWK_WIFI" ]] || {
-            echo "[error] AERONEXT Wi-Fi did not become active"
+        # Establish an approved field Wi-Fi path before disabling remote
+        # recovery. The canonical ISR GCS profile always has first priority.
+        active_wifi="$(activate_field_wifi)" || {
+            echo "[error] no approved field Wi-Fi profile could be activated"
             exit 1
         }
 
@@ -68,7 +98,7 @@ case "$MODE" in
         set_mode pixhawk
         systemctl disable --now tailscaled.service
         systemctl start thesis-host-health.service
-        echo "[ok] Pixhawk mode: AERONEXT active, Pixhawk Ethernet active, Tailscale disabled"
+        echo "[ok] Pixhawk mode: field Wi-Fi=$active_wifi, Pixhawk Ethernet active, Tailscale disabled"
         ;;
     unattended)
         set_mode unattended

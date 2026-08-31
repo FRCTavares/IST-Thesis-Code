@@ -4,6 +4,8 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
+Open executable issues: **19**.
+
 Last reconciled with GitHub: **31 August 2026**.
 
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
@@ -217,8 +219,10 @@ Issues #51 and #50 retain their historical GitHub P2 labels, but their remaining
    - unattended mode now separates configured connectivity from verified default-gateway reachability.
    - three consecutive reachability failures trigger one bounded `wlan0` reconnect; six failures trigger one bounded NetworkManager restart with an independent cooldown.
    - real installed-system tests proved Tailscale restart, Wi-Fi reconnect, NetworkManager escalation, network recovery, SSH recovery, Tailscale recovery, timer restoration, and production-state isolation.
-   - 15 focused host-health tests pass, the repository and deployed monitor checksums match, and the production timer reports healthy gateway, network, SSH, and Tailscale state.
-   - the issue remains open only for the previously deferred September gates: physical power restoration, watchdog or independent-power mitigation, genuinely external Tailnet SSH, key-expiry confirmation, and physical Pixhawk/AERONEXT mode validation.
+   - 18 focused host-health tests pass for the current repository policy. The previously deployed monitor remains the validated unattended baseline until this ISR-first fallback slice is deliberately installed; the production timer currently reports healthy gateway, network, SSH, and Tailscale state.
+   - 31 Aug 2026: the Tailscale authentication gate was rechecked live; the node is online and now expires on 21 Feb 2027, so the previous 23 Aug 2026 expiry blocker is resolved. The field-network software now implements ordered ISR-first selection: `ISR Aero.Next GCS` is always attempted first, with one explicitly configured approved AERONEXT local-router fallback permitted only when ISR cannot be activated. Neither path may bypass fail-closed Pixhawk mode, the `pixhawk-apm` no-default-route contract, or the Tailscale-off requirement. The exact fallback profile is not yet provisioned and remains a physical field-validation item.
+   - 31 Aug 2026: a spontaneous home-network data-plane outage provided additional real recovery evidence. Gateway reachability failed while NetworkManager still reported the expected Wi-Fi profile and default route; after the configured third consecutive failure, the host monitor performed one bounded Wi-Fi reconnect. DHCP/default routing returned at 19:45:48 WEST, Tailscale recovered immediately afterward, and a fresh SSH connection to `100.69.42.62` passed. This validates the repaired data-plane recovery path but does not satisfy the genuinely external-network SSH gate.
+   - the issue remains open for physical power restoration, watchdog or independent-power mitigation, genuinely external Tailnet SSH, exact AERONEXT fallback-profile provisioning/validation, and the physical Pixhawk/field-network mode validation.
 
 2. [ ] [#50 — P2 Complete flight-readiness gate and record held-out UAV-motion evidence (September)](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
    - phase 10; live-system; resumes in September after the remaining physical validation in #51.

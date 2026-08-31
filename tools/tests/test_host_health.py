@@ -1,6 +1,7 @@
 """Tests for the unattended Pi host-only recovery contract."""
 
 import importlib.util
+import subprocess
 from pathlib import Path
 
 
@@ -286,9 +287,107 @@ def test_network_mode_script_is_fail_closed():
         REPO_ROOT / "tools/host/set_pi_network_mode.sh"
     ).read_text(encoding="utf-8")
 
-    wifi_up = 'nmcli connection up "$PIXHAWK_WIFI"'
+    field_wifi_activation = 'active_wifi="$(activate_field_wifi)"'
     mode_persist = "set_mode pixhawk"
     tailscale_stop = "systemctl disable --now tailscaled.service"
-    assert mode_script.index(wifi_up) < mode_script.index(mode_persist)
-    assert mode_script.index(wifi_up) < mode_script.index(tailscale_stop)
+
+    assert (
+        mode_script.index(field_wifi_activation)
+        < mode_script.index(mode_persist)
+    )
+    assert (
+        mode_script.index(field_wifi_activation)
+        < mode_script.index(tailscale_stop)
+    )
+    assert (
+        'for candidate in "$PIXHAWK_WIFI" "$PIXHAWK_WIFI_FALLBACK"'
+        in mode_script
+    )
+    assert "no approved field Wi-Fi profile could be activated" in mode_script
     assert "ipv4.never-default yes ipv6.never-default yes" in mode_script
+
+
+def test_pixhawk_network_recovery_falls_back_after_primary_failure():
+    commands = []
+
+    def runner(command, timeout):
+        commands.append((list(command), timeout))
+        return subprocess.CompletedProcess(
+            command,
+            1 if "ISR Aero.Next GCS" in command else 0,
+            stdout="",
+            stderr="",
+        )
+
+    results = HOST_HEALTH.execute_actions(
+        ["network_reconnect"],
+        interface="wlan0",
+        mode="pixhawk",
+        pixhawk_wifi_connection="ISR Aero.Next GCS",
+        pixhawk_wifi_fallback_connection="AERONEXT Local Router",
+        dry_run=False,
+        runner=runner,
+    )
+
+    assert results == {"network_reconnect": 0}
+    assert commands == [
+        (
+            [
+                "nmcli",
+                "connection",
+                "up",
+                "ISR Aero.Next GCS",
+                "ifname",
+                "wlan0",
+            ],
+            45.0,
+        ),
+        (
+            [
+                "nmcli",
+                "connection",
+                "up",
+                "AERONEXT Local Router",
+                "ifname",
+                "wlan0",
+            ],
+            45.0,
+        ),
+    ]
+
+
+def test_pixhawk_network_recovery_does_not_use_fallback_when_primary_passes():
+    commands = []
+
+    def runner(command, timeout):
+        commands.append((list(command), timeout))
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            stdout="",
+            stderr="",
+        )
+
+    results = HOST_HEALTH.execute_actions(
+        ["network_reconnect"],
+        interface="wlan0",
+        mode="pixhawk",
+        pixhawk_wifi_connection="ISR Aero.Next GCS",
+        pixhawk_wifi_fallback_connection="AERONEXT Local Router",
+        dry_run=False,
+        runner=runner,
+    )
+
+    assert results == {"network_reconnect": 0}
+    assert len(commands) == 1
+    assert commands[0][0][3] == "ISR Aero.Next GCS"
+
+
+def test_network_mode_script_defines_ordered_field_wifi_fallback():
+    mode_script = (
+        REPO_ROOT / "tools/host/set_pi_network_mode.sh"
+    ).read_text(encoding="utf-8")
+
+    assert "THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION" in mode_script
+    assert 'for candidate in "$PIXHAWK_WIFI" "$PIXHAWK_WIFI_FALLBACK"' in mode_script
+    assert "no approved field Wi-Fi profile could be activated" in mode_script

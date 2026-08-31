@@ -16,9 +16,10 @@ the physical AERONEXT/Pixhawk mode check.
 The deployment enables only NetworkManager, Tailscale, the SSH socket, UFW, and
 the host-health timer. It does not enable or start ROS, MAVROS, perception,
 tracking, TIM, control, arming, recording, or any aircraft-facing service.
-Tailscale is required only in unattended mode. Pixhawk mode instead requires
-`ISR Aero.Next GCS` on `wlan0`, reserves `eth0` for `pixhawk-apm`, and keeps
-Tailscale stopped.
+Tailscale is required only in unattended mode. Pixhawk mode prefers
+`ISR Aero.Next GCS` on `wlan0` and may fall back to one explicitly configured
+approved AERONEXT local-router profile when ISR cannot be activated. It reserves
+`eth0` for `pixhawk-apm` and keeps Tailscale stopped.
 
 ## Audited baseline
 
@@ -56,13 +57,15 @@ an admin-console expiry change or renewal before departure.
   - restarts Tailscale only when the underlying network is healthy;
   - restarts only `ssh.socket` when SSH is unavailable;
   - emits redacted JSON and never logs credentials or Tailscale peer data.
-  - in Pixhawk mode, rejects every Wi-Fi profile except `ISR Aero.Next GCS`,
-    requires its default route through `wlan0`, and stops rather than restarts
-    Tailscale.
+  - in Pixhawk mode, accepts only the configured field Wi-Fi profiles,
+    with `ISR Aero.Next GCS` first priority and an optional approved AERONEXT
+    local-router fallback; it requires the active field profile's default route
+    through `wlan0` and stops rather than restarts Tailscale.
 - `tools/host/set_pi_network_mode.sh`
   - switches explicitly between `unattended` and `pixhawk` modes;
-  - proves AERONEXT Wi-Fi is active before persisting field mode or stopping
-    Tailscale;
+  - tries `ISR Aero.Next GCS` first, then the explicitly configured approved
+    AERONEXT local-router fallback if required, and proves one approved field
+    Wi-Fi profile is active before persisting field mode or stopping Tailscale;
   - activates `pixhawk-apm` with IPv4/IPv6 default routes disabled;
   - fails before changing mode if either required NetworkManager profile is
     absent or AERONEXT cannot connect.
@@ -190,11 +193,47 @@ After installation:
 - non-mutating invocation: Pixhawk mode, one-failure threshold, dry-run;
 - observed: the home Wi-Fi profile was rejected (`expected_wifi_active=false`)
   even though the interface and a default route were present;
-- selected recovery actions: exact AERONEXT connection recovery and
-  `tailscale_stop`; no action was executed in the dry-run;
+- selected recovery actions: recovery toward the configured preferred
+  field Wi-Fi profile and `tailscale_stop`; no action was executed in the
+  dry-run. The current software now supports ordered ISR-first recovery with
+  an explicitly configured approved AERONEXT fallback;
 - live-stack field and source paths now invoke the fail-closed mode switch
   instead of activating `pixhawk-apm` directly;
 - result: SOFTWARE POLICY PASS; physical link/profile check remains open.
+
+### 31 August 2026 spontaneous data-plane outage and automatic recovery
+
+A genuine home-network data-plane interruption occurred while the Pi remained
+configured in `unattended` mode on `netplan-wlan0-Wi-Fi MC`.
+
+- At 19:41 WEST, the host-health check still observed the expected active
+  NetworkManager profile, installed default route, active SSH, and running
+  Tailscale, but the configured gateway `192.168.1.1` was no longer reachable.
+  This was recorded as the first consecutive network failure.
+- At 19:43 WEST, the gateway remained unreachable and Tailscale had also become
+  offline, while `wlan0` was still nominally configured.
+- At 19:45 WEST, the third consecutive network failure triggered exactly one
+  bounded `network_reconnect` action.
+- NetworkManager deliberately deactivated and reactivated the same
+  `netplan-wlan0-Wi-Fi MC` profile. During that transition the Pi temporarily
+  lost its LAN/default-route data path.
+- At 19:45:48 WEST, DHCP restored `192.168.1.110` and the default route through
+  `192.168.1.1`.
+- Tailscale rebound to `wlan0`, re-established its control/DERP connectivity,
+  and log upload recovered by 19:46:12 WEST.
+- The next host-health invocation at 19:47 reported healthy gateway, network,
+  SSH, and Tailscale state with all failure counters reset to zero.
+- A fresh SSH connection to the Pi's Tailscale address `100.69.42.62` succeeded
+  again from the operator Mac at approximately 20:03 WEST.
+- The installed host mode remained `unattended`; `tailscaled.service` remained
+  enabled/active and no Pixhawk field-mode transition occurred.
+
+Result: PASS. This is retained real-failure evidence that the July data-plane
+repair detects a nominally configured but unusable Wi-Fi path and performs one
+bounded reconnect that restores both LAN and Tailscale reachability.
+
+This same-home-network Tailscale reconnection does not replace the still-open
+requirement for a fresh Tailnet SSH test from a genuinely external network.
 
 ## Diagnostics and cleanliness
 
@@ -216,11 +255,11 @@ Do not close Issue #51 until all of these are recorded:
    home network (for example, on a phone hotspot);
 3. confirmation that a tested smart plug or UPS is available, or a locally
    supervised destructive watchdog-recovery test with the runbook safeguards;
-4. confirmation that the unattended interval ends before 23 August 2026, or
-   that Tailscale key expiry was extended/disabled for this node;
+4. [RESOLVED 31 Aug 2026] live Tailscale status reports the node online with
+   key expiry `2027-02-21T12:59:51Z`, covering the remaining thesis interval;
 5. with the Pixhawk connected to `eth0`, locally confirm `pixhawk-apm` is active,
-   `ISR Aero.Next GCS` is the active `wlan0` profile and default route, and
-   `tailscaled.service` is disabled/inactive.
+   the approved field Wi-Fi selected on `wlan0` has the default route, ISR was
+   preferred when available, and `tailscaled.service` is disabled/inactive.
 
 ## 25 July 2026 data-plane recovery repair validation
 

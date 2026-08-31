@@ -9,8 +9,10 @@ the Pixhawk 6, switch to the mandatory field mode before starting MAVROS:
 
     sudo ./tools/host/set_pi_network_mode.sh pixhawk
 
-Field mode requires the `ISR Aero.Next GCS` Wi-Fi profile, uses `eth0` only for
-the Pixhawk, and stops/disables Tailscale. Restore this unattended mode after
+Field mode prefers the `ISR Aero.Next GCS` Wi-Fi profile and may use the
+explicitly configured approved AERONEXT local-router fallback only when ISR
+cannot be activated. It uses `eth0` only for the Pixhawk and stops/disables
+Tailscale. Restore unattended mode after
 the Pixhawk is disconnected with:
 
     sudo ./tools/host/set_pi_network_mode.sh unattended
