@@ -6,10 +6,11 @@ Issue: [#51](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
 
 ## Status
 
-Implementation and all software-controlled host tests pass. Issue #51 remains
-open pending the physical power-removal/restoration test, external-network
-reconnection, confirmation of the independent power/watchdog mitigation, and
-the physical AERONEXT/Pixhawk mode check.
+Implementation and all software-controlled host tests pass. The external
+Tailnet and storage-safe physical power-restoration gates also pass. Issue #51
+remains open pending the independent power/watchdog mitigation, exact approved
+AERONEXT fallback-profile provisioning/validation, and the physical
+AERONEXT/Pixhawk mode check.
 
 ## Safety boundary
 
@@ -273,6 +274,77 @@ Result: PASS. Fresh SSH through the Tailnet works while the operator computer is
 on a genuinely separate external network, and no direct LAN SSH firewall
 exception is required.
 
+### 31 August 2026 storage-safe physical power restoration
+
+A storage-safe complete physical power-removal/restoration test was performed
+while the Pi was in `unattended` mode and no thesis live stack, ROS bag
+recording, MAVROS process, or aircraft-facing control process was running.
+
+Pre-power evidence was retained under
+`ros2_ws/log/p051_power_cycle_20260831_221616/`.
+
+Before shutdown:
+
+- Git commit:
+  `fd3e23167b8603cfa457ca055a37e0f297c31e6a`;
+- boot ID:
+  `7d547b68-11ad-49e1-8e00-266273014d15`;
+- root filesystem: `/dev/mmcblk0p2`, ext4, read-write;
+- approximately 73 GiB remained free;
+- NetworkManager, `tailscaled.service`, `ssh.socket`, and
+  `thesis-host-health.timer` were enabled and active;
+- host mode was `unattended`;
+- the storage-safe shutdown was requested at 22:16:17 WEST after `sync`.
+
+The previous-boot journal confirms an orderly shutdown:
+
+- systemd reached `umount.target`, `shutdown.target`, `final.target`, and
+  `poweroff.target`;
+- `systemd-poweroff.service` completed successfully;
+- at 22:16:21 WEST, `systemd-shutdown` recorded
+  `Syncing filesystems and block devices`;
+- the journal then stopped normally.
+
+After the Pi had fully shut down, input power was physically removed, left
+disconnected for at least 15 seconds, and restored once. No local interaction
+was performed after restoration.
+
+Post-restoration evidence:
+
+- new boot ID:
+  `98eeee9a-b2a2-45c1-baa8-156a308e4c38`;
+- recorded OS boot start: 22:17:35 WEST;
+- the repository commit and clean state were preserved;
+- host mode remained `unattended`;
+- NetworkManager, `tailscaled.service`, `ssh.socket`, and
+  `thesis-host-health.timer` automatically returned enabled and active;
+- `wlan0` recovered the home profile and default route through
+  `192.168.1.1`;
+- Tailscale recovered address `100.69.42.62`;
+- from the operator Mac on the separate phone-hotspot network, both Tailnet
+  reachability and TCP/22 were already available at the first observation at
+  22:20:28 WEST;
+- a fresh external SSH session passed with
+  `SSH_CONNECTION=100.105.37.101 59804 100.69.42.62 22`;
+- the root ext4 filesystem was mounted read-write with no detected current-boot
+  filesystem or I/O errors;
+- no failed systemd units were present.
+
+The exact physical power-restoration timestamp was not instrumented, so an exact
+power-on-to-remote-reachability latency is not claimed. Remote access was
+confirmed no later than 22:20:28 WEST, which is 173 seconds after the recorded
+OS boot start.
+
+The post-restoration watchdog audit also confirmed that systemd is actively
+using `/dev/watchdog0`: `RuntimeWatchdogUSec=30s`,
+`RebootWatchdogUSec=10min`, and `wdctl` reported the Broadcom BCM2835 watchdog
+with a 30-second timeout and active keep-alive. This verifies the configured
+watchdog is live, but it does not replace the still-open destructive-watchdog or
+independent-power-mitigation acceptance gate.
+
+Result: PASS. The Pi returned from a storage-safe complete physical power cycle
+to an externally reachable unattended state without local intervention.
+
 ## Diagnostics and cleanliness
 
 - recent previous-boot journal is available;
@@ -287,8 +359,11 @@ exception is required.
 
 Do not close Issue #51 until all of these are recorded:
 
-1. storage-safe poweroff, physical power removal, restoration, and automatic
-   Tailscale/SSH recovery;
+1. [RESOLVED 31 Aug 2026] storage-safe poweroff, complete physical power
+   removal, restoration, and automatic Tailscale/SSH recovery passed. The boot
+   ID changed, the ext4 root returned read-write without detected I/O errors,
+   unattended services restored automatically, and fresh external Tailnet SSH
+   succeeded;
 2. [RESOLVED 31 Aug 2026] a fresh Tailscale SSH connection passed while the
    operator Mac was on a phone-hotspot network (`172.20.10.3`, gateway
    `172.20.10.1`) and the Pi remained on the home LAN (`192.168.1.110`,
