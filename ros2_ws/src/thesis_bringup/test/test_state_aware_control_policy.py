@@ -3,9 +3,9 @@ from __future__ import annotations
 import pytest
 
 from thesis_bringup.control.state_aware_policy import (
+    resolve_state_aware_policy,
     StateAwarePolicyConfig,
     StateAwarePolicyInput,
-    resolve_state_aware_policy,
 )
 
 
@@ -24,6 +24,8 @@ def policy_input(**overrides):
         "recovery_elapsed_s": 0.20,
         "recovery_integrated_yaw_rad": 0.01,
         "dt_s": 0.10,
+        "target_source_stamp_ns": 5_000_000_000,
+        "status_source_stamp_ns": 5_000_000_000,
     }
     values.update(overrides)
     return StateAwarePolicyInput(**values)
@@ -61,6 +63,19 @@ def test_target_status_frame_mismatch_fails_safe():
     )
 
     assert decision.mode == "HOVER"
+    assert not decision.translation_allowed
+
+
+def test_target_status_source_timestamp_mismatch_fails_safe():
+    decision = resolve_state_aware_policy(
+        policy_input(
+            status_source_stamp_ns=4_999_000_000,
+        ),
+        enabled_config(),
+    )
+
+    assert decision.mode == "HOVER"
+    assert decision.reason == "authority_frame_mismatch"
     assert not decision.translation_allowed
 
 

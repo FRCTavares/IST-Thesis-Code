@@ -190,10 +190,18 @@ def test_target_msg_from_invalid_output_zeros_controller_fields():
 
 
 def test_status_only_json_preserves_core_diagnostics():
-    payload = json.loads(status_only_json(_output()))
+    payload = json.loads(
+        status_only_json(
+            _output(),
+            selection_generation=7,
+            selection_session_id="session-a",
+        )
+    )
 
     assert payload["state"] == "LOCKED"
     assert payload["control_mode"] == "FULL"
+    assert payload["selection_generation"] == 7
+    assert payload["selection_session_id"] == "session-a"
     assert payload["target_track_id"] == 7
     assert payload["visible"] is True
     assert payload["quality"] == 0.73
@@ -275,6 +283,8 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     payload = json.loads(
         status_json_from_output(
             _output(),
+            selection_generation=11,
+            selection_session_id="session-b",
             frame_id=42,
             tim_mars_processing_ms=1.5,
             num_tracks=3,
@@ -338,6 +348,8 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     )
 
     assert payload["frame_id"] == 42
+    assert payload["selection_generation"] == 11
+    assert payload["selection_session_id"] == "session-b"
     assert payload["tim_mars_processing_ms"] == 1.5
     assert "lat_ms" not in payload
     assert payload["num_tracks"] == 3
