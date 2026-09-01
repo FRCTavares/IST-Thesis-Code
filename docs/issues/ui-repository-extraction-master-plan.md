@@ -2335,8 +2335,8 @@ Update this table during actual execution.
 | P0 execution refresh | 2026-09-01 | `8e88a471` | N/A | PASS | clean #55 branch; current live-ui tree `634754dd`; mobile field target frozen |
 | M1 local source import | 2026-09-01 | `bd1f2cd5` / tree `634754dd` | `032041aa` | PASS | 45 source files matched path-for-path and blob-for-blob; 47 tracked files after provenance/.gitignore; no generated artifacts; old live-ui retained |
 | P0 green baseline | 2026-08-29 | `bbc19d21` | N/A | PASS | npm/build/smoke; 337 + 17 tests |
-| M0 current-main preflight | pending | pending | N/A | pending | pending |
-| M1 repository creation | pending | N/A | pending | pending | pending |
+| M0 current-main preflight | 2026-09-01 | `bd1f2cd5` / tree `634754dd` | N/A | PASS | clean execution branch; 45 tracked files; destination/GitHub collision checks clear; source sentinels verified |
+| M1 repository creation | 2026-09-01 | tree `634754dd` | `032041aa` | PASS | exact 45-file import plus provenance/.gitignore; public `FRCTavares/IST-Thesis-UI` created; remote main exactly matches validated import commit |
 | M2 standalone validation | 2026-09-01 | N/A | `032041aa` | PASS | `npm ci`, production build and dependency tree pass; mock/offline HTTP pass without ROS/Thesis-Code dependency; true Vite session ownership gives deterministic cleanup |
 | M3 UI launcher | pending | optional | pending | pending | pending |
 | M4 compatibility wrapper | pending | pending | pending | pending | pending |
