@@ -6,11 +6,20 @@ Issue: [#51](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
 
 ## Status
 
-Implementation and all software-controlled host tests pass. The external
-Tailnet and storage-safe physical power-restoration gates also pass. Issue #51
-remains open pending the independent power/watchdog mitigation, exact approved
-AERONEXT fallback-profile provisioning/validation, and the physical
-AERONEXT/Pixhawk mode check.
+Implementation and all software-controlled host tests pass. External
+Tailnet recovery, storage-safe physical power restoration, and repeated
+spontaneous data-plane recovery also pass. Issue #51 is complete for its
+host-only unattended-recovery scope.
+
+The configured Raspberry Pi hardware watchdog is live and actively fed by
+systemd with a 30-second timeout. A destructive simulated kernel hang was
+deliberately not injected because the committed runbook permits that test only
+when a verified independent smart-plug or UPS recovery path is available. Hard
+kernel-hang recovery therefore remains an explicit untested extreme-failure
+limitation rather than a claimed validation result.
+
+Exact AERONEXT fallback provisioning and the physical Pixhawk/AERONEXT network
+state are field/flight-readiness checks and are transferred to Issue #50.
 
 ## Safety boundary
 
@@ -345,6 +354,44 @@ independent-power-mitigation acceptance gate.
 Result: PASS. The Pi returned from a storage-safe complete physical power cycle
 to an externally reachable unattended state without local intervention.
 
+### 31 August 2026 second spontaneous data-plane recovery
+
+A second genuine home-network data-plane outage occurred after the physical
+power-restoration validation while the Pi remained in `unattended` mode.
+
+The Pi did not reboot: boot ID
+`98eeee9a-b2a2-45c1-baa8-156a308e4c38` remained unchanged.
+
+The installed host-health monitor recorded:
+
+- 22:41:50 WEST: expected Wi-Fi active, gateway reachable, network healthy,
+  Tailscale online;
+- 22:44:00: the Wi-Fi profile and default route still appeared configured, but
+  `gateway_reachable=false`; network and Tailscale failure counters became 1;
+- 22:46:12: the same data-plane failure persisted and counters became 2;
+- 22:48:24--22:48:45: the third consecutive failure triggered one bounded
+  `network_reconnect`, which returned status 0;
+- NetworkManager deliberately reactivated the same
+  `netplan-wlan0-Wi-Fi MC` profile;
+- 22:48:44: wireless association completed;
+- 22:48:45: DHCP restored `192.168.1.110` and the default route through
+  `192.168.1.1`;
+- Tailscale immediately rebound, re-established DERP/control connectivity, and
+  regained direct peer connectivity;
+- 22:50:45: the next host-health invocation reported the gateway, network,
+  Tailscale, SSH, and service state healthy and reset all failure counters.
+
+During the outage, a genuinely external Mac connection over the Tailnet became
+unreachable and the existing SSH session timed out. This is expected when the
+underlying network path disappears; an existing TCP session is not required to
+survive a complete data-plane interruption. The acceptance criterion is that
+the host recovers automatically and accepts a fresh remote connection after
+connectivity is restored.
+
+Result: PASS. This independently reproduces the failure mode that motivated the
+July repair and demonstrates that the deployed bounded recovery policy restores
+the host without rebooting it.
+
 ## Diagnostics and cleanliness
 
 - recent previous-boot journal is available;
@@ -355,27 +402,28 @@ to an externally reachable unattended state without local intervention.
 - no credentials, SSH keys, Wi-Fi secrets, Tailscale keys, or Tailscale state
   were added to the repository.
 
-## Remaining physical/external gates
+## Issue #51 closure disposition
 
-Do not close Issue #51 until all of these are recorded:
+The host-only unattended-recovery scope is complete.
 
-1. [RESOLVED 31 Aug 2026] storage-safe poweroff, complete physical power
-   removal, restoration, and automatic Tailscale/SSH recovery passed. The boot
-   ID changed, the ext4 root returned read-write without detected I/O errors,
-   unattended services restored automatically, and fresh external Tailnet SSH
-   succeeded;
-2. [RESOLVED 31 Aug 2026] a fresh Tailscale SSH connection passed while the
-   operator Mac was on a phone-hotspot network (`172.20.10.3`, gateway
-   `172.20.10.1`) and the Pi remained on the home LAN (`192.168.1.110`,
-   gateway `192.168.1.1`). The Pi observed the SSH source as the Mac Tailnet
-   address `100.105.37.101`;
-3. confirmation that a tested smart plug or UPS is available, or a locally
-   supervised destructive watchdog-recovery test with the runbook safeguards;
-4. [RESOLVED 31 Aug 2026] live Tailscale status reports the node online with
-   key expiry `2027-02-21T12:59:51Z`, covering the remaining thesis interval;
-5. with the Pixhawk connected to `eth0`, locally confirm `pixhawk-apm` is active,
-   the approved field Wi-Fi selected on `wlan0` has the default route, ISR was
-   preferred when available, and `tailscaled.service` is disabled/inactive.
+1. [RESOLVED 31 Aug 2026] storage-safe complete power removal/restoration
+   returned the Pi to an externally reachable unattended state;
+2. [RESOLVED 31 Aug 2026] genuinely external Tailnet SSH passed without a
+   direct-LAN SSH firewall exception;
+3. [RESOLVED WITH EXPLICIT LIMITATION] systemd actively feeds the Broadcom
+   hardware watchdog with a 30-second timeout. Destructive kernel-hang fault
+   injection was not performed because the committed runbook requires a
+   verified working smart plug or UPS before that test. Hard-hang recovery is
+   therefore not claimed as experimentally demonstrated;
+4. [RESOLVED 31 Aug 2026] Tailscale authentication remains valid through
+   `2027-02-21T12:59:51Z`;
+5. [TRANSFERRED TO #50] provision and validate the exact approved AERONEXT
+   fallback profile and physically verify Pixhawk field-network state with
+   `pixhawk-apm` on `eth0`, approved field Wi-Fi/default route on `wlan0`, ISR
+   preferred when available, and Tailscale disabled.
+
+The transferred field-network items remain required before aircraft operation;
+closing #51 does not waive them.
 
 ## 25 July 2026 data-plane recovery repair validation
 
