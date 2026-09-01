@@ -28,7 +28,7 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 ## P0 — Safety, evidence integrity, thesis claims, and flight blockers
 
 1. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
-   - phase 7; experiment; development/legacy inputs are frozen and hashed in `tim_mars_split_v1`. The remaining H01–H03 live capture, annotation, hashing, and people/clothing-overlap work was explicitly deferred by the operator on 23 July 2026 until September. The release gate must remain fail-closed at `final_ready=0/3`; no final held-out evaluation or threshold changes are permitted before that work resumes.
+   - phase 7; experiment; the historical 23 July `tim_mars_split_v1` is retained for provenance, while the active prospective final-evaluation authority is `tim_mars_split_v2`, frozen on 1 September before any H01–H03 capture or outcome access. Development/legacy inputs remain development/legacy only. H01–H03 capture, physical-v2 annotation, hashing, and people/clothing-overlap records remain pending; the release gate must stay fail-closed at `final_ready=0/3`, and no held-out outcome may influence thresholds, algorithm logic, tracker settings, or model selection.
 
 2. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
     - phase 9; experiment; blocked until the September held-out evaluation
