@@ -2338,7 +2338,7 @@ Update this table during actual execution.
 | M0 current-main preflight | 2026-09-01 | `bd1f2cd5` / tree `634754dd` | N/A | PASS | clean execution branch; 45 tracked files; destination/GitHub collision checks clear; source sentinels verified |
 | M1 repository creation | 2026-09-01 | tree `634754dd` | `032041aa` | PASS | exact 45-file import plus provenance/.gitignore; public `FRCTavares/IST-Thesis-UI` created; remote main exactly matches validated import commit |
 | M2 standalone validation | 2026-09-01 | N/A | `032041aa` | PASS | `npm ci`, production build and dependency tree pass; mock/offline HTTP pass without ROS/Thesis-Code dependency; true Vite session ownership gives deterministic cleanup |
-| M3 UI launcher | pending | optional | pending | pending | pending |
+| M3 UI launcher | 2026-09-01 | N/A | `03e45384` | PASS | UI-owned `tools/start_dashboard.sh`; backend/mock/offline modes; host/port/install options; external state/log path; launcher execs real Vite process; HTTP and deterministic shutdown smoke pass |
 | M4 compatibility wrapper | pending | pending | pending | pending | pending |
 | M5 docs/test ownership | pending | pending | pending | pending | pending |
 | M6 live integration | pending | pending | pending | pending | pending |
