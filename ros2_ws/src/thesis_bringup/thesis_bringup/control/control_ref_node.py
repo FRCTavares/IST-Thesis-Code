@@ -16,6 +16,18 @@ from rclpy.qos import (
     QoSProfile,
     ReliabilityPolicy,
 )
+from std_msgs.msg import String
+from thesis_bringup.control.state_aware_policy import (
+    resolve_bounded_recovery_yaw,
+    resolve_state_aware_policy,
+    StateAwarePolicyConfig,
+    StateAwarePolicyInput,
+)
+from thesis_bringup.control.tim_authority_status import (
+    evaluate_authority_epoch,
+    parse_tim_authority_status,
+    TimAuthorityStatus,
+)
 from thesis_bringup.freshness import (
     classify_freshness,
     DEFAULT_FUTURE_TOLERANCE_S,
@@ -104,7 +116,14 @@ class ControlRefNode(Node):
     def __init__(self) -> None:
         super().__init__('control_ref_node')
 
-        self.declare_parameter('target_topic', '/target')
+        self.declare_parameter(
+            'target_topic',
+            '/target_memory_mars',
+        )
+        self.declare_parameter(
+            'status_topic',
+            '/target_memory_mars/status',
+        )
         self.declare_parameter('cmd_topic', '/control_ref/cmd_vel')
         self.declare_parameter('rate_hz', 30.0)
         self.declare_parameter(
@@ -157,7 +176,22 @@ class ControlRefNode(Node):
         self.declare_parameter('ambiguity_warn_every_n', 30)
         self.declare_parameter('saturation_warn_every_n', 90)
 
+        # Issue #74 bounded LOST recovery. Keep disabled until
+        # deterministic and closed-loop validation explicitly promotes it.
+        self.declare_parameter('enable_yaw_recovery', False)
+        self.declare_parameter('recovery_yaw_rate', 0.10)
+        self.declare_parameter('recovery_max_duration_s', 1.0)
+        self.declare_parameter(
+            'recovery_max_integrated_yaw_rad',
+            0.10,
+        )
+        self.declare_parameter(
+            'recovery_last_trusted_max_age_s',
+            1.0,
+        )
+
         target_topic = str(self.get_parameter('target_topic').value)
+        status_topic = str(self.get_parameter('status_topic').value)
         cmd_topic = str(self.get_parameter('cmd_topic').value)
         rate_hz = float(self.get_parameter('rate_hz').value)
         self.enable_mavros = bool(self.get_parameter('enable_mavros').value)
@@ -172,6 +206,39 @@ class ControlRefNode(Node):
         )
         self.ambiguity_warn_every_n = int(self.get_parameter('ambiguity_warn_every_n').value)
         self.saturation_warn_every_n = int(self.get_parameter('saturation_warn_every_n').value)
+
+        self.enable_yaw_recovery = bool(
+            self.get_parameter('enable_yaw_recovery').value
+        )
+        self.recovery_yaw_rate = float(
+            self.get_parameter('recovery_yaw_rate').value
+        )
+        self.recovery_max_duration_s = float(
+            self.get_parameter('recovery_max_duration_s').value
+        )
+        self.recovery_max_integrated_yaw_rad = float(
+            self.get_parameter(
+                'recovery_max_integrated_yaw_rad'
+            ).value
+        )
+        self.recovery_last_trusted_max_age_s = float(
+            self.get_parameter(
+                'recovery_last_trusted_max_age_s'
+            ).value
+        )
+
+        if self.recovery_yaw_rate <= 0.0:
+            raise ValueError('recovery_yaw_rate must be > 0')
+        if self.recovery_max_duration_s <= 0.0:
+            raise ValueError('recovery_max_duration_s must be > 0')
+        if self.recovery_max_integrated_yaw_rad <= 0.0:
+            raise ValueError(
+                'recovery_max_integrated_yaw_rad must be > 0'
+            )
+        if self.recovery_last_trusted_max_age_s <= 0.0:
+            raise ValueError(
+                'recovery_last_trusted_max_age_s must be > 0'
+            )
 
         self.stale_timeout_s = float(self.get_parameter('stale_timeout_s').value)
         self.future_tolerance_s = float(
@@ -214,6 +281,35 @@ class ControlRefNode(Node):
         self.last_target_source_order_status: Optional[str] = None
         self.latest_source_stamp_ns: Optional[int] = None
 
+        self.last_status: Optional[TimAuthorityStatus] = None
+        self.last_status_rx_time = None
+        self.selection_generation: Optional[int] = None
+        self.selection_session_id: Optional[str] = None
+        self.retired_selection_session_ids: set[str] = set()
+        self.last_policy_reason: Optional[str] = None
+
+        self.last_trusted_horizontal_error: Optional[float] = None
+        self.last_trusted_stamp_ns: Optional[int] = None
+        self.last_trusted_generation: Optional[int] = None
+
+        self.recovery_active = False
+        self.recovery_start_ns: Optional[int] = None
+        self.recovery_last_update_ns: Optional[int] = None
+        self.recovery_integrated_yaw_rad = 0.0
+        self.recovery_consumed_trusted_stamp_ns: Optional[int] = None
+
+        self.state_aware_policy_config = StateAwarePolicyConfig(
+            recovery_enabled=self.enable_yaw_recovery,
+            recovery_yaw_rate=self.recovery_yaw_rate,
+            recovery_max_duration_s=self.recovery_max_duration_s,
+            recovery_max_integrated_yaw_rad=(
+                self.recovery_max_integrated_yaw_rad
+            ),
+            last_trusted_max_age_s=(
+                self.recovery_last_trusted_max_age_s
+            ),
+        )
+
         self.prev_vx = 0.0
         self.prev_vy = 0.0
         self.prev_yaw_z = 0.0
@@ -241,12 +337,27 @@ class ControlRefNode(Node):
             target_qos,
         )
 
+        status_qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+            reliability=ReliabilityPolicy.RELIABLE,
+        )
+        self.sub_status = self.create_subscription(
+            String,
+            status_topic,
+            self.on_status,
+            status_qos,
+        )
+
         self.pub_cmd = self.create_publisher(TwistStamped, cmd_topic, 10)
         self.pub_mavros = self.create_publisher(TwistStamped, self.mavros_topic, 10)
 
         self.timer = self.create_timer(1.0 / rate_hz, self.on_timer)
 
         self.get_logger().info(f'Listening on {target_topic}')
+        self.get_logger().info(
+            f'Listening for TIM authority status on {status_topic}'
+        )
         self.get_logger().info(f'Publishing commands to {cmd_topic}')
         self.get_logger().info(
             f'Command frame_id={self.cmd_frame_id} | MAVROS frame_id={self.mavros_frame_id}'
@@ -256,6 +367,412 @@ class ControlRefNode(Node):
             f'{"enabled" if self.enable_mavros else "disabled"} '
             f'on {self.mavros_topic}'
         )
+
+    def reset_recovery_state(
+        self,
+        *,
+        clear_consumed: bool = False,
+    ) -> None:
+        self.recovery_active = False
+        self.recovery_start_ns = None
+        self.recovery_last_update_ns = None
+        self.recovery_integrated_yaw_rad = 0.0
+
+        if clear_consumed:
+            self.recovery_consumed_trusted_stamp_ns = None
+
+    def consume_current_trusted_history(self) -> None:
+        if self.last_trusted_stamp_ns is not None:
+            self.recovery_consumed_trusted_stamp_ns = (
+                self.last_trusted_stamp_ns
+            )
+
+    def clear_trusted_history(self) -> None:
+        self.last_trusted_horizontal_error = None
+        self.last_trusted_stamp_ns = None
+        self.last_trusted_generation = None
+        self.reset_recovery_state(clear_consumed=True)
+
+    def recovery_elapsed_s(self, now_ns: int) -> float:
+        if (
+            not self.recovery_active
+            or self.recovery_start_ns is None
+        ):
+            return 0.0
+
+        return max(
+            0.0,
+            (now_ns - self.recovery_start_ns) * 1e-9,
+        )
+
+    def recovery_dt_s(self, now_ns: int) -> float:
+        if (
+            not self.recovery_active
+            or self.recovery_last_update_ns is None
+        ):
+            return 0.0
+
+        return max(
+            0.0,
+            (now_ns - self.recovery_last_update_ns) * 1e-9,
+        )
+
+    def recovery_history_consumed(self) -> bool:
+        return (
+            not self.recovery_active
+            and self.last_trusted_stamp_ns is not None
+            and self.recovery_consumed_trusted_stamp_ns
+            == self.last_trusted_stamp_ns
+        )
+
+    def begin_recovery(self, now_ns: int) -> None:
+        self.recovery_active = True
+        self.recovery_start_ns = now_ns
+        self.recovery_last_update_ns = now_ns
+        self.recovery_integrated_yaw_rad = 0.0
+        self.consume_current_trusted_history()
+
+        # Never inherit translation or prior yaw into a recovery attempt.
+        self.prev_vx = 0.0
+        self.prev_vy = 0.0
+        self.prev_yaw_z = 0.0
+
+    def stop_recovery(self) -> None:
+        self.recovery_active = False
+        self.recovery_start_ns = None
+        self.recovery_last_update_ns = None
+        self.recovery_integrated_yaw_rad = 0.0
+
+    def handle_recovery_yaw(
+        self,
+        *,
+        decision,
+        now,
+    ) -> None:
+        now_ns = now.nanoseconds
+
+        if not self.recovery_active:
+            self.begin_recovery(now_ns)
+            self.update_mode('RECOVERY_YAW_ONLY')
+            self.maybe_log_policy_reason(
+                decision.mode,
+                decision.reason,
+                self.last_status,
+            )
+
+            # First recovery tick is deliberately hard-zero.
+            self.maybe_log_recovery_diagnostics(
+                now_ns=now_ns,
+                mode=decision.mode,
+                reason=decision.reason,
+                final_vx=0.0,
+                final_vy=0.0,
+                final_yaw_z=0.0,
+                force=True,
+            )
+            self.publish_zero()
+            return
+
+        dt_s = self.recovery_dt_s(now_ns)
+        remaining_budget = max(
+            0.0,
+            self.recovery_max_integrated_yaw_rad
+            - self.recovery_integrated_yaw_rad,
+        )
+
+        command = resolve_bounded_recovery_yaw(
+            desired_yaw_z=decision.recovery_yaw_z,
+            previous_yaw_z=self.prev_yaw_z,
+            invert_yaw=self.invert_yaw,
+            max_yaw_z=self.max_yaw_z,
+            max_delta_yaw_z=self.max_delta_yaw_z,
+            dt_s=dt_s,
+            remaining_integrated_yaw_rad=remaining_budget,
+        )
+
+        if command.budget_exhausted:
+            self.maybe_log_recovery_diagnostics(
+                now_ns=now_ns,
+                mode='HOVER',
+                reason='recovery_yaw_budget_exhausted',
+                final_vx=0.0,
+                final_vy=0.0,
+                final_yaw_z=0.0,
+                force=True,
+            )
+            self.stop_recovery()
+            self.update_mode('HOVER')
+            self.maybe_log_policy_reason(
+                'HOVER',
+                'recovery_yaw_budget_exhausted',
+                self.last_status,
+            )
+            self.publish_zero()
+            return
+
+        # Translation is a hard invariant during recovery.
+        self.prev_vx = 0.0
+        self.prev_vy = 0.0
+        self.prev_yaw_z = command.yaw_z
+
+        if dt_s > 0.0:
+            self.recovery_integrated_yaw_rad += (
+                abs(command.yaw_z) * dt_s
+            )
+
+        self.recovery_last_update_ns = now_ns
+
+        self.maybe_log_recovery_diagnostics(
+            now_ns=now_ns,
+            mode=decision.mode,
+            reason=decision.reason,
+            final_vx=0.0,
+            final_vy=0.0,
+            final_yaw_z=self.prev_yaw_z,
+        )
+
+        self.update_mode('RECOVERY_YAW_ONLY')
+        self.maybe_log_policy_reason(
+            decision.mode,
+            decision.reason,
+            self.last_status,
+        )
+
+        self.publish_pair(
+            now.to_msg(),
+            0.0,
+            0.0,
+            self.prev_yaw_z,
+        )
+
+    def last_trusted_age_s(self, now_ns: int) -> Optional[float]:
+        if self.last_trusted_stamp_ns is None:
+            return None
+        age_s = (now_ns - self.last_trusted_stamp_ns) * 1e-9
+        if age_s < 0.0:
+            return None
+        return age_s
+
+    def recovery_direction_label(self) -> str:
+        error = self.last_trusted_horizontal_error
+
+        if error is None:
+            return 'unknown'
+        if error > 0.0:
+            return 'right'
+        if error < 0.0:
+            return 'left'
+        return 'center'
+
+    def maybe_log_recovery_diagnostics(
+        self,
+        *,
+        now_ns: int,
+        mode: str,
+        reason: str,
+        final_vx: float,
+        final_vy: float,
+        final_yaw_z: float,
+        force: bool = False,
+    ) -> None:
+        if not force:
+            if self.debug_log_every_n <= 0:
+                return
+            if self.tick_count % self.debug_log_every_n != 0:
+                return
+
+        status = self.last_status
+        trusted_age_s = self.last_trusted_age_s(now_ns)
+        trusted_age_text = (
+            f'{trusted_age_s:.3f}'
+            if trusted_age_s is not None
+            else 'none'
+        )
+
+        elapsed_s = self.recovery_elapsed_s(now_ns)
+        remaining_budget_rad = max(
+            0.0,
+            self.recovery_max_integrated_yaw_rad
+            - self.recovery_integrated_yaw_rad,
+        )
+
+        tim_state = (
+            status.state
+            if status is not None
+            else 'NO_STATUS'
+        )
+        tim_control_mode = (
+            status.control_mode
+            if status is not None
+            else 'NO_STATUS'
+        )
+        generation = (
+            status.selection_generation
+            if status is not None
+            else -1
+        )
+        session_id = (
+            status.selection_session_id
+            if status is not None
+            else 'none'
+        )
+
+        yaw_saturated = (
+            self.max_yaw_z > 0.0
+            and abs(final_yaw_z) >= 0.99 * self.max_yaw_z
+        )
+
+        self.get_logger().info(
+            'recovery_diagnostics '
+            f'mode={mode} '
+            f'reason={reason} '
+            f'tim_state={tim_state} '
+            f'tim_control_mode={tim_control_mode} '
+            f'selection_generation={generation} '
+            f'selection_session={session_id} '
+            f'status_fresh={self.status_is_fresh(now_ns)} '
+            f'recovery_enabled={self.enable_yaw_recovery} '
+            f'recovery_active={self.recovery_active} '
+            f'trusted_history_age_s={trusted_age_text} '
+            f'recovery_direction={self.recovery_direction_label()} '
+            f'recovery_elapsed_s={elapsed_s:.3f} '
+            f'recovery_integrated_yaw_rad='
+            f'{self.recovery_integrated_yaw_rad:.4f} '
+            f'recovery_budget_remaining_rad='
+            f'{remaining_budget_rad:.4f} '
+            f'saturation={yaw_saturated} '
+            'final_command='
+            f'(vx={final_vx:.4f},vy={final_vy:.4f},'
+            f'yaw_z={final_yaw_z:.4f})'
+        )
+
+    def status_is_fresh(self, now_ns: Optional[int] = None) -> bool:
+        status = self.last_status
+        rx_time = self.last_status_rx_time
+
+        if status is None or rx_time is None:
+            return False
+        if status.frame_id is None or status.frame_id <= 0:
+            return False
+        if not status.freshness_is_fresh:
+            return False
+
+        if now_ns is None:
+            now_ns = self.get_clock().now().nanoseconds
+
+        age_s = (now_ns - rx_time.nanoseconds) * 1e-9
+        return 0.0 <= age_s <= self.stale_timeout_s
+
+    def maybe_log_policy_reason(
+        self,
+        mode: str,
+        reason: str,
+        status: Optional[TimAuthorityStatus],
+    ) -> None:
+        token = f'{mode}:{reason}'
+        if token == self.last_policy_reason:
+            return
+
+        state = status.state if status is not None else 'NO_STATUS'
+        control_mode = (
+            status.control_mode
+            if status is not None
+            else 'NO_STATUS'
+        )
+        generation = (
+            status.selection_generation
+            if status is not None
+            else 'n/a'
+        )
+        self.get_logger().info(
+            f'state_aware_policy mode={mode} reason={reason} '
+            f'tim_state={state} tim_control_mode={control_mode} '
+            f'selection_generation={generation}'
+        )
+        self.last_policy_reason = token
+
+    def on_status(self, msg: String) -> None:
+        now = self.get_clock().now()
+
+        try:
+            status = parse_tim_authority_status(msg.data)
+        except ValueError as exc:
+            self.last_status = None
+            self.last_status_rx_time = now
+            self.clear_trusted_history()
+            self.last_target = None
+            self.get_logger().warn(
+                f'invalid TIM authority status: {exc}'
+            )
+            self.publish_zero()
+            return
+
+        previous_generation = self.selection_generation
+        previous_session_id = self.selection_session_id
+
+        epoch = evaluate_authority_epoch(
+            current_session_id=previous_session_id,
+            current_generation=previous_generation,
+            retired_session_ids=self.retired_selection_session_ids,
+            incoming_session_id=status.selection_session_id,
+            incoming_generation=status.selection_generation,
+        )
+
+        if not epoch.accepted:
+            self.last_status = None
+            self.last_status_rx_time = now
+            self.clear_trusted_history()
+            self.last_target = None
+            self.valid_prev_tick = False
+            self.get_logger().warn(
+                'rejected TIM authority epoch: '
+                f'reason={epoch.reason} '
+                f'current_session={previous_session_id} '
+                f'current_generation={previous_generation} '
+                f'incoming_session={status.selection_session_id} '
+                f'incoming_generation={status.selection_generation}'
+            )
+            self.publish_zero()
+            return
+
+        session_changed = (
+            previous_session_id is not None
+            and status.selection_session_id != previous_session_id
+        )
+        generation_changed = (
+            previous_generation is not None
+            and status.selection_generation != previous_generation
+        )
+
+        if session_changed and previous_session_id is not None:
+            self.retired_selection_session_ids.add(
+                previous_session_id
+            )
+
+        self.selection_session_id = status.selection_session_id
+        self.selection_generation = status.selection_generation
+        self.last_status = status
+        self.last_status_rx_time = now
+
+        # Status-only messages are authority transactions (select/clear).
+        # They intentionally have no causal frame_id and cannot authorize
+        # movement.
+        status_only = status.frame_id is None
+
+        if epoch.reset_authority or status_only:
+            self.clear_trusted_history()
+            self.last_target = None
+            self.valid_prev_tick = False
+            self.publish_zero()
+
+        if session_changed or generation_changed:
+            self.get_logger().info(
+                'TIM authority epoch changed: '
+                f'session={previous_session_id} -> '
+                f'{status.selection_session_id} '
+                f'generation={previous_generation} -> '
+                f'{status.selection_generation}'
+            )
 
     def on_target(self, msg: TargetState) -> None:
         now = self.get_clock().now()
@@ -486,12 +1003,119 @@ class ControlRefNode(Node):
             return
 
         t = self.last_target
-
+        status = self.last_status
         invalid_reason = self.target_invalid_reason(t)
-        if invalid_reason is not None:
+
+        status_target_matches = (
+            status is not None
+            and status.target_track_id is not None
+            and int(t.id) == status.target_track_id
+        )
+
+        decision = resolve_state_aware_policy(
+            StateAwarePolicyInput(
+                state=(
+                    status.state
+                    if status is not None
+                    else "NO_STATUS"
+                ),
+                control_mode=(
+                    status.control_mode
+                    if status is not None
+                    else "NO_STATUS"
+                ),
+                target_valid=(
+                    invalid_reason is None
+                    and status_target_matches
+                ),
+                target_frame_id=int(t.frame_id),
+                status_frame_id=(
+                    int(status.frame_id)
+                    if status is not None
+                    and status.frame_id is not None
+                    else 0
+                ),
+                target_source_stamp_ns=int(t.src_stamp_ns),
+                status_source_stamp_ns=(
+                    int(status.source_stamp_ns)
+                    if status is not None
+                    and status.source_stamp_ns is not None
+                    else 0
+                ),
+                status_fresh=self.status_is_fresh(
+                    now_ns=now.nanoseconds,
+                ),
+                selection_generation=(
+                    status.selection_generation
+                    if status is not None
+                    else -1
+                ),
+                last_trusted_generation=(
+                    self.last_trusted_generation
+                ),
+                last_trusted_horizontal_error=(
+                    self.last_trusted_horizontal_error
+                ),
+                last_trusted_age_s=self.last_trusted_age_s(
+                    now.nanoseconds
+                ),
+                recovery_elapsed_s=self.recovery_elapsed_s(
+                    now.nanoseconds
+                ),
+                recovery_integrated_yaw_rad=(
+                    self.recovery_integrated_yaw_rad
+                ),
+                dt_s=self.recovery_dt_s(
+                    now.nanoseconds
+                ),
+                recovery_history_consumed=(
+                    self.recovery_history_consumed()
+                ),
+            ),
+            self.state_aware_policy_config,
+        )
+
+        if decision.mode == 'RECOVERY_YAW_ONLY':
             self.valid_prev_tick = False
-            self.update_mode('TARGET_INVALID')
-            self.maybe_warn_invalid_target(invalid_reason, t)
+            self.handle_recovery_yaw(
+                decision=decision,
+                now=now,
+            )
+            return
+
+        if self.recovery_active:
+            self.maybe_log_recovery_diagnostics(
+                now_ns=now.nanoseconds,
+                mode=decision.mode,
+                reason=decision.reason,
+                final_vx=0.0,
+                final_vy=0.0,
+                final_yaw_z=0.0,
+                force=True,
+            )
+            self.stop_recovery()
+
+        if (
+            status is not None
+            and status.state in {'REACQUIRED', 'NO_TARGET'}
+        ):
+            # Confirmation or no-target state terminates this trusted
+            # observation's one recovery opportunity.
+            self.consume_current_trusted_history()
+
+        if not decision.allow_normal_follow:
+            self.valid_prev_tick = False
+            self.update_mode(decision.mode)
+            self.maybe_log_policy_reason(
+                decision.mode,
+                decision.reason,
+                status,
+            )
+            if invalid_reason is not None:
+                self.maybe_warn_invalid_target(
+                    invalid_reason,
+                    t,
+                )
             self.publish_zero()
             return
 
@@ -525,7 +1149,12 @@ class ControlRefNode(Node):
         self.last_invalid_reason = None
         self.invalid_count = 0
         self.valid_prev_tick = True
-        self.update_mode('TRACKING')
+        self.update_mode(decision.mode)
+        self.maybe_log_policy_reason(
+            decision.mode,
+            decision.reason,
+            status,
+        )
 
         (
             vx_cmd,
@@ -555,7 +1184,23 @@ class ControlRefNode(Node):
             invert_lateral=self.invert_lateral,
         )
 
-        self.prev_vx = self.slew(vx_cmd, self.prev_vx, self.max_delta_vx)
+        if decision.update_last_trusted:
+            self.last_trusted_horizontal_error = float(ex)
+            self.last_trusted_stamp_ns = now.nanoseconds
+            self.last_trusted_generation = (
+                status.selection_generation
+                if status is not None
+                else None
+            )
+            # A genuinely new trusted observation re-arms exactly one
+            # subsequent bounded LOST recovery attempt.
+            self.recovery_consumed_trusted_stamp_ns = None
+
+        self.prev_vx = self.slew(
+            vx_cmd,
+            self.prev_vx,
+            self.max_delta_vx,
+        )
         self.prev_vy = self.slew(vy_cmd, self.prev_vy, self.max_delta_vy)
         self.prev_yaw_z = self.slew(yaw_z_cmd, self.prev_yaw_z, self.max_delta_yaw_z)
         self.maybe_warn_saturation(vx_cmd, vy_cmd, yaw_z_cmd)

@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import time
 from typing import Optional
+import uuid
 
 import rclpy
 from rclpy.executors import ExternalShutdownException
@@ -166,6 +167,8 @@ class TargetMemoryMarsNode(Node):
         self._appearance_async_publish_errors = 0
 
         self._last_mirrored_target_id: Optional[int] = None
+        self._selection_generation = 0
+        self._selection_session_id = uuid.uuid4().hex
 
         cfg = build_target_memory_config(self, params)
         appearance_cfg = AppearanceAttachmentConfig(
@@ -707,6 +710,14 @@ class TargetMemoryMarsNode(Node):
                 )
                 self._image_error_warned = True
 
+    def _advance_selection_generation(self, reason: str) -> int:
+        self._selection_generation += 1
+        self.get_logger().info(
+            "TIM selection generation advanced: "
+            f"generation={self._selection_generation} reason={reason}"
+        )
+        return self._selection_generation
+
     def _on_raw_target(self, msg: TargetState) -> None:
         """Mirror positive dashboard /target selections into TIM.
 
@@ -725,9 +736,15 @@ class TargetMemoryMarsNode(Node):
         ):
             return
 
+        self._advance_selection_generation(
+            "mirrored_target_selection"
+        )
         self._cancel_async_reid(
             "mirrored_target_selection"
         )
+        out = self._runtime.clear()
+        self._publish_target_reset()
+        self._publish_status_only(out)
         self._last_mirrored_target_id = target_id
         self._runtime.request_selection(target_id)
         self.get_logger().info(
@@ -736,6 +753,11 @@ class TargetMemoryMarsNode(Node):
 
     def _on_select(self, msg: UInt32) -> None:
         requested_id = int(msg.data)
+        self._advance_selection_generation(
+            "operator_selection"
+            if requested_id > 0
+            else "operator_select_clear"
+        )
         if requested_id <= 0:
             self._cancel_async_reid(
                 "operator_select_clear"
@@ -758,6 +780,7 @@ class TargetMemoryMarsNode(Node):
         )
 
     def _on_clear(self, _: Empty) -> None:
+        self._advance_selection_generation("operator_clear")
         self._cancel_async_reid(
             "operator_clear"
         )
@@ -902,7 +925,11 @@ class TargetMemoryMarsNode(Node):
         return target_msg
 
     def _publish_status_only(self, out: TargetMemoryOutput) -> None:
-        base_status_json = status_only_json(out)
+        base_status_json = status_only_json(
+            out,
+            selection_generation=self._selection_generation,
+            selection_session_id=self._selection_session_id,
+        )
         self._appearance_async_last_status_json = (
             base_status_json
         )
@@ -944,6 +971,8 @@ class TargetMemoryMarsNode(Node):
         msg = String()
         base_status_json = status_json_from_output(
             result.output,
+            selection_generation=self._selection_generation,
+            selection_session_id=self._selection_session_id,
             frame_id=int(tracks_msg.frame_id),
             tim_mars_processing_ms=float(
                 t_end_ns - t_start_ns
