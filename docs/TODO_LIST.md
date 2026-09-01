@@ -200,6 +200,8 @@ frame IDs start at one.
 
 9. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
     - phase 10; engineering; coordinate target-control behavior with #52 and path documentation with #33.
+    - 1 Sep 2026: execution started on `issue-55-ui-repository-extraction-20260901` from clean main `8e88a471`. Repository extraction is governed by `docs/issues/ui-repository-extraction-master-plan.md`: Phase A moves only the tracked React/Vite `live-ui` frontend into `FRCTavares/IST-Thesis-UI`; ROS dashboard bridge, runtime API, target authority, TIM-MARS, control, scientific tooling, and annotation backend remain in `IST-Thesis-Code`.
+    - The approved post-extraction frontend target is an iPhone-first field interface: live video, numbered tracks, numeric bootstrap target selection, explicit select/clear, TIM state/current TIM track ID, and connection status. Desktop charts/logging/metrics complexity and ordinary model/tracker switching are not required in the frozen flight UI. No source extraction has occurred yet.
 
 10. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
     - phase 9; experiment/documentation.
