@@ -664,7 +664,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate resolved configuration before we touch hardware/container state.
+# Validate resolved configuration before we touch hardware/runtime state.
 case "$PERCEPTION_MODE" in
     integrated-camera)
         ;;
@@ -832,7 +832,7 @@ fi
 
 if [[ ! -f "$PERCEPTION_HAILO_HEF_PATH" ]]; then
     echo "[error] detector HEF not found: $PERCEPTION_HAILO_HEF_PATH"
-    echo "[hint] use --detector-model yolov6n or --detector-hef-path /path/to/model.hef"
+    echo "[hint] use --detector-model yolov8s or --detector-hef-path /path/to/model.hef"
     exit 1
 fi
 

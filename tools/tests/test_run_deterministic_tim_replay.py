@@ -1008,6 +1008,11 @@ def test_make_status_message_zeroes_backend_wall_time_for_determinism(
         appearance_warning=None,
         candidate_track_ids=(1, 2, 3),
         appearance_cache_size=2,
+        appearance_cache_lookups=3,
+        appearance_cache_hits=1,
+        appearance_cache_misses=1,
+        appearance_cache_expired=1,
+        appearance_cache_invalidated=0,
         appearance_embedding_age_ms_by_track_id={1: 0.0},
         appearance_crop_quality_by_track_id={},
         appearance_encoding_rejected=0,
@@ -1062,6 +1067,12 @@ def test_make_status_message_zeroes_backend_wall_time_for_determinism(
         captured["appearance_compute_min_interval_ms"]
         == 0.0
     )
+    assert captured["tim_mars_processing_ms"] == 0.0
+    assert captured["appearance_cache_lookups"] == 3
+    assert captured["appearance_cache_hits"] == 1
+    assert captured["appearance_cache_misses"] == 1
+    assert captured["appearance_cache_expired"] == 1
+    assert captured["appearance_cache_invalidated"] == 0
     assert captured["appearance_encoding_eligible"] == 3
     assert captured["appearance_backend_calls"] == 1
     assert captured["appearance_backend_requested"] == 3

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -eo pipefail
 
 # Purpose:
 # - Replay a source bag from image_raw.
@@ -33,7 +32,21 @@ RUN_COMMAND="${RUN_COMMAND% }"
 THESIS_ROOT="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}"
 ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 
-BAG_PATH="$(realpath "$BAG_PATH")"
+if [[ ! -d "$THESIS_ROOT" ]]; then
+  echo "[error] thesis root not found: $THESIS_ROOT" >&2
+  exit 14
+fi
+
+if [[ ! -e "$BAG_PATH" ]]; then
+  echo "[error] input bag not found: $BAG_PATH" >&2
+  exit 14
+fi
+
+if ! BAG_PATH="$(realpath "$BAG_PATH")"; then
+  echo "[error] failed to resolve input bag path: $BAG_PATH" >&2
+  exit 14
+fi
+
 BAG_BASE="$(basename "$BAG_PATH")"
 HEF_PATH="$THESIS_ROOT/models/hef/${DETECTOR_MODEL}.hef"
 
@@ -60,10 +73,31 @@ if [[ "$TIM_MODE" == "mars" ]]; then
   RUN_TIM_MARS=true
 fi
 
-mkdir -p "$LOG_DIR" "$OUT_ROOT"
+if ! mkdir -p "$LOG_DIR" "$OUT_ROOT" "$REPORT_ROOT"; then
+  echo "[error] failed to create replay output directories" >&2
+  exit 15
+fi
 
-source /opt/ros/jazzy/setup.bash
-source "$THESIS_ROOT/ros2_ws/install/setup.bash"
+if [[ ! -f /opt/ros/jazzy/setup.bash ]]; then
+  echo "[error] ROS 2 Jazzy setup not found: /opt/ros/jazzy/setup.bash" >&2
+  exit 16
+fi
+
+if ! source /opt/ros/jazzy/setup.bash; then
+  echo "[error] failed to source ROS 2 Jazzy environment" >&2
+  exit 16
+fi
+
+if [[ ! -f "$THESIS_ROOT/ros2_ws/install/setup.bash" ]]; then
+  echo "[error] thesis ROS workspace setup not found" >&2
+  exit 16
+fi
+
+if ! source "$THESIS_ROOT/ros2_ws/install/setup.bash"; then
+  echo "[error] failed to source thesis ROS workspace" >&2
+  exit 16
+fi
+
 export ROS_DOMAIN_ID
 
 echo "[info] THESIS_ROOT=$THESIS_ROOT"
@@ -78,16 +112,109 @@ echo "[info] RECORDER_STOP_TIMEOUT=$RECORDER_STOP_TIMEOUT"
 echo "[info] OUT_BAG=$OUT_BAG"
 echo "[info] LOG_DIR=$LOG_DIR"
 
+DETECTOR_PID=""
+TRACKER_PID=""
+DASHBOARD_PID=""
+TIM_PID=""
+REC_PID=""
+PLAY_PID=""
+RESOURCE_SAMPLER_PID=""
+HARDWARE_HEALTH_PID=""
+
+RESOURCE_SAMPLING_ENABLED="${RESOURCE_SAMPLING_ENABLED:-false}"
+RESOURCE_SAMPLE_INTERVAL_S="${RESOURCE_SAMPLE_INTERVAL_S:-1.0}"
+HARDWARE_HEALTH_INTERVAL_S="${HARDWARE_HEALTH_INTERVAL_S:-1.0}"
+
+RESOURCE_SAMPLER="$THESIS_ROOT/tools/experiments/sample_process_groups.py"
+HARDWARE_HEALTH_SAMPLER="$THESIS_ROOT/tools/experiments/sample_p044_hardware_health.py"
+
+PROCESS_GROUP_SUPERVISOR=(
+  "$THESIS_ROOT/tools/lib/run_in_owned_process_group.py"
+)
+
+if [[ ! -x "${PROCESS_GROUP_SUPERVISOR[0]}" ]]; then
+  echo "[error] owned-process supervisor is unavailable or not executable: ${PROCESS_GROUP_SUPERVISOR[0]}" >&2
+  exit 17
+fi
+
+owned_process_alive() {
+  local pid="$1"
+
+  if [[ -z "$pid" ]]; then
+    return 1
+  fi
+
+  kill -0 "$pid" >/dev/null 2>&1
+}
+
+stop_owned_process() {
+  local label="$1"
+  local pid="$2"
+
+  if [[ -z "$pid" ]]; then
+    return 0
+  fi
+
+  if owned_process_alive "$pid"; then
+    echo "[info] stopping $label supervisor pid=$pid"
+    kill -TERM "$pid" >/dev/null 2>&1 || true
+
+    for _ in $(seq 1 20); do
+      if ! owned_process_alive "$pid"; then
+        break
+      fi
+      sleep 0.1
+    done
+  fi
+
+  if owned_process_alive "$pid"; then
+    echo "[warn] $label still alive after SIGTERM; escalating owned process group"
+    kill -USR1 "$pid" >/dev/null 2>&1 || true
+  fi
+
+  wait "$pid" 2>/dev/null || true
+}
+
+resolve_owned_pgid() {
+    local label="$1"
+    local supervisor_pid="$2"
+    local children_path="/proc/$supervisor_pid/task/$supervisor_pid/children"
+    local child_pid=""
+    local pgid=""
+
+    for _ in $(seq 1 50); do
+        if [[ -r "$children_path" ]]; then
+            read -r child_pid _ < "$children_path" || true
+
+            if [[ "$child_pid" =~ ^[0-9]+$ ]] && kill -0 "$child_pid" >/dev/null 2>&1; then
+                pgid="$(ps -o pgid= -p "$child_pid" 2>/dev/null | tr -d '[:space:]')"
+
+                if [[ "$pgid" == "$child_pid" ]]; then
+                    printf '%s\n' "$pgid"
+                    return 0
+                fi
+            fi
+        fi
+
+        sleep 0.1
+    done
+
+    echo "[error] failed to resolve owned process group for $label supervisor pid=$supervisor_pid" >&2
+    return 1
+}
+
 cleanup() {
-  echo "[info] cleaning up background processes"
-  jobs -pr | xargs -r kill || true
-  pkill -f "ros2 bag play|ros2 bag record|perception_pipeline_node|tracker_node|dashboard_bridge_node|target_memory_mars_node" || true
+  echo "[info] cleaning up runner-owned supervised processes"
+stop_owned_process "hardware health sampler" "${HARDWARE_HEALTH_PID:-}"
+stop_owned_process "resource sampler" "${RESOURCE_SAMPLER_PID:-}"
+  stop_owned_process "playback" "${PLAY_PID:-}"
+  stop_owned_process "recorder" "${REC_PID:-}"
+  stop_owned_process "TIM-MARS" "${TIM_PID:-}"
+  stop_owned_process "dashboard bridge" "${DASHBOARD_PID:-}"
+  stop_owned_process "tracker" "${TRACKER_PID:-}"
+  stop_owned_process "detector" "${DETECTOR_PID:-}"
 }
 trap cleanup EXIT
-
-echo "[info] stopping old replay processes"
-pkill -f "ros2 bag play|ros2 bag record|perception_pipeline_node|tracker_node|dashboard_bridge_node|target_memory_mars_node" || true
-sleep 2
 
 if [[ -e "$OUT_BAG" ]]; then
   BASE_OUT="$OUT_BAG"
@@ -99,7 +226,10 @@ if [[ -e "$OUT_BAG" ]]; then
   RUN_NAME="$(basename "$OUT_BAG")"
   REPORT_DIR="$REPORT_ROOT/$RUN_NAME"
   LOG_DIR="$LOG_ROOT/$RUN_NAME"
-  mkdir -p "$LOG_DIR"
+  if ! mkdir -p "$LOG_DIR" "$REPORT_DIR"; then
+    echo "[error] failed to create collision-safe run directories" >&2
+    exit 15
+  fi
   echo "[warn] output exists, using OUT_BAG=$OUT_BAG"
 fi
 
@@ -110,7 +240,7 @@ if [[ ! -f "$TRACKER_CONFIG" ]]; then
 fi
 
 echo "[info] starting detector: $DETECTOR_MODEL"
-ros2 run thesis_bringup perception_pipeline_node --ros-args \
+"${PROCESS_GROUP_SUPERVISOR[@]}" ros2 run thesis_bringup perception_pipeline_node --ros-args \
   -p image_topic:=/camera/image_raw \
   -p img_w:=640 \
   -p img_h:=640 \
@@ -126,24 +256,29 @@ ros2 run thesis_bringup perception_pipeline_node --ros-args \
   -p async_max_inflight:=1 \
   -p num_workers:=1 \
   >"$LOG_DIR/detector.log" 2>&1 &
+DETECTOR_PID=$!
 
 echo "[info] starting tracker: $TRACKER"
-ros2 run thesis_tracker tracker_node --ros-args \
+"${PROCESS_GROUP_SUPERVISOR[@]}" ros2 run thesis_tracker tracker_node --ros-args \
   --params-file "$TRACKER_CONFIG" \
+  -p publish_timing_topic:=true \
   >"$LOG_DIR/tracker.log" 2>&1 &
+TRACKER_PID=$!
 
 echo "[info] starting dashboard bridge"
-ros2 run thesis_bringup dashboard_bridge_node --ros-args \
+"${PROCESS_GROUP_SUPERVISOR[@]}" ros2 run thesis_bringup dashboard_bridge_node --ros-args \
   -p ws_host:=127.0.0.1 \
   -p ws_port:=0 \
   -p api_host:=127.0.0.1 \
   -p api_port:=8090 \
   -p publish_hz:=30.0 \
   >"$LOG_DIR/dashboard_bridge.log" 2>&1 &
+DASHBOARD_PID=$!
 
 
 TIM_MARS_CONFIG="${TIM_MARS_CONFIG:-$THESIS_ROOT/ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml}"
 TIM_METADATA_HELPER="$THESIS_ROOT/tools/experiments/write_tim_run_metadata.py"
+TRACK_SELECTION_HELPER="$THESIS_ROOT/tools/experiments/wait_for_track_selection.py"
 
 if [[ "$RUN_TIM_MARS" == "true" && ! -f "$TIM_MARS_CONFIG" ]]; then
   echo "[error] canonical TIM-MARS config not found: $TIM_MARS_CONFIG" >&2
@@ -155,8 +290,42 @@ echo "[info] TIM_MARS_CONFIG=$TIM_MARS_CONFIG"
 TIM_MIRROR_EFFECTIVE="${MARS_MIRROR_RAW_TARGET_SELECTION:-true}"
 TIM_MARS_MODEL_PATH="${MARS_MODEL_PATH:-$THESIS_ROOT/models/reid/mars-small128.pb}"
 
+if [[ "$RUN_TIM_MARS" == "true" && ! -f "$TIM_METADATA_HELPER" ]]; then
+  echo "[error] TIM-MARS metadata helper not found: $TIM_METADATA_HELPER" >&2
+  exit 17
+fi
+
+if [[ ! -f "$TRACK_SELECTION_HELPER" ]]; then
+  echo "[error] typed track-selection helper not found: $TRACK_SELECTION_HELPER" >&2
+  exit 17
+fi
+
+if [[ "$RUN_TIM_MARS" == "true" && ! -f "$TIM_MARS_MODEL_PATH" ]]; then
+  echo "[error] TIM-MARS appearance model not found: $TIM_MARS_MODEL_PATH" >&2
+  exit 17
+fi
+
+DETECTOR_HEF_SHA_LINE=""
+DETECTOR_HEF_SHA256=""
+TIM_MARS_MODEL_SHA_LINE=""
+TIM_MARS_MODEL_SHA256=""
+
+if ! DETECTOR_HEF_SHA_LINE="$(sha256sum "$HEF_PATH")"; then
+  echo "[error] failed to hash detector HEF: $HEF_PATH" >&2
+  exit 18
+fi
+DETECTOR_HEF_SHA256="${DETECTOR_HEF_SHA_LINE%% *}"
+
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
-  python3 "$TIM_METADATA_HELPER" \
+  if ! TIM_MARS_MODEL_SHA_LINE="$(sha256sum "$TIM_MARS_MODEL_PATH")"; then
+    echo "[error] failed to hash TIM-MARS appearance model: $TIM_MARS_MODEL_PATH" >&2
+    exit 18
+  fi
+  TIM_MARS_MODEL_SHA256="${TIM_MARS_MODEL_SHA_LINE%% *}"
+fi
+
+if [[ "$RUN_TIM_MARS" == "true" ]]; then
+  if ! python3 "$TIM_METADATA_HELPER" \
     --repo-root "$THESIS_ROOT" \
     --output-dir "$REPORT_DIR" \
     --config "$TIM_MARS_CONFIG" \
@@ -176,31 +345,130 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     --field "output_bag=$OUT_BAG" \
     --field "detector_model=$DETECTOR_MODEL" \
     --field "detector_hef=$HEF_PATH" \
+    --field "detector_hef_sha256=$DETECTOR_HEF_SHA256" \
+    --field "mars_model_sha256=$TIM_MARS_MODEL_SHA256" \
     --field "target_id=$TARGET_ID" \
     --field "tracker=$TRACKER" \
     --field "tim_mode=$TIM_MODE" \
     --field "rate=$RATE" \
     --field "target_wait_timeout_s=$TARGET_WAIT_TIMEOUT" \
-    --field "recorder_stop_timeout_s=$RECORDER_STOP_TIMEOUT"
+    --field "recorder_stop_timeout_s=$RECORDER_STOP_TIMEOUT"; then
+    echo "[error] failed to write TIM-MARS run provenance metadata" >&2
+    exit 18
+  fi
 fi
 
 if [[ "$RUN_TIM_MARS" == "true" ]]; then
   echo "[info] starting TIM-MARS"
-  ros2 run thesis_bringup target_memory_mars_node --ros-args \
+  "${PROCESS_GROUP_SUPERVISOR[@]}" ros2 run thesis_bringup target_memory_mars_node --ros-args \
     --params-file "$TIM_MARS_CONFIG" \
     -p tracks_topic:=/tracks \
     -p mirror_target_topic:=/target \
     -p target_topic:=/target_memory_mars \
     -p status_topic:=/target_memory_mars/status \
     -p select_topic:=/target_memory_mars/select \
+    -p timing_target_topic:=/timing_target \
     -p selected_track_id:=0 \
     -p mirror_raw_target_selection:="$TIM_MIRROR_EFFECTIVE" \
     -p appearance_image_topic:=/camera/image_raw \
     -p mars_model_path:="$TIM_MARS_MODEL_PATH" \
     >"$LOG_DIR/target_memory_mars.log" 2>&1 &
+  TIM_PID=$!
 fi
 
 sleep 4
+
+require_alive() {
+  local label="$1"
+  local pid="$2"
+  local log_path="$3"
+
+  if kill -0 "$pid" >/dev/null 2>&1; then
+    echo "[ok] $label running pid=$pid"
+    return 0
+  fi
+
+  echo "[error] $label exited before playback"
+  if [[ -f "$log_path" ]]; then
+    tail -n 80 "$log_path" || true
+  fi
+  return 1
+}
+
+if ! require_alive "detector" "$DETECTOR_PID" "$LOG_DIR/detector.log"; then
+  exit 5
+fi
+
+if ! require_alive "tracker" "$TRACKER_PID" "$LOG_DIR/tracker.log"; then
+  exit 5
+fi
+
+if ! require_alive "dashboard bridge" "$DASHBOARD_PID" "$LOG_DIR/dashboard_bridge.log"; then
+  exit 5
+fi
+
+if [[ "$RUN_TIM_MARS" == "true" ]]; then
+  if ! require_alive "TIM-MARS" "$TIM_PID" "$LOG_DIR/target_memory_mars.log"; then
+    exit 5
+  fi
+fi
+
+case "${RESOURCE_SAMPLING_ENABLED,,}" in
+true)
+    if [[ ! -f "$RESOURCE_SAMPLER" ]]; then
+        echo "[error] resource sampler not found: $RESOURCE_SAMPLER" >&2
+        exit 19
+    fi
+
+    if [[ ! -f "$HARDWARE_HEALTH_SAMPLER" ]]; then
+        echo "[error] hardware-health sampler not found: $HARDWARE_HEALTH_SAMPLER" >&2
+        exit 19
+    fi
+
+    DETECTOR_PGID="$(resolve_owned_pgid "detector" "$DETECTOR_PID")" || exit 19
+    TRACKER_PGID="$(resolve_owned_pgid "tracker" "$TRACKER_PID")" || exit 19
+
+    RESOURCE_GROUP_ARGS=(
+        --group "detector=$DETECTOR_PGID"
+        --group "tracker=$TRACKER_PGID"
+    )
+
+    echo "[info] resource detector pgid=$DETECTOR_PGID"
+    echo "[info] resource tracker pgid=$TRACKER_PGID"
+
+    if [[ "$RUN_TIM_MARS" == "true" ]]; then
+        TIM_PGID="$(resolve_owned_pgid "TIM-MARS" "$TIM_PID")" || exit 19
+        RESOURCE_GROUP_ARGS+=(--group "tim=$TIM_PGID")
+        echo "[info] resource TIM-MARS pgid=$TIM_PGID"
+    fi
+
+    mkdir -p         "$REPORT_DIR/resources"         "$REPORT_DIR/hardware_health"
+
+    echo "[info] starting process-group resource sampler"
+    "${PROCESS_GROUP_SUPERVISOR[@]}"         "$THESIS_ROOT/thesis_env/bin/python"         "$RESOURCE_SAMPLER"         --output-dir "$REPORT_DIR/resources"         "${RESOURCE_GROUP_ARGS[@]}"         --interval-s "$RESOURCE_SAMPLE_INTERVAL_S"         > "$LOG_DIR/resources.log" 2>&1 &
+    RESOURCE_SAMPLER_PID=$!
+
+    echo "[info] starting hardware-health sampler"
+    "${PROCESS_GROUP_SUPERVISOR[@]}"         "$THESIS_ROOT/thesis_env/bin/python"         "$HARDWARE_HEALTH_SAMPLER"         --output-dir "$REPORT_DIR/hardware_health"         --interval-s "$HARDWARE_HEALTH_INTERVAL_S"         --duration-s 0         > "$LOG_DIR/hardware_health.log" 2>&1 &
+    HARDWARE_HEALTH_PID=$!
+
+    sleep 1
+
+    if ! require_alive         "resource sampler"         "$RESOURCE_SAMPLER_PID"         "$LOG_DIR/resources.log"; then
+        exit 19
+    fi
+
+    if ! require_alive         "hardware health sampler"         "$HARDWARE_HEALTH_PID"         "$LOG_DIR/hardware_health.log"; then
+        exit 19
+    fi
+    ;;
+false)
+    ;;
+*)
+    echo "[error] RESOURCE_SAMPLING_ENABLED must be true or false" >&2
+    exit 19
+    ;;
+esac
 
 echo "[info] nodes before playback"
 ros2 node list | sort | tee "$LOG_DIR/nodes_before_play.txt" || true
@@ -211,144 +479,181 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
   TOPICS+=(/target_memory_mars /target_memory_mars/status)
 fi
 
-ros2 bag record -s mcap -o "$OUT_BAG" --topics "${TOPICS[@]}" \
+"${PROCESS_GROUP_SUPERVISOR[@]}" ros2 bag record -s mcap -o "$OUT_BAG" --topics "${TOPICS[@]}" \
   >"$LOG_DIR/record.log" 2>&1 &
 REC_PID=$!
 
 sleep 2
 
+if ! require_alive "recorder" "$REC_PID" "$LOG_DIR/record.log"; then
+  exit 6
+fi
+
 echo "[info] starting image-only playback"
-ros2 bag play "$BAG_PATH" \
+"${PROCESS_GROUP_SUPERVISOR[@]}" ros2 bag play "$BAG_PATH" \
   --topics /camera/image_raw \
   --rate "$RATE" \
   >"$LOG_DIR/play.log" 2>&1 &
 PLAY_PID=$!
 
-wait_for_tracks() {
-  local timeout_s="$1"
-  local start_s
-  start_s="$(date +%s)"
+sleep 1
 
-  echo "[info] waiting for /tracks"
-  while true; do
-    local now_s elapsed
-    now_s="$(date +%s)"
-    elapsed=$((now_s - start_s))
-
-    if (( elapsed > timeout_s )); then
-      echo "[error] /tracks not seen within ${timeout_s}s"
-      return 1
-    fi
-
-    if timeout 2s ros2 topic echo /tracks --once >"$LOG_DIR/tracks_once.txt" 2>/dev/null; then
-      if grep -q "id:" "$LOG_DIR/tracks_once.txt"; then
-        echo "[ok] /tracks available"
-        return 0
-      fi
-    fi
-
-    sleep 1
-  done
-}
-
+if ! require_alive "playback" "$PLAY_PID" "$LOG_DIR/play.log"; then
+  exit 7
+fi
 
 wait_for_target_id() {
   local target_id="$1"
   local timeout_s="$2"
-  local start_s
-  start_s="$(date +%s)"
+  local selection_error="$LOG_DIR/track_selection_error.log"
+  local chosen_id
 
-  echo "[info] waiting for target id $target_id in /tracks"
-  while true; do
-    local now_s elapsed
-    now_s="$(date +%s)"
-    elapsed=$((now_s - start_s))
+  echo "[info] waiting for target id $target_id through typed /tracks subscriber"
 
-    if (( elapsed > timeout_s )); then
-      echo "[error] target id $target_id not seen in /tracks within ${timeout_s}s"
-      return 1
-    fi
+  if ! chosen_id="$(python3 "$TRACK_SELECTION_HELPER"     --topic /tracks     --timeout "$timeout_s"     --target-id "$target_id"     2>"$selection_error")"; then
+    echo "[error] target id $target_id was not resolved from /tracks"
+    cat "$selection_error" 2>/dev/null || true
+    return 1
+  fi
 
-    if timeout 2s ros2 topic echo /tracks --once >"$LOG_DIR/tracks_once.txt" 2>/dev/null; then
-      if grep -q "id: ${target_id}" "$LOG_DIR/tracks_once.txt"; then
-        echo "[ok] target id $target_id found"
-        return 0
-      fi
-    fi
+  if [[ "$chosen_id" != "$target_id" ]]; then
+    echo "[error] typed target resolver returned unexpected id: $chosen_id"
+    return 1
+  fi
 
-    sleep 1
-  done
+  echo "$chosen_id" > "$LOG_DIR/chosen_target_id.txt"
+  echo "[ok] target id $target_id found"
+  return 0
 }
+
 
 resolve_largest_target() {
-  for _ in $(seq 1 "$TARGET_WAIT_TIMEOUT"); do
-    if timeout 2s ros2 topic echo /tracks --once >"$LOG_DIR/tracks_once.txt" 2>/dev/null; then
-      CHOSEN_ID="$(python3 "$THESIS_ROOT/tools/experiments/select_largest_track_id.py" "$LOG_DIR/tracks_once.txt" 2>"$LOG_DIR/select_largest_error.log" || true)"
-      if [[ -n "${CHOSEN_ID:-}" ]]; then
-        echo "$CHOSEN_ID" > "$LOG_DIR/chosen_target_id.txt"
-        TARGET_ID="$CHOSEN_ID"
-        echo "[ok] largest target resolved to id: $TARGET_ID"
-        return 0
-      fi
-    fi
-    sleep 1
-  done
+  local selection_error="$LOG_DIR/track_selection_error.log"
+  local chosen_id
 
-  echo "[error] could not resolve largest target id"
-  cat "$LOG_DIR/select_largest_error.log" 2>/dev/null || true
-  return 1
+  echo "[info] resolving largest target through typed /tracks subscriber"
+
+  if ! chosen_id="$(python3 "$TRACK_SELECTION_HELPER"     --topic /tracks     --timeout "$TARGET_WAIT_TIMEOUT"     --largest     --min-height 40.0     2>"$selection_error")"; then
+    echo "[error] could not resolve largest target id"
+    cat "$selection_error" 2>/dev/null || true
+    return 1
+  fi
+
+  if [[ -z "$chosen_id" ]]; then
+    echo "[error] typed largest-target resolver returned an empty id"
+    return 1
+  fi
+
+  TARGET_ID="$chosen_id"
+  echo "$TARGET_ID" > "$LOG_DIR/chosen_target_id.txt"
+  echo "[ok] largest target resolved to id: $TARGET_ID"
+  return 0
 }
+
 
 select_target() {
   local target_id="$1"
+  local response_path="$LOG_DIR/target_api_response.json"
 
-  echo "[info] selecting target via API: $target_id"
-  curl -s -X POST http://127.0.0.1:8090/api/target \
+  echo "[info] selecting target through dashboard authority API: $target_id"
+
+  if ! curl -sS --fail-with-body -X POST http://127.0.0.1:8090/api/target \
     -H "Content-Type: application/json" \
-    -d "{\"target\": ${target_id}}" | tee "$LOG_DIR/target_api_response.json" || true
+    -d "{\"target\": ${target_id}}" \
+    -o "$response_path"; then
+    echo "[error] target authority API request failed"
+    cat "$response_path" 2>/dev/null || true
+    return 1
+  fi
+
+  cat "$response_path"
   echo
 
-  if [[ "$RUN_TIM_MARS" == "true" ]]; then
-    echo "[info] selecting target via TIM-MARS select topic: $target_id"
-    ros2 topic pub --once \
-      --qos-reliability best_effort \
-      /target_memory_mars/select \
-      std_msgs/msg/UInt32 \
-      "{data: ${target_id}}" >"$LOG_DIR/tim_mars_select.log" 2>&1 || true
+  if ! python3 -c 'import json, sys; p=json.load(open(sys.argv[1])); raise SystemExit(0 if p.get("ok") is True else 1)' "$response_path"; then
+    echo "[error] target authority API did not confirm selection"
+    return 1
   fi
+
+  echo "[ok] target authority API confirmed selection"
+  return 0
 }
 
-wait_for_tracks "$TARGET_WAIT_TIMEOUT"
+if [[ "$RUN_TIM_MARS" == "true" ]]; then
+  if [[ "${TARGET_ID,,}" == "largest" ]]; then
+    if ! resolve_largest_target; then
+      exit 9
+    fi
+  else
+    if ! wait_for_target_id "$TARGET_ID" "$TARGET_WAIT_TIMEOUT"; then
+      exit 10
+    fi
+  fi
 
-if [[ "${TARGET_ID,,}" == "largest" ]]; then
-  resolve_largest_target
+  sleep 2
+
+  if ! select_target "$TARGET_ID"; then
+    exit 11
+  fi
 else
-  wait_for_target_id "$TARGET_ID" "$TARGET_WAIT_TIMEOUT"
+  echo "[info] TIM-MARS disabled; skipping selected-target authority bootstrap"
 fi
 
-sleep 2
-select_target "$TARGET_ID"
-
 echo "[info] waiting for playback to finish"
-wait "$PLAY_PID" || true
+wait "$PLAY_PID"
+PLAY_EXIT=$?
+PLAY_PID=""
+
+# Resource/health measurements intentionally cover the active replay window,
+# not recorder shutdown or other post-playback cleanup latency.
+if [[ -n "${HARDWARE_HEALTH_PID:-}" ]]; then
+    stop_owned_process "hardware health sampler" "$HARDWARE_HEALTH_PID"
+    HARDWARE_HEALTH_PID=""
+fi
+
+if [[ -n "${RESOURCE_SAMPLER_PID:-}" ]]; then
+    stop_owned_process "resource sampler" "$RESOURCE_SAMPLER_PID"
+    RESOURCE_SAMPLER_PID=""
+fi
+
+if [[ "$PLAY_EXIT" -ne 0 ]]; then
+  echo "[error] ros2 bag playback exited with status $PLAY_EXIT"
+  tail -n 80 "$LOG_DIR/play.log" 2>/dev/null || true
+  exit 12
+fi
 
 echo "[info] stopping recorder"
-kill -INT "$REC_PID" || true
+
+if owned_process_alive "$REC_PID"; then
+  kill -INT "$REC_PID" >/dev/null 2>&1 || true
+fi
 
 for _ in $(seq 1 "$RECORDER_STOP_TIMEOUT"); do
-  if ! kill -0 "$REC_PID" >/dev/null 2>&1; then
+  if ! owned_process_alive "$REC_PID"; then
     break
   fi
   sleep 1
 done
 
-if kill -0 "$REC_PID" >/dev/null 2>&1; then
+if owned_process_alive "$REC_PID"; then
   echo "[warn] recorder did not exit after SIGINT, sending SIGTERM"
-  kill "$REC_PID" || true
+  kill -TERM "$REC_PID" >/dev/null 2>&1 || true
   sleep 2
 fi
 
-wait "$REC_PID" || true
+if owned_process_alive "$REC_PID"; then
+  echo "[warn] recorder still alive after SIGTERM; escalating owned process group"
+  kill -USR1 "$REC_PID" >/dev/null 2>&1 || true
+fi
+
+wait "$REC_PID"
+REC_EXIT=$?
+REC_PID=""
+
+if [[ "$REC_EXIT" -ne 0 && "$REC_EXIT" -ne 130 && "$REC_EXIT" -ne 143 ]]; then
+  echo "[error] recorder exited with unexpected status $REC_EXIT"
+  tail -n 80 "$LOG_DIR/record.log" 2>/dev/null || true
+  exit 13
+fi
 
 echo "[ok] done"
 echo "[ok] eval bag: $OUT_BAG"

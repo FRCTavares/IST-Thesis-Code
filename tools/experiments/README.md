@@ -19,7 +19,8 @@ starting many ROS commands when reproducing TIM-MARS experiments.
 | `run_one_detector_tim_replay.sh` | Diagnostic full-pipeline workflow | Reruns detector, tracker, and TIM-MARS from image_raw source bags. |
 | `publish_annotated_track_target.py` | Core final workflow | Publishes oracle-style `/target` from annotation CSV intervals and `/tracks`. |
 | `publish_selected_track_target.py` | Core final workflow | Publishes `/target` from one fixed tracker ID. |
-| `select_largest_track_id.py` | Support helper | Selects the largest usable track ID from a `/tracks` echo dump. |
+| `wait_for_track_selection.py` | Support helper | Resolves largest-track or explicit-ID selection from a persistent typed `/tracks` subscription for the full-pipeline replay runner. |
+| `select_largest_track_id.py` | Legacy support helper | Parses a saved `/tracks` text echo for workflows that still intentionally use that older mechanism, including `run_one_clean_tim_replay.sh`. It is not used by the current full-pipeline runner. |
 | `write_tim_run_metadata.py` | Support helper | Writes validated replay invocation and effective-value provenance. |
 
 ## Deterministic tracker freezing
@@ -77,6 +78,12 @@ selection behavior.
 This can change tracker IDs compared with existing manual annotations. Use it
 for diagnostics or when annotations/evaluation are compatible with regenerated
 IDs.
+
+For target selection, this runner uses `wait_for_track_selection.py`, a persistent
+typed `/tracks` subscriber with BEST_EFFORT, KEEP_LAST depth-1 QoS matching the
+tracker publisher. It does not repeatedly create short-lived `ros2 topic echo`
+subscribers. Runtime commands are launched through the owned-process-group
+supervisor so shutdown remains scoped to processes created by that run.
 
 ## Controlled target publishers
 

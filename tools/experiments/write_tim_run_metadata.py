@@ -211,6 +211,7 @@ def main() -> int:
         "command": args.command,
         "effective_command": effective_command,
         "value_sources": value_sources,
+        "experiment_fields": experiment_fields,
         "canonical_config": {
             "source": str(config_path),
             "copy": canonical_copy.name,

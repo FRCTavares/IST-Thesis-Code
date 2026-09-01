@@ -5,6 +5,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 
 MODULE_PATH = (
     Path(__file__).resolve().parents[1]
@@ -25,15 +27,20 @@ SPEC.loader.exec_module(MODULE)
 
 def payload(
     *,
-    latency_ms: float,
+    processing_ms: float,
     backend_calls: int,
     requested: int = 0,
     returned: int = 0,
     valid: int = 0,
     wall_ms: float = 0.0,
+    cache_lookups: int = 0,
+    cache_hits: int = 0,
+    cache_misses: int = 0,
+    cache_expired: int = 0,
+    cache_invalidated: int = 0,
 ) -> dict[str, object]:
     return {
-        "lat_ms": latency_ms,
+        "tim_mars_processing_ms": processing_ms,
         "appearance_candidates": 3,
         "appearance_features_valid": valid,
         "appearance_encoding_eligible": requested,
@@ -42,6 +49,11 @@ def payload(
         "appearance_backend_returned": returned,
         "appearance_backend_valid": valid,
         "appearance_backend_wall_ms": wall_ms,
+        "appearance_cache_lookups": cache_lookups,
+        "appearance_cache_hits": cache_hits,
+        "appearance_cache_misses": cache_misses,
+        "appearance_cache_expired": cache_expired,
+        "appearance_cache_invalidated": cache_invalidated,
     }
 
 
@@ -50,14 +62,14 @@ def test_excludes_isolated_first_call_warmup():
         (
             0,
             payload(
-                latency_ms=1.0,
+                processing_ms=1.0,
                 backend_calls=0,
             ),
         ),
         (
             1_000_000_000,
             payload(
-                latency_ms=301.0,
+                processing_ms=301.0,
                 backend_calls=1,
                 requested=2,
                 returned=2,
@@ -68,7 +80,7 @@ def test_excludes_isolated_first_call_warmup():
         (
             2_000_000_000,
             payload(
-                latency_ms=41.0,
+                processing_ms=41.0,
                 backend_calls=1,
                 requested=2,
                 returned=2,
@@ -79,7 +91,7 @@ def test_excludes_isolated_first_call_warmup():
         (
             3_000_000_000,
             payload(
-                latency_ms=1.5,
+                processing_ms=1.5,
                 backend_calls=0,
             ),
         ),
@@ -122,7 +134,7 @@ def test_keeps_first_call_when_not_an_outlier():
         (
             0,
             payload(
-                latency_ms=41.0,
+                processing_ms=41.0,
                 backend_calls=1,
                 requested=2,
                 returned=2,
@@ -133,7 +145,7 @@ def test_keeps_first_call_when_not_an_outlier():
         (
             1_000_000_000,
             payload(
-                latency_ms=46.0,
+                processing_ms=46.0,
                 backend_calls=1,
                 requested=2,
                 returned=2,
@@ -162,14 +174,14 @@ def test_reports_callback_displacement_and_integrity():
         (
             0,
             payload(
-                latency_ms=1.0,
+                processing_ms=1.0,
                 backend_calls=0,
             ),
         ),
         (
             1_000_000_000,
             payload(
-                latency_ms=21.5,
+                processing_ms=21.5,
                 backend_calls=1,
                 requested=1,
                 returned=1,
@@ -180,7 +192,7 @@ def test_reports_callback_displacement_and_integrity():
         (
             2_000_000_000,
             payload(
-                latency_ms=1.5,
+                processing_ms=1.5,
                 backend_calls=0,
             ),
         ),
@@ -192,10 +204,10 @@ def test_reports_callback_displacement_and_integrity():
     )
 
     assert (
-        result["callback_latency_displacement_mean_ms"]
+        result["processing_displacement_mean_ms"]
         == 20.25
     )
-    assert result["callback_overhead_ms"]["mean"] == 1.5
+    assert result["non_backend_processing_ms"]["mean"] == 1.5
     assert result["integrity"][
         "returned_not_greater_than_requested"
     ] is True
@@ -204,12 +216,71 @@ def test_reports_callback_displacement_and_integrity():
     ] is True
 
 
+def test_descriptive_stats_include_std_and_p90():
+    stats = MODULE.descriptive_stats([1.0, 2.0, 3.0])
+
+    assert stats["n"] == 3
+    assert stats["mean"] == 2.0
+    assert stats["std"] == pytest.approx(0.816496580927726)
+    assert stats["p50"] == 2.0
+    assert stats["p90"] == pytest.approx(2.8)
+    assert stats["p95"] == pytest.approx(2.9)
+    assert stats["p99"] == pytest.approx(2.98)
+
+
+def test_reports_exact_cache_accounting():
+    records = [
+        (
+            0,
+            payload(
+                processing_ms=1.0,
+                backend_calls=0,
+                cache_lookups=2,
+                cache_hits=1,
+                cache_misses=1,
+            ),
+        ),
+        (
+            1_000_000_000,
+            payload(
+                processing_ms=21.0,
+                backend_calls=1,
+                requested=1,
+                returned=1,
+                valid=1,
+                wall_ms=20.0,
+                cache_lookups=1,
+                cache_expired=1,
+            ),
+        ),
+    ]
+
+    result = MODULE.analyse_records(
+        records,
+        run_name="synthetic",
+    )
+
+    totals = result["totals"]
+    assert totals["appearance_cache_lookups"] == 3
+    assert totals["appearance_cache_hits"] == 1
+    assert totals["appearance_cache_misses"] == 1
+    assert totals["appearance_cache_expired"] == 1
+    assert totals["appearance_cache_invalidated"] == 0
+    assert result["ratios"]["cache_hit_rate"] == pytest.approx(1.0 / 3.0)
+    assert result["ratios"]["valid_embeddings_per_second"] == 1.0
+    assert result["integrity"]["cache_accounting_identity_totals"] is True
+    assert (
+        result["integrity"]["cache_accounting_identity_all_records"]
+        is True
+    )
+
+
 def test_render_markdown_contains_steady_state_contract():
     records = [
         (
             0,
             payload(
-                latency_ms=21.0,
+                processing_ms=21.0,
                 backend_calls=1,
                 requested=1,
                 returned=1,
@@ -229,3 +300,63 @@ def test_render_markdown_contains_steady_state_contract():
     assert "steady state" in markdown
     assert "## Warm-up classification" in markdown
     assert MODULE.SUMMARY_SCHEMA in markdown
+
+def test_excludes_non_frame_status_only_control_record():
+    records = [
+        (
+            0,
+            payload(
+                processing_ms=1.0,
+                backend_calls=0,
+            ),
+        ),
+        (
+            500_000_000,
+            {
+                "state": "NO_TARGET",
+                "reason": "operator_clear",
+            },
+        ),
+        (
+            1_000_000_000,
+            payload(
+                processing_ms=21.0,
+                backend_calls=1,
+                requested=1,
+                returned=1,
+                valid=1,
+                wall_ms=20.0,
+            ),
+        ),
+    ]
+
+    result = MODULE.analyse_records(
+        records,
+        run_name="synthetic",
+    )
+
+    assert result["status_records_total"] == 3
+    assert result["excluded_non_frame_status_records"] == 1
+    assert result["totals"]["status_records"] == 2
+    assert result["totals"]["status_records_total"] == 3
+    assert (
+        result["totals"]["excluded_non_frame_status_records"]
+        == 1
+    )
+
+
+def test_partial_workload_record_still_fails_closed():
+    incomplete = payload(
+        processing_ms=1.0,
+        backend_calls=0,
+    )
+    del incomplete["appearance_cache_hits"]
+
+    with pytest.raises(
+        ValueError,
+        match="missing required workload fields",
+    ):
+        MODULE.analyse_records(
+            [(0, incomplete)],
+            run_name="synthetic",
+        )

@@ -353,5 +353,136 @@ supply positive reacquisition-success evidence: none of the five evaluated
 architectures physically reacquired the selected target after either Seq04
 return.
 
-Issue #58 still requires held-out physical-reference evaluation and the
-canonical embedded-cost evidence before any final comparative claim is frozen.
+Issue #58 still requires held-out physical-reference evaluation before any
+final comparative claim is frozen. The canonical embedded-cost and timing
+development evidence is complete below.
+
+## Canonical embedded-cost development evidence — 31 Aug 2026
+
+This section records the retained development-only onboard cost comparison for
+Issue #58. It is not held-out identity evidence and does not replace the
+H01--H03 physical-v2 evaluation required for final Issue #58 closure.
+
+### Experimental contract
+
+- Retained matrix:
+  `ros2_ws/log/p058_retained_cost_matrix_92d123e3_20260831_130450`
+- Git commit: `92d123e3d8e45d6fc3a8c386194d6f0ca85fc181`
+- Working tree at execution: clean
+- Platform: Raspberry Pi 5, `aarch64`, kernel `6.8.0-1063-raspi`
+- ROS: Jazzy
+- HailoRT: `4.23.0`
+- Detector: direct/in-process Hailo YOLOv8s
+- Detector HEF SHA-256:
+  `69540ff855740371d229f4caca1ab908635a72fec55fdc1541e73f2fc17ec43b`
+- TIM-MARS appearance model: CPU MARS `mars-small128.pb`
+- MARS SHA-256:
+  `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`
+- Source: June Seq03 four-person crossing/ambiguity raw image bag
+- Playback rate: `1.0x`
+- Repetitions: three per architecture
+- Execution order: rotated across repetitions
+- Inter-cell cooldown: 20 s
+- Process-group CPU/RSS sampling: 1 s
+- Hardware-health sampling: 1 s
+- Retained cells: 9/9 successful
+- Throttling: zero non-zero throttling samples in every retained cell
+- Hardware sampler errors: zero in every retained cell
+
+Process CPU percentage is Linux process CPU usage and can exceed 100% because a
+process can consume more than one CPU core.
+
+The primary *architecture-specific* comparison excludes the detector because
+the same YOLOv8s detector is common to all three cells. For ByteTrack + TIM-MARS,
+architecture CPU and RSS are the sum of the ByteTrack tracker process and the
+separate TIM-MARS process. DeepSORT's integrated appearance extraction is
+already contained inside the DeepSORT tracker process.
+
+### Retained resource result
+
+| Architecture | Architecture CPU [%] | Mean architecture RSS [MiB] | Full-system CPU [%] | Mean full-system RSS [MiB] | Mean SoC temp. [C] | Highest observed temp. [C] |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ByteTrack raw | 227.2 +/- 0.6 | 134.6 +/- 0.2 | 254.5 +/- 0.6 | 353.1 +/- 0.3 | 60.8 +/- 0.6 | 63.1 |
+| ByteTrack + TIM-MARS | 243.3 +/- 10.3 | 919.6 +/- 7.8 | 267.8 +/- 11.9 | 1138.6 +/- 7.9 | 63.1 +/- 0.7 | 67.0 |
+| DeepSORT raw | 267.0 +/- 3.0 | 767.2 +/- 1.9 | 291.9 +/- 3.2 | 985.5 +/- 1.8 | 65.0 +/- 0.4 | 69.2 |
+
+Values reported as `mean +/- sample standard deviation` are calculated across
+the three retained run-level means.
+
+Relative to DeepSORT raw, ByteTrack + TIM-MARS used approximately `8.9%` less
+architecture-specific CPU on this controlled development workload, while using
+approximately `19.9%` more mean architecture-specific RSS. When the common
+detector is included, the corresponding differences are approximately `8.3%`
+less full-perception CPU and `15.5%` more mean full-perception RSS.
+
+Raw ByteTrack remains substantially lighter than either appearance-enabled
+architecture, but the frozen May/Seq03/Seq04 physical-v2 development evidence
+already shows why raw lightweight tracking alone is not an adequate selected-
+person identity solution.
+
+DeepSORT also ran hotter than the other two architectures in this matrix, but
+none of the nine retained runs produced a non-zero throttling sample. Therefore
+the CPU comparison is not explained by observed thermal throttling.
+
+### Retained timing and causal-throughput result
+
+The nine retained bags were analysed with the canonical schema-v4 offline timing
+analyser using the same active-window definition for every architecture:
+`pub_dt_ms <= 100 ms`. Values reported as `mean +/- sample standard deviation`
+below are calculated across the three retained run-level values.
+
+| Architecture | Tracker timing [Hz] | `track_ms` p50 [ms] | `track_ms` p95 [ms] | `track_ms` p99 [ms] | Validated-target timing [Hz] | Validated-target p95 [ms] | Active detector-to-tracker coverage [%] |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| ByteTrack raw | 18.612 +/- 0.403 | 1.201 +/- 0.013 | 6.218 +/- 0.362 | 11.732 +/- 0.850 | NA | NA | 100.000 +/- 0.000 |
+| ByteTrack + TIM-MARS | 18.100 +/- 0.351 | 2.019 +/- 0.380 | 22.841 +/- 2.001 | 30.487 +/- 3.321 | 17.561 +/- 0.549 | 181.785 +/- 15.445 | 99.963 +/- 0.064 |
+| DeepSORT raw | 9.796 +/- 0.180 | 79.100 +/- 7.181 | 150.816 +/- 3.433 | 167.987 +/- 6.063 | NA | NA | 68.154 +/- 1.087 |
+
+The ByteTrack + TIM-MARS controller-facing validated-target path exceeds the
+preferred `15 Hz` rate in all three retained runs and its validated-target p95
+latency remains at or below the thesis `200 ms` target in all three runs. The
+three run-level validated-target p95 values are `172.949 ms`, `172.788 ms`, and
+`199.619 ms`.
+
+DeepSORT's integrated appearance tracker is materially slower on the same
+controlled workload: its tracker stage averages `9.796 Hz`, versus
+`18.100 Hz` for the ByteTrack tracker when TIM-MARS is enabled. Its tracker p95
+compute time is `150.816 +/- 3.433 ms`, compared with
+`22.841 +/- 2.001 ms` for the ByteTrack tracker in the TIM-MARS architecture.
+Only `68.154 +/- 1.087%` of active detector frame IDs reach the DeepSORT tracker
+timing stream, whereas ByteTrack raw and ByteTrack + TIM-MARS retain essentially
+complete active detector-to-tracker causal coverage.
+
+This does not turn the raw DeepSORT cell into a controller-facing latency
+measurement. DeepSORT raw intentionally has no TIM-MARS selected-target
+authority, so its reported rate and latency describe the integrated tracker
+stage. Conversely, `e2e_validated_target_ms` for ByteTrack + TIM-MARS is a
+controller-facing selected-target authority measurement.
+
+Together with the retained resource evidence, this establishes the development
+compute trade-off: raw ByteTrack is cheapest but is insufficient as a
+selected-person identity solution in the frozen physical-v2 development
+evidence; adding TIM-MARS preserves a controller-usable rate and bounded p95
+latency while strongly improving the selected-target safety behaviour; and
+integrated DeepSORT is slower at the tracker stage and does not eliminate the
+severe Seq03 wrong-person failure. These are development-sequence findings, not
+a held-out universal architecture ranking.
+
+Corrected aggregate analysis provenance:
+
+- timing schema: `4`;
+- active-gap threshold: `100 ms`;
+- aggregate JSON SHA-256:
+  `faf56e6c76f742ef37d9f72245d5081f970d21c755f953c7d6bafce04889ab73`;
+- aggregate Markdown SHA-256:
+  `450dbbc99c2ba49856b9c793c4a46e94158371789cd5ae5d13b9563c92e48851`;
+- analysis was derived from the existing nine retained bags; no replay or
+  measurement was repeated for the latency-aggregation correction.
+### Current Issue #58 status
+
+The development architecture evidence now contains the frozen
+safety/availability comparisons plus the retained canonical onboard resource,
+timing, causal-coverage, and controller-rate comparison. No additional Issue #58
+development architecture experiment is currently required. The remaining final
+evidence gate is the held-out H01--H03 physical-v2 evaluation under Issue #27.
+Issue #58 therefore remains open, while the active implementation critical path
+advances to Issue #74.

@@ -16,7 +16,6 @@ from http.server import (
 )
 import json
 import os
-import subprocess
 import threading
 import time
 from typing import Any
@@ -76,7 +75,6 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("fps_topic", "/camera/fps")
         self.declare_parameter("replay_progress_topic", "/camera/replay_progress")
         self.declare_parameter("timing_topic", "/timing")
-        self.declare_parameter("timing_target_topic", "/timing_target")
 
         self.declare_parameter("ws_host", "0.0.0.0")
         self.declare_parameter("ws_port", 8765)
@@ -87,14 +85,10 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("img_h", 640)
         self.declare_parameter("camera_ref_w", 1280)
         self.declare_parameter("camera_ref_h", 720)
-        self.declare_parameter("detector_container_name", "pi-ai-kit-ubuntu-hailo-ubuntu-pi-1")
-        self.declare_parameter("detector_bind", "tcp://0.0.0.0:5556")
         self.declare_parameter("detector_width", 640)
         self.declare_parameter("detector_height", 640)
         self.declare_parameter("detector_fps", 30)
         self.declare_parameter("detector_label", "person")
-        # Legacy-only control path: restart container detector with a different HEF.
-        self.declare_parameter("enable_container_model_switch_api", False)
         self.declare_parameter("perception_node_name", "perception_camera_node")
         thesis_root = os.getenv("THESIS_ROOT", "/home/francisco/Desktop/Thesis-Code")
         self.declare_parameter(
@@ -124,7 +118,6 @@ class DashboardBridgeNode(Node):
         self._fps_topic = str(self.get_parameter("fps_topic").value)
         self._replay_progress_topic = str(self.get_parameter("replay_progress_topic").value)
         self._timing_topic = str(self.get_parameter("timing_topic").value)
-        self._timing_target_topic = str(self.get_parameter("timing_target_topic").value)
 
         self._ws_host = str(self.get_parameter("ws_host").value)
         self._ws_port = int(self.get_parameter("ws_port").value)
@@ -135,15 +128,10 @@ class DashboardBridgeNode(Node):
         self._img_h = max(1.0, float(self.get_parameter("img_h").value))
         self._camera_ref_w = max(1.0, float(self.get_parameter("camera_ref_w").value))
         self._camera_ref_h = max(1.0, float(self.get_parameter("camera_ref_h").value))
-        self._detector_container_name = str(self.get_parameter("detector_container_name").value)
-        self._detector_bind = str(self.get_parameter("detector_bind").value)
         self._detector_width = int(self.get_parameter("detector_width").value)
         self._detector_height = int(self.get_parameter("detector_height").value)
         self._detector_fps = int(self.get_parameter("detector_fps").value)
         self._detector_label = str(self.get_parameter("detector_label").value)
-        self._enable_container_model_switch_api = bool(
-            self.get_parameter("enable_container_model_switch_api").value
-        )
         self._perception_node_name = (
             str(self.get_parameter("perception_node_name").value).strip()
             or "perception_camera_node"
@@ -268,7 +256,6 @@ class DashboardBridgeNode(Node):
             self._target_clear_topic,
             command_qos,
         )
-        self._timing_target_pub = self.create_publisher(Timing, self._timing_target_topic, qos)
 
         self._tracks_sub = self.create_subscription(
             Track2DArray,
@@ -324,11 +311,8 @@ class DashboardBridgeNode(Node):
             f"fps={self._fps_topic}, "
             f"replay_progress={self._replay_progress_topic}, "
             f"timing={self._timing_topic}, "
-            f"timing_target={self._timing_target_topic}, "
             f"ws=ws://{self._ws_host}:{self._ws_port}, "
             f"api=http://{self._api_host}:{self._api_port}, "
-            "container_model_switch_api="
-            f"{'enabled' if self._enable_container_model_switch_api else 'disabled'}, "
             "runtime_reconfiguration="
             f"{'enabled' if self._runtime_reconfiguration_enabled else 'disabled'}, "
             f"target_authority_session={self._target_authority_session_id}, "
@@ -479,17 +463,10 @@ class DashboardBridgeNode(Node):
             )
             return integrated_camera_result
 
-        if self._enable_container_model_switch_api:
-            container_result = self._handle_container_model_switch(model)
-            container_result["target_authority_generation"] = authority_generation
-            return container_result
-
         return {
             "ok": False,
-            "error": (
-                "model switch unavailable: perception parameter service not reachable "
-                "and container model switch API is disabled"
-            ),
+            "error": "model switch unavailable: perception parameter service not reachable",
+            "target_authority_generation": authority_generation,
             "status_code": 503,
         }
 
@@ -544,44 +521,6 @@ class DashboardBridgeNode(Node):
             "requested_model": model,
             "hef_path": hef_path,
             "mode": "integrated-camera",
-            "status_code": 200,
-        }
-
-    def _handle_container_model_switch(self, model: str) -> dict[str, Any]:
-        hef_name = self._model_to_hef[model]
-
-        cmd = """
-echo "container model switching is not supported in the integrated-camera thesis repository" >&2
-echo "use perception_camera_node launched by tools/start_live_stack.sh" >&2
-exit 1
-"""
-
-        try:
-            result = subprocess.run(
-                ["docker", "exec", self._detector_container_name, "bash", "-lc", cmd],
-                check=False,
-                text=True,
-                capture_output=True,
-                timeout=20,
-            )
-        except Exception as exc:
-            self.get_logger().error(f"Model switch execution failed: {exc}")
-            return {"ok": False, "error": f"model switch failed: {exc}", "status_code": 500}
-
-        if result.returncode != 0:
-            stderr = (result.stderr or "").strip()
-            self.get_logger().error(f"Model switch command failed (model={model}): {stderr}")
-            return {
-                "ok": False,
-                "error": f"model switch command failed: {stderr}",
-                "status_code": 500,
-            }
-
-        self.get_logger().info(f"Model switch applied: {model} ({hef_name})")
-        return {
-            "ok": True,
-            "requested_model": model,
-            "mode": "container-switching-removed",
             "status_code": 200,
         }
 
@@ -836,19 +775,6 @@ exit 1
             return None, "target must be >= 1 or null"
         return target_id, None
 
-    @staticmethod
-    def _sensor_to_target_ms_if_comparable(
-        src_stamp_ns: int,
-        t_target_cb_end_ns: int,
-    ) -> float | None:
-        if src_stamp_ns <= 0:
-            return None
-
-        delta_ns = int(t_target_cb_end_ns) - int(src_stamp_ns)
-        if 0 <= delta_ns <= 60_000_000_000:
-            return float(delta_ns) / 1e6
-        return None
-
     def _publish_immediate_target_reset(self) -> None:
         now_ns = time.monotonic_ns()
 
@@ -866,13 +792,6 @@ exit 1
         target_msg.score = 0.0
         target_msg.quality = 0.0
         self._target_pub.publish(target_msg)
-
-        timing_msg = Timing()
-        timing_msg.frame_id = 0
-        timing_msg.t_target_cb_start_ns = int(now_ns)
-        timing_msg.t_target_cb_end_ns = int(now_ns)
-        timing_msg.target_ms = 0.0
-        self._timing_target_pub.publish(timing_msg)
 
     def _publish_target_from_tracks(self, msg: Track2DArray) -> TargetState:
         with self._state_lock:
@@ -914,25 +833,6 @@ exit 1
         t_target_cb_end_ns = time.monotonic_ns()
         target_msg.t_target_cb_end_ns = int(t_target_cb_end_ns)
         self._target_pub.publish(target_msg)
-
-        timing_msg = Timing()
-        timing_msg.frame_id = int(msg.frame_id)
-        timing_msg.src_stamp_ns = int(msg.src_stamp_ns)
-        timing_msg.t_cam_msg_seen_ns = int(msg.t_cam_msg_seen_ns)
-        timing_msg.t_target_cb_start_ns = int(t_target_cb_start_ns)
-        timing_msg.t_target_cb_end_ns = int(t_target_cb_end_ns)
-        timing_msg.target_ms = float((t_target_cb_end_ns - t_target_cb_start_ns) / 1e6)
-        if timing_msg.t_cam_msg_seen_ns > 0 and t_target_cb_end_ns >= timing_msg.t_cam_msg_seen_ns:
-            timing_msg.e2e_target_ms = float(
-                (t_target_cb_end_ns - timing_msg.t_cam_msg_seen_ns) / 1e6
-            )
-        sensor_ms = self._sensor_to_target_ms_if_comparable(
-            int(msg.src_stamp_ns),
-            t_target_cb_end_ns,
-        )
-        if sensor_ms is not None:
-            timing_msg.sensor_to_target_ms = sensor_ms
-        self._timing_target_pub.publish(timing_msg)
 
         return target_msg
 

@@ -774,7 +774,7 @@ def make_status_message(
         frame_id=int(
             getattr(tracks_message, "frame_id", 0)
         ),
-        lat_ms=0.0,
+        tim_mars_processing_ms=0.0,
         num_tracks=len(tracks_message.tracks),
         appearance_enabled=bool(
             runtime.config.appearance.enabled
@@ -830,6 +830,21 @@ def make_status_message(
         ),
         appearance_cache_size=(
             diagnostics.appearance_cache_size
+        ),
+        appearance_cache_lookups=(
+            diagnostics.appearance_cache_lookups
+        ),
+        appearance_cache_hits=(
+            diagnostics.appearance_cache_hits
+        ),
+        appearance_cache_misses=(
+            diagnostics.appearance_cache_misses
+        ),
+        appearance_cache_expired=(
+            diagnostics.appearance_cache_expired
+        ),
+        appearance_cache_invalidated=(
+            diagnostics.appearance_cache_invalidated
         ),
         appearance_embedding_age_ms_by_track_id=(
             diagnostics.appearance_embedding_age_ms_by_track_id
