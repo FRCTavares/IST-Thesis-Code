@@ -25,10 +25,20 @@ table-consistency checks without hiding their recorded commands or provenance.
 
 ## Live field recording
 
-The recommended retained-data workflow is source-first: record the three field
-scenarios with `--source-record`, replay the pipeline offline, and retain one
-representative `--field-record` run as live-system evidence. Follow
-`docs/flight/SOURCE_FIRST_FIELD_RECORDING_PLAN.md`.
+Current retained-data procedures are issue-specific rather than one generic
+field session:
+
+- Issue #27 final held-out source capture:
+  `docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md` and
+  `tools/experiments/record_p027_heldout_sequence.sh`.
+- Issue #50 closed-loop aircraft validation:
+  `docs/flight/P050_FLIGHT_VALIDATION.md`. This procedure is currently
+  **not executable** until the exact current-system flight command is frozen.
+- Issue #64 representative small-target/high-resolution capture:
+  `docs/flight/p064_high_resolution_capture_runbook.md`.
+
+Do not use archived P023 or S01/S02/S03/V01 commands as current operator
+instructions.
 
 ### Optional combined raw recording
 
