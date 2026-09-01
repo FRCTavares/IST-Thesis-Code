@@ -1494,6 +1494,13 @@ Rollback remains trivial.
 
 # 47. Phase M3 — UI-owned launcher
 
+M2 established an additional lifecycle requirement:
+
+- do not assume the PID returned by backgrounding `npm run dev` owns Vite;
+- the launcher must own the actual long-lived frontend process or its complete
+  session/process group;
+- stop/interrupt handling must leave no Vite or esbuild listener/process behind.
+
 Create the authoritative frontend launcher in:
 
     IST-Thesis-UI/tools/start_dashboard.sh
@@ -2330,7 +2337,7 @@ Update this table during actual execution.
 | P0 green baseline | 2026-08-29 | `bbc19d21` | N/A | PASS | npm/build/smoke; 337 + 17 tests |
 | M0 current-main preflight | pending | pending | N/A | pending | pending |
 | M1 repository creation | pending | N/A | pending | pending | pending |
-| M2 standalone validation | pending | N/A | pending | pending | pending |
+| M2 standalone validation | 2026-09-01 | N/A | `032041aa` | PASS | `npm ci`, production build and dependency tree pass; mock/offline HTTP pass without ROS/Thesis-Code dependency; true Vite session ownership gives deterministic cleanup |
 | M3 UI launcher | pending | optional | pending | pending | pending |
 | M4 compatibility wrapper | pending | pending | pending | pending | pending |
 | M5 docs/test ownership | pending | pending | pending | pending | pending |
