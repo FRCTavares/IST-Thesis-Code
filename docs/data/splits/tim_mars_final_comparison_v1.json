@@ -1,0 +1,266 @@
+{
+  "schema_version": 1,
+  "contract_id": "tim_mars_final_comparison_v1_2026_09_01",
+  "created_date": "2026-09-01",
+  "purpose": "Prospective final H01-H03 selected-person identity comparison. This contract is frozen before held-out capture or outcome access.",
+  "algorithm_freeze_commit": "85bef616ae90445683b129d9b30d58a76d5c25bd",
+  "held_out_split": {
+    "path": "docs/data/splits/tim_mars_split_v2.json",
+    "split_id": "tim_mars_split_v2_2026_09_01",
+    "sequence_ids": [
+      "heldout_h01_exit_reentry",
+      "heldout_h02_crossing",
+      "heldout_h03_occlusion_distractor"
+    ]
+  },
+  "common_detector": {
+    "name": "YOLOv8s",
+    "backend": "direct_in_process_hailo",
+    "input_geometry": [
+      640,
+      640
+    ],
+    "model": {
+      "path": "models/hef/yolov8s.hef",
+      "size_bytes": 11284359,
+      "sha256": "69540ff855740371d229f4caca1ab908635a72fec55fdc1541e73f2fc17ec43b"
+    },
+    "rule": "Generate one detector evidence stream per held-out source and freeze it before tracker fan-out. Every primary architecture must consume the same detector evidence for that sequence."
+  },
+  "common_appearance_model": {
+    "name": "MARS-small128",
+    "embedding_dimension": 128,
+    "backend": "CPU TensorFlow",
+    "model": {
+      "path": "models/reid/mars-small128.pb",
+      "size_bytes": 11244410,
+      "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1"
+    },
+    "rule": "The same MARS model and crop/preprocessing implementation is used wherever MARS appearance evidence is required."
+  },
+  "initial_target_bootstrap": {
+    "authority": "physical_reference_v2",
+    "rule": "The selected physical person is defined in the frozen physical-v2 annotation before architecture outcome inspection. For each tracker-derived architecture, the initial tracker identity is mapped to that selected physical person only at the predetermined initial selection/bootstrap instant. The mapping may use the physical annotation at that instant but may not use later correctness, recovery, candidate-score, or architecture outcomes.",
+    "failure_rule": "If an architecture cannot produce a valid selected-target bootstrap at the predetermined instant, record the bootstrap failure; do not move the bootstrap time or choose another identity based on later performance."
+  },
+  "primary_architectures": [
+    {
+      "id": "bytetrack_raw",
+      "label": "ByteTrack raw",
+      "tracker": {
+        "type": "bytetrack",
+        "config": {
+          "path": "ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+          "size_bytes": 477,
+          "sha256": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906"
+        },
+        "parameters": {
+          "min_score": 0.2,
+          "track_thresh": 0.5,
+          "match_thresh": 0.8,
+          "track_buffer": 30,
+          "frame_rate": 30,
+          "low_thresh": 0.1,
+          "new_track_thresh": 0.6,
+          "second_match_thresh": 0.5,
+          "unconfirmed_match_thresh": 0.7,
+          "fuse_scores": true,
+          "mot20": false
+        },
+        "config_file_authority": "The complete hashed tracker_bytetrack.yaml file is authoritative. The parameters object is an explicit duplicate for auditability."
+      },
+      "identity_output": "raw selected ByteTrack target",
+      "tim_mars": false
+    },
+    {
+      "id": "target_reid_090",
+      "label": "Simple Target-ReID 0.90",
+      "candidate_source": "ByteTrack candidates",
+      "threshold": 0.9,
+      "decision_rule": "Highest selected-target-anchor MARS cosine similarity; publish only when similarity >= 0.90, otherwise LOST.",
+      "implementation": [
+        {
+          "path": "tools/analysis/p058_target_reid_baseline.py",
+          "size_bytes": 3985,
+          "sha256": "c942051fda3f7759a15716e0e233b2877b91d93f02fd5b3be1f04eaa3136efea"
+        },
+        {
+          "path": "tools/analysis/p058_target_reid_runtime.py",
+          "size_bytes": 8325,
+          "sha256": "895c7f9bb95b9444db54350793676c3e9d7dd3f1279b52088e6fca4d8b438858"
+        },
+        {
+          "path": "tools/experiments/run_p058_target_reid_replay.py",
+          "size_bytes": 10005,
+          "sha256": "a6cd86d48bd174fc69b600fec130ddbf729f1ee287784fb9c7936e65961e787a"
+        }
+      ],
+      "excluded_features": [
+        "TIM-MARS geometry fusion",
+        "hard-negative memory",
+        "temporal recovery confirmation",
+        "TIM-MARS state-machine authority",
+        "trusted-only adaptive target memory"
+      ],
+      "runtime_parameters": {
+        "image_topic": "/camera/image_raw",
+        "max_image_age_ms": 250.0,
+        "image_buffer_size": 64,
+        "mars_batch_size": 32,
+        "tracks_are_normalized": false
+      },
+      "candidate_tracker": {
+        "type": "bytetrack",
+        "config": {
+          "path": "ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+          "size_bytes": 477,
+          "sha256": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906"
+        },
+        "parameters": {
+          "min_score": 0.2,
+          "track_thresh": 0.5,
+          "match_thresh": 0.8,
+          "track_buffer": 30,
+          "frame_rate": 30,
+          "low_thresh": 0.1,
+          "new_track_thresh": 0.6,
+          "second_match_thresh": 0.5,
+          "unconfirmed_match_thresh": 0.7,
+          "fuse_scores": true,
+          "mot20": false
+        }
+      },
+      "runtime_rule": "The selected-target anchor is created once from the predetermined bootstrap identity and remains immutable. Every subsequent decision is stateless with respect to identity history and ranks current ByteTrack candidates only by MARS cosine similarity."
+    },
+    {
+      "id": "bytetrack_tim_mars",
+      "label": "ByteTrack + canonical TIM-MARS",
+      "tracker": {
+        "type": "bytetrack",
+        "config": {
+          "path": "ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+          "size_bytes": 477,
+          "sha256": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906"
+        },
+        "config_file_authority": "The complete hashed tracker_bytetrack.yaml file is authoritative. The parameters object is an explicit duplicate for auditability.",
+        "parameters": {
+          "min_score": 0.2,
+          "track_thresh": 0.5,
+          "match_thresh": 0.8,
+          "track_buffer": 30,
+          "frame_rate": 30,
+          "low_thresh": 0.1,
+          "new_track_thresh": 0.6,
+          "second_match_thresh": 0.5,
+          "unconfirmed_match_thresh": 0.7,
+          "fuse_scores": true,
+          "mot20": false
+        }
+      },
+      "tim_mars": {
+        "config": {
+          "path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+          "size_bytes": 4567,
+          "sha256": "e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931"
+        },
+        "appearance_backend": "CPU MARS-small128",
+        "appearance_request_policy": "all_candidates",
+        "appearance_compute_min_interval_ms": 250.0
+      },
+      "identity_authority": "TIM-MARS"
+    },
+    {
+      "id": "deepsort_raw",
+      "label": "DeepSORT raw",
+      "tracker": {
+        "type": "deepsort",
+        "config": {
+          "path": "ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml",
+          "size_bytes": 601,
+          "sha256": "d586e2e04c283313606cb366b64c0e7bad19692207f185d7dd9b89c89e33efb0"
+        },
+        "parameters": {
+          "min_score": 0.35,
+          "max_age": 30,
+          "n_init": 3,
+          "max_iou_distance": 0.75,
+          "max_cosine_distance": 0.2,
+          "nn_budget": 100,
+          "only_position_gating": false,
+          "image_topic": "/camera/image_raw",
+          "image_buffer_size": 64,
+          "max_image_age_ms": 250.0,
+          "reid_batch_size": 32
+        },
+        "config_file_authority": "The complete hashed tracker_deepsort.yaml file is authoritative. The parameters object is an explicit duplicate for auditability."
+      },
+      "appearance_model": "common_appearance_model",
+      "identity_output": "raw selected DeepSORT target",
+      "tim_mars": false
+    }
+  ],
+  "non_primary_development_results": {
+    "sort_raw": "Retained as development evidence but not required as a primary final architecture cell.",
+    "sort_plus_tim": "Not promoted: all 29 frozen development configurations failed the development safety promotion criterion."
+  },
+  "physical_reference_and_evaluation": {
+    "reference_contract": "tim_physical_target_bbox_v2",
+    "schema_version": 2,
+    "files": [
+      {
+        "path": "tools/analysis/physical_target_reference_v2.py",
+        "size_bytes": 25984,
+        "sha256": "6299542c5ae3f4f21bb313112f8375774ed2685ccf0cb164bd56848c34094c96"
+      },
+      {
+        "path": "tools/analysis/physical_target_bbox_evaluation_v2.py",
+        "size_bytes": 19901,
+        "sha256": "4e80edc4a574d0eaf9fadbcf5c085513afe2ba40758cb25bbaeb866400fdbcfd"
+      },
+      {
+        "path": "tools/analysis/evaluate_physical_target_bbox_v2.py",
+        "size_bytes": 9694,
+        "sha256": "ab6012a3cf912c1a9c35be3487101c55d646c8a00d3bb47670ab20785076a631"
+      }
+    ],
+    "primary_identity_buckets": [
+      "correct_target_output_duration_s",
+      "wrong_person_output_duration_s",
+      "identity_unresolved_duration_s",
+      "lost_or_suppressed_duration_s"
+    ],
+    "additional_required_buckets": [
+      "target_absent_duration_s",
+      "target_absent_with_output_duration_s",
+      "reference_unavailable_duration_s",
+      "reference_gap_duration_s"
+    ],
+    "identity_rule": "Stage A physical-person attribution is threshold-free and identity-independent of tracker IDs. Stage B localisation does not gate Stage A identity correctness.",
+    "duration_rule": "All primary duration buckets must reconcile against the full physical-v2 evaluation window according to the frozen v2 reference-gap and unavailable-reference semantics."
+  },
+  "outcome_access_policy": {
+    "before_release": "Do not run or inspect architecture correctness results, TIM candidate scores, threshold diagnostics, or comparative outcomes.",
+    "after_release": "Evaluate all four primary architectures without retuning, model switching, tracker-parameter changes, bootstrap-time changes, or evaluation-rule changes.",
+    "post_access_change": "A behavior-affecting change motivated by held-out outcomes contaminates the accessed H01-H03 evidence. The affected sequences must cease to be final held-out evidence and a new prospective split is required."
+  },
+  "source_code_freeze": {
+    "commit": "85bef616ae90445683b129d9b30d58a76d5c25bd",
+    "required_unchanged_paths": [
+      "ros2_ws/src/thesis_bringup/thesis_bringup/perception",
+      "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars",
+      "ros2_ws/src/thesis_tracker/thesis_tracker",
+      "ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+      "ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml",
+      "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+      "tools/analysis/p058_target_reid_baseline.py",
+      "tools/analysis/p058_target_reid_runtime.py",
+      "tools/experiments/run_p058_target_reid_replay.py",
+      "tools/experiments/run_deterministic_tracker_replay.py",
+      "tools/experiments/run_deterministic_tim_replay.py",
+      "tools/analysis/physical_target_reference_v2.py",
+      "tools/analysis/physical_target_bbox_evaluation_v2.py",
+      "tools/analysis/evaluate_physical_target_bbox_v2.py"
+    ],
+    "change_rule": "Any behavior-affecting change under these paths before held-out outcome access requires a new explicitly versioned prospective freeze. After held-out outcome access, outcome-motivated changes contaminate the accessed held-out evidence."
+  }
+}

@@ -69,8 +69,9 @@ records their exact paths and hashes.
 
 ## Operational documentation
 
-- [Source-first field recording plan](flight/SOURCE_FIRST_FIELD_RECORDING_PLAN.md)
-- [Flight-readiness procedure](flight/P023_FLIGHT_READINESS.md)
+- [Issue #27 held-out capture index](flight/P027_HELDOUT_CAPTURE_RUNBOOK.md)
+- [Issue #50 aircraft-validation status](flight/P050_FLIGHT_VALIDATION.md)
+- [Issue #64 high-resolution capture](flight/p064_high_resolution_capture_runbook.md)
 - [Hailo recovery](debug/HAILO_RECOVERY.md)
 - [Live camera recovery](debug/LIVE_STACK_CAMERA_RECOVERY.md)
 - [Unattended Pi operation](debug/UNATTENDED_PI_OPERATION.md)

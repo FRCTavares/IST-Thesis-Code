@@ -1,6 +1,6 @@
 # TIM-MARS tooling index
 
-Date: 2026-07-23
+Date: 2026-09-01
 
 ## Purpose
 
@@ -29,7 +29,9 @@ Only `mars` and `off` are supported target-memory operator modes.
 - Dashboard launcher: `tools/start_ui_stack.sh`
 - Dashboard instructions: `live-ui/README.md`
 - ROS workspace build: `tools/thesis_build.sh`
-- Field recording plan: `docs/flight/SOURCE_FIRST_FIELD_RECORDING_PLAN.md`
+- Held-out capture index: `docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md`
+- Held-out capture helper: `tools/experiments/record_p027_heldout_sequence.sh`
+- Aircraft-validation status: `docs/flight/P050_FLIGHT_VALIDATION.md`
 - Tools overview: `tools/README.md`
 
 The dashboard application is in `live-ui/`. From the repository root, use
@@ -51,7 +53,8 @@ fresh checkout to install frontend dependencies.
 
 ## Frozen experiment definitions
 
-- Development/final split: `docs/data/splits/tim_mars_split_v1.json`
+- Active prospective development/final split: `docs/data/splits/tim_mars_split_v2.json`
+- Historical July split: `docs/data/splits/tim_mars_split_v1.json`
 - Split policy: `docs/data/splits/README.md`
 - Component-ablation manifest: `docs/data/ablations/tim_mars_component_ablation_v1.yaml`
 - Component-ablation interpretation: `docs/data/ablations/README.md`

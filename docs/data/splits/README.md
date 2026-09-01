@@ -1,12 +1,18 @@
 # TIM-MARS frozen evaluation split
 
-The machine-readable authority is:
+The active prospective machine-readable authority is:
 
-`docs/data/splits/tim_mars_split_v1.json`
+`docs/data/splits/tim_mars_split_v2.json`
 
-This split was introduced after the existing May and June recordings had
-already been inspected and used during development. They are therefore not
-relabeled as held-out data.
+`tim_mars_split_v1.json` is retained unchanged as historical provenance for
+the 23 July 2026 freeze. TIM-MARS development continued after that freeze, but
+H01--H03 were never captured or inspected. Split v2 therefore establishes a
+new prospective freeze for the actual final algorithm before any held-out
+outcome exists; this is a protocol update, not post-test tuning.
+
+The original split was introduced after the existing May and June recordings
+had already been inspected and used during development. They therefore remain
+development/legacy data in v2 and are not relabeled as held-out data.
 
 ## Sets
 
@@ -55,7 +61,7 @@ For each H01–H03 recording:
 4. Freeze the tracker/output-generation contract and annotation before viewing
    TIM results.
 5. Add the source path, annotation path, selected target, file sizes, and
-   SHA-256 values to `tim_mars_split_v1.json`; change status to `ready`.
+   SHA-256 values to `tim_mars_split_v2.json`; change status to `ready`.
 6. Run:
 
    ```bash
@@ -72,4 +78,4 @@ The normal schema/freeze check intentionally permits pending captures:
 python3 tools/analysis/validate_tim_evaluation_split.py
 ```
 
-It must report `final_ready=0/3` until tomorrow's recordings are frozen.
+It must report `final_ready=0/3` until the September held-out recordings are captured, annotated, identity/outfit-audited, hashed, and frozen.
