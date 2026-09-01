@@ -56,8 +56,11 @@ Before activating the Pixhawk link, enter the mandatory field network mode:
 
     sudo ./tools/host/set_pi_network_mode.sh pixhawk
 
-This requires the `ISR Aero.Next GCS` Wi-Fi profile, activates the Pixhawk
-Ethernet profile without a default route, and stops/disables Tailscale. Do not
+This first attempts the preferred `ISR Aero.Next GCS` Wi-Fi profile. If ISR
+cannot be activated, field mode may use the explicitly configured approved
+AERONEXT local-router fallback profile. If neither approved field Wi-Fi works,
+the transition fails closed. The Pixhawk Ethernet profile is activated without
+a default route and Tailscale is stopped/disabled. Do not
 operate the Pixhawk Ethernet link while the Pi is using the unattended/Tailscale
 network mode. Return to remote bench operation only after disconnecting the
 Pixhawk:
