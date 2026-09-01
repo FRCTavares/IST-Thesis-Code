@@ -2339,8 +2339,8 @@ Update this table during actual execution.
 | M1 repository creation | 2026-09-01 | tree `634754dd` | `032041aa` | PASS | exact 45-file import plus provenance/.gitignore; public `FRCTavares/IST-Thesis-UI` created; remote main exactly matches validated import commit |
 | M2 standalone validation | 2026-09-01 | N/A | `032041aa` | PASS | `npm ci`, production build and dependency tree pass; mock/offline HTTP pass without ROS/Thesis-Code dependency; true Vite session ownership gives deterministic cleanup |
 | M3 UI launcher | 2026-09-01 | N/A | `03e45384` | PASS | UI-owned `tools/start_dashboard.sh`; backend/mock/offline modes; host/port/install options; external state/log path; launcher execs real Vite process; HTTP and deterministic shutdown smoke pass |
-| M4 compatibility wrapper | 2026-09-01 | this boundary checkpoint | `03e45384` | PASS | `start_ui_stack.sh` reduced to external delegation shim; legacy operator flags/env translated; missing checkout fails clearly; no npm/Vite implementation remains in Thesis-Code |
-| M5 docs/test ownership | 2026-09-01 | this boundary checkpoint | `03e45384` | IN PROGRESS | Thesis-Code operator docs/tests migrated to external frontend ownership; 11 targeted contracts pass; UI-repository README contract cleanup remains before M5 closes |
+| M4 compatibility wrapper | 2026-09-01 | `5104f0df` | `03e45384` | PASS | `start_ui_stack.sh` reduced to external delegation shim; legacy operator flags/env translated; missing checkout fails clearly; no npm/Vite implementation remains in Thesis-Code |
+| M5 docs/test ownership | 2026-09-01 | `5104f0df` | `ef8914c9` | PASS | Thesis-Code operator docs/tests migrated to external frontend ownership with 11 targeted contracts passing; UI README now documents the actual runtime/API/port/frozen-profile/target-authority/bbox contracts and production build passes |
 | M6 live integration | pending | pending | pending | pending | pending |
 | M7 old frontend removal | pending | pending | pending | pending | pending |
 | H1 frontend hardening | pending | N/A | pending | pending | pending |
