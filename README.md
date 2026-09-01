@@ -91,10 +91,16 @@ matching HailoRT and TAPPAS system runtime first. The repository helpers
 `tools/setup/install_host_hailo_bindings.sh` and
 `tools/setup/setup_local_tappas_runtime.sh` support compatible host setups.
 
-The web UI has a separate Node.js dependency set. Install it only when needed
-with:
+The browser frontend is owned by the separate `FRCTavares/IST-Thesis-UI` repository. The expected co-located checkout is:
 
-    ./tools/start_ui_stack.sh --install
+    $HOME/Desktop/IST-Thesis-UI
+
+Install its locked Node.js dependencies from that repository when needed:
+
+    cd $HOME/Desktop/IST-Thesis-UI
+    ./tools/start_dashboard.sh --install --mode backend
+
+`Thesis-Code/tools/start_ui_stack.sh` remains only as a compatibility shim that delegates to that external launcher.
 
 ## 1) One-time shell setup
 
@@ -201,30 +207,37 @@ Expected:
 - Core topics are listed.
 - Required service ports are listening for dashboard video, API, WebSocket, and UI services.
 
-Run UI in parallel (second terminal):
+Run the browser frontend in parallel from the separate UI repository (second terminal):
+
+```bash
+cd $HOME/Desktop/IST-Thesis-UI
+./tools/start_dashboard.sh --mode backend
+```
+
+The frontend launcher defaults to `127.0.0.1:5173`. For an explicitly approved field-network/iPhone session, bind it deliberately:
+
+```bash
+cd $HOME/Desktop/IST-Thesis-UI
+./tools/start_dashboard.sh --mode backend --host 0.0.0.0 --port 5173
+```
+
+Do not treat that bind as an access-control policy. API, WebSocket, video, firewall, CORS, and field-network exposure are separate Issue #55 backend security contracts.
+
+The historical Thesis-Code command remains available for operator compatibility:
 
 ```bash
 cd $THESIS_ROOT
-./tools/start_ui_stack.sh
+./tools/start_ui_stack.sh --mode backend --host 0.0.0.0
 ```
 
-Notes:
+That command contains no frontend implementation. It resolves `${THESIS_UI_ROOT:-$HOME/Desktop/IST-Thesis-UI}` and delegates to the UI-owned `tools/start_dashboard.sh` launcher.
 
-- The UI launcher skips `npm install` by default.
-- Use `./tools/start_ui_stack.sh --install` when you want to refresh dependencies.
-
-Useful UI flags:
-
-- `./tools/start_ui_stack.sh --mode backend`
-- `./tools/start_ui_stack.sh --mode mock`
-- `./tools/start_ui_stack.sh --mode offline`
-- `./tools/start_ui_stack.sh --port 5174`
-- `./tools/start_ui_stack.sh --host 0.0.0.0`
+The live ROS/backend services remain owned by `tools/start_live_stack.sh`: `dashboard_bridge_node` provides the HTTP API and telemetry WebSocket, and `web_video_server` provides the MJPEG stream.
 
 Verification checkpoint for the UI:
 
-- Open `http://127.0.0.1:5173` or the remote host IP and chosen port.
-- Dashboard connects to the telemetry WebSocket and backend API when running in backend mode.
+- Open `http://127.0.0.1:5173` for a local-only launch, or the approved Pi field-network address when an explicit network bind is in use.
+- In backend mode, confirm API `:8090`, WebSocket `:8765`, and video `:8080` are reachable through the intended network policy.
 
 ## 3) Manual startup
 
