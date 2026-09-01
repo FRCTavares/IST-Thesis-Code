@@ -6,19 +6,30 @@ Issue: [#51](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
 
 ## Status
 
-Implementation and all software-controlled host tests pass. Issue #51 remains
-open pending the physical power-removal/restoration test, external-network
-reconnection, confirmation of the independent power/watchdog mitigation, and
-the physical AERONEXT/Pixhawk mode check.
+Implementation and all software-controlled host tests pass. External
+Tailnet recovery, storage-safe physical power restoration, and repeated
+spontaneous data-plane recovery also pass. Issue #51 is complete for its
+host-only unattended-recovery scope.
+
+The configured Raspberry Pi hardware watchdog is live and actively fed by
+systemd with a 30-second timeout. A destructive simulated kernel hang was
+deliberately not injected because the committed runbook permits that test only
+when a verified independent smart-plug or UPS recovery path is available. Hard
+kernel-hang recovery therefore remains an explicit untested extreme-failure
+limitation rather than a claimed validation result.
+
+Exact AERONEXT fallback provisioning and the physical Pixhawk/AERONEXT network
+state are field/flight-readiness checks and are transferred to Issue #50.
 
 ## Safety boundary
 
 The deployment enables only NetworkManager, Tailscale, the SSH socket, UFW, and
 the host-health timer. It does not enable or start ROS, MAVROS, perception,
 tracking, TIM, control, arming, recording, or any aircraft-facing service.
-Tailscale is required only in unattended mode. Pixhawk mode instead requires
-`ISR Aero.Next GCS` on `wlan0`, reserves `eth0` for `pixhawk-apm`, and keeps
-Tailscale stopped.
+Tailscale is required only in unattended mode. Pixhawk mode prefers
+`ISR Aero.Next GCS` on `wlan0` and may fall back to one explicitly configured
+approved AERONEXT local-router profile when ISR cannot be activated. It reserves
+`eth0` for `pixhawk-apm` and keeps Tailscale stopped.
 
 ## Audited baseline
 
@@ -56,13 +67,15 @@ an admin-console expiry change or renewal before departure.
   - restarts Tailscale only when the underlying network is healthy;
   - restarts only `ssh.socket` when SSH is unavailable;
   - emits redacted JSON and never logs credentials or Tailscale peer data.
-  - in Pixhawk mode, rejects every Wi-Fi profile except `ISR Aero.Next GCS`,
-    requires its default route through `wlan0`, and stops rather than restarts
-    Tailscale.
+  - in Pixhawk mode, accepts only the configured field Wi-Fi profiles,
+    with `ISR Aero.Next GCS` first priority and an optional approved AERONEXT
+    local-router fallback; it requires the active field profile's default route
+    through `wlan0` and stops rather than restarts Tailscale.
 - `tools/host/set_pi_network_mode.sh`
   - switches explicitly between `unattended` and `pixhawk` modes;
-  - proves AERONEXT Wi-Fi is active before persisting field mode or stopping
-    Tailscale;
+  - tries `ISR Aero.Next GCS` first, then the explicitly configured approved
+    AERONEXT local-router fallback if required, and proves one approved field
+    Wi-Fi profile is active before persisting field mode or stopping Tailscale;
   - activates `pixhawk-apm` with IPv4/IPv6 default routes disabled;
   - fails before changing mode if either required NetworkManager profile is
     absent or AERONEXT cannot connect.
@@ -190,11 +203,194 @@ After installation:
 - non-mutating invocation: Pixhawk mode, one-failure threshold, dry-run;
 - observed: the home Wi-Fi profile was rejected (`expected_wifi_active=false`)
   even though the interface and a default route were present;
-- selected recovery actions: exact AERONEXT connection recovery and
-  `tailscale_stop`; no action was executed in the dry-run;
+- selected recovery actions: recovery toward the configured preferred
+  field Wi-Fi profile and `tailscale_stop`; no action was executed in the
+  dry-run. The current software now supports ordered ISR-first recovery with
+  an explicitly configured approved AERONEXT fallback;
 - live-stack field and source paths now invoke the fail-closed mode switch
   instead of activating `pixhawk-apm` directly;
 - result: SOFTWARE POLICY PASS; physical link/profile check remains open.
+
+### 31 August 2026 spontaneous data-plane outage and automatic recovery
+
+A genuine home-network data-plane interruption occurred while the Pi remained
+configured in `unattended` mode on `netplan-wlan0-Wi-Fi MC`.
+
+- At 19:41 WEST, the host-health check still observed the expected active
+  NetworkManager profile, installed default route, active SSH, and running
+  Tailscale, but the configured gateway `192.168.1.1` was no longer reachable.
+  This was recorded as the first consecutive network failure.
+- At 19:43 WEST, the gateway remained unreachable and Tailscale had also become
+  offline, while `wlan0` was still nominally configured.
+- At 19:45 WEST, the third consecutive network failure triggered exactly one
+  bounded `network_reconnect` action.
+- NetworkManager deliberately deactivated and reactivated the same
+  `netplan-wlan0-Wi-Fi MC` profile. During that transition the Pi temporarily
+  lost its LAN/default-route data path.
+- At 19:45:48 WEST, DHCP restored `192.168.1.110` and the default route through
+  `192.168.1.1`.
+- Tailscale rebound to `wlan0`, re-established its control/DERP connectivity,
+  and log upload recovered by 19:46:12 WEST.
+- The next host-health invocation at 19:47 reported healthy gateway, network,
+  SSH, and Tailscale state with all failure counters reset to zero.
+- A fresh SSH connection to the Pi's Tailscale address `100.69.42.62` succeeded
+  again from the operator Mac at approximately 20:03 WEST.
+- The installed host mode remained `unattended`; `tailscaled.service` remained
+  enabled/active and no Pixhawk field-mode transition occurred.
+
+Result: PASS. This is retained real-failure evidence that the July data-plane
+repair detects a nominally configured but unusable Wi-Fi path and performs one
+bounded reconnect that restores both LAN and Tailscale reachability.
+
+This same-home-network Tailscale reconnection does not replace the still-open
+requirement for a fresh Tailnet SSH test from a genuinely external network.
+
+### 31 August 2026 external Tailnet SSH and firewall cleanup
+
+The temporary LAN-only SSH exception used during Issue #51 recovery testing was
+removed after first proving that the active operator shell was using Tailscale:
+
+- the active shell was
+  `100.105.37.101 -> 100.69.42.62:22`, confirming Mac-to-Pi Tailnet transport;
+- the exact temporary UFW rule
+  `22/tcp on wlan0 ALLOW IN 192.168.1.213`
+  (`temporary P051 LAN SSH test`) was uniquely identified and removed;
+- UFW remained active with default-deny inbound, Tailnet service access on
+  `tailscale0`, Tailscale UDP 41641 on `wlan0`, and Pixhawk MAVLink UDP 14550
+  restricted to `eth0`;
+- the existing Tailnet SSH session survived the firewall change;
+- a fresh second SSH session to `100.69.42.62` succeeded afterward, proving that
+  access did not depend on the removed LAN exception.
+
+A genuinely external Tailnet SSH test was then performed with the Raspberry Pi
+left on the home network and the operator Mac moved to a separate phone-hotspot
+network:
+
+- Mac host: `Franciscos-Mac.local`, Darwin;
+- Mac hotspot IPv4: `172.20.10.3`;
+- Mac default gateway: `172.20.10.1`;
+- the Mac was therefore outside the Pi's `192.168.1.0/24` home LAN;
+- a fresh SSH connection from the Mac to the Pi Tailscale address
+  `100.69.42.62` succeeded;
+- the Pi reported
+  `SSH_CONNECTION=100.105.37.101 59081 100.69.42.62 22`;
+- the Pi remained on `netplan-wlan0-Wi-Fi MC` with physical address
+  `192.168.1.110` and default gateway `192.168.1.1`;
+- the Pi's Tailscale peer state showed the external Mac reachable directly via
+  `148.69.202.51:20044`.
+
+Result: PASS. Fresh SSH through the Tailnet works while the operator computer is
+on a genuinely separate external network, and no direct LAN SSH firewall
+exception is required.
+
+### 31 August 2026 storage-safe physical power restoration
+
+A storage-safe complete physical power-removal/restoration test was performed
+while the Pi was in `unattended` mode and no thesis live stack, ROS bag
+recording, MAVROS process, or aircraft-facing control process was running.
+
+Pre-power evidence was retained under
+`ros2_ws/log/p051_power_cycle_20260831_221616/`.
+
+Before shutdown:
+
+- Git commit:
+  `fd3e23167b8603cfa457ca055a37e0f297c31e6a`;
+- boot ID:
+  `7d547b68-11ad-49e1-8e00-266273014d15`;
+- root filesystem: `/dev/mmcblk0p2`, ext4, read-write;
+- approximately 73 GiB remained free;
+- NetworkManager, `tailscaled.service`, `ssh.socket`, and
+  `thesis-host-health.timer` were enabled and active;
+- host mode was `unattended`;
+- the storage-safe shutdown was requested at 22:16:17 WEST after `sync`.
+
+The previous-boot journal confirms an orderly shutdown:
+
+- systemd reached `umount.target`, `shutdown.target`, `final.target`, and
+  `poweroff.target`;
+- `systemd-poweroff.service` completed successfully;
+- at 22:16:21 WEST, `systemd-shutdown` recorded
+  `Syncing filesystems and block devices`;
+- the journal then stopped normally.
+
+After the Pi had fully shut down, input power was physically removed, left
+disconnected for at least 15 seconds, and restored once. No local interaction
+was performed after restoration.
+
+Post-restoration evidence:
+
+- new boot ID:
+  `98eeee9a-b2a2-45c1-baa8-156a308e4c38`;
+- recorded OS boot start: 22:17:35 WEST;
+- the repository commit and clean state were preserved;
+- host mode remained `unattended`;
+- NetworkManager, `tailscaled.service`, `ssh.socket`, and
+  `thesis-host-health.timer` automatically returned enabled and active;
+- `wlan0` recovered the home profile and default route through
+  `192.168.1.1`;
+- Tailscale recovered address `100.69.42.62`;
+- from the operator Mac on the separate phone-hotspot network, both Tailnet
+  reachability and TCP/22 were already available at the first observation at
+  22:20:28 WEST;
+- a fresh external SSH session passed with
+  `SSH_CONNECTION=100.105.37.101 59804 100.69.42.62 22`;
+- the root ext4 filesystem was mounted read-write with no detected current-boot
+  filesystem or I/O errors;
+- no failed systemd units were present.
+
+The exact physical power-restoration timestamp was not instrumented, so an exact
+power-on-to-remote-reachability latency is not claimed. Remote access was
+confirmed no later than 22:20:28 WEST, which is 173 seconds after the recorded
+OS boot start.
+
+The post-restoration watchdog audit also confirmed that systemd is actively
+using `/dev/watchdog0`: `RuntimeWatchdogUSec=30s`,
+`RebootWatchdogUSec=10min`, and `wdctl` reported the Broadcom BCM2835 watchdog
+with a 30-second timeout and active keep-alive. This verifies the configured
+watchdog is live, but it does not replace the still-open destructive-watchdog or
+independent-power-mitigation acceptance gate.
+
+Result: PASS. The Pi returned from a storage-safe complete physical power cycle
+to an externally reachable unattended state without local intervention.
+
+### 31 August 2026 second spontaneous data-plane recovery
+
+A second genuine home-network data-plane outage occurred after the physical
+power-restoration validation while the Pi remained in `unattended` mode.
+
+The Pi did not reboot: boot ID
+`98eeee9a-b2a2-45c1-baa8-156a308e4c38` remained unchanged.
+
+The installed host-health monitor recorded:
+
+- 22:41:50 WEST: expected Wi-Fi active, gateway reachable, network healthy,
+  Tailscale online;
+- 22:44:00: the Wi-Fi profile and default route still appeared configured, but
+  `gateway_reachable=false`; network and Tailscale failure counters became 1;
+- 22:46:12: the same data-plane failure persisted and counters became 2;
+- 22:48:24--22:48:45: the third consecutive failure triggered one bounded
+  `network_reconnect`, which returned status 0;
+- NetworkManager deliberately reactivated the same
+  `netplan-wlan0-Wi-Fi MC` profile;
+- 22:48:44: wireless association completed;
+- 22:48:45: DHCP restored `192.168.1.110` and the default route through
+  `192.168.1.1`;
+- Tailscale immediately rebound, re-established DERP/control connectivity, and
+  regained direct peer connectivity;
+- 22:50:45: the next host-health invocation reported the gateway, network,
+  Tailscale, SSH, and service state healthy and reset all failure counters.
+
+During the outage, a genuinely external Mac connection over the Tailnet became
+unreachable and the existing SSH session timed out. This is expected when the
+underlying network path disappears; an existing TCP session is not required to
+survive a complete data-plane interruption. The acceptance criterion is that
+the host recovers automatically and accepts a fresh remote connection after
+connectivity is restored.
+
+Result: PASS. This independently reproduces the failure mode that motivated the
+July repair and demonstrates that the deployed bounded recovery policy restores
+the host without rebooting it.
 
 ## Diagnostics and cleanliness
 
@@ -206,21 +402,28 @@ After installation:
 - no credentials, SSH keys, Wi-Fi secrets, Tailscale keys, or Tailscale state
   were added to the repository.
 
-## Remaining physical/external gates
+## Issue #51 closure disposition
 
-Do not close Issue #51 until all of these are recorded:
+The host-only unattended-recovery scope is complete.
 
-1. storage-safe poweroff, physical power removal, restoration, and automatic
-   Tailscale/SSH recovery;
-2. a fresh Tailscale SSH connection while the operator computer is outside the
-   home network (for example, on a phone hotspot);
-3. confirmation that a tested smart plug or UPS is available, or a locally
-   supervised destructive watchdog-recovery test with the runbook safeguards;
-4. confirmation that the unattended interval ends before 23 August 2026, or
-   that Tailscale key expiry was extended/disabled for this node;
-5. with the Pixhawk connected to `eth0`, locally confirm `pixhawk-apm` is active,
-   `ISR Aero.Next GCS` is the active `wlan0` profile and default route, and
-   `tailscaled.service` is disabled/inactive.
+1. [RESOLVED 31 Aug 2026] storage-safe complete power removal/restoration
+   returned the Pi to an externally reachable unattended state;
+2. [RESOLVED 31 Aug 2026] genuinely external Tailnet SSH passed without a
+   direct-LAN SSH firewall exception;
+3. [RESOLVED WITH EXPLICIT LIMITATION] systemd actively feeds the Broadcom
+   hardware watchdog with a 30-second timeout. Destructive kernel-hang fault
+   injection was not performed because the committed runbook requires a
+   verified working smart plug or UPS before that test. Hard-hang recovery is
+   therefore not claimed as experimentally demonstrated;
+4. [RESOLVED 31 Aug 2026] Tailscale authentication remains valid through
+   `2027-02-21T12:59:51Z`;
+5. [TRANSFERRED TO #50] provision and validate the exact approved AERONEXT
+   fallback profile and physically verify Pixhawk field-network state with
+   `pixhawk-apm` on `eth0`, approved field Wi-Fi/default route on `wlan0`, ISR
+   preferred when available, and Tailscale disabled.
+
+The transferred field-network items remain required before aircraft operation;
+closing #51 does not waive them.
 
 ## 25 July 2026 data-plane recovery repair validation
 

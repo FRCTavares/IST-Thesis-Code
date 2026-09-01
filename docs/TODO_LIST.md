@@ -4,6 +4,8 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
+Open executable issues: **19**.
+
 Last reconciled with GitHub: **31 August 2026**.
 
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
@@ -210,18 +212,23 @@ frame IDs start at one.
 
 ## P2 — Deferred maintenance and physical-validation dependencies
 
-Issues #51 and #50 retain their historical GitHub P2 labels, but their remaining physical gates are mandatory for retained aircraft closed-loop evidence after #74. Execute #51 before #50. The other P2 items remain outside the immediate scientific critical path.
+Issue #51 is closed for the host-only unattended-recovery scope. Issue #50 retains its historical GitHub P2 label but is the active next live-system gate and inherits the mandatory AERONEXT/Pixhawk field-network checks before retained aircraft closed-loop evidence after #74. The other P2 items remain outside the immediate scientific critical path.
 
-1. [ ] [#51 — P2 Complete deferred physical validation for unattended Pi recovery (September)](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
+1. [x] [#51 — P2 Complete deferred physical validation for unattended Pi recovery (September)](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
    - the software recovery defect demonstrated on 25 July 2026 is repaired and validated.
    - unattended mode now separates configured connectivity from verified default-gateway reachability.
    - three consecutive reachability failures trigger one bounded `wlan0` reconnect; six failures trigger one bounded NetworkManager restart with an independent cooldown.
    - real installed-system tests proved Tailscale restart, Wi-Fi reconnect, NetworkManager escalation, network recovery, SSH recovery, Tailscale recovery, timer restoration, and production-state isolation.
-   - 15 focused host-health tests pass, the repository and deployed monitor checksums match, and the production timer reports healthy gateway, network, SSH, and Tailscale state.
-   - the issue remains open only for the previously deferred September gates: physical power restoration, watchdog or independent-power mitigation, genuinely external Tailnet SSH, key-expiry confirmation, and physical Pixhawk/AERONEXT mode validation.
+   - 18 focused host-health tests pass for the current repository policy. The previously deployed monitor remains the validated unattended baseline until this ISR-first fallback slice is deliberately installed; the production timer currently reports healthy gateway, network, SSH, and Tailscale state.
+   - 31 Aug 2026: the Tailscale authentication gate was rechecked live; the node is online and now expires on 21 Feb 2027, so the previous 23 Aug 2026 expiry blocker is resolved. The field-network software now implements ordered ISR-first selection: `ISR Aero.Next GCS` is always attempted first, with one explicitly configured approved AERONEXT local-router fallback permitted only when ISR cannot be activated. Neither path may bypass fail-closed Pixhawk mode, the `pixhawk-apm` no-default-route contract, or the Tailscale-off requirement. The exact fallback profile is not yet provisioned and remains a physical field-validation item.
+   - 31 Aug 2026: a spontaneous home-network data-plane outage provided additional real recovery evidence. Gateway reachability failed while NetworkManager still reported the expected Wi-Fi profile and default route; after the configured third consecutive failure, the host monitor performed one bounded Wi-Fi reconnect. DHCP/default routing returned at 19:45:48 WEST, Tailscale recovered immediately afterward, and a fresh SSH connection to `100.69.42.62` passed. This validates the repaired data-plane recovery path but does not satisfy the genuinely external-network SSH gate.
+   - 31 Aug 2026: the genuinely external Tailnet SSH gate is resolved. The operator Mac was moved to a phone-hotspot network (`172.20.10.3`, gateway `172.20.10.1`) while the Pi remained on the home LAN (`192.168.1.110`, gateway `192.168.1.1`); a fresh SSH session passed from Mac Tailnet address `100.105.37.101` to Pi Tailnet address `100.69.42.62`. The temporary direct-LAN SSH UFW exception was also removed beforehand, and a fresh Tailnet SSH connection passed after that cleanup.
+   - 31 Aug 2026: the storage-safe physical power-restoration gate is resolved. After a clean `sync`/systemd poweroff, input power was physically removed for at least 15 seconds and restored once. The boot ID changed from `7d547b68-11ad-49e1-8e00-266273014d15` to `98eeee9a-b2a2-45c1-baa8-156a308e4c38`; unattended mode and all remote-access services restored automatically, the ext4 root returned read-write without detected I/O errors, and fresh external Tailnet SSH passed. Remote access was confirmed no later than 22:20:28 WEST, 173 seconds after the recorded OS boot start; exact power-on-to-reachability latency was not instrumented and is therefore not claimed.
+   - 31 Aug 2026 closure: the host-only unattended-recovery scope is complete. A second spontaneous data-plane outage independently exercised the same bounded recovery path: three consecutive gateway failures triggered one same-profile Wi-Fi reconnect, DHCP/default routing returned, and Tailscale recovered without a reboot. The 30-second hardware watchdog is live and actively fed by systemd. Destructive kernel-hang injection was deliberately not performed because the committed runbook requires a verified working smart plug or UPS before that test; hard-hang recovery is therefore retained as an explicit untested extreme-failure limitation. Exact AERONEXT fallback provisioning and physical Pixhawk field-network validation are transferred to #50 and remain mandatory before aircraft operation.
 
 2. [ ] [#50 — P2 Complete flight-readiness gate and record held-out UAV-motion evidence (September)](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
-   - phase 10; live-system; resumes in September after the remaining physical validation in #51.
+   - inherits the remaining physical network gate from closed #51: provision/validate the exact approved AERONEXT fallback profile and, with the real Pixhawk connected, verify `pixhawk-apm` on `eth0`, approved field Wi-Fi/default route on `wlan0` with ISR preferred when available, and `tailscaled.service` disabled/inactive before aircraft operation.
+   - phase 10; live-system; active next live-system gate after the #51 host-only closure.
    - owns retained physical closed-loop evidence for the promoted #74 controller: TIM-MARS remains the sole selected-person identity authority while the aircraft performs conservative following and any promoted bounded visual-recovery behaviour.
 
 3. [ ] [#45 — P2.x Detector (perception upgrade behind TIM — additive, low priority)](https://github.com/FRCTavares/IST-Thesis-Code/issues/45)
