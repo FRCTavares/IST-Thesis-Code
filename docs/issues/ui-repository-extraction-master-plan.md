@@ -2326,6 +2326,7 @@ Update this table during actual execution.
 | P0 forensic audit | 2026-08-29 | `bbc19d21` / main `22b9737a` | N/A | PASS | deep dependency + final forensic audit |
 | P0 cross-branch check | 2026-08-29 | tree `634754dd` | N/A | PASS | live-ui/bridge/launcher equivalent |
 | P0 execution refresh | 2026-09-01 | `8e88a471` | N/A | PASS | clean #55 branch; current live-ui tree `634754dd`; mobile field target frozen |
+| M1 local source import | 2026-09-01 | `bd1f2cd5` / tree `634754dd` | `032041aa` | PASS | 45 source files matched path-for-path and blob-for-blob; 47 tracked files after provenance/.gitignore; no generated artifacts; old live-ui retained |
 | P0 green baseline | 2026-08-29 | `bbc19d21` | N/A | PASS | npm/build/smoke; 337 + 17 tests |
 | M0 current-main preflight | pending | pending | N/A | pending | pending |
 | M1 repository creation | pending | N/A | pending | pending | pending |
