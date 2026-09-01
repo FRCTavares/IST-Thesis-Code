@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 import re
 import subprocess
@@ -12,7 +11,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 TOOLS_ROOT = REPO_ROOT / "tools"
 ROOT_README = REPO_ROOT / "README.md"
 INDEX = REPO_ROOT / "docs/design/tim_tooling_index.md"
-LIVE_UI_README = REPO_ROOT / "live-ui/README.md"
 TOOLS_README = TOOLS_ROOT / "README.md"
 P027_RUNBOOK = REPO_ROOT / "docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md"
 P050_STATUS = REPO_ROOT / "docs/flight/P050_FLIGHT_VALIDATION.md"
@@ -20,7 +18,6 @@ EXPERIMENTS_README = TOOLS_ROOT / "experiments/README.md"
 
 REPOSITORY_PATH_PREFIXES = (
     "docs/",
-    "live-ui/",
     "models/",
     "reports/",
     "ros2_ws/",
@@ -57,63 +54,39 @@ def test_tooling_index_has_no_removed_runtime_or_ui_paths():
     assert "thesis_bringup/target_memory.py" not in index
     assert "nodes/target_memory_mars_node.py" not in index
     assert "hsv" not in index
+    assert "live-ui/" not in index
 
 
-def test_dashboard_docs_and_launcher_use_live_ui():
-    readme = LIVE_UI_README.read_text(encoding="utf-8")
+def test_dashboard_docs_and_launcher_use_external_ui_repository():
+    root_readme = ROOT_README.read_text(encoding="utf-8")
+    index = INDEX.read_text(encoding="utf-8")
+    tools_readme = TOOLS_README.read_text(encoding="utf-8")
     launcher = (TOOLS_ROOT / "start_ui_stack.sh").read_text(
         encoding="utf-8"
     )
 
-    assert "cd live-ui" in readme
-    assert "./tools/start_ui_stack.sh --install" in readme
-    assert "user-interface" not in readme
-    assert '$THESIS_ROOT/live-ui' in launcher
-    assert "user-interface" not in launcher
+    for document in (root_readme, index, tools_readme):
+        assert "FRCTavares/IST-Thesis-UI" in document
+
+    assert "THESIS_UI_ROOT" in launcher
+    assert "IST-Thesis-UI" in launcher
+    assert "start_dashboard.sh" in launcher
+    assert 'exec "$UI_LAUNCHER"' in launcher
+
+    assert "$THESIS_ROOT/live-ui" not in launcher
+    assert "npm run dev" not in launcher
+    assert "npm install" not in launcher
+    assert "ros2_ws/log/ui_stack" not in launcher
 
 
-def test_every_dashboard_readme_source_path_exists():
-    readme = LIVE_UI_README.read_text(encoding="utf-8")
-    inline_tokens = set(re.findall(r"`([^`\n]+)`", readme))
-    relative_paths = {
-        token.rstrip("/")
-        for token in inline_tokens
-        if token.startswith("src/")
-    }
-    relative_paths.update(
-        "src/" + token.rstrip("/")
-        for token in inline_tokens
-        if token
-        in {
-            "app/",
-            "components/",
-            "features/",
-            "services/",
-            "types/",
-            "utils/",
-        }
-    )
-    relative_paths.add(".env.example")
+def test_dashboard_backend_ownership_remains_in_thesis_code_docs():
+    root_readme = ROOT_README.read_text(encoding="utf-8")
+    index = INDEX.read_text(encoding="utf-8")
 
-    missing = [
-        relative_path
-        for relative_path in sorted(relative_paths)
-        if not (REPO_ROOT / "live-ui" / relative_path).exists()
-    ]
-    assert missing == []
-
-
-def test_dashboard_package_exposes_every_documented_npm_command():
-    package = json.loads(
-        (REPO_ROOT / "live-ui/package.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    scripts = package["scripts"]
-    readme = LIVE_UI_README.read_text(encoding="utf-8")
-    for command in ("dev", "build", "preview"):
-        assert command in scripts
-        assert f"npm run {command}" in readme
+    for document in (root_readme, index):
+        assert "dashboard_bridge_node" in document
+        assert "web_video_server" in document
+        assert "start_live_stack.sh" in document
 
 
 def test_ui_launcher_help_and_shell_syntax_from_clean_checkout():
@@ -129,6 +102,9 @@ def test_ui_launcher_help_and_shell_syntax_from_clean_checkout():
     )
     assert "--mode <backend|mock|offline>" in result.stdout
     assert "--install" in result.stdout
+    assert "Compatibility shim" in result.stdout
+    assert "THESIS_UI_ROOT" in result.stdout
+    assert "IST-Thesis-UI" in result.stdout
 
 
 def test_documented_build_recording_and_evaluation_commands_are_supported():

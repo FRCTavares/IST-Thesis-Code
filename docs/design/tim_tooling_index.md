@@ -26,17 +26,23 @@ Only `mars` and `off` are supported target-memory operator modes.
 ## Operator entrypoints
 
 - Live stack: `tools/start_live_stack.sh`
-- Dashboard launcher: `tools/start_ui_stack.sh`
-- Dashboard instructions: `live-ui/README.md`
+- Browser frontend repository: `FRCTavares/IST-Thesis-UI`
+- Browser frontend launcher: `IST-Thesis-UI/tools/start_dashboard.sh`
+- Thesis-Code compatibility shim: `tools/start_ui_stack.sh`
 - ROS workspace build: `tools/thesis_build.sh`
 - Held-out capture index: `docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md`
 - Held-out capture helper: `tools/experiments/record_p027_heldout_sequence.sh`
 - Aircraft-validation status: `docs/flight/P050_FLIGHT_VALIDATION.md`
 - Tools overview: `tools/README.md`
 
-The dashboard application is in `live-ui/`. From the repository root, use
-`./tools/start_ui_stack.sh`; use `./tools/start_ui_stack.sh --install` after a
-fresh checkout to install frontend dependencies.
+The React/Vite dashboard is owned by the separate `FRCTavares/IST-Thesis-UI`
+repository. `tools/start_ui_stack.sh` is retained only as a compatibility shim
+that resolves `${THESIS_UI_ROOT:-$HOME/Desktop/IST-Thesis-UI}` and delegates to
+that repository's `IST-Thesis-UI/tools/start_dashboard.sh`.
+
+The ROS dashboard backend remains in Thesis-Code and is started by
+`tools/start_live_stack.sh`: `dashboard_bridge_node` owns the dashboard HTTP API
+and telemetry WebSocket, while `web_video_server` owns the MJPEG video service.
 
 ## Replay and evaluation
 
