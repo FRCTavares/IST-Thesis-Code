@@ -14,7 +14,8 @@ ROOT_README = REPO_ROOT / "README.md"
 INDEX = REPO_ROOT / "docs/design/tim_tooling_index.md"
 LIVE_UI_README = REPO_ROOT / "live-ui/README.md"
 TOOLS_README = TOOLS_ROOT / "README.md"
-FIELD_PLAN = REPO_ROOT / "docs/flight/SOURCE_FIRST_FIELD_RECORDING_PLAN.md"
+P027_RUNBOOK = REPO_ROOT / "docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md"
+P050_STATUS = REPO_ROOT / "docs/flight/P050_FLIGHT_VALIDATION.md"
 EXPERIMENTS_README = TOOLS_ROOT / "experiments/README.md"
 
 REPOSITORY_PATH_PREFIXES = (
@@ -133,7 +134,8 @@ def test_ui_launcher_help_and_shell_syntax_from_clean_checkout():
 def test_documented_build_recording_and_evaluation_commands_are_supported():
     tools_readme = TOOLS_README.read_text(encoding="utf-8")
     root_readme = ROOT_README.read_text(encoding="utf-8")
-    field_plan = FIELD_PLAN.read_text(encoding="utf-8")
+    p027_runbook = P027_RUNBOOK.read_text(encoding="utf-8")
+    p050_status = P050_STATUS.read_text(encoding="utf-8")
     experiments = EXPERIMENTS_README.read_text(encoding="utf-8")
     live_cli = (TOOLS_ROOT / "lib/live_cli.sh").read_text(
         encoding="utf-8"
@@ -161,7 +163,8 @@ def test_documented_build_recording_and_evaluation_commands_are_supported():
         assert (
             option in root_readme
             or option in tools_readme
-            or option in field_plan
+            or option in p027_runbook
+            or option in p050_status
         )
 
     command = (
