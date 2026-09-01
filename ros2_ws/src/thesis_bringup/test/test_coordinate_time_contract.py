@@ -10,6 +10,8 @@ import pytest
 
 from thesis_bringup.dashboard.dashboard_bridge_node import DashboardBridgeNode
 from thesis_bringup.perception.perception_pipeline_node import (
+    FIRST_CAUSAL_FRAME_ID,
+    INFERENCE_SEQUENCE_START,
     PerceptionPipelineNode,
 )
 from thesis_bringup.perception.preprocessing import (
@@ -19,6 +21,17 @@ from thesis_bringup.perception.preprocessing import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
+
+
+def test_live_pipeline_reserves_numeric_frame_zero_for_noncausal_events():
+    assert INFERENCE_SEQUENCE_START == 0
+    assert FIRST_CAUSAL_FRAME_ID == 1
+
+    transform = ImageTransform.direct_resize(640, 480, 640, 640)
+    causal_header = transform.detection_frame_id(FIRST_CAUSAL_FRAME_ID)
+
+    assert ";frame=1;" in causal_header
+    assert ";frame=0;" not in causal_header
 
 
 @pytest.mark.parametrize(
@@ -65,6 +78,7 @@ def test_detection_publication_maps_inference_box_to_source_pixels():
         frame_id=17,
         stamp_sec=12,
         stamp_nanosec=34,
+        t_cam_msg_seen_ns=123456789,
         transform=transform,
     )
     node = object.__new__(PerceptionPipelineNode)
@@ -102,6 +116,7 @@ def test_detection_publication_maps_inference_box_to_source_pixels():
     )
     assert "source=640x480" in output.header.frame_id
     assert "inference=640x640" in output.header.frame_id
+    assert "t_cam_msg_seen_ns=123456789" in output.header.frame_id
 
 
 def test_dashboard_normalizes_source_pixel_boxes_without_second_transform():
@@ -157,6 +172,7 @@ def test_p064_detection_publication_stays_in_high_resolution_source_pixels(
         frame_id=64,
         stamp_sec=12,
         stamp_nanosec=34,
+        t_cam_msg_seen_ns=987654321,
         transform=transform,
     )
     node = object.__new__(PerceptionPipelineNode)
@@ -196,3 +212,4 @@ def test_p064_detection_publication_stays_in_high_resolution_source_pixels(
     assert expected_source in output.header.frame_id
     assert "inference=640x640" in output.header.frame_id
     assert "pad=0,0" in output.header.frame_id
+    assert "t_cam_msg_seen_ns=987654321" in output.header.frame_id

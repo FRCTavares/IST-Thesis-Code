@@ -88,6 +88,11 @@ class TimMarsRuntimeDiagnostics:
     appearance_skip_reason: str
     appearance_warning: Optional[str]
     appearance_cache_size: int
+    appearance_cache_lookups: int
+    appearance_cache_hits: int
+    appearance_cache_misses: int
+    appearance_cache_expired: int
+    appearance_cache_invalidated: int
     appearance_embedding_age_ms_by_track_id: dict[int, float]
     appearance_crop_quality_by_track_id: dict[
         int,
@@ -475,6 +480,21 @@ class TimMarsRuntime:
             appearance_warning=appearance_diagnostics.warning,
             appearance_cache_size=len(
                 self.appearance_state.cache_by_track_id
+            ),
+            appearance_cache_lookups=int(
+                appearance_diagnostics.cache_lookups
+            ),
+            appearance_cache_hits=int(
+                appearance_diagnostics.cache_hits
+            ),
+            appearance_cache_misses=int(
+                appearance_diagnostics.cache_misses
+            ),
+            appearance_cache_expired=int(
+                appearance_diagnostics.cache_expired
+            ),
+            appearance_cache_invalidated=int(
+                appearance_diagnostics.cache_invalidated
             ),
             appearance_embedding_age_ms_by_track_id=dict(
                 appearance_diagnostics.embedding_age_ms_by_track_id

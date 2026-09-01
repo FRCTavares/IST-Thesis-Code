@@ -136,6 +136,27 @@ def test_runtime_switches_fail_closed_around_target_authority():
         assert authority_clear_line < reconfiguration_guard_line
 
 
+def test_dashboard_has_no_container_model_switch_fallback():
+    dashboard = _read(DASHBOARD)
+    launcher = _read(LAUNCHER)
+    methods = _class_methods(DASHBOARD, "DashboardBridgeNode")
+
+    for retired_symbol in {
+        "detector_container_name",
+        "detector_bind",
+        "enable_container_model_switch_api",
+        "_handle_container_model_switch",
+    }:
+        assert retired_symbol not in dashboard
+
+    assert '["docker", "exec"' not in dashboard
+    assert "DASHBOARD_CONTAINER_MODEL_SWITCH_BOOL" not in launcher
+    assert "-p enable_container_model_switch_api" not in launcher
+
+    model_switch_calls = _called_attributes(methods["_handle_model_switch"])
+    assert "_handle_integrated_camera_model_switch" in model_switch_calls
+
+
 def test_tim_select_and_clear_publish_immediate_zero_authority():
     methods = _class_methods(TIM_NODE, "TargetMemoryMarsNode")
 

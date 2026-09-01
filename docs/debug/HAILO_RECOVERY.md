@@ -170,22 +170,21 @@ hailortcli scan -> Device: 0000:01:00.0
 
 ### Step 1: Stop stale Hailo users
 
-```bash
-cd "$THESIS_ROOT"
+The current thesis runtime uses Hailo directly in-process. There is no
+Docker/ZMQ inference service to start, stop, or recover.
 
-pkill -f 'perception_camera_node|perception_pipeline_node|hailo|ros2 bag record' || true
+First inspect possible stale host-side Hailo/perception users without terminating
+unrelated processes:
+
+```bash
+pgrep -af 'perception_camera_node|perception_pipeline_node|hailo|ros2 bag record' || true
 ```
 
-Check containers:
+Only after verifying that a PID belongs to a stale thesis run should it be stopped.
+Prefer terminating that exact PID rather than using a broad process-name kill:
 
 ```bash
-docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'
-```
-
-If a Hailo/container inference service is still running:
-
-```bash
-docker stop $(docker ps -q --filter "name=hailo") 2>/dev/null || true
+kill -TERM <verified-stale-thesis-pid>
 ```
 
 ### Step 2: Check device ownership

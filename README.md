@@ -24,6 +24,7 @@ From `tools/start_live_stack.sh`:
 - Perception mode: integrated camera only
 - Camera capture: 640x480
 - Hailo inference: 640x640
+- Detector default: YOLOv8s
 - Tracker default: ByteTrack
 - Target memory default: TIM-MARS
 - TIM-MARS appearance: enabled
@@ -144,7 +145,11 @@ Removed runtime paths:
 
 - no split camera-to-perception node chain;
 - no separate live perception pipeline executable;
+- no container/Docker/ZMQ inference service;
 - no full-rate live raw image transport.
+
+Detector inference is performed directly in-process through the current Hailo
+runtime.
 
 ### Tracker modes
 
@@ -330,52 +335,43 @@ Expected output:
 
 - `summary.md` and plot files under `reports/tracking/<eval_bag_name>/` by default.
 
-### 5.1) Timing vocabulary (canonical)
+### 5.1) Runtime timing vocabulary
 
-Use these names in runtime analysis, reports, and UI interpretation:
+The current runtime contract is **Timing schema v4**. It describes only the
+direct/in-process Hailo architecture and intentionally contains no
+container/ZMQ compatibility fields or fallback aliases.
 
-- `e2e_det_ms`: Detection end-to-end latency from camera callback seen to detection publish completion.
-- `pub_dt_ms`: Detection publish cadence interval (ms between consecutive `/timing` publishes).
-- `det_out_fps`: Detection output rate derived from `/detections` callback cadence.
-- `camera_input_fps`: Camera publish FPS from `/camera/fps`.
-- `container_queue_ms`: Pre-infer wait before inference starts.
-- `infer_ms`: Inference compute duration.
-- `track_ms`: Tracker backend compute duration.
-- `e2e_target_ms`: End-to-end latency to target publish completion.
+The complete metric definitions, timestamp semantics, intended uses, and
+selective-ReID/cache workload counters are documented in
+`docs/RUNTIME_METRICS.md`.
 
-Clock-domain note:
-
-- `src_stamp_ns` is source or sensor clock metadata and may not be directly comparable to host monotonic timing without synchronization.
-- `pub_dt_ms`, `det_out_fps`, and `camera_input_fps` are cadence-derived metrics.
-
-The canonical field list, the legacy alias-to-canonical mapping, metric tiers,
-warning thresholds, and the alias-removal plan are defined in
-`tools/timing_contract.py`. Per-field deprecation notes are in
+The machine-readable contract is defined by `tools/timing_contract.py` and
 `ros2_ws/src/thesis_msgs/msg/Timing.msg`.
 
-Freeze note:
+Important clock rule:
 
-- Timing schema v3 is frozen for the thesis baseline.
-- Canonical timing names must not change unless metric semantics change.
-- Remaining aliases are deprecated compatibility/history only.
+- `src_stamp_ns` is source/sensor timestamp metadata.
+- detector, tracker, and TIM-MARS stage timestamps use the host monotonic clock.
+- source timestamps must not be subtracted from host-monotonic timestamps unless
+  clock comparability has been established for that run.
 
-### 5.2) Operator Metric Priority (Thesis)
+Historical bags produced with older Timing message layouts remain historical
+evidence and should be analysed with the code/schema that produced them rather
+than silently reinterpreted as schema v4.
 
-Top 5 during live runs:
+### 5.2) Operator metric priority
 
-1. `e2e_det_ms` p95: end-to-end detection responsiveness.
-2. `pub_dt_ms` p95: cadence stability and freshness.
-3. `det_out_fps`: effective perception output rate.
-4. `container_queue_ms` p95: bottleneck visibility before inference.
-5. `camera_input_fps`: camera feed health relative to detector throughput.
+Primary live checks:
 
-Top 5 during offline analysis:
+1. `e2e_validated_target_ms` p95: camera-callback-to-controller-authority responsiveness.
+2. `e2e_det_ms` p95: detector-path responsiveness.
+3. `pub_dt_ms` p95 and derived detector frequency: cadence stability.
+4. `pre_infer_wait_ms` p95: in-process scheduling/backpressure before Hailo inference.
+5. `infer_ms` and `track_ms`: detector and tracker compute cost.
 
-1. `e2e_det_ms` p95/p99: latency tail behavior.
-2. `pub_dt_ms` p95/p99: cadence jitter and restart-gap impact.
-3. `container_queue_ms` distribution: queue pressure/bottleneck location.
-4. `infer_ms` distribution: compute cost stability.
-5. `e2e_target_ms` p95 when target stream is present: downstream control readiness latency.
+Offline analysis additionally reports `n`, mean, population standard deviation,
+p50, p90, p95, p99, maximum, cadence/jitter, and the exact selective-ReID
+workload/cache counters where available.
 
 ## 6) Quick troubleshooting
 

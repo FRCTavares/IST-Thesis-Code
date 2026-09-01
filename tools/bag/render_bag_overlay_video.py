@@ -475,8 +475,11 @@ def draw_hud(
         rows.append(f"pub_dt={det_timing['pub_dt_ms']:.1f} ms")
     if "track_ms" in tracker_timing:
         rows.append(f"track={tracker_timing['track_ms']:.2f} ms")
-    if "e2e_target_ms" in target_timing:
-        rows.append(f"e2e_target={target_timing['e2e_target_ms']:.1f} ms")
+    if "e2e_validated_target_ms" in target_timing:
+        rows.append(
+            "e2e_validated="
+            f"{target_timing['e2e_validated_target_ms']:.1f} ms"
+        )
 
     line_h = 19
     pad = 8

@@ -128,7 +128,7 @@ class EvidenceAccumulator:
 
         self.infer_ms: list[float] = []
         self.e2e_det_ms: list[float] = []
-        self.container_queue_ms: list[float] = []
+        self.pre_infer_wait_ms: list[float] = []
         self.pub_dt_ms: list[float] = []
 
         self.reid_queue_delay_ms: list[float] = []
@@ -158,8 +158,8 @@ class EvidenceAccumulator:
             "src_stamp_ns": int(message.src_stamp_ns),
             "infer_ms": float(message.infer_ms),
             "e2e_det_ms": float(message.e2e_det_ms),
-            "container_queue_ms": float(
-                message.container_queue_ms
+            "pre_infer_wait_ms": float(
+                message.pre_infer_wait_ms
             ),
             "pub_dt_ms": float(message.pub_dt_ms),
         }
@@ -168,8 +168,8 @@ class EvidenceAccumulator:
             self.timing_count += 1
             self.infer_ms.append(event["infer_ms"])
             self.e2e_det_ms.append(event["e2e_det_ms"])
-            self.container_queue_ms.append(
-                event["container_queue_ms"]
+            self.pre_infer_wait_ms.append(
+                event["pre_infer_wait_ms"]
             )
 
             if event["pub_dt_ms"] > 0.0:
@@ -443,9 +443,9 @@ class EvidenceAccumulator:
                     "e2e_det_ms": metric_summary(
                         self.e2e_det_ms
                     ),
-                    "container_queue_ms": (
+                    "pre_infer_wait_ms": (
                         metric_summary(
-                            self.container_queue_ms
+                            self.pre_infer_wait_ms
                         )
                     ),
                     "pub_dt_ms": metric_summary(

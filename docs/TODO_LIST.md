@@ -4,9 +4,9 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
-Last reconciled with GitHub: **28 August 2026**.
+Last reconciled with GitHub: **31 August 2026**.
 
-Open executable issues: **20**.
+The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules
 
@@ -48,11 +48,9 @@ Open executable issues: **20**.
 ## P1 — Major algorithmic, scientific, engineering, and documentation work
 
 
-**Immediate thesis-critical implementation and evaluation path (target 7 September 2026):** complete or explicitly reject #25 → #64 → #21 → #58 → #74 → #32. Issue #74 completes the final state-aware controller-facing architecture before #32 measures the promoted onboard system. Thesis writing continues in parallel through #66–#68; #40–#42 remain the final method, limitations, and figure workstream.
+**Immediate thesis-critical implementation and evaluation path:** #74 deterministic state-aware controller → #51 remaining physical readiness → #27 prospective held-out freeze/evaluation → #50 closed-loop ground/flight validation → #64 representative drone-POV resolution decision → #58 final held-out closure → #32 final sustained onboard characterisation → #39 final claim freeze. The pre-#58 #32 instrumentation/evidence gate and the #58 development architecture/embedded-cost comparison completed on 31 August 2026. Issue #58 remains open only for the prospective held-out H01--H03 architecture evidence required after #27; no additional development architecture experiment is currently justified. Issues #25 and #21 are closed. Paused #64 does not block the current #74 deterministic controller work.
 
 **Parallel thesis-writing workstream:** the thesis is not postponed until the code is finished. Complete the architecture and evidence-safe method catch-up by 7 September, the supervisor-ready full draft by 30 September, and the review/submission work by 31 October alongside the algorithm and evaluation schedule.
-
-**Planned travel pause and restart:** thesis and repository work pauses after 10 August 2026 and resumes on 25 August 2026. No thesis or algorithm progress is assumed during 11--24 August. The first writing task on return is Chapter 3 Section 3.3, Software and ROS 2 Architecture; Sections 3.1 System Requirements and 3.2 Hardware Platform already have a clean compiled pre-travel working draft. From 25 August, prioritise completion of Chapter 3, the evidence-safe Chapter 4 method draft, and the remaining thesis-critical algorithm freeze. The algorithm-freeze target is rebaselined to 7 September to account for the planned pause. The September supervisor-ready full-draft milestone and 31 October final-submission deadline remain unchanged unless later evidence requires another explicit replan.
 
 1. [ ] [#66 — P1.T1 Write thesis background, related work, architecture, and method draft by 7 September 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/66) — HIGHEST PRIORITY — PARALLEL THESIS WORKSTREAM — IN PROGRESS
    - thesis writing formally started on 9 August 2026. Official IST/MEEC directives, the current Técnico LaTeX template, three recent Técnico dissertations, and PIC2 as pre-thesis source material have been audited. The seven-chapter dissertation architecture, page budget, writing style, figure/table plan, claim-evidence plan, and local dissertation workspace are established.
@@ -68,19 +66,15 @@ Open executable issues: **20**.
 3. [ ] [#68 — P1.T3 Complete thesis review, formatting, and final submission by 31 October 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/68) — HIGHEST PRIORITY — PARALLEL THESIS WORKSTREAM
    - own supervisor revisions, proofreading, current IST/MEEC formatting compliance, originality and AI-use declarations, Portuguese and English abstracts, extended abstract, final reproducibility checks, release archival and submission.
 
-4. [x] [#25 — P1.10 Improve bbox evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/25) — HIGHEST PRIORITY
-   - phase 6; experiment; use the transform contract from #53.
-   - 19 August priority boundary: #25 remains thesis-critical for the identity-independent evaluator, physical-target reference contract, and valid physical-target annotations. Further annotation-UI feature work, refactoring, convenience work, bag-browser improvements, and visual polish are paused. The current UI is an annotation instrument, not a thesis contribution; modify it again only when a concrete defect blocks scientifically valid #25 evidence. Manual annotation may proceed in parallel once the existing tool is sufficient.
-   - resumed on 25 August on `issue-25-bbox-evaluation-continuation-20260825`, based on current `origin/main` while preserving the parked `issue-25-improve-bbox-evaluation` checkpoint. The v1/v2 physical-reference contracts, identity-independent evaluators, and v2 annotation workspace are present. The machine-doable M4A-v2 workload re-plan is recorded in `docs/issues/p1-10-physical-reference-annotation-plan.md`, including exact source-frame horizons and the requirement to regenerate M5 outputs from the same annotated captures. Francisco completed the six-item M3-v2 human browser acceptance checkpoint on 25 August against June Seq01 raw bag `2026-06-19__12-48-17`. Real playback of the initial Seq01 endpoint anchors exposed nonlinear motion around 7.8 s that endpoint-linear evaluator interpolation cannot represent. The custom annotation instrument and its assisted-propagation work remain available for schema/debug/evaluator inspection, but CVAT is now the preferred M4B human annotation frontend. June Seq01 M4B human annotation is complete: the reviewed ordered-PNG task exported as CVAT for images 1.1 and converted/validated as 1520 per-frame v2 samples with zero missing frames and complete target plus `phys_d001`--`phys_d003` coverage. `physical_ref`, never numeric CVAT IDs or drawing order, defines identity; exact times come from `frame_manifest.json`, never nominal FPS. The validated 1,520-sample artifact is promoted at `docs/data/physical_target_references/seq01_clean.json` (SHA-256 `c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d`); the superseded two-anchor draft SHA-256 is recorded in the Issue #25 annotation plan. May hard re-entry M4B is also complete: Francisco's reviewed CVAT for images 1.1 export converted and validated as 974 per-frame `present_scored` / `distractors_complete` samples with zero gaps, exact `target` plus `phys_d001` coverage, the header-derived `[0.0, 67.864909774]` s window, and zero duration-reconciliation residual. The promoted canonical artifact is `docs/data/physical_target_references/dev_may_hard_reentry.json` (SHA-256 `45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c`). June Seq03 M4B is now also complete: the reviewed CVAT for images 1.1 export was converted and validated as 1,931 per-frame `present_scored` / `distractors_complete` samples with target coverage on all frames, `phys_d001` on frames 0--1930, `phys_d002` on frames 350--1930 and `phys_d003` on frames 400--1930. Exact positive `Image.header.stamp` timing gives `[0.0, 83.867251154] s`; the `83.866288839 s` rosbag metadata duration is bag-record-time duration and is not the reference clock. The promoted canonical artifact is `docs/data/physical_target_references/seq03_crossing.json` (SHA-256 `9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71`). June Seq04 M4B is now complete: Francisco's human-reviewed CVAT for images 1.1 export was converted into 2,047 per-frame frozen-v2 samples, with 1,717 `present_scored` / `distractors_complete` frames and 330 explicit `absent` frames from two confirmed physical target exits (1382--1571 and 1682--1821). `phys_d001`--`phys_d003` cover every scored frame; `phys_d004` exits after frame 2001. Exact positive `Image.header.stamp` timing gives `[0.0, 86.500955726] s`. The canonical artifact is `docs/data/physical_target_references/seq04_occlusion_no_exit.json` (SHA-256 `a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b`). All four required M4B physical references are now complete. The Seq04 M5 subset is now complete: same-capture regenerated ByteTrack, SORT and DeepSORT outputs, canonical TIM-MARS, and the frozen simple Target-ReID baseline have been evaluated against the frozen Seq04 physical-v2 reference, including explicit target-absence publication and physical-return recovery accounting. At this checkpoint, global M5 still required the May, Seq01 and Seq03 completion audit; this was subsequently completed by the 29 August global M5 closure audit below.
+4. [ ] [#64 — P1.9+ Evaluate higher-resolution source frames for appearance crops while retaining 640x640 Hailo detection](https://github.com/FRCTavares/IST-Thesis-Code/issues/64) — HIGHEST PRIORITY — PAUSED / FIELD DEPENDENT
 
-   - 29 August M5 Seq01 restart: audited the Seq03/Seq04 common-input artifacts and confirmed their merge/retiming was ad hoc, so added the tested fail-closed `tools/experiments/build_common_input_bag.py` helper. The exact Seq01 Hailo detector-only regeneration was not started as evidence: the Pi reported no `/dev/hailo*` and `hailortcli scan` returned no devices; the resulting zero-byte partial recording was removed. At this checkpoint, Seq01, May, and Seq03 M5 completion/audit requirements remained open; these were subsequently resolved by the 29 August completion and global closure audit below.
-5. [ ] [#64 — P1.9+ Evaluate higher-resolution source frames for appearance crops while retaining 640x640 Hailo detection](https://github.com/FRCTavares/IST-Thesis-Code/issues/64) — HIGHEST PRIORITY
-   - 29 August M5 Seq01 completion: regenerated Hailo YOLOv8s detections from the exact annotated `12-48-17` raw capture, froze a 1,520/1,520 source-header-aligned common input, and regenerated deterministic ByteTrack plus canonical TIM-MARS. Autonomous largest-track ID 2 was rejected by physical evidence (initial IoU 0); physical-target ID 1 was established at initial IoU `0.935017` and fixed for both streams. Against `seq01_clean.json`, raw ByteTrack and TIM-MARS each give `61.200516816 s` correct, `0 s` wrong/unresolved/lost/reference-gap, complete coverage, and zero reconciliation residual. This supersedes the hardware-blocked restart note above for Seq01. May and Seq03 still required audit at this checkpoint and were subsequently resolved by the global M5 closure audit below.
-   - **PAUSED — representative drone-POV footage required.** Stage-A live feasibility on 27 August 2026 kept Hailo detector inference fixed at 640x640: VGA 640x480 PASS, HD 1280x720 PASS, while FHD 1920x1080 FAILS the current appearance-image freshness requirement despite adequate detector/tracker throughput. The controlled R3 comparison was audited and corrected before acceptance: CVAT frames 93--96 are now `present_reference_unavailable`; the deterministic tracker replay now parses the versioned `;frame=<n>;` coordinate contract instead of emitting numeric `frame_id=0`; corrected candidate-stream SHA-256 is `615ed6abf0083f8cbe86a47257fdc71f4c62c2e16fa314997c57ed34a1a99578`; and the promoted physical reference is `docs/data/physical_target_references/p064_gate2_hd_master_r3.json` with SHA-256 `0d9f4148f67b610d5cd012db4d3613f6fc559aec63c2ae705adc50595e8db147`.
-   - 29 August global M5 closure audit: May hard re-entry is manually confirmed complete on its preserved exact-capture `bags/reference/tim_good/...target_1` lineage with the frozen reference SHA, 67.864909774 s window, coverage 1.0 and zero residual. Seq01 is complete in `867778b6`. Seq03 evaluator-only reports are now frozen from the existing same-capture p058 TIM bag: raw ByteTrack `33.831624313 / 0.100206111 / 49.834967359 s` and canonical TIM-MARS `22.532686264 / 0 / 61.234111519 s` correct/wrong/lost, each over 83.867251154 s with 0.100453371 s reference gap and valid reconciliation. Seq04 M5 was already complete. All substantive M5 sequences are therefore audited complete. Issue #25 was merged through PR #84 and closed as completed on 29 August 2026; merge commit `7423e25457bcce0b7a952a71f08673ee987db1bd`.
-   - Corrected native 1280x720 and deterministic 640x360 appearance replays use identical detector/tracker evidence and produce different TIM semantic digests, proving that the appearance-pixel condition reaches TIM, but their v2 physical-target reports are byte-identical: 18.600459426 s correct-target output, 0 wrong-person output, 9.100239419 s lost/suppressed, 0 target-absent duration, 0.133160003 s reference-unavailable and 0.066408595 s reference-gap over 27.900267443 s total evaluated duration. The resolution-specific material benefit is therefore 0 percentage points and the predeclared Stage-B repeat gate is not reached for R3.
-   - This R3 result is intentionally not generalized to airborne operation: target height is 534.64--561.11 px (median 549.72 px), far larger than the intended distant/small-person drone distribution. Issue #64 remains open but paused until one representative native-HD drone-POV sequence is recorded. Future representative capture uses the already established live `YOLOv8s + ByteTrack + TIM-MARS` path while keeping detector inference at 640x640; this does not retrospectively alter the completed R3 experiment, which remains frozen on YOLOv6n. Field command: `tools/experiments/record_p064_drone_sequence.sh small_target_r1`.
-6. [ ] [#58 — P1.13+ Compare lightweight tracker + TIM-MARS against integrated appearance-aware tracking](https://github.com/FRCTavares/IST-Thesis-Code/issues/58) — HIGHEST PRIORITY — IN PROGRESS
+   - Stage-A live feasibility retained 640x640 Hailo detector inference. VGA 640x480 and HD 1280x720 passed; FHD 1920x1080 failed the current appearance-image freshness requirement.
+   - The corrected R3 experiment proved that native 1280x720 pixels reach TIM-MARS, but native-HD and deterministic 640x360 appearance conditions produced identical physical-target results. Measured benefit was therefore zero for that close, large-target sequence.
+   - R3 does not answer the intended distant/small-person airborne case because the target was roughly 535--561 px tall. Resume only with one representative native-HD drone-POV sequence containing a substantially smaller target.
+   - Prefer collecting that sequence during #50 physical validation. Keep detector inference at 640x640. Field helper: `tools/experiments/record_p064_drone_sequence.sh small_target_r1`.
+   - #64 does not block the current #58 development comparison or #74 deterministic controller implementation. Resolve it before final #32 characterization and #39 claim freeze.
+
+5. [ ] [#58 — P1.13+ Compare lightweight tracker + TIM-MARS against integrated appearance-aware tracking](https://github.com/FRCTavares/IST-Thesis-Code/issues/58) — HIGHEST PRIORITY — IN PROGRESS
     - phase 7; experiment; compare separately calibrated lightweight
       appearance-free tracker + TIM-MARS systems against integrated
       appearance-aware tracker references using held-out controller-facing
@@ -89,18 +83,19 @@ Open executable issues: **20**.
       architecture.
     - add one deliberately simple literature-aligned post-MOT Target-ReID baseline: ByteTrack candidates; the same MARS model and crop/preprocessing contract used by TIM-MARS; highest target-appearance similarity above a development-calibrated threshold; LOST otherwise. Exclude TIM-MARS geometry fusion, hard-negative policy, temporal recovery confirmation, state-machine authority, and trusted-only memory-update logic. This isolates whether full TIM-MARS provides controller-facing value beyond ordinary Target-ReID rather than merely beyond the raw tracker.
    - Simple Target-ReID development calibration is now frozen on `dev_may_hard_reentry`. The threshold grid `0.00:0.05:0.95` and historical Issue #58 safety-first selector were fixed before outcome review. The selected threshold is `0.90`: physical-v2 gives `23.152773497 s` correct-target output, `0 s` wrong-person output, `0 s` identity-unresolved and `44.712136277 s` lost/suppressed over `67.864909774 s`. This is development-only evidence and demonstrates the availability cost of a conservative fixed-template ReID baseline; held-out comparison remains required.
-   - The first physical-v2 four-cell development architecture matrix is now frozen for May hard re-entry: ByteTrack raw `38.530771128 / 7.595021755 / 21.739116891 s`, simple Target-ReID `23.152773497 / 0 / 44.712136277 s`, canonical ByteTrack + TIM-MARS `62.594003990 / 0.033394241 / 5.237511543 s`, and DeepSORT raw `51.356019855 / 0.033394241 / 16.475495678 s` for correct / wrong / lost. TIM-MARS therefore matches DeepSORT wrong-person duration on this development sequence while providing `11.237984135 s` more correct-target output. This remains development-only evidence; remaining architecture cells and held-out physical-v2 evaluation are required before the final Issue #58 claim.
+   - The first physical-v2 four-cell development architecture matrix is now frozen for May hard re-entry: ByteTrack raw `38.530771128 / 7.595021755 / 21.739116891 s`, simple Target-ReID `23.152773497 / 0 / 44.712136277 s`, canonical ByteTrack + TIM-MARS `62.594003990 / 0.033394241 / 5.237511543 s`, and DeepSORT raw `51.356019855 / 0.033394241 / 16.475495678 s` for correct / wrong / lost. TIM-MARS therefore matches DeepSORT wrong-person duration on this development sequence while providing `11.237984135 s` more correct-target output. This remains development-only evidence; the embedded-cost architecture comparison is now complete, while held-out physical-v2 evaluation remains required before the final Issue #58 claim.
    - The minimal appearance-free SORT arm has also been re-audited against the corrected May physical-v2 reference using exactly the 29 pre-frozen SORT+TIM calibration configurations. Raw SORT gives `29.398778016 / 0.049512077 / 38.416619681 s` correct / wrong / lost. With the historical `+0.05 s` asymmetric safety tolerance, the maximum permitted wrong-person duration is `0.099512077 s`; zero of 29 SORT+TIM configurations pass. The lowest-wrong candidate `confirmation_time_higher_3` still produces `0.694389678 s` wrong-person output. SORT+TIM is therefore a documented development negative result, not a promotable architecture cell.
    - June Seq03 now provides a second frozen physical-v2 development architecture comparison from the exact canonical `2026-06-19__12-55-58` raw capture. One YOLOv8s detection stream was frozen with exact 1,931/1,931 image-to-detection header-timestamp equality and then fanned out deterministically to all tracker architectures with no Seq03 retuning. Results for correct / wrong / lost are: ByteTrack raw `33.831624313 / 0.100206111 / 49.834967359 s`; SORT raw `27.432422908 / 0 / 56.334374875 s`; frozen Target-ReID 0.90 `13.962779010 / 0 / 69.804018773 s`; canonical ByteTrack + TIM-MARS `22.532686264 / 0 / 61.234111519 s`; and DeepSORT raw `27.547623858 / 35.350991550 / 20.868182375 s`. TIM-MARS removes ByteTrack's residual `0.100206111 s` wrong-person output but sacrifices `11.298938049 s` correct-target availability; relative to simple Target-ReID it preserves the same zero measured wrong-person duration while adding `8.569907254 s` correct-target output. DeepSORT produces `35.350991550 s` wrong-person output despite identical detector evidence, correct physical-target bootstrap, and zero appearance-image age. Seq03 has zero target-absent duration, so it does not itself test open-set target-absence behavior; that development evidence is now supplied separately by Seq04.
-   - June Seq04 now supplies the first frozen development-only open-set target-absence comparison for Issue #58. Over `72.500041772 s` of physically scored target-present time, correct / wrong / lost are: ByteTrack raw `26.567002669 / 37.500838682 / 8.432200421 s`; SORT raw `14.833643862 / 0 / 57.666397910 s`; frozen Target-ReID 0.90 `1.166866685 / 0 / 71.333175087 s`; canonical ByteTrack + TIM-MARS `35.068442774 / 0 / 37.431598998 s`; and DeepSORT raw `36.833999479 / 0 / 35.666042293 s`. During `13.900030159 s` of explicit physical target absence, ByteTrack publishes an output for `13.100381659 s`, whereas SORT, DeepSORT, Target-ReID and TIM-MARS remain clear throughout. Neither physical return yields a correct reacquisition for any architecture: return 1 is a failure before the next absence, while return 2 is right-censored at sequence end, so no finite reacquisition latency is reported. ByteTrack additionally publishes a wrong person for `4.166819295 s` and `2.699997183 s` in the two post-return windows. Seq04 therefore demonstrates TIM-MARS's conservative safety transformation relative to ByteTrack, but not an availability advantage over DeepSORT; held-out H01--H03 and canonical Issue #32 cost evidence remain required for the final architecture comparison.
+   - 31 Aug 2026: the canonical Issue #58 development architecture, embedded-cost, and timing comparison is complete on Raspberry Pi 5 at measurement commit `92d123e3`, using the same June Seq03 source, direct-Hailo YOLOv8s, real-time `1.0x` playback, three repetitions per architecture, rotated execution order, and the schema-v4 active timing window `pub_dt_ms <= 100 ms`. All 9/9 retained cells completed with zero hardware-sampler errors and zero observed throttling. Architecture-specific resource means are: ByteTrack raw `227.2 +/- 0.6%` CPU and `134.6 +/- 0.2 MiB` RSS; ByteTrack + TIM-MARS `243.3 +/- 10.3%` CPU and `919.6 +/- 7.8 MiB` combined tracker+TIM RSS; DeepSORT raw `267.0 +/- 3.0%` CPU and `767.2 +/- 1.9 MiB` RSS. TIM-MARS therefore uses about `8.9%` less architecture CPU than DeepSORT on this controlled workload but about `19.9%` more mean architecture RSS. Corrected timing aggregation gives ByteTrack raw tracker `18.612 +/- 0.403 Hz` with tracker p95 `6.218 +/- 0.362 ms`; ByteTrack + TIM-MARS tracker `18.100 +/- 0.351 Hz` with tracker p95 `22.841 +/- 2.001 ms`, and validated selected-target output `17.561 +/- 0.549 Hz` with end-to-end validated-target p95 `181.785 +/- 15.445 ms`; DeepSORT raw tracker throughput is `9.796 +/- 0.180 Hz` with tracker p95 `150.816 +/- 3.433 ms` and only `68.154 +/- 1.087%` active detector-to-tracker causal coverage. The ByteTrack + TIM-MARS controller-facing path satisfies the preferred `>=15 Hz` rate and the `<=200 ms` p95 latency target in `3/3` retained runs. The DeepSORT cell is intentionally tracker-stage only and has no TIM-MARS selected-target authority, so it must not be described as a controller-facing end-to-end latency measurement. Issue #58 development experimentation is now frozen; the issue remains OPEN only for held-out H01--H03 physical-v2 architecture evidence under Issue #27 before the final general claim. Do not rerun the frozen May/Seq03/Seq04 development matrices or add StrongSORT/BoT-SORT unless later evidence exposes a specific scientific deficiency.
+   - June Seq04 now supplies the first frozen development-only open-set target-absence comparison for Issue #58. Over `72.500041772 s` of physically scored target-present time, correct / wrong / lost are: ByteTrack raw `26.567002669 / 37.500838682 / 8.432200421 s`; SORT raw `14.833643862 / 0 / 57.666397910 s`; frozen Target-ReID 0.90 `1.166866685 / 0 / 71.333175087 s`; canonical ByteTrack + TIM-MARS `35.068442774 / 0 / 37.431598998 s`; and DeepSORT raw `36.833999479 / 0 / 35.666042293 s`. During `13.900030159 s` of explicit physical target absence, ByteTrack publishes an output for `13.100381659 s`, whereas SORT, DeepSORT, Target-ReID and TIM-MARS remain clear throughout. Neither physical return yields a correct reacquisition for any architecture: return 1 is a failure before the next absence, while return 2 is right-censored at sequence end, so no finite reacquisition latency is reported. ByteTrack additionally publishes a wrong person for `4.166819295 s` and `2.699997183 s` in the two post-return windows. Seq04 therefore demonstrates TIM-MARS's conservative safety transformation relative to ByteTrack, but not an availability advantage over DeepSORT; held-out H01--H03 remain required for the final architecture comparison; the canonical embedded-cost development comparison is now complete.
     - Target-absence false publication must be reported explicitly for this baseline,       together with confirmed reacquisition delay after the physical target returns.       Treat genuine target absence as an open-set case in which LOST is a valid outcome;       do not force publication of the highest-ranked visible candidate. Liao et al.       (2014), Ye et al. (2024), TPT-Bench, and Bayar and Aker (2024) are prior-art       boundaries rather than standalone TIM-MARS novelty claims.
 
-7. [ ] [#74 — P1.x State-aware selected-person following and bounded visual recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/74) — HIGHEST PRIORITY
-    - phase 10; live-system; execute after #25 → #64 → #21 → #58 and before #32.
+6. [ ] [#74 — P1.x State-aware selected-person following and bounded visual recovery](https://github.com/FRCTavares/IST-Thesis-Code/issues/74) — HIGHEST PRIORITY
+    - phase 10; live-system; execute after the #58 development comparison and before final #32 characterization. Issues #25 and #21 are closed; paused #64 does not block deterministic controller implementation. Physical closed-loop validation is owned by #50 after the remaining #51 readiness gates.
     - TIM-MARS remains the sole selected-person identity authority. Add only a conservative state-aware following policy plus tightly bounded yaw-only visual recovery from trusted TIM-MARS history; raw `/target`, `/tracks`, detector candidates, and unconfirmed candidates must never obtain controller authority.
     - retain the extension only if deterministic safety tests and closed-loop evidence show useful recovery without unacceptable wrong-person non-zero command duration. Physical-aircraft validation remains owned by #50/#51.
 
-8. [ ] [#32 — P1.14 End-to-end runtime, compute budget, and onboard resource characterisation](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
+7. [ ] [#32 — P1.14 End-to-end runtime, compute budget, and onboard resource characterisation](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
     - phase 7; live-system; owns the canonical per-stage latency and queueing
       timebase, wall-clock versus CPU-service-time separation, p50/p90/p95/p99
       and maximum distributions, cadence/jitter/drop accounting, selective-ReID
@@ -109,23 +104,108 @@ Open executable issues: **20**.
       and reproducible power measurements where available. It also measures the
       incremental cost of TIM-MARS and supplies the runtime contract for the
       lightweight-versus-integrated tracker comparison.
+    - 30 Aug 2026: pre-#58 instrumentation implementation now includes the
+      direct-Hailo Timing schema v4, TIM-MARS ownership of `/timing_target`,
+      exact selective-ReID cache lookup/hit/miss/expiry/invalidation telemetry,
+      and the schema-v3 TIM-MARS ReID workload summary. Retired container/ZMQ
+      timing compatibility fields remain intentionally unsupported. YOLOv8s is
+      now the canonical Pi 5 + Hailo detector for current runtime defaults and
+      new experiments; historical detector evidence retains its original model
+      identity. The first current-schema smoke exposed a cross-topic delivery
+      race: `/detections` could reach the tracker before its matching `/timing`,
+      dropping the downstream camera-arrival monotonic timestamp. The detection
+      contract now carries that causal timestamp directly, without a blocking
+      tracker join, and tracker timing is enabled by default. The runner audit
+      additionally exposed an incompatible duplicate BEST_EFFORT target command;
+      the full-pipeline runner now uses only the dashboard authority API's RELIABLE
+      TIM-MARS command path, explicitly enables tracker/target timing, and
+      propagates input/setup/provenance/startup/playback/selection failures. The
+      second dirty-tree smoke
+      then confirmed causal camera timing on 1109/1109 detector, tracker, and
+      validated-target samples, with positive validated target end-to-end latency
+      on 1109/1109 samples. `/timing_target` intentionally owns TIM-MARS timestamps
+      rather than duplicating `t_track_cb_*`; those tracker timestamps remain owned
+      by `/timing_tracker`. That smoke also exposed PID-only cleanup as insufficient
+      because `ros2 run` children survive their wrapper process. The runner now uses
+      a runner-owned supervisor PID whose forked child creates an isolated process
+      group and receives forwarded shutdown signals. Isolated validation confirmed
+      that signalling only the supervisor terminates both the command leader and its
+      descendants. The next dirty-tree run confirmed the lifecycle repair leaves
+      zero runtime descendants and independently passed the schema-v4 causal timing
+      audit on 1086 detector/tracker/target samples, but exposed repeated short-lived
+      `ros2 topic echo /tracks --once` discovery as an unreliable target-resolution
+      mechanism despite all 1086 recorded `/tracks` messages being non-empty. The
+      full-pipeline runner now resolves the target through a persistent typed
+      BEST_EFFORT, KEEP_LAST depth-1 `/tracks` subscriber matching the tracker
+      publisher QoS; isolated ROS validation covers both largest-track and explicit-ID
+      selection. The final dirty-tree canonical YOLOv8s full-pipeline smoke then
+      confirmed typed target resolution, authoritative TIM-MARS selection, schema-v4
+      detector/tracker/target causal timing, provenance generation, and zero surviving
+      runner descendants. Replay documentation now distinguishes the persistent
+      typed full-pipeline resolver from the older text-echo support path, and Hailo
+      recovery guidance avoids broad process-name termination. A final active-runtime
+      architecture audit also removed the retired dashboard Docker/container model-switch
+      fallback and its launcher wiring; model switching now has only the direct in-process
+      perception parameter-service path when runtime reconfiguration is explicitly enabled,
+      while the frozen live profile continues to disable runtime reconfiguration. The
+      dashboard WebSocket metrics schema remains independently versioned from Timing schema
+      v4. The first post-promotion clean-tree replay then exposed three audit-contract issues
+      before retained evidence could be accepted: the cross-topic
+      `e2e_validated_target_ms >= e2e_det_ms` comparison incorrectly ordered two independent
+      ROS publication-return endpoints; one immediate `operator_clear` status-only event was
+      correctly non-frame control telemetry but was being interpreted as a malformed ReID
+      workload sample; and replay provenance recorded the YOLOv8s/MARS model paths without
+      their content hashes. The follow-up instrumentation patch removes the invalid
+      cross-topic inequality while retaining per-topic causal timestamp checks, excludes only
+      no-frame/no-workload control-status records while keeping partial workload records
+      fail-closed, and records SHA-256 identities for both runtime models in the experiment
+      provenance. The first retained clean-tree replay from follow-up commit
+`5672d14995156ed24d8726a19567802968d70377` exposed one additional
+cross-layer contract inconsistency: the live perception pipeline emitted
+causal numeric `frame_id=0`, while tracker timing, TIM-MARS appearance
+lifecycle handling, controller-facing target resets, and the accepted
+deterministic replay contract reserve numeric zero for invalid, reset, or
+otherwise noncausal lifecycle events. Inference sequencing therefore remains
+zero-based for legacy Gst PTS compatibility, while published causal pipeline
+frame IDs start at one.
+    - 31 Aug 2026: the replacement retained clean-tree Seq03 replay from
+      `67311f2097f6dbea54f98498a564bfc50463fc7c` completed the pre-#58
+      instrumentation/evidence gate. Provenance records a clean repository,
+      canonical YOLOv8s and CPU MARS identities, and the direct-Hailo runtime.
+      Schema-v4 causal invariants pass with zero failures: `/timing` and
+      `/timing_tracker` use causal frame IDs 1--1019, while `/timing_target`
+      uses 92--1019; no causal timing path contains frame ID zero. The single
+      controller-facing target frame zero is the expected noncausal
+      `operator_clear` lifecycle event. Gap-filtered active results are
+      detector e2e p95 35.184 ms, tracker p95 21.297 ms, target e2e p95
+      192.727 ms and p99 235.360 ms at 15.732 Hz target timing. Selective
+      CPU-MARS workload remains stable: cache hit rate 0.86837, 3.309 backend
+      calls/s, 9.661 requested crops/s, steady-state backend p95 181.189 ms,
+      with one first-call warm-up outlier at 676.132 ms. The runner and audit
+      both leave zero surviving runtime descendants and no repository-root
+      runtime noise.
+    - Pre-#58 #32 work is therefore complete. Execution now proceeds
+      #58 → #74 → #32 final sustained characterization. Do not close #32
+      before the post-#74 sustained resource evidence.
 
-10. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
+8. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
    - phase 5; engineering.
 
-11. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
+9. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
     - phase 10; engineering; coordinate target-control behavior with #52 and path documentation with #33.
 
-12. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
+10. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
     - phase 9; experiment/documentation.
 
-13. [ ] [#41 — P1.19 Add explicit limitations](https://github.com/FRCTavares/IST-Thesis-Code/issues/41)
+11. [ ] [#41 — P1.19 Add explicit limitations](https://github.com/FRCTavares/IST-Thesis-Code/issues/41)
     - phase 9; experiment/documentation.
 
-14. [ ] [#42 — P1.20 Build final figures](https://github.com/FRCTavares/IST-Thesis-Code/issues/42)
+12. [ ] [#42 — P1.20 Build final figures](https://github.com/FRCTavares/IST-Thesis-Code/issues/42)
     - phase 9; experiment/documentation.
 
-## P2 — Useful work after the critical path
+## P2 — Deferred maintenance and physical-validation dependencies
+
+Issues #51 and #50 retain their historical GitHub P2 labels, but their remaining physical gates are mandatory for retained aircraft closed-loop evidence after #74. Execute #51 before #50. The other P2 items remain outside the immediate scientific critical path.
 
 1. [ ] [#51 — P2 Complete deferred physical validation for unattended Pi recovery (September)](https://github.com/FRCTavares/IST-Thesis-Code/issues/51)
    - the software recovery defect demonstrated on 25 July 2026 is repaired and validated.
@@ -136,8 +216,8 @@ Open executable issues: **20**.
    - the issue remains open only for the previously deferred September gates: physical power restoration, watchdog or independent-power mitigation, genuinely external Tailnet SSH, key-expiry confirmation, and physical Pixhawk/AERONEXT mode validation.
 
 2. [ ] [#50 — P2 Complete flight-readiness gate and record held-out UAV-motion evidence (September)](https://github.com/FRCTavares/IST-Thesis-Code/issues/50)
-   - phase 10; live-system; deferred by the operator on 23 July 2026 until September and depends on the remaining physical validation in #51.
-   - No flight or retained UAV-motion evidence is required for the current P0/P1 critical path; the field procedure will be revalidated when this issue resumes.
+   - phase 10; live-system; resumes in September after the remaining physical validation in #51.
+   - owns retained physical closed-loop evidence for the promoted #74 controller: TIM-MARS remains the sole selected-person identity authority while the aircraft performs conservative following and any promoted bounded visual-recovery behaviour.
 
 3. [ ] [#45 — P2.x Detector (perception upgrade behind TIM — additive, low priority)](https://github.com/FRCTavares/IST-Thesis-Code/issues/45)
    - phase 10; live-system; additive and non-blocking.
