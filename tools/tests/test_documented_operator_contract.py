@@ -152,3 +152,8 @@ def test_documented_build_recording_and_evaluation_commands_are_supported():
         TOOLS_ROOT
         / "experiments/run_tim_component_ablation.py"
     ).is_file()
+
+def test_internal_live_ui_tree_is_absent_after_m7():
+    repository_root = Path(__file__).resolve().parents[2]
+
+    assert not (repository_root / "live-ui").exists()

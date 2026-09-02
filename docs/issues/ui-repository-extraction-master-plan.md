@@ -16,7 +16,9 @@
 
 **Intended Pi checkout:** `~/Desktop/IST-Thesis-UI`
 
-**Current frontend location:** `IST-Thesis-Code/live-ui/`
+**Current frontend location:** `FRCTavares/IST-Thesis-UI` (`~/Desktop/IST-Thesis-UI`)
+
+**Historical pre-M7 source location:** `IST-Thesis-Code/live-ui/`
 
 This document is the execution authority for separating the browser-facing
 thesis dashboard from the ROS/scientific code repository.
@@ -2342,7 +2344,7 @@ Update this table during actual execution.
 | M4 compatibility wrapper | 2026-09-01 | `5104f0df` | `03e45384` | PASS | `start_ui_stack.sh` reduced to external delegation shim; legacy operator flags/env translated; missing checkout fails clearly; no npm/Vite implementation remains in Thesis-Code |
 | M5 docs/test ownership | 2026-09-01 | `5104f0df` | `ef8914c9` | PASS | Thesis-Code operator docs/tests migrated to external frontend ownership with 11 targeted contracts passing; UI README now documents the actual runtime/API/port/frozen-profile/target-authority/bbox contracts and production build passes |
 | M6 live integration | 2026-09-02 | `3a42c8e433bf547e8360a42bf2d45916de189afa` | `e7329e01` | PASS | automated live integration PASS; direct real-iPhone LAN and numbered overlay / SELECT / LOCKED / CLEAR / resize validation PASS; truthful Tailscale reporting PASS; A/B/C timing characterization PASS; prebuilt static frontend and deterministic launcher cleanup PASS; real Pixhawk-gated `ISR Aero.Next GCS` field entry PASS with `pixhawk-apm`, no Ethernet default route, and Tailscale inactive; real physical Pixhawk unplug PASS with dispatcher fail-closed return to `unattended` in 8318 ms, maintenance ISR/Tailscale recovery, and no emergency rollback; raw evidence `reports/p055_field_network_2026_09_02/`; summary `docs/results/live/p055_field_network_validation.md`; M7 unblocked but not started |
-| M7 old frontend removal | pending | pending | pending | pending | pending |
+| M7 old frontend removal | 2026-09-02 | working tree on `issue-55-ui-repository-extraction-20260901` | `e7329e01` | PASS | pre-delete `live-ui` tree exactly matched frozen M1 `634754dd789c32ba1d75216855a9dd77e187774b`; 45 tracked frontend files removed from Thesis-Code; ignored local frontend build/dependency outputs removed; external UI remained clean at retained M6 ref; compatibility wrapper contains no embedded frontend dependency; retained P055 raw field-network evidence made trackable; post-removal regressions PASS (15 targeted ownership/docs, 1082 full tools, 19 dashboard/target-authority backend); `live-ui/` absent from filesystem and Git index |
 | H1 frontend hardening | pending | N/A | pending | pending | pending |
 | H2 backend hardening | pending | pending | optional | pending | pending |
 | B1 annotation frontend | deferred | pending | pending | deferred | not part of Phase A |

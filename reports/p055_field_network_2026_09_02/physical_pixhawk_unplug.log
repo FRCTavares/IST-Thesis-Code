@@ -1,0 +1,93 @@
+============================================================
+P055 REAL PHYSICAL PIXHAWK DISCONNECT — RETAINED EVIDENCE
+============================================================
+started_utc=2026-09-02T12:32:31Z
+emergency_rollback_used=NO
+
+===== A. DETACHED STARTING STATE =====
+wifi=ISR
+carrier=1
+eth_connection=
+mode=unattended
+tailscaled=active
+gcs_autoconnect=no
+
+===== B. ISOLATE NETWORKMANAGER DISPATCHER =====
+health_timer=inactive
+
+===== C. OPERATOR READING DELAY =====
+field_entry_delay_seconds=8
+
+===== D. ENTER REAL FIELD MODE =====
+field_entry_started_utc=2026-09-02T12:32:39Z
+[field] trying Wi-Fi profile: ISR Aero.Next GCS
+Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/10)
+Removed "/etc/systemd/system/multi-user.target.wants/tailscaled.service".
+[ok] Pixhawk mode: field Wi-Fi=Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/9)
+ISR Aero.Next GCS, Pixhawk Ethernet active on eth0, Tailscale disabled
+field_entry_status=0
+
+===== E. CONFIRMED REAL FIELD STATE =====
+wifi=ISR Aero.Next GCS
+wifi_ipv4=192.168.8.174/24
+carrier=1
+eth_connection=pixhawk-apm
+mode=pixhawk
+tailscaled=inactive
+gcs_autoconnect=no
+eth0_default_route=<none>
+
+all_default_routes:
+default via 192.168.8.1 dev wlan0 proto dhcp src 192.168.8.174 metric 20100 
+REAL_FIELD_SETUP_GATE=PASS
+
+============================================================
+READY_FOR_PHYSICAL_PIXHAWK_UNPLUG=YES
+WAITING_UP_TO_600_SECONDS_FOR_REAL CARRIER LOSS
+============================================================
+
+===== F. WAIT FOR PHYSICAL PIXHAWK ETHERNET UNPLUG =====
+carrier_loss_sample=309
+carrier_loss_utc=2026-09-02T12:34:00.434Z
+
+===== G. WAIT FOR AUTOMATIC FAIL-CLOSED EXIT =====
+auto_exit_sample=32
+auto_exit_utc=2026-09-02T12:34:08.752Z
+carrier_to_unattended_ms=8318
+
+===== I. WAIT FOR MAINTENANCE NETWORK RECOVERY =====
+maintenance_recovery_attempt=6
+maintenance_recovered_utc=2026-09-02T12:34:14Z
+
+===== J. FINAL POST-UNPLUG STATE =====
+wifi=ISR
+wifi_ipv4=10.16.145.129/23
+carrier=0
+eth_connection=
+mode=unattended
+tailscaled=active
+gcs_autoconnect=no
+emergency_rollback_used=NO
+
+final_default_routes:
+default via 10.16.145.254 dev wlan0 proto dhcp src 10.16.145.129 metric 110 
+
+===== K. DISPATCHER SERVICE EVIDENCE =====
+Result=success
+ExecMainCode=0
+ExecMainStatus=0
+2026-09-02T13:34:06+01:00 fcstpi systemd[1]: Starting thesis-pixhawk-disconnect.service - Fail closed from Pixhawk field networking after Ethernet loss...
+2026-09-02T13:34:07+01:00 fcstpi thesis-network-mode[10297]: [field] disconnecting field Wi-Fi profile: ISR Aero.Next GCS
+2026-09-02T13:34:07+01:00 fcstpi systemctl[10455]: Created symlink /etc/systemd/system/multi-user.target.wants/tailscaled.service → /usr/lib/systemd/system/tailscaled.service.
+2026-09-02T13:34:08+01:00 fcstpi thesis-network-mode[10297]: [ok] unattended mode: field Wi-Fi inactive/non-autoconnecting; Tailscale enabled
+2026-09-02T13:34:08+01:00 fcstpi systemd[1]: thesis-pixhawk-disconnect.service: Deactivated successfully.
+2026-09-02T13:34:08+01:00 fcstpi systemd[1]: Finished thesis-pixhawk-disconnect.service - Fail closed from Pixhawk field networking after Ethernet loss.
+
+===== L. RESTART PERIODIC BACKSTOP =====
+health_timer=active
+
+===== M. FINAL VERDICT =====
+REAL_PHYSICAL_DISCONNECT_GATE=PASS
+NO_PIXHAWK_NO_AERONEXT_GCS=PASS
+FAST_DISPATCHER_PATH=PASS
+finished_utc=2026-09-02T12:34:14Z

@@ -1,0 +1,55 @@
+============================================================
+P055 REAL FIELD ENTRY — DETACHED EVIDENCE
+============================================================
+started_utc=2026-09-02T12:04:20Z
+
+===== A. STARTING STATE =====
+wifi=ISR
+carrier=1
+mode=unattended
+tailscaled=active
+
+===== B. ENTER REAL PIXHAWK MODE =====
+[field] trying Wi-Fi profile: ISR Aero.Next GCS
+Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/6)
+Removed "/etc/systemd/system/multi-user.target.wants/tailscaled.service".
+[ok] Pixhawk mode: field Wi-Fi=Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/5)
+ISR Aero.Next GCS, Pixhawk Ethernet active on eth0, Tailscale disabled
+field_entry_status=0
+
+===== C. REAL FIELD STATE =====
+wifi=ISR Aero.Next GCS
+wifi_ipv4=192.168.8.174/24
+carrier=1
+eth_connection=pixhawk-apm
+mode=pixhawk
+tailscaled=inactive
+gcs_autoconnect=no
+eth0_default_route=<none>
+
+all_default_routes:
+default via 192.168.8.1 dev wlan0 proto dhcp src 192.168.8.174 metric 20100 
+REAL_FIELD_ENTRY_GATE=PASS
+
+===== D. CONTROLLED RETURN TO UNATTENDED =====
+[field] disconnecting field Wi-Fi profile: ISR Aero.Next GCS
+Created symlink /etc/systemd/system/multi-user.target.wants/tailscaled.service → /usr/lib/systemd/system/tailscaled.service.
+[ok] unattended mode: field Wi-Fi inactive/non-autoconnecting; Tailscale enabled
+rollback_status=0
+
+===== E. MAINTENANCE NETWORK RECOVERY =====
+recovered_on_attempt=6
+wifi=ISR
+carrier=1
+eth_connection=
+mode=unattended
+tailscaled=active
+gcs_autoconnect=no
+
+final_default_routes:
+default via 10.16.145.254 dev wlan0 proto dhcp src 10.16.145.129 metric 110 
+REAL_FIELD_ROLLBACK_GATE=PASS
+
+===== F. OVERALL =====
+REAL_POSITIVE_FIELD_GATE=PASS
+finished_utc=2026-09-02T12:04:57Z
