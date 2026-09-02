@@ -28,6 +28,31 @@ The current #55 UI path has been validated with:
 The browser is an operator interface only. TIM-MARS remains the physical-person
 identity authority.
 
+The dashboard access-control boundary is explicit. When
+`dashboard_bridge_node` is started without an operator-approved remote override,
+its HTTP API and WebSocket listeners default to `127.0.0.1`, and browser access
+is limited to the explicit local frontend Origins
+`http://127.0.0.1:5173` and `http://localhost:5173`. Wildcard CORS is rejected.
+A browser request carrying any other `Origin` is rejected before an API handler
+is executed. Non-browser local operator tooling may omit the `Origin` header,
+but it can only reach the listener through the configured network bind.
+
+Remote field access is enabled only by `tools/start_field_ui.sh`. That launcher
+binds the frontend, API, WebSocket, and video services to the current `wlan0`
+IPv4 address, configures the exact `http://<wlan0-ip>:5173` browser Origin, and
+relies on the wlan0-only UFW rules plus the Pixhawk-gated approved field WLAN as
+the operator access-control boundary. Tailscale remains inactive in field mode.
+There is no router port forwarding or public-internet dashboard exposure. This
+trusted-network/firewall model is the deliberate Issue #55 access-control
+mechanism; permissive CORS is not treated as authentication.
+
+The dashboard bridge also subscribes to `/mavros/battery` using
+`sensor_msgs/msg/BatteryState` and forwards only informational battery
+telemetry. Percentage is accepted only when MAVROS provides a finite value in
+the standard `[0, 1]` range; it is never inferred from voltage. Missing data is
+reported as unavailable rather than `0%`, and receive-time freshness is carried
+explicitly. Battery telemetry has no target-authority or control effect.
+
 ## 1. What the operator should see
 
 The final field UI is intentionally small and phone-first.
