@@ -151,21 +151,35 @@ This normally needs to be done only once per Pi installation:
     export PAGER=cat
     tools/setup/setup_field_ui_firewall.sh
 
-The helper allows these TCP services only on `wlan0`:
+The helper allows these field-operator services only on `wlan0`:
 
+- `22` — SSH, restricted by source CIDR to the approved GCS operator subnet;
 - `5173` — browser frontend;
 - `8080` — MJPEG video;
 - `8090` — dashboard HTTP API;
 - `8765` — dashboard WebSocket.
 
-It does not open LAN SSH.
+The retained `ISR Aero.Next GCS` network uses `192.168.8.0/24`, which is the
+default SSH source CIDR. This rule exists so a headless Pi remains operable
+after field entry disables Tailscale. It does not authorize SSH from arbitrary
+Wi-Fi networks, create router port forwarding, or expose SSH publicly.
+
+If a different approved AERONEXT fallback uses another subnet, configure that
+subnet explicitly through `FIELD_OPERATOR_SSH_CIDR` during one-time setup rather
+than broadening SSH to `Anywhere`.
 
 Current UFW policy also contains the independently owned Pixhawk and unattended
 host rules. Do not remove or broaden them from this runbook.
 
 ## 4. Before field use
 
-Use a local Pi terminal for the field-network transition.
+The Pi may be operated headlessly.
+
+The field-network transition may be initiated either from a local Pi terminal
+or from an existing maintenance/Tailscale SSH session. If it is initiated over
+Tailscale, the session is expected to terminate when successful field entry
+disables Tailscale. The operator must then connect the Mac to the same approved
+GCS Wi-Fi and establish a new direct LAN SSH session to the Pi.
 
 From the Pi:
 
@@ -194,6 +208,15 @@ Carrier must be `1`.
 Enter field networking explicitly:
 
     sudo /usr/local/sbin/thesis-network-mode pixhawk
+
+If the command was issued through Tailscale, expect that SSH session to close.
+Connect the operator Mac to `ISR Aero.Next GCS`, then reconnect directly:
+
+    ssh francisco@fcstpi.local
+
+If mDNS is unavailable, use the Pi's current GCS IPv4 address. During the
+retained 2 September 2026 field session this was `192.168.8.174`; DHCP may
+assign a different address on another session.
 
 Verify:
 

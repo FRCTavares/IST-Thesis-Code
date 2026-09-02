@@ -431,3 +431,8 @@ def test_source_network_and_route_contract_is_intentionally_scoped():
     )
 
     assert "ufw allow in on wlan0 proto tcp" in firewall
+    assert 'FIELD_OPERATOR_SSH_CIDR="${FIELD_OPERATOR_SSH_CIDR:-192.168.8.0/24}"' in firewall
+    assert 'from "$FIELD_OPERATOR_SSH_CIDR"' in firewall
+    assert 'proto tcp to any port 22' in firewall
+    assert 'ufw allow 22' not in firewall
+    assert 'ufw allow OpenSSH' not in firewall
