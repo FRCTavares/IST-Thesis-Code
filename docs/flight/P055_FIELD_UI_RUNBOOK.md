@@ -2,7 +2,9 @@
 
 ## Status
 
-**FIELD UI WORKFLOW VALIDATED ON A REAL IPHONE, BUT ISSUE #55 M6 IS NOT YET CLOSED.**
+**FIELD UI WORKFLOW AND PIXHAWK-GATED FIELD NETWORK VALIDATED; ISSUE #55 M6 PASS.**
+
+M7 old-frontend removal is now unblocked but is not part of this runbook validation.
 
 This document owns the operator-facing browser/UI workflow for the Raspberry Pi
 field system.
@@ -65,29 +67,55 @@ correct selected person > LOST / hover / suppression > wrong person.
 
 ## 2. Network contract
 
-Field operation uses an approved local Wi-Fi network only.
+Field operation is explicit and Pixhawk-gated.
 
-Priority:
+The required invariant is:
+
+`NO PIXHAWK -> NO AERONEXT GCS`
+
+Approved field Wi-Fi priority:
 
 1. `ISR Aero.Next GCS`;
-2. explicitly approved AERONEXT local-router/network fallback.
+2. one explicitly configured approved AERONEXT local-router/network fallback
+   only if the primary cannot be activated.
 
 The field router does not need internet access.
 
-Required field-network state:
+The host normally remains in `unattended` maintenance mode. Field/GCS profiles
+are persisted with `connection.autoconnect=no` and must not be selected as
+ordinary maintenance networks.
 
-- Pi and iPhone connected to the same approved Wi-Fi;
-- Pi field services bound to the active `wlan0` IPv4 address;
+Physical Pixhawk Ethernet carrier is a prerequisite for field entry, but carrier
+appearance never triggers field mode automatically.
+
+Enter field networking only through:
+
+    sudo /usr/local/sbin/thesis-network-mode pixhawk
+
+A valid field state requires:
+
+- approved field Wi-Fi active on `wlan0`;
+- `pixhawk-apm` active on the dedicated Ethernet interface;
+- physical Pixhawk carrier present;
+- no default route through Pixhawk Ethernet;
 - Tailscale disabled/inactive;
-- no LAN SSH exposure;
-- Pixhawk Ethernet remains `pixhawk-apm`;
-- Pixhawk Ethernet must not install the default route;
-- no router port forwarding;
-- no public dashboard/API exposure.
+- field/GCS `connection.autoconnect=no`;
+- no router port forwarding or public dashboard/API exposure.
 
-Do not use the normal field launcher while Tailscale is active. Its fail-closed
-check is intentional.
+Only after those gates pass should `tools/start_field_ui.sh --no-control` be
+started.
 
+If the Pixhawk Ethernet contract disappears while already in field mode, the
+NetworkManager dispatcher fails closed to `unattended`: field Wi-Fi is dropped,
+Pixhawk Ethernet is relinquished, and Tailscale is restored. The periodic
+host-health monitor independently enforces the same contract as a slower
+backstop.
+
+Neither the dispatcher nor the health monitor automatically re-enters field
+mode. A new explicit `pixhawk` command is required after carrier returns.
+
+The final real physical-disconnect validation is retained in
+`docs/results/live/p055_field_network_validation.md`.
 ## 3. One-time Pi firewall preparation
 
 This normally needs to be done only once per Pi installation:
@@ -112,7 +140,9 @@ host rules. Do not remove or broaden them from this runbook.
 
 ## 4. Before field use
 
-From the Pi local terminal:
+Use a local Pi terminal for the field-network transition.
+
+From the Pi:
 
     cd ~/Desktop/Thesis-Code || exit 1
     set +u
@@ -123,31 +153,49 @@ Check repository state:
 
     git status --short
 
-Check active Wi-Fi:
+Confirm the maintenance state:
 
-    nmcli -t -f ACTIVE,SSID dev wifi
-
-Check addresses and routes:
-
-    ip -brief address show wlan0
-    ip route
-
-Check Tailscale:
-
+    sudo /usr/local/sbin/thesis-network-mode status
+    nmcli -g GENERAL.CONNECTION device show wlan0
     systemctl is-active tailscaled
+    nmcli -g connection.autoconnect connection show "ISR Aero.Next GCS"
 
-For actual aircraft work, also perform the current Issue #50 network/Pixhawk
-checks in `P050_FLIGHT_VALIDATION.md`.
+Physically connect and power the Pixhawk, then verify:
 
-Required before final aircraft operation:
+    cat /sys/class/net/eth0/carrier
 
-- approved Wi-Fi active;
+Carrier must be `1`.
+
+Enter field networking explicitly:
+
+    sudo /usr/local/sbin/thesis-network-mode pixhawk
+
+Verify:
+
+    sudo /usr/local/sbin/thesis-network-mode status
+    nmcli -g GENERAL.CONNECTION device show wlan0
+    nmcli -g GENERAL.CONNECTION device show eth0
+    systemctl is-active tailscaled
+    ip route show default
+    ip route show default dev eth0
+
+Required before launching the field UI:
+
+- host mode `pixhawk`;
 - ISR preferred whenever available;
-- approved AERONEXT fallback only when ISR is unavailable;
+- approved AERONEXT fallback only when explicitly configured and the primary
+  cannot be activated;
+- physical Pixhawk carrier present;
+- `pixhawk-apm` active;
+- no Pixhawk Ethernet default route;
 - Tailscale inactive;
-- `pixhawk-apm` Ethernet has no default route;
-- manual pilot takeover remains available.
+- field/GCS autoconnect still disabled.
 
+Do not manually preserve the GCS connection if the Pixhawk link disappears.
+The host is required to fail closed to unattended networking.
+
+For actual aircraft work, also perform the Issue #50 control/MAVROS/abort
+checks in `P050_FLIGHT_VALIDATION.md`.
 ## 5. Current validated UI-only launch command
 
 The currently validated ground/UI command is:

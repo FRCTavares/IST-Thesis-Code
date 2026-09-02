@@ -1,144 +1,183 @@
-# Issue #55 — M6 Final Field Checklist
+# Issue #55 — M6 Field Checklist
 
-Use this only for the final approved-network validation.
+## Validation status
 
-## Before starting
+**M6 PASS — 2 September 2026.**
 
-Use either:
-- a local Pi terminal; or
-- direct LAN SSH from the Mac to the Pi's `wlan0` IPv4 address while both are
-  connected to the approved ISR/AERONEXT Wi-Fi, but only if the current Pi
-  firewall permits direct SSH on that WLAN.
+The final M6 evidence combines the previously completed real-iPhone UI
+validation with the real Pixhawk-gated field-network validation retained in
+`docs/results/live/p055_field_network_validation.md`.
 
-Do not use a Tailscale `100.x.x.x` address or depend on Tailscale for the SSH
-session. If direct WLAN SSH is blocked by the current firewall, use a local Pi
-terminal instead; do not weaken the field firewall just to complete M6.
+This file remains the compact operator checklist for the validated field
+network/UI path.
 
-Keep:
-- Pixhawk Ethernet connected on `pixhawk-apm`;
-- no default route on Pixhawk Ethernet;
-- Mac and iPhone available on the approved Wi-Fi.
+## Required invariant
 
-Preferred Wi-Fi:
-1. `ISR Aero.Next GCS`
-2. approved AERONEXT local/GCS network only if ISR is unavailable
+`NO PIXHAWK -> NO AERONEXT GCS`
 
-## 1. Join the approved Wi-Fi
+Field Wi-Fi is never a passive maintenance preference.
 
-Check:
+Approved order:
 
-    nmcli -t -f NAME,DEVICE connection show --active
-    ip -4 addr show wlan0
-    ip route
+1. `ISR Aero.Next GCS`;
+2. one explicitly configured approved AERONEXT fallback only if the primary
+   cannot be activated.
 
-PASS:
-- wlan0 is on `ISR Aero.Next GCS` or approved AERONEXT fallback;
-- wlan0 has an IPv4 address;
-- Pixhawk Ethernet remains present;
-- Pixhawk Ethernet has no default route.
+Do not configure `ISR Aero.Next GCS-5G` merely because it is visible.
 
-## 2. Verify SSH path, then disable Tailscale
+## 1. Start in unattended maintenance mode
 
-If using SSH from the Mac, first check:
-
-    echo "$SSH_CONNECTION"
-
-PASS before disabling Tailscale, if using SSH:
-- a fresh Mac -> Pi SSH connection over the Pi's `wlan0` IPv4 address succeeds;
-- the Pi/server address in `SSH_CONNECTION` is that `wlan0` IPv4 address;
-- the session is not using a Tailscale `100.x.x.x` address.
-
-If that fresh direct-WLAN SSH connection does not work, switch to a local Pi
-terminal before disabling Tailscale.
-
-Then disable Tailscale:
-
-    sudo systemctl disable --now tailscaled
+Use a local Pi terminal for the field transition.
 
 Check:
 
+    sudo /usr/local/sbin/thesis-network-mode status
+    nmcli -g GENERAL.CONNECTION device show wlan0
     systemctl is-active tailscaled
-    ip link show tailscale0 2>/dev/null || true
+    nmcli -g connection.autoconnect connection show "ISR Aero.Next GCS"
 
 PASS:
-- `tailscaled` is inactive;
-- no active `tailscale0` interface is being used;
-- if using direct WLAN SSH, the Mac-to-Pi SSH session still works after
-  Tailscale is stopped.
 
-## 3. Start the field UI
+- mode is `unattended`;
+- ordinary maintenance Wi-Fi is active;
+- Tailscale may be active for maintenance;
+- `ISR Aero.Next GCS` has `connection.autoconnect=no`.
+
+Do not manually connect the GCS profile while the Pixhawk is absent.
+
+## 2. Connect and verify the Pixhawk
+
+Physically connect and power the Pixhawk Ethernet link.
+
+Check:
+
+    cat /sys/class/net/eth0/carrier
+    nmcli -g GENERAL.CONNECTION device show eth0
+
+PASS before field entry:
+
+- physical carrier is `1`;
+- field mode has not been entered automatically;
+- `pixhawk-apm` need not yet be active while still unattended.
+
+Carrier appearance is only a prerequisite. It is never an automatic field-mode
+trigger.
+
+## 3. Enter field mode explicitly
+
+From the local Pi terminal:
+
+    sudo /usr/local/sbin/thesis-network-mode pixhawk
+
+Then check:
+
+    sudo /usr/local/sbin/thesis-network-mode status
+    nmcli -g GENERAL.CONNECTION device show wlan0
+    nmcli -g GENERAL.CONNECTION device show eth0
+    cat /sys/class/net/eth0/carrier
+    systemctl is-active tailscaled
+    ip route show default
+    ip route show default dev eth0
+    nmcli -g connection.autoconnect connection show "ISR Aero.Next GCS"
+
+PASS:
+
+- mode is `pixhawk`;
+- Wi-Fi is `ISR Aero.Next GCS`, or the explicitly approved fallback if the
+  primary genuinely cannot be activated;
+- `pixhawk-apm` is active on the Pixhawk Ethernet interface;
+- carrier is `1`;
+- Pixhawk Ethernet owns no default route;
+- the default route is through approved field Wi-Fi;
+- Tailscale is inactive;
+- field/GCS autoconnect remains `no`.
+
+If any field-network contract fails, do not launch the UI.
+
+## 4. Start the field UI
 
     cd ~/Desktop/Thesis-Code || exit 1
     tools/start_field_ui.sh --no-control
 
-Do NOT use either bench override.
+Do not use a bench override.
 
 PASS when the terminal prints:
 
     FIELD UI READY
 
-Note the printed iPhone URL:
+Open the printed `http://<PI_WLAN_IP>:5173` address from the iPhone connected to
+the same approved GCS Wi-Fi.
 
-    http://<PI_WLAN_IP>:5173
-
-## 4. Test from iPhone
-
-Connect the iPhone to the SAME approved GCS Wi-Fi.
-
-Open the printed URL in Safari.
+## 5. Verify the operator surface
 
 Confirm:
+
 - camera video is live;
-- numbered cyan `#ID` person overlay is visible;
-- health shows NOMINAL or otherwise truthful status.
+- numbered cyan `#ID` tracker overlays are aligned;
+- SELECT on the intended person produces the matching TIM target;
+- TIM reaches `LOCKED`;
+- CLEAR TARGET returns to `NO_TARGET`;
+- the authoritative target overlay disappears;
+- the ordinary numbered tracker overlay remains;
+- no stale target box remains.
 
-Then:
+The real-iPhone version of this sequence passed during M6.
 
-1. press SELECT on a visible person;
-2. confirm `TIM TARGET #N`;
-3. confirm `TIM CONFIRMED`;
-4. confirm TIM state `LOCKED`;
-5. confirm REF matches the selected/current TIM track;
-6. press CLEAR TARGET;
-7. confirm `NO_TARGET`;
-8. confirm the green TIM target box disappears;
-9. confirm the normal cyan `#ID` remains.
+## 6. Normal shutdown
 
-PASS:
-- SELECT -> LOCKED works;
-- CLEAR -> NO_TARGET works;
-- no stale target overlay remains.
-
-## 5. Stop
-
-Press Ctrl-C once in the Pi terminal.
-
-Wait for:
+Press Ctrl-C once in the field-UI terminal and wait for:
 
     [field-ui] stopped
 
-Then check:
+Check:
 
     ss -lntp | rg ':5173|:8080|:8090|:8765' || true
     pgrep -af 'start_field_ui|http.server 5173|dashboard_bridge|target_memory_mars|web_video_server' || true
 
+Then return the host to maintenance networking:
+
+    sudo /usr/local/sbin/thesis-network-mode unattended
+
 PASS:
-- ports 5173, 8080, 8090, 8765 are free;
-- no field-UI/live-stack processes remain.
 
-## 6. Evidence to remember
+- field-UI ports are free;
+- no field-UI/live-stack processes remain;
+- approved field Wi-Fi is inactive;
+- mode is `unattended`;
+- Tailscale is restored;
+- ordinary maintenance Wi-Fi may reconnect according to its own autoconnect
+  policy;
+- field/GCS `connection.autoconnect` remains `no`.
 
-For M6 closure, record:
+## 7. Pixhawk disconnect while in field mode
 
-- exact SSID used;
-- Pi wlan0 IPv4 address;
-- confirmation that Tailscale was inactive;
-- if SSH was used, confirmation that it was direct Mac -> Pi WLAN SSH and
-  remained usable with Tailscale stopped;
-- iPhone opened the Pi WLAN URL directly;
-- SELECT -> LOCKED -> CLEAR -> NO_TARGET passed;
-- shutdown cleanup passed.
+If physical Pixhawk Ethernet carrier disappears during field mode, do not try
+to preserve the GCS connection.
 
-Do not run another A/B/C performance test.
+The validated host behavior is:
 
-If all sections pass, M6 field validation is PASS.
+1. NetworkManager dispatcher detects Ethernet loss;
+2. host exits to `unattended`;
+3. approved field Wi-Fi is disconnected;
+4. `pixhawk-apm` is relinquished;
+5. Tailscale is restored;
+6. ordinary maintenance Wi-Fi may recover;
+7. carrier restoration alone does not re-enter field mode.
+
+The final real physical-unplug test measured `8318 ms` from observed carrier
+loss to the retained unattended-state observation and required no emergency
+rollback.
+
+## 8. Retained M6 evidence
+
+Authoritative summary:
+
+    docs/results/live/p055_field_network_validation.md
+
+Raw logs:
+
+    reports/p055_field_network_2026_09_02/
+
+Do not repeat the A/B/C UI performance characterization for Issue #55.
+
+M7 may begin only after the M6 closure commit is retained.
