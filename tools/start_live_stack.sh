@@ -1059,14 +1059,21 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     if [[ "$RECORD_MAVROS" -eq 1 ]]; then
         VIDEO_BAG_TOPICS+=(
             /mavros/state
+            /mavros/extended_state
             /mavros/imu/data_raw
             /mavros/imu/data
             /mavros/imu/mag
             /mavros/imu/static_pressure
             /mavros/imu/temperature_imu
+            /mavros/rc/in
+            /mavros/rc/out
+            /mavros/battery
+            /mavros/global_position/global
+            /mavros/global_position/rel_alt
+            /mavros/global_position/local
             /mavros/local_position/pose
             /mavros/local_position/velocity_local
-            /mavros/setpoint_velocity/cmd_vel_unstamped
+            /mavros/setpoint_velocity/cmd_vel
         )
     fi
 
@@ -1246,36 +1253,6 @@ if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
         echo "[ok] raw image bag metadata: $RAW_IMAGE_BAG_OUT_DIR/raw_image_metadata.txt"
     else
         echo "[warn] raw image bag output directory not visible yet; metadata was not written"
-    fi
-fi
-
-if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
-    echo "[field] enforcing AERONEXT/Pixhawk network mode (Tailscale will stop)"
-    sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk
-
-    echo "[field] starting MAVROS Pixhawk 6X Ethernet link"
-    export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
-
-    start_ros_bg mavros_pixhawk bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 launch mavros apm.launch fcu_url:=udp://:14550@ tgt_system:=9 tgt_component:=1'
-
-    sleep 8
-
-    echo "[field] requesting MAVLink streams"
-    bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate "{stream_id: 0, message_rate: 50, on_off: true}"' || true
-
-    MAVROS_BAG_ROOT="$THESIS_ROOT/bags/mavros"
-    mkdir -p "$MAVROS_BAG_ROOT"
-    MAVROS_BAG_OUT_DIR="$MAVROS_BAG_ROOT/$(basename "$VIDEO_BAG_OUT_DIR")__mavros"
-
-    echo "[field] starting MAVROS recorder: $MAVROS_BAG_OUT_DIR"
-
-    start_ros_bg mavros_bag bash -lc "source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID=42 && ros2 bag record --storage mcap -o '$MAVROS_BAG_OUT_DIR' --topics /mavros/imu/data_raw /mavros/imu/data /mavros/imu/mag /mavros/imu/static_pressure /mavros/imu/temperature_imu /mavros/rc/in /mavros/rc/out /mavros/battery /mavros/global_position/global /mavros/global_position/rel_alt /mavros/global_position/local /mavros/local_position/pose /mavros/local_position/velocity_local /mavros/state /mavros/extended_state"
-
-    sleep 1
-    if ! check_proc_alive mavros_bag; then
-        echo "[error] MAVROS recorder failed"
-        stop_stack
-        exit 1
     fi
 fi
 

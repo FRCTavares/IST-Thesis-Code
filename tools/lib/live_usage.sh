@@ -137,7 +137,9 @@ Default live stack:
 
 Common options:
     --record                 Record video/perception/tracking/control bag
-    --field-record           Record full live pipeline and separate MAVROS telemetry
+    --field-record           Record full live pipeline with canonical MAVROS telemetry
+                             (alias for --record + --record-mavros; does not
+                             change host network mode)
     --record-raw             Also record /camera/image_raw in a separate synchronized bag
     --source-record          Record source dataset: /camera/image_raw and MAVROS telemetry
     --source-record-no-mavros

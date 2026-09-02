@@ -26,6 +26,33 @@ def test_record_raw_is_explicit_and_field_record_does_not_reset_it():
     assert "FIELD_RAW_IMAGE_RECORD" not in field_block
 
 
+def test_field_record_reuses_canonical_mavros_owner_without_network_transition():
+    cli = CLI.read_text(encoding="utf-8")
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+    defaults = DEFAULTS.read_text(encoding="utf-8")
+
+    field_block = _case_block(cli, "--field-record", "--record-raw")
+
+    assert "ENABLE_ROSBAG=1" in field_block
+    assert "RECORD_MAVROS=1" in field_block
+    assert "FIELD_MAVROS_RECORD" not in field_block
+    assert "FIELD_MAVROS_RECORD" not in defaults
+    assert "FIELD_MAVROS_RECORD" not in launcher
+    assert 'start_ros_bg mavros_pixhawk' not in launcher
+    assert '[field] enforcing AERONEXT/Pixhawk network mode' not in launcher
+
+
+def test_canonical_mavros_evidence_records_real_control_and_battery_topics():
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    assert "/mavros/battery" in launcher
+    assert "/mavros/extended_state" in launcher
+    assert "/mavros/rc/in" in launcher
+    assert "/mavros/rc/out" in launcher
+    assert "/mavros/setpoint_velocity/cmd_vel" in launcher
+    assert "/mavros/setpoint_velocity/cmd_vel_unstamped" not in launcher
+
+
 def test_raw_recording_requires_normal_live_recording():
     cli = CLI.read_text(encoding="utf-8")
 

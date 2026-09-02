@@ -174,7 +174,6 @@ apply_resolution_selector() {
     return 0
 }
 
-FIELD_MAVROS_RECORD=0
 FIELD_RAW_IMAGE_RECORD=0
 
 # /camera/image_raw is off by default (no perception/tracking/TIM/dashboard

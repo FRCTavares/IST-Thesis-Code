@@ -51,11 +51,16 @@ outputs by using:
 ./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO_NAME
 ```
 
-This creates three synchronized recordings:
+This creates two synchronized recordings:
 
-- the normal live pipeline bag under `bags/live_camera/`;
-- a separate `__image_raw` MCAP bag containing `/camera/image_raw`;
-- a separate `__mavros` MCAP bag containing Pixhawk telemetry.
+- the normal live pipeline bag under `bags/live_camera/`, including the
+  canonical MAVROS telemetry set;
+- a separate `__image_raw` MCAP bag containing `/camera/image_raw`.
+
+MAVROS is owned once by the canonical `--record-mavros` lifecycle and its
+telemetry is retained directly in the normal live bag. The actual #74
+controller-to-MAVROS `TwistStamped` topic,
+`/mavros/setpoint_velocity/cmd_vel`, and `/mavros/battery` are included.
 
 Raw recording requires at least 40 GiB free by default. At 640x480 BGR8 and a
 true 30 FPS, the theoretical uncompressed payload is about 28 MB/s or 1.7
@@ -65,8 +70,11 @@ field. The raw bag is clean camera imagery, not a guarantee of 30 recorded FPS.
 Because the measured combined mode does not approach 30 raw FPS, it is a
 diagnostic option and is not recommended for the source-first field session.
 
-`--field-record` enforces the AERONEXT/Pixhawk Ethernet network mode and stops
-Tailscale. Run it from the Pi's local terminal when the Pixhawk is connected.
+`--field-record` is a convenience alias for the normal live recording plus
+canonical MAVROS telemetry. It does not change host networking. Before starting
+a field run, enter and verify `pixhawk` network mode explicitly using the
+current Issue #50/P055 operator procedure; successful field entry disables
+Tailscale before the live stack starts.
 
 ## Subdirectories
 

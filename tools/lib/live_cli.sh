@@ -540,10 +540,13 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --field-record)
+            # Convenience alias for the retained field evidence set.
+            # Field network mode is entered explicitly by the operator before
+            # live-stack startup; this option never changes host networking.
             ENABLE_ROSBAG=1
             TRACKER_PUBLISH_TIMING_BOOL="true"
             TARGET_TIMING_ENABLED=1
-            FIELD_MAVROS_RECORD=1
+            RECORD_MAVROS=1
             shift
             ;;
         --record-raw)

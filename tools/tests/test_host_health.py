@@ -317,14 +317,29 @@ def test_host_assets_live_with_their_installer_not_in_deploy_tree():
     } <= {path.name for path in SYSTEMD_ASSET_ROOT.iterdir()}
 
 
-def test_field_stack_enters_network_mode_instead_of_direct_ethernet_up():
+def test_live_stack_keeps_field_network_transition_out_of_normal_flight_path():
     live_stack = (REPO_ROOT / "tools/start_live_stack.sh").read_text(
         encoding="utf-8"
     )
+    live_cli = (REPO_ROOT / "tools/lib/live_cli.sh").read_text(
+        encoding="utf-8"
+    )
 
+    field_start = live_cli.index("        --field-record)")
+    field_end = live_cli.index("        --record-raw)", field_start)
+    field_block = live_cli[field_start:field_end]
+
+    assert "RECORD_MAVROS=1" in field_block
+    assert "set_pi_network_mode" not in field_block
+    assert "FIELD_MAVROS_RECORD" not in field_block
+
+    # The normal/field flight path must never change host networking during
+    # stack startup. The sole retained implicit transition belongs to the
+    # isolated legacy source-MAVROS capture path.
     assert live_stack.count(
         'sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk'
-    ) == 2
+    ) == 1
+    assert '"${SOURCE_MAVROS_RECORD:-0}" -eq 1' in live_stack
     assert "sudo nmcli connection up pixhawk-apm" not in live_stack
 
 
