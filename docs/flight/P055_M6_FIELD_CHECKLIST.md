@@ -27,7 +27,9 @@ Do not configure `ISR Aero.Next GCS-5G` merely because it is visible.
 
 ## 1. Start in unattended maintenance mode
 
-Use a local Pi terminal for the field transition.
+Use either a local Pi terminal or an existing maintenance/Tailscale SSH session
+for the field transition. A headless Pi does not require a monitor or keyboard
+when the approved wlan0-scoped operator SSH rule has been installed.
 
 Check:
 
@@ -65,9 +67,17 @@ trigger.
 
 ## 3. Enter field mode explicitly
 
-From the local Pi terminal:
+From the Pi shell:
 
     sudo /usr/local/sbin/thesis-network-mode pixhawk
+
+When this is issued from a Tailscale maintenance shell, successful field entry
+intentionally terminates that connection. Connect the operator computer to the
+approved GCS Wi-Fi and reconnect directly to the Pi:
+
+    ssh francisco@fcstpi.local
+
+Use the current GCS IPv4 address instead if mDNS does not resolve.
 
 Then check:
 

@@ -24,8 +24,12 @@ For normal replay/evaluation work, these scripts should not be needed.
 ## Field UI firewall
 
 `setup_field_ui_firewall.sh` is the one-time host setup helper for the field
-browser interface. It installs inbound UFW rules for TCP 5173, 8080, 8090, and
-8765 on `wlan0` only.
+operator interface. It installs inbound UFW rules for TCP 5173, 8080, 8090, and
+8765 on `wlan0`, plus TCP 22 on `wlan0` restricted to the approved field
+operator subnet. The default SSH source is `192.168.8.0/24`, the retained
+`ISR Aero.Next GCS` subnet. It does not create public SSH exposure or router
+port forwarding. A different explicitly approved field subnet may be supplied
+with `FIELD_OPERATOR_SSH_CIDR`.
 
 Run it during Pi preparation, not as part of normal field startup:
 
