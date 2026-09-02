@@ -493,6 +493,9 @@ The frontend-packaging M6 gate is therefore PASS. The retained frontend implemen
 
 ## 17. Remaining Issue #55 M6 closure gates
 
+For the final offline field session, use the compact operator checklist:
+`docs/flight/P055_M6_FIELD_CHECKLIST.md`.
+
 Do not mark this runbook final until all of the following are resolved:
 
 1. the final field network is tested on an approved ISR/AERONEXT network with
