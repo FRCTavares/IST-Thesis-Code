@@ -28,6 +28,30 @@ current-system verification:
 Existing launcher capabilities such as `--field-record`, `--record-mavros` and
 `--record-raw` are not, by themselves, an approved #50 flight command.
 
+## 2 September 2026 MAVROS launch reconciliation
+
+The normal/field live path now has one MAVROS owner. `--record-mavros` launches
+MAVROS, waits for `/mavros/state` to report `connected: true`, verifies the
+stream-rate service, requests the configured stream rate, and retains MAVROS
+telemetry in the normal live bag. `--field-record` is only a convenience alias
+for normal live recording plus this canonical MAVROS path; it does not perform
+a network-mode transition and does not launch a second MAVROS instance.
+
+Field networking must therefore be entered and verified before live-stack
+startup. This matches the headless field workflow: enter `pixhawk` explicitly,
+allow Tailscale to stop, reconnect from the approved GCS LAN, verify the field
+network state, and only then launch the live stack.
+
+The retained MAVROS evidence includes `/mavros/battery`, state/extended-state,
+RC context, position/velocity context, and the actual #74 controller MAVROS
+output `/mavros/setpoint_velocity/cmd_vel`. The obsolete
+`cmd_vel_unstamped` recording mismatch has been removed.
+
+This is a software-contract reconciliation only. It does not promote the stack
+to an approved aircraft procedure. Real Pixhawk telemetry, battery delivery,
+controller mirroring, target authority, manual takeover/abort behaviour, and
+the exact first closed-loop command still require physical ground validation.
+
 ## Safe network inspection
 
 When preparing Issue #50 with the real field hardware:

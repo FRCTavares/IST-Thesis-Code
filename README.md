@@ -301,9 +301,13 @@ cd "$THESIS_ROOT"
 Additional MAVROS topics:
 
 /mavros/state
+/mavros/extended_state
+/mavros/battery
+/mavros/rc/in
+/mavros/rc/out
 /mavros/local_position/pose
 /mavros/local_position/velocity_local
-/mavros/setpoint_velocity/cmd_vel_unstamped
+/mavros/setpoint_velocity/cmd_vel
 
 ## 5) Replay and analysis
 
