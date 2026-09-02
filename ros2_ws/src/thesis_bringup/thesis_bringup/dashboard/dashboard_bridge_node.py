@@ -15,6 +15,7 @@ from http.server import (
     ThreadingHTTPServer,
 )
 import json
+import math
 import os
 import threading
 import time
@@ -36,6 +37,7 @@ from rclpy.qos import (
     QoSProfile,
     ReliabilityPolicy,
 )
+from sensor_msgs.msg import BatteryState
 from std_msgs.msg import (
     Empty,
     Float32,
@@ -60,6 +62,113 @@ METRIC_WARN_THRESHOLDS_MS = {
     "pub_dt_ms": 120.0,
 }
 
+DEFAULT_DASHBOARD_ALLOWED_ORIGINS = (
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+)
+DEFAULT_BATTERY_STALE_TIMEOUT_S = 3.0
+
+
+def parse_dashboard_allowed_origins(raw: str) -> set[str]:
+    """Parse the explicit browser-Origin allowlist without wildcard fallback."""
+    origins = {
+        origin.strip()
+        for origin in str(raw).split(",")
+        if origin.strip()
+    }
+
+    if "*" in origins:
+        raise ValueError(
+            "wildcard dashboard Origin is not permitted; "
+            "configure explicit trusted Origins"
+        )
+
+    if not origins:
+        return set(DEFAULT_DASHBOARD_ALLOWED_ORIGINS)
+
+    return origins
+
+
+def dashboard_request_origin_allowed(
+    origin: str,
+    allowed_origins: set[str],
+) -> bool:
+    """Accept non-browser clients or one explicitly trusted browser Origin."""
+    normalized = str(origin).strip()
+    return not normalized or normalized in allowed_origins
+
+
+def _finite_float(value: Any) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+
+    if not math.isfinite(parsed):
+        return None
+
+    return parsed
+
+
+def sanitize_battery_measurements(
+    percentage: Any,
+    voltage_v: Any,
+    current_a: Any,
+) -> dict[str, float | None]:
+    """Normalize MAVROS BatteryState values without inventing charge state."""
+    percentage_value = _finite_float(percentage)
+    if (
+        percentage_value is None
+        or percentage_value < 0.0
+        or percentage_value > 1.0
+    ):
+        percentage_value = None
+
+    voltage_value = _finite_float(voltage_v)
+    if voltage_value is None or voltage_value <= 0.0:
+        voltage_value = None
+
+    current_value = _finite_float(current_a)
+
+    return {
+        "percentage": percentage_value,
+        "voltage_v": voltage_value,
+        "current_a": current_value,
+    }
+
+
+def build_battery_telemetry(
+    measurements: dict[str, float | None],
+    *,
+    last_rx_monotonic_ns: int | None,
+    now_monotonic_ns: int,
+    stale_timeout_s: float,
+) -> dict[str, Any]:
+    """Build browser telemetry using local receive age for freshness."""
+    payload: dict[str, Any] = {
+        "percentage": measurements.get("percentage"),
+        "voltage_v": measurements.get("voltage_v"),
+        "current_a": measurements.get("current_a"),
+        "age_ms": None,
+        "stale": True,
+        "source": None,
+    }
+
+    if last_rx_monotonic_ns is None:
+        return payload
+
+    age_ns = max(
+        0,
+        int(now_monotonic_ns) - int(last_rx_monotonic_ns),
+    )
+    payload["age_ms"] = age_ns / 1_000_000.0
+    payload["stale"] = (
+        age_ns > int(float(stale_timeout_s) * 1_000_000_000.0)
+    )
+    payload["source"] = "mavros"
+
+    return payload
+
 
 class DashboardBridgeNode(Node):
     def __init__(self) -> None:
@@ -75,12 +184,20 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("fps_topic", "/camera/fps")
         self.declare_parameter("replay_progress_topic", "/camera/replay_progress")
         self.declare_parameter("timing_topic", "/timing")
+        self.declare_parameter("battery_topic", "/mavros/battery")
+        self.declare_parameter(
+            "battery_stale_timeout_s",
+            DEFAULT_BATTERY_STALE_TIMEOUT_S,
+        )
 
-        self.declare_parameter("ws_host", "0.0.0.0")
+        self.declare_parameter("ws_host", "127.0.0.1")
         self.declare_parameter("ws_port", 8765)
-        self.declare_parameter("api_host", "0.0.0.0")
+        self.declare_parameter("api_host", "127.0.0.1")
         self.declare_parameter("api_port", 8090)
-        self.declare_parameter("allowed_origins", "*")
+        self.declare_parameter(
+            "allowed_origins",
+            ",".join(DEFAULT_DASHBOARD_ALLOWED_ORIGINS),
+        )
         self.declare_parameter("publish_hz", 30.0)
         self.declare_parameter("img_w", 640)
         self.declare_parameter("img_h", 640)
@@ -117,8 +234,23 @@ class DashboardBridgeNode(Node):
             self.get_parameter("target_memory_status_topic").value
         )
         self._fps_topic = str(self.get_parameter("fps_topic").value)
-        self._replay_progress_topic = str(self.get_parameter("replay_progress_topic").value)
+        self._replay_progress_topic = str(
+            self.get_parameter("replay_progress_topic").value
+        )
         self._timing_topic = str(self.get_parameter("timing_topic").value)
+        self._battery_topic = str(
+            self.get_parameter("battery_topic").value
+        )
+        self._battery_stale_timeout_s = float(
+            self.get_parameter("battery_stale_timeout_s").value
+        )
+        if (
+            not math.isfinite(self._battery_stale_timeout_s)
+            or self._battery_stale_timeout_s <= 0.0
+        ):
+            raise ValueError(
+                "battery_stale_timeout_s must be finite and positive"
+            )
 
         self._ws_host = str(self.get_parameter("ws_host").value)
         self._ws_port = int(self.get_parameter("ws_port").value)
@@ -128,13 +260,9 @@ class DashboardBridgeNode(Node):
         allowed_origins_raw = str(
             self.get_parameter("allowed_origins").value
         ).strip()
-        self._allowed_origins = {
-            origin.strip()
-            for origin in allowed_origins_raw.split(",")
-            if origin.strip()
-        }
-        if not self._allowed_origins:
-            self._allowed_origins = {"*"}
+        self._allowed_origins = parse_dashboard_allowed_origins(
+            allowed_origins_raw
+        )
 
         self._publish_hz = float(self.get_parameter("publish_hz").value)
         self._img_w = max(1.0, float(self.get_parameter("img_w").value))
@@ -180,6 +308,13 @@ class DashboardBridgeNode(Node):
         self._target_authority_session_id = uuid.uuid4().hex
         self._target_authority_event_lock = threading.Lock()
 
+        self._battery_measurements: dict[str, float | None] = {
+            "percentage": None,
+            "voltage_v": None,
+            "current_a": None,
+        }
+        self._battery_last_rx_monotonic_ns: int | None = None
+
         self._state_lock = threading.Lock()
         self._state: dict[str, Any] = {
             "tracks": [],
@@ -216,6 +351,14 @@ class DashboardBridgeNode(Node):
                 "mem_used_mb": None,
                 "temp_c": None,
             },
+            "battery": build_battery_telemetry(
+                self._battery_measurements,
+                last_rx_monotonic_ns=(
+                    self._battery_last_rx_monotonic_ns
+                ),
+                now_monotonic_ns=time.monotonic_ns(),
+                stale_timeout_s=self._battery_stale_timeout_s,
+            ),
         }
         self._dirty = False
 
@@ -301,6 +444,12 @@ class DashboardBridgeNode(Node):
             self._on_timing,
             qos,
         )
+        self._battery_sub = self.create_subscription(
+            BatteryState,
+            self._battery_topic,
+            self._on_battery,
+            qos,
+        )
         self._publish_timer = self.create_timer(
             1.0 / max(self._publish_hz, 1.0),
             self._flush_state_to_clients,
@@ -324,6 +473,7 @@ class DashboardBridgeNode(Node):
             f"fps={self._fps_topic}, "
             f"replay_progress={self._replay_progress_topic}, "
             f"timing={self._timing_topic}, "
+            f"battery={self._battery_topic}, "
             f"ws=ws://{self._ws_host}:{self._ws_port}, "
             f"api=http://{self._api_host}:{self._api_port}, "
             "runtime_reconfiguration="
@@ -337,16 +487,43 @@ class DashboardBridgeNode(Node):
         node_ref = self
 
         class _ControlHandler(BaseHTTPRequestHandler):
+            def _request_origin(self) -> str:
+                return str(
+                    self.headers.get("Origin", "")
+                ).strip()
+
+            def _request_origin_allowed(self) -> bool:
+                return dashboard_request_origin_allowed(
+                    self._request_origin(),
+                    node_ref._allowed_origins,
+                )
+
             def _cors_origin(self) -> str | None:
-                origin = str(self.headers.get("Origin", "")).strip()
+                origin = self._request_origin()
 
-                if "*" in node_ref._allowed_origins:
-                    return "*"
-
-                if origin and origin in node_ref._allowed_origins:
+                if (
+                    origin
+                    and dashboard_request_origin_allowed(
+                        origin,
+                        node_ref._allowed_origins,
+                    )
+                ):
                     return origin
 
                 return None
+
+            def _reject_disallowed_origin(self) -> bool:
+                if self._request_origin_allowed():
+                    return False
+
+                self._send_json(
+                    403,
+                    {
+                        "ok": False,
+                        "error": "browser Origin is not allowed",
+                    },
+                )
+                return True
 
             def _send_cors_headers(self) -> None:
                 allowed_origin = self._cors_origin()
@@ -377,11 +554,17 @@ class DashboardBridgeNode(Node):
                 self.wfile.write(body)
 
             def do_OPTIONS(self) -> None:
+                if self._reject_disallowed_origin():
+                    return
+
                 self.send_response(204)
                 self._send_cors_headers()
                 self.end_headers()
 
             def do_GET(self) -> None:
+                if self._reject_disallowed_origin():
+                    return
+
                 if self.path == "/api/models":
                     self._send_json(200, node_ref._handle_models_list())
                     return
@@ -389,8 +572,13 @@ class DashboardBridgeNode(Node):
                 self._send_json(404, {"ok": False, "error": "unknown endpoint"})
 
             def do_POST(self) -> None:
+                if self._reject_disallowed_origin():
+                    return
+
                 try:
-                    content_length = int(self.headers.get("Content-Length", "0"))
+                    content_length = int(
+                        self.headers.get("Content-Length", "0")
+                    )
                 except Exception:
                     content_length = 0
 
@@ -880,13 +1068,10 @@ class DashboardBridgeNode(Node):
         self._loop.run_forever()
 
     async def _start_server(self) -> None:
-        websocket_origins = None
-
-        if "*" not in self._allowed_origins:
-            websocket_origins = [
-                None,
-                *sorted(self._allowed_origins),
-            ]
+        websocket_origins = [
+            None,
+            *sorted(self._allowed_origins),
+        ]
 
         self._server = await websockets.serve(
             self._handle_client,
@@ -920,7 +1105,20 @@ class DashboardBridgeNode(Node):
         with self._state_lock:
             if not self._dirty:
                 return
-            payload = json.dumps(self._state, separators=(",", ":"))
+
+            state_snapshot = dict(self._state)
+            state_snapshot["battery"] = build_battery_telemetry(
+                self._battery_measurements,
+                last_rx_monotonic_ns=(
+                    self._battery_last_rx_monotonic_ns
+                ),
+                now_monotonic_ns=time.monotonic_ns(),
+                stale_timeout_s=self._battery_stale_timeout_s,
+            )
+            payload = json.dumps(
+                state_snapshot,
+                separators=(",", ":"),
+            )
             self._dirty = False
 
         if not self._loop.is_running():
@@ -982,8 +1180,18 @@ class DashboardBridgeNode(Node):
                 "metric_windows": dict(self._state["metric_windows"]),
                 "metric_thresholds_ms": dict(self._state["metric_thresholds_ms"]),
                 "replay_progress": self._state["replay_progress"],
-                "inference_resolution": dict(self._state["inference_resolution"]),
+                "inference_resolution": dict(
+                    self._state["inference_resolution"]
+                ),
                 "system": dict(self._state["system"]),
+                "battery": build_battery_telemetry(
+                    self._battery_measurements,
+                    last_rx_monotonic_ns=(
+                        self._battery_last_rx_monotonic_ns
+                    ),
+                    now_monotonic_ns=time.monotonic_ns(),
+                    stale_timeout_s=self._battery_stale_timeout_s,
+                ),
             }
         return json.dumps(snapshot, separators=(",", ":"))
 
@@ -1104,6 +1312,27 @@ class DashboardBridgeNode(Node):
             self._state["camera_input_fps"] = value
             self._dirty = True
 
+    def _on_battery(self, msg: BatteryState) -> None:
+        rx_monotonic_ns = time.monotonic_ns()
+        measurements = sanitize_battery_measurements(
+            msg.percentage,
+            msg.voltage,
+            msg.current,
+        )
+
+        with self._state_lock:
+            self._battery_measurements = measurements
+            self._battery_last_rx_monotonic_ns = rx_monotonic_ns
+            self._state["battery"] = build_battery_telemetry(
+                self._battery_measurements,
+                last_rx_monotonic_ns=(
+                    self._battery_last_rx_monotonic_ns
+                ),
+                now_monotonic_ns=rx_monotonic_ns,
+                stale_timeout_s=self._battery_stale_timeout_s,
+            )
+            self._dirty = True
+
     def _on_replay_progress(self, msg: Float32) -> None:
         with self._state_lock:
             value = float(msg.data)
@@ -1134,6 +1363,14 @@ class DashboardBridgeNode(Node):
                 "mem_used_mb": mem_used_mb,
                 "temp_c": temp_c,
             }
+            self._state["battery"] = build_battery_telemetry(
+                self._battery_measurements,
+                last_rx_monotonic_ns=(
+                    self._battery_last_rx_monotonic_ns
+                ),
+                now_monotonic_ns=time.monotonic_ns(),
+                stale_timeout_s=self._battery_stale_timeout_s,
+            )
             self._dirty = True
 
     async def _shutdown_server(self) -> None:
