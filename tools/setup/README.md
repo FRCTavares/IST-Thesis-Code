@@ -20,3 +20,17 @@ scripts. Do not run them during evaluation unless the runtime environment
 actually needs repair or recreation.
 
 For normal replay/evaluation work, these scripts should not be needed.
+
+## Field UI firewall
+
+`setup_field_ui_firewall.sh` is the one-time host setup helper for the field
+browser interface. It installs inbound UFW rules for TCP 5173, 8080, 8090, and
+8765 on `wlan0` only.
+
+Run it during Pi preparation, not as part of normal field startup:
+
+    cd ~/Desktop/Thesis-Code || exit 1
+    tools/setup/setup_field_ui_firewall.sh
+
+Normal field operation uses the stable top-level
+`tools/start_field_ui.sh` entrypoint.

@@ -794,6 +794,10 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
     DASHBOARD_RUNTIME_RECONFIGURATION_BOOL="false"
 
     start_ros_bg dashboard_bridge ros2 run thesis_bringup dashboard_bridge_node --ros-args \
+        -p ws_host:="$DASHBOARD_BRIDGE_BIND_HOST" \
+        -p api_host:="$DASHBOARD_BRIDGE_BIND_HOST" \
+        -p allowed_origins:="$DASHBOARD_BRIDGE_ALLOWED_ORIGINS" \
+        -p publish_hz:="$DASHBOARD_BRIDGE_PUBLISH_HZ" \
         -p img_w:=640 \
         -p img_h:=640 \
         -p camera_ref_w:=$CAMERA_WIDTH \
@@ -808,12 +812,21 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         stop_stack
         exit 1
     fi
-    if ! wait_for_port 127.0.0.1 8765 15 1; then
+    DASHBOARD_READY_HOST="$DASHBOARD_BRIDGE_BIND_HOST"
+    if [[ "$DASHBOARD_READY_HOST" == "0.0.0.0" || "$DASHBOARD_READY_HOST" == "::" ]]; then
+        DASHBOARD_READY_HOST="127.0.0.1"
+    fi
+
+    if ! wait_for_port "$DASHBOARD_READY_HOST" 8765 15 1; then
         stop_stack
         exit 1
     fi
 
     DASHBOARD_BRIDGE_RESOLVED_PARAMS=(
+        "ws_host=$DASHBOARD_BRIDGE_BIND_HOST"
+        "api_host=$DASHBOARD_BRIDGE_BIND_HOST"
+        "allowed_origins=$DASHBOARD_BRIDGE_ALLOWED_ORIGINS"
+        "publish_hz=$DASHBOARD_BRIDGE_PUBLISH_HZ"
         "img_w=640"
         "img_h=640"
         "camera_ref_w=$CAMERA_WIDTH"
@@ -849,13 +862,20 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
     fi
 
     if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
-        start_ros_bg web_video ros2 run web_video_server web_video_server --ros-args -p port:=8080
+        start_ros_bg web_video ros2 run web_video_server web_video_server --ros-args \
+            -p address:="$WEB_VIDEO_BIND_HOST" \
+            -p port:=8080
         sleep 1
         if ! check_proc_alive web_video; then
             stop_stack
             exit 1
         fi
-        if ! wait_for_port 127.0.0.1 8080 15 1; then
+        WEB_VIDEO_READY_HOST="$WEB_VIDEO_BIND_HOST"
+        if [[ "$WEB_VIDEO_READY_HOST" == "0.0.0.0" || "$WEB_VIDEO_READY_HOST" == "::" ]]; then
+            WEB_VIDEO_READY_HOST="127.0.0.1"
+        fi
+
+        if ! wait_for_port "$WEB_VIDEO_READY_HOST" 8080 15 1; then
             stop_stack
             exit 1
         fi

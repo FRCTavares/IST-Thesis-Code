@@ -2341,7 +2341,7 @@ Update this table during actual execution.
 | M3 UI launcher | 2026-09-01 | N/A | `03e45384` | PASS | UI-owned `tools/start_dashboard.sh`; backend/mock/offline modes; host/port/install options; external state/log path; launcher execs real Vite process; HTTP and deterministic shutdown smoke pass |
 | M4 compatibility wrapper | 2026-09-01 | `5104f0df` | `03e45384` | PASS | `start_ui_stack.sh` reduced to external delegation shim; legacy operator flags/env translated; missing checkout fails clearly; no npm/Vite implementation remains in Thesis-Code |
 | M5 docs/test ownership | 2026-09-01 | `5104f0df` | `ef8914c9` | PASS | Thesis-Code operator docs/tests migrated to external frontend ownership with 11 targeted contracts passing; UI README now documents the actual runtime/API/port/frozen-profile/target-authority/bbox contracts and production build passes |
-| M6 live integration | pending | pending | pending | pending | pending |
+| M6 live integration | 2026-09-01 | working tree on `issue-55-ui-repository-extraction-20260901` | `e7329e01` | IN PROGRESS | automated live integration PASS; direct iPhone LAN PASS; numbered overlays / SELECT / LOCKED / CLEAR / resize visual PASS; truthful Tailscale bench reporting PASS; A/B/C timing characterization PASS; prebuilt static frontend + real-iPhone smoke + deterministic field-launcher cleanup PASS; retained frontend implementation `e7329e01`; pending approved ISR/AERONEXT + Tailscale-off validation and retained Thesis-Code ref |
 | M7 old frontend removal | pending | pending | pending | pending | pending |
 | H1 frontend hardening | pending | N/A | pending | pending | pending |
 | H2 backend hardening | pending | pending | optional | pending | pending |

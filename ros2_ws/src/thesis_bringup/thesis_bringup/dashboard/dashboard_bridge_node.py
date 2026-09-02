@@ -80,6 +80,7 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("ws_port", 8765)
         self.declare_parameter("api_host", "0.0.0.0")
         self.declare_parameter("api_port", 8090)
+        self.declare_parameter("allowed_origins", "*")
         self.declare_parameter("publish_hz", 30.0)
         self.declare_parameter("img_w", 640)
         self.declare_parameter("img_h", 640)
@@ -123,6 +124,18 @@ class DashboardBridgeNode(Node):
         self._ws_port = int(self.get_parameter("ws_port").value)
         self._api_host = str(self.get_parameter("api_host").value)
         self._api_port = int(self.get_parameter("api_port").value)
+
+        allowed_origins_raw = str(
+            self.get_parameter("allowed_origins").value
+        ).strip()
+        self._allowed_origins = {
+            origin.strip()
+            for origin in allowed_origins_raw.split(",")
+            if origin.strip()
+        }
+        if not self._allowed_origins:
+            self._allowed_origins = {"*"}
+
         self._publish_hz = float(self.get_parameter("publish_hz").value)
         self._img_w = max(1.0, float(self.get_parameter("img_w").value))
         self._img_h = max(1.0, float(self.get_parameter("img_h").value))
@@ -324,22 +337,48 @@ class DashboardBridgeNode(Node):
         node_ref = self
 
         class _ControlHandler(BaseHTTPRequestHandler):
+            def _cors_origin(self) -> str | None:
+                origin = str(self.headers.get("Origin", "")).strip()
+
+                if "*" in node_ref._allowed_origins:
+                    return "*"
+
+                if origin and origin in node_ref._allowed_origins:
+                    return origin
+
+                return None
+
+            def _send_cors_headers(self) -> None:
+                allowed_origin = self._cors_origin()
+                if allowed_origin is not None:
+                    self.send_header(
+                        "Access-Control-Allow-Origin",
+                        allowed_origin,
+                    )
+                    if allowed_origin != "*":
+                        self.send_header("Vary", "Origin")
+
+                self.send_header(
+                    "Access-Control-Allow-Methods",
+                    "GET, POST, OPTIONS",
+                )
+                self.send_header(
+                    "Access-Control-Allow-Headers",
+                    "Content-Type",
+                )
+
             def _send_json(self, status: int, payload: dict[str, Any]) -> None:
                 body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
                 self.send_response(status)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(body)))
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-                self.send_header("Access-Control-Allow-Headers", "Content-Type")
+                self._send_cors_headers()
                 self.end_headers()
                 self.wfile.write(body)
 
             def do_OPTIONS(self) -> None:
                 self.send_response(204)
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                self.send_header("Access-Control-Allow-Headers", "Content-Type")
+                self._send_cors_headers()
                 self.end_headers()
 
             def do_GET(self) -> None:
@@ -841,6 +880,14 @@ class DashboardBridgeNode(Node):
         self._loop.run_forever()
 
     async def _start_server(self) -> None:
+        websocket_origins = None
+
+        if "*" not in self._allowed_origins:
+            websocket_origins = [
+                None,
+                *sorted(self._allowed_origins),
+            ]
+
         self._server = await websockets.serve(
             self._handle_client,
             self._ws_host,
@@ -848,6 +895,7 @@ class DashboardBridgeNode(Node):
             ping_interval=20,
             ping_timeout=20,
             max_queue=4,
+            origins=websocket_origins,
         )
 
     def _on_server_start_done(self, future) -> None:

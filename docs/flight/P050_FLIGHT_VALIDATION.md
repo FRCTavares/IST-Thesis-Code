@@ -7,6 +7,11 @@
 Issue #50 owns the current closed-loop aircraft validation. The archived P023
 documents are historical and must not be used as current launch instructions.
 
+The field browser/iPhone workflow is maintained separately in
+`docs/flight/P055_FIELD_UI_RUNBOOK.md`. That document owns UI/network
+operation only; this #50 procedure remains authoritative for aircraft control,
+MAVROS, abort handling, and retained flight evidence.
+
 Before a final #50 flight command is frozen, the following still require
 current-system verification:
 
