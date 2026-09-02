@@ -14,6 +14,7 @@ rather than ad-hoc ROS commands.
 | `tools/thesis_build.sh` | Build entrypoint | Builds the ROS 2 workspace with repository-local logs. |
 | `tools/reproduce_tim_mars.py` | Reproducibility entrypoint | Validates frozen inputs, builds the workspace, runs the canonical TIM-MARS matrix, and verifies tables and provenance. |
 | `tools/start_live_stack.sh` | Live operation entrypoint | Starts the live camera, perception, tracker, TIM/control/dashboard stack. |
+| `tools/start_field_ui.sh` | Field UI entrypoint | Starts the canonical live stack plus the separately owned static field dashboard on the approved WLAN, enforcing the field Wi-Fi/Tailscale policy and owning complete-session cleanup. |
 | `tools/start_ui_stack.sh` | UI compatibility entrypoint | Delegates browser-frontend startup to the separately owned `FRCTavares/IST-Thesis-UI` repository; it contains no npm/Vite implementation. |
 | `tools/timing_contract.py` | Shared contract | Defines schema-v4 timing fields, topic ownership, labels, metric tiers, and warning thresholds. |
 
@@ -79,7 +80,7 @@ Tailscale. Run it from the Pi's local terminal when the Pixhawk is connected.
 | `camera/` | Camera probing and validation scripts. |
 | `catalogue/` | Builds the TIM evaluation bag/run catalogue. |
 | `host/` | Raspberry Pi networking, recovery, installation, and co-located systemd assets. |
-| `setup/` | Host/runtime setup helpers. |
+| `setup/` | Host/runtime setup helpers, including one-time field-UI firewall preparation. |
 | `lib/` | Shared shell fragments sourced by `start_live_stack.sh`. |
 | `tests/` | Automated contracts for repository tooling. |
 

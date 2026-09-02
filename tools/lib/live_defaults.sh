@@ -52,6 +52,16 @@ PERCEPTION_INFERENCE_BACKEND="hailo_direct"
 PERCEPTION_DETECTOR_MODEL="yolov8s"
 PERCEPTION_HAILO_HEF_PATH="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/models/hef/${PERCEPTION_DETECTOR_MODEL}.hef"
 ENABLE_DASHBOARD_BRIDGE=1
+
+# Dashboard network exposure.
+#
+# Generic live-stack defaults preserve the historical all-interface bind.
+# The field launcher overrides these with the active wlan0 IPv4 address
+# and the exact browser Origin used by the phone.
+DASHBOARD_BRIDGE_BIND_HOST="${DASHBOARD_BRIDGE_BIND_HOST:-0.0.0.0}"
+DASHBOARD_BRIDGE_ALLOWED_ORIGINS="${DASHBOARD_BRIDGE_ALLOWED_ORIGINS:-*}"
+DASHBOARD_BRIDGE_PUBLISH_HZ="${DASHBOARD_BRIDGE_PUBLISH_HZ:-30.0}"
+
 TARGET_MEMORY_MODE="${TARGET_MEMORY_MODE:-mars}"  # off | mars
 TARGET_MEMORY_MARS_CONFIG="${TARGET_MEMORY_MARS_CONFIG:-${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml}"
 
@@ -67,6 +77,8 @@ ENABLE_CONTROL=1
 CONTROL_MAVROS_BOOL="false"
 CONTROL_STALE_TIMEOUT_S=0.90
 ENABLE_WEB_VIDEO=1
+WEB_VIDEO_BIND_HOST="${WEB_VIDEO_BIND_HOST:-0.0.0.0}"
+
 # Video bag recording, disabled by default.
 # Enabled with: --record or --record-video
 ENABLE_ROSBAG=0
