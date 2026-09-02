@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 THESIS_ROOT="${THESIS_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 SYSTEMD_ASSET_ROOT="$SCRIPT_DIR/systemd"
+NETWORKMANAGER_ASSET_ROOT="$SCRIPT_DIR/networkmanager"
 INTERFACE="wlan0"
 DRY_RUN=0
 CONFIGURE_FIREWALL=1
@@ -63,7 +64,9 @@ required_files=(
     "$THESIS_ROOT/tools/host/set_pi_network_mode.sh"
     "$SYSTEMD_ASSET_ROOT/thesis-host-health.service"
     "$SYSTEMD_ASSET_ROOT/thesis-host-health.timer"
+    "$SYSTEMD_ASSET_ROOT/thesis-pixhawk-disconnect.service"
     "$SYSTEMD_ASSET_ROOT/thesis-host-health.default"
+    "$NETWORKMANAGER_ASSET_ROOT/dispatcher.d/90-thesis-pixhawk-disconnect"
     "$SYSTEMD_ASSET_ROOT/tailscaled.service.d/10-thesis-recovery.conf"
     "$SYSTEMD_ASSET_ROOT/ssh.service.d/10-thesis-recovery.conf"
     "$SYSTEMD_ASSET_ROOT/system.conf.d/10-thesis-watchdog.conf"
@@ -79,16 +82,47 @@ if [[ "$CONFIGURE_FIREWALL" -eq 1 ]] && ! command -v ufw >/dev/null; then
     exit 1
 fi
 
+if ! command -v nmcli >/dev/null; then
+    echo "[error] nmcli is required to enforce field Wi-Fi policy"
+    exit 1
+fi
+
+if ! command -v flock >/dev/null; then
+    echo "[error] flock is required to serialize field-network transitions"
+    exit 1
+fi
+
+disable_field_wifi_autoconnect() {
+    local candidate=""
+
+    for candidate in \
+        "${THESIS_HOST_PIXHAWK_WIFI_CONNECTION:-}" \
+        "${THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION:-}"
+    do
+        [ -n "$candidate" ] || continue
+
+        if nmcli -t -f NAME connection show | grep -Fxq -- "$candidate"; then
+            nmcli connection modify "$candidate" connection.autoconnect no
+            echo "[ok] field Wi-Fi autoconnect disabled: $candidate"
+        else
+            echo "[warn] configured field Wi-Fi profile is not installed: $candidate" >&2
+        fi
+    done
+}
+
 python3 -m py_compile "$THESIS_ROOT/tools/host/thesis_host_health.py"
 systemd-analyze verify \
     "$SYSTEMD_ASSET_ROOT/thesis-host-health.service" \
-    "$SYSTEMD_ASSET_ROOT/thesis-host-health.timer"
+    "$SYSTEMD_ASSET_ROOT/thesis-host-health.timer" \
+    "$SYSTEMD_ASSET_ROOT/thesis-pixhawk-disconnect.service"
 
 destinations=(
     "/usr/local/libexec/thesis_host_health.py"
     "/usr/local/sbin/thesis-network-mode"
     "/etc/systemd/system/thesis-host-health.service"
     "/etc/systemd/system/thesis-host-health.timer"
+    "/etc/systemd/system/thesis-pixhawk-disconnect.service"
+    "/etc/NetworkManager/dispatcher.d/90-thesis-pixhawk-disconnect"
     "/etc/default/thesis-host-health"
     "/etc/systemd/system/tailscaled.service.d/10-thesis-recovery.conf"
     "/etc/systemd/system/ssh.service.d/10-thesis-recovery.conf"
@@ -108,6 +142,8 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
     printf '[dry-run] install %s\n' "${destinations[@]}"
     printf '[dry-run] back up before firewall changes %s\n' "${backup_only[@]}"
     echo "[dry-run] enable NetworkManager.service tailscaled.service ssh.socket thesis-host-health.timer"
+    echo "[dry-run] enforce configured field Wi-Fi profiles with connection.autoconnect=no"
+    echo "[dry-run] install Pixhawk-link dispatcher fail-closed exit hook and service"
     if [[ "$CONFIGURE_FIREWALL" -eq 1 ]]; then
         echo "[dry-run] enable UFW: deny inbound, allow tailscale0, allow UDP 41641 on $INTERFACE, allow Pixhawk UDP 14550 on eth0"
     fi
@@ -153,10 +189,26 @@ install -D -m 0644 \
     "$SYSTEMD_ASSET_ROOT/thesis-host-health.timer" \
     /etc/systemd/system/thesis-host-health.timer
 install -D -m 0644 \
+    "$SYSTEMD_ASSET_ROOT/thesis-pixhawk-disconnect.service" \
+    /etc/systemd/system/thesis-pixhawk-disconnect.service
+install -D -m 0755 \
+    "$NETWORKMANAGER_ASSET_ROOT/dispatcher.d/90-thesis-pixhawk-disconnect" \
+    /etc/NetworkManager/dispatcher.d/90-thesis-pixhawk-disconnect
+install -D -m 0644 \
     "$SYSTEMD_ASSET_ROOT/thesis-host-health.default" \
     /etc/default/thesis-host-health
 sed -i "s/^THESIS_HOST_INTERFACE=.*/THESIS_HOST_INTERFACE=$INTERFACE/" \
     /etc/default/thesis-host-health
+
+set -a
+# shellcheck disable=SC1091
+source /etc/default/thesis-host-health
+set +a
+
+# Persist the core gating invariant in NetworkManager itself. Field/GCS Wi-Fi
+# may only be activated explicitly after Pixhawk carrier is proven.
+disable_field_wifi_autoconnect
+
 install -D -m 0644 \
     "$SYSTEMD_ASSET_ROOT/tailscaled.service.d/10-thesis-recovery.conf" \
     /etc/systemd/system/tailscaled.service.d/10-thesis-recovery.conf

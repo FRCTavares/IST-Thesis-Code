@@ -3,8 +3,10 @@
 
 In unattended mode the monitor may reconnect Wi-Fi, restart tailscaled, or
 restart the SSH socket after repeated failures. In Pixhawk mode it requires the
-configured AERONEXT Wi-Fi profile and keeps tailscaled stopped. It never starts
-ROS, MAVROS, the live thesis stack, or any aircraft-facing process.
+configured AERONEXT Wi-Fi profile plus a physically valid dedicated Pixhawk
+Ethernet link and keeps tailscaled stopped. Loss of that Ethernet contract
+requests an immediate host-only return to unattended networking. It never
+starts ROS, MAVROS, the live thesis stack, or any aircraft-facing process.
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ DEFAULT_STATE: dict[str, int] = {
     "last_network_manager_recovery_epoch": 0,
     "last_tailscale_recovery_epoch": 0,
     "last_ssh_recovery_epoch": 0,
+    "last_field_mode_exit_recovery_epoch": 0,
 }
 
 
@@ -79,6 +82,7 @@ def inspect_host(
     root_path: Path,
     min_free_bytes: int,
     pixhawk_wifi_fallback_connection: str = "",
+    pixhawk_ethernet_connection: str = "pixhawk-apm",
     runner: Callable[..., subprocess.CompletedProcess[str]] = run_command,
 ) -> dict[str, Any]:
     """Collect the minimal host state needed for safe recovery decisions."""
@@ -101,6 +105,63 @@ def inspect_host(
         gateway_index = route_fields.index("via") + 1
         if gateway_index < len(route_fields):
             default_gateway = route_fields[gateway_index]
+
+    pixhawk_interface = command_stdout(
+        runner,
+        [
+            "nmcli",
+            "-g",
+            "connection.interface-name",
+            "connection",
+            "show",
+            pixhawk_ethernet_connection,
+        ],
+    )
+    pixhawk_active_connection = ""
+    pixhawk_carrier_present = False
+    pixhawk_default_route = False
+    if pixhawk_interface:
+        pixhawk_active_connection = command_stdout(
+            runner,
+            [
+                "nmcli",
+                "-g",
+                "GENERAL.CONNECTION",
+                "device",
+                "show",
+                pixhawk_interface,
+            ],
+        )
+        pixhawk_carrier_present = (
+            command_stdout(
+                runner,
+                ["cat", f"/sys/class/net/{pixhawk_interface}/carrier"],
+            )
+            == "1"
+        )
+        pixhawk_default_route = bool(
+            command_stdout(
+                runner,
+                [
+                    "ip",
+                    "route",
+                    "show",
+                    "default",
+                    "dev",
+                    pixhawk_interface,
+                ],
+            )
+        )
+
+    pixhawk_ethernet_active = (
+        bool(pixhawk_interface)
+        and pixhawk_active_connection == pixhawk_ethernet_connection
+    )
+    pixhawk_network_valid = (
+        pixhawk_ethernet_active
+        and pixhawk_carrier_present
+        and not pixhawk_default_route
+    )
 
     gateway_reachable = False
     if mode == "unattended" and default_gateway:
@@ -164,10 +225,12 @@ def inspect_host(
         )
         if connection
     }
-    expected_wifi_active = (
-        mode != "pixhawk"
-        or active_wifi_connection in approved_field_wifi
-    )
+    if mode == "pixhawk":
+        expected_wifi_active = active_wifi_connection in approved_field_wifi
+    else:
+        # A field/GCS profile is invalid as an unattended maintenance network,
+        # even if NetworkManager reports it as otherwise connected.
+        expected_wifi_active = active_wifi_connection not in approved_field_wifi
     network_config_ok = (
         network_manager_active
         and network_connected
@@ -175,7 +238,7 @@ def inspect_host(
         and expected_wifi_active
     )
     network_ok = (
-        network_config_ok
+        network_config_ok and pixhawk_network_valid
         if mode == "pixhawk"
         else network_config_ok and gateway_reachable
     )
@@ -194,6 +257,12 @@ def inspect_host(
         "network_manager_active": network_manager_active,
         "network_connected": network_connected,
         "active_wifi_connection": active_wifi_connection,
+        "pixhawk_interface": pixhawk_interface,
+        "pixhawk_active_connection": pixhawk_active_connection,
+        "pixhawk_carrier_present": pixhawk_carrier_present,
+        "pixhawk_ethernet_active": pixhawk_ethernet_active,
+        "pixhawk_default_route": pixhawk_default_route,
+        "pixhawk_network_valid": pixhawk_network_valid,
         "expected_wifi_active": expected_wifi_active,
         "default_route": default_route,
         "default_gateway": default_gateway,
@@ -280,6 +349,16 @@ def choose_recovery_actions(
             and now_epoch - last_recovery >= cooldown_seconds
         )
 
+    # Field mode is fail-closed. Any loss of the dedicated Pixhawk Ethernet
+    # contract or of the approved field-network configuration returns the host
+    # to unattended networking. The health monitor never reconnects field
+    # Wi-Fi itself; only an explicit operator pixhawk transition may do that.
+    if mode == "pixhawk":
+        if not snapshot.get("pixhawk_network_valid", False):
+            return ["field_mode_exit"]
+        if not snapshot["network_ok"]:
+            return ["field_mode_exit"]
+
     if not snapshot["network_ok"]:
         if eligible(
             "network",
@@ -304,7 +383,7 @@ def choose_recovery_actions(
 
 
 ACTION_COMMANDS: dict[str, list[str]] = {
-    "network_reconnect": ["nmcli", "device", "connect"],
+    "network_reconnect": ["nmcli", "device", "set"],
     "network_manager_restart": [
         "systemctl",
         "restart",
@@ -313,6 +392,11 @@ ACTION_COMMANDS: dict[str, list[str]] = {
     "tailscale_restart": ["systemctl", "restart", "tailscaled.service"],
     "tailscale_stop": ["systemctl", "stop", "tailscaled.service"],
     "ssh_socket_restart": ["systemctl", "restart", "ssh.socket"],
+    "field_mode_exit": [
+        "systemctl",
+        "start",
+        "thesis-pixhawk-disconnect.service",
+    ],
 }
 
 ACTION_STATE_NAMES = {
@@ -321,6 +405,7 @@ ACTION_STATE_NAMES = {
     "tailscale_restart": "tailscale",
     "tailscale_stop": "tailscale",
     "ssh_socket_restart": "ssh",
+    "field_mode_exit": "field_mode_exit",
 }
 
 
@@ -338,41 +423,20 @@ def execute_actions(
     results: dict[str, int] = {}
     for action in actions:
         command = list(ACTION_COMMANDS[action])
+
         if action == "network_reconnect" and mode == "pixhawk":
-            candidates = [
-                connection
-                for connection in (
-                    pixhawk_wifi_connection,
-                    pixhawk_wifi_fallback_connection,
-                )
-                if connection
-            ]
-
-            if dry_run:
-                results[action] = 0
-                continue
-
-            result_code = 1
-            for connection in candidates:
-                result_code = runner(
-                    [
-                        "nmcli",
-                        "connection",
-                        "up",
-                        connection,
-                        "ifname",
-                        interface,
-                    ],
-                    timeout=45.0,
-                ).returncode
-                if result_code == 0:
-                    break
-
-            results[action] = result_code
+            # Defensive backstop: field Wi-Fi activation belongs only to the
+            # explicit thesis-network-mode pixhawk transition.
+            results[action] = 1
             continue
 
         if action == "network_reconnect":
-            command.append(interface)
+            # In unattended mode never use `nmcli device connect`: that
+            # operation can manually select a saved field/GCS profile even
+            # when its connection.autoconnect property is disabled. Instead,
+            # re-enable device autoconnect and let NetworkManager consider
+            # only profiles whose own autoconnect policy permits activation.
+            command.extend([interface, "autoconnect", "yes"])
 
         if dry_run:
             results[action] = 0
@@ -404,6 +468,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--pixhawk-wifi-fallback-connection",
         default=os.environ.get(
             "THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION", ""
+        ),
+    )
+    parser.add_argument(
+        "--pixhawk-ethernet-connection",
+        default=os.environ.get(
+            "THESIS_HOST_PIXHAWK_ETHERNET_CONNECTION", "pixhawk-apm"
         ),
     )
     parser.add_argument(
@@ -459,6 +529,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         pixhawk_wifi_fallback_connection=(
             args.pixhawk_wifi_fallback_connection
         ),
+        pixhawk_ethernet_connection=args.pixhawk_ethernet_connection,
     )
     updated = update_failure_counters(snapshot, state)
     now_epoch = int(time.time())
