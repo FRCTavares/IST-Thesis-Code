@@ -230,7 +230,7 @@ cd $THESIS_ROOT
 ./tools/start_ui_stack.sh --mode backend --host 0.0.0.0
 ```
 
-That command contains no frontend implementation. It resolves `${THESIS_UI_ROOT:-$HOME/Desktop/IST-Thesis-UI}` and delegates to the UI-owned `tools/start_dashboard.sh` launcher.
+That command contains no frontend implementation. It resolves `${THESIS_UI_ROOT:-$HOME/Desktop/IST-Thesis-UI}` and delegates to the UI-owned `IST-Thesis-UI/tools/start_dashboard.sh` launcher.
 
 The live ROS/backend services remain owned by `tools/start_live_stack.sh`: `dashboard_bridge_node` provides the HTTP API and telemetry WebSocket, and `web_video_server` provides the MJPEG stream.
 

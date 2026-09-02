@@ -1,0 +1,2 @@
+# Retained raw Issue #55 field evidence: preserve captured bytes verbatim
+reports/p055_field_network_2026_09_02/*.log -whitespace

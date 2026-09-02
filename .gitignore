@@ -164,10 +164,6 @@ tools/visualization/.tim_audit_favourites.json
 # Local build/runtime logs
 log/
 
-# Frontend local dependencies/build outputs
-live-ui/node_modules/
-live-ui/dist/
-
 # Local ROS 2 bag data
 /bags/*
 !/bags/README.md
@@ -176,6 +172,12 @@ live-ui/dist/
 /reports/*
 !/reports/README.md
 !/reports/PROMOTED.md
+
+# Retained Issue #55 field-network validation evidence
+!/reports/p055_field_network_2026_09_02/
+!/reports/p055_field_network_2026_09_02/README.md
+!/reports/p055_field_network_2026_09_02/SHA256SUMS
+!/reports/p055_field_network_2026_09_02/*.log
 
 thesis_env/
 reports/local_env_snapshots/
