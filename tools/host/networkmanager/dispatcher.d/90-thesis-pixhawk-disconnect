@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Host-only fail-closed trigger. It never enters field mode and never starts
+# ROS, MAVROS, perception, control, recording, or aircraft-facing services.
+
+set -u
+
+INTERFACE="${1:-}"
+ACTION="${2:-}"
+CONFIG_FILE="${THESIS_HOST_CONFIG_FILE:-/etc/default/thesis-host-health}"
+
+case "$ACTION" in
+    pre-down|down)
+        ;;
+    *)
+        exit 0
+        ;;
+esac
+
+[ -r "$CONFIG_FILE" ] || exit 0
+
+set -a
+# shellcheck disable=SC1090
+source "$CONFIG_FILE"
+set +a
+
+[ "${THESIS_HOST_MODE:-unattended}" = "pixhawk" ] || exit 0
+
+PIXHAWK_ETHERNET="${THESIS_HOST_PIXHAWK_ETHERNET_CONNECTION:-pixhawk-apm}"
+PIXHAWK_INTERFACE="$(
+    nmcli -g connection.interface-name         connection show "$PIXHAWK_ETHERNET" 2>/dev/null         | head -n 1
+)"
+
+[ -n "$PIXHAWK_INTERFACE" ] || exit 0
+[ "$INTERFACE" = "$PIXHAWK_INTERFACE" ] || exit 0
+
+# Do not block NetworkManager's dispatcher queue while the serialized network
+# mode transition performs the unattended fail-closed exit.
+systemctl start --no-block thesis-pixhawk-disconnect.service

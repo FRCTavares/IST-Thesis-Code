@@ -1,0 +1,27 @@
+[Unit]
+Description=Fail closed from Pixhawk field networking after Ethernet loss
+Documentation=file:///home/francisco/Desktop/Thesis-Code/docs/debug/UNATTENDED_PI_OPERATION.md
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/default/thesis-host-health
+Environment=THESIS_HOST_SKIP_HEALTH_RECHECK=1
+ExecStart=/usr/local/sbin/thesis-network-mode unattended
+TimeoutStartSec=60s
+User=root
+Group=root
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=read-only
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+UMask=0077
