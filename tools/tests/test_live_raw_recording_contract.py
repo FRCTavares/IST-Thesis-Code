@@ -8,6 +8,7 @@ CLI = REPO_ROOT / "tools/lib/live_cli.sh"
 DEFAULTS = REPO_ROOT / "tools/lib/live_defaults.sh"
 LAUNCHER = REPO_ROOT / "tools/start_live_stack.sh"
 USAGE = REPO_ROOT / "tools/lib/live_usage.sh"
+CAMERA_HELPER = REPO_ROOT / "tools/lib/live_camera.sh"
 
 
 def _case_block(text: str, option: str, next_option: str) -> str:
@@ -51,6 +52,47 @@ def test_canonical_mavros_evidence_records_real_control_and_battery_topics():
     assert "/mavros/rc/out" in launcher
     assert "/mavros/setpoint_velocity/cmd_vel" in launcher
     assert "/mavros/setpoint_velocity/cmd_vel_unstamped" not in launcher
+
+
+def test_current_pixhawk_mavros_target_is_10_1():
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    assert 'MAVROS_TGT_SYSTEM="${MAVROS_TGT_SYSTEM:-10}"' in launcher
+    assert 'MAVROS_TGT_COMPONENT="${MAVROS_TGT_COMPONENT:-1}"' in launcher
+    assert "tgt_system:=9 tgt_component:=1" not in launcher
+    assert "tgt_system:=10 tgt_component:=1" in launcher
+
+
+def test_live_cleanup_does_not_use_broad_pkill_and_excludes_ancestors():
+    helper = CAMERA_HELPER.read_text(encoding="utf-8")
+
+    assert 'pkill -f "$STACK_PROC_PATTERN"' not in helper
+    assert 'pgrep -af "$STACK_PROC_PATTERN"' not in helper
+    assert 'awk' not in helper[
+        helper.index("list_existing_stack_processes()"):
+        helper.index("signal_existing_stack_processes()")
+    ]
+    assert "stack_ancestor_pids()" in helper
+    assert "list_existing_stack_processes()" in helper
+    assert "signal_existing_stack_processes()" in helper
+    assert 'pgrep -f "$STACK_PROC_PATTERN"' in helper
+    assert 'excluded_pids["$pid"]=1' in helper
+    assert '${excluded_pids[$pid]:-}' in helper
+    assert 'ps -p "$pid" -o pid=,args=' in helper
+
+
+def test_canonical_mavros_imu_probe_uses_one_qos_explicit_subscriber():
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    assert "timeout 10s ros2 topic echo" in launcher
+    assert "/mavros/imu/data_raw" in launcher
+    assert "--qos-profile sensor_data" in launcher
+    assert "--qos-reliability best_effort" in launcher
+    assert "--qos-durability volatile" in launcher
+    assert (
+        "timeout 2 ros2 topic echo /mavros/imu/data_raw --once"
+        not in launcher
+    )
 
 
 def test_raw_recording_requires_normal_live_recording():

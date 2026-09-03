@@ -919,7 +919,7 @@ if [[ "$RECORD_MAVROS" -eq 1 ]]; then
     }
 
     MAVROS_FCU_URL="${MAVROS_FCU_URL:-udp://:14550@}"
-    MAVROS_TGT_SYSTEM="${MAVROS_TGT_SYSTEM:-9}"
+    MAVROS_TGT_SYSTEM="${MAVROS_TGT_SYSTEM:-10}"
     MAVROS_TGT_COMPONENT="${MAVROS_TGT_COMPONENT:-1}"
     MAVROS_STREAM_RATE="${MAVROS_STREAM_RATE:-50}"
 
@@ -993,26 +993,23 @@ if [[ "$RECORD_MAVROS" -eq 1 ]]; then
     fi
 
     mavros_log info "checking /mavros/imu/data_raw, timeout 10s"
-    MAVROS_IMU_READY=0
 
-    for i in {1..20}; do
-        if timeout 2 ros2 topic echo /mavros/imu/data_raw --once 2>/dev/null | grep -q "header:"; then
-            MAVROS_IMU_READY=1
-            break
-        fi
-
-        if (( i % 5 == 0 )); then
-            mavros_log info "still waiting for raw IMU sample, attempt ${i}/20"
-        fi
-
-        sleep 0.5
-    done
-
-    if [[ "$MAVROS_IMU_READY" -ne 1 ]]; then
+    # Use one persistent sensor-data subscriber for the complete readiness
+    # window. Repeated short-lived ros2 topic echo processes can spend most of
+    # their lifetime in DDS discovery and produced a false-negative warning
+    # during the 3 September 2026 physical ground run even though the retained
+    # bag contained /mavros/imu/data_raw at approximately 49.65 Hz.
+    if timeout 10s ros2 topic echo \
+        /mavros/imu/data_raw \
+        --once \
+        --qos-profile sensor_data \
+        --qos-reliability best_effort \
+        --qos-durability volatile \
+        >/dev/null 2>&1; then
+        mavros_log ok "MAVROS raw IMU stream detected"
+    else
         mavros_log warn "/mavros/imu/data_raw did not publish during startup check"
         mavros_log warn "bag recording will still include MAVROS topics, but IMU stream may be missing"
-    else
-        mavros_log ok "MAVROS raw IMU stream detected"
     fi
 
     mavros_log ok "MAVROS telemetry setup finished"
@@ -1356,7 +1353,7 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
         echo "[source] starting MAVROS Pixhawk 6X Ethernet link"
         export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 
-        start_ros_bg source_mavros_pixhawk bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 launch mavros apm.launch fcu_url:=udp://:14550@ tgt_system:=9 tgt_component:=1'
+        start_ros_bg source_mavros_pixhawk bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 launch mavros apm.launch fcu_url:=udp://:14550@ tgt_system:=10 tgt_component:=1'
 
         sleep 8
 
