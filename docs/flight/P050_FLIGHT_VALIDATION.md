@@ -90,12 +90,55 @@ messages (approximately 49.48 Hz), 2,860 `/mavros/rc/in` messages,
 (approximately 49.71 Hz). The repository-native MAVROS lifecycle and the two
 launcher hardening changes therefore pass this physical disarmed regression.
 
-Two independent issues remain. `/mavros/extended_state` was advertised but
-retained zero messages, and the FCU repeatedly reported `PreArm: RC not found`.
-The latter remains a physical manual-takeover/flight-readiness blocker and is
-not waived by the presence of `/mavros/rc/in` telemetry. The recorder also
-reported 841 transport-layer message losses; final retained flight evidence
-must account for message-loss behaviour rather than assuming a lossless bag.
+Two independent follow-up items remain from this regression.
+`/mavros/extended_state` was advertised but retained zero messages. The FCU
+also repeatedly reported `PreArm: RC not found`; however, the RC transmitter
+was not available or powered during this session, so that message is expected
+for the tested setup and is not evidence of a Pixhawk/MAVROS defect. Real RC
+input and manual pilot takeover remain untested and mandatory before flight.
+The recorder also reported 841 transport-layer message losses; final retained
+flight evidence must account for message-loss behaviour rather than assuming
+a lossless bag.
+
+During the same 3 September ground session an independent operator-facing GCS
+telemetry path was also physically present. Mission Planner on the ground
+station was connected through a 433 MHz telemetry radio and displayed live
+vehicle/map telemetry while visibly reporting the aircraft as `DISARMED`. The
+Mission Planner serial connection was shown at 57600 baud. This provides useful
+physical evidence that the operator had a separate GCS telemetry view while the
+Raspberry Pi used the Ethernet/MAVROS path.
+
+The telemetry-radio/GCS observation is not evidence of an RC pilot-control
+link and therefore does not clear the manual-takeover gate. During this
+3 September session the RC transmitter/controller was not available and was
+not powered, so the FCU message `PreArm: RC not found` is expected under the
+tested physical setup and is not classified here as a Pixhawk/MAVROS defect.
+The real RC input and manual-pilot takeover path were therefore not tested and
+remain a mandatory physical ground gate before flight.
+
+A subsequent UI-visible disarmed ground run passed the current operator
+target-authority path with aircraft control explicitly disabled. The field UI
+showed the live camera, numbered ByteTrack candidates, TIM-MARS state, real
+MAVROS battery telemetry and `NO_CONTROL`. The operator selected tracker ID
+`#4`; TIM-MARS visibly reached `LOCKED`; CLEAR then returned the system to
+`NO_TARGET`.
+
+The retained authority event log independently records generation 1 as
+`authority_state="selection_requested"`, `reason="operator_select"` and
+`requested_target_id=4`, followed by generation 2 as
+`authority_state="cleared"` with `reason="operator_clear"`. The 194.134 s
+MCAP retained 5,016 `/target_memory_mars` messages, 5,016
+`/target_memory_mars/status` messages and 5,061 `/tracks` messages. Its metadata
+records `control_enabled=0`, `mavros_mirror_enabled=false`,
+`target_authority_source=/target_memory_mars` and `record_mavros=1`.
+
+This physically passes the UI SELECT -> LOCKED -> CLEAR -> NO_TARGET
+target-authority gate in a disarmed no-control configuration. It does not clear
+the separate RC/manual-takeover, controller-sign, controller-to-MAVROS
+mirroring or first closed-loop aircraft-command gates. The same run retained
+zero `/mavros/extended_state` messages and reported 2,726 transport-layer
+message losses; both remain follow-up items before final retained flight
+evidence.
 
 ## 3 September 2026 abrupt-reset observation
 
