@@ -24,6 +24,75 @@ current-system verification:
 6. freeze the exact target-selection, control-authority and abort procedure;
 7. define the exact retained bag/topic set.
 
+## Current Issue #50 checkpoint — 3 September 2026
+
+This section is the concise resume point for the next physical session. The
+detailed evidence and historical failure/recovery record remain preserved below
+and in `docs/TODO_LIST.md`.
+
+### Already physically or deterministically validated
+
+- **Field Pixhawk/MAVROS path:** real Pixhawk Ethernet carrier, explicit field
+  networking, no Ethernet default route, Tailscale inactive, MAVROS connected
+  to the current FCU at system/component `10.1`, and real battery, RC and IMU
+  telemetry observed.
+- **Operator target authority:** the field UI successfully selected and cleared
+  a real ByteTrack target while aircraft control was disabled; TIM-MARS remained
+  the sole selected-person identity authority.
+- **Camera robustness:** after the retained RP1/TEVS kernel fault and host
+  recovery, the launcher correctly propagated the real RP1-CFE media device,
+  dynamically resolved `tevs 10-0048`, completed camera configuration without
+  `EINVAL`, sustained approximately 30 Hz perception, and shut down without a
+  residual camera process or new kernel fault.
+- **Controller software contract:** deterministic #74 safety, authority,
+  freshness, sign, saturation, slew and fail-closed tests pass. Bounded yaw
+  recovery remains disabled for aircraft use.
+- **Canonical MAVROS target:** the current physical FCU target is `10.1`; the
+  historical June `9.1` evidence remains historical provenance only.
+
+### Ground work that can continue without the aircraft
+
+- Resolve or explicitly bound the systematic rosbag transport-loss behaviour,
+  including a genuine controlled `/camera/dashboard` rate comparison.
+- Freeze the final #50 operator commands, provenance fields and retained topic
+  set after the remaining physical gates are known.
+- Reconcile remaining configuration/documentation cleanup that does not require
+  aircraft hardware.
+
+### Physical work deferred until the aircraft and RC transmitter are available
+
+- Verify real RC input and manual-pilot takeover.
+- Validate the controller-to-MAVROS `TwistStamped` mirror while the aircraft is
+  disarmed.
+- Perform the physical control-sign checks: centred target zero/near-zero
+  command, left/right yaw signs, far/near forward signs, stale/invalid zero,
+  saturation and slew behaviour.
+- Complete the three formal ground scenarios covering target following,
+  crossing/ambiguity, occlusion/loss and re-entry.
+- Complete the tethered or conservative low-hover gate before any free-flight
+  validation, if operationally feasible.
+- Record the prospective held-out UAV-motion evidence required by #50/#27.
+
+### Known limitations and blockers still carried forward
+
+- `/mavros/extended_state` has not yet produced retained messages in the current
+  physical setup and requires disposition.
+- The genuine dashboard-rate versus rosbag-loss comparison remains unresolved;
+  the earlier attempted sweep is invalid because the requested rates were
+  overridden.
+- One unexplained Raspberry Pi restart occurred during the 3 September ground
+  session. Its cause remains unclassified; any repeat unexplained reset is a
+  flight-readiness blocker.
+- One RP1/TEVS camera kernel Oops occurred during repeated startup attempts.
+  Successful post-reboot repository-native and final robustness smokes establish
+  recovery for continued controlled ground work, but the historical fault
+  remains retained as safety evidence.
+- Real RC/manual takeover, controller-to-MAVROS mirroring, physical command-sign
+  validation, formal dry runs and held-out UAV-motion evidence are not yet
+  complete.
+
+**Issue #50 remains open. There is no flight clearance at this checkpoint.**
+
 Existing launcher capabilities such as `--field-record`, `--record-mavros` and
 `--record-raw` are not, by themselves, an approved #50 flight command.
 
