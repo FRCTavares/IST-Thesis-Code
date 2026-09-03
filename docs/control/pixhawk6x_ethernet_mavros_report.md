@@ -27,12 +27,14 @@ connection without using any project-specific helper scripts.
 - MAVROS launch file: `mavros apm.launch`
 - ROS domain used in my tests: `ROS_DOMAIN_ID=42`
 - MAVLink UDP port: `14550`
-- MAVLink target system/component detected from Pixhawk:
-  - system ID: `9`
+- Current MAVLink target system/component verified on 3 September 2026:
+  - system ID: `10`
   - component ID: `1`
 
-The non-default target IDs were important. In this setup the Pixhawk appeared as
-MAVLink target `9.1`, not the usual/default `1.1`.
+The target IDs are operationally important. The current Pixhawk appears as
+MAVLink target `10.1`, not the usual/default `1.1`. Earlier retained June 2026
+integration evidence used `9.1`; that historical result remains valid for the
+configuration used at that time but is no longer the current aircraft target.
 
 ## 1. Physical connection
 
@@ -44,8 +46,8 @@ The tested Ethernet subnet was:
 
 In my captured packets, the relevant traffic was between:
 
-    Pixhawk-side address:       192.168.144.183:14550
-    Raspberry Pi-side address:  192.168.144.14:<ephemeral UDP port>
+    Pixhawk-side address:       192.168.144.14:<ephemeral UDP port>
+    Raspberry Pi-side address:  192.168.144.183:14550
 
 Exact IPs may differ depending on the Pixhawk/network configuration, but the
 Raspberry Pi must be on the same Ethernet subnet as the Pixhawk.
@@ -120,20 +122,20 @@ Start MAVROS with the ArduPilot launch file and the Ethernet UDP FCU URL:
 
     ros2 launch mavros apm.launch \
       fcu_url:=udp://:14550@ \
-      tgt_system:=9 \
+      tgt_system:=10 \
       tgt_component:=1
 
 Explanation of the important arguments:
 
 - `fcu_url:=udp://:14550@`
   - MAVROS listens for MAVLink over UDP on local port `14550`.
-- `tgt_system:=9`
-  - The Pixhawk MAVLink system ID used in my setup.
+- `tgt_system:=10`
+  - The current Pixhawk MAVLink system ID verified on 3 September 2026.
 - `tgt_component:=1`
   - The Pixhawk MAVLink component ID used in my setup.
 
 Why this mattered: MAVROS could see packets, but it did not correctly connect
-until the target system/component were explicitly set to `9.1`.
+until the target system/component matched the active flight controller.
 
 Keep this MAVROS terminal open.
 
@@ -282,10 +284,12 @@ If no packets appear:
 
 Use the explicit target:
 
-    tgt_system:=9
+    tgt_system:=10
     tgt_component:=1
 
-In my setup the Pixhawk was target `9.1`, not `1.1`.
+For the current aircraft configuration verified on 3 September 2026, the
+Pixhawk target is `10.1`, not `1.1`. If this ever changes again, confirm the
+incoming MAVLink HEARTBEAT system/component IDs before changing the launcher.
 
 ### `/mavros/state` does not show `connected: true`
 
@@ -330,7 +334,7 @@ Terminal 1:
 
     ros2 launch mavros apm.launch \
       fcu_url:=udp://:14550@ \
-      tgt_system:=9 \
+      tgt_system:=10 \
       tgt_component:=1
 
 Terminal 2:
@@ -364,5 +368,9 @@ The connection was validated on 2026-06-02. The successful state output showed:
 
 The IMU rate was stable around 50 Hz.
 
-The main setup lesson was that the Pixhawk used MAVLink target `9.1`, and the
-MAVLink stream-rate request was required after MAVROS connected.
+The current setup lesson is that MAVROS must target the system/component IDs
+actually emitted by the flight controller. On 3 September 2026 passive MAVLink
+inspection showed HEARTBEAT traffic from `10.1`; MAVROS targeting `10.1` then
+reported `connected: true`, identified ArduCopter 4.6.3 on Pixhawk 6X, published
+battery telemetry, and produced `/mavros/imu/data_raw` at approximately 50 Hz.
+The MAVLink stream-rate request remains required after MAVROS connects.

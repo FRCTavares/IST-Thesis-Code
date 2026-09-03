@@ -48,9 +48,67 @@ check_stuck_camera_processes() {
     return 0
 }
 
+stack_ancestor_pids() {
+    local pid="$$"
+    local ppid=""
+
+    while [[ "$pid" =~ ^[0-9]+$ ]] && [[ "$pid" -gt 1 ]]; do
+        printf '%s\n' "$pid"
+
+        ppid="$(
+            ps -o ppid= -p "$pid" 2>/dev/null \
+                | tr -d '[:space:]'
+        )"
+
+        if [[ -z "$ppid" || "$ppid" == "$pid" ]]; then
+            break
+        fi
+
+        pid="$ppid"
+    done
+}
+
+list_existing_stack_processes() {
+    local -A excluded_pids=()
+    local pid
+
+    while read -r pid; do
+        if [[ "$pid" =~ ^[0-9]+$ ]]; then
+            excluded_pids["$pid"]=1
+        fi
+    done < <(stack_ancestor_pids)
+
+    # pgrep does not return its own PID. Filter the resulting candidate PIDs
+    # against the current launcher ancestry so an invoking shell whose command
+    # text mentions stack node names cannot be mistaken for stale runtime.
+    while read -r pid; do
+        if [[ ! "$pid" =~ ^[0-9]+$ ]]; then
+            continue
+        fi
+
+        if [[ -n "${excluded_pids[$pid]:-}" ]]; then
+            continue
+        fi
+
+        ps -p "$pid" -o pid=,args= 2>/dev/null || true
+    done < <(pgrep -f "$STACK_PROC_PATTERN" 2>/dev/null || true)
+}
+
+signal_existing_stack_processes() {
+    local signal_name="$1"
+    local pid
+
+    while read -r pid _rest; do
+        if [[ -n "${pid:-}" ]] && kill -0 "$pid" >/dev/null 2>&1; then
+            kill -s "$signal_name" "$pid" >/dev/null 2>&1 || true
+        fi
+    done < <(list_existing_stack_processes)
+}
+
 cleanup_existing_stack_processes() {
     local existing
-    existing="$(pgrep -af "$STACK_PROC_PATTERN" || true)"
+    existing="$(list_existing_stack_processes)"
+
     if [[ -z "${existing:-}" ]]; then
         return 0
     fi
@@ -58,11 +116,21 @@ cleanup_existing_stack_processes() {
     echo "[warn] found existing stack-related process(es); stopping before fresh start"
     echo "$existing"
 
-    pkill -f "$STACK_PROC_PATTERN" >/dev/null 2>&1 || true
+    # Signal only resolved process IDs. Never use pkill -f here: an invoking
+    # shell may legitimately contain stack-process names in its command line.
+    # The current launcher and its ancestor shells are explicitly excluded.
+    signal_existing_stack_processes INT
     sleep 1
 
     local remaining
-    remaining="$(pgrep -af "$STACK_PROC_PATTERN" || true)"
+    remaining="$(list_existing_stack_processes)"
+
+    if [[ -n "${remaining:-}" ]]; then
+        signal_existing_stack_processes TERM
+        sleep 1
+        remaining="$(list_existing_stack_processes)"
+    fi
+
     if [[ -n "${remaining:-}" ]]; then
         echo "[warn] some stack process(es) still running after stop attempt:"
         echo "$remaining"
