@@ -576,6 +576,12 @@ if [[ "$CAMERA_DASHBOARD_FPS" =~ ^[0-9]+$ ]]; then
     CAMERA_DASHBOARD_FPS="${CAMERA_DASHBOARD_FPS}.0"
 fi
 
+# The launcher preflight resolves the actual rp1-cfe media controller dynamically.
+# The integrated perception path runs the node directly rather than through
+# build_camera_args(), so propagate that resolved device explicitly here.
+CAMERA_MEDIA_DEV_RUNTIME="${CAMERA_MEDIA_DEV_OVERRIDE:-/dev/media0}"
+log_info "camera media: runtime=$CAMERA_MEDIA_DEV_RUNTIME"
+
 # Keep ROS runtime on host Python, but expose required packages for integrated Hailo mode:
 # - system dist-packages for gi/Gst
 # - project thesis_env site-packages for hailort/tappas Python bindings
@@ -627,6 +633,7 @@ camera_retry_applied=0
 
 while true; do
     start_ros_bg perception_camera env PYTHONPATH="$PERCEPTION_PYTHONPATH" LD_LIBRARY_PATH="$PERCEPTION_LD_LIBRARY_PATH" GST_PLUGIN_PATH="$PERCEPTION_GST_PLUGIN_PATH" ros2 run thesis_bringup perception_camera_node --ros-args \
+        -p media_dev:=$CAMERA_MEDIA_DEV_RUNTIME \
         -p width:=$CAMERA_WIDTH \
         -p height:=$CAMERA_HEIGHT \
         -p fps:=$CAMERA_FPS \
@@ -695,6 +702,7 @@ done
 # Snapshot of the exact resolved parameters used for the successful
 # perception_camera_node launch above, for Issue #54 run-metadata capture.
 PERCEPTION_CAMERA_RESOLVED_PARAMS=(
+    "media_dev=$CAMERA_MEDIA_DEV_RUNTIME"
     "width=$CAMERA_WIDTH"
     "height=$CAMERA_HEIGHT"
     "fps=$CAMERA_FPS"

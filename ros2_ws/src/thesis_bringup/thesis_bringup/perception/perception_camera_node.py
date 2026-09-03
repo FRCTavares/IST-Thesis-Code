@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections import deque
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -264,6 +265,19 @@ class PerceptionCameraNode(PerceptionPipelineNode):
 
         return result
 
+    @staticmethod
+    def _detect_tevs_entity_from_media_graph(graph: str) -> str | None:
+        entity_names = re.findall(
+            r"- entity\s+\d+:\s+([^\n(]+)\s*\(",
+            graph,
+        )
+        tevs_entities = [
+            name.strip()
+            for name in entity_names
+            if name.strip().startswith("tevs ")
+        ]
+        return tevs_entities[0] if tevs_entities else None
+
     def _resolve_sensor_entity(self) -> None:
         result = self._run_shell(
             f"media-ctl -d {self._media_dev} -p",
@@ -274,18 +288,20 @@ class PerceptionCameraNode(PerceptionPipelineNode):
         if self._sensor_entity in graph:
             return
 
-        for line in graph.splitlines():
-            line = line.strip()
-            if line.startswith("- entity") and "tevs " in line:
-                parts = line.split("'")
-                if len(parts) >= 2:
-                    detected = parts[1]
-                    self.get_logger().warn(
-                        f"Configured sensor_entity='{self._sensor_entity}' not present on "
-                        f"{self._media_dev}; using '{detected}' instead"
-                    )
-                    self._sensor_entity = detected
-                    return
+        detected = self._detect_tevs_entity_from_media_graph(graph)
+        if detected is None:
+            self.get_logger().warn(
+                f"Configured sensor_entity='{self._sensor_entity}' not present on "
+                f"{self._media_dev}, and no TEVS sensor entity was auto-detected; "
+                "keeping configured value"
+            )
+            return
+
+        self.get_logger().warn(
+            f"Configured sensor_entity='{self._sensor_entity}' not present on "
+            f"{self._media_dev}; using '{detected}' instead"
+        )
+        self._sensor_entity = detected
 
     def _configure_camera(self) -> None:
         self.get_logger().info("Configuring TEVS camera before integrated capture start")
