@@ -162,6 +162,42 @@ This observation does not block continued disarmed ground validation, but a
 repeat unexplained reset is a flight-readiness blocker and must be investigated
 before any retained aircraft flight.
 
+## 3 September 2026 camera kernel-oops observation
+
+During repeated Pi-only ground camera startup on 3 September, the camera
+subsystem entered a kernel-level failure state after several earlier successful
+runs. The failure sequence recorded by the current boot journal was:
+
+- DesignWare I2C controller timeouts;
+- TEVS register-read failures with `ret=-110`, including registers `0x317a`
+  and `0x3118`;
+- `rp1-cfe` reporting `stream on failed in subdev`;
+- an ARM64 kernel Oops caused by a translation fault, with
+  `csi2_stop_channel()` in the `rp1_cfe` call trace.
+
+After the kernel Oops, `perception_camera_node` PID 90329 became orphaned under
+PID 1 in uninterruptible `D` state at `_vb2_fop_release`. SIGINT and SIGTERM
+did not clear the process. No additional camera or live-stack run is permitted
+on this boot.
+
+The relevant host state was Ubuntu 24.04.4 LTS on
+`6.8.0-1063-raspi`, with the in-tree `rp1_cfe` 1.0 module and the external
+TechNexion `tevs` 2.0 module. Local evidence from the failure window is retained
+under
+`ros2_ws/log/flight_readiness/p050_camera_kernel_oops_20260903/`.
+
+This observation is treated separately from the earlier unexplained Raspberry
+Pi reset; the available evidence does not establish that the two events share
+a cause. It is also separate from the rosbag transport-loss investigation.
+The attempted dashboard-rate sweep that preceded this failure is invalid as a
+rate comparison because the test environment variable was overwritten by the
+canonical 30 Hz default before camera startup.
+
+A clean host recovery followed by a deliberately minimal post-recovery camera
+regression is mandatory before further live-camera flight-readiness work. A
+repeat I2C timeout, kernel Oops, persistent `D`-state process, or unexplained
+host reset remains a flight blocker.
+
 ## Safe network inspection
 
 When preparing Issue #50 with the real field hardware:
