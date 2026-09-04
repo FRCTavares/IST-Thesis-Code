@@ -173,3 +173,37 @@ def test_runtime_preserves_unclipped_candidate_bbox():
         12.0,
         70.0,
     )
+
+
+def test_large_unclipped_wide_crop_is_encoding_eligible_but_not_memory_eligible():
+    """Wide valid crops may support comparison without contaminating memory."""
+    quality = measure_crop_qualities(
+        [
+            (
+                80.0,
+                100.0,
+                562.0,
+                482.0,
+            )
+        ],
+        image_width=640,
+        image_height=640,
+        thresholds=thresholds(),
+    )[0]
+
+    assert quality.crop_width_px == 482.0
+    assert quality.crop_height_px == 382.0
+    assert quality.clipping_fraction == 0.0
+    assert quality.aspect_ratio == pytest.approx(
+        482.0 / 382.0
+    )
+
+    # Issue #89: this geometry is technically usable by MARS for
+    # comparison/reacquisition, but remains outside the conservative
+    # positive-memory aspect-ratio contract.
+    assert quality.encoding_eligible
+    assert not quality.memory_update_eligible
+    assert (
+        "aspect_ratio_too_wide"
+        in quality.rejection_reasons
+    )
