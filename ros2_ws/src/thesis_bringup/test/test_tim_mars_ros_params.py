@@ -31,7 +31,7 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 109
+    assert len(node.values) == 111
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["timing_target_topic"] == "/timing_target"
@@ -144,6 +144,11 @@ def test_tim_mars_ros_params_declares_expected_interface():
         node.values["same_id_hijack_protection_enabled"]
         is False
     )
+    assert node.values["global_reacquisition_enabled"] is False
+    assert (
+        node.values["global_reacquisition_after_missed_frames"]
+        == 9
+    )
     assert node.values["rank_aware_reacquisition_enabled"] is True
     assert node.values["candidate_belief_enabled"] is False
     assert node.values["candidate_belief_min_score"] == 0.45
@@ -214,6 +219,10 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
         "hard_negative_decay_policy"
     ] = "none_until_expiry"
     node.values["same_id_hijack_protection_enabled"] = True
+    node.values["global_reacquisition_enabled"] = True
+    node.values[
+        "global_reacquisition_after_missed_frames"
+    ] = 17
     node.values["rank_aware_reacquisition_enabled"] = True
     node.values["rank_aware_confirm_frames"] = 4
     node.values["candidate_belief_enabled"] = True
@@ -303,6 +312,11 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
         == "none_until_expiry"
     )
     assert cfg.same_id_hijack_protection_enabled is True
+    assert cfg.global_reacquisition_enabled is True
+    assert (
+        cfg.global_reacquisition_after_missed_frames
+        == 17
+    )
     assert cfg.rank_aware_reacquisition_enabled is True
     assert cfg.rank_aware_confirm_frames == 4
     assert cfg.candidate_belief_enabled is True
@@ -364,6 +378,8 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
         "hard_negative_max_age_frames",
         "hard_negative_decay_policy",
         "same_id_hijack_protection_enabled",
+        "global_reacquisition_enabled",
+        "global_reacquisition_after_missed_frames",
     }
 
     assert expected_active_keys <= canonical.keys()
@@ -381,6 +397,12 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
             "appearance_gallery_min_anchor_similarity"
         ]
         == 0.75
+    )
+
+    assert canonical["global_reacquisition_enabled"] is False
+    assert (
+        canonical["global_reacquisition_after_missed_frames"]
+        == 9
     )
 
     for name, value in canonical.items():

@@ -284,6 +284,13 @@ class TargetMemoryConfig:
     appearance_conservative_min_similarity: float = 0.65
     appearance_conservative_margin: float = 0.05
 
+    # Long-gap global protected-identity recovery.
+    # Prolonged LOST may compare valid current candidates against
+    # protected identity without stale last-bbox geometry acting
+    # as an appearance-authority gate.
+    global_reacquisition_enabled: bool = False
+    global_reacquisition_after_missed_frames: int = 0
+
     # Rank-aware reacquisition.
     # In UNCERTAIN/LOST states, candidates can be ranked by appearance evidence
     # rather than raw total score alone. Confirmation can require repeated frames.
