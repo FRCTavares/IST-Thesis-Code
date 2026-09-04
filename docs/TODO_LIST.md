@@ -6,7 +6,7 @@ closing evidence.
 
 Open executable issues: **19**.
 
-Last reconciled with GitHub: **3 September 2026**.
+Last reconciled with GitHub: **4 September 2026**.
 
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
@@ -27,9 +27,12 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 
 ## P0 — Safety, evidence integrity, thesis claims, and flight blockers
 
-1. [ ] [#89 — Fix wide-crop appearance eligibility blocking TIM-MARS reacquisition](https://github.com/FRCTavares/IST-Thesis-Code/issues/89) — IN PROGRESS
+1. [ ] [#89 — Fix wide-crop appearance eligibility blocking TIM-MARS reacquisition](https://github.com/FRCTavares/IST-Thesis-Code/issues/89) — SOFTWARE / DEVELOPMENT EVIDENCE COMPLETE — LIVE REPRODUCTION PENDING
    - immediate algorithm gate before #90 and before prospective held-out H01--H03 evaluation. The 1 September live reproduction showed a large, unclipped same-ID crop at approximately 1.26 width/height aspect ratio being rejected before MARS encoding, leaving LOST reacquisition suppressed as `same_id_reacquisition_reject:no_candidate_appearance`.
    - preserve same-ID hijack protection. Separate comparison/encoding eligibility from trusted positive-memory update eligibility: wide valid crops may provide fresh comparison evidence without automatically entering reusable positive memory. Development-only regression/evaluation is permitted; H01--H03 remain untouched.
+   - software fix frozen at `046ff8b3`: wide crops may now provide current comparison appearance while `appearance_crop_max_aspect_ratio=1.00` remains a positive-memory trust gate. Same-ID hijack protection is unchanged and no geometry-only fallback was added. `thesis_bringup` build passed; pytest recorded `425 passed, 1 skipped`; flake8 and `git diff --check` passed.
+   - retained Seq03/Seq04 development replays preserve the frozen candidate streams and show byte-identical physical-v2 controller-facing outcomes before/after. Seq04 changes the 28 wide crop records from `28/28` encoding-rejected to `28/28` encoding-eligible while keeping all `28/28` memory-update-ineligible; TIM wrong-person duration remains `0 s` and target-absence-with-output remains `0 s`.
+   - tracked evidence: `docs/results/selected_target_tracking/p089_wide_crop_reacquisition.md`. One explicit GitHub acceptance gate remains: reproduce the 1 September live/simple-scene case and confirm improved same-ID reacquisition availability. Keep #89 open and do not start #90 until that validation passes.
 
 2. [ ] [#90 — Add long-gap global appearance-based target reacquisition](https://github.com/FRCTavares/IST-Thesis-Code/issues/90)
    - execute only after #89 fixes and freezes the comparison-eligible versus memory-update-eligible appearance contract. Add conservative long-gap global appearance recovery without weakening the short-gap safety path or allowing unconfirmed observations to update positive memory.
