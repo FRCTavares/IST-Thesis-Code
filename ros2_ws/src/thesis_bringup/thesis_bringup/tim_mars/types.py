@@ -485,6 +485,7 @@ class TargetMemoryOutput:
     candidate_track_id: Optional[int] = None
     candidate_score: float = 0.0
     publication_suppressed_reason: str = ""
+    proposal_source: str = "none"
 
     @property
     def control_valid(self) -> bool:

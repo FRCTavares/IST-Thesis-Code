@@ -1008,6 +1008,7 @@ class TargetIdentityMemory:
                 reason=verdict.reason,
                 best_score=proposal.score,
                 all_scores=list(proposal.all_scores),
+                proposal_source=proposal.proposal_source,
             )
 
         if verdict.status == _ProposalVerdictStatus.PENDING:
@@ -1030,6 +1031,7 @@ class TargetIdentityMemory:
                 all_scores=list(proposal.all_scores),
                 state_override=TargetState.REACQUIRED,
                 control_mode_override=ControlMode.CONFIRM,
+                proposal_source=proposal.proposal_source,
             )
 
         return self._accept(
@@ -1037,6 +1039,7 @@ class TargetIdentityMemory:
             best_score=proposal.score,
             all_scores=list(proposal.all_scores),
             candidates=proposal.candidates,
+            proposal_source=proposal.proposal_source,
         )
 
     def _same_id_reacquisition_appearance_reject_reason(
@@ -1274,6 +1277,9 @@ class TargetIdentityMemory:
                 ),
                 best_score=best,
                 all_scores=scores_sorted,
+                proposal_source=(
+                    'global_identity_reacquisition'
+                ),
             )
 
         second_app = max(
@@ -1302,6 +1308,9 @@ class TargetIdentityMemory:
                 ),
                 best_score=best,
                 all_scores=scores_sorted,
+                proposal_source=(
+                    'global_identity_reacquisition'
+                ),
             )
 
         if (
@@ -1320,6 +1329,9 @@ class TargetIdentityMemory:
                 ),
                 best_score=best,
                 all_scores=scores_sorted,
+                proposal_source=(
+                    'global_identity_reacquisition'
+                ),
             )
 
         best = replace(best, ambiguous=False)
@@ -2053,6 +2065,7 @@ class TargetIdentityMemory:
         best_score: CandidateScore,
         all_scores: List[CandidateScore],
         candidates: Sequence[CandidateTrack],
+        proposal_source: str = 'none',
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = '',
     ) -> TargetMemoryOutput:
@@ -2113,6 +2126,7 @@ class TargetIdentityMemory:
             reacquired=reacquired,
             best_score=best_score,
             all_scores=all_scores,
+            proposal_source=proposal_source,
             memory_update_frozen=memory_update_frozen,
             memory_update_freeze_reason=(
                 memory_update_freeze_reason
@@ -2463,6 +2477,7 @@ class TargetIdentityMemory:
         all_scores: Optional[List[CandidateScore]] = None,
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = '',
+        proposal_source: str = 'none',
     ) -> TargetMemoryOutput:
         self._m.frames_since_seen += 1
         self._m.quality *= self.cfg.stale_quality_decay
@@ -2479,6 +2494,7 @@ class TargetIdentityMemory:
             all_scores=all_scores or [],
             memory_update_frozen=memory_update_frozen,
             memory_update_freeze_reason=memory_update_freeze_reason,
+            proposal_source=proposal_source,
         )
 
     def _make_output(
@@ -2493,6 +2509,7 @@ class TargetIdentityMemory:
         control_mode_override: Optional[ControlMode] = None,
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = '',
+        proposal_source: str = 'none',
     ) -> TargetMemoryOutput:
         score_list = all_scores or []
 
@@ -2623,6 +2640,7 @@ class TargetIdentityMemory:
             candidate_track_id=candidate_track_id,
             candidate_score=candidate_score,
             publication_suppressed_reason=publication_suppressed_reason,
+            proposal_source=str(proposal_source),
         )
 
 

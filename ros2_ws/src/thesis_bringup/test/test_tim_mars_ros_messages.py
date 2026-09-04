@@ -132,6 +132,7 @@ def _output(control_valid=True):
         candidate_track_id=3,
         candidate_score=0.72,
         publication_suppressed_reason="",
+        proposal_source="global_identity_reacquisition",
     )
 
 
@@ -209,6 +210,11 @@ def test_status_only_json_preserves_core_diagnostics():
     assert payload["candidate_track_id"] == 3
     assert payload["candidate_score"] == 0.72
     assert payload["publication_suppressed_reason"] == ""
+    assert (
+        payload["proposal_source"]
+        == "global_identity_reacquisition"
+    )
+    assert payload["proposal_candidate_count"] == 1
     assert (
         payload["acceptance_memory_source"]
         == "protected_anchor"
@@ -409,6 +415,11 @@ def test_status_json_includes_scores_and_appearance_diagnostics():
     assert payload["image_track_offset_ms"] == 12.5
     assert payload["appearance_warning"] is None
     assert payload["candidate_track_ids"] == [7, 8]
+    assert (
+        payload["proposal_source"]
+        == "global_identity_reacquisition"
+    )
+    assert payload["proposal_candidate_count"] == 1
     assert payload["best"]["track_id"] == 7
     assert payload["best"]["geometry_score"] == 0.73
     assert payload["best"]["ranking_score"] == 0.81
