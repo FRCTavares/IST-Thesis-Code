@@ -198,6 +198,14 @@ ROS-free and Hailo-free.
 - `appearance_memory.py`: low-level crop, HSV feature, cosine-similarity, and
   exponential feature-update helpers.
 - `crop_quality.py`: pure crop-quality measurement in appearance-image pixels.
+  Crop quality deliberately separates embedding/comparison eligibility from
+  positive-memory update eligibility. With the canonical
+  `appearance_crop_max_aspect_ratio=1.00`, a sufficiently large, unclipped wide
+  crop may still be encoded and used as current identity evidence, while being
+  excluded from reusable positive appearance memory. CPU MARS crops the
+  candidate bbox and directly resizes it to the model's fixed `128x64` input,
+  so the upper aspect-ratio limit is retained as a memory-trust gate rather
+  than an encoding ceiling. Same-ID hijack protection remains unchanged.
 
 ### Appearance embedding attachment (in-process, canonical)
 

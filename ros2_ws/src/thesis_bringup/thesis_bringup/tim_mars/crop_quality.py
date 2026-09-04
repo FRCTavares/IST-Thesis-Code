@@ -203,15 +203,20 @@ def measure_crop_qualities(
                 "aspect_ratio_too_narrow"
             )
 
+        memory_reasons = list(encoding_reasons)
+
+        # A wide crop is still usable for identity comparison: the
+        # MARS backend crops it and resizes it to the fixed model input.
+        # Keep the conservative upper aspect-ratio threshold as a
+        # positive-memory trust gate so comparison-only evidence cannot
+        # contaminate the reusable appearance cache/gallery.
         if aspect_ratio > max(
             0.0,
             float(thresholds.max_aspect_ratio),
         ):
-            encoding_reasons.append(
+            memory_reasons.append(
                 "aspect_ratio_too_wide"
             )
-
-        memory_reasons = list(encoding_reasons)
 
         if max_iou >= max(
             0.0,

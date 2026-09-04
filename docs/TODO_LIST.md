@@ -6,7 +6,7 @@ closing evidence.
 
 Open executable issues: **19**.
 
-Last reconciled with GitHub: **31 August 2026**.
+Last reconciled with GitHub: **3 September 2026**.
 
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
@@ -27,10 +27,17 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 
 ## P0 — Safety, evidence integrity, thesis claims, and flight blockers
 
-1. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
+1. [ ] [#89 — Fix wide-crop appearance eligibility blocking TIM-MARS reacquisition](https://github.com/FRCTavares/IST-Thesis-Code/issues/89) — IN PROGRESS
+   - immediate algorithm gate before #90 and before prospective held-out H01--H03 evaluation. The 1 September live reproduction showed a large, unclipped same-ID crop at approximately 1.26 width/height aspect ratio being rejected before MARS encoding, leaving LOST reacquisition suppressed as `same_id_reacquisition_reject:no_candidate_appearance`.
+   - preserve same-ID hijack protection. Separate comparison/encoding eligibility from trusted positive-memory update eligibility: wide valid crops may provide fresh comparison evidence without automatically entering reusable positive memory. Development-only regression/evaluation is permitted; H01--H03 remain untouched.
+
+2. [ ] [#90 — Add long-gap global appearance-based target reacquisition](https://github.com/FRCTavares/IST-Thesis-Code/issues/90)
+   - execute only after #89 fixes and freezes the comparison-eligible versus memory-update-eligible appearance contract. Add conservative long-gap global appearance recovery without weakening the short-gap safety path or allowing unconfirmed observations to update positive memory.
+
+3. [ ] [#27 — P0.16 Freeze tuning and test data](https://github.com/FRCTavares/IST-Thesis-Code/issues/27)
    - phase 7; experiment; the historical 23 July `tim_mars_split_v1` is retained for provenance, while the active prospective final-evaluation authority is `tim_mars_split_v2`, frozen on 1 September before any H01–H03 capture or outcome access. Development/legacy inputs remain development/legacy only. The dedicated source-only H01–H03 capture procedure is now a compact common index plus separate H01/H02/H03 operator sheets under `docs/flight/`; it records frozen YOLOv8s detector evidence with raw imagery while tracker/TIM/control remain disabled. Actual H01–H03 capture, physical-v2 annotation, hashing, and people/clothing-overlap records remain pending; the release gate must stay fail-closed at `final_ready=0/3`, and no held-out outcome may influence thresholds, algorithm logic, tracker settings, or model selection.
 
-2. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
+4. [ ] [#39 — P0.22 Freeze the claim only after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39)
     - phase 9; experiment; blocked until the September held-out evaluation
       under #27, the lightweight-versus-integrated tracker comparison under
       #58, and the final embedded-deployment evidence under #32 are complete.
@@ -50,7 +57,7 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 ## P1 — Major algorithmic, scientific, engineering, and documentation work
 
 
-**Immediate thesis-critical implementation and evaluation path:** #74 deterministic state-aware controller → #51 remaining physical readiness → #27 prospective held-out freeze/evaluation → #50 closed-loop ground/flight validation → #64 representative drone-POV resolution decision → #58 final held-out closure → #32 final sustained onboard characterisation → #39 final claim freeze. The pre-#58 #32 instrumentation/evidence gate and the #58 development architecture/embedded-cost comparison completed on 31 August 2026. Issue #58 remains open only for the prospective held-out H01--H03 architecture evidence required after #27; no additional development architecture experiment is currently justified. Issues #25 and #21 are closed. Paused #64 does not block the current #74 deterministic controller work.
+**Immediate thesis-critical implementation and evaluation path:** #89 wide-crop appearance eligibility → #90 long-gap global appearance reacquisition → #27 prospective held-out freeze/evaluation → #50 closed-loop ground/flight validation → #64 representative drone-POV resolution decision → #58 final held-out closure → #32 final sustained onboard characterisation → #39 final claim freeze. The deterministic #74 controller implementation is complete in software; its remaining physical validation is owned by #50. The pre-#58 #32 instrumentation/evidence gate and the #58 development architecture/embedded-cost comparison completed on 31 August 2026. Issue #58 remains open only for the prospective held-out H01--H03 architecture evidence required after #27; no additional development architecture experiment is currently justified. Issues #25 and #21 are closed. Paused #64 does not block the current #74 deterministic controller work.
 
 **Parallel thesis-writing workstream:** the thesis is not postponed until the code is finished. Complete the architecture and evidence-safe method catch-up by 7 September, the supervisor-ready full draft by 30 September, and the review/submission work by 31 October alongside the algorithm and evaluation schedule.
 
