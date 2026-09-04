@@ -1081,7 +1081,7 @@ def test_make_status_message_zeroes_backend_wall_time_for_determinism(
     assert captured["appearance_backend_wall_ms"] == 0.0
     assert (
         MODULE.SEMANTIC_DIGEST_SCHEMA
-        == "tim_mars_replay_generated_fields_v4"
+        == "tim_mars_replay_generated_fields_v5"
     )
 
 

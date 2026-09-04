@@ -106,6 +106,11 @@ def test_long_gap_new_id_opposite_side_reacquires_by_protected_identity():
     assert not first.visible
     assert not first.control_valid
     assert first.candidate_track_id == 44
+    assert (
+        first.proposal_source
+        == "global_identity_reacquisition"
+    )
+    assert len(first.all_scores) == 1
     assert first.best_score is not None
     assert first.best_score.appearance_evaluated
     assert first.best_score.positive_similarity >= 0.99
@@ -121,6 +126,11 @@ def test_long_gap_new_id_opposite_side_reacquires_by_protected_identity():
     assert second.control_valid
     assert second.reacquired
     assert second.target_track_id == 44
+    assert (
+        second.proposal_source
+        == "global_identity_reacquisition"
+    )
+    assert len(second.all_scores) == 1
 
 
 def test_long_gap_distractor_only_scene_remains_lost():
@@ -151,6 +161,11 @@ def test_long_gap_distractor_only_scene_remains_lost():
     assert not output.visible
     assert not output.control_valid
     assert output.target_track_id == 1
+    assert (
+        output.proposal_source
+        == "global_identity_reacquisition"
+    )
+    assert len(output.all_scores) == 1
     assert output.best_score is not None
     assert output.best_score.appearance_evaluated
     assert output.reason.startswith(

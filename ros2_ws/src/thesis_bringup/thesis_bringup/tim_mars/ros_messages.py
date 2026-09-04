@@ -649,6 +649,12 @@ def status_payload_base(
         "candidate_track_id": out.candidate_track_id,
         "candidate_score": float(out.candidate_score),
         "publication_suppressed_reason": out.publication_suppressed_reason,
+        "proposal_source": str(
+            getattr(out, "proposal_source", "none")
+        ),
+        "proposal_candidate_count": int(
+            len(getattr(out, "all_scores", ()) or ())
+        ),
     }
 
 
