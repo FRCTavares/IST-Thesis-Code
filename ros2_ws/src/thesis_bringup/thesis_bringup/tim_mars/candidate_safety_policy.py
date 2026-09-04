@@ -41,10 +41,21 @@ def protected_gallery_reacquisition_reject_reason(
     ):
         return None
 
-    if not candidate.appearance_memory_update_eligible:
+    comparison_only_wide_crop = bool(
+        candidate.appearance_crop_quality is not None
+        and candidate.appearance_crop_quality.encoding_eligible
+        and not candidate.appearance_crop_quality.memory_update_eligible
+        and candidate.appearance_crop_quality.rejection_reasons
+        == ('aspect_ratio_too_wide',)
+    )
+
+    if (
+        not candidate.appearance_memory_update_eligible
+        and not comparison_only_wide_crop
+    ):
         return (
-            "protected_gallery_reacquisition_reject:"
-            "untrusted_crop"
+            'protected_gallery_reacquisition_reject:'
+            'untrusted_crop'
         )
 
     if score.ambiguous:
