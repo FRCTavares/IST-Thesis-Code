@@ -413,21 +413,90 @@ failure.
 It also does not use held-out H01--H03 evidence. Those sequences remain
 untouched and isolated from algorithm development.
 
+## Live reproduction refinement — 4 September 2026
+
+The first live validation after `046ff8b3` confirmed that the original
+pre-encoding aspect-ratio defect was removed, but it exposed a second
+downstream eligibility conflation.
+
+A narrow, trusted operator selection was established first. Live status showed:
+
+- target tracker ID `33`;
+- state `LOCKED`;
+- `protected_anchor_available=true`;
+- trusted gallery size `4`;
+- trusted appearance lineage.
+
+The same tracker ID was then retained while the target adopted a wide pose.
+Immediately before the controlled lens-cover loss, the tracker bbox was about
+`561.571 x 408.704 px`, or approximately `1.374` width/height.
+
+After the brief loss, TIM-MARS reached `LOST`, and tracker ID `33` returned as
+the same candidate ID. The current crop evidence showed:
+
+- aspect ratio about `1.372`;
+- clipping fraction `0`;
+- `encoding_eligible=true`;
+- `memory_update_eligible=false`;
+- rejection reason `aspect_ratio_too_wide`;
+- current appearance available and evaluated;
+- positive similarity `0.8435138464`;
+- positive support source `trusted_gallery`.
+
+Therefore the original wide-crop encoding blockage was demonstrably removed in
+the reproduced live case. However, reacquisition still did not complete.
+The state machine repeatedly emitted
+`protected_gallery_reacquisition_reject:untrusted_crop`.
+
+Read-only code inspection identified the exact remaining gate in
+`candidate_safety_policy.py`: protected-gallery reacquisition treated
+`appearance_memory_update_eligible=false` as a blanket rejection. That policy
+therefore still conflated suitability for current identity comparison with
+suitability for reusable positive-memory adaptation.
+
+The second Issue #89 software correction is deliberately narrow:
+
+- a crop may bypass this protected-gallery `untrusted_crop` rejection only when
+  explicit current `appearance_crop_quality` provenance exists;
+- the crop must be encoding-eligible;
+- it must remain memory-update-ineligible;
+- its complete rejection-reason tuple must be exactly
+  `('aspect_ratio_too_wide',)`;
+- generic provenance-free `memory_update_eligible=false` observations remain
+  rejected;
+- overlap/group-contaminated comparison crops remain rejected;
+- positive anchor/gallery adaptation still requires memory-update eligibility;
+- same-ID hijack protection is unchanged;
+- no geometry-only fallback is introduced.
+
+The new contract was added test-first. Before the policy edit, the wide-only
+protected-gallery test failed while the two conservative rejection controls
+passed. After the policy edit:
+
+- focused protected-gallery contract: `3 passed`;
+- focused crop/attachment/appearance/protected-memory set: `74 passed`;
+- same-ID/hijack/wide/protected-gallery regression subset: `17 passed`;
+- complete `thesis_bringup` test suite: `427 passed, 1 skipped`;
+- `tools/thesis_build.sh --packages-select thesis_bringup`: PASS;
+- `git diff --check`: PASS;
+- no root-level `log/`, `hailort.log`, or `.pytest_cache` was created.
+
+The prior live process loaded the pre-fix Python module, so it cannot serve as
+validation of this second correction. A fresh runtime restart from the committed
+software state is required.
+
 ## Remaining acceptance gate
 
-Issue #89 remains open for one explicit acceptance item:
+Issue #89 remains open for one final acceptance item:
 
-**repeat the 1 September live/simple-scene failure after commit `046ff8b3` and
-verify that the large visible wide selected person receives current appearance
-evidence and can complete the existing confirmation-gated same-ID reacquisition
-path rather than remaining indefinitely in
-`same_id_reacquisition_reject:no_candidate_appearance`.**
+**restart the canonical live stack from the committed second software fix,
+establish a trusted narrow selection, retain the same tracker ID while moving
+to a wide pose, create a brief controlled loss, and verify that the wide
+same-ID candidate can complete the existing confirmation-gated
+`LOST -> REACQUIRED -> LOCKED` path while remaining
+`encoding_eligible=true` and `memory_update_eligible=false`.**
 
-That live check is validation only.
+The final live check must also confirm that the wide crop does not update
+positive appearance memory and that no wrong-person authority is introduced.
 
-No threshold, model, tracker, appearance preprocessing, or recovery-policy
-change should be made from that check unless it exposes a new independently
-documented defect.
-
-Issue #90 must remain blocked until this final #89 live acceptance gate is
-satisfied.
+Issue #90 remains blocked until this fresh live acceptance passes.
