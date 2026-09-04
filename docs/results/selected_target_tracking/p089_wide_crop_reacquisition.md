@@ -485,18 +485,175 @@ The prior live process loaded the pre-fix Python module, so it cannot serve as
 validation of this second correction. A fresh runtime restart from the committed
 software state is required.
 
-## Remaining acceptance gate
+## Final live acceptance — 4 September 2026
 
-Issue #89 remains open for one final acceptance item:
+The second software correction was committed as
+`64cce622a6eb6bc27faf9b8b9b1de0960e33db47` and loaded into a fresh canonical
+live runtime.
 
-**restart the canonical live stack from the committed second software fix,
-establish a trusted narrow selection, retain the same tracker ID while moving
-to a wide pose, create a brief controlled loss, and verify that the wide
-same-ID candidate can complete the existing confirmation-gated
-`LOST -> REACQUIRED -> LOCKED` path while remaining
-`encoding_eligible=true` and `memory_update_eligible=false`.**
+Recorded live evidence:
 
-The final live check must also confirm that the wide crop does not update
-positive appearance memory and that no wrong-person authority is introduced.
+`bags/live_camera/2026-09-04__12-06-50__video__p089_live_wide_crop_acceptance_02`
 
-Issue #90 remains blocked until this fresh live acceptance passes.
+The run metadata records a clean repository at `64cce622`, YOLOv8s direct
+Hailo inference, ByteTrack, TIM-MARS with CPU MARS appearance, and controller
+output disabled for the acceptance exercise.
+
+A narrow target was first selected as tracker ID `1`. Before widening, status
+showed:
+
+- state `LOCKED`;
+- target and candidate tracker ID `1`;
+- `visible=true`;
+- `protected_anchor_available=true`;
+- trusted gallery size `4`;
+- trusted appearance lineage;
+- narrow crop aspect ratio approximately `0.591`;
+- narrow crop both encoding-eligible and memory-update-eligible.
+
+The same ByteTrack ID was then retained while the person widened. Immediately
+before the loss exercise, `ids` reported approximately
+`431.328 x 395.501 px`, already above the canonical `1.0` width/height
+memory-trust threshold.
+
+A 10-second diagnostic then applied a brief controlled lens cover. The final
+acceptance summary was:
+
+- status messages: `299`;
+- `lost_seen=true`;
+- `reacquired_same_id=true`;
+- `locked_after_reacquire=true`;
+- wide samples: `260`;
+- wide comparison-only samples: `260`;
+- wide samples with evaluated appearance: `48`;
+- wide positive-memory updates: `0`;
+- wrong visible authority samples: `0`;
+- overall acceptance: `PASS=YES`.
+
+The observed state path included:
+
+- `UNCERTAIN` at approximately `3.191 s`;
+- `LOST` at approximately `3.388 s`;
+- conservative protected-anchor rejection while appearance agreement was still
+  insufficient (`0.316 < 0.750`, later `0.690 < 0.750`);
+- transient
+  `same_id_reacquisition_reject:no_candidate_appearance` between selective
+  appearance evaluations;
+- `REACQUIRED` at approximately `4.363 s`, with the existing
+  `recovery_persistence_pending: id=1 confirm=1/2` gate;
+- `LOCKED`, visible, on the same ID at approximately `4.367 s`.
+
+The final wide same-ID evidence later in the probe showed:
+
+- aspect ratio: `1.1773798505`;
+- clipping fraction: `0`;
+- `encoding_eligible=true`;
+- `memory_update_eligible=false`;
+- sole rejection reason: `aspect_ratio_too_wide`;
+- current appearance available and evaluated;
+- positive similarity: `0.8841875126`;
+- positive support source: `trusted_gallery`;
+- positive memory updated: `false`.
+
+This directly satisfies the live/simple-scene acceptance requirement that
+motivated Issue #89: a large valid wide crop can now supply current appearance
+for same-ID LOST recovery without being admitted into reusable positive memory.
+The existing appearance and protected-anchor safety gates remain active during
+recovery rather than being bypassed.
+
+## Final-commit deterministic development regression
+
+Because the second correction changes the downstream protected-gallery policy,
+Seq03 and Seq04 were replayed again from their frozen ByteTrack candidate
+streams under final software commit `64cce622`.
+
+Final replay outputs:
+
+- Seq03:
+  `bags/replay/p089_seq03_wide_crop_64cce622_2026_09_04`;
+- Seq04:
+  `bags/replay/p089_seq04_wide_crop_64cce622_2026_09_04`.
+
+Frozen candidate-stream SHA-256 values were reverified exactly:
+
+- Seq03:
+  `60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db`;
+- Seq04:
+  `9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf`.
+
+The generated semantic digests are also exactly unchanged from the first
+post-fix replay:
+
+- Seq03:
+  `de219d248aed32b14649a7eab29065c0899d86db747456eda3565056e45c7304`;
+- Seq04:
+  `695ae20a8f630fceec74996a373b45c0620f6a096bd2a81510f5c4d65f6b0942`.
+
+Final provenance artifacts include:
+
+- Seq03 replay metadata SHA-256:
+  `9d361d4744bfc4e413821483b95b828483171a539c8ab83735c068cec2a24c39`;
+- Seq03 resolved-runtime SHA-256:
+  `fbdcb6897b8dc02bdc4ff6cee99079dc5aa50d3bdee2e3912e49d325649ac2ad`;
+- Seq04 replay metadata SHA-256:
+  `ca3b0fd2d07047e4765961084f97b058d51ff200c7cf67204ecc2f48b53d1490`;
+- Seq04 resolved-runtime SHA-256:
+  `53d86b9ca8a515e29009d5a25f69eeb6f5e5440b5abda357ca6b22a6f8d2475b`.
+
+## Final physical-v2 safety gate
+
+Identity-independent physical-v2 evaluation was rerun directly on the final
+`64cce622` replay outputs. Generated reports are retained locally under:
+
+`reports/p089_wide_crop_64cce622_2026_09_04/physical_v2/`
+
+Seq03 final TIM-MARS result:
+
+- correct-target output: `22.532686264 s`;
+- wrong-person output: `0 s`;
+- identity unresolved: `0 s`;
+- lost/suppressed: `61.234111519 s`;
+- physical-reference gap: `0.100453371 s`;
+- reconciliation: PASS.
+
+Seq04 final TIM-MARS result:
+
+- correct-target output: `35.068442774 s`;
+- wrong-person output: `0 s`;
+- identity unresolved: `0 s`;
+- lost/suppressed: `37.431598998 s`;
+- target absent: `13.900030159 s`;
+- target absent with output: `0 s`;
+- physical-reference gap: `0.100883795 s`;
+- reconciliation: PASS.
+
+For both sequences, the complete physical-v2 duration-bucket dictionaries are
+exactly equal to the pre-second-fix Issue #89 results. The downstream
+wide-comparison exception therefore introduces no measured controller-facing
+safety regression on the retained development evidence.
+
+## Issue #89 closure assessment
+
+All technical acceptance gates are now satisfied:
+
+1. the original pre-encoding wide-crop root cause is documented and fixed;
+2. comparison eligibility is separated from positive-memory eligibility;
+3. the downstream protected-gallery conflation is documented and narrowly
+   corrected;
+4. same-ID hijack protection remains enabled;
+5. no geometry-only recovery path was introduced;
+6. wide-only, contaminated-crop, same-ID, distractor, and protected-gallery
+   regression tests are present;
+7. the complete `thesis_bringup` suite records `427 passed, 1 skipped`;
+8. the project build helper passes;
+9. the fresh live reproduction demonstrates
+   `LOST -> REACQUIRED -> LOCKED` on the same wide tracker ID;
+10. the wide crop remains positive-memory-ineligible throughout the live
+    acceptance;
+11. no wrong visible authority was observed live;
+12. final Seq03/Seq04 physical-v2 safety metrics retain `0 s` wrong-person
+    output, and Seq04 retains `0 s` target-absence-with-output;
+13. no prospective H01--H03 outcome was inspected or used.
+
+Issue #89 is therefore technically closure-ready. Issue #90 remains blocked
+until this branch is merged and Issue #89 is closed.
