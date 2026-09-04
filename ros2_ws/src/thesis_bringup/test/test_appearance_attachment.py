@@ -10,7 +10,12 @@ from thesis_bringup.tim_mars.appearance_attachment import (
     attach_appearance_features,
     map_bbox_to_appearance_image,
 )
-from thesis_bringup.tim_mars.target_memory import CandidateTrack
+from thesis_bringup.tim_mars.target_memory import (
+    CandidateTrack,
+    TargetIdentityMemory,
+    TargetMemoryConfig,
+    TargetState,
+)
 
 
 def tr(track_id, bbox=(10, 20, 30, 60), score=0.9):
@@ -835,3 +840,204 @@ def test_p064_mapped_crop_clips_at_every_appearance_boundary(
     assert quality.crop_width_px == pytest.approx(expected_width)
     assert quality.crop_height_px == pytest.approx(expected_height)
     assert quality.clipping_fraction > 0.0
+
+
+def test_wide_crop_attaches_fresh_appearance_without_updating_cache():
+    """A wide comparison-valid crop must reach MARS but not trusted cache."""
+    backend = FakeMarsBackend(["wide-feature"])
+    candidate = tr(
+        142,
+        bbox=(
+            80.0,
+            100.0,
+            562.0,
+            482.0,
+        ),
+    )
+    state = AppearanceAttachmentState()
+
+    result = attach_appearance_features(
+        config=cfg(),
+        state=state,
+        data=data(
+            [candidate],
+            mars_backend=backend,
+        ),
+    )
+
+    assert len(backend.calls) == 1
+    assert backend.calls[0][1] == [
+        (
+            80.0,
+            100.0,
+            562.0,
+            482.0,
+        )
+    ]
+
+    enriched = result.candidates[0]
+    quality = enriched.appearance_crop_quality
+
+    assert enriched.appearance == "wide-feature"
+    assert quality is not None
+    assert quality.encoding_eligible
+    assert not quality.memory_update_eligible
+    assert not enriched.appearance_memory_update_eligible
+    assert (
+        "aspect_ratio_too_wide"
+        in quality.rejection_reasons
+    )
+
+    # Comparison-only evidence must not become reusable trusted
+    # appearance memory.
+    assert state.cache_by_track_id == {}
+    assert state.cache_seen_ns == {}
+
+    assert result.diagnostics.encoding_rejected == 0
+    assert result.diagnostics.encoding_eligible == 1
+    assert result.diagnostics.memory_update_ineligible == 1
+    assert result.diagnostics.backend_requested == 1
+    assert result.diagnostics.backend_valid == 1
+    assert result.diagnostics.features_valid == 1
+
+
+def test_wide_same_id_reacquisition_beats_distractor_without_memory_update():
+    """Wide comparison evidence must recover the target without poisoning memory."""
+    target_feature = np.asarray(
+        [1.0, 0.0, 0.0],
+        dtype=np.float32,
+    )
+    distractor_feature = np.asarray(
+        [0.0, 1.0, 0.0],
+        dtype=np.float32,
+    )
+
+    tim = TargetIdentityMemory(
+        TargetMemoryConfig(
+            image_width=640,
+            image_height=640,
+            max_uncertain_frames=1,
+            appearance_enabled=True,
+            appearance_ambiguous_only=False,
+            appearance_conservative_enabled=False,
+            hard_negative_memory_enabled=False,
+            rank_aware_reacquisition_enabled=True,
+            candidate_belief_enabled=False,
+            absence_recovery_enabled=False,
+            short_gap_same_id_priority_enabled=True,
+            short_gap_same_id_grace_frames=8,
+            short_gap_same_id_min_total=0.20,
+            short_gap_new_id_suppression_enabled=False,
+        )
+    )
+
+    tim.select(
+        CandidateTrack(
+            track_id=142,
+            bbox=(100.0, 100.0, 340.0, 340.0),
+            score=0.95,
+            appearance=target_feature,
+            appearance_memory_update_eligible=True,
+        )
+    )
+
+    tim.update([])
+    lost = tim.update([])
+    assert lost.state == TargetState.LOST
+
+    wide_target_bbox = (
+        69.0,
+        100.0,
+        371.0,
+        340.0,
+    )
+    distractor_bbox = (
+        102.0,
+        100.0,
+        342.0,
+        340.0,
+    )
+
+    backend = FakeMarsBackend(
+        [
+            target_feature,
+            distractor_feature,
+        ]
+    )
+    attachment_state = AppearanceAttachmentState()
+
+    first_attachment = attach_appearance_features(
+        config=cfg(compute_min_interval_ms=0.0),
+        state=attachment_state,
+        data=data(
+            [
+                tr(142, bbox=wide_target_bbox, score=0.95),
+                tr(77, bbox=distractor_bbox, score=0.95),
+            ],
+            mars_backend=backend,
+        ),
+    )
+
+    wide_target = first_attachment.candidates[0]
+
+    assert wide_target.appearance is target_feature
+    assert wide_target.appearance_crop_quality is not None
+    assert wide_target.appearance_crop_quality.encoding_eligible
+    assert not wide_target.appearance_crop_quality.memory_update_eligible
+    assert not wide_target.appearance_memory_update_eligible
+    assert (
+        "aspect_ratio_too_wide"
+        in wide_target.appearance_crop_quality.rejection_reasons
+    )
+
+    first = tim.update(first_attachment.candidates)
+
+    assert first.target_track_id == 142
+    assert first.candidate_track_id == 142
+    assert first.state == TargetState.REACQUIRED
+    assert first.reacquired
+    assert not first.visible
+    assert not first.positive_memory_updated
+
+    second_attachment = attach_appearance_features(
+        config=cfg(compute_min_interval_ms=0.0),
+        state=attachment_state,
+        data=data(
+            [
+                tr(
+                    142,
+                    bbox=(71.0, 101.0, 373.0, 341.0),
+                    score=0.95,
+                ),
+                tr(
+                    77,
+                    bbox=(104.0, 101.0, 344.0, 341.0),
+                    score=0.95,
+                ),
+            ],
+            mars_backend=backend,
+            now_ns=1_300_000_000,
+            latest_image_seen_ns=1_299_900_000,
+            latest_image_seq=4,
+        ),
+    )
+
+    second_wide_target = second_attachment.candidates[0]
+
+    assert second_wide_target.appearance is target_feature
+    assert not second_wide_target.appearance_memory_update_eligible
+
+    committed = tim.update(second_attachment.candidates)
+
+    assert committed.target_track_id == 142
+    assert committed.candidate_track_id == 142
+    assert committed.state == TargetState.LOCKED
+    assert committed.visible
+    assert committed.reacquired
+
+    # The competing person must never acquire identity authority.
+    assert committed.target_track_id != 77
+
+    # The wide crop can support comparison/reacquisition, but must not
+    # contaminate reusable positive appearance memory.
+    assert not committed.positive_memory_updated

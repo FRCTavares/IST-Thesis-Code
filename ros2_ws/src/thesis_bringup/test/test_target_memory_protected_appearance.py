@@ -5,6 +5,9 @@ import numpy as np
 from thesis_bringup.tim_mars.appearance_memory import (
     cosine_similarity,
 )
+from thesis_bringup.tim_mars.crop_quality import (
+    AppearanceCropQuality,
+)
 from thesis_bringup.tim_mars.target_memory import (
     CandidateTrack,
     TargetIdentityMemory,
@@ -28,12 +31,14 @@ def tr(
     score=0.95,
     appearance=None,
     memory_eligible=True,
+    crop_quality=None,
 ):
     return CandidateTrack(
         track_id=track_id,
         bbox=bbox,
         score=score,
         appearance=appearance,
+        appearance_crop_quality=crop_quality,
         appearance_memory_update_eligible=memory_eligible,
     )
 
@@ -580,6 +585,119 @@ def test_gallery_supported_switch_rejects_untrusted_crop():
     assert output.reason == (
         "protected_gallery_reacquisition_reject:"
         "untrusted_crop"
+    )
+
+
+def test_gallery_supported_switch_allows_wide_comparison_only_crop():
+    """Allow a wide-only comparison crop without trusting it for memory."""
+    anchor = feat([1.0, 0.0, 0.0])
+    gallery_pose = feat([0.80, 0.60, 0.0])
+    wide_quality = AppearanceCropQuality(
+        crop_width_px=480.0,
+        crop_height_px=380.0,
+        clipping_fraction=0.0,
+        aspect_ratio=480.0 / 380.0,
+        max_iou_with_other=0.0,
+        min_centre_distance_norm=1.0,
+        encoding_eligible=True,
+        memory_update_eligible=False,
+        rejection_reasons=('aspect_ratio_too_wide',),
+    )
+
+    tim = TargetIdentityMemory(
+        protected_cfg(
+            id_switch_min_appearance_similarity=0.78,
+            appearance_gallery_min_anchor_similarity=0.75,
+        )
+    )
+    tim.select(
+        tr(
+            1,
+            (100, 100, 160, 240),
+            appearance=anchor,
+        )
+    )
+    tim._positive_appearance.trusted_gallery = [
+        gallery_pose.copy()
+    ]
+
+    first = tim.update(
+        [
+            tr(
+                2,
+                (104, 101, 164, 241),
+                appearance=gallery_pose,
+                memory_eligible=False,
+                crop_quality=wide_quality,
+            )
+        ]
+    )
+
+    assert first.state == TargetState.REACQUIRED
+    assert first.target_track_id == 1
+    assert first.candidate_track_id == 2
+    assert not first.visible
+    assert first.best_score is not None
+    assert (
+        first.best_score.positive_support_source
+        == 'trusted_gallery'
+    )
+    assert not first.positive_memory_updated
+
+
+def test_gallery_supported_switch_rejects_contaminated_comparison_crop():
+    """Keep contaminated comparison crops blocked from reacquisition."""
+    anchor = feat([1.0, 0.0, 0.0])
+    gallery_pose = feat([0.80, 0.60, 0.0])
+    contaminated_quality = AppearanceCropQuality(
+        crop_width_px=480.0,
+        crop_height_px=380.0,
+        clipping_fraction=0.0,
+        aspect_ratio=480.0 / 380.0,
+        max_iou_with_other=0.20,
+        min_centre_distance_norm=0.10,
+        encoding_eligible=True,
+        memory_update_eligible=False,
+        rejection_reasons=(
+            'aspect_ratio_too_wide',
+            'overlap_with_person',
+        ),
+    )
+
+    tim = TargetIdentityMemory(
+        protected_cfg(
+            id_switch_min_appearance_similarity=0.78,
+            appearance_gallery_min_anchor_similarity=0.75,
+        )
+    )
+    tim.select(
+        tr(
+            1,
+            (100, 100, 160, 240),
+            appearance=anchor,
+        )
+    )
+    tim._positive_appearance.trusted_gallery = [
+        gallery_pose.copy()
+    ]
+
+    output = tim.update(
+        [
+            tr(
+                2,
+                (104, 101, 164, 241),
+                appearance=gallery_pose,
+                memory_eligible=False,
+                crop_quality=contaminated_quality,
+            )
+        ]
+    )
+
+    assert output.target_track_id == 1
+    assert output.state == TargetState.UNCERTAIN
+    assert output.reason == (
+        'protected_gallery_reacquisition_reject:'
+        'untrusted_crop'
     )
 
 
