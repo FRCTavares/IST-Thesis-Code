@@ -36,6 +36,15 @@ Required:
 - at least 40 GiB free;
 - camera/media/Hailo devices exist.
 
+## Execution plan
+
+All physical H01–H03 work is queued in:
+
+`docs/flight/P027_HELDOUT_EXECUTION_PLAN.md`
+
+Do not start a real held-out capture unless working in the appropriate physical
+recording environment.
+
 ## Scenario sheets
 
 Run exactly one scenario at a time:
