@@ -601,7 +601,7 @@ def main() -> int:
     args = parse_args()
     repo_root = args.repo_root.expanduser().resolve()
     split_path = (
-        repo_root / "docs/data/splits/tim_mars_split_v2.json"
+        repo_root / "docs/data/splits/tim_mars_split_v3.json"
     )
     model_path = args.model.expanduser().resolve()
 

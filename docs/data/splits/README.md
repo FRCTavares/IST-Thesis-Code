@@ -2,13 +2,22 @@
 
 The active prospective machine-readable authority is:
 
-`docs/data/splits/tim_mars_split_v2.json`
+`docs/data/splits/tim_mars_split_v3.json`
+
+The matching active prospective comparison authority is:
+
+`docs/data/splits/tim_mars_final_comparison_v2.json`
+
+`tim_mars_split_v2.json` is retained unchanged as historical provenance for
+the 1 September 2026 prospective freeze. It was superseded before any H01--H03
+capture or outcome access because reviewed behavior-affecting Issues #89 and
+#90 were subsequently promoted.
 
 `tim_mars_split_v1.json` is retained unchanged as historical provenance for
 the 23 July 2026 freeze. TIM-MARS development continued after that freeze, but
-H01--H03 were never captured or inspected. Split v2 therefore establishes a
-new prospective freeze for the actual final algorithm before any held-out
-outcome exists; this is a protocol update, not post-test tuning.
+H01--H03 were never captured or inspected. Split v3 therefore binds the
+current final algorithm prospectively before any held-out outcome exists; this
+is a protocol update, not post-test tuning.
 
 The original split was introduced after the existing May and June recordings
 had already been inspected and used during development. They therefore remain
@@ -61,7 +70,7 @@ For each H01–H03 recording:
 4. Freeze the tracker/output-generation contract and annotation before viewing
    TIM results.
 5. Add the source path, annotation path, selected target, file sizes, and
-   SHA-256 values to `tim_mars_split_v2.json`; change status to `ready`.
+   SHA-256 values to `tim_mars_split_v3.json`; change status to `ready`.
 6. Run:
 
    ```bash
