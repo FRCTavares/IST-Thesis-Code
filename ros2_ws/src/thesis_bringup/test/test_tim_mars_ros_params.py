@@ -399,7 +399,7 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
         == 0.75
     )
 
-    assert canonical["global_reacquisition_enabled"] is False
+    assert canonical["global_reacquisition_enabled"] is True
     assert (
         canonical["global_reacquisition_after_missed_frames"]
         == 9
