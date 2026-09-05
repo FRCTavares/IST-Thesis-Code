@@ -113,3 +113,16 @@ tracked-vs-untracked decision:
    dataset, and quantisation settings;
 3. for `mars-small128.pb`: the exact distribution the frozen graph came from;
 4. a reproducible acquisition or build command.
+
+## Storage decision — Issue #49 (5 September 2026)
+
+The repository Git object pack remains approximately 4.52 GiB. Issue #49 does
+not migrate the tracked model artifacts or rewrite repository history.
+
+The current tracked/untracked state is retained because artifact provenance is
+still incomplete. A Git LFS, release-asset, or external artifact-store migration
+would require a separate migration plan after provenance recovery, with backup,
+collaborator coordination, and preservation of hashes and historical references.
+
+Issue #49 therefore closes the storage decision as: **retain current model
+tracking; no history rewrite or artifact migration in this issue**.
