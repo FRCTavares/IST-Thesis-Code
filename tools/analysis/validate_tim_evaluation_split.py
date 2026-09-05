@@ -651,7 +651,7 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         nargs="?",
         default=Path(
-            "docs/data/splits/tim_mars_split_v2.json"
+            "docs/data/splits/tim_mars_split_v3.json"
         ),
     )
     parser.add_argument(
