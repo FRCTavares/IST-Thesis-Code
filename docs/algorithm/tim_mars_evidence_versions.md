@@ -1,6 +1,6 @@
 # TIM-MARS evidence-version map
 
-Date: 2026-07-23. Current runtime identity refreshed 2026-08-28.
+Date: 2026-07-23. Current runtime identity refreshed 2026-09-05.
 
 The machine-readable authority is
 `docs/data/catalogue/tim_evidence_versions.json`. A TIM-MARS result is valid
@@ -25,9 +25,10 @@ tracked evidence (see "Current canonical runtime vs frozen evidence").
 - Configuration:
   `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
 - SHA-256:
-  `e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931`
+  `0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0`
 - Established by commit:
-  `bd5eeb4ebb79988bce2fa18b8889550d5f497306` (2026-07-29); byte-stable since.
+  `e4e0dad06cebccfb9c1e6b6b29c819a55a1783df` (2026-09-05), after the
+  reviewed Issue #90 global-reacquisition promotion.
 - Latest frozen evidence version: `p028_dual_oracle_development` (evaluated
   with an **earlier** configuration, `e7620313…` — see the version map).
 
@@ -40,9 +41,11 @@ that it has a universal safety guarantee.
 
 The latest frozen evidence version, `p028_dual_oracle_development`, was
 evaluated at algorithm commit `c5ba9d30…` and configuration `e7620313…`. Since
-then the canonical runtime advanced through three changes. Each is a
-narrowly-scoped parameter decision with its own tracked evidence; none of them
-re-establishes or supersedes the P0.17 headline development claim.
+then the canonical runtime advanced through five recorded promotions. The
+latest two are the reviewed Issue #89 comparison-versus-memory-update
+eligibility change and Issue #90 long-gap global appearance reacquisition.
+These remain development/live acceptance evidence and do not constitute
+H01--H03 held-out evidence.
 
 | Parameter | Change | Promotion commit | Evidence | Claim boundary |
 | --- | --- | --- | --- | --- |
@@ -50,8 +53,9 @@ re-establishes or supersedes the P0.17 headline development claim.
 | `hard_negative_max_age_frames`, `hard_negative_decay_policy` | added: `247` frames, `none_until_expiry` | `6ba28c6133ff2e105ca6db4c17d0b0759c27b565` | `reports/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/` (P1.7, Issue #18) | Largest tested finite maximum age that exercised committed-prototype expiry with zero annotated-ID or spatial safety degradation over the four frozen development sequences (age sweep `62/93/247/394/427`, repeatable). Development-only. Appearance vectors stay full-strength; expiry only during uninterrupted trusted `LOCKED → LOCKED` continuity. |
 | `appearance_request_policy` | added: `all_candidates` | `bd5eeb4ebb79988bce2fa18b8889550d5f497306` | — | Behaviour-neutral. Makes the pre-existing encode-all default an explicit parameter so controlled Issue #44 experiments can override it. No change to the canonical decision path. |
 
-None of the nine `active_parameters` tracked in the machine-readable map were
-changed by these promotions.
+The machine-readable map now also tracks the active long-gap recovery controls:
+`global_reacquisition_enabled=true` and
+`global_reacquisition_after_missed_frames=9`.
 
 ## Version map
 

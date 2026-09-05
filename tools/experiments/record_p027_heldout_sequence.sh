@@ -32,7 +32,7 @@ case "$scenario" in
         ;;
 esac
 
-SPLIT_PATH="$THESIS_ROOT/docs/data/splits/tim_mars_split_v2.json"
+SPLIT_PATH="$THESIS_ROOT/docs/data/splits/tim_mars_split_v3.json"
 SOURCE_RECORD_ROOT="$THESIS_ROOT/bags/source/held_out/2026-09/$scenario_dir"
 RAW_RECORDING_MIN_FREE_GIB="${RAW_RECORDING_MIN_FREE_GIB:-40}"
 RUN_ID="${RUN_ID:-$(date +%F__%H-%M-%S)}"

@@ -1,35 +1,62 @@
 {
   "schema_version": 2,
   "authority_date": "2026-07-23",
-  "current_runtime_as_of": "2026-08-28",
+  "current_runtime_as_of": "2026-09-05",
   "current_runtime": {
     "description": "The configuration the repository currently treats as canonical. This is NOT the configuration any frozen evidence version was evaluated with; see latest_frozen_evidence_version and canonical_changes_since_latest_frozen_evidence.",
     "config_path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
-    "config_sha256": "e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931",
-    "config_established_commit": "bd5eeb4ebb79988bce2fa18b8889550d5f497306",
+    "config_sha256": "0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0",
+    "config_established_commit": "e4e0dad06cebccfb9c1e6b6b29c819a55a1783df",
     "latest_frozen_evidence_version": "p028_dual_oracle_development",
     "differs_from_latest_frozen_evidence": true,
     "canonical_changes_since_latest_frozen_evidence": [
       {
-        "parameters": ["hard_negative_max_positive_similarity"],
+        "parameters": [
+          "hard_negative_max_positive_similarity"
+        ],
         "change": "1.01 (exclusion disabled) -> 0.95",
         "promotion_commit": "f10492637163e2b25cd72155deffd8c12d5fb69d",
         "evidence_path": "reports/p017_fragment_safety_f1049263_2026_07_27/",
         "claim_boundary": "P1.6 / Issue #17. 0.95 is the lowest tested safe positive-similarity fragment-exclusion threshold over the four frozen development sequences (deterministic 0.95-1.01 sweep, all annotated-ID/spatial/absent-output gates PASS, repeatable). Development-only; no absolute-performance, tracker-independent, or held-out claim."
       },
       {
-        "parameters": ["hard_negative_max_age_frames", "hard_negative_decay_policy"],
+        "parameters": [
+          "hard_negative_max_age_frames",
+          "hard_negative_decay_policy"
+        ],
         "change": "added: 247 tracker frames, none_until_expiry",
         "promotion_commit": "6ba28c6133ff2e105ca6db4c17d0b0759c27b565",
         "evidence_path": "reports/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/",
         "claim_boundary": "P1.7 / Issue #18. 247 is the largest tested finite maximum age that exercised committed-prototype expiry with zero annotated-ID or spatial safety degradation over the four frozen development sequences (age sweep 62/93/247/394/427, repeatable). Development-only. Appearance vectors remain full-strength; expiry only during uninterrupted trusted LOCKED->LOCKED continuity."
       },
       {
-        "parameters": ["appearance_request_policy"],
+        "parameters": [
+          "appearance_request_policy"
+        ],
         "change": "added: all_candidates",
         "promotion_commit": "bd5eeb4ebb79988bce2fa18b8889550d5f497306",
         "evidence_path": null,
         "claim_boundary": "Behaviour-neutral. Makes the pre-existing encode-all appearance-request default an explicit parameter so controlled Issue #44 experiments can override it with geometry_winner. No change to the canonical decision path."
+      },
+      {
+        "parameters": [
+          "appearance_crop_max_aspect_ratio",
+          "appearance comparison-vs-memory-update eligibility semantics"
+        ],
+        "change": "wide, unclipped crops may provide current comparison evidence without becoming eligible for trusted positive-memory updates",
+        "promotion_commit": "2f5b3eed6e2617836e60ba4eb9e7231535727b64",
+        "evidence_path": null,
+        "claim_boundary": "Issue #89. Reviewed development and live/simple-scene acceptance evidence promoted the separation between appearance encoding/comparison eligibility and positive-memory-update eligibility. The canonical crop-width threshold itself was not relaxed. Development/live acceptance only; no H01-H03 outcome was accessed. Reviewed result: docs/results/selected_target_tracking/p089_wide_crop_reacquisition.md."
+      },
+      {
+        "parameters": [
+          "global_reacquisition_enabled",
+          "global_reacquisition_after_missed_frames"
+        ],
+        "change": "global_reacquisition_enabled false -> true; global_reacquisition_after_missed_frames retained at 9",
+        "promotion_commit": "e4e0dad06cebccfb9c1e6b6b29c819a55a1783df",
+        "evidence_path": null,
+        "claim_boundary": "Issue #90. Long-gap protected-identity global appearance reacquisition was promoted after controlled development-only comparison. The absolute appearance threshold remained 0.78 and no threshold tuning was performed. H01-H03 outcomes were not accessed. Reviewed result: docs/results/selected_target_tracking/p090_long_gap_global_reacquisition.md."
       }
     ]
   },
@@ -42,7 +69,9 @@
     "absence_appearance_margin": 0.2,
     "same_id_hijack_protection_enabled": true,
     "freshness_max_output_age_s": 0.9,
-    "freshness_future_tolerance_s": 0.05
+    "freshness_future_tolerance_s": 0.05,
+    "global_reacquisition_enabled": true,
+    "global_reacquisition_after_missed_frames": 9
   },
   "evidence_versions": [
     {
