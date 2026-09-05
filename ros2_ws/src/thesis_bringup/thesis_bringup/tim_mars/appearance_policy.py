@@ -62,6 +62,7 @@ def score_with_appearance(
     cfg: TargetMemoryConfig,
     positive_memory: PositiveAppearanceMemory | None = None,
     protected_only: bool = False,
+    allow_geometry_bypass: bool = False,
 ) -> CandidateScore:
     """Return a base score enriched with appearance evidence."""
     appearance_score = 0.0
@@ -89,7 +90,10 @@ def score_with_appearance(
     ranking_score = geometry_score
     total = base.total
 
-    allows_appearance = geometry_allows_appearance(base)
+    allows_appearance = bool(
+        allow_geometry_bypass
+        or geometry_allows_appearance(base)
+    )
 
     if candidate.appearance is not None and allows_appearance:
         if positive_memory is not None:

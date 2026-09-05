@@ -446,6 +446,19 @@ class TargetIdentityMemory:
                 short_gap_proposal
             )
 
+        global_proposal, global_output = (
+            self._handle_global_identity_reacquisition(
+                candidates=candidates,
+            )
+        )
+        if global_output is not None:
+            self._reset_confirmation_trackers_except(set())
+            return global_output
+        if global_proposal is not None:
+            return self._finalize_candidate_proposal(
+                global_proposal
+            )
+
         rank_proposal, rank_output = (
             self._handle_rank_aware_reacquisition(
                 candidates=candidates,
@@ -522,8 +535,12 @@ class TargetIdentityMemory:
             )
         )
 
-        if self._absence_confirmation_applies(
-            id_switch=id_switch,
+        if (
+            proposal_source
+            != 'global_identity_reacquisition'
+            and self._absence_confirmation_applies(
+                id_switch=id_switch,
+            )
         ):
             confirmation_options.append(
                 (
@@ -762,7 +779,9 @@ class TargetIdentityMemory:
                 score=proposal.score,
                 all_scores=proposal.all_scores,
                 absence_confirmation_applies=(
-                    self._absence_confirmation_applies(
+                    proposal.proposal_source
+                    != 'global_identity_reacquisition'
+                    and self._absence_confirmation_applies(
                         id_switch=proposal.id_switch,
                     )
                 ),
@@ -846,6 +865,8 @@ class TargetIdentityMemory:
         if (
             proposal.id_switch
             and self.cfg.id_switch_spatial_gate_enabled
+            and proposal.proposal_source
+            != 'global_identity_reacquisition'
         ):
             spatial_ok = (
                 proposal.score.iou
@@ -987,6 +1008,7 @@ class TargetIdentityMemory:
                 reason=verdict.reason,
                 best_score=proposal.score,
                 all_scores=list(proposal.all_scores),
+                proposal_source=proposal.proposal_source,
             )
 
         if verdict.status == _ProposalVerdictStatus.PENDING:
@@ -1009,6 +1031,7 @@ class TargetIdentityMemory:
                 all_scores=list(proposal.all_scores),
                 state_override=TargetState.REACQUIRED,
                 control_mode_override=ControlMode.CONFIRM,
+                proposal_source=proposal.proposal_source,
             )
 
         return self._accept(
@@ -1016,6 +1039,7 @@ class TargetIdentityMemory:
             best_score=proposal.score,
             all_scores=list(proposal.all_scores),
             candidates=proposal.candidates,
+            proposal_source=proposal.proposal_source,
         )
 
     def _same_id_reacquisition_appearance_reject_reason(
@@ -1180,6 +1204,155 @@ class TargetIdentityMemory:
             )
 
         return ()
+
+    def _global_reacquisition_active(self) -> bool:
+        """Return whether prolonged LOST uses global identity recovery."""
+        return bool(
+            self.cfg.global_reacquisition_enabled
+            and self.cfg.appearance_enabled
+            and self.cfg.appearance_protected_memory_enabled
+            and self._positive_appearance.has_any
+            and self._m.state == TargetState.LOST
+            and self._m.frames_since_seen
+            >= max(
+                1,
+                int(
+                    self.cfg
+                    .global_reacquisition_after_missed_frames
+                ),
+            )
+        )
+
+    def _handle_global_identity_reacquisition(
+        self,
+        *,
+        candidates: Sequence[CandidateTrack],
+    ) -> tuple[
+        Optional[_CandidateProposal],
+        Optional[TargetMemoryOutput],
+    ]:
+        """Propose prolonged-LOST recovery from protected identity."""
+        if not self._global_reacquisition_active():
+            return None, None
+
+        scores = [
+            self._score_candidate(
+                self._m.bbox,
+                candidate,
+                use_appearance=True,
+                allow_geometry_bypass=True,
+            )
+            for candidate in candidates
+        ]
+
+        scores_sorted = sorted(
+            scores,
+            key=lambda score: (
+                float(score.positive_similarity),
+                float(score.appearance_raw),
+                float(score.geometry_score),
+            ),
+            reverse=True,
+        )
+
+        best = scores_sorted[0]
+        best_candidate = next(
+            candidate
+            for candidate in candidates
+            if int(candidate.track_id)
+            == int(best.track_id)
+        )
+
+        threshold = self._id_switch_appearance_threshold()
+
+        if (
+            not best.appearance_evaluated
+            or float(best.appearance_raw) < threshold
+        ):
+            return None, self._miss(
+                reason=(
+                    'global_identity_recovery_reject:appearance'
+                    f' {best.appearance_raw:.3f}'
+                    f'<{threshold:.3f}'
+                ),
+                best_score=best,
+                all_scores=scores_sorted,
+                proposal_source=(
+                    'global_identity_reacquisition'
+                ),
+            )
+
+        second_app = max(
+            (
+                float(score.appearance_raw)
+                for score in scores_sorted[1:]
+                if score.appearance_evaluated
+            ),
+            default=0.0,
+        )
+        required_margin = max(
+            0.0,
+            float(
+                self.cfg.appearance_conservative_margin
+            ),
+        )
+        margin = float(best.appearance_raw) - second_app
+
+        if margin < required_margin:
+            return None, self._miss(
+                reason=(
+                    'global_identity_recovery_reject:'
+                    'appearance_margin'
+                    f' {margin:.3f}'
+                    f'<{required_margin:.3f}'
+                ),
+                best_score=best,
+                all_scores=scores_sorted,
+                proposal_source=(
+                    'global_identity_reacquisition'
+                ),
+            )
+
+        if (
+            best.hard_negative_reject
+            or self._hard_negative_memory.should_reject(
+                best,
+                self.cfg,
+            )
+        ):
+            return None, self._miss(
+                reason=(
+                    'global_identity_recovery_reject:'
+                    'hard_negative'
+                    f' neg={best.hard_negative_similarity:.3f}'
+                    f' margin={best.hard_negative_margin:.3f}'
+                ),
+                best_score=best,
+                all_scores=scores_sorted,
+                proposal_source=(
+                    'global_identity_reacquisition'
+                ),
+            )
+
+        best = replace(best, ambiguous=False)
+        scores_sorted[0] = best
+
+        return (
+            self._make_candidate_proposal(
+                candidate=best_candidate,
+                score=best,
+                all_scores=scores_sorted,
+                candidates=candidates,
+                proposal_source=(
+                    'global_identity_reacquisition'
+                ),
+                diagnostic_reason=(
+                    'global_identity_reacquisition_candidate'
+                ),
+                minimum_total=0.0,
+            ),
+            None,
+        )
 
     def _handle_rank_aware_reacquisition(
         self,
@@ -1683,6 +1856,7 @@ class TargetIdentityMemory:
         candidate: CandidateTrack,
         *,
         use_appearance: bool,
+        allow_geometry_bypass: bool = False,
     ) -> CandidateScore:
         protected_mode = bool(
             self.cfg.appearance_protected_memory_enabled
@@ -1743,6 +1917,7 @@ class TargetIdentityMemory:
                 else None
             ),
             protected_only=protected_only,
+            allow_geometry_bypass=allow_geometry_bypass,
         )
 
     def _is_ambiguous(
@@ -1890,6 +2065,7 @@ class TargetIdentityMemory:
         best_score: CandidateScore,
         all_scores: List[CandidateScore],
         candidates: Sequence[CandidateTrack],
+        proposal_source: str = 'none',
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = '',
     ) -> TargetMemoryOutput:
@@ -1950,6 +2126,7 @@ class TargetIdentityMemory:
             reacquired=reacquired,
             best_score=best_score,
             all_scores=all_scores,
+            proposal_source=proposal_source,
             memory_update_frozen=memory_update_frozen,
             memory_update_freeze_reason=(
                 memory_update_freeze_reason
@@ -2300,6 +2477,7 @@ class TargetIdentityMemory:
         all_scores: Optional[List[CandidateScore]] = None,
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = '',
+        proposal_source: str = 'none',
     ) -> TargetMemoryOutput:
         self._m.frames_since_seen += 1
         self._m.quality *= self.cfg.stale_quality_decay
@@ -2316,6 +2494,7 @@ class TargetIdentityMemory:
             all_scores=all_scores or [],
             memory_update_frozen=memory_update_frozen,
             memory_update_freeze_reason=memory_update_freeze_reason,
+            proposal_source=proposal_source,
         )
 
     def _make_output(
@@ -2330,6 +2509,7 @@ class TargetIdentityMemory:
         control_mode_override: Optional[ControlMode] = None,
         memory_update_frozen: bool = False,
         memory_update_freeze_reason: str = '',
+        proposal_source: str = 'none',
     ) -> TargetMemoryOutput:
         score_list = all_scores or []
 
@@ -2460,6 +2640,7 @@ class TargetIdentityMemory:
             candidate_track_id=candidate_track_id,
             candidate_score=candidate_score,
             publication_suppressed_reason=publication_suppressed_reason,
+            proposal_source=str(proposal_source),
         )
 
 

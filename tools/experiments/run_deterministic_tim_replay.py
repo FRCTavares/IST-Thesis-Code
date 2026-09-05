@@ -75,7 +75,7 @@ from p064_appearance_contract import (  # noqa: E402
 TIM_TARGET_TOPIC = "/target_memory_mars"
 TIM_STATUS_TOPIC = "/target_memory_mars/status"
 SEMANTIC_DIGEST_SCHEMA = (
-    "tim_mars_replay_generated_fields_v4"
+    "tim_mars_replay_generated_fields_v5"
 )
 
 

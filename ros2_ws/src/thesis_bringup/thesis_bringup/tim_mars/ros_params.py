@@ -264,6 +264,16 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("appearance_conservative_min_similarity", 0.65)
     node.declare_parameter("appearance_conservative_margin", 0.05)
 
+    # Long-gap global protected-identity recovery.
+    # The 9-frame development onset starts strictly after the
+    # canonical 8-frame short-gap same-ID grace window.
+    # The feature remains disabled unless explicitly enabled.
+    node.declare_parameter("global_reacquisition_enabled", False)
+    node.declare_parameter(
+        "global_reacquisition_after_missed_frames",
+        9,
+    )
+
     # Rank-aware reacquisition and candidate-belief confirmation.
     node.declare_parameter("rank_aware_reacquisition_enabled", True)
     node.declare_parameter("rank_aware_lost_min_total", 0.40)
@@ -632,6 +642,19 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         ),
         appearance_conservative_margin=float(
             node.get_parameter("appearance_conservative_margin").value
+        ),
+        global_reacquisition_enabled=bool(
+            node.get_parameter(
+                "global_reacquisition_enabled"
+            ).value
+        ),
+        global_reacquisition_after_missed_frames=max(
+            1,
+            int(
+                node.get_parameter(
+                    "global_reacquisition_after_missed_frames"
+                ).value
+            ),
         ),
         rank_aware_reacquisition_enabled=bool(
             node.get_parameter("rank_aware_reacquisition_enabled").value
