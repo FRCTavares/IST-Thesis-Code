@@ -53,7 +53,7 @@ fresh checkout to install frontend dependencies.
 
 ## Frozen experiment definitions
 
-- Active prospective development/final split: `docs/data/splits/tim_mars_split_v2.json`
+- Active prospective development/final split: `docs/data/splits/tim_mars_split_v3.json`
 - Historical July split: `docs/data/splits/tim_mars_split_v1.json`
 - Split policy: `docs/data/splits/README.md`
 - Component-ablation manifest: `docs/data/ablations/tim_mars_component_ablation_v1.yaml`
