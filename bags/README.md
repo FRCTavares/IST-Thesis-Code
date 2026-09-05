@@ -28,17 +28,29 @@ a few uncurated scratch listings.
 
 ## Current protected structure
 
-The current intended bag structure is:
+Protection is role- and evidence-based rather than tied to the historical July
+folder list.
 
-- `bags/source/curated/`
-- `bags/source/official_flights/2026-06-19/`
-- `bags/replay/paper_final_tim_results_2026_07_03/`
-- `bags/replay/paper_final_deepsort_june_full_2026_07_04/`
-- `bags/replay/paper_final_deepsort_june_memory_2026_07_04/`
-- `bags/replay/paper_final_deepsort_may_2026_07_03/`
-- `bags/reference/tim_good/`
-- `bags/reference/annotation_aliases/`
-- `bags/reference/delivered_paper_results/`
+Always protect:
+
+- `bags/source/curated/`;
+- `bags/source/official_flights/`;
+- `bags/reference/tim_good/`;
+- every source/raw recording;
+- replay evidence referenced by promoted result documents, frozen experiment
+  manifests, current thesis evaluation, or active roadmap dependencies.
+
+Historical `paper_final_*` replay folders documented by the July cleanup may no
+longer exist locally. Their deletion provenance remains under
+`docs/archive/bag_cleanup_2026_07_09/`; do not recreate aliases to absent bags.
+
+Generated replay evidence must be classified through the current evidence
+retention policy before deletion. Unknown evidence is retained by default.
+
+Current retention authority:
+
+- `docs/data/catalogue/evidence_retention_policy.md`
+- `docs/data/catalogue/evidence_retention_manifest_2026_09_05.json`
 
 ## Naming contract
 
@@ -105,17 +117,15 @@ Do not treat other replay folders as final evidence unless they are documented i
 
 ## Reference aliases
 
-Small symlink aliases live under:
+Stable symlink aliases may live under `bags/reference/`, but an alias is retained
+only while its target exists and the shortcut serves an active workflow.
 
-    bags/reference/
+Broken aliases are repository-hygiene defects and should be removed rather than
+left as historical markers. Historical target names belong in tracked cleanup
+provenance, not in dangling filesystem links.
 
-Current intended alias groups:
-
-- `bags/reference/tim_good/`
-- `bags/reference/annotation_aliases/`
-- `bags/reference/delivered_paper_results/`
-
-Use aliases for convenience in the annotation UI or paper-result review, but keep the real bag folders in their source or replay locations.
+The annotation UI already supports role grouping and user favourites, so a
+permanent alias is not required merely to make a bag discoverable.
 
 ## Annotation inputs
 
