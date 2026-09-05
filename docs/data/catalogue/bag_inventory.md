@@ -1,4 +1,10 @@
-# Bag inventory
+# Historical bag inventory snapshot
+
+> **Historical snapshot — not current retention authority.**
+> This inventory was generated on 25 June 2026 and describes paths that were
+> later deleted or reorganised. Current retention authority is
+> `docs/data/catalogue/evidence_retention_policy.md` together with
+> `docs/data/catalogue/evidence_retention_manifest_2026_09_05.json`.
 
 Generated: `2026-06-25T00:30:09`
 
