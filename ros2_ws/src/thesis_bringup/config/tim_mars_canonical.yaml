@@ -107,6 +107,12 @@ target_memory_mars_node:
     appearance_conservative_min_similarity: 0.65
     appearance_conservative_margin: 0.05
 
+    # Long-gap global protected-identity recovery.
+    # Development evidence frozen and promoted by Issue #90 on 5 September 2026.
+    # Starts after the 8-frame short-gap grace window.
+    global_reacquisition_enabled: true
+    global_reacquisition_after_missed_frames: 9
+
     # Rank-aware reacquisition
     rank_aware_reacquisition_enabled: true
     rank_aware_lost_min_total: 0.40

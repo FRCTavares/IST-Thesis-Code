@@ -71,6 +71,10 @@ def main() -> None:
             "quality": payload.get("quality"),
             "frames_since_seen": payload.get("frames_since_seen"),
             "reason": payload.get("reason"),
+            "proposal_source": payload.get("proposal_source"),
+            "proposal_candidate_count": payload.get(
+                "proposal_candidate_count"
+            ),
             "memory_update_frozen": payload.get("memory_update_frozen"),
             "memory_update_freeze_reason": payload.get("memory_update_freeze_reason"),
             "appearance_margin_best_vs_second": payload.get("appearance_margin_best_vs_second"),
@@ -110,6 +114,7 @@ def main() -> None:
     fieldnames = [
         "t", "frame_id", "state", "control_mode", "target_track_id", "visible",
         "reacquired", "quality", "frames_since_seen", "reason",
+        "proposal_source", "proposal_candidate_count",
         "memory_update_frozen", "memory_update_freeze_reason",
         "appearance_margin_best_vs_second", "geometry_strength",
         "risk_hard_negative", "risk_absence", "risk_scene_ambiguity",
