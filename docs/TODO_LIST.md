@@ -194,9 +194,19 @@ frame IDs start at one.
       with one first-call warm-up outlier at 676.132 ms. The runner and audit
       both leave zero surviving runtime descendants and no repository-root
       runtime noise.
-    - Pre-#58 #32 work is therefore complete. Execution now proceeds
-      #58 → #74 → #32 final sustained characterization. Do not close #32
-      before the post-#74 sustained resource evidence.
+    - 6 Sep 2026: home-doable final-characterization preparation is now
+      implemented on the #32 branch. The full-pipeline runner has a
+      default-off TIM-authority controller mode with MAVROS forced OFF,
+      `/control_ref/cmd_vel` recording, optional controller process-group
+      sampling, exact replay measurement bounds, and automatic all-run plus
+      steady-state Issue #32 resource analysis with n/mean/std/p50/p90/p95/
+      p99/max reporting. Historical P044 sampler schemas and retained P032
+      development reports remain unchanged. Final retained execution is
+      gated by #27 held-out completion, the final #58 architecture result,
+      the #50 physical controller/recovery decision, and #64 only if its
+      remaining drone-POV evidence changes the promoted resolution. Do not
+      close #32 before the final sustained evidence and thesis-facing
+      runtime table are frozen.
 
 8. [ ] [#20 — P1.8 Rename misleading fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20)
    - phase 5; engineering.

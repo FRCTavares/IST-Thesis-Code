@@ -85,6 +85,22 @@ tracker publisher. It does not repeatedly create short-lived `ros2 topic echo`
 subscribers. Runtime commands are launched through the owned-process-group
 supervisor so shutdown remains scoped to processes created by that run.
 
+For Issue #32 characterization, `RUN_CONTROLLER=true` is an explicit,
+default-off option and requires `tim_mode=mars`. The replay controller consumes
+`/target_memory_mars` plus its matching status stream, publishes
+`/control_ref/cmd_vel`, and always runs with MAVROS disabled. Bounded yaw
+recovery is separately default-off through `CONTROL_ENABLE_YAW_RECOVERY` and
+must match the controller state ultimately promoted by the physical #50/#74
+decision.
+
+When `RESOURCE_SAMPLING_ENABLED=true`, the runner samples detector and tracker
+plus TIM-MARS and the controller when those components are active. Dashboard,
+playback and recording processes are excluded from this core controller-path
+CPU/RSS total. After playback ends, the runner stops the samplers and writes
+`p032_final_resources.json` plus `p032_final_resources.md` using explicit
+playback monotonic-time boundaries. The default steady-state warm-up exclusion
+is 60 seconds and can be overridden with `P032_RESOURCE_WARM_UP_S`.
+
 ## Controlled target publishers
 
 `publish_annotated_track_target.py` is annotation-driven and follows the
