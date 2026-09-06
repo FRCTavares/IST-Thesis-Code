@@ -73,6 +73,38 @@ if [[ "$TIM_MODE" == "mars" ]]; then
   RUN_TIM_MARS=true
 fi
 
+RUN_CONTROLLER="${RUN_CONTROLLER:-false}"
+CONTROL_ENABLE_YAW_RECOVERY="${CONTROL_ENABLE_YAW_RECOVERY:-false}"
+CONTROL_STALE_TIMEOUT_S="${CONTROL_STALE_TIMEOUT_S:-0.20}"
+
+case "${RUN_CONTROLLER,,}" in
+  true|false)
+    ;;
+  *)
+    echo "[error] RUN_CONTROLLER must be true or false" >&2
+    exit 3
+    ;;
+esac
+
+case "${CONTROL_ENABLE_YAW_RECOVERY,,}" in
+  true|false)
+    ;;
+  *)
+    echo "[error] CONTROL_ENABLE_YAW_RECOVERY must be true or false" >&2
+    exit 3
+    ;;
+esac
+
+if [[ "${RUN_CONTROLLER,,}" == "true" && "$RUN_TIM_MARS" != "true" ]]; then
+  echo "[error] RUN_CONTROLLER=true requires tim_mode=mars" >&2
+  exit 3
+fi
+
+if [[ "${CONTROL_ENABLE_YAW_RECOVERY,,}" == "true" && "${RUN_CONTROLLER,,}" != "true" ]]; then
+  echo "[error] CONTROL_ENABLE_YAW_RECOVERY=true requires RUN_CONTROLLER=true" >&2
+  exit 3
+fi
+
 if ! mkdir -p "$LOG_DIR" "$OUT_ROOT" "$REPORT_ROOT"; then
   echo "[error] failed to create replay output directories" >&2
   exit 15
@@ -109,6 +141,9 @@ echo "[info] TRACKER=$TRACKER"
 echo "[info] TIM_MODE=$TIM_MODE"
 echo "[info] RATE=$RATE"
 echo "[info] RECORDER_STOP_TIMEOUT=$RECORDER_STOP_TIMEOUT"
+echo "[info] RUN_CONTROLLER=$RUN_CONTROLLER"
+echo "[info] CONTROL_ENABLE_YAW_RECOVERY=$CONTROL_ENABLE_YAW_RECOVERY"
+echo "[info] CONTROL_STALE_TIMEOUT_S=$CONTROL_STALE_TIMEOUT_S"
 echo "[info] OUT_BAG=$OUT_BAG"
 echo "[info] LOG_DIR=$LOG_DIR"
 
@@ -116,6 +151,7 @@ DETECTOR_PID=""
 TRACKER_PID=""
 DASHBOARD_PID=""
 TIM_PID=""
+CONTROL_PID=""
 REC_PID=""
 PLAY_PID=""
 RESOURCE_SAMPLER_PID=""
@@ -124,9 +160,14 @@ HARDWARE_HEALTH_PID=""
 RESOURCE_SAMPLING_ENABLED="${RESOURCE_SAMPLING_ENABLED:-false}"
 RESOURCE_SAMPLE_INTERVAL_S="${RESOURCE_SAMPLE_INTERVAL_S:-1.0}"
 HARDWARE_HEALTH_INTERVAL_S="${HARDWARE_HEALTH_INTERVAL_S:-1.0}"
+P032_RESOURCE_WARM_UP_S="${P032_RESOURCE_WARM_UP_S:-60.0}"
 
 RESOURCE_SAMPLER="$THESIS_ROOT/tools/experiments/sample_process_groups.py"
 HARDWARE_HEALTH_SAMPLER="$THESIS_ROOT/tools/experiments/sample_p044_hardware_health.py"
+P032_RESOURCE_ANALYSER="$THESIS_ROOT/tools/analysis/analyse_p032_final_resources.py"
+
+P032_ANALYSIS_START_MONOTONIC_NS=""
+P032_ANALYSIS_END_MONOTONIC_NS=""
 
 PROCESS_GROUP_SUPERVISOR=(
   "$THESIS_ROOT/tools/lib/run_in_owned_process_group.py"
@@ -209,6 +250,7 @@ stop_owned_process "hardware health sampler" "${HARDWARE_HEALTH_PID:-}"
 stop_owned_process "resource sampler" "${RESOURCE_SAMPLER_PID:-}"
   stop_owned_process "playback" "${PLAY_PID:-}"
   stop_owned_process "recorder" "${REC_PID:-}"
+  stop_owned_process "controller" "${CONTROL_PID:-}"
   stop_owned_process "TIM-MARS" "${TIM_PID:-}"
   stop_owned_process "dashboard bridge" "${DASHBOARD_PID:-}"
   stop_owned_process "tracker" "${TRACKER_PID:-}"
@@ -352,7 +394,19 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     --field "tim_mode=$TIM_MODE" \
     --field "rate=$RATE" \
     --field "target_wait_timeout_s=$TARGET_WAIT_TIMEOUT" \
-    --field "recorder_stop_timeout_s=$RECORDER_STOP_TIMEOUT"; then
+    --field "recorder_stop_timeout_s=$RECORDER_STOP_TIMEOUT" \
+    --field "controller_enabled=$RUN_CONTROLLER" \
+    --field "controller_target_topic=/target_memory_mars" \
+    --field "controller_status_topic=/target_memory_mars/status" \
+    --field "controller_cmd_topic=/control_ref/cmd_vel" \
+    --field "controller_mavros_enabled=false" \
+    --field "controller_yaw_recovery_enabled=$CONTROL_ENABLE_YAW_RECOVERY" \
+    --field "controller_stale_timeout_s=$CONTROL_STALE_TIMEOUT_S" \
+    --field "controller_image_width=640" \
+    --field "controller_image_height=640" \
+    --field "resource_sampling_enabled=$RESOURCE_SAMPLING_ENABLED" \
+    --field "p032_resource_warm_up_s=$P032_RESOURCE_WARM_UP_S" \
+    --field "resource_analysis_schema=p032_final_resource_analysis_v1"; then
     echo "[error] failed to write TIM-MARS run provenance metadata" >&2
     exit 18
   fi
@@ -374,6 +428,22 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
     -p mars_model_path:="$TIM_MARS_MODEL_PATH" \
     >"$LOG_DIR/target_memory_mars.log" 2>&1 &
   TIM_PID=$!
+fi
+
+if [[ "${RUN_CONTROLLER,,}" == "true" ]]; then
+  echo "[info] starting controller characterization path"
+  "${PROCESS_GROUP_SUPERVISOR[@]}" ros2 run thesis_bringup control_ref_node --ros-args \
+    -p target_topic:=/target_memory_mars \
+    -p status_topic:=/target_memory_mars/status \
+    -p cmd_topic:=/control_ref/cmd_vel \
+    -p enable_yaw_recovery:="$CONTROL_ENABLE_YAW_RECOVERY" \
+    -p img_w:=640.0 \
+    -p img_h:=640.0 \
+    -p enable_mavros:=false \
+    -p cmd_frame_id:=base_link \
+    -p stale_timeout_s:="$CONTROL_STALE_TIMEOUT_S" \
+    >"$LOG_DIR/control_ref.log" 2>&1 &
+  CONTROL_PID=$!
 fi
 
 sleep 4
@@ -413,6 +483,12 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
   fi
 fi
 
+if [[ "${RUN_CONTROLLER,,}" == "true" ]]; then
+  if ! require_alive "controller" "$CONTROL_PID" "$LOG_DIR/control_ref.log"; then
+    exit 5
+  fi
+fi
+
 case "${RESOURCE_SAMPLING_ENABLED,,}" in
 true)
     if [[ ! -f "$RESOURCE_SAMPLER" ]]; then
@@ -422,6 +498,11 @@ true)
 
     if [[ ! -f "$HARDWARE_HEALTH_SAMPLER" ]]; then
         echo "[error] hardware-health sampler not found: $HARDWARE_HEALTH_SAMPLER" >&2
+        exit 19
+    fi
+
+    if [[ ! -f "$P032_RESOURCE_ANALYSER" ]]; then
+        echo "[error] P032 resource analyser not found: $P032_RESOURCE_ANALYSER" >&2
         exit 19
     fi
 
@@ -440,6 +521,12 @@ true)
         TIM_PGID="$(resolve_owned_pgid "TIM-MARS" "$TIM_PID")" || exit 19
         RESOURCE_GROUP_ARGS+=(--group "tim=$TIM_PGID")
         echo "[info] resource TIM-MARS pgid=$TIM_PGID"
+    fi
+
+    if [[ "${RUN_CONTROLLER,,}" == "true" ]]; then
+        CONTROL_PGID="$(resolve_owned_pgid "controller" "$CONTROL_PID")" || exit 19
+        RESOURCE_GROUP_ARGS+=(--group "controller=$CONTROL_PGID")
+        echo "[info] resource controller pgid=$CONTROL_PGID"
     fi
 
     mkdir -p         "$REPORT_DIR/resources"         "$REPORT_DIR/hardware_health"
@@ -479,6 +566,10 @@ if [[ "$RUN_TIM_MARS" == "true" ]]; then
   TOPICS+=(/target_memory_mars /target_memory_mars/status)
 fi
 
+if [[ "${RUN_CONTROLLER,,}" == "true" ]]; then
+  TOPICS+=(/control_ref/cmd_vel)
+fi
+
 "${PROCESS_GROUP_SUPERVISOR[@]}" ros2 bag record -s mcap -o "$OUT_BAG" --topics "${TOPICS[@]}" \
   >"$LOG_DIR/record.log" 2>&1 &
 REC_PID=$!
@@ -487,6 +578,13 @@ sleep 2
 
 if ! require_alive "recorder" "$REC_PID" "$LOG_DIR/record.log"; then
   exit 6
+fi
+
+if [[ "${RESOURCE_SAMPLING_ENABLED,,}" == "true" ]]; then
+  P032_ANALYSIS_START_MONOTONIC_NS="$(
+    "$THESIS_ROOT/thesis_env/bin/python" -c 'import time; print(time.monotonic_ns())'
+  )" || exit 20
+  echo "[info] P032 analysis start monotonic ns=$P032_ANALYSIS_START_MONOTONIC_NS"
 fi
 
 echo "[info] starting image-only playback"
@@ -603,6 +701,13 @@ wait "$PLAY_PID"
 PLAY_EXIT=$?
 PLAY_PID=""
 
+if [[ "${RESOURCE_SAMPLING_ENABLED,,}" == "true" ]]; then
+  P032_ANALYSIS_END_MONOTONIC_NS="$(
+    "$THESIS_ROOT/thesis_env/bin/python" -c 'import time; print(time.monotonic_ns())'
+  )" || exit 20
+  echo "[info] P032 analysis end monotonic ns=$P032_ANALYSIS_END_MONOTONIC_NS"
+fi
+
 # Resource/health measurements intentionally cover the active replay window,
 # not recorder shutdown or other post-playback cleanup latency.
 if [[ -n "${HARDWARE_HEALTH_PID:-}" ]]; then
@@ -619,6 +724,41 @@ if [[ "$PLAY_EXIT" -ne 0 ]]; then
   echo "[error] ros2 bag playback exited with status $PLAY_EXIT"
   tail -n 80 "$LOG_DIR/play.log" 2>/dev/null || true
   exit 12
+fi
+
+if [[ "${RESOURCE_SAMPLING_ENABLED,,}" == "true" ]]; then
+  P032_ARCHITECTURE_GROUPS="detector,tracker"
+
+  if [[ "$RUN_TIM_MARS" == "true" ]]; then
+    P032_ARCHITECTURE_GROUPS+=",tim"
+  fi
+
+  if [[ "${RUN_CONTROLLER,,}" == "true" ]]; then
+    P032_ARCHITECTURE_GROUPS+=",controller"
+  fi
+
+  echo "[info] generating P032 final resource analysis"
+  echo "[info] P032 architecture groups=$P032_ARCHITECTURE_GROUPS"
+
+  "$THESIS_ROOT/thesis_env/bin/python" "$P032_RESOURCE_ANALYSER" \
+    --resources-samples "$REPORT_DIR/resources/samples.jsonl" \
+    --hardware-samples "$REPORT_DIR/hardware_health/samples.jsonl" \
+    --output-json "$REPORT_DIR/p032_final_resources.json" \
+    --output-markdown "$REPORT_DIR/p032_final_resources.md" \
+    --warm-up-s "$P032_RESOURCE_WARM_UP_S" \
+    --analysis-start-monotonic-ns "$P032_ANALYSIS_START_MONOTONIC_NS" \
+    --analysis-end-monotonic-ns "$P032_ANALYSIS_END_MONOTONIC_NS" \
+    --architecture-groups "$P032_ARCHITECTURE_GROUPS" \
+    >"$LOG_DIR/p032_final_resources.log" 2>&1
+  P032_ANALYSIS_RC=$?
+
+  if [[ "$P032_ANALYSIS_RC" -ne 0 ]]; then
+    echo "[error] P032 resource analysis failed with status $P032_ANALYSIS_RC"
+    tail -n 120 "$LOG_DIR/p032_final_resources.log" 2>/dev/null || true
+    exit 20
+  fi
+
+  echo "[ok] P032 resource analysis: $REPORT_DIR/p032_final_resources.json"
 fi
 
 echo "[info] stopping recorder"

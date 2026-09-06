@@ -138,3 +138,50 @@ def test_runner_records_content_hashes_for_runtime_models():
         '--field "mars_model_sha256=$TIM_MARS_MODEL_SHA256"'
         in RUNNER
     )
+
+def test_optional_controller_characterization_is_fail_closed():
+    assert 'RUN_CONTROLLER="${RUN_CONTROLLER:-false}"' in RUNNER
+    assert (
+        'CONTROL_ENABLE_YAW_RECOVERY='
+        '"${CONTROL_ENABLE_YAW_RECOVERY:-false}"'
+        in RUNNER
+    )
+    assert "RUN_CONTROLLER=true requires tim_mode=mars" in RUNNER
+    assert (
+        "CONTROL_ENABLE_YAW_RECOVERY=true requires RUN_CONTROLLER=true"
+        in RUNNER
+    )
+
+    assert (
+        '"${PROCESS_GROUP_SUPERVISOR[@]}" ros2 run '
+        "thesis_bringup control_ref_node"
+    ) in RUNNER
+    assert '-p target_topic:=/target_memory_mars' in RUNNER
+    assert '-p status_topic:=/target_memory_mars/status' in RUNNER
+    assert '-p cmd_topic:=/control_ref/cmd_vel' in RUNNER
+    assert '-p enable_mavros:=false' in RUNNER
+    assert (
+        '-p enable_yaw_recovery:="$CONTROL_ENABLE_YAW_RECOVERY"'
+        in RUNNER
+    )
+
+    assert 'CONTROL_PID=$!' in RUNNER
+    assert (
+        'stop_owned_process "controller" "${CONTROL_PID:-}"'
+        in RUNNER
+    )
+
+
+def test_controller_characterization_provenance_is_explicit():
+    for marker in (
+        '--field "controller_enabled=$RUN_CONTROLLER"',
+        '--field "controller_target_topic=/target_memory_mars"',
+        '--field "controller_status_topic=/target_memory_mars/status"',
+        '--field "controller_cmd_topic=/control_ref/cmd_vel"',
+        '--field "controller_mavros_enabled=false"',
+        '--field "controller_yaw_recovery_enabled=$CONTROL_ENABLE_YAW_RECOVERY"',
+        '--field "controller_stale_timeout_s=$CONTROL_STALE_TIMEOUT_S"',
+        '--field "controller_image_width=640"',
+        '--field "controller_image_height=640"',
+    ):
+        assert marker in RUNNER
