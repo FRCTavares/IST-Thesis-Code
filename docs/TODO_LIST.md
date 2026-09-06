@@ -213,6 +213,18 @@ frame IDs start at one.
 
 9. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
     - phase 10; engineering; coordinate target-control behavior with #52 and path documentation with #33.
+    - 6 September 2026: frontend ownership has already moved to the independent
+      `FRCTavares/IST-Thesis-UI` repository, whose current field frontend,
+      deterministic validation contract, UI-owned launcher and battery-status
+      work are authoritative. M4/M5 now replace the Thesis-Code UI launcher
+      implementation with a compatibility shim and move operator documentation
+      and tests away from internal-frontend ownership. The old `live-ui/` tree
+      remains temporarily frozen at migration tree
+      `634754dd789c32ba1d75216855a9dd77e187774b`; do not remove it until the M6
+      live HTTP/WebSocket/MJPEG/overlay/protected-control/target-command
+      integration gate passes. Issue #55 remains open for M6/M7 plus the
+      remaining backend bind/CORS/access-control and shared integration
+      contract work.
 
 10. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
     - phase 9; experiment/documentation.
