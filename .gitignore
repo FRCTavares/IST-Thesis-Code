@@ -164,10 +164,6 @@ tools/visualization/.tim_audit_favourites.json
 # Local build/runtime logs
 log/
 
-# Frontend local dependencies/build outputs
-live-ui/node_modules/
-live-ui/dist/
-
 # Local ROS 2 bag data
 /bags/*
 !/bags/README.md

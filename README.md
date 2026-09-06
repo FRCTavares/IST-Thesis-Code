@@ -91,10 +91,16 @@ matching HailoRT and TAPPAS system runtime first. The repository helpers
 `tools/setup/install_host_hailo_bindings.sh` and
 `tools/setup/setup_local_tappas_runtime.sh` support compatible host setups.
 
-The web UI has a separate Node.js dependency set. Install it only when needed
-with:
+The browser frontend is independently owned by
+`FRCTavares/IST-Thesis-UI`, normally checked out at
+`~/Desktop/IST-Thesis-UI`. Prepare a fresh frontend checkout with:
 
-    ./tools/start_ui_stack.sh --install
+    cd ~/Desktop/IST-Thesis-UI
+    npm ci
+    npm run build
+
+`tools/start_ui_stack.sh` remains only as a Thesis-Code compatibility
+entrypoint and delegates to the external UI repository.
 
 ## 1) One-time shell setup
 
@@ -204,22 +210,31 @@ Expected:
 Run UI in parallel (second terminal):
 
 ```bash
-cd $THESIS_ROOT
-./tools/start_ui_stack.sh
+cd ~/Desktop/IST-Thesis-UI
+./tools/start_dashboard.sh
 ```
 
 Notes:
 
-- The UI launcher skips `npm install` by default.
-- Use `./tools/start_ui_stack.sh --install` when you want to refresh dependencies.
+- `IST-Thesis-UI/tools/start_dashboard.sh` is the authoritative frontend
+  launcher.
+- Its normal field/runtime mode serves an already-built `dist/` tree and does
+  not install dependencies or compile the frontend at launch time.
+- After frontend dependency or source changes, prepare the external checkout
+  with `npm ci` and `npm run build`.
+- `tools/start_ui_stack.sh` remains a compatibility entrypoint in this
+  repository and delegates to the external launcher.
+- The compatibility launcher defaults `THESIS_UI_ROOT` to
+  `$HOME/Desktop/IST-Thesis-UI`.
 
-Useful UI flags:
+Useful authoritative UI commands from `~/Desktop/IST-Thesis-UI`:
 
-- `./tools/start_ui_stack.sh --mode backend`
-- `./tools/start_ui_stack.sh --mode mock`
-- `./tools/start_ui_stack.sh --mode offline`
-- `./tools/start_ui_stack.sh --port 5174`
-- `./tools/start_ui_stack.sh --host 0.0.0.0`
+- `./tools/start_dashboard.sh --mode backend`
+- `./tools/start_dashboard.sh --mode mock`
+- `./tools/start_dashboard.sh --mode offline`
+- `./tools/start_dashboard.sh --port 5174`
+- `./tools/start_dashboard.sh --host 0.0.0.0`
+- `./tools/start_dashboard.sh --dev` only for frontend development.
 
 Verification checkpoint for the UI:
 

@@ -213,6 +213,38 @@ frame IDs start at one.
 
 9. [ ] [#55 — P1.22 Repair and test the live UI launch, build, and access-control contract](https://github.com/FRCTavares/IST-Thesis-Code/issues/55)
     - phase 10; engineering; coordinate target-control behavior with #52 and path documentation with #33.
+    - 6 September 2026: frontend ownership has moved to the independent
+      `FRCTavares/IST-Thesis-UI` repository. M4/M5 replaced the Thesis-Code
+      frontend implementation path with a compatibility launcher and moved
+      operator documentation/tests to the external ownership contract.
+    - 6 September 2026: M6 live integration was executed as a dedicated
+      bag-replay gate, `tools/live/run_issue55_m6_integration.sh`. It replays
+      only `/camera/image_raw`, `/detections`, and `/tracks` from
+      `bags/replay/p025_seq01_physical_v2_tim_mars_2026_08_29` into a fresh
+      canonical `target_memory_mars_node` and a fresh `dashboard_bridge_node`
+      (API 8090 / WS 8765, runtime reconfiguration disabled), with a
+      best-effort `/camera/image_raw` -> `/camera/dashboard` relay feeding
+      `web_video_server` 8080 and the external `IST-Thesis-UI` launcher on
+      5173, all bound to loopback. No controller, MAVROS, Pixhawk, camera,
+      detector, or Hailo component is started. The run passed every check:
+      external UI static serve with runtime configuration pointing at the
+      intended API/WS endpoints, `GET /api/models`, telemetry WebSocket
+      carrying the target-authority fields, a decoded MJPEG dashboard frame,
+      frozen model and tracker reconfiguration each rejected with HTTP 409,
+      operator target select and clear reaching the fresh
+      `target_memory_mars_node`, and monotonically increasing target-authority
+      generations. Evidence is retained under `ros2_ws/log/issue55_m6/`.
+      Existing semantic confirmed and deliberately left unchanged here: a
+      denied protected model/tracker request advances the target-authority
+      generation before returning HTTP 409; any redesign belongs to the
+      remaining H2 access-control work.
+    - 6 September 2026: M7 removed the frozen internal `live-ui/` frontend only
+      after confirming that its HEAD tree still exactly matched migration tree
+      `634754dd789c32ba1d75216855a9dd77e187774b`. Current browser frontend
+      ownership is exclusively `FRCTavares/IST-Thesis-UI`; historical frontend
+      source and experiment provenance remain recoverable from Thesis-Code Git
+      history. Issue #55 remains open for backend bind/CORS/access-control and
+      shared integration-contract hardening.
 
 10. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
     - phase 9; experiment/documentation.
