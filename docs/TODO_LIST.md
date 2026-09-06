@@ -217,15 +217,27 @@ frame IDs start at one.
       `FRCTavares/IST-Thesis-UI` repository. M4/M5 replaced the Thesis-Code
       frontend implementation path with a compatibility launcher and moved
       operator documentation/tests to the external ownership contract.
-    - 6 September 2026: M6 live integration passed against the authoritative
-      external frontend using an isolated replay. The gate verified frontend
-      static/runtime configuration, HTTP API discovery, WebSocket telemetry,
-      `/target_memory_mars` authority selection and clear, monotonically
-      increasing authority generations, frozen model/tracker reconfiguration
-      rejection with HTTP 409, and MJPEG video delivery. The initial MJPEG
-      assertion was a harness false negative: the retained capture contained
-      nine complete JPEG frames and decoded successfully as 640x480 RGB JPEG,
-      while `web_video_server` reported a clean MJPEG stream request.
+    - 6 September 2026: M6 live integration was executed as a dedicated
+      bag-replay gate, `tools/live/run_issue55_m6_integration.sh`. It replays
+      only `/camera/image_raw`, `/detections`, and `/tracks` from
+      `bags/replay/p025_seq01_physical_v2_tim_mars_2026_08_29` into a fresh
+      canonical `target_memory_mars_node` and a fresh `dashboard_bridge_node`
+      (API 8090 / WS 8765, runtime reconfiguration disabled), with a
+      best-effort `/camera/image_raw` -> `/camera/dashboard` relay feeding
+      `web_video_server` 8080 and the external `IST-Thesis-UI` launcher on
+      5173, all bound to loopback. No controller, MAVROS, Pixhawk, camera,
+      detector, or Hailo component is started. The run passed every check:
+      external UI static serve with runtime configuration pointing at the
+      intended API/WS endpoints, `GET /api/models`, telemetry WebSocket
+      carrying the target-authority fields, a decoded MJPEG dashboard frame,
+      frozen model and tracker reconfiguration each rejected with HTTP 409,
+      operator target select and clear reaching the fresh
+      `target_memory_mars_node`, and monotonically increasing target-authority
+      generations. Evidence is retained under `ros2_ws/log/issue55_m6/`.
+      Existing semantic confirmed and deliberately left unchanged here: a
+      denied protected model/tracker request advances the target-authority
+      generation before returning HTTP 409; any redesign belongs to the
+      remaining H2 access-control work.
     - 6 September 2026: M7 removed the frozen internal `live-ui/` frontend only
       after confirming that its HEAD tree still exactly matched migration tree
       `634754dd789c32ba1d75216855a9dd77e187774b`. Current browser frontend
