@@ -14,7 +14,7 @@ rather than ad-hoc ROS commands.
 | `tools/thesis_build.sh` | Build entrypoint | Builds the ROS 2 workspace with repository-local logs. |
 | `tools/reproduce_tim_mars.py` | Reproducibility entrypoint | Validates frozen inputs, builds the workspace, runs the canonical TIM-MARS matrix, and verifies tables and provenance. |
 | `tools/start_live_stack.sh` | Live operation entrypoint | Starts the live camera, perception, tracker, TIM/control/dashboard stack. |
-| `tools/start_ui_stack.sh` | UI operation entrypoint | Starts the dashboard frontend with consistent environment/logging. |
+| `tools/start_ui_stack.sh` | UI compatibility entrypoint | Delegates dashboard startup to the independently owned `IST-Thesis-UI/tools/start_dashboard.sh` launcher. |
 | `tools/timing_contract.py` | Shared contract | Defines schema-v4 timing fields, topic ownership, labels, metric tiers, and warning thresholds. |
 
 Individual evaluation and replay commands remain in their owning

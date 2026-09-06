@@ -26,17 +26,19 @@ Only `mars` and `off` are supported target-memory operator modes.
 ## Operator entrypoints
 
 - Live stack: `tools/start_live_stack.sh`
-- Dashboard launcher: `tools/start_ui_stack.sh`
-- Dashboard instructions: `live-ui/README.md`
+- Dashboard compatibility launcher: `tools/start_ui_stack.sh`
+- Authoritative dashboard frontend: `FRCTavares/IST-Thesis-UI`
 - ROS workspace build: `tools/thesis_build.sh`
 - Held-out capture index: `docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md`
 - Held-out capture helper: `tools/experiments/record_p027_heldout_sequence.sh`
 - Aircraft-validation status: `docs/flight/P050_FLIGHT_VALIDATION.md`
 - Tools overview: `tools/README.md`
 
-The dashboard application is in `live-ui/`. From the repository root, use
-`./tools/start_ui_stack.sh`; use `./tools/start_ui_stack.sh --install` after a
-fresh checkout to install frontend dependencies.
+The browser frontend is independently owned by `FRCTavares/IST-Thesis-UI`,
+normally checked out at `~/Desktop/IST-Thesis-UI`. Its authoritative launcher is
+`~/Desktop/IST-Thesis-UI/tools/start_dashboard.sh`. The local
+`tools/start_ui_stack.sh` entrypoint is retained only as an operator
+compatibility shim and must not contain frontend build/runtime implementation.
 
 ## Replay and evaluation
 

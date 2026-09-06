@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 import re
 import subprocess
@@ -12,7 +11,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 TOOLS_ROOT = REPO_ROOT / "tools"
 ROOT_README = REPO_ROOT / "README.md"
 INDEX = REPO_ROOT / "docs/design/tim_tooling_index.md"
-LIVE_UI_README = REPO_ROOT / "live-ui/README.md"
 TOOLS_README = TOOLS_ROOT / "README.md"
 P027_RUNBOOK = REPO_ROOT / "docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md"
 P050_STATUS = REPO_ROOT / "docs/flight/P050_FLIGHT_VALIDATION.md"
@@ -20,7 +18,6 @@ EXPERIMENTS_README = TOOLS_ROOT / "experiments/README.md"
 
 REPOSITORY_PATH_PREFIXES = (
     "docs/",
-    "live-ui/",
     "models/",
     "reports/",
     "ros2_ws/",
@@ -59,76 +56,88 @@ def test_tooling_index_has_no_removed_runtime_or_ui_paths():
     assert "hsv" not in index
 
 
-def test_dashboard_docs_and_launcher_use_live_ui():
-    readme = LIVE_UI_README.read_text(encoding="utf-8")
-    launcher = (TOOLS_ROOT / "start_ui_stack.sh").read_text(
-        encoding="utf-8"
-    )
-
-    assert "cd live-ui" in readme
-    assert "./tools/start_ui_stack.sh --install" in readme
-    assert "user-interface" not in readme
-    assert '$THESIS_ROOT/live-ui' in launcher
-    assert "user-interface" not in launcher
+def test_internal_live_ui_tree_is_removed_from_thesis_code():
+    assert not (REPO_ROOT / "live-ui").exists()
 
 
-def test_every_dashboard_readme_source_path_exists():
-    readme = LIVE_UI_README.read_text(encoding="utf-8")
-    inline_tokens = set(re.findall(r"`([^`\n]+)`", readme))
-    relative_paths = {
-        token.rstrip("/")
-        for token in inline_tokens
-        if token.startswith("src/")
-    }
-    relative_paths.update(
-        "src/" + token.rstrip("/")
-        for token in inline_tokens
-        if token
-        in {
-            "app/",
-            "components/",
-            "features/",
-            "services/",
-            "types/",
-            "utils/",
-        }
-    )
-    relative_paths.add(".env.example")
-
-    missing = [
-        relative_path
-        for relative_path in sorted(relative_paths)
-        if not (REPO_ROOT / "live-ui" / relative_path).exists()
-    ]
-    assert missing == []
-
-
-def test_dashboard_package_exposes_every_documented_npm_command():
-    package = json.loads(
-        (REPO_ROOT / "live-ui/package.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    scripts = package["scripts"]
-    readme = LIVE_UI_README.read_text(encoding="utf-8")
-    for command in ("dev", "build", "preview"):
-        assert command in scripts
-        assert f"npm run {command}" in readme
-
-
-def test_ui_launcher_help_and_shell_syntax_from_clean_checkout():
+def test_dashboard_compatibility_launcher_uses_external_ui_repository():
     launcher = TOOLS_ROOT / "start_ui_stack.sh"
+    source = launcher.read_text(encoding="utf-8")
+
     subprocess.run(["bash", "-n", str(launcher)], check=True)
+
+    assert (
+        'THESIS_UI_ROOT="${THESIS_UI_ROOT:-$HOME/Desktop/IST-Thesis-UI}"'
+        in source
+    )
+    assert (
+        'UI_LAUNCHER="$THESIS_UI_ROOT/tools/start_dashboard.sh"'
+        in source
+    )
+    assert 'exec "$UI_LAUNCHER" "${FORWARD_ARGS[@]}"' in source
+
+    # Thesis-Code must no longer implement the frontend runtime itself.
+    assert "UI_DIR=" not in source
+    assert "npm run dev" not in source
+    assert "npm install" not in source
+    assert "ros2_ws/log/ui_stack" not in source
+
+
+def test_dashboard_compatibility_launcher_forwards_legacy_contract(
+    tmp_path: Path,
+):
+    external_root = tmp_path / "IST-Thesis-UI"
+    external_tools = external_root / "tools"
+    external_tools.mkdir(parents=True)
+
+    fake_launcher = external_tools / "start_dashboard.sh"
+    fake_launcher.write_text(
+        """#!/usr/bin/env bash
+printf 'api=%s\\n' "${VITE_DASHBOARD_API_BASE_URL:-}"
+printf 'ws=%s\\n' "${VITE_DASHBOARD_WS_URL:-}"
+printf 'args='
+printf '<%s>' "$@"
+printf '\\n'
+""",
+        encoding="utf-8",
+    )
+    fake_launcher.chmod(0o755)
+
+    launcher = TOOLS_ROOT / "start_ui_stack.sh"
     result = subprocess.run(
-        ["bash", str(launcher), "--help"],
+        [
+            "bash",
+            str(launcher),
+            "--api-base-url",
+            "http://127.0.0.1:8090",
+            "--ws-url",
+            "ws://127.0.0.1:8765",
+            "--skip-install",
+            "--mode",
+            "backend",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "5174",
+        ],
         cwd=REPO_ROOT,
         check=True,
         capture_output=True,
         text=True,
-        env={"PATH": "/usr/bin:/bin", "PI_IP": "127.0.0.1"},
+        env={
+            "PATH": "/usr/bin:/bin",
+            "HOME": str(tmp_path),
+            "THESIS_UI_ROOT": str(external_root),
+        },
     )
-    assert "--mode <backend|mock|offline>" in result.stdout
-    assert "--install" in result.stdout
+
+    assert "api=http://127.0.0.1:8090" in result.stdout
+    assert "ws=ws://127.0.0.1:8765" in result.stdout
+    assert (
+        "args=<--mode><backend><--host><0.0.0.0><--port><5174>"
+        in result.stdout
+    )
+    assert "--skip-install" not in result.stdout
 
 
 def test_documented_build_recording_and_evaluation_commands_are_supported():
