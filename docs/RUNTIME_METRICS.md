@@ -159,6 +159,46 @@ Keep these quantities conceptually separate:
   processing time.
 - `pub_dt_ms` is cadence/jitter evidence, not processing latency.
 
+## Final sustained resource characterization
+
+Issue #32 final resource reporting is produced from the retained raw
+process-group and hardware-health JSONL streams. The historical P044 sampler
+schemas are not modified. `tools/analysis/analyse_p032_final_resources.py`
+provides the Issue #32 reporting layer and emits
+`p032_final_resource_analysis_v1`.
+
+The analyzer accepts explicit monotonic timestamps captured immediately before
+playback starts and immediately after playback finishes. Samples outside those
+bounds are excluded, so sampler pre-roll and post-roll cannot contaminate the
+active-run distribution. Reports retain both the complete active-playback
+population and the steady-state population after the configured warm-up.
+
+For finite numeric metrics the report retains `n`, mean, population standard
+deviation, minimum, p50, p90, p95, p99, and maximum. Architecture CPU and RSS
+totals are calculated only at timestamps where all requested core groups have
+a sample, preventing partial sums from being interpreted as whole-path
+measurements.
+
+The core controller-path resource total contains detector, tracker, TIM-MARS
+when active, and controller when active. Dashboard, replay, recorder and
+sampling/analysis helpers are excluded from that core total. Their enabled
+state remains part of run provenance where relevant, and they must not be
+silently conflated with the controller-path compute budget.
+
+Hardware-health reporting retains temperature, ARM frequency, throttling,
+available memory and core-voltage telemetry. Core voltage is not an electrical
+power measurement. Power is reported only if a reproducible electrical
+measurement method is available.
+
+Raw-image DDS transport cost remains a separate measured quantity under Issue
+#54 rather than a theoretical width-times-height-times-rate estimate. Hailo
+utilization/contention is reported only when directly observable from available
+Hailo tooling; otherwise it is explicitly unavailable rather than inferred from
+CPU or latency.
+
+The execution protocol is maintained in
+`docs/issues/p1-14-final-runtime-characterization.md`.
+
 ## Historical evidence
 
 Schema v4 intentionally performs no field fallback and contains no retired
