@@ -56,6 +56,10 @@ def test_tooling_index_has_no_removed_runtime_or_ui_paths():
     assert "hsv" not in index
 
 
+def test_internal_live_ui_tree_is_removed_from_thesis_code():
+    assert not (REPO_ROOT / "live-ui").exists()
+
+
 def test_dashboard_compatibility_launcher_uses_external_ui_repository():
     launcher = TOOLS_ROOT / "start_ui_stack.sh"
     source = launcher.read_text(encoding="utf-8")
