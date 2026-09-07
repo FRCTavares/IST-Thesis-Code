@@ -287,3 +287,58 @@ def test_repeatability_passes_on_identical_repeats():
         {**template, "sequence_id": "s", "config_id": "canonical_baseline", "repeat_index": 2},
     ]
     assert AGG.repeatability(cells)["deterministic"] is True
+
+
+# -- per-cell replay-bag cleanup ---------------------------------------------
+
+
+def test_prune_cell_bags_removes_reproducible_payloads_keeps_provenance(tmp_path):
+    cell_bag = tmp_path / "dev_june_seq03__canonical_baseline"
+    for sub in ("tracker", "tim"):
+        d = cell_bag / sub
+        d.mkdir(parents=True)
+        (d / f"{sub}_0.mcap").write_bytes(b"x" * 4096)
+        (d / "rosbag2.db3").write_bytes(b"y" * 4096)
+        (d / "metadata.yaml").write_text("rosbag2_bagfile_information: {}\n")
+        (d / "tracker_freeze_metadata.json").write_text('{"determinism": {}}')
+        (d / "tracker_freeze_metadata.sha256").write_text("abc  x\n")
+
+    removed = RUN.prune_cell_bags(cell_bag)
+
+    assert sorted(removed) == [
+        "tim/rosbag2.db3", "tim/tim_0.mcap",
+        "tracker/rosbag2.db3", "tracker/tracker_0.mcap",
+    ]
+    for sub in ("tracker", "tim"):
+        assert not (cell_bag / sub / f"{sub}_0.mcap").exists()
+        assert not (cell_bag / sub / "rosbag2.db3").exists()
+        assert (cell_bag / sub / "metadata.yaml").is_file()
+        assert (cell_bag / sub / "tracker_freeze_metadata.json").is_file()
+        assert (cell_bag / sub / "tracker_freeze_metadata.sha256").is_file()
+
+
+def test_prune_cell_bags_is_a_noop_on_missing_directory(tmp_path):
+    assert RUN.prune_cell_bags(tmp_path / "nope") == []
+
+
+def test_prune_cell_bags_never_touches_files_outside_the_cell_dir(tmp_path):
+    outside = tmp_path / "source.mcap"
+    outside.write_bytes(b"z" * 4096)
+    cell_bag = tmp_path / "cell"
+    (cell_bag / "tracker").mkdir(parents=True)
+    (cell_bag / "tracker" / "t_0.mcap").write_bytes(b"x" * 4096)
+
+    RUN.prune_cell_bags(cell_bag)
+
+    assert outside.is_file()
+    assert not (cell_bag / "tracker" / "t_0.mcap").exists()
+
+
+def test_runner_exposes_keep_bags_and_defaults_to_pruning():
+    import inspect
+
+    sig = inspect.signature(RUN.run_cell)
+    assert sig.parameters["keep_bags"].default is False
+    src = RUNNER_PATH.read_text()
+    assert "--keep-bags" in src
+    assert 'if cell["status"] == "ok" and not keep_bags:' in src
