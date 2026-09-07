@@ -1,0 +1,53 @@
+{
+  "checks": [
+    {
+      "mismatches": {},
+      "passed": true,
+      "repeat_index": 1,
+      "sequence_id": "dev_june_seq01"
+    },
+    {
+      "mismatches": {},
+      "passed": true,
+      "repeat_index": 2,
+      "sequence_id": "dev_june_seq01"
+    },
+    {
+      "mismatches": {},
+      "passed": true,
+      "repeat_index": 1,
+      "sequence_id": "dev_june_seq03"
+    },
+    {
+      "mismatches": {},
+      "passed": true,
+      "repeat_index": 2,
+      "sequence_id": "dev_june_seq03"
+    },
+    {
+      "mismatches": {},
+      "passed": true,
+      "repeat_index": 1,
+      "sequence_id": "dev_june_seq04"
+    },
+    {
+      "mismatches": {},
+      "passed": true,
+      "repeat_index": 2,
+      "sequence_id": "dev_june_seq04"
+    },
+    {
+      "mismatches": {},
+      "passed": true,
+      "repeat_index": 1,
+      "sequence_id": "dev_may_hard_reentry"
+    },
+    {
+      "mismatches": {},
+      "passed": true,
+      "repeat_index": 2,
+      "sequence_id": "dev_may_hard_reentry"
+    }
+  ],
+  "deterministic": true
+}
