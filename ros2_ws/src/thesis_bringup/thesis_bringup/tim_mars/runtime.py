@@ -673,6 +673,11 @@ class TimMarsRuntime:
                 ),
             )
 
+        challenged_ids = self.memory.appearance_challenge_track_ids(candidates)
+        forced_indices = tuple(
+            index for index, candidate in enumerate(candidates)
+            if candidate.track_id in challenged_ids
+        )
         result = attach_appearance_features(
             config=self.config.appearance,
             state=self.appearance_state,
@@ -699,12 +704,36 @@ class TimMarsRuntime:
                 candidate_frame_height=self.config.image_height,
                 frame_id=frame_id,
                 requested_candidate_indices=(
-                    appearance_request.requested_indices
+                    tuple(sorted(set(
+                        appearance_request.requested_indices + forced_indices
+                    )))
                 ),
+                forced_candidate_indices=forced_indices,
             ),
         )
 
         self.appearance_state = result.state
+        if challenged_ids:
+            result.candidates = [
+                replace(
+                    candidate,
+                    appearance=None,
+                    appearance_memory_update_eligible=False,
+                    appearance_challenge_failed=True,
+                )
+                if (
+                    candidate.track_id in challenged_ids
+                    and not (
+                        result.diagnostics.skip_reason in {
+                            "ok", "fresh_identity_challenge",
+                        }
+                        and result.diagnostics.embedding_age_ms_by_track_id.get(
+                            candidate.track_id
+                        ) == 0.0
+                    )
+                ) else candidate
+                for candidate in result.candidates
+            ]
         return result.candidates, result.diagnostics
 
     def clip_bbox(self, bbox: BBox) -> BBox:
