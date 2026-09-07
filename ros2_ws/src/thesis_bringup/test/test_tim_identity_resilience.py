@@ -174,3 +174,29 @@ def test_experiments_disabled_preserve_cached_same_id_continuity():
     items, diag = attach(rt, candidates(), 1_030_000_000, 2)
     assert diag.skip_reason == "cached_interval"
     assert rt.memory.update(items).state == TargetState.LOCKED
+
+
+def test_consensus_global_recovery_and_correct_post_recovery_continuation():
+    rt = initialized()
+    rt.memory.cfg.appearance_gallery_consensus_recovery_enabled = True
+    rt.memory.cfg.global_reacquisition_enabled = True
+    rt.memory.cfg.global_reacquisition_after_missed_frames = 1
+    rt.memory.cfg.max_uncertain_frames = 1
+    rt.memory.cfg.id_switch_spatial_gate_enabled = False
+    rt.memory.cfg.min_confirm_frames_after_reacquire = 1
+    rt.memory._positive_appearance.trusted_gallery = [
+        np.array([0., 1., .2]) / np.sqrt(1.04),
+        np.array([0., 1., -.2]) / np.sqrt(1.04),
+    ]
+    for _ in range(10):
+        rt.memory.update([])
+    assert rt.memory.state == TargetState.LOST
+    returned = replace(candidates()[0], track_id=19, appearance=OTHER)
+    first = rt.memory.update([returned])
+    assert first.state == TargetState.REACQUIRED
+    assert not first.visible
+    second = rt.memory.update([returned])
+    assert second.state == TargetState.LOCKED
+    assert second.visible
+    assert rt.memory.update([returned]).visible
+    np.testing.assert_array_equal(rt.memory._positive_appearance.protected_anchor, TARGET)

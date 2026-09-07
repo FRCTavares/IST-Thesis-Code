@@ -128,8 +128,9 @@ def normalized(buckets):
             "identity_unresolved", "lost_or_suppressed")
     present = sum(buckets[key + "_duration_s"] for key in keys)
     result = {"target_present_evaluable_duration_s": present}
-    for key in keys:
-        result[key + "_pct"] = 100 * buckets[key + "_duration_s"] / present if present else None
+    for key, label in zip(keys, ("correct_target", "wrong_person",
+                                "identity_unresolved", "lost_or_suppressed")):
+        result[label + "_pct"] = 100 * buckets[key + "_duration_s"] / present if present else None
     published = present - buckets["lost_or_suppressed_duration_s"]
     result["publication_correctness_pct"] = 100 * buckets["correct_target_output_duration_s"] / published if published else None
     absent = buckets["target_absent_duration_s"]
@@ -141,6 +142,7 @@ def summarize():
     cells, aggregates = {}, {}
     for candidate in CANDIDATES:
         total = Counter()
+        completed = []
         for sequence in SEQUENCES:
             bag = bag_path(sequence, candidate, 1)
             metadata_path = bag / "tim_replay_metadata.json"
@@ -175,11 +177,16 @@ def summarize():
                 "retained_duration_buckets_equal": buckets == old["duration_buckets"],
             }
             total.update(buckets)
+            completed.append(sequence)
             print(candidate, sequence, {k: round(buckets[k + "_duration_s"], 6)
                   for k in ("correct_target_output", "wrong_person_output", "lost_or_suppressed")},
                   "repeat", repeat_equal, flush=True)
         if total:
-            aggregates[candidate] = {"duration_buckets": dict(total), "normalized": normalized(total)}
+            aggregates[candidate] = {
+                "duration_buckets": dict(total), "normalized": normalized(total),
+                "complete": tuple(completed) == SEQUENCES,
+                "completed_sequences": completed,
+            }
     REPORTS.mkdir(parents=True, exist_ok=True)
     (REPORTS / "summary.json").write_text(json.dumps({
         "protocol": "docs/results/selected_target_tracking/tim_resilience_methodology_20260907.md",
