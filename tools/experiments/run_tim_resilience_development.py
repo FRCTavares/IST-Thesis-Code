@@ -25,6 +25,7 @@ CANDIDATES = {
     "challenge": (True, False),
     "gallery_consensus": (False, True),
     "combined": (True, True),
+    "available_image_challenge": (True, False),
 }
 CANONICAL = ROOT / "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
 CANONICAL_SHA = "0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0"
@@ -71,6 +72,8 @@ def run_cell(sequence, candidate, repeat):
     if candidate != "baseline":
         values["same_id_fresh_challenge_enabled"] = challenge
         values["appearance_gallery_consensus_recovery_enabled"] = consensus
+        if candidate == "available_image_challenge":
+            values["same_id_challenge_available_images_only"] = True
     config = REPORTS / f"{candidate}.yaml"
     config.parent.mkdir(parents=True, exist_ok=True)
     if not config.exists():
