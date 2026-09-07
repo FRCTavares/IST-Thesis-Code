@@ -1263,3 +1263,69 @@ def test_processing_timestamp_window_rejects_invalid_contract(
         MODULE.filter_track_events_by_timestamp(
             events, start, end
         )
+
+def test_shadow_appearance_probe_is_default_off(monkeypatch):
+    """Keep forensic shadow inference completely opt-in."""
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        [
+            "run_deterministic_tim_replay.py",
+            "input",
+            "output",
+            "--config",
+            "config.yaml",
+            "--model",
+            "model.pb",
+            "--selected-track-id",
+            "7",
+        ],
+    )
+
+    arguments = MODULE.parse_args()
+
+    assert arguments.shadow_appearance_probe_out is None
+    assert arguments.shadow_appearance_probe_frame_ids is None
+    assert arguments.shadow_appearance_probe_track_id is None
+
+
+def test_shadow_appearance_probe_options_are_explicit(
+    monkeypatch,
+    tmp_path,
+):
+    """Parse the bounded development-only shadow-probe contract."""
+    output_path = tmp_path / "shadow.json"
+
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        [
+            "run_deterministic_tim_replay.py",
+            "input",
+            "output",
+            "--config",
+            "config.yaml",
+            "--model",
+            "model.pb",
+            "--selected-track-id",
+            "7",
+            "--shadow-appearance-probe-out",
+            str(output_path),
+            "--shadow-appearance-probe-frame-ids",
+            "1054",
+            "1055",
+            "1081",
+            "--shadow-appearance-probe-track-id",
+            "9",
+        ],
+    )
+
+    arguments = MODULE.parse_args()
+
+    assert arguments.shadow_appearance_probe_out == output_path
+    assert arguments.shadow_appearance_probe_frame_ids == [
+        1054,
+        1055,
+        1081,
+    ]
+    assert arguments.shadow_appearance_probe_track_id == 9
