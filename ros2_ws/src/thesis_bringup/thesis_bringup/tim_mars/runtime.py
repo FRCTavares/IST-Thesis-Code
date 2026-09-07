@@ -713,7 +713,14 @@ class TimMarsRuntime:
         )
 
         self.appearance_state = result.state
-        if challenged_ids:
+        unavailable_image = result.diagnostics.skip_reason in {
+            "cached_same_image", "stale_image", "no_image",
+        }
+        keep_existing_evidence = bool(
+            self.config.memory.same_id_challenge_available_images_only
+            and unavailable_image
+        )
+        if challenged_ids and not keep_existing_evidence:
             result.candidates = [
                 replace(
                     candidate,

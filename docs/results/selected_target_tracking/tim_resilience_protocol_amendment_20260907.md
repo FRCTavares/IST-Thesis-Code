@@ -5,7 +5,7 @@ original candidates and before implementation/evaluation of the fourth.
 It does not replace the original protocol or erase negative results.
 
 The strict challenge candidate removes Seq03 wrong authority but loses
-30.140331088 s correct authority on May. The frame audit identifies 187
+30.140331 s correct authority on May. The frame audit identifies 187
 `same_id_fresh_challenge_reject` decisions: 140 `cached_same_image` and 47
 `stale_image`. Repeated LOCKED -> UNCERTAIN -> REACQUIRED transitions explain
 the regression. The May source has only 360 images for 950 tracker messages;

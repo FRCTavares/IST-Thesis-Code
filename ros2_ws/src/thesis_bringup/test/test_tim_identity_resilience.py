@@ -200,3 +200,43 @@ def test_consensus_global_recovery_and_correct_post_recovery_continuation():
     assert second.visible
     assert rt.memory.update([returned]).visible
     np.testing.assert_array_equal(rt.memory._positive_appearance.protected_anchor, TARGET)
+
+
+@pytest.mark.parametrize("image", [True, False])
+def test_available_image_policy_keeps_existing_identity_gates(image):
+    rt = initialized()
+    rt.memory.cfg.same_id_challenge_available_images_only = True
+    items, diag = attach(rt, candidates(), 1_000_000_000, 2, image=image)
+    assert diag.skip_reason in {"cached_same_image", "no_image"}
+    assert not items[0].appearance_challenge_failed
+    assert rt.memory.update(items).visible
+    rt.memory._hard_negative_memory._memory = [OTHER]
+    wrong = replace(items[0], appearance=OTHER)
+    assert not rt.memory.update([wrong, items[1]]).visible
+
+
+def test_available_image_policy_still_fails_closed_on_backend_failure():
+    rt = initialized()
+    rt.memory.cfg.same_id_challenge_available_images_only = True
+    rt.mars_backend = None
+    items, _ = attach(rt, candidates(), 1_030_000_000, 2)
+    assert items[0].appearance_challenge_failed
+    assert not rt.memory.update(items).visible
+
+
+def test_available_image_policy_does_not_extend_cache_expiry():
+    rt = initialized()
+    rt.memory.cfg.same_id_challenge_available_images_only = True
+    items, diag = attach(rt, candidates(), 2_000_000_000, 2, image=False)
+    assert diag.cache_expired == 2
+    assert items[0].appearance is None
+    assert not rt.memory.update(items).visible
+
+
+def test_available_image_policy_still_challenges_new_visual_observation():
+    rt = initialized()
+    rt.memory.cfg.same_id_challenge_available_images_only = True
+    rt.mars_backend.feature = OTHER
+    items, diag = attach(rt, candidates(), 1_030_000_000, 2)
+    assert diag.skip_reason == "fresh_identity_challenge"
+    assert not rt.memory.update(items).visible
