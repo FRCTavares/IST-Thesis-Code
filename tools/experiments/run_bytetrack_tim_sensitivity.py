@@ -291,6 +291,32 @@ def read_generated_digest(bag_dir: Path, metadata_name: str) -> str | None:
     return data.get("determinism", {}).get("generated_semantic_sha256")
 
 
+# Bytes that are large, deterministic, and reproducible from the frozen
+# methodology commit. Everything else in a cell bag directory (metadata.yaml,
+# tracker-freeze / TIM-replay metadata, digests, resolved-runtime fingerprints,
+# copied config) is compact provenance and is kept.
+_REPRODUCIBLE_BAG_SUFFIXES = (".mcap", ".db3")
+
+
+def prune_cell_bags(bag_dir: Path) -> list[str]:
+    """Delete the large reproducible replay payloads under one cell's bag
+    directory, keeping every compact provenance sidecar. Returns the relative
+    paths removed. Never touches anything outside ``bag_dir``.
+    """
+    removed: list[str] = []
+    if not bag_dir.is_dir():
+        return removed
+    for path in sorted(bag_dir.rglob("*")):
+        if path.is_file() and path.suffix in _REPRODUCIBLE_BAG_SUFFIXES:
+            try:
+                rel = str(path.relative_to(bag_dir))
+            except ValueError:
+                rel = str(path)
+            path.unlink()
+            removed.append(rel)
+    return removed
+
+
 def run_cell(
     *,
     sequence: dict[str, Any],
@@ -301,6 +327,7 @@ def run_cell(
     bag_root: Path,
     repeat_index: int | None,
     resume: bool,
+    keep_bags: bool = False,
 ) -> dict[str, Any]:
     seq_id = sequence["id"]
     config_id = config_entry["id"]
@@ -455,6 +482,13 @@ def run_cell(
         cell["physical_v2"][s]["reconciliation"]["ok"] for s in cell["physical_v2"]
     )
     cell.update(status="ok" if ok else "evaluation_incomplete", duration_s=round(time.time() - started, 2))
+
+    # The digests, resolved-runtime fingerprints and physical-v2 reports are
+    # now written; drop the large reproducible replay payloads for a clean
+    # cell. Non-ok cells keep their bags for diagnosis.
+    if cell["status"] == "ok" and not keep_bags:
+        cell["pruned_reproducible_bag_files"] = len(prune_cell_bags(bag_dir))
+
     write_json(cell_json, cell)
     return cell
 
@@ -587,6 +621,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run", action="store_true")
     parser.add_argument("--repeatability", action="store_true", help="Also run canonical baseline x2 per sequence.")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--keep-bags",
+        action="store_true",
+        help="Keep the large per-cell replay MCAP bags (default: delete them "
+        "after a cell succeeds; compact provenance sidecars are always kept).",
+    )
     return parser.parse_args()
 
 
@@ -646,6 +686,7 @@ def main() -> int:
             bag_root=bag_root,
             repeat_index=repeat_index,
             resume=args.resume,
+            keep_bags=args.keep_bags,
         )
         cells.append(cell)
         print(f"    -> {cell['status']} ({cell.get('duration_s')}s)", flush=True)
@@ -658,6 +699,7 @@ def main() -> int:
         "repo_commit": git_value("rev-parse", "HEAD"),
         "repo_status_short": git_value("status", "--short").splitlines(),
         "manifest_lock": "manifest_lock.json",
+        "keep_bags": bool(args.keep_bags),
         "split": {
             "path": manifest["development_set"]["split_authority"],
             "id": manifest["development_set"]["split_id"],
