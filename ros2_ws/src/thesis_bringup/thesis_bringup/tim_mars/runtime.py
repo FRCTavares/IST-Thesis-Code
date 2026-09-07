@@ -62,6 +62,11 @@ class TimMarsRuntimeConfig:
     image_buffer_size: int = 64
     appearance_async_request_crops_enabled: bool = False
 
+    # Development-only mechanism-ablation controls. These are intentionally
+    # not TargetMemoryConfig/ROS/canonical-YAML parameters.
+    development_ablation_disable_forced_same_id_challenge: bool = False
+    development_ablation_restore_same_id_general_negative_exemption: bool = False
+
 
 @dataclass(frozen=True)
 class AppearanceFrame:
@@ -138,7 +143,15 @@ class TimMarsRuntime:
     _images: list[AppearanceFrame] = field(default_factory=list, init=False)
 
     def __post_init__(self) -> None:
-        self.memory = TargetIdentityMemory(self.config.memory)
+        self.memory = TargetIdentityMemory(
+            self.config.memory,
+            development_ablation_disable_forced_same_id_challenge=bool(
+                self.config.development_ablation_disable_forced_same_id_challenge
+            ),
+            development_ablation_restore_same_id_general_negative_exemption=bool(
+                self.config.development_ablation_restore_same_id_general_negative_exemption
+            ),
+        )
         selected_id = int(self.config.selected_track_id)
         self.pending_select_id = selected_id if selected_id > 0 else None
 

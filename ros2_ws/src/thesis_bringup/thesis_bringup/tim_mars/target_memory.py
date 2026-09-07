@@ -131,8 +131,20 @@ class TargetIdentityMemory:
         out = tim.update(current_tracks)
     """
 
-    def __init__(self, cfg: Optional[TargetMemoryConfig] = None) -> None:
+    def __init__(
+        self,
+        cfg: Optional[TargetMemoryConfig] = None,
+        *,
+        development_ablation_disable_forced_same_id_challenge: bool = False,
+        development_ablation_restore_same_id_general_negative_exemption: bool = False,
+    ) -> None:
         self.cfg = cfg or TargetMemoryConfig()
+        self._development_ablation_disable_forced_same_id_challenge = bool(
+            development_ablation_disable_forced_same_id_challenge
+        )
+        self._development_ablation_restore_same_id_general_negative_exemption = bool(
+            development_ablation_restore_same_id_general_negative_exemption
+        )
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
         self._candidate_persistence = CandidatePersistenceTracker()
@@ -903,7 +915,10 @@ class TargetIdentityMemory:
         )
         trusted_same_id_continuity = bool(
             self.cfg.same_id_hijack_protection_enabled
-            and not self.cfg.same_id_fresh_challenge_enabled
+            and (
+                not self.cfg.same_id_fresh_challenge_enabled
+                or self._development_ablation_restore_same_id_general_negative_exemption
+            )
             and proposal.same_id
             and self._m.state == TargetState.LOCKED
         )
@@ -1113,6 +1128,9 @@ class TargetIdentityMemory:
         candidates: Sequence[CandidateTrack],
     ) -> tuple[int, ...]:
         """Request current evidence using the existing hijack risk predicate."""
+        if self._development_ablation_disable_forced_same_id_challenge:
+            return ()
+
         if not (
             self.cfg.same_id_fresh_challenge_enabled
             and self.cfg.same_id_hijack_protection_enabled

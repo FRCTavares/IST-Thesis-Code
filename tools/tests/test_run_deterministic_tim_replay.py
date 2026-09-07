@@ -859,6 +859,8 @@ def test_build_resolved_runtime_payload_records_sources(
         "appearance_enabled": True,
         "appearance_request_policy": "all_candidates",
         "appearance_compute_min_interval_ms": 250.0,
+        "ablation_disable_forced_same_id_challenge": False,
+        "ablation_restore_same_id_general_negative_exemption": False,
         "compact_output": True,
         "process_start_timestamp_ns": 100,
         "process_end_timestamp_ns": 200,
@@ -896,6 +898,12 @@ def test_build_resolved_runtime_payload_records_sources(
     assert sources[
         "appearance_compute_min_interval_ms"
     ] == "canonical_config"
+    assert sources[
+        "ablation_disable_forced_same_id_challenge"
+    ] == "runner_default"
+    assert sources[
+        "ablation_restore_same_id_general_negative_exemption"
+    ] == "runner_default"
     assert sources["raw_target_mode"] == (
         "command_line"
     )
@@ -1329,3 +1337,52 @@ def test_shadow_appearance_probe_options_are_explicit(
         1081,
     ]
     assert arguments.shadow_appearance_probe_track_id == 9
+
+def test_tim_ablation_controls_are_default_off(monkeypatch):
+    """Keep development ablations completely opt-in."""
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        [
+            "run_deterministic_tim_replay.py",
+            "input",
+            "output",
+            "--config",
+            "config.yaml",
+            "--model",
+            "model.pb",
+            "--selected-track-id",
+            "7",
+        ],
+    )
+
+    arguments = MODULE.parse_args()
+
+    assert not arguments.ablation_disable_forced_same_id_challenge
+    assert not arguments.ablation_restore_same_id_general_negative_exemption
+
+
+def test_tim_ablation_controls_are_explicit(monkeypatch):
+    """Parse both independent development-only ablation controls."""
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        [
+            "run_deterministic_tim_replay.py",
+            "input",
+            "output",
+            "--config",
+            "config.yaml",
+            "--model",
+            "model.pb",
+            "--selected-track-id",
+            "7",
+            "--ablation-disable-forced-same-id-challenge",
+            "--ablation-restore-same-id-general-negative-exemption",
+        ],
+    )
+
+    arguments = MODULE.parse_args()
+
+    assert arguments.ablation_disable_forced_same_id_challenge
+    assert arguments.ablation_restore_same_id_general_negative_exemption
