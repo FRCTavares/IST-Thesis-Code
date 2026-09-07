@@ -1,0 +1,56 @@
+{
+  "match_thresh_higher_1": {
+    "overall": "neutral",
+    "per_sequence": {
+      "dev_june_seq01": "neutral",
+      "dev_june_seq03": "neutral",
+      "dev_june_seq04": "neutral",
+      "dev_may_hard_reentry": "neutral"
+    }
+  },
+  "match_thresh_lower_1": {
+    "overall": "regressed",
+    "per_sequence": {
+      "dev_june_seq01": "neutral",
+      "dev_june_seq03": "neutral",
+      "dev_june_seq04": "regressed",
+      "dev_may_hard_reentry": "neutral"
+    }
+  },
+  "track_buffer_higher_1": {
+    "overall": "neutral",
+    "per_sequence": {
+      "dev_june_seq01": "neutral",
+      "dev_june_seq03": "neutral",
+      "dev_june_seq04": "neutral",
+      "dev_may_hard_reentry": "neutral"
+    }
+  },
+  "track_buffer_lower_1": {
+    "overall": "neutral",
+    "per_sequence": {
+      "dev_june_seq01": "neutral",
+      "dev_june_seq03": "neutral",
+      "dev_june_seq04": "neutral",
+      "dev_may_hard_reentry": "neutral"
+    }
+  },
+  "track_thresh_higher_1": {
+    "overall": "unsafe_regression",
+    "per_sequence": {
+      "dev_june_seq01": "neutral",
+      "dev_june_seq03": "neutral",
+      "dev_june_seq04": "neutral",
+      "dev_may_hard_reentry": "unsafe_regression"
+    }
+  },
+  "track_thresh_lower_1": {
+    "overall": "neutral",
+    "per_sequence": {
+      "dev_june_seq01": "neutral",
+      "dev_june_seq03": "neutral",
+      "dev_june_seq04": "neutral",
+      "dev_may_hard_reentry": "neutral"
+    }
+  }
+}

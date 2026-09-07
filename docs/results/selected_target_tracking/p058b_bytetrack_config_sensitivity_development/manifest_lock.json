@@ -1,0 +1,191 @@
+{
+  "canonical_tracker_config": {
+    "path": "ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+    "sha256": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906"
+  },
+  "configurations": [
+    {
+      "dimension_id": null,
+      "dimension_label": "canonical baseline",
+      "id": "canonical_baseline",
+      "order": 0,
+      "overrides": {},
+      "parameters": {
+        "frame_rate": 30,
+        "fuse_scores": true,
+        "low_thresh": 0.1,
+        "match_thresh": 0.8,
+        "min_score": 0.2,
+        "mot20": false,
+        "new_track_thresh": 0.6,
+        "second_match_thresh": 0.5,
+        "track_buffer": 30,
+        "track_thresh": 0.5,
+        "tracker_type": "bytetrack",
+        "unconfirmed_match_thresh": 0.7
+      },
+      "path": "reports/p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07/configs/canonical_baseline.yaml",
+      "sha256": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906"
+    },
+    {
+      "dimension_id": "track_thresh",
+      "dimension_label": "Detection score split threshold (high vs low association round)",
+      "id": "track_thresh_lower_1",
+      "order": 1,
+      "overrides": {
+        "track_thresh": 0.4
+      },
+      "parameters": {
+        "frame_rate": 30,
+        "fuse_scores": true,
+        "low_thresh": 0.1,
+        "match_thresh": 0.8,
+        "min_score": 0.2,
+        "mot20": false,
+        "new_track_thresh": 0.6,
+        "second_match_thresh": 0.5,
+        "track_buffer": 30,
+        "track_thresh": 0.4,
+        "tracker_type": "bytetrack",
+        "unconfirmed_match_thresh": 0.7
+      },
+      "path": "reports/p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07/configs/track_thresh_lower_1.yaml",
+      "sha256": "b70053a13f97158225f45bd76317f3b02690c923a4a4e6e9a5b177a1f381b00f"
+    },
+    {
+      "dimension_id": "track_thresh",
+      "dimension_label": "Detection score split threshold (high vs low association round)",
+      "id": "track_thresh_higher_1",
+      "order": 2,
+      "overrides": {
+        "track_thresh": 0.6
+      },
+      "parameters": {
+        "frame_rate": 30,
+        "fuse_scores": true,
+        "low_thresh": 0.1,
+        "match_thresh": 0.8,
+        "min_score": 0.2,
+        "mot20": false,
+        "new_track_thresh": 0.6,
+        "second_match_thresh": 0.5,
+        "track_buffer": 30,
+        "track_thresh": 0.6,
+        "tracker_type": "bytetrack",
+        "unconfirmed_match_thresh": 0.7
+      },
+      "path": "reports/p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07/configs/track_thresh_higher_1.yaml",
+      "sha256": "0ad50708516d1d632a211aac28ca683dbbbf51564ee63b5addd8c3882d59e31e"
+    },
+    {
+      "dimension_id": "match_thresh",
+      "dimension_label": "First-round IoU association acceptance threshold",
+      "id": "match_thresh_lower_1",
+      "order": 3,
+      "overrides": {
+        "match_thresh": 0.7
+      },
+      "parameters": {
+        "frame_rate": 30,
+        "fuse_scores": true,
+        "low_thresh": 0.1,
+        "match_thresh": 0.7,
+        "min_score": 0.2,
+        "mot20": false,
+        "new_track_thresh": 0.6,
+        "second_match_thresh": 0.5,
+        "track_buffer": 30,
+        "track_thresh": 0.5,
+        "tracker_type": "bytetrack",
+        "unconfirmed_match_thresh": 0.7
+      },
+      "path": "reports/p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07/configs/match_thresh_lower_1.yaml",
+      "sha256": "d9921fe642152ff2fbf0433b8d1b2c10f24acdea861b3722e2ea986e0589ccd9"
+    },
+    {
+      "dimension_id": "match_thresh",
+      "dimension_label": "First-round IoU association acceptance threshold",
+      "id": "match_thresh_higher_1",
+      "order": 4,
+      "overrides": {
+        "match_thresh": 0.9
+      },
+      "parameters": {
+        "frame_rate": 30,
+        "fuse_scores": true,
+        "low_thresh": 0.1,
+        "match_thresh": 0.9,
+        "min_score": 0.2,
+        "mot20": false,
+        "new_track_thresh": 0.6,
+        "second_match_thresh": 0.5,
+        "track_buffer": 30,
+        "track_thresh": 0.5,
+        "tracker_type": "bytetrack",
+        "unconfirmed_match_thresh": 0.7
+      },
+      "path": "reports/p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07/configs/match_thresh_higher_1.yaml",
+      "sha256": "41175638b72bb737a5e3bb4665a9f5134de0b0d7beea8ed1e7969352302dca10"
+    },
+    {
+      "dimension_id": "track_buffer",
+      "dimension_label": "Lost-track lifetime (frames retained before removal)",
+      "id": "track_buffer_lower_1",
+      "order": 5,
+      "overrides": {
+        "track_buffer": 15
+      },
+      "parameters": {
+        "frame_rate": 30,
+        "fuse_scores": true,
+        "low_thresh": 0.1,
+        "match_thresh": 0.8,
+        "min_score": 0.2,
+        "mot20": false,
+        "new_track_thresh": 0.6,
+        "second_match_thresh": 0.5,
+        "track_buffer": 15,
+        "track_thresh": 0.5,
+        "tracker_type": "bytetrack",
+        "unconfirmed_match_thresh": 0.7
+      },
+      "path": "reports/p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07/configs/track_buffer_lower_1.yaml",
+      "sha256": "49193a10c4ac728060cb717ef0e730f1723dd48bd0dfa3ab9876f1f280f1c9e3"
+    },
+    {
+      "dimension_id": "track_buffer",
+      "dimension_label": "Lost-track lifetime (frames retained before removal)",
+      "id": "track_buffer_higher_1",
+      "order": 6,
+      "overrides": {
+        "track_buffer": 45
+      },
+      "parameters": {
+        "frame_rate": 30,
+        "fuse_scores": true,
+        "low_thresh": 0.1,
+        "match_thresh": 0.8,
+        "min_score": 0.2,
+        "mot20": false,
+        "new_track_thresh": 0.6,
+        "second_match_thresh": 0.5,
+        "track_buffer": 45,
+        "track_thresh": 0.5,
+        "tracker_type": "bytetrack",
+        "unconfirmed_match_thresh": 0.7
+      },
+      "path": "reports/p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07/configs/track_buffer_higher_1.yaml",
+      "sha256": "956f8f19ccf81922fceaedc5a1fd6a7c125fdd0376aa2eb66bc0ea87b6dec17f"
+    }
+  ],
+  "manifest_id": "bytetrack_tim_sensitivity_v1",
+  "manifest_path": "docs/data/tracker_sensitivity/bytetrack_tim_sensitivity_v1.yaml",
+  "manifest_sha256": "44b96035330c0eb9690b0e7c5f42c02acb33138a2ded771fbc000eb7ef2f6954",
+  "repo_commit": "14c3ef20755863e7ced3350fe823ccc017277ae3",
+  "repo_status_short": [],
+  "schema_version": 1,
+  "tim_mars_config": {
+    "path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+    "sha256": "0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0"
+  }
+}
