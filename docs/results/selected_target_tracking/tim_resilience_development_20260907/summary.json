@@ -1,0 +1,1624 @@
+{
+  "aggregates": {
+    "available_image_challenge": {
+      "complete": true,
+      "completed_sequences": [
+        "may",
+        "seq01",
+        "seq03",
+        "seq04"
+      ],
+      "duration_buckets": {
+        "correct_target_output_duration_s": 197.3635018920005,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 197.3635018920005,
+        "lost_or_suppressed_duration_s": 87.9353700119995,
+        "reference_gap_duration_s": 0.20133716599999474,
+        "reference_gap_with_output_duration_s": 0.16782075899999427,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 13.900030159000003,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.03339424100000343
+      },
+      "normalized": {
+        "correct_target_pct": 69.16971030248096,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 30.818586064610212,
+        "publication_correctness_pct": 99.98308269194997,
+        "target_absent_with_output_pct": 0.0,
+        "target_present_evaluable_duration_s": 285.332266145,
+        "wrong_person_pct": 0.01170363290881136
+      }
+    },
+    "baseline": {
+      "complete": true,
+      "completed_sequences": [
+        "may",
+        "seq01",
+        "seq03",
+        "seq04"
+      ],
+      "duration_buckets": {
+        "correct_target_output_duration_s": 192.33126363500054,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 192.33126363500054,
+        "lost_or_suppressed_duration_s": 92.83425884399949,
+        "reference_gap_duration_s": 0.20133716599999474,
+        "reference_gap_with_output_duration_s": 0.13354185199999336,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 13.900030159000003,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.16674366600000212
+      },
+      "normalized": {
+        "correct_target_pct": 67.40606880305002,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 32.53549277768081,
+        "publication_correctness_pct": 99.91337901709325,
+        "target_absent_with_output_pct": 0.0,
+        "target_present_evaluable_duration_s": 285.33226614500006,
+        "wrong_person_pct": 0.05843841926915702
+      }
+    },
+    "challenge": {
+      "complete": true,
+      "completed_sequences": [
+        "may",
+        "seq01",
+        "seq03",
+        "seq04"
+      ],
+      "duration_buckets": {
+        "correct_target_output_duration_s": 167.02084516799223,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 167.02084516799223,
+        "lost_or_suppressed_duration_s": 118.27802673600776,
+        "reference_gap_duration_s": 0.20133716599999474,
+        "reference_gap_with_output_duration_s": 0.16782075899999427,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 13.900030159000003,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.03339424100000343
+      },
+      "normalized": {
+        "correct_target_pct": 58.53556186425676,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 41.452734502834424,
+        "publication_correctness_pct": 99.98000994101187,
+        "target_absent_with_output_pct": 0.0,
+        "target_present_evaluable_duration_s": 285.332266145,
+        "wrong_person_pct": 0.01170363290881136
+      }
+    },
+    "combined": {
+      "complete": true,
+      "completed_sequences": [
+        "may",
+        "seq01",
+        "seq03",
+        "seq04"
+      ],
+      "duration_buckets": {
+        "correct_target_output_duration_s": 214.82152578799224,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 214.82152578799224,
+        "lost_or_suppressed_duration_s": 70.27680167100775,
+        "reference_gap_duration_s": 0.20133716599999474,
+        "reference_gap_with_output_duration_s": 0.16782075899999427,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 13.900030159000003,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.23393868600001255
+      },
+      "normalized": {
+        "correct_target_pct": 75.28819950521276,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 24.629812330896538,
+        "publication_correctness_pct": 99.89121937144346,
+        "target_absent_with_output_pct": 0.0,
+        "target_present_evaluable_duration_s": 285.332266145,
+        "wrong_person_pct": 0.08198816389070057
+      }
+    },
+    "gallery_consensus": {
+      "complete": true,
+      "completed_sequences": [
+        "may",
+        "seq01",
+        "seq03",
+        "seq04"
+      ],
+      "duration_buckets": {
+        "correct_target_output_duration_s": 238.83061862600053,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 238.83061862600053,
+        "lost_or_suppressed_duration_s": 42.70103207799947,
+        "reference_gap_duration_s": 0.20133716599999474,
+        "reference_gap_with_output_duration_s": 0.13354185199999336,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 13.900030159000003,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 3.8006154410000015
+      },
+      "normalized": {
+        "correct_target_pct": 83.7026326719852,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 14.96537095328002,
+        "publication_correctness_pct": 98.43358360039066,
+        "target_absent_with_output_pct": 0.0,
+        "target_present_evaluable_duration_s": 285.332266145,
+        "wrong_person_pct": 1.3319963747347827
+      }
+    }
+  },
+  "cells": {
+    "available_image_challenge/may": {
+      "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+      "config_sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 62.79632971200054,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 62.79632971200054,
+        "lost_or_suppressed_duration_s": 5.035185820999448,
+        "reference_gap_duration_s": 0.0,
+        "reference_gap_with_output_duration_s": 0.0,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.03339424100000343
+      },
+      "generated_semantic_sha256": "252829b914efdb81876a41bda5494985db4ddcf0f07d8a9de267c91415a13cd9",
+      "normalized": {
+        "correct_target_pct": 92.53136845112067,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 7.419424615412218,
+        "publication_correctness_pct": 99.94684961368763,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 67.864909774,
+        "wrong_person_pct": 0.04920693346710561
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "afa3b4186fdccda3880ef7e7e2c097a325bc6ba2",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 248,
+        "backend_requested": 416,
+        "backend_valid": 416,
+        "cache_expired": 11,
+        "cache_hits": 1375,
+        "cache_invalidated": 0,
+        "cache_lookups": 2372,
+        "cache_misses": 986,
+        "cached_positive_memory_update_frames": 586,
+        "candidates_per_invocation": 1.6774193548387097,
+        "embeddings_per_s": 6.152941919322087,
+        "encoded_frame_pct": 26.105263157894736,
+        "encoded_frames": 248,
+        "forced_fresh_frames": 84,
+        "frames": 950,
+        "positive_memory_update_frames": 801,
+        "reasons": {
+          "accepted_candidate": 861,
+          "global_identity_recovery_reject": 17,
+          "id_switch_recovery_reject": 5,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 12,
+          "rank_aware_id_switch_recovery_reject": 2,
+          "reacquired_candidate": 7,
+          "recovery_persistence_pending": 7,
+          "same_id_hijack_reject": 2,
+          "same_id_reacquisition_reject": 19,
+          "short_gap_new_id_suppressed": 17
+        },
+        "states": {
+          "LOCKED": 869,
+          "LOST": 39,
+          "REACQUIRED": 7,
+          "UNCERTAIN": 35
+        },
+        "timeline_duration_s": 67.609934476
+      }
+    },
+    "available_image_challenge/seq01": {
+      "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+      "config_sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 61.200516816,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 61.200516816,
+        "lost_or_suppressed_duration_s": 0.0,
+        "reference_gap_duration_s": 0.0,
+        "reference_gap_with_output_duration_s": 0.0,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "97b1f3ca36a75d4fe2f679c250fa8f53675b536001cf168572681f53d075e4f5",
+      "normalized": {
+        "correct_target_pct": 100.0,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 0.0,
+        "publication_correctness_pct": 100.0,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 61.200516816,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "afa3b4186fdccda3880ef7e7e2c097a325bc6ba2",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": true,
+      "workload": {
+        "backend_calls": 232,
+        "backend_requested": 876,
+        "backend_valid": 876,
+        "cache_expired": 0,
+        "cache_hits": 4844,
+        "cache_invalidated": 0,
+        "cache_lookups": 5028,
+        "cache_misses": 184,
+        "cached_positive_memory_update_frames": 1281,
+        "candidates_per_invocation": 3.7758620689655173,
+        "embeddings_per_s": 14.313604616014981,
+        "encoded_frame_pct": 15.263157894736842,
+        "encoded_frames": 232,
+        "forced_fresh_frames": 8,
+        "frames": 1520,
+        "positive_memory_update_frames": 1513,
+        "reasons": {
+          "accepted_candidate": 1519,
+          "operator_select": 1
+        },
+        "states": {
+          "LOCKED": 1520
+        },
+        "timeline_duration_s": 61.200516816
+      }
+    },
+    "available_image_challenge/seq03": {
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "config_sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 24.600414281999996,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 24.600414281999996,
+        "lost_or_suppressed_duration_s": 59.166383501000006,
+        "reference_gap_duration_s": 0.1004533710000004,
+        "reference_gap_with_output_duration_s": 0.1004533710000004,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+      "normalized": {
+        "correct_target_pct": 29.367738690128743,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 70.63226130987127,
+        "publication_correctness_pct": 100.0,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 83.766797783,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "afa3b4186fdccda3880ef7e7e2c097a325bc6ba2",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 354,
+        "backend_requested": 896,
+        "backend_valid": 896,
+        "cache_expired": 15,
+        "cache_hits": 4000,
+        "cache_invalidated": 0,
+        "cache_lookups": 4541,
+        "cache_misses": 526,
+        "cached_positive_memory_update_frames": 400,
+        "candidates_per_invocation": 2.531073446327684,
+        "embeddings_per_s": 10.683550344993819,
+        "encoded_frame_pct": 18.33247022268255,
+        "encoded_frames": 354,
+        "forced_fresh_frames": 52,
+        "frames": 1931,
+        "positive_memory_update_frames": 525,
+        "reasons": {
+          "accepted_candidate": 540,
+          "best_below_threshold": 1,
+          "global_identity_recovery_reject": 409,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 967,
+          "rank_aware_id_switch_recovery_reject": 2,
+          "reacquired_candidate": 2,
+          "recovery_persistence_pending": 2,
+          "same_id_hijack_reject": 1,
+          "same_id_reacquisition_reject": 2,
+          "short_gap_new_id_suppressed": 4
+        },
+        "states": {
+          "LOCKED": 543,
+          "LOST": 1374,
+          "REACQUIRED": 2,
+          "UNCERTAIN": 12
+        },
+        "timeline_duration_s": 83.867251154
+      }
+    },
+    "available_image_challenge/seq04": {
+      "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "config_sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 48.766241081999965,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 48.766241081999965,
+        "lost_or_suppressed_duration_s": 23.733800690000038,
+        "reference_gap_duration_s": 0.10088379499999434,
+        "reference_gap_with_output_duration_s": 0.06736738799999387,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 13.900030159000003,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "ff818a434e52a4c5f6733846434cc455f6501182ac4632a2f4da65cc68e6d980",
+      "normalized": {
+        "correct_target_pct": 67.26374204770984,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 32.73625795229016,
+        "publication_correctness_pct": 99.99999999999999,
+        "target_absent_with_output_pct": 0.0,
+        "target_present_evaluable_duration_s": 72.500041772,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "afa3b4186fdccda3880ef7e7e2c097a325bc6ba2",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 1150,
+        "backend_requested": 2224,
+        "backend_valid": 2224,
+        "cache_expired": 43,
+        "cache_hits": 5320,
+        "cache_invalidated": 0,
+        "cache_lookups": 6734,
+        "cache_misses": 1371,
+        "cached_positive_memory_update_frames": 123,
+        "candidates_per_invocation": 1.9339130434782608,
+        "embeddings_per_s": 25.710698585166288,
+        "encoded_frame_pct": 56.17977528089887,
+        "encoded_frames": 1150,
+        "forced_fresh_frames": 837,
+        "frames": 2047,
+        "positive_memory_update_frames": 840,
+        "reasons": {
+          "accepted_candidate": 1138,
+          "best_below_threshold": 19,
+          "global_identity_recovery_reject": 721,
+          "id_switch_recovery_reject": 5,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 105,
+          "rank_aware_id_switch_recovery_reject": 8,
+          "reacquired_candidate": 10,
+          "recovery_persistence_pending": 11,
+          "same_id_hijack_reject": 3,
+          "same_id_reacquisition_reject": 19,
+          "short_gap_new_id_suppressed": 7
+        },
+        "states": {
+          "LOCKED": 1149,
+          "LOST": 828,
+          "REACQUIRED": 11,
+          "UNCERTAIN": 59
+        },
+        "timeline_duration_s": 86.500955726
+      }
+    },
+    "baseline/may": {
+      "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+      "config_sha256": "0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 62.594003990000544,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 62.594003990000544,
+        "lost_or_suppressed_duration_s": 5.237511542999446,
+        "reference_gap_duration_s": 0.0,
+        "reference_gap_with_output_duration_s": 0.0,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.03339424100000343
+      },
+      "generated_semantic_sha256": "063ce426086c5ce89acfd71f7b90b8bfa7155eee2169fcd0a7905ec14756cb05",
+      "normalized": {
+        "correct_target_pct": 92.2332383531455,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 7.717554713387404,
+        "publication_correctness_pct": 99.94667790464992,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 67.864909774,
+        "wrong_person_pct": 0.04920693346710561
+      },
+      "post_implementation_baseline_semantic_equal": true,
+      "reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "7ea81b079d556896ec766fef2df3af618acb423d",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": true,
+      "workload": {
+        "backend_calls": 185,
+        "backend_requested": 374,
+        "backend_valid": 374,
+        "cache_expired": 11,
+        "cache_hits": 1438,
+        "cache_invalidated": 0,
+        "cache_lookups": 2414,
+        "cache_misses": 965,
+        "cached_positive_memory_update_frames": 646,
+        "candidates_per_invocation": 2.0216216216216214,
+        "embeddings_per_s": 5.531731437082837,
+        "encoded_frame_pct": 19.473684210526315,
+        "encoded_frames": 185,
+        "forced_fresh_frames": 0,
+        "frames": 950,
+        "positive_memory_update_frames": 803,
+        "reasons": {
+          "accepted_candidate": 858,
+          "global_identity_recovery_reject": 18,
+          "id_switch_recovery_reject": 5,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 14,
+          "rank_aware_id_switch_recovery_reject": 3,
+          "reacquired_candidate": 7,
+          "recovery_persistence_pending": 7,
+          "same_id_hijack_reject": 3,
+          "same_id_reacquisition_reject": 19,
+          "short_gap_new_id_suppressed": 15
+        },
+        "states": {
+          "LOCKED": 866,
+          "LOST": 42,
+          "REACQUIRED": 7,
+          "UNCERTAIN": 35
+        },
+        "timeline_duration_s": 67.609934476
+      }
+    },
+    "baseline/seq01": {
+      "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+      "config_sha256": "0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 61.200516816,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 61.200516816,
+        "lost_or_suppressed_duration_s": 0.0,
+        "reference_gap_duration_s": 0.0,
+        "reference_gap_with_output_duration_s": 0.0,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "6de78f32017a4d9810f69c6db1a655e23473db58da0dc659d9cc245ee5640d3a",
+      "normalized": {
+        "correct_target_pct": 100.0,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 0.0,
+        "publication_correctness_pct": 100.0,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 61.200516816,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": true,
+      "reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "7ea81b079d556896ec766fef2df3af618acb423d",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": true,
+      "workload": {
+        "backend_calls": 224,
+        "backend_requested": 868,
+        "backend_valid": 868,
+        "cache_expired": 0,
+        "cache_hits": 4852,
+        "cache_invalidated": 0,
+        "cache_lookups": 5036,
+        "cache_misses": 184,
+        "cached_positive_memory_update_frames": 1289,
+        "candidates_per_invocation": 3.875,
+        "embeddings_per_s": 14.182886765640415,
+        "encoded_frame_pct": 14.736842105263158,
+        "encoded_frames": 224,
+        "forced_fresh_frames": 0,
+        "frames": 1520,
+        "positive_memory_update_frames": 1513,
+        "reasons": {
+          "accepted_candidate": 1519,
+          "operator_select": 1
+        },
+        "states": {
+          "LOCKED": 1520
+        },
+        "timeline_duration_s": 61.200516816
+      }
+    },
+    "baseline/seq03": {
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "config_sha256": "0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 25.06744324399999,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 25.06744324399999,
+        "lost_or_suppressed_duration_s": 58.56600511400001,
+        "reference_gap_duration_s": 0.1004533710000004,
+        "reference_gap_with_output_duration_s": 0.1004533710000004,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.1333494249999987
+      },
+      "generated_semantic_sha256": "ac7d23b09cc5bb6eb916aea4e4dfdaa946284bc22aa75973382f1963533bab7b",
+      "normalized": {
+        "correct_target_pct": 29.925273386882747,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 69.9155353481659,
+        "publication_correctness_pct": 99.47085225948453,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 83.766797783,
+        "wrong_person_pct": 0.15919126495135189
+      },
+      "post_implementation_baseline_semantic_equal": true,
+      "reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "7ea81b079d556896ec766fef2df3af618acb423d",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": true,
+      "workload": {
+        "backend_calls": 302,
+        "backend_requested": 844,
+        "backend_valid": 844,
+        "cache_expired": 15,
+        "cache_hits": 4052,
+        "cache_invalidated": 0,
+        "cache_lookups": 4593,
+        "cache_misses": 526,
+        "cached_positive_memory_update_frames": 450,
+        "candidates_per_invocation": 2.794701986754967,
+        "embeddings_per_s": 10.063522869614713,
+        "encoded_frame_pct": 15.639564992232005,
+        "encoded_frames": 302,
+        "forced_fresh_frames": 0,
+        "frames": 1931,
+        "positive_memory_update_frames": 537,
+        "reasons": {
+          "accepted_candidate": 550,
+          "best_below_threshold": 1,
+          "global_identity_recovery_reject": 481,
+          "hard_negative_reject": 6,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 873,
+          "rank_aware_id_switch_recovery_reject": 4,
+          "reacquired_candidate": 3,
+          "recovery_persistence_pending": 3,
+          "same_id_hijack_reject": 3,
+          "same_id_reacquisition_reject": 2,
+          "short_gap_new_id_suppressed": 4
+        },
+        "states": {
+          "LOCKED": 554,
+          "LOST": 1355,
+          "REACQUIRED": 3,
+          "UNCERTAIN": 19
+        },
+        "timeline_duration_s": 83.867251154
+      }
+    },
+    "baseline/seq04": {
+      "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "config_sha256": "0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 43.46929958499997,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 43.46929958499997,
+        "lost_or_suppressed_duration_s": 29.03074218700003,
+        "reference_gap_duration_s": 0.10088379499999434,
+        "reference_gap_with_output_duration_s": 0.03308848099999295,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 13.900030159000003,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "46f330684b6ba857d565c3eda25c2a0d9e890fa0c9cd951532621345f8279324",
+      "normalized": {
+        "correct_target_pct": 59.95762005448679,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 40.04237994551321,
+        "publication_correctness_pct": 100.0,
+        "target_absent_with_output_pct": 0.0,
+        "target_present_evaluable_duration_s": 72.500041772,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": true,
+      "reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "7ea81b079d556896ec766fef2df3af618acb423d",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": true,
+      "workload": {
+        "backend_calls": 313,
+        "backend_requested": 1387,
+        "backend_valid": 1387,
+        "cache_expired": 50,
+        "cache_hits": 6002,
+        "cache_invalidated": 0,
+        "cache_lookups": 7571,
+        "cache_misses": 1519,
+        "cached_positive_memory_update_frames": 712,
+        "candidates_per_invocation": 4.431309904153355,
+        "embeddings_per_s": 16.03450491799714,
+        "encoded_frame_pct": 15.29066927210552,
+        "encoded_frames": 313,
+        "forced_fresh_frames": 0,
+        "frames": 2047,
+        "positive_memory_update_frames": 834,
+        "reasons": {
+          "accepted_candidate": 997,
+          "best_below_threshold": 20,
+          "global_identity_recovery_reject": 774,
+          "id_switch_recovery_reject": 5,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 123,
+          "rank_aware_id_switch_recovery_reject": 14,
+          "reacquired_candidate": 18,
+          "recovery_persistence_pending": 20,
+          "same_id_hijack_reject": 11,
+          "same_id_reacquisition_reject": 57,
+          "short_gap_new_id_suppressed": 7
+        },
+        "states": {
+          "LOCKED": 1016,
+          "LOST": 907,
+          "REACQUIRED": 20,
+          "UNCERTAIN": 104
+        },
+        "timeline_duration_s": 86.500955726
+      }
+    },
+    "challenge/may": {
+      "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+      "config_sha256": "005cec03df39badd7e99a33eeaa87ae7f3ffc222170fcb70ef89133e71db350b",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 32.45367298799228,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 32.45367298799228,
+        "lost_or_suppressed_duration_s": 35.37784254500772,
+        "reference_gap_duration_s": 0.0,
+        "reference_gap_with_output_duration_s": 0.0,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.03339424100000343
+      },
+      "generated_semantic_sha256": "0694f7464025d79a560ed3a6c813b8268f77be524446dc6e49b751ddb8a1d4f5",
+      "normalized": {
+        "correct_target_pct": 47.82099187351419,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 52.1298011930187,
+        "publication_correctness_pct": 99.8972075848995,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 67.864909774,
+        "wrong_person_pct": 0.04920693346710561
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 219,
+        "backend_requested": 394,
+        "backend_valid": 394,
+        "cache_expired": 12,
+        "cache_hits": 1398,
+        "cache_invalidated": 0,
+        "cache_lookups": 2394,
+        "cache_misses": 984,
+        "cached_positive_memory_update_frames": 132,
+        "candidates_per_invocation": 1.7990867579908676,
+        "embeddings_per_s": 5.827545952434861,
+        "encoded_frame_pct": 23.05263157894737,
+        "encoded_frames": 219,
+        "forced_fresh_frames": 47,
+        "frames": 950,
+        "positive_memory_update_frames": 254,
+        "reasons": {
+          "accepted_candidate": 262,
+          "global_identity_recovery_reject": 46,
+          "id_switch_recovery_reject": 3,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 50,
+          "rank_aware_id_switch_recovery_reject": 6,
+          "reacquired_candidate": 189,
+          "recovery_persistence_pending": 191,
+          "same_id_fresh_challenge_reject": 187,
+          "same_id_hijack_reject": 1,
+          "same_id_reacquisition_reject": 13,
+          "short_gap_new_id_suppressed": 1
+        },
+        "states": {
+          "LOCKED": 452,
+          "LOST": 69,
+          "REACQUIRED": 191,
+          "UNCERTAIN": 238
+        },
+        "timeline_duration_s": 67.609934476
+      }
+    },
+    "challenge/seq01": {
+      "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+      "config_sha256": "005cec03df39badd7e99a33eeaa87ae7f3ffc222170fcb70ef89133e71db350b",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 61.200516816,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 61.200516816,
+        "lost_or_suppressed_duration_s": 0.0,
+        "reference_gap_duration_s": 0.0,
+        "reference_gap_with_output_duration_s": 0.0,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "97b1f3ca36a75d4fe2f679c250fa8f53675b536001cf168572681f53d075e4f5",
+      "normalized": {
+        "correct_target_pct": 100.0,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 0.0,
+        "publication_correctness_pct": 100.0,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 61.200516816,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": true,
+      "workload": {
+        "backend_calls": 232,
+        "backend_requested": 876,
+        "backend_valid": 876,
+        "cache_expired": 0,
+        "cache_hits": 4844,
+        "cache_invalidated": 0,
+        "cache_lookups": 5028,
+        "cache_misses": 184,
+        "cached_positive_memory_update_frames": 1281,
+        "candidates_per_invocation": 3.7758620689655173,
+        "embeddings_per_s": 14.313604616014981,
+        "encoded_frame_pct": 15.263157894736842,
+        "encoded_frames": 232,
+        "forced_fresh_frames": 8,
+        "frames": 1520,
+        "positive_memory_update_frames": 1513,
+        "reasons": {
+          "accepted_candidate": 1519,
+          "operator_select": 1
+        },
+        "states": {
+          "LOCKED": 1520
+        },
+        "timeline_duration_s": 61.200516816
+      }
+    },
+    "challenge/seq03": {
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "config_sha256": "005cec03df39badd7e99a33eeaa87ae7f3ffc222170fcb70ef89133e71db350b",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 24.600414281999996,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 24.600414281999996,
+        "lost_or_suppressed_duration_s": 59.166383501000006,
+        "reference_gap_duration_s": 0.1004533710000004,
+        "reference_gap_with_output_duration_s": 0.1004533710000004,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+      "normalized": {
+        "correct_target_pct": 29.367738690128743,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 70.63226130987127,
+        "publication_correctness_pct": 100.0,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 83.766797783,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 354,
+        "backend_requested": 896,
+        "backend_valid": 896,
+        "cache_expired": 15,
+        "cache_hits": 4000,
+        "cache_invalidated": 0,
+        "cache_lookups": 4541,
+        "cache_misses": 526,
+        "cached_positive_memory_update_frames": 400,
+        "candidates_per_invocation": 2.531073446327684,
+        "embeddings_per_s": 10.683550344993819,
+        "encoded_frame_pct": 18.33247022268255,
+        "encoded_frames": 354,
+        "forced_fresh_frames": 52,
+        "frames": 1931,
+        "positive_memory_update_frames": 525,
+        "reasons": {
+          "accepted_candidate": 540,
+          "best_below_threshold": 1,
+          "global_identity_recovery_reject": 409,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 967,
+          "rank_aware_id_switch_recovery_reject": 2,
+          "reacquired_candidate": 2,
+          "recovery_persistence_pending": 2,
+          "same_id_hijack_reject": 1,
+          "same_id_reacquisition_reject": 2,
+          "short_gap_new_id_suppressed": 4
+        },
+        "states": {
+          "LOCKED": 543,
+          "LOST": 1374,
+          "REACQUIRED": 2,
+          "UNCERTAIN": 12
+        },
+        "timeline_duration_s": 83.867251154
+      }
+    },
+    "challenge/seq04": {
+      "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "config_sha256": "005cec03df39badd7e99a33eeaa87ae7f3ffc222170fcb70ef89133e71db350b",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 48.766241081999965,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 48.766241081999965,
+        "lost_or_suppressed_duration_s": 23.733800690000038,
+        "reference_gap_duration_s": 0.10088379499999434,
+        "reference_gap_with_output_duration_s": 0.06736738799999387,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 13.900030159000003,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "ff818a434e52a4c5f6733846434cc455f6501182ac4632a2f4da65cc68e6d980",
+      "normalized": {
+        "correct_target_pct": 67.26374204770984,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 32.73625795229016,
+        "publication_correctness_pct": 99.99999999999999,
+        "target_absent_with_output_pct": 0.0,
+        "target_present_evaluable_duration_s": 72.500041772,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          "?? tools/analysis/analyse_tim_resilience_evidence.py"
+        ]
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 1150,
+        "backend_requested": 2224,
+        "backend_valid": 2224,
+        "cache_expired": 43,
+        "cache_hits": 5320,
+        "cache_invalidated": 0,
+        "cache_lookups": 6734,
+        "cache_misses": 1371,
+        "cached_positive_memory_update_frames": 123,
+        "candidates_per_invocation": 1.9339130434782608,
+        "embeddings_per_s": 25.710698585166288,
+        "encoded_frame_pct": 56.17977528089887,
+        "encoded_frames": 1150,
+        "forced_fresh_frames": 837,
+        "frames": 2047,
+        "positive_memory_update_frames": 840,
+        "reasons": {
+          "accepted_candidate": 1138,
+          "best_below_threshold": 19,
+          "global_identity_recovery_reject": 721,
+          "id_switch_recovery_reject": 5,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 105,
+          "rank_aware_id_switch_recovery_reject": 8,
+          "reacquired_candidate": 10,
+          "recovery_persistence_pending": 11,
+          "same_id_hijack_reject": 3,
+          "same_id_reacquisition_reject": 19,
+          "short_gap_new_id_suppressed": 7
+        },
+        "states": {
+          "LOCKED": 1149,
+          "LOST": 828,
+          "REACQUIRED": 11,
+          "UNCERTAIN": 59
+        },
+        "timeline_duration_s": 86.500955726
+      }
+    },
+    "combined/may": {
+      "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+      "config_sha256": "8444d835036f5c3eaad7d92efb8bbe7fed0420404a89481daa535d795ca239d0",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 32.45367298799228,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 32.45367298799228,
+        "lost_or_suppressed_duration_s": 35.37784254500772,
+        "reference_gap_duration_s": 0.0,
+        "reference_gap_with_output_duration_s": 0.0,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.03339424100000343
+      },
+      "generated_semantic_sha256": "0694f7464025d79a560ed3a6c813b8268f77be524446dc6e49b751ddb8a1d4f5",
+      "normalized": {
+        "correct_target_pct": 47.82099187351419,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 52.1298011930187,
+        "publication_correctness_pct": 99.8972075848995,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 67.864909774,
+        "wrong_person_pct": 0.04920693346710561
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M tools/experiments/run_tim_resilience_development.py",
+          "?? tools/analysis/analyse_tim_resilience_evidence.py",
+          "?? tools/tests/test_tim_resilience_development.py"
+        ]
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 219,
+        "backend_requested": 394,
+        "backend_valid": 394,
+        "cache_expired": 12,
+        "cache_hits": 1398,
+        "cache_invalidated": 0,
+        "cache_lookups": 2394,
+        "cache_misses": 984,
+        "cached_positive_memory_update_frames": 132,
+        "candidates_per_invocation": 1.7990867579908676,
+        "embeddings_per_s": 5.827545952434861,
+        "encoded_frame_pct": 23.05263157894737,
+        "encoded_frames": 219,
+        "forced_fresh_frames": 47,
+        "frames": 950,
+        "positive_memory_update_frames": 254,
+        "reasons": {
+          "accepted_candidate": 262,
+          "global_identity_recovery_reject": 46,
+          "id_switch_recovery_reject": 3,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 50,
+          "rank_aware_id_switch_recovery_reject": 6,
+          "reacquired_candidate": 189,
+          "recovery_persistence_pending": 191,
+          "same_id_fresh_challenge_reject": 187,
+          "same_id_hijack_reject": 1,
+          "same_id_reacquisition_reject": 13,
+          "short_gap_new_id_suppressed": 1
+        },
+        "states": {
+          "LOCKED": 452,
+          "LOST": 69,
+          "REACQUIRED": 191,
+          "UNCERTAIN": 238
+        },
+        "timeline_duration_s": 67.609934476
+      }
+    },
+    "combined/seq01": {
+      "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+      "config_sha256": "8444d835036f5c3eaad7d92efb8bbe7fed0420404a89481daa535d795ca239d0",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 61.200516816,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 61.200516816,
+        "lost_or_suppressed_duration_s": 0.0,
+        "reference_gap_duration_s": 0.0,
+        "reference_gap_with_output_duration_s": 0.0,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "97b1f3ca36a75d4fe2f679c250fa8f53675b536001cf168572681f53d075e4f5",
+      "normalized": {
+        "correct_target_pct": 100.0,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 0.0,
+        "publication_correctness_pct": 100.0,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 61.200516816,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+          " M tools/experiments/run_tim_resilience_development.py",
+          "?? tools/analysis/analyse_tim_resilience_evidence.py",
+          "?? tools/tests/test_tim_resilience_development.py"
+        ]
+      },
+      "retained_duration_buckets_equal": true,
+      "workload": {
+        "backend_calls": 232,
+        "backend_requested": 876,
+        "backend_valid": 876,
+        "cache_expired": 0,
+        "cache_hits": 4844,
+        "cache_invalidated": 0,
+        "cache_lookups": 5028,
+        "cache_misses": 184,
+        "cached_positive_memory_update_frames": 1281,
+        "candidates_per_invocation": 3.7758620689655173,
+        "embeddings_per_s": 14.313604616014981,
+        "encoded_frame_pct": 15.263157894736842,
+        "encoded_frames": 232,
+        "forced_fresh_frames": 8,
+        "frames": 1520,
+        "positive_memory_update_frames": 1513,
+        "reasons": {
+          "accepted_candidate": 1519,
+          "operator_select": 1
+        },
+        "states": {
+          "LOCKED": 1520
+        },
+        "timeline_duration_s": 61.200516816
+      }
+    },
+    "combined/seq03": {
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "config_sha256": "8444d835036f5c3eaad7d92efb8bbe7fed0420404a89481daa535d795ca239d0",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 69.86735953399999,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 69.86735953399999,
+        "lost_or_suppressed_duration_s": 13.765676638000006,
+        "reference_gap_duration_s": 0.1004533710000004,
+        "reference_gap_with_output_duration_s": 0.1004533710000004,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.13376161100000772
+      },
+      "generated_semantic_sha256": "4f6756b2713987a12585ae1860d5b47aeae254a3e1318aebba5048ca94731848",
+      "normalized": {
+        "correct_target_pct": 83.40698389234497,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 16.4333327790091,
+        "publication_correctness_pct": 99.80891504477059,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 83.766797783,
+        "wrong_person_pct": 0.15968332864593981
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+          " M tools/experiments/run_tim_resilience_development.py",
+          "?? tools/analysis/analyse_tim_resilience_evidence.py",
+          "?? tools/tests/test_tim_resilience_development.py"
+        ]
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 1008,
+        "backend_requested": 1550,
+        "backend_valid": 1550,
+        "cache_expired": 12,
+        "cache_hits": 3360,
+        "cache_invalidated": 0,
+        "cache_lookups": 3887,
+        "cache_misses": 515,
+        "cached_positive_memory_update_frames": 645,
+        "candidates_per_invocation": 1.5376984126984128,
+        "embeddings_per_s": 18.481588208415648,
+        "encoded_frame_pct": 52.20093215950285,
+        "encoded_frames": 1008,
+        "forced_fresh_frames": 706,
+        "frames": 1931,
+        "positive_memory_update_frames": 1433,
+        "reasons": {
+          "accepted_candidate": 1592,
+          "ambiguous_best_candidate": 1,
+          "best_below_threshold": 9,
+          "global_identity_recovery_reject": 161,
+          "hard_negative_reject": 4,
+          "id_switch_recovery_reject": 10,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 55,
+          "rank_aware_hard_negative_reject": 5,
+          "rank_aware_id_switch_recovery_reject": 15,
+          "reacquired_candidate": 15,
+          "recovery_persistence_pending": 16,
+          "same_id_hijack_reject": 7,
+          "same_id_reacquisition_reject": 15,
+          "short_gap_new_id_suppressed": 25
+        },
+        "states": {
+          "LOCKED": 1608,
+          "LOST": 223,
+          "REACQUIRED": 16,
+          "UNCERTAIN": 84
+        },
+        "timeline_duration_s": 83.867251154
+      }
+    },
+    "combined/seq04": {
+      "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "config_sha256": "8444d835036f5c3eaad7d92efb8bbe7fed0420404a89481daa535d795ca239d0",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 51.299976449999974,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 51.299976449999974,
+        "lost_or_suppressed_duration_s": 21.133282488000027,
+        "reference_gap_duration_s": 0.10088379499999434,
+        "reference_gap_with_output_duration_s": 0.06736738799999387,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 13.900030159000003,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0667828340000014
+      },
+      "generated_semantic_sha256": "0584f862060fbee162c2e93c3430cde8743a3bebb597eb3c05539483b9f0228f",
+      "normalized": {
+        "correct_target_pct": 70.75854743826143,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 29.14933836101849,
+        "publication_correctness_pct": 99.86998822793012,
+        "target_absent_with_output_pct": 0.0,
+        "target_present_evaluable_duration_s": 72.500041772,
+        "wrong_person_pct": 0.09211420072007927
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "d887cfe61aada2dc924b2569b91c3e75c0760d06",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": []
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 1194,
+        "backend_requested": 2268,
+        "backend_valid": 2268,
+        "cache_expired": 43,
+        "cache_hits": 5276,
+        "cache_invalidated": 0,
+        "cache_lookups": 6690,
+        "cache_misses": 1371,
+        "cached_positive_memory_update_frames": 125,
+        "candidates_per_invocation": 1.899497487437186,
+        "embeddings_per_s": 26.219363485232527,
+        "encoded_frame_pct": 58.329262335124575,
+        "encoded_frames": 1194,
+        "forced_fresh_frames": 881,
+        "frames": 2047,
+        "positive_memory_update_frames": 890,
+        "reasons": {
+          "accepted_candidate": 1191,
+          "appearance_conservative_reject": 6,
+          "best_below_threshold": 26,
+          "global_identity_recovery_reject": 659,
+          "id_switch_recovery_reject": 5,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 67,
+          "rank_aware_id_switch_recovery_reject": 12,
+          "reacquired_candidate": 16,
+          "recovery_persistence_pending": 18,
+          "same_id_hijack_reject": 5,
+          "same_id_reacquisition_reject": 31,
+          "short_gap_new_id_suppressed": 10
+        },
+        "states": {
+          "LOCKED": 1208,
+          "LOST": 732,
+          "REACQUIRED": 18,
+          "UNCERTAIN": 89
+        },
+        "timeline_duration_s": 86.500955726
+      }
+    },
+    "gallery_consensus/may": {
+      "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+      "config_sha256": "f37b65eca87dd6f7ab3d0bd7e2d18d4c869c903c4b9ddd7848667b8a27eba9b1",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 62.594003990000544,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 62.594003990000544,
+        "lost_or_suppressed_duration_s": 5.237511542999446,
+        "reference_gap_duration_s": 0.0,
+        "reference_gap_with_output_duration_s": 0.0,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.03339424100000343
+      },
+      "generated_semantic_sha256": "063ce426086c5ce89acfd71f7b90b8bfa7155eee2169fcd0a7905ec14756cb05",
+      "normalized": {
+        "correct_target_pct": 92.2332383531455,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 7.717554713387404,
+        "publication_correctness_pct": 99.94667790464992,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 67.864909774,
+        "wrong_person_pct": 0.04920693346710561
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M tools/experiments/run_tim_resilience_development.py",
+          "?? tools/analysis/analyse_tim_resilience_evidence.py"
+        ]
+      },
+      "retained_duration_buckets_equal": true,
+      "workload": {
+        "backend_calls": 185,
+        "backend_requested": 374,
+        "backend_valid": 374,
+        "cache_expired": 11,
+        "cache_hits": 1438,
+        "cache_invalidated": 0,
+        "cache_lookups": 2414,
+        "cache_misses": 965,
+        "cached_positive_memory_update_frames": 646,
+        "candidates_per_invocation": 2.0216216216216214,
+        "embeddings_per_s": 5.531731437082837,
+        "encoded_frame_pct": 19.473684210526315,
+        "encoded_frames": 185,
+        "forced_fresh_frames": 0,
+        "frames": 950,
+        "positive_memory_update_frames": 803,
+        "reasons": {
+          "accepted_candidate": 858,
+          "global_identity_recovery_reject": 18,
+          "id_switch_recovery_reject": 5,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 14,
+          "rank_aware_id_switch_recovery_reject": 3,
+          "reacquired_candidate": 7,
+          "recovery_persistence_pending": 7,
+          "same_id_hijack_reject": 3,
+          "same_id_reacquisition_reject": 19,
+          "short_gap_new_id_suppressed": 15
+        },
+        "states": {
+          "LOCKED": 866,
+          "LOST": 42,
+          "REACQUIRED": 7,
+          "UNCERTAIN": 35
+        },
+        "timeline_duration_s": 67.609934476
+      }
+    },
+    "gallery_consensus/seq01": {
+      "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+      "config_sha256": "f37b65eca87dd6f7ab3d0bd7e2d18d4c869c903c4b9ddd7848667b8a27eba9b1",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 61.200516816,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 61.200516816,
+        "lost_or_suppressed_duration_s": 0.0,
+        "reference_gap_duration_s": 0.0,
+        "reference_gap_with_output_duration_s": 0.0,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "6de78f32017a4d9810f69c6db1a655e23473db58da0dc659d9cc245ee5640d3a",
+      "normalized": {
+        "correct_target_pct": 100.0,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 0.0,
+        "publication_correctness_pct": 100.0,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 61.200516816,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M tools/experiments/run_tim_resilience_development.py",
+          "?? tools/analysis/analyse_tim_resilience_evidence.py"
+        ]
+      },
+      "retained_duration_buckets_equal": true,
+      "workload": {
+        "backend_calls": 224,
+        "backend_requested": 868,
+        "backend_valid": 868,
+        "cache_expired": 0,
+        "cache_hits": 4852,
+        "cache_invalidated": 0,
+        "cache_lookups": 5036,
+        "cache_misses": 184,
+        "cached_positive_memory_update_frames": 1289,
+        "candidates_per_invocation": 3.875,
+        "embeddings_per_s": 14.182886765640415,
+        "encoded_frame_pct": 14.736842105263158,
+        "encoded_frames": 224,
+        "forced_fresh_frames": 0,
+        "frames": 1520,
+        "positive_memory_update_frames": 1513,
+        "reasons": {
+          "accepted_candidate": 1519,
+          "operator_select": 1
+        },
+        "states": {
+          "LOCKED": 1520
+        },
+        "timeline_duration_s": 61.200516816
+      }
+    },
+    "gallery_consensus/seq03": {
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "config_sha256": "f37b65eca87dd6f7ab3d0bd7e2d18d4c869c903c4b9ddd7848667b8a27eba9b1",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 68.53298672,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 68.53298672,
+        "lost_or_suppressed_duration_s": 11.466589863000003,
+        "reference_gap_duration_s": 0.1004533710000004,
+        "reference_gap_with_output_duration_s": 0.1004533710000004,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 3.767221199999998
+      },
+      "generated_semantic_sha256": "dd295a94a9ebf8ebde4086781c5abc62b76ed552b634721593c4f6b8de316bb4",
+      "normalized": {
+        "correct_target_pct": 81.81402242155231,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 13.688705031681518,
+        "publication_correctness_pct": 94.78947390556827,
+        "target_absent_with_output_pct": null,
+        "target_present_evaluable_duration_s": 83.766797783,
+        "wrong_person_pct": 4.497272546766177
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M tools/experiments/run_tim_resilience_development.py",
+          "?? tools/analysis/analyse_tim_resilience_evidence.py",
+          "?? tools/tests/test_tim_resilience_development.py"
+        ]
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 302,
+        "backend_requested": 844,
+        "backend_valid": 844,
+        "cache_expired": 15,
+        "cache_hits": 4052,
+        "cache_invalidated": 0,
+        "cache_lookups": 4593,
+        "cache_misses": 526,
+        "cached_positive_memory_update_frames": 1253,
+        "candidates_per_invocation": 2.794701986754967,
+        "embeddings_per_s": 10.063522869614713,
+        "encoded_frame_pct": 15.639564992232005,
+        "encoded_frames": 302,
+        "forced_fresh_frames": 0,
+        "frames": 1931,
+        "positive_memory_update_frames": 1479,
+        "reasons": {
+          "accepted_candidate": 1654,
+          "ambiguous_best_candidate": 2,
+          "best_below_threshold": 15,
+          "global_identity_recovery_reject": 81,
+          "hard_negative_reject": 6,
+          "id_switch_recovery_reject": 10,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 44,
+          "rank_aware_id_switch_recovery_reject": 24,
+          "reacquired_candidate": 18,
+          "recovery_persistence_pending": 18,
+          "same_id_hijack_reject": 7,
+          "same_id_reacquisition_reject": 26,
+          "short_gap_new_id_suppressed": 25
+        },
+        "states": {
+          "LOCKED": 1673,
+          "LOST": 140,
+          "REACQUIRED": 18,
+          "UNCERTAIN": 100
+        },
+        "timeline_duration_s": 83.867251154
+      }
+    },
+    "gallery_consensus/seq04": {
+      "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "config_sha256": "f37b65eca87dd6f7ab3d0bd7e2d18d4c869c903c4b9ddd7848667b8a27eba9b1",
+      "duration_buckets": {
+        "correct_target_output_duration_s": 46.50311109999998,
+        "identity_unresolved_duration_s": 0.0,
+        "localisation_scored_duration_s": 46.50311109999998,
+        "lost_or_suppressed_duration_s": 25.996930672000026,
+        "reference_gap_duration_s": 0.10088379499999434,
+        "reference_gap_with_output_duration_s": 0.03308848099999295,
+        "reference_unavailable_duration_s": 0.0,
+        "target_absent_duration_s": 13.900030159000003,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "generated_semantic_sha256": "ec1a0d0ed0be66dfb3553d247bb4c63f643725d0a0be8e27622746ec8ca2f9a7",
+      "normalized": {
+        "correct_target_pct": 64.14218525038117,
+        "identity_unresolved_pct": 0.0,
+        "lost_or_suppressed_pct": 35.857814749618825,
+        "publication_correctness_pct": 100.0,
+        "target_absent_with_output_pct": 0.0,
+        "target_present_evaluable_duration_s": 72.500041772,
+        "wrong_person_pct": 0.0
+      },
+      "post_implementation_baseline_semantic_equal": null,
+      "reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+      "repeat_semantic_equal": true,
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "94b0b6e95d1959404ce8d7dea67877749f072588",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M tools/experiments/run_tim_resilience_development.py",
+          "?? tools/analysis/analyse_tim_resilience_evidence.py",
+          "?? tools/tests/test_tim_resilience_development.py"
+        ]
+      },
+      "retained_duration_buckets_equal": false,
+      "workload": {
+        "backend_calls": 313,
+        "backend_requested": 1387,
+        "backend_valid": 1387,
+        "cache_expired": 50,
+        "cache_hits": 6002,
+        "cache_invalidated": 0,
+        "cache_lookups": 7571,
+        "cache_misses": 1519,
+        "cached_positive_memory_update_frames": 753,
+        "candidates_per_invocation": 4.431309904153355,
+        "embeddings_per_s": 16.03450491799714,
+        "encoded_frame_pct": 15.29066927210552,
+        "encoded_frames": 313,
+        "forced_fresh_frames": 0,
+        "frames": 2047,
+        "positive_memory_update_frames": 882,
+        "reasons": {
+          "accepted_candidate": 1062,
+          "best_below_threshold": 27,
+          "global_identity_recovery_reject": 720,
+          "id_switch_recovery_reject": 5,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 67,
+          "rank_aware_id_switch_recovery_reject": 16,
+          "reacquired_candidate": 23,
+          "recovery_persistence_pending": 28,
+          "same_id_hijack_reject": 12,
+          "same_id_reacquisition_reject": 76,
+          "short_gap_new_id_suppressed": 10
+        },
+        "states": {
+          "LOCKED": 1086,
+          "LOST": 805,
+          "REACQUIRED": 28,
+          "UNCERTAIN": 128
+        },
+        "timeline_duration_s": 86.500955726
+      }
+    }
+  },
+  "heldout_accessed": false,
+  "protocol": "docs/results/selected_target_tracking/tim_resilience_methodology_20260907.md"
+}
