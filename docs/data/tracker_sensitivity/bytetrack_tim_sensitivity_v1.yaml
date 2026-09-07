@@ -1,0 +1,374 @@
+schema_version: 1
+manifest_id: bytetrack_tim_sensitivity_v1
+issue: 58
+
+title: ByteTrack configuration sensitivity for downstream TIM-MARS
+
+purpose: >-
+  Determine experimentally whether one-factor-at-a-time perturbations of the
+  canonical ByteTrack association/lifetime configuration change the
+  controller-facing TIM-MARS result on the already-recorded development
+  sequences. This is an offline development sensitivity study, not a retuning
+  exercise. The canonical ByteTrack configuration remains canonical; no
+  configuration in this matrix is promoted or selected as a replacement, and
+  the canonical YAML is never modified on disk. The downstream question is
+  the important one: raw tracker improvement alone is not sufficient evidence
+  to change the canonical tracker.
+
+research_question: >-
+  Does changing ByteTrack's activation, association, or lost-track lifetime
+  configuration improve the final TIM-MARS controller-facing target result
+  compared with the current canonical ByteTrack settings, on the development
+  sequences, without introducing wrong-target authority?
+
+protocol_freeze:
+  date: "2026-09-07"
+  branch: experiment-bytetrack-tim-config-20260907
+  baseline_commit_placeholder: recorded_by_runner_at_execution
+  outcome_inspected_before_freeze: false
+  statement: >-
+    No physical-v2 outcome (correct/wrong/lost duration, localisation, state
+    occupancy, or any other evaluator output) has been generated or inspected
+    for any non-canonical ByteTrack configuration in this matrix as of this
+    freeze. Every perturbation value above and below canonical was chosen from
+    the parameter's own physical meaning and a symmetric single-step
+    neighbourhood, not from any observed result.
+
+frozen_invariants:
+  - The canonical ByteTrack YAML (ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml) is never modified on disk.
+  - TIM-MARS is identical across every cell; the canonical TIM-MARS YAML and MARS model are unchanged.
+  - The detector is not re-run; every cell for a sequence consumes the identical frozen recorded detections and images.
+  - Physical development-sequence selection is unchanged; only tim_mars_split_v3 development sequences are used.
+  - Physical-v2 references and the physical_target_bbox_evaluation_v2 semantics are unchanged.
+  - new_track_thresh is pinned at its canonical value 0.6 for every cell, including the track_thresh perturbations, so the track_thresh experiment does not silently change track birth.
+  - Only the parameters named in a dimension change relative to canonical; every other ByteTrack field is byte-identical to canonical.
+  - No interaction (multi-dimension) configuration is included in this first frozen pass.
+  - Reserved held-out sequences (heldout_h01_exit_reentry, heldout_h02_crossing, heldout_h03_occlusion_distractor) may never enter this matrix.
+
+canonical_tracker_config:
+  path: ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml
+  sha256: e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906
+  canonical_values:
+    tracker_type: bytetrack
+    min_score: 0.2
+    track_thresh: 0.5
+    match_thresh: 0.8
+    track_buffer: 30
+    frame_rate: 30
+    low_thresh: 0.1
+    new_track_thresh: 0.6
+    second_match_thresh: 0.5
+    unconfirmed_match_thresh: 0.7
+    fuse_scores: true
+    mot20: false
+  verification: >-
+    The runner re-verifies this sha256 against the live file at every
+    materialization/dry-run/run invocation and fails closed on mismatch. The
+    materialized baseline configuration must be byte-identical to the live
+    canonical file.
+
+tim_mars_config:
+  path: ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml
+  sha256: 0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0
+  model: models/reid/mars-small128.pb
+  note: >-
+    This is the post-Issue-#90 promoted canonical TIM-MARS configuration and
+    matches the Issue #27 frozen canonical_config sha256. It is passed
+    unchanged to run_deterministic_tim_replay.py for every cell.
+
+pipeline:
+  stages:
+    - id: tracker_replay
+      tool: tools/experiments/run_deterministic_tracker_replay.py
+      note: >-
+        Regenerates /tracks and a fixed-ID raw /target deterministically from
+        the frozen recorded images and detections using the candidate ByteTrack
+        YAML. selection-mode is largest_first_eligible only to produce a
+        complete /tracks stream; the operator bootstrap target is resolved
+        separately and spatially (see bootstrap_resolution).
+    - id: bootstrap_resolution
+      tool: tools/analysis/resolve_bootstrap_target.py
+      rule: >-
+        At the first generated /tracks message whose best-overlapping track
+        reaches the IoU threshold against the physical-target reference box at
+        the first present_scored reference sample, select that track ID. The
+        same rule is applied identically to every cell. IoU threshold 0.5. If
+        no track reaches the threshold within max_bootstrap_lag_frames the cell
+        is recorded as a bootstrap failure and preserved, not dropped and not
+        silently re-anchored.
+      min_iou: 0.5
+      max_bootstrap_lag_frames: 30
+    - id: tim_replay
+      tool: tools/experiments/run_deterministic_tim_replay.py
+      args_note: >-
+        --config tim_mars_canonical.yaml --model models/reid/mars-small128.pb
+        --selected-track-id <resolved> --raw-target-mode selected_id
+        --raw-target-topic /target --image-topic /camera/image_raw
+        --tracks-topic /tracks --image-width <seq> --image-height <seq>
+        --compact-output
+    - id: physical_v2_evaluation
+      tool: tools/analysis/evaluate_physical_target_bbox_v2.py
+      note: >-
+        Evaluates both the raw fixed-ID /target stream and the
+        /target_memory_mars TIM stream against the identity-independent
+        physical-v2 reference in one pass.
+    - id: raw_tracker_diagnostics
+      tool: tools/analysis/analyse_tracker_target_continuity.py
+      note: >-
+        Identity-independent raw ByteTrack diagnostics derived from the
+        generated /tracks stream and the physical-v2 reference: matched
+        target track IDs over time, target ID switches, fragmentation,
+        target-visible coverage, false continuation during physical absence,
+        disappearance delay.
+    - id: tim_state_occupancy
+      tool: tools/analysis/analyse_tim_state_occupancy.py
+      note: >-
+        TIM-MARS state occupancy and transition counts parsed from
+        /target_memory_mars/status. Only states present in the canonical
+        status schema are reported.
+
+evaluation:
+  reference_dir: docs/data/physical_target_references
+  evaluator: physical_target_bbox_evaluation_v2
+  identity_model: identity_independent_spatial
+  disallowed_evaluators:
+    - tools/analysis/evaluate_tim_event_recovery.py
+    - tools/analysis/evaluate_tim_target_bbox_correctness.py
+  disallowed_reason: >-
+    Those evaluators depend on tracker-ID annotation oracles. ByteTrack IDs
+    change across configurations, so a tracker-ID oracle is not a valid
+    cross-configuration headline evaluator here.
+
+development_set:
+  split_authority: docs/data/splits/tim_mars_split_v3.json
+  split_id: tim_mars_split_v3_2026_09_05
+  split_sha256: 34bf5b6f09f8938b23fae7cda18314e3aa06115ed0f966f60b8ca6bda8cfb409
+  membership_statement: >-
+    docs/data/splits/tim_mars_split_v3.json is the sole authority for
+    development-set membership. Only its development entries are used. No
+    legacy_validation or final_held_out sequence may enter this matrix. The
+    four sequences below map to development split entries dev_may_hard_reentry,
+    dev_june_seq01, dev_june_seq03_ocsort, and dev_june_seq04_ocsort. The
+    physical-v2 identity-independent evaluation does not use the split's
+    tracker-ID annotation paths or selected_target_id fields; the operator
+    bootstrap target is resolved spatially from the physical-v2 reference for
+    each cell.
+  reserved_held_out_ids:
+    - heldout_h01_exit_reentry
+    - heldout_h02_crossing
+    - heldout_h03_occlusion_distractor
+  sequences:
+    - id: dev_may_hard_reentry
+      split_membership_id: dev_may_hard_reentry
+      scenario: hard target exit, re-entry, and tracker-ID switch
+      role: hard_comparison
+      common_input:
+        path: bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw
+        kind: curated_development_raw_source
+        mcap_sha256: becad555aa8150ea969448316f1478786743a76cde266b20b574d32af7602839
+        image_topic: /camera/image_raw
+        detections_topic: /detections
+        recorded_image_count: 974
+        recorded_detection_count: 953
+        detector_provenance: >-
+          Historical May 2026 tim_v1-era recorded detections, retained with
+          the model that generated them. 21 image frames have no matching
+          recorded detection; run_deterministic_tracker_replay.py processes
+          the 953 recorded detections in original source order using prior
+          images, identically for every configuration, so detector
+          variability is eliminated within this sequence.
+      physical_reference:
+        path: docs/data/physical_target_references/dev_may_hard_reentry.json
+        sha256: 45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c
+      image_width: 640
+      image_height: 640
+      evaluation_window_s: 67.864909774
+    - id: dev_june_seq01
+      split_membership_id: dev_june_seq01
+      scenario: clean four-person visibility
+      role: regression_gate
+      common_input:
+        path: bags/replay/p025_seq01_physical_v2_common_input_2026_08_29
+        kind: frozen_common_input_source_header_v1
+        mcap_sha256: abf769b7330d279db4ec1a4e2e0384f1cae95a8654a32c4a4fac83a9671d1e5a
+        image_topic: /camera/image_raw
+        detections_topic: /detections
+        recorded_image_count: 1520
+        recorded_detection_count: 1520
+        detector_provenance: >-
+          Frozen YOLOv8s detection stream established for the Issue #25/#58
+          Seq01 physical-v2 work; one-to-one image/detection header equality.
+      physical_reference:
+        path: docs/data/physical_target_references/seq01_clean.json
+        sha256: c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d
+      image_width: 640
+      image_height: 480
+      evaluation_window_s: 61.200516816
+    - id: dev_june_seq03
+      split_membership_id: dev_june_seq03_ocsort
+      scenario: four-person crossing ambiguity
+      role: hard_comparison
+      common_input:
+        path: bags/replay/p058_seq03_physical_v2_common_input_2026_08_28
+        kind: frozen_common_input_source_header_v1
+        mcap_sha256: fe5dc3b01e8bf31fee5a73aacffa0cf91d1bc7c7151130b83b3600451cd449b2
+        image_topic: /camera/image_raw
+        detections_topic: /detections
+        recorded_image_count: 1931
+        recorded_detection_count: 1931
+        detector_provenance: >-
+          Frozen YOLOv8s detection stream established for the Issue #58 Seq03
+          physical-v2 architecture matrix; one-to-one image/detection header
+          equality.
+      physical_reference:
+        path: docs/data/physical_target_references/seq03_crossing.json
+        sha256: 9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71
+      image_width: 640
+      image_height: 480
+      evaluation_window_s: 83.867251154
+    - id: dev_june_seq04
+      split_membership_id: dev_june_seq04_ocsort
+      scenario: four-person partial occlusion without exit, with physical target absence
+      role: hard_comparison
+      common_input:
+        path: bags/replay/p058_seq04_physical_v2_common_input_2026_08_28
+        kind: frozen_common_input_source_header_v1
+        mcap_sha256: cacaba91fecb56921d0c16b30a10a6e0b7e6c083c12015b3e68e7bede6d2d44d
+        image_topic: /camera/image_raw
+        detections_topic: /detections
+        recorded_image_count: 2047
+        recorded_detection_count: 2047
+        detector_provenance: >-
+          Frozen YOLOv8s detection stream established for the Issue #58 Seq04
+          physical-v2 physical-absence matrix; one-to-one image/detection
+          header equality.
+      physical_reference:
+        path: docs/data/physical_target_references/seq04_occlusion_no_exit.json
+        sha256: a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b
+      image_width: 640
+      image_height: 480
+      evaluation_window_s: 86.500955726
+
+dimensions:
+  - id: track_thresh
+    label: Detection score split threshold (high vs low association round)
+    kind: single
+    parameters: [track_thresh]
+    canonical_values:
+      track_thresh: 0.50
+    pinned_alongside:
+      new_track_thresh: 0.6
+    note: >-
+      track_thresh partitions detections into the high-score first-association
+      round and the low-score second-association round. new_track_thresh is
+      held at its canonical 0.6 so this dimension isolates the association
+      split from track birth. Symmetric single step of 0.10.
+    perturbations:
+      - id: track_thresh_lower_1
+        values: {track_thresh: 0.40}
+      - id: track_thresh_higher_1
+        values: {track_thresh: 0.60}
+
+  - id: match_thresh
+    label: First-round IoU association acceptance threshold
+    kind: single
+    parameters: [match_thresh]
+    canonical_values:
+      match_thresh: 0.80
+    note: >-
+      match_thresh is the maximum fused IoU distance accepted in the first
+      high-score association round. Lower is stricter association; higher is
+      more permissive. Symmetric single step of 0.10.
+    perturbations:
+      - id: match_thresh_lower_1
+        values: {match_thresh: 0.70}
+      - id: match_thresh_higher_1
+        values: {match_thresh: 0.90}
+
+  - id: track_buffer
+    label: Lost-track lifetime (frames retained before removal)
+    kind: single
+    parameters: [track_buffer]
+    canonical_values:
+      track_buffer: 30
+    note: >-
+      track_buffer, scaled by frame_rate/30, sets max_time_lost: how long a
+      lost tracklet is retained for possible re-association before removal.
+      Shorter forgets faster; longer persists a stale identity longer.
+      Symmetric single step of 15 frames (0.5 s at 30 fps).
+    perturbations:
+      - id: track_buffer_lower_1
+        values: {track_buffer: 15}
+      - id: track_buffer_higher_1
+        values: {track_buffer: 45}
+
+baseline:
+  id: canonical_baseline
+  description: >-
+    The materialized canonical_baseline configuration is byte-identical to the
+    live canonical ByteTrack YAML and is run through the identical harness as
+    every candidate. It is not compared against any previously published
+    report generated by a different pipeline.
+
+repeatability:
+  requirement: >-
+    Before interpreting any candidate difference, run canonical_baseline twice
+    on each of the four sequences through this same harness and compare the
+    generated tracker semantic digest, bootstrap resolution, TIM generated
+    semantic digest, physical-v2 duration buckets, and state occupancy. Exact
+    equality is required for a PASS. A mismatch is a determinism defect and
+    must be investigated before parameter differences are interpreted.
+  repeats: 2
+
+interactions:
+  included_in_this_freeze: false
+  policy: >-
+    This manifest freezes a single-pass OFAT matrix only. A small second-pass
+    combination extension may be added only if the OFAT evidence shows one or
+    two clearly promising directions with no safety regression. Any such
+    combinations must be declared and committed in a new manifest version
+    before their outcomes are inspected.
+
+metrics:
+  severity_ordering: correct_target > lost_or_hover > wrong_target
+  interpretation_rule: >-
+    A candidate is not an improvement merely because it publishes a target
+    longer, reduces lost time, or holds a tracker ID longer. A configuration
+    that converts lost/suppressed time into wrong-target authority is a safety
+    regression. Report safety, correctness/availability, and behaviour
+    separately; never collapse them into one scalar.
+  tim_mars_physical_v2:
+    - correct_target_output_duration_s / fraction
+    - wrong_person_output_duration_s / fraction
+    - lost_or_suppressed_duration_s / fraction
+    - target_absent_with_output_duration_s
+    - localisation iou_duration_weighted_mean
+  raw_bytetrack_diagnostic:
+    - target_matched_track_ids
+    - target_id_switch_count
+    - target_track_fragment_count
+    - target_visible_coverage_fraction
+    - false_continuation_during_absence_s
+    - bootstrap_outcome / bootstrap_iou
+  tim_state:
+    - state_occupancy_fraction (only schema states)
+    - transition_count / transitions_into_lost / transitions_into_reacquired
+    - target_authority_change_count
+
+expected_counts:
+  dimensions: 3
+  perturbations_per_dimension: 2
+  candidate_configurations: 6
+  canonical_baseline_count: 1
+  unique_configurations: 7
+  development_sequences: 4
+  first_pass_cells: 28
+  repeatability_cells: 8
+  accounting: 7 configurations x 4 development sequences = 28 first-pass cells; canonical_baseline x 4 sequences x 2 repeats = 8 repeatability cells.
+
+canonical_change_policy: >-
+  This experiment produces a recommendation only. Regardless of outcome, no
+  change is made to ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml,
+  to the Issue #27 frozen configuration, or to TIM-MARS. Any proposal to
+  change the canonical tracker configuration is a separate, explicitly
+  reviewed step.
