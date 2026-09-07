@@ -1,0 +1,23 @@
+{
+  "bag_root": "bags/replay/p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07",
+  "cells_bootstrap_failure": 0,
+  "cells_ok": 36,
+  "cells_other": 0,
+  "cells_total": 36,
+  "created_utc": "2026-09-07T02:45:58Z",
+  "log_root": "ros2_ws/log/p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07",
+  "manifest_lock": "manifest_lock.json",
+  "model": {
+    "path": "models/reid/mars-small128.pb",
+    "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1"
+  },
+  "repo_commit": "14c3ef20755863e7ced3350fe823ccc017277ae3",
+  "repo_status_short": [],
+  "report_root": "reports/p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07",
+  "run_id": "p058b_bytetrack_config_sensitivity_14c3ef20_2026_09_07",
+  "split": {
+    "id": "tim_mars_split_v3_2026_09_05",
+    "path": "docs/data/splits/tim_mars_split_v3.json",
+    "sha256": "34bf5b6f09f8938b23fae7cda18314e3aa06115ed0f966f60b8ca6bda8cfb409"
+  }
+}
