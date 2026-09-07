@@ -31,7 +31,9 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 111
+    assert len(node.values) == 113
+    assert node.values["same_id_fresh_challenge_enabled"] is False
+    assert node.values["appearance_gallery_consensus_recovery_enabled"] is False
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["timing_target_topic"] == "/timing_target"

@@ -66,6 +66,7 @@ class AppearanceAttachmentInput:
     # remains present for crop quality, cache reuse, and lifecycle ownership.
     # None preserves the unchanged encode-all-eligible baseline.
     requested_candidate_indices: tuple[int, ...] | None = None
+    forced_candidate_indices: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -584,7 +585,8 @@ def attach_appearance_features(
         and elapsed_ms < config.compute_min_interval_ms
     )
 
-    if image_already_encoded or interval_too_short:
+    force_interval = bool(interval_too_short and data.forced_candidate_indices)
+    if image_already_encoded or (interval_too_short and not force_interval):
         diagnostics.skip_reason = (
             "cached_same_image"
             if image_already_encoded
@@ -611,6 +613,8 @@ def attach_appearance_features(
     )
 
     requested_index_set = set(requested_candidate_indices)
+    if force_interval:
+        requested_index_set = set(data.forced_candidate_indices)
     encoding_indices = [
         index
         for index in crop_quality_eligible_indices
@@ -621,7 +625,8 @@ def attach_appearance_features(
     )
 
     if not encoding_indices:
-        state.last_mars_compute_ns = data.now_ns
+        if not force_interval:
+            state.last_mars_compute_ns = data.now_ns
         state.last_mars_image_seq = data.latest_image_seq
 
         if not requested_candidate_indices:
@@ -695,7 +700,8 @@ def attach_appearance_features(
             float(perf_counter_ns() - encode_started_ns) / 1e6
         )
 
-    state.last_mars_compute_ns = data.now_ns
+    if not force_interval:
+        state.last_mars_compute_ns = data.now_ns
     state.last_mars_image_seq = data.latest_image_seq
 
     fresh_appearance_by_track_id: dict[int, Any] = {}
@@ -784,7 +790,7 @@ def attach_appearance_features(
             )
         )
 
-    diagnostics.skip_reason = "ok"
+    diagnostics.skip_reason = "fresh_identity_challenge" if force_interval else "ok"
     diagnostics.features_valid = sum(
         candidate.appearance is not None
         for candidate in final_candidates

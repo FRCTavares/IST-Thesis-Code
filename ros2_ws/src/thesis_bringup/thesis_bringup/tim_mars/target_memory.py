@@ -20,7 +20,10 @@ from typing import (
     Sequence,
 )
 
-from thesis_bringup.tim_mars.appearance_memory import update_feature_memory
+from thesis_bringup.tim_mars.appearance_memory import (
+    cosine_similarity,
+    update_feature_memory,
+)
 from thesis_bringup.tim_mars.appearance_policy import (
     score_with_appearance,
     should_use_appearance,
@@ -773,6 +776,9 @@ class TargetIdentityMemory:
         Policy order is intentional and preserves the established diagnostic
         and fail-closed behaviour of the unified acceptance gate.
         """
+        if proposal.candidate.appearance_challenge_failed:
+            return 'same_id_fresh_challenge_reject:no_fresh_evidence'
+
         absence_reject = (
             absence_aware_reacquisition_reject_reason(
                 cfg=self.cfg,
@@ -897,6 +903,7 @@ class TargetIdentityMemory:
         )
         trusted_same_id_continuity = bool(
             self.cfg.same_id_hijack_protection_enabled
+            and not self.cfg.same_id_fresh_challenge_enabled
             and proposal.same_id
             and self._m.state == TargetState.LOCKED
         )
@@ -927,6 +934,19 @@ class TargetIdentityMemory:
                 candidate=proposal.candidate,
                 score=proposal.score,
                 reacquired=reacquired,
+                gallery_support_count=(
+                    sum(
+                        cosine_similarity(
+                            entry, proposal.candidate.appearance
+                        ) >= self._id_switch_appearance_threshold()
+                        for entry in self._positive_appearance.trusted_gallery
+                    )
+                    if (
+                        self.cfg.appearance_gallery_consensus_recovery_enabled
+                        and proposal.candidate.appearance is not None
+                    )
+                    else 0
+                ),
             )
         )
         if gallery_reject is not None:
@@ -1082,10 +1102,55 @@ class TargetIdentityMemory:
         self,
         proposal: _CandidateProposal,
     ) -> Optional[CandidateScore]:
+        return self._nearby_identity_challenger(
+            selected=proposal.candidate,
+            candidates=proposal.candidates,
+            all_scores=proposal.all_scores,
+        )
+
+    def appearance_challenge_track_ids(
+        self,
+        candidates: Sequence[CandidateTrack],
+    ) -> tuple[int, ...]:
+        """Request current evidence using the existing hijack risk predicate."""
+        if not (
+            self.cfg.same_id_fresh_challenge_enabled
+            and self.cfg.same_id_hijack_protection_enabled
+            and self.cfg.appearance_enabled
+            and self._m.state == TargetState.LOCKED
+            and self._m.bbox is not None
+        ):
+            return ()
+        eligible = [
+            item for item in candidates
+            if item.score >= self.cfg.min_candidate_score
+        ]
+        selected = next(
+            (item for item in eligible if item.track_id == self._m.track_id),
+            None,
+        )
+        if selected is None:
+            return ()
+        scores = [
+            score_candidate(self._m.bbox, item, self._m.track_id, self.cfg)
+            for item in eligible
+        ]
+        challenger = self._nearby_identity_challenger(
+            selected=selected, candidates=eligible, all_scores=scores,
+        )
+        return (int(selected.track_id),) if challenger is not None else ()
+
+    def _nearby_identity_challenger(
+        self,
+        *,
+        selected: CandidateTrack,
+        candidates: Sequence[CandidateTrack],
+        all_scores: Sequence[CandidateScore],
+    ) -> Optional[CandidateScore]:
         """Return a nearby new-ID candidate plausible relative to target memory."""
         scores_by_id = {
             int(score.track_id): score
-            for score in proposal.all_scores
+            for score in all_scores
         }
         width = float(
             getattr(self.cfg, 'image_width', 640.0)
@@ -1094,10 +1159,10 @@ class TargetIdentityMemory:
             getattr(self.cfg, 'image_height', 640.0)
         )
 
-        for candidate in proposal.candidates:
+        for candidate in candidates:
             if (
                 int(candidate.track_id)
-                == int(proposal.candidate.track_id)
+                == int(selected.track_id)
             ):
                 continue
 
@@ -1109,11 +1174,11 @@ class TargetIdentityMemory:
 
             group_close = bool(
                 bbox_iou(
-                    proposal.candidate.bbox,
+                    selected.bbox,
                     candidate.bbox,
                 ) >= 0.10
                 or centre_distance_norm(
-                    proposal.candidate.bbox,
+                    selected.bbox,
                     candidate.bbox,
                     width,
                     height,
