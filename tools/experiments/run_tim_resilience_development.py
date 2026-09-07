@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import shlex
+import shutil
 import subprocess
 import sys
 
@@ -169,9 +170,15 @@ def summarize():
             if repeat.is_file():
                 repeat_equal = (metadata["determinism"]["generated_semantic_sha256"] ==
                                 read_json(repeat)["determinism"]["generated_semantic_sha256"])
+            neutral = bag_path(sequence, "baseline", 3) / "tim_replay_metadata.json"
+            neutral_equal = None
+            if candidate == "baseline" and neutral.is_file():
+                neutral_equal = (metadata["determinism"]["generated_semantic_sha256"] ==
+                                 read_json(neutral)["determinism"]["generated_semantic_sha256"])
             cells[f"{candidate}/{sequence}"] = {
                 "duration_buckets": buckets, "normalized": normalized(buckets),
                 "workload": workload(bag), "repeat_semantic_equal": repeat_equal,
+                "post_implementation_baseline_semantic_equal": neutral_equal,
                 "candidate_stream_sha256": expected,
                 "generated_semantic_sha256": metadata["determinism"]["generated_semantic_sha256"],
                 "repository": metadata["repository"],
@@ -197,12 +204,87 @@ def summarize():
     }, indent=2, sort_keys=True) + "\n")
 
 
+def retain():
+    """Retain a complete, reproducible review bundle without replacing one."""
+    summary = read_json(REPORTS / "summary.json")
+    assert len(summary["cells"]) == len(CANDIDATES) * len(SEQUENCES)
+    assert all(value["complete"] for value in summary["aggregates"].values())
+    assert all(value["repeat_semantic_equal"] for value in summary["cells"].values())
+    assert all(summary["cells"][f"baseline/{seq}"]["post_implementation_baseline_semantic_equal"]
+               for seq in SEQUENCES)
+    destination = ROOT / "docs/results/selected_target_tracking/tim_resilience_development_20260907"
+    if destination.exists():
+        raise FileExistsError(destination)
+    profiles = {candidate: read_json(REPORTS / f"service_{candidate}.json")
+                for candidate in ("baseline", "available_image_challenge")}
+    assert all(profile["semantic_digest_equal"] for profile in profiles.values())
+    destination.mkdir()
+    shutil.copyfile(REPORTS / "summary.json", destination / "summary.json")
+    shutil.copyfile(REPORTS / "available_image_challenge.yaml",
+                    destination / "available_image_challenge.yaml")
+    (destination / "service_profile.json").write_text(json.dumps(profiles, indent=2, sort_keys=True) + "\n")
+    provenance = {seq: {"retained_replay": retained_metadata(seq),
+                        "physical_reference_report": retained_report(seq)} for seq in SEQUENCES}
+    (destination / "source_provenance.json").write_text(json.dumps(provenance, indent=2, sort_keys=True) + "\n")
+    audits = {}
+    for candidate in CANDIDATES:
+        for sequence in SEQUENCES:
+            audit = read_json(REPORTS / candidate / sequence / "forensic/audit.json")
+            wrong = audit.pop("wrong_authority_frames")
+            audit["wrong_authority_frame_count"] = len(wrong)
+            audit["first_wrong_frames"] = [
+                {"time_s": row["time_s"], "frame_id": row["status"]["frame_id"],
+                 "track_id": row["status"]["candidate_track_id"],
+                 "reason": row["status"]["reason"], "score": row["status"]["best"]}
+                for row in wrong[:4]
+            ]
+            audits[f"{candidate}/{sequence}"] = audit
+    (destination / "frame_audits.json").write_text(json.dumps(audits, indent=2, sort_keys=True) + "\n")
+    event = []
+    with (REPORTS / "baseline/seq03/forensic/frames.jsonl").open() as stream:
+        for line in stream:
+            row = json.loads(line)
+            if 1075 <= row["status"]["frame_id"] <= 1082:
+                event.append(row)
+    (destination / "seq03_event.json").write_text(json.dumps(event, indent=2, sort_keys=True) + "\n")
+    lines = ["# Complete development comparison", "",
+             "Durations use the unchanged physical-v2 evaluator. Percentages use target-present evaluable time.", "",
+             "| Sequence | Candidate | Correct s | Correct % | Wrong s | Wrong % | Lost s | Lost % | Absent-output s |",
+             "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
+    for sequence in SEQUENCES:
+        for candidate in CANDIDATES:
+            cell = summary["cells"][f"{candidate}/{sequence}"]
+            b, p = cell["duration_buckets"], cell["normalized"]
+            lines.append(f"| {sequence} | {candidate} | {b['correct_target_output_duration_s']:.6f} | {p['correct_target_pct']:.3f} | "
+                         f"{b['wrong_person_output_duration_s']:.6f} | {p['wrong_person_pct']:.3f} | "
+                         f"{b['lost_or_suppressed_duration_s']:.6f} | {p['lost_or_suppressed_pct']:.3f} | {b['target_absent_with_output_duration_s']:.6f} |")
+    lines += ["", "Every cell has zero identity-unresolved and reference-unavailable duration.",
+              "Reference gaps are 0 s (May/Seq01), 0.100453371 s (Seq03), and 0.100883795 s (Seq04).",
+              "Target absence is 13.900030159 s in Seq04 and zero elsewhere; absence-output percentage is 0% in Seq04 and undefined elsewhere.",
+              "All remaining buckets, publication correctness, state/rejection counts and cache/workload counters are retained in summary.json.",
+              "", "## Aggregate target-present accounting", "",
+              "| Candidate | Present s | Correct s | Correct % | Wrong s | Wrong % | Unresolved s | Lost s | Lost % | Publication correctness % |",
+              "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
+    for candidate in CANDIDATES:
+        aggregate = summary["aggregates"][candidate]
+        b, p = aggregate["duration_buckets"], aggregate["normalized"]
+        lines.append(f"| {candidate} | {p['target_present_evaluable_duration_s']:.6f} | {b['correct_target_output_duration_s']:.6f} | "
+                     f"{p['correct_target_pct']:.3f} | {b['wrong_person_output_duration_s']:.6f} | {p['wrong_person_pct']:.3f} | "
+                     f"{b['identity_unresolved_duration_s']:.6f} | {b['lost_or_suppressed_duration_s']:.6f} | "
+                     f"{p['lost_or_suppressed_pct']:.3f} | {p['publication_correctness_pct']:.6f} |")
+    (destination / "comparison.md").write_text("\n".join(lines) + "\n")
+    print(f"Retained {destination}", flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate", choices=tuple(CANDIDATES), action="append")
-    parser.add_argument("--repeat", type=int, choices=(1, 2), default=1)
+    parser.add_argument("--repeat", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--summarize", action="store_true")
+    parser.add_argument("--retain", action="store_true")
     args = parser.parse_args()
+    if args.repeat == 3 and any(c != "baseline" for c in args.candidate or ()):
+        parser.error("repeat 3 is reserved for the final unchanged-baseline control")
     if hashlib.sha256(CANONICAL.read_bytes()).hexdigest() != CANONICAL_SHA:
         raise ValueError("canonical configuration changed")
     for candidate in args.candidate or ():
@@ -210,6 +292,8 @@ def main():
             run_cell(sequence, candidate, args.repeat)
     if args.summarize:
         summarize()
+    if args.retain:
+        retain()
 
 
 if __name__ == "__main__":
