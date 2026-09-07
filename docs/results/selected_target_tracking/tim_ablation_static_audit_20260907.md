@@ -135,3 +135,38 @@ increase correct-target duration.
 
 H01/H02/H03 remain reserved pending capture and were not inspected. Historical
 split/comparison freezes remain unchanged.
+
+## Stage-1 execution checkpoint: AB-11 / AB-18
+
+The first Stage-1 2x2 mechanism decomposition completed on 7 September 2026
+using only May, Seq01, Seq03 and Seq04 development evidence. The new
+development-only controls were behavior-neutral when disabled on all four
+sequences: semantic and candidate-stream digests matched the retained selected
+reference exactly.
+
+AB-11, which disables only forced fresh same-ID challenge scheduling, exactly
+reproduced canonical behavior on all four sequences in generated semantic
+digest, unchanged physical-v2 duration buckets and appearance workload. AB-18,
+which restores the canonical later general same-ID committed-negative
+exemption while retaining fresh challenge scheduling and the earlier
+challenger-specific negative check, exactly reproduced the selected candidate
+on all four sequences by the same three measures.
+
+This isolates forced fresh challenge scheduling as the source of the selected
+candidate's observed development delta. Aggregate correct-target authority
+changes from 192.331264 s (67.406%) to 197.363502 s (69.170%), wrong-person
+authority falls from 0.166744 s to 0.033394 s, and LOST/suppressed authority
+falls from 92.834259 s to 87.935370 s. Seq03 remains a local safety/availability
+trade-off: fresh challenges remove 0.133349 s wrong-person authority while
+reducing net correct authority by 0.467029 s and increasing LOST/suppressed
+time by 0.600378 s.
+
+Accordingly, forced fresh scheduling is classified as useful and essential to
+the selected development delta, with a context-specific Seq03 availability
+cost. The later general same-ID negative veto is development-redundant on the
+four permitted sequences. This does not imply that hard-negative memory or the
+earlier challenger-specific negative rejection is redundant.
+
+Exact retained evidence is in
+`tim_ablation_stage1_2x2_20260907.{json,md}`. H01/H02/H03 were not captured,
+inspected or used, and the historical v3/v2 freeze contracts remain unchanged.

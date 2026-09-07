@@ -223,6 +223,24 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--ablation-disable-forced-same-id-challenge",
+        action="store_true",
+        help=(
+            "Development-only AB-11 control: disable forced same-ID "
+            "fresh-challenge scheduling while preserving the general "
+            "committed-negative veto."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-restore-same-id-general-negative-exemption",
+        action="store_true",
+        help=(
+            "Development-only AB-18 control: restore the general LOCKED "
+            "same-ID committed-negative exemption while preserving fresh "
+            "challenge scheduling and challenger-specific rejection."
+        ),
+    )
+    parser.add_argument(
         "--shadow-appearance-probe-out",
         type=Path,
         default=None,
@@ -667,6 +685,20 @@ def build_runtime(
             selected_track_id=int(args.selected_track_id),
             auto_select_largest=False,
             image_buffer_size=64,
+        development_ablation_disable_forced_same_id_challenge=bool(
+            getattr(
+                args,
+                "ablation_disable_forced_same_id_challenge",
+                False,
+            )
+        ),
+        development_ablation_restore_same_id_general_negative_exemption=bool(
+            getattr(
+                args,
+                "ablation_restore_same_id_general_negative_exemption",
+                False,
+            )
+        ),
         ),
         mars_backend=backend,
     )
@@ -1478,6 +1510,20 @@ def build_resolved_runtime_payload(
             "appearance_compute_min_interval_ms": float(
                 appearance_compute_min_interval_ms
             ),
+        "ablation_disable_forced_same_id_challenge": bool(
+            getattr(
+                args,
+                "ablation_disable_forced_same_id_challenge",
+                False,
+            )
+        ),
+        "ablation_restore_same_id_general_negative_exemption": bool(
+            getattr(
+                args,
+                "ablation_restore_same_id_general_negative_exemption",
+                False,
+            )
+        ),
             "compact_output": bool(
                 args.compact_output
             ),
@@ -1500,6 +1546,22 @@ def build_resolved_runtime_payload(
             "compact_output": bool(
                 args.compact_output
             ),
+        "development_ablation_controls": {
+            "disable_forced_same_id_challenge": bool(
+                getattr(
+                    args,
+                    "ablation_disable_forced_same_id_challenge",
+                    False,
+                )
+            ),
+            "restore_same_id_general_negative_exemption": bool(
+                getattr(
+                    args,
+                    "ablation_restore_same_id_general_negative_exemption",
+                    False,
+                )
+            ),
+        },
             "input_bag": str(input_bag),
             "output_bag": str(output_bag),
             "alternate_appearance": (
@@ -1565,6 +1627,12 @@ def build_resolved_runtime_payload(
                 ) is None
                 else "command_line"
             ),
+        "ablation_disable_forced_same_id_challenge": argument_source(
+            "--ablation-disable-forced-same-id-challenge"
+        ),
+        "ablation_restore_same_id_general_negative_exemption": argument_source(
+            "--ablation-restore-same-id-general-negative-exemption"
+        ),
             "raw_target_mode": argument_source(
                 "--raw-target-mode"
             ),

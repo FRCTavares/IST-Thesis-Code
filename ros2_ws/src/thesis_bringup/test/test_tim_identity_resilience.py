@@ -34,7 +34,12 @@ class Encoder:
         return [self.feature for _ in boxes]
 
 
-def runtime(enabled=True):
+def runtime(
+    enabled=True,
+    *,
+    disable_forced_challenge=False,
+    restore_general_negative_exemption=False,
+):
     config = TargetMemoryConfig(
         appearance_enabled=True,
         appearance_protected_memory_enabled=True,
@@ -48,6 +53,12 @@ def runtime(enabled=True):
         memory=config,
         appearance=AppearanceAttachmentConfig(True, 250., 250., 750.),
         image_width=640., image_height=640.,
+        development_ablation_disable_forced_same_id_challenge=(
+            disable_forced_challenge
+        ),
+        development_ablation_restore_same_id_general_negative_exemption=(
+            restore_general_negative_exemption
+        ),
     ), mars_backend=Encoder())
 
 
@@ -70,8 +81,8 @@ def attach(rt, items, timestamp, frame, image=True):
     )
 
 
-def initialized(enabled=True):
-    rt = runtime(enabled)
+def initialized(enabled=True, **kwargs):
+    rt = runtime(enabled, **kwargs)
     items, _ = attach(rt, candidates(), 1_000_000_000, 1)
     rt.memory.select(items[0], frame_id=1, timestamp_ns=1_000_000_000)
     return rt
@@ -144,6 +155,68 @@ def test_strong_negative_rejects_same_id_even_without_challenger():
     output = rt.memory.update([item])
     assert not output.visible
     assert output.reason.startswith("hard_negative_reject")
+
+
+def test_ab11_disables_forced_scheduling_but_keeps_general_negative_veto():
+    rt = initialized(disable_forced_challenge=True)
+    rt.mars_backend.feature = OTHER
+
+    items, diag = attach(
+        rt,
+        candidates(),
+        1_030_000_000,
+        2,
+    )
+
+    assert diag.skip_reason == "cached_interval"
+    assert len(rt.mars_backend.calls) == 1
+
+    rt.memory._hard_negative_memory._memory = [OTHER]
+    wrong = replace(
+        candidates()[0],
+        appearance=OTHER,
+    )
+    output = rt.memory.update([wrong])
+
+    assert not output.visible
+    assert output.reason.startswith("hard_negative_reject")
+
+
+def test_ab18_restores_only_general_same_id_negative_exemption():
+    rt = initialized(
+        restore_general_negative_exemption=True,
+    )
+    rt.memory._hard_negative_memory._memory = [OTHER]
+
+    wrong = replace(
+        candidates()[0],
+        appearance=OTHER,
+    )
+
+    # No current challenger: the later general same-ID negative veto is
+    # experimentally exempted.
+    output = rt.memory.update([wrong])
+    assert output.visible
+    assert output.target_track_id == 7
+
+
+def test_ab18_keeps_challenger_specific_negative_rejection():
+    rt = initialized(
+        restore_general_negative_exemption=True,
+    )
+    rt.memory._hard_negative_memory._memory = [OTHER]
+
+    items = candidates()
+    items[0] = replace(
+        items[0],
+        appearance=OTHER,
+    )
+
+    output = rt.memory.update(items)
+
+    assert not output.visible
+    assert output.reason.startswith("same_id_hijack_reject")
+    assert "hard_negative" in output.reason
 
 
 @pytest.mark.parametrize("count,accepted", [(0, False), (1, False), (2, True)])
