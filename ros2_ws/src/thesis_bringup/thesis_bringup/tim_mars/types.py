@@ -280,6 +280,17 @@ class TargetMemoryConfig:
     same_id_challenge_available_images_only: bool = False
     appearance_gallery_consensus_recovery_enabled: bool = False
 
+    # Source-aware adaptive positive-memory updates.
+    # When enabled, an eligible adaptive-memory update that carries known
+    # source provenance does not reinforce the adaptive prototype if its
+    # source matches the last source already incorporated into that
+    # prototype. Last-source suppression only: missing source provenance
+    # preserves the existing adaptive-update behaviour, the EMA coefficient
+    # and gallery admission are unchanged, and appearance inference
+    # scheduling is unaffected. The historical development-only ablation
+    # control remains available for experiment reproduction.
+    appearance_prevent_repeated_source_adaptive_update: bool = False
+
     # Conservative appearance publication filter.
     # When enabled, a candidate needs sufficiently strong and separated
     # appearance evidence before it is allowed to drive controller-facing output.

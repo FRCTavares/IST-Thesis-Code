@@ -101,6 +101,22 @@ target_memory_mars_node:
 
     same_id_hijack_protection_enabled: true
 
+    # Same-ID fresh-appearance challenge and available-image challenge policy.
+    # Selected development baseline promoted after the Stage-1 mechanism
+    # ablation. During a nearby same-ID identity challenge the candidate must
+    # present fresh appearance evidence; when the current image cannot be
+    # encoded, existing identity evidence is retained instead of forcing a
+    # challenge failure.
+    same_id_fresh_challenge_enabled: true
+    same_id_challenge_available_images_only: true
+    appearance_gallery_consensus_recovery_enabled: false
+
+    # AB-16: one repeated appearance source image does not reinforce the
+    # adaptive positive-memory EMA more than once. Last-source suppression
+    # only; the adaptive coefficient, trusted-gallery admission and appearance
+    # inference scheduling are unchanged.
+    appearance_prevent_repeated_source_adaptive_update: true
+
     # Conservative appearance validation
     appearance_conservative_enabled: true
     appearance_conservative_require_appearance: false

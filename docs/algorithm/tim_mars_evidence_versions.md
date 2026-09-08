@@ -1,6 +1,6 @@
 # TIM-MARS evidence-version map
 
-Date: 2026-07-23. Current runtime identity refreshed 2026-09-05.
+Date: 2026-07-23. Current runtime identity refreshed 2026-09-08.
 
 The machine-readable authority is
 `docs/data/catalogue/tim_evidence_versions.json`. A TIM-MARS result is valid
@@ -25,10 +25,12 @@ tracked evidence (see "Current canonical runtime vs frozen evidence").
 - Configuration:
   `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
 - SHA-256:
-  `0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0`
-- Established by commit:
-  `e4e0dad06cebccfb9c1e6b6b29c819a55a1783df` (2026-09-05), after the
-  reviewed Issue #90 global-reacquisition promotion.
+  `b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c`
+- Established by branch (pending review/merge):
+  `tim-mars-ab16-production-promotion-20260908` (2026-09-08), the TIM-MARS
+  Stage-3 AB-16 source-aware adaptive positive-memory production promotion.
+  The promotion commit hash is recorded in the machine-readable map once the
+  branch is merged.
 - Latest frozen evidence version: `p028_dual_oracle_development` (evaluated
   with an **earlier** configuration, `e7620313…` — see the version map).
 
@@ -41,17 +43,21 @@ that it has a universal safety guarantee.
 
 The latest frozen evidence version, `p028_dual_oracle_development`, was
 evaluated at algorithm commit `c5ba9d30…` and configuration `e7620313…`. Since
-then the canonical runtime advanced through five recorded promotions. The
-latest two are the reviewed Issue #89 comparison-versus-memory-update
-eligibility change and Issue #90 long-gap global appearance reacquisition.
-These remain development/live acceptance evidence and do not constitute
-H01--H03 held-out evidence.
+then the canonical runtime advanced through six recorded promotions. The
+latest is the TIM-MARS Stage-3 AB-16 source-aware adaptive positive-memory
+production promotion; the two before it are the reviewed Issue #89
+comparison-versus-memory-update eligibility change and Issue #90 long-gap
+global appearance reacquisition. These remain development/live acceptance
+evidence and do not constitute H01--H03 held-out evidence. The full ordered
+list of promotions is in the machine-readable map; the table below carries
+the earliest three and the AB-16 promotion.
 
 | Parameter | Change | Promotion commit | Evidence | Claim boundary |
 | --- | --- | --- | --- | --- |
 | `hard_negative_max_positive_similarity` | `1.01` (exclusion off) → `0.95` | `f10492637163e2b25cd72155deffd8c12d5fb69d` | `reports/p017_fragment_safety_f1049263_2026_07_27/` (P1.6, Issue #17) | Lowest tested safe positive-similarity fragment-exclusion threshold over the four frozen development sequences; deterministic `0.95–1.01` sweep, all annotated-ID / spatial / absent-output gates PASS, repeatable. Development-only; no absolute-performance, tracker-independent, or held-out claim. |
 | `hard_negative_max_age_frames`, `hard_negative_decay_policy` | added: `247` frames, `none_until_expiry` | `6ba28c6133ff2e105ca6db4c17d0b0759c27b565` | `reports/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/` (P1.7, Issue #18) | Largest tested finite maximum age that exercised committed-prototype expiry with zero annotated-ID or spatial safety degradation over the four frozen development sequences (age sweep `62/93/247/394/427`, repeatable). Development-only. Appearance vectors stay full-strength; expiry only during uninterrupted trusted `LOCKED → LOCKED` continuity. |
 | `appearance_request_policy` | added: `all_candidates` | `bd5eeb4ebb79988bce2fa18b8889550d5f497306` | — | Behaviour-neutral. Makes the pre-existing encode-all default an explicit parameter so controlled Issue #44 experiments can override it. No change to the canonical decision path. |
+| `appearance_prevent_repeated_source_adaptive_update`; selected development baseline (`same_id_fresh_challenge_enabled`, `same_id_challenge_available_images_only`, `appearance_gallery_consensus_recovery_enabled`) | `appearance_prevent_repeated_source_adaptive_update` added: `true` (AB-16); development baseline materialised into canonical; `min_confirm_frames_after_reacquire` retained at `1` (AB-14 not promoted) | `tim-mars-ab16-production-promotion-20260908` | `docs/results/selected_target_tracking/tim_mars_ab16_production_promotion_decision_20260908.md` | TIM-MARS Stage-3 decision. AB-16 last-source suppression only (image timestamp preferred over source-frame fallback; missing provenance preserves existing behaviour; EMA coefficient, trusted-gallery admission and appearance inference scheduling unchanged; no MARS inference saving claimed). Development-only AB-16 ablation control retained for reproduction. Development-only; no H01--H03 outcome accessed; not a prospective freeze. |
 
 The machine-readable map now also tracks the active long-gap recovery controls:
 `global_reacquisition_enabled=true` and
@@ -67,7 +73,7 @@ The machine-readable map now also tracks the active long-gap recovery controls:
 | P0.17 dual-oracle development | `c5ba9d30997e47c7f555baee5257bc687698508a` | `e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff` | Improves over raw; not zero-wrong and not held-out |
 
 These rows are immutable historical fingerprints. The current canonical runtime
-is not one of them — it is `e9dc78c8…` (see "Current canonical runtime").
+is not one of them — it is `b0a98334…` (see "Current canonical runtime").
 
 All versions use MARS model SHA-256
 `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`.
