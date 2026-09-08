@@ -33,7 +33,9 @@
       "path": "docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json",
       "note": "Companion machine-readable manifest pinning the full reproduction surface (models, pinned numerical environment, evaluation tooling, runtime-provenance requirements, primary and presence-conditioned metric contract, and the post-freeze lock rule)."
     },
-    "held_out_execution_plan": "docs/flight/P027_HELDOUT_EXECUTION_PLAN_v2.md"
+    "held_out_execution_plan": "docs/flight/P027_HELDOUT_EXECUTION_PLAN_v2.md",
+    "freeze_definition_commit": "1b38a8cc27188e94b1c08ff6d555712cec752ed9",
+    "provenance_model_note": "freeze.algorithm_commit (79f11b631688889bf5ffbeb3c16ef543a53f9973) is the immutable algorithm/configuration authority and is NOT the runtime git HEAD of a Stage-7 evaluation. freeze_definition_commit (1b38a8cc27188e94b1c08ff6d555712cec752ed9) is the Stage-7 contract root on branch p027-prospective-freeze-20260908. A held-out runtime revision records its actual HEAD and is valid when it contains the merged Stage-7 freeze and keeps every final_comparison_contract source_code_freeze.required_unchanged_paths path and every pinned artifact byte-identical to the algorithm authority. See docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json provenance_model."
   },
   "sets": {
     "development": [

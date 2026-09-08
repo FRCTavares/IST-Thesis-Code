@@ -16,9 +16,12 @@ Active authorities:
   (`docs/data/splits/tim_mars_final_comparison_v3.json`);
 - prospective freeze manifest:
   `docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json`;
-- frozen algorithm commit: `79f11b631688889bf5ffbeb3c16ef543a53f9973`
+- algorithm-authority commit (immutable): `79f11b631688889bf5ffbeb3c16ef543a53f9973`
   (PR #101 merge — final development algorithm: selected baseline + production
-  AB-16 only);
+  AB-16 only). This is **not** the runtime git HEAD of a held-out run;
+- freeze-definition commit: `1b38a8cc27188e94b1c08ff6d555712cec752ed9`
+  (Stage-7 contract root; the merged Stage-7 freeze contains it and any
+  provenance-clarification commit on this branch);
 - canonical TIM-MARS SHA-256:
   `b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c`;
 - detector: YOLOv8s `models/hef/yolov8s.hef`;
@@ -28,6 +31,8 @@ Active authorities:
 - release state: `final_ready=0/3`.
 
 H01, H02 and H03 have not been captured or inspected.
+
+The runtime revision used for a held-out capture / replay / evaluation records its actual git HEAD; it is valid when it contains the merged Stage-7 freeze and `validate_tim_evaluation_split.py --verify-hashes` passes (that check requires the algorithm-authority commit to be an ancestor of HEAD and every frozen behaviour-bearing path to be byte-identical to it — never `HEAD == 79f11b63…`).
 
 This document is the execution queue for physical work that must only be
 performed when the required people, hardware and recording environment are
