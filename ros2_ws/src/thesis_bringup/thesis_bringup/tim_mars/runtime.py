@@ -66,6 +66,8 @@ class TimMarsRuntimeConfig:
     # not TargetMemoryConfig/ROS/canonical-YAML parameters.
     development_ablation_disable_forced_same_id_challenge: bool = False
     development_ablation_restore_same_id_general_negative_exemption: bool = False
+    development_ablation_disable_same_id_positive_support_reject: bool = False
+    development_ablation_disable_conservative_final_filter: bool = False
 
 
 @dataclass(frozen=True)
@@ -150,6 +152,12 @@ class TimMarsRuntime:
             ),
             development_ablation_restore_same_id_general_negative_exemption=bool(
                 self.config.development_ablation_restore_same_id_general_negative_exemption
+            ),
+            development_ablation_disable_same_id_positive_support_reject=bool(
+                self.config.development_ablation_disable_same_id_positive_support_reject
+            ),
+            development_ablation_disable_conservative_final_filter=bool(
+                self.config.development_ablation_disable_conservative_final_filter
             ),
         )
         selected_id = int(self.config.selected_track_id)

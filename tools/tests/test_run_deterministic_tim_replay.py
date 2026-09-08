@@ -861,6 +861,9 @@ def test_build_resolved_runtime_payload_records_sources(
         "appearance_compute_min_interval_ms": 250.0,
         "ablation_disable_forced_same_id_challenge": False,
         "ablation_restore_same_id_general_negative_exemption": False,
+        "ablation_disable_hard_negative_memory": False,
+        "ablation_disable_same_id_positive_support_reject": False,
+        "ablation_disable_conservative_final_filter": False,
         "compact_output": True,
         "process_start_timestamp_ns": 100,
         "process_end_timestamp_ns": 200,
@@ -903,6 +906,15 @@ def test_build_resolved_runtime_payload_records_sources(
     ] == "runner_default"
     assert sources[
         "ablation_restore_same_id_general_negative_exemption"
+    ] == "runner_default"
+    assert sources[
+        "ablation_disable_hard_negative_memory"
+    ] == "runner_default"
+    assert sources[
+        "ablation_disable_same_id_positive_support_reject"
+    ] == "runner_default"
+    assert sources[
+        "ablation_disable_conservative_final_filter"
     ] == "runner_default"
     assert sources["raw_target_mode"] == (
         "command_line"
@@ -1360,6 +1372,9 @@ def test_tim_ablation_controls_are_default_off(monkeypatch):
 
     assert not arguments.ablation_disable_forced_same_id_challenge
     assert not arguments.ablation_restore_same_id_general_negative_exemption
+    assert not arguments.ablation_disable_hard_negative_memory
+    assert not arguments.ablation_disable_same_id_positive_support_reject
+    assert not arguments.ablation_disable_conservative_final_filter
 
 
 def test_tim_ablation_controls_are_explicit(monkeypatch):
@@ -1379,6 +1394,9 @@ def test_tim_ablation_controls_are_explicit(monkeypatch):
             "7",
             "--ablation-disable-forced-same-id-challenge",
             "--ablation-restore-same-id-general-negative-exemption",
+            "--ablation-disable-hard-negative-memory",
+            "--ablation-disable-same-id-positive-support-reject",
+            "--ablation-disable-conservative-final-filter",
         ],
     )
 
@@ -1386,3 +1404,34 @@ def test_tim_ablation_controls_are_explicit(monkeypatch):
 
     assert arguments.ablation_disable_forced_same_id_challenge
     assert arguments.ablation_restore_same_id_general_negative_exemption
+    assert arguments.ablation_disable_hard_negative_memory
+    assert arguments.ablation_disable_same_id_positive_support_reject
+    assert arguments.ablation_disable_conservative_final_filter
+
+
+def test_ab09_uses_existing_hard_negative_memory_switch():
+    args = argparse.Namespace(
+        appearance_enabled=False,
+        appearance_request_policy=None,
+        appearance_compute_min_interval_ms=None,
+        image_width=640.0,
+        image_height=480.0,
+        model=Path("unused.pb"),
+        tracks_are_normalized=False,
+        selected_track_id=7,
+        ablation_disable_forced_same_id_challenge=False,
+        ablation_restore_same_id_general_negative_exemption=False,
+        ablation_disable_hard_negative_memory=True,
+        ablation_disable_same_id_positive_support_reject=False,
+        ablation_disable_conservative_final_filter=False,
+    )
+
+    runtime = MODULE.build_runtime(
+        {
+            "appearance_enabled": False,
+            "hard_negative_memory_enabled": True,
+        },
+        args,
+    )
+
+    assert runtime.memory.cfg.hard_negative_memory_enabled is False

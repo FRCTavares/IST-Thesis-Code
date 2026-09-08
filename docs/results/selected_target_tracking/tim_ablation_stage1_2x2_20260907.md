@@ -53,4 +53,21 @@ All cells retain zero target-absence output in the tested development sequences.
 - **AB-11 / forced fresh challenge scheduling:** useful and essential to the selected development delta, with a context-specific availability cost on Seq03.
 - **AB-18 / later general same-ID negative veto:** redundant on the four permitted development sequences. This does not classify hard-negative memory itself as redundant because the earlier challenger-specific negative path remains active.
 
+
+## 8 September mechanism follow-up
+
+A second Stage-1 block isolated AB-06, AB-09 and AB-10. The new controls are
+default-off neutral on Seq03. AB-06 is inactive on the available development
+evidence. AB-09 is diagnostically active but redundant for controller-facing
+behavior and appearance compute workload on the available development evidence;
+explicit disablement on Seq03 and Seq04 preserves the complete physical-v2
+outcome. AB-10 is safety-essential on Seq03: removing the same-ID
+positive-support rejection introduces approximately 1.100 s of wrong-person
+authority for only approximately 0.299 s additional correct authority.
+
+Detailed provenance, opportunity counts, physical-v2 results and workload
+comparisons are retained in
+`tim_ablation_stage1_mechanisms_20260908.json` and
+`tim_ablation_stage1_mechanisms_20260908.md`.
+
 Exact per-cell semantic digests, candidate-stream digests, physical reference hashes, resolved control provenance, commands and workload counters are retained in the companion JSON.
