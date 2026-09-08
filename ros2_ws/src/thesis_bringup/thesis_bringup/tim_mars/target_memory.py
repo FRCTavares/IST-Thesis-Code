@@ -137,6 +137,8 @@ class TargetIdentityMemory:
         *,
         development_ablation_disable_forced_same_id_challenge: bool = False,
         development_ablation_restore_same_id_general_negative_exemption: bool = False,
+        development_ablation_disable_same_id_positive_support_reject: bool = False,
+        development_ablation_disable_conservative_final_filter: bool = False,
     ) -> None:
         self.cfg = cfg or TargetMemoryConfig()
         self._development_ablation_disable_forced_same_id_challenge = bool(
@@ -144,6 +146,12 @@ class TargetIdentityMemory:
         )
         self._development_ablation_restore_same_id_general_negative_exemption = bool(
             development_ablation_restore_same_id_general_negative_exemption
+        )
+        self._development_ablation_disable_same_id_positive_support_reject = bool(
+            development_ablation_disable_same_id_positive_support_reject
+        )
+        self._development_ablation_disable_conservative_final_filter = bool(
+            development_ablation_disable_conservative_final_filter
         )
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
@@ -845,7 +853,11 @@ class TargetIdentityMemory:
             )
         )
         if same_id_hijack_reject is not None:
-            return same_id_hijack_reject
+            if not (
+                self._development_ablation_disable_same_id_positive_support_reject
+                and "hard_negative" not in same_id_hijack_reject
+            ):
+                return same_id_hijack_reject
 
         id_switch_appearance_reject = (
             id_switch_appearance_reject_reason(
@@ -967,15 +979,16 @@ class TargetIdentityMemory:
         if gallery_reject is not None:
             return gallery_reject
 
-        conservative_reject = (
-            appearance_conservative_reject_reason(
-                cfg=self.cfg,
-                best_score=proposal.score,
-                all_scores=proposal.all_scores,
+        if not self._development_ablation_disable_conservative_final_filter:
+            conservative_reject = (
+                appearance_conservative_reject_reason(
+                    cfg=self.cfg,
+                    best_score=proposal.score,
+                    all_scores=proposal.all_scores,
+                )
             )
-        )
-        if conservative_reject is not None:
-            return conservative_reject
+            if conservative_reject is not None:
+                return conservative_reject
 
         return None
 

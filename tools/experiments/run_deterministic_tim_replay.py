@@ -241,6 +241,21 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--ablation-disable-hard-negative-memory",
+        action="store_true",
+        help="Development-only AB-09: disable hard-negative memory.",
+    )
+    parser.add_argument(
+        "--ablation-disable-same-id-positive-support-reject",
+        action="store_true",
+        help="Development-only AB-10: disable same-ID positive-support rejection.",
+    )
+    parser.add_argument(
+        "--ablation-disable-conservative-final-filter",
+        action="store_true",
+        help="Development-only AB-06: disable the final conservative filter.",
+    )
+    parser.add_argument(
         "--shadow-appearance-probe-out",
         type=Path,
         default=None,
@@ -621,6 +636,15 @@ def build_runtime(
         appearance_enabled=appearance_enabled,
     )
 
+    if bool(
+        getattr(
+            args,
+            "ablation_disable_hard_negative_memory",
+            False,
+        )
+    ):
+        memory.hard_negative_memory_enabled = False
+
     appearance = AppearanceAttachmentConfig(
         enabled=appearance_enabled,
         max_image_age_ms=float(
@@ -696,6 +720,20 @@ def build_runtime(
             getattr(
                 args,
                 "ablation_restore_same_id_general_negative_exemption",
+                False,
+            )
+        ),
+        development_ablation_disable_same_id_positive_support_reject=bool(
+            getattr(
+                args,
+                "ablation_disable_same_id_positive_support_reject",
+                False,
+            )
+        ),
+        development_ablation_disable_conservative_final_filter=bool(
+            getattr(
+                args,
+                "ablation_disable_conservative_final_filter",
                 False,
             )
         ),
@@ -1524,6 +1562,27 @@ def build_resolved_runtime_payload(
                 False,
             )
         ),
+        "ablation_disable_hard_negative_memory": bool(
+            getattr(
+                args,
+                "ablation_disable_hard_negative_memory",
+                False,
+            )
+        ),
+        "ablation_disable_same_id_positive_support_reject": bool(
+            getattr(
+                args,
+                "ablation_disable_same_id_positive_support_reject",
+                False,
+            )
+        ),
+        "ablation_disable_conservative_final_filter": bool(
+            getattr(
+                args,
+                "ablation_disable_conservative_final_filter",
+                False,
+            )
+        ),
             "compact_output": bool(
                 args.compact_output
             ),
@@ -1558,6 +1617,27 @@ def build_resolved_runtime_payload(
                 getattr(
                     args,
                     "ablation_restore_same_id_general_negative_exemption",
+                    False,
+                )
+            ),
+            "disable_hard_negative_memory": bool(
+                getattr(
+                    args,
+                    "ablation_disable_hard_negative_memory",
+                    False,
+                )
+            ),
+            "disable_same_id_positive_support_reject": bool(
+                getattr(
+                    args,
+                    "ablation_disable_same_id_positive_support_reject",
+                    False,
+                )
+            ),
+            "disable_conservative_final_filter": bool(
+                getattr(
+                    args,
+                    "ablation_disable_conservative_final_filter",
                     False,
                 )
             ),
@@ -1632,6 +1712,15 @@ def build_resolved_runtime_payload(
         ),
         "ablation_restore_same_id_general_negative_exemption": argument_source(
             "--ablation-restore-same-id-general-negative-exemption"
+        ),
+        "ablation_disable_hard_negative_memory": argument_source(
+            "--ablation-disable-hard-negative-memory"
+        ),
+        "ablation_disable_same_id_positive_support_reject": argument_source(
+            "--ablation-disable-same-id-positive-support-reject"
+        ),
+        "ablation_disable_conservative_final_filter": argument_source(
+            "--ablation-disable-conservative-final-filter"
         ),
             "raw_target_mode": argument_source(
                 "--raw-target-mode"

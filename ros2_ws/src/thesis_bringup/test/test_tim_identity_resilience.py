@@ -39,6 +39,8 @@ def runtime(
     *,
     disable_forced_challenge=False,
     restore_general_negative_exemption=False,
+    disable_same_id_positive_support_reject=False,
+    disable_conservative_final_filter=False,
 ):
     config = TargetMemoryConfig(
         appearance_enabled=True,
@@ -58,6 +60,12 @@ def runtime(
         ),
         development_ablation_restore_same_id_general_negative_exemption=(
             restore_general_negative_exemption
+        ),
+        development_ablation_disable_same_id_positive_support_reject=(
+            disable_same_id_positive_support_reject
+        ),
+        development_ablation_disable_conservative_final_filter=(
+            disable_conservative_final_filter
         ),
     ), mars_backend=Encoder())
 
@@ -217,6 +225,76 @@ def test_ab18_keeps_challenger_specific_negative_rejection():
     assert not output.visible
     assert output.reason.startswith("same_id_hijack_reject")
     assert "hard_negative" in output.reason
+
+
+def test_ab10_removes_only_positive_support_hijack_rejection():
+    rt = initialized(
+        disable_same_id_positive_support_reject=True,
+    )
+
+    items = candidates()
+    items[0] = replace(
+        items[0],
+        appearance=OTHER,
+    )
+
+    output = rt.memory.update(items)
+
+    assert output.visible
+    assert output.target_track_id == 7
+
+
+def test_ab10_keeps_challenger_specific_negative_rejection():
+    rt = initialized(
+        disable_same_id_positive_support_reject=True,
+    )
+    rt.memory._hard_negative_memory._memory = [OTHER]
+
+    items = candidates()
+    items[0] = replace(
+        items[0],
+        appearance=OTHER,
+    )
+
+    output = rt.memory.update(items)
+
+    assert not output.visible
+    assert output.reason.startswith("same_id_hijack_reject")
+    assert "hard_negative" in output.reason
+
+
+def test_ab06_bypasses_only_final_conservative_filter(monkeypatch):
+    monkeypatch.setattr(
+        "thesis_bringup.tim_mars.target_memory."
+        "appearance_conservative_reject_reason",
+        lambda **kwargs: "appearance_conservative_reject:synthetic",
+    )
+
+    control = initialized()
+    control_items, _ = attach(
+        control,
+        candidates(),
+        1_030_000_000,
+        2,
+    )
+    rejected = control.memory.update(control_items)
+
+    assert not rejected.visible
+    assert rejected.reason == "appearance_conservative_reject:synthetic"
+
+    ablated = initialized(
+        disable_conservative_final_filter=True,
+    )
+    ablated_items, _ = attach(
+        ablated,
+        candidates(),
+        1_030_000_000,
+        2,
+    )
+    accepted = ablated.memory.update(ablated_items)
+
+    assert accepted.visible
+    assert accepted.target_track_id == 7
 
 
 @pytest.mark.parametrize("count,accepted", [(0, False), (1, False), (2, True)])
