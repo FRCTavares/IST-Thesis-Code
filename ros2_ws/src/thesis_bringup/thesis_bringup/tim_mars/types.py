@@ -89,6 +89,7 @@ class CandidateTrack:
         AppearanceCropQuality
     ] = None
     appearance_memory_update_eligible: bool = True
+    appearance_challenge_failed: bool = False
     appearance_provenance: Optional[
         AppearanceObservationProvenance
     ] = None
@@ -275,6 +276,9 @@ class TargetMemoryConfig:
     # During such a challenge, the same-ID candidate must carry current
     # positive appearance support and must not match hard-negative memory.
     same_id_hijack_protection_enabled: bool = False
+    same_id_fresh_challenge_enabled: bool = False
+    same_id_challenge_available_images_only: bool = False
+    appearance_gallery_consensus_recovery_enabled: bool = False
 
     # Conservative appearance publication filter.
     # When enabled, a candidate needs sufficiently strong and separated

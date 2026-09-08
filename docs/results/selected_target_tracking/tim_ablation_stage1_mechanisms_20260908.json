@@ -1,0 +1,835 @@
+{
+  "cells": {
+    "ab06/seq03": {
+      "bag": "bags/replay/tim_ablation_seq03_ab06_20260908",
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "canonical_config": {
+        "copy": "tim_mars_canonical_config.yaml",
+        "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+        "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+      },
+      "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq03_ab06_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --ablation-disable-conservative-final-filter --overwrite --compact-output",
+      "development_ablation_controls": {
+        "disable_conservative_final_filter": true,
+        "disable_forced_same_id_challenge": false,
+        "disable_hard_negative_memory": false,
+        "disable_same_id_positive_support_reject": false,
+        "restore_same_id_general_negative_exemption": false
+      },
+      "expected_candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "generated_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+      "model": {
+        "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+        "size_bytes": 11244410,
+        "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+      },
+      "physical_v2": {
+        "evaluation_required": false,
+        "reason": "The generated semantic digest exactly matches the selected Seq03 semantic digest."
+      },
+      "reason_deltas_vs_selected": {},
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "add0ff759eff63ad3d2274a4e656ea5810f74f2d",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+          " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+          " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+          " M tools/experiments/run_deterministic_tim_replay.py",
+          " M tools/tests/test_run_deterministic_tim_replay.py"
+        ]
+      },
+      "resolved_runtime_sha256": "df291665f9955cb78238f2bf77e3091e8384bbc0b63478f165815fae28761eb4",
+      "selected_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+      "semantic_equal_selected": true,
+      "state_deltas_vs_selected": {},
+      "workload": {
+        "backend_calls": 354,
+        "backend_requested": 896,
+        "backend_valid": 896,
+        "cache_expired": 15,
+        "cache_hits": 4000,
+        "cache_invalidated": 0,
+        "cache_lookups": 4541,
+        "cache_misses": 526,
+        "cached_positive_memory_update_frames": 400,
+        "candidates_per_invocation": 2.531073446327684,
+        "embeddings_per_s": 10.683550344993819,
+        "encoded_frame_pct": 18.33247022268255,
+        "encoded_frames": 354,
+        "forced_fresh_frames": 52,
+        "frames": 1931,
+        "positive_memory_update_frames": 525,
+        "reasons": {
+          "accepted_candidate": 540,
+          "best_below_threshold": 1,
+          "global_identity_recovery_reject": 409,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 967,
+          "rank_aware_id_switch_recovery_reject": 2,
+          "reacquired_candidate": 2,
+          "recovery_persistence_pending": 2,
+          "same_id_hijack_reject": 1,
+          "same_id_reacquisition_reject": 2,
+          "short_gap_new_id_suppressed": 4
+        },
+        "states": {
+          "LOCKED": 543,
+          "LOST": 1374,
+          "REACQUIRED": 2,
+          "UNCERTAIN": 12
+        },
+        "timeline_duration_s": 83.867251154
+      },
+      "workload_numeric_deltas_vs_selected": {}
+    },
+    "ab09/seq03": {
+      "bag": "bags/replay/tim_ablation_seq03_ab09_20260908",
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "canonical_config": {
+        "copy": "tim_mars_canonical_config.yaml",
+        "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+        "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+      },
+      "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq03_ab09_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --ablation-disable-hard-negative-memory --overwrite --compact-output",
+      "development_ablation_controls": {
+        "disable_conservative_final_filter": false,
+        "disable_forced_same_id_challenge": false,
+        "disable_hard_negative_memory": true,
+        "disable_same_id_positive_support_reject": false,
+        "restore_same_id_general_negative_exemption": false
+      },
+      "expected_candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "generated_semantic_sha256": "f88e15770da00ae7b23006f028dd25336774a4251cec8c8ad885197eae6f3ac1",
+      "model": {
+        "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+        "size_bytes": 11244410,
+        "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+      },
+      "physical_v2": {
+        "duration_deltas_vs_selected": {},
+        "report": {
+          "contract_version": "tim_physical_target_bbox_v2",
+          "coordinate_convention": "source_pixels_historical_pre_p53",
+          "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+          "coverage": {
+            "interpolated_reference_duration_s": 83.766797783,
+            "reference_coverage_fraction": 0.9988022336535682,
+            "reference_covered_duration_s": 83.766797783,
+            "reference_gap_duration_s": 0.1004533710000004
+          },
+          "duration_buckets": {
+            "correct_target_output_duration_s": 24.600414281999996,
+            "identity_unresolved_duration_s": 0.0,
+            "localisation_scored_duration_s": 24.600414281999996,
+            "lost_or_suppressed_duration_s": 59.166383501000006,
+            "reference_gap_duration_s": 0.1004533710000004,
+            "reference_gap_with_output_duration_s": 0.1004533710000004,
+            "reference_unavailable_duration_s": 0.0,
+            "target_absent_duration_s": 0.0,
+            "target_absent_with_output_duration_s": 0.0,
+            "wrong_person_output_duration_s": 0.0
+          },
+          "evaluation_window": {
+            "end_s": 83.867251154,
+            "start_s": 0.0
+          },
+          "evaluator": "physical_target_bbox_evaluation_v2",
+          "evaluator_mode": "physical_reference_v2",
+          "localisation": {
+            "centre_error_px_duration_weighted_mean": 2.334025784377257,
+            "centre_error_px_max": 11.834822298982518,
+            "centre_error_px_median": 1.7882559799124966,
+            "centre_error_ref_h_duration_weighted_mean": 0.02445829660656926,
+            "centre_error_ref_h_max": 0.12948383259280652,
+            "centre_error_ref_h_median": 0.01867709763246095,
+            "iou_duration_weighted_mean": 0.8716335060407215,
+            "iou_max": 0.9773237494103876,
+            "iou_median": 0.8990045503772879,
+            "iou_min": 0.5745923910303049,
+            "iou_p10": 0.732601482482869,
+            "iou_p90": 0.9559219205573184,
+            "n_samples": 1032,
+            "scored_duration_s": 24.600414281999996
+          },
+          "physical_reference_path": "docs/data/physical_target_references/seq03_crossing.json",
+          "physical_reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+          "reconciliation": {
+            "ok": true,
+            "primary_bucket_total_s": 83.867251154,
+            "residual_s": 0.0
+          },
+          "repo_commit": "add0ff759eff63ad3d2274a4e656ea5810f74f2d",
+          "repo_dirty": true,
+          "schema_version": 2,
+          "selected_physical_target_label": "black_shirt_person",
+          "source_bag_name": "2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+          "source_bag_path": "bags/source/curated/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+          "source_height": 480,
+          "source_image_topic": "/camera/image_raw",
+          "source_width": 640,
+          "stream": "tim_target_memory",
+          "total_evaluated_duration_s": 83.867251154
+        },
+        "report_source_path": "reports/tim_ablation_stage1_seq03_smoke_20260908/ab09/tim_target_memory.json",
+        "report_source_sha256": "dd38035c16b925ab10d7720af0f1911fb011701fc9e410bfb5162821f967113f"
+      },
+      "reason_deltas_vs_selected": {},
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "add0ff759eff63ad3d2274a4e656ea5810f74f2d",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+          " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+          " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+          " M tools/experiments/run_deterministic_tim_replay.py",
+          " M tools/tests/test_run_deterministic_tim_replay.py"
+        ]
+      },
+      "resolved_runtime_sha256": "65a2af07c0c01430bcd37335efd709743ab26a5edcb2053b96613cff585a4174",
+      "selected_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+      "semantic_equal_selected": false,
+      "state_deltas_vs_selected": {},
+      "workload": {
+        "backend_calls": 354,
+        "backend_requested": 896,
+        "backend_valid": 896,
+        "cache_expired": 15,
+        "cache_hits": 4000,
+        "cache_invalidated": 0,
+        "cache_lookups": 4541,
+        "cache_misses": 526,
+        "cached_positive_memory_update_frames": 400,
+        "candidates_per_invocation": 2.531073446327684,
+        "embeddings_per_s": 10.683550344993819,
+        "encoded_frame_pct": 18.33247022268255,
+        "encoded_frames": 354,
+        "forced_fresh_frames": 52,
+        "frames": 1931,
+        "positive_memory_update_frames": 525,
+        "reasons": {
+          "accepted_candidate": 540,
+          "best_below_threshold": 1,
+          "global_identity_recovery_reject": 409,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 967,
+          "rank_aware_id_switch_recovery_reject": 2,
+          "reacquired_candidate": 2,
+          "recovery_persistence_pending": 2,
+          "same_id_hijack_reject": 1,
+          "same_id_reacquisition_reject": 2,
+          "short_gap_new_id_suppressed": 4
+        },
+        "states": {
+          "LOCKED": 543,
+          "LOST": 1374,
+          "REACQUIRED": 2,
+          "UNCERTAIN": 12
+        },
+        "timeline_duration_s": 83.867251154
+      },
+      "workload_numeric_deltas_vs_selected": {}
+    },
+    "ab09/seq04": {
+      "bag": "bags/replay/tim_ablation_seq04_ab09_20260908",
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "canonical_config": {
+        "copy": "tim_mars_canonical_config.yaml",
+        "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+        "source": "/home/francisco/Desktop/Thesis-Code/reports/tim_resilience_20260907/available_image_challenge.yaml"
+      },
+      "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq04_ab09_20260908 --config reports/tim_resilience_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --ablation-disable-hard-negative-memory --overwrite --compact-output",
+      "development_ablation_controls": {
+        "disable_conservative_final_filter": false,
+        "disable_forced_same_id_challenge": false,
+        "disable_hard_negative_memory": true,
+        "disable_same_id_positive_support_reject": false,
+        "restore_same_id_general_negative_exemption": false
+      },
+      "expected_candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "generated_semantic_sha256": "7cd4192a63f48632b11f7b23da691cc23cda306c55e2bd1ab231a3c04569c476",
+      "model": {
+        "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+        "size_bytes": 11244410,
+        "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+      },
+      "physical_v2": {
+        "duration_deltas_vs_selected": {},
+        "report": {
+          "contract_version": "tim_physical_target_bbox_v2",
+          "coordinate_convention": "source_pixels_historical_pre_p53",
+          "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+          "coverage": {
+            "interpolated_reference_duration_s": 72.500041772,
+            "reference_coverage_fraction": 0.8381415114261949,
+            "reference_covered_duration_s": 72.500041772,
+            "reference_gap_duration_s": 0.10088379499999434
+          },
+          "duration_buckets": {
+            "correct_target_output_duration_s": 48.766241081999965,
+            "identity_unresolved_duration_s": 0.0,
+            "localisation_scored_duration_s": 48.766241081999965,
+            "lost_or_suppressed_duration_s": 23.733800690000038,
+            "reference_gap_duration_s": 0.10088379499999434,
+            "reference_gap_with_output_duration_s": 0.06736738799999387,
+            "reference_unavailable_duration_s": 0.0,
+            "target_absent_duration_s": 13.900030159000003,
+            "target_absent_with_output_duration_s": 0.0,
+            "wrong_person_output_duration_s": 0.0
+          },
+          "evaluation_window": {
+            "end_s": 86.500955726,
+            "start_s": 0.0
+          },
+          "evaluator": "physical_target_bbox_evaluation_v2",
+          "evaluator_mode": "physical_reference_v2",
+          "localisation": {
+            "centre_error_px_duration_weighted_mean": 3.0974412245869645,
+            "centre_error_px_max": 45.417950946885696,
+            "centre_error_px_median": 2.5685106958096418,
+            "centre_error_ref_h_duration_weighted_mean": 0.03777893154640771,
+            "centre_error_ref_h_max": 0.6253332086862963,
+            "centre_error_ref_h_median": 0.029832523209351557,
+            "iou_duration_weighted_mean": 0.821574605688344,
+            "iou_max": 0.9867691828574611,
+            "iou_median": 0.837533083229907,
+            "iou_min": 0.09792028329853047,
+            "iou_p10": 0.7221324789154017,
+            "iou_p90": 0.9129834982074828,
+            "n_samples": 2119,
+            "scored_duration_s": 48.766241081999965
+          },
+          "physical_reference_path": "docs/data/physical_target_references/seq04_occlusion_no_exit.json",
+          "physical_reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+          "reconciliation": {
+            "ok": true,
+            "primary_bucket_total_s": 86.500955726,
+            "residual_s": 0.0
+          },
+          "repo_commit": "add0ff759eff63ad3d2274a4e656ea5810f74f2d",
+          "repo_dirty": true,
+          "schema_version": 2,
+          "selected_physical_target_label": "black_shirt_person",
+          "source_bag_name": "2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+          "source_bag_path": "bags/source/curated/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+          "source_height": 480,
+          "source_image_topic": "/camera/image_raw",
+          "source_width": 640,
+          "stream": "tim_target_memory",
+          "total_evaluated_duration_s": 86.500955726
+        },
+        "report_source_path": "reports/tim_ablation_stage1_seq04_ab09_20260908/tim_target_memory.json",
+        "report_source_sha256": "84b6dc0855dc369dcf02a0ba14a6c41de9de37939eaa2a54cdd323aef5052b35"
+      },
+      "reason_deltas_vs_selected": {
+        "global_identity_recovery_reject": {
+          "ablation": 715,
+          "delta": -6,
+          "selected": 721
+        },
+        "protected_gallery_reacquisition_reject": {
+          "ablation": 111,
+          "delta": 6,
+          "selected": 105
+        }
+      },
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "add0ff759eff63ad3d2274a4e656ea5810f74f2d",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+          " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+          " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+          " M tools/experiments/run_deterministic_tim_replay.py",
+          " M tools/tests/test_run_deterministic_tim_replay.py"
+        ]
+      },
+      "resolved_runtime_sha256": "cac170855e5607ef6082f5f27d86d8d49d9223186d27fb3a17d2f49f010bc1ae",
+      "selected_semantic_sha256": "ff818a434e52a4c5f6733846434cc455f6501182ac4632a2f4da65cc68e6d980",
+      "semantic_equal_selected": false,
+      "state_deltas_vs_selected": {},
+      "workload": {
+        "backend_calls": 1150,
+        "backend_requested": 2224,
+        "backend_valid": 2224,
+        "cache_expired": 43,
+        "cache_hits": 5320,
+        "cache_invalidated": 0,
+        "cache_lookups": 6734,
+        "cache_misses": 1371,
+        "cached_positive_memory_update_frames": 123,
+        "candidates_per_invocation": 1.9339130434782608,
+        "embeddings_per_s": 25.710698585166288,
+        "encoded_frame_pct": 56.17977528089887,
+        "encoded_frames": 1150,
+        "forced_fresh_frames": 837,
+        "frames": 2047,
+        "positive_memory_update_frames": 840,
+        "reasons": {
+          "accepted_candidate": 1138,
+          "best_below_threshold": 19,
+          "global_identity_recovery_reject": 715,
+          "id_switch_recovery_reject": 5,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 111,
+          "rank_aware_id_switch_recovery_reject": 8,
+          "reacquired_candidate": 10,
+          "recovery_persistence_pending": 11,
+          "same_id_hijack_reject": 3,
+          "same_id_reacquisition_reject": 19,
+          "short_gap_new_id_suppressed": 7
+        },
+        "states": {
+          "LOCKED": 1149,
+          "LOST": 828,
+          "REACQUIRED": 11,
+          "UNCERTAIN": 59
+        },
+        "timeline_duration_s": 86.500955726
+      },
+      "workload_numeric_deltas_vs_selected": {}
+    },
+    "ab10/seq03": {
+      "bag": "bags/replay/tim_ablation_seq03_ab10_20260908",
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "canonical_config": {
+        "copy": "tim_mars_canonical_config.yaml",
+        "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+        "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+      },
+      "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq03_ab10_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --ablation-disable-same-id-positive-support-reject --overwrite --compact-output",
+      "development_ablation_controls": {
+        "disable_conservative_final_filter": false,
+        "disable_forced_same_id_challenge": false,
+        "disable_hard_negative_memory": false,
+        "disable_same_id_positive_support_reject": true,
+        "restore_same_id_general_negative_exemption": false
+      },
+      "expected_candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "generated_semantic_sha256": "1bb8d523183adccffa60ed65d64d3530fb24cac2bd479882e9c4a66ae34c9867",
+      "model": {
+        "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+        "size_bytes": 11244410,
+        "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+      },
+      "physical_v2": {
+        "duration_deltas_vs_selected": {
+          "correct_target_output_duration_s": {
+            "ablation": 24.899310263000004,
+            "delta": 0.29889598100000825,
+            "selected": 24.600414281999996
+          },
+          "localisation_scored_duration_s": {
+            "ablation": 24.899310263000004,
+            "delta": 0.29889598100000825,
+            "selected": 24.600414281999996
+          },
+          "lost_or_suppressed_duration_s": {
+            "ablation": 57.767564021,
+            "delta": -1.3988194800000073,
+            "selected": 59.166383501000006
+          },
+          "wrong_person_output_duration_s": {
+            "ablation": 1.099923498999999,
+            "delta": 1.099923498999999,
+            "selected": 0.0
+          }
+        },
+        "report": {
+          "contract_version": "tim_physical_target_bbox_v2",
+          "coordinate_convention": "source_pixels_historical_pre_p53",
+          "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+          "coverage": {
+            "interpolated_reference_duration_s": 83.766797783,
+            "reference_coverage_fraction": 0.9988022336535682,
+            "reference_covered_duration_s": 83.766797783,
+            "reference_gap_duration_s": 0.1004533710000004
+          },
+          "duration_buckets": {
+            "correct_target_output_duration_s": 24.899310263000004,
+            "identity_unresolved_duration_s": 0.0,
+            "localisation_scored_duration_s": 24.899310263000004,
+            "lost_or_suppressed_duration_s": 57.767564021,
+            "reference_gap_duration_s": 0.1004533710000004,
+            "reference_gap_with_output_duration_s": 0.1004533710000004,
+            "reference_unavailable_duration_s": 0.0,
+            "target_absent_duration_s": 0.0,
+            "target_absent_with_output_duration_s": 0.0,
+            "wrong_person_output_duration_s": 1.099923498999999
+          },
+          "evaluation_window": {
+            "end_s": 83.867251154,
+            "start_s": 0.0
+          },
+          "evaluator": "physical_target_bbox_evaluation_v2",
+          "evaluator_mode": "physical_reference_v2",
+          "localisation": {
+            "centre_error_px_duration_weighted_mean": 2.409886053031896,
+            "centre_error_px_max": 11.834822298982518,
+            "centre_error_px_median": 1.8080024534256234,
+            "centre_error_ref_h_duration_weighted_mean": 0.02540120542290602,
+            "centre_error_ref_h_max": 0.12948383259280652,
+            "centre_error_ref_h_median": 0.019117454631693592,
+            "iou_duration_weighted_mean": 0.8695947882231361,
+            "iou_max": 0.9773237494103876,
+            "iou_median": 0.8983130179390799,
+            "iou_min": 0.5745923910303049,
+            "iou_p10": 0.7291760437948288,
+            "iou_p90": 0.9559079780389527,
+            "n_samples": 1042,
+            "scored_duration_s": 24.899310263000004
+          },
+          "physical_reference_path": "docs/data/physical_target_references/seq03_crossing.json",
+          "physical_reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+          "reconciliation": {
+            "ok": true,
+            "primary_bucket_total_s": 83.867251154,
+            "residual_s": 0.0
+          },
+          "repo_commit": "add0ff759eff63ad3d2274a4e656ea5810f74f2d",
+          "repo_dirty": true,
+          "schema_version": 2,
+          "selected_physical_target_label": "black_shirt_person",
+          "source_bag_name": "2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+          "source_bag_path": "bags/source/curated/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+          "source_height": 480,
+          "source_image_topic": "/camera/image_raw",
+          "source_width": 640,
+          "stream": "tim_target_memory",
+          "total_evaluated_duration_s": 83.867251154
+        },
+        "report_source_path": "reports/tim_ablation_stage1_seq03_smoke_20260908/ab10/tim_target_memory.json",
+        "report_source_sha256": "b2428f633f19c980b31a0ad07c291959384043765a7efd8f809b4bb58ebd0864"
+      },
+      "reason_deltas_vs_selected": {
+        "accepted_candidate": {
+          "ablation": 573,
+          "delta": 33,
+          "selected": 540
+        },
+        "best_below_threshold": {
+          "ablation": 3,
+          "delta": 2,
+          "selected": 1
+        },
+        "global_identity_recovery_reject": {
+          "ablation": 413,
+          "delta": 4,
+          "selected": 409
+        },
+        "id_switch_recovery_reject": {
+          "ablation": 1,
+          "delta": 1,
+          "selected": 0
+        },
+        "protected_gallery_reacquisition_reject": {
+          "ablation": 925,
+          "delta": -42,
+          "selected": 967
+        },
+        "rank_aware_id_switch_recovery_reject": {
+          "ablation": 3,
+          "delta": 1,
+          "selected": 2
+        },
+        "reacquired_candidate": {
+          "ablation": 1,
+          "delta": -1,
+          "selected": 2
+        },
+        "recovery_persistence_pending": {
+          "ablation": 1,
+          "delta": -1,
+          "selected": 2
+        },
+        "same_id_hijack_reject": {
+          "ablation": 0,
+          "delta": -1,
+          "selected": 1
+        },
+        "same_id_reacquisition_reject": {
+          "ablation": 6,
+          "delta": 4,
+          "selected": 2
+        }
+      },
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "add0ff759eff63ad3d2274a4e656ea5810f74f2d",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+          " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+          " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+          " M tools/experiments/run_deterministic_tim_replay.py",
+          " M tools/tests/test_run_deterministic_tim_replay.py"
+        ]
+      },
+      "resolved_runtime_sha256": "f5f833b3155f3b7cfa9bd826d21766d13ec7bef1c63bae78f12a07adaccf9ebf",
+      "selected_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+      "semantic_equal_selected": false,
+      "state_deltas_vs_selected": {
+        "LOCKED": {
+          "ablation": 575,
+          "delta": 32,
+          "selected": 543
+        },
+        "LOST": {
+          "ablation": 1343,
+          "delta": -31,
+          "selected": 1374
+        },
+        "REACQUIRED": {
+          "ablation": 1,
+          "delta": -1,
+          "selected": 2
+        }
+      },
+      "workload": {
+        "backend_calls": 380,
+        "backend_requested": 922,
+        "backend_valid": 922,
+        "cache_expired": 15,
+        "cache_hits": 3974,
+        "cache_invalidated": 0,
+        "cache_lookups": 4515,
+        "cache_misses": 526,
+        "cached_positive_memory_update_frames": 400,
+        "candidates_per_invocation": 2.4263157894736844,
+        "embeddings_per_s": 10.993564082683372,
+        "encoded_frame_pct": 19.67892283790782,
+        "encoded_frames": 380,
+        "forced_fresh_frames": 78,
+        "frames": 1931,
+        "positive_memory_update_frames": 550,
+        "reasons": {
+          "accepted_candidate": 573,
+          "best_below_threshold": 3,
+          "global_identity_recovery_reject": 413,
+          "id_switch_recovery_reject": 1,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 925,
+          "rank_aware_id_switch_recovery_reject": 3,
+          "reacquired_candidate": 1,
+          "recovery_persistence_pending": 1,
+          "same_id_reacquisition_reject": 6,
+          "short_gap_new_id_suppressed": 4
+        },
+        "states": {
+          "LOCKED": 575,
+          "LOST": 1343,
+          "REACQUIRED": 1,
+          "UNCERTAIN": 12
+        },
+        "timeline_duration_s": 83.867251154
+      },
+      "workload_numeric_deltas_vs_selected": {
+        "backend_calls": {
+          "ablation": 380,
+          "delta": 26,
+          "selected": 354
+        },
+        "backend_requested": {
+          "ablation": 922,
+          "delta": 26,
+          "selected": 896
+        },
+        "backend_valid": {
+          "ablation": 922,
+          "delta": 26,
+          "selected": 896
+        },
+        "cache_hits": {
+          "ablation": 3974,
+          "delta": -26,
+          "selected": 4000
+        },
+        "cache_lookups": {
+          "ablation": 4515,
+          "delta": -26,
+          "selected": 4541
+        },
+        "candidates_per_invocation": {
+          "ablation": 2.4263157894736844,
+          "delta": -0.1047576568539994,
+          "selected": 2.531073446327684
+        },
+        "embeddings_per_s": {
+          "ablation": 10.993564082683372,
+          "delta": 0.31001373768955354,
+          "selected": 10.683550344993819
+        },
+        "encoded_frame_pct": {
+          "ablation": 19.67892283790782,
+          "delta": 1.346452615225271,
+          "selected": 18.33247022268255
+        },
+        "encoded_frames": {
+          "ablation": 380,
+          "delta": 26,
+          "selected": 354
+        },
+        "forced_fresh_frames": {
+          "ablation": 78,
+          "delta": 26,
+          "selected": 52
+        },
+        "positive_memory_update_frames": {
+          "ablation": 550,
+          "delta": 25,
+          "selected": 525
+        }
+      }
+    },
+    "neutrality/seq03": {
+      "bag": "bags/replay/tim_ablation_seq03_neutrality_20260908",
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "canonical_config": {
+        "copy": "tim_mars_canonical_config.yaml",
+        "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+        "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+      },
+      "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq03_neutrality_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --overwrite --compact-output",
+      "development_ablation_controls": {
+        "disable_conservative_final_filter": false,
+        "disable_forced_same_id_challenge": false,
+        "disable_hard_negative_memory": false,
+        "disable_same_id_positive_support_reject": false,
+        "restore_same_id_general_negative_exemption": false
+      },
+      "expected_candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "generated_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+      "model": {
+        "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+        "size_bytes": 11244410,
+        "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+      },
+      "reason_deltas_vs_selected": {},
+      "repository": {
+        "branch": "tim-mars-same-id-hijack-resilience-20260907",
+        "commit": "add0ff759eff63ad3d2274a4e656ea5810f74f2d",
+        "root": "/home/francisco/Desktop/Thesis-Code",
+        "status_short": [
+          " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+          " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+          " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+          " M tools/experiments/run_deterministic_tim_replay.py",
+          " M tools/tests/test_run_deterministic_tim_replay.py"
+        ]
+      },
+      "resolved_runtime_sha256": "e0a878eb304cc29e6f42821a137aef2f44f091cdc4bbe5c406a69d9e4215527a",
+      "selected_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+      "semantic_equal_selected": true,
+      "state_deltas_vs_selected": {},
+      "workload": {
+        "backend_calls": 354,
+        "backend_requested": 896,
+        "backend_valid": 896,
+        "cache_expired": 15,
+        "cache_hits": 4000,
+        "cache_invalidated": 0,
+        "cache_lookups": 4541,
+        "cache_misses": 526,
+        "cached_positive_memory_update_frames": 400,
+        "candidates_per_invocation": 2.531073446327684,
+        "embeddings_per_s": 10.683550344993819,
+        "encoded_frame_pct": 18.33247022268255,
+        "encoded_frames": 354,
+        "forced_fresh_frames": 52,
+        "frames": 1931,
+        "positive_memory_update_frames": 525,
+        "reasons": {
+          "accepted_candidate": 540,
+          "best_below_threshold": 1,
+          "global_identity_recovery_reject": 409,
+          "operator_select": 1,
+          "protected_gallery_reacquisition_reject": 967,
+          "rank_aware_id_switch_recovery_reject": 2,
+          "reacquired_candidate": 2,
+          "recovery_persistence_pending": 2,
+          "same_id_hijack_reject": 1,
+          "same_id_reacquisition_reject": 2,
+          "short_gap_new_id_suppressed": 4
+        },
+        "states": {
+          "LOCKED": 543,
+          "LOST": 1374,
+          "REACQUIRED": 2,
+          "UNCERTAIN": 12
+        },
+        "timeline_duration_s": 83.867251154
+      },
+      "workload_numeric_deltas_vs_selected": {}
+    }
+  },
+  "classifications": {
+    "AB06": {
+      "basis": "Zero final conservative-filter rejects occur in the selected May, Seq01, Seq03 and Seq04 runs. Explicit Seq03 disablement is semantically identical to selected.",
+      "classification": "INACTIVE",
+      "mechanism": "conservative final appearance filter",
+      "scope": "available development evidence"
+    },
+    "AB09": {
+      "basis": "The subsystem is diagnostically active but never owns a final selected-run rejection. Explicit disablement on Seq03 and Seq04, the only sequences with best-candidate hard-negative rejects, preserves physical-v2 outcome and appearance compute workload. Seq04 changes only redundant rejection-path attribution.",
+      "classification": "REDUNDANT",
+      "mechanism": "hard-negative memory",
+      "scope": "available development evidence"
+    },
+    "AB10": {
+      "basis": "Removing this rejection introduces approximately 1.100 s wrong-person authority for approximately 0.299 s additional correct authority.",
+      "classification": "ESSENTIAL",
+      "mechanism": "same-ID hijack rejection for missing or insufficient positive appearance support",
+      "scope": "observed Seq03 safety behavior"
+    }
+  },
+  "date": "2026-09-08",
+  "development_only": true,
+  "h01_h02_h03_accessed": false,
+  "historical_split_or_comparison_freezes_modified": false,
+  "opportunity_scan": {
+    "may": {
+      "any_score_hard_negative_reject": 199,
+      "best_hard_negative_reject": 0,
+      "final_conservative_reject": 0,
+      "final_hard_negative_reject": 0,
+      "frames": 950,
+      "same_id_hijack_reject": 2
+    },
+    "seq01": {
+      "any_score_hard_negative_reject": 662,
+      "best_hard_negative_reject": 0,
+      "final_conservative_reject": 0,
+      "final_hard_negative_reject": 0,
+      "frames": 1520,
+      "same_id_hijack_reject": 0
+    },
+    "seq03": {
+      "any_score_hard_negative_reject": 633,
+      "best_hard_negative_reject": 46,
+      "final_conservative_reject": 0,
+      "final_hard_negative_reject": 0,
+      "frames": 1931,
+      "same_id_hijack_reject": 1
+    },
+    "seq04": {
+      "any_score_hard_negative_reject": 611,
+      "best_hard_negative_reject": 73,
+      "final_conservative_reject": 0,
+      "final_hard_negative_reject": 0,
+      "frames": 2047,
+      "same_id_hijack_reject": 3
+    }
+  },
+  "schema_version": 1,
+  "selected_reference_artifact": "docs/results/selected_target_tracking/tim_ablation_stage1_2x2_20260907.json",
+  "selected_reference_artifact_sha256": "34198bf89fa9ec13d236b5711d5b441b56f1fcce40c8a74b40fe84995cbc9589",
+  "study": "TIM-MARS Stage-1 development mechanism ablation"
+}

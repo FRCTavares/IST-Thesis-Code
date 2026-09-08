@@ -62,6 +62,18 @@ class TimMarsRuntimeConfig:
     image_buffer_size: int = 64
     appearance_async_request_crops_enabled: bool = False
 
+    # Development-only mechanism-ablation controls. These are intentionally
+    # not TargetMemoryConfig/ROS/canonical-YAML parameters.
+    development_ablation_disable_forced_same_id_challenge: bool = False
+    development_ablation_restore_same_id_general_negative_exemption: bool = False
+    development_ablation_disable_same_id_positive_support_reject: bool = False
+    development_ablation_disable_conservative_final_filter: bool = False
+    development_ablation_disable_trusted_gallery_storage: bool = False
+    development_ablation_disable_adaptive_positive_memory: bool = False
+    development_ablation_prevent_repeated_source_adaptive_update: bool = False
+    development_ablation_retire_overage_hard_negatives_pre_score: bool = False
+    development_ablation_require_distinct_source_for_persistence: bool = False
+
 
 @dataclass(frozen=True)
 class AppearanceFrame:
@@ -138,7 +150,36 @@ class TimMarsRuntime:
     _images: list[AppearanceFrame] = field(default_factory=list, init=False)
 
     def __post_init__(self) -> None:
-        self.memory = TargetIdentityMemory(self.config.memory)
+        self.memory = TargetIdentityMemory(
+            self.config.memory,
+            development_ablation_disable_forced_same_id_challenge=bool(
+                self.config.development_ablation_disable_forced_same_id_challenge
+            ),
+            development_ablation_restore_same_id_general_negative_exemption=bool(
+                self.config.development_ablation_restore_same_id_general_negative_exemption
+            ),
+            development_ablation_disable_same_id_positive_support_reject=bool(
+                self.config.development_ablation_disable_same_id_positive_support_reject
+            ),
+            development_ablation_disable_conservative_final_filter=bool(
+                self.config.development_ablation_disable_conservative_final_filter
+            ),
+            development_ablation_disable_trusted_gallery_storage=bool(
+                self.config.development_ablation_disable_trusted_gallery_storage
+            ),
+            development_ablation_disable_adaptive_positive_memory=bool(
+                self.config.development_ablation_disable_adaptive_positive_memory
+            ),
+            development_ablation_prevent_repeated_source_adaptive_update=bool(
+                self.config.development_ablation_prevent_repeated_source_adaptive_update
+            ),
+            development_ablation_retire_overage_hard_negatives_pre_score=bool(
+                self.config.development_ablation_retire_overage_hard_negatives_pre_score
+            ),
+            development_ablation_require_distinct_source_for_persistence=bool(
+                self.config.development_ablation_require_distinct_source_for_persistence
+            ),
+        )
         selected_id = int(self.config.selected_track_id)
         self.pending_select_id = selected_id if selected_id > 0 else None
 
@@ -673,6 +714,11 @@ class TimMarsRuntime:
                 ),
             )
 
+        challenged_ids = self.memory.appearance_challenge_track_ids(candidates)
+        forced_indices = tuple(
+            index for index, candidate in enumerate(candidates)
+            if candidate.track_id in challenged_ids
+        )
         result = attach_appearance_features(
             config=self.config.appearance,
             state=self.appearance_state,
@@ -699,12 +745,43 @@ class TimMarsRuntime:
                 candidate_frame_height=self.config.image_height,
                 frame_id=frame_id,
                 requested_candidate_indices=(
-                    appearance_request.requested_indices
+                    tuple(sorted(set(
+                        appearance_request.requested_indices + forced_indices
+                    )))
                 ),
+                forced_candidate_indices=forced_indices,
             ),
         )
 
         self.appearance_state = result.state
+        unavailable_image = result.diagnostics.skip_reason in {
+            "cached_same_image", "stale_image", "no_image",
+        }
+        keep_existing_evidence = bool(
+            self.config.memory.same_id_challenge_available_images_only
+            and unavailable_image
+        )
+        if challenged_ids and not keep_existing_evidence:
+            result.candidates = [
+                replace(
+                    candidate,
+                    appearance=None,
+                    appearance_memory_update_eligible=False,
+                    appearance_challenge_failed=True,
+                )
+                if (
+                    candidate.track_id in challenged_ids
+                    and not (
+                        result.diagnostics.skip_reason in {
+                            "ok", "fresh_identity_challenge",
+                        }
+                        and result.diagnostics.embedding_age_ms_by_track_id.get(
+                            candidate.track_id
+                        ) == 0.0
+                    )
+                ) else candidate
+                for candidate in result.candidates
+            ]
         return result.candidates, result.diagnostics
 
     def clip_bbox(self, bbox: BBox) -> BBox:

@@ -33,6 +33,12 @@ class CandidatePersistenceTracker:
     score: float = 0.0
     identity_evidence_confirmed: bool = False
 
+    # AB-19 development-only: the appearance source-image observation
+    # (source_image_timestamp_ns / source_frame_id) that last advanced the
+    # persistence count. When distinct-source persistence is required, a
+    # repeated source-image observation does not advance the count.
+    last_advancing_source: Optional[tuple] = None
+
     @property
     def pending(self) -> bool:
         return self.candidate_id is not None
@@ -53,10 +59,38 @@ class CandidatePersistenceTracker:
         self.bbox = None
         self.score = 0.0
         self.identity_evidence_confirmed = False
+        self.last_advancing_source = None
 
-    def preview(self, track_id: int) -> int:
+    def _repeated_source(
+        self,
+        track_id: int,
+        *,
+        source_observation: Optional[tuple],
+        require_distinct_source: bool,
+    ) -> bool:
+        return bool(
+            require_distinct_source
+            and self.candidate_id == int(track_id)
+            and source_observation is not None
+            and source_observation == self.last_advancing_source
+        )
+
+    def preview(
+        self,
+        track_id: int,
+        *,
+        source_observation: Optional[tuple] = None,
+        require_distinct_source: bool = False,
+    ) -> int:
         """Return the next observation count without mutating state."""
         if self.candidate_id == int(track_id):
+            if self._repeated_source(
+                track_id,
+                source_observation=source_observation,
+                require_distinct_source=require_distinct_source,
+            ):
+                # AB-19: a repeated source image is not fresh evidence.
+                return self.observation_count
             return self.observation_count + 1
         return 1
 
@@ -78,10 +112,17 @@ class CandidatePersistenceTracker:
         bbox: Optional[BBox] = None,
         score: float = 0.0,
         identity_evidence_confirmed: bool = False,
+        source_observation: Optional[tuple] = None,
+        require_distinct_source: bool = False,
     ) -> int:
         """Commit one gate-approved observation."""
         same_candidate = bool(
             self.candidate_id == int(track_id)
+        )
+        repeated_source = self._repeated_source(
+            track_id,
+            source_observation=source_observation,
+            require_distinct_source=require_distinct_source,
         )
         retained_identity_evidence = bool(
             identity_evidence_confirmed
@@ -90,7 +131,11 @@ class CandidatePersistenceTracker:
                 and self.identity_evidence_confirmed
             )
         )
-        next_count = self.preview(track_id)
+        next_count = self.preview(
+            track_id,
+            source_observation=source_observation,
+            require_distinct_source=require_distinct_source,
+        )
 
         self.candidate_id = int(track_id)
         self.observation_count = next_count
@@ -104,6 +149,8 @@ class CandidatePersistenceTracker:
         self.identity_evidence_confirmed = (
             retained_identity_evidence
         )
+        if not repeated_source:
+            self.last_advancing_source = source_observation
 
         return next_count
 

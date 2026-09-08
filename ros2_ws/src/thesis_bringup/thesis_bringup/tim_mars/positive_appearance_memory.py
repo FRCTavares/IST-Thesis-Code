@@ -31,6 +31,14 @@ class PositiveAppearanceMemory:
     lineage_trusted: bool = False
     trusted_lock_streak: int = 0
 
+    # Runtime-only provenance for preventing repeated reinforcement of the
+    # adaptive EMA from one visual observation.
+    last_adaptive_source_observation: tuple[str, int] | None = None
+
+    # Per-call mutation diagnostics used by development ablations.
+    last_update_adaptive_updated: bool = False
+    last_update_gallery_updated: bool = False
+
     def clear(self) -> None:
         self.protected_anchor = None
         self.trusted_gallery = []
@@ -40,12 +48,17 @@ class PositiveAppearanceMemory:
         self.current_lineage_supported = False
         self.lineage_trusted = False
         self.trusted_lock_streak = 0
+        self.last_adaptive_source_observation = None
+        self.last_update_adaptive_updated = False
+        self.last_update_gallery_updated = False
 
     def select_operator(
         self,
         *,
         track_id: int,
         appearance: Any,
+        adaptive_enabled: bool = True,
+        source_observation: tuple[str, int] | None = None,
     ) -> bool:
         """Start a new operator-authorized identity lineage."""
         self.clear()
@@ -63,10 +76,19 @@ class PositiveAppearanceMemory:
             appearance,
             alpha=1.0,
         )
-        self.adaptive_prototype = update_feature_memory(
-            None,
-            appearance,
-            alpha=1.0,
+        self.adaptive_prototype = (
+            update_feature_memory(
+                None,
+                appearance,
+                alpha=1.0,
+            )
+            if adaptive_enabled
+            else None
+        )
+        self.last_adaptive_source_observation = (
+            source_observation
+            if self.adaptive_prototype is not None
+            else None
         )
         self.trusted_lock_streak = 1
         return self.protected_anchor is not None
@@ -242,6 +264,8 @@ class PositiveAppearanceMemory:
         *,
         track_id: int,
         appearance: Any,
+        adaptive_enabled: bool = True,
+        source_observation: tuple[str, int] | None = None,
     ) -> bool:
         """Create the first anchor only from operator-authorized continuity."""
         if self.protected_anchor is not None:
@@ -264,10 +288,19 @@ class PositiveAppearanceMemory:
             appearance,
             alpha=1.0,
         )
-        self.adaptive_prototype = update_feature_memory(
-            None,
-            appearance,
-            alpha=1.0,
+        self.adaptive_prototype = (
+            update_feature_memory(
+                None,
+                appearance,
+                alpha=1.0,
+            )
+            if adaptive_enabled
+            else None
+        )
+        self.last_adaptive_source_observation = (
+            source_observation
+            if self.adaptive_prototype is not None
+            else None
         )
         self.current_lineage_track_id = int(track_id)
         self.current_lineage_supported = True
@@ -282,21 +315,37 @@ class PositiveAppearanceMemory:
         appearance: Any,
         alpha: float,
         gallery_max_entries: int,
+        adaptive_enabled: bool = True,
+        prevent_repeated_adaptive_source: bool = False,
+        source_observation: tuple[str, int] | None = None,
     ) -> bool:
+        self.last_update_adaptive_updated = False
+        self.last_update_gallery_updated = False
+
         if not self.lineage_trusted:
             return False
         if appearance is None:
             return False
 
-        updated = update_feature_memory(
-            self.adaptive_prototype,
-            appearance,
-            alpha=alpha,
+        repeated_adaptive_source = bool(
+            prevent_repeated_adaptive_source
+            and source_observation is not None
+            and source_observation
+            == self.last_adaptive_source_observation
         )
-        if updated is None:
-            return False
 
-        self.adaptive_prototype = updated
+        if adaptive_enabled and not repeated_adaptive_source:
+            updated = update_feature_memory(
+                self.adaptive_prototype,
+                appearance,
+                alpha=alpha,
+            )
+            if updated is not None:
+                self.adaptive_prototype = updated
+                self.last_adaptive_source_observation = (
+                    source_observation
+                )
+                self.last_update_adaptive_updated = True
 
         similarities = [
             clamp01(
@@ -316,8 +365,15 @@ class PositiveAppearanceMemory:
             similarities,
             default=0.0,
         )
+        max_entries = max(
+            0,
+            int(gallery_max_entries),
+        )
 
-        if max_existing_similarity < 0.98:
+        if (
+            max_existing_similarity < 0.98
+            and max_entries > 0
+        ):
             prototype = update_feature_memory(
                 None,
                 appearance,
@@ -325,19 +381,17 @@ class PositiveAppearanceMemory:
             )
             if prototype is not None:
                 self.trusted_gallery.append(prototype)
+                self.last_update_gallery_updated = True
 
-                max_entries = max(
-                    0,
-                    int(gallery_max_entries),
-                )
-                if max_entries == 0:
-                    self.trusted_gallery = []
-                elif len(self.trusted_gallery) > max_entries:
+                if len(self.trusted_gallery) > max_entries:
                     self.trusted_gallery = (
                         self.trusted_gallery[-max_entries:]
                     )
 
-        return True
+        return bool(
+            self.last_update_adaptive_updated
+            or self.last_update_gallery_updated
+        )
 
     def protected_reference(self) -> Any:
         if self.protected_anchor is not None:
