@@ -26,7 +26,8 @@ v1/v2) are retained byte-unchanged as historical provenance.
 
 | Item | Value |
 | --- | --- |
-| Algorithm authority commit | `79f11b631688889bf5ffbeb3c16ef543a53f9973` (PR #101 merge) |
+| Algorithm authority commit (immutable) | `79f11b631688889bf5ffbeb3c16ef543a53f9973` (PR #101 merge — the final algorithm/configuration; **not** the runtime git HEAD of a Stage-7 run) |
+| Freeze-definition commit | `1b38a8cc27188e94b1c08ff6d555712cec752ed9` (Stage-7 contract root on `p027-prospective-freeze-20260908`; later provenance-clarification commits on the same branch are part of the same freeze) |
 | Base Stage-1 merge | `d3edbcc537b92f5ef66771911015e620fc7467d2` |
 | Canonical config | `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml` |
 | Canonical config SHA-256 | `b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c` |
@@ -52,6 +53,16 @@ short-gap new-ID suppression, protected anchor, trusted gallery, adaptive
 positive representation, appearance-weighted ranking, hard-negative memory and
 its lifecycle, update-based candidate persistence, generic post-reacquisition
 confirmation) is unchanged.
+
+## Provenance model — three distinct commits
+
+| Concept | Value | Meaning |
+| --- | --- | --- |
+| **Algorithm authority commit** | `79f11b631688889bf5ffbeb3c16ef543a53f9973` | Immutable. The exact final algorithm and canonical configuration selected in PR #101. It precedes the Stage-7 freeze and is never the runtime git HEAD of a Stage-7 evaluation. |
+| **Freeze-definition commit** | `1b38a8cc27188e94b1c08ff6d555712cec752ed9` | The first commit on `p027-prospective-freeze-20260908` that defined this contract (split v4, comparison v3, manifest, execution plan v2). Provenance corrections on the same branch are part of the same freeze; the eventual merged Stage-7 freeze revision contains `1b38a8cc…` and every correction commit. No future merge SHA is asserted. |
+| **Runtime source commit** | actual git HEAD at capture / replay / evaluation time | Recorded verbatim. **Not required to equal the algorithm-authority commit** and generally will not — it must post-date the merged Stage-7 freeze. Validity is content equality of behaviour-bearing paths and pinned artifacts, not commit identity. |
+
+The invariant is **runtime code that can affect algorithmic or evaluation behaviour == frozen algorithm authority**, not *runtime git HEAD == the pre-freeze algorithm commit*. A held-out runtime revision is valid when: (a) the merged Stage-7 freeze (hence the algorithm-authority commit) is an ancestor of runtime HEAD; (b) the active authorities are the frozen v4 split and v3 comparison; (c) every path in the v3 comparison `source_code_freeze.required_unchanged_paths` is byte-identical to the algorithm-authority commit `79f11b63…`; (d) the canonical config, tracker config, detector/appearance models, pinned environment and physical-v2 evaluator hashes match this manifest; (e) the validator fails closed on any drift. `validate_tim_evaluation_split.py` already implements (a) via `git merge-base --is-ancestor` and (c) via `git diff --quiet 79f11b63… -- <paths>` — it does **not** check `HEAD == 79f11b63…`.
 
 ## Frozen contracts
 
@@ -214,14 +225,14 @@ prospective split is required.
 
 ## Runtime provenance required from every held-out run
 
-Source commit (`= 79f11b63…`, clean tree), canonical/tracker/detector/MARS
-hashes, pinned-environment hash and effective values, split-v4 sequence id,
-source-bag path and SHA-256, candidate-stream SHA-256 and match flag,
-architecture-arm id, `repeated_source_adaptive_update` resolution
-(`requested_production_policy=true`, `development_ablation_control=false`,
-`activation_source='production_config'` for the final TIM-MARS arm), output
-paths and semantic digest, evaluator file hashes, physical-v2 reference path
-and SHA-256, resolved-runtime schema version. Full list in the manifest.
+- **`runtime_source_commit`** — the actual git HEAD at capture / replay / evaluation time, recorded verbatim (also acceptable under the historical name `source_commit`). **Not required to equal any earlier commit.**
+- **`algorithm_authority_commit`** — `79f11b631688889bf5ffbeb3c16ef543a53f9973` (constant).
+- **`freeze_definition_commit`** — `1b38a8cc27188e94b1c08ff6d555712cec752ed9` (constant).
+- **`repo_dirty`** — must be `false` for a final held-out run.
+- **`behaviour_bearing_source_matches_algorithm_authority`** — `true` only when `git diff --quiet 79f11b63… -- <v3 comparison source_code_freeze.required_unchanged_paths>` reports no drift.
+- canonical / tracker / detector / MARS hashes (must equal the pinned manifest values); pinned-environment hash and effective variable values; split-v4 sequence id; source-bag path and SHA-256; candidate-stream SHA-256 and match flag; architecture-arm id; `repeated_source_adaptive_update` resolution (`requested_production_policy=true`, `development_ablation_control=false`, `activation_source='production_config'` for the final TIM-MARS arm); output paths and semantic digest; evaluator file hashes; physical-v2 reference path and SHA-256; resolved-runtime schema version.
+
+Full list and the `runtime_revision_validity` conditions are in the manifest.
 
 ## Protected historical files — byte-unchanged
 
