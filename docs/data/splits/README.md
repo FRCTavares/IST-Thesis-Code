@@ -2,11 +2,25 @@
 
 The active prospective machine-readable authority is:
 
-`docs/data/splits/tim_mars_split_v3.json`
+`docs/data/splits/tim_mars_split_v4.json`
 
 The matching active prospective comparison authority is:
 
-`docs/data/splits/tim_mars_final_comparison_v2.json`
+`docs/data/splits/tim_mars_final_comparison_v3.json`
+
+The full Stage-7 reproduction surface (algorithm commit, models, pinned
+numerical environment, evaluation tooling, runtime-provenance
+requirements, primary and presence-conditioned metric contract, and the
+post-freeze lock rule) is pinned in
+`docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json`; the held-out
+physical procedure is `docs/flight/P027_HELDOUT_EXECUTION_PLAN_v2.md`.
+
+`tim_mars_split_v3.json` and `tim_mars_final_comparison_v2.json` are retained unchanged
+as historical provenance for the 5 September 2026 prospective freeze. They
+were superseded before any H01--H03 capture or outcome access because the
+reviewed Stage-1 mechanism-ablation campaign selected the AB-16
+source-aware adaptive positive-memory promotion, merged as PR #101 at
+`79f11b631688889bf5ffbeb3c16ef543a53f9973`.
 
 `tim_mars_split_v2.json` is retained unchanged as historical provenance for
 the 1 September 2026 prospective freeze. It was superseded before any H01--H03
@@ -15,13 +29,13 @@ capture or outcome access because reviewed behavior-affecting Issues #89 and
 
 `tim_mars_split_v1.json` is retained unchanged as historical provenance for
 the 23 July 2026 freeze. TIM-MARS development continued after that freeze, but
-H01--H03 were never captured or inspected. Split v3 therefore binds the
+H01--H03 were never captured or inspected. Split v4 therefore binds the
 current final algorithm prospectively before any held-out outcome exists; this
 is a protocol update, not post-test tuning.
 
 The original split was introduced after the existing May and June recordings
 had already been inspected and used during development. They therefore remain
-development/legacy data in v2 and are not relabeled as held-out data.
+development/legacy data and are not relabeled as held-out data.
 
 ## Sets
 
@@ -70,7 +84,7 @@ For each H01–H03 recording:
 4. Freeze the tracker/output-generation contract and annotation before viewing
    TIM results.
 5. Add the source path, annotation path, selected target, file sizes, and
-   SHA-256 values to `tim_mars_split_v3.json`; change status to `ready`.
+   SHA-256 values to `tim_mars_split_v4.json`; change status to `ready`.
 6. Run:
 
    ```bash

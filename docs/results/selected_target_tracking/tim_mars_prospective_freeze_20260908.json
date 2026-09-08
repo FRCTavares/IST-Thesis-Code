@@ -1,0 +1,385 @@
+{
+  "record": "tim_mars_prospective_held_out_freeze",
+  "freeze_id": "tim_mars_prospective_freeze_2026_09_08",
+  "stage": "Stage-7 prospective held-out freeze",
+  "issue": 27,
+  "date": "2026-09-08",
+  "is_prospective_freeze": true,
+  "held_out_outcome_accessed": false,
+  "h01_h02_h03_accessed": false,
+  "source": {
+    "repository": "FRCTavares/IST-Thesis-Code",
+    "algorithm_authority_commit": "79f11b631688889bf5ffbeb3c16ef543a53f9973",
+    "algorithm_authority_commit_subject": "Merge pull request #101 from FRCTavares/tim-mars-ab16-production-promotion-20260908",
+    "base_stage1_merge_commit": "d3edbcc537b92f5ef66771911015e620fc7467d2",
+    "construction_branch": "p027-prospective-freeze-20260908",
+    "clean_tree_required": "yes for constructing the freeze and for every final held-out capture/replay/evaluation run",
+    "algorithm_commit_must_be_ancestor_of_freeze_branch": true,
+    "note": "The freeze construction branch adds only documentation, contract and split-path retarget files; it changes no algorithm code or canonical configuration. The frozen algorithm is exactly the state at 79f11b631688889bf5ffbeb3c16ef543a53f9973 (PR #101 merge).",
+    "freeze_definition_commit": "1b38a8cc27188e94b1c08ff6d555712cec752ed9",
+    "freeze_definition_note": "The Stage-7 prospective contract was first defined at 1b38a8cc27188e94b1c08ff6d555712cec752ed9 on branch p027-prospective-freeze-20260908. This provenance-clarification commit is part of the same branch; the eventual merged Stage-7 freeze revision contains both. A runtime revision is 'contained by the merged freeze' when the merged Stage-7 freeze commit is an ancestor of runtime HEAD.",
+    "runtime_revision_rule": "A held-out runtime revision is NOT required to have git HEAD equal to the algorithm-authority commit 79f11b631688889bf5ffbeb3c16ef543a53f9973. It must instead contain the merged Stage-7 freeze and keep every behaviour-bearing path and pinned artifact byte-identical to the algorithm authority; see provenance_model and runtime_provenance_requirements.runtime_revision_validity."
+  },
+  "canonical_runtime_configuration": {
+    "tim_mars_canonical": {
+      "path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+      "size_bytes": 5727,
+      "sha256": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c"
+    },
+    "tracker_bytetrack": {
+      "path": "ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+      "size_bytes": 477,
+      "sha256": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906"
+    },
+    "tracker_deepsort": {
+      "path": "ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml",
+      "size_bytes": 601,
+      "sha256": "d586e2e04c283313606cb366b64c0e7bad19692207f185d7dd9b89c89e33efb0"
+    },
+    "critical_tim_settings": {
+      "min_confirm_frames_after_reacquire": 1,
+      "appearance_weight": 0.12,
+      "same_id_fresh_challenge_enabled": true,
+      "same_id_challenge_available_images_only": true,
+      "appearance_gallery_consensus_recovery_enabled": false,
+      "appearance_prevent_repeated_source_adaptive_update": true
+    },
+    "not_promoted": [
+      "AB-14",
+      "AB-15",
+      "AB-19"
+    ],
+    "selected_target_authority": "TIM-MARS",
+    "canonical_tracker": "ByteTrack",
+    "canonical_detector": "YOLOv8s"
+  },
+  "models": {
+    "detector_yolov8s": {
+      "path": "models/hef/yolov8s.hef",
+      "size_bytes": 11284359,
+      "sha256": "69540ff855740371d229f4caca1ab908635a72fec55fdc1541e73f2fc17ec43b",
+      "name": "YOLOv8s",
+      "backend": "direct_in_process_hailo",
+      "inference_geometry": [
+        640,
+        640
+      ],
+      "resolved_via": "tools/lib/live_defaults.sh PERCEPTION_DETECTOR_MODEL=yolov8s -> PERCEPTION_HAILO_HEF_PATH=$THESIS_ROOT/models/hef/yolov8s.hef; held-out capture uses tools/experiments/record_p027_heldout_sequence.sh -> tools/start_live_stack.sh --detector-model yolov8s"
+    },
+    "appearance_mars_small128": {
+      "path": "models/reid/mars-small128.pb",
+      "size_bytes": 11244410,
+      "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "name": "MARS-small128",
+      "embedding_dimension": 128,
+      "backend": "CPU TensorFlow"
+    }
+  },
+  "pinned_numerical_environment": {
+    "path": "docs/results/selected_target_tracking/tim_pinned_replay_env_20260908.sh",
+    "size_bytes": 2482,
+    "sha256": "24f8c09f4d041c0f63741629a9768789aa9bbc98dd9482a8b59dddb7a52e2fc6",
+    "contract": {
+      "TF_DETERMINISTIC_OPS": "1",
+      "TF_ENABLE_ONEDNN_OPTS": "0",
+      "TF_NUM_INTRAOP_THREADS": "1",
+      "TF_NUM_INTEROP_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    },
+    "reference_toolchain": {
+      "python": "3.12.3",
+      "numpy": "1.26.4",
+      "tensorflow": "2.17.1",
+      "platform": "linux aarch64",
+      "nproc": 4
+    },
+    "use": "Source this file before every deterministic architecture replay whose semantic digest or physical-v2 buckets are compared. It changes no algorithm, configuration or contract; it is a numerical-reproducibility pin only."
+  },
+  "evaluation_tooling": {
+    "deterministic_replay": {
+      "tim_mars_selected_target": {
+        "path": "tools/experiments/run_deterministic_tim_replay.py",
+        "size_bytes": 101077,
+        "sha256": "8df5c8970557cdec41aa5fa52fa5526debfd7fc1d83bdb8b5cfeb9ed23637310"
+      },
+      "raw_tracker": {
+        "path": "tools/experiments/run_deterministic_tracker_replay.py",
+        "size_bytes": 38628,
+        "sha256": "337c44b321b9e8f55fa3481ff9df48db16d3219e0d862a52e80cf7f50f83132b"
+      },
+      "simple_target_reid": {
+        "path": "tools/experiments/run_p058_target_reid_replay.py",
+        "size_bytes": 10005,
+        "sha256": "a6cd86d48bd174fc69b600fec130ddbf729f1ee287784fb9c7936e65961e787a"
+      }
+    },
+    "simple_target_reid_implementation": {
+      "baseline": {
+        "path": "tools/analysis/p058_target_reid_baseline.py",
+        "size_bytes": 3985,
+        "sha256": "c942051fda3f7759a15716e0e233b2877b91d93f02fd5b3be1f04eaa3136efea"
+      },
+      "runtime": {
+        "path": "tools/analysis/p058_target_reid_runtime.py",
+        "size_bytes": 8325,
+        "sha256": "895c7f9bb95b9444db54350793676c3e9d7dd3f1279b52088e6fca4d8b438858"
+      }
+    },
+    "physical_v2_identity_evaluation": {
+      "reference_contract": "tim_physical_target_bbox_v2",
+      "schema_version": 2,
+      "reference_parser": {
+        "path": "tools/analysis/physical_target_reference_v2.py",
+        "size_bytes": 25984,
+        "sha256": "6299542c5ae3f4f21bb313112f8375774ed2685ccf0cb164bd56848c34094c96"
+      },
+      "core_evaluation": {
+        "path": "tools/analysis/physical_target_bbox_evaluation_v2.py",
+        "size_bytes": 19901,
+        "sha256": "4e80edc4a574d0eaf9fadbcf5c085513afe2ba40758cb25bbaeb866400fdbcfd"
+      },
+      "cli_entrypoint": {
+        "path": "tools/analysis/evaluate_physical_target_bbox_v2.py",
+        "size_bytes": 9694,
+        "sha256": "ab6012a3cf912c1a9c35be3487101c55d646c8a00d3bb47670ab20785076a631"
+      },
+      "frozen_constants": {
+        "DEFAULT_STEP_S": 0.05,
+        "DEFAULT_MAX_OUTPUT_AGE_S": 0.9,
+        "constant_sources": [
+          {
+            "path": "ros2_ws/src/thesis_bringup/thesis_bringup/freshness.py",
+            "size_bytes": 4335,
+            "sha256": "4abda9ffab0b171f007d565e91bf6a0d2723ed6e5958f3c7d8abb0ba82aa46f6"
+          }
+        ],
+        "constant_source_note": "DEFAULT_STEP_S is imported from the frozen thesis_bringup.tim_mars package (covered by the algorithm commit and the final-comparison source_code_freeze); DEFAULT_MAX_OUTPUT_AGE_S is imported from thesis_bringup.freshness.py, hashed here."
+      },
+      "raw_topic": "/target",
+      "tim_topic": "/target_memory_mars"
+    },
+    "split_and_release_validator": {
+      "path": "tools/analysis/validate_tim_evaluation_split.py",
+      "size_bytes": 21530,
+      "sha256": "67ad7f015e3ace8c915d250cdca83c84afeb3fa260c53f8b339bee2f37c1af50"
+    },
+    "held_out_source_capture_helper": {
+      "path": "tools/experiments/record_p027_heldout_sequence.sh",
+      "size_bytes": 6516,
+      "sha256": "266955b4ab682d215ad7d137309769e537314b195f4856b5c5528b7c29f5f472"
+    },
+    "candidate_stream_verification": "run_deterministic_tim_replay.py and run_deterministic_tracker_replay.py hard-verify each replay's frozen candidate-input stream SHA-256 against the value supplied on the command line (--expected-candidate-stream-sha256). For a held-out source the expected value is the SHA-256 of that sequence's own frozen detector/tracker candidate stream, recorded in the split v4 manifest at capture time; there is no cross-sequence expectation.",
+    "event_or_reacquisition_evaluator": "NOT part of the retained Issue #27 contract. The frozen held-out evaluation is the physical-v2 identity-bucket evaluator above. Reacquisition and interval-level figures are DERIVED descriptive analysis over the frozen physical-v2 reference segments plus the frozen per-sample scoring (see primary_metric_contract); no additional evaluator is frozen or required.",
+    "architecture_comparison_contract": {
+      "path": "docs/data/splits/tim_mars_final_comparison_v3.json",
+      "note": "Extends tim_mars_final_comparison_v2_2026_09_05 with only the AB-16-driven canonical config hash/size and the frozen algorithm commit; architecture arms, models, evaluator, buckets and bootstrap rule are unchanged. Its own source_code_freeze.required_unchanged_paths list is the authoritative behaviour-bearing path set."
+    }
+  },
+  "split_contract": {
+    "path": "docs/data/splits/tim_mars_split_v4.json",
+    "split_id": "tim_mars_split_v4_2026_09_08",
+    "supersedes": "tim_mars_split_v3_2026_09_05"
+  },
+  "final_comparison_contract": {
+    "path": "docs/data/splits/tim_mars_final_comparison_v3.json",
+    "contract_id": "tim_mars_final_comparison_v3_2026_09_08",
+    "supersedes": "tim_mars_final_comparison_v2_2026_09_05"
+  },
+  "held_out_execution_plan": "docs/flight/P027_HELDOUT_EXECUTION_PLAN_v2.md",
+  "runtime_provenance_requirements": {
+    "description": "Every held-out architecture capture / replay / evaluation must retain a machine-readable provenance record with at least the following fields before any outcome is inspected. See provenance_model for the three distinct commit concepts.",
+    "required_fields": [
+      "runtime_source_commit: the actual git HEAD at capture / replay / evaluation time, recorded verbatim (NOT required to equal any earlier commit; also acceptable under the historical field name 'source_commit')",
+      "algorithm_authority_commit: 79f11b631688889bf5ffbeb3c16ef543a53f9973 (constant; identifies the frozen algorithm/configuration)",
+      "freeze_definition_commit: 1b38a8cc27188e94b1c08ff6d555712cec752ed9 (constant; the Stage-7 contract root)",
+      "repo_dirty: must be false for a final held-out run",
+      "canonical_config_path and canonical_config_sha256 (must equal b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c)",
+      "tracker_config_path and tracker_config_sha256",
+      "detector_model_path and detector_model_sha256",
+      "appearance_model_path and appearance_model_sha256",
+      "pinned_environment_sha256 and the effective pinned environment variable values",
+      "input_sequence_identifier (split v4 sequence id, e.g. heldout_h01_exit_reentry)",
+      "input_source_bag_path and input_source_bag_sha256",
+      "candidate_stream_sha256 and candidate_stream_matches_expected",
+      "architecture_arm_id (from the final comparison contract)",
+      "repeated_source_adaptive_update.{requested_production_policy,development_ablation_control,effective_suppression,activation_source} (must be requested_production_policy=true, development_ablation_control=false, activation_source='production_config' for a final held-out TIM-MARS run)",
+      "output_bag_path and generated semantic digest schema/value",
+      "evaluator_files and their sha256 (physical_target_reference_v2.py, physical_target_bbox_evaluation_v2.py, evaluate_physical_target_bbox_v2.py)",
+      "physical_v2_reference_path and physical_v2_reference_sha256",
+      "resolved_runtime schema_version",
+      "behaviour_bearing_source_matches_algorithm_authority: boolean, true only when 'git diff --quiet 79f11b631688889bf5ffbeb3c16ef543a53f9973 -- <source_code_freeze.required_unchanged_paths>' reports no drift"
+    ],
+    "runtime_revision_validity": {
+      "description": "A held-out capture / replay / evaluation revision is valid when ALL of the following hold. The invariant is 'runtime code that can affect algorithmic or evaluation behaviour == frozen algorithm authority', NOT 'runtime git HEAD == the pre-freeze algorithm commit'.",
+      "conditions": [
+        "contains the merged Stage-7 prospective-freeze definition: the merged Stage-7 freeze commit (which itself contains 1b38a8cc27188e94b1c08ff6d555712cec752ed9 and 79f11b631688889bf5ffbeb3c16ef543a53f9973 as ancestors) is an ancestor of runtime HEAD; equivalently the algorithm-authority commit is an ancestor of runtime HEAD (validate_tim_evaluation_split.py enforces this via 'git merge-base --is-ancestor')",
+        "uses the frozen v4 split (docs/data/splits/tim_mars_split_v4.json) and v3 comparison contract (docs/data/splits/tim_mars_final_comparison_v3.json) as the active authorities",
+        "every behaviour-bearing path in the comparison contract's source_code_freeze.required_unchanged_paths is byte-identical to the algorithm-authority commit 79f11b631688889bf5ffbeb3c16ef543a53f9973 (validate_tim_evaluation_split.py enforces this via 'git diff --quiet 79f11b631688889bf5ffbeb3c16ef543a53f9973 -- <paths>')",
+        "the frozen canonical config, tracker config, detector model, appearance model, pinned-environment and physical-v2 evaluator SHA-256 values equal the values pinned in this manifest and the v4 split / v3 comparison",
+        "the validator fails closed (non-zero exit) if any required behaviour-bearing path differs from the algorithm authority, or any pinned artifact hash differs, or the active split/comparison contract is not the frozen v4/v3"
+      ]
+    }
+  },
+  "primary_metric_contract": {
+    "authority": "tim_physical_target_bbox_v2 via evaluate_physical_target_bbox_v2.py",
+    "evaluated_stream": "/target_memory_mars (TIM selected-target) for TIM-MARS; the arm's controller-facing selected-target stream otherwise",
+    "primary_identity_buckets": [
+      "correct_target_output_duration_s",
+      "wrong_person_output_duration_s",
+      "identity_unresolved_duration_s",
+      "lost_or_suppressed_duration_s"
+    ],
+    "additional_required_buckets": [
+      "target_absent_duration_s",
+      "target_absent_with_output_duration_s",
+      "reference_unavailable_duration_s",
+      "reference_gap_duration_s"
+    ],
+    "reconciliation_rule": "All primary duration buckets must reconcile against the full physical-v2 evaluation window per the frozen v2 reference-gap and unavailable-reference semantics (reconciliation.ok=true, residual_s within evaluator tolerance).",
+    "target_presence_accounting": {
+      "physical_target_present_duration_s": "correct_target_output_duration_s + wrong_person_output_duration_s + identity_unresolved_duration_s + lost_or_suppressed_duration_s (the reference-covered, physically-scored target-present time)",
+      "physical_target_absent_duration_s": "target_absent_duration_s",
+      "total_scored_duration_s": "total_evaluated_duration_s",
+      "percent_time_target_present": "100 * physical_target_present_duration_s / (physical_target_present_duration_s + physical_target_absent_duration_s)"
+    },
+    "while_physical_target_present": {
+      "correct_target_authority_duration_s": "correct_target_output_duration_s",
+      "correct_target_authority_pct": "100 * correct_target_output_duration_s / physical_target_present_duration_s",
+      "wrong_person_authority_duration_s": "wrong_person_output_duration_s",
+      "wrong_person_authority_pct": "100 * wrong_person_output_duration_s / physical_target_present_duration_s",
+      "lost_or_suppressed_duration_s": "lost_or_suppressed_duration_s",
+      "lost_or_suppressed_pct": "100 * lost_or_suppressed_duration_s / physical_target_present_duration_s",
+      "identity_unresolved_duration_s": "identity_unresolved_duration_s"
+    },
+    "while_physical_target_absent": {
+      "false_publication_leakage_duration_s": "target_absent_with_output_duration_s",
+      "leakage_pct_of_absent_time": "100 * target_absent_with_output_duration_s / target_absent_duration_s  (reported only when target_absent_duration_s > 0; otherwise 'not applicable')",
+      "safe_clear_duration_s": "target_absent_duration_s - target_absent_with_output_duration_s"
+    },
+    "reacquisition_derivation": {
+      "status": "descriptive_secondary_analysis",
+      "authority": "the frozen physical-v2 reference identity_state segments (present_scored vs absent) plus the frozen per-sample scoring at DEFAULT_STEP_S; no additional evaluator is frozen",
+      "valid_disappearance_return_event": "a maximal run of identity_state='absent' samples in the frozen reference that is bounded on both sides by identity_state='present_scored'. The 'return instant' is the first present_scored sample after that absent run.",
+      "successful_reacquisition": "correct-target authority (per the frozen scoring) is held at some sample at or after the return instant and before the evaluation-window end.",
+      "reacquisition_latency_s": "(first sample time at which correct-target authority is held at or after the return instant) - (return instant). Reported per valid event.",
+      "right_censored_event": "a valid disappearance/return event for which correct-target authority is never held again before the evaluation-window end. Its latency is reported as right-censored (>= window_end - return_instant); it is NOT assigned a finite latency and is excluded from any summary-latency statistic.",
+      "reacquisition_success_rate": "successful_reacquisitions / valid_disappearance_return_events",
+      "summary_latency": "computed only over non-censored successful events; if any event is censored this is reported alongside the censored count, never as a single completed figure."
+    },
+    "identity_safety_reporting": {
+      "wrong_person_authority_duration_s": "always reported explicitly per sequence",
+      "target_absence_leakage_duration_s": "always reported explicitly per sequence",
+      "wrong_person_intervals": "descriptive: maximal runs of samples scored wrong_person in the frozen per-sample scoring; each interval's [start_s, end_s, duration_s] reported",
+      "identity_switch_events": "descriptive: a transition in the frozen per-sample scoring from correct_target to wrong_person without an intervening lost_or_suppressed sample; reported where the reference supports it",
+      "authority_to_non_designated_person": "any non-zero wrong_person_output_duration_s or target_absent_with_output_duration_s is an explicit finding"
+    },
+    "development_percentage_characterisation": {
+      "purpose": "Descriptive only. The same presence-conditioned percentages may be computed for the retained development sequences (dev_may_hard_reentry, dev_june_seq01, dev_june_seq03_ocsort, dev_june_seq04_ocsort) from their existing frozen physical-v2 references, using the identical derivation above and no change to evaluator classification semantics.",
+      "fields": [
+        "pct correct while physical target present",
+        "pct wrong while physical target present",
+        "pct suppressed while physical target present",
+        "pct leakage while physical target absent"
+      ],
+      "must_not": [
+        "be used to retune the algorithm",
+        "introduce any new optimisation or acceptance threshold"
+      ],
+      "known_retained_fact": "dev_june_seq03_ocsort (Seq03 crossing) has zero physical target-absent duration; its leakage percentage is 'not applicable'.",
+      "development_physical_v2_references": {
+        "dev_may_hard_reentry": {
+          "path": "docs/data/physical_target_references/dev_may_hard_reentry.json",
+          "size_bytes": 519817,
+          "sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c"
+        },
+        "dev_june_seq01": {
+          "path": "docs/data/physical_target_references/seq01_clean.json",
+          "size_bytes": 1336650,
+          "sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d"
+        },
+        "dev_june_seq03_ocsort": {
+          "path": "docs/data/physical_target_references/seq03_crossing.json",
+          "size_bytes": 1566872,
+          "sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71"
+        },
+        "dev_june_seq04_ocsort": {
+          "path": "docs/data/physical_target_references/seq04_occlusion_no_exit.json",
+          "size_bytes": 1882790,
+          "sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b"
+        }
+      }
+    }
+  },
+  "success_failure_interpretation": {
+    "quantitative_pass_threshold": "None exists in the historical Issue #27 methodology and none is fabricated here. Results are interpreted, not reduced to a single scalar.",
+    "safety_principle": "correct target > LOST/HOVER > wrong target",
+    "rules": [
+      "wrong-person authority is always reported explicitly and is never compensated by higher correct-target availability",
+      "target-absence leakage is always reported explicitly",
+      "LOST/HOVER is an acceptable safe outcome under ambiguity or absence",
+      "no post-held-out parameter adjustment may be used to improve a failed result",
+      "an unfavourable held-out result remains valid thesis evidence"
+    ],
+    "architecture_metric_validity": {
+      "controller_facing_selected_target_authority": [
+        "target_reid_090",
+        "bytetrack_tim_mars"
+      ],
+      "raw_tracker_baselines_no_selected_target_authority": [
+        "bytetrack_raw",
+        "deepsort_raw"
+      ],
+      "development_only_negative_arm": [
+        "target_reid_090"
+      ],
+      "note": "Raw tracker baselines have no selected-target identity policy; their identity buckets are computed with the same evaluator but interpreted as a lower reference, not as a controller capable of safe suppression. target_reid_090 is retained as a development-only negative arm (fixed 0.90 appearance threshold, stateless)."
+    }
+  },
+  "post_freeze_lock_rule": {
+    "trigger": "the first access or capture of any of H01/H02/H03 after this freeze is merged",
+    "locked": [
+      "algorithm behaviour: every behaviour-bearing path in the v3 comparison source_code_freeze.required_unchanged_paths is byte-identical to the algorithm-authority commit 79f11b631688889bf5ffbeb3c16ef543a53f9973 (checked by content, not by runtime HEAD identity)",
+      "production configuration (tim_mars_canonical.yaml, b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c)",
+      "tracker configuration (tracker_bytetrack.yaml)",
+      "models (yolov8s.hef, mars-small128.pb)",
+      "evaluator definitions (physical-v2 trio + pinned constants)",
+      "split (tim_mars_split_v4.json)",
+      "architecture arms (tim_mars_final_comparison_v3.json)",
+      "primary metrics and presence-conditioned derivation",
+      "annotation interpretation (physical-v2 reference contract)"
+    ],
+    "no_outcome_driven_changes": true,
+    "post_access_software_bug": "A serious software correctness bug found after held-out access must be documented. It must NOT be silently patched and re-run as though still prospective. Any corrected evaluation must be clearly identified as post-freeze / post-access evidence.",
+    "recapture_policy": "A held-out physical capture may be repeated only for prospectively-defined technical invalidity: corrupted or unfinalized recording, missing required topics (/camera/image_raw and /detections), unusable camera imagery, or objective failure to execute the predeclared physical scenario. A failed algorithmic performance result is NEVER grounds for recapture.",
+    "threshold_or_algorithm_change_after_access": "contaminates the accessed H01/H02/H03 recordings; they must leave the final held-out set and a further explicitly versioned prospective split is required."
+  },
+  "protected_historical_contracts_unchanged": [
+    "docs/data/splits/tim_mars_split_v3.json",
+    "docs/data/splits/tim_mars_split_v2.json",
+    "docs/data/splits/tim_mars_split_v1.json",
+    "docs/data/splits/tim_mars_final_comparison_v2.json",
+    "docs/data/splits/tim_mars_final_comparison_v1.json",
+    "docs/flight/P027_HELDOUT_EXECUTION_PLAN.md"
+  ],
+  "notes": [
+    "This is the prospective freeze. It is created and merged BEFORE any H01/H02/H03 source is captured, listed, opened, hashed, replayed, annotated, evaluated or inspected.",
+    "No held-out outcome information exists or was used. The release gate remains fail-closed at final_ready=0/3.",
+    "Issue #27 must remain OPEN. The held-out evaluation has not occurred."
+  ],
+  "provenance_model": {
+    "algorithm_authority_commit": {
+      "value": "79f11b631688889bf5ffbeb3c16ef543a53f9973",
+      "meaning": "Immutable. The exact final algorithm and canonical configuration selected in PR #101. It precedes the Stage-7 freeze itself and is never the runtime git HEAD of a Stage-7 evaluation."
+    },
+    "freeze_definition_commit": {
+      "value": "1b38a8cc27188e94b1c08ff6d555712cec752ed9",
+      "meaning": "The first commit on branch p027-prospective-freeze-20260908 that defined this prospective contract (split v4, comparison v3, manifest, execution plan v2). Later provenance-clarification commits on the same branch are part of the same freeze; the eventual merged Stage-7 freeze revision contains 1b38a8cc27188e94b1c08ff6d555712cec752ed9 and every such correction commit. No future merge SHA is asserted here."
+    },
+    "runtime_source_commit": {
+      "value": "recorded verbatim at capture / replay / evaluation time",
+      "meaning": "The actual git HEAD used for a held-out capture, replay or evaluation. It is NOT required to equal the algorithm-authority commit and generally will not (it must post-date the merged Stage-7 freeze). Validity is defined by content equality of behaviour-bearing paths and pinned artifacts, not by commit identity."
+    }
+  }
+}
