@@ -256,6 +256,27 @@ def parse_args() -> argparse.Namespace:
         help="Development-only AB-06: disable the final conservative filter.",
     )
     parser.add_argument(
+        "--ablation-disable-trusted-gallery-storage",
+        action="store_true",
+        help="Development-only AB-07: disable trusted-gallery storage.",
+    )
+    parser.add_argument(
+        "--ablation-disable-adaptive-positive-memory",
+        action="store_true",
+        help=(
+            "Development-only AB-08: remove the adaptive positive "
+            "representation while preserving anchor/gallery behavior."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-prevent-repeated-source-adaptive-update",
+        action="store_true",
+        help=(
+            "Development-only AB-16: prevent repeated-source adaptive "
+            "EMA reinforcement while preserving gallery behavior."
+        ),
+    )
+    parser.add_argument(
         "--shadow-appearance-probe-out",
         type=Path,
         default=None,
@@ -734,6 +755,27 @@ def build_runtime(
             getattr(
                 args,
                 "ablation_disable_conservative_final_filter",
+                False,
+            )
+        ),
+        development_ablation_disable_trusted_gallery_storage=bool(
+            getattr(
+                args,
+                "ablation_disable_trusted_gallery_storage",
+                False,
+            )
+        ),
+        development_ablation_disable_adaptive_positive_memory=bool(
+            getattr(
+                args,
+                "ablation_disable_adaptive_positive_memory",
+                False,
+            )
+        ),
+        development_ablation_prevent_repeated_source_adaptive_update=bool(
+            getattr(
+                args,
+                "ablation_prevent_repeated_source_adaptive_update",
                 False,
             )
         ),
@@ -1641,6 +1683,27 @@ def build_resolved_runtime_payload(
                     False,
                 )
             ),
+            "disable_trusted_gallery_storage": bool(
+                getattr(
+                    args,
+                    "ablation_disable_trusted_gallery_storage",
+                    False,
+                )
+            ),
+            "disable_adaptive_positive_memory": bool(
+                getattr(
+                    args,
+                    "ablation_disable_adaptive_positive_memory",
+                    False,
+                )
+            ),
+            "prevent_repeated_source_adaptive_update": bool(
+                getattr(
+                    args,
+                    "ablation_prevent_repeated_source_adaptive_update",
+                    False,
+                )
+            ),
         },
             "input_bag": str(input_bag),
             "output_bag": str(output_bag),
@@ -1721,6 +1784,15 @@ def build_resolved_runtime_payload(
         ),
         "ablation_disable_conservative_final_filter": argument_source(
             "--ablation-disable-conservative-final-filter"
+        ),
+        "ablation_disable_trusted_gallery_storage": argument_source(
+            "--ablation-disable-trusted-gallery-storage"
+        ),
+        "ablation_disable_adaptive_positive_memory": argument_source(
+            "--ablation-disable-adaptive-positive-memory"
+        ),
+        "ablation_prevent_repeated_source_adaptive_update": argument_source(
+            "--ablation-prevent-repeated-source-adaptive-update"
         ),
             "raw_target_mode": argument_source(
                 "--raw-target-mode"

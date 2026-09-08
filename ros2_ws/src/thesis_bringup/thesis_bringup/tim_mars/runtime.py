@@ -68,6 +68,9 @@ class TimMarsRuntimeConfig:
     development_ablation_restore_same_id_general_negative_exemption: bool = False
     development_ablation_disable_same_id_positive_support_reject: bool = False
     development_ablation_disable_conservative_final_filter: bool = False
+    development_ablation_disable_trusted_gallery_storage: bool = False
+    development_ablation_disable_adaptive_positive_memory: bool = False
+    development_ablation_prevent_repeated_source_adaptive_update: bool = False
 
 
 @dataclass(frozen=True)
@@ -158,6 +161,15 @@ class TimMarsRuntime:
             ),
             development_ablation_disable_conservative_final_filter=bool(
                 self.config.development_ablation_disable_conservative_final_filter
+            ),
+            development_ablation_disable_trusted_gallery_storage=bool(
+                self.config.development_ablation_disable_trusted_gallery_storage
+            ),
+            development_ablation_disable_adaptive_positive_memory=bool(
+                self.config.development_ablation_disable_adaptive_positive_memory
+            ),
+            development_ablation_prevent_repeated_source_adaptive_update=bool(
+                self.config.development_ablation_prevent_repeated_source_adaptive_update
             ),
         )
         selected_id = int(self.config.selected_track_id)

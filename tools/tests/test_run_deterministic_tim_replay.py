@@ -1375,6 +1375,9 @@ def test_tim_ablation_controls_are_default_off(monkeypatch):
     assert not arguments.ablation_disable_hard_negative_memory
     assert not arguments.ablation_disable_same_id_positive_support_reject
     assert not arguments.ablation_disable_conservative_final_filter
+    assert not arguments.ablation_disable_trusted_gallery_storage
+    assert not arguments.ablation_disable_adaptive_positive_memory
+    assert not arguments.ablation_prevent_repeated_source_adaptive_update
 
 
 def test_tim_ablation_controls_are_explicit(monkeypatch):
@@ -1397,6 +1400,9 @@ def test_tim_ablation_controls_are_explicit(monkeypatch):
             "--ablation-disable-hard-negative-memory",
             "--ablation-disable-same-id-positive-support-reject",
             "--ablation-disable-conservative-final-filter",
+            "--ablation-disable-trusted-gallery-storage",
+            "--ablation-disable-adaptive-positive-memory",
+            "--ablation-prevent-repeated-source-adaptive-update",
         ],
     )
 
@@ -1407,6 +1413,9 @@ def test_tim_ablation_controls_are_explicit(monkeypatch):
     assert arguments.ablation_disable_hard_negative_memory
     assert arguments.ablation_disable_same_id_positive_support_reject
     assert arguments.ablation_disable_conservative_final_filter
+    assert arguments.ablation_disable_trusted_gallery_storage
+    assert arguments.ablation_disable_adaptive_positive_memory
+    assert arguments.ablation_prevent_repeated_source_adaptive_update
 
 
 def test_ab09_uses_existing_hard_negative_memory_switch():

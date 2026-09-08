@@ -139,6 +139,9 @@ class TargetIdentityMemory:
         development_ablation_restore_same_id_general_negative_exemption: bool = False,
         development_ablation_disable_same_id_positive_support_reject: bool = False,
         development_ablation_disable_conservative_final_filter: bool = False,
+        development_ablation_disable_trusted_gallery_storage: bool = False,
+        development_ablation_disable_adaptive_positive_memory: bool = False,
+        development_ablation_prevent_repeated_source_adaptive_update: bool = False,
     ) -> None:
         self.cfg = cfg or TargetMemoryConfig()
         self._development_ablation_disable_forced_same_id_challenge = bool(
@@ -152,6 +155,15 @@ class TargetIdentityMemory:
         )
         self._development_ablation_disable_conservative_final_filter = bool(
             development_ablation_disable_conservative_final_filter
+        )
+        self._development_ablation_disable_trusted_gallery_storage = bool(
+            development_ablation_disable_trusted_gallery_storage
+        )
+        self._development_ablation_disable_adaptive_positive_memory = bool(
+            development_ablation_disable_adaptive_positive_memory
+        )
+        self._development_ablation_prevent_repeated_source_adaptive_update = bool(
+            development_ablation_prevent_repeated_source_adaptive_update
         )
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
@@ -205,6 +217,29 @@ class TargetIdentityMemory:
     def appearance_update_cooldown_frames_remaining(self) -> int:
         """Remaining frames before positive appearance updates resume."""
         return int(self._appearance_update_cooldown_frames_remaining)
+
+    @staticmethod
+    def _appearance_source_observation(
+        candidate: CandidateTrack,
+    ) -> tuple[str, int] | None:
+        """Return the actual visual observation behind an embedding."""
+        provenance = candidate.appearance_provenance
+        if provenance is None:
+            return None
+
+        if provenance.source_image_timestamp_ns is not None:
+            return (
+                "image_timestamp_ns",
+                int(provenance.source_image_timestamp_ns),
+            )
+
+        if provenance.source_frame_id is not None:
+            return (
+                "source_frame_id",
+                int(provenance.source_frame_id),
+            )
+
+        return None
 
     def _record_tracker_timeline(
         self,
@@ -347,6 +382,12 @@ class TargetIdentityMemory:
                 self._positive_appearance.select_operator(
                     track_id=track.track_id,
                     appearance=selected_appearance,
+                    adaptive_enabled=not (
+                        self._development_ablation_disable_adaptive_positive_memory
+                    ),
+                    source_observation=(
+                        self._appearance_source_observation(track)
+                    ),
                 )
             )
             self._last_acceptance_memory_source = (
@@ -2473,6 +2514,12 @@ class TargetIdentityMemory:
             .bootstrap_operator_anchor(
                 track_id=candidate.track_id,
                 appearance=candidate.appearance,
+                adaptive_enabled=not (
+                    self._development_ablation_disable_adaptive_positive_memory
+                ),
+                source_observation=(
+                    self._appearance_source_observation(candidate)
+                ),
             )
         )
         if bootstrapped:
@@ -2529,8 +2576,18 @@ class TargetIdentityMemory:
             appearance=candidate.appearance,
             alpha=self.cfg.appearance_update_alpha,
             gallery_max_entries=(
-                self.cfg
-                .appearance_trusted_gallery_max_entries
+                0
+                if self._development_ablation_disable_trusted_gallery_storage
+                else self.cfg.appearance_trusted_gallery_max_entries
+            ),
+            adaptive_enabled=not (
+                self._development_ablation_disable_adaptive_positive_memory
+            ),
+            prevent_repeated_adaptive_source=bool(
+                self._development_ablation_prevent_repeated_source_adaptive_update
+            ),
+            source_observation=(
+                self._appearance_source_observation(candidate)
             ),
         )
 
