@@ -2629,7 +2629,11 @@ class TargetIdentityMemory:
                 self._development_ablation_disable_adaptive_positive_memory
             ),
             prevent_repeated_adaptive_source=bool(
-                self._development_ablation_prevent_repeated_source_adaptive_update
+                self.cfg.appearance_prevent_repeated_source_adaptive_update
+                or (
+                    self
+                    ._development_ablation_prevent_repeated_source_adaptive_update
+                )
             ),
             source_observation=(
                 self._appearance_source_observation(candidate)

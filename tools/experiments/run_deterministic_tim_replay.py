@@ -1690,6 +1690,7 @@ def build_resolved_runtime_payload(
     image_topic: str,
     input_bag: Path,
     output_bag: Path,
+    production_prevent_repeated_source_adaptive_update: bool = False,
 ) -> dict[str, Any]:
     """Build exact deterministic replay runtime provenance."""
     alternate_appearance = dict(
@@ -1709,11 +1710,49 @@ def build_resolved_runtime_payload(
         )
     )
 
+    production_repeated_source_policy = bool(
+        production_prevent_repeated_source_adaptive_update
+    )
+    development_repeated_source_control = bool(
+        getattr(
+            args,
+            "ablation_prevent_repeated_source_adaptive_update",
+            False,
+        )
+    )
+    effective_repeated_source_suppression = bool(
+        production_repeated_source_policy
+        or development_repeated_source_control
+    )
+    if (
+        production_repeated_source_policy
+        and development_repeated_source_control
+    ):
+        repeated_source_activation = "production_config+development_ablation"
+    elif production_repeated_source_policy:
+        repeated_source_activation = "production_config"
+    elif development_repeated_source_control:
+        repeated_source_activation = "development_ablation"
+    else:
+        repeated_source_activation = "inactive"
+
     return {
-        "schema_version": 3,
+        "schema_version": 4,
         "canonical_config": dict(
             summary["canonical_config"]
         ),
+        "repeated_source_adaptive_update": {
+            "requested_production_policy": (
+                production_repeated_source_policy
+            ),
+            "development_ablation_control": (
+                development_repeated_source_control
+            ),
+            "effective_suppression": (
+                effective_repeated_source_suppression
+            ),
+            "activation_source": repeated_source_activation,
+        },
         "runtime_overrides": {
             "selected_track_id": int(
                 args.selected_track_id
@@ -3266,6 +3305,10 @@ def main() -> int:
             image_topic=image_topic,
             input_bag=input_bag,
             output_bag=output_bag,
+            production_prevent_repeated_source_adaptive_update=bool(
+                runtime.config.memory
+                .appearance_prevent_repeated_source_adaptive_update
+            ),
         )
     )
 
