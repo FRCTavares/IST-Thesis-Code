@@ -1,0 +1,68 @@
+{
+  "available_image_challenge": {
+    "appearance_serial_service_fraction": 0.3793729197275944,
+    "appearance_service": {
+      "count": 1150,
+      "max_ms": 471.108424,
+      "mean_ms": 28.53575663739131,
+      "p50_ms": 17.4323395,
+      "p95_ms": 61.988304899999996,
+      "p99_ms": 65.10102259,
+      "total_ms": 32816.120133
+    },
+    "candidate": "available_image_challenge",
+    "forced_appearance_service": {
+      "count": 837,
+      "max_ms": 25.580032,
+      "mean_ms": 17.33391058542413,
+      "p50_ms": 17.130836,
+      "p95_ms": 18.446174199999998,
+      "p99_ms": 22.889813439999998,
+      "total_ms": 14508.48316
+    },
+    "measurement": "offline_serial_service_time_not_live_latency",
+    "runtime_serial_service_fraction": 0.41493422801815016,
+    "runtime_service": {
+      "count": 2047,
+      "max_ms": 472.083696,
+      "mean_ms": 17.534053388861746,
+      "p50_ms": 18.174071,
+      "p95_ms": 62.7819542,
+      "p99_ms": 65.4019157,
+      "total_ms": 35892.207287
+    },
+    "semantic_digest_equal": true,
+    "sequence": "seq04",
+    "timeline_duration_s": 86.500955726
+  },
+  "baseline": {
+    "appearance_serial_service_fraction": 0.2081057627966676,
+    "appearance_service": {
+      "count": 313,
+      "max_ms": 476.639591,
+      "mean_ms": 57.512291929712454,
+      "p50_ms": 59.033315,
+      "p95_ms": 62.4720958,
+      "p99_ms": 64.39261791999999,
+      "total_ms": 18001.347374
+    },
+    "candidate": "baseline",
+    "forced_appearance_service": {
+      "count": 0
+    },
+    "measurement": "offline_serial_service_time_not_live_latency",
+    "runtime_serial_service_fraction": 0.24075320903928946,
+    "runtime_service": {
+      "count": 2047,
+      "max_ms": 477.744679,
+      "mean_ms": 10.173611468490474,
+      "p50_ms": 1.391961,
+      "p95_ms": 62.256497599999996,
+      "p99_ms": 64.09857477999999,
+      "total_ms": 20825.382676
+    },
+    "semantic_digest_equal": true,
+    "sequence": "seq04",
+    "timeline_duration_s": 86.500955726
+  }
+}

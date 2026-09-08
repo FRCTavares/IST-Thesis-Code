@@ -222,6 +222,156 @@ def parse_args() -> argparse.Namespace:
             "fully recorded in provenance, but are not duplicated."
         ),
     )
+    parser.add_argument(
+        "--ablation-disable-forced-same-id-challenge",
+        action="store_true",
+        help=(
+            "Development-only AB-11 control: disable forced same-ID "
+            "fresh-challenge scheduling while preserving the general "
+            "committed-negative veto."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-restore-same-id-general-negative-exemption",
+        action="store_true",
+        help=(
+            "Development-only AB-18 control: restore the general LOCKED "
+            "same-ID committed-negative exemption while preserving fresh "
+            "challenge scheduling and challenger-specific rejection."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-disable-hard-negative-memory",
+        action="store_true",
+        help="Development-only AB-09: disable hard-negative memory.",
+    )
+    parser.add_argument(
+        "--ablation-disable-same-id-positive-support-reject",
+        action="store_true",
+        help="Development-only AB-10: disable same-ID positive-support rejection.",
+    )
+    parser.add_argument(
+        "--ablation-disable-conservative-final-filter",
+        action="store_true",
+        help="Development-only AB-06: disable the final conservative filter.",
+    )
+    parser.add_argument(
+        "--ablation-disable-trusted-gallery-storage",
+        action="store_true",
+        help="Development-only AB-07: disable trusted-gallery storage.",
+    )
+    parser.add_argument(
+        "--ablation-disable-adaptive-positive-memory",
+        action="store_true",
+        help=(
+            "Development-only AB-08: remove the adaptive positive "
+            "representation while preserving anchor/gallery behavior."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-prevent-repeated-source-adaptive-update",
+        action="store_true",
+        help=(
+            "Development-only AB-16: prevent repeated-source adaptive "
+            "EMA reinforcement while preserving gallery behavior."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-disable-global-reacquisition",
+        action="store_true",
+        help=(
+            "Development-only AB-12: disable long-gap global identity "
+            "reacquisition via the existing TargetMemoryConfig switch."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-disable-rank-aware-reacquisition",
+        action="store_true",
+        help=(
+            "Development-only AB-13: disable rank-aware reacquisition via "
+            "the existing TargetMemoryConfig switch."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-disable-short-gap-same-id-priority",
+        action="store_true",
+        help=(
+            "Development-only AB-04: disable short-gap same-ID priority via "
+            "the existing TargetMemoryConfig switch."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-disable-short-gap-new-id-suppression",
+        action="store_true",
+        help=(
+            "Development-only AB-05: disable short-gap new-ID suppression via "
+            "the existing TargetMemoryConfig switch."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-zero-min-confirm-frames-after-reacquire",
+        action="store_true",
+        help=(
+            "Development-only AB-14: set min_confirm_frames_after_reacquire "
+            "to 0 for the ablation only, via the existing TargetMemoryConfig "
+            "field."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-zero-appearance-ranking-contribution",
+        action="store_true",
+        help=(
+            "Development-only AB-01: set appearance_weight to 0 so appearance "
+            "makes no numerical contribution to the ranking/total score, "
+            "while appearance evaluation, similarity/margin gates, the "
+            "conservative filter, positive/protected memory and hard-negative "
+            "behaviour all remain active. This is NOT appearance_enabled=false."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-retire-overage-hard-negatives-pre-score",
+        action="store_true",
+        help=(
+            "Development-only AB-15: retire committed hard negatives older than "
+            "hard_negative_max_age_frames before candidate scoring, instead of "
+            "only through a later trusted accepted transaction."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-require-distinct-source-for-persistence",
+        action="store_true",
+        help=(
+            "Development-only AB-19: a repeated appearance source image does "
+            "not advance recovery/rank-aware/belief persistence; the required "
+            "observation count and all safety gates are unchanged."
+        ),
+    )
+    parser.add_argument(
+        "--shadow-appearance-probe-out",
+        type=Path,
+        default=None,
+        help=(
+            "Development-only behavior-neutral shadow appearance evidence "
+            "sidecar. Probe embeddings are never supplied to TIM state."
+        ),
+    )
+    parser.add_argument(
+        "--shadow-appearance-probe-frame-ids",
+        type=int,
+        nargs="+",
+        default=None,
+        help=(
+            "Tracker frame IDs at which to compute independent fresh "
+            "appearance evidence before the normal TIM decision."
+        ),
+    )
+    parser.add_argument(
+        "--shadow-appearance-probe-track-id",
+        type=int,
+        default=None,
+        help="Tracker ID whose crop is encoded by the shadow probe.",
+    )
+
     return parser.parse_args()
 
 
@@ -577,6 +727,80 @@ def build_runtime(
         appearance_enabled=appearance_enabled,
     )
 
+    if bool(
+        getattr(
+            args,
+            "ablation_disable_hard_negative_memory",
+            False,
+        )
+    ):
+        memory.hard_negative_memory_enabled = False
+
+    # AB-12 / AB-13 / AB-04 / AB-05 / AB-14 development-only interventions
+    # reuse existing TargetMemoryConfig switches exactly like AB-09 above.
+    # They are runner-only: no canonical YAML, ROS parameter, launch or
+    # TargetIdentityMemory constructor exposure is added.
+    if bool(
+        getattr(
+            args,
+            "ablation_disable_global_reacquisition",
+            False,
+        )
+    ):
+        memory.global_reacquisition_enabled = False
+
+    if bool(
+        getattr(
+            args,
+            "ablation_disable_rank_aware_reacquisition",
+            False,
+        )
+    ):
+        memory.rank_aware_reacquisition_enabled = False
+
+    if bool(
+        getattr(
+            args,
+            "ablation_disable_short_gap_same_id_priority",
+            False,
+        )
+    ):
+        memory.short_gap_same_id_priority_enabled = False
+
+    if bool(
+        getattr(
+            args,
+            "ablation_disable_short_gap_new_id_suppression",
+            False,
+        )
+    ):
+        memory.short_gap_new_id_suppression_enabled = False
+
+    if bool(
+        getattr(
+            args,
+            "ablation_zero_min_confirm_frames_after_reacquire",
+            False,
+        )
+    ):
+        memory.min_confirm_frames_after_reacquire = 0
+
+    # AB-01: appearance_weight is used at exactly one site
+    # (appearance_policy.score_with_appearance) as the multiplier on the
+    # appearance contribution to ranking_score/total. Zeroing it removes the
+    # numerical ranking contribution only; appearance_raw, the similarity and
+    # margin gates, the conservative filter, positive/protected memory and
+    # hard-negative memory are all computed from separate quantities and stay
+    # active. This is deliberately NOT appearance_enabled=false.
+    if bool(
+        getattr(
+            args,
+            "ablation_zero_appearance_ranking_contribution",
+            False,
+        )
+    ):
+        memory.appearance_weight = 0.0
+
     appearance = AppearanceAttachmentConfig(
         enabled=appearance_enabled,
         max_image_age_ms=float(
@@ -641,6 +865,69 @@ def build_runtime(
             selected_track_id=int(args.selected_track_id),
             auto_select_largest=False,
             image_buffer_size=64,
+        development_ablation_disable_forced_same_id_challenge=bool(
+            getattr(
+                args,
+                "ablation_disable_forced_same_id_challenge",
+                False,
+            )
+        ),
+        development_ablation_restore_same_id_general_negative_exemption=bool(
+            getattr(
+                args,
+                "ablation_restore_same_id_general_negative_exemption",
+                False,
+            )
+        ),
+        development_ablation_disable_same_id_positive_support_reject=bool(
+            getattr(
+                args,
+                "ablation_disable_same_id_positive_support_reject",
+                False,
+            )
+        ),
+        development_ablation_disable_conservative_final_filter=bool(
+            getattr(
+                args,
+                "ablation_disable_conservative_final_filter",
+                False,
+            )
+        ),
+        development_ablation_disable_trusted_gallery_storage=bool(
+            getattr(
+                args,
+                "ablation_disable_trusted_gallery_storage",
+                False,
+            )
+        ),
+        development_ablation_disable_adaptive_positive_memory=bool(
+            getattr(
+                args,
+                "ablation_disable_adaptive_positive_memory",
+                False,
+            )
+        ),
+        development_ablation_prevent_repeated_source_adaptive_update=bool(
+            getattr(
+                args,
+                "ablation_prevent_repeated_source_adaptive_update",
+                False,
+            )
+        ),
+        development_ablation_retire_overage_hard_negatives_pre_score=bool(
+            getattr(
+                args,
+                "ablation_retire_overage_hard_negatives_pre_score",
+                False,
+            )
+        ),
+        development_ablation_require_distinct_source_for_persistence=bool(
+            getattr(
+                args,
+                "ablation_require_distinct_source_for_persistence",
+                False,
+            )
+        ),
         ),
         mars_backend=backend,
     )
@@ -1452,6 +1739,83 @@ def build_resolved_runtime_payload(
             "appearance_compute_min_interval_ms": float(
                 appearance_compute_min_interval_ms
             ),
+        "ablation_disable_forced_same_id_challenge": bool(
+            getattr(
+                args,
+                "ablation_disable_forced_same_id_challenge",
+                False,
+            )
+        ),
+        "ablation_restore_same_id_general_negative_exemption": bool(
+            getattr(
+                args,
+                "ablation_restore_same_id_general_negative_exemption",
+                False,
+            )
+        ),
+        "ablation_disable_hard_negative_memory": bool(
+            getattr(
+                args,
+                "ablation_disable_hard_negative_memory",
+                False,
+            )
+        ),
+        "ablation_disable_same_id_positive_support_reject": bool(
+            getattr(
+                args,
+                "ablation_disable_same_id_positive_support_reject",
+                False,
+            )
+        ),
+        "ablation_disable_conservative_final_filter": bool(
+            getattr(
+                args,
+                "ablation_disable_conservative_final_filter",
+                False,
+            )
+        ),
+        "ablation_disable_global_reacquisition": bool(
+            getattr(
+                args,
+                "ablation_disable_global_reacquisition",
+                False,
+            )
+        ),
+        "ablation_disable_rank_aware_reacquisition": bool(
+            getattr(
+                args,
+                "ablation_disable_rank_aware_reacquisition",
+                False,
+            )
+        ),
+        "ablation_disable_short_gap_same_id_priority": bool(
+            getattr(
+                args,
+                "ablation_disable_short_gap_same_id_priority",
+                False,
+            )
+        ),
+        "ablation_disable_short_gap_new_id_suppression": bool(
+            getattr(
+                args,
+                "ablation_disable_short_gap_new_id_suppression",
+                False,
+            )
+        ),
+        "ablation_zero_min_confirm_frames_after_reacquire": bool(
+            getattr(
+                args,
+                "ablation_zero_min_confirm_frames_after_reacquire",
+                False,
+            )
+        ),
+        "ablation_zero_appearance_ranking_contribution": bool(
+            getattr(
+                args,
+                "ablation_zero_appearance_ranking_contribution",
+                False,
+            )
+        ),
             "compact_output": bool(
                 args.compact_output
             ),
@@ -1474,6 +1838,120 @@ def build_resolved_runtime_payload(
             "compact_output": bool(
                 args.compact_output
             ),
+        "development_ablation_controls": {
+            "disable_forced_same_id_challenge": bool(
+                getattr(
+                    args,
+                    "ablation_disable_forced_same_id_challenge",
+                    False,
+                )
+            ),
+            "restore_same_id_general_negative_exemption": bool(
+                getattr(
+                    args,
+                    "ablation_restore_same_id_general_negative_exemption",
+                    False,
+                )
+            ),
+            "disable_hard_negative_memory": bool(
+                getattr(
+                    args,
+                    "ablation_disable_hard_negative_memory",
+                    False,
+                )
+            ),
+            "disable_same_id_positive_support_reject": bool(
+                getattr(
+                    args,
+                    "ablation_disable_same_id_positive_support_reject",
+                    False,
+                )
+            ),
+            "disable_conservative_final_filter": bool(
+                getattr(
+                    args,
+                    "ablation_disable_conservative_final_filter",
+                    False,
+                )
+            ),
+            "disable_trusted_gallery_storage": bool(
+                getattr(
+                    args,
+                    "ablation_disable_trusted_gallery_storage",
+                    False,
+                )
+            ),
+            "disable_adaptive_positive_memory": bool(
+                getattr(
+                    args,
+                    "ablation_disable_adaptive_positive_memory",
+                    False,
+                )
+            ),
+            "prevent_repeated_source_adaptive_update": bool(
+                getattr(
+                    args,
+                    "ablation_prevent_repeated_source_adaptive_update",
+                    False,
+                )
+            ),
+            "retire_overage_hard_negatives_pre_score": bool(
+                getattr(
+                    args,
+                    "ablation_retire_overage_hard_negatives_pre_score",
+                    False,
+                )
+            ),
+            "require_distinct_source_for_persistence": bool(
+                getattr(
+                    args,
+                    "ablation_require_distinct_source_for_persistence",
+                    False,
+                )
+            ),
+            "disable_global_reacquisition": bool(
+                getattr(
+                    args,
+                    "ablation_disable_global_reacquisition",
+                    False,
+                )
+            ),
+            "disable_rank_aware_reacquisition": bool(
+                getattr(
+                    args,
+                    "ablation_disable_rank_aware_reacquisition",
+                    False,
+                )
+            ),
+            "disable_short_gap_same_id_priority": bool(
+                getattr(
+                    args,
+                    "ablation_disable_short_gap_same_id_priority",
+                    False,
+                )
+            ),
+            "disable_short_gap_new_id_suppression": bool(
+                getattr(
+                    args,
+                    "ablation_disable_short_gap_new_id_suppression",
+                    False,
+                )
+            ),
+            "zero_min_confirm_frames_after_reacquire": bool(
+                getattr(
+                    args,
+                    "ablation_zero_min_confirm_frames_after_reacquire",
+                    False,
+                )
+            ),
+            "zero_appearance_ranking_contribution": bool(
+                getattr(
+                    args,
+                    "ablation_zero_appearance_ranking_contribution",
+                    False,
+                )
+            ),
+        },
             "input_bag": str(input_bag),
             "output_bag": str(output_bag),
             "alternate_appearance": (
@@ -1539,6 +2017,54 @@ def build_resolved_runtime_payload(
                 ) is None
                 else "command_line"
             ),
+        "ablation_disable_forced_same_id_challenge": argument_source(
+            "--ablation-disable-forced-same-id-challenge"
+        ),
+        "ablation_restore_same_id_general_negative_exemption": argument_source(
+            "--ablation-restore-same-id-general-negative-exemption"
+        ),
+        "ablation_disable_hard_negative_memory": argument_source(
+            "--ablation-disable-hard-negative-memory"
+        ),
+        "ablation_disable_same_id_positive_support_reject": argument_source(
+            "--ablation-disable-same-id-positive-support-reject"
+        ),
+        "ablation_disable_conservative_final_filter": argument_source(
+            "--ablation-disable-conservative-final-filter"
+        ),
+        "ablation_disable_trusted_gallery_storage": argument_source(
+            "--ablation-disable-trusted-gallery-storage"
+        ),
+        "ablation_disable_adaptive_positive_memory": argument_source(
+            "--ablation-disable-adaptive-positive-memory"
+        ),
+        "ablation_prevent_repeated_source_adaptive_update": argument_source(
+            "--ablation-prevent-repeated-source-adaptive-update"
+        ),
+        "ablation_retire_overage_hard_negatives_pre_score": argument_source(
+            "--ablation-retire-overage-hard-negatives-pre-score"
+        ),
+        "ablation_require_distinct_source_for_persistence": argument_source(
+            "--ablation-require-distinct-source-for-persistence"
+        ),
+        "ablation_disable_global_reacquisition": argument_source(
+            "--ablation-disable-global-reacquisition"
+        ),
+        "ablation_disable_rank_aware_reacquisition": argument_source(
+            "--ablation-disable-rank-aware-reacquisition"
+        ),
+        "ablation_disable_short_gap_same_id_priority": argument_source(
+            "--ablation-disable-short-gap-same-id-priority"
+        ),
+        "ablation_disable_short_gap_new_id_suppression": argument_source(
+            "--ablation-disable-short-gap-new-id-suppression"
+        ),
+        "ablation_zero_min_confirm_frames_after_reacquire": argument_source(
+            "--ablation-zero-min-confirm-frames-after-reacquire"
+        ),
+        "ablation_zero_appearance_ranking_contribution": argument_source(
+            "--ablation-zero-appearance-ranking-contribution"
+        ),
             "raw_target_mode": argument_source(
                 "--raw-target-mode"
             ),
@@ -1865,6 +2391,274 @@ def main() -> int:
     raw_target_messages_written = 0
     raw_target_valid_messages_written = 0
 
+    shadow_probe_records: list[dict[str, Any]] = []
+    shadow_probe_frames = {
+        int(frame_id)
+        for frame_id in (
+            args.shadow_appearance_probe_frame_ids or []
+        )
+    }
+
+    if bool(args.shadow_appearance_probe_out) != bool(shadow_probe_frames):
+        raise RuntimeError(
+            "--shadow-appearance-probe-out and "
+            "--shadow-appearance-probe-frame-ids must be supplied together"
+        )
+
+    if (
+        shadow_probe_frames
+        and args.shadow_appearance_probe_track_id is None
+    ):
+        raise RuntimeError(
+            "--shadow-appearance-probe-track-id is required "
+            "when shadow probing"
+        )
+
+    def record_shadow_appearance_probe(
+        *,
+        frame_id: int,
+        tracks_message: Track2DArray,
+    ) -> None:
+        """Record fresh evidence without mutating TIM state."""
+        if int(frame_id) not in shadow_probe_frames:
+            return
+
+        track_timestamp_ns = runtime.track_time_ns(tracks_message)
+        if track_timestamp_ns is None:
+            raise RuntimeError(
+                f"shadow probe frame {frame_id}: no track timestamp"
+            )
+
+        if runtime.mars_backend is None:
+            raise RuntimeError(
+                f"shadow probe frame {frame_id}: MARS backend unavailable"
+            )
+
+        selected_image = runtime.select_causal_image(
+            track_timestamp_ns
+        )
+        if selected_image is None:
+            raise RuntimeError(
+                f"shadow probe frame {frame_id}: no causal image"
+            )
+
+        probe_track_id = int(
+            args.shadow_appearance_probe_track_id
+        )
+        matching_tracks = [
+            track
+            for track in tracks_message.tracks
+            if int(track.id) == probe_track_id
+        ]
+
+        if len(matching_tracks) != 1:
+            shadow_probe_records.append(
+                {
+                    "frame_id": int(frame_id),
+                    "track_timestamp_ns": int(track_timestamp_ns),
+                    "probe_track_id": probe_track_id,
+                    "status": "track_unavailable",
+                    "matching_track_count": len(matching_tracks),
+                }
+            )
+            return
+
+        candidate = runtime.candidate_from_track(
+            matching_tracks[0],
+            frame_id=int(frame_id),
+            timestamp_ns=int(track_timestamp_ns),
+        )
+
+        image = selected_image.image_bgr
+        if image is None or getattr(image, "ndim", 0) != 3:
+            raise RuntimeError(
+                f"shadow probe frame {frame_id}: invalid image"
+            )
+
+        image_height = int(image.shape[0])
+        image_width = int(image.shape[1])
+        candidate_width = float(runtime.config.image_width)
+        candidate_height = float(runtime.config.image_height)
+
+        if candidate_width <= 0.0 or candidate_height <= 0.0:
+            raise RuntimeError(
+                "shadow probe: invalid candidate-frame geometry"
+            )
+
+        sx = float(image_width) / candidate_width
+        sy = float(image_height) / candidate_height
+
+        x1, y1, x2, y2 = candidate.bbox
+        mapped_bbox = (
+            float(x1) * sx,
+            float(y1) * sy,
+            float(x2) * sx,
+            float(y2) * sy,
+        )
+
+        encoded = runtime.mars_backend.encode(
+            image,
+            [mapped_bbox],
+        )
+        if len(encoded) != 1:
+            raise RuntimeError(
+                f"shadow probe frame {frame_id}: "
+                f"encoder returned {len(encoded)} features"
+            )
+
+        appearance = encoded[0]
+        if appearance is None:
+            shadow_probe_records.append(
+                {
+                    "frame_id": int(frame_id),
+                    "track_timestamp_ns": int(track_timestamp_ns),
+                    "image_timestamp_ns": int(
+                        selected_image.stamp_ns
+                    ),
+                    "probe_track_id": probe_track_id,
+                    "status": "embedding_unavailable",
+                    "candidate_bbox": list(candidate.bbox),
+                    "mapped_bbox": list(mapped_bbox),
+                }
+            )
+            return
+
+        positive_memory = runtime.memory._positive_appearance
+        hard_negative_memory = (
+            runtime.memory._hard_negative_memory
+        )
+
+        (
+            anchor_similarity,
+            gallery_similarity,
+            adaptive_similarity,
+        ) = positive_memory.similarities(appearance)
+
+        (
+            effective_similarity,
+            effective_source,
+            _,
+            _,
+            _,
+        ) = positive_memory.effective_similarity(
+            appearance=appearance,
+            protected_only=False,
+        )
+
+        (
+            protected_similarity,
+            protected_source,
+            _,
+            _,
+            _,
+        ) = positive_memory.effective_similarity(
+            appearance=appearance,
+            protected_only=True,
+        )
+
+        negative_similarity = hard_negative_memory.similarity(
+            appearance,
+            runtime.config.memory,
+        )
+
+        memory_state = getattr(runtime.memory, "_m", None)
+        state_object = getattr(memory_state, "state", None)
+        state_name = getattr(state_object, "value", None)
+        if state_name is None and state_object is not None:
+            state_name = str(state_object)
+
+        shadow_probe_records.append(
+            {
+                "frame_id": int(frame_id),
+                "track_timestamp_ns": int(track_timestamp_ns),
+                "image_timestamp_ns": int(
+                    selected_image.stamp_ns
+                ),
+                "image_age_ms": (
+                    float(
+                        int(track_timestamp_ns)
+                        - int(selected_image.stamp_ns)
+                    )
+                    / 1e6
+                ),
+                "probe_track_id": probe_track_id,
+                "status": "fresh_embedding",
+                "candidate_bbox": [
+                    float(v) for v in candidate.bbox
+                ],
+                "mapped_bbox": [
+                    float(v) for v in mapped_bbox
+                ],
+                "pre_decision_state": state_name,
+                "positive": {
+                    "anchor_similarity": float(
+                        anchor_similarity
+                    ),
+                    "gallery_similarity": float(
+                        gallery_similarity
+                    ),
+                    "adaptive_similarity": float(
+                        adaptive_similarity
+                    ),
+                    "effective_similarity": float(
+                        effective_similarity
+                    ),
+                    "effective_source": str(
+                        effective_source
+                    ),
+                    "protected_similarity": float(
+                        protected_similarity
+                    ),
+                    "protected_source": str(
+                        protected_source
+                    ),
+                },
+                "negative": {
+                    "similarity": float(
+                        negative_similarity
+                    ),
+                    "effective_minus_negative": float(
+                        effective_similarity
+                        - negative_similarity
+                    ),
+                    "protected_minus_negative": float(
+                        protected_similarity
+                        - negative_similarity
+                    ),
+                    "committed_entries": len(
+                        getattr(
+                            hard_negative_memory,
+                            "_memory",
+                            [],
+                        )
+                    ),
+                },
+                "lineage": {
+                    "operator_track_id": (
+                        positive_memory.operator_track_id
+                    ),
+                    "current_lineage_track_id": (
+                        positive_memory.current_lineage_track_id
+                    ),
+                    "current_lineage_supported": bool(
+                        positive_memory.current_lineage_supported
+                    ),
+                    "lineage_trusted": bool(
+                        positive_memory.lineage_trusted
+                    ),
+                    "trusted_lock_streak": int(
+                        positive_memory.trusted_lock_streak
+                    ),
+                    "trusted_gallery_size": len(
+                        positive_memory.trusted_gallery
+                    ),
+                    "protected_anchor_available": (
+                        positive_memory.protected_anchor is not None
+                    ),
+                },
+            }
+        )
+
     def process_one_track_event(
         event: tuple[int, int, int, int, Track2DArray],
     ) -> None:
@@ -1879,6 +2673,11 @@ def main() -> int:
             _source_sequence,
             tracks_message,
         ) = event
+
+        record_shadow_appearance_probe(
+            frame_id=int(_frame_id),
+            tracks_message=tracks_message,
+        )
 
         result = runtime.process_tracks(tracks_message)
 
@@ -2497,6 +3296,56 @@ def main() -> int:
             ),
         }
     )
+
+    if args.shadow_appearance_probe_out is not None:
+        observed_probe_frames = {
+            int(record["frame_id"])
+            for record in shadow_probe_records
+        }
+        missing_probe_frames = sorted(
+            shadow_probe_frames - observed_probe_frames
+        )
+        if missing_probe_frames:
+            raise RuntimeError(
+                "shadow appearance probe missed frames: "
+                + ", ".join(
+                    str(value)
+                    for value in missing_probe_frames
+                )
+            )
+
+        shadow_probe_path = (
+            args.shadow_appearance_probe_out
+            .expanduser()
+            .resolve()
+        )
+        shadow_probe_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        shadow_probe_path.write_text(
+            json.dumps(
+                {
+                    "schema": "tim_shadow_appearance_probe_v1",
+                    "behavior_neutral_contract": (
+                        "Probe embeddings are computed against "
+                        "pre-decision memory and are never supplied "
+                        "to TIM state, cache, positive memory, "
+                        "hard-negative memory or publication."
+                    ),
+                    "probe_track_id": int(
+                        args.shadow_appearance_probe_track_id
+                    ),
+                    "requested_frame_ids": sorted(
+                        shadow_probe_frames
+                    ),
+                    "records": shadow_probe_records,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
 
     write_replay_metadata(
         output_bag,

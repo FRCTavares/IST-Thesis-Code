@@ -1,0 +1,2437 @@
+{
+  "ab07": {
+    "aggregate_duration_deltas_s": {
+      "correct_target_output": -6.6329963679999935,
+      "lost_or_suppressed": 6.63299636799999,
+      "target_absent_with_output": 0.0,
+      "wrong_person_output": 0.0
+    },
+    "classification": "USEFUL_CONTEXT_SPECIFIC_AVAILABILITY_SUPPORT_ON_AVAILABLE_DEVELOPMENT_EVIDENCE",
+    "interpretation": "Trusted-gallery storage is controller-facing neutral on the clean Seq01 sequence but improves correct-target availability on May, Seq03 and especially Seq04 without increasing wrong-person authority on any available development sequence. The mechanism should be retained.",
+    "sequences": {
+      "may": {
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": -0.06638953699999917,
+              "selected": 62.79632971200054,
+              "treatment": 62.72994017500054
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 0.06638953699999917,
+              "selected": 5.035185820999448,
+              "treatment": 5.101575357999447
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.03339424100000343,
+              "treatment": 0.03339424100000343
+            }
+          },
+          "report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Direct source-bag inspection: all 974 /camera/image_raw messages are 640x640 source images; capture date 2026-05-14 predates Issue #53's 2026-07-22 resize-contract closure, and the historical /detections header.frame_id is frame_103 rather than a tim_mars_source_pixels_resize_v1 contract string. Coordinates are therefore exact unresized source pixels.",
+            "coverage": {
+              "interpolated_reference_duration_s": 67.864909774,
+              "reference_coverage_fraction": 1.0,
+              "reference_covered_duration_s": 67.864909774,
+              "reference_gap_duration_s": 0.0
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 62.72994017500054,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 62.72994017500054,
+              "lost_or_suppressed_duration_s": 5.101575357999447,
+              "reference_gap_duration_s": 0.0,
+              "reference_gap_with_output_duration_s": 0.0,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.03339424100000343
+            },
+            "evaluation_window": {
+              "end_s": 67.864909774,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 2.920588290452002,
+              "centre_error_px_max": 18.00021337955425,
+              "centre_error_px_median": 2.2848058020230715,
+              "centre_error_ref_h_duration_weighted_mean": 0.036335224118217865,
+              "centre_error_ref_h_max": 0.21174230537059466,
+              "centre_error_ref_h_median": 0.02861533196805631,
+              "iou_duration_weighted_mean": 0.8346165917258168,
+              "iou_max": 0.9825717872336721,
+              "iou_median": 0.8592585944332618,
+              "iou_min": 0.35145306896921913,
+              "iou_p10": 0.7121030364751081,
+              "iou_p90": 0.9281438335372535,
+              "n_samples": 2149,
+              "scored_duration_s": 62.72994017500055
+            },
+            "physical_reference_path": "docs/data/physical_target_references/dev_may_hard_reentry.json",
+            "physical_reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 67.864909774,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+            "source_bag_path": "bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+            "source_height": 640,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 67.864909774
+          },
+          "report_source_path": "reports/tim_ablation_stage1_positive_memory_20260908/ab07/may/tim_target_memory.json",
+          "report_source_sha256": "1a02b7a769be0cfbb58097301486d2714f7be62d9d073101dc3d00d932f22f55"
+        },
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_may_ab07_20260908",
+          "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 bags/replay/tim_ablation_may_ab07_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --ablation-disable-trusted-gallery-storage --compact-output",
+          "development_ablation_controls": {
+            "disable_adaptive_positive_memory": false,
+            "disable_conservative_final_filter": false,
+            "disable_forced_same_id_challenge": false,
+            "disable_hard_negative_memory": false,
+            "disable_same_id_positive_support_reject": false,
+            "disable_trusted_gallery_storage": true,
+            "prevent_repeated_source_adaptive_update": false,
+            "restore_same_id_general_negative_exemption": false
+          },
+          "generated_semantic_sha256": "cc0e41672dd5605b23e63d46779009da997b2747fb7e38365dbeecedda1dac37",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M docs/TODO_LIST.md",
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.json",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.md"
+            ]
+          },
+          "resolved_runtime_sha256": "7de2a7c3c968cb75463988eb9008fa183bad0e565e9b7158df0b14302b77ce0b",
+          "status_summary": {
+            "frames_gallery_nonempty": 0,
+            "max_gallery_size": 0,
+            "positive_memory_update_reasons": {
+              "protected_anchor_bootstrap": 1,
+              "trusted_locked_adaptive_update": 735
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 782,
+              "none": 41,
+              "protected_anchor": 126
+            },
+            "states": {
+              "LOCKED": 867,
+              "LOST": 35,
+              "REACQUIRED": 12,
+              "UNCERTAIN": 36
+            },
+            "visible_frames": 867
+          }
+        }
+      },
+      "seq01": {
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": 0.0,
+              "selected": 61.200516816,
+              "treatment": 61.200516816
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            }
+          },
+          "report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Bag directory name embeds capture date 2026-06-19, before Issue #53's tim_mars_source_pixels_resize_v1 contract closed on 2026-07-22; a bag captured on this date cannot carry that header. Automatically resolved by tools/bag_annotation_ui/tim_ui_physical_reference.py.resolve_coordinate_convention; see docs/issues/p1-10-improve-bbox-evaluation.md section F for the May hard-reentry sequence's direct header-inspection confirmation of this same rule.",
+            "coverage": {
+              "interpolated_reference_duration_s": 61.200516816,
+              "reference_coverage_fraction": 1.0,
+              "reference_covered_duration_s": 61.200516816,
+              "reference_gap_duration_s": 0.0
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 61.200516816,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 61.200516816,
+              "lost_or_suppressed_duration_s": 0.0,
+              "reference_gap_duration_s": 0.0,
+              "reference_gap_with_output_duration_s": 0.0,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 61.200516816,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 1.9906634253916107,
+              "centre_error_px_max": 8.237263589439875,
+              "centre_error_px_median": 1.779226755307377,
+              "centre_error_ref_h_duration_weighted_mean": 0.025416945260480835,
+              "centre_error_ref_h_max": 0.09034026817153155,
+              "centre_error_ref_h_median": 0.02313627435126025,
+              "iou_duration_weighted_mean": 0.8769405541044651,
+              "iou_max": 0.988201002196618,
+              "iou_median": 0.8809982614820406,
+              "iou_min": 0.6357347889440395,
+              "iou_p10": 0.815491306657853,
+              "iou_p90": 0.929399072327686,
+              "n_samples": 2743,
+              "scored_duration_s": 61.200516816
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq01_clean.json",
+            "physical_reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 61.200516816,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 61.200516816
+          },
+          "report_source_path": "reports/tim_ablation_stage1_positive_memory_20260908/ab07/seq01/tim_target_memory.json",
+          "report_source_sha256": "dadd6b0b1f7c47cc71800e0637baf3cffc7426beb383560690927964f7ed1bae"
+        },
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_seq01_ab07_20260908",
+          "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p025_seq01_physical_v2_bytetrack_fixed_id1_2026_08_29 bags/replay/tim_ablation_seq01_ab07_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b --ablation-disable-trusted-gallery-storage --compact-output",
+          "development_ablation_controls": {
+            "disable_adaptive_positive_memory": false,
+            "disable_conservative_final_filter": false,
+            "disable_forced_same_id_challenge": false,
+            "disable_hard_negative_memory": false,
+            "disable_same_id_positive_support_reject": false,
+            "disable_trusted_gallery_storage": true,
+            "prevent_repeated_source_adaptive_update": false,
+            "restore_same_id_general_negative_exemption": false
+          },
+          "generated_semantic_sha256": "20a6c36a657e50442006c988ca9e80bd9fafd4176bdf7869b1c1239e72fddcce",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M docs/TODO_LIST.md",
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.json",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.md"
+            ]
+          },
+          "resolved_runtime_sha256": "1e4f532a17687dde56911867dd0893cb90e3285eaa2106225466f5888e7d33cc",
+          "status_summary": {
+            "frames_gallery_nonempty": 0,
+            "max_gallery_size": 0,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 1512
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 1507,
+              "none": 7,
+              "protected_anchor": 5
+            },
+            "states": {
+              "LOCKED": 1520
+            },
+            "visible_frames": 1520
+          }
+        }
+      },
+      "seq03": {
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": -2.0013675549999945,
+              "selected": 24.600414281999996,
+              "treatment": 22.599046727
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 2.0013675549999945,
+              "selected": 59.166383501000006,
+              "treatment": 61.167751056
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            }
+          },
+          "report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+            "coverage": {
+              "interpolated_reference_duration_s": 83.766797783,
+              "reference_coverage_fraction": 0.9988022336535682,
+              "reference_covered_duration_s": 83.766797783,
+              "reference_gap_duration_s": 0.1004533710000004
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 22.599046727,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 22.599046727,
+              "lost_or_suppressed_duration_s": 61.167751056,
+              "reference_gap_duration_s": 0.1004533710000004,
+              "reference_gap_with_output_duration_s": 0.1004533710000004,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 83.867251154,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 2.3130935189616704,
+              "centre_error_px_max": 11.731647471280848,
+              "centre_error_px_median": 1.6951222679329263,
+              "centre_error_ref_h_duration_weighted_mean": 0.023913763534179244,
+              "centre_error_ref_h_max": 0.1289192029811082,
+              "centre_error_ref_h_median": 0.017965620944512668,
+              "iou_duration_weighted_mean": 0.8745275293943325,
+              "iou_max": 0.9773237494103876,
+              "iou_median": 0.9026979521079861,
+              "iou_min": 0.5745923910303049,
+              "iou_p10": 0.7313282700359298,
+              "iou_p90": 0.9581216533822283,
+              "n_samples": 947,
+              "scored_duration_s": 22.599046727
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq03_crossing.json",
+            "physical_reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 83.867251154,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 83.867251154
+          },
+          "report_source_path": "reports/tim_ablation_stage1_seq03_smoke_20260908/ab07/tim_target_memory.json",
+          "report_source_sha256": "b0be8e1061fba8f7d21986afebe269ad04ddf7fdfb1e4a4d3a6e0d9c899be43b"
+        },
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_seq03_ab07_20260908",
+          "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq03_ab07_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --ablation-disable-trusted-gallery-storage --compact-output",
+          "development_ablation_controls": {
+            "disable_adaptive_positive_memory": false,
+            "disable_conservative_final_filter": false,
+            "disable_forced_same_id_challenge": false,
+            "disable_hard_negative_memory": false,
+            "disable_same_id_positive_support_reject": false,
+            "disable_trusted_gallery_storage": true,
+            "prevent_repeated_source_adaptive_update": false,
+            "restore_same_id_general_negative_exemption": false
+          },
+          "generated_semantic_sha256": "c9713f1d87044b227b1635f21b0f585d3227d3d4d6856d9ffe1079d3325fe798",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py"
+            ]
+          },
+          "resolved_runtime_sha256": "5dca800037f6cd680ef23a7913a487c733cb1a3384e1a5470e6e775142369955",
+          "status_summary": {
+            "frames_gallery_nonempty": 0,
+            "max_gallery_size": 0,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 492
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 493,
+              "none": 12,
+              "protected_anchor": 1425
+            },
+            "states": {
+              "LOCKED": 498,
+              "LOST": 1420,
+              "REACQUIRED": 1,
+              "UNCERTAIN": 12
+            },
+            "visible_frames": 498
+          }
+        }
+      },
+      "seq04": {
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": -4.565239276,
+              "selected": 48.766241081999965,
+              "treatment": 44.201001805999965
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 4.565239275999996,
+              "selected": 23.733800690000038,
+              "treatment": 28.299039966000034
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            }
+          },
+          "report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+            "coverage": {
+              "interpolated_reference_duration_s": 72.500041772,
+              "reference_coverage_fraction": 0.8381415114261949,
+              "reference_covered_duration_s": 72.500041772,
+              "reference_gap_duration_s": 0.10088379499999434
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 44.201001805999965,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 44.201001805999965,
+              "lost_or_suppressed_duration_s": 28.299039966000034,
+              "reference_gap_duration_s": 0.10088379499999434,
+              "reference_gap_with_output_duration_s": 0.06736738799999387,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 13.900030159000003,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 86.500955726,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 2.992748308986904,
+              "centre_error_px_max": 45.417950946885696,
+              "centre_error_px_median": 2.463354086459354,
+              "centre_error_ref_h_duration_weighted_mean": 0.03669442846041449,
+              "centre_error_ref_h_max": 0.6253332086862963,
+              "centre_error_ref_h_median": 0.028733813463782724,
+              "iou_duration_weighted_mean": 0.8230409791444439,
+              "iou_max": 0.9867691828574611,
+              "iou_median": 0.8396195213132789,
+              "iou_min": 0.09792028329853047,
+              "iou_p10": 0.72481621108204,
+              "iou_p90": 0.9117731751004324,
+              "n_samples": 1926,
+              "scored_duration_s": 44.201001805999965
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq04_occlusion_no_exit.json",
+            "physical_reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 86.500955726,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 86.500955726
+          },
+          "report_source_path": "reports/tim_ablation_stage1_positive_memory_20260908/ab07/seq04/tim_target_memory.json",
+          "report_source_sha256": "350f362cf83a268a6f3838e2d7b0e454d759ac6cba0156c8c9fd4f82e1e436d5"
+        },
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_seq04_ab07_20260908",
+          "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq04_ab07_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --ablation-disable-trusted-gallery-storage --compact-output",
+          "development_ablation_controls": {
+            "disable_adaptive_positive_memory": false,
+            "disable_conservative_final_filter": false,
+            "disable_forced_same_id_challenge": false,
+            "disable_hard_negative_memory": false,
+            "disable_same_id_positive_support_reject": false,
+            "disable_trusted_gallery_storage": true,
+            "prevent_repeated_source_adaptive_update": false,
+            "restore_same_id_general_negative_exemption": false
+          },
+          "generated_semantic_sha256": "328a7111ac928f61e3703f10652ad1a75dbe9b5a36fbfca769a84c0cef54b230",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M docs/TODO_LIST.md",
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.json",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.md"
+            ]
+          },
+          "resolved_runtime_sha256": "38bf3bb9c3d323fcec8715260460c0d35b1614d1cb4df95ac0e826255dc756cb",
+          "status_summary": {
+            "frames_gallery_nonempty": 0,
+            "max_gallery_size": 0,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 683
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 964,
+              "none": 35,
+              "protected_anchor": 1047
+            },
+            "states": {
+              "LOCKED": 1045,
+              "LOST": 909,
+              "REACQUIRED": 27,
+              "UNCERTAIN": 66
+            },
+            "visible_frames": 1045
+          }
+        }
+      }
+    }
+  },
+  "ab08": {
+    "aggregate_duration_deltas_s": {
+      "correct_target_output": -4.231102590999988,
+      "lost_or_suppressed": 4.231102590999988,
+      "target_absent_with_output": 0.0,
+      "wrong_person_output": 0.0
+    },
+    "classification": "USEFUL_CONTEXT_SPECIFIC_AVAILABILITY_SUPPORT_ON_AVAILABLE_DEVELOPMENT_EVIDENCE",
+    "interpretation": "The adaptive positive representation is controller-facing neutral on May and Seq01 but improves correct-target availability on Seq03 and Seq04 without increasing wrong-person authority on any available development sequence. The mechanism should be retained.",
+    "sequences": {
+      "may": {
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": 0.0,
+              "selected": 62.79632971200054,
+              "treatment": 62.79632971200054
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 0.0,
+              "selected": 5.035185820999448,
+              "treatment": 5.035185820999448
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.03339424100000343,
+              "treatment": 0.03339424100000343
+            }
+          },
+          "report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Direct source-bag inspection: all 974 /camera/image_raw messages are 640x640 source images; capture date 2026-05-14 predates Issue #53's 2026-07-22 resize-contract closure, and the historical /detections header.frame_id is frame_103 rather than a tim_mars_source_pixels_resize_v1 contract string. Coordinates are therefore exact unresized source pixels.",
+            "coverage": {
+              "interpolated_reference_duration_s": 67.864909774,
+              "reference_coverage_fraction": 1.0,
+              "reference_covered_duration_s": 67.864909774,
+              "reference_gap_duration_s": 0.0
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 62.79632971200054,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 62.79632971200054,
+              "lost_or_suppressed_duration_s": 5.035185820999448,
+              "reference_gap_duration_s": 0.0,
+              "reference_gap_with_output_duration_s": 0.0,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.03339424100000343
+            },
+            "evaluation_window": {
+              "end_s": 67.864909774,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 2.920169732877401,
+              "centre_error_px_max": 18.00021337955425,
+              "centre_error_px_median": 2.286771546072358,
+              "centre_error_ref_h_duration_weighted_mean": 0.036326466978915416,
+              "centre_error_ref_h_max": 0.21174230537059466,
+              "centre_error_ref_h_median": 0.02861381551245297,
+              "iou_duration_weighted_mean": 0.8346039731342617,
+              "iou_max": 0.9825717872336721,
+              "iou_median": 0.8591935371435222,
+              "iou_min": 0.35145306896921913,
+              "iou_p10": 0.7122807339314601,
+              "iou_p90": 0.9281059239793699,
+              "n_samples": 2152,
+              "scored_duration_s": 62.79632971200055
+            },
+            "physical_reference_path": "docs/data/physical_target_references/dev_may_hard_reentry.json",
+            "physical_reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 67.864909774,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+            "source_bag_path": "bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+            "source_height": 640,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 67.864909774
+          },
+          "report_source_path": "reports/tim_ablation_stage1_positive_memory_20260908/ab08/may/tim_target_memory.json",
+          "report_source_sha256": "a94f21c134347ec6a05fb06ef3ff8088622fcabf894a1fd49bdcc286a0a07d4b"
+        },
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_may_ab08_20260908",
+          "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 bags/replay/tim_ablation_may_ab08_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --ablation-disable-adaptive-positive-memory --compact-output",
+          "development_ablation_controls": {
+            "disable_adaptive_positive_memory": true,
+            "disable_conservative_final_filter": false,
+            "disable_forced_same_id_challenge": false,
+            "disable_hard_negative_memory": false,
+            "disable_same_id_positive_support_reject": false,
+            "disable_trusted_gallery_storage": false,
+            "prevent_repeated_source_adaptive_update": false,
+            "restore_same_id_general_negative_exemption": false
+          },
+          "generated_semantic_sha256": "8048246930650a77be4aa34f2fb873f0de46543e2579765e610dd8d9657e0297",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M docs/TODO_LIST.md",
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.json",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.md"
+            ]
+          },
+          "resolved_runtime_sha256": "7240bd141008d8359912f9e71e32ca45e797704370be9af73ca2261e557c2496",
+          "status_summary": {
+            "frames_gallery_nonempty": 914,
+            "max_gallery_size": 4,
+            "positive_memory_update_reasons": {
+              "protected_anchor_bootstrap": 1,
+              "trusted_locked_adaptive_update": 164
+            },
+            "positive_support_sources": {
+              "none": 41,
+              "protected_anchor": 27,
+              "trusted_gallery": 881
+            },
+            "states": {
+              "LOCKED": 869,
+              "LOST": 39,
+              "REACQUIRED": 7,
+              "UNCERTAIN": 35
+            },
+            "visible_frames": 869
+          }
+        }
+      },
+      "seq01": {
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": 0.0,
+              "selected": 61.200516816,
+              "treatment": 61.200516816
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            }
+          },
+          "report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Bag directory name embeds capture date 2026-06-19, before Issue #53's tim_mars_source_pixels_resize_v1 contract closed on 2026-07-22; a bag captured on this date cannot carry that header. Automatically resolved by tools/bag_annotation_ui/tim_ui_physical_reference.py.resolve_coordinate_convention; see docs/issues/p1-10-improve-bbox-evaluation.md section F for the May hard-reentry sequence's direct header-inspection confirmation of this same rule.",
+            "coverage": {
+              "interpolated_reference_duration_s": 61.200516816,
+              "reference_coverage_fraction": 1.0,
+              "reference_covered_duration_s": 61.200516816,
+              "reference_gap_duration_s": 0.0
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 61.200516816,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 61.200516816,
+              "lost_or_suppressed_duration_s": 0.0,
+              "reference_gap_duration_s": 0.0,
+              "reference_gap_with_output_duration_s": 0.0,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 61.200516816,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 1.9906634253916107,
+              "centre_error_px_max": 8.237263589439875,
+              "centre_error_px_median": 1.779226755307377,
+              "centre_error_ref_h_duration_weighted_mean": 0.025416945260480835,
+              "centre_error_ref_h_max": 0.09034026817153155,
+              "centre_error_ref_h_median": 0.02313627435126025,
+              "iou_duration_weighted_mean": 0.8769405541044651,
+              "iou_max": 0.988201002196618,
+              "iou_median": 0.8809982614820406,
+              "iou_min": 0.6357347889440395,
+              "iou_p10": 0.815491306657853,
+              "iou_p90": 0.929399072327686,
+              "n_samples": 2743,
+              "scored_duration_s": 61.200516816
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq01_clean.json",
+            "physical_reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 61.200516816,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 61.200516816
+          },
+          "report_source_path": "reports/tim_ablation_stage1_positive_memory_20260908/ab08/seq01/tim_target_memory.json",
+          "report_source_sha256": "dadd6b0b1f7c47cc71800e0637baf3cffc7426beb383560690927964f7ed1bae"
+        },
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_seq01_ab08_20260908",
+          "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p025_seq01_physical_v2_bytetrack_fixed_id1_2026_08_29 bags/replay/tim_ablation_seq01_ab08_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b --ablation-disable-adaptive-positive-memory --compact-output",
+          "development_ablation_controls": {
+            "disable_adaptive_positive_memory": true,
+            "disable_conservative_final_filter": false,
+            "disable_forced_same_id_challenge": false,
+            "disable_hard_negative_memory": false,
+            "disable_same_id_positive_support_reject": false,
+            "disable_trusted_gallery_storage": false,
+            "prevent_repeated_source_adaptive_update": false,
+            "restore_same_id_general_negative_exemption": false
+          },
+          "generated_semantic_sha256": "8ce323707dc3a98e7c0d0b6ceb58a75b8a42266117c3e31fb96cc3402a32d8d7",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M docs/TODO_LIST.md",
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.json",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.md"
+            ]
+          },
+          "resolved_runtime_sha256": "1e434a6c8289a2f95c3b280435d5c32926cd3cef6e2b2de4b8e8105e8d0e86e2",
+          "status_summary": {
+            "frames_gallery_nonempty": 1512,
+            "max_gallery_size": 4,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 190
+            },
+            "positive_support_sources": {
+              "none": 7,
+              "protected_anchor": 4,
+              "trusted_gallery": 1508
+            },
+            "states": {
+              "LOCKED": 1520
+            },
+            "visible_frames": 1520
+          }
+        }
+      },
+      "seq03": {
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": -2.0316392769999965,
+              "selected": 24.600414281999996,
+              "treatment": 22.568775005
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 2.0316392769999965,
+              "selected": 59.166383501000006,
+              "treatment": 61.198022778
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            }
+          },
+          "report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+            "coverage": {
+              "interpolated_reference_duration_s": 83.766797783,
+              "reference_coverage_fraction": 0.9988022336535682,
+              "reference_covered_duration_s": 83.766797783,
+              "reference_gap_duration_s": 0.1004533710000004
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 22.568775005,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 22.568775005,
+              "lost_or_suppressed_duration_s": 61.198022778,
+              "reference_gap_duration_s": 0.1004533710000004,
+              "reference_gap_with_output_duration_s": 0.1004533710000004,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 83.867251154,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 2.3315709293598212,
+              "centre_error_px_max": 11.834822298982518,
+              "centre_error_px_median": 1.7017736937619343,
+              "centre_error_ref_h_duration_weighted_mean": 0.024112368685107355,
+              "centre_error_ref_h_max": 0.12948383259280652,
+              "centre_error_ref_h_median": 0.018041746041122617,
+              "iou_duration_weighted_mean": 0.8740727317792502,
+              "iou_max": 0.9773237494103876,
+              "iou_median": 0.9025500845777488,
+              "iou_min": 0.5745923910303049,
+              "iou_p10": 0.7291869417976022,
+              "iou_p90": 0.9581241903601228,
+              "n_samples": 946,
+              "scored_duration_s": 22.568775005
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq03_crossing.json",
+            "physical_reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 83.867251154,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 83.867251154
+          },
+          "report_source_path": "reports/tim_ablation_stage1_seq03_smoke_20260908/ab08/tim_target_memory.json",
+          "report_source_sha256": "6e80a0a4045ec9b3c7ea6524307926aa7cd01962899c65510854df8528679759"
+        },
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_seq03_ab08_20260908",
+          "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq03_ab08_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --ablation-disable-adaptive-positive-memory --compact-output",
+          "development_ablation_controls": {
+            "disable_adaptive_positive_memory": true,
+            "disable_conservative_final_filter": false,
+            "disable_forced_same_id_challenge": false,
+            "disable_hard_negative_memory": false,
+            "disable_same_id_positive_support_reject": false,
+            "disable_trusted_gallery_storage": false,
+            "prevent_repeated_source_adaptive_update": false,
+            "restore_same_id_general_negative_exemption": false
+          },
+          "generated_semantic_sha256": "54d6b7c22e03713c71d7ca53a8532ccdc1e86503c4bdb09cd85231987301fe51",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py"
+            ]
+          },
+          "resolved_runtime_sha256": "fc5d259f3555ea33aafeadd86366c6a17ce062c112510f17c3c1aadc89730e0f",
+          "status_summary": {
+            "frames_gallery_nonempty": 1923,
+            "max_gallery_size": 4,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 47
+            },
+            "positive_support_sources": {
+              "none": 12,
+              "protected_anchor": 35,
+              "trusted_gallery": 1883
+            },
+            "states": {
+              "LOCKED": 497,
+              "LOST": 1421,
+              "REACQUIRED": 1,
+              "UNCERTAIN": 12
+            },
+            "visible_frames": 497
+          }
+        }
+      },
+      "seq04": {
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": -2.199463313999992,
+              "selected": 48.766241081999965,
+              "treatment": 46.56677776799997
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 2.199463313999992,
+              "selected": 23.733800690000038,
+              "treatment": 25.93326400400003
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            }
+          },
+          "report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+            "coverage": {
+              "interpolated_reference_duration_s": 72.500041772,
+              "reference_coverage_fraction": 0.8381415114261949,
+              "reference_covered_duration_s": 72.500041772,
+              "reference_gap_duration_s": 0.10088379499999434
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 46.56677776799997,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 46.56677776799997,
+              "lost_or_suppressed_duration_s": 25.93326400400003,
+              "reference_gap_duration_s": 0.10088379499999434,
+              "reference_gap_with_output_duration_s": 0.06736738799999387,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 13.900030159000003,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 86.500955726,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 3.0369252927224744,
+              "centre_error_px_max": 45.417950946885696,
+              "centre_error_px_median": 2.523929029243721,
+              "centre_error_ref_h_duration_weighted_mean": 0.037269681605455726,
+              "centre_error_ref_h_max": 0.6253332086862963,
+              "centre_error_ref_h_median": 0.02950453148158581,
+              "iou_duration_weighted_mean": 0.8238017541558986,
+              "iou_max": 0.9867691828574611,
+              "iou_median": 0.8396118613445656,
+              "iou_min": 0.09792028329853047,
+              "iou_p10": 0.7258925416796844,
+              "iou_p90": 0.9132249887898954,
+              "n_samples": 2024,
+              "scored_duration_s": 46.56677776799997
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq04_occlusion_no_exit.json",
+            "physical_reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 86.500955726,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 86.500955726
+          },
+          "report_source_path": "reports/tim_ablation_stage1_positive_memory_20260908/ab08/seq04/tim_target_memory.json",
+          "report_source_sha256": "12d654f857b24ca6d8e9aa2184a4ea049df9b35807ea562f78f994e6543abd8c"
+        },
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_seq04_ab08_20260908",
+          "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq04_ab08_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --ablation-disable-adaptive-positive-memory --compact-output",
+          "development_ablation_controls": {
+            "disable_adaptive_positive_memory": true,
+            "disable_conservative_final_filter": false,
+            "disable_forced_same_id_challenge": false,
+            "disable_hard_negative_memory": false,
+            "disable_same_id_positive_support_reject": false,
+            "disable_trusted_gallery_storage": false,
+            "prevent_repeated_source_adaptive_update": false,
+            "restore_same_id_general_negative_exemption": false
+          },
+          "generated_semantic_sha256": "500b0e9e9a5677f114f88d7294efa5cf2d9c9001807b292ab55f36ec5a31d8da",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M docs/TODO_LIST.md",
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.json",
+              "?? docs/results/selected_target_tracking/tim_ablation_stage1_positive_memory_20260908.md"
+            ]
+          },
+          "resolved_runtime_sha256": "8f9ac718196b62dbf711f9bef1794df0ac51a53155ba400e63a27f8ad9b42bd3",
+          "status_summary": {
+            "frames_gallery_nonempty": 2042,
+            "max_gallery_size": 4,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 316
+            },
+            "positive_support_sources": {
+              "none": 22,
+              "protected_anchor": 47,
+              "trusted_gallery": 1977
+            },
+            "states": {
+              "LOCKED": 1097,
+              "LOST": 873,
+              "REACQUIRED": 12,
+              "UNCERTAIN": 65
+            },
+            "visible_frames": 1097
+          }
+        }
+      }
+    }
+  },
+  "ab16": {
+    "aggregate_adaptive_update_comparison": {
+      "reduction_count": 2383,
+      "reduction_pct": 64.84353741496598,
+      "selected": 3675,
+      "treatment": 1292
+    },
+    "classification": "CONTROLLER_FACING_REDUNDANT_ON_AVAILABLE_DEVELOPMENT_EVIDENCE__SIMPLIFICATION_CANDIDATE",
+    "interpretation": "Preventing repeated adaptive-EMA reinforcement from the same source image changes internal positive-memory semantics but leaves controller-facing duration buckets and state counts unchanged on May, Seq01, Seq03 and Seq04. This does not reduce MARS embedding or appearance-inference workload.",
+    "sequences": {
+      "may": {
+        "adaptive_update_comparison": {
+          "selected": 800,
+          "treatment": 219
+        },
+        "controller_facing_neutral": true,
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": 0.0,
+              "selected": 62.79632971200054,
+              "treatment": 62.79632971200054
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 0.0,
+              "selected": 5.035185820999448,
+              "treatment": 5.035185820999448
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.03339424100000343,
+              "treatment": 0.03339424100000343
+            }
+          },
+          "selected_report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Direct source-bag inspection: all 974 /camera/image_raw messages are 640x640 source images; capture date 2026-05-14 predates Issue #53's 2026-07-22 resize-contract closure, and the historical /detections header.frame_id is frame_103 rather than a tim_mars_source_pixels_resize_v1 contract string. Coordinates are therefore exact unresized source pixels.",
+            "coverage": {
+              "interpolated_reference_duration_s": 67.864909774,
+              "reference_coverage_fraction": 1.0,
+              "reference_covered_duration_s": 67.864909774,
+              "reference_gap_duration_s": 0.0
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 62.79632971200054,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 62.79632971200054,
+              "lost_or_suppressed_duration_s": 5.035185820999448,
+              "reference_gap_duration_s": 0.0,
+              "reference_gap_with_output_duration_s": 0.0,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.03339424100000343
+            },
+            "evaluation_window": {
+              "end_s": 67.864909774,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 2.920169732877401,
+              "centre_error_px_max": 18.00021337955425,
+              "centre_error_px_median": 2.286771546072358,
+              "centre_error_ref_h_duration_weighted_mean": 0.036326466978915416,
+              "centre_error_ref_h_max": 0.21174230537059466,
+              "centre_error_ref_h_median": 0.02861381551245297,
+              "iou_duration_weighted_mean": 0.8346039731342617,
+              "iou_max": 0.9825717872336721,
+              "iou_median": 0.8591935371435222,
+              "iou_min": 0.35145306896921913,
+              "iou_p10": 0.7122807339314601,
+              "iou_p90": 0.9281059239793699,
+              "n_samples": 2152,
+              "scored_duration_s": 62.79632971200055
+            },
+            "physical_reference_path": "docs/data/physical_target_references/dev_may_hard_reentry.json",
+            "physical_reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 67.864909774,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+            "source_bag_path": "bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+            "source_height": 640,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 67.864909774
+          },
+          "treatment_report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Direct source-bag inspection: all 974 /camera/image_raw messages are 640x640 source images; capture date 2026-05-14 predates Issue #53's 2026-07-22 resize-contract closure, and the historical /detections header.frame_id is frame_103 rather than a tim_mars_source_pixels_resize_v1 contract string. Coordinates are therefore exact unresized source pixels.",
+            "coverage": {
+              "interpolated_reference_duration_s": 67.864909774,
+              "reference_coverage_fraction": 1.0,
+              "reference_covered_duration_s": 67.864909774,
+              "reference_gap_duration_s": 0.0
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 62.79632971200054,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 62.79632971200054,
+              "lost_or_suppressed_duration_s": 5.035185820999448,
+              "reference_gap_duration_s": 0.0,
+              "reference_gap_with_output_duration_s": 0.0,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.03339424100000343
+            },
+            "evaluation_window": {
+              "end_s": 67.864909774,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 2.920169732877401,
+              "centre_error_px_max": 18.00021337955425,
+              "centre_error_px_median": 2.286771546072358,
+              "centre_error_ref_h_duration_weighted_mean": 0.036326466978915416,
+              "centre_error_ref_h_max": 0.21174230537059466,
+              "centre_error_ref_h_median": 0.02861381551245297,
+              "iou_duration_weighted_mean": 0.8346039731342617,
+              "iou_max": 0.9825717872336721,
+              "iou_median": 0.8591935371435222,
+              "iou_min": 0.35145306896921913,
+              "iou_p10": 0.7122807339314601,
+              "iou_p90": 0.9281059239793699,
+              "n_samples": 2152,
+              "scored_duration_s": 62.79632971200055
+            },
+            "physical_reference_path": "docs/data/physical_target_references/dev_may_hard_reentry.json",
+            "physical_reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 67.864909774,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+            "source_bag_path": "bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+            "source_height": 640,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 67.864909774
+          },
+          "treatment_report_source_path": "reports/tim_ablation_stage1_positive_memory_20260908/ab16/may/tim_target_memory.json",
+          "treatment_report_source_sha256": "a94f21c134347ec6a05fb06ef3ff8088622fcabf894a1fd49bdcc286a0a07d4b"
+        },
+        "selected": {
+          "bag": "bags/replay/tim_resilience_may_available_image_challenge_r1_20260907",
+          "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/reports/tim_resilience_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 /home/francisco/Desktop/Thesis-Code/bags/replay/tim_resilience_may_available_image_challenge_r1_20260907 --config /home/francisco/Desktop/Thesis-Code/reports/tim_resilience_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --compact-output",
+          "development_ablation_controls": {
+            "interpretation": "Replay predates explicit development-ablation control provenance. No AB16 control existed in that runtime.",
+            "schema_presence": "absent_legacy_runtime_schema",
+            "values": null
+          },
+          "generated_semantic_sha256": "252829b914efdb81876a41bda5494985db4ddcf0f07d8a9de267c91415a13cd9",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "afa3b4186fdccda3880ef7e7e2c097a325bc6ba2",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": []
+          },
+          "resolved_runtime_sha256": "5ea485c9586682cc227ee743c4deaf1fcad881d24f4767e587e9fb3dd0ac4184",
+          "status_summary": {
+            "messages": 950,
+            "positive_memory_update_reasons": {
+              "protected_anchor_bootstrap": 1,
+              "trusted_locked_adaptive_update": 800
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 166,
+              "none": 41,
+              "protected_anchor": 24,
+              "trusted_gallery": 718
+            },
+            "states": {
+              "LOCKED": 869,
+              "LOST": 39,
+              "REACQUIRED": 7,
+              "UNCERTAIN": 35
+            },
+            "trusted_locked_adaptive_updates": 800,
+            "visible_frames": 869
+          }
+        },
+        "state_counts_equal": true,
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_may_ab16_20260908",
+          "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 bags/replay/tim_ablation_may_ab16_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --ablation-prevent-repeated-source-adaptive-update --compact-output",
+          "development_ablation_controls": {
+            "schema_presence": "explicit",
+            "values": {
+              "disable_adaptive_positive_memory": false,
+              "disable_conservative_final_filter": false,
+              "disable_forced_same_id_challenge": false,
+              "disable_hard_negative_memory": false,
+              "disable_same_id_positive_support_reject": false,
+              "disable_trusted_gallery_storage": false,
+              "prevent_repeated_source_adaptive_update": true,
+              "restore_same_id_general_negative_exemption": false
+            }
+          },
+          "generated_semantic_sha256": "6ff3b513396acca9126f152a23c3e17ed744e68bd2b747e4bb1b48279105a85e",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M docs/TODO_LIST.md",
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py"
+            ]
+          },
+          "resolved_runtime_sha256": "5fe8f8f894a8f976844012dd57986ac3ccb1928c4825f83b66aa01d9867eed5c",
+          "status_summary": {
+            "messages": 950,
+            "positive_memory_update_reasons": {
+              "protected_anchor_bootstrap": 1,
+              "trusted_locked_adaptive_update": 219
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 119,
+              "none": 41,
+              "protected_anchor": 21,
+              "trusted_gallery": 768
+            },
+            "states": {
+              "LOCKED": 869,
+              "LOST": 39,
+              "REACQUIRED": 7,
+              "UNCERTAIN": 35
+            },
+            "trusted_locked_adaptive_updates": 219,
+            "visible_frames": 869
+          }
+        }
+      },
+      "seq01": {
+        "adaptive_update_comparison": {
+          "selected": 1512,
+          "treatment": 231
+        },
+        "controller_facing_neutral": true,
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": 0.0,
+              "selected": 61.200516816,
+              "treatment": 61.200516816
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            }
+          },
+          "selected_report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Bag directory name embeds capture date 2026-06-19, before Issue #53's tim_mars_source_pixels_resize_v1 contract closed on 2026-07-22; a bag captured on this date cannot carry that header. Automatically resolved by tools/bag_annotation_ui/tim_ui_physical_reference.py.resolve_coordinate_convention; see docs/issues/p1-10-improve-bbox-evaluation.md section F for the May hard-reentry sequence's direct header-inspection confirmation of this same rule.",
+            "coverage": {
+              "interpolated_reference_duration_s": 61.200516816,
+              "reference_coverage_fraction": 1.0,
+              "reference_covered_duration_s": 61.200516816,
+              "reference_gap_duration_s": 0.0
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 61.200516816,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 61.200516816,
+              "lost_or_suppressed_duration_s": 0.0,
+              "reference_gap_duration_s": 0.0,
+              "reference_gap_with_output_duration_s": 0.0,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 61.200516816,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 1.9906634253916107,
+              "centre_error_px_max": 8.237263589439875,
+              "centre_error_px_median": 1.779226755307377,
+              "centre_error_ref_h_duration_weighted_mean": 0.025416945260480835,
+              "centre_error_ref_h_max": 0.09034026817153155,
+              "centre_error_ref_h_median": 0.02313627435126025,
+              "iou_duration_weighted_mean": 0.8769405541044651,
+              "iou_max": 0.988201002196618,
+              "iou_median": 0.8809982614820406,
+              "iou_min": 0.6357347889440395,
+              "iou_p10": 0.815491306657853,
+              "iou_p90": 0.929399072327686,
+              "n_samples": 2743,
+              "scored_duration_s": 61.200516816
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq01_clean.json",
+            "physical_reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 61.200516816,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 61.200516816
+          },
+          "treatment_report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Bag directory name embeds capture date 2026-06-19, before Issue #53's tim_mars_source_pixels_resize_v1 contract closed on 2026-07-22; a bag captured on this date cannot carry that header. Automatically resolved by tools/bag_annotation_ui/tim_ui_physical_reference.py.resolve_coordinate_convention; see docs/issues/p1-10-improve-bbox-evaluation.md section F for the May hard-reentry sequence's direct header-inspection confirmation of this same rule.",
+            "coverage": {
+              "interpolated_reference_duration_s": 61.200516816,
+              "reference_coverage_fraction": 1.0,
+              "reference_covered_duration_s": 61.200516816,
+              "reference_gap_duration_s": 0.0
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 61.200516816,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 61.200516816,
+              "lost_or_suppressed_duration_s": 0.0,
+              "reference_gap_duration_s": 0.0,
+              "reference_gap_with_output_duration_s": 0.0,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 61.200516816,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 1.9906634253916107,
+              "centre_error_px_max": 8.237263589439875,
+              "centre_error_px_median": 1.779226755307377,
+              "centre_error_ref_h_duration_weighted_mean": 0.025416945260480835,
+              "centre_error_ref_h_max": 0.09034026817153155,
+              "centre_error_ref_h_median": 0.02313627435126025,
+              "iou_duration_weighted_mean": 0.8769405541044651,
+              "iou_max": 0.988201002196618,
+              "iou_median": 0.8809982614820406,
+              "iou_min": 0.6357347889440395,
+              "iou_p10": 0.815491306657853,
+              "iou_p90": 0.929399072327686,
+              "n_samples": 2743,
+              "scored_duration_s": 61.200516816
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq01_clean.json",
+            "physical_reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 61.200516816,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 61.200516816
+          },
+          "treatment_report_source_path": "reports/tim_ablation_stage1_positive_memory_20260908/ab16/seq01/tim_target_memory.json",
+          "treatment_report_source_sha256": "dadd6b0b1f7c47cc71800e0637baf3cffc7426beb383560690927964f7ed1bae"
+        },
+        "selected": {
+          "bag": "bags/replay/tim_resilience_seq01_available_image_challenge_r1_20260907",
+          "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/reports/tim_resilience_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p025_seq01_physical_v2_bytetrack_fixed_id1_2026_08_29 /home/francisco/Desktop/Thesis-Code/bags/replay/tim_resilience_seq01_available_image_challenge_r1_20260907 --config /home/francisco/Desktop/Thesis-Code/reports/tim_resilience_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b --compact-output",
+          "development_ablation_controls": {
+            "interpretation": "Replay predates explicit development-ablation control provenance. No AB16 control existed in that runtime.",
+            "schema_presence": "absent_legacy_runtime_schema",
+            "values": null
+          },
+          "generated_semantic_sha256": "97b1f3ca36a75d4fe2f679c250fa8f53675b536001cf168572681f53d075e4f5",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "afa3b4186fdccda3880ef7e7e2c097a325bc6ba2",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": []
+          },
+          "resolved_runtime_sha256": "b2ffeb2a1e8b2b0f42433b70106a0596e8e80ed65ac7372c8973b9058a52f9cb",
+          "status_summary": {
+            "messages": 1520,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 1512
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 380,
+              "none": 7,
+              "protected_anchor": 4,
+              "trusted_gallery": 1128
+            },
+            "states": {
+              "LOCKED": 1520
+            },
+            "trusted_locked_adaptive_updates": 1512,
+            "visible_frames": 1520
+          }
+        },
+        "state_counts_equal": true,
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_seq01_ab16_20260908",
+          "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p025_seq01_physical_v2_bytetrack_fixed_id1_2026_08_29 bags/replay/tim_ablation_seq01_ab16_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b --ablation-prevent-repeated-source-adaptive-update --compact-output",
+          "development_ablation_controls": {
+            "schema_presence": "explicit",
+            "values": {
+              "disable_adaptive_positive_memory": false,
+              "disable_conservative_final_filter": false,
+              "disable_forced_same_id_challenge": false,
+              "disable_hard_negative_memory": false,
+              "disable_same_id_positive_support_reject": false,
+              "disable_trusted_gallery_storage": false,
+              "prevent_repeated_source_adaptive_update": true,
+              "restore_same_id_general_negative_exemption": false
+            }
+          },
+          "generated_semantic_sha256": "fda6a763ceb1f6697de35c139ba85493e9bd0c129ad5af5ed7e6761fa4d706c8",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M docs/TODO_LIST.md",
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py"
+            ]
+          },
+          "resolved_runtime_sha256": "c9d40304b4a7894de2088dcd8d51a50227090b16b619eb614421130d39e76215",
+          "status_summary": {
+            "messages": 1520,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 231
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 257,
+              "none": 7,
+              "protected_anchor": 1,
+              "trusted_gallery": 1254
+            },
+            "states": {
+              "LOCKED": 1520
+            },
+            "trusted_locked_adaptive_updates": 231,
+            "visible_frames": 1520
+          }
+        }
+      },
+      "seq03": {
+        "adaptive_update_comparison": {
+          "selected": 524,
+          "treatment": 124
+        },
+        "controller_facing_neutral": true,
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": 0.0,
+              "selected": 24.600414281999996,
+              "treatment": 24.600414281999996
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 0.0,
+              "selected": 59.166383501000006,
+              "treatment": 59.166383501000006
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            }
+          },
+          "selected_report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+            "coverage": {
+              "interpolated_reference_duration_s": 83.766797783,
+              "reference_coverage_fraction": 0.9988022336535682,
+              "reference_covered_duration_s": 83.766797783,
+              "reference_gap_duration_s": 0.1004533710000004
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 24.600414281999996,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 24.600414281999996,
+              "lost_or_suppressed_duration_s": 59.166383501000006,
+              "reference_gap_duration_s": 0.1004533710000004,
+              "reference_gap_with_output_duration_s": 0.1004533710000004,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 83.867251154,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 2.334025784377257,
+              "centre_error_px_max": 11.834822298982518,
+              "centre_error_px_median": 1.7882559799124966,
+              "centre_error_ref_h_duration_weighted_mean": 0.02445829660656926,
+              "centre_error_ref_h_max": 0.12948383259280652,
+              "centre_error_ref_h_median": 0.01867709763246095,
+              "iou_duration_weighted_mean": 0.8716335060407215,
+              "iou_max": 0.9773237494103876,
+              "iou_median": 0.8990045503772879,
+              "iou_min": 0.5745923910303049,
+              "iou_p10": 0.732601482482869,
+              "iou_p90": 0.9559219205573184,
+              "n_samples": 1032,
+              "scored_duration_s": 24.600414281999996
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq03_crossing.json",
+            "physical_reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 83.867251154,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 83.867251154
+          },
+          "treatment_report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+            "coverage": {
+              "interpolated_reference_duration_s": 83.766797783,
+              "reference_coverage_fraction": 0.9988022336535682,
+              "reference_covered_duration_s": 83.766797783,
+              "reference_gap_duration_s": 0.1004533710000004
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 24.600414281999996,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 24.600414281999996,
+              "lost_or_suppressed_duration_s": 59.166383501000006,
+              "reference_gap_duration_s": 0.1004533710000004,
+              "reference_gap_with_output_duration_s": 0.1004533710000004,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 0.0,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 83.867251154,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 2.334025784377257,
+              "centre_error_px_max": 11.834822298982518,
+              "centre_error_px_median": 1.7882559799124966,
+              "centre_error_ref_h_duration_weighted_mean": 0.02445829660656926,
+              "centre_error_ref_h_max": 0.12948383259280652,
+              "centre_error_ref_h_median": 0.01867709763246095,
+              "iou_duration_weighted_mean": 0.8716335060407215,
+              "iou_max": 0.9773237494103876,
+              "iou_median": 0.8990045503772879,
+              "iou_min": 0.5745923910303049,
+              "iou_p10": 0.732601482482869,
+              "iou_p90": 0.9559219205573184,
+              "n_samples": 1032,
+              "scored_duration_s": 24.600414281999996
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq03_crossing.json",
+            "physical_reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 83.867251154,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 83.867251154
+          },
+          "treatment_report_source_path": "reports/tim_ablation_stage1_seq03_smoke_20260908/ab16/tim_target_memory.json",
+          "treatment_report_source_sha256": "d9f0c6b541162fd53e98fa713ff7d51b4164293c0f8ad6015f31bbf2cf29d95c"
+        },
+        "selected": {
+          "bag": "bags/replay/tim_resilience_seq03_available_image_challenge_r1_20260907",
+          "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/reports/tim_resilience_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack /home/francisco/Desktop/Thesis-Code/bags/replay/tim_resilience_seq03_available_image_challenge_r1_20260907 --config /home/francisco/Desktop/Thesis-Code/reports/tim_resilience_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --compact-output",
+          "development_ablation_controls": {
+            "interpretation": "Replay predates explicit development-ablation control provenance. No AB16 control existed in that runtime.",
+            "schema_presence": "absent_legacy_runtime_schema",
+            "values": null
+          },
+          "generated_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "afa3b4186fdccda3880ef7e7e2c097a325bc6ba2",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": []
+          },
+          "resolved_runtime_sha256": "4778b62255fbeed69208c0d60ed2e0f7c70617b65bf371f275021780edef8fa1",
+          "status_summary": {
+            "messages": 1931,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 524
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 223,
+              "none": 12,
+              "protected_anchor": 3,
+              "trusted_gallery": 1692
+            },
+            "states": {
+              "LOCKED": 543,
+              "LOST": 1374,
+              "REACQUIRED": 2,
+              "UNCERTAIN": 12
+            },
+            "trusted_locked_adaptive_updates": 524,
+            "visible_frames": 543
+          }
+        },
+        "state_counts_equal": true,
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_seq03_ab16_20260908",
+          "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq03_ab16_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --ablation-prevent-repeated-source-adaptive-update --compact-output",
+          "development_ablation_controls": {
+            "schema_presence": "explicit",
+            "values": {
+              "disable_adaptive_positive_memory": false,
+              "disable_conservative_final_filter": false,
+              "disable_forced_same_id_challenge": false,
+              "disable_hard_negative_memory": false,
+              "disable_same_id_positive_support_reject": false,
+              "disable_trusted_gallery_storage": false,
+              "prevent_repeated_source_adaptive_update": true,
+              "restore_same_id_general_negative_exemption": false
+            }
+          },
+          "generated_semantic_sha256": "8b32510cf8b7e36c03960e6b3fbfc3df9739629850281bd5c594811c2001e386",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py"
+            ]
+          },
+          "resolved_runtime_sha256": "53a12f49abb55ccd03797b386977f329722895b50dcc4f6fd5d3af5936638dbb",
+          "status_summary": {
+            "messages": 1931,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 124
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 109,
+              "none": 12,
+              "protected_anchor": 2,
+              "trusted_gallery": 1807
+            },
+            "states": {
+              "LOCKED": 543,
+              "LOST": 1374,
+              "REACQUIRED": 2,
+              "UNCERTAIN": 12
+            },
+            "trusted_locked_adaptive_updates": 124,
+            "visible_frames": 543
+          }
+        }
+      },
+      "seq04": {
+        "adaptive_update_comparison": {
+          "selected": 839,
+          "treatment": 718
+        },
+        "controller_facing_neutral": true,
+        "physical_v2": {
+          "duration_comparison": {
+            "correct_target_output_duration_s": {
+              "delta": 0.0,
+              "selected": 48.766241081999965,
+              "treatment": 48.766241081999965
+            },
+            "lost_or_suppressed_duration_s": {
+              "delta": 0.0,
+              "selected": 23.733800690000038,
+              "treatment": 23.733800690000038
+            },
+            "target_absent_with_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            },
+            "wrong_person_output_duration_s": {
+              "delta": 0.0,
+              "selected": 0.0,
+              "treatment": 0.0
+            }
+          },
+          "selected_report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+            "coverage": {
+              "interpolated_reference_duration_s": 72.500041772,
+              "reference_coverage_fraction": 0.8381415114261949,
+              "reference_covered_duration_s": 72.500041772,
+              "reference_gap_duration_s": 0.10088379499999434
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 48.766241081999965,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 48.766241081999965,
+              "lost_or_suppressed_duration_s": 23.733800690000038,
+              "reference_gap_duration_s": 0.10088379499999434,
+              "reference_gap_with_output_duration_s": 0.06736738799999387,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 13.900030159000003,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 86.500955726,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 3.0974412245869645,
+              "centre_error_px_max": 45.417950946885696,
+              "centre_error_px_median": 2.5685106958096418,
+              "centre_error_ref_h_duration_weighted_mean": 0.03777893154640771,
+              "centre_error_ref_h_max": 0.6253332086862963,
+              "centre_error_ref_h_median": 0.029832523209351557,
+              "iou_duration_weighted_mean": 0.821574605688344,
+              "iou_max": 0.9867691828574611,
+              "iou_median": 0.837533083229907,
+              "iou_min": 0.09792028329853047,
+              "iou_p10": 0.7221324789154017,
+              "iou_p90": 0.9129834982074828,
+              "n_samples": 2119,
+              "scored_duration_s": 48.766241081999965
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq04_occlusion_no_exit.json",
+            "physical_reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 86.500955726,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 86.500955726
+          },
+          "treatment_report": {
+            "contract_version": "tim_physical_target_bbox_v2",
+            "coordinate_convention": "source_pixels_historical_pre_p53",
+            "coordinate_convention_evidence": "Frozen Issue #25 plan; direct curated-bag inspection; capture predates Issue #53 coordinate-contract closure.",
+            "coverage": {
+              "interpolated_reference_duration_s": 72.500041772,
+              "reference_coverage_fraction": 0.8381415114261949,
+              "reference_covered_duration_s": 72.500041772,
+              "reference_gap_duration_s": 0.10088379499999434
+            },
+            "duration_buckets": {
+              "correct_target_output_duration_s": 48.766241081999965,
+              "identity_unresolved_duration_s": 0.0,
+              "localisation_scored_duration_s": 48.766241081999965,
+              "lost_or_suppressed_duration_s": 23.733800690000038,
+              "reference_gap_duration_s": 0.10088379499999434,
+              "reference_gap_with_output_duration_s": 0.06736738799999387,
+              "reference_unavailable_duration_s": 0.0,
+              "target_absent_duration_s": 13.900030159000003,
+              "target_absent_with_output_duration_s": 0.0,
+              "wrong_person_output_duration_s": 0.0
+            },
+            "evaluation_window": {
+              "end_s": 86.500955726,
+              "start_s": 0.0
+            },
+            "evaluator": "physical_target_bbox_evaluation_v2",
+            "evaluator_mode": "physical_reference_v2",
+            "localisation": {
+              "centre_error_px_duration_weighted_mean": 3.0974412245869645,
+              "centre_error_px_max": 45.417950946885696,
+              "centre_error_px_median": 2.5685106958096418,
+              "centre_error_ref_h_duration_weighted_mean": 0.03777893154640771,
+              "centre_error_ref_h_max": 0.6253332086862963,
+              "centre_error_ref_h_median": 0.029832523209351557,
+              "iou_duration_weighted_mean": 0.821574605688344,
+              "iou_max": 0.9867691828574611,
+              "iou_median": 0.837533083229907,
+              "iou_min": 0.09792028329853047,
+              "iou_p10": 0.7221324789154017,
+              "iou_p90": 0.9129834982074828,
+              "n_samples": 2119,
+              "scored_duration_s": 48.766241081999965
+            },
+            "physical_reference_path": "docs/data/physical_target_references/seq04_occlusion_no_exit.json",
+            "physical_reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+            "reconciliation": {
+              "ok": true,
+              "primary_bucket_total_s": 86.500955726,
+              "residual_s": 0.0
+            },
+            "repo_commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "repo_dirty": true,
+            "schema_version": 2,
+            "selected_physical_target_label": "black_shirt_person",
+            "source_bag_name": "2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+            "source_bag_path": "bags/source/curated/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+            "source_height": 480,
+            "source_image_topic": "/camera/image_raw",
+            "source_width": 640,
+            "stream": "tim_target_memory",
+            "total_evaluated_duration_s": 86.500955726
+          },
+          "treatment_report_source_path": "reports/tim_ablation_stage1_positive_memory_20260908/ab16/seq04/tim_target_memory.json",
+          "treatment_report_source_sha256": "d76ec2dc798a8496935089795629078426f4e33f90a8df6264ae8d736c35ee3d"
+        },
+        "selected": {
+          "bag": "bags/replay/tim_resilience_seq04_available_image_challenge_r1_20260907",
+          "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/reports/tim_resilience_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack /home/francisco/Desktop/Thesis-Code/bags/replay/tim_resilience_seq04_available_image_challenge_r1_20260907 --config /home/francisco/Desktop/Thesis-Code/reports/tim_resilience_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --compact-output",
+          "development_ablation_controls": {
+            "interpretation": "Replay predates explicit development-ablation control provenance. No AB16 control existed in that runtime.",
+            "schema_presence": "absent_legacy_runtime_schema",
+            "values": null
+          },
+          "generated_semantic_sha256": "ff818a434e52a4c5f6733846434cc455f6501182ac4632a2f4da65cc68e6d980",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "afa3b4186fdccda3880ef7e7e2c097a325bc6ba2",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": []
+          },
+          "resolved_runtime_sha256": "6dd20720887c54004f1b684255ed20816a3defaf777cbcc993c0560516782a23",
+          "status_summary": {
+            "messages": 2047,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 839
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 374,
+              "none": 34,
+              "protected_anchor": 17,
+              "trusted_gallery": 1621
+            },
+            "states": {
+              "LOCKED": 1149,
+              "LOST": 828,
+              "REACQUIRED": 11,
+              "UNCERTAIN": 59
+            },
+            "trusted_locked_adaptive_updates": 839,
+            "visible_frames": 1149
+          }
+        },
+        "state_counts_equal": true,
+        "treatment": {
+          "bag": "bags/replay/tim_ablation_seq04_ab16_20260908",
+          "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+          "canonical_config": {
+            "copy": "tim_mars_canonical_config.yaml",
+            "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+            "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+          },
+          "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq04_ab16_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --ablation-prevent-repeated-source-adaptive-update --compact-output",
+          "development_ablation_controls": {
+            "schema_presence": "explicit",
+            "values": {
+              "disable_adaptive_positive_memory": false,
+              "disable_conservative_final_filter": false,
+              "disable_forced_same_id_challenge": false,
+              "disable_hard_negative_memory": false,
+              "disable_same_id_positive_support_reject": false,
+              "disable_trusted_gallery_storage": false,
+              "prevent_repeated_source_adaptive_update": true,
+              "restore_same_id_general_negative_exemption": false
+            }
+          },
+          "generated_semantic_sha256": "b275e0533224dc8853c95a04e1cb22a49fcb2766ab43eae8e12286c69b9c7a32",
+          "model": {
+            "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+            "size_bytes": 11244410,
+            "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+          },
+          "repository": {
+            "branch": "tim-mars-same-id-hijack-resilience-20260907",
+            "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+            "root": "/home/francisco/Desktop/Thesis-Code",
+            "status_short": [
+              " M docs/TODO_LIST.md",
+              " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+              " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+              " M tools/experiments/run_deterministic_tim_replay.py",
+              " M tools/tests/test_run_deterministic_tim_replay.py"
+            ]
+          },
+          "resolved_runtime_sha256": "fbabc09b26489522eb5d66b18342f718e904f62f8d626bffd813ec322ce1e582",
+          "status_summary": {
+            "messages": 2047,
+            "positive_memory_update_reasons": {
+              "operator_anchor_initialised": 1,
+              "trusted_locked_adaptive_update": 718
+            },
+            "positive_support_sources": {
+              "adaptive_prototype": 367,
+              "none": 34,
+              "protected_anchor": 17,
+              "trusted_gallery": 1628
+            },
+            "states": {
+              "LOCKED": 1149,
+              "LOST": 828,
+              "REACQUIRED": 11,
+              "UNCERTAIN": 59
+            },
+            "trusted_locked_adaptive_updates": 718,
+            "visible_frames": 1149
+          }
+        }
+      }
+    }
+  },
+  "created_at_utc": "2026-09-08T09:40:22.603911+00:00",
+  "default_off_neutrality": {
+    "bag": "bags/replay/tim_ablation_seq03_neutrality_ab070816_20260908",
+    "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+    "canonical_config": {
+      "copy": "tim_mars_canonical_config.yaml",
+      "sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+      "source": "/home/francisco/Desktop/Thesis-Code/docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml"
+    },
+    "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_ablation_seq03_neutrality_ab070816_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --compact-output",
+    "development_ablation_controls": {
+      "schema_presence": "explicit",
+      "values": {
+        "disable_adaptive_positive_memory": false,
+        "disable_conservative_final_filter": false,
+        "disable_forced_same_id_challenge": false,
+        "disable_hard_negative_memory": false,
+        "disable_same_id_positive_support_reject": false,
+        "disable_trusted_gallery_storage": false,
+        "prevent_repeated_source_adaptive_update": false,
+        "restore_same_id_general_negative_exemption": false
+      }
+    },
+    "expected_selected_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+    "generated_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+    "model": {
+      "sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "size_bytes": 11244410,
+      "source": "/home/francisco/Desktop/Thesis-Code/models/reid/mars-small128.pb"
+    },
+    "repository": {
+      "branch": "tim-mars-same-id-hijack-resilience-20260907",
+      "commit": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+      "root": "/home/francisco/Desktop/Thesis-Code",
+      "status_short": [
+        " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+        " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+        " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+        " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+        " M tools/experiments/run_deterministic_tim_replay.py",
+        " M tools/tests/test_run_deterministic_tim_replay.py"
+      ]
+    },
+    "resolved_runtime_sha256": "45ee46f54a2ee4b643fa7cb0ec4ccbde42778b721cd856d49d33432254788d05",
+    "semantic_equal_selected": true,
+    "status_summary": {
+      "messages": 1931,
+      "positive_memory_update_reasons": {
+        "operator_anchor_initialised": 1,
+        "trusted_locked_adaptive_update": 524
+      },
+      "positive_support_sources": {
+        "adaptive_prototype": 223,
+        "none": 12,
+        "protected_anchor": 3,
+        "trusted_gallery": 1692
+      },
+      "states": {
+        "LOCKED": 543,
+        "LOST": 1374,
+        "REACQUIRED": 2,
+        "UNCERTAIN": 12
+      },
+      "trusted_locked_adaptive_updates": 524,
+      "visible_frames": 543
+    }
+  },
+  "positive_memory_stage1_conclusion": {
+    "adaptive_positive_representation": "retain",
+    "repeated_source_adaptive_ema_reinforcement": "controller-facing redundant on available development evidence; AB16 simplification candidate",
+    "scope": "Development-only conclusion. No canonical behavior or #27 prospective held-out freeze is changed by this evidence.",
+    "trusted_gallery_storage": "retain"
+  },
+  "reference_candidate": "available_image_challenge",
+  "repository": {
+    "branch": "tim-mars-same-id-hijack-resilience-20260907",
+    "head": "7a4e95e6a2d1a06d7b4b173cc2ede1ef450d56fb",
+    "status_short": [
+      " M docs/TODO_LIST.md",
+      " M ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+      " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+      " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+      " M ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+      " M tools/experiments/run_deterministic_tim_replay.py",
+      " M tools/tests/test_run_deterministic_tim_replay.py"
+    ]
+  },
+  "schema": "tim_ablation_stage1_positive_memory_v1",
+  "schema_version": 1,
+  "scope": "Development-only Stage-1 positive-memory mechanism evidence. H01/H02/H03 outcomes were not accessed or captured."
+}

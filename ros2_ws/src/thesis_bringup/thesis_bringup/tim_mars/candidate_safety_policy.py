@@ -26,6 +26,7 @@ def protected_gallery_reacquisition_reject_reason(
     candidate: CandidateTrack,
     score: CandidateScore,
     reacquired: bool,
+    gallery_support_count: int = 0,
 ) -> Optional[str]:
     """Validate gallery-only support for a risky reacquisition.
 
@@ -74,6 +75,10 @@ def protected_gallery_reacquisition_reject_reason(
         and float(
             score.protected_anchor_similarity
         ) < anchor_threshold
+        and not (
+            cfg.appearance_gallery_consensus_recovery_enabled
+            and gallery_support_count >= 2
+        )
     ):
         return (
             "protected_gallery_reacquisition_reject:"

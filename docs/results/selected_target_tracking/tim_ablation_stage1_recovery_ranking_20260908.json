@@ -1,0 +1,2348 @@
+{
+  "cells": {
+    "ab01": {
+      "may": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 bags/replay/tim_s1pin_ab01_may_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --overwrite --compact-output --ablation-zero-appearance-ranking-contribution",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": true,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 62.79632971200054,
+            "treatment": 62.79632971200054
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 5.035185820999448,
+            "treatment": 5.035185820999448
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.03339424100000343,
+            "treatment": 0.03339424100000343
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 67.864909774,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 801,
+          "delta": 0,
+          "treatment": 801
+        },
+        "proposal_source_delta": {},
+        "publication_suppressed_delta": {},
+        "reason_prefix_delta": {},
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "2299b3cc4d8e03f6c4a519b9d9bf3d3de4667b998a77ca7eb473501a9540820c",
+        "workload_delta": {}
+      },
+      "seq01": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+        "classification_hint": "INACTIVE (semantic-identical to pinned baseline)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p025_seq01_physical_v2_bytetrack_fixed_id1_2026_08_29 bags/replay/tim_s1pin_ab01_seq01_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b --overwrite --compact-output --ablation-zero-appearance-ranking-contribution",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": true,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 61.200516816,
+            "treatment": 61.200516816
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 61.200516816,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 1513,
+          "delta": 0,
+          "treatment": 1513
+        },
+        "proposal_source_delta": {},
+        "publication_suppressed_delta": {},
+        "reason_prefix_delta": {},
+        "semantic_equal_pinned_baseline": true,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "7754d5717a587f5ee596f00a5aa2402e11386856b52b6a5d8f0ce7f84103dce2",
+        "workload_delta": {}
+      },
+      "seq03": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab01_seq03_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --overwrite --compact-output --ablation-zero-appearance-ranking-contribution",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": true,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 24.600414281999996,
+            "treatment": 24.600414281999996
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 59.166383501000006,
+            "treatment": 59.166383501000006
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 83.867251154,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 525,
+          "delta": 0,
+          "treatment": 525
+        },
+        "proposal_source_delta": {},
+        "publication_suppressed_delta": {},
+        "reason_prefix_delta": {},
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "d7b9edbfa626e7adb46005c3831babab9afee84d2789daf3a7faa21a0bb347da",
+        "workload_delta": {}
+      },
+      "seq04": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab01_seq04_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --overwrite --compact-output --ablation-zero-appearance-ranking-contribution",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": true,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 48.766241081999965,
+            "treatment": 48.766241081999965
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 23.733800690000038,
+            "treatment": 23.733800690000038
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 86.500955726,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 840,
+          "delta": 0,
+          "treatment": 840
+        },
+        "proposal_source_delta": {
+          "none": -1,
+          "normal_selection": 1
+        },
+        "publication_suppressed_delta": {
+          "id_switch_recovery_reject": 1,
+          "short_gap_new_id_suppressed": -1
+        },
+        "reason_prefix_delta": {
+          "id_switch_recovery_reject": 1,
+          "short_gap_new_id_suppressed": -1
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "44d36d77e47510d9cddcd2e812758ab294b30f8c1e714ffaf6511feb26890d99",
+        "workload_delta": {}
+      }
+    },
+    "ab04": {
+      "may": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 bags/replay/tim_s1pin_ab04_may_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --overwrite --compact-output --ablation-disable-short-gap-same-id-priority",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": true,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 62.79632971200054,
+            "treatment": 62.79632971200054
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 5.035185820999448,
+            "treatment": 5.035185820999448
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.03339424100000343,
+            "treatment": 0.03339424100000343
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 67.864909774,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 801,
+          "delta": 0,
+          "treatment": 801
+        },
+        "proposal_source_delta": {
+          "normal_selection": 17,
+          "rank_aware_reacquisition": 5,
+          "short_gap_same_id": -22
+        },
+        "publication_suppressed_delta": {
+          "id_switch_recovery_reject": 3,
+          "same_id_reacquisition_reject": -3
+        },
+        "reason_prefix_delta": {
+          "id_switch_recovery_reject": 3,
+          "same_id_reacquisition_reject": -3
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "1a3f1cd1a568d14d6134e878a2a1c8cb1c113101ba24439d33f0699f23f7ee09",
+        "workload_delta": {}
+      },
+      "seq03": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab04_seq03_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --overwrite --compact-output --ablation-disable-short-gap-same-id-priority",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": true,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 24.600414281999996,
+            "treatment": 24.600414281999996
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 59.166383501000006,
+            "treatment": 59.166383501000006
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 83.867251154,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 525,
+          "delta": 0,
+          "treatment": 525
+        },
+        "proposal_source_delta": {
+          "normal_selection": 2,
+          "rank_aware_reacquisition": 6,
+          "short_gap_same_id": -8
+        },
+        "publication_suppressed_delta": {},
+        "reason_prefix_delta": {},
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "b947ee4217c7c1f8c84a265df92a16aa11d185fca799e2b7854950f21e587975",
+        "workload_delta": {}
+      },
+      "seq04": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab04_seq04_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --overwrite --compact-output --ablation-disable-short-gap-same-id-priority",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": true,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 48.766241081999965,
+            "treatment": 48.766241081999965
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 23.733800690000038,
+            "treatment": 23.733800690000038
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 86.500955726,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 840,
+          "delta": 0,
+          "treatment": 840
+        },
+        "proposal_source_delta": {
+          "normal_selection": 18,
+          "rank_aware_reacquisition": 19,
+          "short_gap_same_id": -37
+        },
+        "publication_suppressed_delta": {},
+        "reason_prefix_delta": {},
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "b2bd95a3488decc432ee7ec02f1680920e3420e5afa6dbea9147c3c7f5fe29ee",
+        "workload_delta": {}
+      }
+    },
+    "ab05": {
+      "may": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 bags/replay/tim_s1pin_ab05_may_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --overwrite --compact-output --ablation-disable-short-gap-new-id-suppression",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": true,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 62.79632971200054,
+            "treatment": 62.79632971200054
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 5.035185820999448,
+            "treatment": 5.035185820999448
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.03339424100000343,
+            "treatment": 0.03339424100000343
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 67.864909774,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 801,
+          "delta": 0,
+          "treatment": 801
+        },
+        "proposal_source_delta": {
+          "none": -17,
+          "normal_selection": 6,
+          "rank_aware_reacquisition": 11
+        },
+        "publication_suppressed_delta": {
+          "id_switch_recovery_reject": 6,
+          "protected_gallery_reacquisition_reject": 5,
+          "rank_aware_id_switch_recovery_reject": 6,
+          "short_gap_new_id_suppressed": -17
+        },
+        "reason_prefix_delta": {
+          "id_switch_recovery_reject": 6,
+          "protected_gallery_reacquisition_reject": 5,
+          "rank_aware_id_switch_recovery_reject": 6,
+          "short_gap_new_id_suppressed": -17
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "8a2c5f0a3d990616a23140b400f4687d31200c32c7b9522791d2f6a89a3726e6",
+        "workload_delta": {}
+      },
+      "seq03": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab05_seq03_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --overwrite --compact-output --ablation-disable-short-gap-new-id-suppression",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": true,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 24.600414281999996,
+            "treatment": 24.600414281999996
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 59.166383501000006,
+            "treatment": 59.166383501000006
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 83.867251154,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 525,
+          "delta": 0,
+          "treatment": 525
+        },
+        "proposal_source_delta": {
+          "none": -4,
+          "rank_aware_reacquisition": 4
+        },
+        "publication_suppressed_delta": {
+          "rank_aware_id_switch_recovery_reject": 4,
+          "short_gap_new_id_suppressed": -4
+        },
+        "reason_prefix_delta": {
+          "rank_aware_id_switch_recovery_reject": 4,
+          "short_gap_new_id_suppressed": -4
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "431344371a05df16d462cf486d22dd1a9c740c5dcaceb3056f65a55f738454a4",
+        "workload_delta": {}
+      },
+      "seq04": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab05_seq04_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --overwrite --compact-output --ablation-disable-short-gap-new-id-suppression",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": true,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 48.766241081999965,
+            "treatment": 48.766241081999965
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 23.733800690000038,
+            "treatment": 23.733800690000038
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 86.500955726,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 840,
+          "delta": 0,
+          "treatment": 840
+        },
+        "proposal_source_delta": {
+          "none": -7,
+          "normal_selection": 7
+        },
+        "publication_suppressed_delta": {
+          "id_switch_recovery_reject": 7,
+          "short_gap_new_id_suppressed": -7
+        },
+        "reason_prefix_delta": {
+          "id_switch_recovery_reject": 7,
+          "short_gap_new_id_suppressed": -7
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "119e9c6358b89764e8cb81dfea00693602dfe08d9bf35db1cb04dfe5deeb4372",
+        "workload_delta": {}
+      }
+    },
+    "ab12": {
+      "may": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 bags/replay/tim_s1pin_ab12_may_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --overwrite --compact-output --ablation-disable-global-reacquisition",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": true,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 62.79632971200054,
+            "treatment": 62.79632971200054
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 5.035185820999448,
+            "treatment": 5.035185820999448
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.03339424100000343,
+            "treatment": 0.03339424100000343
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 67.864909774,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 801,
+          "delta": 0,
+          "treatment": 801
+        },
+        "proposal_source_delta": {
+          "global_identity_reacquisition": -34,
+          "normal_selection": 6,
+          "rank_aware_reacquisition": 28
+        },
+        "publication_suppressed_delta": {
+          "global_identity_recovery_reject": -17,
+          "id_switch_recovery_reject": 1,
+          "rank_aware_id_switch_recovery_reject": 11,
+          "same_id_reacquisition_reject": 5
+        },
+        "reason_prefix_delta": {
+          "global_identity_recovery_reject": -17,
+          "id_switch_recovery_reject": 1,
+          "rank_aware_id_switch_recovery_reject": 11,
+          "same_id_reacquisition_reject": 5
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "8a2b9980f5325e7eb4cf9a05146a8a9209d3a28eb1a9665a6f7c2c7a42e56f96",
+        "workload_delta": {}
+      },
+      "seq01": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+        "classification_hint": "INACTIVE (semantic-identical to pinned baseline)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p025_seq01_physical_v2_bytetrack_fixed_id1_2026_08_29 bags/replay/tim_s1pin_ab12_seq01_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b --overwrite --compact-output --ablation-disable-global-reacquisition",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": true,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 61.200516816,
+            "treatment": 61.200516816
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 61.200516816,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 1513,
+          "delta": 0,
+          "treatment": 1513
+        },
+        "proposal_source_delta": {},
+        "publication_suppressed_delta": {},
+        "reason_prefix_delta": {},
+        "semantic_equal_pinned_baseline": true,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "7754d5717a587f5ee596f00a5aa2402e11386856b52b6a5d8f0ce7f84103dce2",
+        "workload_delta": {}
+      },
+      "seq03": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+        "classification_hint": "USEFUL/ESSENTIAL for availability (removing it loses correct authority)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab12_seq03_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --overwrite --compact-output --ablation-disable-global-reacquisition",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": true,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": -2.067728018,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 2.067728018,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 24.600414281999996,
+            "treatment": 22.532686264
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 59.166383501000006,
+            "treatment": 61.234111519
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 83.867251154,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 525,
+          "delta": -33,
+          "treatment": 492
+        },
+        "proposal_source_delta": {
+          "global_identity_reacquisition": -1372,
+          "normal_selection": 92,
+          "rank_aware_reacquisition": 1286,
+          "short_gap_same_id": -6
+        },
+        "publication_suppressed_delta": {
+          "ambiguous_best_candidate": 195,
+          "best_below_threshold": 93,
+          "global_identity_recovery_reject": -409,
+          "id_switch_recovery_reject": 40,
+          "protected_gallery_reacquisition_reject": -135,
+          "rank_aware_id_switch_recovery_reject": 266,
+          "recovery_persistence_pending": -2,
+          "same_id_hijack_reject": -1
+        },
+        "reason_prefix_delta": {
+          "accepted_candidate": -45,
+          "ambiguous_best_candidate": 195,
+          "best_below_threshold": 93,
+          "global_identity_recovery_reject": -409,
+          "id_switch_recovery_reject": 40,
+          "protected_gallery_reacquisition_reject": -135,
+          "rank_aware_id_switch_recovery_reject": 266,
+          "reacquired_candidate": -2,
+          "recovery_persistence_pending": -2,
+          "same_id_hijack_reject": -1
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {
+          "LOCKED": -47,
+          "LOST": 55,
+          "REACQUIRED": -2,
+          "UNCERTAIN": -6
+        },
+        "treatment_semantic_sha256": "439499ced6226d48bf1cf31a742c41611a2cda3a6824d20f4e775cceee9f05d5",
+        "workload_delta": {
+          "appearance_backend_calls": -40,
+          "appearance_backend_requested": -40,
+          "appearance_backend_returned": -40,
+          "appearance_backend_valid": -40,
+          "appearance_cache_hits": 40,
+          "appearance_cache_lookups": 40,
+          "appearance_encoding_eligible": -145
+        }
+      },
+      "seq04": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+        "classification_hint": "USEFUL/ESSENTIAL for availability (removing it loses correct authority)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab12_seq04_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --overwrite --compact-output --ablation-disable-global-reacquisition",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": true,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": -9.302666459,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 9.302666459,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 48.766241081999965,
+            "treatment": 39.46357462299999
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 23.733800690000038,
+            "treatment": 33.03646714900001
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 86.500955726,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 840,
+          "delta": -189,
+          "treatment": 651
+        },
+        "proposal_source_delta": {
+          "global_identity_reacquisition": -820,
+          "normal_selection": 270,
+          "rank_aware_reacquisition": 560,
+          "short_gap_same_id": -10
+        },
+        "publication_suppressed_delta": {
+          "ambiguous_best_candidate": 12,
+          "appearance_conservative_reject": 34,
+          "best_below_threshold": 404,
+          "global_identity_recovery_reject": -721,
+          "id_switch_recovery_reject": 9,
+          "protected_gallery_reacquisition_reject": 32,
+          "rank_aware_id_switch_recovery_reject": 425,
+          "recovery_persistence_pending": -2,
+          "same_id_hijack_reject": -1,
+          "same_id_reacquisition_reject": 23
+        },
+        "reason_prefix_delta": {
+          "accepted_candidate": -211,
+          "ambiguous_best_candidate": 12,
+          "appearance_conservative_reject": 34,
+          "best_below_threshold": 404,
+          "global_identity_recovery_reject": -721,
+          "id_switch_recovery_reject": 9,
+          "protected_gallery_reacquisition_reject": 32,
+          "rank_aware_id_switch_recovery_reject": 425,
+          "reacquired_candidate": -4,
+          "recovery_persistence_pending": -2,
+          "same_id_hijack_reject": -1,
+          "same_id_reacquisition_reject": 23
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {
+          "LOCKED": -215,
+          "LOST": 234,
+          "REACQUIRED": -2,
+          "UNCERTAIN": -17
+        },
+        "treatment_semantic_sha256": "753e4923f483f981329164599eaf41371bf28411036ff8cbf776bb12d41bea33",
+        "workload_delta": {
+          "appearance_backend_calls": -121,
+          "appearance_backend_requested": -121,
+          "appearance_backend_returned": -121,
+          "appearance_backend_valid": -121,
+          "appearance_cache_expired": 2,
+          "appearance_cache_hits": 86,
+          "appearance_cache_lookups": 121,
+          "appearance_cache_misses": 33,
+          "appearance_encoding_eligible": -503
+        }
+      }
+    },
+    "ab13": {
+      "may": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 bags/replay/tim_s1pin_ab13_may_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --overwrite --compact-output --ablation-disable-rank-aware-reacquisition",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": true,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 62.79632971200054,
+            "treatment": 62.79632971200054
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 5.035185820999448,
+            "treatment": 5.035185820999448
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.03339424100000343,
+            "treatment": 0.03339424100000343
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 67.864909774,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 801,
+          "delta": 0,
+          "treatment": 801
+        },
+        "proposal_source_delta": {
+          "normal_selection": 4,
+          "rank_aware_reacquisition": -4
+        },
+        "publication_suppressed_delta": {
+          "id_switch_recovery_reject": 2,
+          "rank_aware_id_switch_recovery_reject": -2
+        },
+        "reason_prefix_delta": {
+          "id_switch_recovery_reject": 2,
+          "rank_aware_id_switch_recovery_reject": -2
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "19521ab6f70e52580c5de18666d549026ddc18fb349843fe141d2a7400a9f7fc",
+        "workload_delta": {}
+      },
+      "seq03": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab13_seq03_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --overwrite --compact-output --ablation-disable-rank-aware-reacquisition",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": true,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 24.600414281999996,
+            "treatment": 24.600414281999996
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 59.166383501000006,
+            "treatment": 59.166383501000006
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 83.867251154,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 525,
+          "delta": 0,
+          "treatment": 525
+        },
+        "proposal_source_delta": {
+          "normal_selection": 4,
+          "rank_aware_reacquisition": -4
+        },
+        "publication_suppressed_delta": {
+          "best_below_threshold": 2,
+          "rank_aware_id_switch_recovery_reject": -2
+        },
+        "reason_prefix_delta": {
+          "best_below_threshold": 2,
+          "rank_aware_id_switch_recovery_reject": -2
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "e74f991592015954fdf4405028362c987dbf46b666064187e2c7f47b173aa3bf",
+        "workload_delta": {}
+      },
+      "seq04": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab13_seq04_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --overwrite --compact-output --ablation-disable-rank-aware-reacquisition",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": true,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 48.766241081999965,
+            "treatment": 48.766241081999965
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 23.733800690000038,
+            "treatment": 23.733800690000038
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 86.500955726,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 840,
+          "delta": 0,
+          "treatment": 840
+        },
+        "proposal_source_delta": {
+          "normal_selection": 15,
+          "rank_aware_reacquisition": -15
+        },
+        "publication_suppressed_delta": {
+          "best_below_threshold": 7,
+          "id_switch_recovery_reject": 1,
+          "protected_gallery_reacquisition_reject": -2,
+          "rank_aware_id_switch_recovery_reject": -8,
+          "same_id_reacquisition_reject": 2
+        },
+        "reason_prefix_delta": {
+          "best_below_threshold": 7,
+          "id_switch_recovery_reject": 1,
+          "protected_gallery_reacquisition_reject": -2,
+          "rank_aware_id_switch_recovery_reject": -8,
+          "same_id_reacquisition_reject": 2
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "e89d27af40119aa244f8823d45b9d7a5d8bd93997783cd9b2fd407a53367fbf8",
+        "workload_delta": {}
+      }
+    },
+    "ab14": {
+      "may": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+        "classification_hint": "removing it INCREASES correct authority with no new wrong \u2014 inspect why",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 bags/replay/tim_s1pin_ab14_may_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --overwrite --compact-output --ablation-zero-min-confirm-frames-after-reacquire",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": true
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.617569768,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": -0.617569768,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 62.79632971200054,
+            "treatment": 63.413899480001284
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 5.035185820999448,
+            "treatment": 4.417616052998713
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.03339424100000343,
+            "treatment": 0.03339424100000343
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 67.864909774,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 801,
+          "delta": 7,
+          "treatment": 808
+        },
+        "proposal_source_delta": {
+          "global_identity_reacquisition": -5,
+          "normal_selection": 7,
+          "short_gap_same_id": -2
+        },
+        "publication_suppressed_delta": {
+          "recovery_persistence_pending": -7
+        },
+        "reason_prefix_delta": {
+          "accepted_candidate": 7,
+          "recovery_persistence_pending": -7
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {
+          "LOCKED": 7,
+          "REACQUIRED": -7
+        },
+        "treatment_semantic_sha256": "82f22c1bd6627c3c3e03e0beb82752ad30204460059b9283f048334c0c8fc9fd",
+        "workload_delta": {
+          "appearance_backend_requested": -1,
+          "appearance_backend_returned": -1,
+          "appearance_backend_valid": -1,
+          "appearance_cache_hits": 1,
+          "appearance_cache_lookups": 1
+        }
+      },
+      "seq03": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+        "classification_hint": "removing it INCREASES correct authority with no new wrong \u2014 inspect why",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab14_seq03_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --overwrite --compact-output --ablation-zero-min-confirm-frames-after-reacquire",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": true
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.06692737,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": -0.06692737,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 24.600414281999996,
+            "treatment": 24.667341651999998
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 59.166383501000006,
+            "treatment": 59.099456131000004
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 83.867251154,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 525,
+          "delta": 2,
+          "treatment": 527
+        },
+        "proposal_source_delta": {
+          "global_identity_reacquisition": -2,
+          "normal_selection": 2
+        },
+        "publication_suppressed_delta": {
+          "recovery_persistence_pending": -2
+        },
+        "reason_prefix_delta": {
+          "accepted_candidate": 2,
+          "recovery_persistence_pending": -2
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {
+          "LOCKED": 2,
+          "REACQUIRED": -2
+        },
+        "treatment_semantic_sha256": "a2abcf328894fda30ac3a359a3903499d0c5c5cc43dd95346a1770f85279291f",
+        "workload_delta": {
+          "appearance_backend_calls": 2,
+          "appearance_backend_requested": 2,
+          "appearance_backend_returned": 2,
+          "appearance_backend_valid": 2,
+          "appearance_cache_hits": -2,
+          "appearance_cache_lookups": -2,
+          "appearance_encoding_eligible": 7
+        }
+      },
+      "seq04": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+        "classification_hint": "removing it INCREASES correct authority with no new wrong \u2014 inspect why",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab14_seq04_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --overwrite --compact-output --ablation-zero-min-confirm-frames-after-reacquire",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "restore_same_id_general_negative_exemption": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": true
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.295821426,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": -0.295821426,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 48.766241081999965,
+            "treatment": 49.06206250799999
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 23.733800690000038,
+            "treatment": 23.43797926400001
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 86.500955726,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 840,
+          "delta": 2,
+          "treatment": 842
+        },
+        "proposal_source_delta": {
+          "global_identity_reacquisition": -13,
+          "normal_selection": 6,
+          "rank_aware_reacquisition": 2,
+          "short_gap_same_id": 5
+        },
+        "publication_suppressed_delta": {
+          "global_identity_recovery_reject": -5,
+          "protected_gallery_reacquisition_reject": -2,
+          "rank_aware_id_switch_recovery_reject": 4,
+          "recovery_persistence_pending": -11,
+          "same_id_hijack_reject": 1,
+          "same_id_reacquisition_reject": 7
+        },
+        "reason_prefix_delta": {
+          "accepted_candidate": 5,
+          "global_identity_recovery_reject": -5,
+          "protected_gallery_reacquisition_reject": -2,
+          "rank_aware_id_switch_recovery_reject": 4,
+          "reacquired_candidate": 1,
+          "recovery_persistence_pending": -11,
+          "same_id_hijack_reject": 1,
+          "same_id_reacquisition_reject": 7
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {
+          "LOCKED": 6,
+          "LOST": -1,
+          "REACQUIRED": -11,
+          "UNCERTAIN": 6
+        },
+        "treatment_semantic_sha256": "2d23218cb6008b700c2f1c10274932b935ffaef3e65851c9d05ec86e931b17e5",
+        "workload_delta": {
+          "appearance_backend_calls": 5,
+          "appearance_backend_requested": 5,
+          "appearance_backend_returned": 5,
+          "appearance_backend_valid": 5,
+          "appearance_cache_expired": -1,
+          "appearance_cache_hits": -14,
+          "appearance_cache_lookups": -5,
+          "appearance_cache_misses": 10,
+          "appearance_encoding_eligible": 20
+        }
+      }
+    },
+    "ab15": {
+      "seq03": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab15_seq03_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --overwrite --compact-output --ablation-retire-overage-hard-negatives-pre-score",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "require_distinct_source_for_persistence": false,
+          "restore_same_id_general_negative_exemption": false,
+          "retire_overage_hard_negatives_pre_score": true,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 24.600414281999996,
+            "treatment": 24.600414281999996
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 59.166383501000006,
+            "treatment": 59.166383501000006
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 83.867251154,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 525,
+          "delta": 0,
+          "treatment": 525
+        },
+        "proposal_source_delta": {},
+        "publication_suppressed_delta": {},
+        "reason_prefix_delta": {},
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "82c63e6abfb7c1d6be8afd39f4aeb5722840768637e0d4da3357d6f9793eb8f6",
+        "workload_delta": {}
+      },
+      "seq04": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+        "classification_hint": "controller-facing REDUNDANT (buckets+states identical; diagnostics differ)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab15_seq04_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --overwrite --compact-output --ablation-retire-overage-hard-negatives-pre-score",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "require_distinct_source_for_persistence": false,
+          "restore_same_id_general_negative_exemption": false,
+          "retire_overage_hard_negatives_pre_score": true,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": 0.0,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 48.766241081999965,
+            "treatment": 48.766241081999965
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 23.733800690000038,
+            "treatment": 23.733800690000038
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 86.500955726,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 840,
+          "delta": 0,
+          "treatment": 840
+        },
+        "proposal_source_delta": {},
+        "publication_suppressed_delta": {
+          "global_identity_recovery_reject": -6,
+          "protected_gallery_reacquisition_reject": 6
+        },
+        "reason_prefix_delta": {
+          "global_identity_recovery_reject": -6,
+          "protected_gallery_reacquisition_reject": 6
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {},
+        "treatment_semantic_sha256": "653e35e9f20d7ec3b7ea14e4647fd5c90b9592895f82e64d37121708c4976eb1",
+        "workload_delta": {}
+      }
+    },
+    "ab19": {
+      "may": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+        "classification_hint": "USEFUL/ESSENTIAL for availability (removing it loses correct authority)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1 bags/replay/tim_s1pin_ab19_may_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 640 --expected-candidate-stream-sha256 a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d --overwrite --compact-output --ablation-require-distinct-source-for-persistence",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "require_distinct_source_for_persistence": true,
+          "restore_same_id_general_negative_exemption": false,
+          "retire_overage_hard_negatives_pre_score": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": -2.754305096,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 2.754305096,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 62.79632971200054,
+            "treatment": 60.04202461600209
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 5.035185820999448,
+            "treatment": 7.789490916997907
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.03339424100000343,
+            "treatment": 0.03339424100000343
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 67.864909774,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 801,
+          "delta": -47,
+          "treatment": 754
+        },
+        "proposal_source_delta": {
+          "global_identity_reacquisition": 11,
+          "normal_selection": -35,
+          "short_gap_same_id": 24
+        },
+        "publication_suppressed_delta": {
+          "global_identity_recovery_reject": -5,
+          "protected_gallery_reacquisition_reject": 1,
+          "recovery_persistence_pending": 50,
+          "same_id_hijack_reject": -1,
+          "same_id_reacquisition_reject": 6
+        },
+        "reason_prefix_delta": {
+          "accepted_candidate": -50,
+          "global_identity_recovery_reject": -5,
+          "protected_gallery_reacquisition_reject": 1,
+          "reacquired_candidate": -1,
+          "recovery_persistence_pending": 50,
+          "same_id_hijack_reject": -1,
+          "same_id_reacquisition_reject": 6
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {
+          "LOCKED": -51,
+          "LOST": 1,
+          "REACQUIRED": 50
+        },
+        "treatment_semantic_sha256": "9fe23e6a4d1bdcb50cd95ba03b0e295a75ad9e42bfcbe5a9c7cc0cfd793bde2f",
+        "workload_delta": {
+          "appearance_backend_calls": -3,
+          "appearance_backend_requested": -3,
+          "appearance_backend_returned": -3,
+          "appearance_backend_valid": -3,
+          "appearance_cache_hits": 3,
+          "appearance_cache_lookups": 3,
+          "appearance_encoding_eligible": -7
+        }
+      },
+      "seq03": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+        "classification_hint": "USEFUL/ESSENTIAL for availability (removing it loses correct authority)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab19_seq03_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 1 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode source --image-width 640 --image-height 480 --expected-candidate-stream-sha256 60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db --overwrite --compact-output --ablation-require-distinct-source-for-persistence",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "require_distinct_source_for_persistence": true,
+          "restore_same_id_general_negative_exemption": false,
+          "retire_overage_hard_negatives_pre_score": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": -2.067728018,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 2.067728018,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 24.600414281999996,
+            "treatment": 22.532686264
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 59.166383501000006,
+            "treatment": 61.234111519
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 83.867251154,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 525,
+          "delta": -33,
+          "treatment": 492
+        },
+        "proposal_source_delta": {
+          "global_identity_reacquisition": 54,
+          "normal_selection": -46,
+          "rank_aware_reacquisition": -2,
+          "short_gap_same_id": -6
+        },
+        "publication_suppressed_delta": {
+          "global_identity_recovery_reject": 98,
+          "protected_gallery_reacquisition_reject": -56,
+          "recovery_persistence_pending": 6,
+          "same_id_hijack_reject": -1
+        },
+        "reason_prefix_delta": {
+          "accepted_candidate": -45,
+          "global_identity_recovery_reject": 98,
+          "protected_gallery_reacquisition_reject": -56,
+          "reacquired_candidate": -2,
+          "recovery_persistence_pending": 6,
+          "same_id_hijack_reject": -1
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {
+          "LOCKED": -47,
+          "LOST": 47,
+          "REACQUIRED": 6,
+          "UNCERTAIN": -6
+        },
+        "treatment_semantic_sha256": "638f7f42aa0d30f0ffd685a84bb7075cb266c1948d0762099b6b9a4a4794f697",
+        "workload_delta": {
+          "appearance_backend_calls": -40,
+          "appearance_backend_requested": -40,
+          "appearance_backend_returned": -40,
+          "appearance_backend_valid": -40,
+          "appearance_cache_hits": 40,
+          "appearance_cache_lookups": 40,
+          "appearance_encoding_eligible": -145
+        }
+      },
+      "seq04": {
+        "candidate_stream_matches_expected": true,
+        "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+        "classification_hint": "USEFUL/ESSENTIAL for availability (removing it loses correct authority)",
+        "command": "tools/experiments/run_deterministic_tim_replay.py bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack bags/replay/tim_s1pin_ab19_seq04_20260908 --config docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml --model models/reid/mars-small128.pb --selected-track-id 5 --image-topic /camera/image_raw --tracks-topic /tracks --raw-target-topic /target --raw-target-mode selected_id --image-width 640 --image-height 480 --expected-candidate-stream-sha256 9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf --overwrite --compact-output --ablation-require-distinct-source-for-persistence",
+        "development_ablation_controls": {
+          "disable_adaptive_positive_memory": false,
+          "disable_conservative_final_filter": false,
+          "disable_forced_same_id_challenge": false,
+          "disable_global_reacquisition": false,
+          "disable_hard_negative_memory": false,
+          "disable_rank_aware_reacquisition": false,
+          "disable_same_id_positive_support_reject": false,
+          "disable_short_gap_new_id_suppression": false,
+          "disable_short_gap_same_id_priority": false,
+          "disable_trusted_gallery_storage": false,
+          "prevent_repeated_source_adaptive_update": false,
+          "require_distinct_source_for_persistence": true,
+          "restore_same_id_general_negative_exemption": false,
+          "retire_overage_hard_negatives_pre_score": false,
+          "zero_appearance_ranking_contribution": false,
+          "zero_min_confirm_frames_after_reacquire": false
+        },
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "physical_v2_bucket_delta_s": {
+          "correct_target_output_duration_s": -10.066900216,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 10.066900216,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": {
+            "baseline": 48.766241081999965,
+            "treatment": 38.699340866
+          },
+          "identity_unresolved_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "lost_or_suppressed_duration_s": {
+            "baseline": 23.733800690000038,
+            "treatment": 33.800700906
+          },
+          "target_absent_with_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          },
+          "wrong_person_output_duration_s": {
+            "baseline": 0.0,
+            "treatment": 0.0
+          }
+        },
+        "physical_v2_reconciliation_treatment": {
+          "ok": true,
+          "primary_bucket_total_s": 86.500955726,
+          "residual_s": 0.0
+        },
+        "positive_memory_updated_frames": {
+          "baseline": 840,
+          "delta": -173,
+          "treatment": 667
+        },
+        "proposal_source_delta": {
+          "global_identity_reacquisition": 281,
+          "none": -2,
+          "normal_selection": -242,
+          "rank_aware_reacquisition": -11,
+          "short_gap_same_id": -26
+        },
+        "publication_suppressed_delta": {
+          "best_below_threshold": -15,
+          "global_identity_recovery_reject": 106,
+          "id_switch_recovery_reject": -5,
+          "protected_gallery_reacquisition_reject": 52,
+          "rank_aware_id_switch_recovery_reject": -6,
+          "recovery_persistence_pending": 108,
+          "same_id_hijack_reject": -2,
+          "same_id_reacquisition_reject": -9,
+          "short_gap_new_id_suppressed": -2
+        },
+        "reason_prefix_delta": {
+          "accepted_candidate": -220,
+          "best_below_threshold": -15,
+          "global_identity_recovery_reject": 106,
+          "id_switch_recovery_reject": -5,
+          "protected_gallery_reacquisition_reject": 52,
+          "rank_aware_id_switch_recovery_reject": -6,
+          "reacquired_candidate": -7,
+          "recovery_persistence_pending": 108,
+          "same_id_hijack_reject": -2,
+          "same_id_reacquisition_reject": -9,
+          "short_gap_new_id_suppressed": -2
+        },
+        "semantic_equal_pinned_baseline": false,
+        "state_count_delta": {
+          "LOCKED": -227,
+          "LOST": 160,
+          "REACQUIRED": 108,
+          "UNCERTAIN": -41
+        },
+        "treatment_semantic_sha256": "538032ce772db943a2a1a78b54c0e7faf3be5774e989454f706f113fe3f46edc",
+        "workload_delta": {
+          "appearance_backend_calls": -124,
+          "appearance_backend_requested": -124,
+          "appearance_backend_returned": -124,
+          "appearance_backend_valid": -124,
+          "appearance_cache_expired": 1,
+          "appearance_cache_hits": 105,
+          "appearance_cache_lookups": 124,
+          "appearance_cache_misses": 18,
+          "appearance_encoding_eligible": -525
+        }
+      }
+    }
+  },
+  "classifications": {
+    "ab01": "INACTIVE/REDUNDANT numerical ranking contribution; appearance decisive via gates only",
+    "ab04": "REDUNDANT on available development evidence",
+    "ab05": "REDUNDANT on available development evidence (suppressed candidates rejected downstream anyway)",
+    "ab12": "USEFUL (availability-essential Seq03/Seq04; redundant May; inactive Seq01; zero wrong-person)",
+    "ab13": "REDUNDANT controller-facing + workload; diagnostically active",
+    "ab14": "REDUNDANT for wrong-person safety; only adds 0.07-0.62 s suppression latency; simplification candidate",
+    "ab15": "INACTIVE - over-age hard-negative retirement changes no bucket/state/published target",
+    "ab19": "HARDENING with availability cost (-14.89 s aggregate), no measured safety benefit; diagnostic only"
+  },
+  "date": "2026-09-08",
+  "development_only": true,
+  "h01_h02_h03_accessed": false,
+  "issue27_frozen_files_modified": false,
+  "new_absence_leakage_any_cell_s": 0.0,
+  "new_wrong_person_authority_any_cell_s": 0.0,
+  "opportunity": {
+    "ab01": {
+      "may": "opportunity",
+      "seq01": "no-opportunity(semantic-identical)",
+      "seq03": "opportunity",
+      "seq04": "opportunity"
+    },
+    "ab04": {
+      "may": "opportunity",
+      "seq01": "no-opportunity",
+      "seq03": "opportunity",
+      "seq04": "opportunity"
+    },
+    "ab05": {
+      "may": "opportunity",
+      "seq01": "no-opportunity",
+      "seq03": "opportunity",
+      "seq04": "opportunity"
+    },
+    "ab12": {
+      "may": "opportunity",
+      "seq01": "no-opportunity",
+      "seq03": "opportunity",
+      "seq04": "opportunity"
+    },
+    "ab13": {
+      "may": "opportunity",
+      "seq01": "no-opportunity",
+      "seq03": "opportunity",
+      "seq04": "opportunity"
+    },
+    "ab14": {
+      "may": "opportunity",
+      "seq01": "no-opportunity",
+      "seq03": "opportunity",
+      "seq04": "opportunity"
+    },
+    "ab15": {
+      "may": "no-opportunity",
+      "seq01": "no-opportunity",
+      "seq03": "opportunity",
+      "seq04": "opportunity"
+    },
+    "ab19": {
+      "may": "opportunity",
+      "seq01": "no-opportunity",
+      "seq03": "opportunity",
+      "seq04": "opportunity"
+    }
+  },
+  "pinned_env_file": "docs/results/selected_target_tracking/tim_pinned_replay_env_20260908.sh",
+  "pinned_selected_baselines": {
+    "may": {
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+      "config_sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "physical_v2_buckets": {
+        "correct_target_output_duration_s": 62.79632971200054,
+        "lost_or_suppressed_duration_s": 5.035185820999448,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.03339424100000343
+      },
+      "pinned_semantic_sha256": "9eb017711275e98bbba6f6b35ea30b1be036aac730c222a9686dd8ef446fa63b",
+      "proposal_sources": {
+        "global_identity_reacquisition": 34,
+        "none": 18,
+        "normal_selection": 872,
+        "rank_aware_reacquisition": 4,
+        "short_gap_same_id": 22
+      },
+      "reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 67.864909774,
+        "residual_s": 0.0
+      },
+      "repo_commit": "23dfe589297411422491ed6c7f3de98c99bc232f",
+      "repo_dirty": true,
+      "states": {
+        "LOCKED": 869,
+        "LOST": 39,
+        "REACQUIRED": 7,
+        "UNCERTAIN": 35
+      }
+    },
+    "seq01": {
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+      "config_sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "physical_v2_buckets": {
+        "correct_target_output_duration_s": 61.200516816,
+        "lost_or_suppressed_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "pinned_semantic_sha256": "7754d5717a587f5ee596f00a5aa2402e11386856b52b6a5d8f0ce7f84103dce2",
+      "proposal_sources": {
+        "none": 1,
+        "normal_selection": 1519
+      },
+      "reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 61.200516816,
+        "residual_s": 0.0
+      },
+      "repo_commit": "23dfe589297411422491ed6c7f3de98c99bc232f",
+      "repo_dirty": true,
+      "states": {
+        "LOCKED": 1520
+      }
+    },
+    "seq03": {
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "config_sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "physical_v2_buckets": {
+        "correct_target_output_duration_s": 24.600414281999996,
+        "lost_or_suppressed_duration_s": 59.166383501000006,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "pinned_semantic_sha256": "ca1f1826e2092a03c36b73015045d55c55dc232046b28871e769b85200079eaf",
+      "proposal_sources": {
+        "global_identity_reacquisition": 1372,
+        "none": 5,
+        "normal_selection": 542,
+        "rank_aware_reacquisition": 4,
+        "short_gap_same_id": 8
+      },
+      "reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 83.867251154,
+        "residual_s": 0.0
+      },
+      "repo_commit": "23dfe589297411422491ed6c7f3de98c99bc232f",
+      "repo_dirty": true,
+      "states": {
+        "LOCKED": 543,
+        "LOST": 1374,
+        "REACQUIRED": 2,
+        "UNCERTAIN": 12
+      }
+    },
+    "seq04": {
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "config_sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+      "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+      "physical_v2_buckets": {
+        "correct_target_output_duration_s": 48.766241081999965,
+        "lost_or_suppressed_duration_s": 23.733800690000038,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "pinned_semantic_sha256": "d7da756a5220a06e35ada759c5a7a7cafbf678e5c7102d31b35028c996a4c5ca",
+      "proposal_sources": {
+        "global_identity_reacquisition": 820,
+        "none": 8,
+        "normal_selection": 1167,
+        "rank_aware_reacquisition": 15,
+        "short_gap_same_id": 37
+      },
+      "reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 86.500955726,
+        "residual_s": 0.0
+      },
+      "repo_commit": "23dfe589297411422491ed6c7f3de98c99bc232f",
+      "repo_dirty": true,
+      "states": {
+        "LOCKED": 1149,
+        "LOST": 828,
+        "REACQUIRED": 11,
+        "UNCERTAIN": 59
+      }
+    }
+  },
+  "schema": "tim_ablation_stage1_recovery_ranking_v1",
+  "semantic_comparison_contract": "pinned_selected_baseline_vs_pinned_treatment",
+  "stop_conditions_triggered": []
+}

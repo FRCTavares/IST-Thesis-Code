@@ -1,0 +1,653 @@
+{
+  "behavior_neutral_contract": "Probe embeddings are computed against pre-decision memory and are never supplied to TIM state, cache, positive memory, hard-negative memory or publication.",
+  "probe_track_id": 9,
+  "records": [
+    {
+      "candidate_bbox": [
+        281.29899883270264,
+        102.79750442504883,
+        312.68488788604736,
+        181.16437911987305
+      ],
+      "frame_id": 1054,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870212568399161,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        281.29899883270264,
+        102.79750442504883,
+        312.68488788604736,
+        181.16437911987305
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": 0.25874333148773854,
+        "protected_minus_negative": 0.25557631254196167,
+        "similarity": 0.5021860599517822
+      },
+      "positive": {
+        "adaptive_similarity": 0.7609293914395208,
+        "anchor_similarity": 0.6780547903808827,
+        "effective_similarity": 0.7609293914395208,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.7577623724937439,
+        "protected_similarity": 0.7577623724937439,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "LOCKED",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870212568399161
+    },
+    {
+      "candidate_bbox": [
+        281.31155586242676,
+        103.39739227294922,
+        313.06149101257324,
+        181.74201202392578
+      ],
+      "frame_id": 1055,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870212601499642,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        281.31155586242676,
+        103.39739227294922,
+        313.06149101257324,
+        181.74201202392578
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": 0.27363746309665093,
+        "protected_minus_negative": 0.25859344005584717,
+        "similarity": 0.5504270792007446
+      },
+      "positive": {
+        "adaptive_similarity": 0.8240645422973956,
+        "anchor_similarity": 0.6783705162030766,
+        "effective_similarity": 0.8240645422973956,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.8090205192565918,
+        "protected_similarity": 0.8090205192565918,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "UNCERTAIN",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870212601499642
+    },
+    {
+      "candidate_bbox": [
+        281.47978591918945,
+        105.24352264404297,
+        312.9660758972168,
+        181.77332305908203
+      ],
+      "frame_id": 1056,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870212635067661,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        281.47978591918945,
+        105.24352264404297,
+        312.9660758972168,
+        181.77332305908203
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": 0.25341342780838905,
+        "protected_minus_negative": 0.23486751317977905,
+        "similarity": 0.5622283220291138
+      },
+      "positive": {
+        "adaptive_similarity": 0.8156417498375028,
+        "anchor_similarity": 0.6570901070290868,
+        "effective_similarity": 0.8156417498375028,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.7970958352088928,
+        "protected_similarity": 0.7970958352088928,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "UNCERTAIN",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870212635067661
+    },
+    {
+      "candidate_bbox": [
+        281.0912494659424,
+        104.33475112915039,
+        313.2759380340576,
+        182.11901473999023
+      ],
+      "frame_id": 1057,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870212668614401,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        281.0912494659424,
+        104.33475112915039,
+        313.2759380340576,
+        182.11901473999023
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": 0.24767393114840752,
+        "protected_minus_negative": 0.22357036015810738,
+        "similarity": 0.5450980988203346
+      },
+      "positive": {
+        "adaptive_similarity": 0.7927720299687421,
+        "anchor_similarity": 0.635929064265378,
+        "effective_similarity": 0.7927720299687421,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.7686684589784419,
+        "protected_similarity": 0.7686684589784419,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "UNCERTAIN",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870212668614401
+    },
+    {
+      "candidate_bbox": [
+        280.2919063568115,
+        100.87373352050781,
+        313.915246963501,
+        182.07289123535156
+      ],
+      "frame_id": 1058,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870212701463976,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        280.2919063568115,
+        100.87373352050781,
+        313.915246963501,
+        182.07289123535156
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": 0.24091637630232932,
+        "protected_minus_negative": 0.2163347730836137,
+        "similarity": 0.6013287068205301
+      },
+      "positive": {
+        "adaptive_similarity": 0.8422450831228594,
+        "anchor_similarity": 0.6712096537601535,
+        "effective_similarity": 0.8422450831228594,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.8176634799041438,
+        "protected_similarity": 0.8176634799041438,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "UNCERTAIN",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870212701463976
+    },
+    {
+      "candidate_bbox": [
+        280.41172790527344,
+        101.05302810668945,
+        314.22023010253906,
+        182.68839645385742
+      ],
+      "frame_id": 1059,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870212801490587,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        280.41172790527344,
+        101.05302810668945,
+        314.22023010253906,
+        182.68839645385742
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": 0.24775706644986717,
+        "protected_minus_negative": 0.21651321649551392,
+        "similarity": 0.5715987086296082
+      },
+      "positive": {
+        "adaptive_similarity": 0.8193557750794753,
+        "anchor_similarity": 0.6561162862847022,
+        "effective_similarity": 0.8193557750794753,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.7881119251251221,
+        "protected_similarity": 0.7881119251251221,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "UNCERTAIN",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870212801490587
+    },
+    {
+      "candidate_bbox": [
+        280.26132011413574,
+        101.5993881225586,
+        314.04361152648926,
+        183.2005386352539
+      ],
+      "frame_id": 1060,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870212834910216,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        280.26132011413574,
+        101.5993881225586,
+        314.04361152648926,
+        183.2005386352539
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": 0.26138891080322524,
+        "protected_minus_negative": 0.223070833316942,
+        "similarity": 0.608275221791837
+      },
+      "positive": {
+        "adaptive_similarity": 0.8696641325950623,
+        "anchor_similarity": 0.6394748091697693,
+        "effective_similarity": 0.8696641325950623,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.831346055108779,
+        "protected_similarity": 0.831346055108779,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "UNCERTAIN",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870212834910216
+    },
+    {
+      "candidate_bbox": [
+        280.295711517334,
+        100.93339157104492,
+        314.456729888916,
+        183.36854934692383
+      ],
+      "frame_id": 1061,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870212869104938,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        280.295711517334,
+        100.93339157104492,
+        314.456729888916,
+        183.36854934692383
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": 0.2705706880548351,
+        "protected_minus_negative": 0.23667937517166138,
+        "similarity": 0.6061939001083374
+      },
+      "positive": {
+        "adaptive_similarity": 0.8767645881631725,
+        "anchor_similarity": 0.6564798746395036,
+        "effective_similarity": 0.8767645881631725,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.8428732752799988,
+        "protected_similarity": 0.8428732752799988,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "LOST",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870212869104938
+    },
+    {
+      "candidate_bbox": [
+        280.5619468688965,
+        100.30842971801758,
+        315.30322647094727,
+        184.03629684448242
+      ],
+      "frame_id": 1062,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870212901577253,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        280.5619468688965,
+        100.30842971801758,
+        315.30322647094727,
+        184.03629684448242
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": 0.2686276958647684,
+        "protected_minus_negative": 0.22928225994110107,
+        "similarity": 0.6084778308868408
+      },
+      "positive": {
+        "adaptive_similarity": 0.8771055267516092,
+        "anchor_similarity": 0.659891585105156,
+        "effective_similarity": 0.8771055267516092,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.8377600908279419,
+        "protected_similarity": 0.8377600908279419,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "LOST",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870212901577253
+    },
+    {
+      "candidate_bbox": [
+        281.15390968322754,
+        101.53020477294922,
+        315.52480125427246,
+        184.17118072509766
+      ],
+      "frame_id": 1063,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870212934910068,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        281.15390968322754,
+        101.53020477294922,
+        315.52480125427246,
+        184.17118072509766
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": 0.2752146057189715,
+        "protected_minus_negative": 0.23673564195632935,
+        "similarity": 0.6112874150276184
+      },
+      "positive": {
+        "adaptive_similarity": 0.8865020207465899,
+        "anchor_similarity": 0.656015792847621,
+        "effective_similarity": 0.8865020207465899,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.8480230569839478,
+        "protected_similarity": 0.8480230569839478,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "LOST",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870212934910068
+    },
+    {
+      "candidate_bbox": [
+        301.32690238952637,
+        85.38872146606445,
+        332.40674018859863,
+        157.96628952026367
+      ],
+      "frame_id": 1078,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870213601573605,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        301.32690238952637,
+        85.38872146606445,
+        332.40674018859863,
+        157.96628952026367
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": -0.036851004890075534,
+        "protected_minus_negative": -0.06176280975341797,
+        "similarity": 0.767993152141571
+      },
+      "positive": {
+        "adaptive_similarity": 0.7311421472514955,
+        "anchor_similarity": 0.5638810732293769,
+        "effective_similarity": 0.7311421472514955,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.7062303423881531,
+        "protected_similarity": 0.7062303423881531,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "LOST",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870213601573605
+    },
+    {
+      "candidate_bbox": [
+        300.5314950942993,
+        82.67724227905273,
+        329.23235988616943,
+        151.33331680297852
+      ],
+      "frame_id": 1079,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870213634986975,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        300.5314950942993,
+        82.67724227905273,
+        329.23235988616943,
+        151.33331680297852
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": -0.1677099675899475,
+        "protected_minus_negative": -0.2018435001373291,
+        "similarity": 0.8161004185676575
+      },
+      "positive": {
+        "adaptive_similarity": 0.64839045097771,
+        "anchor_similarity": 0.5435710277301685,
+        "effective_similarity": 0.64839045097771,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.6142569184303284,
+        "protected_similarity": 0.6142569184303284,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "LOST",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870213634986975
+    },
+    {
+      "candidate_bbox": [
+        299.6840353012085,
+        80.3661994934082,
+        327.690598487854,
+        148.50237655639648
+      ],
+      "frame_id": 1080,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870213701477697,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        299.6840353012085,
+        80.3661994934082,
+        327.690598487854,
+        148.50237655639648
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": -0.22687294187527252,
+        "protected_minus_negative": -0.2533109188079834,
+        "similarity": 0.8764760494232178
+      },
+      "positive": {
+        "adaptive_similarity": 0.6496031075479453,
+        "anchor_similarity": 0.4525162549326572,
+        "effective_similarity": 0.6496031075479453,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.6231651306152344,
+        "protected_similarity": 0.6231651306152344,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "LOST",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870213701477697
+    },
+    {
+      "candidate_bbox": [
+        299.5482816696167,
+        80.34283828735352,
+        327.3202486038208,
+        149.2119255065918
+      ],
+      "frame_id": 1081,
+      "image_age_ms": 0.0,
+      "image_timestamp_ns": 1781870213734923030,
+      "lineage": {
+        "current_lineage_supported": true,
+        "current_lineage_track_id": 9,
+        "lineage_trusted": true,
+        "operator_track_id": 1,
+        "protected_anchor_available": true,
+        "trusted_gallery_size": 4,
+        "trusted_lock_streak": 2
+      },
+      "mapped_bbox": [
+        299.5482816696167,
+        80.34283828735352,
+        327.3202486038208,
+        149.2119255065918
+      ],
+      "negative": {
+        "committed_entries": 1,
+        "effective_minus_negative": -0.22591545060743923,
+        "protected_minus_negative": -0.25815558433532715,
+        "similarity": 0.9133371114730835
+      },
+      "positive": {
+        "adaptive_similarity": 0.6874216608656443,
+        "anchor_similarity": 0.4707405549729201,
+        "effective_similarity": 0.6874216608656443,
+        "effective_source": "adaptive_prototype",
+        "gallery_similarity": 0.6551815271377563,
+        "protected_similarity": 0.6551815271377563,
+        "protected_source": "trusted_gallery"
+      },
+      "pre_decision_state": "LOST",
+      "probe_track_id": 9,
+      "status": "fresh_embedding",
+      "track_timestamp_ns": 1781870213734923030
+    }
+  ],
+  "requested_frame_ids": [
+    1054,
+    1055,
+    1056,
+    1057,
+    1058,
+    1059,
+    1060,
+    1061,
+    1062,
+    1063,
+    1078,
+    1079,
+    1080,
+    1081
+  ],
+  "schema": "tim_shadow_appearance_probe_v1"
+}

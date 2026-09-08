@@ -1,0 +1,135 @@
+{
+  "config_sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+  "date": "2026-09-08",
+  "development_only": true,
+  "drift_example_seq03_frame3": {
+    "abs_delta": 6.1e-08,
+    "field": "adaptive_similarity",
+    "historical_env": 0.9875444762435244,
+    "uncontrolled_rerun": 0.9875445365905762
+  },
+  "h01_h02_h03_accessed": false,
+  "issue27_frozen_files_modified": false,
+  "kind": "numerical_reproducibility_rebaseline_not_behavioral_refreeze",
+  "model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+  "pinned_env": {
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "TF_DETERMINISTIC_OPS": "1",
+    "TF_ENABLE_ONEDNN_OPTS": "0",
+    "TF_NUM_INTEROP_THREADS": "1",
+    "TF_NUM_INTRAOP_THREADS": "1"
+  },
+  "pinned_env_file": "docs/results/selected_target_tracking/tim_pinned_replay_env_20260908.sh",
+  "pinned_env_file_sha256": "24f8c09f4d041c0f63741629a9768789aa9bbc98dd9482a8b59dddb7a52e2fc6",
+  "root_cause": "TF 2.17.1 CPU intra-op thread count auto-selected from machine state; reduction order in MARS conv/matmul is thread-count dependent; MARS embeddings drift ~1e-7; appearance-similarity status diagnostics drift; semantic digest changes. Controller-facing output/state/physical-v2 unchanged.",
+  "schema": "tim_pinned_replay_semantic_rebaseline_v1",
+  "semantic_digest_schema": "tim_mars_replay_generated_fields_v5",
+  "sequences": {
+    "may": {
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+      "expected_candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+      "historical_semantic_sha256": "252829b914efdb81876a41bda5494985db4ddcf0f07d8a9de267c91415a13cd9",
+      "new_absence_leakage_s": 0.0,
+      "new_pinned_semantic_sha256": "9eb017711275e98bbba6f6b35ea30b1be036aac730c222a9686dd8ef446fa63b",
+      "new_wrong_person_authority_s": 0.0,
+      "physical_v2_buckets": {
+        "correct_target_output_duration_s": 62.79632971200054,
+        "lost_or_suppressed_duration_s": 5.035185820999448,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.03339424100000343
+      },
+      "physical_v2_vs_retained": "byte_identical",
+      "reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 67.864909774,
+        "residual_s": 0.0
+      },
+      "repeats_identical": "3/3",
+      "state_counts_vs_retained": "identical",
+      "tim_target_stream_vs_retained": "byte_identical_frame_by_frame"
+    },
+    "seq01": {
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+      "expected_candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+      "historical_semantic_sha256": "97b1f3ca36a75d4fe2f679c250fa8f53675b536001cf168572681f53d075e4f5",
+      "new_absence_leakage_s": 0.0,
+      "new_pinned_semantic_sha256": "7754d5717a587f5ee596f00a5aa2402e11386856b52b6a5d8f0ce7f84103dce2",
+      "new_wrong_person_authority_s": 0.0,
+      "physical_v2_buckets": {
+        "correct_target_output_duration_s": 61.200516816,
+        "lost_or_suppressed_duration_s": 0.0,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "physical_v2_vs_retained": "byte_identical",
+      "reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 61.200516816,
+        "residual_s": 0.0
+      },
+      "repeats_identical": "3/3",
+      "state_counts_vs_retained": "identical",
+      "tim_target_stream_vs_retained": "byte_identical_frame_by_frame"
+    },
+    "seq03": {
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "expected_candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "historical_semantic_sha256": "307c9c3c2d5ad0f468a452ec8b753552a276e51d3fcd85381158bc13c93811ca",
+      "new_absence_leakage_s": 0.0,
+      "new_pinned_semantic_sha256": "ca1f1826e2092a03c36b73015045d55c55dc232046b28871e769b85200079eaf",
+      "new_wrong_person_authority_s": 0.0,
+      "physical_v2_buckets": {
+        "correct_target_output_duration_s": 24.600414281999996,
+        "lost_or_suppressed_duration_s": 59.166383501000006,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "physical_v2_vs_retained": "byte_identical",
+      "reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 83.867251154,
+        "residual_s": 0.0
+      },
+      "repeats_identical": "11/11",
+      "state_counts_vs_retained": "identical",
+      "tim_target_stream_vs_retained": "byte_identical_frame_by_frame"
+    },
+    "seq04": {
+      "candidate_stream_matches_expected": true,
+      "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "expected_candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "historical_semantic_sha256": "ff818a434e52a4c5f6733846434cc455f6501182ac4632a2f4da65cc68e6d980",
+      "new_absence_leakage_s": 0.0,
+      "new_pinned_semantic_sha256": "d7da756a5220a06e35ada759c5a7a7cafbf678e5c7102d31b35028c996a4c5ca",
+      "new_wrong_person_authority_s": 0.0,
+      "physical_v2_buckets": {
+        "correct_target_output_duration_s": 48.766241081999965,
+        "lost_or_suppressed_duration_s": 23.733800690000038,
+        "target_absent_with_output_duration_s": 0.0,
+        "wrong_person_output_duration_s": 0.0
+      },
+      "physical_v2_vs_retained": "byte_identical",
+      "reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 86.500955726,
+        "residual_s": 0.0
+      },
+      "repeats_identical": "3/3",
+      "state_counts_vs_retained": "identical",
+      "tim_target_stream_vs_retained": "byte_identical_frame_by_frame"
+    }
+  },
+  "tf_enable_onednn_opts_required": false,
+  "toolchain": {
+    "nproc": 4,
+    "numpy": "1.26.4",
+    "platform": "linux-aarch64",
+    "python": "3.12.3",
+    "tensorflow": "2.17.1"
+  }
+}
