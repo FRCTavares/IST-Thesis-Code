@@ -31,10 +31,14 @@ def test_tim_mars_ros_params_declares_expected_interface():
 
     declare_tim_mars_parameters(node)
 
-    assert len(node.values) == 114
+    assert len(node.values) == 115
     assert node.values["same_id_fresh_challenge_enabled"] is False
     assert node.values["same_id_challenge_available_images_only"] is False
     assert node.values["appearance_gallery_consensus_recovery_enabled"] is False
+    assert (
+        node.values["appearance_prevent_repeated_source_adaptive_update"]
+        is False
+    )
     assert node.values["tracks_topic"] == "/tracks"
     assert node.values["target_topic"] == "/target_memory_mars"
     assert node.values["timing_target_topic"] == "/timing_target"
@@ -233,6 +237,9 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     node.values["candidate_belief_confirm_frames"] = 5
     node.values["absence_recovery_enabled"] = True
     node.values["absence_confirm_frames"] = 5
+    node.values[
+        "appearance_prevent_repeated_source_adaptive_update"
+    ] = True
 
     params = read_tim_mars_ros_params(node)
     cfg = build_target_memory_config(node, params)
@@ -327,6 +334,9 @@ def test_tim_mars_ros_params_builds_config_from_ros_values():
     assert cfg.candidate_belief_confirm_frames == 5
     assert cfg.absence_recovery_enabled is True
     assert cfg.absence_confirm_frames == 5
+    assert (
+        cfg.appearance_prevent_repeated_source_adaptive_update is True
+    )
 
 
 def test_canonical_yaml_defines_all_active_algorithm_parameters():
@@ -406,6 +416,18 @@ def test_canonical_yaml_defines_all_active_algorithm_parameters():
     assert (
         canonical["global_reacquisition_after_missed_frames"]
         == 9
+    )
+
+    # Selected development baseline promoted with the Stage-1 AB-16 decision.
+    assert canonical["min_confirm_frames_after_reacquire"] == 1
+    assert canonical["same_id_fresh_challenge_enabled"] is True
+    assert canonical["same_id_challenge_available_images_only"] is True
+    assert (
+        canonical["appearance_gallery_consensus_recovery_enabled"] is False
+    )
+    assert (
+        canonical["appearance_prevent_repeated_source_adaptive_update"]
+        is True
     )
 
     for name, value in canonical.items():

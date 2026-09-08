@@ -262,6 +262,9 @@ def declare_tim_mars_parameters(node: Any) -> None:
     node.declare_parameter("same_id_fresh_challenge_enabled", False)
     node.declare_parameter("same_id_challenge_available_images_only", False)
     node.declare_parameter("appearance_gallery_consensus_recovery_enabled", False)
+    node.declare_parameter(
+        "appearance_prevent_repeated_source_adaptive_update", False
+    )
     node.declare_parameter("appearance_conservative_enabled", True)
     node.declare_parameter("appearance_conservative_require_appearance", False)
     node.declare_parameter("appearance_conservative_min_similarity", 0.65)
@@ -643,6 +646,11 @@ def build_target_memory_config(node: Any, params: TimMarsRosParams) -> TargetMem
         ),
         appearance_gallery_consensus_recovery_enabled=bool(
             node.get_parameter("appearance_gallery_consensus_recovery_enabled").value
+        ),
+        appearance_prevent_repeated_source_adaptive_update=bool(
+            node.get_parameter(
+                "appearance_prevent_repeated_source_adaptive_update"
+            ).value
         ),
         appearance_conservative_require_appearance=bool(
             node.get_parameter("appearance_conservative_require_appearance").value
