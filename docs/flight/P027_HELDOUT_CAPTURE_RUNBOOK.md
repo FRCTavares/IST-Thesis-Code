@@ -40,7 +40,10 @@ Required:
 
 All physical H01–H03 work is queued in:
 
-`docs/flight/P027_HELDOUT_EXECUTION_PLAN.md`
+`docs/flight/P027_HELDOUT_EXECUTION_PLAN_v2.md`
+
+(the original `P027_HELDOUT_EXECUTION_PLAN.md` is retained unchanged as
+historical provenance for the superseded 5 September split-v3 freeze).
 
 Do not start a real held-out capture unless working in the appropriate physical
 recording environment.

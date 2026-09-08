@@ -26,11 +26,9 @@ tracked evidence (see "Current canonical runtime vs frozen evidence").
   `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
 - SHA-256:
   `b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c`
-- Established by branch (pending review/merge):
-  `tim-mars-ab16-production-promotion-20260908` (2026-09-08), the TIM-MARS
-  Stage-3 AB-16 source-aware adaptive positive-memory production promotion.
-  The promotion commit hash is recorded in the machine-readable map once the
-  branch is merged.
+- Established by commit:
+  `79f11b631688889bf5ffbeb3c16ef543a53f9973` (2026-09-08), the merge of PR #101 promoting the
+  Stage-3 AB-16 source-aware adaptive positive-memory policy.
 - Latest frozen evidence version: `p028_dual_oracle_development` (evaluated
   with an **earlier** configuration, `e7620313…` — see the version map).
 
@@ -57,7 +55,7 @@ the earliest three and the AB-16 promotion.
 | `hard_negative_max_positive_similarity` | `1.01` (exclusion off) → `0.95` | `f10492637163e2b25cd72155deffd8c12d5fb69d` | `reports/p017_fragment_safety_f1049263_2026_07_27/` (P1.6, Issue #17) | Lowest tested safe positive-similarity fragment-exclusion threshold over the four frozen development sequences; deterministic `0.95–1.01` sweep, all annotated-ID / spatial / absent-output gates PASS, repeatable. Development-only; no absolute-performance, tracker-independent, or held-out claim. |
 | `hard_negative_max_age_frames`, `hard_negative_decay_policy` | added: `247` frames, `none_until_expiry` | `6ba28c6133ff2e105ca6db4c17d0b0759c27b565` | `reports/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/` (P1.7, Issue #18) | Largest tested finite maximum age that exercised committed-prototype expiry with zero annotated-ID or spatial safety degradation over the four frozen development sequences (age sweep `62/93/247/394/427`, repeatable). Development-only. Appearance vectors stay full-strength; expiry only during uninterrupted trusted `LOCKED → LOCKED` continuity. |
 | `appearance_request_policy` | added: `all_candidates` | `bd5eeb4ebb79988bce2fa18b8889550d5f497306` | — | Behaviour-neutral. Makes the pre-existing encode-all default an explicit parameter so controlled Issue #44 experiments can override it. No change to the canonical decision path. |
-| `appearance_prevent_repeated_source_adaptive_update`; selected development baseline (`same_id_fresh_challenge_enabled`, `same_id_challenge_available_images_only`, `appearance_gallery_consensus_recovery_enabled`) | `appearance_prevent_repeated_source_adaptive_update` added: `true` (AB-16); development baseline materialised into canonical; `min_confirm_frames_after_reacquire` retained at `1` (AB-14 not promoted) | `tim-mars-ab16-production-promotion-20260908` | `docs/results/selected_target_tracking/tim_mars_ab16_production_promotion_decision_20260908.md` | TIM-MARS Stage-3 decision. AB-16 last-source suppression only (image timestamp preferred over source-frame fallback; missing provenance preserves existing behaviour; EMA coefficient, trusted-gallery admission and appearance inference scheduling unchanged; no MARS inference saving claimed). Development-only AB-16 ablation control retained for reproduction. Development-only; no H01--H03 outcome accessed; not a prospective freeze. |
+| `appearance_prevent_repeated_source_adaptive_update`; selected development baseline (`same_id_fresh_challenge_enabled`, `same_id_challenge_available_images_only`, `appearance_gallery_consensus_recovery_enabled`) | `appearance_prevent_repeated_source_adaptive_update` added: `true` (AB-16); development baseline materialised into canonical; `min_confirm_frames_after_reacquire` retained at `1` (AB-14 not promoted) | `79f11b631688889bf5ffbeb3c16ef543a53f9973` | `docs/results/selected_target_tracking/tim_mars_ab16_production_promotion_decision_20260908.md` | TIM-MARS Stage-3 decision. AB-16 last-source suppression only (image timestamp preferred over source-frame fallback; missing provenance preserves existing behaviour; EMA coefficient, trusted-gallery admission and appearance inference scheduling unchanged; no MARS inference saving claimed). Development-only AB-16 ablation control retained for reproduction. Development-only; no H01--H03 outcome accessed; not a prospective freeze. |
 
 The machine-readable map now also tracks the active long-gap recovery controls:
 `global_reacquisition_enabled=true` and
