@@ -20,6 +20,25 @@ Protocol-freeze stage usage (no TIM replay execution)::
 Later, outcome-producing usage::
 
     run_tim_parameter_sensitivity.py --run
+
+Historical vs. live canonical configuration
+------------------------------------------
+Issue #31 is a *historical* robustness study. Its manifest
+(``docs/data/parameter_sensitivity/tim_mars_parameter_sensitivity_v1.yaml``)
+pins the exact canonical TIM-MARS configuration that was frozen for the
+experiment on 2026-08-07:
+
+    sha256 e9dc78c8e60d5c108e608a449803832738e39867ddd708a4d6855bbb782fe931
+
+The live ``tim_mars_canonical.yaml`` has legitimately changed since then
+(most recently the AB-16 promotion in PR #101, sha256
+``b0a98334...``). Historical reproduction of Issue #31 therefore validates
+against the *frozen* canonical recovered from
+``manifest.protocol_freeze.baseline_commit`` -- never against whatever config
+happens to be live today. The current live canonical hash is still recorded
+in the run provenance as an informational drift signal, but a drift does not
+invalidate the historical experiment. This runner is not part of the Stage-7
+prospective held-out evaluation tooling surface.
 """
 
 from __future__ import annotations
@@ -120,27 +139,120 @@ def git_value(repo_root: Path, *arguments: str) -> str:
 
 
 # --------------------------------------------------------------------------
-# Canonical-hash verification (fail closed)
+# Frozen (historical) vs. live canonical-config verification (fail closed)
 # --------------------------------------------------------------------------
+#
+# Issue #31 is a historical experiment. Its manifest pins the canonical
+# configuration that was frozen at experiment time
+# (``manifest.canonical_config.sha256``, recoverable from
+# ``manifest.protocol_freeze.baseline_commit``). Historical reproduction
+# validates against those frozen bytes. The live canonical file may have
+# changed since (e.g. AB-16 promotion) and that drift is reported for
+# provenance only -- it never invalidates the historical reproduction.
+
+
+DEFAULT_CANONICAL_REL_PATH = (
+    "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
+)
 
 
 class CanonicalHashMismatch(ValueError):
-    """Raised when the live canonical YAML does not match the pinned hash."""
+    """Raised when a recovered/declared canonical hash does not match its pin."""
 
 
-def verify_canonical_hash(
+class FrozenCanonicalUnavailable(ValueError):
+    """Raised when the frozen Issue #31 canonical cannot be recovered from Git."""
+
+
+def git_show_bytes(repo_root: Path, revision: str, rel_path: str) -> bytes:
+    """Return the exact bytes of ``rel_path`` as of ``revision``.
+
+    Used to recover the historical Issue #31 canonical configuration from the
+    protocol-freeze commit without touching the live file on disk.
+    """
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "show", f"{revision}:{rel_path}"],
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise FrozenCanonicalUnavailable(
+            f"cannot recover {rel_path} at {revision} from {repo_root}: "
+            f"{result.stderr.decode('utf-8', 'replace').strip()}"
+        )
+    return result.stdout
+
+
+def manifest_canonical_rel_path(manifest: dict[str, Any]) -> str:
+    return str(
+        manifest.get("canonical_config", {}).get(
+            "path", DEFAULT_CANONICAL_REL_PATH
+        )
+    )
+
+
+def frozen_baseline_commit(manifest: dict[str, Any]) -> str:
+    try:
+        commit = manifest["protocol_freeze"]["baseline_commit"]
+    except (KeyError, TypeError) as exc:
+        raise ValueError(
+            "manifest is internally inconsistent: "
+            "protocol_freeze.baseline_commit is required to recover the "
+            "frozen Issue #31 canonical configuration"
+        ) from exc
+    commit = str(commit).strip()
+    if not commit:
+        raise ValueError(
+            "manifest protocol_freeze.baseline_commit is empty"
+        )
+    return commit
+
+
+def resolve_frozen_canonical(
     manifest: dict[str, Any],
-    canonical_path: Path,
-) -> str:
-    expected = manifest["canonical_config"]["sha256"]
-    actual = sha256_file(canonical_path)
+    repo_root: Path,
+) -> tuple[bytes, str]:
+    """Recover the exact frozen Issue #31 canonical config and verify its hash.
+
+    Returns ``(frozen_bytes, frozen_sha256)`` where ``frozen_sha256`` is
+    guaranteed to equal ``manifest.canonical_config.sha256``. Raises
+    ``CanonicalHashMismatch`` if the recovered bytes do not match the pin
+    (a corrupted/tampered manifest or history), and
+    ``FrozenCanonicalUnavailable`` if the bytes cannot be retrieved at all.
+    """
+    expected = str(manifest["canonical_config"]["sha256"])
+    commit = frozen_baseline_commit(manifest)
+    rel_path = manifest_canonical_rel_path(manifest)
+    frozen_bytes = git_show_bytes(repo_root, commit, rel_path)
+    actual = hashlib.sha256(frozen_bytes).hexdigest()
     if actual != expected:
         raise CanonicalHashMismatch(
-            "canonical TIM-MARS YAML does not match the Issue #31 "
-            f"frozen pin: expected {expected}, got {actual} "
-            f"({canonical_path})"
+            "recovered frozen Issue #31 canonical config does not match the "
+            f"manifest pin: expected {expected}, got {actual} "
+            f"(recovered from {commit}:{rel_path})"
         )
-    return actual
+    return frozen_bytes, actual
+
+
+def verify_frozen_canonical_hash(
+    manifest: dict[str, Any],
+    repo_root: Path,
+) -> str:
+    """Fail-closed validation for historical Issue #31 reproduction.
+
+    Confirms the frozen canonical recovered from the protocol-freeze commit
+    hashes to the manifest pin. Does NOT read the live canonical file.
+    """
+    _, frozen_sha = resolve_frozen_canonical(manifest, repo_root)
+    return frozen_sha
+
+
+def current_live_canonical_sha256(canonical_path: Path) -> str | None:
+    """Informational: SHA-256 of the live canonical file, or ``None`` if absent."""
+    path = Path(canonical_path)
+    if not path.is_file():
+        return None
+    return sha256_file(path)
 
 
 # --------------------------------------------------------------------------
@@ -301,6 +413,9 @@ def derive_configurations(
     this function is the single source of truth for turning that into the
     flat, ordered configuration list, so there is no separately maintained
     "configurations" list that could drift out of sync with the dimensions.
+
+    ``canonical`` is the frozen Issue #31 canonical parameter mapping (see
+    ``resolve_frozen_canonical``), not the live-on-disk canonical.
     """
     canonical_keys = set(canonical)
     configurations: list[dict[str, Any]] = [
@@ -328,7 +443,7 @@ def derive_configurations(
             if canonical[canonical_key] != dimension["canonical_values"][canonical_key]:
                 raise ValueError(
                     f"{dimension_id} canonical_values disagree with the "
-                    f"live canonical YAML for {canonical_key}"
+                    f"frozen Issue #31 canonical YAML for {canonical_key}"
                 )
 
         for perturbation in dimension["perturbations"]:
@@ -422,6 +537,35 @@ def effective_confirmation_frames(configured: int) -> int:
 # --------------------------------------------------------------------------
 
 
+def canonical_provenance(
+    manifest: dict[str, Any],
+    repo_root: Path,
+    canonical_path: Path,
+    frozen_sha: str,
+) -> dict[str, Any]:
+    """Build the historical-vs-live canonical provenance record.
+
+    ``frozen_sha`` is the already-verified SHA-256 of the frozen Issue #31
+    canonical (== ``manifest.canonical_config.sha256``). The live canonical
+    hash is recorded purely as an informational drift signal.
+    """
+    live_sha = current_live_canonical_sha256(canonical_path)
+    return {
+        # The canonical config path recorded in the historical manifest --
+        # this is a config path, NOT the manifest's own path.
+        "frozen_canonical_path": manifest_canonical_rel_path(manifest),
+        "manifest_pin_sha256": str(manifest["canonical_config"]["sha256"]),
+        "frozen_canonical_sha256": frozen_sha,
+        "frozen_canonical_recovered_from_commit": frozen_baseline_commit(
+            manifest
+        ),
+        "current_live_canonical_path": str(canonical_path),
+        "current_live_canonical_sha256": live_sha,
+        "current_live_canonical_matches_frozen": live_sha == frozen_sha,
+        "historical_reproduction_valid": True,
+    }
+
+
 def materialize_configurations(
     *,
     manifest_path: Path,
@@ -431,9 +575,12 @@ def materialize_configurations(
 ) -> dict[str, Any]:
     manifest = load_yaml_mapping(manifest_path)
     validate_manifest_schema(manifest)
-    canonical_document = load_yaml_mapping(canonical_path)
-    canonical = canonical_parameters(canonical_document)
-    verify_canonical_hash(manifest, canonical_path)
+
+    # Historical Issue #31 reproduction: the baseline is the canonical config
+    # that was frozen for the experiment, recovered from Git -- never the live
+    # on-disk file, which has legitimately changed since (AB-16, ...).
+    frozen_bytes, frozen_sha = resolve_frozen_canonical(manifest, repo_root)
+    canonical = canonical_parameters(yaml.safe_load(frozen_bytes))
 
     configurations = derive_configurations(manifest, canonical)
     validate_configurations(configurations, canonical)
@@ -445,7 +592,7 @@ def materialize_configurations(
     for config in configurations:
         config_path = config_dir / f"{config['id']}.yaml"
         if config["id"] == BASELINE_ID:
-            config_path.write_bytes(canonical_path.read_bytes())
+            config_path.write_bytes(frozen_bytes)
         else:
             document = {NODE_NAME: {"ros__parameters": config["parameters"]}}
             config_path.write_text(
@@ -466,16 +613,19 @@ def materialize_configurations(
     baseline_entry = next(
         entry for entry in config_entries if entry["id"] == BASELINE_ID
     )
-    if baseline_entry["sha256"] != sha256_file(canonical_path):
+    if baseline_entry["sha256"] != frozen_sha:
         raise ValueError(
             "materialized baseline configuration is not byte-identical to "
-            "the canonical YAML"
+            "the frozen Issue #31 canonical YAML"
         )
 
+    provenance = canonical_provenance(
+        manifest, repo_root, canonical_path, frozen_sha
+    )
     sequences = development_sequences(manifest)
     status = git_value(repo_root, "status", "--short").splitlines()
     lock = {
-        "schema_version": 1,
+        "schema_version": 2,
         "manifest_id": manifest["manifest_id"],
         "issue": 31,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -490,10 +640,12 @@ def materialize_configurations(
             "path": str(manifest_path),
             "sha256": sha256_file(manifest_path),
         },
+        # The canonical configuration this experiment is frozen against.
         "canonical_config": {
-            "path": str(canonical_path),
-            "sha256": sha256_file(canonical_path),
+            "path": manifest_canonical_rel_path(manifest),
+            "sha256": frozen_sha,
         },
+        "canonical_provenance": provenance,
         "raw_target_mode": manifest["raw_target_mode"],
         "development_sequence_ids": [str(s["id"]) for s in sequences],
         "expected_counts": manifest["expected_counts"],
@@ -724,6 +876,9 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=repo_root
         / "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+        help="Live canonical YAML, recorded for informational drift only. "
+        "The frozen Issue #31 baseline is recovered from the manifest's "
+        "protocol_freeze.baseline_commit and is what the matrix runs against.",
     )
     parser.add_argument(
         "--split",
@@ -798,9 +953,24 @@ def main() -> int:
 
     manifest = load_yaml_mapping(manifest_path)
     validate_manifest_schema(manifest)
-    canonical_document = load_yaml_mapping(canonical_path)
-    canonical = canonical_parameters(canonical_document)
-    verify_canonical_hash(manifest, canonical_path)
+
+    # Historical Issue #31 reproduction validates against the frozen canonical
+    # recovered from Git, not the live file. resolve_frozen_canonical() is
+    # itself fail-closed: it raises unless the recovered bytes hash to the
+    # manifest pin. Live drift is informational only.
+    frozen_bytes, frozen_sha = resolve_frozen_canonical(manifest, repo_root)
+    canonical = canonical_parameters(yaml.safe_load(frozen_bytes))
+    live_sha = current_live_canonical_sha256(canonical_path)
+    if live_sha == frozen_sha:
+        print(f"[ok] live canonical matches the frozen Issue #31 pin {frozen_sha}")
+    else:
+        print(
+            "[note] live canonical has drifted from the frozen Issue #31 pin "
+            "(historical reproduction is unaffected):\n"
+            f"       frozen  {frozen_sha} "
+            f"({frozen_baseline_commit(manifest)})\n"
+            f"       live    {live_sha} ({canonical_path})"
+        )
 
     split = load_json_mapping(split_path)
     verify_split_membership(manifest, split)
@@ -940,12 +1110,20 @@ def main() -> int:
             completed_cells.add((config_id, sequence_id))
 
     provenance = {
-        "schema_version": 1,
+        "schema_version": 2,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "matrix_lock": "parameter_sensitivity_lock.json",
         "sequence_ids": [str(s["id"]) for s in sequences],
         "configuration_ids": [str(c["id"]) for c in configurations],
         "raw_target_mode": manifest["raw_target_mode"],
+        "manifest": {
+            "path": str(manifest_path),
+            "sha256": sha256_file(manifest_path),
+            "manifest_id": manifest.get("manifest_id"),
+        },
+        "canonical": canonical_provenance(
+            manifest, repo_root, canonical_path, frozen_sha
+        ),
         "split": {
             "path": str(split_path),
             "sha256": sha256_file(split_path),
