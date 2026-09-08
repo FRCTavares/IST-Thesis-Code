@@ -1,0 +1,460 @@
+{
+  "algorithm": {
+    "canonical_config_sha256": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c",
+    "description": "Final selected TIM-MARS development algorithm: selected development baseline + production AB-16 only (PR #101 merge 79f11b631688889bf5ffbeb3c16ef543a53f9973).",
+    "evidence_source": "docs/results/selected_target_tracking/tim_mars_ab16_production_regression_20260908.json and the retained per-run physical-v2 reports under reports/tim_ab16_prod_regression_20260908/prodab16/<seq>/r{1,2,3}/tim_target_memory.json (Stage-5, verdict PASS).",
+    "note": "Stage-5 established that the production-AB-16 physical-v2 duration buckets are byte-identical across the 3 production repeats and byte-equal to the selected development baseline control on all four sequences; no sequence was re-run or re-classified for this characterisation."
+  },
+  "date": "2026-09-08",
+  "derived_reporting_schema": "tim_presence_conditioned_metrics_v1",
+  "frozen_physical_v2_evaluator_unchanged": {
+    "ros2_ws/src/thesis_bringup/thesis_bringup/freshness.py": "4abda9ffab0b171f007d565e91bf6a0d2723ed6e5958f3c7d8abb0ba82aa46f6",
+    "tools/analysis/evaluate_physical_target_bbox_v2.py": "ab6012a3cf912c1a9c35be3487101c55d646c8a00d3bb47670ab20785076a631",
+    "tools/analysis/physical_target_bbox_evaluation_v2.py": "4e80edc4a574d0eaf9fadbcf5c085513afe2ba40758cb25bbaeb866400fdbcfd",
+    "tools/analysis/physical_target_reference_v2.py": "6299542c5ae3f4f21bb313112f8375774ed2685ccf0cb164bd56848c34094c96"
+  },
+  "issue": 27,
+  "percent_time_target_present_definition": "Exact Stage-7 primary_metric_contract quantity: percent_time_target_present = 100 * physical_target_present_duration_s / (physical_target_present_duration_s + physical_target_absent_duration_s). reference_unavailable_duration_s and reference_gap_duration_s are excluded from this denominator. The separately named physical_target_present_pct_of_total (denominator total_evaluated_duration_s) is a secondary descriptive quantity and is NOT the Stage-7 percent_time_target_present.",
+  "present_denominator_definition": "physical_target_present_duration_s = correct_target_output_duration_s + wrong_person_output_duration_s + identity_unresolved_duration_s + lost_or_suppressed_duration_s. reference_unavailable_duration_s and reference_gap_duration_s are kept strictly separate and are never folded into this denominator.",
+  "record": "tim_mars_presence_conditioned_development_characterisation",
+  "reporting_tool": {
+    "path": "tools/analysis/derive_presence_conditioned_metrics.py",
+    "sha256": "3388f880b5d24d54a75a7cd03d7881e2237494960da3963b9fb3af51efb160df"
+  },
+  "scope": [
+    "development-only descriptive characterisation",
+    "no tuning, no parameter sweep, no configuration selection performed",
+    "no H01/H02/H03 access: the held-out sources were not captured, listed, opened, hashed, replayed, annotated, evaluated or inspected",
+    "derived from the frozen tim_physical_target_bbox_v2 duration semantics; percentages are pure arithmetic transformations of already-frozen buckets",
+    "the presence-conditioned formulas were predeclared in the Stage-7 prospective freeze primary_metric_contract; this record implements them, it does not create or modify methodology",
+    "this record does not supersede or modify the physical-v2 evaluator and introduces no pass/fail threshold"
+  ],
+  "sequences": [
+    {
+      "canonical_config_sha256": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c",
+      "physical_reference_path": "docs/data/physical_target_references/dev_may_hard_reentry.json",
+      "physical_reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+      "physical_v2_buckets_byte_equal_selected_baseline_control": true,
+      "physical_v2_report_identical_across_3_production_repeats": true,
+      "presence_conditioned": {
+        "derived_reporting_schema": "tim_presence_conditioned_metrics_v1",
+        "derived_reporting_schema_note": "DERIVED reporting layer. Pure arithmetic transformation of the frozen tim_physical_target_bbox_v2 duration buckets, implementing the presence-conditioned formulas predeclared in the Issue #27 Stage-7 prospective freeze primary_metric_contract (docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json). This is NOT a physical-v2 evaluator contract and does not modify, supersede or reinterpret it. No pass/fail threshold is introduced.",
+        "frozen_bucket_inputs_s": {
+          "correct_target_output_duration_s": 62.79632971200054,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 5.035185820999448,
+          "reference_gap_duration_s": 0.0,
+          "reference_unavailable_duration_s": 0.0,
+          "target_absent_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.03339424100000343
+        },
+        "label": "dev_may_hard_reentry",
+        "reconciliation": {
+          "absolute_tolerance_s": 1e-06,
+          "duration_partition_ok": true,
+          "duration_partition_residual_s": 0.0,
+          "duration_partition_sum_s": 67.864909774,
+          "duration_partition_total_s": 67.864909774,
+          "present_denominator_vs_reference_covered_residual_s": 0.0,
+          "present_pct_components_sum": 100.0,
+          "present_pct_components_sum_ok": true,
+          "source_evaluator_reconciliation_ok": true,
+          "source_evaluator_reconciliation_residual_s": 0.0
+        },
+        "source_report": {
+          "contract_version": "tim_physical_target_bbox_v2",
+          "evaluation_window": {
+            "end_s": 67.864909774,
+            "start_s": 0.0
+          },
+          "evaluator": "physical_target_bbox_evaluation_v2",
+          "evaluator_mode": "physical_reference_v2",
+          "physical_reference_path": "docs/data/physical_target_references/dev_may_hard_reentry.json",
+          "physical_reference_sha256": "45d620d97e6488fb174e4ce66c49403079e084bc577d6d621c8365265f0d238c",
+          "repo_commit": "75147ecb0e4edce81f54aea1b303a25df0572d45",
+          "repo_dirty": false,
+          "schema_version": 2,
+          "source_bag_name": "2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+          "source_bag_path": "bags/source/curated/2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw",
+          "stream": "tim_target_memory",
+          "total_evaluated_duration_s": 67.864909774
+        },
+        "stage7_primary_metric_contract_mapping": {
+          "correct_target_authority_pct": "while_target_present.correct_while_present_pct",
+          "leakage_pct_of_absent_time": "while_target_absent.absence_leakage_pct (null when target_absent_duration_s == 0)",
+          "lost_or_suppressed_pct": "while_target_present.lost_or_suppressed_while_present_pct",
+          "percent_time_target_absent": "target_presence_accounting.percent_time_target_absent = 100 * physical_target_absent_duration_s / (physical_target_present_duration_s + physical_target_absent_duration_s)",
+          "percent_time_target_present": "target_presence_accounting.percent_time_target_present = 100 * physical_target_present_duration_s / (physical_target_present_duration_s + physical_target_absent_duration_s); reference_unavailable_duration_s and reference_gap_duration_s are excluded from the denominator. The separately named physical_target_present_pct_of_total (denominator total_evaluated_duration_s) is a secondary descriptive quantity and is NOT this Stage-7 metric.",
+          "physical_target_present_duration_s": "target_presence_accounting.physical_target_present_duration_s",
+          "safe_clear_duration_s": "while_target_absent.safe_clear_while_absent_duration_s",
+          "wrong_person_authority_pct": "while_target_present.wrong_while_present_pct"
+        },
+        "target_presence_accounting": {
+          "percent_time_target_absent": 0.0,
+          "percent_time_target_present": 100.0,
+          "percent_time_target_present_denominator": "physical_target_present_duration_s + physical_target_absent_duration_s",
+          "physical_target_absent_duration_s": 0.0,
+          "physical_target_absent_pct_of_total": 0.0,
+          "physical_target_present_definition": "correct_target_output_duration_s + wrong_person_output_duration_s + identity_unresolved_duration_s + lost_or_suppressed_duration_s",
+          "physical_target_present_duration_s": 67.864909774,
+          "physical_target_present_pct_of_total": 100.0,
+          "present_plus_absent_duration_s": 67.864909774,
+          "reference_gap_duration_s": 0.0,
+          "reference_gap_pct_of_total": 0.0,
+          "reference_unavailable_duration_s": 0.0,
+          "reference_unavailable_pct_of_total": 0.0,
+          "total_evaluated_duration_s": 67.864909774
+        },
+        "while_target_absent": {
+          "absence_leakage_duration_s": 0.0,
+          "absence_leakage_pct": null,
+          "denominator_s": 0.0,
+          "safe_clear_while_absent_duration_s": 0.0,
+          "safe_clear_while_absent_pct": null
+        },
+        "while_target_present": {
+          "correct_while_present_duration_s": 62.79632971200054,
+          "correct_while_present_pct": 92.53136845112067,
+          "denominator_s": 67.864909774,
+          "identity_unresolved_while_present_duration_s": 0.0,
+          "identity_unresolved_while_present_pct": 0.0,
+          "lost_or_suppressed_while_present_duration_s": 5.035185820999448,
+          "lost_or_suppressed_while_present_pct": 7.419424615412218,
+          "wrong_while_present_duration_s": 0.03339424100000343,
+          "wrong_while_present_pct": 0.04920693346710561
+        }
+      },
+      "replay_repo_commit": "75147ecb0e4edce81f54aea1b303a25df0572d45",
+      "replay_repo_dirty": false,
+      "source_physical_v2_report": "reports/tim_ab16_prod_regression_20260908/prodab16/may/r1/tim_target_memory.json",
+      "source_physical_v2_report_repeats": [
+        "reports/tim_ab16_prod_regression_20260908/prodab16/may/r1/tim_target_memory.json",
+        "reports/tim_ab16_prod_regression_20260908/prodab16/may/r2/tim_target_memory.json",
+        "reports/tim_ab16_prod_regression_20260908/prodab16/may/r3/tim_target_memory.json"
+      ],
+      "split_id": "dev_may_hard_reentry",
+      "split_membership": "development"
+    },
+    {
+      "canonical_config_sha256": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c",
+      "physical_reference_path": "docs/data/physical_target_references/seq01_clean.json",
+      "physical_reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+      "physical_v2_buckets_byte_equal_selected_baseline_control": true,
+      "physical_v2_report_identical_across_3_production_repeats": true,
+      "presence_conditioned": {
+        "derived_reporting_schema": "tim_presence_conditioned_metrics_v1",
+        "derived_reporting_schema_note": "DERIVED reporting layer. Pure arithmetic transformation of the frozen tim_physical_target_bbox_v2 duration buckets, implementing the presence-conditioned formulas predeclared in the Issue #27 Stage-7 prospective freeze primary_metric_contract (docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json). This is NOT a physical-v2 evaluator contract and does not modify, supersede or reinterpret it. No pass/fail threshold is introduced.",
+        "frozen_bucket_inputs_s": {
+          "correct_target_output_duration_s": 61.200516816,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "reference_gap_duration_s": 0.0,
+          "reference_unavailable_duration_s": 0.0,
+          "target_absent_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "label": "dev_june_seq01",
+        "reconciliation": {
+          "absolute_tolerance_s": 1e-06,
+          "duration_partition_ok": true,
+          "duration_partition_residual_s": 0.0,
+          "duration_partition_sum_s": 61.200516816,
+          "duration_partition_total_s": 61.200516816,
+          "present_denominator_vs_reference_covered_residual_s": 0.0,
+          "present_pct_components_sum": 100.0,
+          "present_pct_components_sum_ok": true,
+          "source_evaluator_reconciliation_ok": true,
+          "source_evaluator_reconciliation_residual_s": 0.0
+        },
+        "source_report": {
+          "contract_version": "tim_physical_target_bbox_v2",
+          "evaluation_window": {
+            "end_s": 61.200516816,
+            "start_s": 0.0
+          },
+          "evaluator": "physical_target_bbox_evaluation_v2",
+          "evaluator_mode": "physical_reference_v2",
+          "physical_reference_path": "docs/data/physical_target_references/seq01_clean.json",
+          "physical_reference_sha256": "c0d7c2a3c7471cd9ae2d1a16868110e5f1f30320cf15c21f32ffef2d8d23833d",
+          "repo_commit": "75147ecb0e4edce81f54aea1b303a25df0572d45",
+          "repo_dirty": false,
+          "schema_version": 2,
+          "source_bag_name": "2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw",
+          "source_bag_path": "bags/source/curated/2026-06-19__12-48-17__source__2026-06-19__official__seq01__clean_four_person__image_raw",
+          "stream": "tim_target_memory",
+          "total_evaluated_duration_s": 61.200516816
+        },
+        "stage7_primary_metric_contract_mapping": {
+          "correct_target_authority_pct": "while_target_present.correct_while_present_pct",
+          "leakage_pct_of_absent_time": "while_target_absent.absence_leakage_pct (null when target_absent_duration_s == 0)",
+          "lost_or_suppressed_pct": "while_target_present.lost_or_suppressed_while_present_pct",
+          "percent_time_target_absent": "target_presence_accounting.percent_time_target_absent = 100 * physical_target_absent_duration_s / (physical_target_present_duration_s + physical_target_absent_duration_s)",
+          "percent_time_target_present": "target_presence_accounting.percent_time_target_present = 100 * physical_target_present_duration_s / (physical_target_present_duration_s + physical_target_absent_duration_s); reference_unavailable_duration_s and reference_gap_duration_s are excluded from the denominator. The separately named physical_target_present_pct_of_total (denominator total_evaluated_duration_s) is a secondary descriptive quantity and is NOT this Stage-7 metric.",
+          "physical_target_present_duration_s": "target_presence_accounting.physical_target_present_duration_s",
+          "safe_clear_duration_s": "while_target_absent.safe_clear_while_absent_duration_s",
+          "wrong_person_authority_pct": "while_target_present.wrong_while_present_pct"
+        },
+        "target_presence_accounting": {
+          "percent_time_target_absent": 0.0,
+          "percent_time_target_present": 100.0,
+          "percent_time_target_present_denominator": "physical_target_present_duration_s + physical_target_absent_duration_s",
+          "physical_target_absent_duration_s": 0.0,
+          "physical_target_absent_pct_of_total": 0.0,
+          "physical_target_present_definition": "correct_target_output_duration_s + wrong_person_output_duration_s + identity_unresolved_duration_s + lost_or_suppressed_duration_s",
+          "physical_target_present_duration_s": 61.200516816,
+          "physical_target_present_pct_of_total": 100.0,
+          "present_plus_absent_duration_s": 61.200516816,
+          "reference_gap_duration_s": 0.0,
+          "reference_gap_pct_of_total": 0.0,
+          "reference_unavailable_duration_s": 0.0,
+          "reference_unavailable_pct_of_total": 0.0,
+          "total_evaluated_duration_s": 61.200516816
+        },
+        "while_target_absent": {
+          "absence_leakage_duration_s": 0.0,
+          "absence_leakage_pct": null,
+          "denominator_s": 0.0,
+          "safe_clear_while_absent_duration_s": 0.0,
+          "safe_clear_while_absent_pct": null
+        },
+        "while_target_present": {
+          "correct_while_present_duration_s": 61.200516816,
+          "correct_while_present_pct": 100.0,
+          "denominator_s": 61.200516816,
+          "identity_unresolved_while_present_duration_s": 0.0,
+          "identity_unresolved_while_present_pct": 0.0,
+          "lost_or_suppressed_while_present_duration_s": 0.0,
+          "lost_or_suppressed_while_present_pct": 0.0,
+          "wrong_while_present_duration_s": 0.0,
+          "wrong_while_present_pct": 0.0
+        }
+      },
+      "replay_repo_commit": "75147ecb0e4edce81f54aea1b303a25df0572d45",
+      "replay_repo_dirty": false,
+      "source_physical_v2_report": "reports/tim_ab16_prod_regression_20260908/prodab16/seq01/r1/tim_target_memory.json",
+      "source_physical_v2_report_repeats": [
+        "reports/tim_ab16_prod_regression_20260908/prodab16/seq01/r1/tim_target_memory.json",
+        "reports/tim_ab16_prod_regression_20260908/prodab16/seq01/r2/tim_target_memory.json",
+        "reports/tim_ab16_prod_regression_20260908/prodab16/seq01/r3/tim_target_memory.json"
+      ],
+      "split_id": "dev_june_seq01",
+      "split_membership": "development"
+    },
+    {
+      "canonical_config_sha256": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c",
+      "physical_reference_path": "docs/data/physical_target_references/seq03_crossing.json",
+      "physical_reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+      "physical_v2_buckets_byte_equal_selected_baseline_control": true,
+      "physical_v2_report_identical_across_3_production_repeats": true,
+      "presence_conditioned": {
+        "derived_reporting_schema": "tim_presence_conditioned_metrics_v1",
+        "derived_reporting_schema_note": "DERIVED reporting layer. Pure arithmetic transformation of the frozen tim_physical_target_bbox_v2 duration buckets, implementing the presence-conditioned formulas predeclared in the Issue #27 Stage-7 prospective freeze primary_metric_contract (docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json). This is NOT a physical-v2 evaluator contract and does not modify, supersede or reinterpret it. No pass/fail threshold is introduced.",
+        "frozen_bucket_inputs_s": {
+          "correct_target_output_duration_s": 24.600414281999996,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 59.166383501000006,
+          "reference_gap_duration_s": 0.1004533710000004,
+          "reference_unavailable_duration_s": 0.0,
+          "target_absent_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "label": "dev_june_seq03_ocsort",
+        "reconciliation": {
+          "absolute_tolerance_s": 1e-06,
+          "duration_partition_ok": true,
+          "duration_partition_residual_s": 0.0,
+          "duration_partition_sum_s": 83.867251154,
+          "duration_partition_total_s": 83.867251154,
+          "present_denominator_vs_reference_covered_residual_s": 0.0,
+          "present_pct_components_sum": 100.00000000000001,
+          "present_pct_components_sum_ok": true,
+          "source_evaluator_reconciliation_ok": true,
+          "source_evaluator_reconciliation_residual_s": 0.0
+        },
+        "source_report": {
+          "contract_version": "tim_physical_target_bbox_v2",
+          "evaluation_window": {
+            "end_s": 83.867251154,
+            "start_s": 0.0
+          },
+          "evaluator": "physical_target_bbox_evaluation_v2",
+          "evaluator_mode": "physical_reference_v2",
+          "physical_reference_path": "docs/data/physical_target_references/seq03_crossing.json",
+          "physical_reference_sha256": "9e03fedc8076638bfb300cf131672aef38927252c09ac48174fa79bd2aa17f71",
+          "repo_commit": "75147ecb0e4edce81f54aea1b303a25df0572d45",
+          "repo_dirty": false,
+          "schema_version": 2,
+          "source_bag_name": "2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+          "source_bag_path": "bags/source/curated/2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw",
+          "stream": "tim_target_memory",
+          "total_evaluated_duration_s": 83.867251154
+        },
+        "stage7_primary_metric_contract_mapping": {
+          "correct_target_authority_pct": "while_target_present.correct_while_present_pct",
+          "leakage_pct_of_absent_time": "while_target_absent.absence_leakage_pct (null when target_absent_duration_s == 0)",
+          "lost_or_suppressed_pct": "while_target_present.lost_or_suppressed_while_present_pct",
+          "percent_time_target_absent": "target_presence_accounting.percent_time_target_absent = 100 * physical_target_absent_duration_s / (physical_target_present_duration_s + physical_target_absent_duration_s)",
+          "percent_time_target_present": "target_presence_accounting.percent_time_target_present = 100 * physical_target_present_duration_s / (physical_target_present_duration_s + physical_target_absent_duration_s); reference_unavailable_duration_s and reference_gap_duration_s are excluded from the denominator. The separately named physical_target_present_pct_of_total (denominator total_evaluated_duration_s) is a secondary descriptive quantity and is NOT this Stage-7 metric.",
+          "physical_target_present_duration_s": "target_presence_accounting.physical_target_present_duration_s",
+          "safe_clear_duration_s": "while_target_absent.safe_clear_while_absent_duration_s",
+          "wrong_person_authority_pct": "while_target_present.wrong_while_present_pct"
+        },
+        "target_presence_accounting": {
+          "percent_time_target_absent": 0.0,
+          "percent_time_target_present": 100.0,
+          "percent_time_target_present_denominator": "physical_target_present_duration_s + physical_target_absent_duration_s",
+          "physical_target_absent_duration_s": 0.0,
+          "physical_target_absent_pct_of_total": 0.0,
+          "physical_target_present_definition": "correct_target_output_duration_s + wrong_person_output_duration_s + identity_unresolved_duration_s + lost_or_suppressed_duration_s",
+          "physical_target_present_duration_s": 83.766797783,
+          "physical_target_present_pct_of_total": 99.88022336535683,
+          "present_plus_absent_duration_s": 83.766797783,
+          "reference_gap_duration_s": 0.1004533710000004,
+          "reference_gap_pct_of_total": 0.11977663464317483,
+          "reference_unavailable_duration_s": 0.0,
+          "reference_unavailable_pct_of_total": 0.0,
+          "total_evaluated_duration_s": 83.867251154
+        },
+        "while_target_absent": {
+          "absence_leakage_duration_s": 0.0,
+          "absence_leakage_pct": null,
+          "denominator_s": 0.0,
+          "safe_clear_while_absent_duration_s": 0.0,
+          "safe_clear_while_absent_pct": null
+        },
+        "while_target_present": {
+          "correct_while_present_duration_s": 24.600414281999996,
+          "correct_while_present_pct": 29.367738690128743,
+          "denominator_s": 83.766797783,
+          "identity_unresolved_while_present_duration_s": 0.0,
+          "identity_unresolved_while_present_pct": 0.0,
+          "lost_or_suppressed_while_present_duration_s": 59.166383501000006,
+          "lost_or_suppressed_while_present_pct": 70.63226130987127,
+          "wrong_while_present_duration_s": 0.0,
+          "wrong_while_present_pct": 0.0
+        }
+      },
+      "replay_repo_commit": "75147ecb0e4edce81f54aea1b303a25df0572d45",
+      "replay_repo_dirty": false,
+      "source_physical_v2_report": "reports/tim_ab16_prod_regression_20260908/prodab16/seq03/r1/tim_target_memory.json",
+      "source_physical_v2_report_repeats": [
+        "reports/tim_ab16_prod_regression_20260908/prodab16/seq03/r1/tim_target_memory.json",
+        "reports/tim_ab16_prod_regression_20260908/prodab16/seq03/r2/tim_target_memory.json",
+        "reports/tim_ab16_prod_regression_20260908/prodab16/seq03/r3/tim_target_memory.json"
+      ],
+      "split_id": "dev_june_seq03_ocsort",
+      "split_membership": "development"
+    },
+    {
+      "canonical_config_sha256": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c",
+      "physical_reference_path": "docs/data/physical_target_references/seq04_occlusion_no_exit.json",
+      "physical_reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+      "physical_v2_buckets_byte_equal_selected_baseline_control": true,
+      "physical_v2_report_identical_across_3_production_repeats": true,
+      "presence_conditioned": {
+        "derived_reporting_schema": "tim_presence_conditioned_metrics_v1",
+        "derived_reporting_schema_note": "DERIVED reporting layer. Pure arithmetic transformation of the frozen tim_physical_target_bbox_v2 duration buckets, implementing the presence-conditioned formulas predeclared in the Issue #27 Stage-7 prospective freeze primary_metric_contract (docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json). This is NOT a physical-v2 evaluator contract and does not modify, supersede or reinterpret it. No pass/fail threshold is introduced.",
+        "frozen_bucket_inputs_s": {
+          "correct_target_output_duration_s": 48.766241081999965,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 23.733800690000038,
+          "reference_gap_duration_s": 0.10088379499999434,
+          "reference_unavailable_duration_s": 0.0,
+          "target_absent_duration_s": 13.900030159000003,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "label": "dev_june_seq04_ocsort",
+        "reconciliation": {
+          "absolute_tolerance_s": 1e-06,
+          "duration_partition_ok": true,
+          "duration_partition_residual_s": 0.0,
+          "duration_partition_sum_s": 86.500955726,
+          "duration_partition_total_s": 86.500955726,
+          "present_denominator_vs_reference_covered_residual_s": 0.0,
+          "present_pct_components_sum": 100.0,
+          "present_pct_components_sum_ok": true,
+          "source_evaluator_reconciliation_ok": true,
+          "source_evaluator_reconciliation_residual_s": 0.0
+        },
+        "source_report": {
+          "contract_version": "tim_physical_target_bbox_v2",
+          "evaluation_window": {
+            "end_s": 86.500955726,
+            "start_s": 0.0
+          },
+          "evaluator": "physical_target_bbox_evaluation_v2",
+          "evaluator_mode": "physical_reference_v2",
+          "physical_reference_path": "docs/data/physical_target_references/seq04_occlusion_no_exit.json",
+          "physical_reference_sha256": "a99fb5ea98c3f1442c6a90851235f51d773e509ea7be5e7c058bad8d2a0c886b",
+          "repo_commit": "75147ecb0e4edce81f54aea1b303a25df0572d45",
+          "repo_dirty": false,
+          "schema_version": 2,
+          "source_bag_name": "2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+          "source_bag_path": "bags/source/curated/2026-06-19__12-59-53__source__2026-06-19__official__seq04__four_person_occlusion_no_exit__image_raw",
+          "stream": "tim_target_memory",
+          "total_evaluated_duration_s": 86.500955726
+        },
+        "stage7_primary_metric_contract_mapping": {
+          "correct_target_authority_pct": "while_target_present.correct_while_present_pct",
+          "leakage_pct_of_absent_time": "while_target_absent.absence_leakage_pct (null when target_absent_duration_s == 0)",
+          "lost_or_suppressed_pct": "while_target_present.lost_or_suppressed_while_present_pct",
+          "percent_time_target_absent": "target_presence_accounting.percent_time_target_absent = 100 * physical_target_absent_duration_s / (physical_target_present_duration_s + physical_target_absent_duration_s)",
+          "percent_time_target_present": "target_presence_accounting.percent_time_target_present = 100 * physical_target_present_duration_s / (physical_target_present_duration_s + physical_target_absent_duration_s); reference_unavailable_duration_s and reference_gap_duration_s are excluded from the denominator. The separately named physical_target_present_pct_of_total (denominator total_evaluated_duration_s) is a secondary descriptive quantity and is NOT this Stage-7 metric.",
+          "physical_target_present_duration_s": "target_presence_accounting.physical_target_present_duration_s",
+          "safe_clear_duration_s": "while_target_absent.safe_clear_while_absent_duration_s",
+          "wrong_person_authority_pct": "while_target_present.wrong_while_present_pct"
+        },
+        "target_presence_accounting": {
+          "percent_time_target_absent": 16.08798447540728,
+          "percent_time_target_present": 83.91201552459272,
+          "percent_time_target_present_denominator": "physical_target_present_duration_s + physical_target_absent_duration_s",
+          "physical_target_absent_duration_s": 13.900030159000003,
+          "physical_target_absent_pct_of_total": 16.069221481239662,
+          "physical_target_present_definition": "correct_target_output_duration_s + wrong_person_output_duration_s + identity_unresolved_duration_s + lost_or_suppressed_duration_s",
+          "physical_target_present_duration_s": 72.500041772,
+          "physical_target_present_pct_of_total": 83.81415114261948,
+          "present_plus_absent_duration_s": 86.40007193100001,
+          "reference_gap_duration_s": 0.10088379499999434,
+          "reference_gap_pct_of_total": 0.11662737614085253,
+          "reference_unavailable_duration_s": 0.0,
+          "reference_unavailable_pct_of_total": 0.0,
+          "total_evaluated_duration_s": 86.500955726
+        },
+        "while_target_absent": {
+          "absence_leakage_duration_s": 0.0,
+          "absence_leakage_pct": 0.0,
+          "denominator_s": 13.900030159000003,
+          "safe_clear_while_absent_duration_s": 13.900030159000003,
+          "safe_clear_while_absent_pct": 100.0
+        },
+        "while_target_present": {
+          "correct_while_present_duration_s": 48.766241081999965,
+          "correct_while_present_pct": 67.26374204770984,
+          "denominator_s": 72.500041772,
+          "identity_unresolved_while_present_duration_s": 0.0,
+          "identity_unresolved_while_present_pct": 0.0,
+          "lost_or_suppressed_while_present_duration_s": 23.733800690000038,
+          "lost_or_suppressed_while_present_pct": 32.73625795229016,
+          "wrong_while_present_duration_s": 0.0,
+          "wrong_while_present_pct": 0.0
+        }
+      },
+      "replay_repo_commit": "75147ecb0e4edce81f54aea1b303a25df0572d45",
+      "replay_repo_dirty": false,
+      "source_physical_v2_report": "reports/tim_ab16_prod_regression_20260908/prodab16/seq04/r1/tim_target_memory.json",
+      "source_physical_v2_report_repeats": [
+        "reports/tim_ab16_prod_regression_20260908/prodab16/seq04/r1/tim_target_memory.json",
+        "reports/tim_ab16_prod_regression_20260908/prodab16/seq04/r2/tim_target_memory.json",
+        "reports/tim_ab16_prod_regression_20260908/prodab16/seq04/r3/tim_target_memory.json"
+      ],
+      "split_id": "dev_june_seq04_ocsort",
+      "split_membership": "development"
+    }
+  ],
+  "stage": "Stage-7 prospective freeze -- reporting-layer implementation",
+  "status": "development_only_descriptive_characterisation"
+}
