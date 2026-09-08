@@ -6,7 +6,7 @@
     "description": "The configuration the repository currently treats as canonical. This is NOT the configuration any frozen evidence version was evaluated with; see latest_frozen_evidence_version and canonical_changes_since_latest_frozen_evidence.",
     "config_path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
     "config_sha256": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c",
-    "config_established_commit": "tim-mars-ab16-production-promotion-20260908 (branch; pending review/merge)",
+    "config_established_commit": "79f11b631688889bf5ffbeb3c16ef543a53f9973",
     "latest_frozen_evidence_version": "p028_dual_oracle_development",
     "differs_from_latest_frozen_evidence": true,
     "canonical_changes_since_latest_frozen_evidence": [
@@ -66,7 +66,7 @@
           "appearance_gallery_consensus_recovery_enabled"
         ],
         "change": "appearance_prevent_repeated_source_adaptive_update added: true (AB-16 production promotion); selected development baseline materialised into canonical: same_id_fresh_challenge_enabled true, same_id_challenge_available_images_only true, appearance_gallery_consensus_recovery_enabled false. min_confirm_frames_after_reacquire retained at 1 (AB-14 not promoted).",
-        "promotion_commit": "tim-mars-ab16-production-promotion-20260908 (branch; pending review/merge)",
+        "promotion_commit": "79f11b631688889bf5ffbeb3c16ef543a53f9973",
         "evidence_path": null,
         "claim_boundary": "TIM-MARS Stage-3 architecture decision. AB-16 is the only Stage-1 mechanism ablation adopted: an eligible adaptive positive-memory update carrying known source provenance does not reinforce the adaptive prototype when its source matches the last source already incorporated (last-source suppression only, image timestamp preferred over source-frame fallback, missing provenance preserves existing behaviour; EMA coefficient, trusted-gallery admission and appearance inference scheduling unchanged; no MARS inference saving claimed). The historical development-only AB-16 ablation control is retained for experiment reproduction. AB-14 is not promoted; AB-15 and AB-19 remain diagnostics only. Development-only decision; no held-out H01-H03 outcome was accessed and no new prospective freeze was created. The combined AB-16 production regression across May/Seq01/Seq03/Seq04 under the pinned replay environment is the next gate. Decision record: docs/results/selected_target_tracking/tim_mars_ab16_production_promotion_decision_20260908.md."
       }
