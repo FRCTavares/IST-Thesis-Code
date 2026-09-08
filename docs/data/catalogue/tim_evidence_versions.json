@@ -1,12 +1,12 @@
 {
   "schema_version": 2,
   "authority_date": "2026-07-23",
-  "current_runtime_as_of": "2026-09-05",
+  "current_runtime_as_of": "2026-09-08",
   "current_runtime": {
     "description": "The configuration the repository currently treats as canonical. This is NOT the configuration any frozen evidence version was evaluated with; see latest_frozen_evidence_version and canonical_changes_since_latest_frozen_evidence.",
     "config_path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
-    "config_sha256": "0f2ac3fc780781c3921430310abfddeac2bfeb6c1c833529f2f1054d263f15c0",
-    "config_established_commit": "e4e0dad06cebccfb9c1e6b6b29c819a55a1783df",
+    "config_sha256": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c",
+    "config_established_commit": "tim-mars-ab16-production-promotion-20260908 (branch; pending review/merge)",
     "latest_frozen_evidence_version": "p028_dual_oracle_development",
     "differs_from_latest_frozen_evidence": true,
     "canonical_changes_since_latest_frozen_evidence": [
@@ -57,6 +57,18 @@
         "promotion_commit": "e4e0dad06cebccfb9c1e6b6b29c819a55a1783df",
         "evidence_path": null,
         "claim_boundary": "Issue #90. Long-gap protected-identity global appearance reacquisition was promoted after controlled development-only comparison. The absolute appearance threshold remained 0.78 and no threshold tuning was performed. H01-H03 outcomes were not accessed. Reviewed result: docs/results/selected_target_tracking/p090_long_gap_global_reacquisition.md."
+      },
+      {
+        "parameters": [
+          "appearance_prevent_repeated_source_adaptive_update",
+          "same_id_fresh_challenge_enabled",
+          "same_id_challenge_available_images_only",
+          "appearance_gallery_consensus_recovery_enabled"
+        ],
+        "change": "appearance_prevent_repeated_source_adaptive_update added: true (AB-16 production promotion); selected development baseline materialised into canonical: same_id_fresh_challenge_enabled true, same_id_challenge_available_images_only true, appearance_gallery_consensus_recovery_enabled false. min_confirm_frames_after_reacquire retained at 1 (AB-14 not promoted).",
+        "promotion_commit": "tim-mars-ab16-production-promotion-20260908 (branch; pending review/merge)",
+        "evidence_path": null,
+        "claim_boundary": "TIM-MARS Stage-3 architecture decision. AB-16 is the only Stage-1 mechanism ablation adopted: an eligible adaptive positive-memory update carrying known source provenance does not reinforce the adaptive prototype when its source matches the last source already incorporated (last-source suppression only, image timestamp preferred over source-frame fallback, missing provenance preserves existing behaviour; EMA coefficient, trusted-gallery admission and appearance inference scheduling unchanged; no MARS inference saving claimed). The historical development-only AB-16 ablation control is retained for experiment reproduction. AB-14 is not promoted; AB-15 and AB-19 remain diagnostics only. Development-only decision; no held-out H01-H03 outcome was accessed and no new prospective freeze was created. The combined AB-16 production regression across May/Seq01/Seq03/Seq04 under the pinned replay environment is the next gate. Decision record: docs/results/selected_target_tracking/tim_mars_ab16_production_promotion_decision_20260908.md."
       }
     ]
   },
@@ -71,7 +83,12 @@
     "freshness_max_output_age_s": 0.9,
     "freshness_future_tolerance_s": 0.05,
     "global_reacquisition_enabled": true,
-    "global_reacquisition_after_missed_frames": 9
+    "global_reacquisition_after_missed_frames": 9,
+    "appearance_prevent_repeated_source_adaptive_update": true,
+    "same_id_fresh_challenge_enabled": true,
+    "same_id_challenge_available_images_only": true,
+    "appearance_gallery_consensus_recovery_enabled": false,
+    "min_confirm_frames_after_reacquire": 1
   },
   "evidence_versions": [
     {

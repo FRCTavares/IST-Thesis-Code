@@ -849,7 +849,7 @@ def test_build_resolved_runtime_payload_records_sources(
         )
     )
 
-    assert payload["schema_version"] == 3
+    assert payload["schema_version"] == 4
     assert payload["runtime_overrides"] == {
         "selected_track_id": 7,
         "image_width": 800.0,
@@ -1579,3 +1579,131 @@ def test_ab15_ab19_runtime_controls_reach_the_memory_state_machine():
     )
     assert ablated.memory._development_ablation_retire_overage_hard_negatives_pre_score
     assert ablated.memory._development_ablation_require_distinct_source_for_persistence
+
+
+def _ab16_runtime_args(**overrides):
+    base = dict(
+        appearance_enabled=False,
+        appearance_request_policy=None,
+        appearance_compute_min_interval_ms=None,
+        image_width=640.0,
+        image_height=480.0,
+        model=Path("unused.pb"),
+        tracks_are_normalized=False,
+        selected_track_id=7,
+    )
+    base.update(overrides)
+    return argparse.Namespace(**base)
+
+
+def test_ab16_production_param_reaches_memory_config_through_replay():
+    """The canonical AB-16 production switch flows into TargetMemoryConfig."""
+    disabled = MODULE.build_runtime(
+        {"appearance_enabled": False},
+        _ab16_runtime_args(),
+    )
+    assert (
+        disabled.memory.cfg.appearance_prevent_repeated_source_adaptive_update
+        is False
+    )
+
+    enabled = MODULE.build_runtime(
+        {
+            "appearance_enabled": False,
+            "appearance_prevent_repeated_source_adaptive_update": True,
+        },
+        _ab16_runtime_args(),
+    )
+    assert (
+        enabled.memory.cfg.appearance_prevent_repeated_source_adaptive_update
+        is True
+    )
+    assert (
+        enabled.memory._development_ablation_prevent_repeated_source_adaptive_update
+        is False
+    )
+
+
+def _ab16_resolved_payload(monkeypatch, tmp_path, *, production, development):
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        ["runner", "input", "output", "--config", "config.yaml"],
+    )
+    args = MODULE.argparse.Namespace(
+        selected_track_id=7,
+        image_width=800.0,
+        image_height=640.0,
+        tracks_are_normalized=False,
+        zero_id_when_not_visible=False,
+        appearance_enabled=None,
+        appearance_request_policy=None,
+        appearance_compute_min_interval_ms=None,
+        raw_target_mode="selected_id",
+        image_topic="auto",
+        tracks_topic="/tracks",
+        raw_target_topic="/target",
+        compact_output=False,
+        process_start_timestamp_ns=None,
+        process_end_timestamp_ns=None,
+        ablation_prevent_repeated_source_adaptive_update=development,
+    )
+    return MODULE.build_resolved_runtime_payload(
+        summary={
+            "canonical_config": {
+                "copy": "tim_mars_canonical_config.yaml",
+                "sha256": "a" * 64,
+                "source": "config.yaml",
+            },
+        },
+        args=args,
+        appearance_enabled=True,
+        appearance_request_policy="all_candidates",
+        appearance_compute_min_interval_ms=250.0,
+        image_topic="/camera/image_raw",
+        input_bag=tmp_path / "input",
+        output_bag=tmp_path / "output",
+        production_prevent_repeated_source_adaptive_update=production,
+    )
+
+
+def test_resolved_runtime_distinguishes_repeated_source_activation(
+    monkeypatch,
+    tmp_path,
+):
+    """Provenance separates production policy, dev control and effective state."""
+    inactive = _ab16_resolved_payload(
+        monkeypatch, tmp_path, production=False, development=False
+    )["repeated_source_adaptive_update"]
+    assert inactive == {
+        "requested_production_policy": False,
+        "development_ablation_control": False,
+        "effective_suppression": False,
+        "activation_source": "inactive",
+    }
+
+    production_only = _ab16_resolved_payload(
+        monkeypatch, tmp_path, production=True, development=False
+    )["repeated_source_adaptive_update"]
+    assert production_only == {
+        "requested_production_policy": True,
+        "development_ablation_control": False,
+        "effective_suppression": True,
+        "activation_source": "production_config",
+    }
+
+    development_only = _ab16_resolved_payload(
+        monkeypatch, tmp_path, production=False, development=True
+    )["repeated_source_adaptive_update"]
+    assert development_only == {
+        "requested_production_policy": False,
+        "development_ablation_control": True,
+        "effective_suppression": True,
+        "activation_source": "development_ablation",
+    }
+
+    both = _ab16_resolved_payload(
+        monkeypatch, tmp_path, production=True, development=True
+    )["repeated_source_adaptive_update"]
+    assert both["effective_suppression"] is True
+    assert both["activation_source"] == "production_config+development_ablation"

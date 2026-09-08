@@ -1,0 +1,433 @@
+{
+  "base_stage1_merge_commit": "d3edbcc537b92f5ef66771911015e620fc7467d2",
+  "baseline_control_configuration": {
+    "all_other_development_ablation_controls": false,
+    "appearance_prevent_repeated_source_adaptive_update": "absent -> False",
+    "canonical_yaml_modified": false,
+    "config": "selected development baseline (available_image_challenge.yaml)",
+    "development_ablation_prevent_repeated_source_adaptive_update": false,
+    "repeats_per_sequence": 1
+  },
+  "branch": "tim-mars-ab16-production-promotion-20260908",
+  "canonical_config_path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+  "canonical_config_sha256": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c",
+  "date": "2026-09-08",
+  "effective_environment": {
+    "machine": "aarch64",
+    "nproc": 4,
+    "numpy": "1.26.4",
+    "pinned_env_vars": {
+      "MKL_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "TF_DETERMINISTIC_OPS": "1",
+      "TF_ENABLE_ONEDNN_OPTS": "0",
+      "TF_NUM_INTEROP_THREADS": "1",
+      "TF_NUM_INTRAOP_THREADS": "1"
+    },
+    "platform": "Linux-6.8.0-1064-raspi-aarch64-with-glibc2.39",
+    "python": "3.12.3",
+    "tensorflow": "2.17.1"
+  },
+  "failures": [],
+  "gates": {
+    "B_baseline_control_reproduction": true,
+    "C_production_repeatability": true,
+    "D_candidate_stream": true,
+    "E_controller_facing": true,
+    "F_state_path": true,
+    "G_positive_memory": true,
+    "H_hard_negative": true,
+    "I_appearance_workload": true,
+    "Part3_production_equals_historical_ab16": true
+  },
+  "h01_h02_h03_accessed": false,
+  "heldout_accessed": false,
+  "historical_ab16_equivalence_configuration": {
+    "activation_path": "historical development-only ablation flag",
+    "config": "selected development baseline + --ablation-prevent-repeated-source-adaptive-update",
+    "repeats_per_sequence": 1
+  },
+  "is_prospective_freeze": false,
+  "mars_model_path": "models/reid/mars-small128.pb",
+  "mars_model_sha256": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+  "notes": [
+    "Development regression only. H01/H02/H03 were not accessed, listed, hashed, replayed, annotated, evaluated or captured.",
+    "This is NOT the Stage-7 prospective freeze. No prospective algorithm/config/split/comparison freeze is created or altered.",
+    "No historical Stage-1 evidence file was modified.",
+    "Retained low-level run tree: reports/tim_ab16_prod_regression_20260908/ (ignored per repository convention)."
+  ],
+  "permitted_source_sequences": {
+    "may": "bags/reference/tim_good/2026-05-14__hard_reentry__bytetrack__tim_mars_v4_margin010__target_1",
+    "seq01": "bags/replay/p025_seq01_physical_v2_bytetrack_fixed_id1_2026_08_29",
+    "seq03": "bags/replay/p058_seq03_physical_v2_trackers_2026_08_28/bytetrack",
+    "seq04": "bags/replay/p058_seq04_physical_v2_trackers_2026_08_28/bytetrack"
+  },
+  "pinned_environment_file": "docs/results/selected_target_tracking/tim_pinned_replay_env_20260908.sh",
+  "pinned_environment_sha256": "24f8c09f4d041c0f63741629a9768789aa9bbc98dd9482a8b59dddb7a52e2fc6",
+  "production_candidate_configuration": {
+    "activation_path": "production configuration (TargetMemoryConfig / ROS parameter)",
+    "all_other_development_ablation_controls": false,
+    "appearance_gallery_consensus_recovery_enabled": false,
+    "appearance_prevent_repeated_source_adaptive_update": true,
+    "appearance_weight": 0.12,
+    "config": "canonical production candidate (tim_mars_canonical.yaml)",
+    "development_ablation_prevent_repeated_source_adaptive_update": false,
+    "min_confirm_frames_after_reacquire": 1,
+    "repeats_per_sequence": 3,
+    "same_id_challenge_available_images_only": true,
+    "same_id_fresh_challenge_enabled": true
+  },
+  "protected_27_files_modified": false,
+  "record": "tim_mars_ab16_production_regression",
+  "resolved_runtime_schema_version": 4,
+  "selected_development_baseline_config_path": "docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml",
+  "selected_development_baseline_config_sha256": "a8c8092199f6ad7659ef00226e77b3181b72c9e2fb89bb0e8e2c86c91a43cd5c",
+  "sequences": {
+    "may": {
+      "appearance_workload": {
+        "appearance_backend_calls": 248,
+        "appearance_backend_requested": 416,
+        "appearance_backend_returned": 416,
+        "appearance_backend_valid": 416,
+        "appearance_cache_expired": 11,
+        "appearance_cache_hits": 1375,
+        "appearance_cache_invalidated": 0,
+        "appearance_cache_lookups": 2372,
+        "appearance_cache_misses": 986,
+        "appearance_encoding_eligible": 507,
+        "appearance_encoding_rejected": 894
+      },
+      "appearance_workload_byte_equal_baseline": true,
+      "baseline_control": {
+        "adaptive_updates": 800,
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": 62.79632971200054,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 5.035185820999448,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.03339424100000343
+        },
+        "reproduces_retained_pinned_baseline": true,
+        "semantic_sha256": "9eb017711275e98bbba6f6b35ea30b1be036aac730c222a9686dd8ef446fa63b"
+      },
+      "candidate_stream_all_runs_equal_expected": true,
+      "candidate_stream_sha256": "a85270138a46cb51888dc2656d3525647109647fa69886f39024e3ec9cab8d8d",
+      "controller_facing": {
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "per_sequence_correct_authority_loss_s": 0.0,
+        "physical_v2_byte_equal_baseline": true,
+        "tim_target_id_counts_baseline": {
+          "0": 81,
+          "1": 666,
+          "41": 203
+        },
+        "tim_target_id_counts_candidate": {
+          "0": 81,
+          "1": 666,
+          "41": 203
+        },
+        "tim_target_stream_byte_equal_baseline": true
+      },
+      "hard_negative_equal_baseline": true,
+      "label": "May hard re-entry",
+      "positive_memory": {
+        "baseline_adaptive_updates": 800,
+        "candidate_adaptive_updates": 219,
+        "known_stage1_ab16_adaptive_updates": 219,
+        "matches_known_stage1_ab16": true,
+        "non_adaptive_update_reasons_unchanged": true,
+        "protected_anchor_init_unchanged": true,
+        "reduction_pct": 72.62
+      },
+      "production_candidate": {
+        "adaptive_updates": 219,
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": 62.79632971200054,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 5.035185820999448,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.03339424100000343
+        },
+        "repeats": 3,
+        "semantic_identical_across_repeats": true,
+        "semantic_sha256": "a19b451ed7037802dd79cc264df1dd8e85ccfa34ccef35fe4172cdd303de7d93",
+        "status_scan_identical_across_repeats": true,
+        "tim_target_stream_identical_across_repeats": true,
+        "tim_target_stream_sha256": "18102c37b6c515eee70eb83d50e6522241fa3070e6c94191696fc16c1b3ceed6"
+      },
+      "production_vs_historical_ab16": {
+        "activation_source_differs_as_expected": true,
+        "candidate_stream_equal": true,
+        "historical_activation_source": "development_ablation",
+        "physical_v2_equal": true,
+        "production_activation_source": "production_config",
+        "semantic_equal": true,
+        "status_scan_equal": true,
+        "tim_target_stream_equal": true
+      },
+      "state_path_equal_baseline": true
+    },
+    "seq01": {
+      "appearance_workload": {
+        "appearance_backend_calls": 232,
+        "appearance_backend_requested": 876,
+        "appearance_backend_returned": 876,
+        "appearance_backend_valid": 876,
+        "appearance_cache_expired": 0,
+        "appearance_cache_hits": 4844,
+        "appearance_cache_invalidated": 0,
+        "appearance_cache_lookups": 5028,
+        "appearance_cache_misses": 184,
+        "appearance_encoding_eligible": 897,
+        "appearance_encoding_rejected": 37
+      },
+      "appearance_workload_byte_equal_baseline": true,
+      "baseline_control": {
+        "adaptive_updates": 1512,
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": 61.200516816,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "reproduces_retained_pinned_baseline": true,
+        "semantic_sha256": "7754d5717a587f5ee596f00a5aa2402e11386856b52b6a5d8f0ce7f84103dce2"
+      },
+      "candidate_stream_all_runs_equal_expected": true,
+      "candidate_stream_sha256": "1c9b90773a86c1dc5739d7af5617268a60f6c109086ac5354e1a14825a04ac2b",
+      "controller_facing": {
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "per_sequence_correct_authority_loss_s": 0.0,
+        "physical_v2_byte_equal_baseline": true,
+        "tim_target_id_counts_baseline": {
+          "1": 1520
+        },
+        "tim_target_id_counts_candidate": {
+          "1": 1520
+        },
+        "tim_target_stream_byte_equal_baseline": true
+      },
+      "hard_negative_equal_baseline": true,
+      "label": "Seq01 clean",
+      "positive_memory": {
+        "baseline_adaptive_updates": 1512,
+        "candidate_adaptive_updates": 231,
+        "known_stage1_ab16_adaptive_updates": 231,
+        "matches_known_stage1_ab16": true,
+        "non_adaptive_update_reasons_unchanged": true,
+        "protected_anchor_init_unchanged": true,
+        "reduction_pct": 84.72
+      },
+      "production_candidate": {
+        "adaptive_updates": 231,
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": 61.200516816,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 0.0,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "repeats": 3,
+        "semantic_identical_across_repeats": true,
+        "semantic_sha256": "981a6fed40b80068aa0fce1476aa4bd23d213ada4da933c428e26d5d2e6ccf0d",
+        "status_scan_identical_across_repeats": true,
+        "tim_target_stream_identical_across_repeats": true,
+        "tim_target_stream_sha256": "b7bba484f5f27371705e2c12f4679e0372087834dd463ad9f16af224dd4be859"
+      },
+      "production_vs_historical_ab16": {
+        "activation_source_differs_as_expected": true,
+        "candidate_stream_equal": true,
+        "historical_activation_source": "development_ablation",
+        "physical_v2_equal": true,
+        "production_activation_source": "production_config",
+        "semantic_equal": true,
+        "status_scan_equal": true,
+        "tim_target_stream_equal": true
+      },
+      "state_path_equal_baseline": true
+    },
+    "seq03": {
+      "appearance_workload": {
+        "appearance_backend_calls": 354,
+        "appearance_backend_requested": 896,
+        "appearance_backend_returned": 896,
+        "appearance_backend_valid": 896,
+        "appearance_cache_expired": 15,
+        "appearance_cache_hits": 4000,
+        "appearance_cache_invalidated": 0,
+        "appearance_cache_lookups": 4541,
+        "appearance_cache_misses": 526,
+        "appearance_encoding_eligible": 1025,
+        "appearance_encoding_rejected": 23
+      },
+      "appearance_workload_byte_equal_baseline": true,
+      "baseline_control": {
+        "adaptive_updates": 524,
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": 24.600414281999996,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 59.166383501000006,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "reproduces_retained_pinned_baseline": true,
+        "semantic_sha256": "ca1f1826e2092a03c36b73015045d55c55dc232046b28871e769b85200079eaf"
+      },
+      "candidate_stream_all_runs_equal_expected": true,
+      "candidate_stream_sha256": "60e41fb14822af5a04b781ac08a6a75e7a05382a9bd55629a737a325512582db",
+      "controller_facing": {
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "per_sequence_correct_authority_loss_s": 0.0,
+        "physical_v2_byte_equal_baseline": true,
+        "tim_target_id_counts_baseline": {
+          "0": 1388,
+          "1": 496,
+          "24": 20,
+          "9": 27
+        },
+        "tim_target_id_counts_candidate": {
+          "0": 1388,
+          "1": 496,
+          "24": 20,
+          "9": 27
+        },
+        "tim_target_stream_byte_equal_baseline": true
+      },
+      "hard_negative_equal_baseline": true,
+      "label": "Seq03 crossing",
+      "positive_memory": {
+        "baseline_adaptive_updates": 524,
+        "candidate_adaptive_updates": 124,
+        "known_stage1_ab16_adaptive_updates": 124,
+        "matches_known_stage1_ab16": true,
+        "non_adaptive_update_reasons_unchanged": true,
+        "protected_anchor_init_unchanged": true,
+        "reduction_pct": 76.34
+      },
+      "production_candidate": {
+        "adaptive_updates": 124,
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": 24.600414281999996,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 59.166383501000006,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "repeats": 3,
+        "semantic_identical_across_repeats": true,
+        "semantic_sha256": "689ac655e00433bd412ae6ad2b8ecd23804a4610537d501637edfd4c5bed41b5",
+        "status_scan_identical_across_repeats": true,
+        "tim_target_stream_identical_across_repeats": true,
+        "tim_target_stream_sha256": "f262442ed88faa94004f693f12bb697b15a1604b97576f2c72a7fb948045f2d7"
+      },
+      "production_vs_historical_ab16": {
+        "activation_source_differs_as_expected": true,
+        "candidate_stream_equal": true,
+        "historical_activation_source": "development_ablation",
+        "physical_v2_equal": true,
+        "production_activation_source": "production_config",
+        "semantic_equal": true,
+        "status_scan_equal": true,
+        "tim_target_stream_equal": true
+      },
+      "state_path_equal_baseline": true
+    },
+    "seq04": {
+      "appearance_workload": {
+        "appearance_backend_calls": 1150,
+        "appearance_backend_requested": 2224,
+        "appearance_backend_returned": 2224,
+        "appearance_backend_valid": 2224,
+        "appearance_cache_expired": 43,
+        "appearance_cache_hits": 5320,
+        "appearance_cache_invalidated": 0,
+        "appearance_cache_lookups": 6734,
+        "appearance_cache_misses": 1371,
+        "appearance_encoding_eligible": 5286,
+        "appearance_encoding_rejected": 0
+      },
+      "appearance_workload_byte_equal_baseline": true,
+      "baseline_control": {
+        "adaptive_updates": 839,
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": 48.766241081999965,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 23.733800690000038,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "reproduces_retained_pinned_baseline": true,
+        "semantic_sha256": "d7da756a5220a06e35ada759c5a7a7cafbf678e5c7102d31b35028c996a4c5ca"
+      },
+      "candidate_stream_all_runs_equal_expected": true,
+      "candidate_stream_sha256": "9c514facb5cd946a02800885e8bacb9ea9fb0132d6ceab4c73e7f4a30ce3c3bf",
+      "controller_facing": {
+        "new_absence_leakage_s": 0.0,
+        "new_wrong_person_authority_s": 0.0,
+        "per_sequence_correct_authority_loss_s": 0.0,
+        "physical_v2_byte_equal_baseline": true,
+        "tim_target_id_counts_baseline": {
+          "0": 898,
+          "26": 55,
+          "32": 164,
+          "5": 613,
+          "8": 317
+        },
+        "tim_target_id_counts_candidate": {
+          "0": 898,
+          "26": 55,
+          "32": 164,
+          "5": 613,
+          "8": 317
+        },
+        "tim_target_stream_byte_equal_baseline": true
+      },
+      "hard_negative_equal_baseline": true,
+      "label": "Seq04 occlusion / no-exit",
+      "positive_memory": {
+        "baseline_adaptive_updates": 839,
+        "candidate_adaptive_updates": 718,
+        "known_stage1_ab16_adaptive_updates": 718,
+        "matches_known_stage1_ab16": true,
+        "non_adaptive_update_reasons_unchanged": true,
+        "protected_anchor_init_unchanged": true,
+        "reduction_pct": 14.42
+      },
+      "production_candidate": {
+        "adaptive_updates": 718,
+        "physical_v2_buckets": {
+          "correct_target_output_duration_s": 48.766241081999965,
+          "identity_unresolved_duration_s": 0.0,
+          "lost_or_suppressed_duration_s": 23.733800690000038,
+          "target_absent_with_output_duration_s": 0.0,
+          "wrong_person_output_duration_s": 0.0
+        },
+        "repeats": 3,
+        "semantic_identical_across_repeats": true,
+        "semantic_sha256": "0bf20a0ed74259a07d3785575fee86abc594cf2e697dc8627984aa98b7a8035b",
+        "status_scan_identical_across_repeats": true,
+        "tim_target_stream_identical_across_repeats": true,
+        "tim_target_stream_sha256": "320fe8576282536cf1e0ee878987118a9f6281871e409fb64fa54b52e5ee4b2e"
+      },
+      "production_vs_historical_ab16": {
+        "activation_source_differs_as_expected": true,
+        "candidate_stream_equal": true,
+        "historical_activation_source": "development_ablation",
+        "physical_v2_equal": true,
+        "production_activation_source": "production_config",
+        "semantic_equal": true,
+        "status_scan_equal": true,
+        "tim_target_stream_equal": true
+      },
+      "state_path_equal_baseline": true
+    }
+  },
+  "source_commit": "75147ecb0e4edce81f54aea1b303a25df0572d45",
+  "stage": "Stage-5 development regression",
+  "verdict": "PASS"
+}
