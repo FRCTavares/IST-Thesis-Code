@@ -147,3 +147,48 @@ def test_reset_clears_identity_evidence():
     tracker.reset()
 
     assert not tracker.identity_evidence_confirmed
+
+
+def test_ab19_repeated_source_does_not_advance_persistence():
+    tracker = CandidatePersistenceTracker()
+
+    assert tracker.observe(
+        7,
+        required_observations=3,
+        source="recovery_persistence",
+        source_observation=("image_timestamp_ns", 100),
+        require_distinct_source=True,
+    ) == 1
+
+    assert tracker.observe(
+        7,
+        required_observations=3,
+        source="recovery_persistence",
+        source_observation=("image_timestamp_ns", 100),
+        require_distinct_source=True,
+    ) == 1
+    assert tracker.observation_count == 1
+    assert tracker.preview(
+        7,
+        source_observation=("image_timestamp_ns", 100),
+        require_distinct_source=True,
+    ) == 1
+
+    assert tracker.observe(
+        7,
+        required_observations=3,
+        source="recovery_persistence",
+        source_observation=("image_timestamp_ns", 133),
+        require_distinct_source=True,
+    ) == 2
+
+
+def test_ab19_disabled_default_advances_on_repeated_source():
+    tracker = CandidatePersistenceTracker()
+
+    assert tracker.observe(
+        7, source_observation=("image_timestamp_ns", 1)
+    ) == 1
+    assert tracker.observe(
+        7, source_observation=("image_timestamp_ns", 1)
+    ) == 2

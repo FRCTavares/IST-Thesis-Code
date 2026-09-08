@@ -142,6 +142,8 @@ class TargetIdentityMemory:
         development_ablation_disable_trusted_gallery_storage: bool = False,
         development_ablation_disable_adaptive_positive_memory: bool = False,
         development_ablation_prevent_repeated_source_adaptive_update: bool = False,
+        development_ablation_retire_overage_hard_negatives_pre_score: bool = False,
+        development_ablation_require_distinct_source_for_persistence: bool = False,
     ) -> None:
         self.cfg = cfg or TargetMemoryConfig()
         self._development_ablation_disable_forced_same_id_challenge = bool(
@@ -164,6 +166,12 @@ class TargetIdentityMemory:
         )
         self._development_ablation_prevent_repeated_source_adaptive_update = bool(
             development_ablation_prevent_repeated_source_adaptive_update
+        )
+        self._development_ablation_retire_overage_hard_negatives_pre_score = bool(
+            development_ablation_retire_overage_hard_negatives_pre_score
+        )
+        self._development_ablation_require_distinct_source_for_persistence = bool(
+            development_ablation_require_distinct_source_for_persistence
         )
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
@@ -467,6 +475,24 @@ class TargetIdentityMemory:
                 reacquired=False,
             )
 
+        if (
+            self._development_ablation_retire_overage_hard_negatives_pre_score
+            and self.cfg.hard_negative_memory_enabled
+            and int(self.cfg.hard_negative_max_age_frames) > 0
+        ):
+            # AB-15 development-only: retire over-age committed hard negatives
+            # before candidate scoring, instead of only through a later trusted
+            # accepted transaction. Side-effect only; the removed prototypes are
+            # simply no longer scoreable this frame.
+            self._last_hard_negative_events = tuple(
+                self._last_hard_negative_events
+            ) + self._hard_negative_memory.expire_committed(
+                current_frame_id=self._current_tracker_frame_id,
+                max_age_frames=self.cfg.hard_negative_max_age_frames,
+                decay_policy=self.cfg.hard_negative_decay_policy,
+                selected_track_id=self._m.track_id,
+            )
+
         prepared = self._prepare_update_candidates(candidates)
         if prepared is None:
             self._positive_appearance.observe_pre_anchor_operator_presence(
@@ -658,6 +684,11 @@ class TargetIdentityMemory:
                     required=required,
                     count=self._preview_confirmation_count(
                         int(candidate.track_id),
+                        source_observation=(
+                            self._appearance_source_observation(
+                                candidate
+                            )
+                        ),
                     ),
                 ),
             )
@@ -699,9 +730,15 @@ class TargetIdentityMemory:
     def _preview_confirmation_count(
         self,
         track_id: int,
+        *,
+        source_observation: Optional[tuple] = None,
     ) -> int:
         return self._candidate_persistence.preview(
-            int(track_id)
+            int(track_id),
+            source_observation=source_observation,
+            require_distinct_source=(
+                self._development_ablation_require_distinct_source_for_persistence
+            ),
         )
 
     def _reset_confirmation_trackers_except(
@@ -798,6 +835,14 @@ class TargetIdentityMemory:
                     proposal.score
                     .appearance_similarity_passed
                 )
+            ),
+            source_observation=(
+                self._appearance_source_observation(
+                    proposal.candidate
+                )
+            ),
+            require_distinct_source=(
+                self._development_ablation_require_distinct_source_for_persistence
             ),
         )
 
