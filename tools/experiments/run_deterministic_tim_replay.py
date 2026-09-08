@@ -277,6 +277,76 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--ablation-disable-global-reacquisition",
+        action="store_true",
+        help=(
+            "Development-only AB-12: disable long-gap global identity "
+            "reacquisition via the existing TargetMemoryConfig switch."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-disable-rank-aware-reacquisition",
+        action="store_true",
+        help=(
+            "Development-only AB-13: disable rank-aware reacquisition via "
+            "the existing TargetMemoryConfig switch."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-disable-short-gap-same-id-priority",
+        action="store_true",
+        help=(
+            "Development-only AB-04: disable short-gap same-ID priority via "
+            "the existing TargetMemoryConfig switch."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-disable-short-gap-new-id-suppression",
+        action="store_true",
+        help=(
+            "Development-only AB-05: disable short-gap new-ID suppression via "
+            "the existing TargetMemoryConfig switch."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-zero-min-confirm-frames-after-reacquire",
+        action="store_true",
+        help=(
+            "Development-only AB-14: set min_confirm_frames_after_reacquire "
+            "to 0 for the ablation only, via the existing TargetMemoryConfig "
+            "field."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-zero-appearance-ranking-contribution",
+        action="store_true",
+        help=(
+            "Development-only AB-01: set appearance_weight to 0 so appearance "
+            "makes no numerical contribution to the ranking/total score, "
+            "while appearance evaluation, similarity/margin gates, the "
+            "conservative filter, positive/protected memory and hard-negative "
+            "behaviour all remain active. This is NOT appearance_enabled=false."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-retire-overage-hard-negatives-pre-score",
+        action="store_true",
+        help=(
+            "Development-only AB-15: retire committed hard negatives older than "
+            "hard_negative_max_age_frames before candidate scoring, instead of "
+            "only through a later trusted accepted transaction."
+        ),
+    )
+    parser.add_argument(
+        "--ablation-require-distinct-source-for-persistence",
+        action="store_true",
+        help=(
+            "Development-only AB-19: a repeated appearance source image does "
+            "not advance recovery/rank-aware/belief persistence; the required "
+            "observation count and all safety gates are unchanged."
+        ),
+    )
+    parser.add_argument(
         "--shadow-appearance-probe-out",
         type=Path,
         default=None,
@@ -666,6 +736,71 @@ def build_runtime(
     ):
         memory.hard_negative_memory_enabled = False
 
+    # AB-12 / AB-13 / AB-04 / AB-05 / AB-14 development-only interventions
+    # reuse existing TargetMemoryConfig switches exactly like AB-09 above.
+    # They are runner-only: no canonical YAML, ROS parameter, launch or
+    # TargetIdentityMemory constructor exposure is added.
+    if bool(
+        getattr(
+            args,
+            "ablation_disable_global_reacquisition",
+            False,
+        )
+    ):
+        memory.global_reacquisition_enabled = False
+
+    if bool(
+        getattr(
+            args,
+            "ablation_disable_rank_aware_reacquisition",
+            False,
+        )
+    ):
+        memory.rank_aware_reacquisition_enabled = False
+
+    if bool(
+        getattr(
+            args,
+            "ablation_disable_short_gap_same_id_priority",
+            False,
+        )
+    ):
+        memory.short_gap_same_id_priority_enabled = False
+
+    if bool(
+        getattr(
+            args,
+            "ablation_disable_short_gap_new_id_suppression",
+            False,
+        )
+    ):
+        memory.short_gap_new_id_suppression_enabled = False
+
+    if bool(
+        getattr(
+            args,
+            "ablation_zero_min_confirm_frames_after_reacquire",
+            False,
+        )
+    ):
+        memory.min_confirm_frames_after_reacquire = 0
+
+    # AB-01: appearance_weight is used at exactly one site
+    # (appearance_policy.score_with_appearance) as the multiplier on the
+    # appearance contribution to ranking_score/total. Zeroing it removes the
+    # numerical ranking contribution only; appearance_raw, the similarity and
+    # margin gates, the conservative filter, positive/protected memory and
+    # hard-negative memory are all computed from separate quantities and stay
+    # active. This is deliberately NOT appearance_enabled=false.
+    if bool(
+        getattr(
+            args,
+            "ablation_zero_appearance_ranking_contribution",
+            False,
+        )
+    ):
+        memory.appearance_weight = 0.0
+
     appearance = AppearanceAttachmentConfig(
         enabled=appearance_enabled,
         max_image_age_ms=float(
@@ -776,6 +911,20 @@ def build_runtime(
             getattr(
                 args,
                 "ablation_prevent_repeated_source_adaptive_update",
+                False,
+            )
+        ),
+        development_ablation_retire_overage_hard_negatives_pre_score=bool(
+            getattr(
+                args,
+                "ablation_retire_overage_hard_negatives_pre_score",
+                False,
+            )
+        ),
+        development_ablation_require_distinct_source_for_persistence=bool(
+            getattr(
+                args,
+                "ablation_require_distinct_source_for_persistence",
                 False,
             )
         ),
@@ -1625,6 +1774,48 @@ def build_resolved_runtime_payload(
                 False,
             )
         ),
+        "ablation_disable_global_reacquisition": bool(
+            getattr(
+                args,
+                "ablation_disable_global_reacquisition",
+                False,
+            )
+        ),
+        "ablation_disable_rank_aware_reacquisition": bool(
+            getattr(
+                args,
+                "ablation_disable_rank_aware_reacquisition",
+                False,
+            )
+        ),
+        "ablation_disable_short_gap_same_id_priority": bool(
+            getattr(
+                args,
+                "ablation_disable_short_gap_same_id_priority",
+                False,
+            )
+        ),
+        "ablation_disable_short_gap_new_id_suppression": bool(
+            getattr(
+                args,
+                "ablation_disable_short_gap_new_id_suppression",
+                False,
+            )
+        ),
+        "ablation_zero_min_confirm_frames_after_reacquire": bool(
+            getattr(
+                args,
+                "ablation_zero_min_confirm_frames_after_reacquire",
+                False,
+            )
+        ),
+        "ablation_zero_appearance_ranking_contribution": bool(
+            getattr(
+                args,
+                "ablation_zero_appearance_ranking_contribution",
+                False,
+            )
+        ),
             "compact_output": bool(
                 args.compact_output
             ),
@@ -1701,6 +1892,62 @@ def build_resolved_runtime_payload(
                 getattr(
                     args,
                     "ablation_prevent_repeated_source_adaptive_update",
+                    False,
+                )
+            ),
+            "retire_overage_hard_negatives_pre_score": bool(
+                getattr(
+                    args,
+                    "ablation_retire_overage_hard_negatives_pre_score",
+                    False,
+                )
+            ),
+            "require_distinct_source_for_persistence": bool(
+                getattr(
+                    args,
+                    "ablation_require_distinct_source_for_persistence",
+                    False,
+                )
+            ),
+            "disable_global_reacquisition": bool(
+                getattr(
+                    args,
+                    "ablation_disable_global_reacquisition",
+                    False,
+                )
+            ),
+            "disable_rank_aware_reacquisition": bool(
+                getattr(
+                    args,
+                    "ablation_disable_rank_aware_reacquisition",
+                    False,
+                )
+            ),
+            "disable_short_gap_same_id_priority": bool(
+                getattr(
+                    args,
+                    "ablation_disable_short_gap_same_id_priority",
+                    False,
+                )
+            ),
+            "disable_short_gap_new_id_suppression": bool(
+                getattr(
+                    args,
+                    "ablation_disable_short_gap_new_id_suppression",
+                    False,
+                )
+            ),
+            "zero_min_confirm_frames_after_reacquire": bool(
+                getattr(
+                    args,
+                    "ablation_zero_min_confirm_frames_after_reacquire",
+                    False,
+                )
+            ),
+            "zero_appearance_ranking_contribution": bool(
+                getattr(
+                    args,
+                    "ablation_zero_appearance_ranking_contribution",
                     False,
                 )
             ),
@@ -1793,6 +2040,30 @@ def build_resolved_runtime_payload(
         ),
         "ablation_prevent_repeated_source_adaptive_update": argument_source(
             "--ablation-prevent-repeated-source-adaptive-update"
+        ),
+        "ablation_retire_overage_hard_negatives_pre_score": argument_source(
+            "--ablation-retire-overage-hard-negatives-pre-score"
+        ),
+        "ablation_require_distinct_source_for_persistence": argument_source(
+            "--ablation-require-distinct-source-for-persistence"
+        ),
+        "ablation_disable_global_reacquisition": argument_source(
+            "--ablation-disable-global-reacquisition"
+        ),
+        "ablation_disable_rank_aware_reacquisition": argument_source(
+            "--ablation-disable-rank-aware-reacquisition"
+        ),
+        "ablation_disable_short_gap_same_id_priority": argument_source(
+            "--ablation-disable-short-gap-same-id-priority"
+        ),
+        "ablation_disable_short_gap_new_id_suppression": argument_source(
+            "--ablation-disable-short-gap-new-id-suppression"
+        ),
+        "ablation_zero_min_confirm_frames_after_reacquire": argument_source(
+            "--ablation-zero-min-confirm-frames-after-reacquire"
+        ),
+        "ablation_zero_appearance_ranking_contribution": argument_source(
+            "--ablation-zero-appearance-ranking-contribution"
         ),
             "raw_target_mode": argument_source(
                 "--raw-target-mode"

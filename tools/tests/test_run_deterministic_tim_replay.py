@@ -864,6 +864,12 @@ def test_build_resolved_runtime_payload_records_sources(
         "ablation_disable_hard_negative_memory": False,
         "ablation_disable_same_id_positive_support_reject": False,
         "ablation_disable_conservative_final_filter": False,
+        "ablation_disable_global_reacquisition": False,
+        "ablation_disable_rank_aware_reacquisition": False,
+        "ablation_disable_short_gap_same_id_priority": False,
+        "ablation_disable_short_gap_new_id_suppression": False,
+        "ablation_zero_min_confirm_frames_after_reacquire": False,
+        "ablation_zero_appearance_ranking_contribution": False,
         "compact_output": True,
         "process_start_timestamp_ns": 100,
         "process_end_timestamp_ns": 200,
@@ -915,6 +921,24 @@ def test_build_resolved_runtime_payload_records_sources(
     ] == "runner_default"
     assert sources[
         "ablation_disable_conservative_final_filter"
+    ] == "runner_default"
+    assert sources[
+        "ablation_disable_global_reacquisition"
+    ] == "runner_default"
+    assert sources[
+        "ablation_disable_rank_aware_reacquisition"
+    ] == "runner_default"
+    assert sources[
+        "ablation_disable_short_gap_same_id_priority"
+    ] == "runner_default"
+    assert sources[
+        "ablation_disable_short_gap_new_id_suppression"
+    ] == "runner_default"
+    assert sources[
+        "ablation_zero_min_confirm_frames_after_reacquire"
+    ] == "runner_default"
+    assert sources[
+        "ablation_zero_appearance_ranking_contribution"
     ] == "runner_default"
     assert sources["raw_target_mode"] == (
         "command_line"
@@ -1378,6 +1402,14 @@ def test_tim_ablation_controls_are_default_off(monkeypatch):
     assert not arguments.ablation_disable_trusted_gallery_storage
     assert not arguments.ablation_disable_adaptive_positive_memory
     assert not arguments.ablation_prevent_repeated_source_adaptive_update
+    assert not arguments.ablation_disable_global_reacquisition
+    assert not arguments.ablation_disable_rank_aware_reacquisition
+    assert not arguments.ablation_disable_short_gap_same_id_priority
+    assert not arguments.ablation_disable_short_gap_new_id_suppression
+    assert not arguments.ablation_zero_min_confirm_frames_after_reacquire
+    assert not arguments.ablation_zero_appearance_ranking_contribution
+    assert not arguments.ablation_retire_overage_hard_negatives_pre_score
+    assert not arguments.ablation_require_distinct_source_for_persistence
 
 
 def test_tim_ablation_controls_are_explicit(monkeypatch):
@@ -1403,6 +1435,14 @@ def test_tim_ablation_controls_are_explicit(monkeypatch):
             "--ablation-disable-trusted-gallery-storage",
             "--ablation-disable-adaptive-positive-memory",
             "--ablation-prevent-repeated-source-adaptive-update",
+            "--ablation-disable-global-reacquisition",
+            "--ablation-disable-rank-aware-reacquisition",
+            "--ablation-disable-short-gap-same-id-priority",
+            "--ablation-disable-short-gap-new-id-suppression",
+            "--ablation-zero-min-confirm-frames-after-reacquire",
+            "--ablation-zero-appearance-ranking-contribution",
+            "--ablation-retire-overage-hard-negatives-pre-score",
+            "--ablation-require-distinct-source-for-persistence",
         ],
     )
 
@@ -1416,6 +1456,14 @@ def test_tim_ablation_controls_are_explicit(monkeypatch):
     assert arguments.ablation_disable_trusted_gallery_storage
     assert arguments.ablation_disable_adaptive_positive_memory
     assert arguments.ablation_prevent_repeated_source_adaptive_update
+    assert arguments.ablation_disable_global_reacquisition
+    assert arguments.ablation_disable_rank_aware_reacquisition
+    assert arguments.ablation_disable_short_gap_same_id_priority
+    assert arguments.ablation_disable_short_gap_new_id_suppression
+    assert arguments.ablation_zero_min_confirm_frames_after_reacquire
+    assert arguments.ablation_zero_appearance_ranking_contribution
+    assert arguments.ablation_retire_overage_hard_negatives_pre_score
+    assert arguments.ablation_require_distinct_source_for_persistence
 
 
 def test_ab09_uses_existing_hard_negative_memory_switch():
@@ -1444,3 +1492,90 @@ def test_ab09_uses_existing_hard_negative_memory_switch():
     )
 
     assert runtime.memory.cfg.hard_negative_memory_enabled is False
+
+
+def test_recovery_and_ranking_ablations_use_existing_config_switches():
+    """AB-12/13/04/05/14/01 reuse existing TargetMemoryConfig switches only."""
+    base = dict(
+        appearance_enabled=False,
+        appearance_request_policy=None,
+        appearance_compute_min_interval_ms=None,
+        image_width=640.0,
+        image_height=480.0,
+        model=Path("unused.pb"),
+        tracks_are_normalized=False,
+        selected_track_id=7,
+    )
+    canonical = {
+        "appearance_enabled": False,
+        "global_reacquisition_enabled": True,
+        "rank_aware_reacquisition_enabled": True,
+        "short_gap_same_id_priority_enabled": True,
+        "short_gap_new_id_suppression_enabled": True,
+        "min_confirm_frames_after_reacquire": 1,
+        "appearance_weight": 0.12,
+    }
+
+    default_runtime = MODULE.build_runtime(
+        dict(canonical),
+        argparse.Namespace(**base),
+    )
+    assert default_runtime.memory.cfg.global_reacquisition_enabled is True
+    assert default_runtime.memory.cfg.rank_aware_reacquisition_enabled is True
+    assert default_runtime.memory.cfg.short_gap_same_id_priority_enabled is True
+    assert (
+        default_runtime.memory.cfg.short_gap_new_id_suppression_enabled is True
+    )
+    assert default_runtime.memory.cfg.min_confirm_frames_after_reacquire == 1
+    assert default_runtime.memory.cfg.appearance_weight == 0.12
+
+    ablated = MODULE.build_runtime(
+        dict(canonical),
+        argparse.Namespace(
+            **base,
+            ablation_disable_global_reacquisition=True,
+            ablation_disable_rank_aware_reacquisition=True,
+            ablation_disable_short_gap_same_id_priority=True,
+            ablation_disable_short_gap_new_id_suppression=True,
+            ablation_zero_min_confirm_frames_after_reacquire=True,
+            ablation_zero_appearance_ranking_contribution=True,
+        ),
+    )
+    assert ablated.memory.cfg.global_reacquisition_enabled is False
+    assert ablated.memory.cfg.rank_aware_reacquisition_enabled is False
+    assert ablated.memory.cfg.short_gap_same_id_priority_enabled is False
+    assert ablated.memory.cfg.short_gap_new_id_suppression_enabled is False
+    assert ablated.memory.cfg.min_confirm_frames_after_reacquire == 0
+    assert ablated.memory.cfg.appearance_weight == 0.0
+
+
+def test_ab15_ab19_runtime_controls_reach_the_memory_state_machine():
+    """AB-15/AB-19 development controls are threaded to TargetIdentityMemory."""
+    base = dict(
+        appearance_enabled=False,
+        appearance_request_policy=None,
+        appearance_compute_min_interval_ms=None,
+        image_width=640.0,
+        image_height=480.0,
+        model=Path("unused.pb"),
+        tracks_are_normalized=False,
+        selected_track_id=7,
+    )
+    canonical = {"appearance_enabled": False}
+
+    default_runtime = MODULE.build_runtime(
+        dict(canonical), argparse.Namespace(**base)
+    )
+    assert not default_runtime.memory._development_ablation_retire_overage_hard_negatives_pre_score
+    assert not default_runtime.memory._development_ablation_require_distinct_source_for_persistence
+
+    ablated = MODULE.build_runtime(
+        dict(canonical),
+        argparse.Namespace(
+            **base,
+            ablation_retire_overage_hard_negatives_pre_score=True,
+            ablation_require_distinct_source_for_persistence=True,
+        ),
+    )
+    assert ablated.memory._development_ablation_retire_overage_hard_negatives_pre_score
+    assert ablated.memory._development_ablation_require_distinct_source_for_persistence
