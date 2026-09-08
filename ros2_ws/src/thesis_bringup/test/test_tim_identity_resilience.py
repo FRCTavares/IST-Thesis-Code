@@ -12,6 +12,9 @@ from thesis_bringup.tim_mars.appearance_request_policy import (
 from thesis_bringup.tim_mars.candidate_safety_policy import (
     protected_gallery_reacquisition_reject_reason,
 )
+from thesis_bringup.tim_mars.positive_appearance_memory import (
+    PositiveAppearanceMemory,
+)
 from thesis_bringup.tim_mars.runtime import (
     AppearanceFrame, TimMarsRuntime, TimMarsRuntimeConfig,
 )
@@ -41,6 +44,9 @@ def runtime(
     restore_general_negative_exemption=False,
     disable_same_id_positive_support_reject=False,
     disable_conservative_final_filter=False,
+    disable_trusted_gallery_storage=False,
+    disable_adaptive_positive_memory=False,
+    prevent_repeated_source_adaptive_update=False,
 ):
     config = TargetMemoryConfig(
         appearance_enabled=True,
@@ -66,6 +72,15 @@ def runtime(
         ),
         development_ablation_disable_conservative_final_filter=(
             disable_conservative_final_filter
+        ),
+        development_ablation_disable_trusted_gallery_storage=(
+            disable_trusted_gallery_storage
+        ),
+        development_ablation_disable_adaptive_positive_memory=(
+            disable_adaptive_positive_memory
+        ),
+        development_ablation_prevent_repeated_source_adaptive_update=(
+            prevent_repeated_source_adaptive_update
         ),
     ), mars_backend=Encoder())
 
@@ -94,6 +109,82 @@ def initialized(enabled=True, **kwargs):
     items, _ = attach(rt, candidates(), 1_000_000_000, 1)
     rt.memory.select(items[0], frame_id=1, timestamp_ns=1_000_000_000)
     return rt
+
+
+def test_ab07_gallery_capacity_zero_preserves_anchor_and_adaptive():
+    memory = PositiveAppearanceMemory()
+    memory.select_operator(
+        track_id=1,
+        appearance=TARGET,
+    )
+    memory.lineage_trusted = True
+
+    pose = np.array([0.8, 0.6, 0.0], dtype=np.float32)
+    updated = memory.update_trusted(
+        appearance=pose,
+        alpha=0.5,
+        gallery_max_entries=0,
+    )
+
+    assert updated
+    assert memory.protected_anchor is not None
+    assert memory.adaptive_prototype is not None
+    assert memory.trusted_gallery == []
+
+
+def test_ab08_removes_adaptive_representation_but_keeps_anchor():
+    rt = initialized(
+        disable_adaptive_positive_memory=True,
+    )
+
+    assert rt.memory._positive_appearance.protected_anchor is not None
+    assert rt.memory._positive_appearance.adaptive_prototype is None
+
+
+def test_ab16_prevents_repeated_source_adaptive_ema_only():
+    memory = PositiveAppearanceMemory()
+    memory.select_operator(
+        track_id=1,
+        appearance=TARGET,
+        source_observation=("image_timestamp_ns", 1),
+    )
+    memory.lineage_trusted = True
+
+    pose = np.array([0.8, 0.6, 0.0], dtype=np.float32)
+
+    assert memory.update_trusted(
+        appearance=pose,
+        alpha=0.5,
+        gallery_max_entries=0,
+        prevent_repeated_adaptive_source=True,
+        source_observation=("image_timestamp_ns", 2),
+    )
+
+    after_first_source = memory.adaptive_prototype.copy()
+
+    assert not memory.update_trusted(
+        appearance=pose,
+        alpha=0.5,
+        gallery_max_entries=0,
+        prevent_repeated_adaptive_source=True,
+        source_observation=("image_timestamp_ns", 2),
+    )
+    np.testing.assert_allclose(
+        memory.adaptive_prototype,
+        after_first_source,
+    )
+
+    assert memory.update_trusted(
+        appearance=pose,
+        alpha=0.5,
+        gallery_max_entries=0,
+        prevent_repeated_adaptive_source=True,
+        source_observation=("image_timestamp_ns", 3),
+    )
+    assert not np.array_equal(
+        memory.adaptive_prototype,
+        after_first_source,
+    )
 
 
 def test_risk_challenge_refreshes_only_selected_candidate_before_interval():
