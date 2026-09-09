@@ -1,506 +1,106 @@
-# README
+# Thesis-Code
 
-Practical commands for day-to-day operation.
-All commands run from `$THESIS_ROOT` unless noted.
+Last reviewed: 2026-09-09
 
-Use this file as the command source of truth.
+Onboard RGB-only selected-person tracking and following for a micro aerial
+robot. The scientific core is **TIM-MARS**, a selected-target identity-memory
+layer that sits between an appearance-free tracker and the flight controller
+and is the only controller-facing target authority.
 
-## Final thesis artifacts
+## System at a glance
 
-For final TIM-MARS result evidence and local verification, start here:
+- **Platform:** Raspberry Pi 5 + Hailo-8 for the full live stack; generic
+  Linux for replay and offline analysis.
+- **ROS 2:** Jazzy, `ROS_DOMAIN_ID=42`, workspace under `ros2_ws/`.
+- **Detector:** YOLOv8s, direct in-process Hailo inference.
+- **Tracker:** ByteTrack (canonical); SORT / OC-SORT / DeepSORT selectable.
+- **Selected-target authority:** TIM-MARS (`target_memory_mars_node`).
+- **Canonical path:** `perception_camera_node` -> `tracker_node` -> raw
+  `/target` -> `target_memory_mars_node` -> `/target_memory_mars` ->
+  `control_ref_node`. The controller consumes `/target_memory_mars` only;
+  raw `/target` never drives control.
+- **Frontend:** independently owned — `FRCTavares/IST-Thesis-UI`.
 
-- `docs/data/final_experiment_inventory.md`: promoted final replay bags, reports, and annotation CSVs.
-- `docs/data/reproduce_final_results.md`: local checks for final result artifact availability.
-- `docs/results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`: clean canonical selected-target evidence.
-- `docs/results/live/p052_target_authority_ground_evidence.md`: three retained isolated target-authority dry-runs for Issue #52.
-- `bags/README.md`: bag roles, deletion policy, and naming contract.
-- `ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/README.md`: TIM-MARS module structure and configuration guide.
+## Root layout
 
-## Current runtime defaults
+| Path | Owns |
+| --- | --- |
+| `ros2_ws/` | The ROS 2 implementation: `thesis_msgs`, `thesis_tracker`, `thesis_bringup`. `src/` is tracked; `build/`, `install/`, `log/` are local/generated. See `ros2_ws/README.md`. |
+| `tools/` | Build, live-stack, evaluation-reproduction, analysis, annotation and host-recovery tooling. See `tools/README.md`. |
+| `models/` | Detector `.hef` and ReID model binaries plus a per-file provenance inventory. See `models/README.md`. |
+| `docs/` | Research contracts, frozen data definitions, procedures, reviewed result summaries, and the historical archive. Authority hierarchy: `docs/README.md`. |
+| `bags/` | ROS bag data — protected source/flight recordings and disposable replay bags. Only `bags/README.md` is tracked; bag data and the retention policy live under `bags/README.md` and `docs/data/catalogue/`. |
+| `reports/` | Locally generated analysis output, with a promotion path: a citable result exists here only as a reviewed evidence package force-added with provenance sidecars. Only `README.md` / `PROMOTED.md` and those packages are tracked. |
+| `artifacts/` | Disposable, reproducible intermediate output (annotation/CVAT scratch, rendered media, run logs). `artifacts/README.md` is tracked; all generated contents are local and are never thesis authority. |
+| `data/` | Imported external-benchmark datasets and locally processed frames, used only by the external-tracking comparison. Currently entirely local; a concise `data/README.md` will follow in a later folder pass. |
 
-From `tools/start_live_stack.sh`:
+Local, git-ignored, not part of a clean checkout: `thesis_env/` (the
+project-local Python venv, activated by `.envrc` when present). Legacy
+generated `figures/` output is being consolidated into `artifacts/figures/`;
+it is not an architectural root directory.
 
-- Default command: `./tools/start_live_stack.sh`
-- Perception mode: integrated camera only
-- Camera capture: 640x480
-- Hailo inference: 640x640
-- Detector default: YOLOv8s
-- Tracker default: ByteTrack
-- Target memory default: TIM-MARS
-- TIM-MARS appearance: enabled
-- Dashboard target: 30 FPS
-- Control node: enabled
-- Web video: enabled
-- Recording: disabled by default, enabled with `--record`
-- Bag tag option: `--tag <name>`
+## Primary entrypoints
 
-The 2026-06-17 validated full-stack recording held the critical topics at approximately 30 Hz with `throttled=0x0`.
+| Command | Purpose |
+| --- | --- |
+| `./tools/thesis_build.sh` | Build the ROS 2 workspace with repository-local colcon logs. |
+| `./tools/start_live_stack.sh` | Start the live camera -> perception -> tracker -> TIM-MARS -> control/dashboard stack. Options: `--help`, `--help-advanced`. |
+| `python3 tools/reproduce_tim_mars.py --set development` | Verify the frozen split and hashes, build, run the canonical evaluation matrix, and check provenance. |
+| `./tools/start_ui_stack.sh` | Launch the external dashboard (`IST-Thesis-UI`). |
 
-## Scope and assumptions
+`tools/timing_contract.py` is the repository-wide schema-v4 timing contract,
+imported as `tools.timing_contract`; it is not a CLI.
 
-- Primary platform: Raspberry Pi 5 + Hailo (full live stack).
-- Fallback platform: generic Linux (UI, replay, offline analysis).
-- ROS 2 distro: Jazzy.
-- Workspace root: `$HOME/Desktop/Thesis-Code`.
+## Where to go
 
-## Clean-checkout installation
+- **Build, live operation, and every tool:** `tools/README.md`
+- **Experiments and replay:** `tools/experiments/README.md`
+- **Evaluation and analysis:** `tools/analysis/README.md`,
+  `docs/design/tim_tooling_index.md`
+- **Field procedures:** `docs/flight/` (held-out capture, aircraft validation,
+  high-resolution capture)
+- **Results and evidence:** `docs/results/README.md`; claim boundaries in
+  `docs/algorithm/tim_mars_evidence_versions.md`
+- **Runtime metrics:** `docs/RUNTIME_METRICS.md`
+- **Setup and recovery:** the Setup section below, then `docs/debug/`,
+  `tools/setup/`, `tools/host/`
+- **Documentation conventions:** `docs/design/README_STANDARD.md`
 
-The supported development environment is Ubuntu 24.04 with ROS 2 Jazzy.
+## Setup
 
-Install the generic host tools:
-
-    sudo apt update
-    sudo apt install -y \
-      git \
-      python3-colcon-common-extensions \
-      python3-rosdep \
-      python3-venv
-
-Clone the repository and enter it:
-
-    git clone git@github.com:FRCTavares/IST-Thesis-Code.git "$HOME/Desktop/Thesis-Code"
-    cd "$HOME/Desktop/Thesis-Code" || exit 1
-
-Install dependencies declared by the ROS packages:
-
-    source /opt/ros/jazzy/setup.bash
-    sudo rosdep init 2>/dev/null || true
-    rosdep update
-    rosdep install \
-      --from-paths ros2_ws/src \
-      --ignore-src \
-      --rosdistro jazzy \
-      -r \
-      -y
-
-Create the ignored project-local Python environment while retaining access to
-the ROS Python packages installed by apt:
-
-    python3 -m venv --system-site-packages thesis_env
-    thesis_env/bin/python -m pip install --upgrade pip pytest
-
-Build the workspace through the repository helper:
-
-    tools/thesis_build.sh
-
-Then source the environment manually or enable `.envrc` with `direnv allow`.
-
-The Hailo runtime is platform-specific and is not installed by rosdep or as a
-generic PyPI dependency. On the Raspberry Pi 5 deployment host, install the
-matching HailoRT and TAPPAS system runtime first. The repository helpers
-`tools/setup/install_host_hailo_bindings.sh` and
-`tools/setup/setup_local_tappas_runtime.sh` support compatible host setups.
-
-The browser frontend is independently owned by
-`FRCTavares/IST-Thesis-UI`, normally checked out at
-`~/Desktop/IST-Thesis-UI`. Prepare a fresh frontend checkout with:
-
-    cd ~/Desktop/IST-Thesis-UI
-    npm ci
-    npm run build
-
-`tools/start_ui_stack.sh` remains only as a Thesis-Code compatibility
-entrypoint and delegates to the external UI repository.
-
-## 1) One-time shell setup
-
-In ~/.bashrc set:
+Supported host: Ubuntu 24.04 with ROS 2 Jazzy.
 
 ```bash
-export THESIS_ROOT="$HOME/Desktop/Thesis-Code"
-export ROS_DOMAIN_ID=42
-```
+git clone git@github.com:FRCTavares/IST-Thesis-Code.git "$HOME/Desktop/Thesis-Code"
+cd "$HOME/Desktop/Thesis-Code" || exit 1
 
-## 2) Live stack
-
-Start the validated live stack:
-
-    ./tools/start_live_stack.sh
-
-Start the validated live stack and record:
-
-    ./tools/start_live_stack.sh --record --tag flight_01
-
-Useful short options:
-
-    ./tools/start_live_stack.sh --dash 10
-    ./tools/start_live_stack.sh --tracker sort --mem off
-    ./tools/start_live_stack.sh --no-control
-    ./tools/start_live_stack.sh --no-dashboard
-    ./tools/start_live_stack.sh --help-advanced
-
-Startup order:
-
-1. Preflight and camera health checks.
-2. `perception_camera_node` captures frames, runs Hailo inference, and publishes `/detections`, `/timing`, and `/camera/dashboard`.
-3. `tracker_node` publishes `/tracks`.
-4. `dashboard_bridge_node` publishes raw `/target` for telemetry and sends
-   explicit selection commands on `/target_memory_mars/select` or
-   `/target_memory_mars/clear`.
-5. `target_memory_mars_node` validates identity and publishes the only
-   controller-authoritative target on `/target_memory_mars`.
-6. `control_ref_node` subscribes to `/target_memory_mars` and publishes
-   `/control_ref/cmd_vel`. Raw `/target` never drives control.
-
-The frozen live profile rejects runtime detector and tracker switching. Restart
-the stack with an explicitly validated model/tracker instead. Selecting or
-clearing a target immediately revokes the previous control authority until
-TIM-MARS publishes a new valid target.
-
-Removed runtime paths:
-
-- no split camera-to-perception node chain;
-- no separate live perception pipeline executable;
-- no container/Docker/ZMQ inference service;
-- no full-rate live raw image transport.
-
-Detector inference is performed directly in-process through the current Hailo
-runtime.
-
-### Tracker modes
-
-The live stack supports multiple tracker backends:
-
-```bash
-./tools/start_live_stack.sh --tracker sort
-./tools/start_live_stack.sh --tracker ocsort
-./tools/start_live_stack.sh --tracker bytetrack
-./tools/start_live_stack.sh --tracker deepsort
-```
-
-Full option list:
-
-```bash
-./tools/start_live_stack.sh --help
-./tools/start_live_stack.sh --help-advanced
-```
-
-If you want to enable host-side Hailo dependencies:
-
-- Install or probe host Python bindings: `./tools/setup/install_host_hailo_bindings.sh`
-- Optional no-root runtime shim: `./tools/setup/setup_local_tappas_runtime.sh`
-
-Note:
-
-- start_live_stack.sh auto-detects local runtime assets from infer_service/opt/tappas_runtime_3_31 when present.
-
-Stop:
-
-- In prompt: `stop`, `quit`, or `exit`
-- If the interactive shell is gone, terminate stack processes explicitly:
-
-```bash
-pkill -f 'perception_camera_node|tracker_node|target_memory_mars_node|control_ref_node|dashboard_bridge_node|web_video_server' || true
-```
-
-Verification checkpoint for a healthy live stack:
-
-```bash
 source /opt/ros/jazzy/setup.bash
-source "$THESIS_ROOT/ros2_ws/install/setup.bash"
-ros2 topic list | rg '/camera/dashboard|/detections|/timing|/target|/target_memory_mars'
-ss -ltnp | rg ':8080|:8090|:8765|:5173'
+sudo rosdep init 2>/dev/null || true
+rosdep update
+rosdep install --from-paths ros2_ws/src --ignore-src --rosdistro jazzy -r -y
+
+python3 -m venv --system-site-packages thesis_env
+thesis_env/bin/python -m pip install --upgrade pip pytest
+
+./tools/thesis_build.sh
+direnv allow          # loads .envrc: ROS overlays, thesis_env, ROS_DOMAIN_ID=42
 ```
 
-Expected:
-
-- Core topics are listed.
-- Required service ports are listening for dashboard video, API, WebSocket, and UI services.
-
-Run UI in parallel (second terminal):
-
-```bash
-cd ~/Desktop/IST-Thesis-UI
-./tools/start_dashboard.sh
-```
-
-Notes:
-
-- `IST-Thesis-UI/tools/start_dashboard.sh` is the authoritative frontend
-  launcher.
-- Its normal field/runtime mode serves an already-built `dist/` tree and does
-  not install dependencies or compile the frontend at launch time.
-- After frontend dependency or source changes, prepare the external checkout
-  with `npm ci` and `npm run build`.
-- `tools/start_ui_stack.sh` remains a compatibility entrypoint in this
-  repository and delegates to the external launcher.
-- The compatibility launcher defaults `THESIS_UI_ROOT` to
-  `$HOME/Desktop/IST-Thesis-UI`.
-
-Useful authoritative UI commands from `~/Desktop/IST-Thesis-UI`:
-
-- `./tools/start_dashboard.sh --mode backend`
-- `./tools/start_dashboard.sh --mode mock`
-- `./tools/start_dashboard.sh --mode offline`
-- `./tools/start_dashboard.sh --port 5174`
-- `./tools/start_dashboard.sh --host 0.0.0.0`
-- `./tools/start_dashboard.sh --dev` only for frontend development.
-
-Verification checkpoint for the UI:
-
-- Open `http://127.0.0.1:5173` or the remote host IP and chosen port.
-- Dashboard connects to the telemetry WebSocket and backend API when running in backend mode.
-
-## 3) Manual startup
-
-Supported live runtime:
-
-    ./tools/start_live_stack.sh
-
-Outdoor recording command:
-
-    ./tools/start_live_stack.sh --record --record-mavros --tag outdoor_01
-
-## 4) Record flight video bags
-
-The recommended flight recording path is integrated into `tools/start_live_stack.sh`.
-
-Use `--record` to record the dashboard image stream plus the perception, tracking, target, timing, and control topics required for later analysis and offline overlay rendering.
-
-Every recorded live run also stores target-authority provenance. The dashboard
-appends startup, select, clear, and switch-attempt generations to
-`target_authority_events.jsonl`; stack shutdown archives that JSONL file beside
-the bag. `flight_metadata.txt` records the authoritative topic, initial
-generation, runtime log path, and frozen reconfiguration state.
-
-### 4.1) Standard flight video bag
-
-```bash
-cd "$THESIS_ROOT"
-./tools/start_live_stack.sh --record --tag flight_01
-```
-
-This records to:
-
-`bags/live_camera/YYYY-MM-DD__HH-MM-SS__video__flight_01/`
-
-Recorded topics:
-/camera/dashboard
-/camera/fps
-/detections
-/tracks
-/target
-/timing
-/timing_tracker
-/timing_target
-/control_ref/cmd_vel
-
-Notes:
-
-- /camera/dashboard is recorded to keep field bags small; the live integrated path does not publish full-rate raw images.
-- /timing_tracker is enabled automatically when --record is used.
-- A flight_metadata.txt file is written next to the bag with run configuration, tracker type, perception mode, camera settings, and recorded topics.
-
-### 4.2) Flight video bag with MAVROS context
-
-Use this when flying with the autopilot connected and you want basic flight-state context:
-
-```bash
-cd "$THESIS_ROOT"
-./tools/start_live_stack.sh --record --record-mavros --tag outdoor_01
-```
-
-Additional MAVROS topics:
-
-/mavros/state
-/mavros/local_position/pose
-/mavros/local_position/velocity_local
-/mavros/setpoint_velocity/cmd_vel_unstamped
-
-## 5) Replay and analysis
-
-Replay an existing bag:
-
-```bash
-ros2 launch thesis_bringup eval_replay.launch.py \
-  bag:=$THESIS_ROOT/bags/live_camera/<bag_name> \
-  tracker:=sort
-```
-
-Replay verification:
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source "$THESIS_ROOT/ros2_ws/install/setup.bash"
-ros2 topic hz /timing
-```
-
-Expected:
-
-- Replay publishes `/timing` steadily during bag playback.
-
-Timing:
-
-```bash
-python3 tools/analysis/analyse_bag_timing.py "$THESIS_ROOT/bags/live_camera/<bag_name>"
-```
-
-Expected output:
-
-- Markdown timing report in `reports/timing/` by default.
-- Figure files in `figures/timing/` by default.
-
-Tracking:
-
-```bash
-python3 tools/analysis/analyse_bag_tracking.py "$THESIS_ROOT/bags/eval/<eval_bag_name>"
-```
-
-Expected output:
-
-- `summary.md` and plot files under `reports/tracking/<eval_bag_name>/` by default.
-
-### 5.1) Runtime timing vocabulary
-
-The current runtime contract is **Timing schema v4**. It describes only the
-direct/in-process Hailo architecture and intentionally contains no
-container/ZMQ compatibility fields or fallback aliases.
-
-The complete metric definitions, timestamp semantics, intended uses, and
-selective-ReID/cache workload counters are documented in
-`docs/RUNTIME_METRICS.md`.
-
-The machine-readable contract is defined by `tools/timing_contract.py` and
-`ros2_ws/src/thesis_msgs/msg/Timing.msg`.
-
-Important clock rule:
-
-- `src_stamp_ns` is source/sensor timestamp metadata.
-- detector, tracker, and TIM-MARS stage timestamps use the host monotonic clock.
-- source timestamps must not be subtracted from host-monotonic timestamps unless
-  clock comparability has been established for that run.
-
-Historical bags produced with older Timing message layouts remain historical
-evidence and should be analysed with the code/schema that produced them rather
-than silently reinterpreted as schema v4.
-
-### 5.2) Operator metric priority
-
-Primary live checks:
-
-1. `e2e_validated_target_ms` p95: camera-callback-to-controller-authority responsiveness.
-2. `e2e_det_ms` p95: detector-path responsiveness.
-3. `pub_dt_ms` p95 and derived detector frequency: cadence stability.
-4. `pre_infer_wait_ms` p95: in-process scheduling/backpressure before Hailo inference.
-5. `infer_ms` and `track_ms`: detector and tracker compute cost.
-
-Offline analysis additionally reports `n`, mean, population standard deviation,
-p50, p90, p95, p99, maximum, cadence/jitter, and the exact selective-ReID
-workload/cache counters where available.
-
-## 6) Quick troubleshooting
-
-Camera check:
-
-```bash
-ros2 topic echo /camera/fps --once
-```
-
-Ports check:
-
-```bash
-ss -ltnp | rg ':8080|:8090|:8765|:5173'
-```
-
-ROS graph refresh:
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source $THESIS_ROOT/ros2_ws/install/setup.bash
-export ROS_DOMAIN_ID=42
-ros2 daemon stop
-ros2 daemon start
-sleep 2
-ros2 node list
-ros2 topic list
-```
-
-If startup says camera is not publishing:
-
-- Rerun tools/start_live_stack.sh once.
-- Try conservative camera mode: `./tools/start_live_stack.sh --profile safe-camera`
-- Check cable/sensor state.
-- If camera tooling/processes are stuck in uninterruptible `D` state, reboot host. Userspace cannot reliably kill that state.
-- Use the active stream probe only for diagnosis: `./tools/start_live_stack.sh --camera-preflight-stream-probe-on`
-
-Camera-startup notes:
-
-- The normal launcher preflights the media graph and capture link, but avoids an active `/dev/video0` stream probe by default because that path can wedge bad camera-driver states.
-- Sensor `trigger_mode` and rate/exposure control writes are opt-in. This keeps daily startup from poking the TEVS I2C control path unless you explicitly request it.
-- The camera node has startup/stall watchdogs; if no frames arrive, it exits so the live stack fails fast instead of continuing in a half-alive state.
-- Camera helpers live in `tools/lib/live_camera.sh`; CLI/default/help helpers live in `tools/lib/live_cli.sh`, `tools/lib/live_defaults.sh`, and `tools/lib/live_usage.sh`.
-
-Additional common failures:
-
-- Perception pipeline startup failure:
-  - Check `perception_camera.log` in the latest live-stack log directory.
-  - Confirm Hailo host dependencies and local runtime assets are available when using the Hailo backend.
-- Empty ROS graph:
-  - Verify `ROS_DOMAIN_ID` matches all terminals.
-  - Re-source `/opt/ros/jazzy/setup.bash` and workspace overlay.
-- UI shows no live data:
-  - Confirm API `:8090` and WS `:8765` ports are reachable.
-  - Use UI mock mode to isolate backend vs frontend issues.
-- `ros2 run` cannot find packages:
-  - Rebuild the workspace with `colcon build --symlink-install` in `ros2_ws`.
-
-Live log triage quick commands:
-
-```bash
-cd "$THESIS_ROOT"
-ls -1 ros2_ws/log/live_stack/latest
-tail -n 80 ros2_ws/log/live_stack/latest/camera.log
-tail -n 80 ros2_ws/log/live_stack/latest/perception_camera.log
-tail -n 80 ros2_ws/log/live_stack/latest/inference.log
-```
-
-Note: `perception_camera.log` is the active perception log.
-
-## 7) Control validation quick checks
-
-Verify control node is running and publishing:
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source $THESIS_ROOT/ros2_ws/install/setup.bash
-ros2 node list | rg control_ref_node
-ros2 topic hz /control_ref/cmd_vel
-```
-
-For deterministic sign checks, run an isolated control node on test topics:
-
-```bash
-ros2 run thesis_bringup control_ref_node --ros-args \
-  -r __node:=control_ref_test_node \
-  -p target_topic:=/target_test \
-  -p cmd_topic:=/control_ref_test/cmd_vel \
-  -p enable_mavros:=false
-```
-
-Expected behavior from validated baseline:
-
-- center target -> vx=0, yaw_z=0
-- left target -> yaw_z < 0
-- right target -> yaw_z > 0
-- far target (smaller h) -> vx > 0
-- near target (larger h) -> vx < 0
-- stale/lost target -> vx=0, yaw_z=0
-- raw `/target` output cannot produce a command; live control consumes
-  `/target_memory_mars` only
-
-## 8) Canonical repository paths (for command context)
-
-- ROS packages: `ros2_ws/src/`
-- Utility scripts: `tools/`
-- Live bags: `bags/live_camera/`
-- Eval output bags: `bags/eval/`
-- Timing reports: `reports/timing/`
-- Timing figures: `figures/timing/`
-- Tracking reports: `reports/tracking/`
-
-## 9) Last validated assumptions
-
-- Date: 2026-06-04
-- ROS: Jazzy
-- Default live path: integrated camera perception via `tools/start_live_stack.sh`
-- Active runtime: integrated camera live stack via `tools/start_live_stack.sh`.
+The Hailo runtime is platform-specific (Raspberry Pi 5) and is installed
+separately — see `tools/setup/`. The browser frontend is prepared in its own
+repository: `cd ~/Desktop/IST-Thesis-UI && npm ci && npm run build`.
+
+## Rules
+
+- The only tracked root files are `.envrc`, `.gitignore`, `LICENSE`,
+  `README.md`. Every tracked root directory is a distinct architectural
+  concern with its own README.
+- `data/`, `figures/`, `thesis_env/` and caches stay local and are never
+  committed.
+- `thesis_env/` is the project-local Python environment; recreate it with the
+  Setup steps, never commit it.
+- Paths pinned in
+  `docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json`
+  must not move before the H01–H03 held-out evaluation.
+- Generated caches (`__pycache__/`, `.pytest_cache/`, `*.pyc`) are never
+  committed; run `pytest` with `-p no:cacheprovider`.
