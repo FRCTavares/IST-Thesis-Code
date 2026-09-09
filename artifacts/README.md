@@ -1,5 +1,7 @@
 # artifacts/
 
+Last reviewed: 2026-09-09
+
 Disposable, reproducible generated output.
 
 Everything under `artifacts/` is git-ignored (`.gitignore`: `artifacts/**`).
