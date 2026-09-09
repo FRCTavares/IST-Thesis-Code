@@ -35,9 +35,9 @@ and is the only controller-facing target authority.
 | `data/` | Local external datasets and processed research workspaces, including CVAT physical-reference packages and Issue #64 processed inputs. Generated contents remain local; see `data/README.md`. |
 
 Local, git-ignored, not part of a clean checkout: `thesis_env/` (the
-project-local Python venv, activated by `.envrc` when present). Legacy
-generated `figures/` output is being consolidated into `artifacts/figures/`;
-it is not an architectural root directory.
+project-local Python venv, activated by `.envrc` when present). Generated
+figures belong under `artifacts/figures/`; there is no root-level figure
+workspace.
 
 ## Primary entrypoints
 
@@ -95,8 +95,8 @@ repository: `cd ~/Desktop/IST-Thesis-UI && npm ci && npm run build`.
 - The only tracked root files are `.envrc`, `.gitignore`, `LICENSE`,
   `README.md`. Every tracked root directory is a distinct architectural
   concern with its own README.
-- `data/`, `figures/`, `thesis_env/` and caches stay local and are never
-  committed.
+- Generated dataset contents under `data/`, generated contents under
+  `artifacts/`, `thesis_env/`, and caches stay local and are never committed.
 - `thesis_env/` is the project-local Python environment; recreate it with the
   Setup steps, never commit it.
 - Paths pinned in

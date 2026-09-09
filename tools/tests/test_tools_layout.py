@@ -110,3 +110,19 @@ def test_timing_entrypoints_bootstrap_the_repository_import_path():
         assert "Path(__file__).resolve().parents[2]" in source
         assert "sys.path.insert(0, str(REPO_ROOT))" in source
         assert "from tools.timing_contract import" in source
+
+
+def test_timing_analyser_defaults_generated_figures_to_artifacts():
+    source = (TOOLS_ROOT / "analysis/analyse_bag_timing.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert (
+        'os.path.join(thesis_root, "artifacts", "figures", "timing", bag_name)'
+        in source
+    )
+    assert (
+        'os.path.join(thesis_root, "figures", "timing", bag_name)'
+        not in source
+    )
+    assert "default: artifacts/figures/timing/<bag>/" in source
