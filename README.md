@@ -32,7 +32,7 @@ and is the only controller-facing target authority.
 | `bags/` | ROS bag data — protected source/flight recordings and disposable replay bags. Only `bags/README.md` is tracked; bag data and the retention policy live under `bags/README.md` and `docs/data/catalogue/`. |
 | `reports/` | Locally generated analysis output, with a promotion path: a citable result exists here only as a reviewed evidence package force-added with provenance sidecars. Only `README.md` / `PROMOTED.md` and those packages are tracked. |
 | `artifacts/` | Disposable, reproducible intermediate output (annotation/CVAT scratch, rendered media, run logs). `artifacts/README.md` is tracked; all generated contents are local and are never thesis authority. |
-| `data/` | Imported external-benchmark datasets and locally processed frames, used only by the external-tracking comparison. Currently entirely local; a concise `data/README.md` will follow in a later folder pass. |
+| `data/` | Local external datasets and processed research workspaces, including CVAT physical-reference packages and Issue #64 processed inputs. Generated contents remain local; see `data/README.md`. |
 
 Local, git-ignored, not part of a clean checkout: `thesis_env/` (the
 project-local Python venv, activated by `.envrc` when present). Legacy
