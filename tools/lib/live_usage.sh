@@ -137,7 +137,7 @@ Default live stack:
 
 Common options:
     --record                 Record video/perception/tracking/control bag
-    --field-record           Record full live pipeline and separate MAVROS telemetry
+    --field-record           Record full live pipeline with managed MAVROS telemetry
     --record-raw             Also record /camera/image_raw in a separate synchronized bag
     --source-record          Record source dataset: /camera/image_raw and MAVROS telemetry
     --source-record-no-mavros
@@ -153,6 +153,8 @@ Common options:
     --no-appearance          Disable TIM-MARS appearance extraction
     --res PRESET             vga | hd | fhd | WIDTHxHEIGHT
     --no-control             Disable control_ref_node
+    --control-mavros         Mirror validated controller commands to managed MAVROS
+                             (aircraft authority; requires --field-record)
     --no-dashboard           Disable dashboard bridge and web video
     --no-web-video           Disable MJPEG web video only
     -v, --verbose            Print verbose startup logs

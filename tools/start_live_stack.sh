@@ -330,6 +330,8 @@ write_video_bag_metadata() {
         echo "runtime_reconfiguration_enabled=false"
         echo "mavros_mirror_enabled=${CONTROL_MAVROS_BOOL:-false}"
         echo "record_mavros=$RECORD_MAVROS"
+        echo "field_mavros_mode=${FIELD_MAVROS_RECORD:-0}"
+        echo "mavros_setpoint_velocity_frame=${MAVROS_SETPOINT_VELOCITY_FRAME:-disabled}"
         echo "bag_out_dir=${VIDEO_BAG_OUT_DIR:-}"
         echo "dataset_bag_out_dir=${DATASET_BAG_OUT_DIR:-}"
         echo "log_run_dir=$RUN_DIR"
@@ -862,28 +864,19 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
     fi
 fi
 
-if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
-    start_ros_bg control ros2 run thesis_bringup control_ref_node --ros-args \
-        -p target_topic:=/target_memory_mars \
-        -p status_topic:=/target_memory_mars/status \
-        -p enable_yaw_recovery:=false \
-        -p img_w:=${CAMERA_WIDTH}.0 \
-        -p img_h:=${CAMERA_HEIGHT}.0 \
-        -p enable_mavros:=$CONTROL_MAVROS_BOOL \
-        -p cmd_frame_id:=base_link \
-        -p mavros_frame_id:=base_link \
-        -p stale_timeout_s:=$CONTROL_STALE_TIMEOUT_S
-    sleep 1
-    if ! check_proc_alive control; then
-        stop_stack
-        exit 1
-    fi
-fi
-
 # Start MAVROS telemetry when --record-mavros is enabled.
 # This keeps --record-mavros self-contained:
 # launch MAVROS, wait for FCU connection, request streams, then start bag recording.
 if [[ "$RECORD_MAVROS" -eq 1 ]]; then
+    if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
+        echo "[field] enforcing ISR-first/Pixhawk network mode before MAVROS startup"
+        if ! sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk; then
+            echo "[error] failed to enter Pixhawk field-network mode"
+            stop_stack
+            exit 1
+        fi
+    fi
+
     MAVROS_START_TS="$(date +%s)"
 
     mavros_elapsed() {
@@ -902,6 +895,15 @@ if [[ "$RECORD_MAVROS" -eq 1 ]]; then
     MAVROS_TGT_SYSTEM="${MAVROS_TGT_SYSTEM:-9}"
     MAVROS_TGT_COMPONENT="${MAVROS_TGT_COMPONENT:-1}"
     MAVROS_STREAM_RATE="${MAVROS_STREAM_RATE:-50}"
+
+    if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
+        if pgrep -f '/mavros/mavros_node|/mavros_node([[:space:]]|$)' >/dev/null 2>&1; then
+            mavros_log error "pre-existing MAVROS process detected in retained field mode"
+            mavros_log error "stop the existing MAVROS process and rerun so the live stack owns the aircraft link"
+            stop_stack
+            exit 1
+        fi
+    fi
 
     mavros_log info "--record-mavros enabled: starting MAVROS telemetry"
     mavros_log info "config: fcu_url=${MAVROS_FCU_URL} target=${MAVROS_TGT_SYSTEM}.${MAVROS_TGT_COMPONENT} stream_rate=${MAVROS_STREAM_RATE}Hz"
@@ -939,6 +941,27 @@ if [[ "$RECORD_MAVROS" -eq 1 ]]; then
 
         mavros_log ok "MAVROS connected"
     fi
+
+    MAVROS_SETPOINT_VELOCITY_FRAME="BODY_NED"
+    mavros_log info "configuring setpoint_velocity mav_frame=${MAVROS_SETPOINT_VELOCITY_FRAME}"
+
+    if ! ros2 param set /mavros/setpoint_velocity mav_frame "$MAVROS_SETPOINT_VELOCITY_FRAME"; then
+        mavros_log error "failed to configure /mavros/setpoint_velocity mav_frame"
+        stop_stack
+        exit 1
+    fi
+
+    MAVROS_FRAME_VALUE="$(
+        ros2 param get /mavros/setpoint_velocity mav_frame 2>/dev/null || true
+    )"
+
+    if ! printf '%s\n' "$MAVROS_FRAME_VALUE" | grep -qx "String value is: BODY_NED"; then
+        mavros_log error "setpoint_velocity mav_frame verification failed: ${MAVROS_FRAME_VALUE:-<missing>}"
+        stop_stack
+        exit 1
+    fi
+
+    mavros_log ok "setpoint_velocity mav_frame verified: BODY_NED"
 
     mavros_log info "waiting for /mavros/set_stream_rate service, timeout 10s"
     MAVROS_STREAM_SERVICE_READY=0
@@ -989,13 +1012,36 @@ if [[ "$RECORD_MAVROS" -eq 1 ]]; then
     done
 
     if [[ "$MAVROS_IMU_READY" -ne 1 ]]; then
+        if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
+            mavros_log error "/mavros/imu/data_raw missing in retained field mode"
+            stop_stack
+            exit 1
+        fi
         mavros_log warn "/mavros/imu/data_raw did not publish during startup check"
-        mavros_log warn "bag recording will still include MAVROS topics, but IMU stream may be missing"
+        mavros_log warn "telemetry-only recording may continue with the missing stream documented"
     else
         mavros_log ok "MAVROS raw IMU stream detected"
     fi
 
     mavros_log ok "MAVROS telemetry setup finished"
+fi
+
+if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
+    start_ros_bg control ros2 run thesis_bringup control_ref_node --ros-args \
+        -p target_topic:=/target_memory_mars \
+        -p status_topic:=/target_memory_mars/status \
+        -p enable_yaw_recovery:=false \
+        -p img_w:=${CAMERA_WIDTH}.0 \
+        -p img_h:=${CAMERA_HEIGHT}.0 \
+        -p enable_mavros:=$CONTROL_MAVROS_BOOL \
+        -p cmd_frame_id:=base_link \
+        -p mavros_frame_id:=base_link \
+        -p stale_timeout_s:=$CONTROL_STALE_TIMEOUT_S
+    sleep 1
+    if ! check_proc_alive control; then
+        stop_stack
+        exit 1
+    fi
 fi
 
 if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
@@ -1039,14 +1085,21 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     if [[ "$RECORD_MAVROS" -eq 1 ]]; then
         VIDEO_BAG_TOPICS+=(
             /mavros/state
+            /mavros/extended_state
             /mavros/imu/data_raw
             /mavros/imu/data
             /mavros/imu/mag
             /mavros/imu/static_pressure
             /mavros/imu/temperature_imu
+            /mavros/rc/in
+            /mavros/rc/out
+            /mavros/battery
+            /mavros/global_position/global
+            /mavros/global_position/rel_alt
+            /mavros/global_position/local
             /mavros/local_position/pose
             /mavros/local_position/velocity_local
-            /mavros/setpoint_velocity/cmd_vel_unstamped
+            /mavros/setpoint_velocity/cmd_vel
         )
     fi
 
@@ -1226,36 +1279,6 @@ if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
         echo "[ok] raw image bag metadata: $RAW_IMAGE_BAG_OUT_DIR/raw_image_metadata.txt"
     else
         echo "[warn] raw image bag output directory not visible yet; metadata was not written"
-    fi
-fi
-
-if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
-    echo "[field] enforcing AERONEXT/Pixhawk network mode (Tailscale will stop)"
-    sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk
-
-    echo "[field] starting MAVROS Pixhawk 6X Ethernet link"
-    export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
-
-    start_ros_bg mavros_pixhawk bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 launch mavros apm.launch fcu_url:=udp://:14550@ tgt_system:=9 tgt_component:=1'
-
-    sleep 8
-
-    echo "[field] requesting MAVLink streams"
-    bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate "{stream_id: 0, message_rate: 50, on_off: true}"' || true
-
-    MAVROS_BAG_ROOT="$THESIS_ROOT/bags/mavros"
-    mkdir -p "$MAVROS_BAG_ROOT"
-    MAVROS_BAG_OUT_DIR="$MAVROS_BAG_ROOT/$(basename "$VIDEO_BAG_OUT_DIR")__mavros"
-
-    echo "[field] starting MAVROS recorder: $MAVROS_BAG_OUT_DIR"
-
-    start_ros_bg mavros_bag bash -lc "source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID=42 && ros2 bag record --storage mcap -o '$MAVROS_BAG_OUT_DIR' --topics /mavros/imu/data_raw /mavros/imu/data /mavros/imu/mag /mavros/imu/static_pressure /mavros/imu/temperature_imu /mavros/rc/in /mavros/rc/out /mavros/battery /mavros/global_position/global /mavros/global_position/rel_alt /mavros/global_position/local /mavros/local_position/pose /mavros/local_position/velocity_local /mavros/state /mavros/extended_state"
-
-    sleep 1
-    if ! check_proc_alive mavros_bag; then
-        echo "[error] MAVROS recorder failed"
-        stop_stack
-        exit 1
     fi
 fi
 
