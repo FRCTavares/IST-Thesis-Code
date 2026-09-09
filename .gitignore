@@ -84,11 +84,6 @@ artifacts/figures/
 # Local report outputs
 artifacts/reports/compare/tmp_*/
 
-# ------------------------------
-# Generated analysis outputs
-# ------------------------------
-figures/
-
 # Live benchmark raw outputs
 artifacts/reports/timing/live_matrix_*/
 !artifacts/reports/timing/live_matrix_*/summary.csv
