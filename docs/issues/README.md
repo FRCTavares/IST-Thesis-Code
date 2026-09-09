@@ -22,6 +22,8 @@ result authority.
 | `p1-12-broader-sequences.md` | Broader-sequence evaluation development. |
 | `p1-13-parameter-sensitivity.md` | Parameter-sensitivity methodology. |
 | `p1-14-final-runtime-characterization.md` | Issue #32 runtime-characterization plan. |
+| `p050-flight-validation.md` | Issue #50 aircraft-validation preparation and retained engineering detail. |
+| `p064-high-resolution-appearance-source.md` | Issue #64 source-resolution experiment history and frozen R3 evidence. |
 | `p1-21-raw-image-transport-provenance.md` | Raw-image transport and provenance development. |
 
 ## Rules

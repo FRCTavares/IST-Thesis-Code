@@ -1,5 +1,9 @@
 # Issue #64 — High-Resolution Appearance-Source Evaluation
 
+Operational execution for the remaining drone-POV capture is condensed in
+`docs/flight/README.md`. This document retains the detailed experimental
+history, methodology and frozen R3 evidence.
+
 ## 0. Experimental Status and Decision Logic
 
 The Issue #64 question is:
