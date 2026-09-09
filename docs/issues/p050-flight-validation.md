@@ -1,6 +1,9 @@
-# Issue #50 — Current Aircraft Validation Status
+# Issue #50 — Aircraft Validation Preparation Record
 
 ## Status
+
+This is the detailed Issue #50 preparation record, not the day-of-flight
+operator sheet. Current flight-day authority is `docs/flight/README.md`.
 
 **NOT YET EXECUTABLE AS A RETAINED FLIGHT PROCEDURE.**
 
@@ -59,6 +62,6 @@ Required before aircraft operation:
 - no automatic arming;
 - manual pilot takeover available.
 
-The exact retained ground/hover/flight launch commands must be added here
-under Issue #50 after the current live-stack/control audit. Until then, do not
-substitute commands from `docs/archive/flight/`.
+The exact retained ground/hover/flight launch commands must be frozen in
+`docs/flight/README.md` after the current live-stack/control audit. Until then,
+do not substitute commands from `docs/archive/flight/`.
