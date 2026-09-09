@@ -167,7 +167,9 @@ def test_final_sequences_parses_v4_entry_schema_when_ready(tmp_path):
     for entry in synthetic["sets"]["final_held_out"]:
         entry["status"] = "ready"
         # Path("/repo") / "/abs/tmp/ref.json" collapses to the absolute path.
-        entry["planned_physical_v2_reference_path"] = str(reference)
+        entry["annotation_path"] = str(reference)
+        entry["annotation_sha256"] = hashlib.sha256(reference.read_bytes()).hexdigest()
+        entry["source_path"] = entry["expected_source_path"] + "/exact_capture"
 
     sequences = RUN.final_sequences(contract(), synthetic, None)
 
@@ -322,48 +324,60 @@ def test_verify_frozen_file_records_rejects_missing_file(tmp_path):
         RUN.verify_frozen_file_records([record], context="test")
 
 
-def _heldout_sequence(tmp_path) -> tuple[dict, Path]:
+def _heldout_sequence(tmp_path, monkeypatch) -> tuple[dict, Path]:
     tmp_path = Path(tmp_path)
+    monkeypatch.setattr(RUN, "REPO_ROOT", tmp_path)
     src_dir = tmp_path / "heldout_src"
     src_dir.mkdir(parents=True)
     payload = src_dir / "h0x_0.mcap"
     payload.write_bytes(b"held-out-frozen-source")
     reference = tmp_path / "h0x_ref.json"
     reference.write_text("{}")
+    metadata = src_dir / "metadata.yaml"
+    metadata.write_text(__import__("yaml").safe_dump({"rosbag2_bagfile_information": {
+        "storage_identifier": "mcap", "relative_file_paths": [payload.name],
+        "topics_with_message_count": [
+            {"topic_metadata": {"name": name}, "message_count": 1}
+            for name in ("/camera/image_raw", "/detections")
+        ],
+    }}))
+    records = [_record_for(path) for path in (payload, metadata)]
+    for record in records:
+        record["path"] = str(Path(record["path"]).relative_to(tmp_path))
     sequence = {
         "id": "heldout_hx",
-        "source_path": str(src_dir),
+        "source_path": str(src_dir.relative_to(tmp_path)),
         "physical_reference": str(reference),
         "physical_reference_sha256": hashlib.sha256(
             reference.read_bytes()
         ).hexdigest(),
         "evidence_role": "final_held_out",
-        "source_files": [_record_for(payload)],
+        "source_files": records,
     }
     return sequence, payload
 
 
 def test_verify_sequence_inputs_accepts_matching_heldout_source_files(
-    tmp_path,
+    tmp_path, monkeypatch,
 ):
-    sequence, _ = _heldout_sequence(tmp_path)
+    sequence, _ = _heldout_sequence(tmp_path, monkeypatch)
     RUN.verify_sequence_inputs(sequence)  # must not raise
 
 
 def test_verify_sequence_inputs_rejects_tampered_heldout_source_file(
-    tmp_path,
+    tmp_path, monkeypatch,
 ):
-    sequence, _ = _heldout_sequence(tmp_path)
+    sequence, _ = _heldout_sequence(tmp_path, monkeypatch)
     sequence["source_files"][0]["sha256"] = "0" * 64
     with pytest.raises(SystemExit):
         RUN.verify_sequence_inputs(sequence)
 
-    sequence, _ = _heldout_sequence(tmp_path / "b")
+    sequence, _ = _heldout_sequence(tmp_path / "b", monkeypatch)
     sequence["source_files"][0]["size_bytes"] += 7
     with pytest.raises(SystemExit):
         RUN.verify_sequence_inputs(sequence)
 
-    sequence, payload = _heldout_sequence(tmp_path / "c")
+    sequence, payload = _heldout_sequence(tmp_path / "c", monkeypatch)
     payload.unlink()
     with pytest.raises(SystemExit):
         RUN.verify_sequence_inputs(sequence)
@@ -418,19 +432,22 @@ def test_final_held_out_tampered_source_file_stops_before_run_sequence(
                         {
                             "id": contract_ids[0],
                             "status": "ready",
-                            "expected_source_path": str(src_dir),
-                            "planned_physical_v2_reference_path": str(
+                            "source_path": str(src_dir),
+                            "annotation_sha256": hashlib.sha256(reference.read_bytes()).hexdigest(),
+                            "annotation_path": str(
                                 reference
                             ),
                             "files": [tampered_record],
                         },
                         {"id": contract_ids[1], "status": "ready",
-                         "expected_source_path": str(src_dir),
-                         "planned_physical_v2_reference_path": str(reference),
+                         "source_path": str(src_dir),
+                         "annotation_sha256": hashlib.sha256(reference.read_bytes()).hexdigest(),
+                            "annotation_path": str(reference),
                          "files": [good_record]},
                         {"id": contract_ids[2], "status": "ready",
-                         "expected_source_path": str(src_dir),
-                         "planned_physical_v2_reference_path": str(reference),
+                         "source_path": str(src_dir),
+                         "annotation_sha256": hashlib.sha256(reference.read_bytes()).hexdigest(),
+                            "annotation_path": str(reference),
                          "files": [good_record]},
                     ],
                 },

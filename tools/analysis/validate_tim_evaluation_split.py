@@ -8,8 +8,13 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
 from pathlib import Path, PurePosixPath
 from typing import Any
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from p027_handoff import ACTIVE_SPLIT_ID, validate_ready_entry
 
 
 READY = "ready"
@@ -634,6 +639,12 @@ def validate_manifest(
                         f"{context}: pending capture files must be empty"
                     )
                 continue
+
+            if set_name == "final_held_out" and manifest.get("split_id") == ACTIVE_SPLIT_ID:
+                try:
+                    validate_ready_entry(entry, repo_root, verify_hashes=verify_hashes)
+                except (ValueError, KeyError, TypeError, OSError) as exc:
+                    errors.append(f"{context}: {exc}")
 
             for field in (
                 "source_path",
