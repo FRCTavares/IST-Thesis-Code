@@ -328,6 +328,8 @@ write_video_bag_metadata() {
         echo "target_authority_event_log=target_authority_events.jsonl"
         echo "target_authority_runtime_log=$TARGET_AUTHORITY_EVENT_LOG"
         echo "runtime_reconfiguration_enabled=false"
+        echo "dashboard_bind=${DASHBOARD_BIND:-127.0.0.1}"
+        echo "dashboard_control_api_token_state=$([[ -n "${DASHBOARD_CONTROL_TOKEN:-}" ]] && echo configured || echo open)"
         echo "mavros_mirror_enabled=${CONTROL_MAVROS_BOOL:-false}"
         echo "record_mavros=$RECORD_MAVROS"
         echo "field_mavros_mode=${FIELD_MAVROS_RECORD:-0}"
@@ -794,23 +796,51 @@ fi
 
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
     DASHBOARD_RUNTIME_RECONFIGURATION_BOOL="false"
+    DASHBOARD_BIND="${DASHBOARD_BIND:-127.0.0.1}"
+    # Reachable loopback probe address for the readiness check: 127.0.0.1 for a
+    # loopback bind, otherwise the bind address itself.
+    if dashboard_bind_is_loopback "$DASHBOARD_BIND"; then
+        DASHBOARD_PROBE_HOST="127.0.0.1"
+    else
+        DASHBOARD_PROBE_HOST="$DASHBOARD_BIND"
+    fi
+    # The access token is delivered to the bridge only through the inherited
+    # DASHBOARD_CONTROL_TOKEN environment variable, never as a ROS CLI argument
+    # (which would expose it in ps / /proc/<pid>/cmdline). It is never
+    # defaulted, printed, or written to provenance; only a configured/open
+    # marker is recorded.
+    DASHBOARD_CONTROL_TOKEN_VALUE="${DASHBOARD_CONTROL_TOKEN:-}"
+    if [[ -n "$DASHBOARD_CONTROL_TOKEN_VALUE" ]]; then
+        export DASHBOARD_CONTROL_TOKEN
+    fi
+
+    DASHBOARD_BRIDGE_ARGS=(
+        -p img_w:=640
+        -p img_h:=640
+        -p camera_ref_w:=$CAMERA_WIDTH
+        -p camera_ref_h:=$CAMERA_HEIGHT
+        -p api_host:="$DASHBOARD_BIND"
+        -p ws_host:="$DASHBOARD_BIND"
+        -p runtime_reconfiguration_enabled:=$DASHBOARD_RUNTIME_RECONFIGURATION_BOOL
+        -p target_authority_event_log_path:="$TARGET_AUTHORITY_EVENT_LOG"
+        -p validated_target_topic:=/target_memory_mars
+        -p target_select_topic:=/target_memory_mars/select
+        -p target_clear_topic:=/target_memory_mars/clear
+    )
+    if [[ -n "${DASHBOARD_CORS_ALLOWED_ORIGINS:-}" ]]; then
+        DASHBOARD_BRIDGE_ARGS+=(
+            -p dashboard_cors_allowed_origins:="$DASHBOARD_CORS_ALLOWED_ORIGINS"
+        )
+    fi
 
     start_ros_bg dashboard_bridge ros2 run thesis_bringup dashboard_bridge_node --ros-args \
-        -p img_w:=640 \
-        -p img_h:=640 \
-        -p camera_ref_w:=$CAMERA_WIDTH \
-        -p camera_ref_h:=$CAMERA_HEIGHT \
-        -p runtime_reconfiguration_enabled:=$DASHBOARD_RUNTIME_RECONFIGURATION_BOOL \
-        -p target_authority_event_log_path:="$TARGET_AUTHORITY_EVENT_LOG" \
-        -p validated_target_topic:=/target_memory_mars \
-        -p target_select_topic:=/target_memory_mars/select \
-        -p target_clear_topic:=/target_memory_mars/clear
+        "${DASHBOARD_BRIDGE_ARGS[@]}"
     sleep 1
     if ! check_proc_alive dashboard_bridge; then
         stop_stack
         exit 1
     fi
-    if ! wait_for_port 127.0.0.1 8765 15 1; then
+    if ! wait_for_port "$DASHBOARD_PROBE_HOST" 8765 15 1; then
         stop_stack
         exit 1
     fi
@@ -820,6 +850,10 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         "img_h=640"
         "camera_ref_w=$CAMERA_WIDTH"
         "camera_ref_h=$CAMERA_HEIGHT"
+        "api_host=$DASHBOARD_BIND"
+        "ws_host=$DASHBOARD_BIND"
+        "dashboard_control_api_token_state=$([[ -n "$DASHBOARD_CONTROL_TOKEN_VALUE" ]] && echo configured || echo open)"
+        "dashboard_cors_allowed_origins=${DASHBOARD_CORS_ALLOWED_ORIGINS:-node-default}"
         "runtime_reconfiguration_enabled=$DASHBOARD_RUNTIME_RECONFIGURATION_BOOL"
         "validated_target_topic=/target_memory_mars"
         "target_select_topic=/target_memory_mars/select"
@@ -1220,8 +1254,16 @@ if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
     fi
 fi
 
+# The dashboard HTTP API / telemetry WebSocket bind to $DASHBOARD_BIND (loopback
+# by default). web_video_server is unchanged; from a remote browser it is
+# reachable at the Pi address. See docs/live/dashboard_trust_boundary.md.
+if dashboard_bind_is_loopback "${DASHBOARD_BIND:-127.0.0.1}"; then
+    DASHBOARD_URL_HOST="127.0.0.1"
+else
+    DASHBOARD_URL_HOST="${DASHBOARD_BIND}"
+fi
 VIDEO_URL="http://${PI_IP}:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45"
-WS_URL="ws://${PI_IP}:8765"
+WS_URL="ws://${DASHBOARD_URL_HOST}:8765"
 
 if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 && "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
     echo "[ok] Live stack started successfully. Dashboard: $VIDEO_URL | WS: $WS_URL"

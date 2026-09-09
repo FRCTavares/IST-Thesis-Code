@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 import re
+import subprocess
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -106,18 +107,19 @@ def test_target_commands_use_reliable_qos_and_auto_fails_closed():
     assert '"auto"' in dashboard
 
 
-def test_runtime_switches_fail_closed_around_target_authority():
+def test_denied_runtime_switch_is_a_target_authority_no_op():
+    """A denied model/tracker switch rejects before it touches target authority.
+
+    The ``_runtime_reconfiguration_enabled`` guard and its 409 ``return`` both
+    precede any ``_apply_target_authority_request`` call, and a ``return`` sits
+    between the guard and that call.
+    """
     dashboard = _read(DASHBOARD)
     methods = _class_methods(DASHBOARD, "DashboardBridgeNode")
 
     assert 'declare_parameter("runtime_reconfiguration_enabled", False)' in dashboard
     for method_name in {"_handle_model_switch", "_handle_tracker_switch"}:
         method = methods[method_name]
-        attributes = {
-            node.attr
-            for node in ast.walk(method)
-            if isinstance(node, ast.Attribute)
-        }
         calls = _called_attributes(method)
         authority_clear_line = min(
             node.lineno
@@ -132,10 +134,95 @@ def test_runtime_switches_fail_closed_around_target_authority():
             if isinstance(node, ast.Attribute)
             and node.attr == "_runtime_reconfiguration_enabled"
         )
+        return_lines = [
+            node.lineno
+            for node in ast.walk(method)
+            if isinstance(node, ast.Return)
+        ]
 
-        assert "_runtime_reconfiguration_enabled" in attributes
         assert "_apply_target_authority_request" in calls
-        assert authority_clear_line < reconfiguration_guard_line
+        # Reconfiguration denial happens before any authority reset.
+        assert reconfiguration_guard_line < authority_clear_line
+        # A rejected no-op returns between the guard and the authority call.
+        assert any(
+            reconfiguration_guard_line <= line < authority_clear_line
+            for line in return_lines
+        )
+
+
+def test_launcher_binds_dashboard_and_gates_non_loopback_on_a_token():
+    launcher = _read(LAUNCHER)
+    live_cli = (REPO_ROOT / "tools/lib/live_cli.sh").read_text(
+        encoding="utf-8"
+    )
+    live_defaults = (REPO_ROOT / "tools/lib/live_defaults.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'DASHBOARD_BIND="${DASHBOARD_BIND:-127.0.0.1}"' in live_defaults
+    assert "dashboard_bind_is_loopback" in live_defaults
+    assert "--dashboard-bind" in live_cli
+    assert '-p api_host:="$DASHBOARD_BIND"' in launcher
+    assert '-p ws_host:="$DASHBOARD_BIND"' in launcher
+    assert "dashboard_cors_allowed_origins" in launcher
+
+    # The control token must NOT be placed on the ROS command line; it is
+    # delivered only through the inherited environment variable.
+    assert "dashboard_control_api_token:=" not in launcher
+    assert "export DASHBOARD_CONTROL_TOKEN" in launcher
+
+    # Non-loopback bind without a token must refuse before the bridge starts.
+    assert "dashboard_bind_is_loopback" in live_cli
+    assert 'DASHBOARD_CONTROL_TOKEN' in live_cli
+    assert "is not loopback" in live_cli
+
+
+def _run_live_arg_gate(
+    *,
+    bind: str,
+    token: str | None,
+) -> subprocess.CompletedProcess:
+    parts = [
+        f'export THESIS_ROOT="{REPO_ROOT}"',
+        f'cd "{REPO_ROOT}"',
+        "source tools/lib/live_usage.sh",
+        "source tools/lib/live_defaults.sh",
+        "source tools/lib/live_storage.sh",
+        "source tools/lib/live_cli.sh",
+    ]
+    if token is None:
+        parts.append("unset DASHBOARD_CONTROL_TOKEN")
+    else:
+        parts.append(f"export DASHBOARD_CONTROL_TOKEN={token}")
+    parts.append(
+        "parse_and_validate_live_stack_args "
+        f"--dashboard-bind {bind} && echo GATE_PASSED"
+    )
+    return subprocess.run(
+        ["bash", "-c", "; ".join(parts)],
+        capture_output=True,
+        text=True,
+        cwd=str(REPO_ROOT),
+    )
+
+
+def test_live_launcher_refuses_non_loopback_dashboard_bind_without_token():
+    result = _run_live_arg_gate(bind="203.0.113.7", token=None)
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "GATE_PASSED" not in result.stdout
+    assert "not loopback" in output
+    assert "DASHBOARD_CONTROL_TOKEN" in output
+
+
+def test_live_launcher_accepts_non_loopback_dashboard_bind_with_token():
+    result = _run_live_arg_gate(bind="203.0.113.7", token="synthetic-ground-secret")
+    assert "GATE_PASSED" in result.stdout
+
+
+def test_live_launcher_accepts_loopback_dashboard_bind_without_token():
+    result = _run_live_arg_gate(bind="127.0.0.1", token=None)
+    assert "GATE_PASSED" in result.stdout
 
 
 def test_dashboard_has_no_container_model_switch_fallback():
