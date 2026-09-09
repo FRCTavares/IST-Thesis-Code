@@ -1,6 +1,7 @@
 """Structural contracts for the maintained tools directory."""
 
 from pathlib import Path
+import re
 import stat
 
 
@@ -56,6 +57,32 @@ def test_every_tool_domain_is_documented():
 def test_top_level_contains_only_stable_shared_entrypoints():
     actual = {path.name for path in TOOLS_ROOT.iterdir() if path.is_file()}
     assert actual == TOP_LEVEL_FILES
+
+
+_LAST_REVIEWED = re.compile(r"^Last reviewed: \d{4}-\d{2}-\d{2}$", re.MULTILINE)
+
+
+def _first_heading(text: str) -> str:
+    for line in text.splitlines():
+        if line.strip():
+            return line.strip()
+    return ""
+
+
+def test_folder_readmes_follow_the_documentation_standard():
+    """Every tools folder README identifies its path and carries a review date.
+
+    See docs/design/README_STANDARD.md. This guardrail does not check the
+    review date's value, prose, line count, or table shape.
+    """
+    root_readme = (TOOLS_ROOT / "README.md").read_text(encoding="utf-8")
+    assert _first_heading(root_readme) == "# tools"
+    assert _LAST_REVIEWED.search(root_readme)
+
+    for name in sorted(DOMAIN_DIRECTORIES):
+        text = (TOOLS_ROOT / name / "README.md").read_text(encoding="utf-8")
+        assert _first_heading(text) == f"# tools/{name}", name
+        assert _LAST_REVIEWED.search(text), name
 
 
 def test_removed_or_moved_tools_do_not_return():
