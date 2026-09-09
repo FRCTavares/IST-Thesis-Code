@@ -143,6 +143,22 @@ requested crops per second, valid embeddings per second, backend wall-time
 statistics, TIM-MARS processing statistics, warm-up classification, and the
 processing displacement associated with backend-call frames.
 
+## Operator live-check priority
+
+While a live run is in progress, read these p95 metrics in order:
+
+1. `e2e_validated_target_ms` — camera-callback to controller-authority
+   responsiveness (the control-readiness latency contract).
+2. `e2e_det_ms` — detector-path responsiveness.
+3. `pub_dt_ms` and the derived detector frequency — cadence stability.
+4. `pre_infer_wait_ms` — in-process scheduling / backpressure before Hailo
+   inference.
+5. `infer_ms` and `track_ms` — detector and tracker compute cost.
+
+Offline analysis additionally reports `n`, mean, population standard
+deviation, p50/p90/p95/p99, maximum, cadence/jitter, and the selective-ReID
+workload/cache counters where available.
+
 ## Interpretation boundaries
 
 Keep these quantities conceptually separate:
