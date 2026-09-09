@@ -29,9 +29,8 @@ Only `mars` and `off` are supported target-memory operator modes.
 - Dashboard compatibility launcher: `tools/start_ui_stack.sh`
 - Authoritative dashboard frontend: `FRCTavares/IST-Thesis-UI`
 - ROS workspace build: `tools/thesis_build.sh`
-- Held-out capture index: `docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md`
+- Flight-day operator sheet: `docs/flight/README.md`
 - Held-out capture helper: `tools/experiments/record_p027_heldout_sequence.sh`
-- Aircraft-validation status: `docs/flight/P050_FLIGHT_VALIDATION.md`
 - Tools overview: `tools/README.md`
 
 The browser frontend is independently owned by `FRCTavares/IST-Thesis-UI`,

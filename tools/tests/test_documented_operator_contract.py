@@ -13,7 +13,7 @@ ROOT_README = REPO_ROOT / "README.md"
 INDEX = REPO_ROOT / "docs/design/tim_tooling_index.md"
 TOOLS_README = TOOLS_ROOT / "README.md"
 P027_RUNBOOK = REPO_ROOT / "docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md"
-P050_STATUS = REPO_ROOT / "docs/flight/P050_FLIGHT_VALIDATION.md"
+FLIGHT_DAY = REPO_ROOT / "docs/flight/README.md"
 EXPERIMENTS_README = TOOLS_ROOT / "experiments/README.md"
 
 REPOSITORY_PATH_PREFIXES = (
@@ -140,11 +140,28 @@ printf '\\n'
     assert "--skip-install" not in result.stdout
 
 
+def test_flight_day_sheet_stays_compact_and_fail_closed():
+    text = FLIGHT_DAY.read_text(encoding="utf-8")
+
+    assert len(text.splitlines()) < 150
+    assert "only current day-of-flight operator sheet" in text
+    assert "Run 1 — H01" in text
+    assert "Run 2 — H02" in text
+    assert "Run 3 — H03" in text
+    assert "#64 small-target drone POV" in text
+    assert "Flight 1 — basic following" in text
+    assert "Flight 2 — loss / reacquisition" in text
+    assert "Flight 3 — crossing / distractor" in text
+    assert "Flight 4 — bounded yaw recovery" in text
+    assert "--record-mavros" in text
+    assert "NOT FROZEN — DO NOT USE AN OLD P023 COMMAND" in text
+
+
 def test_documented_build_recording_and_evaluation_commands_are_supported():
     tools_readme = TOOLS_README.read_text(encoding="utf-8")
     root_readme = ROOT_README.read_text(encoding="utf-8")
     p027_runbook = P027_RUNBOOK.read_text(encoding="utf-8")
-    p050_status = P050_STATUS.read_text(encoding="utf-8")
+    flight_day = FLIGHT_DAY.read_text(encoding="utf-8")
     experiments = EXPERIMENTS_README.read_text(encoding="utf-8")
     live_cli = (TOOLS_ROOT / "lib/live_cli.sh").read_text(
         encoding="utf-8"
@@ -173,7 +190,7 @@ def test_documented_build_recording_and_evaluation_commands_are_supported():
             option in root_readme
             or option in tools_readme
             or option in p027_runbook
-            or option in p050_status
+            or option in flight_day
         )
 
     command = (
