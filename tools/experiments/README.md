@@ -1,196 +1,57 @@
-# Experiment Replay Tools
+# tools/experiments
 
-This folder contains replay helpers used to reproduce TIM-MARS evaluation runs.
+Last reviewed: 2026-09-09
 
-These scripts are not generic utilities. They encode thesis-specific replay
-contracts: bag naming, output folders, ROS topics, selected-target publication
-modes, and report generation. Prefer using these scripts instead of manually
-starting many ROS commands when reproducing TIM-MARS experiments.
+## Purpose
 
-## Tool classification
+Replay and capture runners that reproduce TIM-MARS and tracker evaluations.
+These are not generic utilities: each encodes a thesis-specific contract for
+bag naming, output roots, ROS topics and selected-target publication mode. The
+layout is deliberately flat because these paths are cited verbatim by frozen
+manifests and by reproduction documentation.
 
-| Tool | Status | Purpose |
+## Contents
+
+Representative entrypoints by category — not every file is listed.
+
+| Path | Category | Role |
 | --- | --- | --- |
-| `run_one_memory_tim_replay.sh` | Core final workflow | Main memory-only TIM-MARS replay helper over existing tracks and target sources. |
-| `run_deterministic_tim_replay.py` | Core final workflow | Produces deterministic TIM-MARS replay output and resolved-runtime provenance. |
-| `run_tim_component_ablation.py` | Core P0.17 workflow | Materializes and runs the frozen seven-row TIM-MARS component-ablation matrix. |
-| `run_deterministic_tracker_replay.py` | Core P0.18 workflow | Freezes one tracker and fixed-ID raw target deterministically from recorded image and detection evidence. |
-| `run_one_clean_tim_replay.sh` | Core/support workflow | Replays an existing bag with detector/tracker outputs and reruns TIM-MARS. |
-| `run_one_detector_tim_replay.sh` | Diagnostic full-pipeline workflow | Reruns detector, tracker, and TIM-MARS from image_raw source bags. |
-| `publish_annotated_track_target.py` | Core final workflow | Publishes oracle-style `/target` from annotation CSV intervals and `/tracks`. |
-| `publish_selected_track_target.py` | Core final workflow | Publishes `/target` from one fixed tracker ID. |
-| `wait_for_track_selection.py` | Support helper | Resolves largest-track or explicit-ID selection from a persistent typed `/tracks` subscription for the full-pipeline replay runner. |
-| `select_largest_track_id.py` | Legacy support helper | Parses a saved `/tracks` text echo for workflows that still intentionally use that older mechanism, including `run_one_clean_tim_replay.sh`. It is not used by the current full-pipeline runner. |
-| `write_tim_run_metadata.py` | Support helper | Writes validated replay invocation and effective-value provenance. |
+| `run_one_memory_tim_replay.sh` | Core replay | Memory-only TIM-MARS replay over existing tracks/targets/annotations. |
+| `run_deterministic_tim_replay.py` | Core replay (frozen) | Deterministic TIM-MARS replay with resolved-runtime provenance. |
+| `run_deterministic_tracker_replay.py` | Core replay (frozen) | Freezes one tracker and a fixed-ID raw target from recorded evidence. |
+| `run_one_clean_tim_replay.sh`, `run_one_detector_tim_replay.sh` | Full/partial pipeline | Replay with reused or regenerated detector/tracker outputs. |
+| `run_tim_component_ablation.py` | Ablation | Frozen seven-row component-ablation matrix (Issue #28). |
+| `run_tim_parameter_sensitivity.py`, `run_bytetrack_tim_sensitivity.py` | Sensitivity | Historical Issue #31 OFAT sweep; Issue #58b ByteTrack config screen. |
+| `record_p027_heldout_sequence.sh` | Capture (frozen) | Held-out source capture helper (Issue #27). |
+| `record_p064_drone_sequence.sh` | Capture | Representative small-target capture (Issue #64). |
+| `publish_annotated_track_target.py`, `publish_selected_track_target.py` | Publishers | Oracle-style and fixed-ID `/target` sources for controlled replays. |
+| `wait_for_track_selection.py`, `select_largest_track_id.py`, `write_tim_run_metadata.py`, `build_common_input_bag.py`, `images_to_camera_bag.py` | Support | Track selection, run-metadata provenance, input-bag construction. |
+| `run_p058_target_reid_replay.py` (frozen), `run_tim_resilience_development.py` | Issue-scoped | Issue #58 Target-ReID replay; Issue #90 resilience study. |
+| `run_p044_*.sh`, `sample_p044_*.py`, `collect_p044_transport_evidence.py`, `analyze_p044_sustained_soak.py`, `p044_*_relay.py` | Historical | Issue #44 (closed) Hailo ReID-offload evidence, retained for reproduction. |
+| `p064_appearance_contract.py`, `prepare_p064_appearance_variants.py`, `measure_p054_raw_image_transport_cost.sh`, `capture_external_detector_tracker.sh`, `profile_tim_resilience_service.py`, `sample_process_groups.py` | Issue-scoped | Per-issue capture, measurement and profiling helpers. |
 
-## Deterministic tracker freezing
+## Rules
 
-Use `run_deterministic_tracker_replay.py` before tracker-pairing
-experiments. It processes detections in original rosbag source order,
-writes one replacement `/tracks` and `/target` message per detection,
-and does not run TIM-MARS during tracker freezing.
+- The flat structure is intentional — do not add `current/`, `historical/` or
+  other subdirectories; frozen manifests and reproduction docs pin these paths.
+- Paths pinned in the prospective-freeze JSON must not move before H01–H03.
+- Full-pipeline runners regenerate tracker IDs; use them only when annotations
+  and evaluation tolerate regenerated IDs.
+- Prefer explicit output roots for final runs so bags and reports trace back to
+  the experiment.
 
-The default `largest_first_eligible` mode selects the largest eligible
-track once and keeps that tracker ID fixed. By default, one eligible message
-is sufficient, preserving the original evidence contract. The optional
-`--selection-confirmation-messages N` gate requires the same tracker ID to be
-present in `N` consecutive generated track messages before it can be selected.
-If the selected ID later disappears, raw `/target` becomes invalid; the runner
-does not silently select another person.
+## Reproduce the canonical matrix
 
-For DeepSORT, recorded image callbacks are forwarded in original source
-order to reproduce the live node latest-image contract. Image-age
-statistics and stale-image counts are stored in
-`tracker_freeze_metadata.json`.
+    python3 tools/experiments/run_tim_component_ablation.py --set development
 
-Generated tracker IDs must be validated against tracker-specific
-annotations before track-ID correctness evaluation.
+Single end-to-end reproduction command:
+`python3 tools/reproduce_tim_mars.py --set development`.
 
-Determinism is defined over topic order, bag timestamps, and declared ROS
-message fields. It is not defined as byte-for-byte identity of MCAP files or
-raw CDR payloads because CDR alignment padding can contain non-semantic bytes.
-The runner records a canonical generated-message SHA-256 digest in
-`tracker_freeze_metadata.json`.
+## See also
 
-## Recommended final replay path
-
-Use `run_one_memory_tim_replay.sh` when the goal is to evaluate TIM-MARS as a
-selected-target memory layer over already-created tracker outputs. It avoids
-changing tracker IDs by rerunning the detector/tracker pipeline.
-
-Typical modes:
-
-- `RAW_TARGET_MODE=source`: reuse `/target` already stored in the input bag.
-- `RAW_TARGET_MODE=selected_id`: publish `/target` from a fixed tracker ID.
-- `RAW_TARGET_MODE=annotation`: publish `/target` from annotation intervals.
-
-`TIM_MIRROR_RAW_TARGET_SELECTION=false` means TIM-MARS starts from the selected
-track ID and then recovers autonomously. This is the preferred mode for testing
-the memory layer itself.
-
-`TIM_MIRROR_RAW_TARGET_SELECTION=true` means TIM-MARS follows raw `/target`
-reselection updates. Use this only when intentionally testing mirrored raw
-selection behavior.
-
-## Full-pipeline replay warning
-
-`run_one_detector_tim_replay.sh` reruns detector and tracker from image data.
-This can change tracker IDs compared with existing manual annotations. Use it
-for diagnostics or when annotations/evaluation are compatible with regenerated
-IDs.
-
-For target selection, this runner uses `wait_for_track_selection.py`, a persistent
-typed `/tracks` subscriber with BEST_EFFORT, KEEP_LAST depth-1 QoS matching the
-tracker publisher. It does not repeatedly create short-lived `ros2 topic echo`
-subscribers. Runtime commands are launched through the owned-process-group
-supervisor so shutdown remains scoped to processes created by that run.
-
-For Issue #32 characterization, `RUN_CONTROLLER=true` is an explicit,
-default-off option and requires `tim_mode=mars`. The replay controller consumes
-`/target_memory_mars` plus its matching status stream, publishes
-`/control_ref/cmd_vel`, and always runs with MAVROS disabled. Bounded yaw
-recovery is separately default-off through `CONTROL_ENABLE_YAW_RECOVERY` and
-must match the controller state ultimately promoted by the physical #50/#74
-decision.
-
-When `RESOURCE_SAMPLING_ENABLED=true`, the runner samples detector and tracker
-plus TIM-MARS and the controller when those components are active. Dashboard,
-playback and recording processes are excluded from this core controller-path
-CPU/RSS total. After playback ends, the runner stops the samplers and writes
-`p032_final_resources.json` plus `p032_final_resources.md` using explicit
-playback monotonic-time boundaries. The default steady-state warm-up exclusion
-is 60 seconds and can be overridden with `P032_RESOURCE_WARM_UP_S`.
-
-## Controlled target publishers
-
-`publish_annotated_track_target.py` is annotation-driven and follows the
-physical target across tracker-ID fragmentation. It is an oracle-style
-controlled stream, not a real raw selector baseline.
-
-`publish_selected_track_target.py` publishes a target from one fixed tracker ID.
-It is useful for controlled selected-ID replays and simple sanity checks.
-
-## Replay provenance
-
-The memory replay runner records both each effective value and its origin.
-
-Origins distinguish:
-
-- an explicit parent-shell environment value;
-- a runner default;
-- appearance-topic auto-detection from bag contents;
-- a fallback used when no supported image topic is present.
-
-`run_metadata.json` stores the original invocation, a fully resolved command
-with effective environment assignments, and the value-source map.
-`tim_mars_resolved_runtime.json` stores the same value-source map alongside
-runtime overrides and experiment fields.
-
-The deterministic TIM runner also writes:
-
-- `tim_mars_resolved_runtime.json`;
-- `tim_mars_resolved_runtime.sha256`;
-- a `resolved_runtime` reference inside `tim_replay_metadata.json`.
-
-This records the effective selected target, image geometry, appearance mode,
-normalisation mode, raw-target mode, topic contract, value origins, and
-canonical configuration fingerprint separately from the generated ROS bag.
-
-This prevents an inherited `RAW_TARGET_MODE`, output root, configuration path,
-or appearance-topic override from silently changing the meaning of a run.
-
-For repeated evaluations such as component ablations, pass `--compact-output`.
-TIM-MARS still consumes the complete selected image and track timelines, while
-the generated bag retains only `/tracks`, the raw target, and generated TIM
-target/status topics. The omitted source topics and the compact-output flag are
-recorded in resolved-runtime provenance. The default remains a full source copy.
-
-## Single reproducibility command
-
-From the repository root, the public end-to-end command is:
-
-    python3 tools/reproduce_tim_mars.py --set development
-
-It verifies the frozen split and hashes, rejects an uncommitted repository,
-builds through `tools/thesis_build.sh`, runs this directory's canonical
-component-ablation workflow, verifies replay metadata and resolved-runtime
-fingerprints, and checks that the generated aggregate CSV, JSON, and Markdown
-tables agree.
-
-Use `--validate-only` for source/configuration validation without a build or
-replay. Use `--dry-run --allow-dirty` while developing the wrapper itself.
-`--set final_held_out` remains fail-closed until all H01-H03 entries pass the
-split release gate.
-
-## Component-ablation matrix
-
-Issue #28 is defined by
-`docs/data/ablations/tim_mars_component_ablation_v1.yaml`. Validate and
-materialize its six TIM configurations without running bags:
-
-```bash
-python3 tools/experiments/run_tim_component_ablation.py --materialize-only
-```
-
-After sourcing the ROS workspace, run all frozen development sequences:
-
-```bash
-python3 tools/experiments/run_tim_component_ablation.py --set development
-```
-
-The runner evaluates the raw tracker once per sequence, runs the six TIM rows
-with compact deterministic output, and writes spatial, annotated-ID, per-event,
-and aggregate reports. The spatial oracle tolerates same-person ID
-fragmentation but can be optimistic when a tracker box merges two people. The
-annotated-ID oracle is conservative and can count same-person fragmentation.
-Promotion requires neither oracle to degrade beyond the configured tolerance,
-and a zero-wrong-target claim requires numerical zero from both.
-`--set final_held_out` additionally requires the evaluation-split final-release
-validator to pass.
-
-## Output policy
-
-By default, replay outputs go under thesis-specific replay/report/log folders.
-Most scripts allow environment variables to override output roots. Prefer
-setting explicit output roots for final runs so reports and bags are easy to
-trace back to the experiment.
+- `docs/design/tim_tooling_index.md` — replay/evaluation path authority
+- `docs/data/reproduce_final_results.md` — full reproduction steps
+- `docs/issues/p1-14-final-runtime-characterization.md` — Issue #32 context;
+  the default-off controller (`RUN_CONTROLLER`) and resource-sampling
+  (`RESOURCE_SAMPLING_ENABLED`) modes are documented in the header and inline
+  checks of `run_one_detector_tim_replay.sh`

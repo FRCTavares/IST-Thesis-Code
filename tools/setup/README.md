@@ -1,4 +1,6 @@
-# Setup Tools
+# tools/setup
+
+Last reviewed: 2026-09-09
 
 This folder contains host/runtime setup helpers for the thesis perception stack.
 
