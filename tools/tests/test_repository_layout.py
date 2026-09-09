@@ -1,9 +1,9 @@
 """Structural contracts for the repository root.
 
 Keeps new root-level tracked files and directories deliberate. Derived from
-tracked Git state, never a local ``ls``, so ignored local directories such as
-``data/``, ``figures/``, ``thesis_env/`` and ``.pytest_cache/`` do not affect
-these tests.
+tracked Git state, never a local ``ls``, so generated or ignored local content
+such as ``thesis_env/``, ``ros2_ws/build/``, ``ros2_ws/install/``,
+``ros2_ws/log/`` and ``.pytest_cache/`` does not affect these tests.
 
 See docs/design/README_STANDARD.md for the folder-README convention.
 """

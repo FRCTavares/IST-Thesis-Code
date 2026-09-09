@@ -5,7 +5,7 @@ This module renders single-stream and paired raw-vs-TIM videos from rosbag2
 data, annotations, and selected-target outputs. It is used for visual
 inspection and paper/thesis validation videos.
 
-It is separate from the interactive FastAPI annotation UI.
+The renderer is non-interactive and produces video output only.
 """
 
 from __future__ import annotations
