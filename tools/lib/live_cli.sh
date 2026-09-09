@@ -101,6 +101,15 @@ while [[ $# -gt 0 ]]; do
             ENABLE_WEB_VIDEO=0
             shift
             ;;
+        --dashboard-bind)
+            if [[ $# -lt 2 ]]; then
+                echo "[error] --dashboard-bind requires an address"
+                print_usage
+                exit 1
+            fi
+            DASHBOARD_BIND="$2"
+            shift 2
+            ;;
         --tracker-profile-off)
             TRACKER_PROFILE_ENABLED=0
             shift
@@ -883,6 +892,22 @@ fi
 if [[ "$ENABLE_CONTROL" -eq 1 && "$ENABLE_DASHBOARD_BRIDGE" -eq 0 ]]; then
     echo "[warn] control requires /target from dashboard_bridge_node after target_selector removal; disabling control"
     ENABLE_CONTROL=0
+fi
+
+# Non-loopback dashboard bind exposes the unauthenticated /api/target control
+# endpoint on a reachable Pi interface. Refuse to start the dashboard bridge in
+# that configuration unless an access token is provided through the environment.
+if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
+    if ! dashboard_bind_is_loopback "$DASHBOARD_BIND"; then
+        if [[ -z "${DASHBOARD_CONTROL_TOKEN:-}" ]]; then
+            echo "[error] --dashboard-bind '$DASHBOARD_BIND' is not loopback"
+            echo "        remote dashboard control requires DASHBOARD_CONTROL_TOKEN"
+            echo "[hint] export DASHBOARD_CONTROL_TOKEN=<shared secret> before starting the stack,"
+            echo "       or keep a loopback --dashboard-bind (default: 127.0.0.1)"
+            echo "[hint] see docs/live/dashboard_trust_boundary.md"
+            exit 1
+        fi
+    fi
 fi
 
 if ! [[ "$ENABLE_ROSBAG" =~ ^[01]$ ]]; then

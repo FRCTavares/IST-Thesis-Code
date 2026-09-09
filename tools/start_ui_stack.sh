@@ -21,6 +21,12 @@ if [ -n "${UI_PORT:-}" ] && [ -z "${DASHBOARD_UI_PORT:-}" ]; then
     export DASHBOARD_UI_PORT="$UI_PORT"
 fi
 
+# Forward the dashboard control-API access token to the external frontend using
+# its own runtime-config variable name. The token is never printed here.
+if [ -n "${DASHBOARD_CONTROL_TOKEN:-}" ] && [ -z "${VITE_DASHBOARD_CONTROL_TOKEN:-}" ]; then
+    export VITE_DASHBOARD_CONTROL_TOKEN="$DASHBOARD_CONTROL_TOKEN"
+fi
+
 FORWARD_ARGS=()
 
 while [ "$#" -gt 0 ]; do

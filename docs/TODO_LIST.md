@@ -266,6 +266,33 @@ frame IDs start at one.
       source and experiment provenance remain recoverable from Thesis-Code Git
       history. Issue #55 remains open for backend bind/CORS/access-control and
       shared integration-contract hardening.
+    - 9 September 2026: H2 dashboard access contract hardened. The
+      `dashboard_bridge_node` HTTP API and telemetry WebSocket now default to a
+      `127.0.0.1` bind; `tools/start_live_stack.sh --dashboard-bind <addr>` /
+      `DASHBOARD_BIND` chooses a reachable interface, and a non-loopback bind
+      with an empty `DASHBOARD_CONTROL_TOKEN` is refused before the bridge
+      starts. The three control POST endpoints (`/api/model`, `/api/tracker`,
+      `/api/target`) require `Authorization: Bearer <token>` (constant-time,
+      HTTP 401 otherwise) when a token is configured; `GET /api/models` and the
+      telemetry stream stay open. Wildcard CORS is removed for an exact-origin
+      `dashboard_cors_allowed_origins` allowlist (default loopback dev origins),
+      applied to the WebSocket origin check as well. A denied `/api/model` or
+      `/api/tracker` in the frozen profile is now a true HTTP 409 no-op: no
+      generation change, no `/target` reset, no TIM-MARS clear, no
+      detector/tracker change. The token is never committed, persisted,
+      printed, or written to provenance. New `docs/live/dashboard_trust_boundary.md`
+      documents the topology and policy; the operator sheet points at it. Tests:
+      `ros2_ws/src/thesis_bringup/test/test_dashboard_api_contract.py` (handler
+      HTTP contract) and updated `test_live_target_authority.py`. Old checklist
+      items rejected as external/stale: frontend format/lint/typecheck/test/
+      build commands, provider/dead-structure consolidation, and the production
+      build smoke are owned by `FRCTavares/IST-Thesis-UI` (`npm run verify` + its
+      CI) and must not be duplicated here; the `user-interface` vs `live-ui`
+      path mismatch is moot (both trees removed). Coordinated frontend change:
+      IST-Thesis-UI sends the bearer token on the `/api/target` POST when
+      `VITE_DASHBOARD_CONTROL_TOKEN` is set (separate PR). The Issue #55 code
+      work is complete pending PR merge and issue closure; the M6 integration
+      gate and the target-authority ground runner remain the pre-field checks.
 
 10. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
     - phase 9; experiment/documentation.
