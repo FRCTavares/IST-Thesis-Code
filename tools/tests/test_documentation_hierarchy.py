@@ -35,6 +35,7 @@ def test_documented_top_level_directories_exist():
         "debug",
         "design",
         "flight",
+        "issues",
         "results",
         "archive",
     }
@@ -118,3 +119,52 @@ def test_issue_57_is_removed_after_completion():
     # The open-issue count is reconciled with GitHub regularly; assert only that
     # the count line still exists in its canonical form, not a fixed value.
     assert re.search(r"Open executable issues: \*\*\d+\*\*\.", text)
+
+def test_maintained_documentation_domains_have_reviewed_readmes():
+    required = (
+        DOCS / "README.md",
+        DOCS / "algorithm" / "README.md",
+        DOCS / "control" / "README.md",
+        DOCS / "data" / "README.md",
+        DOCS / "debug" / "README.md",
+        DOCS / "design" / "README.md",
+        DOCS / "flight" / "README.md",
+        DOCS / "issues" / "README.md",
+        DOCS / "results" / "README.md",
+        DOCS / "results" / "live" / "README.md",
+        DOCS / "results" / "selected_target_tracking" / "README.md",
+        DOCS / "archive" / "README.md",
+    )
+
+    date_pattern = re.compile(
+        r"^Last reviewed: \d{4}-\d{2}-\d{2}$",
+        re.MULTILINE,
+    )
+
+    for path in required:
+        assert path.is_file()
+        text = path.read_text(encoding="utf-8")
+        assert text.startswith("# ")
+        assert date_pattern.search(text)
+
+
+def test_current_docs_do_not_advertise_retired_annotation_ui():
+    current_docs = (
+        DOCS / "README.md",
+        DOCS / "data" / "README.md",
+        DOCS / "data" / "catalogue" / "bag_layout.md",
+        DOCS / "data" / "catalogue" / "evidence_retention_policy.md",
+        DOCS / "design" / "tim_tooling_index.md",
+    )
+
+    retired = (
+        "tools/bag_annotation_ui",
+        "tim_clean_ui",
+        "ui favourites",
+        "fallback workspace",
+    )
+
+    for path in current_docs:
+        text = path.read_text(encoding="utf-8").lower()
+        for phrase in retired:
+            assert phrase not in text

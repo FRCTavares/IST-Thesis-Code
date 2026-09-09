@@ -1,5 +1,7 @@
 # External benchmark data contract
 
+Last reviewed: 2026-09-09
+
 This directory contains tracked contracts and manifests for Issue #30.
 
 It does not contain external dataset images or large generated outputs.

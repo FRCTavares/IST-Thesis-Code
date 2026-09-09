@@ -1,5 +1,7 @@
 # Historical result interpretations
 
+Last reviewed: 2026-09-09
+
 These directories contain superseded development-stage interpretations:
 
 - `deepsort_vs_tim/`

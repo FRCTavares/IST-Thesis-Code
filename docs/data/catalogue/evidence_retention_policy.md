@@ -59,8 +59,8 @@ the cleanup manifest.
 
 The historical `bags/annotation_inputs/` tree was removed in the July cleanup.
 Current annotation work uses real source/replay paths and resolving convenience
-aliases where useful. The annotation UI already provides role grouping and
-client-side favourites.
+aliases where useful. Manual physical-reference annotation is performed in CVAT;
+the repository does not maintain a separate annotation frontend.
 
 Dangling aliases are not retained as historical evidence. Historical names are
 recorded in tracked cleanup provenance instead.
