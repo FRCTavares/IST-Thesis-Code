@@ -24,7 +24,8 @@ export HAILORT_LOGGER_PATH="$THESIS_ROOT/ros2_ws/log/hailort"
 
 export SOURCE_RECORD_ROOT="${SOURCE_RECORD_ROOT:-/dev/shm/p064_source_video}"
 export RAW_RECORDING_MIN_FREE_GIB="${RAW_RECORDING_MIN_FREE_GIB:-3}"
-export RUN_ID="${RUN_ID:-$(date +%F__%H-%M-%S)}"
+source "$THESIS_ROOT/tools/lib/live_run_id.sh" || exit 1
+initialize_live_run_id || exit $?
 
 tag="p064_drone_${scenario}"
 source_bag="$SOURCE_RECORD_ROOT/${RUN_ID}__source__${tag}__image_raw_detections"

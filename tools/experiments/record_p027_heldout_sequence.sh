@@ -35,7 +35,8 @@ esac
 SPLIT_PATH="$THESIS_ROOT/docs/data/splits/tim_mars_split_v4.json"
 SOURCE_RECORD_ROOT="$THESIS_ROOT/bags/source/held_out/2026-09/$scenario_dir"
 RAW_RECORDING_MIN_FREE_GIB="${RAW_RECORDING_MIN_FREE_GIB:-40}"
-RUN_ID="${RUN_ID:-$(date +%F__%H-%M-%S)}"
+source "$THESIS_ROOT/tools/lib/live_run_id.sh" || exit 1
+initialize_live_run_id || exit $?
 
 export SOURCE_RECORD_ROOT
 export RAW_RECORDING_MIN_FREE_GIB
