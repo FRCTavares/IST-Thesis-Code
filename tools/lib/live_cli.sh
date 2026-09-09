@@ -544,6 +544,7 @@ while [[ $# -gt 0 ]]; do
             TRACKER_PUBLISH_TIMING_BOOL="true"
             TARGET_TIMING_ENABLED=1
             FIELD_MAVROS_RECORD=1
+            RECORD_MAVROS=1
             shift
             ;;
         --record-raw)
@@ -907,6 +908,18 @@ fi
 
 if ! [[ "$RECORD_MAVROS" =~ ^[01]$ ]]; then
     echo "[error] RECORD_MAVROS must be 0 or 1"
+    exit 1
+fi
+
+if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 && "$RECORD_MAVROS" -ne 1 ]]; then
+    echo "[error] --field-record requires MAVROS telemetry recording"
+    echo "[hint] do not combine --field-record with --no-record-mavros"
+    exit 1
+fi
+
+if [[ "${CONTROL_MAVROS_BOOL:-false}" == "true" && "${FIELD_MAVROS_RECORD:-0}" -ne 1 ]]; then
+    echo "[error] --control-mavros is permitted only in retained field mode"
+    echo "[hint] use --field-record --control-mavros for aircraft control"
     exit 1
 fi
 
