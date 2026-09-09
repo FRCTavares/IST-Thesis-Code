@@ -37,7 +37,8 @@ fi
 ORIGINAL_INVOCATION="$(printf '%q ' "start_live_stack.sh" "$@")"
 
 LOG_ROOT="$ROS_WS/log/live_stack"
-RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+source "$THESIS_ROOT/tools/lib/live_run_id.sh" || exit 1
+initialize_live_run_id || exit $?
 RUN_DIR="$LOG_ROOT/$RUN_ID"
 PID_FILE="$RUN_DIR/pids.txt"
 LATEST_LINK="$LOG_ROOT/latest"
@@ -1345,7 +1346,7 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
     echo "[source] source evidence root: $SOURCE_ROOT"
 
     SOURCE_TAG_SAFE="${BAG_TAG:-source_record}"
-    SOURCE_RUN_ID="${RUN_ID:-$(date +%F__%H-%M-%S)}"
+    SOURCE_RUN_ID="$RUN_ID"
 
     SOURCE_RAW_BAG_SUFFIX="image_raw"
     if [[ "${SOURCE_DETECTIONS_RECORD:-0}" -eq 1 ]]; then
