@@ -1,4 +1,6 @@
-# Camera Tools
+# tools/camera
+
+Last reviewed: 2026-09-09
 
 This folder contains camera probing and validation helpers.
 

@@ -1,87 +1,51 @@
-# Analysis Tools
+# tools/analysis
 
-This folder contains offline and live analysis tools for thesis evaluation,
-performance validation, and TIM-MARS diagnostics.
+Last reviewed: 2026-09-09
 
-The tools are split into three groups:
+## Purpose
 
-- **Core final evaluation**: scripts used to compute final selected-target
-  correctness metrics for TIM-MARS.
-- **Diagnostic support**: scripts used to explain TIM-MARS decisions or inspect
-  tracker/perception behavior.
-- **Live timing validation**: scripts used while running the live stack.
+Offline and live analysis tools for TIM-MARS evaluation, runtime
+characterisation, and diagnostics. The directory is broad but grouped by
+function; it is not restructured into subdirectories because several paths
+here are pinned by the prospective-freeze manifest.
 
-## Core final evaluation
+## Contents
 
-| Tool | Purpose | Use for final metrics? |
+| Path | Role | Why it exists |
 | --- | --- | --- |
-| `tim_evaluation.py` | Shared authority for annotation parsing, time origins, output validity, freshness sampling, and exact interval integration. | Library used by the final ID/event evaluators |
-| `evaluate_tim_target_correctness.py` | Compares raw `/target` and TIM-MARS `/target_memory_mars` against annotation intervals using track-ID correctness and duration metrics. | Yes |
-| `evaluate_tim_target_bbox_correctness.py` | Evaluates bbox correctness using the annotated target track as spatial reference on a common `/tracks` clock. | Yes, as spatial complement |
-| `evaluate_tim_by_event_type.py` | Aggregates selected-target correctness by annotation `event_type`. | Yes, for event-level tables |
-| `validate_tim_evaluation_split.py` | Validates the frozen development/legacy/final split, source/annotation hashes, people/clothing records, and final-release gate. | Required before final evaluation |
+| `tim_evaluation.py` | Shared library | Single authority for annotation parsing, time origins, output-validity, freshness sampling and interval integration. |
+| `evaluate_tim_target_correctness.py` | Correctness | Track-ID correctness and durations for raw `/target` vs TIM `/target_memory_mars`. |
+| `evaluate_tim_target_bbox_correctness.py` | Correctness | Spatial bbox agreement against the annotated target track. |
+| `evaluate_tim_by_event_type.py` | Correctness | Selected-target correctness aggregated by annotation `event_type`. |
+| `evaluate_physical_target_bbox_v2.py`, `physical_target_bbox_evaluation_v2.py`, `physical_target_reference_v2.py` | Physical-v2 evaluator | Identity-independent physical-target evaluator (frozen for H01–H03). `*_v2` supersedes the retained v1 files. |
+| `validate_tim_evaluation_split.py` | Gate | Validates the frozen split, hashes, people/clothing records and the final-release gate. |
+| `derive_presence_conditioned_metrics.py` | Reporting | Pure downstream presence-conditioned percentages from one physical-v2 report. |
+| `p058_target_reid_*.py` | Baseline | Simple post-MOT Target-ReID arm for Issue #58 (baseline/calibration/runtime/sweep). |
+| `analyse_bag_timing.py`, `check_live_timing_invariants.py`, `collect_live_timing_stats.py` | Timing | Offline stats/plots and live `/timing` invariant/percentile checks. Import `tools.timing_contract`. |
+| `analyse_bag_tracking.py`, `analyse_tracker_target_continuity.py`, `analyse_tim_*` | Diagnostics | Tracker continuity, state occupancy, ReID workload, resilience-evidence analysis. |
+| `extract_tim_all_scores.py`, `extract_tim_mars_reid_similarity.py` | Diagnostics | Candidate `all_scores` and MARS/ReID similarity extraction to explain accept/reject decisions. |
+| `aggregate_*_report.py`, `plot_parameter_sensitivity.py`, `render_bbox_size_report_outputs.py` | Aggregation | Combine per-cell experiment output into reports, tables and figures. |
+| `*external*`, `catalogue_external_tracking_dataset.py`, `select_first_phase_benchmark.py` | External datasets | VisDrone/MOT/DanceTrack acquisition, validation, selection and outcome scoring. |
+| `cvat_physical_reference.py` | Annotation bridge | Exact-frame CVAT ↔ physical-reference-v2 conversion (fail-closed). |
+| `templates/` | Assets | Blank annotation templates consumed by the evaluators and the UI. |
 
-`evaluate_tim_target_correctness.py` and `evaluate_tim_by_event_type.py` are
-thin report/CLI layers. They must import evaluation semantics from
-`tim_evaluation.py`; neither CLI may define its own annotation parser, time
-origin, output-validity rule, freshness sampler, or duration-step calculation.
-This guarantees that event rows sum exactly to the main selected-target totals.
+## Rules
 
-## Diagnostic support
+- CLI evaluators are thin layers: they must import evaluation semantics from
+  `tim_evaluation.py` and never define their own annotation parser, time
+  origin, output-validity rule or duration step. This keeps event rows summing
+  exactly to the selected-target totals.
+- A selected-target output is valid only when its ID is non-zero and any
+  present bbox is finite with positive width and height.
+- Full-pipeline reruns from `/camera/image_raw` regenerate tracker IDs;
+  annotations made for one run are not valid for another unless the IDs match
+  or an ID-independent evaluator is used.
+- `*_v2` physical-target files and `validate_tim_evaluation_split.py` are
+  frozen for H01–H03 — do not move or rename them.
 
-| Tool | Purpose | Notes |
-| --- | --- | --- |
-| `extract_tim_all_scores.py` | Extracts TIM-MARS `all_scores` candidate diagnostics from `/target_memory_mars/status`. | Use to explain accept/reject decisions. |
-| `extract_tim_mars_reid_similarity.py` | Evaluates MARS/ReID similarity over TIM appearance experiment crops. | Appearance-diagnostics only. |
-| `analyse_bag_tracking.py` | Computes tracker/target continuity diagnostics from bags. | Useful for tracker analysis, not final TIM correctness. |
-| `analyse_bag_timing.py` | Computes offline timing statistics and plots from rosbag2 timing topics. | Useful for performance sections. |
+## See also
 
-## Live timing validation
-
-| Tool | Purpose | Notes |
-| --- | --- | --- |
-| `check_live_timing_invariants.py` | Checks live `/timing`, `/timing_tracker`, `/timing_target`, and `/detections` ordering/sanity invariants. | Short live health test. |
-| `collect_live_timing_stats.py` | Collects live timing percentiles, topic rates, and optional JSON reports. | Useful for ablation and performance checks. |
-
-## Annotation contract
-
-Final selected-target evaluators expect annotation CSVs with interval timing and
-target visibility/correct-track fields. Use the template in:
-
-`tools/analysis/templates/target_correctness_annotations_template.csv`
-
-Intervals use half-open `[start_s, end_s)` boundaries. Gaps are permitted and
-remain unscored. Positive-duration overlaps, negative durations, and non-finite
-times are rejected because they make duration totals ambiguous. Zero-duration
-rows are permitted but contribute no time.
-
-Manual annotation files should be created by the user through the annotation UI;
-these tools only consume annotations.
-
-## Target-output validity
-
-A selected-target output is valid only when its ID is non-zero and, when bbox
-fields are present, all bbox values are finite with positive width and height.
-A zero ID with a non-zero bbox and a non-zero ID with an invalid bbox are both
-scored as no valid output. This rule is shared by the track-ID and bbox
-evaluators.
-
-## Recommended final workflow
-
-For final TIM-MARS selected-target evaluation:
-
-1. Validate `docs/data/splits/tim_mars_split_v1.json` with
-   `validate_tim_evaluation_split.py --verify-hashes --require-final-ready`.
-2. Produce or select a replay bag from the permitted split.
-3. Use `evaluate_tim_target_correctness.py` for selected-track duration metrics.
-4. Use `evaluate_tim_target_bbox_correctness.py` when spatial bbox agreement is
-   needed.
-5. Use `evaluate_tim_by_event_type.py` to summarize behavior by event type.
-6. Use `extract_tim_all_scores.py` only when a decision needs explanation.
-
-## Important distinction
-
-Full-pipeline reruns from `/camera/image_raw` can regenerate tracker IDs. Manual
-annotations created for one tracker run are not automatically valid for a new
-full-pipeline run unless the IDs still match or an ID-independent evaluator is
-used.
+- `docs/design/tim_tooling_index.md` — replay/evaluation path authority
+- `docs/data/splits/README.md` — evaluation split policy
+- `templates/target_correctness_annotations_template.csv` — annotation format
+  (`[start_s, end_s)` half-open intervals; gaps allowed and unscored)

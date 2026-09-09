@@ -23,6 +23,21 @@ current-system verification:
 Existing launcher capabilities such as `--field-record`, `--record-mavros` and
 `--record-raw` are not, by themselves, an approved #50 flight command.
 
+### Combined raw recording (diagnostic)
+
+`./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO`
+produces three synchronised recordings: the normal live-pipeline bag under
+`bags/live_camera/`, a separate `__image_raw` MCAP bag with `/camera/image_raw`,
+and a separate `__mavros` MCAP bag. `--field-record` enforces the field/Pixhawk network mode (ISR Wi-Fi first,
+with the approved AERONEXT fallback) and stops Tailscale, so run it from the
+Pi's local terminal with the Pixhawk connected.
+
+Raw recording requires at least 40 GiB free (enforced by
+`tools/lib/live_storage.sh`). The measured combined raw frame rate stays well
+below the 640x480 30 FPS nominal, so this mode is a diagnostic option, not the
+source-first field session — verify the recorded frame count and duration with
+`ros2 bag info` before leaving the field.
+
 ## Safe network inspection
 
 When preparing Issue #50 with the real field hardware:

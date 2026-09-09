@@ -1,4 +1,6 @@
-# Evidence Catalogue Tool
+# tools/catalogue
+
+Last reviewed: 2026-09-09
 
 This directory owns the reproducible TIM-MARS evidence catalogue builder.
 

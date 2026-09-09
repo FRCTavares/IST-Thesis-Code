@@ -1,4 +1,6 @@
-# Tool Tests
+# tools/tests
+
+Last reviewed: 2026-09-09
 
 These tests protect the repository's non-ROS tooling contracts: evaluators,
 replay determinism and provenance, coordinate mapping, recording storage,
@@ -15,3 +17,5 @@ python3 -m pytest -q -p no:cacheprovider tools/tests
 
 Use `-p no:cacheprovider` so validation does not leave a root-level
 `.pytest_cache`. Focused tests may be run by passing one test file.
+
+`fixtures/` holds frozen mini-datasets used by the external-dataset tests.
