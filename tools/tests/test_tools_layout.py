@@ -11,7 +11,6 @@ TOOLS_ROOT = REPO_ROOT / "tools"
 DOMAIN_DIRECTORIES = {
     "analysis",
     "bag",
-    "bag_annotation_ui",
     "camera",
     "catalogue",
     "experiments",
@@ -34,8 +33,6 @@ TOP_LEVEL_FILES = {
 REMOVED_TOOLS = {
     "thesis_eval.sh",
     "thesis_live.sh",
-    "bag_annotation_ui/render_all_tracks_id_video.py",
-    "bag_annotation_ui/video.py",
 }
 
 
@@ -101,12 +98,6 @@ def test_entrypoint_and_library_modes_match_their_roles():
 
     for path in (TOOLS_ROOT / "lib").glob("*.sh"):
         assert not is_executable(path)
-    assert not is_executable(
-        TOOLS_ROOT / "bag_annotation_ui/tim_ui_backend.py"
-    )
-    assert not is_executable(
-        TOOLS_ROOT / "bag_annotation_ui/tim_clean_ui.py"
-    )
 
 
 def test_timing_entrypoints_bootstrap_the_repository_import_path():
