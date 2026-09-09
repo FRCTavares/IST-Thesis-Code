@@ -175,8 +175,9 @@ CANONICAL_PATH_DOCS = (
 )
 
 # Directories whose contents are always tracked, so a path into them must exist.
-# bags/, reports/, artifacts/, data/, models/reid, figures/ are deliberately
-# excluded: they hold git-ignored, generated, or frozen-but-untracked content.
+# bags/, reports/, artifacts/, data/, and models/reid are deliberately excluded:
+# literal paths there may refer to ignored, generated, local, or selectively
+# promoted evidence rather than files that must exist in every checkout.
 _REPO_TOP_LEVEL = (
     "docs/",
     "tools/",
