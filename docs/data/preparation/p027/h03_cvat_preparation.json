@@ -1,0 +1,16 @@
+{
+  "preparation_config_version": "tim_cvat_preparation_config_v1",
+  "sequence_id": "heldout_h03_occlusion_distractor",
+  "source_bag_path": "",
+  "source_image_topic": "/camera/image_raw",
+  "source_width": 640,
+  "source_height": 480,
+  "coordinate_convention": "source_pixels_p53_contract",
+  "coordinate_convention_evidence": "",
+  "selected_physical_target_label": "",
+  "annotator": "",
+  "allowed_roles": [
+    "target",
+    "phys_d001"
+  ]
+}

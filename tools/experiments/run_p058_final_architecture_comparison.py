@@ -12,8 +12,8 @@ Verification split
 * The repository split validator (``validate_tim_evaluation_split.py``) is used
   only for structural validity and, in final-held-out mode, the
   ``--require-final-ready`` release gate (final_ready = 3/3). ``--verify-hashes``
-  is deliberately NOT delegated to it: that path also fires on non-behavioural
-  documentation edits under a frozen directory.
+  is not delegated: the runner independently verifies frozen code, contract
+  assets and the same actual source/annotation records validated by Stage-7.
 * Every frozen identity this runner depends on is verified by the runner
   itself, before any architecture execution: :func:`verify_frozen_git_paths`
   (behaviour-bearing frozen source), :func:`verify_contract_files` (path /
@@ -76,6 +76,8 @@ import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "tools/analysis"))
+from p027_handoff import verify_source_inventory
 
 # --- Active Stage-7 prospective-freeze authorities -----------------------------
 ACTIVE_CONTRACT_ID = "tim_mars_final_comparison_v3_2026_09_08"
@@ -558,14 +560,9 @@ def run_split_validator(
     """Run the repository split validator for structural validity and the
     final-ready release gate.
 
-    ``--verify-hashes`` is intentionally NOT delegated here. That path in the
-    repository validator includes a blunt ``git diff --quiet`` behaviour check
-    that also fires on non-behavioural documentation edits under a frozen
-    directory. This runner performs its own stronger, behaviour-aware
-    verification instead: :func:`verify_frozen_git_paths` (behaviour-bearing
-    frozen source), :func:`verify_contract_files` (byte-hash of every frozen
-    file the contract records) and :func:`verify_sequence_inputs` (per-sequence
-    bag and physical-v2 reference hashes).
+    Hash verification is performed independently before replay by the frozen
+    code/asset guards and verify_sequence_inputs. Ready source and annotation
+    paths/hashes come from the same split records as the Stage-7 validator.
     """
     command = [
         sys.executable,
@@ -670,8 +667,8 @@ def final_sequences(
 
     Deterministic H01/H02/H03 ordering comes from the contract's
     ``held_out_split.sequence_ids``. Each held-out entry must have status
-    ``ready``; the physical-v2 reference is derived from the split's
-    ``planned_physical_v2_reference_path`` (no separate hard-coded map).
+    ``ready``; source_path, annotation_path and annotation_sha256 are
+    the actual frozen authorities. Planning fields never select inputs.
     """
     ordered_ids = [
         str(sid) for sid in contract["held_out_split"]["sequence_ids"]
@@ -698,8 +695,11 @@ def final_sequences(
                 "execution refused until every H01-H03 sequence is 'ready'"
             )
 
-        source_rel = str(entry["expected_source_path"])
-        reference_rel = str(entry["planned_physical_v2_reference_path"])
+        for field in ("source_path", "annotation_path", "annotation_sha256"):
+            if not isinstance(entry.get(field), str) or not entry[field].strip():
+                raise SystemExit(f"{sequence_id}: missing actual ready field {field}")
+        source_rel = str(entry["source_path"])
+        reference_rel = str(entry["annotation_path"])
         reference = REPO_ROOT / reference_rel
         if not reference.is_file():
             raise SystemExit(
@@ -718,7 +718,7 @@ def final_sequences(
                 "detections_topic": "/detections",
                 "physical_reference": reference_rel,
                 "physical_reference_sha256":
-                    sha256_file(reference),
+                    str(entry["annotation_sha256"]),
                 "image_width": HELDOUT_SOURCE_IMAGE_WIDTH,
                 "image_height": HELDOUT_SOURCE_IMAGE_HEIGHT,
                 "scenario": entry.get("scenario"),
@@ -773,6 +773,15 @@ def verify_sequence_inputs(
     # {path, size_bytes, sha256} records copied from the v4 split. Verify
     # every one before any architecture replay so a post-freeze change to a
     # ready H01/H02/H03 source cannot pass unnoticed.
+    if sequence.get("evidence_role") == "final_held_out":
+        try:
+            verify_source_inventory(
+                REPO_ROOT, sequence["source_path"], sequence.get("source_files"),
+                verify_hashes=True,
+            )
+        except (ValueError, KeyError, TypeError, OSError) as exc:
+            raise SystemExit(str(exc)) from exc
+
     source_files = sequence.get("source_files") or []
     if source_files:
         verify_frozen_file_records(
