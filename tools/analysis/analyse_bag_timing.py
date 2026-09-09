@@ -563,7 +563,7 @@ def main():
     # Default locations
     thesis_root = os.environ.get("THESIS_ROOT", os.path.expanduser("~/Desktop/Thesis-Code"))
     default_out = os.path.join(thesis_root, "reports", "timing", f"{bag_name}__timing.md")
-    default_figdir = os.path.join(thesis_root, "figures", "timing", bag_name)
+    default_figdir = os.path.join(thesis_root, "artifacts", "figures", "timing", bag_name)
 
     out_path = args.out if args.out.strip() else default_out
     figdir = args.figdir if args.figdir.strip() else default_figdir
