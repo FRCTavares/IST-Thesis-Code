@@ -5,8 +5,8 @@ Last reviewed: 2026-09-09
 ## Purpose
 
 Executable tooling for the thesis system — building the workspace, running the
-live stack, reproducing the TIM-MARS evaluation, offline analysis, annotation,
-and Raspberry Pi host recovery — plus the assets those tools own. Domain
+live stack, reproducing the TIM-MARS evaluation, offline analysis, and
+Raspberry Pi host recovery — plus the assets those tools own. Domain
 commands live in the subdirectory that owns them; only stable entrypoints and
 one repository-wide contract sit directly under `tools/`.
 
@@ -31,7 +31,6 @@ compatibility interface.
 | `analysis/` | Offline and live analysis: selected-target and bbox correctness, event summaries, timing checks, TIM diagnostics, physical-reference tooling. |
 | `experiments/` | TIM-MARS and tracker replay runners, capture helpers, controlled target publishers. Flat by design. |
 | `bag/` | Standalone bag → overlay/comparison video renderers. |
-| `bag_annotation_ui/` | Local annotation/review UI and its `static/` browser assets. |
 | `catalogue/` | Builds the TIM evaluation evidence catalogue with pinned hashes. |
 | `camera/` | Camera V4L2 mode probing (hardware diagnostics). |
 | `live/` | Small live-ROS inspection helpers; the Issue #55 M6 UI-integration gate. |
@@ -47,7 +46,8 @@ compatibility interface.
 - Documented entrypoint paths are a compatibility interface — grep for a tool
   before renaming or moving it.
 - Keep tool-owned assets beside the tool (`host/systemd/`,
-  `analysis/templates/`, `bag_annotation_ui/static/`). No separate deploy tree.
+  `analysis/templates/`). No separate deploy tree.
+- Manual annotation is performed in CVAT; no repository-local annotation UI is maintained.
 - Paths pinned in
   `docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json`
   must not move before H01–H03.

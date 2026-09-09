@@ -66,8 +66,7 @@ compatibility shim and must not contain frontend build/runtime implementation.
 
 - Side-by-side raw/TIM renderer: `tools/bag/render_tim_comparison_video.py`
 - General bag overlay renderer: `tools/bag/render_bag_overlay_video.py`
-- Annotation/review UI: `tools/bag_annotation_ui/tim_clean_ui.py`
-- Annotation UI instructions: `tools/bag_annotation_ui/README.md`
+- Manual annotation frontend: CVAT (external); no repository-local annotation UI is maintained.
 
 ## Promoted tracked evidence
 
