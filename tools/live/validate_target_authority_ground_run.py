@@ -545,6 +545,58 @@ def settled_zero_metrics(
     return probe.metrics_since(mark)
 
 
+def _rejected_switch_phase(
+    probe: AuthorityProbe,
+    processes: ProcessSet,
+    api_port: int,
+    api_events: list[dict[str, Any]],
+    *,
+    path: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    """A frozen model/tracker switch is denied as a true target-authority no-op.
+
+    With a target selected, the switch returns HTTP 409, the operator's
+    selection survives, no zero target is published, control keeps driving the
+    selected target, and no ``model_switch``/``tracker_switch`` authority event
+    is recorded. The phase then explicitly clears the selection.
+    """
+    select_target(probe, processes, api_port, api_events)
+    switch_mark = probe.mark()
+    status, body = api_post(api_port, path, payload)
+    api_events.append({"path": path, "status": status, "body": body})
+    require(status == 409, f"Frozen {path} switch returned HTTP {status}")
+
+    probe.observe(
+        0.45,
+        publish_tracks=True,
+        health_check=processes.assert_alive,
+    )
+    metrics = probe.metrics_since(switch_mark)
+    require(
+        metrics["validated_target_ids"] in ([TARGET_ID], []),
+        f"Denied {path} switch disturbed the selected target: "
+        f"{metrics['validated_target_ids']}",
+    )
+    require(
+        0 not in metrics["validated_target_ids"],
+        f"Denied {path} switch published a zero target",
+    )
+    require(
+        metrics["nonzero_command_samples"] > 0,
+        f"Denied {path} switch stopped control of the selected target",
+    )
+
+    clear_status, _clear_body = api_post(api_port, "/api/target", {"target": 0})
+    api_events.append(
+        {"path": "/api/target", "status": clear_status, "body": _clear_body}
+    )
+    require(clear_status == 200, "post-reject clear failed")
+    clear_mark = probe.mark()
+    wait_for_zero_target(probe, processes, clear_mark)
+    return metrics
+
+
 def sha256_file(path: Path) -> str:
     """Hash one retained evidence artifact."""
     digest = hashlib.sha256()
@@ -750,37 +802,23 @@ def main() -> int:
         )
         summary["phases"]["id_reuse_without_selection"] = metrics
 
-        select_target(probe, processes, args.api_port, summary["api_events"])
-        switch_mark = probe.mark()
-        status, body = api_post(
+        summary["phases"]["model_switch_rejected"] = _rejected_switch_phase(
+            probe,
+            processes,
             args.api_port,
-            "/api/model",
-            {"model": "yolov8n"},
+            summary["api_events"],
+            path="/api/model",
+            payload={"model": "yolov8n"},
         )
-        summary["api_events"].append(
-            {"path": "/api/model", "status": status, "body": body}
-        )
-        require(status == 409, f"Frozen model switch returned HTTP {status}")
-        wait_for_zero_target(probe, processes, switch_mark)
-        metrics = settled_zero_metrics(probe, processes)
-        assert_zero_phase(metrics, "model_switch_rejected")
-        summary["phases"]["model_switch_rejected"] = metrics
 
-        select_target(probe, processes, args.api_port, summary["api_events"])
-        switch_mark = probe.mark()
-        status, body = api_post(
+        summary["phases"]["tracker_switch_rejected"] = _rejected_switch_phase(
+            probe,
+            processes,
             args.api_port,
-            "/api/tracker",
-            {"tracker": "bytetrack"},
+            summary["api_events"],
+            path="/api/tracker",
+            payload={"tracker": "bytetrack"},
         )
-        summary["api_events"].append(
-            {"path": "/api/tracker", "status": status, "body": body}
-        )
-        require(status == 409, f"Frozen tracker switch returned HTTP {status}")
-        wait_for_zero_target(probe, processes, switch_mark)
-        metrics = settled_zero_metrics(probe, processes)
-        assert_zero_phase(metrics, "tracker_switch_rejected")
-        summary["phases"]["tracker_switch_rejected"] = metrics
 
         select_target(probe, processes, args.api_port, summary["api_events"])
         stale_mark = probe.mark()
@@ -834,16 +872,26 @@ def main() -> int:
         require(event_log.is_file(), "Authority event log was not written")
         authority_events = load_authority_events(event_log)
         generations = [int(event["generation"]) for event in authority_events]
-        require(generations == list(range(8)), f"Unexpected authority generations: {generations}")
+        require(
+            generations == list(range(8)),
+            f"Unexpected authority generations: {generations}",
+        )
         reasons = [str(event["reason"]) for event in authority_events]
         for required_reason in {
             "startup",
             "operator_select",
             "operator_clear",
-            "model_switch:yolov8n",
-            "tracker_switch:bytetrack",
         }:
             require(required_reason in reasons, f"Missing authority event: {required_reason}")
+        # A denied model/tracker switch is a true no-op: it must never record a
+        # target-authority transition.
+        require(
+            not any(
+                reason.startswith(("model_switch:", "tracker_switch:"))
+                for reason in reasons
+            ),
+            f"Denied switch recorded an authority event: {reasons}",
+        )
         summary["authority_events"] = authority_events
         summary["passed"] = True
     except Exception as exc:

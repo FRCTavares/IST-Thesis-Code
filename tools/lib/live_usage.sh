@@ -88,6 +88,11 @@ Options:
     --target-memory-mars-model-path <path>
                                           MARS-small128 .pb path
     --no-dashboard                      Disable dashboard bridge
+    --dashboard-bind <address>          Dashboard HTTP-API / telemetry-WS bind address
+                                         (default: 127.0.0.1; also DASHBOARD_BIND env).
+                                         A non-loopback bind requires DASHBOARD_CONTROL_TOKEN
+                                         in the environment; see
+                                         docs/live/dashboard_trust_boundary.md
     --no-tracker                        Do not start tracker node
     --no-target                         Deprecated alias; target selection is now handled by dashboard bridge API
     --no-control                        Do not start control_ref_node
@@ -156,6 +161,8 @@ Common options:
     --control-mavros         Mirror validated controller commands to managed MAVROS
                              (aircraft authority; requires --field-record)
     --no-dashboard           Disable dashboard bridge and web video
+    --dashboard-bind ADDR    Dashboard API/WS bind (default 127.0.0.1; non-loopback
+                             requires DASHBOARD_CONTROL_TOKEN)
     --no-web-video           Disable MJPEG web video only
     -v, --verbose            Print verbose startup logs
     -h, --help               Show this help

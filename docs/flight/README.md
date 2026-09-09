@@ -92,7 +92,7 @@ Switch back to normal validated runtime.
 - [ ] stale/UNCERTAIN/REACQUIRED/LOST fails safe
 - [ ] command signs checked on ground
 - [ ] pilot takeover / abort agreed
-- [ ] retained topics/bags frozen
+- [ ] retained topics/bags frozen; dashboard bind + token per `docs/live/dashboard_trust_boundary.md`
 
 `--record-mavros` is a recording option, not an approved flight command.
 
