@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 from collections import deque
 from datetime import datetime, timezone
+import hmac
 from http.server import (
     BaseHTTPRequestHandler,
     ThreadingHTTPServer,
@@ -60,6 +61,153 @@ METRIC_WARN_THRESHOLDS_MS = {
     "pub_dt_ms": 120.0,
 }
 
+# Safe standalone defaults. The dashboard bridge binds loopback only; the live
+# launcher deliberately overrides the bind for remote operator access and, in
+# that case, requires an access token (see docs/live/dashboard_trust_boundary.md
+# and the tools/start_live_stack.sh non-loopback gate).
+DEFAULT_DASHBOARD_BIND_HOST = "127.0.0.1"
+# Loopback development origins only. Remote UI use requires the operator to add
+# their frontend origin explicitly; no field hostname/IP is a committed default.
+DEFAULT_DASHBOARD_CORS_ALLOWED_ORIGINS = (
+    "http://localhost:5173,http://127.0.0.1:5173"
+)
+# HTTP endpoints that command runtime state and therefore require the access
+# token when one is configured.
+CONTROL_API_PATHS = ("/api/model", "/api/tracker", "/api/target")
+
+
+def _parse_csv_origins(raw: str) -> tuple[str, ...]:
+    """Parse a comma-separated allowlist into an ordered, de-duplicated tuple.
+
+    An empty or whitespace-only value yields an empty allowlist, whose
+    semantics are: no cross-origin access is granted (never a wildcard).
+    """
+    seen: dict[str, None] = {}
+    for token in str(raw).split(","):
+        origin = token.strip()
+        if origin:
+            seen.setdefault(origin, None)
+    return tuple(seen)
+
+
+def _resolve_control_api_token(
+    param_value: Any,
+    environ: "os._Environ[str] | dict[str, str]",
+) -> str:
+    """Resolve the control-API bearer token.
+
+    An explicit non-empty ROS parameter wins (hermetic/unit-test use);
+    otherwise the ``DASHBOARD_CONTROL_TOKEN`` environment variable is used, so
+    the live launcher never has to place the secret on the process command
+    line. An empty result disables the check.
+    """
+    explicit = str(param_value or "").strip()
+    if explicit:
+        return explicit
+    return str(environ.get("DASHBOARD_CONTROL_TOKEN", "")).strip()
+
+
+class DashboardControlHandler(BaseHTTPRequestHandler):
+    """HTTP control API for the dashboard bridge.
+
+    Read-only discovery (``GET /api/models``) is always available. The control
+    POST endpoints (``/api/model``, ``/api/tracker``, ``/api/target``) require
+    ``Authorization: Bearer <token>`` when the bridge has a token configured.
+    ``Access-Control-Allow-Origin`` is emitted only for an allowlisted Origin
+    and is never a wildcard. The owning node is reached through
+    ``self.server.dashboard_node``.
+    """
+
+    @property
+    def _node(self) -> "DashboardBridgeNode":
+        return self.server.dashboard_node  # type: ignore[attr-defined]
+
+    def _cors_headers(self, *, preflight: bool = False) -> list[tuple[str, str]]:
+        allowed = self._node._cors_allow_origin(self.headers.get("Origin"))
+        if allowed is None:
+            return []
+        headers = [
+            ("Access-Control-Allow-Origin", allowed),
+            ("Vary", "Origin"),
+        ]
+        if preflight:
+            headers.append(
+                ("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            )
+            headers.append(
+                ("Access-Control-Allow-Headers", "Content-Type, Authorization")
+            )
+        return headers
+
+    def _send_json(self, status: int, payload: dict[str, Any]) -> None:
+        body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        for name, value in self._cors_headers():
+            self.send_header(name, value)
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_OPTIONS(self) -> None:
+        self.send_response(204)
+        for name, value in self._cors_headers(preflight=True):
+            self.send_header(name, value)
+        self.end_headers()
+
+    def do_GET(self) -> None:
+        if self.path == "/api/models":
+            self._send_json(200, self._node._handle_models_list())
+            return
+        self._send_json(404, {"ok": False, "error": "unknown endpoint"})
+
+    def do_POST(self) -> None:
+        if self.path in CONTROL_API_PATHS and not self._node._control_api_token_ok(
+            self.headers.get("Authorization")
+        ):
+            self._send_json(
+                401,
+                {"ok": False, "error": "control API authentication required"},
+            )
+            return
+
+        try:
+            content_length = int(self.headers.get("Content-Length", "0"))
+        except Exception:
+            content_length = 0
+
+        raw = self.rfile.read(content_length) if content_length > 0 else b"{}"
+        try:
+            payload = json.loads(raw.decode("utf-8")) if raw else {}
+        except Exception:
+            self._send_json(400, {"ok": False, "error": "invalid JSON body"})
+            return
+
+        if self.path == "/api/model":
+            model = str(payload.get("model", "")).strip().lower()
+            result = self._node._handle_model_switch(model)
+        elif self.path == "/api/tracker":
+            tracker = str(payload.get("tracker", "")).strip().lower()
+            result = self._node._handle_tracker_switch(tracker)
+        elif self.path == "/api/target":
+            result = self._node._handle_target_focus(payload.get("target"))
+        else:
+            self._send_json(404, {"ok": False, "error": "unknown endpoint"})
+            return
+
+        self._send_json(
+            int(
+                result.get(
+                    "status_code",
+                    200 if result.get("ok") else 500,
+                )
+            ),
+            result,
+        )
+
+    def log_message(self, _format: str, *_args: Any) -> None:
+        return
+
 
 class DashboardBridgeNode(Node):
     def __init__(self) -> None:
@@ -76,10 +224,15 @@ class DashboardBridgeNode(Node):
         self.declare_parameter("replay_progress_topic", "/camera/replay_progress")
         self.declare_parameter("timing_topic", "/timing")
 
-        self.declare_parameter("ws_host", "0.0.0.0")
+        self.declare_parameter("ws_host", DEFAULT_DASHBOARD_BIND_HOST)
         self.declare_parameter("ws_port", 8765)
-        self.declare_parameter("api_host", "0.0.0.0")
+        self.declare_parameter("api_host", DEFAULT_DASHBOARD_BIND_HOST)
         self.declare_parameter("api_port", 8090)
+        self.declare_parameter(
+            "dashboard_cors_allowed_origins",
+            DEFAULT_DASHBOARD_CORS_ALLOWED_ORIGINS,
+        )
+        self.declare_parameter("dashboard_control_api_token", "")
         self.declare_parameter("publish_hz", 30.0)
         self.declare_parameter("img_w", 640)
         self.declare_parameter("img_h", 640)
@@ -123,6 +276,19 @@ class DashboardBridgeNode(Node):
         self._ws_port = int(self.get_parameter("ws_port").value)
         self._api_host = str(self.get_parameter("api_host").value)
         self._api_port = int(self.get_parameter("api_port").value)
+        self._cors_allowed_origins = _parse_csv_origins(
+            str(self.get_parameter("dashboard_cors_allowed_origins").value)
+        )
+        # Local field-network access credential for the control POST endpoints.
+        # Resolved from the ROS parameter (unit tests) or the
+        # DASHBOARD_CONTROL_TOKEN environment variable (live launcher), so the
+        # secret is never placed on the process command line. Empty disables
+        # the check (safe only for a loopback bind; the live launcher enforces
+        # that coupling). Never logged, never emitted in provenance.
+        self._control_api_token = _resolve_control_api_token(
+            self.get_parameter("dashboard_control_api_token").value,
+            os.environ,
+        )
         self._publish_hz = float(self.get_parameter("publish_hz").value)
         self._img_w = max(1.0, float(self.get_parameter("img_w").value))
         self._img_h = max(1.0, float(self.get_parameter("img_h").value))
@@ -313,6 +479,9 @@ class DashboardBridgeNode(Node):
             f"timing={self._timing_topic}, "
             f"ws=ws://{self._ws_host}:{self._ws_port}, "
             f"api=http://{self._api_host}:{self._api_port}, "
+            f"cors_allowed_origins={len(self._cors_allowed_origins)}, "
+            "control_api_token="
+            f"{'configured' if self._control_api_token else 'open'}, "
             "runtime_reconfiguration="
             f"{'enabled' if self._runtime_reconfiguration_enabled else 'disabled'}, "
             f"target_authority_session={self._target_authority_session_id}, "
@@ -320,99 +489,34 @@ class DashboardBridgeNode(Node):
             f"integrated_camera_hef_dir={self._integrated_camera_hef_dir}"
         )
 
+    def _cors_allow_origin(self, origin: str | None) -> str | None:
+        """Return the request Origin only when it is in the allowlist.
+
+        Never returns a wildcard. An empty allowlist grants no cross-origin
+        access.
+        """
+        if origin and origin in self._cors_allowed_origins:
+            return origin
+        return None
+
+    def _control_api_token_ok(self, authorization_header: str | None) -> bool:
+        """Constant-time check of the control-endpoint bearer token.
+
+        When no token is configured the check passes (safe only for a loopback
+        bind; the live launcher enforces that coupling).
+        """
+        if not self._control_api_token:
+            return True
+        expected = f"Bearer {self._control_api_token}"
+        return hmac.compare_digest(str(authorization_header or ""), expected)
+
     def _run_api_server(self) -> None:
-        node_ref = self
-
-        class _ControlHandler(BaseHTTPRequestHandler):
-            def _send_json(self, status: int, payload: dict[str, Any]) -> None:
-                body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-                self.send_response(status)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(body)))
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-                self.send_header("Access-Control-Allow-Headers", "Content-Type")
-                self.end_headers()
-                self.wfile.write(body)
-
-            def do_OPTIONS(self) -> None:
-                self.send_response(204)
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                self.send_header("Access-Control-Allow-Headers", "Content-Type")
-                self.end_headers()
-
-            def do_GET(self) -> None:
-                if self.path == "/api/models":
-                    self._send_json(200, node_ref._handle_models_list())
-                    return
-
-                self._send_json(404, {"ok": False, "error": "unknown endpoint"})
-
-            def do_POST(self) -> None:
-                try:
-                    content_length = int(self.headers.get("Content-Length", "0"))
-                except Exception:
-                    content_length = 0
-
-                raw = self.rfile.read(content_length) if content_length > 0 else b"{}"
-                try:
-                    payload = json.loads(raw.decode("utf-8")) if raw else {}
-                except Exception:
-                    self._send_json(400, {"ok": False, "error": "invalid JSON body"})
-                    return
-
-                if self.path == "/api/model":
-                    model = str(payload.get("model", "")).strip().lower()
-                    result = node_ref._handle_model_switch(model)
-                    self._send_json(
-                        int(
-                            result.get(
-                                "status_code",
-                                200 if result.get("ok") else 500,
-                            )
-                        ),
-                        result,
-                    )
-                    return
-
-                if self.path == "/api/tracker":
-                    tracker = str(payload.get("tracker", "")).strip().lower()
-                    result = node_ref._handle_tracker_switch(tracker)
-                    self._send_json(
-                        int(
-                            result.get(
-                                "status_code",
-                                200 if result.get("ok") else 500,
-                            )
-                        ),
-                        result,
-                    )
-                    return
-
-                if self.path == "/api/target":
-                    result = node_ref._handle_target_focus(payload.get("target"))
-                    self._send_json(
-                        int(
-                            result.get(
-                                "status_code",
-                                200 if result.get("ok") else 500,
-                            )
-                        ),
-                        result,
-                    )
-                    return
-
-                self._send_json(404, {"ok": False, "error": "unknown endpoint"})
-
-            def log_message(self, _format: str, *_args: Any) -> None:
-                return
-
         try:
             self._api_server = ThreadingHTTPServer(
                 (self._api_host, self._api_port),
-                _ControlHandler,
+                DashboardControlHandler,
             )
+            self._api_server.dashboard_node = self
             self._api_server.serve_forever()
         except Exception as exc:
             self.get_logger().error(f"Control API server failed: {exc}")
@@ -439,21 +543,27 @@ class DashboardBridgeNode(Node):
         if model not in self._model_to_hef:
             return {"ok": False, "error": f"unsupported model: {model}", "status_code": 400}
 
-        authority_generation = self._apply_target_authority_request(
-            None,
-            reason=f"model_switch:{model}",
-        )
-
         if not self._runtime_reconfiguration_enabled:
+            # Rejected no-op. A denied protected switch must not touch target
+            # identity/control authority: no generation change, no immediate
+            # /target reset, no TIM-MARS clear, and no detector change. The
+            # current generation is echoed for observability only.
             return {
                 "ok": False,
                 "error": (
                     "runtime model switching is disabled in the frozen live profile; "
                     "restart the stack with an explicitly validated model"
                 ),
-                "target_authority_generation": authority_generation,
+                "target_authority_generation": self._target_authority_generation,
                 "status_code": 409,
             }
+
+        # Runtime reconfiguration is explicitly enabled: an accepted switch
+        # deliberately resets target authority before the detector changes.
+        authority_generation = self._apply_target_authority_request(
+            None,
+            reason=f"model_switch:{model}",
+        )
 
         # Prefer integrated-camera model switch when the perception node is available.
         integrated_camera_result = self._handle_integrated_camera_model_switch(model)
@@ -532,21 +642,27 @@ class DashboardBridgeNode(Node):
                 "status_code": 400,
             }
 
-        authority_generation = self._apply_target_authority_request(
-            None,
-            reason=f"tracker_switch:{tracker}",
-        )
-
         if not self._runtime_reconfiguration_enabled:
+            # Rejected no-op. A denied protected switch must not touch target
+            # identity/control authority: no generation change, no immediate
+            # /target reset, no TIM-MARS clear, and no tracker change. The
+            # current generation is echoed for observability only.
             return {
                 "ok": False,
                 "error": (
                     "runtime tracker switching is disabled in the frozen live profile; "
                     "restart the stack with an explicitly validated tracker"
                 ),
-                "target_authority_generation": authority_generation,
+                "target_authority_generation": self._target_authority_generation,
                 "status_code": 409,
             }
+
+        # Runtime reconfiguration is explicitly enabled: an accepted switch
+        # deliberately resets target authority before the tracker changes.
+        authority_generation = self._apply_target_authority_request(
+            None,
+            reason=f"tracker_switch:{tracker}",
+        )
 
         if not self._tracker_set_params_client.wait_for_service(timeout_sec=1.0):
             return {
@@ -841,6 +957,11 @@ class DashboardBridgeNode(Node):
         self._loop.run_forever()
 
     async def _start_server(self) -> None:
+        # Browser telemetry clients must present an allowlisted Origin. Local
+        # non-browser tooling (the Issue #55 M6 probe, the target-authority
+        # ground runner) legitimately connects with no Origin header, so
+        # ``None`` is included; arbitrary browser origins are rejected at the
+        # handshake.
         self._server = await websockets.serve(
             self._handle_client,
             self._ws_host,
@@ -848,6 +969,7 @@ class DashboardBridgeNode(Node):
             ping_interval=20,
             ping_timeout=20,
             max_queue=4,
+            origins=[*self._cors_allowed_origins, None],
         )
 
     def _on_server_start_done(self, future) -> None:

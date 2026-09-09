@@ -52,6 +52,14 @@ PERCEPTION_INFERENCE_BACKEND="hailo_direct"
 PERCEPTION_DETECTOR_MODEL="yolov8s"
 PERCEPTION_HAILO_HEF_PATH="${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/models/hef/${PERCEPTION_DETECTOR_MODEL}.hef"
 ENABLE_DASHBOARD_BRIDGE=1
+# Dashboard HTTP-API / telemetry-WebSocket bind address. Loopback by default
+# (safe standalone). Override with --dashboard-bind <addr> or DASHBOARD_BIND for
+# remote operator access; a non-loopback bind then requires DASHBOARD_CONTROL_TOKEN
+# (see docs/live/dashboard_trust_boundary.md).
+DASHBOARD_BIND="${DASHBOARD_BIND:-127.0.0.1}"
+# Optional comma-separated browser-origin allowlist for the dashboard CORS /
+# WebSocket-origin policy. Empty leaves the node default (loopback dev origins).
+DASHBOARD_CORS_ALLOWED_ORIGINS="${DASHBOARD_CORS_ALLOWED_ORIGINS:-}"
 TARGET_MEMORY_MODE="${TARGET_MEMORY_MODE:-mars}"  # off | mars
 TARGET_MEMORY_MARS_CONFIG="${TARGET_MEMORY_MARS_CONFIG:-${THESIS_ROOT:-$HOME/Desktop/Thesis-Code}/ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml}"
 
@@ -120,6 +128,21 @@ apply_startup_profile() {
             exit 1
             ;;
     esac
+}
+
+dashboard_bind_is_loopback() {
+    # Conservative: recognise only obvious loopback forms. Anything else is
+    # treated as non-loopback (so the control-token gate applies).
+    local addr="${1,,}"
+    case "$addr" in
+        localhost|127.0.0.1|::1|"[::1]")
+            return 0
+            ;;
+    esac
+    if [[ "$addr" =~ ^127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        return 0
+    fi
+    return 1
 }
 
 normalize_double_literal() {

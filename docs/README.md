@@ -43,6 +43,8 @@ A result becomes citable only after it is reviewed and promoted into
 - `flight/` — current recording, readiness, and run-provenance procedures.
 - `issues/` — issue-specific engineering records, implementation contracts,
   and methodological development history that remain useful for traceability.
+- `live/` — operational contracts for the live dashboard stack: network
+  exposure, access control, and the operator trust boundary.
 - `results/` — reviewed current evidence and thesis-facing result summaries.
 - `archive/` — superseded result interpretations and historical cleanup
   records retained only for traceability.
@@ -74,6 +76,7 @@ records their exact paths and hashes.
 ## Operational documentation
 
 - [Flight-day operator sheet](flight/README.md)
+- [Dashboard trust boundary](live/dashboard_trust_boundary.md)
 - [Hailo recovery](debug/HAILO_RECOVERY.md)
 - [Live camera recovery](debug/LIVE_STACK_CAMERA_RECOVERY.md)
 - [Unattended Pi operation](debug/UNATTENDED_PI_OPERATION.md)
