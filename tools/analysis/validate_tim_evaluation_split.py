@@ -8,7 +8,7 @@ import hashlib
 import json
 import re
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -21,6 +21,14 @@ SET_NAMES = (
 )
 
 FULL_GIT_COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+
+# The prospective contract freezes behavior-affecting changes, not prose.
+# Everything except explicit documentation-only files is treated
+# conservatively as behavior-bearing.
+_DOC_ONLY_SUFFIXES = frozenset({".md", ".rst", ".txt"})
+_DOC_ONLY_STEMS = frozenset(
+    {"README", "LICENSE", "LICENCE", "NOTICE", "CHANGELOG", "AUTHORS"}
+)
 
 
 def sha256_file(path: Path) -> str:
@@ -45,6 +53,146 @@ def _run_git(
         stderr=subprocess.PIPE,
         check=False,
     )
+
+
+def _is_documentation_only(path_str: str) -> bool:
+    """Return whether a repository path is documentation-only."""
+    posix = PurePosixPath(path_str)
+    if posix.suffix.lower() in _DOC_ONLY_SUFFIXES:
+        return True
+    if posix.suffix == "" and posix.stem in _DOC_ONLY_STEMS:
+        return True
+    return False
+
+
+def _git_lines(
+    repo_root: Path,
+    *args: str,
+) -> list[str]:
+    completed = _run_git(repo_root, *args)
+    if completed.returncode != 0:
+        return []
+    return completed.stdout.decode().split()
+
+
+def behavior_bearing_frozen_files(
+    *,
+    repo_root: Path,
+    source_commit: str,
+    source_paths: list[str],
+) -> list[str]:
+    """Resolve tracked non-documentation files at the freeze commit."""
+    listed = _run_git(
+        repo_root,
+        "ls-tree",
+        "-r",
+        "--name-only",
+        source_commit,
+        "--",
+        *source_paths,
+    )
+    if listed.returncode != 0:
+        return []
+
+    return sorted(
+        path
+        for path in listed.stdout.decode().split()
+        if not _is_documentation_only(path)
+    )
+
+
+def validate_behavior_source_freeze(
+    *,
+    repo_root: Path,
+    source_commit: str,
+    source_paths: list[str],
+) -> list[str]:
+    """Validate the contract's behavior-affecting source-code freeze.
+
+    Documentation-only changes under a frozen directory are permitted.
+    Every tracked non-documentation file present at the algorithm-authority
+    commit remains frozen, and any newly added non-documentation file under
+    a frozen path is also treated as behavior-bearing.
+    """
+    errors: list[str] = []
+
+    behavior_files = behavior_bearing_frozen_files(
+        repo_root=repo_root,
+        source_commit=source_commit,
+        source_paths=source_paths,
+    )
+    if not behavior_files:
+        return [
+            "unable to resolve behavior-bearing source files at "
+            "frozen algorithm commit"
+        ]
+
+    changed = _run_git(
+        repo_root,
+        "diff",
+        "--name-only",
+        source_commit,
+        "--",
+        *behavior_files,
+    )
+    if changed.returncode != 0:
+        return ["unable to verify behavior-bearing source freeze"]
+
+    changed_paths = [
+        path
+        for path in changed.stdout.decode().split()
+        if path
+    ]
+    if changed_paths:
+        errors.append(
+            "behavior-bearing source code differs from "
+            "frozen algorithm commit"
+        )
+
+    additions = _run_git(
+        repo_root,
+        "diff",
+        "--name-only",
+        "--diff-filter=A",
+        source_commit,
+        "--",
+        *source_paths,
+    )
+    if additions.returncode != 0:
+        errors.append(
+            "unable to verify newly added behavior-bearing source files"
+        )
+        return errors
+
+    untracked = _run_git(
+        repo_root,
+        "ls-files",
+        "--others",
+        "--exclude-standard",
+        "--",
+        *source_paths,
+    )
+    if untracked.returncode != 0:
+        errors.append(
+            "unable to verify newly added behavior-bearing source files"
+        )
+        return errors
+
+    added_behavior = sorted(
+        {
+            path
+            for stream in (additions.stdout, untracked.stdout)
+            for path in stream.decode().split()
+            if path and not _is_documentation_only(path)
+        }
+    )
+    if added_behavior:
+        errors.append(
+            "behavior-bearing source code differs from "
+            "frozen algorithm commit"
+        )
+
+    return errors
 
 
 def validate_git_freeze(
@@ -332,24 +480,13 @@ def validate_final_comparison_contract(
                             f"commit: {source_path}"
                         )
 
-                drift = _run_git(
-                    repo_root,
-                    "diff",
-                    "--quiet",
-                    source_commit,
-                    "--",
-                    *source_paths,
+                errors.extend(
+                    validate_behavior_source_freeze(
+                        repo_root=repo_root,
+                        source_commit=source_commit,
+                        source_paths=source_paths,
+                    )
                 )
-                if drift.returncode == 1:
-                    errors.append(
-                        "behavior-bearing source code differs from "
-                        "frozen algorithm commit"
-                    )
-                elif drift.returncode != 0:
-                    errors.append(
-                        "unable to verify behavior-bearing source "
-                        "freeze"
-                    )
 
     return errors
 
