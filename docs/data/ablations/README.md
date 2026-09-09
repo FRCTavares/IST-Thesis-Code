@@ -1,5 +1,7 @@
 # TIM-MARS component-ablation specification
 
+Last reviewed: 2026-09-09
+
 The machine-readable P0.17 authority is:
 
 `docs/data/ablations/tim_mars_component_ablation_v1.yaml`

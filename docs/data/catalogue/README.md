@@ -1,5 +1,7 @@
 # Data Catalogue
 
+Last reviewed: 2026-09-09
+
 This folder contains the active metadata used to understand and locate thesis bag data.
 
 Active files:

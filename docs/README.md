@@ -1,5 +1,7 @@
 # Thesis documentation
 
+Last reviewed: 2026-09-09
+
 This directory contains the maintained research contracts, operational
 documentation, frozen data definitions, curated result summaries, and
 historical records for the TIM-MARS thesis project.
@@ -39,6 +41,8 @@ A result becomes citable only after it is reviewed and promoted into
 - `debug/` — current Hailo, camera, and unattended-host recovery procedures.
 - `design/` — maintained implementation and tooling indexes.
 - `flight/` — current recording, readiness, and run-provenance procedures.
+- `issues/` — issue-specific engineering records, implementation contracts,
+  and methodological development history that remain useful for traceability.
 - `results/` — reviewed current evidence and thesis-facing result summaries.
 - `archive/` — superseded result interpretations and historical cleanup
   records retained only for traceability.
