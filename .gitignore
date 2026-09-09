@@ -100,7 +100,6 @@ artifacts/reports/timing/live_matrix_*/
 # ------------------------------
 data/datasets/external/
 data/datasets/processed/
-!data/datasets/.gitkeep
 
 # Dataset visual previews
 artifacts/reports/dataset_checks/visdrone_gt_preview/
