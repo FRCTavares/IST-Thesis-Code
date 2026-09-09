@@ -58,8 +58,8 @@ compatibility interface.
 - Path authority: `docs/design/tim_tooling_index.md`
 - README standard for this repository: `docs/design/README_STANDARD.md`
 - Reproduction: `docs/data/reproduce_final_results.md`
-- Field capture: `docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md`,
-  `docs/flight/P050_FLIGHT_VALIDATION.md`
-- Combined raw field capture:
+- Flight-day operator sheet: `docs/flight/README.md`
+- Frozen Issue #27 detail: `docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md`
+- Combined raw field capture diagnostic:
   `./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO`
-  (behaviour and storage requirements in `docs/flight/P050_FLIGHT_VALIDATION.md`)
+  (not an approved aircraft launch command; see `docs/flight/README.md`)
