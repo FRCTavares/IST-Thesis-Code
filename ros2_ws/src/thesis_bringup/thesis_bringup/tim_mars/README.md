@@ -1,5 +1,7 @@
 # TIM-MARS selected-target memory
 
+Last reviewed: 2026-09-09
+
 TIM-MARS is the selected-target memory layer used for safer vision-based UAV
 person-following perception. It sits above detection, multi-object tracking, and
 raw target selection. Its job is not to improve generic tracking. Its job is to
