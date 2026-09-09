@@ -7,8 +7,10 @@ and software versions, model/config SHA-256 hashes, the resolved ROS
 parameters each node was launched with, a topic/QoS inventory, the selected
 target, and the runtime switch history. This script assembles schema v1 of
 that record from information the live launcher already has (or can cheaply
-introspect via `ros2 topic info`) and writes it atomically beside the
-recording it describes.
+introspect via `ros2 topic info` / `ros2 param dump`) and writes it atomically
+beside the recording it describes. Node parameters that must reflect the
+running node (e.g. control_ref_node) are read live and, on query failure, are
+recorded as query_ok=false -- never backfilled from source-code defaults.
 """
 
 from __future__ import annotations
@@ -109,6 +111,141 @@ def parse_params(items: list[str]) -> dict[str, dict[str, str]]:
         key, value = rest.split("=", 1)
         params.setdefault(node, {})[key] = value
     return params
+
+
+def _parse_param_dump(text: str, node: str) -> dict[str, Any]:
+    """Parse `ros2 param dump <node>` YAML into a flat {name: value} dict.
+
+    Raises ValueError when the text does not contain a usable parameter block
+    for the node -- we must never silently fall back to source-code defaults.
+    """
+    import yaml  # PyYAML ships with the ROS 2 tooling.
+
+    try:
+        loaded = yaml.safe_load(text)
+    except yaml.YAMLError as exc:  # pragma: no cover - defensive
+        raise ValueError(f"parameter dump is not valid YAML: {exc}") from exc
+
+    if not isinstance(loaded, dict):
+        raise ValueError("parameter dump did not contain a mapping")
+
+    block = None
+    for candidate in (node, node.lstrip("/"), f"/{node.lstrip('/')}"):
+        if candidate in loaded and isinstance(loaded[candidate], dict):
+            block = loaded[candidate]
+            break
+    if block is None and len(loaded) == 1:
+        # `ros2 param dump` emits exactly one top-level node key.
+        (only_value,) = loaded.values()
+        if isinstance(only_value, dict):
+            block = only_value
+    if block is None:
+        raise ValueError(f"no parameter block for node {node!r} in dump")
+
+    params = block.get("ros__parameters", block)
+    if not isinstance(params, dict) or not params:
+        raise ValueError(f"node {node!r} exposed no parameters")
+
+    return {str(key): value for key, value in params.items()}
+
+
+def query_node_parameters(
+    node: str,
+    *,
+    dump_file: str | None = None,
+    skip_live: bool = False,
+    timeout_s: float = 8.0,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Resolve a running node's parameters, or record why it could not.
+
+    Returns ``(parameters, meta)``. On any failure ``parameters`` is empty and
+    ``meta['query_ok']`` is False with an ``error`` string -- the caller must
+    surface that as a provenance failure rather than substituting defaults.
+    """
+    if dump_file is not None:
+        source = "file"
+        try:
+            text = Path(dump_file).read_text(encoding="utf-8")
+        except OSError as exc:
+            return {}, {"source": source, "query_ok": False, "error": str(exc)}
+        try:
+            params = _parse_param_dump(text, node)
+        except ValueError as exc:
+            return {}, {"source": source, "query_ok": False, "error": str(exc)}
+        return params, {
+            "source": source,
+            "query_ok": True,
+            "parameter_count": len(params),
+            "dump_file": dump_file,
+        }
+
+    source = "runtime_query"
+    if skip_live:
+        return {}, {
+            "source": source,
+            "query_ok": False,
+            "error": "live node parameter query skipped (--skip-node-param-query)",
+        }
+
+    node_fqn = node if node.startswith("/") else f"/{node}"
+    try:
+        result = subprocess.run(
+            ["ros2", "param", "dump", node_fqn, "--timeout", "3"],
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return {}, {"source": source, "query_ok": False, "error": str(exc)}
+
+    # `ros2 param dump` exits 0 even when the node is absent, printing a
+    # diagnostic to stderr, so the exit code alone is not trustworthy.
+    stderr = (result.stderr or "").strip()
+    if result.returncode != 0:
+        return {}, {
+            "source": source,
+            "query_ok": False,
+            "error": stderr or f"ros2 param dump exited {result.returncode}",
+        }
+    if not (result.stdout or "").strip():
+        return {}, {
+            "source": source,
+            "query_ok": False,
+            "error": stderr or "ros2 param dump produced no output (node not found)",
+        }
+    try:
+        params = _parse_param_dump(result.stdout, node_fqn)
+    except ValueError as exc:
+        return {}, {"source": source, "query_ok": False, "error": str(exc)}
+
+    return params, {
+        "source": source,
+        "query_ok": True,
+        "parameter_count": len(params),
+    }
+
+
+def parse_expected_params(items: list[str]) -> dict[str, dict[str, Any]]:
+    """Parse `--expect-param NODE:KEY[=VALUE]` into {node: {key: value|None}}."""
+    expected: dict[str, dict[str, Any]] = {}
+    for item in items:
+        if ":" not in item:
+            raise SystemExit(f"--expect-param must be NODE:KEY[=VALUE], got: {item}")
+        node, rest = item.split(":", 1)
+        if "=" in rest:
+            key, value = rest.split("=", 1)
+            expected.setdefault(node, {})[key] = value
+        else:
+            expected.setdefault(node, {})[rest] = None
+    return expected
+
+
+def _stringify_param(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, sort_keys=True)
+    return str(value)
 
 
 def introspect_topic_qos(topic: str) -> dict[str, Any]:
@@ -222,6 +359,46 @@ def main() -> int:
     parser.add_argument("--recorded-topic", action="append", default=[])
     parser.add_argument("--hash-file", action="append", default=[], help="LABEL=PATH, repeatable")
     parser.add_argument("--param", action="append", default=[], help="NODE:KEY=VALUE, repeatable")
+    parser.add_argument(
+        "--resolved-node-params",
+        action="append",
+        default=[],
+        metavar="NODE",
+        help=(
+            "Query the running NODE's resolved parameters via `ros2 param "
+            "dump` and record them (repeatable). A failed query is recorded "
+            "as query_ok=false, never replaced with source defaults."
+        ),
+    )
+    parser.add_argument(
+        "--resolved-node-params-file",
+        action="append",
+        default=[],
+        metavar="NODE=PATH",
+        help=(
+            "Read NODE's resolved parameters from a `ros2 param dump` YAML "
+            "file instead of a live query (offline / test use; repeatable)."
+        ),
+    )
+    parser.add_argument(
+        "--expect-param",
+        action="append",
+        default=[],
+        metavar="NODE:KEY[=VALUE]",
+        help=(
+            "Assert a specific resolved parameter is present (and optionally "
+            "equals VALUE); recorded for the validator (repeatable)."
+        ),
+    )
+    parser.add_argument(
+        "--skip-node-param-query",
+        action="store_true",
+        help=(
+            "Do not run the live `ros2 param dump` for --resolved-node-params "
+            "(offline / test use). The node is then recorded as query_ok=false "
+            "and never backfilled from defaults."
+        ),
+    )
     parser.add_argument("--switch-history-log", type=Path, default=None)
     parser.add_argument(
         "--skip-topic-introspection",
@@ -236,6 +413,34 @@ def main() -> int:
     if not args.skip_topic_introspection:
         for topic in args.recorded_topic:
             topic_qos_inventory[topic] = introspect_topic_qos(topic)
+
+    resolved_parameters = parse_params(args.param)
+    resolved_parameters_meta: dict[str, Any] = {}
+
+    dump_files: dict[str, str] = {}
+    for item in args.resolved_node_params_file:
+        if "=" not in item:
+            raise SystemExit(
+                f"--resolved-node-params-file must be NODE=PATH, got: {item}"
+            )
+        node, path = item.split("=", 1)
+        dump_files[node] = path
+
+    query_nodes = list(dict.fromkeys(list(args.resolved_node_params) + list(dump_files)))
+    for node in query_nodes:
+        params, meta = query_node_parameters(
+            node,
+            dump_file=dump_files.get(node),
+            skip_live=args.skip_node_param_query and node not in dump_files,
+        )
+        resolved_parameters_meta[node] = meta
+        if params:
+            merged = dict(resolved_parameters.get(node, {}))
+            for key, value in params.items():
+                merged[key] = _stringify_param(value)
+            resolved_parameters[node] = merged
+
+    expected_parameters = parse_expected_params(args.expect_param)
 
     payload = {
         "schema_version": SCHEMA_VERSION,
@@ -256,7 +461,9 @@ def main() -> int:
         "git": git_state(args.repo_root),
         "hardware_software": hardware_software(args.ros_distro),
         "hashes": parse_hash_files(args.hash_file),
-        "resolved_parameters": parse_params(args.param),
+        "resolved_parameters": resolved_parameters,
+        "resolved_parameters_meta": resolved_parameters_meta,
+        "expected_parameters": expected_parameters,
         "topic_qos_inventory": topic_qos_inventory,
         "target": target_summary,
         "runtime_switch_history": switch_history,
