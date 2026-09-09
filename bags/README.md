@@ -1,64 +1,92 @@
-# Bag Directory Policy
+# bags/
 
-This directory stores large ROS bag data. Keep it organized by data role, not by experiment mood.
+Last reviewed: 2026-09-09
 
-## Folder roles
+## Purpose
 
-| Folder | Role | Deletion policy |
-|---|---|---|
-| `source/curated/` | protected rerunnable source bags used for TIM, tracker, and full-pipeline reruns | do not delete |
-| `source/official_flights/` | protected official field-flight bags kept as original flight evidence | do not delete |
-| `replay/` | generated replay/evaluation bags | disposable unless promoted to final evidence |
-| `reference/` | known-good bags and small symlink aliases | keep intentionally curated entries |
-| `tmp/` | temporary generated bags | disposable |
-| `ui_replays/` | UI-generated replay bags | disposable unless promoted |
+Local ROS 2 recordings used as source evidence, live/field evidence, reference
+material, or generated replay output.
 
-## Core rule
+Bag protection is determined by **data role and evidence provenance**, not only
+by the directory name. Raw/source recordings are precious. Generated replay
+bags are removable only after the evidence-retention gate says they are safe to
+delete.
 
-Source/raw bags are precious. Replay/tmp/UI bags are disposable unless explicitly promoted.
+## Current folder roles
 
-After the 2026-07-09 cleanup, old lab archive bags, failed tuning replays, duplicate full-pipeline bags, annotation-input bags, and MAVROS-only support bags were removed. The cleanup audit trail is tracked at:
+| Folder | Role | Default treatment |
+| --- | --- | --- |
+| `source/curated/` | Protected rerunnable development source bags. | Never delete or overwrite. |
+| `source/official_flights/` | Protected original field-flight evidence. | Never delete or overwrite. |
+| `source/held_out/` | Prospective held-out source recordings, including H01-H03. | Protected; do not inspect outcomes before the release gate permits it. |
+| `live_camera/` | Normal live-stack pipeline recordings produced by `start_live_stack.sh`. | Retain according to experiment/evidence role. |
+| `datasets/` | Dataset-style recordings produced by the live stack. | Retain according to experiment/evidence role. |
+| `source_video/` | Source-first/raw recording root used by the live stack and Issue #64 capture workflow. | Treat completed source recordings as protected until their owning experiment closes. |
+| `mavros/` | Synchronized Pixhawk/MAVROS telemetry recordings produced by field/source recording modes. | Retain with the paired source/field evidence when required. |
+| `replay/` | Generated deterministic replay, tracker, detector, and evaluation bags. | Disposable only after retention-policy review. |
+| `reference/` | Known-good reference bags and deliberate symlink aliases. | Keep curated entries while their targets and workflows remain valid. |
+| `ground/` | Retained ground-validation recordings from earlier/current integration work. | Preserve while referenced; no generic new-output contract is implied. |
 
-- `docs/archive/bag_cleanup_2026_07_09/`
+Directories such as historical `annotation_inputs/`, `review/`, and UI-specific
+replay workspaces are not part of the current repository workflow.
 
-It preserves the deleted bag names, the deletion rationale, and a per-bag
-`metadata.yaml` sidecar for every removed bag. A local
-`reports/bag_cleanup_2026_07_09/` working directory holds the same content plus
-a few uncurated scratch listings.
+## Current recording routes
 
-## Current protected structure
+The live-stack defaults are defined in `tools/lib/live_defaults.sh` and
+`tools/start_live_stack.sh`.
 
-Protection is role- and evidence-based rather than tied to the historical July
-folder list.
+Current producer paths include:
+
+- normal live pipeline recording -> `bags/live_camera/`;
+- dataset-style recording -> `bags/datasets/`;
+- source-first/raw recording -> `bags/source_video/` unless an issue-specific
+  `SOURCE_RECORD_ROOT` overrides it;
+- synchronized MAVROS telemetry -> `bags/mavros/`.
+
+Issue-specific procedures may deliberately override the generic source root.
+
+For Issue #27, the prospective held-out helper writes H01-H03 source recordings
+under:
+
+    bags/source/held_out/2026-09/<scenario>/
+
+using:
+
+    tools/experiments/record_p027_heldout_sequence.sh
+
+For Issue #64, `record_p064_drone_sequence.sh` preserves the completed source
+capture under `bags/source_video/`.
+
+Do not relocate these paths before their owning experiment/provenance contract
+is complete merely to make the directory tree look more uniform.
+
+## Protection and deletion rules
 
 Always protect:
 
+- every original source/raw recording required to reproduce thesis evidence;
 - `bags/source/curated/`;
 - `bags/source/official_flights/`;
+- `bags/source/held_out/`;
 - `bags/reference/tim_good/`;
-- every source/raw recording;
-- replay evidence referenced by promoted result documents, frozen experiment
-  manifests, current thesis evaluation, or active roadmap dependencies.
+- source, live, MAVROS, or replay evidence referenced by a frozen manifest,
+  promoted result, active evaluation, or open roadmap dependency.
 
-Historical `paper_final_*` replay folders documented by the July cleanup may no
-longer exist locally. Their deletion provenance remains under
-`docs/archive/bag_cleanup_2026_07_09/`; do not recreate aliases to absent bags.
-
-Generated replay evidence must be classified through the current evidence
-retention policy before deletion. Unknown evidence is retained by default.
+Generated replay evidence must pass the current retention policy before
+deletion. Unknown evidence is retained by default.
 
 Current retention authority:
 
 - `docs/data/catalogue/evidence_retention_policy.md`
 - `docs/data/catalogue/evidence_retention_manifest_2026_09_05.json`
 
-## Naming contract
+Historical deletion provenance is retained under:
 
-Use double underscores between semantic fields.
+- `docs/archive/bag_cleanup_2026_07_09/`
 
-## Source bags
+## Source naming
 
-Source bags preserve capture provenance, including timestamp and original role.
+For new source recordings, use double underscores between semantic fields.
 
 Pattern:
 
@@ -68,72 +96,38 @@ Example:
 
     2026-06-19__12-55-58__source__2026-06-19__official__seq03__four_person_crossing_ambiguity__image_raw
 
-## Protected source set
-
-The protected rerunnable source set lives in:
-
-    bags/source/curated/
-
-These bags contain `/camera/image_raw` where applicable and are preferred for realistic full detector/tracker/TIM reruns.
-
-Rules:
-
-- Do not delete curated source bags.
-- Do not overwrite curated source bags.
-- Use curated `/camera/image_raw` bags for realistic full-pipeline reruns.
-- Do not use dashboard-only bags as full-pipeline source inputs.
-- Dashboard/video replay bags may be used for visual review, but not as golden full-pipeline inputs.
-- Event-level grouping should come from annotations, not from physically splitting bags.
-
-## Official flight bags
-
-Official field-flight bags are protected separately under:
-
-    bags/source/official_flights/2026-06-19/
-
-These preserve the official field-session material, including image, full-pipeline, and MAVROS-context bags. They are kept for traceability and should not be deleted during cleanup.
+Historical names remain unchanged for provenance.
 
 ## Replay bags
 
-Replay bags are generated outputs.
+Replay bags are generated outputs. Existing experiment-specific replay names
+remain frozen when cited by tracked evidence.
 
-Pattern for future promoted replays:
+For new work, keep replay output under `bags/replay/` and give the directory a
+run/experiment identity that is sufficient to recover its configuration and
+source evidence.
 
-    YYYY-MM-DD__seqXX__<scenario>__replay_<kind>__det_<detector>__trk_<tracker>__tim_<mode>__target_<policy>
-
-Existing submitted-paper replay bags are kept under their historical final folders:
-
-- `bags/replay/paper_final_tim_results_2026_07_03/`
-- `bags/replay/paper_final_deepsort_may_2026_07_03/`
-- `bags/replay/paper_final_deepsort_june_full_2026_07_04/`
-- `bags/replay/paper_final_deepsort_june_memory_2026_07_04/`
-
-The `paper_final_*` names are frozen for traceability and should not be used as the naming pattern for new thesis reruns.
-
-Do not treat other replay folders as final evidence unless they are documented in:
-
-- `docs/data/final_experiment_inventory.md`
-- `docs/archive/bag_cleanup_2026_07_09/keep_bags.txt`
+Do not infer that a replay is final evidence from its name. Promotion is defined
+by tracked manifests and reviewed result documentation.
 
 ## Reference aliases
 
-Stable symlink aliases may live under `bags/reference/`, but an alias is retained
-only while its target exists and the shortcut serves an active workflow.
+Stable symlink aliases may live under `bags/reference/` while the target exists
+and the shortcut serves an active workflow.
 
 Broken aliases are repository-hygiene defects and should be removed rather than
-left as historical markers. Historical target names belong in tracked cleanup
-provenance, not in dangling filesystem links.
+kept as historical markers. Historical target names belong in tracked
+provenance.
 
-The annotation UI already supports role grouping and user favourites, so a
-permanent alias is not required merely to make a bag discoverable.
+`bags/reference/annotation_aliases/` may remain as historical/convenience
+aliases, but current manual physical-reference annotation is performed in CVAT
+and does not require a repository-local annotation UI or permanent alias tree.
 
-## Annotation inputs
+## Boundary with other storage roots
 
-The old `bags/annotation_inputs/` folder was removed during cleanup.
-
-Annotation workflows should now use:
-
-- `bags/reference/annotation_aliases/`
-- real replay/source bag paths directly
-
-Annotation CSV `bag_name` values may refer to historical bag names. When the corresponding bag no longer exists locally, use the documented cleanup metadata and current aliases to resolve the intended source.
+- `data/` owns external datasets and processed research workspaces, not primary
+  ROS recording evidence.
+- `reports/` owns generated analysis output and explicitly promoted compact
+  evidence packages.
+- `artifacts/` owns disposable reproducible intermediate output.
+- reviewed thesis-facing result summaries live under `docs/results/`.

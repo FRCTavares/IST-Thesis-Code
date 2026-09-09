@@ -19,11 +19,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 ALLOWED_ROOT_FILES = {".envrc", ".gitignore", "LICENSE", "README.md"}
 
-# Currently tracked architectural root directories. A future deliberate
-# `data/README.md` will intentionally require adding "data" here.
+# Deliberate tracked architectural root directories.
 ARCHITECTURAL_ROOT_DIRECTORIES = {
     "artifacts",
     "bags",
+    "data",
     "docs",
     "models",
     "reports",
@@ -61,6 +61,26 @@ def test_tracked_root_directories_are_the_intended_architecture():
 def test_every_architectural_root_directory_has_a_readme():
     for name in sorted(ARCHITECTURAL_ROOT_DIRECTORIES):
         assert (REPO_ROOT / name / "README.md").is_file(), name
+
+
+STORAGE_ROOT_DIRECTORIES = {
+    "artifacts",
+    "bags",
+    "data",
+    "reports",
+}
+
+
+def test_storage_root_readmes_are_reviewed():
+    pattern = re.compile(
+        r"^Last reviewed: \d{4}-\d{2}-\d{2}$",
+        re.MULTILINE,
+    )
+
+    for name in sorted(STORAGE_ROOT_DIRECTORIES):
+        path = REPO_ROOT / name / "README.md"
+        text = path.read_text(encoding="utf-8")
+        assert pattern.search(text), name
 
 
 def test_root_readme_follows_the_documentation_standard():

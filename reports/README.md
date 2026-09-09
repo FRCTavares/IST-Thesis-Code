@@ -1,5 +1,7 @@
 # Generated Reports
 
+Last reviewed: 2026-09-09
+
 This folder contains generated analysis outputs from local experiments, reruns,
 visual validation, timing analysis, tracking evaluation, and temporary debugging.
 
