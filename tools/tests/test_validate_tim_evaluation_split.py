@@ -463,6 +463,127 @@ def test_behavior_source_drift_is_detected(tmp_path):
     )
 
 
+def test_documentation_only_drift_under_frozen_directory_is_allowed(tmp_path):
+    value = manifest(tmp_path, final_ready=False)
+
+    frozen_dir = tmp_path / "frozen_source"
+    frozen_dir.mkdir()
+    (frozen_dir / "source.py").write_text("frozen = True\n")
+    (frozen_dir / "README.md").write_text("original docs\n")
+
+    subprocess.run(
+        ["git", "add", "frozen_source"],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "freeze directory source"],
+        cwd=tmp_path,
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+
+    value["freeze"]["algorithm_commit"] = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    value["freeze"]["canonical_config"]["sha256"] = digest(
+        (tmp_path / value["freeze"]["canonical_config"]["path"]).read_bytes()
+    )
+
+    bind_final_comparison_contract(tmp_path, value)
+
+    import json
+
+    contract_path = tmp_path / "comparison.json"
+    contract = json.loads(contract_path.read_text())
+    contract["algorithm_freeze_commit"] = value["freeze"]["algorithm_commit"]
+    contract["source_code_freeze"] = {
+        "commit": value["freeze"]["algorithm_commit"],
+        "required_unchanged_paths": ["frozen_source"],
+    }
+    contract_path.write_text(json.dumps(contract, indent=2) + "\n")
+    value["freeze"]["final_comparison_contract"]["sha256"] = digest(
+        contract_path.read_bytes()
+    )
+
+    (frozen_dir / "README.md").write_text("updated documentation only\n")
+
+    errors = validate(
+        value,
+        tmp_path,
+        verify_hashes=True,
+    )
+
+    assert not any(
+        "behavior-bearing source code differs" in error
+        for error in errors
+    )
+
+
+def test_new_behavior_file_under_frozen_directory_is_detected(tmp_path):
+    value = manifest(tmp_path, final_ready=False)
+
+    frozen_dir = tmp_path / "frozen_source"
+    frozen_dir.mkdir()
+    (frozen_dir / "source.py").write_text("frozen = True\n")
+
+    subprocess.run(
+        ["git", "add", "frozen_source"],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "freeze directory source"],
+        cwd=tmp_path,
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+
+    value["freeze"]["algorithm_commit"] = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    value["freeze"]["canonical_config"]["sha256"] = digest(
+        (tmp_path / value["freeze"]["canonical_config"]["path"]).read_bytes()
+    )
+
+    bind_final_comparison_contract(tmp_path, value)
+
+    import json
+
+    contract_path = tmp_path / "comparison.json"
+    contract = json.loads(contract_path.read_text())
+    contract["algorithm_freeze_commit"] = value["freeze"]["algorithm_commit"]
+    contract["source_code_freeze"] = {
+        "commit": value["freeze"]["algorithm_commit"],
+        "required_unchanged_paths": ["frozen_source"],
+    }
+    contract_path.write_text(json.dumps(contract, indent=2) + "\n")
+    value["freeze"]["final_comparison_contract"]["sha256"] = digest(
+        contract_path.read_bytes()
+    )
+
+    (frozen_dir / "new_behavior.py").write_text("new_behavior = True\n")
+
+    errors = validate(
+        value,
+        tmp_path,
+        verify_hashes=True,
+    )
+
+    assert any(
+        "behavior-bearing source code differs" in error
+        for error in errors
+    )
+
+
 def test_target_reid_final_threshold_is_frozen(tmp_path):
     value = manifest(tmp_path, final_ready=False)
     contract_path = bind_final_comparison_contract(
