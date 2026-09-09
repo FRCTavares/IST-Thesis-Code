@@ -1,5 +1,7 @@
 # Documentation archive
 
+Last reviewed: 2026-09-09
+
 This directory contains tracked historical material that remains useful for
 traceability but is not current thesis authority.
 

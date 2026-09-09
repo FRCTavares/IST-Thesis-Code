@@ -1,5 +1,7 @@
 # TIM-MARS frozen evaluation split
 
+Last reviewed: 2026-09-09
+
 The active prospective machine-readable authority is:
 
 `docs/data/splits/tim_mars_split_v4.json`

@@ -1,19 +1,23 @@
 # Current thesis results
 
+Last reviewed: 2026-09-09
+
 This directory contains reviewed result summaries that are still relevant to
 the thesis, current engineering validation, or active claim boundaries.
 
 ## Selected-target tracking
 
-Use:
+Use the namespace index:
+
+- `selected_target_tracking/README.md`
+
+Key promoted sources retained directly in this canonical index:
 
 - `selected_target_tracking/hard_reentry_multi_tracker_summary.md`
 - `selected_target_tracking/p028_wrong_oracle_audit.md`
 - `selected_target_tracking/p028_component_ablation_development/README.md`
 - `selected_target_tracking/hard_reentry_compute_throughput_summary.md`
 - `selected_target_tracking/p023_output_freshness_validation.md`
-- `selected_target_tracking/p030_broader_sequences_summary.md`
-- `selected_target_tracking/p031_parameter_sensitivity_summary.md`
 
 The evidence-version authority is:
 
@@ -25,7 +29,9 @@ repository commit.
 
 ## Live-system validation
 
-Current retained live and ground evidence is under `live/`.
+Use the namespace index:
+
+- `live/README.md`
 
 These documents validate specific authority, coordinate, freshness, recovery,
 or host-operation contracts. They are not substitutes for the final held-out
