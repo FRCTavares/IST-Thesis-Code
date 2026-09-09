@@ -18,8 +18,9 @@ for visual validation and debugging. They produce no quantitative metrics.
 
 - Use these for visual inspection only; for quantitative evaluation use
   `tools/analysis/`.
-- Prefer these over the annotation UI when a plain overlay or paired video is
-  all that is needed; the UI has its own renderers for interactive review.
+- Use these when a plain overlay or paired video is sufficient. Manual
+  annotation and interactive frame review are handled through CVAT and the
+  maintained analysis/import tooling, not a repository-local annotation UI.
 - The renderers honour the track header coordinate contract
   (`tim_mars_source_pixels_resize_v1` vs legacy `frame_<n>`); this is covered
   by `tools/tests/test_render_bag_overlay_coordinate_contract.py` and
