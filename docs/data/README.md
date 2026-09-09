@@ -1,11 +1,46 @@
-# Data Metadata
+# Data metadata
 
-This folder contains small, tracked metadata related to recorded experimental data.
+Last reviewed: 2026-09-09
 
-- `annotations/`: trusted manual annotation CSVs used by TIM-MARS evaluation. Tracker-ID-specific (`correct_target_track_id`); see Issue #25.
-- `physical_target_references/`: tracker-ID-independent physical-person bbox reference artifacts, one per source sequence. New canonical artifacts use contract `tim_physical_target_bbox_v2`, frozen in `docs/issues/p1-10-physical-reference-v2-contract.md`, with the authoritative schema/validator in `tools/analysis/physical_target_reference_v2.py`; v1 remains preserved as the historical narrower contract. References are reusable across tracker backends and same-capture regenerated runs without editing, and never replace the files in `annotations/`, which remain historical tracker-ID evidence. For M4B, prefer the exact-frame CVAT bridge in `tools/analysis/cvat_physical_reference.py`; ordered PNG tasks export as **CVAT for images 1.1**, which may contain one `<image><box>` per interpolated frame, while native `<track>` CVAT 1.1 remains a supported alternate input. In both forms, `physical_ref` alone defines annotation-local identity, exact timestamps come from `frame_manifest.json` rather than FPS, and human review remains authoritative. The custom UI's "Physical reference v2 (Issue #25)" mode remains the schema/evaluator inspection and fallback workspace. In-progress human artifacts may remain local and untracked; stage a canonical reference only after the annotator intentionally completes and reviews it. When no human v2 seed exists, `prepare --preparation-config` creates a seedless task and an intentionally empty/fail-closed semantic sidecar: establish every `physical_ref` manually in CVAT, then populate state/context/required-role intervals only after review. Never seed identity from historical tracker boxes. Assisted frame-by-frame proposals, confidence labels, review regions, and suggested anchors are temporary UI/server cache state rather than physical-reference data and must never be staged as canonical evidence.
-- `catalogue/`: bag inventory, evaluation catalogue, migration manifests, and keep-policy notes.
-- `final_experiment_inventory.md`: promoted final replay bags, reports, and annotation CSVs.
-- `reproduce_final_results.md`: local verification steps for the final thesis result artifacts.
+## Purpose
 
-Actual ROS 2 bags remain under `bags/` and are generally not tracked by Git.
+Small, tracked research inputs and metadata used to reproduce, interpret, and
+audit thesis experiments. Large recordings and generated datasets do not belong
+here.
+
+## Contents
+
+| Path | Role |
+| --- | --- |
+| `annotations/` | Historical trusted tracker-ID annotation CSVs used by earlier TIM-MARS evaluation. |
+| `physical_target_references/` | Tracker-independent physical-person bbox references; v2 is the current contract. |
+| `ablations/` | Frozen component-ablation specifications. |
+| `catalogue/` | Bag inventories, evidence maps, retention policy, and related metadata. |
+| `external_benchmark/` | Contracts and manifests for external benchmark evaluation. |
+| `splits/` | Versioned development and prospective held-out split definitions. |
+| `parameter_sensitivity/` | Frozen TIM-MARS parameter-sensitivity experiment definitions. |
+| `tracker_sensitivity/` | Frozen tracker-sensitivity experiment definitions. |
+| `final_experiment_inventory.md` | Promoted replay/evidence inventory. |
+| `reproduce_final_results.md` | Current reproduction entrypoints and historical-result boundaries. |
+
+## Annotation workflow
+
+Manual physical-reference annotation is performed in CVAT. The maintained
+exact-frame bridge is `tools/analysis/cvat_physical_reference.py`.
+
+Canonical physical references use the `tim_physical_target_bbox_v2` contract
+implemented by `tools/analysis/physical_target_reference_v2.py`. Human review is
+authoritative; CVAT numeric IDs and drawing order are not physical identity.
+
+Historical tracker-ID annotations and historical provenance are retained as
+evidence and must not be rewritten to look like they were produced by the
+current workflow.
+
+## Rules
+
+- ROS 2 recordings live under `bags/`, not `docs/data/`.
+- Large external/processed datasets remain local under the repository `data/`
+  tree unless a tracked manifest explicitly requires otherwise.
+- In-progress annotation exports may remain local and untracked.
+- Frozen manifests, splits, hashes, and physical references are not rewritten
+  merely because current tooling or runtime defaults later change.
