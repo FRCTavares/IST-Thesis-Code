@@ -155,6 +155,9 @@ def test_current_docs_do_not_advertise_retired_annotation_ui():
         DOCS / "data" / "catalogue" / "bag_layout.md",
         DOCS / "data" / "catalogue" / "evidence_retention_policy.md",
         DOCS / "design" / "tim_tooling_index.md",
+        ROOT / "tools" / "README.md",
+        ROOT / "tools" / "bag" / "README.md",
+        ROOT / "tools" / "bag" / "render_tim_comparison_video.py",
     )
 
     retired = (
@@ -162,6 +165,8 @@ def test_current_docs_do_not_advertise_retired_annotation_ui():
         "tim_clean_ui",
         "ui favourites",
         "fallback workspace",
+        "prefer these over the annotation ui",
+        "interactive fastapi annotation ui",
     )
 
     for path in current_docs:
