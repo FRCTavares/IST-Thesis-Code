@@ -67,6 +67,7 @@ STORAGE_ROOT_DIRECTORIES = {
     "artifacts",
     "bags",
     "data",
+    "models",
     "reports",
 }
 
@@ -81,6 +82,15 @@ def test_storage_root_readmes_are_reviewed():
         path = REPO_ROOT / name / "README.md"
         text = path.read_text(encoding="utf-8")
         assert pattern.search(text), name
+
+
+def test_models_readme_names_the_current_canonical_models():
+    text = (REPO_ROOT / "models" / "README.md").read_text(encoding="utf-8")
+
+    assert "models/hef/yolov8s.hef" in text
+    assert "models/reid/mars-small128.pb" in text
+    assert "**current canonical live and prospective detector**" in text
+    assert "**canonical live detector default**" not in text
 
 
 def test_root_readme_follows_the_documentation_standard():

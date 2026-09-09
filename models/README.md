@@ -1,16 +1,23 @@
 # models/
 
-Neural-network weight files used by the perception and appearance paths.
+Last reviewed: 2026-09-09
+
+## Purpose
+
+Neural-network artifacts used by the detector, tracker, and TIM-MARS
+appearance paths. This inventory records their current runtime role,
+tracking state, hashes, and known provenance without migrating model binaries.
+
+The current prospective evaluation contract uses YOLOv8s
+(`models/hef/yolov8s.hef`) as the detector and MARS-small128
+(`models/reid/mars-small128.pb`) as the canonical appearance model.
+Historical experiments retain the model they actually used.
 
 ```
 models/
   hef/    Hailo-8 compiled detector graphs (.hef)
   reid/   appearance / re-identification models
 ```
-
-This file is an inventory only. It does not change what is tracked. Its purpose
-is to make a later tracked-vs-untracked decision safe: every entry records what
-the file is, what depends on it, and whether its origin is known.
 
 ## Current tracked state
 
@@ -28,16 +35,15 @@ source artefact, conversion, and Hailo Dataflow Compiler settings are not.
 
 ## Detector models — `models/hef/`
 
-Hailo-8 compiled graphs. Detector inference size is 640x640 in every current
-runtime and experiment. Consumed by `perception_pipeline_node` /
-`perception_camera_node` (`hailo_hef_path` parameter) and listed for the
-dashboard model-switch API in
-`ros2_ws/src/thesis_bringup/thesis_bringup/dashboard/dashboard_models.py`.
+Hailo-8 compiled graphs. Current detector inference remains 640x640. The live
+defaults and `perception_pipeline_node` both select `yolov8s.hef`. The complete
+tracked HEF set remains available through the dashboard detector catalogue,
+although the frozen live profile rejects runtime model switching.
 
 | File | Family | SHA-256 | Bytes | Role | Canonical | Origin |
 | --- | --- | --- | ---: | --- | --- | --- |
-| `yolov6n.hef` | YOLOv6-nano | `b645f970fb59f809f4a56b6727b8105fc143e75d43b046116311363f877b156d` | 5 773 147 | **canonical live detector default** (`tools/lib/live_defaults.sh`, `perception_pipeline_node` default `hailo_hef_path`); frozen detector for the Issue #64 R3 replay | yes | unknown / requires provenance recovery |
-| `yolov8s.hef` | YOLOv8-small | `69540ff855740371d229f4caca1ab908635a72fec55fdc1541e73f2fc17ec43b` | 11 284 359 | detector for the official June 2026 sequences (Seq01–Seq04) and the current recommended live path `YOLOv8s + ByteTrack + TIM-MARS` (Issue #64) | yes | unknown / requires provenance recovery |
+| `yolov6n.hef` | YOLOv6-nano | `b645f970fb59f809f4a56b6727b8105fc143e75d43b046116311363f877b156d` | 5 773 147 | Historical detector retained for provenance, including the frozen Issue #64 R3 experiment; not a current runtime default | no | unknown / requires provenance recovery |
+| `yolov8s.hef` | YOLOv8-small | `69540ff855740371d229f4caca1ab908635a72fec55fdc1541e73f2fc17ec43b` | 11 284 359 | **current canonical live and prospective detector**; used by the YOLOv8s + ByteTrack + TIM-MARS runtime and frozen Issue #27 comparison | yes | unknown / requires provenance recovery |
 | `yolov8n.hef` | YOLOv8-nano | `eebaf6e491f8c182c095d2a2fd38d8fc6efbc55d595be1bbec75338f55751917` | 5 100 930 | detector alternative in the historical May 2026 `detector_eval_matrix` comparison (`docs/data/catalogue/bag_inventory.yaml`) | no | unknown / requires provenance recovery |
 | `yolov10n.hef` | YOLOv10-nano | `9c92ae99e76aa16fabe96416cfa1cd478910b95e38cb4b9820b05ba9f3cf9038` | 7 721 797 | detector alternative in the historical May 2026 `detector_eval_matrix` comparison | no | unknown / requires provenance recovery |
 | `yolov11n.hef` | YOLOv11-nano | `3a16fb7b03c48e7c0837e914e7d7e712481c60f511ff0de41ffe2c7e71818ca2` | 8 613 623 | detector alternative in the historical May 2026 `detector_eval_matrix` comparison | no | unknown / requires provenance recovery |
@@ -103,6 +109,18 @@ None of the tracked files is completely unreferenced: the eleven "catalogue
 only" detector graphs are still listed in `dashboard_models.py`. They are,
 however, unused by every frozen runtime path and every current experiment.
 
+## Rules
+
+- YOLOv8s is the sole current canonical detector for new live work and new
+  canonical experiments.
+- MARS-small128 remains the canonical TIM-MARS appearance model.
+- Do not rename, delete, recompile, replace, or migrate model files while they
+  are referenced by frozen experiment or prospective-evaluation contracts.
+- Historical results retain their actual detector and model identity.
+- Keep the current tracked/untracked model state. Any Git LFS, release-asset,
+  external artifact-store, or Git-history migration requires a separate plan
+  after provenance recovery.
+
 ## Provenance recovery checklist
 
 For each model, the following still needs to be recorded before a
@@ -126,3 +144,9 @@ collaborator coordination, and preservation of hashes and historical references.
 
 Issue #49 therefore closes the storage decision as: **retain current model
 tracking; no history rewrite or artifact migration in this issue**.
+
+## See also
+
+- `docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.md`
+- `docs/data/splits/tim_mars_final_comparison_v3.json`
+- `docs/data/catalogue/evidence_retention_policy.md`
