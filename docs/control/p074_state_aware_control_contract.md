@@ -87,6 +87,26 @@ Normal following reuses the existing controller:
 - optional lateral behaviour remains unchanged;
 - existing saturation and slew limits remain unchanged.
 
+### Deterministic sign checks
+
+From the validated baseline, the controller command signs are:
+
+- centred target -> `vx = 0`, `yaw_z = 0`;
+- target left of centre -> `yaw_z < 0`; right of centre -> `yaw_z > 0`;
+- smaller apparent height (target farther) -> `vx > 0`; larger apparent
+  height (target nearer) -> `vx < 0`;
+- stale or lost target -> `vx = 0`, `yaw_z = 0`;
+- a raw `/target` output can never produce a command — live control consumes
+  `/target_memory_mars` only.
+
+Verify the signs with an isolated node on test topics, MAVROS disabled:
+
+    ros2 run thesis_bringup control_ref_node --ros-args \
+      -r __node:=control_ref_test_node \
+      -p target_topic:=/target_test \
+      -p cmd_topic:=/control_ref_test/cmd_vel \
+      -p enable_mavros:=false
+
 ## Uncertain and confirmation states
 
 For `UNCERTAIN`, `REACQUIRED`, `CONFIRM`, stale status, mismatched authority,
