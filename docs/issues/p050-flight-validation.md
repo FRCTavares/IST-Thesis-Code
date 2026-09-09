@@ -26,14 +26,39 @@ current-system verification:
 Existing launcher capabilities such as `--field-record`, `--record-mavros` and
 `--record-raw` are not, by themselves, an approved #50 flight command.
 
+### 9 September software-control audit
+
+The aircraft-facing MAVROS contract was audited against the installed ROS 2
+Jazzy MAVROS configuration before retained flight use. The installed ArduPilot
+`setpoint_velocity` plugin defaults to `LOCAL_NED`, while the thesis controller
+produces forward/lateral commands relative to the aircraft body. The managed
+live path therefore sets and reads back
+`/mavros/setpoint_velocity mav_frame=BODY_NED` before controller mirroring can
+start.
+
+The same hardening change makes `--field-record` use the existing managed
+MAVROS startup rather than a second late MAVROS instance, rejects a
+pre-existing MAVROS process so the retained run owns its FCU connection,
+requires successful field-network entry, FCU connection, stream-rate setup and
+raw-IMU evidence, and records the actual stamped controller-facing MAVROS topic
+`/mavros/setpoint_velocity/cmd_vel`. `--control-mavros` remains explicit,
+is accepted only together with `--field-record`, and does not arm the aircraft
+or change flight mode. `--record-mavros` alone remains telemetry-only. Bounded
+yaw recovery remains forced OFF by the live launcher.
+
+The software command contract is therefore substantially narrower, but the
+retained aircraft command remains blocked until the real Pixhawk/network,
+ground-sign and pilot-takeover gates in `docs/flight/README.md` pass.
+
 ### Combined raw recording (diagnostic)
 
 `./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO`
-produces three synchronised recordings: the normal live-pipeline bag under
-`bags/live_camera/`, a separate `__image_raw` MCAP bag with `/camera/image_raw`,
-and a separate `__mavros` MCAP bag. `--field-record` enforces the field/Pixhawk network mode (ISR Wi-Fi first,
-with the approved AERONEXT fallback) and stops Tailscale, so run it from the
-Pi's local terminal with the Pixhawk connected.
+produces the normal live-pipeline MCAP bag with MAVROS telemetry plus a separate
+synchronised `__image_raw` MCAP bag with `/camera/image_raw`. `--field-record`
+enforces the field/Pixhawk network mode (ISR Wi-Fi first, with the approved
+AERONEXT fallback), stops Tailscale, starts one managed MAVROS instance and
+verifies the `BODY_NED` velocity contract, so run it from the Pi's local
+terminal with the Pixhawk connected.
 
 Raw recording requires at least 40 GiB free (enforced by
 `tools/lib/live_storage.sh`). The measured combined raw frame rate stays well
