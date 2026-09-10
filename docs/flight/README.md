@@ -132,7 +132,7 @@ Diagnostic only:
 
 **Only if #50 promotes recovery first; otherwise skip.**
 
-- [ ] recovery command frozen + ground-tested
+- [ ] candidate: add `--control-yaw-recovery --acknowledge-yaw-recovery-candidate` (see `docs/control/p074_state_aware_control_contract.md`)
 - [ ] yaw only; no translation
 - [ ] duration/yaw budget respected
 - [ ] no wrong-person command

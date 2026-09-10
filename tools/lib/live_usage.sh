@@ -97,6 +97,14 @@ Options:
     --no-target                         Deprecated alias; target selection is now handled by dashboard bridge API
     --no-control                        Do not start control_ref_node
     --control-mavros                    Enable MAVROS mirroring in control_ref_node
+    --control-yaw-recovery             Issue #74 bounded yaw-only recovery CANDIDATE (default OFF).
+                                        On perception LOST with an eligible recent trusted
+                                        observation, permit bounded yaw-only search (translation
+                                        still prohibited). Frozen policy/bounds; requires
+                                        --acknowledge-yaw-recovery-candidate plus
+                                        --field-record --control-mavros.
+    --acknowledge-yaw-recovery-candidate
+                                        Explicit acknowledgement required by --control-yaw-recovery.
     --control-stale-timeout-s <N>       Control stale target timeout seconds (default: 0.80)
     --no-web-video                      Do not start web_video_server
     --record-video                      Record dashboard video + perception/tracking/target/timing/control topics
@@ -160,6 +168,11 @@ Common options:
     --no-control             Disable control_ref_node
     --control-mavros         Mirror validated controller commands to managed MAVROS
                              (aircraft authority; requires --field-record)
+    --control-yaw-recovery   Issue #74 bounded yaw-only recovery candidate (default OFF;
+                             frozen policy). Needs --acknowledge-yaw-recovery-candidate
+                             and --field-record --control-mavros
+    --acknowledge-yaw-recovery-candidate
+                             Deliberate acknowledgement for --control-yaw-recovery
     --no-dashboard           Disable dashboard bridge and web video
     --dashboard-bind ADDR    Dashboard API/WS bind (default 127.0.0.1; non-loopback
                              requires DASHBOARD_CONTROL_TOKEN)

@@ -73,6 +73,13 @@ TARGET_MEMORY_MARS_RANK_AWARE_MISSING_TTL_FRAMES=8
 ENABLE_TRACKER=1
 ENABLE_CONTROL=1
 CONTROL_MAVROS_BOOL="false"
+# Issue #74 bounded yaw-only recovery candidate. Frozen policy; default OFF.
+# Enabled only by the deliberately gated --control-yaw-recovery opt-in
+# (requires --acknowledge-yaw-recovery-candidate plus the retained
+# --field-record --control-mavros trial path). The recovery bounds
+# themselves are frozen in control_ref_node and are never trial-time knobs.
+CONTROL_YAW_RECOVERY_BOOL="false"
+CONTROL_YAW_RECOVERY_ACKNOWLEDGED=0
 CONTROL_STALE_TIMEOUT_S=0.90
 ENABLE_WEB_VIDEO=1
 # Video bag recording, disabled by default.

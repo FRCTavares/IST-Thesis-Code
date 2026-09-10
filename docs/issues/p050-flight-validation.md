@@ -82,6 +82,30 @@ The retained package is specified in
 forced OFF; no candidate-recovery activation path was added. Native Pixhawk
 `.bin` dataflash retrieval remains manual.
 
+### 10 September bounded yaw-recovery candidate activation
+
+The frozen Issue #74 bounded yaw-only recovery candidate can now be selected
+for a physical trial through a deliberate, default-OFF launcher opt-in
+(`tools/lib/live_cli.sh` / `tools/lib/live_defaults.sh`):
+
+- **baseline** (default, no new flags): perception `LOST` -> hover / zero
+  motion. `enable_yaw_recovery:=false`.
+- **candidate**: `--field-record --control-mavros --control-yaw-recovery
+  --acknowledge-yaw-recovery-candidate`. Perception `LOST` + eligible recent
+  trusted history -> bounded yaw-only recovery (translation still prohibited);
+  `LOST` without eligible evidence -> hover. `enable_yaw_recovery:=true`.
+
+`--control-yaw-recovery` fails before launch without the acknowledgement, or
+without control + `--control-mavros` + `--field-record`. No recovery bound is
+a CLI knob; the frozen `control_ref_node` values are used unchanged. Retained
+provenance asserts the running node's `enable_yaw_recovery` against the
+launcher intent (`--expect-param`), so a mismatched trial fails the provenance
+validator. `flight_metadata.txt` records `trial_condition` and
+`control_yaw_recovery_enabled`. The operator records the matching `trial_start`
+event (`--condition candidate --recovery-enabled` / `--condition baseline`);
+the launcher prints the exact command at startup. No arming/mode-change
+authority is added; `docs/flight/README.md` physical gates still apply.
+
 ### Combined raw recording (diagnostic)
 
 `./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO`
