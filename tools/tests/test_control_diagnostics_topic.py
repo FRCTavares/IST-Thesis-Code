@@ -94,18 +94,46 @@ def test_control_diagnostics_message_exists_and_has_required_fields():
 
 
 # --------------------------------------------------------------------------- #
-# I: live launcher still forces recovery OFF, no activation path
+# I: live launcher defaults recovery OFF; the candidate is deliberately gated
 # --------------------------------------------------------------------------- #
-def test_launcher_still_forces_yaw_recovery_off_with_no_activation_path():
+def test_launcher_yaw_recovery_defaults_off_and_is_deliberately_gated():
     source = LAUNCHER.read_text(encoding="utf-8")
-    assert "-p enable_yaw_recovery:=false" in source
-    assert "enable_yaw_recovery:=true" not in source
-    assert "control-yaw-recovery" not in source
-    assert "candidate-trial" not in source
-    # the diagnostics topic default is on; provenance asserts it
-    assert (
-        'control_ref_node:enable_diagnostics=true' in source
+    defaults = (REPO_ROOT / "tools/lib/live_defaults.sh").read_text(
+        encoding="utf-8"
     )
+    cli = (REPO_ROOT / "tools/lib/live_cli.sh").read_text(encoding="utf-8")
+
+    # default OFF
+    assert 'CONTROL_YAW_RECOVERY_BOOL="false"' in defaults
+    assert (
+        'CONTROL_ENABLE_YAW_RECOVERY="${CONTROL_YAW_RECOVERY_BOOL:-false}"'
+        in source
+    )
+    assert (
+        "-p enable_yaw_recovery:=$CONTROL_ENABLE_YAW_RECOVERY" in source
+    )
+
+    # provenance asserts the trial condition dynamically
+    assert (
+        'control_ref_node:enable_yaw_recovery=$control_recovery_expect'
+        in source
+    )
+    assert 'control_ref_node:enable_diagnostics=true' in source
+
+    # candidate opt-in requires the acknowledgement + field control-trial path
+    assert "--control-yaw-recovery)" in cli
+    assert "--acknowledge-yaw-recovery-candidate)" in cli
+    assert "add --acknowledge-yaw-recovery-candidate to proceed" in cli
+    assert "--control-yaw-recovery requires the controller" in cli
+    assert "--control-yaw-recovery is a closed-loop control-trial candidate" in cli
+    assert "--control-yaw-recovery requires retained field recording" in cli
+
+    # bounds are never exposed as trial-time CLI knobs
+    for knob in ("--recovery-yaw-rate", "--recovery-timeout", "--recovery-budget",
+                 "--recovery-max-duration", "--recovery-max-integrated",
+                 "--last-trusted-max-age"):
+        assert knob not in source
+        assert knob not in cli
 
 
 # --------------------------------------------------------------------------- #

@@ -88,9 +88,21 @@ recovery enabled/active state, recovery direction / elapsed / integrated yaw /
 configured budget / configured max duration, last-trusted observation age and
 validity, `status_fresh` / `target_fresh`, and the final `(vx, vy, yaw_z)`.
 `control.log` is retained unchanged and still carries the same information as
-text. Bounded yaw recovery stays OFF; the message can *represent* a candidate
-`RECOVERY_YAW_ONLY` state but the launcher does not enable it. Quick integrity
-check: `python3 tools/analysis/summarize_control_diagnostics.py <bag>`.
+text. Quick integrity check:
+`python3 tools/analysis/summarize_control_diagnostics.py <bag>`.
+
+**Trial condition.** Bounded yaw recovery defaults OFF (**baseline**:
+perception `LOST` -> hover). It is enabled only by the deliberately gated
+`--field-record --control-mavros --control-yaw-recovery
+--acknowledge-yaw-recovery-candidate` (**candidate**: `LOST` + eligible
+trusted history -> bounded yaw-only recovery, translation still prohibited).
+`run_metadata.json` `resolved_parameters.control_ref_node.enable_yaw_recovery`
+is asserted against the launcher intent (`--expect-param`), so a mismatched
+trial fails `validate_live_run_metadata.py`; `flight_metadata.txt` records
+`trial_condition` and `control_yaw_recovery_enabled`. Match it with the
+operator `trial_start` event (`--condition candidate --recovery-enabled` or
+`--condition baseline`). The candidate changes only the perception-state ->
+motion-authority mapping, not TIM-MARS identity or the normal-following law.
 
 ## Still manual / separate (not in this task)
 

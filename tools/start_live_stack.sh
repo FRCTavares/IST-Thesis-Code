@@ -354,6 +354,9 @@ write_video_bag_metadata() {
         echo "control_enabled=$ENABLE_CONTROL"
         echo "freshness_contract=tim_mars_output_freshness_v1"
         echo "control_stale_timeout_s=$CONTROL_STALE_TIMEOUT_S"
+        echo "control_yaw_recovery_enabled=${CONTROL_YAW_RECOVERY_BOOL:-false}"
+        echo "control_yaw_recovery_acknowledged=${CONTROL_YAW_RECOVERY_ACKNOWLEDGED:-0}"
+        echo "trial_condition=$([[ "${CONTROL_YAW_RECOVERY_BOOL:-false}" == "true" ]] && echo candidate || echo baseline)"
         echo "freshness_source_age_gate=true"
         echo "freshness_receive_age_gate=true"
         echo "target_authority_source=$TARGET_AUTHORITY_SOURCE"
@@ -431,13 +434,18 @@ write_live_run_provenance() {
     # Freeze the running control_ref_node's resolved parameters (gains,
     # limits, slew, freshness timeout, and the frozen #74 recovery bounds)
     # into provenance by querying the live node -- never by mirroring launch
-    # arguments, which would miss every node default. The current baseline
-    # keeps recovery OFF; assert that explicitly.
+    # arguments, which would miss every node default. Assert the trial
+    # condition: the running node's enable_yaw_recovery MUST match the
+    # launcher's intent, or the retained-run provenance fails.
+    local control_recovery_expect="false"
+    if [[ "${CONTROL_YAW_RECOVERY_BOOL:-false}" == "true" ]]; then
+        control_recovery_expect="true"
+    fi
     local -a control_param_args=()
     if [[ "${ENABLE_CONTROL:-0}" -eq 1 ]]; then
         control_param_args=(
             --resolved-node-params control_ref_node
-            --expect-param "control_ref_node:enable_yaw_recovery=false"
+            --expect-param "control_ref_node:enable_yaw_recovery=$control_recovery_expect"
             --expect-param "control_ref_node:enable_diagnostics=true"
         )
     fi
@@ -1109,10 +1117,16 @@ if [[ "$RECORD_MAVROS" -eq 1 ]]; then
 fi
 
 if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
+    # Issue #74 bounded yaw-only recovery candidate. Default OFF
+    # (CONTROL_YAW_RECOVERY_BOOL="false" in tools/lib/live_defaults.sh); set
+    # to "true" only by the gated --control-yaw-recovery opt-in resolved in
+    # tools/lib/live_cli.sh. The recovery bounds themselves are frozen in
+    # control_ref_node and are never passed here as trial-time knobs.
+    CONTROL_ENABLE_YAW_RECOVERY="${CONTROL_YAW_RECOVERY_BOOL:-false}"
     start_ros_bg control ros2 run thesis_bringup control_ref_node --ros-args \
         -p target_topic:=/target_memory_mars \
         -p status_topic:=/target_memory_mars/status \
-        -p enable_yaw_recovery:=false \
+        -p enable_yaw_recovery:=$CONTROL_ENABLE_YAW_RECOVERY \
         -p img_w:=${CAMERA_WIDTH}.0 \
         -p img_h:=${CAMERA_HEIGHT}.0 \
         -p enable_mavros:=$CONTROL_MAVROS_BOOL \
@@ -1494,6 +1508,16 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
 fi
 
 log_info "commands: status | ids | target <id> | clear-target | clear | stop"
+
+if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
+    if [[ "${CONTROL_YAW_RECOVERY_BOOL:-false}" == "true" ]]; then
+        echo "[candidate] #74 bounded yaw-only recovery ENABLED (frozen policy; translation prohibited)"
+        echo "[candidate] record: python3 tools/live/operator_event.py trial_start --run-id $RUN_ID --condition candidate --scenario yaw_recovery --recovery-enabled"
+    else
+        echo "[baseline] yaw recovery disabled (perception LOST -> hover / zero motion)"
+        echo "[baseline] record: python3 tools/live/operator_event.py trial_start --run-id $RUN_ID --condition baseline --scenario following"
+    fi
+fi
 
 if [[ "${ENABLE_ROSBAG:-0}" -eq 1 || "${ENABLE_DATASET_BAG:-0}" -eq 1 ]]; then
     echo "[ok] run id: $RUN_ID"
