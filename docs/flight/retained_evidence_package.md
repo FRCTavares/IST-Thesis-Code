@@ -17,6 +17,7 @@ evidence package for a trial. Everything below lives inside it.
 | Artifact | Path in the package | How it gets there | Required |
 | --- | --- | --- | --- |
 | rosbag (MCAP) | `*.mcap` + `metadata.yaml` | `ros2 bag record` (`--field-record --control-mavros`) | yes |
+| controller diagnostics | `/control_ref/diagnostics` in the bag | `control_ref_node` (`thesis_msgs/ControlDiagnostics`, one per command) | yes (when control runs) |
 | run metadata / provenance | `run_metadata.json` | `tools/live/write_live_run_metadata.py` (schema v1) | yes |
 | flight metadata (plain text) | `flight_metadata.txt` | `tools/start_live_stack.sh` | yes |
 | target-authority events | `target_authority_events.jsonl` | `dashboard_bridge_node` → archived on stop | yes |
@@ -78,10 +79,22 @@ bag timestamps — the live stack uses no simulated time) and, on the Pi,
 - The current baseline keeps bounded yaw recovery **OFF**. A candidate trial
   that turns it on is a future, separately-gated change.
 
+## Controller diagnostics
+
+`control_ref_node` publishes one `thesis_msgs/ControlDiagnostics` message on
+`/control_ref/diagnostics` for every command on `/control_ref/cmd_vel` (shared
+`header.stamp`, join 1:1). It makes bag-native the mode, decision reason,
+recovery enabled/active state, recovery direction / elapsed / integrated yaw /
+configured budget / configured max duration, last-trusted observation age and
+validity, `status_fresh` / `target_fresh`, and the final `(vx, vy, yaw_z)`.
+`control.log` is retained unchanged and still carries the same information as
+text. Bounded yaw recovery stays OFF; the message can *represent* a candidate
+`RECOVERY_YAW_ONLY` state but the launcher does not enable it. Quick integrity
+check: `python3 tools/analysis/summarize_control_diagnostics.py <bag>`.
+
 ## Still manual / separate (not in this task)
 
 - native Pixhawk `.bin` dataflash retrieval;
-- a `/control_ref/diagnostics` topic for mode / recovery state;
 - adding `/mavros/setpoint_raw/target_local` and `/mavros/statustext` to the
   recorded topic set;
 - recorder shutdown-order / grace-period changes;

@@ -17,6 +17,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Timing.msg"
   "msg/AppearanceEmbeddingRequest.msg"
   "msg/AppearanceEmbeddingResult.msg"
+  "msg/ControlDiagnostics.msg"
   DEPENDENCIES std_msgs builtin_interfaces
 )
 
