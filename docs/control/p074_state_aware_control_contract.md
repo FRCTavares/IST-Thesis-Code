@@ -216,6 +216,23 @@ cadence.
 
 Diagnostics provide observability only and never motion authority.
 
+### Recorded diagnostics topic
+
+The controller also publishes one `thesis_msgs/ControlDiagnostics` message on
+`/control_ref/diagnostics` for every command it emits on `/control_ref/cmd_vel`,
+sharing that command's `header.stamp` (join the two topics 1:1 on the stamp).
+It carries the resolved mode and reason, the TIM/authority state feeding the
+decision, `recovery_enabled` / `recovery_active`, recovery direction, elapsed
+time, integrated and configured yaw budget and configured maximum duration,
+the last-trusted observation age and validity, `status_fresh` / `target_fresh`,
+and the final `(command_vx, command_vy, command_yaw_z)`. It is built from the
+exact decision and runtime state that produced the command -- it never
+re-derives policy logic -- and its publication is fully isolated from the
+command path. This topic **supplements** `control.log`, which is retained
+unchanged. It is instrumentation only and never acquires motion authority.
+`/control_ref/diagnostics` is recorded in the retained flight bag whenever the
+controller runs (see `docs/flight/retained_evidence_package.md`).
+
 ## Promotion boundary
 
 Deterministic implementation and tests are required before physical validation.
