@@ -90,6 +90,62 @@ def validate(payload: dict[str, Any]) -> tuple[list[str], list[str]]:
     if not resolved_parameters:
         errors.append("resolved_parameters is empty -- no node parameters captured")
 
+    # Nodes whose parameters were meant to be resolved from the running node
+    # must have a successful query. A failed query is never silently replaced
+    # with source-code defaults, so it fails the provenance gate here.
+    resolved_parameters_meta = payload.get("resolved_parameters_meta") or {}
+    if not isinstance(resolved_parameters_meta, dict):
+        errors.append("resolved_parameters_meta must be an object")
+        resolved_parameters_meta = {}
+    for node, meta in resolved_parameters_meta.items():
+        if not isinstance(meta, dict):
+            errors.append(f"resolved_parameters_meta.{node} must be an object")
+            continue
+        if meta.get("query_ok") is not True:
+            errors.append(
+                f"resolved_parameters_meta.{node}: parameter query failed "
+                f"({meta.get('error', 'unknown error')}) -- provenance must "
+                f"record the running node's resolved values, not defaults"
+            )
+            continue
+        node_params = resolved_parameters.get(node) or {}
+        if not node_params:
+            errors.append(
+                f"resolved_parameters_meta.{node}: query_ok but no parameters "
+                f"captured for the node"
+            )
+
+    # Explicit per-parameter expectations (e.g. enable_yaw_recovery=false for
+    # the current baseline controller) must be present and, where a value was
+    # given, must match.
+    expected_parameters = payload.get("expected_parameters") or {}
+    if not isinstance(expected_parameters, dict):
+        errors.append("expected_parameters must be an object")
+        expected_parameters = {}
+    for node, keys in expected_parameters.items():
+        node_params = resolved_parameters.get(node)
+        if not isinstance(node_params, dict):
+            errors.append(
+                f"expected parameters declared for {node} but no resolved "
+                f"parameters were captured for it"
+            )
+            continue
+        if not isinstance(keys, dict):
+            errors.append(f"expected_parameters.{node} must be an object")
+            continue
+        for key, want in keys.items():
+            if key not in node_params:
+                errors.append(
+                    f"expected parameter {node}:{key} was not captured in "
+                    f"resolved_parameters"
+                )
+                continue
+            if want is not None and str(node_params[key]) != str(want):
+                errors.append(
+                    f"expected parameter {node}:{key}={want!r} but resolved "
+                    f"value is {node_params[key]!r}"
+                )
+
     hashes = payload.get("hashes") or {}
     for label, entry in hashes.items():
         recorded_hash = entry.get("sha256")
