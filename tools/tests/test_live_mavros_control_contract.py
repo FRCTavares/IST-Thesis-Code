@@ -85,8 +85,34 @@ def test_field_path_fails_closed_on_missing_raw_imu():
 
 
 def test_aircraft_authority_boundaries_remain_fail_closed():
-    assert "-p enable_yaw_recovery:=false" in LAUNCHER
+    # Yaw recovery defaults OFF: the controller is launched with the
+    # resolved CONTROL_YAW_RECOVERY_BOOL, whose default is "false".
+    assert (
+        "-p enable_yaw_recovery:=$CONTROL_ENABLE_YAW_RECOVERY" in LAUNCHER
+    )
+    assert (
+        'CONTROL_ENABLE_YAW_RECOVERY="${CONTROL_YAW_RECOVERY_BOOL:-false}"'
+        in LAUNCHER
+    )
+    assert 'CONTROL_YAW_RECOVERY_BOOL="false"' in (
+        (ROOT / "tools/lib/live_defaults.sh").read_text(encoding="utf-8")
+    )
     assert "/mavros/cmd/arming" not in LAUNCHER
     assert "/mavros/set_mode" not in LAUNCHER
     assert "CommandBool" not in LAUNCHER
     assert "SetMode" not in LAUNCHER
+
+
+def test_yaw_recovery_candidate_is_deliberately_gated():
+    # Candidate activation requires the acknowledgement AND the retained
+    # field control-trial path; the recovery bounds are never CLI knobs.
+    assert "--control-yaw-recovery)" in CLI
+    assert "--acknowledge-yaw-recovery-candidate)" in CLI
+    assert "add --acknowledge-yaw-recovery-candidate to proceed" in CLI
+    assert "--control-yaw-recovery requires retained field recording" in CLI
+    assert "--control-yaw-recovery is a closed-loop control-trial candidate" in CLI
+    for knob in ("--recovery-yaw-rate", "--recovery-timeout", "--recovery-budget",
+                 "--recovery-max-duration", "--recovery-max-integrated"):
+        assert knob not in CLI
+        assert knob not in USAGE
+        assert knob not in LAUNCHER

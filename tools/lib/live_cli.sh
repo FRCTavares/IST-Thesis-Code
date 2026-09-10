@@ -510,6 +510,15 @@ while [[ $# -gt 0 ]]; do
             CONTROL_MAVROS_BOOL="true"
             shift
             ;;
+        --control-yaw-recovery)
+            # Issue #74 bounded yaw-only recovery candidate (default OFF).
+            CONTROL_YAW_RECOVERY_BOOL="true"
+            shift
+            ;;
+        --acknowledge-yaw-recovery-candidate)
+            CONTROL_YAW_RECOVERY_ACKNOWLEDGED=1
+            shift
+            ;;
         --control-stale-timeout-s)
             if [[ $# -lt 2 ]]; then
                 echo "[error] --control-stale-timeout-s requires a value"
@@ -946,6 +955,36 @@ if [[ "${CONTROL_MAVROS_BOOL:-false}" == "true" && "${FIELD_MAVROS_RECORD:-0}" -
     echo "[error] --control-mavros is permitted only in retained field mode"
     echo "[hint] use --field-record --control-mavros for aircraft control"
     exit 1
+fi
+
+# Issue #74 bounded yaw-only recovery candidate: deliberate, default-OFF
+# opt-in. It changes only the mapping from perception LOST state to permitted
+# motion authority (bounded yaw, translation still prohibited); it never
+# changes TIM-MARS identity decisions or the normal-following control law,
+# and the recovery bounds stay frozen in control_ref_node.
+if [[ "${CONTROL_YAW_RECOVERY_BOOL:-false}" == "true" ]]; then
+    if [[ "${CONTROL_YAW_RECOVERY_ACKNOWLEDGED:-0}" -ne 1 ]]; then
+        echo "[error] --control-yaw-recovery selects the EXPERIMENTAL Issue #74"
+        echo "        bounded yaw-only recovery candidate: on perception LOST"
+        echo "        with an eligible recent trusted observation the aircraft"
+        echo "        performs bounded yaw-only search (no translation)."
+        echo "[hint] add --acknowledge-yaw-recovery-candidate to proceed"
+        exit 1
+    fi
+    if [[ "${ENABLE_CONTROL:-1}" -ne 1 ]]; then
+        echo "[error] --control-yaw-recovery requires the controller (drop --no-control)"
+        exit 1
+    fi
+    if [[ "${CONTROL_MAVROS_BOOL:-false}" != "true" ]]; then
+        echo "[error] --control-yaw-recovery is a closed-loop control-trial candidate"
+        echo "[hint] use --field-record --control-mavros --control-yaw-recovery"
+        echo "       --acknowledge-yaw-recovery-candidate"
+        exit 1
+    fi
+    if [[ "${FIELD_MAVROS_RECORD:-0}" -ne 1 ]]; then
+        echo "[error] --control-yaw-recovery requires retained field recording (--field-record)"
+        exit 1
+    fi
 fi
 
 # /camera/image_raw has no perception/tracking/TIM/dashboard consumer (see

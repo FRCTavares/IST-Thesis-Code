@@ -58,7 +58,19 @@ def test_live_control_consumes_only_validated_tim_target():
     assert block is not None
     assert "-p target_topic:=/target_memory_mars" in block.group(0)
     assert "-p status_topic:=/target_memory_mars/status" in block.group(0)
-    assert "-p enable_yaw_recovery:=false" in block.group(0)
+    # Yaw recovery is launched from the resolved CONTROL_YAW_RECOVERY_BOOL
+    # (frozen #74 candidate; default OFF -- see live_defaults.sh).
+    assert (
+        "-p enable_yaw_recovery:=$CONTROL_ENABLE_YAW_RECOVERY"
+        in block.group(0)
+    )
+    assert (
+        'CONTROL_ENABLE_YAW_RECOVERY="${CONTROL_YAW_RECOVERY_BOOL:-false}"'
+        in launcher
+    )
+    assert 'CONTROL_YAW_RECOVERY_BOOL="false"' in _read(
+        LAUNCHER.parent / "lib" / "live_defaults.sh"
+    )
     assert "-p target_topic:=/target " not in block.group(0)
 
 
