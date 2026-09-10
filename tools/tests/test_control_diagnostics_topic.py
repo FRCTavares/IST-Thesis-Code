@@ -64,11 +64,16 @@ def test_diagnostics_topic_is_recorded_next_to_cmd_vel_in_the_video_bag():
     ), "diagnostics topic must sit beside /control_ref/cmd_vel in VIDEO_BAG_TOPICS"
 
 
-def test_diagnostics_topic_recorded_exactly_once_not_in_dataset_bag():
-    # The video bag (and its run-metadata inventory, which is built from the
-    # same list) gains the topic; the perception-only dataset bag does not.
+def test_diagnostics_topic_in_video_bag_not_dataset_bag():
+    # The video bag (and its run-metadata inventory, built from the same list)
+    # gains the topic; the perception-only dataset bag does not. The topic name
+    # also appears in the stop-time bag/evidence verification contract.
     source = LAUNCHER.read_text(encoding="utf-8")
-    assert source.count("/control_ref/diagnostics") == 1
+    video = source[source.index("VIDEO_BAG_TOPICS=("):source.index("DATASET_BAG_TOPICS=(")]
+    dataset = source[source.index("DATASET_BAG_TOPICS=("):
+                     source.index("DATASET_BAG_TOPICS=(") + 600]
+    assert video.count("/control_ref/diagnostics") == 1
+    assert "/control_ref/diagnostics" not in dataset
 
 
 # --------------------------------------------------------------------------- #

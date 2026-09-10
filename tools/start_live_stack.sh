@@ -136,24 +136,23 @@ print_startup_success_summary() {
     echo "[ok] target memory: mode=${TARGET_MEMORY_MODE:-mars} mars=${RUN_TARGET_MEMORY_MARS:-0}"
 }
 
-kill_tree() {
-    local pid="$1"
-    local sig="${2:-TERM}"
+# Deliberate shutdown ordering + recorder finalization grace (Issue #50/#74).
+# Provides: kill_tree, stop_app_nodes, finalize_recorders.
+source "$THESIS_ROOT/tools/lib/live_shutdown.sh"
 
-    if [[ -z "${pid:-}" ]]; then
-        return
+# Refuse to record a retained trial into an existing non-empty directory.
+# RUN_ID is deterministic (Issue #118), so a collision means a real prior
+# trial -- never silently overwrite or auto-suffix scientific evidence.
+refuse_existing_bag_dir() {
+    local dir="$1"
+    if [[ -e "$dir" && -n "$(ls -A "$dir" 2>/dev/null || true)" ]]; then
+        echo "[error] refusing to record into an existing non-empty evidence directory:"
+        echo "        $dir"
+        echo "[hint] RUN_ID is deterministic (Issue #118); preserve or move the prior trial,"
+        echo "       or pass an explicit distinct RUN_ID / --tag"
+        return 1
     fi
-
-    if ! kill -0 "$pid" >/dev/null 2>&1; then
-        return
-    fi
-
-    local child
-    for child in $(pgrep -P "$pid" 2>/dev/null || true); do
-        kill_tree "$child" "$sig"
-    done
-
-    kill -s "$sig" "$pid" >/dev/null 2>&1 || true
+    return 0
 }
 
 archive_target_authority_events() {
@@ -195,10 +194,70 @@ archive_run_evidence_logs() {
         --log control.log \
         --log dashboard_bridge.log \
         --log target_memory_mars.log \
-        --optional-file operator_events.jsonl; then
+        --optional-file operator_events.jsonl \
+        --optional-file recorder_finalize_outcome.txt; then
         echo "[ok] retained run-evidence logs archived under $bag_dir/run_logs/"
     else
         echo "[warn] retained run-evidence log archival incomplete: see $bag_dir/run_logs/archive_manifest.json"
+    fi
+    return 0
+}
+
+# Verify the finalized retained bag and the full evidence package. Best-effort
+# for process safety: it never exits or kills anything. It DOES persist a
+# machine-readable status beside the bag and prints a prominent warning when
+# the evidence package is incomplete.
+verify_retained_evidence() {
+    local bag_dir="${VIDEO_BAG_OUT_DIR:-}"
+    if [[ -z "$bag_dir" || ! -d "$bag_dir" ]]; then
+        return 0
+    fi
+
+    local -a req=(
+        /camera/dashboard /detections /tracks /timing
+    )
+    if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
+        req+=(/target_memory_mars /target_memory_mars/status /timing_target)
+    fi
+    local -a nz=()
+    if [[ "${ENABLE_CONTROL:-0}" -eq 1 ]]; then
+        req+=(/control_ref/cmd_vel /control_ref/diagnostics)
+        nz+=(/control_ref/cmd_vel /control_ref/diagnostics)
+    fi
+    if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
+        req+=(/mavros/state /mavros/imu/data_raw)
+        nz+=(/mavros/state /mavros/imu/data_raw)
+    fi
+
+    local -a rt_args=() t
+    for t in "${req[@]}"; do rt_args+=(--require-topic "$t"); done
+    for t in "${nz[@]}"; do rt_args+=(--require-nonzero "$t"); done
+
+    python3 "$THESIS_ROOT/tools/live/verify_retained_bag.py" \
+        --bag-dir "$bag_dir" --expect-storage mcap "${rt_args[@]}" || true
+
+    local -a pkg_args=(--bag-dir "$bag_dir" --run-id "$RUN_ID" --repo-root "$THESIS_ROOT")
+    if [[ "${ENABLE_CONTROL:-0}" -eq 1 && "${CONTROL_MAVROS_BOOL:-false}" == "true" ]]; then
+        pkg_args+=(--control-trial)
+    fi
+    if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
+        pkg_args+=(--field-record)
+    fi
+    if [[ -f "$RUN_DIR/operator_events.jsonl" ]]; then
+        pkg_args+=(--expect-operator-events)
+    fi
+
+    if python3 "$THESIS_ROOT/tools/live/verify_evidence_package.py" "${pkg_args[@]}"; then
+        echo "[ok] retained evidence package verified"
+    else
+        echo ""
+        echo "############################################################"
+        echo "#  EVIDENCE PACKAGE INCOMPLETE"
+        echo "#  $bag_dir/evidence_package_status.json"
+        echo "#  Flight / process safety was NOT affected. Do not treat"
+        echo "#  this trial as scientifically valid until resolved."
+        echo "############################################################"
+        echo ""
     fi
     return 0
 }
@@ -212,24 +271,21 @@ stop_stack() {
 
     log_step "stopping live stack"
 
-    if [[ -f "$PID_FILE" ]]; then
-        tac "$PID_FILE" | while read -r pid name; do
-            if [[ -n "${pid:-}" ]] && kill -0 "$pid" >/dev/null 2>&1; then
-                kill_tree "$pid" INT
-                log_stop "$name (pid=$pid)"
-            fi
-        done
+    # 1) Stop the application publishers/nodes first so the controller emits
+    #    its final safe-zero + shutdown diagnostic while the recorders are
+    #    still running. Recorders are deliberately excluded here.
+    stop_app_nodes
 
-        sleep 1
+    # 2) Brief settle so the last in-flight messages reach the recorders.
+    sleep "${STOP_APP_SETTLE_S:-2}"
 
-        tac "$PID_FILE" | while read -r pid _name; do
-            if [[ -n "${pid:-}" ]] && kill -0 "$pid" >/dev/null 2>&1; then
-                kill_tree "$pid" TERM
-            fi
-        done
-    fi
+    # 3) Deliberate recorder finalization: SIGINT, allow a bounded grace
+    #    for recorder exit after flushing/finalizing, escalate only if needed.
+    #    The post-stop verifier then checks metadata.yaml + MCAP integrity.
+    finalize_recorders
 
-    # Force-clean known host-side processes in case ros2 launch left children behind.
+    # 4) Force-clean any host-side stragglers left by ros2 launch. The
+    #    recorders were handled in step 3 and are not pkill'd here.
     pkill -f "camera_bringup.launch.py" >/dev/null 2>&1 || true
     pkill -f "perception_pipeline_node|perception_camera_node" >/dev/null 2>&1 || true
     pkill -f "perception_camera_node" >/dev/null 2>&1 || true
@@ -239,8 +295,11 @@ stop_stack() {
     pkill -f "target_memory_mars_node" >/dev/null 2>&1 || true
     pkill -f "web_video_server" >/dev/null 2>&1 || true
 
+    # 5) Package + verify the retained evidence. Never changes process
+    #    safety -- only the recorded evidence status.
     archive_target_authority_events
     archive_run_evidence_logs
+    verify_retained_evidence
 
     log_done "live stack stop requested"
 }
@@ -373,6 +432,8 @@ write_video_bag_metadata() {
         echo "bag_out_dir=${VIDEO_BAG_OUT_DIR:-}"
         echo "dataset_bag_out_dir=${DATASET_BAG_OUT_DIR:-}"
         echo "log_run_dir=$RUN_DIR"
+        echo "recorder_finalize_grace_s=${RECORDER_FINALIZE_GRACE_S:-10}"
+        echo "shutdown_order=publishers_then_recorders"
         echo ""
         echo "recorded_topics:"
         for topic in "${topics[@]}"; do
@@ -1197,7 +1258,21 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
             /mavros/local_position/pose
             /mavros/local_position/velocity_local
             /mavros/setpoint_velocity/cmd_vel
+            # FCU echo of the setpoint it is actually acting on (compare vs
+            # /control_ref/cmd_vel) and FCU STATUSTEXT (prearm / EKF /
+            # failsafe / mode-change messages needed to interpret a trial).
+            # Both are standard ArduPilot MAVROS plugins (setpoint_raw,
+            # sys_status) not on the apm denylist; they may legitimately
+            # carry zero messages depending on flight mode, so the bag
+            # verifier requires them present but never non-zero.
+            /mavros/setpoint_raw/target_local
+            /mavros/statustext/recv
         )
+    fi
+
+    if ! refuse_existing_bag_dir "$VIDEO_BAG_OUT_DIR"; then
+        stop_stack
+        exit 1
     fi
 
     echo "[ok] video bag recording enabled"
@@ -1262,6 +1337,11 @@ if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
     fi
 
     DATASET_BAG_OUT_DIR="$DATASET_BAG_OUT_ROOT/$DATASET_BAG_NAME"
+
+    if ! refuse_existing_bag_dir "$DATASET_BAG_OUT_DIR"; then
+        stop_stack
+        exit 1
+    fi
 
     DATASET_BAG_TOPICS=(
         /camera/image_raw
@@ -1339,6 +1419,10 @@ print_startup_success_summary
 
 if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
     RAW_IMAGE_BAG_OUT_DIR="${VIDEO_BAG_OUT_DIR}__image_raw"
+    if ! refuse_existing_bag_dir "$RAW_IMAGE_BAG_OUT_DIR"; then
+        stop_stack
+        exit 1
+    fi
     echo "[raw] starting synchronized raw image recorder: $RAW_IMAGE_BAG_OUT_DIR"
 
     if [[ -f "$VIDEO_BAG_OUT_DIR/flight_metadata.txt" ]]; then

@@ -26,9 +26,12 @@ evidence package for a trial. Everything below lives inside it.
 | TIM-MARS node log | `run_logs/target_memory_mars.log` | same | yes |
 | operator event log | `run_logs/operator_events.jsonl` | same (optional-file; `absent` recorded if never written) | yes for retained trials |
 | archival manifest | `run_logs/archive_manifest.json` | `archive_run_evidence.py` | yes |
+| recorder finalization outcome | `run_logs/recorder_finalize_outcome.txt` (`graceful`/`escalated`) | `finalize_recorders` on stop | yes |
+| bag integrity report | `bag_integrity.json` | `tools/live/verify_retained_bag.py` on stop | yes |
+| evidence-package status | `evidence_package_status.json` | `tools/live/verify_evidence_package.py` on stop | yes |
 | paired raw-image bag | `<RUN_ID>__video__…__image_raw/` (sibling dir) | `--record-raw` | recommended |
-| physical-person annotation | added post-flight (`tim_physical_target_bbox_v2`) | manual, from the retained imagery | yes (post-flight) |
-| native Pixhawk `.bin` dataflash | added manually beside the package | **manual**, not yet automated | yes for the candidate trial |
+| physical-person annotation | added post-flight (`tim_physical_target_bbox_v2`) | manual, from the retained imagery | pending post-flight |
+| native Pixhawk `.bin` dataflash | `pixhawk_dataflash/*.bin` + `dataflash_manifest.json` | `tools/live/archive_pixhawk_dataflash.py --source-bin <file>` (retrieval verification pending) | pending post-flight (control field trials) |
 
 `run_metadata.json.git.commit` is the exact Git SHA; `run_metadata.json.hashes`
 carries the SHA-256 of the detector HEF, the MARS ReID model and
@@ -51,10 +54,10 @@ arguments — which would miss every node default):
   live query succeeded. A failed query is **not** replaced with source
   defaults; the validator (`tools/live/validate_live_run_metadata.py`) fails
   the run;
-- `expected_parameters.control_ref_node.enable_yaw_recovery` is asserted to be
-  `false` for the current baseline. `docs/control/p074_state_aware_control_contract.md`
-  and the live launcher keep bounded yaw recovery **OFF**; this task does not
-  add a way to turn it on.
+- `expected_parameters.control_ref_node.enable_yaw_recovery` is asserted
+  against the launcher intent (`false` baseline / `true` candidate). A
+  mismatch fails `tools/live/validate_live_run_metadata.py`. Baseline is the
+  default; the candidate needs the gated `--control-yaw-recovery` opt-in.
 
 ## Operator event log
 
@@ -68,16 +71,67 @@ bag timestamps — the live stack uses no simulated time) and, on the Pi,
 `ts_monotonic_ns`; `trial_start` also records a `clock_pair`
 (`monotonic_ns` / `system_ns`) sample for cross-clock alignment.
 
+## Controlled stop, finalization and verification
+
+`stop_stack` runs a deliberate sequence (Issue #50/#74, `tools/lib/live_shutdown.sh`):
+
+1. `stop_app_nodes` — application publishers/nodes are SIGINT'd first (the
+   controller emits its final safe-zero + shutdown diagnostic) while the
+   recorders keep running; `STOP_APP_GRACE_S` (3 s) then SIGTERM stragglers;
+2. `STOP_APP_SETTLE_S` (2 s) settle so the last messages reach the recorders;
+3. `finalize_recorders` — SIGINT to each recorder and allow up to
+   `RECORDER_FINALIZE_GRACE_S` (10 s, env-overridable) for process exit after
+   flushing/finalizing; escalate to SIGTERM then SIGKILL only if still alive.
+   Final cleanup is restricted to recorder processes/descendants tracked for
+   this run, never host-wide process matching; writes
+   `run_logs/recorder_finalize_outcome.txt`;
+4. archive `run_logs/` + `target_authority_events.jsonl`;
+5. `verify_retained_bag.py` → `bag_integrity.json` (finalized `metadata.yaml`
+   only — never reopens the bag while the recorder holds it);
+6. `verify_evidence_package.py` → `evidence_package_status.json`, printing
+   **`EVIDENCE PACKAGE INCOMPLETE`** if any required artifact is missing,
+   a required topic is empty, provenance is invalid, the archive manifest is
+   incomplete, or recorder finalization escalated.
+
+Process/flight safety always runs (safe-zero, controlled shutdown, cleanup);
+evidence failure is reported and persisted, never turned into unsafe process
+behaviour. A failed bag is **kept**, not deleted.
+
+`evidence_package_status.json.status` is one of `complete_runtime_evidence`,
+`incomplete_runtime_evidence`, `pending_postflight_annotation`,
+`pending_pixhawk_dataflash`. The Pi-side runtime files alone never make a
+package scientifically final.
+
+## Native Pixhawk DataFlash
+
+`tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir <bag>
+--source-bin <file.bin>` copies an **explicitly supplied** `.bin` into
+`<bag>/pixhawk_dataflash/`, SHA-256s both sides, refuses to overwrite, and
+writes `dataflash_manifest.json` with `hardware_verification: pending`. It
+never talks to an FCU and never "selects the latest log" — the operator
+retrieves the file with the real field tooling and identifies the exact trial
+file. **Real-hardware retrieval verification is pending** (no Pixhawk available).
+
+## MAVROS setpoint / statustext evidence
+
+The retained video bag adds `/mavros/setpoint_raw/target_local` (the FCU's
+echo of the setpoint it is acting on — compare against `/control_ref/cmd_vel`)
+and `/mavros/statustext/recv` (FCU prearm / EKF / failsafe / mode-change
+messages needed to interpret a trial). Both are standard ArduPilot MAVROS
+plugins not on the `apm` denylist; either may legitimately carry zero
+messages, so the bag verifier requires them **present, not non-zero**.
+
 ## Interpretation cautions
 
 - TIM `LOCKED` is **not** physical ground truth. Whether the followed geometry
   is the correct physical person requires the post-flight physical-v2
   annotation.
 - A zero command is not proof of a stationary hover, and command publication
-  is not proof of Pixhawk execution — cross-check `/mavros/local_position/*`
-  and the native `.bin`.
-- The current baseline keeps bounded yaw recovery **OFF**. A candidate trial
-  that turns it on is a future, separately-gated change.
+  is not proof of Pixhawk execution — cross-check `/mavros/local_position/*`,
+  `/mavros/setpoint_raw/target_local` and the native `.bin`.
+- The baseline keeps bounded yaw recovery **OFF**; the candidate is the gated
+  `--control-yaw-recovery` opt-in. Only the perception-state -> motion-authority
+  mapping changes, not TIM-MARS identity or the normal-following control law.
 
 ## Controller diagnostics
 
@@ -104,11 +158,8 @@ operator `trial_start` event (`--condition candidate --recovery-enabled` or
 `--condition baseline`). The candidate changes only the perception-state ->
 motion-authority mapping, not TIM-MARS identity or the normal-following law.
 
-## Still manual / separate (not in this task)
+## Still separate / pending
 
-- native Pixhawk `.bin` dataflash retrieval;
-- adding `/mavros/setpoint_raw/target_local` and `/mavros/statustext` to the
-  recorded topic set;
-- recorder shutdown-order / grace-period changes;
-- the final #50/#74 metrics analyser and the physical-v2 flight-annotation
-  tooling.
+- **real-hardware** Pixhawk DataFlash retrieval verification (no Pixhawk yet);
+- the final #50/#74 scientific metrics analyser;
+- the physical-v2 flight-annotation tooling.
