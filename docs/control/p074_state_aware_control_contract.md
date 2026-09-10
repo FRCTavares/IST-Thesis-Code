@@ -137,8 +137,10 @@ LOST state, or confirmation state.
 ## Bounded yaw-only recovery
 
 Active recovery is feature-gated and defaults OFF. The live-stack launcher
-explicitly passes `enable_yaw_recovery=false`; deterministic implementation
-does not by itself promote recovery for aircraft use.
+resolves `enable_yaw_recovery` from `CONTROL_YAW_RECOVERY_BOOL`, whose default
+is `false`; deterministic implementation does not by itself promote recovery
+for aircraft use. The candidate is selected only by the deliberately gated
+`--control-yaw-recovery` opt-in (see "Launcher activation" below).
 
 The implemented development bounds are:
 
@@ -232,6 +234,46 @@ command path. This topic **supplements** `control.log`, which is retained
 unchanged. It is instrumentation only and never acquires motion authority.
 `/control_ref/diagnostics` is recorded in the retained flight bag whenever the
 controller runs (see `docs/flight/retained_evidence_package.md`).
+
+## Launcher activation (baseline vs candidate)
+
+The physical closed-loop comparison the recovery decision depends on is:
+
+**Baseline** — the default. Trusted target: normal following. Perception
+`LOST`: zero translation and zero yaw (hover). No new flags.
+
+**Candidate** — `--control-yaw-recovery`. Trusted target: normal following
+(unchanged). Perception `LOST` **with** an eligible recent trusted observation
+(same selection generation, within the frozen age cap, non-zero search
+direction, not already consumed): zero translation and bounded yaw-only
+recovery. Perception `LOST` **without** eligible trusted evidence: hover.
+
+> The candidate changes the mapping from perception state to permitted motion
+> authority (**perception-conditioned motion authority**). It does not change
+> TIM-MARS identity decisions or the normal-following control law, and the
+> recovery bounds above stay frozen in `control_ref_node`.
+
+Activation is deliberate and default-OFF:
+
+- `--control-yaw-recovery` sets `enable_yaw_recovery:=true`; without it the
+  launcher keeps `enable_yaw_recovery:=false`.
+- It fails before launch unless combined with
+  `--acknowledge-yaw-recovery-candidate`, the controller (no `--no-control`),
+  `--control-mavros`, and `--field-record`.
+- No recovery bound is exposed as a CLI knob; the frozen node/config values
+  are used unchanged.
+- Retained-run provenance asserts the running node's `enable_yaw_recovery`
+  matches the launcher intent (`baseline` -> `false`, `candidate` -> `true`)
+  or the provenance validator fails. `flight_metadata.txt` records
+  `control_yaw_recovery_enabled` and `trial_condition`.
+- The operator records the matching `trial_start` event
+  (`--condition candidate --recovery-enabled` or `--condition baseline`); the
+  launcher prints the ready-to-copy command with the exact `RUN_ID`.
+
+Full field invocation:
+
+    ./tools/start_live_stack.sh --field-record --control-mavros \
+      --control-yaw-recovery --acknowledge-yaw-recovery-candidate --tag SCENARIO
 
 ## Promotion boundary
 
