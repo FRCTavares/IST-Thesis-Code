@@ -172,6 +172,37 @@ archive_target_authority_events() {
     done
 }
 
+# Retain the controller / dashboard / TIM-MARS runtime logs and the operator
+# event log next to the canonical retained bag, keyed by the exact RUN_ID
+# (never the mutable `latest` symlink). Best-effort: an incomplete archival
+# degrades this run's evidence package but must not fail the stop path.
+archive_run_evidence_logs() {
+    local bag_dir="${VIDEO_BAG_OUT_DIR:-}"
+    if [[ -z "$bag_dir" ]]; then
+        bag_dir="${DATASET_BAG_OUT_DIR:-}"
+    fi
+    if [[ -z "$bag_dir" || ! -d "$bag_dir" ]]; then
+        return 0
+    fi
+    if [[ ! -d "${RUN_DIR:-}" ]]; then
+        echo "[warn] run directory missing; cannot archive run-evidence logs: ${RUN_DIR:-<unset>}"
+        return 0
+    fi
+    if python3 "$THESIS_ROOT/tools/live/archive_run_evidence.py" \
+        --run-dir "$RUN_DIR" \
+        --run-id "$RUN_ID" \
+        --bag-dir "$bag_dir" \
+        --log control.log \
+        --log dashboard_bridge.log \
+        --log target_memory_mars.log \
+        --optional-file operator_events.jsonl; then
+        echo "[ok] retained run-evidence logs archived under $bag_dir/run_logs/"
+    else
+        echo "[warn] retained run-evidence log archival incomplete: see $bag_dir/run_logs/archive_manifest.json"
+    fi
+    return 0
+}
+
 STOP_DONE=0
 stop_stack() {
     if [[ "$STOP_DONE" -eq 1 ]]; then
@@ -209,6 +240,7 @@ stop_stack() {
     pkill -f "web_video_server" >/dev/null 2>&1 || true
 
     archive_target_authority_events
+    archive_run_evidence_logs
 
     log_done "live stack stop requested"
 }
@@ -396,6 +428,19 @@ write_live_run_provenance() {
         switch_log_args=(--switch-history-log "$TARGET_AUTHORITY_EVENT_LOG")
     fi
 
+    # Freeze the running control_ref_node's resolved parameters (gains,
+    # limits, slew, freshness timeout, and the frozen #74 recovery bounds)
+    # into provenance by querying the live node -- never by mirroring launch
+    # arguments, which would miss every node default. The current baseline
+    # keeps recovery OFF; assert that explicitly.
+    local -a control_param_args=()
+    if [[ "${ENABLE_CONTROL:-0}" -eq 1 ]]; then
+        control_param_args=(
+            --resolved-node-params control_ref_node
+            --expect-param "control_ref_node:enable_yaw_recovery=false"
+        )
+    fi
+
     if ! python3 "$THESIS_ROOT/tools/live/write_live_run_metadata.py" \
         --output "$output_path" \
         --run-id "$RUN_ID" \
@@ -408,6 +453,7 @@ write_live_run_provenance() {
         "${recorded_topic_args[@]}" \
         "${hash_args[@]}" \
         "${param_args[@]}" \
+        "${control_param_args[@]}" \
         "${switch_log_args[@]}"; then
         echo "[warn] failed to write live-run provenance record: $output_path"
     fi
@@ -1446,6 +1492,12 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
 fi
 
 log_info "commands: status | ids | target <id> | clear-target | clear | stop"
+
+if [[ "${ENABLE_ROSBAG:-0}" -eq 1 || "${ENABLE_DATASET_BAG:-0}" -eq 1 ]]; then
+    echo "[ok] run id: $RUN_ID"
+    echo "[ok] operator events: RUN_ID=$RUN_ID python3 tools/live/operator_event.py <event> ..."
+    echo "     retained logs + operator events are archived under the bag's run_logs/ on stop"
+fi
 
 # Runtime control loop keeps operators in one shell for quick status/stop commands.
 

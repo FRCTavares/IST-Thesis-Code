@@ -50,6 +50,38 @@ The software command contract is therefore substantially narrower, but the
 retained aircraft command remains blocked until the real Pixhawk/network,
 ground-sign and pilot-takeover gates in `docs/flight/README.md` pass.
 
+### 9 September evidence-retention plumbing
+
+Three evidence-plumbing changes were made so a retained trial can be
+reconstructed from its bag directory alone (no controller behaviour, TIM-MARS,
+detector, tracker, threshold, model, config or evaluation change):
+
+1. **Run logs retained with the bag.** `tools/start_live_stack.sh` now archives
+   `control.log`, `dashboard_bridge.log`, `target_memory_mars.log` and the
+   operator event log into `<bag>/run_logs/` on stop, keyed by the exact
+   `RUN_ID` (never the mutable `latest` symlink), via
+   `tools/live/archive_run_evidence.py`. It refuses to overwrite an existing
+   retained destination, never deletes the source logs, and records a missing
+   required log explicitly in `run_logs/archive_manifest.json` rather than
+   creating an empty placeholder.
+2. **Controller parameters frozen into provenance.** `run_metadata.json` now
+   records the running `control_ref_node`'s resolved parameters (gains,
+   limits, slew, freshness timeout, and the frozen #74 recovery bounds),
+   queried live via `ros2 param dump` — never mirrored from launch arguments.
+   `enable_yaw_recovery` is asserted to be `false`. A failed query is recorded
+   as `query_ok=false` and fails `tools/live/validate_live_run_metadata.py`;
+   it is never replaced with source-code defaults.
+3. **Operator event log.** `tools/live/operator_event.py` appends structured
+   JSONL events (`trial_start`, `trial_end`, `target_selected`,
+   `operator_takeover`, `abort` with class + reason, `unexpected_behavior`,
+   `trial_verdict`) tied to `RUN_ID`, with UTC and monotonic timestamps for
+   ROS synchronisation.
+
+The retained package is specified in
+`docs/flight/retained_evidence_package.md`. Bounded yaw recovery remains
+forced OFF; no candidate-recovery activation path was added. Native Pixhawk
+`.bin` dataflash retrieval remains manual.
+
 ### Combined raw recording (diagnostic)
 
 `./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO`
