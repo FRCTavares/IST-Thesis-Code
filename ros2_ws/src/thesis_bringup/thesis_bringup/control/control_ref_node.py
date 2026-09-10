@@ -33,7 +33,9 @@ from thesis_bringup.freshness import (
     DEFAULT_FUTURE_TOLERANCE_S,
     DEFAULT_MAX_OUTPUT_AGE_S,
 )
-from thesis_msgs.msg import TargetState
+from thesis_msgs.msg import ControlDiagnostics, TargetState
+
+NAN = float('nan')
 
 
 def clamp(x: float, lo: float, hi: float) -> float:
@@ -125,6 +127,13 @@ class ControlRefNode(Node):
             '/target_memory_mars/status',
         )
         self.declare_parameter('cmd_topic', '/control_ref/cmd_vel')
+        # Issue #74 controller-decision diagnostics. Evidence/instrumentation
+        # only: publishing this topic never alters the command path.
+        self.declare_parameter(
+            'diagnostics_topic',
+            '/control_ref/diagnostics',
+        )
+        self.declare_parameter('enable_diagnostics', True)
         self.declare_parameter('rate_hz', 30.0)
         self.declare_parameter(
             'stale_timeout_s',
@@ -193,6 +202,12 @@ class ControlRefNode(Node):
         target_topic = str(self.get_parameter('target_topic').value)
         status_topic = str(self.get_parameter('status_topic').value)
         cmd_topic = str(self.get_parameter('cmd_topic').value)
+        diagnostics_topic = str(
+            self.get_parameter('diagnostics_topic').value
+        )
+        self.enable_diagnostics = bool(
+            self.get_parameter('enable_diagnostics').value
+        )
         rate_hz = float(self.get_parameter('rate_hz').value)
         self.enable_mavros = bool(self.get_parameter('enable_mavros').value)
         self.mavros_topic = str(self.get_parameter('mavros_topic').value)
@@ -310,6 +325,16 @@ class ControlRefNode(Node):
             ),
         )
 
+        # Controller-decision diagnostics context. Every command emission
+        # sets these from the exact decision that produced it; the diagnostic
+        # message is built from them plus existing runtime helpers, never by
+        # recomputing policy logic.
+        self._diag_mode = 'INIT'
+        self._diag_reason = 'startup'
+        self._diag_target_valid = False
+        self._diag_invalid_reason = ''
+        self._diag_error_count = 0
+
         self.prev_vx = 0.0
         self.prev_vy = 0.0
         self.prev_yaw_z = 0.0
@@ -352,6 +377,19 @@ class ControlRefNode(Node):
         self.pub_cmd = self.create_publisher(TwistStamped, cmd_topic, 10)
         self.pub_mavros = self.create_publisher(TwistStamped, self.mavros_topic, 10)
 
+        # Reliable, keep-last so no mode/recovery transition sample is dropped
+        # for offline reconstruction; one second of depth is enough headroom.
+        diag_qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=30,
+            reliability=ReliabilityPolicy.RELIABLE,
+        )
+        self.pub_diag = self.create_publisher(
+            ControlDiagnostics,
+            diagnostics_topic,
+            diag_qos,
+        )
+
         self.timer = self.create_timer(1.0 / rate_hz, self.on_timer)
 
         self.get_logger().info(f'Listening on {target_topic}')
@@ -367,6 +405,149 @@ class ControlRefNode(Node):
             f'{"enabled" if self.enable_mavros else "disabled"} '
             f'on {self.mavros_topic}'
         )
+        self.get_logger().info(
+            f'Controller diagnostics '
+            f'{"enabled" if self.enable_diagnostics else "disabled"} '
+            f'on {diagnostics_topic}'
+        )
+
+    def _set_decision(
+        self,
+        mode: str,
+        reason: str,
+        *,
+        target_valid: Optional[bool] = None,
+        invalid_reason: Optional[str] = None,
+    ) -> None:
+        """Record the decision that is about to produce a command.
+
+        The diagnostic message is built from this plus existing runtime state;
+        it never re-derives mode, recovery eligibility, yaw direction, elapsed
+        recovery time or trusted-history validity in a separate branch.
+        """
+        self._diag_mode = str(mode)
+        self._diag_reason = str(reason)
+        if target_valid is not None:
+            self._diag_target_valid = bool(target_valid)
+        if invalid_reason is not None:
+            self._diag_invalid_reason = str(invalid_reason)
+
+    def _build_diagnostics(
+        self,
+        *,
+        now_ns: int,
+        stamp,
+        vx: float,
+        vy: float,
+        yaw_z: float,
+    ) -> ControlDiagnostics:
+        msg = ControlDiagnostics()
+        msg.header.stamp = stamp
+        msg.header.frame_id = self.cmd_frame_id
+
+        msg.mode = self._diag_mode
+        msg.reason = self._diag_reason
+
+        status = self.last_status
+        msg.tim_state = (
+            status.state if status is not None else 'NO_STATUS'
+        )
+        msg.tim_control_mode = (
+            status.control_mode if status is not None else 'NO_STATUS'
+        )
+        msg.selection_generation = int(
+            status.selection_generation if status is not None else -1
+        )
+        msg.selection_session_id = (
+            status.selection_session_id if status is not None else ''
+        )
+        msg.status_fresh = bool(self.status_is_fresh(now_ns))
+        msg.target_fresh = bool(self.is_fresh())
+        msg.target_valid = bool(self._diag_target_valid)
+        msg.target_invalid_reason = str(self._diag_invalid_reason)
+        msg.target_id = int(
+            self.last_target.id if self.last_target is not None else 0
+        )
+
+        msg.recovery_enabled = bool(self.enable_yaw_recovery)
+        msg.recovery_yaw_rate = float(self.recovery_yaw_rate)
+        msg.recovery_max_duration_s = float(self.recovery_max_duration_s)
+        msg.recovery_max_integrated_yaw_rad = float(
+            self.recovery_max_integrated_yaw_rad
+        )
+        msg.recovery_last_trusted_max_age_s = float(
+            self.recovery_last_trusted_max_age_s
+        )
+
+        msg.recovery_active = bool(self.recovery_active)
+        msg.recovery_direction = self.recovery_direction_label()
+        msg.recovery_elapsed_s = float(self.recovery_elapsed_s(now_ns))
+        msg.recovery_integrated_yaw_rad = float(
+            self.recovery_integrated_yaw_rad
+        )
+        msg.recovery_budget_remaining_rad = float(
+            max(
+                0.0,
+                self.recovery_max_integrated_yaw_rad
+                - self.recovery_integrated_yaw_rad,
+            )
+        )
+
+        age_s = self.last_trusted_age_s(now_ns)
+        msg.last_trusted_valid = bool(self.last_trusted_stamp_ns is not None)
+        msg.last_trusted_age_s = float(age_s) if age_s is not None else NAN
+        error = self.last_trusted_horizontal_error
+        msg.last_trusted_horizontal_error = (
+            float(error) if error is not None else NAN
+        )
+        msg.last_trusted_generation = int(
+            self.last_trusted_generation
+            if self.last_trusted_generation is not None
+            else -1
+        )
+        msg.recovery_history_consumed = bool(self.recovery_history_consumed())
+
+        msg.command_vx = float(vx)
+        msg.command_vy = float(vy)
+        msg.command_yaw_z = float(yaw_z)
+        msg.command_saturated_yaw = bool(
+            self.max_yaw_z > 0.0
+            and abs(yaw_z) >= 0.99 * self.max_yaw_z
+        )
+        return msg
+
+    def _emit_diagnostics(
+        self,
+        stamp,
+        vx: float,
+        vy: float,
+        yaw_z: float,
+    ) -> None:
+        """Publish one diagnostic sample for the command just published.
+
+        Fully isolated from the command path: any failure here is swallowed
+        so it can never change what the controller commands.
+        """
+        if not self.enable_diagnostics:
+            return
+        try:
+            now_ns = (
+                int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
+            )
+            msg = self._build_diagnostics(
+                now_ns=now_ns,
+                stamp=stamp,
+                vx=vx,
+                vy=vy,
+                yaw_z=yaw_z,
+            )
+            self.pub_diag.publish(msg)
+        except Exception as exc:
+            self._diag_error_count += 1
+            if self._diag_error_count <= 5:
+                self.get_logger().warn(
+                    f'control diagnostics publish failed: {exc}'
+                )
 
     def reset_recovery_state(
         self,
@@ -459,6 +640,7 @@ class ControlRefNode(Node):
                 decision.reason,
                 self.last_status,
             )
+            self._set_decision('RECOVERY_YAW_ONLY', decision.reason)
 
             # First recovery tick is deliberately hard-zero.
             self.maybe_log_recovery_diagnostics(
@@ -507,6 +689,7 @@ class ControlRefNode(Node):
                 'recovery_yaw_budget_exhausted',
                 self.last_status,
             )
+            self._set_decision('HOVER', 'recovery_yaw_budget_exhausted')
             self.publish_zero()
             return
 
@@ -537,6 +720,7 @@ class ControlRefNode(Node):
             decision.reason,
             self.last_status,
         )
+        self._set_decision('RECOVERY_YAW_ONLY', decision.reason)
 
         self.publish_pair(
             now.to_msg(),
@@ -704,6 +888,12 @@ class ControlRefNode(Node):
             self.get_logger().warn(
                 f'invalid TIM authority status: {exc}'
             )
+            self._set_decision(
+                'HOVER',
+                'tim_status_parse_error',
+                target_valid=False,
+                invalid_reason='',
+            )
             self.publish_zero()
             return
 
@@ -731,6 +921,12 @@ class ControlRefNode(Node):
                 f'current_generation={previous_generation} '
                 f'incoming_session={status.selection_session_id} '
                 f'incoming_generation={status.selection_generation}'
+            )
+            self._set_decision(
+                'HOVER',
+                f'rejected_authority_epoch:{epoch.reason}',
+                target_valid=False,
+                invalid_reason='',
             )
             self.publish_zero()
             return
@@ -763,6 +959,16 @@ class ControlRefNode(Node):
             self.clear_trusted_history()
             self.last_target = None
             self.valid_prev_tick = False
+            self._set_decision(
+                'HOVER',
+                (
+                    'authority_epoch_reset'
+                    if epoch.reset_authority
+                    else 'authority_status_only'
+                ),
+                target_valid=False,
+                invalid_reason='',
+            )
             self.publish_zero()
 
         if session_changed or generation_changed:
@@ -912,6 +1118,9 @@ class ControlRefNode(Node):
                     self.mavros_frame_id,
                 )
             )
+        # Diagnostic sample for this exact command emission. Emitted after the
+        # command is published and fully guarded, so it cannot affect control.
+        self._emit_diagnostics(stamp, vx, vy, yaw_z)
 
     def maybe_warn_invalid_target(self, reason: str, t: Optional[TargetState]) -> None:
         self.invalid_count += 1
@@ -999,6 +1208,12 @@ class ControlRefNode(Node):
             self.valid_prev_tick = False
             self.update_mode('NO_TARGET')
             self.maybe_warn_invalid_target('no_target_msg', None)
+            self._set_decision(
+                'NO_TARGET',
+                'no_target_msg',
+                target_valid=False,
+                invalid_reason='',
+            )
             self.publish_zero()
             return
 
@@ -1011,6 +1226,13 @@ class ControlRefNode(Node):
             and status.target_track_id is not None
             and int(t.id) == status.target_track_id
         )
+
+        # Target-side context for the diagnostic; the same values are fed to
+        # the policy below. Not a recomputation -- it is threaded through.
+        self._diag_target_valid = bool(
+            invalid_reason is None and status_target_matches
+        )
+        self._diag_invalid_reason = invalid_reason or ''
 
         decision = resolve_state_aware_policy(
             StateAwarePolicyInput(
@@ -1077,6 +1299,12 @@ class ControlRefNode(Node):
 
         if decision.mode == 'RECOVERY_YAW_ONLY':
             self.valid_prev_tick = False
+            self._set_decision(
+                'RECOVERY_YAW_ONLY',
+                decision.reason,
+                target_valid=False,
+                invalid_reason='',
+            )
             self.handle_recovery_yaw(
                 decision=decision,
                 now=now,
@@ -1111,6 +1339,7 @@ class ControlRefNode(Node):
                 decision.reason,
                 status,
             )
+            self._set_decision(decision.mode, decision.reason)
             if invalid_reason is not None:
                 self.maybe_warn_invalid_target(
                     invalid_reason,
@@ -1137,6 +1366,7 @@ class ControlRefNode(Node):
             self._ambiguity_prev = True
             if self.enable_ambiguity_hold:
                 self.update_mode('AMBIGUITY_HOLD')
+                self._set_decision('AMBIGUITY_HOLD', 'ambiguity_hold')
                 self.publish_zero()
                 return
         elif self._ambiguity_prev:
@@ -1154,6 +1384,12 @@ class ControlRefNode(Node):
             decision.mode,
             decision.reason,
             status,
+        )
+        self._set_decision(
+            decision.mode,
+            decision.reason,
+            target_valid=True,
+            invalid_reason='',
         )
 
         (
@@ -1232,6 +1468,7 @@ def main(args=None) -> None:
     finally:
         try:
             if rclpy.ok():
+                node._set_decision('HOVER', 'node_shutdown')
                 node.publish_zero()
         except Exception:
             pass
