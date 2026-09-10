@@ -438,6 +438,7 @@ write_live_run_provenance() {
         control_param_args=(
             --resolved-node-params control_ref_node
             --expect-param "control_ref_node:enable_yaw_recovery=false"
+            --expect-param "control_ref_node:enable_diagnostics=true"
         )
     fi
 
@@ -1161,6 +1162,7 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         /timing_tracker
         /timing_target
         /control_ref/cmd_vel
+        /control_ref/diagnostics
     )
 
     if [[ "$RECORD_MAVROS" -eq 1 ]]; then

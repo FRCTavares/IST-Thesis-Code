@@ -33,6 +33,7 @@ Only `mars` and `off` are supported target-memory operator modes.
 - Retained flight-evidence package: `docs/flight/retained_evidence_package.md`
 - Operator event recorder: `tools/live/operator_event.py`
 - Run-evidence log archiver: `tools/live/archive_run_evidence.py`
+- Controller diagnostics summary: `tools/analysis/summarize_control_diagnostics.py`
 - Held-out capture helper: `tools/experiments/record_p027_heldout_sequence.sh`
 - Tools overview: `tools/README.md`
 
