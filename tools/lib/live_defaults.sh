@@ -97,6 +97,15 @@ RECORDING_MIN_FREE_GIB="${RECORDING_MIN_FREE_GIB:-20}"
 RAW_RECORDING_MIN_FREE_GIB="${RAW_RECORDING_MIN_FREE_GIB:-40}"
 RECORD_MAVROS=0
 
+# Issue #50/#74 field hardening: controlled shutdown ordering.
+# Application publishers/nodes are stopped first (the controller emits its
+# final safe-zero + shutdown diagnostic), then a settle window, then the
+# recorder(s) get SIGINT with a real finalization grace before any SIGTERM
+# escalation. Env-overridable so unit tests can shorten the grace.
+STOP_APP_GRACE_S="${STOP_APP_GRACE_S:-3}"
+STOP_APP_SETTLE_S="${STOP_APP_SETTLE_S:-2}"
+RECORDER_FINALIZE_GRACE_S="${RECORDER_FINALIZE_GRACE_S:-10}"
+
 apply_startup_profile() {
     local profile="$1"
     case "$profile" in

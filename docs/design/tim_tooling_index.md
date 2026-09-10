@@ -30,9 +30,13 @@ Only `mars` and `off` are supported target-memory operator modes.
 - Authoritative dashboard frontend: `FRCTavares/IST-Thesis-UI`
 - ROS workspace build: `tools/thesis_build.sh`
 - Flight-day operator sheet: `docs/flight/README.md`
+- Flight-day runbook (copy-paste): `docs/flight/field_day_runbook.md`
 - Retained flight-evidence package: `docs/flight/retained_evidence_package.md`
 - Operator event recorder: `tools/live/operator_event.py`
 - Run-evidence log archiver: `tools/live/archive_run_evidence.py`
+- Retained-bag integrity check: `tools/live/verify_retained_bag.py`
+- Evidence-package completeness check: `tools/live/verify_evidence_package.py`
+- Pixhawk DataFlash archiver: `tools/live/archive_pixhawk_dataflash.py`
 - Controller diagnostics summary: `tools/analysis/summarize_control_diagnostics.py`
 - Held-out capture helper: `tools/experiments/record_p027_heldout_sequence.sh`
 - Tools overview: `tools/README.md`

@@ -1,6 +1,6 @@
 # tools/lib
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-09-10
 
 ## Purpose
 
@@ -15,6 +15,7 @@ the entrypoints so those stay focused on orchestration.
 | `live_usage.sh` | Sourced fragment | Basic and advanced usage text. |
 | `live_cli.sh` | Sourced fragment | Parses and validates `start_live_stack.sh` arguments. |
 | `live_camera.sh` | Sourced fragment | Camera preflight, cleanup and startup readiness. |
+| `live_shutdown.sh` | Sourced fragment | Deliberate stop ordering (Issue #50/#74): `stop_app_nodes` (publishers first), `finalize_recorders` (recorder SIGINT + `RECORDER_FINALIZE_GRACE_S` grace before SIGTERM/SIGKILL, no orphan `ros2 bag record`), and `kill_tree`. |
 | `live_run_id.sh` | Shared initializer | Preserves and exports a caller-supplied run ID, or generates one timestamp when unset; rejects empty/unsafe IDs before creating paths. Used by the live launcher and #27/#64 capture helpers. |
 | `live_storage.sh` | Sourced fragment | Free-space gate before any recording directory is created. |
 | `run_in_owned_process_group.py` | Shared supervisor | Runs a child in its own process group so a run's shutdown only tears down processes that run started; used by the live stack and several experiment/live runners. |
