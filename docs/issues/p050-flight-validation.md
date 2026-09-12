@@ -106,6 +106,48 @@ event (`--condition candidate --recovery-enabled` / `--condition baseline`);
 the launcher prints the exact command at startup. No arming/mode-change
 authority is added; `docs/flight/README.md` physical gates still apply.
 
+### 10 September retained-finalization hardening
+
+Home-only engineering hardening so a future retained trial survives recorder
+truncation, shutdown-order mistakes and incomplete packaging:
+
+- **Shutdown order** (`tools/lib/live_shutdown.sh`): application nodes stop
+  first (controller emits its final safe-zero + shutdown diagnostic while the
+  recorders keep running), then a `STOP_APP_SETTLE_S` window, then
+  `finalize_recorders` sends SIGINT to the recorder(s) and waits up to
+  `RECORDER_FINALIZE_GRACE_S` (10 s, was ~1 s) for process exit after
+  flushing/finalizing before any SIGTERM/SIGKILL escalation. Final cleanup is
+  restricted to recorder processes/descendants tracked for that run rather
+  than host-wide process matching; finalized MCAP + `metadata.yaml` are checked
+  immediately afterward by the bag verifier. Recorder finalization is
+  deliberate, not an accidental consequence of reversing a PID array. The
+  controller shutdown-zero is unchanged.
+- **Bag integrity** (`tools/live/verify_retained_bag.py` → `bag_integrity.json`):
+  from the finalized `metadata.yaml` only — directory, metadata parse,
+  non-empty storage file, storage format, required topics present, and
+  non-zero counts where scientifically required
+  (`/control_ref/cmd_vel`, `/control_ref/diagnostics`, and `/mavros/state` +
+  `/mavros/imu/data_raw` under `--field-record`).
+- **Evidence package** (`tools/live/verify_evidence_package.py` →
+  `evidence_package_status.json`): required vs missing vs optional-absent vs
+  pending post-flight; runs the provenance validator; status
+  `complete_runtime_evidence` / `incomplete_runtime_evidence` /
+  `pending_postflight_annotation` / `pending_pixhawk_dataflash`. Prints
+  `EVIDENCE PACKAGE INCOMPLETE`; process/flight safety is never affected and a
+  failed bag is kept.
+- **MAVROS evidence**: added `/mavros/setpoint_raw/target_local` (FCU setpoint
+  echo vs `/control_ref/cmd_vel`) and `/mavros/statustext/recv` (FCU
+  prearm/EKF/failsafe/mode messages) — both standard ArduPilot plugins, not on
+  the `apm` denylist; required present, not non-zero.
+- **Overwrite safety**: `refuse_existing_bag_dir` fails before recording into
+  an existing non-empty directory (RUN_ID stays deterministic, Issue #118).
+- **Pixhawk DataFlash**: `tools/live/archive_pixhawk_dataflash.py` archives an
+  explicitly-supplied `.bin` (SHA-256, refuse overwrite, preserve source,
+  manifest). It never talks to an FCU and never selects "latest".
+  **Real-hardware retrieval verification is pending** — no Pixhawk available.
+
+Full copy-paste procedure: `docs/flight/field_day_runbook.md`.
+
 ### Combined raw recording (diagnostic)
 
 `./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO`
