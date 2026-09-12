@@ -92,7 +92,7 @@ Switch back to normal validated runtime.
 - [ ] stale/UNCERTAIN/REACQUIRED/LOST fails safe
 - [ ] command signs checked on ground
 - [ ] pilot takeover / abort agreed
-- [ ] retained evidence package per `docs/flight/retained_evidence_package.md`; dashboard bind + token per `docs/live/dashboard_trust_boundary.md`
+- [ ] copy-paste commands in `docs/flight/field_day_runbook.md`; evidence package per `docs/flight/retained_evidence_package.md`
 
 `--record-mavros` is a recording option, not an approved flight command.
 
@@ -141,9 +141,9 @@ Diagnostic only:
 ## 8. End of day
 
 - [ ] H01/H02/H03/#64 paths recorded
-- [ ] flight bags + `run_logs/` + `operator_events.jsonl` finalized and backed up
+- [ ] each flight bag: `evidence_package_status.json` reviewed; `run_logs/` + `.bin` archived; backed up
 - [ ] H01-H03 outcomes still unopened
-- [ ] no evidence deleted
-- [ ] Pixhawk `.bin` dataflash logs downloaded (manual), then Pixhawk disconnected
+- [ ] no evidence deleted (a failed bag is kept, not removed)
+- [ ] Pixhawk `.bin` retrieved + `tools/live/archive_pixhawk_dataflash.py` (real retrieval verification pending), then Pixhawk disconnected
 
     sudo tools/host/set_pi_network_mode.sh unattended
