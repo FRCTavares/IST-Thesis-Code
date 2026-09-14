@@ -36,6 +36,20 @@ def test_shutdown_library_is_sourced_and_wired():
     assert 'tac "$PID_FILE"' not in stop
 
 
+
+def test_background_processes_reset_sigint_sigquit_before_exec():
+    start = LAUNCHER.index("start_ros_bg() {")
+    end = LAUNCHER.index("\n}\n", start)
+    helper = LAUNCHER[start:end]
+
+    # Bash non-interactive async jobs otherwise inherit SIGINT/SIGQUIT ignored.
+    # The tracked PID must be the exec'd process with normal signal handling.
+    assert "trap - INT QUIT" in helper
+    assert 'exec "$@"' in helper
+    assert helper.index("trap - INT QUIT") < helper.index('exec "$@"')
+    assert 'local pid=$!' in helper
+    assert '"$@" >"$RUN_DIR/${name}.log" 2>&1 &' not in helper
+
 def test_recorder_finalize_grace_default_is_generous():
     assert 'RECORDER_FINALIZE_GRACE_S="${RECORDER_FINALIZE_GRACE_S:-10}"' in DEFAULTS
     # 1-second escalation is no longer the behaviour
@@ -158,6 +172,7 @@ def test_stop_time_required_topics_follow_enabled_subsystems():
     assert "req+=(/control_ref/cmd_vel /control_ref/diagnostics)" in LAUNCHER
 
 
+
 def test_control_log_archival_tracks_controller_enablement():
     from pathlib import Path
 
@@ -172,3 +187,20 @@ def test_control_log_archival_tracks_controller_enablement():
     assert 'if [[ "${ENABLE_CONTROL:-0}" -eq 1 ]]; then' in block
     assert "archive_args+=(--log control.log)" in block
     assert "archive_args+=(--optional-file control.log)" in block
+
+
+def test_retained_recorder_logs_and_transport_report_are_wired():
+    archive = LAUNCHER[
+        LAUNCHER.index("archive_run_evidence_logs()"):
+        LAUNCHER.index("verify_retained_evidence()")
+    ]
+    verify = LAUNCHER[
+        LAUNCHER.index("verify_retained_evidence()"):
+        LAUNCHER.index("STOP_DONE=0")
+    ]
+    assert "--log rosbag.log" in archive
+    assert "--log raw_image_bag.log" in archive
+    assert "verify_recorder_transport.py" in verify
+    assert "--raw-bag-dir" in verify
+    assert "--expect-raw-bag" in verify
+    assert "--require-topic /camera/image_raw --require-nonzero /camera/image_raw" in verify

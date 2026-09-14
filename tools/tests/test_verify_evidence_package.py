@@ -35,6 +35,28 @@ def _load():
 vep = _load()
 
 
+def _transport_module():
+    spec = importlib.util.spec_from_file_location(
+        "verify_recorder_transport",
+        REPO_ROOT / "tools/live/verify_recorder_transport.py",
+    )
+    mod = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(mod)
+    return mod
+
+
+vrt = _transport_module()
+
+
+def _recorder_log(count: int) -> str:
+    return (
+        "[INFO] [1789397885.458867283] [rosbag2_recorder]: Recording stopped\n"
+        f"[WARN] [1789397885.458942136] [rosbag2_recorder]: "
+        f"Number of messages lost on the transport layer: {count}\n"
+    )
+
+
 def _passing_run_metadata(dest: Path, tmp_path: Path) -> None:
     dump = tmp_path / "control_dump.yaml"
     dump.write_text(CONTROL_DUMP, encoding="utf-8")
@@ -80,6 +102,7 @@ def _build_package(tmp_path: Path, *, control: bool = True,
     (logs / "control.log").write_text("controller log\n")
     (logs / "dashboard_bridge.log").write_text("dashboard log\n")
     (logs / "target_memory_mars.log").write_text("tim log\n")
+    (logs / "rosbag.log").write_text(_recorder_log(0))
     (logs / "recorder_finalize_outcome.txt").write_text(recorder_outcome + "\n")
     if with_operator:
         (logs / "operator_events.jsonl").write_text('{"event":"trial_start"}\n')
@@ -98,6 +121,9 @@ def _build_package(tmp_path: Path, *, control: bool = True,
     else:
         (bag / "run_metadata.json").write_text('{"schema_version": 1}\n')
 
+    (bag / vrt.REPORT_NAME).write_text(
+        json.dumps(vrt.verify_transport(bag)), encoding="utf-8"
+    )
     return bag
 
 
@@ -323,3 +349,65 @@ def test_missing_operator_events_optional_when_not_expected(tmp_path):
     )
     assert report["optional"]["operator_events_jsonl"]["present"] is False
     assert report["runtime_status"] == "complete_runtime_evidence"
+
+
+def _refresh_transport(bag: Path, raw: Path | None = None) -> None:
+    (bag / vrt.REPORT_NAME).write_text(
+        json.dumps(vrt.verify_transport(bag, raw)), encoding="utf-8"
+    )
+
+
+def test_nonzero_main_transport_loss_makes_package_incomplete(tmp_path):
+    bag = _build_package(tmp_path)
+    (bag / "run_logs/rosbag.log").write_text(_recorder_log(2186))
+    _refresh_transport(bag)
+    status, report = vep.verify_package(
+        bag_dir=bag, run_id="evp_test", control_trial=True, field_record=True,
+        expect_operator_events=True, repo_root=REPO_ROOT,
+    )
+    assert report["bag_integrity_passed"] is True
+    assert status == "incomplete_runtime_evidence"
+    assert any("2186 transport losses" in problem for problem in report["problems"])
+
+
+def test_unavailable_transport_loss_is_not_zero(tmp_path):
+    bag = _build_package(tmp_path)
+    (bag / "run_logs/rosbag.log").write_text(
+        "[INFO] [1.0] [rosbag2_recorder]: Recording stopped\n"
+    )
+    _refresh_transport(bag)
+    status, report = vep.verify_package(
+        bag_dir=bag, run_id="evp_test", control_trial=True, field_record=True,
+        expect_operator_events=True, repo_root=REPO_ROOT,
+    )
+    assert status == "incomplete_runtime_evidence"
+    assert report["recorder_transport"]["recorders"]["main"]["status"] == "unavailable"
+
+
+def test_paired_raw_transport_loss_and_integrity_are_required(tmp_path):
+    bag = _build_package(tmp_path)
+    raw = bag.parent / f"{bag.name}__image_raw"
+    logs = raw / "run_logs"
+    logs.mkdir(parents=True)
+    (logs / "raw_image_bag.log").write_text(_recorder_log(3073))
+    (logs / "archive_manifest.json").write_text(
+        json.dumps({"schema_version": 1, "complete": True})
+    )
+    (raw / "bag_integrity.json").write_text(
+        json.dumps({"schema_version": 1, "passed": True})
+    )
+    _refresh_transport(bag, raw)
+    status, report = vep.verify_package(
+        bag_dir=bag, run_id="evp_test", control_trial=False, field_record=True,
+        expect_operator_events=True, repo_root=REPO_ROOT, expect_raw_bag=True,
+    )
+    assert status == "incomplete_runtime_evidence"
+    assert report["raw_bag_integrity_passed"] is True
+    assert any("raw_image recorder reported 3073" in p for p in report["problems"])
+    (raw / "bag_integrity.json").unlink()
+    status, report = vep.verify_package(
+        bag_dir=bag, run_id="evp_test", control_trial=False, field_record=True,
+        expect_operator_events=True, repo_root=REPO_ROOT, expect_raw_bag=True,
+    )
+    assert status == "incomplete_runtime_evidence"
+    assert any("raw bag integrity" in p for p in report["problems"])

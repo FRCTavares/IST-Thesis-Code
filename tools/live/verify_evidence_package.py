@@ -156,6 +156,7 @@ def verify_package(
     field_record: bool,
     expect_operator_events: bool,
     repo_root: Path,
+    expect_raw_bag: bool = False,
 ) -> tuple[str, dict[str, Any]]:
     report: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -197,6 +198,8 @@ def verify_package(
     require("target_authority_events_jsonl", bag_dir / "target_authority_events.jsonl")
     require("bag_integrity_json", bag_dir / "bag_integrity.json")
     require("archive_manifest_json", logs / "archive_manifest.json")
+    require("rosbag_log", logs / "rosbag.log")
+    require("recorder_transport_status_json", bag_dir / "recorder_transport_status.json")
 
     manifest = _json(logs / "archive_manifest.json")
     manifest_required_logs: dict[str, Any] = {}
@@ -217,6 +220,27 @@ def verify_package(
 
     require("dashboard_bridge_log", logs / "dashboard_bridge.log")
     require("target_memory_mars_log", logs / "target_memory_mars.log")
+
+    raw_bag = bag_dir.parent / f"{bag_dir.name}__image_raw"
+    if expect_raw_bag:
+        report["required"]["raw_image_bag"] = {
+            "present": raw_bag.is_dir(), "path": str(raw_bag)
+        }
+        if not raw_bag.is_dir():
+            problems.append("required raw-image bag missing")
+        raw_logs = raw_bag / "run_logs"
+        require("raw_image_bag_log", raw_logs / "raw_image_bag.log")
+        require("raw_archive_manifest_json", raw_logs / "archive_manifest.json")
+        raw_manifest = _json(raw_logs / "archive_manifest.json")
+        if raw_manifest is None or raw_manifest.get("complete") is not True:
+            problems.append("raw recorder log archival manifest missing or incomplete")
+        require("raw_bag_integrity_json", raw_bag / "bag_integrity.json")
+        raw_integrity = _json(raw_bag / "bag_integrity.json")
+        report["raw_bag_integrity_passed"] = (
+            raw_integrity.get("passed") if isinstance(raw_integrity, dict) else None
+        )
+        if report["raw_bag_integrity_passed"] is not True:
+            problems.append("raw bag integrity check missing or did not pass")
 
     mcap = sorted(bag_dir.glob("*.mcap"))
     report["required"]["mcap_storage_file"] = {
@@ -249,6 +273,49 @@ def verify_package(
         report["diagnostics_message_count"] = int(
             counts.get("/control_ref/diagnostics", 0)
         )
+
+    # --- transport quality is independent of structural MCAP integrity ---
+    transport = _json(bag_dir / "recorder_transport_status.json")
+    report["recorder_transport"] = transport
+    expected_logs = {"main": logs / "rosbag.log"}
+    if expect_raw_bag:
+        expected_logs["raw_image"] = raw_bag / "run_logs" / "raw_image_bag.log"
+    if not isinstance(transport, dict):
+        problems.append("recorder transport report missing or unreadable")
+    else:
+        recorders = transport.get("recorders")
+        if not isinstance(recorders, dict):
+            problems.append("recorder transport report has no recorder observations")
+        else:
+            for name, path in expected_logs.items():
+                observation = recorders.get(name)
+                if not isinstance(observation, dict):
+                    problems.append(f"{name} recorder transport observation missing")
+                    continue
+                if observation.get("source_log") != str(path):
+                    problems.append(f"{name} recorder transport source log mismatch")
+                status = observation.get("status")
+                count = observation.get("reported_transport_loss_count")
+                if (
+                    status == "observed_zero"
+                    and observation.get("parse_ok") is True
+                    and count == 0
+                    and not isinstance(count, bool)
+                ):
+                    continue
+                if (
+                    status == "observed_nonzero"
+                    and observation.get("parse_ok") is True
+                    and isinstance(count, int)
+                    and not isinstance(count, bool)
+                    and count > 0
+                ):
+                    problems.append(f"{name} recorder reported {count} transport losses")
+                else:
+                    problems.append(f"{name} recorder transport observation unavailable or invalid")
+            if not expect_raw_bag and "raw_image" in recorders:
+                problems.append("unexpected raw-image recorder observation")
+        report["recorder_transport_quality_status"] = transport.get("quality_status")
 
     # --- archive manifest completeness ---
     if manifest is not None:
@@ -334,6 +401,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--control-trial", action="store_true")
     parser.add_argument("--field-record", action="store_true")
+    parser.add_argument("--expect-raw-bag", action="store_true")
     parser.add_argument("--expect-operator-events", action="store_true")
     parser.add_argument("--repo-root", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=None)
@@ -353,6 +421,7 @@ def main(argv: list[str] | None = None) -> int:
         field_record=args.field_record,
         expect_operator_events=args.expect_operator_events,
         repo_root=repo_root,
+        expect_raw_bag=args.expect_raw_bag,
     )
 
     out = args.out or (bag_dir / REPORT_NAME)

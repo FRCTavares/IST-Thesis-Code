@@ -84,6 +84,23 @@ def test_field_path_fails_closed_on_missing_raw_imu():
     assert "/mavros/imu/data_raw missing in retained field mode" in LAUNCHER
     assert 'if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then' in LAUNCHER
 
+    imu_gate = LAUNCHER[
+        LAUNCHER.index(
+            'mavros_log info "checking /mavros/imu/data_raw, timeout 10s"'
+        ):
+        LAUNCHER.index('mavros_log ok "MAVROS telemetry setup finished"')
+    ]
+
+    # Keep one DDS subscriber alive for the full readiness interval. Repeated
+    # 2-second subscribers produced a real-hardware false negative despite
+    # MAVROS already receiving RAW_IMU from the FCU.
+    assert (
+        "timeout 10 ros2 topic echo /mavros/imu/data_raw --once"
+        in imu_gate
+    )
+    assert "timeout 2 ros2 topic echo /mavros/imu/data_raw --once" not in imu_gate
+    assert "still waiting for raw IMU sample" not in imu_gate
+
 
 def test_aircraft_authority_boundaries_remain_fail_closed():
     # Yaw recovery defaults OFF: the controller is launched with the

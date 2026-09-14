@@ -81,7 +81,15 @@ log_hint() { log_verbose_tag hint "$@"; }
 start_ros_bg() {
     local name="$1"
     shift
-    "$@" >"$RUN_DIR/${name}.log" 2>&1 &
+
+    # In a non-interactive shell, asynchronous commands inherit SIGINT/SIGQUIT
+    # as ignored. Reset those dispositions in the child before exec so the
+    # tracked process can honor the shutdown contract's graceful SIGINT.
+    (
+        trap - INT QUIT
+        exec "$@"
+    ) >"$RUN_DIR/${name}.log" 2>&1 &
+
     local pid=$!
     PROC_PIDS["$name"]="$pid"
     echo "$pid $name" >>"$PID_FILE"
@@ -478,6 +486,7 @@ archive_run_evidence_logs() {
         --bag-dir "$bag_dir"
         --log dashboard_bridge.log
         --log target_memory_mars.log
+        --log rosbag.log
     )
 
     if [[ "${ENABLE_CONTROL:-0}" -eq 1 ]]; then
@@ -496,6 +505,14 @@ archive_run_evidence_logs() {
         echo "[ok] retained run-evidence logs archived under $bag_dir/run_logs/"
     else
         echo "[warn] retained run-evidence log archival incomplete: see $bag_dir/run_logs/archive_manifest.json"
+    fi
+
+    if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 && -d "${RAW_IMAGE_BAG_OUT_DIR:-}" ]]; then
+        if ! python3 "$THESIS_ROOT/tools/live/archive_run_evidence.py" \
+            --run-dir "$RUN_DIR" --run-id "$RUN_ID" \
+            --bag-dir "$RAW_IMAGE_BAG_OUT_DIR" --log raw_image_bag.log; then
+            echo "[warn] raw recorder log archival incomplete: $RAW_IMAGE_BAG_OUT_DIR/run_logs/archive_manifest.json"
+        fi
     fi
     return 0
 }
@@ -533,12 +550,28 @@ verify_retained_evidence() {
     python3 "$THESIS_ROOT/tools/live/verify_retained_bag.py" \
         --bag-dir "$bag_dir" --expect-storage mcap "${rt_args[@]}" || true
 
+    if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 && -d "${RAW_IMAGE_BAG_OUT_DIR:-}" ]]; then
+        python3 "$THESIS_ROOT/tools/live/verify_retained_bag.py" \
+            --bag-dir "$RAW_IMAGE_BAG_OUT_DIR" --expect-storage mcap \
+            --require-topic /camera/image_raw --require-nonzero /camera/image_raw || true
+    fi
+
+    local -a transport_args=(--bag-dir "$bag_dir")
+    if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
+        transport_args+=(--raw-bag-dir "$RAW_IMAGE_BAG_OUT_DIR")
+    fi
+    python3 "$THESIS_ROOT/tools/live/verify_recorder_transport.py" \
+        "${transport_args[@]}" || true
+
     local -a pkg_args=(--bag-dir "$bag_dir" --run-id "$RUN_ID" --repo-root "$THESIS_ROOT")
     if [[ "${ENABLE_CONTROL:-0}" -eq 1 && "${CONTROL_MAVROS_BOOL:-false}" == "true" ]]; then
         pkg_args+=(--control-trial)
     fi
     if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
         pkg_args+=(--field-record)
+    fi
+    if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
+        pkg_args+=(--expect-raw-bag)
     fi
     if [[ -f "$RUN_DIR/operator_events.jsonl" ]]; then
         pkg_args+=(--expect-operator-events)
@@ -1431,18 +1464,12 @@ if [[ "$RECORD_MAVROS" -eq 1 ]]; then
     mavros_log info "checking /mavros/imu/data_raw, timeout 10s"
     MAVROS_IMU_READY=0
 
-    for i in {1..20}; do
-        if timeout 2 ros2 topic echo /mavros/imu/data_raw --once 2>/dev/null | grep -q "header:"; then
-            MAVROS_IMU_READY=1
-            break
-        fi
-
-        if (( i % 5 == 0 )); then
-            mavros_log info "still waiting for raw IMU sample, attempt ${i}/20"
-        fi
-
-        sleep 0.5
-    done
+    # Use one subscriber for the full readiness window. Repeated short-lived
+    # subscribers can spend most or all of their lifetime in DDS discovery and
+    # falsely report a missing stream even while MAVROS is receiving RAW_IMU.
+    if timeout 10 ros2 topic echo /mavros/imu/data_raw --once >/dev/null 2>&1; then
+        MAVROS_IMU_READY=1
+    fi
 
     if [[ "$MAVROS_IMU_READY" -ne 1 ]]; then
         if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
@@ -1564,21 +1591,29 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         echo "     $topic"
     done
 
-    export RMW_FASTRTPS_USE_SHM=0
 
     QOS_OVERRIDE_FILE="/etc/thesis/live_record_qos_overrides.yaml"
+
+    # Give the retained telemetry/dashboard recorder more buffering while the
+    # high-bandwidth raw recorder is active. Keep the normal MCAP storage
+    # profile here so the canonical retained bag preserves its usual format.
+    VIDEO_ROSBAG_EXTRA_ARGS=(
+        --max-cache-size 268435456
+    )
 
     if [[ -f "$QOS_OVERRIDE_FILE" ]]; then
         start_ros_bg rosbag ros2 bag record \
             --storage mcap \
+            "${VIDEO_ROSBAG_EXTRA_ARGS[@]}" \
             --qos-profile-overrides-path "$QOS_OVERRIDE_FILE" \
             -o "$VIDEO_BAG_OUT_DIR" \
-            "${VIDEO_BAG_TOPICS[@]}"
+            --topics "${VIDEO_BAG_TOPICS[@]}"
     else
         start_ros_bg rosbag ros2 bag record \
             --storage mcap \
+            "${VIDEO_ROSBAG_EXTRA_ARGS[@]}" \
             -o "$VIDEO_BAG_OUT_DIR" \
-            "${VIDEO_BAG_TOPICS[@]}"
+            --topics "${VIDEO_BAG_TOPICS[@]}"
     fi
 
     sleep 1
@@ -1597,7 +1632,13 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     if [[ -d "$VIDEO_BAG_OUT_DIR" ]]; then
         write_video_bag_metadata "$VIDEO_BAG_OUT_DIR/flight_metadata.txt" "${VIDEO_BAG_TOPICS[@]}"
         echo "[ok] video bag metadata: $VIDEO_BAG_OUT_DIR/flight_metadata.txt"
-        write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json" "${VIDEO_BAG_TOPICS[@]}"
+
+        # Full live provenance performs many ROS graph/parameter queries.
+        # When a paired raw recorder is requested, start that recorder first
+        # so evidence capture is not delayed by provenance introspection.
+        if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -ne 1 ]]; then
+            write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json" "${VIDEO_BAG_TOPICS[@]}"
+        fi
     else
         echo "[warn] video bag output directory not visible yet; metadata was not written"
     fi
@@ -1650,7 +1691,6 @@ if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
         echo "     $topic"
     done
 
-    export RMW_FASTRTPS_USE_SHM=0
 
     start_ros_bg dataset_rosbag ros2 bag record \
         --storage mcap \
@@ -1711,17 +1751,25 @@ if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
         echo "raw_image_bag_out_dir=$RAW_IMAGE_BAG_OUT_DIR" >> "$VIDEO_BAG_OUT_DIR/flight_metadata.txt"
     fi
 
-    sleep 3
+    # The raw image stream is the dominant recording bandwidth. Reuse the
+    # fast-write + 512 MiB buffering contract that already sustained the
+    # source-only camera/detection rehearsal near the expected camera rate.
+    RAW_IMAGE_ROSBAG_EXTRA_ARGS=(
+        --storage-preset-profile fastwrite
+        --max-cache-size 536870912
+    )
 
     if [[ -f "$QOS_OVERRIDE_FILE" ]]; then
         start_ros_bg raw_image_bag ros2 bag record \
             --storage mcap \
+            "${RAW_IMAGE_ROSBAG_EXTRA_ARGS[@]}" \
             --qos-profile-overrides-path "$QOS_OVERRIDE_FILE" \
             -o "$RAW_IMAGE_BAG_OUT_DIR" \
             --topics /camera/image_raw
     else
         start_ros_bg raw_image_bag ros2 bag record \
             --storage mcap \
+            "${RAW_IMAGE_ROSBAG_EXTRA_ARGS[@]}" \
             -o "$RAW_IMAGE_BAG_OUT_DIR" \
             --topics /camera/image_raw
     fi
@@ -1742,7 +1790,15 @@ if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
 
     if [[ -d "$RAW_IMAGE_BAG_OUT_DIR" ]]; then
         write_video_bag_metadata "$RAW_IMAGE_BAG_OUT_DIR/raw_image_metadata.txt" /camera/image_raw
+
+        # Both recorders are now live. It is safe to perform the relatively
+        # expensive ROS graph/parameter provenance introspection without
+        # delaying raw evidence capture.
+        if [[ -d "$VIDEO_BAG_OUT_DIR" ]]; then
+            write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json" "${VIDEO_BAG_TOPICS[@]}"
+        fi
         write_live_run_provenance raw_image "$RAW_IMAGE_BAG_OUT_DIR/run_metadata.json" /camera/image_raw
+
         {
             echo "paired_video_bag=$VIDEO_BAG_OUT_DIR"
             echo "raw_image_expected_rate_hz=$CAMERA_FPS"

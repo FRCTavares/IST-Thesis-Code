@@ -24,12 +24,15 @@ evidence package for a trial. Everything below lives inside it.
 | controller runtime log | `run_logs/control.log` | `tools/live/archive_run_evidence.py` on stop | required when the controller runs; explicitly optional/absent for `--no-control` |
 | dashboard bridge log | `run_logs/dashboard_bridge.log` | same | yes |
 | TIM-MARS node log | `run_logs/target_memory_mars.log` | same | yes |
+| main recorder log | `run_logs/rosbag.log` | same; exact rosbag stdout/stderr | yes |
+| recorder transport report | `recorder_transport_status.json` | `tools/live/verify_recorder_transport.py` after log archival | yes |
 | operator event log | `run_logs/operator_events.jsonl` | same (optional-file; `absent` recorded if never written) | yes for retained trials |
 | archival manifest | `run_logs/archive_manifest.json` | `archive_run_evidence.py` | yes |
 | recorder finalization outcome | `run_logs/recorder_finalize_outcome.txt` (`graceful`/`escalated`) | `finalize_recorders` on stop | yes |
 | bag integrity report | `bag_integrity.json` | `tools/live/verify_retained_bag.py` on stop | yes |
 | evidence-package status | `evidence_package_status.json` | `tools/live/verify_evidence_package.py` on stop | yes |
-| paired raw-image bag | `<RUN_ID>__video__…__image_raw/` (sibling dir) | `--record-raw` | recommended |
+| paired raw-image bag | `<RUN_ID>__video__…__image_raw/` (sibling dir) | `--record-raw` | required when requested |
+| paired raw bag integrity and recorder log | sibling `bag_integrity.json`, `run_logs/raw_image_bag.log`, `run_logs/archive_manifest.json` | finalized raw-bag verification and explicit log archival | required when `--record-raw` |
 | physical-person annotation | added post-flight (`tim_physical_target_bbox_v2`) | manual, from the retained imagery | pending post-flight |
 | native Pixhawk `.bin` dataflash | `pixhawk_dataflash/*.bin` + `dataflash_manifest.json` | `tools/live/archive_pixhawk_dataflash.py --source-bin <file>` (retrieval verification pending) | pending post-flight (retained field trials) |
 
@@ -88,10 +91,13 @@ bag timestamps — the live stack uses no simulated time) and, on the Pi,
 4. archive `run_logs/` + `target_authority_events.jsonl`;
 5. `verify_retained_bag.py` → `bag_integrity.json` (finalized `metadata.yaml`
    only — never reopens the bag while the recorder holds it);
-6. `verify_evidence_package.py` → `evidence_package_status.json`, printing
+6. `verify_recorder_transport.py` reads the archived main and, when requested,
+   paired raw recorder logs and writes `recorder_transport_status.json`;
+7. `verify_evidence_package.py` → `evidence_package_status.json`, printing
    **`EVIDENCE PACKAGE INCOMPLETE`** if any required artifact is missing,
    a required topic is empty, provenance is invalid, the archive manifest is
-   incomplete, or recorder finalization escalated.
+   incomplete, recorder finalization escalated, or recorder transport quality
+   is nonzero or unavailable.
 
 Process/flight safety always runs (safe-zero, controlled shutdown, cleanup);
 evidence failure is reported and persisted, never turned into unsafe process
@@ -101,6 +107,37 @@ behaviour. A failed bag is **kept**, not deleted.
 `incomplete_runtime_evidence`, `pending_postflight_annotation`,
 `pending_pixhawk_dataflash`. The Pi-side runtime files alone never make a
 package scientifically final.
+
+## Recorder transport quality
+
+`bag_integrity.json.passed` checks finalized storage structure and topic
+presence; it does **not** establish loss-free acquisition. The canonical
+package also retains the exact main `rosbag.log`, and the paired raw bag
+retains `raw_image_bag.log` when `--record-raw` is used. Each log has its own
+archive manifest. No missing log is fabricated.
+
+`recorder_transport_status.json.recorders.main` records the observed rosbag
+transport-loss count as a **multi-topic aggregate**. It cannot be attributed
+to `/camera/dashboard`, `/detections`, or any other single topic.
+`recorders.raw_image` holds the separate single-topic raw-image recorder
+observation when requested. Each includes recorder identity, scope, source
+path, log presence, parser success, exact reported count (or `null`), and
+`status`: `observed_zero`, `observed_nonzero`, or `unavailable`. Only an
+explicit, well-formed final rosbag loss line following `Recording stopped`
+supports a numeric observation. An absent, partial, malformed, or ambiguous
+line is `unavailable`, never zero. The Pi-side report deliberately does not
+infer a raw loss fraction: it preserves the count without assuming that every
+lost transport sample maps one-to-one to a frame in finalized storage.
+
+The top-level `quality_status` summarizes the recorders, with nonzero taking
+precedence over unavailable if both occur; inspect both recorder entries.
+Any nonzero or unavailable observation makes
+`evidence_package_status.json.runtime_status` equal
+`incomplete_runtime_evidence` until the acquisition quality can be resolved.
+No scientifically acceptable loss percentage is invented. Keep the files for
+diagnosis; do not treat an incomplete dynamic-UAV trial as scientifically
+valid. Older packages without archived recorder logs remain explicitly
+unavailable if rechecked.
 
 ## Native Pixhawk DataFlash
 

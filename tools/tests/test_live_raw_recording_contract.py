@@ -54,6 +54,70 @@ def test_raw_mode_has_field_storage_gate_and_operator_documentation():
     assert "separate synchronized /camera/image_raw" in usage
 
 
+
+def test_field_raw_recorder_starts_before_expensive_provenance():
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    main_metadata = launcher.index(
+        'write_video_bag_metadata "$VIDEO_BAG_OUT_DIR/flight_metadata.txt"'
+    )
+    raw_start = launcher.index(
+        "start_ros_bg raw_image_bag ros2 bag record"
+    )
+    deferred_main_provenance = launcher.index(
+        'write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json"',
+        raw_start,
+    )
+    raw_provenance = launcher.index(
+        'write_live_run_provenance raw_image "$RAW_IMAGE_BAG_OUT_DIR/run_metadata.json"',
+        raw_start,
+    )
+
+    # In paired raw mode, the early provenance call is guarded out.
+    window = launcher[main_metadata:raw_start]
+    assert '[[ "${FIELD_RAW_IMAGE_RECORD:-0}" -ne 1 ]]' in window
+
+    # Both expensive provenance writes occur only after raw recording starts.
+    assert raw_start < deferred_main_provenance < raw_provenance
+
+
+def test_field_raw_recorder_has_high_throughput_storage_contract():
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    start = launcher.index(
+        'if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then'
+    )
+    end = launcher.index(
+        'if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then',
+        start,
+    )
+    block = launcher[start:end]
+
+    assert "RAW_IMAGE_ROSBAG_EXTRA_ARGS=(" in block
+    assert "--storage-preset-profile fastwrite" in block
+    assert "--max-cache-size 536870912" in block
+    assert '"${RAW_IMAGE_ROSBAG_EXTRA_ARGS[@]}"' in block
+    assert "sleep 3" not in block
+
+
+def test_main_retained_recorder_has_expanded_cache():
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    assert "VIDEO_ROSBAG_EXTRA_ARGS=(" in launcher
+    assert "--max-cache-size 268435456" in launcher
+    assert '"${VIDEO_ROSBAG_EXTRA_ARGS[@]}"' in launcher
+
+
+def test_launcher_does_not_claim_unsupported_fastrtps_shm_override():
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    # The installed Jazzy rmw_fastrtps implementation does not expose the
+    # historical RMW_FASTRTPS_USE_SHM switch. Do not use it as an evidence
+    # transport control or claim that it enables/disables FastDDS SHM.
+    assert "LIVE_RECORD_FASTDDS_SHM" not in launcher
+    assert "RMW_FASTRTPS_USE_SHM" not in launcher
+
+
 def test_source_record_no_mavros_records_issue64_evidence_without_mavros():
     cli = CLI.read_text(encoding="utf-8")
 
