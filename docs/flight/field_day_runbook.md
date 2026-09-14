@@ -3,12 +3,7 @@
 The compact go/no-go checklist is `docs/flight/README.md`; this is the
 step-by-step command reference so nothing depends on memory. Aircraft
 operation is still gated by every check in that sheet. **The baseline command
-never enables candidate recovery.** The 14 September main-bag-only ground
-benchmarks still reported transport losses, so these flight commands remain
-blocked until a representative MAVROS-inclusive ground run retains usable
-visual reference with `observed_zero` transport loss. Do not add paired raw:
-full-stack tests lost 52–68% of inferred source frames. The source-only
-H01/H02/H03 procedure is unchanged.
+never enables candidate recovery.** The 14 September no-MAVROS structured-bag plus separate-MJPEG development runs reached observed_zero transport loss at near-30 Hz structured cadence with roughly 10 fps visual evidence. The exact MAVROS-inclusive profile still requires a representative safe field-ground run with a visible target before aircraft evidence is accepted. Do not add paired raw: full-stack tests lost 52–68% of inferred source frames. The source-only H01/H02/H03 procedure is unchanged.
 
 ## Two mappings from perception state to permitted motion (perception-conditioned motion authority)
 
@@ -139,17 +134,18 @@ For a nominally completed trial, record `trial_end` **before** stopping the stac
 
 Then, at the `live-stack>` prompt type `stop` (or Ctrl-C once). The stack then, in order:
 
-1. stops the application nodes first — the controller emits its final
+1. finalizes the separate visual recorder while its local HTTP source remains available;
+2. stops the application nodes first — the controller emits its final
    safe-zero and shutdown diagnostic while the recorders are still running;
-2. waits `STOP_APP_SETTLE_S` (2 s) so the last messages are recorded;
-3. sends SIGINT to the recorder(s) and waits up to `RECORDER_FINALIZE_GRACE_S`
+3. waits `STOP_APP_SETTLE_S` (2 s) so the last messages are recorded;
+4. sends SIGINT to the structured recorder and waits up to `RECORDER_FINALIZE_GRACE_S`
    (10 s) for recorder exit after flushing/finalizing, escalating to SIGTERM
    then SIGKILL only if needed; the subsequent integrity check requires
    finalized `metadata.yaml` and non-empty MCAP storage (and it says whether finalization was graceful);
-4. archives `run_logs/` (`control.log`, `dashboard_bridge.log`,
+5. archives `run_logs/` (`control.log`, `dashboard_bridge.log`,
    `target_memory_mars.log`, `operator_events.jsonl`, `recorder_finalize_outcome.txt`,
    `archive_manifest.json`) and `target_authority_events.jsonl` next to the bag;
-5. writes `bag_integrity.json` and `evidence_package_status.json` beside the bag
+6. writes `bag_integrity.json` plus `visual_evidence_status.json`, `recorder_transport_status.json` and `evidence_package_status.json` beside the bag
    and prints **`EVIDENCE PACKAGE INCOMPLETE`** if anything is missing.
 
 ```bash
@@ -167,7 +163,7 @@ BAG="bags/live_camera/${RUN_ID}__video__flight1_baseline"
 python3 tools/live/archive_pixhawk_dataflash.py \
   --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin /path/to/<this-trial>.bin
 python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" \
-  --control-trial --field-record --expect-operator-events
+  --control-trial --field-record --expect-visual --expect-operator-events
 ```
 
 > **Real-hardware DataFlash retrieval is verification-pending** — there is no

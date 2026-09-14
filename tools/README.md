@@ -61,5 +61,5 @@ compatibility interface.
 - Flight-day operator sheet: `docs/flight/README.md`
 - Frozen Issue #27 detail: `docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md`
 - Combined raw field capture diagnostic:
-  `./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO`
+  `./tools/start_live_stack.sh --record --record-raw --tag NON_HELD_OUT_DIAGNOSTIC`
   (not an approved aircraft launch command; see `docs/flight/README.md`)

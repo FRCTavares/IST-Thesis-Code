@@ -8,7 +8,7 @@ controller, TIM-MARS, detector, tracker, or evaluation behaviour.
 
 ## Canonical location
 
-The retained **video bag directory**
+The retained **structured bag directory**
 (`bags/live_camera/<RUN_ID>__video[__<tag>]/`) is the single canonical
 evidence package for a trial. Everything below lives inside it.
 
@@ -16,7 +16,7 @@ evidence package for a trial. Everything below lives inside it.
 
 | Artifact | Path in the package | How it gets there | Required |
 | --- | --- | --- | --- |
-| rosbag (MCAP) | `*.mcap` + `metadata.yaml` | `ros2 bag record` (`--field-record`; `--control-mavros` only for control trials) | yes |
+| structured rosbag (MCAP) | `*.mcap` + `metadata.yaml` | `--field-record` records non-image topics; `--control-mavros` only for approved control trials | yes |
 | controller diagnostics | `/control_ref/diagnostics` in the bag | `control_ref_node` (`thesis_msgs/ControlDiagnostics`, one per command) | yes (when control runs) |
 | run metadata / provenance | `run_metadata.json` | `tools/live/write_live_run_metadata.py` (schema v1) | yes |
 | flight metadata (plain text) | `flight_metadata.txt` | `tools/start_live_stack.sh` | yes |
@@ -24,6 +24,9 @@ evidence package for a trial. Everything below lives inside it.
 | controller runtime log | `run_logs/control.log` | `tools/live/archive_run_evidence.py` on stop | required when the controller runs; explicitly optional/absent for `--no-control` |
 | dashboard bridge log | `run_logs/dashboard_bridge.log` | same | yes |
 | TIM-MARS node log | `run_logs/target_memory_mars.log` | same | yes |
+| separate visual file | `visual_<RUN_ID>.mkv` | loopback dashboard MJPEG stream copied by ffmpeg, outside MCAP | yes for structured visual/field profile |
+| visual recorder log | `run_logs/visual_record.log` | archived on stop | yes for structured visual/field profile |
+| visual integrity report | `visual_evidence_status.json` | ffprobe frame/timestamp and ffmpeg decode checks | yes for structured visual/field profile |
 | main recorder log | `run_logs/rosbag.log` | same; exact rosbag stdout/stderr | yes |
 | recorder transport report | `recorder_transport_status.json` | `tools/live/verify_recorder_transport.py` after log archival | yes |
 | operator event log | `run_logs/operator_events.jsonl` | same (optional-file; `absent` recorded if never written) | yes for retained trials |
@@ -39,6 +42,8 @@ evidence package for a trial. Everything below lives inside it.
 `run_metadata.json.git.commit` is the exact Git SHA; `run_metadata.json.hashes`
 carries the SHA-256 of the detector HEF, the MARS ReID model and
 `tim_mars_canonical.yaml`.
+
+For the flight profile, `run_metadata.json.visual` links the exact RUN_ID visual path, MJPEG/Matroska settings, dashboard source topic, and UTC recorder-launch time. The file has monotonic Matroska packet timestamps based on ffmpeg input wallclock; packet PTS are relative to the first frame, so cross-clock alignment is approximate. The dashboard topic remains live for TIM-MARS appearance, but neither it nor `/camera/image_raw` enters the structured MCAP. A separate non-held-out no-MAVROS ground benchmark retained ~30 Hz structured topics with observed_zero loss and ~10 fps decodable MJPEG. Passive MAVROS-inclusive field-ground validation and a visible target/distractor review are still required before aircraft use.
 
 ## Controller provenance
 
@@ -78,22 +83,23 @@ bag timestamps — the live stack uses no simulated time) and, on the Pi,
 
 `stop_stack` runs a deliberate sequence (Issue #50/#74, `tools/lib/live_shutdown.sh`):
 
-1. `stop_app_nodes` — application publishers/nodes are SIGINT'd first (the
+1. The visual recorder receives SIGINT while its local HTTP source is healthy, so Matroska closes without a broken-stream warning; the structured bag keeps recording.
+2. `stop_app_nodes` — application publishers/nodes are SIGINT'd first (the
    controller emits its final safe-zero + shutdown diagnostic) while the
    recorders keep running; `STOP_APP_GRACE_S` (3 s) then SIGTERM stragglers;
-2. `STOP_APP_SETTLE_S` (2 s) settle so the last messages reach the recorders;
-3. `finalize_recorders` — SIGINT to each recorder and allow up to
+3. `STOP_APP_SETTLE_S` (2 s) settle so the last messages reach the recorders;
+4. `finalize_recorders` — SIGINT to each recorder and allow up to
    `RECORDER_FINALIZE_GRACE_S` (10 s, env-overridable) for process exit after
    flushing/finalizing; escalate to SIGTERM then SIGKILL only if still alive.
    Final cleanup is restricted to recorder processes/descendants tracked for
    this run, never host-wide process matching; writes
    `run_logs/recorder_finalize_outcome.txt`;
-4. archive `run_logs/` + `target_authority_events.jsonl`;
-5. `verify_retained_bag.py` → `bag_integrity.json` (finalized `metadata.yaml`
+5. archive `run_logs/` + `target_authority_events.jsonl`;
+6. `verify_retained_bag.py` → `bag_integrity.json` (finalized `metadata.yaml`
    only — never reopens the bag while the recorder holds it);
-6. `verify_recorder_transport.py` reads the archived main and, when requested,
+7. `verify_recorder_transport.py` reads the archived main and, when requested,
    paired raw recorder logs and writes `recorder_transport_status.json`;
-7. `verify_evidence_package.py` → `evidence_package_status.json`, printing
+8. `verify_visual_evidence.py` checks the separate file when expected; `verify_evidence_package.py` → `evidence_package_status.json`, printing
    **`EVIDENCE PACKAGE INCOMPLETE`** if any required artifact is missing,
    a required topic is empty, provenance is invalid, the archive manifest is
    incomplete, recorder finalization escalated, or recorder transport quality
@@ -106,7 +112,7 @@ behaviour. A failed bag is **kept**, not deleted.
 `evidence_package_status.json.status` is one of `complete_runtime_evidence`,
 `incomplete_runtime_evidence`, `pending_postflight_annotation`,
 `pending_pixhawk_dataflash`. The Pi-side runtime files alone never make a
-package scientifically final.
+package scientifically final. Missing, corrupt, mismatched or unfinalized visual evidence makes runtime evidence incomplete. An image topic in a structured flight MCAP also fails the package verifier.
 
 ## Recorder transport quality
 

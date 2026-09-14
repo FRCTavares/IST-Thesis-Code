@@ -85,6 +85,10 @@ ENABLE_WEB_VIDEO=1
 # Video bag recording, disabled by default.
 # Enabled with: --record or --record-video
 ENABLE_ROSBAG=0
+# Retained flight profile: structured MCAP plus a separate MJPEG visual file.
+FLIGHT_VISUAL_RECORD=0
+DASHBOARD_FPS_EXPLICIT=0
+CAMERA_RATE_CONTROLS_EXPLICIT=0
 
 # Enabled with: --record-dataset
 # Dataset mode records raw camera imagery plus perception/TIM telemetry for offline replay.

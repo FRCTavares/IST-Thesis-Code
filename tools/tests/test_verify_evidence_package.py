@@ -411,3 +411,62 @@ def test_paired_raw_transport_loss_and_integrity_are_required(tmp_path):
     )
     assert status == "incomplete_runtime_evidence"
     assert any("raw bag integrity" in p for p in report["problems"])
+
+
+def _add_visual_evidence(bag: Path, *, present: bool = True) -> None:
+    visual = bag / "visual_evp_test.mkv"
+    if present:
+        visual.write_bytes(b"synthetic fixture; standalone verifier has a decode test")
+    (bag / "run_logs/visual_record.log").write_text("")
+    (bag / "visual_evidence_status.json").write_text(json.dumps({
+        "run_id": "evp_test",
+        "visual_file": str(visual),
+        "passed": present,
+        "recorder_alive_at_stop": present,
+        "finalization": "graceful" if present else "failed",
+    }))
+    metadata_path = bag / "run_metadata.json"
+    metadata = json.loads(metadata_path.read_text())
+    metadata["visual"] = {
+        "file": str(visual),
+        "started_at_utc": "2026-09-14T20:00:00Z",
+    }
+    metadata_path.write_text(json.dumps(metadata))
+
+
+def test_structured_visual_package_requires_matching_finalized_file(tmp_path):
+    bag = _build_package(tmp_path, control=False)
+    _add_visual_evidence(bag)
+    status, report = vep.verify_package(
+        bag_dir=bag, run_id="evp_test", control_trial=False,
+        field_record=False, expect_operator_events=False,
+        repo_root=REPO_ROOT, expect_visual=True,
+    )
+    assert report["runtime_status"] == "complete_runtime_evidence"
+    assert report["problems"] == []
+
+    (bag / "visual_evp_test.mkv").unlink()
+    status, report = vep.verify_package(
+        bag_dir=bag, run_id="evp_test", control_trial=False,
+        field_record=False, expect_operator_events=False,
+        repo_root=REPO_ROOT, expect_visual=True,
+    )
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+    assert any("visual_file" in problem for problem in report["problems"])
+
+
+def test_structured_visual_package_rejects_image_topic_and_failed_visual(tmp_path):
+    bag = _build_package(tmp_path, control=False)
+    _add_visual_evidence(bag, present=False)
+    integrity_path = bag / "bag_integrity.json"
+    integrity = json.loads(integrity_path.read_text())
+    integrity["topic_message_counts"]["/camera/dashboard"] = 100
+    integrity_path.write_text(json.dumps(integrity))
+    _, report = vep.verify_package(
+        bag_dir=bag, run_id="evp_test", control_trial=False,
+        field_record=False, expect_operator_events=False,
+        repo_root=REPO_ROOT, expect_visual=True,
+    )
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+    assert any("image topic" in problem for problem in report["problems"])
+    assert any("visual evidence" in problem for problem in report["problems"])

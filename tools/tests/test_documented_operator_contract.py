@@ -177,7 +177,8 @@ def test_documented_build_recording_and_evaluation_commands_are_supported():
         check=True,
     )
 
-    assert "--field-record --record-raw" in tools_readme
+    assert "--record --record-raw" in tools_readme
+    assert "not an approved aircraft launch command" in tools_readme
     for option in (
         "--source-record",
         "--field-record",

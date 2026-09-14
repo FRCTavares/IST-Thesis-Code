@@ -357,6 +357,8 @@ def main() -> int:
     parser.add_argument("--bag-kind", required=True, choices=["video", "dataset", "raw_image", "source"])
     parser.add_argument("--bag-out-dir", required=True)
     parser.add_argument("--recorded-topic", action="append", default=[])
+    parser.add_argument("--visual-file", type=Path)
+    parser.add_argument("--visual-started-at-utc", default="")
     parser.add_argument("--hash-file", action="append", default=[], help="LABEL=PATH, repeatable")
     parser.add_argument("--param", action="append", default=[], help="NODE:KEY=VALUE, repeatable")
     parser.add_argument(
@@ -468,6 +470,17 @@ def main() -> int:
         "target": target_summary,
         "runtime_switch_history": switch_history,
     }
+    if args.visual_file is not None:
+        payload["visual"] = {
+            "file": str(args.visual_file),
+            "started_at_utc": args.visual_started_at_utc,
+            "source_topic": "/camera/dashboard",
+            "codec": "mjpeg",
+            "container": "matroska",
+            "requested_dashboard_fps": 15.0,
+            "jpeg_quality": 45,
+            "timestamp_basis": "ffmpeg input wallclock; Matroska packet PTS relative to first frame",
+        }
 
     write_atomic(args.output, payload)
     print(f"[ok] wrote live-run metadata: {args.output}")

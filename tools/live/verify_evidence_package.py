@@ -157,6 +157,7 @@ def verify_package(
     expect_operator_events: bool,
     repo_root: Path,
     expect_raw_bag: bool = False,
+    expect_visual: bool = False,
 ) -> tuple[str, dict[str, Any]]:
     report: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -200,6 +201,27 @@ def verify_package(
     require("archive_manifest_json", logs / "archive_manifest.json")
     require("rosbag_log", logs / "rosbag.log")
     require("recorder_transport_status_json", bag_dir / "recorder_transport_status.json")
+    if expect_visual:
+        visual_file = bag_dir / f"visual_{run_id}.mkv"
+        require("visual_file", visual_file)
+        require("visual_evidence_status_json", bag_dir / "visual_evidence_status.json")
+        require("visual_recorder_log", logs / "visual_record.log")
+        visual_report = _json(bag_dir / "visual_evidence_status.json")
+        report["visual_evidence"] = visual_report
+        if (not isinstance(visual_report, dict) or
+            visual_report.get("passed") is not True or
+            visual_report.get("recorder_alive_at_stop") is not True or
+            visual_report.get("finalization") != "graceful"):
+            problems.append("separate visual evidence missing, stopped early, or failed verification")
+        elif (visual_report.get("run_id") != run_id or
+              visual_report.get("visual_file") != str(visual_file)):
+            problems.append("separate visual evidence run/path mismatch")
+        provenance = _json(bag_dir / "run_metadata.json")
+        visual_metadata = provenance.get("visual") if isinstance(provenance, dict) else None
+        if (not isinstance(visual_metadata, dict) or
+            visual_metadata.get("file") != str(visual_file) or
+            not visual_metadata.get("started_at_utc")):
+            problems.append("run metadata has no matching visual file/start timestamp")
 
     manifest = _json(logs / "archive_manifest.json")
     manifest_required_logs: dict[str, Any] = {}
@@ -266,6 +288,8 @@ def verify_package(
         if not integrity.get("passed"):
             problems.append("bag integrity check did not pass")
         counts = integrity.get("topic_message_counts", {}) or {}
+        if expect_visual and any(topic in counts for topic in ("/camera/dashboard", "/camera/image_raw")):
+            problems.append("structured flight bag contains an image topic")
         if control_trial and int(counts.get("/control_ref/diagnostics", 0)) <= 0:
             problems.append(
                 "control field trial: /control_ref/diagnostics has no messages"
@@ -402,6 +426,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--control-trial", action="store_true")
     parser.add_argument("--field-record", action="store_true")
     parser.add_argument("--expect-raw-bag", action="store_true")
+    parser.add_argument("--expect-visual", action="store_true")
     parser.add_argument("--expect-operator-events", action="store_true")
     parser.add_argument("--repo-root", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=None)
@@ -422,6 +447,7 @@ def main(argv: list[str] | None = None) -> int:
         expect_operator_events=args.expect_operator_events,
         repo_root=repo_root,
         expect_raw_bag=args.expect_raw_bag,
+        expect_visual=args.expect_visual,
     )
 
     out = args.out or (bag_dir / REPORT_NAME)

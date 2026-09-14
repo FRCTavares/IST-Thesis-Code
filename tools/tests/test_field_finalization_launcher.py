@@ -166,7 +166,9 @@ def test_field_runbook_records_nominal_trial_end_before_stop_archival():
 
 
 def test_stop_time_required_topics_follow_enabled_subsystems():
-    assert "        /camera/dashboard /detections /tracks /timing" in LAUNCHER
+    assert "local -a req=(/detections /tracks /timing)" in LAUNCHER
+    assert "req+=(/camera/dashboard)" in LAUNCHER
+    assert 'if [[ "${FLIGHT_VISUAL_RECORD:-0}" -ne 1 ]]; then' in LAUNCHER
     assert "        /timing /timing_target /control_ref/cmd_vel" not in LAUNCHER
     assert "req+=(/target_memory_mars /target_memory_mars/status /timing_target)" in LAUNCHER
     assert "req+=(/control_ref/cmd_vel /control_ref/diagnostics)" in LAUNCHER
@@ -204,3 +206,18 @@ def test_retained_recorder_logs_and_transport_report_are_wired():
     assert "--raw-bag-dir" in verify
     assert "--expect-raw-bag" in verify
     assert "--require-topic /camera/image_raw --require-nonzero /camera/image_raw" in verify
+
+
+def test_integrated_camera_receives_opt_in_sensor_rate_controls():
+    start = LAUNCHER.index('start_ros_bg perception_camera env')
+    end = LAUNCHER.index('    sleep 2', start)
+    block = LAUNCHER[start:end]
+    for parameter in (
+        'apply_sensor_rate_controls:=$CAMERA_APPLY_RATE_CONTROLS_BOOL',
+        'sensor_max_fps:=$CAMERA_SENSOR_MAX_FPS',
+        'sensor_ae_exposure_upper:=$CAMERA_SENSOR_AE_UPPER',
+        'sensor_ae_exposure_max:=$CAMERA_SENSOR_AE_MAX',
+        'sensor_exposure_mode:=$CAMERA_SENSOR_EXPOSURE_MODE',
+        'sensor_manual_exposure:=$CAMERA_SENSOR_MANUAL_EXPOSURE',
+    ):
+        assert parameter in block

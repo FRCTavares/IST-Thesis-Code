@@ -90,13 +90,7 @@ connected, explicitly enter field mode:
 - [ ] pilot takeover/abort agreed; commands and evidence: `docs/flight/field_day_runbook.md`, `docs/flight/retained_evidence_package.md`
 
 `--record-mavros` only records; it grants no flight authority.
-Recording-capacity gate: the 14 September no-MAVROS main-bag-only
-benchmarks reported 1,032 and 891 aggregate transport losses. Paired raw
-lost 52–68% of inferred frames under full-stack load. A representative
-MAVROS-inclusive main-only ground run must show `observed_zero` and usable
-visual reference before treating a flight recording as scientific evidence.
-Do not add `--record-raw` to normal full-stack flights. The frozen H01/H02/H03
-source-only capture is separate and unchanged.
+Recording-capacity gate: no-MAVROS development runs of the structured MCAP plus separate RUN_ID-linked 640x480 MJPEG visual file reached observed_zero transport loss, near-30 Hz non-image topic cadence and roughly 10 fps decodable visual. The exact MAVROS-inclusive field profile and visible-person annotation usefulness still need safe field-ground confirmation before retained aircraft evidence. Earlier dashboard-in-MCAP tests lost messages and paired raw lost 52–68% of inferred frames. Normal full-stack flights use neither image topic in MCAP and never add --record-raw. The frozen H01/H02/H03 source-only capture is separate and unchanged.
 
 ### Aircraft launch command
 

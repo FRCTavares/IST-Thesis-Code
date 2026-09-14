@@ -14,7 +14,7 @@
 # control, MAVROS, web video).
 _live_is_recorder_name() {
     case "$1" in
-        rosbag|dataset_rosbag|raw_image_bag|source_raw_image_bag|source_mavros_bag)
+        rosbag|visual_record|dataset_rosbag|raw_image_bag|source_raw_image_bag|source_mavros_bag)
             return 0
             ;;
     esac
@@ -134,6 +134,25 @@ stop_app_nodes() {
             kill_tree "$pid" TERM
         fi
     done
+}
+
+# Close the separate HTTP visual stream before stopping its web-video source.
+# ffmpeg then writes the Matroska index itself instead of seeing a broken HTTP
+# stream during the publisher shutdown. The structured rosbag remains active.
+stop_visual_recorder() {
+    [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]] || return 0
+    local pid="${PROC_PIDS[visual_record]:-}"
+    [[ -n "$pid" ]] || return 1
+    if ! _live_pid_alive "$pid"; then
+        return 1
+    fi
+    kill_tree "$pid" INT
+    local waited=0
+    while _live_pid_alive "$pid" && (( waited < 10 )); do
+        sleep 1
+        waited=$((waited + 1))
+    done
+    ! _live_pid_alive "$pid"
 }
 
 # Deliberately finalize the recorder(s): SIGINT, allow up to

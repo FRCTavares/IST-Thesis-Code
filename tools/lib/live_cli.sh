@@ -272,6 +272,7 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             CAMERA_DASHBOARD_FPS="$(normalize_double_literal "$2")"
+            DASHBOARD_FPS_EXPLICIT=1
             shift 2
             ;;
         --dashboard-fps)
@@ -281,6 +282,7 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             CAMERA_DASHBOARD_FPS="$2"
+            DASHBOARD_FPS_EXPLICIT=1
             shift 2
             ;;
         --camera-no-flip)
@@ -289,10 +291,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         --camera-rate-controls-off)
             CAMERA_APPLY_RATE_CONTROLS_BOOL="false"
+            CAMERA_RATE_CONTROLS_EXPLICIT=1
             shift
             ;;
         --camera-rate-controls-on)
             CAMERA_APPLY_RATE_CONTROLS_BOOL="true"
+            CAMERA_RATE_CONTROLS_EXPLICIT=1
             shift
             ;;
         --camera-trigger-control-off)
@@ -538,6 +542,13 @@ while [[ $# -gt 0 ]]; do
             TARGET_TIMING_ENABLED=1
             shift
             ;;
+        --record-structured-visual)
+            ENABLE_ROSBAG=1
+            FLIGHT_VISUAL_RECORD=1
+            TRACKER_PUBLISH_TIMING_BOOL="true"
+            TARGET_TIMING_ENABLED=1
+            shift
+            ;;
         --record-video)
             ENABLE_ROSBAG=1
             TRACKER_PUBLISH_TIMING_BOOL="true"
@@ -558,6 +569,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --field-record)
+            FLIGHT_VISUAL_RECORD=1
             ENABLE_ROSBAG=1
             TRACKER_PUBLISH_TIMING_BOOL="true"
             TARGET_TIMING_ENABLED=1
@@ -584,6 +596,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --source-record)
+            FLIGHT_VISUAL_RECORD=0
             SOURCE_RECORD_MODE=1
             SOURCE_RAW_IMAGE_RECORD=1
             SOURCE_MAVROS_RECORD=1
@@ -604,6 +617,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --source-record-no-mavros)
+            FLIGHT_VISUAL_RECORD=0
             SOURCE_RECORD_MODE=1
             SOURCE_RAW_IMAGE_RECORD=1
             SOURCE_MAVROS_RECORD=0
@@ -682,6 +696,33 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Keep the demonstrated flight evidence profile exact. Source-only held-out
+# capture does not enter this branch and retains its own acquisition contract.
+if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
+    if [[ "$ENABLE_ROSBAG" -ne 1 || "$FIELD_RAW_IMAGE_RECORD" -ne 0 ||
+          "$ENABLE_WEB_VIDEO" -ne 1 || "$ENABLE_DASHBOARD_BRIDGE" -ne 1 ]]; then
+        echo "[error] structured visual recording requires a bag and web video, without paired raw"
+        exit 1
+    fi
+    if [[ "$DASHBOARD_FPS_EXPLICIT" -eq 1 && "$CAMERA_DASHBOARD_FPS" != "15" && "$CAMERA_DASHBOARD_FPS" != "15.0" ]]; then
+        echo "[error] structured visual recording requires dashboard target 15 Hz"
+        exit 1
+    fi
+    if [[ "$CAMERA_RATE_CONTROLS_EXPLICIT" -eq 1 && "$CAMERA_APPLY_RATE_CONTROLS_BOOL" != "true" ]]; then
+        echo "[error] structured visual recording requires camera rate controls on"
+        exit 1
+    fi
+    CAMERA_DASHBOARD_FPS=15.0
+    CAMERA_APPLY_RATE_CONTROLS_BOOL="true"
+    if [[ "$CAMERA_WIDTH" != "640" || "$CAMERA_HEIGHT" != "480" ||
+          ( "$CAMERA_FPS" != "30.0" && "$CAMERA_FPS" != "30" ) ||
+          "$CAMERA_SENSOR_AE_MAX" != "33333" || "$CAMERA_SENSOR_AE_UPPER" != "8333" ||
+          "$CAMERA_SENSOR_EXPOSURE_MODE" != "1" ]]; then
+        echo "[error] structured visual recording requires the validated VGA/30 Hz auto-exposure profile"
+        exit 1
+    fi
+fi
 
 # Validate resolved configuration before we touch hardware/runtime state.
 case "$PERCEPTION_MODE" in

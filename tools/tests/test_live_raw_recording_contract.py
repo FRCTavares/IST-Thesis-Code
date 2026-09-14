@@ -50,7 +50,8 @@ def test_raw_mode_has_field_storage_gate_and_operator_documentation():
 
     assert 'RAW_RECORDING_MIN_FREE_GIB="${RAW_RECORDING_MIN_FREE_GIB:-40}"' in defaults
     assert '"$RAW_RECORDING_MIN_FREE_GIB" || exit 1' in launcher
-    assert "--field-record --record-raw --tag flight1" in usage
+    assert "--record --record-raw --tag NON_HELD_OUT_DIAGNOSTIC" in usage
+    assert "--record-raw             Diagnostic paired raw" in usage
     assert "separate synchronized /camera/image_raw" in usage
 
 

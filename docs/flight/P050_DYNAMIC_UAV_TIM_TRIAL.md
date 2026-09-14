@@ -64,10 +64,7 @@ Required state:
 - camera/Hailo healthy;
 - no thesis controller process running;
 - H01/H02/H03 Stage-7 validator still reports `final_ready=0/3`;
-- a representative MAVROS-inclusive main-bag-only ground rehearsal has
-  `observed_zero` transport loss and retains usable visual reference imagery.
-  The 14 September no-MAVROS main-only tests did not pass this gate; do not
-  fly this trial as scientifically retained evidence until it does.
+- a representative MAVROS-inclusive structured-bag plus separate-visual ground rehearsal reports observed_zero rosbag transport loss, a finalized decodable visual file, and adequate visible-person/distractor review. The 14 September no-MAVROS software runs passed throughput, but this exact field-ground gate remains open.
 
 Verify the freeze:
 
@@ -89,10 +86,7 @@ Start the normal retained field stack **without** controller authority:
         --no-control \
         --tag dynamic_uav_tim_manual_r1
 
-Keep `--no-control` present and do not add `--control-mavros` or
-`--record-raw`. Full-stack paired raw lost 52–68% of inferred source frames
-in 14 September diagnostics. Main-only recording also reported transport
-loss, so this command is conditional on the recording-capacity gate above.
+Keep --no-control present and do not add --control-mavros or --record-raw. The field profile writes detections, tracks, TIM-MARS, timing and passive MAVROS telemetry to a structured MCAP without image topics. A separate RUN_ID-linked 640x480 MJPEG file supplies the visual reference. Full-stack paired raw lost 52–68% of inferred source frames in 14 September diagnostics. The no-MAVROS structured+visual development runs reached observed_zero and about 10 fps visual, but the MAVROS-inclusive field-ground gate above remains mandatory.
 
 Select the intended physical target only after the aircraft is safely
 established and the target/distractor identities are visually unambiguous.

@@ -107,7 +107,9 @@ Options:
                                         Explicit acknowledgement required by --control-yaw-recovery.
     --control-stale-timeout-s <N>       Control stale target timeout seconds (default: 0.80)
     --no-web-video                      Do not start web_video_server
-    --record-video                      Record dashboard video + perception/tracking/target/timing/control topics
+    --record-video                      Legacy dashboard-in-MCAP diagnostic recording
+    --record-structured-visual          Non-MAVROS structured MCAP + separate MJPEG visual
+    --field-record                      Same evidence profile with managed passive MAVROS telemetry
     --no-record-video                   Disable video bag recording
     --record-raw                        Add a separate synchronized /camera/image_raw MCAP bag
     --no-record-raw                     Disable the separate raw-image bag
@@ -150,8 +152,10 @@ Default live stack:
 
 Common options:
     --record                 Record video/perception/tracking/control bag
-    --field-record           Record full live pipeline with managed MAVROS telemetry
-    --record-raw             Also record /camera/image_raw in a separate synchronized bag
+    --field-record           Structured bag + separate MJPEG visual + managed MAVROS telemetry
+    --record-structured-visual
+                             Same evidence profile without MAVROS (ground development)
+    --record-raw             Diagnostic paired raw (incompatible with structured visual profile)
     --source-record          Record source dataset: /camera/image_raw and MAVROS telemetry
     --source-record-no-mavros
                              Record /camera/image_raw + /detections for deterministic
@@ -191,7 +195,8 @@ Runtime prompt:
 Examples:
     ./tools/start_live_stack.sh
     ./tools/start_live_stack.sh --record --tag demo1
-    ./tools/start_live_stack.sh --field-record --record-raw --tag flight1
+    ./tools/start_live_stack.sh --field-record --no-control --tag dynamic_uav_tim_manual_r1
+    ./tools/start_live_stack.sh --record --record-raw --tag NON_HELD_OUT_DIAGNOSTIC
     ./tools/start_live_stack.sh --tracker sort --mem off
     ./tools/start_live_stack.sh --dash 10 --no-control
 EOF
