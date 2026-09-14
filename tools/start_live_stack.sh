@@ -472,15 +472,27 @@ archive_run_evidence_logs() {
         echo "[warn] run directory missing; cannot archive run-evidence logs: ${RUN_DIR:-<unset>}"
         return 0
     fi
+    local -a archive_args=(
+        --run-dir "$RUN_DIR"
+        --run-id "$RUN_ID"
+        --bag-dir "$bag_dir"
+        --log dashboard_bridge.log
+        --log target_memory_mars.log
+    )
+
+    if [[ "${ENABLE_CONTROL:-0}" -eq 1 ]]; then
+        archive_args+=(--log control.log)
+    else
+        archive_args+=(--optional-file control.log)
+    fi
+
+    archive_args+=(
+        --optional-file operator_events.jsonl
+        --optional-file recorder_finalize_outcome.txt
+    )
+
     if python3 "$THESIS_ROOT/tools/live/archive_run_evidence.py" \
-        --run-dir "$RUN_DIR" \
-        --run-id "$RUN_ID" \
-        --bag-dir "$bag_dir" \
-        --log control.log \
-        --log dashboard_bridge.log \
-        --log target_memory_mars.log \
-        --optional-file operator_events.jsonl \
-        --optional-file recorder_finalize_outcome.txt; then
+        "${archive_args[@]}"; then
         echo "[ok] retained run-evidence logs archived under $bag_dir/run_logs/"
     else
         echo "[warn] retained run-evidence log archival incomplete: see $bag_dir/run_logs/archive_manifest.json"

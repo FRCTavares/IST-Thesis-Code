@@ -197,7 +197,24 @@ def verify_package(
     require("target_authority_events_jsonl", bag_dir / "target_authority_events.jsonl")
     require("bag_integrity_json", bag_dir / "bag_integrity.json")
     require("archive_manifest_json", logs / "archive_manifest.json")
-    require("control_log", logs / "control.log")
+
+    manifest = _json(logs / "archive_manifest.json")
+    manifest_required_logs: dict[str, Any] = {}
+    if isinstance(manifest, dict):
+        candidate_required = manifest.get("required_logs", {})
+        if isinstance(candidate_required, dict):
+            manifest_required_logs = candidate_required
+
+    control_log = logs / "control.log"
+    if control_trial or "control.log" in manifest_required_logs:
+        require(
+            "control_log",
+            control_log,
+            note="required whenever the controller ran",
+        )
+    else:
+        optional("control_log", control_log)
+
     require("dashboard_bridge_log", logs / "dashboard_bridge.log")
     require("target_memory_mars_log", logs / "target_memory_mars.log")
 
@@ -234,7 +251,6 @@ def verify_package(
         )
 
     # --- archive manifest completeness ---
-    manifest = _json(logs / "archive_manifest.json")
     if manifest is not None:
         report["archive_manifest_complete"] = bool(manifest.get("complete"))
         if not manifest.get("complete"):

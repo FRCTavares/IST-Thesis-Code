@@ -156,3 +156,19 @@ def test_stop_time_required_topics_follow_enabled_subsystems():
     assert "        /timing /timing_target /control_ref/cmd_vel" not in LAUNCHER
     assert "req+=(/target_memory_mars /target_memory_mars/status /timing_target)" in LAUNCHER
     assert "req+=(/control_ref/cmd_vel /control_ref/diagnostics)" in LAUNCHER
+
+
+def test_control_log_archival_tracks_controller_enablement():
+    from pathlib import Path
+
+    launcher = (
+        Path(__file__).resolve().parents[2] / "tools" / "start_live_stack.sh"
+    ).read_text(encoding="utf-8")
+
+    start = launcher.index("archive_run_evidence_logs()")
+    end = launcher.index("verify_retained_evidence()", start)
+    block = launcher[start:end]
+
+    assert 'if [[ "${ENABLE_CONTROL:-0}" -eq 1 ]]; then' in block
+    assert "archive_args+=(--log control.log)" in block
+    assert "archive_args+=(--optional-file control.log)" in block

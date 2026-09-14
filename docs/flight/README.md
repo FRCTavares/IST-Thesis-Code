@@ -7,11 +7,8 @@ The other `P027_*.md` files here are frozen #27 provenance.
 
 ## 0. Before leaving
 
-- [ ] Pi, drone, controller, batteries, chargers
-- [ ] camera, Hailo, Pixhawk
-- [ ] target + distractor + pilot
-- [ ] >=40 GiB free
-- [ ] #27 and normal-runtime worktrees ready
+- [ ] Pi/UAV/controller/batteries/chargers; camera, Hailo and Pixhawk
+- [ ] target, distractor, qualified pilot; >=40 GiB free; #27 and normal-runtime worktrees ready
 
 ## 1. H01-H03 held-out captures
 
@@ -63,29 +60,21 @@ Allowed now: integrity, counts, timestamps, imagery and physical-scenario check.
 
 ## 2. Run 4 — #64 small-target drone POV
 
-Switch back to normal validated runtime.
+Switch back to normal validated runtime:
 
     tools/experiments/record_p064_drone_sequence.sh small_target_r1
 
-- [ ] native 1280x720; detector stays 640x640
-- [ ] target becomes genuinely small at realistic distance
-- [ ] crossing/occlusion
-- [ ] exit + re-entry with distractor visible
-- [ ] final bag copied successfully
+- [ ] native 1280x720; detector remains 640x640; genuinely small target
+- [ ] crossing/occlusion, then exit + re-entry with distractor visible
+- [ ] copy the final bag
 
 ## 3. #50 aircraft gate
 
-**No closed-loop flight until every gate passes.**
-
-If ordinary maintenance/Tailscale access is unavailable and
-`ISR Aero.Next GCS` is the only local network, connect the operator Mac to that
-SSID and SSH to `francisco@192.168.8.174`. The Pi may be connected through the
-low-priority `ISR Aero.Next GCS Rescue` profile while still in `unattended`
-mode. That connection provides management access only and grants no Pixhawk,
-MAVROS, or controller authority.
-
-After the Pixhawk Ethernet link is physically connected, explicitly enter
-field mode:
+**No closed-loop flight until every gate passes.** If only `ISR Aero.Next GCS`
+is available, connect the Mac to it and SSH to `francisco@192.168.8.174`.
+The Rescue profile grants management access in `unattended` mode, never
+Pixhawk/MAVROS/controller authority. With Pixhawk Ethernet physically
+connected, explicitly enter field mode:
 
     sudo tools/host/set_pi_network_mode.sh pixhawk
     sudo tools/host/set_pi_network_mode.sh status
@@ -94,18 +83,13 @@ field mode:
     systemctl is-active tailscaled
 
 - [ ] ISR Wi-Fi preferred; approved AERONEXT fallback available
-- [ ] `pixhawk-apm` active, never default route
-- [ ] Tailscale inactive
+- [ ] `pixhawk-apm` active without default route; Tailscale inactive
 - [ ] real Pixhawk + MAVROS connected
-- [ ] TIM-MARS sole controller target authority
-- [ ] raw `/target` has no motion authority
-- [ ] stale/UNCERTAIN/REACQUIRED/LOST fails safe
-- [ ] command signs checked on ground
-- [ ] pilot takeover / abort agreed
-- [ ] copy-paste commands in `docs/flight/field_day_runbook.md`; evidence package per `docs/flight/retained_evidence_package.md`
+- [ ] TIM-MARS alone authorizes control; raw `/target` has no motion authority
+- [ ] stale/UNCERTAIN/REACQUIRED/LOST fails safe; command signs checked on ground
+- [ ] pilot takeover/abort agreed; commands and evidence: `docs/flight/field_day_runbook.md`, `docs/flight/retained_evidence_package.md`
 
-`--record-mavros` is a recording option, not an approved flight command.
-
+`--record-mavros` only records; it grants no flight authority.
 Diagnostic only:
 
     ./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO
@@ -114,46 +98,50 @@ Diagnostic only:
 
     NOT FROZEN — DO NOT USE AN OLD P023 COMMAND
 
-## 4. Flight 1 — basic following
+## 4. Dynamic UAV TIM validation — manual pilot, controller OFF
 
-- [ ] pilot-controlled takeoff / stable hover
-- [ ] select target; trusted LOCKED + NORMAL
-- [ ] slow person movement
-- [ ] yaw/distance directions correct
+Required **non-held-out** moving-platform evidence; H01/H02/H03 unchanged.
+Follow `docs/flight/P050_DYNAMIC_UAV_TIM_TRIAL.md`.
+
+    ./tools/start_live_stack.sh --field-record --record-raw --no-control --tag dynamic_uav_tim_manual_r1
+
+- [ ] qualified pilot alone controls all motion; no `--control-mavros`
+- [ ] lateral reversal, range/scale change, yaw/viewpoint change, safe arc
+- [ ] simultaneous target + UAV motion; distractor crossing
+- [ ] safe loss and changed-viewpoint return; stable final reference
+- [ ] evidence finalized; `control_ref_node` absent
+
+## 5. Flight 1 — basic following
+
+- [ ] pilot-controlled takeoff / hover; select target at trusted LOCKED + NORMAL
+- [ ] slow person motion; yaw/distance directions correct
 - [ ] no unexpected authority; evidence finalized
 
-## 5. Flight 2 — loss / reacquisition
+## 6. Flight 2 — loss / reacquisition
 
-- [ ] trusted following
-- [ ] target leaves view; translation stops
-- [ ] target re-enters
-- [ ] motion resumes only at trusted LOCKED + NORMAL
+- [ ] trusted following; target leaves view and translation stops
+- [ ] target re-enters; motion resumes only at trusted LOCKED + NORMAL
 - [ ] no distractor authority; evidence finalized
 
-## 6. Flight 3 — crossing / distractor
+## 7. Flight 3 — crossing / distractor
 
-- [ ] controlled target/distractor crossing
-- [ ] no wrong-person non-zero command
-- [ ] uncertainty/loss fails safe
-- [ ] trusted recovery if achieved
+- [ ] controlled crossing; no wrong-person non-zero command
+- [ ] uncertainty/loss fails safe; trusted recovery if achieved
 - [ ] evidence finalized
 
-## 7. Flight 4 — bounded yaw recovery
+## 8. Flight 4 — bounded yaw recovery
 
 **Only if #50 promotes recovery first; otherwise skip.**
 
-- [ ] candidate: add `--control-yaw-recovery --acknowledge-yaw-recovery-candidate` (see `docs/control/p074_state_aware_control_contract.md`)
-- [ ] yaw only; no translation
-- [ ] duration/yaw budget respected
-- [ ] no wrong-person command
-- [ ] evidence finalized
+- [ ] candidate flags: `--control-yaw-recovery --acknowledge-yaw-recovery-candidate` (see `docs/control/p074_state_aware_control_contract.md`)
+- [ ] yaw only, no translation; duration/yaw budget respected
+- [ ] no wrong-person command; evidence finalized
 
-## 8. End of day
+## 9. End of day
 
-- [ ] H01/H02/H03/#64 paths recorded
-- [ ] each flight bag: `evidence_package_status.json` reviewed; `run_logs/` + `.bin` archived; backed up
-- [ ] H01-H03 outcomes still unopened
-- [ ] no evidence deleted (a failed bag is kept, not removed)
-- [ ] Pixhawk `.bin` retrieved + `tools/live/archive_pixhawk_dataflash.py` (real retrieval verification pending), then Pixhawk disconnected
+- [ ] H01/H02/H03/#64 paths recorded; H01-H03 outcomes unopened
+- [ ] dynamic-UAV trial flown with genuine platform motion or marked not flown
+- [ ] each flight: review `evidence_package_status.json`; archive `run_logs/` and `.bin`; back up
+- [ ] keep failed evidence; retrieve Pixhawk `.bin` with `tools/live/archive_pixhawk_dataflash.py`, then disconnect Pixhawk
 
     sudo tools/host/set_pi_network_mode.sh unattended

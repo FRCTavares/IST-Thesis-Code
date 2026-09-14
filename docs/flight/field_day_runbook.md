@@ -50,7 +50,45 @@ ls -l /dev/video0 /dev/media0 /dev/hailo0
 ros2 topic echo /mavros/state --once     # after MAVROS is up: connected: true
 ```
 
-Decide the trial condition and run id before recording:
+## 2A. Required moving-platform TIM-MARS trial
+
+Before treating the later closed-loop flights as representative UAV evidence,
+capture one manual-pilot moving-platform TIM-MARS trial.
+
+This trial is **not** a closed-loop controller test:
+
+- pilot owns all aircraft motion;
+- TIM-MARS/tracker may run;
+- MAVROS may record telemetry;
+- `--no-control` is mandatory so `control_ref_node` does not run;
+- `--control-mavros` must remain absent;
+- H01/H02/H03 remain untouched.
+
+Detailed choreography and acceptance criteria:
+
+`docs/flight/P050_DYNAMIC_UAV_TIM_TRIAL.md`
+
+Choose the run id:
+
+    export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+    echo "$RUN_ID"
+
+Start retained evidence capture:
+
+    ./tools/start_live_stack.sh \
+        --field-record \
+        --record-raw \
+        --no-control \
+        --tag dynamic_uav_tim_manual_r1
+
+Required motion includes lateral translation, range/scale change, yaw/viewpoint
+change, simultaneous target + UAV motion, a distractor interaction, and—when
+safe—a brief visibility-loss/recovery event from a changed UAV viewpoint.
+
+After this trial is safely stopped and its evidence package retained, continue
+with the controller trials below.
+
+Decide the closed-loop trial condition and run id before recording:
 
 ```bash
 export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"     # deterministic; reused everywhere

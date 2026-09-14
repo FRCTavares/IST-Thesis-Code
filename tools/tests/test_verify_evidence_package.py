@@ -248,6 +248,34 @@ def test_non_control_recording_not_forced_to_require_control(tmp_path):
     assert report["runtime_status"] == "complete_runtime_evidence"
 
 
+def test_no_control_field_recording_allows_absent_control_log(tmp_path):
+    bag = _build_package(
+        tmp_path,
+        control=False,
+        with_diag=False,
+        with_operator=True,
+    )
+    (bag / "run_logs" / "control.log").unlink()
+
+    status, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=False,
+        field_record=True,
+        expect_operator_events=True,
+        repo_root=REPO_ROOT,
+    )
+
+    assert report["optional"]["control_log"]["present"] is False
+    assert not any("control_log" in p for p in report["problems"])
+    assert not any(
+        "/control_ref/diagnostics" in p
+        for p in report["problems"]
+    )
+    assert report["runtime_status"] == "complete_runtime_evidence"
+    assert status == "pending_pixhawk_dataflash"
+
+
 def test_recorder_escalation_makes_package_incomplete(tmp_path):
     bag = _build_package(tmp_path, recorder_outcome="escalated")
     status, report = vep.verify_package(

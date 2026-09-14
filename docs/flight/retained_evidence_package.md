@@ -1,10 +1,10 @@
 # Retained flight-evidence package (#50 / #74)
 
-What one retained physical closed-loop trial must preserve so the
-controller-facing thesis metrics can be reconstructed afterward without
-another flight. This is evidence plumbing; it does not authorise flight and
-does not change controller, TIM-MARS, detector, tracker, or evaluation
-behaviour.
+What one retained physical field trial must preserve so the trial can be
+reconstructed afterward without another flight. The package supports both
+manual moving-platform perception trials and closed-loop control trials. This
+is evidence plumbing; it does not authorise flight and does not change
+controller, TIM-MARS, detector, tracker, or evaluation behaviour.
 
 ## Canonical location
 
@@ -16,12 +16,12 @@ evidence package for a trial. Everything below lives inside it.
 
 | Artifact | Path in the package | How it gets there | Required |
 | --- | --- | --- | --- |
-| rosbag (MCAP) | `*.mcap` + `metadata.yaml` | `ros2 bag record` (`--field-record --control-mavros`) | yes |
+| rosbag (MCAP) | `*.mcap` + `metadata.yaml` | `ros2 bag record` (`--field-record`; `--control-mavros` only for control trials) | yes |
 | controller diagnostics | `/control_ref/diagnostics` in the bag | `control_ref_node` (`thesis_msgs/ControlDiagnostics`, one per command) | yes (when control runs) |
 | run metadata / provenance | `run_metadata.json` | `tools/live/write_live_run_metadata.py` (schema v1) | yes |
 | flight metadata (plain text) | `flight_metadata.txt` | `tools/start_live_stack.sh` | yes |
 | target-authority events | `target_authority_events.jsonl` | `dashboard_bridge_node` → archived on stop | yes |
-| controller runtime log | `run_logs/control.log` | `tools/live/archive_run_evidence.py` on stop | yes |
+| controller runtime log | `run_logs/control.log` | `tools/live/archive_run_evidence.py` on stop | required when the controller runs; explicitly optional/absent for `--no-control` |
 | dashboard bridge log | `run_logs/dashboard_bridge.log` | same | yes |
 | TIM-MARS node log | `run_logs/target_memory_mars.log` | same | yes |
 | operator event log | `run_logs/operator_events.jsonl` | same (optional-file; `absent` recorded if never written) | yes for retained trials |
@@ -31,7 +31,7 @@ evidence package for a trial. Everything below lives inside it.
 | evidence-package status | `evidence_package_status.json` | `tools/live/verify_evidence_package.py` on stop | yes |
 | paired raw-image bag | `<RUN_ID>__video__…__image_raw/` (sibling dir) | `--record-raw` | recommended |
 | physical-person annotation | added post-flight (`tim_physical_target_bbox_v2`) | manual, from the retained imagery | pending post-flight |
-| native Pixhawk `.bin` dataflash | `pixhawk_dataflash/*.bin` + `dataflash_manifest.json` | `tools/live/archive_pixhawk_dataflash.py --source-bin <file>` (retrieval verification pending) | pending post-flight (control field trials) |
+| native Pixhawk `.bin` dataflash | `pixhawk_dataflash/*.bin` + `dataflash_manifest.json` | `tools/live/archive_pixhawk_dataflash.py --source-bin <file>` (retrieval verification pending) | pending post-flight (retained field trials) |
 
 `run_metadata.json.git.commit` is the exact Git SHA; `run_metadata.json.hashes`
 carries the SHA-256 of the detector HEF, the MARS ReID model and
