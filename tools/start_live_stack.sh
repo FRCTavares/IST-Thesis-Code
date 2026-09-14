@@ -140,6 +140,291 @@ print_startup_success_summary() {
 # Provides: kill_tree, stop_app_nodes, finalize_recorders.
 source "$THESIS_ROOT/tools/lib/live_shutdown.sh"
 
+# Issue #50 real-hardware MAVLink target resolution.
+#
+# The June bring-up used FCU system 9, while the 14 Sep 2026 physical Pixhawk
+# advertises system 10. A retained run must therefore not depend on one
+# historical hard-coded SYSID. An explicit MAVROS_TGT_SYSTEM override wins;
+# otherwise the launcher probes the approved ordered candidate list. Every
+# failed attempt is fully stopped before the next candidate, and failure to
+# connect to any candidate aborts the run. This helper never arms, changes
+# flight mode, or publishes setpoints.
+mavros_state_reports_connected() {
+    local timeout_s="${1:-5}"
+    local tmp=""
+    local rc=1
+
+    if ! [[ "$timeout_s" =~ ^[0-9]+$ ]] || (( timeout_s < 1 || timeout_s > 60 )); then
+        echo "[error] invalid MAVROS state observation timeout: $timeout_s"
+        return 1
+    fi
+
+    tmp="$(mktemp "$RUN_DIR/mavros_state_probe.XXXXXX")" || {
+        echo "[error] failed to create MAVROS state observation file"
+        return 1
+    }
+
+    # /mavros/state legitimately publishes an initial connected:false before
+    # the FCU heartbeat transition. Observe a bounded stream rather than
+    # trusting the first sample.
+    timeout "$timeout_s" ros2 topic echo /mavros/state         > "$tmp" 2>/dev/null || true
+
+    if grep -q '^connected: true$' "$tmp"; then
+        rc=0
+    fi
+
+    rm -f "$tmp"
+    return "$rc"
+}
+
+remove_tracked_pid_entry() {
+    local pid="$1"
+    local process_name="$2"
+    local tmp=""
+
+    [[ -f "${PID_FILE:-}" ]] || return 0
+
+    tmp="${PID_FILE}.tmp.$$"
+    if ! awk -v pid="$pid" -v name="$process_name" \
+        '!( $1 == pid && $2 == name )' \
+        "$PID_FILE" > "$tmp"; then
+        rm -f "$tmp"
+        echo "[error] failed to rewrite PID tracking file"
+        return 1
+    fi
+
+    if ! mv "$tmp" "$PID_FILE"; then
+        rm -f "$tmp"
+        echo "[error] failed to replace PID tracking file"
+        return 1
+    fi
+}
+
+stop_mavros_probe_attempt() {
+    local process_name="$1"
+    local pid="${PROC_PIDS[$process_name]:-}"
+    local identity=""
+    local owned_pid=""
+    local any=0
+    local i=0
+    local -a tree_identities=()
+
+    if [[ -z "${pid:-}" ]]; then
+        return 0
+    fi
+
+    # Snapshot the exact owned process tree before signalling the ros2-launch
+    # wrapper. Once that wrapper exits, MAVROS descendants may be reparented
+    # and can no longer be discovered safely with pgrep -P.
+    if ! _live_pid_alive "$pid"; then
+        echo "[error] MAVROS probe launcher pid=$pid exited before cleanup ownership snapshot"
+        return 1
+    fi
+
+    _LIVE_TREE_IDENTITIES=()
+    _live_collect_tree_identities "$pid"
+    tree_identities=("${_LIVE_TREE_IDENTITIES[@]}")
+
+    if (( ${#tree_identities[@]} == 0 )); then
+        echo "[error] failed to snapshot MAVROS probe process tree for pid=$pid"
+        return 1
+    fi
+
+    kill_tree "$pid" INT
+
+    # MAVROS on the current Jazzy installation has been observed to enter its
+    # signal handler and then SIGSEGV while shutting down. Therefore completion
+    # is judged using the pre-signal PID/start-time identities, not merely the
+    # ros2-launch wrapper PID.
+    for _ in {1..20}; do
+        any=0
+        for identity in "${tree_identities[@]}"; do
+            if _live_identity_alive "$identity"; then
+                any=1
+                break
+            fi
+        done
+        [[ "$any" -eq 0 ]] && break
+        sleep 0.5
+    done
+
+    any=0
+    for identity in "${tree_identities[@]}"; do
+        if _live_identity_alive "$identity"; then
+            any=1
+            break
+        fi
+    done
+
+    if [[ "$any" -eq 1 ]]; then
+        echo "[warn] MAVROS probe tree survived SIGINT; sending SIGTERM"
+        for (( i=${#tree_identities[@]}-1; i>=0; i-- )); do
+            identity="${tree_identities[i]}"
+            if _live_identity_alive "$identity"; then
+                owned_pid="${identity%%:*}"
+                kill -s TERM "$owned_pid" >/dev/null 2>&1 || true
+            fi
+        done
+
+        for _ in {1..10}; do
+            any=0
+            for identity in "${tree_identities[@]}"; do
+                if _live_identity_alive "$identity"; then
+                    any=1
+                    break
+                fi
+            done
+            [[ "$any" -eq 0 ]] && break
+            sleep 0.5
+        done
+    fi
+
+    any=0
+    for identity in "${tree_identities[@]}"; do
+        if _live_identity_alive "$identity"; then
+            any=1
+            break
+        fi
+    done
+
+    if [[ "$any" -eq 1 ]]; then
+        echo "[warn] MAVROS probe tree survived SIGTERM; sending SIGKILL"
+        for (( i=${#tree_identities[@]}-1; i>=0; i-- )); do
+            identity="${tree_identities[i]}"
+            if _live_identity_alive "$identity"; then
+                owned_pid="${identity%%:*}"
+                kill -s KILL "$owned_pid" >/dev/null 2>&1 || true
+            fi
+        done
+        sleep 1
+    fi
+
+    for identity in "${tree_identities[@]}"; do
+        if _live_identity_alive "$identity"; then
+            owned_pid="${identity%%:*}"
+            echo "[error] failed to stop owned MAVROS probe process pid=$owned_pid"
+            return 1
+        fi
+    done
+
+    if ! remove_tracked_pid_entry "$pid" "$process_name"; then
+        return 1
+    fi
+
+    unset 'PROC_PIDS[$process_name]'
+}
+
+start_mavros_target_probe() {
+    local process_name="$1"
+    local target=""
+    local deadline=0
+    local connected=0
+    local -a candidates=()
+
+    MAVROS_FCU_URL="${MAVROS_FCU_URL:-udp://:14550@}"
+    MAVROS_TGT_COMPONENT="${MAVROS_TGT_COMPONENT:-1}"
+    MAVROS_TGT_SYSTEM_CANDIDATES="${MAVROS_TGT_SYSTEM_CANDIDATES:-10 9}"
+    MAVROS_TARGET_PROBE_TIMEOUT_S="${MAVROS_TARGET_PROBE_TIMEOUT_S:-15}"
+
+    if ! [[ "$MAVROS_TGT_COMPONENT" =~ ^[0-9]+$ ]] \
+        || (( MAVROS_TGT_COMPONENT < 1 || MAVROS_TGT_COMPONENT > 255 )); then
+        echo "[error] invalid MAVROS_TGT_COMPONENT=$MAVROS_TGT_COMPONENT"
+        return 1
+    fi
+
+    if ! [[ "$MAVROS_TARGET_PROBE_TIMEOUT_S" =~ ^[0-9]+$ ]] \
+        || (( MAVROS_TARGET_PROBE_TIMEOUT_S < 1 || MAVROS_TARGET_PROBE_TIMEOUT_S > 60 )); then
+        echo "[error] invalid MAVROS_TARGET_PROBE_TIMEOUT_S=$MAVROS_TARGET_PROBE_TIMEOUT_S"
+        return 1
+    fi
+
+    if [[ -n "${MAVROS_TGT_SYSTEM:-}" ]]; then
+        candidates=("$MAVROS_TGT_SYSTEM")
+        MAVROS_TARGET_SELECTION_MODE="explicit"
+    else
+        read -r -a candidates <<< "$MAVROS_TGT_SYSTEM_CANDIDATES"
+        MAVROS_TARGET_SELECTION_MODE="auto"
+    fi
+
+    if (( ${#candidates[@]} == 0 )); then
+        echo "[error] no MAVROS target-system candidates configured"
+        return 1
+    fi
+
+    for target in "${candidates[@]}"; do
+        if ! [[ "$target" =~ ^[0-9]+$ ]] || (( target < 1 || target > 255 )); then
+            echo "[error] invalid MAVROS target-system candidate: $target"
+            return 1
+        fi
+
+        echo "[mavros-probe] trying FCU target ${target}.${MAVROS_TGT_COMPONENT}"
+
+        start_ros_bg "$process_name" ros2 launch mavros apm.launch \
+            fcu_url:="$MAVROS_FCU_URL" \
+            tgt_system:="$target" \
+            tgt_component:="$MAVROS_TGT_COMPONENT"
+
+        connected=0
+        deadline=$((SECONDS + MAVROS_TARGET_PROBE_TIMEOUT_S))
+
+        # Do not repeatedly create short-lived `ros2 topic echo` subscribers
+        # here. On the Pi, DDS discovery can consume most/all of that lifetime
+        # and caused a real connected 10.1 FCU to be classified as failed.
+        # MAVROS's persistent process log records the actual FCU heartbeat
+        # transition and is local to this freshly-truncated probe log.
+        while (( SECONDS < deadline )); do
+            if grep -Fq \
+                "CON: Got HEARTBEAT, connected. FCU:" \
+                "$RUN_DIR/${process_name}.log" 2>/dev/null; then
+                connected=1
+                break
+            fi
+
+            if ! kill -0 "${PROC_PIDS[$process_name]:-0}" >/dev/null 2>&1; then
+                break
+            fi
+
+            sleep 0.25
+        done
+
+        if [[ "$connected" -eq 1 ]]; then
+            MAVROS_RESOLVED_TGT_SYSTEM="$target"
+            MAVROS_RESOLVED_TGT_COMPONENT="$MAVROS_TGT_COMPONENT"
+            export MAVROS_RESOLVED_TGT_SYSTEM MAVROS_RESOLVED_TGT_COMPONENT
+            export MAVROS_TARGET_SELECTION_MODE
+
+            {
+                echo "selection_mode=$MAVROS_TARGET_SELECTION_MODE"
+                echo "requested_system=${MAVROS_TGT_SYSTEM:-auto}"
+                echo "candidate_systems=$MAVROS_TGT_SYSTEM_CANDIDATES"
+                echo "resolved_system=$MAVROS_RESOLVED_TGT_SYSTEM"
+                echo "resolved_component=$MAVROS_RESOLVED_TGT_COMPONENT"
+                echo "fcu_url=$MAVROS_FCU_URL"
+                echo "probe_timeout_s=$MAVROS_TARGET_PROBE_TIMEOUT_S"
+            } > "$RUN_DIR/mavros_target_resolution.txt"
+
+            echo "[ok] MAVROS FCU target resolved: ${MAVROS_RESOLVED_TGT_SYSTEM}.${MAVROS_RESOLVED_TGT_COMPONENT} (${MAVROS_TARGET_SELECTION_MODE})"
+            return 0
+        fi
+
+        echo "[warn] MAVROS target ${target}.${MAVROS_TGT_COMPONENT} did not connect"
+
+        if [[ -f "$RUN_DIR/${process_name}.log" ]]; then
+            cp "$RUN_DIR/${process_name}.log" \
+                "$RUN_DIR/${process_name}_target_${target}_failed.log" || true
+        fi
+
+        if ! stop_mavros_probe_attempt "$process_name"; then
+            echo "[error] refusing to probe another MAVROS target after cleanup failure"
+            return 1
+        fi
+        sleep 1
+    done
+
+    echo "[error] no approved MAVROS FCU target connected; candidates: ${candidates[*]}"
+    return 1
+}
+
 # Refuse to record a retained trial into an existing non-empty directory.
 # RUN_ID is deterministic (Issue #118), so a collision means a real prior
 # trial -- never silently overwrite or auto-suffix scientific evidence.
@@ -428,6 +713,11 @@ write_video_bag_metadata() {
         echo "mavros_mirror_enabled=${CONTROL_MAVROS_BOOL:-false}"
         echo "record_mavros=$RECORD_MAVROS"
         echo "field_mavros_mode=${FIELD_MAVROS_RECORD:-0}"
+        echo "mavros_target_selection_mode=${MAVROS_TARGET_SELECTION_MODE:-disabled}"
+        echo "mavros_target_system_requested=${MAVROS_TGT_SYSTEM:-auto}"
+        echo "mavros_target_system_candidates=${MAVROS_TGT_SYSTEM_CANDIDATES:-10 9}"
+        echo "mavros_target_system_resolved=${MAVROS_RESOLVED_TGT_SYSTEM:-unresolved}"
+        echo "mavros_target_component_resolved=${MAVROS_RESOLVED_TGT_COMPONENT:-unresolved}"
         echo "mavros_setpoint_velocity_frame=${MAVROS_SETPOINT_VELOCITY_FRAME:-disabled}"
         echo "bag_out_dir=${VIDEO_BAG_OUT_DIR:-}"
         echo "dataset_bag_out_dir=${DATASET_BAG_OUT_DIR:-}"
@@ -1043,8 +1333,8 @@ if [[ "$RECORD_MAVROS" -eq 1 ]]; then
     }
 
     MAVROS_FCU_URL="${MAVROS_FCU_URL:-udp://:14550@}"
-    MAVROS_TGT_SYSTEM="${MAVROS_TGT_SYSTEM:-9}"
     MAVROS_TGT_COMPONENT="${MAVROS_TGT_COMPONENT:-1}"
+    MAVROS_TGT_SYSTEM_CANDIDATES="${MAVROS_TGT_SYSTEM_CANDIDATES:-10 9}"
     MAVROS_STREAM_RATE="${MAVROS_STREAM_RATE:-50}"
 
     if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
@@ -1057,40 +1347,20 @@ if [[ "$RECORD_MAVROS" -eq 1 ]]; then
     fi
 
     mavros_log info "--record-mavros enabled: starting MAVROS telemetry"
-    mavros_log info "config: fcu_url=${MAVROS_FCU_URL} target=${MAVROS_TGT_SYSTEM}.${MAVROS_TGT_COMPONENT} stream_rate=${MAVROS_STREAM_RATE}Hz"
+    mavros_log info "config: fcu_url=${MAVROS_FCU_URL} target=${MAVROS_TGT_SYSTEM:-auto[${MAVROS_TGT_SYSTEM_CANDIDATES}]} component=${MAVROS_TGT_COMPONENT} stream_rate=${MAVROS_STREAM_RATE}Hz"
 
-    if timeout 3 ros2 topic echo /mavros/state --once 2>/dev/null | grep -q "connected: true"; then
+    if mavros_state_reports_connected 5; then
+        MAVROS_RESOLVED_TGT_SYSTEM="${MAVROS_TGT_SYSTEM:-preexisting}"
+        MAVROS_RESOLVED_TGT_COMPONENT="$MAVROS_TGT_COMPONENT"
+        MAVROS_TARGET_SELECTION_MODE="preexisting"
         mavros_log ok "MAVROS already connected"
     else
-        mavros_log info "launching MAVROS node"
-        start_ros_bg mavros ros2 launch mavros apm.launch \
-            fcu_url:="$MAVROS_FCU_URL" \
-            tgt_system:="$MAVROS_TGT_SYSTEM" \
-            tgt_component:="$MAVROS_TGT_COMPONENT"
-
-        mavros_log info "waiting for MAVROS connection on /mavros/state, timeout 60s"
-        MAVROS_CONNECTED=0
-
-        for i in {1..60}; do
-            if timeout 3 ros2 topic echo /mavros/state --once 2>/dev/null | grep -q "connected: true"; then
-                MAVROS_CONNECTED=1
-                break
-            fi
-
-            if (( i % 5 == 0 )); then
-                mavros_log info "still waiting for MAVROS connection, ${i}/60s"
-            fi
-
-            sleep 1
-        done
-
-        if [[ "$MAVROS_CONNECTED" -ne 1 ]]; then
-            mavros_log error "MAVROS did not report connected: true on /mavros/state"
+        if ! start_mavros_target_probe mavros; then
+            mavros_log error "MAVROS did not connect to any approved FCU target"
             stop_stack
             exit 1
         fi
-
-        mavros_log ok "MAVROS connected"
+        mavros_log ok "MAVROS connected to target ${MAVROS_RESOLVED_TGT_SYSTEM}.${MAVROS_RESOLVED_TGT_COMPONENT}"
     fi
 
     MAVROS_SETPOINT_VELOCITY_FRAME="BODY_NED"
@@ -1571,9 +1841,13 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
         echo "[source] starting MAVROS Pixhawk 6X Ethernet link"
         export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 
-        start_ros_bg source_mavros_pixhawk bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 launch mavros apm.launch fcu_url:=udp://:14550@ tgt_system:=9 tgt_component:=1'
+        if ! start_mavros_target_probe source_mavros_pixhawk; then
+            echo "[error] source MAVROS did not connect to any approved FCU target"
+            stop_stack
+            exit 1
+        fi
 
-        sleep 8
+        echo "[source] MAVROS target resolved: ${MAVROS_RESOLVED_TGT_SYSTEM}.${MAVROS_RESOLVED_TGT_COMPONENT}"
 
         echo "[source] requesting MAVLink streams"
         bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate "{stream_id: 0, message_rate: 50, on_off: true}"' || true

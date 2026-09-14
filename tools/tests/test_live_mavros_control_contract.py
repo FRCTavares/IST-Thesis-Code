@@ -37,7 +37,7 @@ def test_body_frame_is_verified_before_controller_mirroring_starts():
         'set_pi_network_mode.sh" pixhawk'
     )
     mavros_launch = LAUNCHER.index(
-        "start_ros_bg mavros ros2 launch mavros apm.launch"
+        "start_mavros_target_probe mavros"
     )
     frame_set = LAUNCHER.index(
         "ros2 param set /mavros/setpoint_velocity mav_frame"
@@ -60,8 +60,9 @@ def test_legacy_normal_live_field_mavros_instance_is_removed():
         not in LAUNCHER
     )
 
-    # Source-record mode remains intentionally separate.
-    assert "start_ros_bg source_mavros_pixhawk " in LAUNCHER
+    # Source-record mode remains intentionally separate but shares the
+    # same fail-closed FCU target resolver.
+    assert "start_mavros_target_probe source_mavros_pixhawk" in LAUNCHER
 
 
 def test_retained_bag_records_actual_stamped_mavros_command():
@@ -116,3 +117,153 @@ def test_yaw_recovery_candidate_is_deliberately_gated():
         assert knob not in CLI
         assert knob not in USAGE
         assert knob not in LAUNCHER
+
+
+
+
+def test_preexisting_mavros_check_observes_state_transition_not_first_sample():
+    helper = LAUNCHER[
+        LAUNCHER.index("mavros_state_reports_connected() {"):
+        LAUNCHER.index("remove_tracked_pid_entry() {")
+    ]
+
+    assert 'timeout "$timeout_s" ros2 topic echo /mavros/state' in helper
+    assert "ros2 topic echo /mavros/state --once" not in helper
+    assert "grep -q '^connected: true$'" in helper
+    assert 'rm -f "$tmp"' in helper
+
+    mavros_runtime = LAUNCHER[
+        LAUNCHER.index('if [[ "$RECORD_MAVROS" -eq 1 ]]; then'):
+        LAUNCHER.index(
+            'if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then'
+        )
+    ]
+
+    assert "if mavros_state_reports_connected 5; then" in mavros_runtime
+    assert (
+        "timeout 3 ros2 topic echo /mavros/state --once"
+        not in mavros_runtime
+    )
+
+def test_mavros_target_system_is_resolved_fail_closed():
+    assert 'MAVROS_TGT_SYSTEM_CANDIDATES="${MAVROS_TGT_SYSTEM_CANDIDATES:-10 9}"' in LAUNCHER
+    assert 'if [[ -n "${MAVROS_TGT_SYSTEM:-}" ]]; then' in LAUNCHER
+    assert 'MAVROS_TARGET_SELECTION_MODE="explicit"' in LAUNCHER
+    assert 'MAVROS_TARGET_SELECTION_MODE="auto"' in LAUNCHER
+    assert "start_mavros_target_probe mavros" in LAUNCHER
+    assert "start_mavros_target_probe source_mavros_pixhawk" in LAUNCHER
+    assert "no approved MAVROS FCU target connected" in LAUNCHER
+    assert "stop_mavros_probe_attempt" in LAUNCHER
+    assert "tgt_system:=9" not in LAUNCHER
+
+
+def test_resolved_mavros_target_is_recorded_in_metadata():
+    assert "mavros_target_selection_mode=" in LAUNCHER
+    assert "mavros_target_system_requested=" in LAUNCHER
+    assert "mavros_target_system_candidates=" in LAUNCHER
+    assert "mavros_target_system_resolved=" in LAUNCHER
+    assert "mavros_target_component_resolved=" in LAUNCHER
+
+
+def test_target_probe_does_not_gain_aircraft_authority():
+    probe = LAUNCHER[
+        LAUNCHER.index("start_mavros_target_probe() {"):
+        LAUNCHER.index("# Refuse to record a retained trial", LAUNCHER.index("start_mavros_target_probe() {"))
+    ]
+    assert "/mavros/cmd/arming" not in probe
+    assert "/mavros/set_mode" not in probe
+    assert "/mavros/setpoint_velocity/cmd_vel" not in probe
+    assert "CommandBool" not in probe
+    assert "SetMode" not in probe
+
+
+
+
+
+
+def test_mavros_probe_readiness_uses_persistent_heartbeat_not_short_dds_echoes():
+    probe = LAUNCHER[
+        LAUNCHER.index("start_mavros_target_probe() {"):
+        LAUNCHER.index(
+            "# Refuse to record a retained trial",
+            LAUNCHER.index("start_mavros_target_probe() {"),
+        )
+    ]
+
+    assert 'MAVROS_TARGET_PROBE_TIMEOUT_S="${MAVROS_TARGET_PROBE_TIMEOUT_S:-15}"' in probe
+    assert "CON: Got HEARTBEAT, connected. FCU:" in probe
+    assert 'grep -Fq' in probe
+    assert "ros2 topic echo /mavros/state" not in probe
+    assert "MAVROS_TARGET_PROBE_ATTEMPTS" not in probe
+
+
+def test_mavros_probe_cleanup_snapshots_and_verifies_owned_descendants():
+    cleanup = LAUNCHER[
+        LAUNCHER.index("stop_mavros_probe_attempt() {"):
+        LAUNCHER.index("start_mavros_target_probe() {")
+    ]
+
+    assert '_live_collect_tree_identities "$pid"' in cleanup
+    assert 'tree_identities=("${_LIVE_TREE_IDENTITIES[@]}")' in cleanup
+    assert '_live_identity_alive "$identity"' in cleanup
+    assert 'owned MAVROS probe process' in cleanup
+    assert 'kill -s TERM "$owned_pid"' in cleanup
+    assert 'kill -s KILL "$owned_pid"' in cleanup
+    assert cleanup.index('_live_collect_tree_identities "$pid"') < cleanup.index(
+        'kill_tree "$pid" INT'
+    )
+
+def test_failed_mavros_probe_cleanup_must_succeed_before_next_candidate():
+    probe = LAUNCHER[
+        LAUNCHER.index("start_mavros_target_probe() {"):
+        LAUNCHER.index(
+            "# Refuse to record a retained trial",
+            LAUNCHER.index("start_mavros_target_probe() {"),
+        )
+    ]
+
+    guard = 'if ! stop_mavros_probe_attempt "$process_name"; then'
+    error = (
+        "refusing to probe another MAVROS target after cleanup failure"
+    )
+
+    assert guard in probe
+    assert error in probe
+
+    guarded = probe[probe.index(guard):]
+    assert guarded.index(error) < guarded.index("return 1")
+    assert guarded.index("return 1") < guarded.index("sleep 1")
+
+
+def test_probe_pid_tracking_replace_failure_is_fail_closed_and_cleans_tmp():
+    cleanup = LAUNCHER[
+        LAUNCHER.index("remove_tracked_pid_entry() {"):
+        LAUNCHER.index("stop_mavros_probe_attempt() {")
+    ]
+
+    assert 'if ! mv "$tmp" "$PID_FILE"; then' in cleanup
+    assert 'rm -f "$tmp"' in cleanup
+    assert "failed to replace PID tracking file" in cleanup
+    assert "return 1" in cleanup
+
+def test_failed_mavros_probe_is_removed_from_shutdown_pid_tracking():
+    cleanup = LAUNCHER[
+        LAUNCHER.index("remove_tracked_pid_entry() {"):
+        LAUNCHER.index("start_mavros_target_probe() {")
+    ]
+
+    assert 'awk -v pid="$pid" -v name="$process_name"' in cleanup
+    assert 'mv "$tmp" "$PID_FILE"' in cleanup
+
+    # Initial shutdown is tree-wide while parent/child relationships are
+    # intact; escalation is then restricted to the exact snapshotted
+    # PID/start-time identities owned by this probe.
+    assert 'kill_tree "$pid" INT' in cleanup
+    assert '_live_collect_tree_identities "$pid"' in cleanup
+    assert '_live_identity_alive "$identity"' in cleanup
+    assert 'kill -s TERM "$owned_pid"' in cleanup
+    assert 'kill -s KILL "$owned_pid"' in cleanup
+
+    assert 'remove_tracked_pid_entry "$pid" "$process_name"' in cleanup
+    assert "failed to stop owned MAVROS probe process" in cleanup
+    assert "unset 'PROC_PIDS[$process_name]'" in cleanup

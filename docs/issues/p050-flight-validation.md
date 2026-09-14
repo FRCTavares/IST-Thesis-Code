@@ -50,6 +50,105 @@ The software command contract is therefore substantially narrower, but the
 retained aircraft command remains blocked until the real Pixhawk/network,
 ground-sign and pilot-takeover gates in `docs/flight/README.md` pass.
 
+### 14 September real-hardware MAVLink target validation
+
+Ground-only testing with the real Pixhawk 6X showed that the current FCU
+advertises MAVLink target `10.1`, while the older June bring-up documentation
+used `9.1`. With the old fixed `9.1` target MAVROS saw packets from remote
+`10.1` but never reached `connected: true`; targeting `10.1` immediately
+produced a valid ArduPilot heartbeat, `armed: false`, `STABILIZE`, raw IMU and
+battery telemetry. `BODY_NED` read-back and the stream-rate request both
+passed, and `/mavros/setpoint_velocity/cmd_vel` had zero publishers.
+
+The launcher therefore no longer assumes one historical FCU SYSID. An explicit
+`MAVROS_TGT_SYSTEM` remains authoritative when deliberately supplied;
+otherwise both the retained field path and source+MAVROS path probe the bounded
+approved list `10 9`, fully stopping a failed MAVROS attempt before trying the
+next target. The resolved system/component and selection mode are retained in
+runtime metadata. Failure to connect to every candidate aborts startup. Target
+resolution does not arm the aircraft, change flight mode, or publish setpoints.
+
+
+### 14 September field-network race diagnosis and revalidation
+
+A first full field-record ground attempt did not validate the automatic MAVROS
+target resolver because the host left Pixhawk network mode while the probes were
+running. NetworkManager had generated an `eth0` down event while the already
+connected `pixhawk-apm` profile was being reactivated; the asynchronous
+fail-closed dispatcher then acted on that stale event after the Ethernet link
+had recovered, returning the Pi to unattended networking.
+
+The previously deployed Pixhawk-gated host-network implementation was recovered
+from commit `3a42c8e4` and restored as the repository source of truth. Field
+entry is now idempotent for an already-active approved Wi-Fi and valid
+`pixhawk-apm` link, and a serialized disconnect request revalidates Ethernet
+carrier, active profile and absence of an Ethernet default route before leaving
+Pixhawk mode.
+
+Real-hardware network-only revalidation passed: `ISR Aero.Next GCS` remained
+active on `wlan0` at `192.168.8.174/24`, `pixhawk-apm` remained active on
+`eth0` at `192.168.144.183/24`, the default route remained exclusively on
+Wi-Fi, Pixhawk `192.168.144.14` was reachable, and Tailscale remained inactive.
+Repeated Pixhawk-mode entry caused no interface cycle, and a deliberately
+started stale disconnect service exited with `stale Pixhawk-disconnect request
+ignored: Ethernet link is healthy`. Subsequent MAVROS auto-target probing was
+then revalidated successfully on the repaired network path.
+
+
+The first post-network-repair `9 -> 10` resolver proof then exposed two
+launcher-side defects rather than a link failure. The `10.1` MAVROS instance
+logged `CON: Got HEARTBEAT, connected. FCU: ArduPilot`, RC input and raw IMU,
+but repeated two-second `ros2 topic echo /mavros/state --once` processes never
+observed a sample and falsely rejected the healthy FCU. In addition, the
+connected `mavros_node` entered its signal handler during probe cleanup and
+then produced an Apport `SIGSEGV` report, while cleanup had been watching only
+the `ros2 launch` wrapper PID.
+
+The repair therefore uses the persistent per-probe MAVROS heartbeat log for
+bounded target resolution and snapshots PID/start-time identities for the
+entire owned launch tree before signalling it. A subsequent candidate is
+forbidden until every captured identity has disappeared, with TERM/KILL
+escalation restricted to those captured processes.
+
+Real-hardware revalidation then passed with the deliberate candidate order
+`9 -> 10`: `9.1` timed out and its owned process tree was removed before the
+next probe; `10.1` reached the ArduPilot heartbeat and was resolved as system
+10/component 1. Raw IMU telemetry was present,
+`/mavros/setpoint_velocity/cmd_vel` had zero publishers, and cleanup left no
+MAVROS process behind. A persistent `/mavros/state` observation additionally
+captured the expected startup transition from one `connected: false` sample to
+repeated `connected: true`, `armed: false`, `manual_input: true`, `STABILIZE`
+samples. This demonstrated that a first-sample `--once` query is not a valid
+MAVROS connectivity predicate; the remaining generic pre-existing-MAVROS check
+was therefore changed to use the same bounded transition-aware observation
+semantics.
+
+A genuine physical Ethernet-loss test subsequently validated the opposite side
+of the fail-closed contract. With the host initially in Pixhawk mode, physical
+removal of the Pixhawk Ethernet cable changed `eth0` carrier from 1 to 0.
+NetworkManager reported `activated -> unavailable` with reason
+`carrier-changed`; the dispatcher/service then logged `confirmed Pixhawk
+Ethernet loss; returning unattended`. The host disconnected
+`ISR Aero.Next GCS`, enabled Tailscale, returned to `configured_mode=unattended`,
+and automatically rejoined ordinary `ISR` Wi-Fi. The final unattended state had
+no Pixhawk Ethernet connection or Ethernet route, Tailscale was active, no
+MAVROS process was running, and remote access through Tailscale succeeded.
+Together with the earlier stale-event test, this demonstrates that recovered
+Ethernet is preserved while genuine physical link loss fails closed as
+intended.
+
+The return path was also exercised physically. Reconnecting the Pixhawk
+Ethernet cable while the host remained in unattended mode restored carrier
+without activating `pixhawk-apm`, without reconnecting `ISR Aero.Next GCS`,
+and without disabling Tailscale; both field profiles remained
+`connection.autoconnect=no`. Field authority therefore did not return merely
+because the cable was restored. An explicit `pixhawk` transition was then
+requested and completed with return code zero: `ISR Aero.Next GCS` reacquired
+`192.168.8.174/24`, `pixhawk-apm` became active on `eth0` at
+`192.168.144.183/24`, Pixhawk `192.168.144.14` was reachable, the Ethernet
+interface carried no default route, and Tailscale was disabled. No MAVROS
+process was started during this network round-trip.
+
 ### 9 September evidence-retention plumbing
 
 Three evidence-plumbing changes were made so a retained trial can be
