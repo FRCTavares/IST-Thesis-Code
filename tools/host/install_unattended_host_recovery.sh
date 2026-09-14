@@ -110,6 +110,34 @@ disable_field_wifi_autoconnect() {
     done
 }
 
+provision_gcs_rescue_profile() {
+    local primary="${THESIS_HOST_PIXHAWK_WIFI_CONNECTION:-}"
+    local rescue="${THESIS_HOST_GCS_RESCUE_WIFI_CONNECTION:-}"
+    local rescue_priority="${THESIS_HOST_GCS_RESCUE_AUTOCONNECT_PRIORITY:-20}"
+
+    [ -n "$rescue" ] || return 0
+
+    if ! nmcli -t -f NAME connection show | grep -Fxq -- "$rescue"; then
+        if [ -z "$primary" ] \
+            || ! nmcli -t -f NAME connection show | grep -Fxq -- "$primary"; then
+            echo "[warn] cannot provision GCS rescue profile: primary profile is unavailable" >&2
+            return 0
+        fi
+
+        # Clone locally so the Wi-Fi PSK remains in NetworkManager and never
+        # enters the repository or installer arguments.
+        nmcli connection clone "$primary" "$rescue"
+        echo "[ok] cloned management-rescue Wi-Fi from primary GCS profile"
+    fi
+
+    nmcli connection modify "$rescue" \
+        connection.autoconnect yes \
+        connection.autoconnect-priority "$rescue_priority" \
+        connection.interface-name "$INTERFACE"
+
+    echo "[ok] management-rescue Wi-Fi enabled: $rescue (priority=$rescue_priority)"
+}
+
 python3 -m py_compile "$THESIS_ROOT/tools/host/thesis_host_health.py"
 systemd-analyze verify \
     "$SYSTEMD_ASSET_ROOT/thesis-host-health.service" \
@@ -143,9 +171,10 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
     printf '[dry-run] back up before firewall changes %s\n' "${backup_only[@]}"
     echo "[dry-run] enable NetworkManager.service tailscaled.service ssh.socket thesis-host-health.timer"
     echo "[dry-run] enforce configured field Wi-Fi profiles with connection.autoconnect=no"
+    echo "[dry-run] provision low-priority autoconnecting GCS management-rescue profile when primary GCS credentials exist"
     echo "[dry-run] install Pixhawk-link dispatcher fail-closed exit hook and service"
     if [[ "$CONFIGURE_FIREWALL" -eq 1 ]]; then
-        echo "[dry-run] enable UFW: deny inbound, allow tailscale0, allow UDP 41641 on $INTERFACE, allow Pixhawk UDP 14550 on eth0"
+        echo "[dry-run] enable UFW: deny inbound, allow tailscale0, allow UDP 41641 on $INTERFACE, allow Pixhawk UDP 14550 on eth0, allow restricted GCS-subnet SSH on $INTERFACE"
     fi
     echo "[dry-run] no ROS, MAVROS, perception, control, or flight service is enabled"
     exit 0
@@ -205,9 +234,11 @@ set -a
 source /etc/default/thesis-host-health
 set +a
 
-# Persist the core gating invariant in NetworkManager itself. Field/GCS Wi-Fi
-# may only be activated explicitly after Pixhawk carrier is proven.
+# Persist the core gating invariant in NetworkManager itself. The actual
+# field-authority Wi-Fi may only be activated explicitly after Pixhawk carrier
+# is proven. A distinct low-priority clone may autoconnect for local SSH only.
 disable_field_wifi_autoconnect
+provision_gcs_rescue_profile
 
 install -D -m 0644 \
     "$SYSTEMD_ASSET_ROOT/tailscaled.service.d/10-thesis-recovery.conf" \
@@ -237,6 +268,14 @@ if [[ "$CONFIGURE_FIREWALL" -eq 1 ]]; then
         comment 'Tailscale direct transport'
     ufw allow in on eth0 proto udp to any port 14550 \
         comment 'Pixhawk MAVLink Ethernet'
+
+    if [[ -n "${THESIS_HOST_GCS_SSH_SUBNET:-}" ]]; then
+        ufw allow in on "$INTERFACE" \
+            from "$THESIS_HOST_GCS_SSH_SUBNET" \
+            to any port 22 proto tcp \
+            comment 'Thesis field operator SSH'
+    fi
+
     ufw --force enable
 fi
 

@@ -2,7 +2,14 @@
 THESIS_HOST_MODE=unattended
 THESIS_HOST_INTERFACE=wlan0
 THESIS_HOST_PIXHAWK_WIFI_CONNECTION="ISR Aero.Next GCS"
-# Optional approved AERONEXT local-router profile. ISR remains first priority.
+
+# Management-only profile for local SSH when Aero.Next GCS is the only
+# reachable Wi-Fi. This profile does not grant Pixhawk/field authority.
+THESIS_HOST_GCS_RESCUE_WIFI_CONNECTION="ISR Aero.Next GCS Rescue"
+THESIS_HOST_GCS_RESCUE_AUTOCONNECT_PRIORITY=20
+THESIS_HOST_GCS_SSH_SUBNET="192.168.8.0/24"
+
+# Optional approved AERONEXT local-router field-authority fallback.
 THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION=""
 THESIS_HOST_PIXHAWK_ETHERNET_CONNECTION=pixhawk-apm
 THESIS_HOST_STATE_DIR=/var/lib/thesis-host-health

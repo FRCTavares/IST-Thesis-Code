@@ -1,6 +1,6 @@
 # Flight day
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-09-14
 
 This is the **only current day-of-flight operator sheet**.
 The other `P027_*.md` files here are frozen #27 provenance.
@@ -76,6 +76,16 @@ Switch back to normal validated runtime.
 ## 3. #50 aircraft gate
 
 **No closed-loop flight until every gate passes.**
+
+If ordinary maintenance/Tailscale access is unavailable and
+`ISR Aero.Next GCS` is the only local network, connect the operator Mac to that
+SSID and SSH to `francisco@192.168.8.174`. The Pi may be connected through the
+low-priority `ISR Aero.Next GCS Rescue` profile while still in `unattended`
+mode. That connection provides management access only and grants no Pixhawk,
+MAVROS, or controller authority.
+
+After the Pixhawk Ethernet link is physically connected, explicitly enter
+field mode:
 
     sudo tools/host/set_pi_network_mode.sh pixhawk
     sudo tools/host/set_pi_network_mode.sh status

@@ -11,7 +11,9 @@ Usage: sudo set_pi_network_mode.sh unattended|pixhawk|status
 pixhawk: prefer ISR Aero.Next GCS Wi-Fi, optionally fall back to the configured
          AERONEXT local-router profile, stop/disable Tailscale, and activate the
          dedicated Pixhawk Ethernet profile without a default route.
-unattended: enable/start Tailscale and leave NetworkManager to recover Wi-Fi.
+unattended: enable/start Tailscale and leave NetworkManager to recover
+            ordinary or management-rescue Wi-Fi. Rescue Wi-Fi grants no
+            Pixhawk/field authority.
 status: report the configured mode and active connections without secrets.
 EOF
 }
@@ -26,6 +28,7 @@ set +a
 
 INTERFACE="${THESIS_HOST_INTERFACE:-wlan0}"
 PIXHAWK_WIFI="${THESIS_HOST_PIXHAWK_WIFI_CONNECTION:-ISR Aero.Next GCS}"
+GCS_RESCUE_WIFI="${THESIS_HOST_GCS_RESCUE_WIFI_CONNECTION:-ISR Aero.Next GCS Rescue}"
 PIXHAWK_WIFI_FALLBACK="${THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION:-}"
 PIXHAWK_ETHERNET="${THESIS_HOST_PIXHAWK_ETHERNET_CONNECTION:-pixhawk-apm}"
 
@@ -227,6 +230,7 @@ case "$MODE" in
         echo "wifi_interface=$INTERFACE"
         echo "wifi_connection=$(nmcli -g GENERAL.CONNECTION device show "$INTERFACE" 2>/dev/null || true)"
         echo "field_wifi_primary=$PIXHAWK_WIFI"
+        echo "management_rescue_wifi=${GCS_RESCUE_WIFI:-none}"
         echo "field_wifi_fallback=${PIXHAWK_WIFI_FALLBACK:-none}"
         echo "ethernet_connection=$(nmcli -g GENERAL.CONNECTION device show eth0 2>/dev/null || true)"
         echo "tailscaled=$(systemctl is-active tailscaled.service 2>/dev/null || true)"

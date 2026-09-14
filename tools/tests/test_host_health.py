@@ -274,7 +274,7 @@ def test_retention_watchdog_and_restart_limits_are_explicit():
     assert "Persistent=true" in timer
 
 
-def test_installer_enforces_tailscale_only_inbound_firewall():
+def test_installer_enforces_restricted_management_firewall():
     installer = (
         REPO_ROOT / "tools/host/install_unattended_host_recovery.sh"
     ).read_text(encoding="utf-8")
@@ -284,6 +284,8 @@ def test_installer_enforces_tailscale_only_inbound_firewall():
     assert "ufw allow in on tailscale0" in installer
     assert 'proto udp to any port 41641' in installer
     assert 'ufw allow in on eth0 proto udp to any port 14550' in installer
+    assert "THESIS_HOST_GCS_SSH_SUBNET" in installer
+    assert 'to any port 22 proto tcp' in installer
     assert "ufw allow 22" not in installer
     assert "ufw allow OpenSSH" not in installer
 
@@ -304,6 +306,38 @@ def test_installer_persists_field_wifi_as_non_autoconnecting():
             "disable_field_wifi_autoconnect",
             installer.index("source /etc/default/thesis-host-health"),
         )
+    )
+
+
+def test_installer_provisions_distinct_low_priority_gcs_rescue_profile():
+    installer = (
+        REPO_ROOT / "tools/host/install_unattended_host_recovery.sh"
+    ).read_text(encoding="utf-8")
+    defaults = (
+        REPO_ROOT / "tools/host/systemd/thesis-host-health.default"
+    ).read_text(encoding="utf-8")
+    mode_script = (
+        REPO_ROOT / "tools/host/set_pi_network_mode.sh"
+    ).read_text(encoding="utf-8")
+
+    assert "THESIS_HOST_GCS_RESCUE_WIFI_CONNECTION" in defaults
+    assert 'THESIS_HOST_GCS_RESCUE_AUTOCONNECT_PRIORITY=20' in defaults
+    assert 'THESIS_HOST_GCS_SSH_SUBNET="192.168.8.0/24"' in defaults
+
+    assert "provision_gcs_rescue_profile()" in installer
+    assert 'nmcli connection clone "$primary" "$rescue"' in installer
+    assert 'connection.autoconnect yes' in installer
+    assert 'connection.autoconnect-priority "$rescue_priority"' in installer
+
+    # Rescue management access must not become a field-authority candidate.
+    assert 'GCS_RESCUE_WIFI=' in mode_script
+    assert (
+        'for candidate in "$PIXHAWK_WIFI" "$PIXHAWK_WIFI_FALLBACK"'
+        in mode_script
+    )
+    assert (
+        'for candidate in "$PIXHAWK_WIFI" "$PIXHAWK_WIFI_FALLBACK" "$GCS_RESCUE_WIFI"'
+        not in mode_script
     )
 
 
@@ -560,7 +594,7 @@ def test_pixhawk_inspection_requires_carrier_profile_and_no_default_route(
     assert unplugged["network_ok"] is False
 
 
-def test_unattended_mode_rejects_field_wifi_as_maintenance_network(tmp_path):
+def _inspect_unattended_wifi(tmp_path, active_connection):
     def runner(command, *, timeout):
         cmd = list(command)
 
@@ -568,13 +602,15 @@ def test_unattended_mode_rejects_field_wifi_as_maintenance_network(tmp_path):
             "nmcli", "-g", "GENERAL.STATE",
             "device", "show", "wlan0",
         ]:
-            return subprocess.CompletedProcess(cmd, 0, "100 (connected)\n", "")
+            return subprocess.CompletedProcess(
+                cmd, 0, "100 (connected)\n", ""
+            )
         if cmd == [
             "nmcli", "-g", "GENERAL.CONNECTION",
             "device", "show", "wlan0",
         ]:
             return subprocess.CompletedProcess(
-                cmd, 0, "ISR Aero.Next GCS\n", ""
+                cmd, 0, f"{active_connection}\n", ""
             )
         if cmd == [
             "ip", "route", "show", "default", "dev", "wlan0"
@@ -598,7 +634,9 @@ def test_unattended_mode_rejects_field_wifi_as_maintenance_network(tmp_path):
             "ip", "route", "show", "default", "dev", "eth0"
         ]:
             return subprocess.CompletedProcess(cmd, 0, "", "")
-        if cmd == ["ping", "-I", "wlan0", "-c", "1", "-W", "2", "10.0.0.1"]:
+        if cmd == [
+            "ping", "-I", "wlan0", "-c", "1", "-W", "2", "10.0.0.1"
+        ]:
             return subprocess.CompletedProcess(cmd, 0, "", "")
         if cmd == ["tailscale", "status", "--json"]:
             return subprocess.CompletedProcess(
@@ -608,8 +646,7 @@ def test_unattended_mode_rejects_field_wifi_as_maintenance_network(tmp_path):
                 "",
             )
         if cmd == [
-            "systemctl", "is-active", "--quiet",
-            "NetworkManager.service",
+            "systemctl", "is-active", "--quiet", "NetworkManager.service",
         ]:
             return subprocess.CompletedProcess(cmd, 0, "", "")
         if cmd == [
@@ -627,7 +664,7 @@ def test_unattended_mode_rejects_field_wifi_as_maintenance_network(tmp_path):
 
         raise AssertionError(f"unexpected command: {cmd}")
 
-    snapshot = HOST_HEALTH.inspect_host(
+    return HOST_HEALTH.inspect_host(
         interface="wlan0",
         mode="unattended",
         pixhawk_wifi_connection="ISR Aero.Next GCS",
@@ -637,9 +674,28 @@ def test_unattended_mode_rejects_field_wifi_as_maintenance_network(tmp_path):
         runner=runner,
     )
 
+
+def test_unattended_mode_rejects_field_wifi_as_maintenance_network(tmp_path):
+    snapshot = _inspect_unattended_wifi(
+        tmp_path,
+        "ISR Aero.Next GCS",
+    )
+
     assert snapshot["active_wifi_connection"] == "ISR Aero.Next GCS"
     assert snapshot["expected_wifi_active"] is False
     assert snapshot["network_ok"] is False
+
+
+def test_unattended_mode_accepts_distinct_gcs_rescue_management_wifi(tmp_path):
+    snapshot = _inspect_unattended_wifi(
+        tmp_path,
+        "ISR Aero.Next GCS Rescue",
+    )
+
+    assert snapshot["active_wifi_connection"] == "ISR Aero.Next GCS Rescue"
+    assert snapshot["expected_wifi_active"] is True
+    assert snapshot["network_config_ok"] is True
+    assert snapshot["network_ok"] is True
 
 
 def test_network_mode_unattended_exit_drops_field_wifi_and_is_serialized():

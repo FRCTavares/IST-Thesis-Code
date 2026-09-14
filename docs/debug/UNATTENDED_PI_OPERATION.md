@@ -21,8 +21,16 @@ It does not start the thesis live stack, ROS, MAVROS, control, arming, or any
 aircraft-facing service. Host availability and aircraft operation are separate
 authority domains.
 
-Remote access remains inside Tailscale. Do not add router port forwarding, a
-public SSH listener, Tailscale Funnel, or public dashboard/API exposure.
+Normal remote access remains inside Tailscale. A separate
+`ISR Aero.Next GCS Rescue` NetworkManager profile may autoconnect at low
+priority when that local GCS network is the only available Wi-Fi. It exists
+only to preserve local operator SSH access and remains valid in `unattended`
+mode; it does not activate `pixhawk-apm`, MAVROS, control, or field authority.
+The actual `ISR Aero.Next GCS` field-authority profile remains
+non-autoconnecting and requires the explicit `pixhawk` transition.
+
+Do not add router port forwarding, a public SSH listener, Tailscale Funnel, or
+public dashboard/API exposure.
 
 ## Tested host baseline
 
@@ -55,8 +63,12 @@ sudo ./tools/host/install_unattended_host_recovery.sh --interface wlan0
 The installer:
 
 - enables NetworkManager, `tailscaled.service`, and `ssh.socket` at boot;
-- enables UFW with default-deny inbound, allows services only through
-  `tailscale0`, and permits UDP 41641 on Wi-Fi for direct Tailscale transport;
+- enables UFW with default-deny inbound, permits normal services through
+  `tailscale0`, permits UDP 41641 on Wi-Fi for direct Tailscale transport, and
+  permits SSH on `wlan0` only from the configured GCS management subnet;
+- keeps the real field-authority GCS profile non-autoconnecting while
+  provisioning a distinct low-priority management-rescue clone from the local
+  NetworkManager profile, so its PSK never enters the repository;
 - gives SSH and Tailscale bounded systemd restart policies;
 - runs `thesis-host-health.service` from a two-minute persistent timer;
 - distinguishes NetworkManager/configuration state from verified unattended
@@ -302,7 +314,7 @@ possible write activity to finish. Physical power removal is the final option.
 | --- | --- | --- |
 | `tailscaled` crash | systemd restart; health-check fallback | none if network is healthy |
 | SSH daemon crash | socket activation; health-check fallback | physical/LAN shell if configuration is invalid |
-| Wi-Fi disconnect | NetworkManager autoconnect; bounded device reconnect | router intervention if AP remains unavailable |
+| Wi-Fi disconnect | NetworkManager autoconnect; bounded device reconnect; low-priority GCS management-rescue profile may recover local SSH | router intervention if every configured AP remains unavailable |
 | Internet outage | services wait; reconnect after upstream returns | ISP/router recovery |
 | Ordinary userspace stall | affected service restart | operator diagnosis |
 | Kernel hang | hardware watchdog after configuration/reboot | smart plug or UPS if watchdog cannot recover |
