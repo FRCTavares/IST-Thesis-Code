@@ -122,11 +122,15 @@ to `/camera/dashboard`, `/detections`, or any other single topic.
 `recorders.raw_image` holds the separate single-topic raw-image recorder
 observation when requested. Each includes recorder identity, scope, source
 path, log presence, parser success, exact reported count (or `null`), and
-`status`: `observed_zero`, `observed_nonzero`, or `unavailable`. Only an
-explicit, well-formed final rosbag loss line following `Recording stopped`
-supports a numeric observation. An absent, partial, malformed, or ambiguous
-line is `unavailable`, never zero. The Pi-side report deliberately does not
-infer a raw loss fraction: it preserves the count without assuming that every
+`status`: `observed_zero`, `observed_nonzero`, or `unavailable`. A
+well-formed final loss line following `Recording stopped` gives the reported
+count. On ROS 2 Jazzy, a fully stopped log with both `Recording
+stopped` and `Event publisher thread: Exited` and no loss warning is
+`observed_zero` (0): the recorder emits the warning only when its final
+loss count is positive. The report records which observation basis applied.
+Missing, partial, malformed, or ambiguous logs remain `unavailable`, never
+implicitly zero. See the [Jazzy recorder stop logic](https://github.com/ros2/rosbag2/blob/jazzy/rosbag2_transport/src/rosbag2_transport/recorder.cpp).
+The Pi-side report deliberately does not infer a raw loss fraction: it preserves the count without assuming that every
 lost transport sample maps one-to-one to a frame in finalized storage.
 
 The top-level `quality_status` summarizes the recorders, with nonzero taking

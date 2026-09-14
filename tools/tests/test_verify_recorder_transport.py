@@ -33,6 +33,22 @@ def test_explicit_zero_is_observed_zero(tmp_path):
     assert report["recorders"]["main"]["reported_transport_loss_count"] == 0
 
 
+def test_complete_stop_without_warning_is_observed_zero(tmp_path):
+    bag = tmp_path / "video"
+    path = bag / "run_logs/rosbag.log"
+    _log(path, None)
+    path.write_text(
+        path.read_text() +
+        "[INFO] [1.2] [rosbag2_recorder]: Event publisher thread: Exited\n",
+        encoding="utf-8",
+    )
+    item = vrt.verify_transport(bag)["recorders"]["main"]
+    assert item["status"] == "observed_zero"
+    assert item["reported_transport_loss_count"] == 0
+    assert item["parse_ok"] is True
+    assert item["observation_basis"] == "complete_jazzy_stop_without_loss_warning"
+
+
 def test_nonzero_counts_preserve_recorder_identity_and_scope(tmp_path):
     bag = tmp_path / "video"
     raw = tmp_path / "video__image_raw"

@@ -3,7 +3,12 @@
 The compact go/no-go checklist is `docs/flight/README.md`; this is the
 step-by-step command reference so nothing depends on memory. Aircraft
 operation is still gated by every check in that sheet. **The baseline command
-never enables candidate recovery.**
+never enables candidate recovery.** The 14 September main-bag-only ground
+benchmarks still reported transport losses, so these flight commands remain
+blocked until a representative MAVROS-inclusive ground run retains usable
+visual reference with `observed_zero` transport loss. Do not add paired raw:
+full-stack tests lost 52–68% of inferred source frames. The source-only
+H01/H02/H03 procedure is unchanged.
 
 ## Two mappings from perception state to permitted motion (perception-conditioned motion authority)
 
@@ -30,7 +35,7 @@ git checkout main && git pull --ff-only
 git status --short                       # must be clean
 tools/thesis_build.sh --packages-select thesis_msgs thesis_bringup
 source /opt/ros/jazzy/setup.bash && source ros2_ws/install/setup.bash
-df -h /                                  # >= 40 GiB free for --record-raw
+df -h /                                  # verify space against planned main-bag duration
 python3 tools/analysis/validate_tim_evaluation_split.py \
     docs/data/splits/tim_mars_split_v4.json --verify-hashes   # final_ready=0/3
 sha256sum models/hef/yolov8s.hef models/reid/mars-small128.pb \
@@ -77,7 +82,6 @@ Start retained evidence capture:
 
     ./tools/start_live_stack.sh \
         --field-record \
-        --record-raw \
         --no-control \
         --tag dynamic_uav_tim_manual_r1
 
@@ -100,13 +104,13 @@ echo "$RUN_ID"
 Baseline:
 
 ```bash
-./tools/start_live_stack.sh --field-record --record-raw --control-mavros --tag flight1_baseline
+./tools/start_live_stack.sh --field-record --control-mavros --tag flight1_baseline
 ```
 
 Candidate (only when the #50 recovery promotion is explicitly intended):
 
 ```bash
-./tools/start_live_stack.sh --field-record --record-raw --control-mavros \
+./tools/start_live_stack.sh --field-record --control-mavros \
   --control-yaw-recovery --acknowledge-yaw-recovery-candidate --tag flight1_candidate
 ```
 

@@ -63,7 +63,11 @@ Required state:
 - real Pixhawk/MAVROS telemetry available;
 - camera/Hailo healthy;
 - no thesis controller process running;
-- H01/H02/H03 Stage-7 validator still reports `final_ready=0/3`.
+- H01/H02/H03 Stage-7 validator still reports `final_ready=0/3`;
+- a representative MAVROS-inclusive main-bag-only ground rehearsal has
+  `observed_zero` transport loss and retains usable visual reference imagery.
+  The 14 September no-MAVROS main-only tests did not pass this gate; do not
+  fly this trial as scientifically retained evidence until it does.
 
 Verify the freeze:
 
@@ -82,11 +86,13 @@ Start the normal retained field stack **without** controller authority:
 
     ./tools/start_live_stack.sh \
         --field-record \
-        --record-raw \
         --no-control \
         --tag dynamic_uav_tim_manual_r1
 
-Keep `--no-control` present and do not add `--control-mavros`.
+Keep `--no-control` present and do not add `--control-mavros` or
+`--record-raw`. Full-stack paired raw lost 52–68% of inferred source frames
+in 14 September diagnostics. Main-only recording also reported transport
+loss, so this command is conditional on the recording-capacity gate above.
 
 Select the intended physical target only after the aircraft is safely
 established and the target/distractor identities are visually unambiguous.

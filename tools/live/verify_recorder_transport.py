@@ -2,7 +2,9 @@
 """Record exact rosbag transport-loss observations from archived recorder logs.
 
 Structural MCAP integrity is independent of transport quality. A missing,
-partial, or ambiguous log is unavailable, never an implicit zero.
+partial, or ambiguous log is unavailable. A complete Jazzy stop with no loss
+warning is an observed zero because rosbag2 emits that warning only for a
+positive transport-loss count.
 """
 from __future__ import annotations
 
@@ -47,14 +49,17 @@ def observe(recorder: str, source_log: Path, scope: str) -> dict[str, Any]:
     stopped = any(
         "[rosbag2_recorder]: Recording stopped" in line for line in lines
     )
+    publisher_exited = any(
+        "[rosbag2_recorder]: Event publisher thread: Exited" in line
+        for line in lines
+    )
     result["recording_stopped_observed"] = stopped
+    result["event_publisher_exited_observed"] = publisher_exited
     if not stopped:
         result["reason"] = "final Recording stopped marker absent"
-    elif len(diagnostics) != 1:
-        result["reason"] = (
-            f"expected one explicit final transport-loss line, found {len(diagnostics)}"
-        )
-    else:
+    elif len(diagnostics) > 1:
+        result["reason"] = "multiple transport-loss lines; observation ambiguous"
+    elif diagnostics:
         match = LOSS_LINE.fullmatch(diagnostics[0])
         if match is None:
             result["reason"] = "transport-loss line malformed"
@@ -63,6 +68,16 @@ def observe(recorder: str, source_log: Path, scope: str) -> dict[str, Any]:
             result["parse_ok"] = True
             result["reported_transport_loss_count"] = count
             result["status"] = "observed_zero" if count == 0 else "observed_nonzero"
+            result["observation_basis"] = "explicit_final_loss_line"
+    elif publisher_exited:
+        # Jazzy recorder.cpp logs the loss warning at stop only when count > 0.
+        # Require both terminal markers before inferring zero from its absence.
+        result["parse_ok"] = True
+        result["reported_transport_loss_count"] = 0
+        result["status"] = "observed_zero"
+        result["observation_basis"] = "complete_jazzy_stop_without_loss_warning"
+    else:
+        result["reason"] = "loss warning absent but final publisher-exit marker missing"
     return result
 
 
