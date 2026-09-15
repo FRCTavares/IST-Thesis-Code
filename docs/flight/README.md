@@ -7,6 +7,24 @@ internet, Tailscale, or institutional ISR connection. Detailed rationale is in
 `docs/flight/field_day_runbook.md`; retained-artifact rules are in
 `docs/flight/retained_evidence_package.md`.
 
+Run the fail-closed software check first:
+
+```bash
+cd ~/Desktop/Thesis-Code || exit 1
+tools/flight/field_preflight_check.sh
+```
+
+Once the Pi is deliberately connected to the GCS and Pixhawk in field mode,
+run the bounded passive telemetry/recording gate:
+
+```bash
+tools/flight/field_preflight_check.sh --passive-live-gate
+```
+
+The command never authorizes flight. It cannot validate the human physical
+safety gates, and the live option uses `--field-record --no-control` with no
+MAVROS command mirroring.
+
 Never arm, change flight mode, or start physical control without the qualified
 pilot and completed gates. Never add `--record-raw` to a full-stack field
 command. `--field-record` already enables the supported structured
