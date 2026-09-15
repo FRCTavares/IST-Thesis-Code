@@ -249,19 +249,12 @@ Full copy-paste procedure: `docs/flight/field_day_runbook.md`.
 
 ### Combined raw recording (diagnostic)
 
-`./tools/start_live_stack.sh --field-record --record-raw --tag SCENARIO`
-produces the normal live-pipeline MCAP bag with MAVROS telemetry plus a separate
-synchronised `__image_raw` MCAP bag with `/camera/image_raw`. `--field-record`
-enforces the field/Pixhawk network mode (ISR Wi-Fi first, with the approved
-AERONEXT fallback), stops Tailscale, starts one managed MAVROS instance and
-verifies the `BODY_NED` velocity contract, so run it from the Pi's local
-terminal with the Pixhawk connected.
-
-Raw recording requires at least 40 GiB free (enforced by
-`tools/lib/live_storage.sh`). The measured combined raw frame rate stays well
-below the 640x480 30 FPS nominal, so this mode is a diagnostic option, not the
-source-first field session — verify the recorded frame count and duration with
-`ros2 bag info` before leaving the field.
+`./tools/start_live_stack.sh --record --record-raw --tag
+NON_HELD_OUT_DIAGNOSTIC` is retained only for non-held-out recorder diagnostics.
+It writes the normal live-pipeline bag plus a separate synchronised
+`__image_raw` MCAP bag. It does not enable the field/Pixhawk profile or MAVROS,
+and it is not an approved full-stack aircraft command. Normal field recording
+uses `--field-record` without `--record-raw`.
 
 ## Safe network inspection
 

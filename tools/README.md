@@ -33,7 +33,7 @@ compatibility interface.
 | `bag/` | Standalone bag → overlay/comparison video renderers. |
 | `catalogue/` | Builds the TIM evaluation evidence catalogue with pinned hashes. |
 | `camera/` | Camera V4L2 mode probing (hardware diagnostics). |
-| `live/` | Small live-ROS inspection helpers; the Issue #55 M6 UI-integration gate. |
+| `live/` | Live inspection, evidence verification, and the strict offline field-evidence summary gate. |
 | `host/` | Raspberry Pi networking / unattended recovery and its `systemd/` assets. |
 | `setup/` | Host Hailo / TAPPAS runtime setup helpers. |
 | `lib/` | Shared implementation used by the launcher and experiment tools (sourced shell fragments; the process-group supervisor). Not standalone executables. |

@@ -1,6 +1,6 @@
 # tools/live
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-09-14
 
 ## Purpose
 
@@ -17,6 +17,7 @@ UI-integration gate. Not evaluation tools.
 | `archive_run_evidence.py` | Evidence retention | Copies the run's `control.log`, `dashboard_bridge.log`, `target_memory_mars.log` and operator event log into `<bag>/run_logs/` keyed by the exact `RUN_ID`; writes `archive_manifest.json`; refuses to overwrite existing retained evidence. Called by `tools/start_live_stack.sh` at stop. |
 | `verify_retained_bag.py` | Bag integrity | Deterministic check of a finalized rosbag2 bag from its `metadata.yaml` (dir/metadata/storage-file/format/required-topics/non-zero-counts); writes `bag_integrity.json` beside the bag; never opens the bag while the recorder holds it, never deletes it. |
 | `verify_evidence_package.py` | Package completeness | Checks the full retained #50/#74 package after stop; writes `evidence_package_status.json` with `complete_runtime_evidence` / `incomplete_runtime_evidence` / `pending_postflight_annotation` / `pending_pixhawk_dataflash`; runs the bag verifier + provenance validator; never fabricates post-flight artifacts. |
+| `summarize_field_evidence.py` | Field acceptance | Prints structured topic rates, transport loss and visual/runtime status; exits nonzero unless the finalized structured-plus-visual runtime package is acceptable. |
 | `archive_pixhawk_dataflash.py` | DataFlash retention | Associates an explicitly-supplied ArduPilot `.bin` with a retained trial (SHA-256 both sides, refuse overwrite, preserve source, `dataflash_manifest.json`). Never talks to an FCU, never picks "latest". |
 | `operator_event.py` | Operator events | Append-only JSONL recorder for physical-trial operator events (trial start/end, target selected, takeover, abort + reason, unexpected behavior, trial verdict), tied to `RUN_ID`. For the #74 comparison use `trial_start --condition baseline` or `--condition candidate --recovery-enabled`; the live launcher prints the matching command at startup. |
 | `validate_target_authority_ground_run.py` | Check | Validates a recorded target-authority ground run. |

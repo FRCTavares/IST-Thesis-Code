@@ -1,145 +1,390 @@
-# Flight day
+# Offline field-day command sheet
 
 Last reviewed: 2026-09-14
 
-This is the **only current day-of-flight operator sheet**.
-The other `P027_*.md` files here are frozen #27 provenance.
+This is the **only current day-of-flight operator sheet**. It works with no
+internet, Tailscale, or institutional ISR connection. Detailed rationale is in
+`docs/flight/field_day_runbook.md`; retained-artifact rules are in
+`docs/flight/retained_evidence_package.md`.
 
-## 0. Before leaving
+Never arm, change flight mode, or start physical control without the qualified
+pilot and completed gates. Never add `--record-raw` to a full-stack field
+command. `--field-record` already enables the supported structured
+non-image MCAP, separate 640x480 MJPEG visual, and passive MAVROS telemetry.
+`--control-mavros` is the separate aircraft-command mirror.
+`--record-structured-visual` is the non-MAVROS development equivalent; do not substitute it for `--field-record` when passive field telemetry is required.
+`--field-record` also implies `--record-mavros`; no extra recording flag is needed.
 
-- [ ] Pi/UAV/controller/batteries/chargers; camera, Hailo and Pixhawk
-- [ ] target, distractor, qualified pilot; >=40 GiB free; #27 and normal-runtime worktrees ready
+## 1. Connect the Mac to the field GCS
 
-## 1. H01-H03 held-out captures
+Connect the Mac to Wi-Fi **`ISR Aero.Next GCS`**, then use:
 
-**Source-only: no MAVROS, controller or TIM outcome inspection.**
+```bash
+ssh francisco@192.168.8.174
+```
 
-Use validator-passing revision:
+Do not use either historical `100.x` Tailscale address in field mode. If
+the Pi is initially on management-only **`ISR Aero.Next GCS Rescue`**, the
+same SSH address applies. Rescue grants local SSH only, never Pixhawk, MAVROS,
+controller, or flight authority.
 
-    1f57e2d55ec41342edc75e48032106b69278ae04
+In every new Pi shell:
 
-Precheck:
+```bash
+cd /home/francisco/Desktop/Thesis-Code || exit 1
+export GIT_PAGER=cat PAGER=cat GH_PAGER=cat
+set +u
+source /opt/ros/jazzy/setup.bash
+source ros2_ws/install/setup.bash
+git --no-pager log -1 --oneline
+git status --short
+```
 
-    git status --short
-    python3 tools/analysis/validate_tim_evaluation_split.py --verify-hashes
-    df -h /
-    ls -l /dev/video0 /dev/media0 /dev/hailo0
+Do not pull, install, or rebuild at the field.
 
-### Run 1 — H01 exit / re-entry
+## 2. Enter and check field network mode
 
-    tools/experiments/record_p027_heldout_sequence.sh h01
+Power/connect Pixhawk Ethernet first. From the Pi shell:
 
-- [ ] target + distractor visible
-- [ ] target fully absent about 5-8 s
-- [ ] distractor visible during absence
-- [ ] target re-enters
-- [ ] >=10 s afterward; bag readable
+```bash
+sudo tools/host/set_pi_network_mode.sh pixhawk
+```
 
-### Run 2 — H02 crossing
+The Wi-Fi profile switch may briefly drop SSH. Reconnect with
+`ssh francisco@192.168.8.174`, enter the repository again, then run:
 
-    tools/experiments/record_p027_heldout_sequence.sh h02
+```bash
+sudo tools/host/set_pi_network_mode.sh status
+nmcli -g GENERAL.CONNECTION,IP4.ADDRESS device show wlan0
+nmcli -g GENERAL.CONNECTION,IP4.ADDRESS device show eth0
+ip -brief address show wlan0
+ip -brief address show eth0
+ip route show default
+ip route show default dev eth0
+ping -c 3 -W 1 192.168.144.14
+systemctl is-active tailscaled
+```
 
-- [ ] start separated
-- [ ] close crossing + sustained overlap
-- [ ] separate
-- [ ] second crossing
-- [ ] >=10 s afterward; bag readable
+Require:
 
-### Run 3 — H03 occlusion
+- `configured_mode=pixhawk`;
+- `wlan0` uses `ISR Aero.Next GCS`, expected Pi address
+  `192.168.8.174/24`, and owns the default route;
+- `eth0` uses `pixhawk-apm`, expected Pi address
+  `192.168.144.183/24`, and reaches Pixhawk `192.168.144.14`;
+- `ip route show default dev eth0` prints nothing;
+- `tailscaled` prints `inactive`.
 
-    tools/experiments/record_p027_heldout_sequence.sh h03
+If field association fails, the helper fails closed. Wait for Rescue, reconnect
+to `192.168.8.174`, and inspect:
 
-- [ ] target + distractor visible
-- [ ] partial then full occlusion
-- [ ] target remains physically present
-- [ ] distractor near last target position
-- [ ] reveal same target; >=10 s; bag readable
+```bash
+sudo tools/host/set_pi_network_mode.sh status
+nmcli -g GENERAL.CONNECTION,IP4.ADDRESS device show wlan0
+nmcli -f NAME,AUTOCONNECT connection show "ISR Aero.Next GCS"
+nmcli -f NAME,AUTOCONNECT connection show "ISR Aero.Next GCS Rescue"
+```
 
-Allowed now: integrity, counts, timestamps, imagery and physical-scenario check.
-**Do not inspect tracker/TIM correctness or architecture outcomes.**
+Do not launch MAVROS or fly on Rescue. Check Ethernet power/cable, then retry
+the explicit `pixhawk` transition. The optional AERONEXT fallback is not
+provisioned; do not guess a profile or address.
 
-## 2. Run 4 — #64 small-target drone POV
+## 3. Hardware, storage, freeze, and stale-process sanity
 
-Switch back to normal validated runtime:
+```bash
+date -Iseconds
+df -h "$PWD" "$PWD/bags"
+ls -l /dev/video0 /dev/media0 /dev/hailo0
+v4l2-ctl -d /dev/video0 --list-formats-ext | sed -n '1,80p'
+hailortcli scan
+pgrep -af '[s]tart_live_stack.sh|[r]os2 bag record|[r]osbag2_recorder|[m]avros_node|[c]ontrol_ref_node|[f]fmpeg.*visual_'   || echo "no stale live-stack/recorder process"
+python3 tools/analysis/validate_tim_evaluation_split.py   docs/data/splits/tim_mars_split_v4.json --verify-hashes
+```
 
-    tools/experiments/record_p064_drone_sequence.sh small_target_r1
+Require all three devices, a Hailo device, enough free space, no stale process,
+and `final_ready=0/3`.
 
-- [ ] native 1280x720; detector remains 640x640; genuinely small target
-- [ ] crossing/occlusion, then exit + re-entry with distractor visible
-- [ ] copy the final bag
+## 4. Passive MAVROS structured-plus-visual ground capacity gate
 
-## 3. #50 aircraft gate
+This is tomorrow's first retained test. Keep the aircraft disarmed and still.
+Use a visible intended person and distractor. Controller and MAVROS command
+mirroring are both off.
 
-**No closed-loop flight until every gate passes.** If only `ISR Aero.Next GCS`
-is available, connect the Mac to it and SSH to `francisco@192.168.8.174`.
-The Rescue profile grants management access in `unattended` mode, never
-Pixhawk/MAVROS/controller authority. With Pixhawk Ethernet physically
-connected, explicitly enter field mode:
+Terminal A:
 
-    sudo tools/host/set_pi_network_mode.sh pixhawk
-    sudo tools/host/set_pi_network_mode.sh status
-    nmcli -t -f ACTIVE,SSID dev wifi
-    ip route
-    systemctl is-active tailscaled
+```bash
+export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+export TAG=capacity_ground_r1
+echo "RUN_ID=$RUN_ID"
+./tools/start_live_stack.sh --field-record --no-control --tag "$TAG"
+```
 
-- [ ] ISR Wi-Fi preferred; approved AERONEXT fallback available
-- [ ] `pixhawk-apm` active without default route; Tailscale inactive
-- [ ] real Pixhawk + MAVROS connected
-- [ ] TIM-MARS alone authorizes control; raw `/target` has no motion authority
-- [ ] stale/UNCERTAIN/REACQUIRED/LOST fails safe; command signs checked on ground
-- [ ] pilot takeover/abort agreed; commands and evidence: `docs/flight/field_day_runbook.md`, `docs/flight/retained_evidence_package.md`
+`--field-record` performs managed FCU-connect, stream-rate, BODY_NED, and
+raw-IMU readiness checks. Do not start a second MAVROS. In Terminal B, SSH over
+GCS, enter the repository as in section 1, set the exact RUN_ID printed by
+Terminal A, and check passive telemetry:
 
-`--record-mavros` only records; it grants no flight authority.
-Recording-capacity gate: no-MAVROS development runs of the structured MCAP plus separate RUN_ID-linked 640x480 MJPEG visual file reached observed_zero transport loss, near-30 Hz non-image topic cadence and roughly 10 fps decodable visual. The exact MAVROS-inclusive field profile and visible-person annotation usefulness still need safe field-ground confirmation before retained aircraft evidence. Earlier dashboard-in-MCAP tests lost messages and paired raw lost 52–68% of inferred frames. Normal full-stack flights use neither image topic in MCAP and never add --record-raw. The frozen H01/H02/H03 source-only capture is separate and unchanged.
+```bash
+read -r -p "RUN_ID printed by Terminal A: " RUN_ID; export RUN_ID
+timeout 12s ros2 topic echo /mavros/state --once
+timeout 12s ros2 topic echo /mavros/imu/data_raw --once
+ros2 topic info /mavros/setpoint_velocity/cmd_vel -v
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID"   --condition baseline --scenario passive_mavros_capacity
+```
 
-### Aircraft launch command
+Require `connected: true`, `armed: false`, raw IMU data, and zero
+publishers on the MAVROS velocity-command topic. At the `live-stack>`
+prompt in Terminal A, use `ids` and `target <id>`. Then record
+the physical identity in Terminal B:
 
-    NOT FROZEN — DO NOT USE AN OLD P023 COMMAND
+```bash
+read -r -p "Visible person description: " PERSON; read -r -p "Track ID: " TRACK_ID
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+```
 
-## 4. Dynamic UAV TIM validation — manual pilot, controller OFF
+Run for 60–90 seconds. Before stopping:
 
-Required **non-held-out** moving-platform evidence; H01/H02/H03 unchanged.
-Follow `docs/flight/P050_DYNAMIC_UAV_TIM_TRIAL.md`.
+```bash
+python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID"   --end-reason ground_capacity_complete
+```
 
-    ./tools/start_live_stack.sh --field-record --no-control --tag dynamic_uav_tim_manual_r1
+Type `stop` once at Terminal A's `live-stack>` prompt. Section
+10 must pass before any aircraft trial.
 
-- [ ] qualified pilot alone controls all motion; no `--control-mavros`
-- [ ] lateral reversal, range/scale change, yaw/viewpoint change, safe arc
-- [ ] simultaneous target + UAV motion; distractor crossing
-- [ ] safe loss and changed-viewpoint return; stable final reference
-- [ ] evidence finalized; `control_ref_node` absent
+## 5. Manual dynamic-UAV TIM-MARS trial
 
-## 5. Flight 1 — basic following
+Only the qualified pilot moves the aircraft. Tracker and TIM-MARS run;
+`control_ref_node` is off and there is no thesis command path.
 
-- [ ] pilot-controlled takeoff / hover; select target at trusted LOCKED + NORMAL
-- [ ] slow person motion; yaw/distance directions correct
-- [ ] no unexpected authority; evidence finalized
+```bash
+export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+export TAG=dynamic_uav_tim_manual_r1
+echo "RUN_ID=$RUN_ID"
+./tools/start_live_stack.sh --field-record --no-control --tag "$TAG"
+```
 
-## 6. Flight 2 — loss / reacquisition
+In Terminal B, use the exact RUN_ID and supported events:
 
-- [ ] trusted following; target leaves view and translation stops
-- [ ] target re-enters; motion resumes only at trusted LOCKED + NORMAL
-- [ ] no distractor authority; evidence finalized
+```bash
+read -r -p "RUN_ID printed by Terminal A: " RUN_ID; export RUN_ID
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID"   --condition baseline --scenario dynamic_uav_tim_manual
+read -r -p "Visible person description: " PERSON; read -r -p "Track ID: " TRACK_ID
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+```
 
-## 7. Flight 3 — crossing / distractor
+Follow `docs/flight/P050_DYNAMIC_UAV_TIM_TRIAL.md`. Record
+`trial_end` before typing `stop`. Do not add
+`--control-mavros` or `--record-raw`.
 
-- [ ] controlled crossing; no wrong-person non-zero command
-- [ ] uncertainty/loss fails safe; trusted recovery if achieved
-- [ ] evidence finalized
+## 6. Controller ground gates
 
-## 8. Flight 4 — bounded yaw recovery
+First verify controller computation with no aircraft command mirror. Keep the
+aircraft disarmed and still:
 
-**Only if #50 promotes recovery first; otherwise skip.**
+```bash
+export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+export TAG=controller_compute_ground_r1
+echo "RUN_ID=$RUN_ID"
+./tools/start_live_stack.sh --field-record --tag "$TAG"
+```
 
-- [ ] candidate flags: `--control-yaw-recovery --acknowledge-yaw-recovery-candidate` (see `docs/control/p074_state_aware_control_contract.md`)
-- [ ] yaw only, no translation; duration/yaw budget respected
-- [ ] no wrong-person command; evidence finalized
+In Terminal B, record the compute-only trial before selecting the target:
 
-## 9. End of day
+```bash
+read -r -p "RUN_ID printed by Terminal A: " RUN_ID; export RUN_ID
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID"   --condition baseline --scenario controller_compute_ground
+read -r -p "Visible person description: " PERSON; read -r -p "Track ID: " TRACK_ID
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID"   --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+```
 
-- [ ] H01/H02/H03/#64 paths recorded; H01-H03 outcomes unopened
-- [ ] dynamic-UAV trial flown with genuine platform motion or marked not flown
-- [ ] each flight: review `evidence_package_status.json`; archive `run_logs/` and `.bin`; back up
-- [ ] keep failed evidence; retrieve Pixhawk `.bin` with `tools/live/archive_pixhawk_dataflash.py`, then disconnect Pixhawk
+The absence of `--control-mavros` is the safety boundary. After target
+selection, observe `/control_ref/cmd_vel`: centred gives
+`vx=0`, `yaw_z=0`; left gives `yaw_z<0`, right gives
+`yaw_z>0`; smaller/farther gives `vx>0`, larger/nearer gives
+`vx<0`; stale/lost gives zeros.
 
-    sudo tools/host/set_pi_network_mode.sh unattended
+```bash
+timeout 20s ros2 topic echo /control_ref/cmd_vel
+timeout 20s ros2 topic echo /control_ref/diagnostics
+```
+
+The real Pixhawk command-path gate is separate. Run it only with the qualified
+pilot, propellers removed or the vehicle safely restrained as agreed, RC/manual
+takeover confirmed, pre-arm state understood, and direction/sign gate passed:
+
+```bash
+export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+export TAG=controller_command_path_ground_r1
+echo "RUN_ID=$RUN_ID"
+./tools/start_live_stack.sh --field-record --control-mavros --tag "$TAG"
+```
+
+In Terminal B, record this distinct physical gate:
+
+```bash
+read -r -p "RUN_ID printed by Terminal A: " RUN_ID; export RUN_ID
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID"   --condition baseline --scenario controller_command_path_ground
+```
+
+The launcher does not arm or change mode. Do not arm during this check. Abort on
+a wrong sign, nonzero stale/lost command, unexpected mode/state, or failed
+pilot takeover. These physical gates remain pending until performed.
+
+## 7. Closed-loop baseline flight
+
+Use this only after every network, capacity, controller-sign, restrained
+command-path, RC/manual takeover, and pilot go/no-go gate above passes:
+
+```bash
+export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+export TAG=flight1_baseline
+echo "RUN_ID=$RUN_ID"
+./tools/start_live_stack.sh --field-record --control-mavros --tag "$TAG"
+```
+
+In Terminal B:
+
+```bash
+read -r -p "RUN_ID printed by Terminal A: " RUN_ID; export RUN_ID
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID"   --condition baseline --scenario following
+read -r -p "Visible person description: " PERSON; read -r -p "Track ID: " TRACK_ID
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+```
+
+## 8. Other non-held-out physical trials
+
+After the same gates, use a unique run and tag.
+
+Loss/reacquisition, Terminal A:
+
+```bash
+export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+export TAG=flight2_loss_reacquisition
+./tools/start_live_stack.sh --field-record --control-mavros --tag "$TAG"
+```
+
+Loss/reacquisition, Terminal B:
+
+```bash
+read -r -p "RUN_ID printed by Terminal A: " RUN_ID; export RUN_ID
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID"   --condition baseline --scenario loss_reacquisition
+read -r -p "Visible person description: " PERSON; read -r -p "Track ID: " TRACK_ID
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID"   --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+```
+
+Crossing/distractor, Terminal A:
+
+```bash
+export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+export TAG=flight3_distractor_crossing
+./tools/start_live_stack.sh --field-record --control-mavros --tag "$TAG"
+```
+
+Crossing/distractor, Terminal B:
+
+```bash
+read -r -p "RUN_ID printed by Terminal A: " RUN_ID; export RUN_ID
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID"   --condition baseline --scenario distractor_crossing
+read -r -p "Visible person description: " PERSON; read -r -p "Track ID: " TRACK_ID
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID"   --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+```
+
+There are no `loss` or `reacquired` event names. Planned
+transitions come from bag/TIM state. Record only observed issues:
+
+```bash
+read -r -p "Observed issue: " OBSERVATION
+python3 tools/live/operator_event.py unexpected_behavior --run-id "$RUN_ID"   --description "$OBSERVATION" --severity concern
+```
+
+Optional bounded-yaw recovery remains experimental. Use only if the existing
+#50/#74 promotion decision and all physical gates permit it:
+
+```bash
+export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+export TAG=flight4_yaw_recovery_candidate
+./tools/start_live_stack.sh --field-record --control-mavros   --control-yaw-recovery --acknowledge-yaw-recovery-candidate --tag "$TAG"
+```
+
+Its Terminal B start event must match:
+
+```bash
+read -r -p "RUN_ID printed by Terminal A: " RUN_ID; export RUN_ID
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID"   --condition candidate --scenario yaw_recovery --recovery-enabled
+```
+
+For any trial, these are the supported safety/end events:
+
+```bash
+python3 tools/live/operator_event.py operator_takeover --run-id "$RUN_ID"   --trigger pilot_rc
+read -r -p "Safety abort reason: " ABORT_REASON
+python3 tools/live/operator_event.py abort --run-id "$RUN_ID"   --abort-class safety --reason "$ABORT_REASON"
+python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID"   --end-reason nominal_complete
+```
+
+## 9. H01/H02/H03: separate frozen source-only capture
+
+These are prospective held-out captures. Do not rehearse, open, replay, inspect,
+analyse, delete, or modify them. Do not use a full-stack field command. Execute
+only the frozen helper when approved held-out capture is actually due:
+
+```bash
+tools/experiments/record_p027_heldout_sequence.sh h01
+tools/experiments/record_p027_heldout_sequence.sh h02
+tools/experiments/record_p027_heldout_sequence.sh h03
+```
+
+The helper enforces `/camera/image_raw` plus `/detections`,
+640x480 source, YOLOv8s at 640x640 inference, and
+tracker/TIM-MARS/controller/dashboard/MAVROS off. See
+`docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md`. This audit does not
+authorize executing those commands.
+
+## 10. Graceful stop and evidence acceptance
+
+Record `trial_end` before stopping. At `live-stack>`, type
+`stop` once (or Ctrl-C once). Let the launcher finalize MJPEG, nodes,
+MCAP, logs, transport status, and evidence status. Do not kill recorders.
+
+After the launcher returns, RUN_ID and TAG remain set:
+
+```bash
+printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"; export BAG
+python3 tools/live/verify_evidence_package.py   --bag-dir "$BAG" --run-id "$RUN_ID"   --field-record --expect-visual --expect-operator-events
+```
+
+For a controller command-mirroring trial, add `--control-trial`. The
+verifier can exit 1 solely because DataFlash and annotation are still pending.
+This exact summary distinguishes pending work from runtime failure and prints
+every retained topic rate:
+
+```bash
+python3 tools/live/summarize_field_evidence.py --bag-dir "$BAG"
+```
+
+**Do not accept the flight as retained scientific evidence** if this command
+fails: transport must be `observed_zero` with count 0, structured bag
+must pass, visual evidence must pass/finalize gracefully, and required
+logs/events must be present. There is no acceptable nonzero-loss threshold.
+Keep failed evidence; never hide a readable-but-lossy MCAP.
+
+Before disconnecting Pixhawk, retrieve the exact native DataFlash `.bin`,
+then archive the explicitly selected file:
+
+```bash
+read -r -p "Exact DataFlash .bin path: " DATAFLASH
+python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"
+python3 tools/live/verify_evidence_package.py   --bag-dir "$BAG" --run-id "$RUN_ID"   --control-trial --field-record --expect-visual --expect-operator-events
+```
+
+## 11. Return to development/unattended mode
+
+After flights stop, recorders finalize, and Pixhawk is disconnected:
+
+```bash
+sudo tools/host/set_pi_network_mode.sh unattended
+sudo tools/host/set_pi_network_mode.sh status
+```
+
+This re-enables Tailscale for later unattended recovery, but field sections
+1–10 require only GCS Wi-Fi and direct Pixhawk Ethernet.

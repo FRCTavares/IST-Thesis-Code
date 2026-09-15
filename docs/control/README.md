@@ -1,6 +1,6 @@
 # Control contracts
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-09-14
 
 ## Purpose
 
@@ -12,7 +12,7 @@ system.
 | Path | Role |
 | --- | --- |
 | `p074_state_aware_control_contract.md` | Frozen Issue #74 state-aware selected-person control contract. |
-| `pixhawk6x_ethernet_mavros_report.md` | Reproducible Pixhawk 6X Ethernet/MAVROS connectivity procedure and evidence. |
+| `pixhawk6x_ethernet_mavros_report.md` | Historical Ethernet/MAVROS evidence; current field commands live in `docs/flight/README.md`. |
 
 ## Rules
 

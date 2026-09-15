@@ -972,7 +972,7 @@ fi
 
 if [[ "$FIELD_RAW_IMAGE_RECORD" -eq 1 && "$ENABLE_ROSBAG" -ne 1 ]]; then
     echo "[error] --record-raw requires the normal live recording bag"
-    echo "[hint] use --record --record-raw, or --field-record --record-raw"
+    echo "[hint] use --record --record-raw for non-held-out diagnostics"
     exit 1
 fi
 

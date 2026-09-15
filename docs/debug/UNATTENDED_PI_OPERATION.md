@@ -32,6 +32,19 @@ non-autoconnecting and requires the explicit `pixhawk` transition.
 Do not add router port forwarding, a public SSH listener, Tailscale Funnel, or
 public dashboard/API exposure.
 
+## Offline field-day boundary
+
+For GCS-only operation, do not use the Tailscale addresses in this unattended
+runbook. Join `ISR Aero.Next GCS` and use:
+
+```bash
+ssh francisco@192.168.8.174
+```
+
+Then follow `docs/flight/README.md`. The same address is used by the
+management-only Rescue profile; field authority still requires the explicit
+`sudo tools/host/set_pi_network_mode.sh pixhawk` transition.
+
 ## Tested host baseline
 
 Baseline captured on 22 July 2026:

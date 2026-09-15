@@ -1,5 +1,16 @@
 # Reproducing Pixhawk 6X Ethernet MAVROS Connectivity on Raspberry Pi 5
 
+## Current operator warning
+
+**Historical connectivity evidence only — do not copy its direct MAVROS or
+address commands for field day.** The current operator authority is
+`docs/flight/README.md`. The physically revalidated topology is Pi
+`wlan0=192.168.8.174`, Pi `eth0=192.168.144.183`, and Pixhawk
+`192.168.144.14`. The current launcher probes the validated MAVLink target
+`10.1` before the historical `9.1` fallback and owns MAVROS
+startup. The packet labels and manual launch sequence below describe an older
+test and are retained only as provenance.
+
 ## Purpose
 
 This document explains how to connect a Raspberry Pi 5 to a Pixhawk 6X over

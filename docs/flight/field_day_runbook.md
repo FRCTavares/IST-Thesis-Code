@@ -21,36 +21,63 @@ trusted selected-person perception.**
 
 ---
 
-## 1. Before leaving home
+## 1. Offline repository precheck
+
+No field step requires internet, a Git pull, or Tailscale.
 
 ```bash
-cd ~/Desktop/Thesis-Code || exit 1
-export GIT_PAGER=cat PAGER=cat
-git checkout main && git pull --ff-only
-git status --short                       # must be clean
-tools/thesis_build.sh --packages-select thesis_msgs thesis_bringup
-source /opt/ros/jazzy/setup.bash && source ros2_ws/install/setup.bash
-df -h /                                  # verify space against planned main-bag duration
-python3 tools/analysis/validate_tim_evaluation_split.py \
-    docs/data/splits/tim_mars_split_v4.json --verify-hashes   # final_ready=0/3
-sha256sum models/hef/yolov8s.hef models/reid/mars-small128.pb \
-    ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml
-bash tools/start_live_stack.sh --help | grep -E 'field-record|control-mavros|control-yaw-recovery'
+cd /home/francisco/Desktop/Thesis-Code || exit 1
+export GIT_PAGER=cat PAGER=cat GH_PAGER=cat
+set +u
+source /opt/ros/jazzy/setup.bash
+source ros2_ws/install/setup.bash
+git --no-pager log -1 --oneline
+git status --short
+df -h "$PWD" "$PWD/bags"
+python3 tools/analysis/validate_tim_evaluation_split.py   docs/data/splits/tim_mars_split_v4.json --verify-hashes
+bash tools/start_live_stack.sh --help |   rg 'field-record|record-structured-visual|control-mavros|no-control'
 ```
 
-## 2. At IST, before flight
+## 2. GCS-only field network and hardware check
+
+Use `ssh francisco@192.168.8.174` from the Mac after joining
+`ISR Aero.Next GCS`. The complete expected-address, Rescue, and reconnect
+procedure is section 2 of `docs/flight/README.md`.
 
 ```bash
 sudo tools/host/set_pi_network_mode.sh pixhawk
 sudo tools/host/set_pi_network_mode.sh status
-nmcli -t -f ACTIVE,SSID dev wifi         # ISR preferred; approved AERONEXT fallback
-ip route                                 # pixhawk-apm present, never default route
-systemctl is-active tailscaled           # inactive
+nmcli -g GENERAL.CONNECTION,IP4.ADDRESS device show wlan0
+nmcli -g GENERAL.CONNECTION,IP4.ADDRESS device show eth0
+ip route show default
+ip route show default dev eth0
+ping -c 3 -W 1 192.168.144.14
+systemctl is-active tailscaled
 ls -l /dev/video0 /dev/media0 /dev/hailo0
-ros2 topic echo /mavros/state --once     # after MAVROS is up: connected: true
+hailortcli scan
 ```
 
-## 2A. Required moving-platform TIM-MARS trial
+Field state requires GCS Wi-Fi, `pixhawk-apm` with no Ethernet default
+route, reachable Pixhawk, and inactive Tailscale. MAVROS is launcher-owned; do
+not start a separate instance.
+
+## 2A. Passive MAVROS recording-capacity ground gate
+
+Before aircraft evidence, perform the exact disarmed, stationary, visible-person
+gate from section 4 of `docs/flight/README.md`:
+
+```bash
+export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
+export TAG=capacity_ground_r1
+echo "RUN_ID=$RUN_ID"
+./tools/start_live_stack.sh --field-record --no-control --tag "$TAG"
+```
+
+This is structured non-image MCAP plus separate MJPEG and passive MAVROS.
+Require connected/armed-false telemetry, visible target/distractor evidence,
+graceful finalization, and `observed_zero` transport loss before flight.
+
+## 2B. Required moving-platform TIM-MARS trial
 
 Before treating the later closed-loop flights as representative UAV evidence,
 capture one manual-pilot moving-platform TIM-MARS trial.
@@ -71,14 +98,15 @@ Detailed choreography and acceptance criteria:
 Choose the run id:
 
     export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
-    echo "$RUN_ID"
+    export TAG=dynamic_uav_tim_manual_r1
+    echo "RUN_ID=$RUN_ID"
 
 Start retained evidence capture:
 
     ./tools/start_live_stack.sh \
         --field-record \
         --no-control \
-        --tag dynamic_uav_tim_manual_r1
+        --tag "$TAG"
 
 Required motion includes lateral translation, range/scale change, yaw/viewpoint
 change, simultaneous target + UAV motion, a distractor interaction, and—when
@@ -94,37 +122,54 @@ export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"     # deterministic; reused everywhe
 echo "$RUN_ID"
 ```
 
-## 3. Start the stack
+## 3. Start a controller trial
 
-Baseline:
-
-```bash
-./tools/start_live_stack.sh --field-record --control-mavros --tag flight1_baseline
-```
-
-Candidate (only when the #50 recovery promotion is explicitly intended):
+Baseline, only after every physical gate in the canonical sheet passes:
 
 ```bash
-./tools/start_live_stack.sh --field-record --control-mavros \
-  --control-yaw-recovery --acknowledge-yaw-recovery-candidate --tag flight1_candidate
+export TAG=flight1_baseline
+./tools/start_live_stack.sh --field-record --control-mavros --tag "$TAG"
 ```
 
-The launcher prints the run id and the matching `operator_event.py trial_start`
-command; it also refuses to record into an existing non-empty bag directory.
-
-## 4. During the trial
+Candidate, only when the #50/#74 recovery promotion is explicitly intended:
 
 ```bash
-# in the live-stack> prompt: ids ; target <id>
-python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" \
-    --condition baseline --scenario following                 # or: --condition candidate --recovery-enabled
-python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" \
-    --track-id <id> --intended-physical-person "person in red"
-# as needed:
-python3 tools/live/operator_event.py unexpected_behavior --run-id "$RUN_ID" --description "..."
-python3 tools/live/operator_event.py operator_takeover --run-id "$RUN_ID" --trigger pilot_rc
-python3 tools/live/operator_event.py abort --run-id "$RUN_ID" --abort-class safety --reason "..."
+export TAG=flight4_yaw_recovery_candidate
+./tools/start_live_stack.sh --field-record --control-mavros   --control-yaw-recovery --acknowledge-yaw-recovery-candidate --tag "$TAG"
 ```
+
+The launcher prints the run id and refuses an existing non-empty bag path.
+
+## 4. Operator events from Terminal B
+
+Set the exact run id printed by Terminal A:
+
+```bash
+read -r -p "RUN_ID printed by Terminal A: " RUN_ID; export RUN_ID
+```
+
+Baseline start:
+
+```bash
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID"   --condition baseline --scenario following
+```
+
+Candidate start:
+
+```bash
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID"   --condition candidate --scenario yaw_recovery --recovery-enabled
+```
+
+After `ids` and `target <id>` at the live prompt:
+
+```bash
+read -r -p "Visible person description: " PERSON
+read -r -p "Track ID: " TRACK_ID
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID"   --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+```
+
+Use only supported event names. Exact loss/crossing scenarios and safety-event
+commands are in section 8 of `docs/flight/README.md`.
 
 ## 5. Controlled stop
 
@@ -149,26 +194,25 @@ Then, at the `live-stack>` prompt type `stop` (or Ctrl-C once). The stack then, 
    and prints **`EVIDENCE PACKAGE INCOMPLETE`** if anything is missing.
 
 ```bash
-cat "bags/live_camera/${RUN_ID}__video__flight1_baseline/evidence_package_status.json"
+printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"; export BAG
+python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID"   --field-record --expect-visual --expect-operator-events
+python3 tools/live/summarize_field_evidence.py --bag-dir "$BAG"
 ```
 
 ## 6. Before disconnecting the Pixhawk
 
-Retrieve the native ArduPilot DataFlash `.bin` with the actual field tooling
-(Mission Planner / MAVProxy `log download`, QGC, or a wired SD-card copy),
-identify the exact file for this trial, then:
+Retrieve the exact native ArduPilot DataFlash file with Mission Planner,
+MAVProxy, QGC, or a wired SD-card copy. Never select a file by assuming the
+latest one belongs to this trial.
 
 ```bash
-BAG="bags/live_camera/${RUN_ID}__video__flight1_baseline"
-python3 tools/live/archive_pixhawk_dataflash.py \
-  --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin /path/to/<this-trial>.bin
-python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" \
-  --control-trial --field-record --expect-visual --expect-operator-events
+read -r -p "Exact DataFlash .bin path: " DATAFLASH
+python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID"   --bag-dir "$BAG" --source-bin "$DATAFLASH"
+python3 tools/live/verify_evidence_package.py --bag-dir "$BAG"   --run-id "$RUN_ID" --control-trial --field-record   --expect-visual --expect-operator-events
 ```
 
-> **Real-hardware DataFlash retrieval is verification-pending** — there is no
-> Pixhawk to test the download step against. The archive helper is validated
-> for an explicitly-supplied file only; do not "select the latest log".
+Real-hardware DataFlash retrieval remains verification-pending; the archive
+helper only validates the explicitly supplied file. After Pixhawk disconnect:
 
 ```bash
 sudo tools/host/set_pi_network_mode.sh unattended

@@ -114,6 +114,15 @@ behaviour. A failed bag is **kept**, not deleted.
 `pending_pixhawk_dataflash`. The Pi-side runtime files alone never make a
 package scientifically final. Missing, corrupt, mismatched or unfinalized visual evidence makes runtime evidence incomplete. An image topic in a structured flight MCAP also fails the package verifier.
 
+For the exact field invocation, stop interaction, and acceptance command use
+`docs/flight/README.md`. After the launcher returns and `BAG` is
+set, this command prints every topic count/rate and exits nonzero unless runtime
+evidence is structured, image-free, zero-loss, and gracefully finalized:
+
+```bash
+python3 tools/live/summarize_field_evidence.py --bag-dir "$BAG"
+```
+
 ## Recorder transport quality
 
 `bag_integrity.json.passed` checks finalized storage structure and topic

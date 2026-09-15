@@ -48,9 +48,9 @@ abort authority throughout the trial.
 
 ## Pre-flight gate
 
-Use the normal #50 aircraft/network gate first:
+Use sections 1–4 of the canonical offline sheet (`docs/flight/README.md`) first:
 
-    cd ~/Desktop/Thesis-Code || exit 1
+    cd /home/francisco/Desktop/Thesis-Code || exit 1
     set +u
     sudo tools/host/set_pi_network_mode.sh pixhawk
     sudo tools/host/set_pi_network_mode.sh status
@@ -98,8 +98,13 @@ Record the trial start:
         --condition baseline \
         --scenario dynamic_uav_tim_manual
 
-After selection, record the intended physical person using the normal
-`target_selected` operator event.
+After selection, record the intended physical person:
+
+```bash
+read -r -p "Visible person description: " PERSON
+read -r -p "Track ID: " TRACK_ID
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID"   --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+```
 
 ## Flight choreography
 

@@ -21,10 +21,10 @@ Deliberately separate from ROS, perception, tracking and aircraft control.
 
 - Host recovery must never start ROS, MAVROS, perception, control, recording,
   arming or any aircraft-facing service.
-- `set_pi_network_mode.sh pixhawk` fails closed unless the Pixhawk Ethernet
-  profile exists and either ISR field Wi-Fi (attempted first) or the approved
-  AERONEXT fallback becomes active; field mode stops Tailscale, so run it from
-  the Pi's local terminal.
+- `set_pi_network_mode.sh pixhawk` fails closed unless Pixhawk Ethernet
+  and an approved field Wi-Fi profile are available. Field mode stops Tailscale;
+  invoke it from the Pi console or GCS-local SSH to `192.168.8.174`.
+  Reconnect to the same address if the Wi-Fi profile switch drops the shell.
 - Never commit Wi-Fi credentials, Tailscale state/auth keys or SSH keys.
 - Run `python3 -m pytest -q tools/tests/test_host_health.py` after changes.
 

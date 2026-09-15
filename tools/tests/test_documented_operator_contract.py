@@ -143,18 +143,31 @@ printf '\\n'
 def test_flight_day_sheet_stays_compact_and_fail_closed():
     text = FLIGHT_DAY.read_text(encoding="utf-8")
 
-    assert len(text.splitlines()) < 150
+    assert len(text.splitlines()) < 425
     assert "only current day-of-flight operator sheet" in text
-    assert "Run 1 — H01" in text
-    assert "Run 2 — H02" in text
-    assert "Run 3 — H03" in text
-    assert "#64 small-target drone POV" in text
-    assert "Flight 1 — basic following" in text
-    assert "Flight 2 — loss / reacquisition" in text
-    assert "Flight 3 — crossing / distractor" in text
-    assert "Flight 4 — bounded yaw recovery" in text
-    assert "--record-mavros" in text
-    assert "NOT FROZEN — DO NOT USE AN OLD P023 COMMAND" in text
+    assert "ssh francisco@192.168.8.174" in text
+    assert "set_pi_network_mode.sh pixhawk" in text
+    assert "set_pi_network_mode.sh unattended" in text
+    assert "--record-structured-visual" in text
+    assert (
+        "./tools/start_live_stack.sh --field-record --no-control "
+        '--tag "$TAG"'
+    ) in text
+    assert (
+        "./tools/start_live_stack.sh --field-record --control-mavros "
+        '--tag "$TAG"'
+    ) in text
+    assert "--acknowledge-yaw-recovery-candidate" in text
+    assert "summarize_field_evidence.py --bag-dir" in text
+    assert "record_p027_heldout_sequence.sh h01" in text
+    assert "record_p027_heldout_sequence.sh h02" in text
+    assert "record_p027_heldout_sequence.sh h03" in text
+    assert "/camera/image_raw" in text
+    assert "/detections" in text
+    assert "--field-record --record-raw" not in text
+    assert "git pull" not in text
+    assert "100.69.42.62" not in text
+    assert "100.105.37.101" not in text
 
 
 def test_documented_build_recording_and_evaluation_commands_are_supported():
