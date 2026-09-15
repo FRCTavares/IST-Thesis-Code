@@ -1,13 +1,19 @@
 # Offline field-day command sheet
 
-Last reviewed: 2026-09-14
+Last reviewed: 2026-09-15
 
 This is the **only current day-of-flight operator sheet**. It works with no
 internet, Tailscale, or institutional ISR connection. Detailed rationale is in
 `docs/flight/field_day_runbook.md`; retained-artifact rules are in
 `docs/flight/retained_evidence_package.md`.
 
-Run the fail-closed software check first:
+Mac shortcut, when installed:
+
+```bash
+thesis-field-connect
+```
+
+Then on the Pi, run the fail-closed software check:
 
 ```bash
 cd ~/Desktop/Thesis-Code || exit 1
