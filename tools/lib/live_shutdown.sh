@@ -21,6 +21,33 @@ _live_is_recorder_name() {
     return 1
 }
 
+
+# rosbag-backed recorders have an authoritative completion sequence in their
+# retained process log. Requiring both markers avoids treating a partial
+# shutdown message as proof that MCAP finalization completed.
+_live_is_rosbag_recorder_name() {
+    case "$1" in
+        rosbag|dataset_rosbag|raw_image_bag|source_raw_image_bag|source_mavros_bag)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+_live_recorder_log_proves_finalized() {
+    local name="${1:-}"
+    local log_path
+
+    _live_is_rosbag_recorder_name "$name" || return 1
+    [[ -n "${RUN_DIR:-}" ]] || return 1
+
+    log_path="$RUN_DIR/${name}.log"
+    [[ -f "$log_path" ]] || return 1
+
+    grep -Fq '[rosbag2_recorder]: Recording stopped' "$log_path" \
+        && grep -Fq '[rosbag2_recorder]: Event publisher thread: Exited' "$log_path"
+}
+
 # Signal a process and all of its descendants.
 kill_tree() {
     local pid="$1"
@@ -42,7 +69,21 @@ kill_tree() {
 }
 
 _live_pid_alive() {
-    kill -0 "$1" >/dev/null 2>&1
+    local pid="${1:-}"
+    local stat rest state
+
+    [[ -n "$pid" ]] || return 1
+    kill -0 "$pid" >/dev/null 2>&1 || return 1
+    [[ -r "/proc/$pid/stat" ]] || return 1
+
+    # kill -0 also succeeds for a zombie. A recorder that has already
+    # completed MCAP finalization can briefly remain as a zombie until its
+    # parent shell reaps it; that must not trigger SIGTERM escalation.
+    stat="$(cat "/proc/$pid/stat" 2>/dev/null)" || return 1
+    rest="${stat##*) }"
+    state="${rest%% *}"
+
+    [[ "$state" != "Z" && "$state" != "X" ]]
 }
 
 _live_pid_starttime() {
@@ -180,26 +221,43 @@ finalize_recorders() {
         return 0
     fi
 
-    local -a recorder_tree_identities=()
+    # Snapshot only process identities owned by this run. Keep the recorder
+    # name beside each identity so any later orphan cleanup can still decide
+    # whether rosbag had already completed its authoritative close sequence.
+    local -a recorder_tree_identities=() recorder_tree_names=()
+    local tree_identity
     for (( i=0; i<${#rpids[@]}; i++ )); do
         if _live_pid_alive "${rpids[i]}"; then
             _LIVE_TREE_IDENTITIES=()
             _live_collect_tree_identities "${rpids[i]}"
-            recorder_tree_identities+=("${_LIVE_TREE_IDENTITIES[@]}")
+            for tree_identity in "${_LIVE_TREE_IDENTITIES[@]}"; do
+                recorder_tree_identities+=("$tree_identity")
+                recorder_tree_names+=("${rnames[i]}")
+            done
         fi
     done
 
+    # First request normal recorder shutdown.
     for (( i=0; i<${#rpids[@]}; i++ )); do
         if _live_pid_alive "${rpids[i]}"; then
             kill_tree "${rpids[i]}" INT
         fi
     done
 
+    # A rosbag process may linger after its recorder thread has already closed
+    # the MCAP and exited its event-publisher thread. Once both authoritative
+    # log markers are present, the scientific recorder is finalized even if
+    # the outer ROS/Python process still needs bounded cleanup.
     local waited=0
     while (( waited < grace )); do
         local any=0
         for (( i=0; i<${#rpids[@]}; i++ )); do
-            _live_pid_alive "${rpids[i]}" && any=1
+            if _live_pid_alive "${rpids[i]}"; then
+                if _live_recorder_log_proves_finalized "${rnames[i]}"; then
+                    continue
+                fi
+                any=1
+            fi
         done
         [[ "$any" -eq 0 ]] && break
         sleep 1
@@ -207,15 +265,27 @@ finalize_recorders() {
     done
 
     local escalated=0
+    local cleanup_signalled=0
+
     for (( i=0; i<${#rpids[@]}; i++ )); do
-        if _live_pid_alive "${rpids[i]}"; then
+        if ! _live_pid_alive "${rpids[i]}"; then
+            continue
+        fi
+
+        cleanup_signalled=1
+        if _live_recorder_log_proves_finalized "${rnames[i]}"; then
+            echo "[warn] recorder '${rnames[i]}' (pid ${rpids[i]}) completed rosbag finalization but process still lives; cleaning lingering process with SIGTERM"
+            kill_tree "${rpids[i]}" TERM
+        else
             escalated=1
             echo "[warn] recorder '${rnames[i]}' (pid ${rpids[i]}) did not finalize within ${grace}s; escalating to SIGTERM"
             kill_tree "${rpids[i]}" TERM
         fi
     done
 
-    if [[ "$escalated" -eq 1 ]]; then
+    # Whether this was evidence-risk escalation or merely post-finalization
+    # process cleanup, give SIGTERM a bounded chance to remove the owned tree.
+    if [[ "$cleanup_signalled" -eq 1 ]]; then
         local esc_waited=0
         while (( esc_waited < 5 )); do
             local any=0
@@ -226,23 +296,35 @@ finalize_recorders() {
             sleep 1
             esc_waited=$((esc_waited + 1))
         done
+
         for (( i=0; i<${#rpids[@]}; i++ )); do
             if _live_pid_alive "${rpids[i]}"; then
-                echo "[error] recorder '${rnames[i]}' still alive after SIGTERM; sending SIGKILL"
+                if _live_recorder_log_proves_finalized "${rnames[i]}"; then
+                    echo "[warn] recorder '${rnames[i]}' still alive after post-finalization SIGTERM; sending SIGKILL"
+                else
+                    escalated=1
+                    echo "[error] recorder '${rnames[i]}' still alive after SIGTERM; sending SIGKILL"
+                fi
                 kill_tree "${rpids[i]}" KILL
             fi
         done
     fi
 
-    # Final safety net: signal only processes snapshotted from recorder
-    # trees owned by this run. Never kill unrelated rosbag processes.
-    local identity pid
+    # Final safety net: signal only processes snapshotted from recorder trees
+    # owned by this run. A surviving process does not invalidate evidence when
+    # its rosbag log already proves the recorder completed both close markers;
+    # it is still removed so no stale process leaks into the next trial.
+    local identity pid name
     local tracked_orphan=0
 
-    for identity in "${recorder_tree_identities[@]}"; do
+    for (( i=0; i<${#recorder_tree_identities[@]}; i++ )); do
+        identity="${recorder_tree_identities[i]}"
+        name="${recorder_tree_names[i]}"
         if _live_identity_alive "$identity"; then
             tracked_orphan=1
-            escalated=1
+            if ! _live_recorder_log_proves_finalized "$name"; then
+                escalated=1
+            fi
             pid="${identity%%:*}"
             echo "[warn] tracked recorder process survived finalization (pid $pid); sending SIGINT"
             kill -s INT "$pid" >/dev/null 2>&1 || true
@@ -251,8 +333,13 @@ finalize_recorders() {
 
     if [[ "$tracked_orphan" -eq 1 ]]; then
         sleep 2
-        for identity in "${recorder_tree_identities[@]}"; do
+        for (( i=0; i<${#recorder_tree_identities[@]}; i++ )); do
+            identity="${recorder_tree_identities[i]}"
+            name="${recorder_tree_names[i]}"
             if _live_identity_alive "$identity"; then
+                if ! _live_recorder_log_proves_finalized "$name"; then
+                    escalated=1
+                fi
                 pid="${identity%%:*}"
                 echo "[warn] tracked recorder process still alive (pid $pid); sending SIGTERM"
                 kill -s TERM "$pid" >/dev/null 2>&1 || true
@@ -260,8 +347,13 @@ finalize_recorders() {
         done
 
         sleep 1
-        for identity in "${recorder_tree_identities[@]}"; do
+        for (( i=0; i<${#recorder_tree_identities[@]}; i++ )); do
+            identity="${recorder_tree_identities[i]}"
+            name="${recorder_tree_names[i]}"
             if _live_identity_alive "$identity"; then
+                if ! _live_recorder_log_proves_finalized "$name"; then
+                    escalated=1
+                fi
                 pid="${identity%%:*}"
                 echo "[error] tracked recorder process still alive (pid $pid); sending SIGKILL"
                 kill -s KILL "$pid" >/dev/null 2>&1 || true
@@ -274,8 +366,13 @@ finalize_recorders() {
         echo "[recorder] finalization ESCALATED (grace ${grace}s exceeded) -- evidence may be truncated"
     else
         RECORDER_FINALIZE_OUTCOME="graceful"
-        echo "[recorder] finalization graceful within ${grace}s"
+        if [[ "$cleanup_signalled" -eq 1 || "$tracked_orphan" -eq 1 ]]; then
+            echo "[recorder] finalization graceful; authoritative rosbag close completed before lingering-process cleanup"
+        else
+            echo "[recorder] finalization graceful within ${grace}s"
+        fi
     fi
+
     _live_write_recorder_outcome
     return 0
 }

@@ -6,6 +6,7 @@ log the signals they receive, proving:
 - a cleanly-exiting recorder gets SIGINT and never SIGTERM;
 - a recorder that takes several seconds (< grace) finalizes gracefully;
 - a recorder that ignores SIGINT is escalated to SIGTERM after the grace;
+- a rosbag that proves finalization in its log may be cleaned without invalidating evidence;
 - application publishers are stopped before the recorders finalize.
 """
 
@@ -40,6 +41,10 @@ FAKE_PROC = textwrap.dedent(
         if behaviour == "slow_finalize":
             time.sleep(float(os.environ.get("FINALIZE_SECS", "2")))
             sys.exit(0)
+        if behaviour == "finalized_but_lingers":
+            print("[INFO] [fake] [rosbag2_recorder]: Recording stopped", flush=True)
+            print("[INFO] [fake] [rosbag2_recorder]: Event publisher thread: Exited", flush=True)
+            return
         # ignore_int: only log, keep running
 
     def on_term(_s, _f):
@@ -67,7 +72,7 @@ def _run_shutdown(tmp_path: Path, procs: list[tuple[str, str]], call: str,
         # Redirect the fake's own stdio to a file (like start_ros_bg does) so a
         # still-running fake never holds the captured pipe open.
         launch.append(
-            f'python3 {fake} {behaviour} "{sigfile}" >"{tmp_path}/{name}.out" 2>&1 & '
+            f'python3 {fake} {behaviour} "{sigfile}" >"{tmp_path}/{name}.log" 2>&1 & '
             f'echo "$! {name}" >> "{pid_file}"'
         )
     env_lines = "\n".join(
@@ -168,7 +173,23 @@ def test_slow_recorder_within_grace_finalizes_gracefully(tmp_path):
     assert (tmp_path / "recorder_finalize_outcome.txt").read_text().strip() == "graceful"
 
 
-# C. ignoring SIGINT is escalated to SIGTERM after the grace
+# C. completed rosbag close markers permit safe cleanup of a lingering process
+def test_finalized_rosbag_linger_is_cleanup_not_evidence_escalation(tmp_path):
+    out = _run_shutdown(
+        tmp_path,
+        [("rosbag", "finalized_but_lingers")],
+        "finalize_recorders",
+        {"RECORDER_FINALIZE_GRACE_S": "4"},
+    )
+    kinds = [s[0] for s in out["sigs"]["rosbag"]]
+    assert kinds[0] == "INT"
+    assert "TERM" in kinds
+    assert out["outcome"] == "graceful"
+    assert "authoritative rosbag close completed" in out["stdout"]
+    assert (tmp_path / "recorder_finalize_outcome.txt").read_text().strip() == "graceful"
+
+
+# D. ignoring SIGINT is escalated to SIGTERM after the grace
 def test_recorder_ignoring_sigint_is_escalated(tmp_path):
     out = _run_shutdown(
         tmp_path,
@@ -183,7 +204,7 @@ def test_recorder_ignoring_sigint_is_escalated(tmp_path):
     assert out["elapsed"] >= 2.0
 
 
-# D. application publishers stop before recorders finalize
+# E. application publishers stop before recorders finalize
 def test_publishers_stop_before_recorder_finalization(tmp_path):
     out = _run_shutdown(
         tmp_path,
@@ -243,3 +264,69 @@ def test_unrelated_rosbag_process_is_not_killed(tmp_path):
             except subprocess.TimeoutExpired:
                 unrelated.kill()
                 unrelated.wait(timeout=3)
+
+def test_zombie_pid_is_not_treated_as_alive(tmp_path):
+    """kill -0 succeeds for zombies; shutdown logic must not call them alive."""
+    zombie_pid_file = tmp_path / "zombie.pid"
+    holder_code = textwrap.dedent(
+        """\
+        import os
+        import sys
+        import time
+        from pathlib import Path
+
+        child = os.fork()
+        if child == 0:
+            os._exit(0)
+
+        for _ in range(200):
+            try:
+                stat = Path(f"/proc/{child}/stat").read_text()
+                state = stat.split(") ", 1)[1].split()[0]
+                if state == "Z":
+                    break
+            except FileNotFoundError:
+                pass
+            time.sleep(0.01)
+
+        Path(sys.argv[1]).write_text(str(child))
+        time.sleep(30)
+        """
+    )
+
+    holder = subprocess.Popen(
+        ["python3", "-c", holder_code, str(zombie_pid_file)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        for _ in range(100):
+            if zombie_pid_file.exists():
+                break
+            time.sleep(0.02)
+
+        assert zombie_pid_file.exists()
+        zombie_pid = int(zombie_pid_file.read_text())
+
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                (
+                    f'source "{LIB}"; '
+                    f'if _live_pid_alive "{zombie_pid}"; '
+                    'then echo ALIVE; else echo DEAD; fi'
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert result.stdout.strip() == "DEAD"
+    finally:
+        holder.terminate()
+        try:
+            holder.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            holder.kill()
+            holder.wait(timeout=3)

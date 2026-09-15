@@ -284,3 +284,24 @@ def test_failed_mavros_probe_is_removed_from_shutdown_pid_tracking():
     assert 'remove_tracked_pid_entry "$pid" "$process_name"' in cleanup
     assert "failed to stop owned MAVROS probe process" in cleanup
     assert "unset 'PROC_PIDS[$process_name]'" in cleanup
+
+def test_retained_command_topics_follow_enabled_control_authority():
+    start = LAUNCHER.index("VIDEO_BAG_TOPICS=(")
+    end = LAUNCHER.index('if ! refuse_existing_bag_dir', start)
+    topics = LAUNCHER[start:end]
+
+    controller_guard = (
+        'if [[ "${ENABLE_CONTROL:-0}" -eq 1 ]]; then\n'
+        '        VIDEO_BAG_TOPICS+=(\n'
+        '            /control_ref/cmd_vel\n'
+        '            /control_ref/diagnostics'
+    )
+    assert controller_guard in topics
+
+    mavros_control_guard = (
+        'if [[ "${ENABLE_CONTROL:-0}" -eq 1 && '
+        '"${CONTROL_MAVROS_BOOL:-false}" == "true" ]]; then\n'
+        '            VIDEO_BAG_TOPICS+=(\n'
+        '                /mavros/setpoint_velocity/cmd_vel'
+    )
+    assert mavros_control_guard in topics

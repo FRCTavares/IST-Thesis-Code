@@ -1598,9 +1598,16 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         /timing
         /timing_tracker
         /timing_target
-        /control_ref/cmd_vel
-        /control_ref/diagnostics
     )
+
+    # Controller outputs exist only when the controller is running. Passive
+    # --no-control field gates must not claim these as recorded topics.
+    if [[ "${ENABLE_CONTROL:-0}" -eq 1 ]]; then
+        VIDEO_BAG_TOPICS+=(
+            /control_ref/cmd_vel
+            /control_ref/diagnostics
+        )
+    fi
 
     if [[ "$RECORD_MAVROS" -eq 1 ]]; then
         VIDEO_BAG_TOPICS+=(
@@ -1619,14 +1626,22 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
             /mavros/global_position/local
             /mavros/local_position/pose
             /mavros/local_position/velocity_local
-            /mavros/setpoint_velocity/cmd_vel
-            # FCU echo of the setpoint it is actually acting on (compare vs
-            # /control_ref/cmd_vel) and FCU STATUSTEXT (prearm / EKF /
-            # failsafe / mode-change messages needed to interpret a trial).
-            # Both are standard ArduPilot MAVROS plugins (setpoint_raw,
-            # sys_status) not on the apm denylist; they may legitimately
-            # carry zero messages depending on flight mode, so the bag
-            # verifier requires them present but never non-zero.
+        )
+
+        # This command topic is meaningful evidence only when the thesis
+        # controller is actually mirroring commands into MAVROS. Passive
+        # --no-control field gates deliberately require zero publishers.
+        if [[ "${ENABLE_CONTROL:-0}" -eq 1 && "${CONTROL_MAVROS_BOOL:-false}" == "true" ]]; then
+            VIDEO_BAG_TOPICS+=(
+                /mavros/setpoint_velocity/cmd_vel
+            )
+        fi
+
+        VIDEO_BAG_TOPICS+=(
+            # FCU echo of the setpoint it is actually acting on and FCU
+            # STATUSTEXT (prearm / EKF / failsafe / mode-change messages
+            # needed to interpret a trial). They may legitimately carry zero
+            # messages depending on flight mode.
             /mavros/setpoint_raw/target_local
             /mavros/statustext/recv
         )
