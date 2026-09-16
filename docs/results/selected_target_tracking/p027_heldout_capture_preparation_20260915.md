@@ -2,8 +2,9 @@
 
 Date: 15 September 2026
 
-Status: source acquisition and annotation preparation complete; human
-physical-v2 annotation, reviewed release and final evaluation pending.
+Status: source acquisition and annotation preparation complete; H01/H02 human
+physical-v2 annotation and reviewed release complete; H03 annotation/release
+and final evaluation pending.
 
 ## Frozen authority
 
@@ -94,15 +95,28 @@ The completed annotation/reference package was also verified byte-for-byte on
 independent Mac storage before release.
 
 The reviewed H01 ready-entry proposal was then applied explicitly. H01 is now
-`ready`; H02 and H03 remain `reserved_pending_capture` pending their own
-independent human physical-v2 annotation and reviewed finalization.
+`ready`.
+
+H02 completed human CVAT review on 16 September 2026. Its raw export was
+preserved unchanged, a conversion-only export removed geometry from the 172
+human-confirmed target-absent frames required by the physical-v2 contract, and
+the reviewed semantic sidecar produced 1513 manifest-aligned samples: 1341
+`present_scored` and 172 `absent`. The accepted reference is
+`docs/data/physical_target_references/heldout_h02_crossing.json`, SHA-256
+`804f98472af93eba9cbe36c3fe432dc7fd5b6f1c3d413cbc0280808996250d90`.
+The complete raw/conversion/config/manifest/reference package was independently
+verified byte-for-byte on Mac storage before release. The reviewed H02
+ready-entry proposal was then applied explicitly, and H02 is now `ready`.
+
+H03 remains `reserved_pending_capture` pending its independent reviewed
+physical-v2 finalization.
 
 Current release state is:
 
-    final_ready=1/3
+    final_ready=2/3
 
 The normal split validator passes with verified hashes, while
-`--require-final-ready` still fails closed because H02 and H03 are not ready.
+`--require-final-ready` still fails closed solely because H03 is not ready.
 No tracker/TIM-MARS correctness, architecture result, threshold decision,
 bootstrap choice or held-out score has been inspected or used during this
 capture/preparation stage. The final Issue #58 held-out runner remains forbidden
