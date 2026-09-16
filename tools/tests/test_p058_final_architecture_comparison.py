@@ -761,6 +761,10 @@ def test_bytetrack_bootstrap_fixed_to_predetermined_initial_frame(tmp_path):
     assert (
         command[command.index("--max-bootstrap-lag-frames") + 1] == "1"
     )
+    assert (
+        command[command.index("--required-bootstrap-frame-index") + 1]
+        == "0"
+    )
 
 
 def test_deepsort_bootstrap_uses_predetermined_confirmed_frame(tmp_path):
@@ -769,9 +773,14 @@ def test_deepsort_bootstrap_uses_predetermined_confirmed_frame(tmp_path):
         Path("/tmp/reference.json"),
         tmp_path / "bootstrap.json",
         max_bootstrap_lag_frames=3,
+        required_frame_index=2,
     )
     assert (
         command[command.index("--max-bootstrap-lag-frames") + 1] == "3"
+    )
+    assert (
+        command[command.index("--required-bootstrap-frame-index") + 1]
+        == "2"
     )
 
 

@@ -46,6 +46,18 @@ def first_scored_target(reference: dict) -> tuple[list[float], float]:
     raise SystemExit("physical reference has no present_scored target sample")
 
 
+def scored_target_boxes_by_time_ns(reference: dict) -> dict[int, list[float]]:
+    """Index exact present-scored reference boxes by relative nanoseconds."""
+    return {
+        round(float(sample["t_s"]) * 1_000_000_000): list(
+            sample["target_bbox_xyxy"]
+        )
+        for sample in reference["samples"]
+        if sample.get("identity_state") == "present_scored"
+        and sample.get("target_bbox_xyxy")
+    }
+
+
 def track_boxes(msg) -> list[tuple[int, tuple[float, float, float, float]]]:
     boxes = []
     for track in msg.tracks:
@@ -111,9 +123,18 @@ def resolve(
     tracks_topic: str,
     min_iou: float,
     max_lag_frames: int,
+    required_frame_index: int | None = None,
 ) -> dict:
     reference = json.loads(reference_path.read_text())
-    ref_box, ref_t = first_scored_target(reference)
+    initial_ref_box, ref_t = first_scored_target(reference)
+    reference_boxes = scored_target_boxes_by_time_ns(reference)
+
+    if required_frame_index is not None and not (
+        0 <= required_frame_index < max_lag_frames
+    ):
+        raise ValueError(
+            "required_frame_index must be within the bootstrap frame budget"
+        )
 
     image_topic = str(
         reference.get("provenance", {}).get(
@@ -138,6 +159,7 @@ def resolve(
     frame_index = 0
     skipped_before_reference = 0
     resolved: dict | None = None
+    required_frame_box: list[float] | None = None
     while reader.has_next():
         topic, raw, record_time_ns = reader.read_next()
         if topic != tracks_topic:
@@ -149,11 +171,16 @@ def resolve(
             continue
         if frame_index >= max_lag_frames:
             break
+        relative_time_ns = track_time_ns - reference_origin_ns
+        frame_ref_box = reference_boxes.get(relative_time_ns)
         best_iou, best_id = 0.0, None
-        for track_id, box in track_boxes(msg):
-            value = iou_xyxy(box, tuple(ref_box))
-            if value > best_iou:
-                best_iou, best_id = value, track_id
+        if frame_ref_box is not None:
+            for track_id, box in track_boxes(msg):
+                value = iou_xyxy(box, tuple(frame_ref_box))
+                if value > best_iou:
+                    best_iou, best_id = value, track_id
+        if frame_index == required_frame_index:
+            required_frame_box = frame_ref_box
         per_frame.append(
             {
                 "frame_index": frame_index,
@@ -162,15 +189,26 @@ def resolve(
                     (track_time_ns - reference_origin_ns) / 1_000_000_000,
                     9,
                 ),
+                "reference_target_bbox_xyxy": frame_ref_box,
                 "best_iou": round(best_iou, 6),
                 "best_track_id": best_id,
             }
         )
-        if resolved is None and best_id is not None and best_iou >= min_iou:
+        frame_is_eligible = (
+            required_frame_index is None
+            or frame_index == required_frame_index
+        )
+        if (
+            resolved is None
+            and frame_is_eligible
+            and best_id is not None
+            and best_iou >= min_iou
+        ):
             resolved = {
                 "resolved_track_id": int(best_id),
                 "bootstrap_iou": round(float(best_iou), 6),
                 "bootstrap_frame_index": frame_index,
+                "reference_target_bbox_xyxy": frame_ref_box,
             }
         frame_index += 1
 
@@ -185,9 +223,15 @@ def resolve(
         "reference_time_origin_topic": image_topic,
         "reference_time_origin_ns": reference_origin_ns,
         "reference_instant_ns": reference_instant_ns,
-        "reference_target_bbox_xyxy": ref_box,
+        "reference_target_bbox_xyxy": (
+            resolved["reference_target_bbox_xyxy"]
+            if resolved
+            else required_frame_box or initial_ref_box
+        ),
+        "first_present_scored_target_bbox_xyxy": initial_ref_box,
         "min_iou_required": min_iou,
         "max_bootstrap_lag_frames": max_lag_frames,
+        "required_bootstrap_frame_index": required_frame_index,
         "frames_inspected": len(per_frame),
         "track_frames_skipped_before_reference": skipped_before_reference,
         "per_frame_best": per_frame[:12],
@@ -202,6 +246,7 @@ def main() -> int:
     parser.add_argument("--tracks-topic", default="/tracks")
     parser.add_argument("--min-iou", type=float, default=0.5)
     parser.add_argument("--max-bootstrap-lag-frames", type=int, default=30)
+    parser.add_argument("--required-bootstrap-frame-index", type=int, default=None)
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
 
@@ -211,6 +256,7 @@ def main() -> int:
         args.tracks_topic,
         args.min_iou,
         args.max_bootstrap_lag_frames,
+        args.required_bootstrap_frame_index,
     )
     text = json.dumps(result, indent=2, sort_keys=True)
     if args.out:

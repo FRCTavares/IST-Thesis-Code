@@ -81,7 +81,11 @@ def install_fake_bag(monkeypatch, messages):
     monkeypatch.setattr(RESOLVER, "get_message", lambda _name: object)
 
 
-def write_reference(tmp_path: Path, reference_t_s: float) -> Path:
+def write_reference(
+    tmp_path: Path,
+    reference_t_s: float,
+    additional_times_s=(),
+) -> Path:
     path = tmp_path / "reference.json"
     path.write_text(
         json.dumps(
@@ -89,10 +93,11 @@ def write_reference(tmp_path: Path, reference_t_s: float) -> Path:
                 "provenance": {"source_image_topic": "/camera/image_raw"},
                 "samples": [
                     {
-                        "t_s": reference_t_s,
+                        "t_s": value,
                         "identity_state": "present_scored",
                         "target_bbox_xyxy": [10.0, 10.0, 20.0, 20.0],
                     }
+                    for value in (reference_t_s, *additional_times_s)
                 ],
             }
         )
@@ -139,7 +144,7 @@ def test_deepsort_budget_starts_at_reference_instant(tmp_path, monkeypatch):
 
     result = RESOLVER.resolve(
         tmp_path / "bag",
-        write_reference(tmp_path, 0.0),
+        write_reference(tmp_path, 0.0, (0.000000001, 0.000000002)),
         "/tracks",
         min_iou=0.5,
         max_lag_frames=3,
@@ -150,3 +155,34 @@ def test_deepsort_budget_starts_at_reference_instant(tmp_path, monkeypatch):
     assert result["bootstrap_frame_index"] == 2
     assert result["track_frames_skipped_before_reference"] == 2
     assert result["frames_inspected"] == 3
+
+
+def test_exact_required_frame_wins_over_earlier_threshold_matches(
+    tmp_path, monkeypatch
+):
+    origin = 10_000_000_000
+    messages = [
+        ("/camera/image_raw", image(origin), origin),
+        ("/tracks", tracks(origin, 3), origin),
+        ("/tracks", tracks(origin + 1_000_000_000, 3), origin + 1),
+        ("/tracks", tracks(origin + 2_000_000_000, 3), origin + 2),
+    ]
+    install_fake_bag(monkeypatch, messages)
+
+    result = RESOLVER.resolve(
+        tmp_path / "bag",
+        write_reference(tmp_path, 0.0, (1.0, 2.0)),
+        "/tracks",
+        min_iou=0.5,
+        max_lag_frames=3,
+        required_frame_index=2,
+    )
+
+    assert result["ok"] is True
+    assert result["bootstrap_frame_index"] == 2
+    assert result["required_bootstrap_frame_index"] == 2
+    assert [frame["best_track_id"] for frame in result["per_frame_best"]] == [
+        3,
+        3,
+        3,
+    ]

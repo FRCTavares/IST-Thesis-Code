@@ -89,10 +89,12 @@ ACTIVE_ALGORITHM_FREEZE_COMMIT = (
 ACTIVE_CANONICAL_TIM_CONFIG_SHA256 = (
     "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c"
 )
-PROTOCOL_REPAIR_ID = "p058_bootstrap_reference_time_alignment_v1"
+PROTOCOL_REPAIR_ID = (
+    "p058_bootstrap_reference_time_alignment_and_exact_instant_v2"
+)
 PROTOCOL_REPAIR_DIAGNOSTIC = (
     "docs/results/selected_target_tracking/"
-    "p058_heldout_bootstrap_forensics_20260916.md"
+    "p058_deepsort_predetermined_instant_forensics_20260916.md"
 )
 SUPERSEDED_CONTRACT_IDS = frozenset({"tim_mars_final_comparison_v2_2026_09_05"})
 
@@ -803,6 +805,7 @@ def bootstrap_command(
     reference: Path,
     output_json: Path,
     max_bootstrap_lag_frames: int = 1,
+    required_frame_index: int = 0,
 ) -> list[str]:
     return [
         sys.executable,
@@ -813,6 +816,8 @@ def bootstrap_command(
         "--min-iou", "0.5",
         "--max-bootstrap-lag-frames",
         str(max_bootstrap_lag_frames),
+        "--required-bootstrap-frame-index",
+        str(required_frame_index),
         "--out", str(output_json),
     ]
 
@@ -1357,6 +1362,7 @@ def run_sequence(
                 reference,
                 deep_bootstrap_json,
                 max_bootstrap_lag_frames=3,
+                required_frame_index=2,
             ),
             log_path,
         )
@@ -1531,8 +1537,9 @@ def write_aggregate(
         "This report is generated directly from the prospectively frozen "
         "Issue #58 architecture contract.",
         "The shared bootstrap resolver applies the documented reference-time "
-        "alignment repair; no algorithm, model, threshold, tracker setting, "
-        "bootstrap frame budget, or evaluation semantic is changed.",
+        "alignment and exact predetermined-instant repairs; no algorithm, "
+        "model, threshold, tracker setting, bootstrap frame budget, or "
+        "evaluation semantic is changed.",
         "",
         "| sequence | architecture | status | correct s | wrong s | "
         "unresolved s | LOST s | absent-with-output s |",
@@ -1710,8 +1717,8 @@ def main() -> int:
             "resolver_sha256": sha256_file(BOOTSTRAP_RESOLVER),
             "scope": (
                 "Align the tracker stream to the first present_scored "
-                "physical-reference time before applying the unchanged "
-                "architecture-specific bootstrap frame budget."
+                "physical-reference time and resolve at the unchanged exact "
+                "architecture-specific frame within its frozen budget."
             ),
             "retuning": False,
         },
