@@ -95,3 +95,60 @@ class TestFrameTimestampsNs:
             later > earlier
             for earlier, later in zip(timestamps, timestamps[1:])
         )
+
+class TestTimestampManifest:
+    def test_accepts_exact_filename_order_and_positive_timestamps(
+        self, tmp_path
+    ):
+        images = [
+            tmp_path / "00000001.png",
+            tmp_path / "00000002.png",
+        ]
+        manifest = tmp_path / "timestamps.json"
+
+        manifest.write_text(
+            '{"schema":"image_sequence_timestamps_v1","frames":['
+            '{"file":"00000001.png","timestamp_ns":1000000000},'
+            '{"file":"00000002.png","timestamp_ns":1021000000}'
+            ']}',
+            encoding="utf-8",
+        )
+
+        assert MODULE.load_timestamp_manifest(
+            manifest, images
+        ) == [
+            1_000_000_000,
+            1_021_000_000,
+        ]
+
+    def test_rejects_filename_mismatch(self, tmp_path):
+        images = [tmp_path / "00000001.png"]
+        manifest = tmp_path / "timestamps.json"
+
+        manifest.write_text(
+            '{"schema":"image_sequence_timestamps_v1","frames":['
+            '{"file":"wrong.png","timestamp_ns":1000000000}'
+            ']}',
+            encoding="utf-8",
+        )
+
+        with pytest.raises(ValueError, match="filenames"):
+            MODULE.load_timestamp_manifest(
+                manifest, images
+            )
+
+    @pytest.mark.parametrize(
+        "timestamps",
+        [
+            [0, 1],
+            [1, 1],
+            [2, 1],
+            [1],
+        ],
+    )
+    def test_rejects_invalid_explicit_timeline(self, timestamps):
+        with pytest.raises(ValueError):
+            MODULE.validate_explicit_timestamps(
+                timestamps,
+                expected_count=2,
+            )

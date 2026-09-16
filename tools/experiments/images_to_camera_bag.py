@@ -12,6 +12,7 @@ source bag.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 from typing import Iterable
 
@@ -47,12 +48,85 @@ def frame_timestamps_ns(
     return [start_time_ns + index * period_ns for index in range(count)]
 
 
+def validate_explicit_timestamps(
+    timestamps_ns: Iterable[int],
+    *,
+    expected_count: int,
+) -> list[int]:
+    timestamps = list(timestamps_ns)
+
+    if len(timestamps) != expected_count:
+        raise ValueError(
+            "timestamp count does not match image count: "
+            f"{len(timestamps)} != {expected_count}"
+        )
+
+    if any(
+        not isinstance(value, int) or isinstance(value, bool)
+        for value in timestamps
+    ):
+        raise ValueError("timestamps must be integer nanoseconds")
+
+    if any(value <= 0 for value in timestamps):
+        raise ValueError("timestamps must be positive")
+
+    if any(
+        later <= earlier
+        for earlier, later in zip(timestamps, timestamps[1:])
+    ):
+        raise ValueError("timestamps must be strictly increasing")
+
+    return timestamps
+
+
+def load_timestamp_manifest(
+    manifest_path: Path,
+    image_paths: Iterable[Path],
+) -> list[int]:
+    image_paths = list(image_paths)
+
+    payload = json.loads(
+        manifest_path.read_text(encoding="utf-8")
+    )
+
+    if payload.get("schema") != "image_sequence_timestamps_v1":
+        raise ValueError("unsupported timestamp manifest schema")
+
+    frames = payload.get("frames")
+    if not isinstance(frames, list):
+        raise ValueError("timestamp manifest frames must be a list")
+
+    expected_names = [path.name for path in image_paths]
+    actual_names = []
+    timestamps = []
+
+    for frame in frames:
+        if not isinstance(frame, dict):
+            raise ValueError(
+                "timestamp manifest frame entries must be objects"
+            )
+        actual_names.append(frame.get("file"))
+        timestamps.append(frame.get("timestamp_ns"))
+
+    if actual_names != expected_names:
+        raise ValueError(
+            "timestamp manifest filenames do not exactly match "
+            "sorted image sequence"
+        )
+
+    return validate_explicit_timestamps(
+        timestamps,
+        expected_count=len(image_paths),
+    )
+
+
 def write_image_bag(
     image_paths: Iterable[Path],
     *,
     output_bag: Path,
-    frame_rate_hz: float,
+    frame_rate_hz: float | None,
     start_time_ns: int,
+    timestamps_ns: Iterable[int] | None = None,
     topic: str = "/camera/image_raw",
     frame_id: str = "camera",
 ) -> dict[str, object]:
@@ -63,11 +137,25 @@ def write_image_bag(
     from rclpy.time import Time as RclpyTime
 
     image_paths = list(image_paths)
-    timestamps_ns = frame_timestamps_ns(
-        len(image_paths),
-        frame_rate_hz=frame_rate_hz,
-        start_time_ns=start_time_ns,
-    )
+
+    if timestamps_ns is None:
+        if frame_rate_hz is None:
+            raise ValueError(
+                "frame_rate_hz is required without explicit timestamps"
+            )
+
+        timestamps = frame_timestamps_ns(
+            len(image_paths),
+            frame_rate_hz=frame_rate_hz,
+            start_time_ns=start_time_ns,
+        )
+        timestamp_mode = "fixed_frame_rate"
+    else:
+        timestamps = validate_explicit_timestamps(
+            timestamps_ns,
+            expected_count=len(image_paths),
+        )
+        timestamp_mode = "explicit_manifest"
 
     bridge = CvBridge()
 
@@ -93,7 +181,7 @@ def write_image_bag(
     written = 0
     skipped: list[str] = []
 
-    for path, stamp_ns in zip(image_paths, timestamps_ns):
+    for path, stamp_ns in zip(image_paths, timestamps):
         image = cv2.imread(str(path), cv2.IMREAD_COLOR)
 
         if image is None:
@@ -116,9 +204,10 @@ def write_image_bag(
         "images_total": len(image_paths),
         "images_written": written,
         "images_skipped": skipped,
+        "timestamp_mode": timestamp_mode,
         "frame_rate_hz": frame_rate_hz,
-        "start_time_ns": start_time_ns,
-        "end_time_ns": timestamps_ns[-1] if timestamps_ns else start_time_ns,
+        "start_time_ns": timestamps[0] if timestamps else start_time_ns,
+        "end_time_ns": timestamps[-1] if timestamps else start_time_ns,
     }
 
 
@@ -126,7 +215,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("image_dir", type=Path)
     parser.add_argument("output_bag", type=Path)
-    parser.add_argument("--frame-rate", type=float, required=True)
+
+    timing = parser.add_mutually_exclusive_group(required=True)
+    timing.add_argument("--frame-rate", type=float)
+    timing.add_argument("--timestamp-manifest", type=Path)
+
     parser.add_argument("--start-time-ns", type=int, default=0)
     parser.add_argument("--topic", default="/camera/image_raw")
     parser.add_argument("--frame-id", default="camera")
@@ -154,16 +247,33 @@ def main() -> int:
     if arguments.limit is not None:
         images = images[: arguments.limit]
 
+    timestamps_ns = None
+    if arguments.timestamp_manifest is not None:
+        if arguments.start_time_ns != 0:
+            raise SystemExit(
+                "--start-time-ns cannot be combined with "
+                "--timestamp-manifest"
+            )
+
+        timestamps_ns = load_timestamp_manifest(
+            arguments.timestamp_manifest,
+            images,
+        )
+
     result = write_image_bag(
         images,
         output_bag=arguments.output_bag,
         frame_rate_hz=arguments.frame_rate,
         start_time_ns=arguments.start_time_ns,
+        timestamps_ns=timestamps_ns,
         topic=arguments.topic,
         frame_id=arguments.frame_id,
     )
 
-    import json
+    if arguments.timestamp_manifest is not None:
+        result["timestamp_manifest"] = str(
+            arguments.timestamp_manifest
+        )
 
     print(json.dumps(result, indent=2))
 
