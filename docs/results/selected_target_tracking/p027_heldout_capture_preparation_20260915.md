@@ -84,15 +84,25 @@ rather than archived May participant codes.
 
 ## Release state
 
-The canonical split has not been manually edited. H01, H02 and H03 remain
-`reserved_pending_capture` until each human-reviewed physical-v2 reference is
-converted, validated, independently backed up and finalized through
-`finalize_p027_heldout_entry.py`.
+H01 completed human CVAT review on 16 September 2026. The raw export was
+preserved unchanged, the conversion-only export and reviewed semantic sidecar
+were hashed, and the resulting physical-v2 reference validated against all 1825
+manifest frames. The accepted reference is
+`docs/data/physical_target_references/heldout_h01_exit_reentry.json`, SHA-256
+`63361fb28372913886fc5735c7d9067c5ec24212627ccddf0a6370c4d8469042`.
+The completed annotation/reference package was also verified byte-for-byte on
+independent Mac storage before release.
 
-Current release state remains:
+The reviewed H01 ready-entry proposal was then applied explicitly. H01 is now
+`ready`; H02 and H03 remain `reserved_pending_capture` pending their own
+independent human physical-v2 annotation and reviewed finalization.
 
-    final_ready=0/3
+Current release state is:
 
+    final_ready=1/3
+
+The normal split validator passes with verified hashes, while
+`--require-final-ready` still fails closed because H02 and H03 are not ready.
 No tracker/TIM-MARS correctness, architecture result, threshold decision,
 bootstrap choice or held-out score has been inspected or used during this
 capture/preparation stage. The final Issue #58 held-out runner remains forbidden

@@ -188,15 +188,36 @@
     "final_held_out": [
       {
         "id": "heldout_h01_exit_reentry",
-        "status": "reserved_pending_capture",
+        "status": "ready",
         "scenario": "selected target exits fully, remains absent, then re-enters amid tracker-ID churn",
         "expected_source_path": "bags/source/held_out/2026-09/h01_exit_reentry",
-        "people_group": "pending_capture",
-        "clothing_group": "pending_capture",
-        "overlap_record": "Must record anonymous participant codes, outfit codes, and exact overlap with every development/legacy group before status may become ready.",
-        "files": [],
+        "people_group": "sep15_three_person_group_A",
+        "clothing_group": "sep15_outfits_A",
+        "overlap_record": "sep15_p001 (target), sep15_p002 (phys_d001), and sep15_p003 (phys_d002) all appeared in june19_four_person_group_A. Their 15 September outfits are coded sep15_o001, sep15_o002, and sep15_o003 respectively. None of these outfits or individual garments were reused from june19_outfits_A. According to the annotator's direct session knowledge, none of sep15_p001, sep15_p002, or sep15_p003 appeared in the May recording and no May outfits were reused; the historical May participant/outfit coding itself remains incomplete.",
+        "files": [
+          {
+            "path": "bags/source/held_out/2026-09/h01_exit_reentry/2026-09-15__16-31-10__source__p027_h01_exit_reentry__image_raw_detections/2026-09-15__16-31-10__source__p027_h01_exit_reentry__image_raw_detections_0.mcap",
+            "size_bytes": 1684445781,
+            "sha256": "9d902ecf68c570e677db6ff004b547cd01c5c979c737aa249c0de385307fe259"
+          },
+          {
+            "path": "bags/source/held_out/2026-09/h01_exit_reentry/2026-09-15__16-31-10__source__p027_h01_exit_reentry__image_raw_detections/metadata.yaml",
+            "size_bytes": 2179,
+            "sha256": "9a502cbec94e010cd8b2c1e1d2daa199a31c1666429f8e32eefd12cb6b7cd64a"
+          },
+          {
+            "path": "bags/source/held_out/2026-09/h01_exit_reentry/2026-09-15__16-31-10__source__p027_h01_exit_reentry__image_raw_detections/run_metadata.json",
+            "size_bytes": 2889,
+            "sha256": "fa7d15282cd7aa8ba8d3bbee645017469452d9caa5039f112d6a9e3841b68df1"
+          }
+        ],
         "planned_physical_v2_reference_path": "docs/data/physical_target_references/heldout_h01_exit_reentry.json",
-        "planned_annotation_status": "not_yet_captured"
+        "planned_annotation_status": "not_yet_captured",
+        "historical_exposure": "The 15 September held-out source recordings and annotations were not available before capture and were not used for algorithm development or tuning. All three participants had appeared in the 19 June development/legacy session, but in completely different clothing. This is participant overlap, not source-recording or outfit exposure. According to the annotator, none appeared in the May recording.",
+        "source_path": "bags/source/held_out/2026-09/h01_exit_reentry/2026-09-15__16-31-10__source__p027_h01_exit_reentry__image_raw_detections",
+        "annotation_path": "docs/data/physical_target_references/heldout_h01_exit_reentry.json",
+        "annotation_sha256": "63361fb28372913886fc5735c7d9067c5ec24212627ccddf0a6370c4d8469042",
+        "selected_target_id": 0
       },
       {
         "id": "heldout_h02_crossing",
