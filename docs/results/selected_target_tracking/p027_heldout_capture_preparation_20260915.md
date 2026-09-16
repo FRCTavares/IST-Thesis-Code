@@ -2,9 +2,8 @@
 
 Date: 15 September 2026
 
-Status: source acquisition and annotation preparation complete; H01/H02 human
-physical-v2 annotation and reviewed release complete; H03 annotation/release
-and final evaluation pending.
+Status: source acquisition, human physical-v2 annotation and reviewed release
+complete for H01/H02/H03; final held-out evaluation pending.
 
 ## Frozen authority
 
@@ -108,17 +107,26 @@ The complete raw/conversion/config/manifest/reference package was independently
 verified byte-for-byte on Mac storage before release. The reviewed H02
 ready-entry proposal was then applied explicitly, and H02 is now `ready`.
 
-H03 remains `reserved_pending_capture` pending its independent reviewed
-physical-v2 finalization.
+H03 completed human CVAT review on 16 September 2026. Its raw export was
+preserved unchanged, a conversion-only export removed geometry from the 100
+human-confirmed target-absent frames required by the physical-v2 contract, and
+the reviewed semantic sidecar produced 1460 manifest-aligned samples: 1360
+`present_scored` and 100 `absent`. The accepted reference is
+`docs/data/physical_target_references/heldout_h03_occlusion_distractor.json`,
+SHA-256
+`a7f39a2afb631f39a33d4aaad859774e4abbc49c66dbe91ac5466587a79e9f04`.
+The complete raw/conversion/config/manifest/reference package was independently
+verified byte-for-byte on Mac storage before release. The reviewed H03
+ready-entry proposal was then applied explicitly, and H03 is now `ready`.
 
 Current release state is:
 
-    final_ready=2/3
+    final_ready=3/3
 
-The normal split validator passes with verified hashes, while
-`--require-final-ready` still fails closed solely because H03 is not ready.
+Both the normal split validator and the `--require-final-ready` release gate
+pass with verified hashes. H01, H02 and H03 are all `ready`.
 No tracker/TIM-MARS correctness, architecture result, threshold decision,
-bootstrap choice or held-out score has been inspected or used during this
-capture/preparation stage. The final Issue #58 held-out runner remains forbidden
-until all three reviewed ready-entry patches have been applied sequentially and
-the `--require-final-ready` validator exits successfully at `3/3`.
+bootstrap choice or held-out score was inspected or used during capture,
+annotation or release preparation. The frozen Issue #58 final held-out
+architecture evaluation is now authorised by the prospective release gate but
+has not yet been run.
