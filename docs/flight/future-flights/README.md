@@ -1,32 +1,36 @@
-# Future Flights — Closed-Loop Validation Queue
+# Future Flights
 
-This directory indexes physical work deferred beyond the 15 September
-non-closed-loop capture session.
-
-Canonical operator sheet:
+Use:
 
     docs/flight/README.md
 
-Detailed field procedure:
+That file is the canonical flight-day command sheet.
 
-    docs/flight/field_day_runbook.md
+## Remaining physical work
 
-Retained evidence contract:
+Complete in this order:
+
+1. passive MAVROS + recorder ground gate
+2. controller compute-only ground gate
+3. restrained / props-off MAVROS command-path gate
+4. RC takeover / PreArm / failsafe check
+5. baseline closed-loop following
+6. loss / reacquisition trial
+7. distractor crossing trial
+8. yaw-recovery candidate only if explicitly approved after baseline review
+
+## Important
+
+Do not add `--record-raw` to field flights.
+
+Do not enable yaw recovery for the baseline.
+
+H01/H02/H03 source captures are already complete and are not part of these flights.
+
+Detailed evidence requirements:
 
     docs/flight/retained_evidence_package.md
 
-## Deferred closed-loop work
+Manual moving-platform TIM-MARS trial:
 
-Do not execute until the complete physical controller safety gate passes.
-
-- RC takeover and RC failsafe validation
-- PreArm / arming-readiness validation
-- physical controller direction/sign validation
-- restrained / props-off command-path validation
-- closed-loop baseline following
-- closed-loop distractor / crossing trial
-- closed-loop loss / reacquisition trial
-- bounded yaw-recovery candidate trial, only if separately authorised
-
-The current MAVROS-inclusive retained recorder must also satisfy the strict
-runtime-evidence gate before these are treated as final scientific trials.
+    docs/flight/P050_DYNAMIC_UAV_TIM_TRIAL.md

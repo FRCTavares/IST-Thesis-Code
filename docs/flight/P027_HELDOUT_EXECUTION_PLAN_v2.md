@@ -1,182 +1,91 @@
 # Issue #27 — Held-Out Physical Execution Plan (v2)
 
-This plan supersedes `docs/flight/P027_HELDOUT_EXECUTION_PLAN.md` for the
-Stage-7 prospective freeze. The v1 plan is retained unchanged as historical
-provenance for the 5 September `tim_mars_split_v3` freeze.
+Stage-7 held-out capture is complete.
 
-## Status
+The original `P027_HELDOUT_EXECUTION_PLAN.md` is historical provenance for the superseded split-v3 freeze.
 
-The Stage-7 prospective evaluation freeze is complete and merged into `main`.
+## Active freeze
 
-Active authorities:
+- split: `docs/data/splits/tim_mars_split_v4.json`
+- comparison: `docs/data/splits/tim_mars_final_comparison_v3.json`
+- algorithm authority: `79f11b631688889bf5ffbeb3c16ef543a53f9973`
+- canonical TIM-MARS SHA-256: `b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c`
 
-- split: `tim_mars_split_v4_2026_09_08`
-  (`docs/data/splits/tim_mars_split_v4.json`);
-- comparison contract: `tim_mars_final_comparison_v3_2026_09_08`
-  (`docs/data/splits/tim_mars_final_comparison_v3.json`);
-- prospective freeze manifest:
-  `docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json`;
-- algorithm-authority commit (immutable): `79f11b631688889bf5ffbeb3c16ef543a53f9973`
-  (PR #101 merge — final development algorithm: selected baseline + production
-  AB-16 only). This is **not** the runtime git HEAD of a held-out run;
-- freeze-definition commit: `1b38a8cc27188e94b1c08ff6d555712cec752ed9`
-  (Stage-7 contract root; the merged Stage-7 freeze contains it and any
-  provenance-clarification commit on this branch);
-- canonical TIM-MARS SHA-256:
-  `b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c`;
-- detector: YOLOv8s `models/hef/yolov8s.hef`;
-- appearance model: MARS-small128 `models/reid/mars-small128.pb`;
-- pinned numerical environment:
-  `docs/results/selected_target_tracking/tim_pinned_replay_env_20260908.sh`;
-- release state: `final_ready=0/3`.
+Validate:
 
-H01, H02 and H03 have not been captured or inspected.
+    cd ~/Desktop/Thesis-Code || exit 1
+    set +u
+    python3 tools/analysis/validate_tim_evaluation_split.py docs/data/splits/tim_mars_split_v4.json --verify-hashes
 
-The runtime revision used for a held-out capture / replay / evaluation records its actual git HEAD; it is valid when it contains the merged Stage-7 freeze and `validate_tim_evaluation_split.py --verify-hashes` passes (that check requires the algorithm-authority commit to be an ancestor of HEAD and every frozen behaviour-bearing path to be byte-identical to it — never `HEAD == 79f11b63…`).
+## Captures — COMPLETE
 
-This document is the execution queue for physical work that must only be
-performed when the required people, hardware and recording environment are
-available.
+Accepted source-only captures from 15 September 2026:
 
-## Scientific boundary
+- H01: `16-31-10`
+- H02: `16-35-33`
+- H03: `16-55-25`
 
-Before all three held-out sources, physical-v2 annotations,
-participant/outfit records and hashes are frozen:
+Each retained only:
 
-- do not inspect tracker or TIM correctness;
-- do not inspect TIM candidate scores;
-- do not compare architectures;
-- do not tune thresholds;
-- do not alter tracker settings;
-- do not change models;
-- do not change bootstrap or evaluation semantics.
+    /camera/image_raw
+    /detections
 
-A physical capture may be repeated only for a recording defect, unusable
-imagery, or failure to perform the specified physical scenario.
+During capture:
 
-It must never be repeated because an algorithm performs badly.
+- tracker OFF
+- TIM-MARS OFF
+- controller OFF
+- MAVROS OFF
 
-## Physical execution order
+The earlier H03 `16-41-41` attempt is rejected recording evidence and is not part of the final evaluation.
 
-Perform one scenario at a time. The physical scenario definitions are
-unchanged; use the existing operator sheets.
+Do not recapture H01/H02/H03 because of algorithm results.
 
-### 1. H01 — Exit and re-entry
+## Current work
 
-Operator sheet: `docs/flight/P027_H01_EXIT_REENTRY.md`
+Physical-v2 annotation and release preparation are now the only Issue #27 steps before evaluation.
 
-Physical requirements:
+Required annotation files:
 
-- selected target visible initially;
-- at least one distractor visible;
-- selected target fully exits the image;
-- selected target physically absent for approximately 5–8 s;
-- distractor visible during at least part of the absence;
-- selected target re-enters;
-- retain at least 10 s after re-entry.
+    docs/data/physical_target_references/heldout_h01_exit_reentry.json
+    docs/data/physical_target_references/heldout_h02_crossing.json
+    docs/data/physical_target_references/heldout_h03_occlusion_distractor.json
 
-Capture command:
+For each sequence:
 
-    tools/experiments/record_p027_heldout_sequence.sh h01
+1. complete human physical-v2 annotation;
+2. record anonymous participant/outfit information;
+3. verify source and annotation hashes;
+4. update the corresponding split entry;
+5. validate the split;
+6. mark that entry ready only after review.
 
-After capture, inspect only recording integrity and physical-scene compliance.
+Do not use held-out algorithm performance to change:
 
-### 2. H02 — Crossing
+- TIM-MARS
+- tracker configuration
+- detector/model choice
+- thresholds
+- evaluator semantics
+- architecture arms
+- primary metrics
 
-Operator sheet: `docs/flight/P027_H02_CROSSING.md`
+## Release gate
 
-Capture command:
+Do not run the final held-out architecture evaluation until:
 
-    tools/experiments/record_p027_heldout_sequence.sh h02
+    python3 tools/analysis/validate_tim_evaluation_split.py docs/data/splits/tim_mars_split_v4.json --verify-hashes --require-final-ready
 
-Perform the physical crossing exactly as specified by the operator sheet
-(two close crossings, at least one sustained overlap/near-overlap, clear
-separations, ≥10 s after the final separation). Do not inspect whether tracker
-identities switch.
+Required result:
 
-### 3. H03 — Occlusion and distractor
+    final_ready=3/3
 
-Operator sheet: `docs/flight/P027_H03_OCCLUSION_DISTRACTOR.md`
+Only after that gate passes may the frozen architecture comparison run on H01/H02/H03.
 
-Capture command:
+## Important
 
-    tools/experiments/record_p027_heldout_sequence.sh h03
+The first held-out access already locked the prospective algorithm and evaluation contract.
 
-Perform the physical occlusion/distractor scenario exactly as specified (the
-target stays physically present through the full visual occlusion; a distractor
-stays visible near the last target location; ≥10 s of clear visibility after
-the reveal). Acceptance is based on the physical scenario and recording quality
-only.
+Recording-integrity failures may be documented as rejected attempts.
 
-## Pre-capture gate for every sequence
-
-Before H01, H02 or H03:
-
-1. repository tree must be clean;
-2. active split validator must pass;
-3. at least 40 GiB free storage;
-4. `/dev/video0`, `/dev/media0` and `/dev/hailo0` must exist;
-5. use the dedicated source-only capture helper;
-6. tracker, TIM-MARS, controller and MAVROS remain disabled.
-
-Validation command (defaults to the v4 split):
-
-    python3 tools/analysis/validate_tim_evaluation_split.py --verify-hashes
-
-## Allowed immediate post-capture inspection
-
-Allowed before final release:
-
-- `ros2 bag info`;
-- topic presence and message counts;
-- duration and timestamps;
-- corruption/finalization checks;
-- source-image quality;
-- confirmation that the planned physical scenario occurred;
-- physical-v2 annotation;
-- anonymous participant and outfit coding.
-
-## Required annotation outputs
-
-- `docs/data/physical_target_references/heldout_h01_exit_reentry.json`
-- `docs/data/physical_target_references/heldout_h02_crossing.json`
-- `docs/data/physical_target_references/heldout_h03_occlusion_distractor.json`
-
-For every retained sequence also record: anonymous participant codes; outfit
-codes; exact participant and clothing/outfit overlap with development/legacy
-recordings; source paths; source file sizes; annotation SHA-256; retained
-source hashes and provenance. Add these to
-`docs/data/splits/tim_mars_split_v4.json` and change the entry status to
-`ready`.
-
-## Final release gate
-
-Only after H01, H02 and H03 are captured, annotated and fully frozen:
-
-    python3 tools/analysis/validate_tim_evaluation_split.py \
-        --verify-hashes \
-        --require-final-ready
-
-Expected release state before architecture evaluation: `final_ready=3/3`.
-
-Only after that gate passes may the four frozen architecture cells of
-`tim_mars_final_comparison_v3.json` be evaluated.
-
-## Post-freeze lock
-
-The first access or capture of any of H01/H02/H03 locks the algorithm,
-production configuration, tracker configuration, models, evaluator
-definitions, split, architecture arms, primary metrics and annotation
-interpretation. No outcome-driven change is allowed afterward. A serious
-software correctness bug found after held-out access must be documented and
-not silently patched and re-run; any corrected evaluation is clearly
-post-freeze / post-access evidence. A failed algorithmic result is never
-grounds for recapture or for a contract change.
-
-## Current next action
-
-No physical experiment is required while away from the appropriate recording
-environment.
-
-The next physical thesis session should begin with H01 using its operator
-sheet, followed by H02 and H03 if conditions and participants allow.
+Bad algorithm performance is never a reason to recapture or change the frozen contract.

@@ -1,249 +1,190 @@
-# Retained flight-evidence package (#50 / #74)
+# Retained Flight Evidence
 
-What one retained physical field trial must preserve so the trial can be
-reconstructed afterward without another flight. The package supports both
-manual moving-platform perception trials and closed-loop control trials. This
-is evidence plumbing; it does not authorise flight and does not change
-controller, TIM-MARS, detector, tracker, or evaluation behaviour.
+Use this file to check what must be saved after a physical trial.
 
-## Canonical location
+Flight commands:
 
-The retained **structured bag directory**
-(`bags/live_camera/<RUN_ID>__video[__<tag>]/`) is the single canonical
-evidence package for a trial. Everything below lives inside it.
+    docs/flight/README.md
 
-## Contents
+## Canonical trial directory
 
-| Artifact | Path in the package | How it gets there | Required |
-| --- | --- | --- | --- |
-| structured rosbag (MCAP) | `*.mcap` + `metadata.yaml` | `--field-record` records non-image topics; `--control-mavros` only for approved control trials | yes |
-| controller diagnostics | `/control_ref/diagnostics` in the bag | `control_ref_node` (`thesis_msgs/ControlDiagnostics`, one per command) | yes (when control runs) |
-| run metadata / provenance | `run_metadata.json` | `tools/live/write_live_run_metadata.py` (schema v1) | yes |
-| flight metadata (plain text) | `flight_metadata.txt` | `tools/start_live_stack.sh` | yes |
-| target-authority events | `target_authority_events.jsonl` | `dashboard_bridge_node` → archived on stop | yes |
-| controller runtime log | `run_logs/control.log` | `tools/live/archive_run_evidence.py` on stop | required when the controller runs; explicitly optional/absent for `--no-control` |
-| dashboard bridge log | `run_logs/dashboard_bridge.log` | same | yes |
-| TIM-MARS node log | `run_logs/target_memory_mars.log` | same | yes |
-| separate visual file | `visual_<RUN_ID>.mkv` | loopback dashboard MJPEG stream copied by ffmpeg, outside MCAP | yes for structured visual/field profile |
-| visual recorder log | `run_logs/visual_record.log` | archived on stop | yes for structured visual/field profile |
-| visual integrity report | `visual_evidence_status.json` | ffprobe frame/timestamp and ffmpeg decode checks | yes for structured visual/field profile |
-| main recorder log | `run_logs/rosbag.log` | same; exact rosbag stdout/stderr | yes |
-| recorder transport report | `recorder_transport_status.json` | `tools/live/verify_recorder_transport.py` after log archival | yes |
-| operator event log | `run_logs/operator_events.jsonl` | same (optional-file; `absent` recorded if never written) | yes for retained trials |
-| archival manifest | `run_logs/archive_manifest.json` | `archive_run_evidence.py` | yes |
-| recorder finalization outcome | `run_logs/recorder_finalize_outcome.txt` (`graceful`/`escalated`) | `finalize_recorders` on stop | yes |
-| bag integrity report | `bag_integrity.json` | `tools/live/verify_retained_bag.py` on stop | yes |
-| per-topic cadence report | operator-selected JSON path | `tools/live/assess_bag_topics.py` after finalization | recommended; required/critical topics are explicit CLI inputs |
-| evidence-package status | `evidence_package_status.json` | `tools/live/verify_evidence_package.py` on stop | yes |
-| paired raw-image bag | `<RUN_ID>__video__…__image_raw/` (sibling dir) | `--record-raw` | required when requested |
-| paired raw bag integrity and recorder log | sibling `bag_integrity.json`, `run_logs/raw_image_bag.log`, `run_logs/archive_manifest.json` | finalized raw-bag verification and explicit log archival | required when `--record-raw` |
-| physical-person annotation | added post-flight (`tim_physical_target_bbox_v2`) | manual, from the retained imagery | pending post-flight |
-| native Pixhawk `.bin` dataflash | `pixhawk_dataflash/*.bin` + `dataflash_manifest.json` | `tools/live/archive_pixhawk_dataflash.py --source-bin <file>` (retrieval verification pending) | pending post-flight (retained field trials) |
+Field trials are stored under:
 
-`run_metadata.json.git.commit` is the exact Git SHA; `run_metadata.json.hashes`
-carries the SHA-256 of the detector HEF, the MARS ReID model and
-`tim_mars_canonical.yaml`.
+    bags/live_camera/<RUN_ID>__video[__<TAG>]/
 
-For the flight profile, `run_metadata.json.visual` links the exact RUN_ID visual path, MJPEG/Matroska settings, dashboard source topic, and UTC recorder-launch time. The file has monotonic Matroska packet timestamps based on ffmpeg input wallclock; packet PTS are relative to the first frame, so cross-clock alignment is approximate. The dashboard topic remains live for TIM-MARS appearance, but neither it nor `/camera/image_raw` enters the structured MCAP. A separate non-held-out no-MAVROS ground benchmark retained ~30 Hz structured topics with observed_zero loss and ~10 fps decodable MJPEG. Passive MAVROS-inclusive field-ground validation and a visible target/distractor review are still required before aircraft use.
+Do not delete failed or incomplete runs.
 
-## Controller provenance
+## Required runtime evidence
 
-`run_metadata.json` now records the **running** `control_ref_node`'s resolved
-parameters (queried live via `ros2 param dump`, never mirrored from launch
-arguments — which would miss every node default):
+Every retained field trial should contain:
 
-- `resolved_parameters.control_ref_node` — `rate_hz`, `img_w`, `img_h`,
-  `desired_h_norm`, `stale_timeout_s`, `future_tolerance_s`, `yaw_kp`,
-  `forward_kp`, `lateral_kp`, `deadband_ex`, `deadband_h`, `max_yaw_z`,
-  `max_vx`, `max_vy`, `max_delta_yaw_z`, `max_delta_vx`, `max_delta_vy`,
-  `use_lateral`, `invert_*`, `enable_yaw_recovery`, `recovery_yaw_rate`,
-  `recovery_max_duration_s`, `recovery_max_integrated_yaw_rad`,
-  `recovery_last_trusted_max_age_s`, plus every other declared parameter;
-- `resolved_parameters_meta.control_ref_node.query_ok` — `true` only when the
-  live query succeeded. A failed query is **not** replaced with source
-  defaults; the validator (`tools/live/validate_live_run_metadata.py`) fails
-  the run;
-- `expected_parameters.control_ref_node.enable_yaw_recovery` is asserted
-  against the launcher intent (`false` baseline / `true` candidate). A
-  mismatch fails `tools/live/validate_live_run_metadata.py`. Baseline is the
-  default; the candidate needs the gated `--control-yaw-recovery` opt-in.
+- finalized structured MCAP + `metadata.yaml`
+- `run_metadata.json`
+- `flight_metadata.txt`
+- `target_authority_events.jsonl`
+- `bag_integrity.json`
+- `recorder_transport_status.json`
+- `evidence_package_status.json`
+- `run_logs/archive_manifest.json`
+- `run_logs/recorder_finalize_outcome.txt`
+- `run_logs/rosbag.log`
+- `run_logs/dashboard_bridge.log`
+- `run_logs/target_memory_mars.log`
+- `run_logs/operator_events.jsonl`
+- separate `visual_<RUN_ID>.mkv`
+- `visual_evidence_status.json`
 
-## Operator event log
+When the controller runs, also require:
 
-`tools/live/operator_event.py <event> --run-id "$RUN_ID" ...` appends one JSON
-line per event to `ros2_ws/log/live_stack/<RUN_ID>/operator_events.jsonl`
-(archived into `run_logs/` on stop). Event types: `trial_start`, `trial_end`,
-`target_selected`, `operator_takeover`, `abort`, `unexpected_behavior`,
-`trial_verdict`. `abort` **requires** a class and a free-text reason.
-Every event carries `ts_utc` (UTC wall clock, which aligns directly with ROS
-bag timestamps — the live stack uses no simulated time) and, on the Pi,
-`ts_monotonic_ns`; `trial_start` also records a `clock_pair`
-(`monotonic_ns` / `system_ns`) sample for cross-clock alignment.
+- `/control_ref/cmd_vel`
+- `/control_ref/diagnostics`
+- `run_logs/control.log`
 
-## Controlled stop, finalization and verification
+The controller publishes one diagnostics message for each command with the same timestamp.
 
-`stop_stack` runs a deliberate sequence (Issue #50/#74, `tools/lib/live_shutdown.sh`):
+## Visual evidence
 
-1. The visual recorder receives SIGINT while its local HTTP source is healthy, so Matroska closes without a broken-stream warning; the structured bag keeps recording.
-2. `stop_app_nodes` — application publishers/nodes are SIGINT'd first (the
-   controller emits its final safe-zero + shutdown diagnostic) while the
-   recorders keep running; `STOP_APP_GRACE_S` (3 s) then SIGTERM stragglers;
-3. `STOP_APP_SETTLE_S` (2 s) settle so the last messages reach the recorders;
-4. `finalize_recorders` — SIGINT to each recorder and allow up to
-   `RECORDER_FINALIZE_GRACE_S` (10 s, env-overridable) for process exit after
-   flushing/finalizing; escalate to SIGTERM then SIGKILL only if still alive.
-   Final cleanup is restricted to recorder processes/descendants tracked for
-   this run, never host-wide process matching; writes
-   `run_logs/recorder_finalize_outcome.txt`;
-5. archive `run_logs/` + `target_authority_events.jsonl`;
-6. `verify_retained_bag.py` → `bag_integrity.json` (finalized `metadata.yaml`
-   only — never reopens the bag while the recorder holds it);
-7. `verify_recorder_transport.py` reads the archived main and, when requested,
-   paired raw recorder logs and writes `recorder_transport_status.json`;
-8. `verify_visual_evidence.py` checks the separate file when expected; `verify_evidence_package.py` → `evidence_package_status.json`, printing
-   **`EVIDENCE PACKAGE INCOMPLETE`** if any required artifact is missing,
-   a required topic is empty, provenance is invalid, the archive manifest is
-   incomplete, recorder finalization escalated, or recorder transport quality
-   is nonzero or unavailable.
+Field flights use:
 
-Process/flight safety always runs (safe-zero, controlled shutdown, cleanup);
-evidence failure is reported and persisted, never turned into unsafe process
-behaviour. A failed bag is **kept**, not deleted.
+- structured non-image MCAP
+- separate 640x480 MJPEG visual file
 
-`evidence_package_status.json.status` is one of `complete_runtime_evidence`,
-`incomplete_runtime_evidence`, `pending_postflight_annotation`,
-`pending_pixhawk_dataflash`. The Pi-side runtime files alone never make a
-package scientifically final. Missing, corrupt, mismatched or unfinalized visual evidence makes runtime evidence incomplete. An image topic in a structured flight MCAP also fails the package verifier.
+Do not add:
 
-For descriptive per-topic quality measurements after finalization, run
-`python3 tools/live/assess_bag_topics.py "$BAG" --out "$BAG/per_topic_quality.json"`.
-The report includes count, first/last timestamp, duration, average rate,
-p50/p95/p99/maximum inter-message gap, monotonicity, explicit missing/empty
-critical-topic checks, and command/diagnostic/MAVROS-mirror pairing when those
-topics are present. It defines no final rate or gap acceptance threshold.
+    --record-raw
 
-Source-only capture uses a matched RELIABLE, VOLATILE, KEEP_LAST depth-5
-publisher/recorder contract for `/camera/image_raw`. This is confined to
-`--source-record` and `--source-record-no-mavros`; the general Pi-local live
-QoS file remains unchanged, and `/detections` retains its offered/default QoS.
+to normal field flights.
 
-For the exact field invocation, stop interaction, and acceptance command use
-`docs/flight/README.md`. After the launcher returns and `BAG` is
-set, this command prints every topic count/rate and exits nonzero unless runtime
-evidence is structured, image-free, zero-loss, and gracefully finalized:
+Neither `/camera/image_raw` nor `/camera/dashboard` should be stored in the structured field MCAP.
 
-```bash
-python3 tools/live/summarize_field_evidence.py --bag-dir "$BAG"
-```
+## Retained MAVROS topics
 
-## Recorder transport quality
+The reduced retained set is:
 
-`bag_integrity.json.passed` checks finalized storage structure and topic
-presence; it does **not** establish loss-free acquisition. The canonical
-package also retains the exact main `rosbag.log`, and the paired raw bag
-retains `raw_image_bag.log` when `--record-raw` is used. Each log has its own
-archive manifest. No missing log is fabricated.
+    /mavros/state
+    /mavros/imu/data_raw
+    /mavros/rc/in
+    /mavros/battery
+    /mavros/local_position/pose
+    /mavros/local_position/velocity_local
+    /mavros/setpoint_raw/target_local
+    /mavros/statustext/recv
 
-`recorder_transport_status.json.recorders.main` records the observed rosbag
-transport-loss count as a **multi-topic aggregate**. It cannot be attributed
-to `/camera/dashboard`, `/detections`, or any other single topic.
-`recorders.raw_image` holds the separate single-topic raw-image recorder
-observation when requested. Each includes recorder identity, scope, source
-path, log presence, parser success, exact reported count (or `null`), and
-`status`: `observed_zero`, `observed_nonzero`, or `unavailable`. A
-well-formed final loss line following `Recording stopped` gives the reported
-count. On ROS 2 Jazzy, a fully stopped log with both `Recording
-stopped` and `Event publisher thread: Exited` and no loss warning is
-`observed_zero` (0): the recorder emits the warning only when its final
-loss count is positive. The report records which observation basis applied.
-Missing, partial, malformed, or ambiguous logs remain `unavailable`, never
-implicitly zero. See the [Jazzy recorder stop logic](https://github.com/ros2/rosbag2/blob/jazzy/rosbag2_transport/src/rosbag2_transport/recorder.cpp).
-The Pi-side report deliberately does not infer a raw loss fraction: it preserves the count without assuming that every
-lost transport sample maps one-to-one to a frame in finalized storage.
+When MAVROS control mirroring is enabled, also retain:
 
-The top-level `quality_status` summarizes the recorders, with nonzero taking
-precedence over unavailable if both occur; inspect both recorder entries.
-Any nonzero or unavailable observation makes
-`evidence_package_status.json.runtime_status` equal
-`incomplete_runtime_evidence` until the acquisition quality can be resolved.
-No scientifically acceptable loss percentage is invented. Keep the files for
-diagnosis; do not treat an incomplete dynamic-UAV trial as scientifically
-valid. Older packages without archived recorder logs remain explicitly
-unavailable if rechecked.
+    /mavros/setpoint_velocity/cmd_vel
 
-## Native Pixhawk DataFlash
+The removed duplicate/nonessential streams are intentionally not retained.
 
-`tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir <bag>
---source-bin <file.bin>` copies an **explicitly supplied** `.bin` into
-`<bag>/pixhawk_dataflash/`, SHA-256s both sides, refuses to overwrite, and
-writes `dataflash_manifest.json` with `hardware_verification: pending`. It
-never talks to an FCU and never "selects the latest log" — the operator
-retrieves the file with the real field tooling and identifies the exact trial
-file. **Real-hardware retrieval verification is pending** (no Pixhawk available).
+## Verify a completed trial
 
-## MAVROS retained topic set
+Set the exact bag:
 
-The retained structured bag keeps `/mavros/state`, `/mavros/imu/data_raw`,
-`/mavros/rc/in`, `/mavros/battery`, `/mavros/local_position/pose`, and
-`/mavros/local_position/velocity_local`. Together these cover FCU state,
-raw inertial evidence, pilot input, power, and local motion needed to
-interpret controller trials. `/mavros/setpoint_velocity/cmd_vel` is added
-only when control mirroring is enabled.
+    printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"
+    export BAG
+    echo "$BAG"
 
-The recorder omits the derived IMU, magnetometer, pressure, temperature,
-RC-output, global-position, relative-altitude, duplicate local-position, and
-extended-state streams. No repository consumer uses those streams for the
-retained trial analyses, and their relevant motion/state evidence is already
-covered by the retained raw IMU, local pose/velocity, state, RC input and
-DataFlash sources. This selection reduces serialization and storage load; it
-does not establish real telemetry rates or FCU behavior.
+Check the evidence package:
 
-The retained video bag also adds `/mavros/setpoint_raw/target_local` (the FCU's
-echo of the setpoint it is acting on — compare against `/control_ref/cmd_vel`)
-and `/mavros/statustext/recv` (FCU prearm / EKF / failsafe / mode-change
-messages needed to interpret a trial). Both are standard ArduPilot MAVROS
-plugins not on the `apm` denylist; either may legitimately carry zero
-messages, so the bag verifier requires them **present, not non-zero**.
+    python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --field-record --expect-visual --expect-operator-events
 
-## Interpretation cautions
+Summarize it:
 
-- TIM `LOCKED` is **not** physical ground truth. Whether the followed geometry
-  is the correct physical person requires the post-flight physical-v2
-  annotation.
-- A zero command is not proof of a stationary hover, and command publication
-  is not proof of Pixhawk execution — cross-check `/mavros/local_position/*`,
-  `/mavros/setpoint_raw/target_local` and the native `.bin`.
-- The baseline keeps bounded yaw recovery **OFF**; the candidate is the gated
-  `--control-yaw-recovery` opt-in. Only the perception-state -> motion-authority
-  mapping changes, not TIM-MARS identity or the normal-following control law.
+    python3 tools/live/summarize_field_evidence.py --bag-dir "$BAG"
 
-## Controller diagnostics
+Generate per-topic cadence/gap evidence:
 
-`control_ref_node` publishes one `thesis_msgs/ControlDiagnostics` message on
-`/control_ref/diagnostics` for every command on `/control_ref/cmd_vel` (shared
-`header.stamp`, join 1:1). It makes bag-native the mode, decision reason,
-recovery enabled/active state, recovery direction / elapsed / integrated yaw /
-configured budget / configured max duration, last-trusted observation age and
-validity, `status_fresh` / `target_fresh`, and the final `(vx, vy, yaw_z)`.
-`control.log` is retained unchanged and still carries the same information as
-text. Quick integrity check:
-`python3 tools/analysis/summarize_control_diagnostics.py <bag>`.
+    python3 tools/live/assess_bag_topics.py "$BAG" --out "$BAG/per_topic_quality.json"
 
-**Trial condition.** Bounded yaw recovery defaults OFF (**baseline**:
-perception `LOST` -> hover). It is enabled only by the deliberately gated
-`--field-record --control-mavros --control-yaw-recovery
---acknowledge-yaw-recovery-candidate` (**candidate**: `LOST` + eligible
-trusted history -> bounded yaw-only recovery, translation still prohibited).
-`run_metadata.json` `resolved_parameters.control_ref_node.enable_yaw_recovery`
-is asserted against the launcher intent (`--expect-param`), so a mismatched
-trial fails `validate_live_run_metadata.py`; `flight_metadata.txt` records
-`trial_condition` and `control_yaw_recovery_enabled`. Match it with the
-operator `trial_start` event (`--condition candidate --recovery-enabled` or
-`--condition baseline`). The candidate changes only the perception-state ->
-motion-authority mapping, not TIM-MARS identity or the normal-following law.
+For controller trials:
 
-## Still separate / pending
+    python3 tools/analysis/summarize_control_diagnostics.py "$BAG"
 
-- **real-hardware** Pixhawk DataFlash retrieval verification (no Pixhawk yet);
-- the final #50/#74 scientific metrics analyser;
-- the physical-v2 flight-annotation tooling.
+## Current recorder acceptance
+
+The current retained-evidence verifier treats nonzero or unavailable rosbag transport-loss evidence as incomplete runtime evidence.
+
+A failed run is still kept.
+
+`assess_bag_topics.py` additionally reports per-topic:
+
+- count
+- duration
+- average rate
+- p50 / p95 / p99 gap
+- maximum gap
+- timestamp monotonicity
+- missing/empty required topics
+- command/diagnostics pairing
+- controller/MAVROS mirror pairing when present
+
+It does not invent scientific rate or gap thresholds.
+
+## Source-only recording
+
+The H01/H02/H03-style source recorder uses a dedicated matched raw-image QoS contract:
+
+    RELIABLE
+    VOLATILE
+    KEEP_LAST
+    depth 5
+
+This applies only to source recording.
+
+The general live QoS configuration is unchanged.
+
+The final non-held wrapper validation retained approximately:
+
+    /camera/image_raw   30.016 Hz
+    /detections         30.000 Hz
+    raw max gap         45.2 ms
+    transport loss      0 observed
+
+H01/H02/H03 source capture is already complete.
+
+## Controller interpretation
+
+Do not confuse commands with aircraft response.
+
+A published command does not prove the Pixhawk executed it.
+
+For controller flights compare:
+
+    /control_ref/cmd_vel
+    /control_ref/diagnostics
+    /mavros/setpoint_velocity/cmd_vel
+    /mavros/setpoint_raw/target_local
+    /mavros/local_position/pose
+    /mavros/local_position/velocity_local
+
+Also retain the native Pixhawk DataFlash log.
+
+TIM-MARS `LOCKED` is not physical ground truth. Final physical-person correctness comes from the post-flight physical annotation.
+
+## Pixhawk DataFlash
+
+Retrieve the exact `.bin` belonging to the trial.
+
+Do not automatically choose the newest file.
+
+Archive it:
+
+    read -r -p "Exact DataFlash .bin path: " DATAFLASH
+
+    python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"
+
+Then verify a controller trial:
+
+    python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --control-trial --field-record --expect-visual --expect-operator-events
+
+Real Pixhawk DataFlash retrieval still requires physical validation.
+
+## Final scientific completion
+
+A physical trial is not scientifically complete until the required post-flight items also exist, including:
+
+- physical-person annotation when required
+- exact Pixhawk DataFlash for retained field/controller trials
+- valid finalized runtime evidence
+
+Runtime evidence and physical ground truth are separate.

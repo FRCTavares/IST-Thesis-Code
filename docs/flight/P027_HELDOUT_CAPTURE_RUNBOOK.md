@@ -1,104 +1,50 @@
-# Issue #27 — H01–H03 Held-Out Capture
+# Issue #27 — H01/H02/H03 Held-Out Capture
 
-## What this is
+Capture is complete.
 
-H01–H03 are final **source-data captures**, not autonomous aircraft flights.
+Accepted source-only runs from 15 September 2026:
 
-During these captures:
+- H01: `16-31-10`
+- H02: `16-35-33`
+- H03: `16-55-25`
 
-- source image: `640x480` at nominal 30 FPS;
-- detector: frozen direct-Hailo YOLOv8s, 640x640 inference;
-- recorded topics: `/camera/image_raw` + `/detections`;
-- tracker: OFF;
-- TIM-MARS: OFF;
-- controller: OFF;
-- MAVROS: OFF.
+Rejected recording attempt:
 
-Use only the dedicated helper. It internally uses
-`--source-record-no-mavros`; do not substitute the older `--source-record`
-field workflow.
+- H03: `16-41-41`
 
-## Before each capture
+Each accepted capture retained only:
+
+    /camera/image_raw
+    /detections
+
+Tracker, TIM-MARS, controller and MAVROS were OFF.
+
+## Current work
+
+Do not recapture the sequences.
+
+Continue with annotation and release preparation in:
+
+    docs/flight/P027_HELDOUT_EXECUTION_PLAN_v2.md
+
+Required annotation files:
+
+    docs/data/physical_target_references/heldout_h01_exit_reentry.json
+    docs/data/physical_target_references/heldout_h02_crossing.json
+    docs/data/physical_target_references/heldout_h03_occlusion_distractor.json
+
+Check the active freeze with:
 
     cd ~/Desktop/Thesis-Code || exit 1
     set +u
-    export GIT_PAGER=cat
-    export PAGER=cat
-    git status --short
-    python3 tools/analysis/validate_tim_evaluation_split.py --verify-hashes
-    df -h /
-    ls -l /dev/video0 /dev/media0 /dev/hailo0
+    python3 tools/analysis/validate_tim_evaluation_split.py docs/data/splits/tim_mars_split_v4.json --verify-hashes
 
-Required:
+Final release requires:
 
-- clean tracked worktree;
-- active split validation passes;
-- at least 40 GiB free;
-- camera/media/Hailo devices exist.
+    python3 tools/analysis/validate_tim_evaluation_split.py docs/data/splits/tim_mars_split_v4.json --verify-hashes --require-final-ready
 
-## Execution plan
+Required before final held-out evaluation:
 
-All physical H01–H03 work is queued in:
+    final_ready=3/3
 
-`docs/flight/P027_HELDOUT_EXECUTION_PLAN_v2.md`
-
-(the original `P027_HELDOUT_EXECUTION_PLAN.md` is retained unchanged as
-historical provenance for the superseded 5 September split-v3 freeze).
-
-Do not start a real held-out capture unless working in the appropriate physical
-recording environment.
-
-## Scenario sheets
-
-Run exactly one scenario at a time:
-
-- [H01 — exit/re-entry](P027_H01_EXIT_REENTRY.md)
-- [H02 — crossing](P027_H02_CROSSING.md)
-- [H03 — occlusion/distractor](P027_H03_OCCLUSION_DISTRACTOR.md)
-
-## After each capture
-
-Allowed:
-
-- `ros2 bag info`;
-- topic counts, duration and timestamps;
-- source-image quality;
-- confirming that the planned **physical** scenario occurred;
-- physical-v2 annotation;
-- anonymous participant/outfit coding.
-
-Forbidden until all three sequences are released:
-
-- tracker/TIM correctness inspection;
-- candidate-score inspection;
-- architecture comparison;
-- changing thresholds, tracker settings, models or identity policy.
-
-A capture may be repeated for corruption, missing topics, unusable imagery, or
-failure to perform the physical scenario. Never repeat it because an algorithm
-later performs badly.
-
-## Annotation outputs
-
-Use:
-
-- `docs/data/physical_target_references/heldout_h01_exit_reentry.json`
-- `docs/data/physical_target_references/heldout_h02_crossing.json`
-- `docs/data/physical_target_references/heldout_h03_occlusion_distractor.json`
-
-Record anonymous participant/outfit codes and exact development/legacy
-people/clothing overlap in the active split.
-
-## Release gate
-
-After all three retained sources and annotations are frozen and hashed:
-
-    python3 tools/analysis/validate_tim_evaluation_split.py \
-        --verify-hashes \
-        --require-final-ready
-
-Only after this passes may the four frozen architecture cells be evaluated.
-
-If an outcome-driven behavior change is made afterward, the accessed sequences
-are contaminated as final held-out evidence and a new prospective split is
-required.
+Do not change the frozen algorithm, tracker, models, thresholds, evaluator semantics, architecture arms or primary metrics based on held-out results.
