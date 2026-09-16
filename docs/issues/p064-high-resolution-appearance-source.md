@@ -323,49 +323,53 @@ The master is valid for Gate 2 only if every retained source image is genuine
 1280x720 imagery. Do not use interpolation or an upsampled source as
 high-resolution evidence.
 
-## 5. Representative Drone-POV Capture — Next Action
+## 5. Representative Drone-POV Capture — Acquired 15 September 2026
 
-Do not perform more controlled-R3 or repeated Stage-B work. The only remaining
-Issue #64 evidence is one representative small-target drone-POV sequence.
+The required field acquisition has now been performed as a direct native-FHD
+development master rather than as a second ROS source bag:
 
-The field command is intentionally one line:
+    bags/development/fhd_appearance/20260915T152745Z_fhd_drone_pov_15sep_1920x1080_mjpeg.mkv
 
-    cd ~/Desktop/Thesis-Code || exit 1
-    tools/experiments/record_p064_drone_sequence.sh small_target_r1
+Retained capture properties:
 
-The helper automatically uses:
+- source: `/dev/video0`, native 1920x1080 UYVY422;
+- retained encoding: MJPEG;
+- decoded frames: 2208;
+- decoded duration: 85.809 s;
+- effective decoded cadence: approximately 25.73 fps;
+- file size: 1,004,727,994 bytes;
+- full decode-to-null validation: PASS;
+- SHA-256:
+  `17c6e654903274afcc2b7e2479554bec99ae8fd08a516c14c290049bc81eee4e`.
 
-- native 1280x720 HD source imagery;
-- YOLOv8s Hailo detection with detector inference still fixed at 640x640;
-- ByteTrack;
-- canonical TIM-MARS;
-- `/camera/image_raw` plus `/detections`;
-- RAM-backed recording under `/dev/shm`;
-- MCAP `fastwrite` plus the existing 512 MiB rosbag cache;
-- no MAVROS and no network-mode change;
-- logs under `ros2_ws/log/`.
+The master has an independently stored Mac copy whose SHA-256 matches the Pi
+source byte-for-byte. The original master must remain unchanged.
 
-It never requests `--camera-preflight-stream-probe-on`.
+This capture is development-only appearance-resolution evidence. It is separate
+from the Stage-7 H01/H02/H03 640x480 prospective held-out set and must not be
+used to change the frozen TIM-MARS algorithm, tracker, thresholds, models or
+held-out evaluation semantics.
 
-At the `live-stack>` prompt, perform one short sequence:
+### Remaining matched comparison
 
-1. target clearly visible with at least one distractor;
-2. begin with a larger or medium target;
-3. increase realistic drone following distance until the target is genuinely
-   small in the image;
-4. include a crossing or partial occlusion;
-5. include target exit/disappearance;
-6. include re-entry while the distractor is visible;
-7. continue for a few seconds after reacquisition;
-8. type `stop`.
+The acquisition gate is closed, but the scientific Issue #64 decision is not.
 
-After `stop`, the helper copies the completed RAM-backed bag into
-`bags/source_video/` and prints its final path. The RAM copy is deliberately
-retained until validation succeeds.
+Before making a source-resolution recommendation:
 
-Prefer several short attempts rather than one long recording. The existing
-3.0 s startup warm-up rule still applies when selecting the retained
-evaluation window.
+1. review the retained frames and quantify whether the target reaches the
+   intended representative small-person drone-POV geometry;
+2. preserve the FHD master unchanged;
+3. derive the lower-resolution HD control from the exact same retained source
+   frames rather than recording another scene;
+4. keep detector inference fixed at 640x640;
+5. use the existing matched appearance-resolution methodology so only source
+   appearance density changes;
+6. annotate/evaluate the matched conditions under the existing physical-target
+   contract;
+7. report both identity-performance and runtime/appearance-freshness effects.
+
+If the target never becomes sufficiently small, the capture must be reported as
+non-representative rather than used to force a resolution conclusion.
 
 ## Final rule
 
@@ -373,10 +377,15 @@ Current evidence establishes:
 
 - VGA is live-feasible;
 - HD is live-feasible;
-- FHD fails the current appearance-freshness screen;
+- native FHD is unsuitable for the existing live ROS appearance-freshness path,
+  but direct native-FHD MJPEG acquisition is viable for an offline matched
+  appearance-resolution experiment;
 - close-range R3 shows no material native-HD identity benefit over the exact
   640x360 control;
-- R3 is not representative of small-person airborne geometry.
+- a representative-intent drone-POV FHD master was acquired on 15 September
+  2026 and independently hash-verified;
+- the target-size adequacy and matched FHD-versus-derived-HD result are not yet
+  known.
 
-No general source-resolution recommendation is made until the representative
-drone-POV sequence is evaluated.
+No general source-resolution recommendation is made until that matched
+evaluation is complete.

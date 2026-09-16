@@ -1,6 +1,6 @@
 # Selected-target tracking evidence
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-09-16
 
 ## Purpose
 
@@ -17,6 +17,7 @@ by one configuration.
 | Path | Role |
 | --- | --- |
 | `tim_mars_prospective_freeze_20260908.md` | Current Stage-7 prospective Issue #27 freeze and held-out claim boundary. |
+| `p027_heldout_capture_preparation_20260915.md` | Post-freeze H01/H02/H03 source-capture, independent-backup, and human-annotation-preparation checkpoint; no held-out algorithm evaluation. |
 | `tim_mars_presence_conditioned_development_20260908.md` | Current presence-conditioned development characterisation. |
 | `hard_reentry_multi_tracker_summary.md` | Historical canonical compact selected-target comparison; uses its recorded evidence version, not the current runtime. |
 | `p028_wrong_oracle_audit.md` | Corrected dual-oracle development audit. |
@@ -31,8 +32,9 @@ by one configuration.
 ## Evidence classes
 
 - **Prospective held-out authority** — the Stage-7 freeze and its pinned
-  reproduction environment; H01-H03 outcomes remain unavailable until the
-  frozen release procedure permits evaluation.
+  reproduction environment; H01-H03 source acquisition is complete, but
+  algorithm outcomes remain unevaluated and unavailable for scientific use
+  until the frozen release procedure permits evaluation.
 - **Promoted development evidence** — reviewed ablations, sensitivity studies,
   resilience investigations, and architecture comparisons.
 - **Historical frozen evidence** — older reproducible experiments whose
