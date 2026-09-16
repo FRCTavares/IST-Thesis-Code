@@ -599,6 +599,7 @@ while [[ $# -gt 0 ]]; do
             FLIGHT_VISUAL_RECORD=0
             SOURCE_RECORD_MODE=1
             SOURCE_RAW_IMAGE_RECORD=1
+            CAMERA_IMAGE_RAW_RELIABLE_BOOL="true"
             SOURCE_MAVROS_RECORD=1
             SOURCE_DETECTIONS_RECORD=0
 
@@ -620,6 +621,7 @@ while [[ $# -gt 0 ]]; do
             FLIGHT_VISUAL_RECORD=0
             SOURCE_RECORD_MODE=1
             SOURCE_RAW_IMAGE_RECORD=1
+            CAMERA_IMAGE_RAW_RELIABLE_BOOL="true"
             SOURCE_MAVROS_RECORD=0
             SOURCE_DETECTIONS_RECORD=1
 

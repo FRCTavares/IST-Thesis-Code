@@ -160,6 +160,7 @@ Common options:
     --source-record-no-mavros
                              Record /camera/image_raw + /detections for deterministic
                              Issue #64 tracker/TIM replay; no MAVROS or network-mode change
+                             Source capture uses matched RELIABLE depth-5 raw-image QoS
                              SOURCE_RECORD_ROOT may override the source evidence output root
     --tag NAME               Add a tag to the recorded bag folder
     --dash N                 Set dashboard target FPS

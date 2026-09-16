@@ -71,13 +71,28 @@ def test_retained_bag_records_actual_stamped_mavros_command():
 
     for topic in (
         "/mavros/state",
-        "/mavros/extended_state",
+        "/mavros/imu/data_raw",
         "/mavros/rc/in",
-        "/mavros/rc/out",
         "/mavros/battery",
-        "/mavros/global_position/global",
+        "/mavros/local_position/pose",
+        "/mavros/local_position/velocity_local",
+        "/mavros/setpoint_raw/target_local",
+        "/mavros/statustext/recv",
     ):
         assert topic in LAUNCHER
+
+    for redundant_topic in (
+        "/mavros/extended_state",
+        "/mavros/imu/data\n",
+        "/mavros/imu/mag",
+        "/mavros/imu/static_pressure",
+        "/mavros/imu/temperature_imu",
+        "/mavros/rc/out",
+        "/mavros/global_position/global",
+        "/mavros/global_position/rel_alt",
+        "/mavros/global_position/local",
+    ):
+        assert redundant_topic not in LAUNCHER
 
 
 def test_field_path_fails_closed_on_missing_raw_imu():

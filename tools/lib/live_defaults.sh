@@ -213,6 +213,7 @@ FIELD_RAW_IMAGE_RECORD=0
 # or --source-record, or forced explicitly via --camera-publish-image-raw /
 # --camera-no-publish-image-raw. See Issue #54.
 CAMERA_PUBLISH_IMAGE_RAW_BOOL="false"
+CAMERA_IMAGE_RAW_RELIABLE_BOOL="false"
 CAMERA_PUBLISH_IMAGE_RAW_EXPLICIT=0
 
 SOURCE_RECORD_MODE=0

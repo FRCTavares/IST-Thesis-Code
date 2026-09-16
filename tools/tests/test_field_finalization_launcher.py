@@ -72,16 +72,22 @@ def test_finalize_recorders_escalates_then_kills_and_cleans_orphans():
     assert 'pkill -f "rosbag2_recorder"' not in SHUTDOWN
 
 
-def test_new_mavros_evidence_topics_are_recorded_once():
-    assert LAUNCHER.count("/mavros/setpoint_raw/target_local") == 1
-    assert LAUNCHER.count("/mavros/statustext/recv") == 1
-    # they sit in the VIDEO_BAG_TOPICS MAVROS append, right after the
-    # existing /mavros/setpoint_velocity/cmd_vel line
+def test_new_mavros_evidence_topics_are_recorded_in_each_mavros_bag():
+    # One occurrence belongs to VIDEO_BAG_TOPICS and one to the separate
+    # source-plus-MAVROS recorder. Each bag retains the FCU command echo and
+    # status text needed to interpret its own telemetry.
+    assert LAUNCHER.count("/mavros/setpoint_raw/target_local") == 2
+    assert LAUNCHER.count("/mavros/statustext/recv") == 2
+
     anchor = LAUNCHER.index("/mavros/setpoint_velocity/cmd_vel")
     window = LAUNCHER[anchor:anchor + 1000]
     assert "/mavros/setpoint_raw/target_local" in window
     assert "/mavros/statustext/recv" in window
     assert "VIDEO_BAG_TOPICS" in LAUNCHER[anchor - 1500:anchor]
+
+    source = LAUNCHER[LAUNCHER.index('if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then'):]
+    assert source.count("/mavros/setpoint_raw/target_local") == 1
+    assert source.count("/mavros/statustext/recv") == 1
 
 
 def test_verify_retained_evidence_is_best_effort_and_prints_incomplete():

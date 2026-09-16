@@ -227,3 +227,72 @@ def test_invalid_and_missing_target_paths_publish_zero():
     ]
 
     assert len(zero_calls) >= 3
+
+
+def test_normalized_deadbands_zero_small_pixel_errors():
+    # 12.8 px / 640 px = 0.02 horizontal error, inside 0.03 deadband.
+    result = compute_control_command(cx=332.8, h=153.6, **BASE_COMMAND)
+    vx, vy, yaw_z, _cx_norm, _h_norm, ex, range_err = result
+    # h=153.6 -> normalized height 0.24; range error 0.01, inside 0.02.
+    assert (vx, vy, yaw_z) == pytest.approx((0.0, 0.0, 0.0))
+    assert ex == 0.0
+    assert range_err == 0.0
+
+
+def test_pixel_geometry_is_normalized_before_control_units():
+    small = compute_control_command(cx=384.0, h=128.0, **BASE_COMMAND)
+    scaled = compute_control_command(
+        cx=768.0,
+        h=256.0,
+        **{**BASE_COMMAND, "img_w": 1280.0, "img_h": 1280.0},
+    )
+    assert scaled == pytest.approx(small)
+
+
+def test_axis_inversion_and_lateral_enable_flip_only_configured_signs():
+    normal = compute_control_command(
+        cx=480.0,
+        h=64.0,
+        **{**BASE_COMMAND, "lateral_kp": 0.4, "use_lateral": True},
+    )
+    inverted = compute_control_command(
+        cx=480.0,
+        h=64.0,
+        **{
+            **BASE_COMMAND,
+            "lateral_kp": 0.4,
+            "use_lateral": True,
+            "invert_yaw": True,
+            "invert_forward": True,
+            "invert_lateral": True,
+        },
+    )
+    assert inverted[0] == pytest.approx(-normal[0])
+    assert inverted[1] == pytest.approx(-normal[1])
+    assert inverted[2] == pytest.approx(-normal[2])
+
+
+@pytest.mark.parametrize("dimension", ["img_w", "img_h"])
+def test_nonpositive_image_dimensions_are_rejected(dimension):
+    values = dict(BASE_COMMAND)
+    values[dimension] = 0.0
+    with pytest.raises(ValueError, match="image dimensions must be positive"):
+        compute_control_command(cx=320.0, h=160.0, **values)
+
+
+def test_node_shutdown_path_requests_a_final_zero_command():
+    tree = ast.parse(CONTROL_SOURCE.read_text(encoding="utf-8"))
+    main = next(
+        node for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "main"
+    )
+    finalizers = [node.finalbody for node in ast.walk(main)
+                  if isinstance(node, ast.Try) and node.finalbody]
+    assert any(
+        isinstance(call, ast.Call)
+        and isinstance(call.func, ast.Attribute)
+        and call.func.attr == "publish_zero"
+        for finalbody in finalizers
+        for node in finalbody
+        for call in ast.walk(node)
+    )

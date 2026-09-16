@@ -33,6 +33,7 @@ evidence package for a trial. Everything below lives inside it.
 | archival manifest | `run_logs/archive_manifest.json` | `archive_run_evidence.py` | yes |
 | recorder finalization outcome | `run_logs/recorder_finalize_outcome.txt` (`graceful`/`escalated`) | `finalize_recorders` on stop | yes |
 | bag integrity report | `bag_integrity.json` | `tools/live/verify_retained_bag.py` on stop | yes |
+| per-topic cadence report | operator-selected JSON path | `tools/live/assess_bag_topics.py` after finalization | recommended; required/critical topics are explicit CLI inputs |
 | evidence-package status | `evidence_package_status.json` | `tools/live/verify_evidence_package.py` on stop | yes |
 | paired raw-image bag | `<RUN_ID>__video__…__image_raw/` (sibling dir) | `--record-raw` | required when requested |
 | paired raw bag integrity and recorder log | sibling `bag_integrity.json`, `run_logs/raw_image_bag.log`, `run_logs/archive_manifest.json` | finalized raw-bag verification and explicit log archival | required when `--record-raw` |
@@ -114,6 +115,18 @@ behaviour. A failed bag is **kept**, not deleted.
 `pending_pixhawk_dataflash`. The Pi-side runtime files alone never make a
 package scientifically final. Missing, corrupt, mismatched or unfinalized visual evidence makes runtime evidence incomplete. An image topic in a structured flight MCAP also fails the package verifier.
 
+For descriptive per-topic quality measurements after finalization, run
+`python3 tools/live/assess_bag_topics.py "$BAG" --out "$BAG/per_topic_quality.json"`.
+The report includes count, first/last timestamp, duration, average rate,
+p50/p95/p99/maximum inter-message gap, monotonicity, explicit missing/empty
+critical-topic checks, and command/diagnostic/MAVROS-mirror pairing when those
+topics are present. It defines no final rate or gap acceptance threshold.
+
+Source-only capture uses a matched RELIABLE, VOLATILE, KEEP_LAST depth-5
+publisher/recorder contract for `/camera/image_raw`. This is confined to
+`--source-record` and `--source-record-no-mavros`; the general Pi-local live
+QoS file remains unchanged, and `/detections` retains its offered/default QoS.
+
 For the exact field invocation, stop interaction, and acceptance command use
 `docs/flight/README.md`. After the launcher returns and `BAG` is
 set, this command prints every topic count/rate and exits nonzero unless runtime
@@ -168,9 +181,24 @@ never talks to an FCU and never "selects the latest log" — the operator
 retrieves the file with the real field tooling and identifies the exact trial
 file. **Real-hardware retrieval verification is pending** (no Pixhawk available).
 
-## MAVROS setpoint / statustext evidence
+## MAVROS retained topic set
 
-The retained video bag adds `/mavros/setpoint_raw/target_local` (the FCU's
+The retained structured bag keeps `/mavros/state`, `/mavros/imu/data_raw`,
+`/mavros/rc/in`, `/mavros/battery`, `/mavros/local_position/pose`, and
+`/mavros/local_position/velocity_local`. Together these cover FCU state,
+raw inertial evidence, pilot input, power, and local motion needed to
+interpret controller trials. `/mavros/setpoint_velocity/cmd_vel` is added
+only when control mirroring is enabled.
+
+The recorder omits the derived IMU, magnetometer, pressure, temperature,
+RC-output, global-position, relative-altitude, duplicate local-position, and
+extended-state streams. No repository consumer uses those streams for the
+retained trial analyses, and their relevant motion/state evidence is already
+covered by the retained raw IMU, local pose/velocity, state, RC input and
+DataFlash sources. This selection reduces serialization and storage load; it
+does not establish real telemetry rates or FCU behavior.
+
+The retained video bag also adds `/mavros/setpoint_raw/target_local` (the FCU's
 echo of the setpoint it is acting on — compare against `/control_ref/cmd_vel`)
 and `/mavros/statustext/recv` (FCU prearm / EKF / failsafe / mode-change
 messages needed to interpret a trial). Both are standard ArduPilot MAVROS

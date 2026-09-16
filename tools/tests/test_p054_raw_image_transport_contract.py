@@ -13,6 +13,7 @@ CLI = REPO_ROOT / "tools/lib/live_cli.sh"
 DEFAULTS = REPO_ROOT / "tools/lib/live_defaults.sh"
 LAUNCHER = REPO_ROOT / "tools/start_live_stack.sh"
 USAGE = REPO_ROOT / "tools/lib/live_usage.sh"
+SOURCE_RELIABLE_CAMERA = REPO_ROOT / "tools/live/source_reliable_perception_camera.py"
 PERCEPTION_CAMERA_NODE = (
     REPO_ROOT
     / "ros2_ws/src/thesis_bringup/thesis_bringup/perception/perception_camera_node.py"
@@ -28,6 +29,7 @@ def _case_block(text: str, option: str, next_option: str) -> str:
 def test_image_raw_publish_flag_is_off_by_default():
     defaults = DEFAULTS.read_text(encoding="utf-8")
     assert 'CAMERA_PUBLISH_IMAGE_RAW_BOOL="false"' in defaults
+    assert 'CAMERA_IMAGE_RAW_RELIABLE_BOOL="false"' in defaults
     assert "CAMERA_PUBLISH_IMAGE_RAW_EXPLICIT=0" in defaults
 
 
@@ -57,6 +59,8 @@ def test_perception_camera_launch_passes_resolved_image_raw_and_fps_flags():
     launcher = LAUNCHER.read_text(encoding="utf-8")
 
     assert "-p publish_image_raw:=$CAMERA_PUBLISH_IMAGE_RAW_BOOL" in launcher
+    assert 'PERCEPTION_CAMERA_COMMAND=(ros2 run thesis_bringup perception_camera_node)' in launcher
+    assert '"$THESIS_ROOT/tools/live/source_reliable_perception_camera.py"' in launcher
     assert "-p publish_fps_topic:=true" in launcher
     assert "-p fps_topic:=/camera/fps" in launcher
 
@@ -100,11 +104,18 @@ def test_perception_camera_node_gates_image_raw_publisher_on_parameter():
     assert 'self.declare_parameter("publish_image_raw", False)' in source
     assert "self._publish_image_raw = bool(self.get_parameter" in source
     assert (
-        "self.create_publisher(Image, \"/camera/image_raw\", dashboard_qos)\n"
+        'self.create_publisher(Image, "/camera/image_raw", dashboard_qos)\n'
         "            if self._publish_image_raw\n"
         "            else None"
     ) in source
     assert "if self._image_raw_pub is not None:" in source
+
+    wrapper = SOURCE_RELIABLE_CAMERA.read_text(encoding="utf-8")
+    assert "class SourceReliablePerceptionCameraNode(PerceptionCameraNode)" in wrapper
+    assert 'if topic == "/camera/image_raw":' in wrapper
+    assert "depth=5" in wrapper
+    assert "ReliabilityPolicy.RELIABLE" in wrapper
+    assert "DurabilityPolicy.VOLATILE" in wrapper
 
 
 def test_perception_camera_node_owns_camera_fps_publisher():

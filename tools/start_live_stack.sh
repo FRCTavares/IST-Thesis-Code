@@ -857,6 +857,9 @@ write_live_run_provenance() {
         hash_args+=(--hash-file "tim_mars_reid_model=$TARGET_MEMORY_MARS_MODEL_PATH")
         hash_args+=(--hash-file "tim_mars_config=$TARGET_MEMORY_MARS_CONFIG")
     fi
+    if [[ "$bag_kind" == "source" && -n "${SOURCE_QOS_OVERRIDE_FILE:-}" ]]; then
+        hash_args+=(--hash-file "source_recorder_qos=$SOURCE_QOS_OVERRIDE_FILE")
+    fi
 
     local -a switch_log_args=()
     if [[ -f "${TARGET_AUTHORITY_EVENT_LOG:-}" ]]; then
@@ -885,6 +888,9 @@ write_live_run_provenance() {
     local -a visual_args=()
     local bag_out_dir
     bag_out_dir="$(dirname "$output_path")"
+    if [[ "$bag_kind" == "source" && -n "${SOURCE_RAW_BAG_OUT_DIR:-}" ]]; then
+        bag_out_dir="$SOURCE_RAW_BAG_OUT_DIR"
+    fi
     if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 && "$bag_kind" == "video" ]]; then
         bag_out_dir="$VIDEO_BAG_OUT_DIR"
         visual_args=(--visual-file "$VISUAL_FILE" --visual-started-at-utc "${VISUAL_STARTED_AT_UTC:-}")
@@ -1126,8 +1132,15 @@ fi
 camera_retry_applied=0
 
 
+PERCEPTION_CAMERA_COMMAND=(ros2 run thesis_bringup perception_camera_node)
+if [[ "${CAMERA_IMAGE_RAW_RELIABLE_BOOL:-false}" == "true" ]]; then
+    PERCEPTION_CAMERA_COMMAND=(
+        python3 "$THESIS_ROOT/tools/live/source_reliable_perception_camera.py"
+    )
+fi
+
 while true; do
-    start_ros_bg perception_camera env PYTHONPATH="$PERCEPTION_PYTHONPATH" LD_LIBRARY_PATH="$PERCEPTION_LD_LIBRARY_PATH" GST_PLUGIN_PATH="$PERCEPTION_GST_PLUGIN_PATH" ros2 run thesis_bringup perception_camera_node --ros-args \
+    start_ros_bg perception_camera env PYTHONPATH="$PERCEPTION_PYTHONPATH" LD_LIBRARY_PATH="$PERCEPTION_LD_LIBRARY_PATH" GST_PLUGIN_PATH="$PERCEPTION_GST_PLUGIN_PATH" "${PERCEPTION_CAMERA_COMMAND[@]}" --ros-args \
         -p width:=$CAMERA_WIDTH \
         -p height:=$CAMERA_HEIGHT \
         -p fps:=$CAMERA_FPS \
@@ -1612,18 +1625,9 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     if [[ "$RECORD_MAVROS" -eq 1 ]]; then
         VIDEO_BAG_TOPICS+=(
             /mavros/state
-            /mavros/extended_state
             /mavros/imu/data_raw
-            /mavros/imu/data
-            /mavros/imu/mag
-            /mavros/imu/static_pressure
-            /mavros/imu/temperature_imu
             /mavros/rc/in
-            /mavros/rc/out
             /mavros/battery
-            /mavros/global_position/global
-            /mavros/global_position/rel_alt
-            /mavros/global_position/local
             /mavros/local_position/pose
             /mavros/local_position/velocity_local
         )
@@ -1947,16 +1951,30 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
             )
         fi
 
+        SOURCE_QOS_OVERRIDE_FILE="/etc/thesis/live_record_qos_overrides.yaml"
+        if [[ "${CAMERA_IMAGE_RAW_RELIABLE_BOOL:-false}" == "true" ]]; then
+            SOURCE_QOS_OVERRIDE_FILE="$THESIS_ROOT/tools/live/source_record_qos_overrides.yaml"
+            if [[ ! -f "$SOURCE_QOS_OVERRIDE_FILE" ]]; then
+                echo "[error] source reliable QoS contract missing: $SOURCE_QOS_OVERRIDE_FILE"
+                stop_stack
+                exit 1
+            fi
+        fi
+
+        # Resolve model/QoS hashes and ROS topic introspection before the image
+        # recorder begins. The staged record still names its final bag path.
+        SOURCE_PREFLIGHT_METADATA="$RUN_DIR/source_preflight_run_metadata.json"
+        write_live_run_provenance source "$SOURCE_PREFLIGHT_METADATA" "${SOURCE_RECORD_TOPICS[@]}"
+
         echo "[source] starting source evidence recorder: $SOURCE_RAW_BAG_OUT_DIR"
         sleep 3
 
-        SOURCE_QOS_OVERRIDE_FILE="/etc/thesis/live_record_qos_overrides.yaml"
-
         SOURCE_ROSBAG_EXTRA_ARGS=()
         if [[ "${SOURCE_DETECTIONS_RECORD:-0}" -eq 1 ]]; then
-            # Issue #64 high-bandwidth evidence capture. Keep DDS/image
-            # semantics unchanged while reducing recorder-side serialization
-            # pressure. 512 MiB is roughly several seconds of HD source data.
+            # Issue #64 high-bandwidth evidence capture. Reduce recorder-side
+            # serialization pressure; the source-specific DDS reliability
+            # contract is defined separately in SOURCE_QOS_OVERRIDE_FILE.
+            # 512 MiB is roughly several seconds of HD source data.
             SOURCE_ROSBAG_EXTRA_ARGS+=(
                 --storage-preset-profile fastwrite
                 --max-cache-size 536870912
@@ -1993,7 +2011,11 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
         done
 
         if [[ -d "$SOURCE_RAW_BAG_OUT_DIR" ]]; then
-            write_live_run_provenance source "$SOURCE_RAW_BAG_OUT_DIR/run_metadata.json" "${SOURCE_RECORD_TOPICS[@]}"
+            if [[ -f "$SOURCE_PREFLIGHT_METADATA" ]]; then
+                cp "$SOURCE_PREFLIGHT_METADATA" "$SOURCE_RAW_BAG_OUT_DIR/run_metadata.json"
+            else
+                echo "[warn] source preflight provenance missing: $SOURCE_PREFLIGHT_METADATA"
+            fi
         else
             echo "[warn] source raw image bag output directory not visible yet; provenance not written"
         fi
@@ -2019,7 +2041,7 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
 
         echo "[source] starting MAVROS recorder: $SOURCE_MAVROS_BAG_OUT_DIR"
 
-        start_ros_bg source_mavros_bag bash -lc "source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID=42 && ros2 bag record --storage mcap -o '$SOURCE_MAVROS_BAG_OUT_DIR' --topics /mavros/imu/data_raw /mavros/imu/data /mavros/imu/mag /mavros/imu/static_pressure /mavros/imu/temperature_imu /mavros/rc/in /mavros/rc/out /mavros/battery /mavros/global_position/global /mavros/global_position/rel_alt /mavros/global_position/local /mavros/local_position/pose /mavros/local_position/velocity_local /mavros/state /mavros/extended_state"
+        start_ros_bg source_mavros_bag bash -lc "source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID=42 && ros2 bag record --storage mcap -o '$SOURCE_MAVROS_BAG_OUT_DIR' --topics /mavros/state /mavros/imu/data_raw /mavros/rc/in /mavros/battery /mavros/local_position/pose /mavros/local_position/velocity_local /mavros/setpoint_raw/target_local /mavros/statustext/recv"
 
         sleep 1
         if ! check_proc_alive source_mavros_bag; then

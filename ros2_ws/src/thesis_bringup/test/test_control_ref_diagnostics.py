@@ -381,3 +381,29 @@ def test_publish_pair_emits_diagnostics_and_recovery_stays_off():
     assert "control-yaw-recovery" not in source
     # control.log path is not removed
     assert "def maybe_log_recovery_diagnostics(" in source
+
+
+def test_mavros_mirror_is_exact_and_shutdown_zero_is_mirrored(driver):
+    driver.node.enable_mavros = True
+    mirrored = []
+    driver.node.pub_mavros.publish = mirrored.append
+
+    src = driver.now_ns() - 10_000_000
+    driver.status(state="LOCKED", control_mode="NORMAL", frame_id=191,
+                  track_ns=src, target_track_id=7)
+    driver.target(cx=420.0, src_ns=src, track_id=7, frame_id=191)
+    driver.node.on_timer()
+
+    command = driver.last_cmd()
+    mirror = mirrored[-1]
+    assert mirror.header.stamp == command.header.stamp
+    assert mirror.twist == command.twist
+
+    driver.node.publish_zero()
+    command_zero = driver.last_cmd()
+    mirror_zero = mirrored[-1]
+    assert mirror_zero.header.stamp == command_zero.header.stamp
+    assert mirror_zero.twist == command_zero.twist
+    assert mirror_zero.twist.linear.x == 0.0
+    assert mirror_zero.twist.linear.y == 0.0
+    assert mirror_zero.twist.angular.z == 0.0

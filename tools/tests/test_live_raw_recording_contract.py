@@ -8,6 +8,7 @@ CLI = REPO_ROOT / "tools/lib/live_cli.sh"
 DEFAULTS = REPO_ROOT / "tools/lib/live_defaults.sh"
 LAUNCHER = REPO_ROOT / "tools/start_live_stack.sh"
 USAGE = REPO_ROOT / "tools/lib/live_usage.sh"
+SOURCE_QOS = REPO_ROOT / "tools/live/source_record_qos_overrides.yaml"
 
 
 def _case_block(text: str, option: str, next_option: str) -> str:
@@ -130,9 +131,11 @@ def test_source_record_no_mavros_records_issue64_evidence_without_mavros():
     block = _case_block(cli, "--source-record-no-mavros", "--tag")
 
     assert "SOURCE_DETECTIONS_RECORD=0" in legacy_block
+    assert 'CAMERA_IMAGE_RAW_RELIABLE_BOOL="true"' in legacy_block
 
     assert "SOURCE_RECORD_MODE=1" in block
     assert "SOURCE_RAW_IMAGE_RECORD=1" in block
+    assert 'CAMERA_IMAGE_RAW_RELIABLE_BOOL="true"' in block
     assert "SOURCE_MAVROS_RECORD=0" in block
     assert "SOURCE_DETECTIONS_RECORD=1" in block
     assert "ENABLE_ROSBAG=0" in block
@@ -154,7 +157,16 @@ def test_source_raw_recording_has_storage_gate_camera_qos_and_issue64_topics():
     )
     assert '"$RAW_RECORDING_MIN_FREE_GIB" || exit 1' in launcher
     assert 'SOURCE_QOS_OVERRIDE_FILE="/etc/thesis/live_record_qos_overrides.yaml"' in launcher
+    assert 'SOURCE_QOS_OVERRIDE_FILE="$THESIS_ROOT/tools/live/source_record_qos_overrides.yaml"' in launcher
+    assert "source reliable QoS contract missing" in launcher
     assert '--qos-profile-overrides-path "$SOURCE_QOS_OVERRIDE_FILE"' in launcher
+    assert SOURCE_QOS.read_text(encoding="utf-8") == (
+        "/camera/image_raw:\n"
+        "  reliability: reliable\n"
+        "  durability: volatile\n"
+        "  history: keep_last\n"
+        "  depth: 5\n"
+    )
     assert 'SOURCE_RECORD_TOPICS=(' in launcher
     assert '/camera/image_raw' in launcher
     assert 'SOURCE_RECORD_TOPICS+=(' in launcher
@@ -184,3 +196,24 @@ def test_source_record_root_can_be_overridden_for_ram_capture():
         in launcher
     )
     assert 'echo "[source] source evidence root: $SOURCE_ROOT"' in launcher
+
+
+def test_source_provenance_finishes_before_recorder_starts():
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+    source = launcher[launcher.index('if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then'):]
+    provenance = source.index(
+        'write_live_run_provenance source "$SOURCE_PREFLIGHT_METADATA"'
+    )
+    recorder = source.index(
+        'start_ros_bg source_raw_image_bag ros2 bag record'
+    )
+    copy = source.index(
+        'cp "$SOURCE_PREFLIGHT_METADATA" "$SOURCE_RAW_BAG_OUT_DIR/run_metadata.json"'
+    )
+    qos = source.index(
+        'SOURCE_QOS_OVERRIDE_FILE="$THESIS_ROOT/tools/live/source_record_qos_overrides.yaml"'
+    )
+    assert qos < provenance < recorder < copy
+    assert source.count(
+        'write_live_run_provenance source '
+    ) == 1
