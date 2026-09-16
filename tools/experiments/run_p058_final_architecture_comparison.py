@@ -35,9 +35,10 @@ Scientific safety rules
   candidate stream per sequence.
 * DeepSORT is generated independently from the same source image/detection
   stream.
-* Bootstrap is resolved only at the predetermined initial instant
-  (max bootstrap lag = one tracker frame). Failure is retained as a result;
-  bootstrap time is never moved using later architecture performance.
+* Bootstrap is aligned to the first ``present_scored`` physical-reference
+  instant and resolved only within the architecture's predetermined frame
+  budget. Failure is retained as a result; bootstrap time is never moved using
+  later architecture performance.
 * Every MARS/TensorFlow replay subprocess runs under the Stage-7 pinned
   numerical environment
   (docs/results/selected_target_tracking/tim_pinned_replay_env_20260908.sh),
@@ -87,6 +88,11 @@ ACTIVE_ALGORITHM_FREEZE_COMMIT = (
 )
 ACTIVE_CANONICAL_TIM_CONFIG_SHA256 = (
     "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c"
+)
+PROTOCOL_REPAIR_ID = "p058_bootstrap_reference_time_alignment_v1"
+PROTOCOL_REPAIR_DIAGNOSTIC = (
+    "docs/results/selected_target_tracking/"
+    "p058_heldout_bootstrap_forensics_20260916.md"
 )
 SUPERSEDED_CONTRACT_IDS = frozenset({"tim_mars_final_comparison_v2_2026_09_05"})
 
@@ -1520,10 +1526,13 @@ def write_aggregate(
         writer.writerows(rows)
 
     lines = [
-        "# Issue #58 frozen architecture comparison",
+        "# Issue #58 frozen architecture comparison — protocol repair",
         "",
         "This report is generated directly from the prospectively frozen "
         "Issue #58 architecture contract.",
+        "The shared bootstrap resolver applies the documented reference-time "
+        "alignment repair; no algorithm, model, threshold, tracker setting, "
+        "bootstrap frame budget, or evaluation semantic is changed.",
         "",
         "| sequence | architecture | status | correct s | wrong s | "
         "unresolved s | LOST s | absent-with-output s |",
@@ -1662,7 +1671,7 @@ def main() -> int:
         verify_sequence_inputs(sequence)
 
     run_id = args.run_id or (
-        "p058_final_architecture_"
+        "p058_final_architecture_protocol_repair_"
         + time.strftime("%Y%m%d_%H%M%S")
     )
     output_root = (
@@ -1693,6 +1702,19 @@ def main() -> int:
             git_output("status", "--porcelain")
         ),
         "evaluation_set": args.set,
+        "evidence_role": "held_out_protocol_repair",
+        "protocol_repair": {
+            "id": PROTOCOL_REPAIR_ID,
+            "diagnostic": PROTOCOL_REPAIR_DIAGNOSTIC,
+            "resolver": relative(BOOTSTRAP_RESOLVER),
+            "resolver_sha256": sha256_file(BOOTSTRAP_RESOLVER),
+            "scope": (
+                "Align the tracker stream to the first present_scored "
+                "physical-reference time before applying the unchanged "
+                "architecture-specific bootstrap frame budget."
+            ),
+            "retuning": False,
+        },
         "contract": {
             "path": relative(contract_path),
             "sha256": sha256_file(contract_path),
@@ -1728,6 +1750,11 @@ def main() -> int:
         "bootstrap_rule": {
             "authority": "physical_reference_v2",
             "min_iou": 0.5,
+            "time_alignment": (
+                "First retained source-image timestamp plus the first "
+                "present_scored reference t_s. Tracker messages before that "
+                "instant do not consume the frame budget."
+            ),
             "predetermined_instants": {
                 "bytetrack_family": {
                     "frame_index": 0,
@@ -1800,6 +1827,8 @@ def main() -> int:
         "schema_version": 1,
         "run_id": run_id,
         "evaluation_set": args.set,
+        "evidence_role": "held_out_protocol_repair",
+        "protocol_repair_id": PROTOCOL_REPAIR_ID,
         "repo_commit": git_output("rev-parse", "HEAD"),
         "repo_dirty": bool(git_output("status", "--porcelain")),
         "cells_total": len(cells),

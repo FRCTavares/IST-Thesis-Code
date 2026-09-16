@@ -4,11 +4,10 @@ bag by spatial agreement with the frozen physical-target reference.
 
 The operator selects the same physical person regardless of tracker
 configuration. Historical tracker IDs cannot be reused across ByteTrack
-configurations because the IDs change. This resolver walks the generated
-``/tracks`` stream in order and, at the first frame whose best-overlapping
-track reaches the IoU threshold against the physical-target reference box at
-the first ``present_scored`` reference sample, selects that track ID. The same
-rule is applied identically to every configuration.
+configurations because the IDs change. This resolver aligns the generated
+``/tracks`` stream to the first ``present_scored`` physical-reference sample,
+then selects the best-overlapping track within the architecture's frozen frame
+budget. The same rule is applied identically to every configuration.
 
 Exit code 0 and ``ok: true`` when a track is resolved; exit code 2 and
 ``ok: false`` when no track reaches the threshold within the bootstrap window
@@ -57,6 +56,55 @@ def track_boxes(msg) -> list[tuple[int, tuple[float, float, float, float]]]:
     return boxes
 
 
+def message_time_ns(msg, record_time_ns: int) -> int:
+    """Return a source/header timestamp, falling back to bag record time."""
+    source_time_ns = int(getattr(msg, "src_stamp_ns", 0))
+    if source_time_ns > 0:
+        return source_time_ns
+
+    header = getattr(msg, "header", None)
+    stamp = getattr(header, "stamp", None)
+    if stamp is not None:
+        header_time_ns = (
+            int(getattr(stamp, "sec", 0)) * 1_000_000_000
+            + int(getattr(stamp, "nanosec", 0))
+        )
+        if header_time_ns > 0:
+            return header_time_ns
+
+    return int(record_time_ns)
+
+
+def open_reader(tracks_bag: Path) -> SequentialReader:
+    reader = SequentialReader()
+    reader.open(
+        StorageOptions(uri=str(tracks_bag), storage_id="mcap"),
+        ConverterOptions("cdr", "cdr"),
+    )
+    return reader
+
+
+def first_topic_time_ns(
+    tracks_bag: Path,
+    topic_name: str,
+) -> tuple[int, str | None]:
+    """Return the first message time for one retained source topic."""
+    reader = open_reader(tracks_bag)
+    types = {t.name: t.type for t in reader.get_all_topics_and_types()}
+    if topic_name not in types:
+        raise RuntimeError(f"no {topic_name} in {tracks_bag}")
+    msg_cls = get_message(types[topic_name])
+
+    while reader.has_next():
+        topic, raw, record_time_ns = reader.read_next()
+        if topic != topic_name:
+            continue
+        msg = deserialize_message(raw, msg_cls)
+        return message_time_ns(msg, record_time_ns), types[topic_name]
+
+    raise RuntimeError(f"no messages on {topic_name} in {tracks_bag}")
+
+
 def resolve(
     tracks_bag: Path,
     reference_path: Path,
@@ -67,11 +115,20 @@ def resolve(
     reference = json.loads(reference_path.read_text())
     ref_box, ref_t = first_scored_target(reference)
 
-    reader = SequentialReader()
-    reader.open(
-        StorageOptions(uri=str(tracks_bag), storage_id="mcap"),
-        ConverterOptions("cdr", "cdr"),
+    image_topic = str(
+        reference.get("provenance", {}).get(
+            "source_image_topic", "/camera/image_raw"
+        )
     )
+    try:
+        reference_origin_ns, _image_type = first_topic_time_ns(
+            tracks_bag, image_topic
+        )
+    except RuntimeError as exc:
+        return {"ok": False, "error": str(exc)}
+    reference_instant_ns = reference_origin_ns + round(ref_t * 1_000_000_000)
+
+    reader = open_reader(tracks_bag)
     types = {t.name: t.type for t in reader.get_all_topics_and_types()}
     if tracks_topic not in types:
         return {"ok": False, "error": f"no {tracks_topic} in {tracks_bag}"}
@@ -79,21 +136,35 @@ def resolve(
 
     per_frame: list[dict] = []
     frame_index = 0
+    skipped_before_reference = 0
     resolved: dict | None = None
     while reader.has_next():
-        topic, raw, _ns = reader.read_next()
+        topic, raw, record_time_ns = reader.read_next()
         if topic != tracks_topic:
+            continue
+        msg = deserialize_message(raw, msg_cls)
+        track_time_ns = message_time_ns(msg, record_time_ns)
+        if track_time_ns < reference_instant_ns:
+            skipped_before_reference += 1
             continue
         if frame_index >= max_lag_frames:
             break
-        msg = deserialize_message(raw, msg_cls)
         best_iou, best_id = 0.0, None
         for track_id, box in track_boxes(msg):
             value = iou_xyxy(box, tuple(ref_box))
             if value > best_iou:
                 best_iou, best_id = value, track_id
         per_frame.append(
-            {"frame_index": frame_index, "best_iou": round(best_iou, 6), "best_track_id": best_id}
+            {
+                "frame_index": frame_index,
+                "track_time_ns": track_time_ns,
+                "track_time_from_reference_origin_s": round(
+                    (track_time_ns - reference_origin_ns) / 1_000_000_000,
+                    9,
+                ),
+                "best_iou": round(best_iou, 6),
+                "best_track_id": best_id,
+            }
         )
         if resolved is None and best_id is not None and best_iou >= min_iou:
             resolved = {
@@ -111,10 +182,14 @@ def resolve(
         ),
         "bootstrap_frame_index": resolved["bootstrap_frame_index"] if resolved else None,
         "reference_sample_t_s": ref_t,
+        "reference_time_origin_topic": image_topic,
+        "reference_time_origin_ns": reference_origin_ns,
+        "reference_instant_ns": reference_instant_ns,
         "reference_target_bbox_xyxy": ref_box,
         "min_iou_required": min_iou,
         "max_bootstrap_lag_frames": max_lag_frames,
         "frames_inspected": len(per_frame),
+        "track_frames_skipped_before_reference": skipped_before_reference,
         "per_frame_best": per_frame[:12],
     }
     return result

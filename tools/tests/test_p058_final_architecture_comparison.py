@@ -184,10 +184,12 @@ def test_final_sequences_parses_v4_entry_schema_when_ready(tmp_path):
         assert seq["image_height"] == RUN.HELDOUT_SOURCE_IMAGE_HEIGHT
 
 
-def test_final_sequences_refuses_reserved_pending_capture():
-    # Real v4 split: every held-out entry is reserved_pending_capture.
-    with pytest.raises(SystemExit):
-        RUN.final_sequences(contract(), split(), None)
+def test_final_sequences_accepts_released_real_split():
+    sequences = RUN.final_sequences(contract(), split(), None)
+    assert [s["id"] for s in sequences] == list(
+        contract()["held_out_split"]["sequence_ids"]
+    )
+    assert all(s["evidence_role"] == "final_held_out" for s in sequences)
 
 
 def test_final_sequences_ordering_follows_contract():
@@ -195,9 +197,10 @@ def test_final_sequences_ordering_follows_contract():
     synthetic["sets"]["final_held_out"] = list(
         reversed(synthetic["sets"]["final_held_out"])
     )
-    with pytest.raises(SystemExit):
-        # still refuses (not ready) but must not KeyError on reordering
-        RUN.final_sequences(contract(), synthetic, None)
+    sequences = RUN.final_sequences(contract(), synthetic, None)
+    assert [s["id"] for s in sequences] == list(
+        contract()["held_out_split"]["sequence_ids"]
+    )
 
 
 # --- Top-level fail-closed gate (no synthetic H01/H02/H03 outcomes) --------
@@ -471,6 +474,7 @@ def test_final_held_out_tampered_source_file_stops_before_run_sequence(
         [
             "run_p058_final_architecture_comparison.py",
             "--set", "final_held_out", "--run",
+            "--split", str(synthetic_split),
             "--sequence", contract_ids[0],
             "--output-dir", str(out_root),
         ],
@@ -484,13 +488,8 @@ def test_final_held_out_tampered_source_file_stops_before_run_sequence(
     assert not out_root.exists()
 
 
-def test_run_split_validator_refuses_real_v4_split_when_not_ready():
-    # Real repository validator, real v4 split (final_ready=0/3). Structural
-    # validity is not required for this assertion: whether the validator exits
-    # non-zero for a structural reason or for the final-ready gate, the runner
-    # must refuse.
-    with pytest.raises(SystemExit):
-        RUN.run_split_validator(SPLIT_PATH, require_final_ready=True)
+def test_run_split_validator_accepts_real_v4_split_when_final_ready():
+    RUN.run_split_validator(SPLIT_PATH, require_final_ready=True)
 
 
 @pytest.mark.skipif(
