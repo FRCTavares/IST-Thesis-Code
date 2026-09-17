@@ -439,6 +439,31 @@ If the target never becomes sufficiently small under the frozen gate above, the
 capture must be reported as non-representative rather than used to force a
 resolution conclusion.
 
+### Human-reference preparation checkpoint — 17 September 2026
+
+The exact-FHD annotation package has been prepared from the frozen 2208-frame
+source bag at:
+
+    artifacts/reports/p064_fhd_drone_pov_15sep_cvat/
+
+It contains all 2208 source frames at native 1920x1080 geometry in the ordered
+lossless-PNG CVAT archive, with exact source timestamps preserved by the frame
+manifest. The allowed physical roles are `target`, `phys_d001` and
+`phys_d002`, corresponding to the three-person 15 September session coding
+`sep15_p001`, `sep15_p002` and `sep15_p003`; semantic required-role intervals
+remain for human review.
+
+Package identities:
+
+- CVAT image archive SHA-256: `7865c8d8a2e5db33ab9552035edc6e7cce60750d6b2369a2c1c0898fd4e2ab53`;
+- frame manifest SHA-256: `a0c522c7a61c5743433639293cefa8d0692875ffdee906b58ef46f660868be80`;
+- preparation-config SHA-256: `33e08aa81e358948153fda000c1bdd8976913ee6e2ef55a1d26a7e60f266287e`.
+
+The generated conversion configuration remains deliberately
+`human_review_required` with an empty `semantic_intervals` list. No geometry
+gate outcome, detector result, tracker result or comparative TIM-MARS result
+has been inspected yet.
+
 ## Final rule
 
 Current evidence establishes:
