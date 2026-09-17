@@ -1,6 +1,6 @@
 # tools
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-09-17
 
 ## Purpose
 
@@ -35,9 +35,32 @@ compatibility interface.
 | `camera/` | Camera V4L2 mode probing (hardware diagnostics). |
 | `live/` | Live inspection, evidence verification, and the strict offline field-evidence summary gate. |
 | `host/` | Raspberry Pi networking / unattended recovery and its `systemd/` assets. |
+| `flight/` | Flight-preflight and field-readiness command-line helpers. |
+| `mac/` | macOS-side connection helpers for field operation. |
 | `setup/` | Host Hailo / TAPPAS runtime setup helpers. |
 | `lib/` | Shared implementation used by the launcher and experiment tools (sourced shell fragments; the process-group supervisor). Not standalone executables. |
 | `tests/` | pytest contracts for all non-ROS tooling, plus `fixtures/`. |
+
+## Recording modes
+
+`tools/start_live_stack.sh` exposes several distinct recording contracts:
+
+- `--field-record` enables the retained structured field-evidence profile with
+  separate MJPEG visual recording and managed MAVROS telemetry.
+- `--record-structured-visual` uses the same structured evidence profile without
+  MAVROS for ground development; it is not an approved aircraft launch command.
+- `--source-record` records source `/camera/image_raw` plus MAVROS telemetry
+  while disabling tracker/TIM-MARS processing for source acquisition.
+- `--source-record-no-mavros` records `/camera/image_raw` plus `/detections`
+  without MAVROS or field-network changes.
+- `--record-raw` adds the separate synchronized raw-image diagnostic bag; it is
+  not part of the approved aircraft launch profile.
+- `--record-mavros` is the lower-level MAVROS telemetry recording switch used by
+  recording profiles; normal field operation should use `--field-record`.
+- `--tag NAME` assigns the retained run/bag tag.
+
+Use `./tools/start_live_stack.sh --help` and `--help-advanced` for the complete
+current CLI contract.
 
 ## Rules
 

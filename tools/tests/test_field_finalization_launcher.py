@@ -167,8 +167,9 @@ def test_verifier_helpers_require_an_explicit_bag_dir(tmp_path):
 def test_field_runbook_records_nominal_trial_end_before_stop_archival():
     runbook = (REPO_ROOT / "docs/flight/field_day_runbook.md").read_text(encoding="utf-8")
     trial_end = runbook.index("operator_event.py trial_end --run-id \"$RUN_ID\"")
-    stop_instruction = runbook.index("Then, at the `live-stack>` prompt type `stop`")
-    assert trial_end < stop_instruction
+    stop_command = runbook.index("\n    stop\n", trial_end)
+    verify_step = runbook.index("## Verify retained evidence", stop_command)
+    assert trial_end < stop_command < verify_step
 
 
 def test_stop_time_required_topics_follow_enabled_subsystems():

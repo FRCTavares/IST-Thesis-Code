@@ -1,6 +1,6 @@
 # Thesis-Code
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-09-17
 
 Onboard RGB-only selected-person tracking and following for a micro aerial
 robot. The scientific core is **TIM-MARS**, a selected-target identity-memory
@@ -62,11 +62,11 @@ imported as `tools.timing_contract`; it is not a CLI.
 - **Results and evidence:** `docs/results/README.md`; claim boundaries in
   `docs/algorithm/tim_mars_evidence_versions.md`
 - **Runtime metrics:** `docs/RUNTIME_METRICS.md`
-- **Setup and recovery:** the Setup section below, then `docs/debug/`,
-  `tools/setup/`, `tools/host/`
+- **Setup and recovery:** the Clean-checkout installation section below, then
+  `docs/debug/`, `tools/setup/`, `tools/host/`
 - **Documentation conventions:** `docs/design/README_STANDARD.md`
 
-## Setup
+## Clean-checkout installation
 
 Supported host: Ubuntu 24.04 with ROS 2 Jazzy.
 

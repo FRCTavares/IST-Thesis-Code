@@ -92,9 +92,12 @@ def test_cli_help_clearly_distinguishes_from_legacy_evaluator():
     )
     assert result.returncode == 0
     help_text = result.stdout
+    compact_help = "".join(help_text.split())
     assert "NOT" in help_text
     assert "correct_target_track_id" in help_text
-    assert "evaluate_tim_target_bbox_correctness.py" in help_text
+    # argparse may hard-wrap this long filename depending on terminal/help
+    # width, including inside the token itself.
+    assert "evaluate_tim_target_bbox_correctness.py" in compact_help
     assert "tim_physical_target_bbox_v1" in help_text
 
 

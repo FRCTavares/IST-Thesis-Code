@@ -6,6 +6,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 HELPER = REPO_ROOT / "tools/experiments/record_p027_heldout_sequence.sh"
 RUNBOOK = REPO_ROOT / "docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md"
+EXECUTION_V2 = REPO_ROOT / "docs/flight/P027_HELDOUT_EXECUTION_PLAN_v2.md"
+HANDOFF = REPO_ROOT / "docs/data/p027_heldout_handoff.md"
 H01 = REPO_ROOT / "docs/flight/P027_H01_EXIT_REENTRY.md"
 H02 = REPO_ROOT / "docs/flight/P027_H02_CROSSING.md"
 H03 = REPO_ROOT / "docs/flight/P027_H03_OCCLUSION_DISTRACTOR.md"
@@ -47,17 +49,16 @@ def test_helper_does_not_run_final_algorithm_evaluation():
 def test_common_runbook_is_short_source_only_index():
     text = RUNBOOK.read_text(encoding="utf-8")
 
-    assert "`640x480`" in text
-    assert "640x640 inference" in text
-    assert "`/camera/image_raw` + `/detections`" in text
-    assert "tracker: OFF" in text
-    assert "TIM-MARS: OFF" in text
-    assert "controller: OFF" in text
-    assert "MAVROS: OFF" in text
-
-    assert "P027_H01_EXIT_REENTRY.md" in text
-    assert "P027_H02_CROSSING.md" in text
-    assert "P027_H03_OCCLUSION_DISTRACTOR.md" in text
+    assert "Capture is complete." in text
+    assert "H01: `16-31-10`" in text
+    assert "H02: `16-35-33`" in text
+    assert "H03: `16-55-25`" in text
+    assert "/camera/image_raw" in text
+    assert "/detections" in text
+    assert "Tracker, TIM-MARS, controller and MAVROS were OFF." in text
+    assert "Do not recapture the sequences." in text
+    assert "P027_HELDOUT_EXECUTION_PLAN_v2.md" in text
+    assert "final_ready=3/3" in text
 
     assert len(text.splitlines()) < 110
 
@@ -99,17 +100,22 @@ def test_h01_h02_h03_physical_scenarios_remain_distinct():
 
 
 def test_common_runbook_keeps_annotation_overlap_and_release_gate():
-    text = RUNBOOK.read_text(encoding="utf-8")
-    compact = " ".join(text.split())
+    runbook = RUNBOOK.read_text(encoding="utf-8")
+    execution = EXECUTION_V2.read_text(encoding="utf-8")
+    handoff = HANDOFF.read_text(encoding="utf-8")
 
-    assert "physical-v2 annotation" in text
-    assert "participant/outfit" in text
-    assert "people/clothing overlap" in text
-    assert "validate_tim_evaluation_split.py \\" in text
-    assert "--verify-hashes \\" in text
-    assert "--require-final-ready" in text
-    assert "Only after this passes" in compact
-    assert "new prospective split is required" in compact
+    assert "P027_HELDOUT_EXECUTION_PLAN_v2.md" in runbook
+    assert "--verify-hashes --require-final-ready" in runbook
+    assert "final_ready=3/3" in runbook
+
+    assert "complete human physical-v2 annotation" in execution
+    assert "record anonymous participant/outfit information" in execution
+    assert "--require-final-ready" in execution
+    assert "final_ready=3/3" in execution
+
+    assert "overlap_record" in handoff
+    assert "participant/clothing overlap" in handoff
+    assert "physical-v2" in handoff
 
 
 def test_archived_operator_docs_are_not_current_authority():

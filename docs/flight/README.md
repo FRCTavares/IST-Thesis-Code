@@ -1,8 +1,9 @@
 # Flight Day
 
-Last reviewed: 2026-09-16
+Last reviewed: 2026-09-17
 
-This is the canonical command sheet for the remaining physical flight work.
+This is the canonical command sheet for the remaining physical flight work and
+the only current day-of-flight operator sheet.
 
 H01/H02/H03 source captures are already complete and are not part of this procedure.
 

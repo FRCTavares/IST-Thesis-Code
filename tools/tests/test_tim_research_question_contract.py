@@ -128,9 +128,12 @@ def test_closed_issue_is_removed_and_final_claim_is_blocked():
     assert "[#38 —" not in text
     assert text.count("[#39 —") == 1
     assert "under #32" in text
-    # The final claim (#39) stays blocked on the held-out (#27), tracker
-    # comparison (#58), and embedded-deployment (#32) evidence. Issue #44 is
-    # now closed and folded in as completed evidence, not a pending dependency.
-    assert "#32 are complete" in text
-    assert "#44 is already closed" in text
-    assert "#58" in text
+    # The held-out (#27) and tracker-comparison (#58) evidence are complete,
+    # while the final claim (#39) remains blocked on embedded-deployment #32.
+    # Issue #44 is closed and folded in as completed evidence.
+    assert (
+        "blocked until the final embedded-deployment evidence under #32 is complete"
+        in text
+    )
+    assert "Hailo appearance-offload work under #44 is already closed" in text
+    assert "tracker comparison under #58 are complete" in text

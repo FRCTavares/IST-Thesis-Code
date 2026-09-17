@@ -14,9 +14,11 @@ DOMAIN_DIRECTORIES = {
     "camera",
     "catalogue",
     "experiments",
+    "flight",
     "host",
     "lib",
     "live",
+    "mac",
     "setup",
     "tests",
 }
