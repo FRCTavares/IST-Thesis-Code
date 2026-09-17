@@ -102,12 +102,12 @@ Recovery:
 sudo apt update
 sudo apt install -y linux-headers-$(uname -r)
 
-cd /home/francisco/tevs-oot
+cd $HOME/src/hardware/tevs-oot
 make clean
 make -j$(nproc)
 
 sudo mkdir -p /lib/modules/$(uname -r)/extra
-sudo cp /home/francisco/tevs-oot/tevs.ko /lib/modules/$(uname -r)/extra/tevs.ko
+sudo cp $HOME/src/hardware/tevs-oot/tevs.ko /lib/modules/$(uname -r)/extra/tevs.ko
 sudo depmod -a
 
 sudo modprobe -r tevs 2>/dev/null || true
@@ -211,12 +211,12 @@ sudo apt install -y linux-headers-$(uname -r)
 Then rebuild:
 
 ```bash
-cd /home/francisco/tevs-oot
+cd $HOME/src/hardware/tevs-oot
 make clean
 make -j$(nproc)
 
 sudo mkdir -p /lib/modules/$(uname -r)/extra
-sudo cp /home/francisco/tevs-oot/tevs.ko /lib/modules/$(uname -r)/extra/tevs.ko
+sudo cp $HOME/src/hardware/tevs-oot/tevs.ko /lib/modules/$(uname -r)/extra/tevs.ko
 sudo depmod -a
 
 sudo modprobe -r tevs 2>/dev/null || true
@@ -381,7 +381,7 @@ Decision logic:
 
 ## Related Files
 
-- `/home/francisco/tevs-oot`
+- `$HOME/src/hardware/tevs-oot`
 - `tools/start_live_stack.sh`
 - `tools/lib/live_camera.sh`
 - `ros2_ws/src/thesis_bringup/thesis_bringup/nodes/perception_camera_node.py`

@@ -373,7 +373,7 @@ Avoid copying Hailo modules from older kernels unless you explicitly verify comp
 ## Related Files and Commands
 
 - `/usr/src/hailo_pci-4.23.0/`
-- `/home/francisco/hailort-drivers/`
+- `$HOME/src/hardware/hailort-drivers/`
 - `tools/setup/install_host_hailo_bindings.sh`
 - `tools/start_live_stack.sh`
 - `ros2_ws/log/live_stack/latest/perception_camera.log`
