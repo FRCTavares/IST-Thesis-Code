@@ -368,8 +368,76 @@ Before making a source-resolution recommendation:
    contract;
 7. report both identity-performance and runtime/appearance-freshness effects.
 
-If the target never becomes sufficiently small, the capture must be reported as
-non-representative rather than used to force a resolution conclusion.
+### Predeclared representative-geometry gate — 17 September 2026
+
+This gate is frozen before inspecting any comparative TIM-MARS outcome and
+before using detector/tracker output to judge target scale.
+
+Target-scale authority is the human-reviewed physical target annotation, not a
+detector or tracker box. The primary measure is target bounding-box height in
+native 1920x1080 source-image pixels; normalised height
+(`bbox_height / 1080`) is retained alongside it.
+
+The repository's retained VisDrone UAV evidence covers human-ground-truth target
+heights from 66 to 132 px and is already described as partial small/distant
+coverage. Separately, the external-sequence selector labels a sequence
+`small_target` when its median target height is below 60 px. The latter is a
+stronger diagnostic category, not a universal minimum-detectable-size threshold
+and not a mandatory gate for this experiment.
+
+For this bounded Issue #64 study, the 15 September capture is considered to
+reach representative small/distant drone-POV geometry only if the
+human-reviewed physical target has a bounding-box height of at most 132 px for
+at least five consecutive target-visible annotated frames. The five-frame
+persistence requirement prevents a single annotation or motion outlier from
+satisfying the gate and reuses the existing repository convention for a
+meaningful consecutive observation run.
+
+The geometry report must be produced before comparative TIM-MARS evaluation and
+must include, over human-reviewed target-visible frames:
+
+- minimum, p10, median, p90 and maximum target height in native FHD pixels;
+- the corresponding normalised-height statistics;
+- frame count and fraction at or below 132 px;
+- longest consecutive run at or below 132 px;
+- frame count and fraction below 60 px, with the median-<60-px
+  `small_target` diagnostic reported separately.
+
+This is an Issue #64 representativeness gate, not a claimed universal detector,
+tracker or ReID operating threshold. If no five-frame run at or below 132 px
+exists, stop the matched-resolution study and report the capture as
+non-representative rather than inspecting comparative TIM-MARS performance.
+
+### Frozen matched-resolution decision contract
+
+Subject to the geometry gate passing, the remaining comparison is frozen as:
+
+- native appearance condition: 1920x1080 FHD;
+- lower-resolution condition: deterministic 1280x720 complete-FOV downsample
+  from the exact same retained source frames using `INTER_AREA`;
+- detector: YOLOv8s Hailo inference, fixed at 640x640, generated once;
+- tracker: ByteTrack, frozen once from that single detector stream;
+- identical source timestamps, scene, FOV, physical target, evaluation window,
+  detector evidence, tracker candidates, canonical TIM-MARS configuration and
+  appearance model across both conditions;
+- only the source pixels available to the TIM-MARS appearance crop differ.
+
+The existing Gate-2 materiality rule remains authoritative. The FHD condition
+must first not increase wrong-person duration or target-absent-with-output
+duration beyond the evaluator's `1e-6 s` reconciliation tolerance. Subject to
+that safety gate, FHD is materially better only if either the correct-target
+fraction increases by at least 5 percentage points, the lost/suppressed
+fraction decreases by at least 5 percentage points, or a human-annotated hard
+exit/re-entry becomes a correct reacquisition within 1.0 s without a safety
+regression.
+
+No result from this development-only study may modify the completed H01/H02/H03
+prospective evidence, frozen TIM-MARS thresholds, detector model, tracker
+configuration or evaluation semantics.
+
+If the target never becomes sufficiently small under the frozen gate above, the
+capture must be reported as non-representative rather than used to force a
+resolution conclusion.
 
 ## Final rule
 

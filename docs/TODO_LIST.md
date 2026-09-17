@@ -99,10 +99,11 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 
 ## P2 — Deferred maintenance and bounded supporting evidence
 
-1. [ ] [#64 — Resolve high-resolution appearance crops on representative small-target UAV footage](https://github.com/FRCTavares/IST-Thesis-Code/issues/64) — SOURCE PREPARATION READY / MATCHED EVALUATION PENDING
+1. [ ] [#64 — Resolve high-resolution appearance crops on representative small-target UAV footage](https://github.com/FRCTavares/IST-Thesis-Code/issues/64) — GEOMETRY GATE FROZEN / HUMAN REFERENCE PENDING
    - The earlier controlled native-HD experiment showed no benefit for a close, large target and therefore did not answer the intended small/distant-person question.
    - A representative drone-POV native-FHD development master was captured on 15 September and independently backed up.
    - Exact source-frame timing can now be preserved from the MKV into a native-MCAP `zstd_fast` `/camera/image_raw` source bag; the adapter and matched-resolution variant storage path have focused tests and an end-to-end smoke, but the real FHD comparison has not yet been run.
+   - Before inspecting detector/TIM comparative outcomes, representative geometry is predeclared from human target boxes: the capture must contain at least five consecutive target-visible frames at `<=132 px` target height in native 1920x1080 imagery; full height statistics and the stronger median-`<60 px` small-target diagnostic must also be reported.
    - Complete one bounded matched-resolution study from that unchanged master, comparing higher-resolution appearance evidence against its derived lower-resolution condition while keeping detector/tracker/TIM interpretation fixed.
    - Keep Hailo detector inference at 640x640. Do not turn this into detector redesign, a new ReID-model study or an outcome-driven change to the completed H01–H03 prospective evaluation.
    - If no material difficult-event identity benefit appears, record the negative result and close #64.
