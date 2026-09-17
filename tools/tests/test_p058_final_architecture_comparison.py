@@ -66,6 +66,12 @@ def test_defaults_bind_to_active_stage7_authorities():
     )
 
 
+def test_history_migration_resolves_stage7_git_authority():
+    assert RUN.resolve_git_commit(
+        RUN.ACTIVE_ALGORITHM_FREEZE_COMMIT
+    ) == "dd22b93a12d64fce2e460991aa6a10ea633cdfbd"
+
+
 def test_active_contract_validates_and_returns_architectures():
     architectures = RUN.validate_contract(contract())
     assert tuple(architectures) == RUN.ARCHITECTURE_ORDER

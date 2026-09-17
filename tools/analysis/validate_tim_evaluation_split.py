@@ -14,6 +14,7 @@ from typing import Any
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from git_history_compat import resolve_git_commit
 from p027_handoff import ACTIVE_SPLIT_ID, validate_ready_entry
 
 
@@ -120,10 +121,11 @@ def validate_behavior_source_freeze(
     a frozen path is also treated as behavior-bearing.
     """
     errors: list[str] = []
+    resolved_source_commit = resolve_git_commit(source_commit)
 
     behavior_files = behavior_bearing_frozen_files(
         repo_root=repo_root,
-        source_commit=source_commit,
+        source_commit=resolved_source_commit,
         source_paths=source_paths,
     )
     if not behavior_files:
@@ -136,7 +138,7 @@ def validate_behavior_source_freeze(
         repo_root,
         "diff",
         "--name-only",
-        source_commit,
+        resolved_source_commit,
         "--",
         *behavior_files,
     )
@@ -159,7 +161,7 @@ def validate_behavior_source_freeze(
         "diff",
         "--name-only",
         "--diff-filter=A",
-        source_commit,
+        resolved_source_commit,
         "--",
         *source_paths,
     )
@@ -212,11 +214,13 @@ def validate_git_freeze(
     if not FULL_GIT_COMMIT_RE.fullmatch(algorithm_commit):
         return errors
 
+    resolved_algorithm_commit = resolve_git_commit(algorithm_commit)
+
     commit_check = _run_git(
         repo_root,
         "cat-file",
         "-e",
-        f"{algorithm_commit}^{{commit}}",
+        f"{resolved_algorithm_commit}^{{commit}}",
     )
     if commit_check.returncode != 0:
         errors.append(
@@ -228,7 +232,7 @@ def validate_git_freeze(
     frozen_config = _run_git(
         repo_root,
         "show",
-        f"{algorithm_commit}:{config_path}",
+        f"{resolved_algorithm_commit}:{config_path}",
     )
     if frozen_config.returncode != 0:
         errors.append(
@@ -244,7 +248,7 @@ def validate_git_freeze(
         repo_root,
         "merge-base",
         "--is-ancestor",
-        algorithm_commit,
+        resolved_algorithm_commit,
         "HEAD",
     )
     if ancestry.returncode == 1:
@@ -472,12 +476,15 @@ def validate_final_comparison_contract(
                     "must be a non-empty string list"
                 )
             elif isinstance(source_commit, str):
+                resolved_source_commit = resolve_git_commit(
+                    source_commit
+                )
                 for source_path in source_paths:
                     at_freeze = _run_git(
                         repo_root,
                         "cat-file",
                         "-e",
-                        f"{source_commit}:{source_path}",
+                        f"{resolved_source_commit}:{source_path}",
                     )
                     if at_freeze.returncode != 0:
                         errors.append(

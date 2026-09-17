@@ -78,6 +78,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "tools/analysis"))
+from git_history_compat import resolve_git_commit
 from p027_handoff import verify_source_inventory
 
 # --- Active Stage-7 prospective-freeze authorities -----------------------------
@@ -434,10 +435,11 @@ def verify_frozen_git_paths(
     """
     freeze = contract["source_code_freeze"]
     freeze_commit = str(freeze["commit"])
+    resolved_freeze_commit = resolve_git_commit(freeze_commit)
     required_paths = [str(p) for p in freeze["required_unchanged_paths"]]
 
     behaviour_files = behaviour_bearing_frozen_files(
-        freeze_commit, required_paths
+        resolved_freeze_commit, required_paths
     )
     if not behaviour_files:
         raise SystemExit(
@@ -446,12 +448,12 @@ def verify_frozen_git_paths(
         )
 
     changed_behaviour = _git_lines(
-        "diff", "--name-only", freeze_commit, "HEAD",
+        "diff", "--name-only", resolved_freeze_commit, "HEAD",
         "--", *behaviour_files,
     )
     added_paths = _git_lines(
         "diff", "--name-only", "--diff-filter=A",
-        freeze_commit, "HEAD", "--", *required_paths,
+        resolved_freeze_commit, "HEAD", "--", *required_paths,
     )
     working_status = subprocess.run(
         [
