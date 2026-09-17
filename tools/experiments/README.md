@@ -28,7 +28,7 @@ Representative entrypoints by category — not every file is listed.
 | `wait_for_track_selection.py`, `select_largest_track_id.py`, `write_tim_run_metadata.py`, `build_common_input_bag.py`, `images_to_camera_bag.py` | Support | Track selection, run-metadata provenance, input-bag construction. |
 | `run_p058_target_reid_replay.py` (frozen), `run_tim_resilience_development.py` | Issue-scoped | Issue #58 Target-ReID replay; Issue #90 resilience study. |
 | `run_p044_*.sh`, `sample_p044_*.py`, `collect_p044_transport_evidence.py`, `analyze_p044_sustained_soak.py`, `p044_*_relay.py` | Historical | Issue #44 (closed) Hailo ReID-offload evidence, retained for reproduction. |
-| `p064_appearance_contract.py`, `prepare_p064_appearance_variants.py`, `measure_p054_raw_image_transport_cost.sh`, `capture_external_detector_tracker.sh`, `profile_tim_resilience_service.py`, `sample_process_groups.py` | Issue-scoped | Per-issue capture, measurement and profiling helpers. |
+| `p064_appearance_contract.py`, `prepare_p064_video_source.py`, `prepare_p064_appearance_variants.py`, `measure_p054_raw_image_transport_cost.sh`, `capture_external_detector_tracker.sh`, `profile_tim_resilience_service.py`, `sample_process_groups.py` | Issue-scoped | Per-issue capture, measurement and profiling helpers. |
 
 ## Rules
 

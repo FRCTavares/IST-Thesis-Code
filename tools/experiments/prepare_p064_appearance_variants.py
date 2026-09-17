@@ -175,8 +175,13 @@ def write_variant(
         raise RuntimeError(str(exc)) from exc
 
     writer = rosbag2_py.SequentialWriter()
+    storage_options = rosbag2_py.StorageOptions(
+        uri=str(output_bag),
+        storage_id="mcap",
+    )
+    storage_options.storage_preset_profile = "zstd_fast"
     writer.open(
-        rosbag2_py.StorageOptions(uri=str(output_bag), storage_id="mcap"),
+        storage_options,
         rosbag2_py.ConverterOptions(
             input_serialization_format="cdr",
             output_serialization_format="cdr",
@@ -264,6 +269,8 @@ def write_variant(
             "padding": False,
             "coordinate_mapping": "independent_x_y_direct_resize",
             "timestamp_contract": "exact_positive_source_header_stamp",
+            "storage_id": "mcap",
+            "storage_preset_profile": "zstd_fast",
             "artifact_files": artifact_manifest(output_bag),
         },
     }

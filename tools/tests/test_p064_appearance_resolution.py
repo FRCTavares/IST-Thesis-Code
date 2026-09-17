@@ -189,6 +189,14 @@ def test_resize_class_and_aspect_ratio_provenance():
     assert aspect_ratio(1280, 720) == pytest.approx(16 / 9)
 
 
+def test_variant_writer_declares_mcap_zstd_fast_storage():
+    source = PREPARER_PATH.read_text(encoding="utf-8")
+
+    assert 'storage_id="mcap"' in source
+    assert 'storage_options.storage_preset_profile = "zstd_fast"' in source
+    assert '"storage_preset_profile": "zstd_fast"' in source
+
+
 def test_complete_fov_resize_preserves_all_corner_regions():
     image = np.zeros((4, 4, 3), dtype=np.uint8)
     image[:2, :2] = (10, 20, 30)
