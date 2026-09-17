@@ -304,6 +304,23 @@ frame IDs start at one.
       `VITE_DASHBOARD_CONTROL_TOKEN` is set (separate PR). The Issue #55 code
       work is complete pending PR merge and issue closure; the M6 integration
       gate and the target-authority ground runner remain the pre-field checks.
+    - 17 September 2026: post-reorganization live smoke testing exposed a
+      pre-existing launcher coupling: `--no-dashboard` correctly disabled only
+      the dashboard bridge and web-video processes, but TIM-MARS startup was
+      accidentally nested inside the dashboard guard even while
+      `RUN_TARGET_MEMORY_MARS=1`. The launcher is repaired so TIM-MARS is
+      independently gated by its own runtime flag, and a regression contract
+      now prevents `--no-dashboard` from silently suppressing selected-target
+      memory. This is launcher/integration hardening only: no TIM-MARS
+      algorithm, canonical configuration, detector, tracker, controller policy,
+      threshold, or held-out evaluation contract changes. Post-fix validation
+      passed on the Raspberry Pi 5 with the real integrated-camera/Hailo path:
+      `--no-control --no-dashboard` started perception, ByteTrack and TIM-MARS
+      independently; TIM-MARS loaded the canonical MARS model and exposed its
+      target/status/select/timing topics; detector and tracker streams remained
+      approximately 30 Hz; dashboard, controller and MAVROS stayed absent; clean
+      shutdown left zero live-stack descendants and no repository-root runtime
+      noise.
 
 10. [ ] [#40 — P1.18 Write the method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40)
     - phase 9; experiment/documentation.

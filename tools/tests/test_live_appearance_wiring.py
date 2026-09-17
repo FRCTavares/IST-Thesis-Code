@@ -33,13 +33,44 @@ def _option_block(script: str, option: str) -> str:
 def _tim_mars_launch_block(script: str) -> str:
     """Return the TIM-MARS launch section from the live launcher."""
     match = re.search(
-        r'(?ms)^        start_ros_bg target_memory_mars '
+        r'(?ms)^    start_ros_bg target_memory_mars '
         r'.*?'
-        r'^        sleep 1$',
+        r'^    sleep 1$',
         script,
     )
     assert match is not None, 'missing TIM-MARS launcher block'
     return match.group(0)
+
+
+def test_tim_mars_startup_is_independent_of_dashboard_bridge():
+    """Disabling the dashboard must not silently suppress enabled TIM-MARS."""
+    cli = _read(CLI)
+    launcher = _read(LAUNCHER)
+
+    no_dashboard = _option_block(cli, '--no-dashboard')
+    assert 'ENABLE_DASHBOARD_BRIDGE=0' in no_dashboard
+    assert 'ENABLE_WEB_VIDEO=0' in no_dashboard
+    assert 'RUN_TARGET_MEMORY_MARS' not in no_dashboard
+    assert 'TARGET_MEMORY_MODE' not in no_dashboard
+
+    startup_start = launcher.index(
+        'if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then',
+        launcher.index('TRACKER_RESOLVED_PARAMS'),
+    )
+    startup_end = launcher.index(
+        '# Start MAVROS telemetry when --record-mavros is enabled.',
+        startup_start,
+    )
+    startup = launcher[startup_start:startup_end]
+
+    assert (
+        '\nif [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then\n'
+        in startup
+    )
+    assert (
+        '\n    if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then\n'
+        not in startup
+    )
 
 
 def test_no_appearance_reaches_tim_mars_ros_parameter():

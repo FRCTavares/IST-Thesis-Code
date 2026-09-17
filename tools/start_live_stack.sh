@@ -1376,30 +1376,6 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
         "target_clear_topic=/target_memory_mars/clear"
     )
 
-    if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
-        if [[ ! -f "$TARGET_MEMORY_MARS_CONFIG" ]]; then
-            echo "[error] canonical TIM-MARS config not found: $TARGET_MEMORY_MARS_CONFIG"
-            stop_stack
-            exit 1
-        fi
-
-        start_ros_bg target_memory_mars ros2 run thesis_bringup target_memory_mars_node --ros-args \
-            --params-file "$TARGET_MEMORY_MARS_CONFIG" \
-            -p target_topic:=/target_memory_mars \
-            -p status_topic:=/target_memory_mars/status \
-            -p select_topic:=/target_memory_mars/select \
-            -p image_width:=${CAMERA_WIDTH}.0 \
-            -p image_height:=${CAMERA_HEIGHT}.0 \
-            -p appearance_enabled:="$TARGET_MEMORY_APPEARANCE_BOOL" \
-            -p appearance_image_topic:="$TARGET_MEMORY_MARS_IMAGE_TOPIC" \
-            -p mars_model_path:="$TARGET_MEMORY_MARS_MODEL_PATH"
-        sleep 1
-        if ! check_proc_alive target_memory_mars; then
-            stop_stack
-            exit 1
-        fi
-    fi
-
     if [[ "$ENABLE_WEB_VIDEO" -eq 1 ]]; then
         start_ros_bg web_video ros2 run web_video_server web_video_server --ros-args -p port:=8080
         sleep 1
@@ -1411,6 +1387,30 @@ if [[ "$ENABLE_DASHBOARD_BRIDGE" -eq 1 ]]; then
             stop_stack
             exit 1
         fi
+    fi
+fi
+
+if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
+    if [[ ! -f "$TARGET_MEMORY_MARS_CONFIG" ]]; then
+        echo "[error] canonical TIM-MARS config not found: $TARGET_MEMORY_MARS_CONFIG"
+        stop_stack
+        exit 1
+    fi
+
+    start_ros_bg target_memory_mars ros2 run thesis_bringup target_memory_mars_node --ros-args \
+        --params-file "$TARGET_MEMORY_MARS_CONFIG" \
+        -p target_topic:=/target_memory_mars \
+        -p status_topic:=/target_memory_mars/status \
+        -p select_topic:=/target_memory_mars/select \
+        -p image_width:=${CAMERA_WIDTH}.0 \
+        -p image_height:=${CAMERA_HEIGHT}.0 \
+        -p appearance_enabled:="$TARGET_MEMORY_APPEARANCE_BOOL" \
+        -p appearance_image_topic:="$TARGET_MEMORY_MARS_IMAGE_TOPIC" \
+        -p mars_model_path:="$TARGET_MEMORY_MARS_MODEL_PATH"
+    sleep 1
+    if ! check_proc_alive target_memory_mars; then
+        stop_stack
+        exit 1
     fi
 fi
 
