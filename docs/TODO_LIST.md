@@ -43,7 +43,7 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
    - Cross-priority dependency exception: the bounded #64 resolution decision may be completed before this P0 item because #32 depends on that result.
 
 3. [ ] [#39 — Freeze final thesis claims after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39) — BLOCKED BY FINAL SYSTEM EVIDENCE
-   - Prospective H01/H02/H03 evaluation under #27 and the final architecture comparison under #58 are complete.
+   - Final claim freeze remains blocked until the final embedded-deployment evidence under #32 is complete. The prospective H01/H02/H03 evaluation under #27 and tracker comparison under #58 are complete. Hailo appearance-offload work under #44 is already closed and must be treated as completed evidence rather than an open dependency.
    - Do not claim universal TIM-MARS dominance: the final held-out evidence shows a scenario-dependent comparison with DeepSORT, while TIM-MARS substantially improves safety over raw ByteTrack and retains substantially more availability than the conservative fixed-template Target-ReID baseline.
    - Remaining evidence dependencies are the #64 resolution decision, the #50/#74 physical controller decision, and the final sustained onboard evidence under #32.
    - Final claim freeze must reconcile implementation/configuration authority, held-out evidence, embedded evidence, explicit limitations and the dissertation literature-gap matrix.
