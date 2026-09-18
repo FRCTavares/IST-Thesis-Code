@@ -4,13 +4,13 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
-Open executable issues: **9**.
+Open executable issues: **8**.
 
-Last reconciled with GitHub: **18 September 2026**.
+Last reconciled with GitHub: **19 September 2026**.
 
 **Physical access blocked until 22 September 2026:** execute #64 → #50 →
 #32 in that order using `docs/flight/22-september-evidence-plan.md`. #50 stays
-P0, #64 stays P1 and is a prerequisite to #32. Remote writing for #40/#66/
+P0, #64 stays P1 and is a prerequisite to #32. Remote writing for #66/
 #67/#41 can proceed; #39 waits for the retained physical decisions and runtime
 evidence.
 
@@ -70,7 +70,7 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
    - Chapters 1 and 2 have complete working drafts and have undergone visual review.
    - Chapter 3 Sections 3.1–3.8 have complete working drafts; the hardware and ROS 2 architecture figures are present.
    - Finish the remaining Chapter 3 visual/implementation-consistency pass and keep a supervisor-ready compiled PDF.
-   - Draft only evidence-safe method material here. #40 remains the authority for final TIM-MARS method wording.
+   - Use the published Chapter 4 method completed under #40 as the implementation authority for remaining architecture prose; keep physical and runtime conclusions evidence-gated.
 
 3. [ ] [#67 — Complete thesis experiments, results, and discussion draft by 30 September 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/67) — ACTIVE THESIS DEADLINE
    - Produce the complete supervisor-ready dissertation draft by 30 September within the applicable MEEC page limit.
@@ -79,18 +79,12 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
    - Integrate explicit limitations through #41 and final figures/evidence tables from the dissertation plan. The former #42 checklist is closed as subsumed by this issue and #39.
    - Do not invent conclusions for evidence that is still pending.
 
-4. [ ] [#40 — Write TIM-MARS method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40) — CHAPTER 4 REVIEWED LOCALLY / PUBLICATION LINK PENDING
-   - The historical #89/#90 algorithm blocker is resolved and the final prospective TIM-MARS algorithm/configuration authority is frozen.
-   - The implementation-backed method authority and behaviour-to-test matrix are in `docs/algorithm/tim_mars_final_method_authority.md`. They reflect the promoted Stage-7 configuration and separate algorithmic authority from #50 physical evidence.
-   - Dissertation Chapter 4, its equations and retained method figures were checked against that authority and committed locally in the separate Thesis-Report repository as `516a7a4`; its full thesis build passed. The report commit is not yet published. Link the accessible section/commit in #40 before closing; the thesis-report source is not in this Pi repository.
-   - The historical algorithm blocker is resolved and the GitHub blocked label has been removed.
-
-5. [ ] [#41 — Write explicit thesis limitations from final evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/41) — EVIDENCE DEPENDENT
+4. [ ] [#41 — Write explicit thesis limitations from final evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/41) — EVIDENCE DEPENDENT
    - Maintain explicit limitations covering small/poor-quality crops, tracker dependence, appearance-domain gap, finite held-out scope, calibration dependence, target absence, long-gap recovery limits, embedded resource constraints and the absence of formal safety guarantees.
    - #27/#58 evidence is complete; final wording still depends on the #64 retained-resolution decision, #50 and #32.
    - Report negative results and rejected mechanisms rather than hiding them.
 
-6. [ ] [#68 — Complete thesis review, formatting, and final submission by 31 October 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/68)
+5. [ ] [#68 — Complete thesis review, formatting, and final submission by 31 October 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/68)
    - Begins in earnest once the complete supervisor-ready draft exists.
    - Own supervisor revisions, proofreading, current IST/MEEC formatting compliance, abstracts/keywords, extended abstract, required declarations, final reproducibility checks, release archival and submission.
    - Do not reopen completed algorithm work unless a genuine correctness or evidence defect is found.
