@@ -102,8 +102,8 @@ def test_warmup_is_excluded_from_steady_state() -> None:
 
     cpu = result["architecture_total"]["cpu_percent"]
 
-    assert cpu["all"]["n"] == 2
-    assert cpu["all"]["mean"] == pytest.approx(90.0)
+    assert cpu["all"]["n"] == 1
+    assert cpu["all"]["mean"] == pytest.approx(60.0)
     assert cpu["steady_state"]["n"] == 1
     assert cpu["steady_state"]["mean"] == pytest.approx(60.0)
 
@@ -189,6 +189,23 @@ def test_throttling_and_power_boundary_are_explicit() -> None:
     assert boundary["raw_sampler_schemas_modified"] is False
 
 
+def test_live_process_tree_resource_schema_is_accepted() -> None:
+    resource = resource_row(0, "detector", 50.0, 100)
+    resource["schema"] = "p032_live_process_tree_sample_v1"
+
+    result = MODULE.analyse(
+        [resource],
+        [hardware_row(0, 60.0)],
+        warm_up_s=0.0,
+        architecture_groups=("detector",),
+        analysis_start_ns=0,
+    )
+
+    assert result["integrity"][
+        "resource_records_have_known_sample_schema"
+    ] is True
+
+
 def test_known_raw_sampler_schemas_are_checked() -> None:
     result = MODULE.analyse(
         [resource_row(0, "detector", 50.0, 100)],
@@ -250,9 +267,11 @@ def test_explicit_analysis_bounds_exclude_sampler_roll() -> None:
 
     assert result["resource_sample_count"] == 2
     assert result["hardware_sample_count"] == 2
+    assert result["architecture_total"]["cpu_percent"]["all"]["n"] == 1
+    assert result["architecture_total"]["rss_kib"]["all"]["n"] == 2
     assert (
         result["architecture_total"]["cpu_percent"]["all"]["mean"]
-        == pytest.approx(55.0)
+        == pytest.approx(60.0)
     )
     assert (
         result["hardware"]["temperature_c"]["all"]["mean"]
@@ -266,3 +285,20 @@ def test_explicit_analysis_bounds_exclude_sampler_roll() -> None:
         result["measurement_window"]["analysis_end_source"]
         == "explicit_argument"
     )
+
+
+def test_missing_live_root_is_not_counted_as_complete_architecture() -> None:
+    live = resource_row(0, "detector", None, 0)
+    live.update({
+        "schema": "p032_live_process_tree_sample_v1",
+        "rss_kib": None,
+        "member_count": 0,
+        "root_identity_alive": False,
+    })
+    result = MODULE.analyse(
+        [live], [hardware_row(0, 60.0)], warm_up_s=0.0,
+        architecture_groups=("detector",), analysis_start_ns=0,
+    )
+    assert result["architecture_total"]["complete_timestamp_count"] == 0
+    assert result["architecture_total"]["rss_kib"]["all"]["n"] == 0
+    assert result["integrity"]["live_resource_roots_present_throughout_window"] is False

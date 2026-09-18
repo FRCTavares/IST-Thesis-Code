@@ -35,8 +35,8 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
    - #74 controller implementation and deterministic validation are complete; #50 owns the physical retain/reject decision.
 
 2. [ ] [#32 — Complete end-to-end runtime and onboard resource characterisation](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
-   - Reusable timing, provenance, selective-ReID workload, cache and resource instrumentation is complete, and the pre-#58 retained evidence gate is complete.
-   - Final closure still requires sustained integrated LIVE characterization of the mounted final Pi/camera/Hailo/controller system, with complete intervals rather than active-only statistics hiding stalls.
+   - Reusable timing, provenance, selective-ReID workload and cache instrumentation is complete; the pre-#58 retained evidence gate is complete. Final live PID-tree CPU/RSS attachment and analysis tooling is implemented and locally validated, without changing production process ownership.
+   - Final closure still requires the sustained integrated LIVE characterization of the mounted final Pi/camera/Hailo/controller system after a nominal 60 s warm-up and 20-minute active measurement, with complete intervals rather than active-only statistics hiding stalls. Tooling validation is not final system evidence.
    - Report final latency semantics, cadence/jitter/drop behavior, selective-ReID workload, CPU/RSS, raw-image/transport cost, temperature/clocks/throttling, accelerator contention and power where reproducibly available.
    - Final characterization must use the controller configuration retained after #50/#74 and the appearance-source resolution retained after #64.
    - Freeze the thesis-facing runtime/resource table before closing this issue.
@@ -63,7 +63,7 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 2. [ ] [#67 — Complete thesis experiments, results, and discussion draft by 30 September 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/67) — ACTIVE THESIS DEADLINE
    - Produce the complete supervisor-ready dissertation draft by 30 September within the applicable MEEC page limit.
    - #27 and #58 final evidence are now available and should be incorporated.
-   - Remaining evidence-dependent results/discussion include the bounded #64 study, #50/#74 physical system evidence and #32 final onboard characterization.
+   - Remaining evidence-dependent results/discussion include the #64 VGA-versus-HD resolution decision, #50/#74 physical system evidence and #32 final onboard characterization.
    - Integrate explicit limitations through #41 and final figures/evidence tables through #42.
    - Do not invent conclusions for evidence that is still pending.
 
@@ -82,7 +82,7 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 
 5. [ ] [#41 — Write explicit thesis limitations from final evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/41) — EVIDENCE DEPENDENT
    - Maintain explicit limitations covering small/poor-quality crops, tracker dependence, appearance-domain gap, finite held-out scope, calibration dependence, target absence, long-gap recovery limits, embedded resource constraints and the absence of formal safety guarantees.
-   - #27/#58 evidence is complete; final wording still depends on #64, #50/#74 and #32.
+   - #27/#58 evidence is complete; final wording still depends on the #64 retained-resolution decision, #50/#74 and #32.
    - Report negative results and rejected mechanisms rather than hiding them.
 
 6. [ ] [#42 — Complete final thesis figures and evidence tables](https://github.com/FRCTavares/IST-Thesis-Code/issues/42) — IN PROGRESS
@@ -99,16 +99,13 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 
 ## P2 — Deferred maintenance and bounded supporting evidence
 
-1. [ ] [#64 — Resolve high-resolution appearance crops on representative small-target UAV footage](https://github.com/FRCTavares/IST-Thesis-Code/issues/64) — CVAT PACKAGE READY / HUMAN REVIEW PENDING
-   - The earlier controlled native-HD experiment showed no benefit for a close, large target and therefore did not answer the intended small/distant-person question.
-   - A representative drone-POV native-FHD development master was captured on 15 September and independently backed up.
-   - Exact source-frame timing can now be preserved from the MKV into a native-MCAP `zstd_fast` `/camera/image_raw` source bag; the adapter and matched-resolution variant storage path have focused tests and an end-to-end smoke, but the real FHD comparison has not yet been run.
-   - Before inspecting detector/TIM comparative outcomes, representative geometry is predeclared from human target boxes: the capture must contain at least five consecutive target-visible frames at `<=132 px` target height in native 1920x1080 imagery; full height statistics and the stronger median-`<60 px` small-target diagnostic must also be reported.
-   - The 2208-frame exact-FHD ordered-image CVAT package is prepared; conversion remains fail-closed until complete human physical-role and semantic-interval review is returned.
-   - Complete one bounded matched-resolution study from that unchanged master, comparing higher-resolution appearance evidence against its derived lower-resolution condition while keeping detector/tracker/TIM interpretation fixed.
-   - Keep Hailo detector inference at 640x640. Do not turn this into detector redesign, a new ReID-model study or an outcome-driven change to the completed H01–H03 prospective evaluation.
-   - If no material difficult-event identity benefit appears, record the negative result and close #64.
-   - #64 must be resolved before final #32 characterization because the retained appearance-source resolution changes the final onboard resource profile.
+1. [ ] [#64 — Resolve high-resolution appearance crops on representative small-target UAV footage](https://github.com/FRCTavares/IST-Thesis-Code/issues/64) — VGA DEFAULT / HD QUALIFICATION PENDING
+   - The current verified live default remains VGA 640x480. Detector Hailo inference remains fixed at 640x640 regardless of camera source resolution.
+   - Previous Stage-A runs found VGA and HD 1280x720 live-feasible for the tested short path, while FHD 1920x1080 failed appearance freshness (480/937 stale skips, 51.2%). FHD is excluded from active deployment consideration.
+   - Preserve the 15 September FHD development master, conversion tooling and prepared CVAT package as archive evidence. Its human geometry gate and comparative TIM-MARS outcome were not inspected; do not invent either result or silently erase the preparation history.
+   - First run the predeclared bounded VGA-versus-HD live qualification in `docs/issues/p064-high-resolution-appearance-source.md`, using the thesis-relevant ByteTrack + TIM-MARS path and raw ByteTrack/DeepSORT references. Keep MAVROS authority and aircraft motion off for the qualification.
+   - If HD fails the live feasibility gate, retain VGA. If HD passes, runtime feasibility alone does not justify promotion: the earlier controlled R3 target was close/large and showed no material native-HD identity benefit. A representative small/distant native-HD matched appearance-pixel identity test is still required before any default change.
+   - Keep the completed H01–H03 held-out evaluation, frozen detector/tracker/TIM settings and existing ReID model unchanged. Resolve #64's retained source resolution before final #32 mounted-system characterization.
 
 2. [ ] [#20 — Rename misleading TIM-MARS geometry fields](https://github.com/FRCTavares/IST-Thesis-Code/issues/20) — MAINTENANCE / NON-BLOCKING
    - The terminology problem remains valid but is not a current scientific blocker.

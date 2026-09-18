@@ -27,7 +27,7 @@ provenance.
 
 ## Measured controller path
 
-The core process-group CPU/RSS total contains:
+The core CPU/RSS total contains:
 
 - detector/perception;
 - tracker;
@@ -44,23 +44,34 @@ without claiming physical closed-loop flight behavior.
 
 ## Measurement window
 
-Resource and hardware samplers start before playback so sampler startup can be
-validated. Their entire lifetime is not the Issue #32 statistical population.
+For the final mounted Pi/camera/Hailo/controller system, start the production
+live stack with the retained #64 source resolution and retained #50/#74
+controller configuration. Attach
+`tools/experiments/measure_p032_live_resources.py` to that run's `pids.txt`
+without changing launcher ownership. The helper starts the PID-tree and
+hardware samplers, waits for first samples, records monotonic start/end bounds,
+then finalizes and analyses both streams. Its default group list is detector,
+tracker, TIM-MARS and controller; every requested live root must be present.
+Retain the live run's configuration/recording provenance alongside the resource
+measurement provenance. Do not use the historical process-group sampler against
+these PIDs as though PID and process-group ID were interchangeable.
 
-The runner records a monotonic timestamp immediately before starting playback
-and another immediately after playback completes. The Issue #32 analyzer
-retains only samples within those explicit bounds.
+Use a nominal 20-minute active measurement after a 60-second warm-up, for a
+nominal 21-minute bounded run. After the retained live stack is healthy, attach
+from a second shell with:
 
-The default warm-up exclusion is 60 seconds. Every retained report contains:
+    python3 tools/experiments/measure_p032_live_resources.py \
+      --run-dir ros2_ws/log/live_stack/<run-id> \
+      --duration-s 1260 --warm-up-s 60
 
-- the complete active-playback population;
-- the post-warm-up steady-state population.
-
-The planned baseline sustained measurement is 20 minutes of active replay after
-tooling preflight. Extend the run if the final system has not reached a stable
-thermal/memory regime. Architecture-overhead claims requiring run-to-run
-variation should use matched repetitions rather than treating samples from one
-run as independent repetitions.
+Resolve `<run-id>` from the exact production run; do not attach to a stale
+`latest` link. Keep the normal stack running until the attachment finishes,
+then stop it with its normal operator command. The report includes both the complete bounded
+population and the post-warm-up population. Inspect full intervals, cadence
+and stalls; active-only averages cannot hide pauses. Extend or repeat if the
+system has not reached a stable thermal/memory regime. Architecture-overhead
+claims requiring run-to-run variation need matched repetitions rather than
+pretending that samples from one run are independent repetitions.
 
 ## Required provenance
 
@@ -80,7 +91,7 @@ Each retained run must identify at least:
 - resource/hardware sampling intervals;
 - warm-up duration;
 - exact analysis monotonic start/end bounds;
-- active core architecture process groups;
+- active core architecture groups and raw resource sampling mode;
 - relevant publishers, subscribers and recorders.
 
 ## Required final outputs
@@ -137,7 +148,9 @@ useful for memory, clock and thermal interpretation.
 ## Claim boundaries
 
 Replay resource characterization measures computation under a controlled
-source. It is not a substitute for physical closed-loop validation.
+source. The final mounted-system characterization uses the production live
+stack, but passive or bench operation still does not establish physical
+closed-loop performance.
 
 Core-voltage telemetry is not power.
 

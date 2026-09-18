@@ -1,8 +1,110 @@
 # Issue #64 — High-Resolution Appearance-Source Evaluation
 
-Operational execution for the remaining drone-POV capture is condensed in
-`docs/flight/README.md`. This document retains the detailed experimental
-history, methodology and frozen R3 evidence.
+This document places the current live resolution qualification before the
+historical experiments and frozen R3 evidence. The later FHD preparation
+sections are retained for provenance, not active deployment selection.
+
+## Current VGA-versus-HD live qualification — predeclared 18 September 2026
+
+The verified live default remains **VGA 640x480**. FHD failed the Stage-A live
+appearance-freshness check (480/937 stale skips, 51.2%) and is outside the
+current deployable envelope. The 15 September FHD master, conversion tooling
+and prepared CVAT package below remain development/archive evidence. No FHD
+human-geometry gate or comparative TIM-MARS outcome has been inspected; the
+older FHD plan below is retained as history and is not the active deployment
+study. Detector Hailo inference remains fixed at 640x640 for both live modes.
+
+This qualification asks whether HD 1280x720 is sufficiently live-feasible to
+merit a representative small/distant identity-benefit test. It is development
+evidence, not the final sustained #32 characterization and not a default
+resolution change. Use the normal integrated live launcher with the same
+YOLOv8s HEF, frozen tracker/TIM parameters, dashboard/recording profile and
+camera FPS in both modes. Keep MAVROS mirroring and aircraft control off. The
+camera's native capture geometry and `/camera/dashboard` geometry must be
+verified for each run; do not infer source geometry from 640x640 inference.
+Avoid unnecessary camera mode transitions and the active preflight stream probe
+because of the documented TEVS restart incident.
+
+### Frozen minimal live matrix
+
+| Configuration | VGA | HD | Purpose |
+| --- | --- | --- | --- |
+| ByteTrack + TIM-MARS | two runs | two runs | Primary selected-person live path, appearance freshness and validated-target timing. |
+| ByteTrack raw | one run | one run | Tracker-only reference and source-resolution cost without TIM-MARS. |
+| DeepSORT raw | one run | one run | Integrated appearance-tracker reference retained in #58. |
+
+Run the four VGA cells as one resolution block, then the four HD cells after a
+clean camera transition. Within each block the fixed order is TIM run 1, raw
+ByteTrack, raw DeepSORT, TIM run 2. Each run has a 60 s warm-up followed by 180 s
+of active observation; retain all startup and active traces, and calculate
+warm-up and steady-state populations separately. A failed launch remains a
+recorded attempt and cannot be silently replaced. Repeat only for a declared
+camera fault or invalid collection, retaining the failed attempt and reason.
+The two TIM runs test short-run repeatability; samples within one run are not
+independent repetitions. Keep scene, lighting and people as comparable as
+practical, but do not use this live matrix to infer identity benefit from
+unmatched human motion.
+
+Use `--res vga` or `--res hd` with `--record-structured-visual --no-control`
+and the default dashboard publisher load. Set `--tracker bytetrack --target-memory mars` for TIM cells, `--tracker bytetrack --target-memory off`
+for raw ByteTrack and `--tracker deepsort --target-memory off` for raw DeepSORT.
+Do not pass `--control-mavros`, `--field-record`, `--record-raw`, or the active
+camera preflight stream probe. In a second shell, resolve the launched run's
+`ros2_ws/log/live_stack/latest` symlink to its exact run directory and attach:
+
+    python3 tools/experiments/measure_p032_live_resources.py \
+      --run-dir ros2_ws/log/live_stack/<run-id> \
+      --architecture-groups detector,tracker,tim \
+      --duration-s 240 --warm-up-s 60
+
+Use `detector,tracker` for raw tracker cells. Start the attachment after the
+stack reaches healthy publication; stop the stack normally after the helper
+finishes and the structured recorder finalizes. If visual recording itself
+changes the measured behavior, retain that observation as the configured
+qualification load rather than changing only one resolution's recorder profile.
+
+Capture native structured timing/status and process-tree CPU/RSS plus hardware
+health with explicit bounds. The controller is absent under `--no-control`.
+Keep the same recorder and dashboard load across cells and record their enabled
+states. Retain exact invocation, model/config hashes,
+OS/Hailo versions, source geometry, run IDs, raw samples, sampler integrity and
+thermal flags. The resource totals exclude dashboard and recorders. Do not
+interpret this short qualification as final mounted-system resource evidence.
+
+For every cell report detector and tracker publication rates, p50/p95/p99 and
+maximum interarrival gaps, detector `e2e_det_ms` p95, tracker `track_ms` p95,
+CPU/RSS and temperature/ARM-frequency/throttle traces, memory availability,
+root losses, and camera/ROS errors. For TIM cells additionally report validated
+`/target_memory_mars` output rate, `e2e_validated_target_ms` p95, TIM processing
+p95, appearance-image age p50/p95/p99, stale-image skip numerator/denominator,
+backend calls/valid embeddings and status coverage. Use host-monotonic causal
+Timing-v4 deltas for latency; source-header time is metadata and must not be
+subtracted from host-monotonic time without verified clock comparability. Raw
+tracker cells have tracker-stage timing only: no TIM-MARS validated-authority
+latency or controller-authority acceptance metric is assigned to them.
+
+HD passes this **runtime gate** only if every valid HD cell has its required
+roots and complete measurement intervals, no sustained camera/ROS failure, no
+unexplained thermal throttling, detector and tracker effective rates at least
+15 Hz, and no steady-state publication gap of 0.5 s or longer. Both HD TIM
+runs must also reach at least 15 Hz validated-target output, p95
+`e2e_validated_target_ms` at most 200 ms, and stale appearance-image skips at
+most 10% of eligible attempts. This 10% development ceiling separates the
+previous HD 5.3% observation from the FHD 51.2% failure; the full age
+distribution remains reported against the configured 250 ms image-age limit.
+Investigate any memory decline, root loss, or service error before accepting a
+run. Report matched VGA results and resource increases even if HD passes; do
+not invent a CPU/RSS threshold or hide long gaps in active-only averages.
+
+If HD fails, retain VGA and report the failure. If HD passes, **do not promote
+it from runtime evidence alone**. The existing R3 target occupied about 550 px
+of a 720 px image and showed no material native-HD benefit. Promotion still
+requires a representative native-HD small/distant sequence and a matched
+appearance-pixel comparison under the existing physical-target safety and
+materiality contract, with common detector/tracker evidence. A positive
+identity result must not alter completed H01–H03 evaluation or frozen models.
+Until that evidence and a documented retain/reject decision, VGA remains the
+live default and #64 stays open.
 
 ## 0. Experimental Status and Decision Logic
 
@@ -12,9 +114,13 @@ The Issue #64 question is:
 > robustness while the complete onboard pipeline still satisfies the
 > real-time system requirements?
 
-The detector is not a resolution variable in this experiment. YOLOv6n Hailo
-inference remains fixed at 640x640. Source resolution changes the image retained
-for source-coordinate tracking and TIM-MARS appearance crops.
+For the historical R3 controlled experiment below, the detector was not a
+resolution variable: YOLOv6n Hailo inference remained fixed at 640x640. That
+statement applies to the frozen R3 evidence only. The active 18 September
+VGA-versus-HD live qualification above uses the current YOLOv8s Hailo path while
+still keeping detector inference fixed at 640x640. Source resolution changes the
+camera/source imagery available to tracking and appearance processing, not the
+detector input geometry.
 
 ### Stage A live-feasibility smoke — 27 August 2026
 
@@ -323,7 +429,7 @@ The master is valid for Gate 2 only if every retained source image is genuine
 1280x720 imagery. Do not use interpolation or an upsampled source as
 high-resolution evidence.
 
-## 5. Representative Drone-POV Capture — Acquired 15 September 2026
+## 5. Archived FHD representative-study preparation — acquired 15 September 2026
 
 The required field acquisition has now been performed as a direct native-FHD
 development master rather than as a second ROS source bag:
@@ -350,11 +456,15 @@ from the Stage-7 H01/H02/H03 640x480 prospective held-out set and must not be
 used to change the frozen TIM-MARS algorithm, tracker, thresholds, models or
 held-out evaluation semantics.
 
-### Remaining matched comparison
+### Archived matched-comparison plan — superseded before outcome inspection
 
-The acquisition gate is closed, but the scientific Issue #64 decision is not.
+The acquisition gate was closed, but this FHD comparison was superseded before
+human-geometry or comparative TIM-MARS outcome inspection because FHD had
+already failed the live appearance-freshness gate and is no longer an active
+deployment candidate. The following steps are retained only as provenance of the
+predeclared plan; they are **not instructions to execute this study now**.
 
-Before making a source-resolution recommendation:
+The superseded plan was:
 
 1. review the retained frames and quantify whether the target reaches the
    intended representative small-person drone-POV geometry;
@@ -464,21 +574,11 @@ The generated conversion configuration remains deliberately
 gate outcome, detector result, tracker result or comparative TIM-MARS result
 has been inspected yet.
 
-## Final rule
+## Current decision rule
 
-Current evidence establishes:
-
-- VGA is live-feasible;
-- HD is live-feasible;
-- native FHD is unsuitable for the existing live ROS appearance-freshness path,
-  but direct native-FHD MJPEG acquisition is viable for an offline matched
-  appearance-resolution experiment;
-- close-range R3 shows no material native-HD identity benefit over the exact
-  640x360 control;
-- a representative-intent drone-POV FHD master was acquired on 15 September
-  2026 and independently hash-verified;
-- the target-size adequacy and matched FHD-versus-derived-HD result are not yet
-  known.
-
-No general source-resolution recommendation is made until that matched
-evaluation is complete.
+The 15 September FHD master and prepared CVAT materials remain archived
+preparation, with no claimed geometry or TIM-MARS outcome. FHD is excluded from
+active deployment consideration by its measured live freshness failure. The
+active VGA-versus-HD live qualification above precedes any further native-HD
+small/distant identity test. VGA remains the verified default until both the
+runtime gate and representative identity-benefit gate support promotion.

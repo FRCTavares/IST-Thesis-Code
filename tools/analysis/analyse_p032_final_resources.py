@@ -14,6 +14,10 @@ from typing import Any
 
 
 SCHEMA = "p032_final_resource_analysis_v1"
+KNOWN_RESOURCE_SAMPLE_SCHEMAS = {
+    "p044_process_group_sample_v1",
+    "p032_live_process_tree_sample_v1",
+}
 DEFAULT_ARCHITECTURE_GROUPS = (
     "detector",
     "tracker",
@@ -258,6 +262,7 @@ def build_architecture_totals(
 
         if not included or any(
             group not in group_rows
+            or group_rows[group].get("root_identity_alive") is False
             for group in included
         ):
             continue
@@ -445,6 +450,22 @@ def analyse(
         start_ns=start_ns,
         end_ns=end_ns,
     )
+    # CPU percentages describe the interval ending at the sample timestamp.
+    # Its first in-window interval may begin before the explicit start bound.
+    # RSS remains a point-in-time value and is retained.
+    first_group_samples: set[str] = set()
+    bounded_resources: list[dict[str, Any]] = []
+    for record in sorted(
+        resource_window,
+        key=lambda item: int(item["sample_monotonic_ns"]),
+    ):
+        group = str(record.get("group", ""))
+        if group not in first_group_samples:
+            first_group_samples.add(group)
+            record = {**record, "cpu_percent": None}
+        bounded_resources.append(record)
+    resource_window = bounded_resources
+
     hardware_window = records_in_window(
         hardware_records,
         timestamp_key="monotonic_ns",
@@ -500,8 +521,7 @@ def analyse(
         "hardware": hardware,
         "integrity": {
             "resource_records_have_known_sample_schema": all(
-                record.get("schema")
-                == "p044_process_group_sample_v1"
+                record.get("schema") in KNOWN_RESOURCE_SAMPLE_SCHEMAS
                 for record in resource_window
             ),
             "hardware_records_have_known_sample_schema": all(
@@ -511,6 +531,13 @@ def analyse(
             ),
             "architecture_has_complete_samples": (
                 architecture["complete_timestamp_count"] > 0
+                and not architecture["missing_requested_groups"]
+            ),
+            "live_resource_roots_present_throughout_window": all(
+                record.get("root_identity_alive") is True
+                for record in resource_window
+                if record.get("schema")
+                == "p032_live_process_tree_sample_v1"
             ),
             "steady_state_resource_samples_present": any(
                 group["cpu_percent"]["steady_state"]["n"] > 0

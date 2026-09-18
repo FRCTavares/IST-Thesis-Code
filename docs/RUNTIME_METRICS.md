@@ -177,17 +177,41 @@ Keep these quantities conceptually separate:
 
 ## Final sustained resource characterization
 
-Issue #32 final resource reporting is produced from the retained raw
-process-group and hardware-health JSONL streams. The historical P044 sampler
-schemas are not modified. `tools/analysis/analyse_p032_final_resources.py`
-provides the Issue #32 reporting layer and emits
-`p032_final_resource_analysis_v1`.
+Issue #32 accepts two distinct raw resource modes:
 
-The analyzer accepts explicit monotonic timestamps captured immediately before
-playback starts and immediately after playback finishes. Samples outside those
-bounds are excluded, so sampler pre-roll and post-roll cannot contaminate the
-active-run distribution. Reports retain both the complete active-playback
-population and the steady-state population after the configured warm-up.
+- Historical/replay process groups: `p044_process_group_sample_v1` from
+  `tools/experiments/sample_process_groups.py`. It samples Linux process-group
+  membership and retains its historical schema.
+- Production live PID trees: `p032_live_process_tree_sample_v1` from
+  `tools/experiments/sample_p032_live_process_trees.py`. The production launcher
+  tracks exec'd process roots in `pids.txt`; it does not allocate one process
+  group per node. The live sampler pins each root by PID plus Linux start time
+  and follows its current descendants without changing launcher ownership or
+  shutdown behavior. A lost root invalidates a complete live architecture
+  sample. Short-lived descendants that vanish between samples and children
+  reparented away from the root cannot be recovered from `/proc` snapshots.
+
+Both resource streams can feed `tools/analysis/analyse_p032_final_resources.py`
+with the unchanged `p044_hardware_health_sample_v1` hardware-health stream.
+The output schema is `p032_final_resource_analysis_v1`; the two resource
+collection methods must remain identified separately in provenance. Live runs
+use the default-off `tools/experiments/measure_p032_live_resources.py` attachment
+against an existing `ros2_ws/log/live_stack/<run-id>/pids.txt`. It starts both
+samplers, records explicit monotonic measurement bounds, finalizes them, runs
+analysis and retains raw JSONL, sampler summaries, provenance and analysis under
+that run's `p032_resources/` directory. It requires every requested root and
+rejects identity loss and sampler coverage gaps. The launcher itself does
+not start resource sampling.
+
+The analyser excludes samples outside explicit monotonic bounds, so sampler
+pre-roll and post-roll do not contaminate the measurement. Reports retain both
+the complete bounded population and the steady-state population after warm-up.
+CPU uses Linux user plus system ticks divided by elapsed monotonic time:
+100% means one fully occupied logical CPU, and a multi-core process tree may
+exceed 100%. The first in-window CPU interval is excluded because it may start before the
+analysis bound. RSS is summed resident memory of current members; shared pages
+can appear in more than one process's RSS and
+this sum is not unique physical memory.
 
 For finite numeric metrics the report retains `n`, mean, population standard
 deviation, minimum, p50, p90, p95, p99, and maximum. Architecture CPU and RSS
@@ -195,9 +219,12 @@ totals are calculated only at timestamps where all requested core groups have
 a sample, preventing partial sums from being interpreted as whole-path
 measurements.
 
-The core controller-path resource total contains detector, tracker, TIM-MARS
-when active, and controller when active. Dashboard, replay, recorder and
-sampling/analysis helpers are excluded from that core total. Their enabled
+The core controller-path resource total maps live `perception_camera` to
+`detector`, `tracker` to `tracker`, `target_memory_mars` to `tim`, and `control`
+to `controller`. Include TIM-MARS and controller only when active. The default
+live attachment requires all four groups; an explicit group list records a
+smaller architecture. Dashboard, replay, recorder and sampling/analysis
+helpers are excluded from that core total. Their enabled
 state remains part of run provenance where relevant, and they must not be
 silently conflated with the controller-path compute budget.
 
