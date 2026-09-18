@@ -12,7 +12,8 @@ experiment evidence.
 
 | Path | Role |
 | --- | --- |
-| `tim_mars_versions.md` | Current TIM-MARS algorithm scope and version evolution. |
+| `tim_mars_final_method_authority.md` | Stage-7 implementation-backed method, parameters and test map for Chapter 4. |
+| `tim_mars_versions.md` | TIM-MARS scope and version evolution. |
 | `tim_mars_evidence_versions.md` | Boundary between current runtime identity and frozen evidence versions. |
 | `coordinate_image_time_contract.md` | Live coordinate, resize, and image-time contract. |
 | `output_freshness_contract.md` | Controller-facing output freshness semantics. |

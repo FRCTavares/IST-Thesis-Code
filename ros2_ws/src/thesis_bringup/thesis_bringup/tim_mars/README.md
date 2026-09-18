@@ -1,6 +1,6 @@
 # TIM-MARS selected-target memory
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-09-18
 
 TIM-MARS is the selected-target memory layer used for safer vision-based UAV
 person-following perception. It sits above detection, multi-object tracking, and
@@ -17,8 +17,9 @@ The canonical algorithmic parameter set is stored in:
 
 - `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
 
-Its current SHA-256 and the report/commit claim boundaries are recorded in:
+The detailed frozen method and report/commit claim boundaries are recorded in:
 
+- `docs/algorithm/tim_mars_final_method_authority.md`
 - `docs/algorithm/tim_mars_evidence_versions.md`
 - `docs/data/catalogue/tim_evidence_versions.json`
 
@@ -83,7 +84,7 @@ State meanings:
 - LOCKED: the selected target is considered safe to publish.
 - UNCERTAIN: the target is temporarily unreliable, usually after missed or weak evidence.
 - LOST: the target has been missing long enough that reacquisition must be conservative.
-- REACQUIRED: a candidate has been accepted after uncertainty/loss but needs confirmation before normal locked publication.
+- REACQUIRED: a recovery proposal is pending confirmation; it is not controller-valid or committed to trusted memory.
 
 ## Candidate scoring
 
@@ -97,8 +98,10 @@ compares each candidate against the remembered selected target using:
 - optional positive appearance similarity,
 - optional hard-negative appearance similarity.
 
-Geometry is always the primary guard. Appearance is used only when configured
-and when geometry makes the candidate plausible enough.
+Local acceptance uses a geometry minimum before appearance can affect ranking.
+The enabled long-gap global recovery deliberately bypasses stale geometry and
+requires protected identity evidence. The exact gates are in the final method
+authority.
 
 TIM-MARS does not add a velocity estimator or motion-prediction model. It
 compares candidates with the last trusted bbox; motion models inside ByteTrack,
@@ -150,8 +153,10 @@ TIM-MARS includes several safeguards for selected-target recovery:
 - same-ID relief: the previous tracker ID can be accepted with reduced threshold.
 - short-gap protection: after a brief miss, new IDs can be suppressed while the old ID has a grace window to return.
 - rank-aware reacquisition: in lost/uncertain states, candidates can be ranked by appearance evidence rather than raw total score alone.
-- absence-aware recovery: after longer absence, new-ID recovery requires stronger geometry and appearance evidence.
-- candidate-belief confirmation: plausible new candidates can require repeated observation before acceptance.
+- global protected-identity recovery: after prolonged LOST, a sufficiently
+  distinct protected match can recover without the stale local geometry gate.
+- absence-aware recovery and candidate-belief confirmation: development
+  policies present in code but disabled in the canonical configuration.
 - hard-negative memory: distractor appearance prototypes observed while locked can suppress wrong-target recovery.
 
 ## ROS role

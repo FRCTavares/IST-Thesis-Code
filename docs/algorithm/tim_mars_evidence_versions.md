@@ -1,11 +1,15 @@
 # TIM-MARS evidence-version map
 
-Date: 2026-07-23. Current runtime identity refreshed 2026-09-08.
+Historical development map opened 2026-07-23; held-out status clarified 2026-09-18.
 
-The machine-readable authority is
-`docs/data/catalogue/tim_evidence_versions.json`. A TIM-MARS result is valid
-only for the configuration hash, algorithm commit, model, bags, annotations,
-oracles, and claim boundary recorded by its evidence version.
+The machine-readable authority for the **historical development rows below** is
+`docs/data/catalogue/tim_evidence_versions.json`. The later Stage-7
+prospective H01–H03 authority is
+`docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.{md,json}`;
+its completed results and retained execution/repair history are indexed by
+`docs/results/selected_target_tracking/README.md`. A result is valid only
+for its recorded configuration hash, algorithm commit, model, bags,
+annotations, evaluator and claim boundary.
 
 Two different things are recorded separately and must not be conflated:
 
@@ -15,10 +19,10 @@ Two different things are recorded separately and must not be conflated:
   a particular result set was evaluated with, kept immutable (the version map
   below).
 
-The current canonical runtime is **not** the configuration of any frozen
-evidence version. It has moved forward from the latest frozen evidence
-version through narrowly-scoped parameter promotions, each with its own
-tracked evidence (see "Current canonical runtime vs frozen evidence").
+The canonical runtime is **not** the configuration of the historical
+development rows in this map. It was subsequently frozen for Stage-7
+H01–H03 before held-out access. The transition table below describes
+pre-freeze development promotions, not changes after held-out access.
 
 ## Current canonical runtime
 
@@ -29,25 +33,29 @@ tracked evidence (see "Current canonical runtime vs frozen evidence").
 - Established by commit:
   `79f11b631688889bf5ffbeb3c16ef543a53f9973` (2026-09-08), the merge of PR #101 promoting the
   Stage-3 AB-16 source-aware adaptive positive-memory policy.
-- Latest frozen evidence version: `p028_dual_oracle_development` (evaluated
-  with an **earlier** configuration, `e7620313…` — see the version map).
+- Latest version **in this historical development map**:
+  `p028_dual_oracle_development` (earlier configuration `e7620313…`).
+- Later Stage-7 prospective held-out freeze: canonical SHA `b0a98334…`,
+  algorithm authority commit `79f11b63…`; see the Stage-7 record above.
 
 "Canonical" means the current reproducible runtime configuration. It does not
-mean that every historical report used the same bytes, that the current
-configuration has been re-evaluated end-to-end as a new evidence version, or
-that it has a universal safety guarantee.
+mean that every historical report used the same bytes, that the Stage-7
+execution was a flawless single run, or that the algorithm has a universal
+safety guarantee. The final 12-cell architecture comparison
+is explicitly post-access protocol-repair evidence.
 
-## Current canonical runtime vs frozen evidence
+## Canonical runtime versus earlier development evidence
 
-The latest frozen evidence version, `p028_dual_oracle_development`, was
+The latest version in the development map, `p028_dual_oracle_development`, was
 evaluated at algorithm commit `c5ba9d30…` and configuration `e7620313…`. Since
 then the canonical runtime advanced through six recorded promotions. The
 latest is the TIM-MARS Stage-3 AB-16 source-aware adaptive positive-memory
 production promotion; the two before it are the reviewed Issue #89
 comparison-versus-memory-update eligibility change and Issue #90 long-gap
-global appearance reacquisition. These remain development/live acceptance
-evidence and do not constitute H01--H03 held-out evidence. The full ordered
-list of promotions is in the machine-readable map; the table below carries
+global appearance reacquisition. Those promotions were development/live
+acceptance evidence at the time; the subsequent Stage-7 freeze and H01–H03
+evaluation have their own separate authority. The full ordered list of
+promotions is in the machine-readable map; the table below carries
 the earliest three and the AB-16 promotion.
 
 | Parameter | Change | Promotion commit | Evidence | Claim boundary |
@@ -71,7 +79,8 @@ The machine-readable map now also tracks the active long-gap recovery controls:
 | P0.17 dual-oracle development | `c5ba9d30997e47c7f555baee5257bc687698508a` | `e7620313be428cac4d2d1f5595dc48b1f6127a43c22f1b4149049beba1e207ff` | Improves over raw; not zero-wrong and not held-out |
 
 These rows are immutable historical fingerprints. The current canonical runtime
-is not one of them — it is `b0a98334…` (see "Current canonical runtime").
+is not one of these **development** rows — it is `b0a98334…` and is
+covered by the later Stage-7 freeze.
 
 All versions use MARS model SHA-256
 `e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1`.

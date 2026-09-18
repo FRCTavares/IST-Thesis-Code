@@ -24,9 +24,10 @@ of publishing a likely distractor.
 
 ## Final implemented components
 
-The frozen component matrix is
-`docs/data/ablations/tim_mars_component_ablation_v1.yaml`. The final row
-contains these six identity-policy components:
+The historical development component matrix is
+`docs/data/ablations/tim_mars_component_ablation_v1.yaml`. Its final row
+records these six identity-policy components; the Stage-7 implementation map
+is `tim_mars_final_method_authority.md`:
 
 1. **Geometric memory and state hysteresis.** The last trusted ID, bbox,
    quality, missed-frame count, and finite state are retained. Candidate
@@ -81,8 +82,8 @@ must not be substituted for one another.
 - `LOCKED`: the selected target is trusted; output may be valid.
 - `UNCERTAIN`: evidence is ambiguous; output is suppressed.
 - `LOST`: safe target availability has expired; output is suppressed.
-- `REACQUIRED`: a recovery candidate was accepted but remains probationary
-  until confirmation.
+- `REACQUIRED`: a recovery proposal is pending confirmation; no candidate
+  has yet been committed as a controller-valid target.
 
 Freshness can invalidate an otherwise locked output when its source age exceeds
 the configured limit.
@@ -115,20 +116,21 @@ Composed rank-aware recovery with confirmation and added same-ID appearance
 hijack protection. These changes produced the current P0.17 configuration
 fingerprint.
 
-## Evidence result
+## Evidence status
 
-The current development result is not flawless:
+The Stage-7 H01–H03 held-out evaluation is complete. See
+`docs/results/selected_target_tracking/README.md` for the frozen prospective
+record and the retained first run, and
+`docs/results/selected_target_tracking/p058_heldout_architecture_comparison_20260916.md`
+for the final post-access protocol-repair 12-cell comparison. The latter must
+not be described as a flawless single-run prospective execution. DeepSORT
+and TIM-MARS have scenario-dependent strengths; neither dominates globally.
 
-- the optimistic spatial oracle reports `0.000 s` aggregate final wrong-target
-  output;
-- the conservative annotated-ID oracle reports `1.300 s`, including a visually
-  confirmed `0.100 s` May distractor handover around `41.3 s`;
-- both improve substantially over their corresponding raw baselines;
-- H01–H03 remain uncaptured and no final held-out claim exists.
-
-See
-`docs/results/selected_target_tracking/p028_wrong_oracle_audit.md`
-and the evidence-version map for the exact claim boundary.
+The earlier P0.28 development oracles reported 0.000 s optimistic-spatial
+wrong output and 1.300 s conservative annotated-ID wrong output, including
+a 0.100 s May distractor handover. Those are historical development results,
+not the H01–H03 authority. See `p028_wrong_oracle_audit.md` and the
+evidence-version map.
 
 ## Tracker dependence
 

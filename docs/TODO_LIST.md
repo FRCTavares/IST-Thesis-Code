@@ -79,10 +79,10 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
    - Integrate explicit limitations through #41 and final figures/evidence tables from the dissertation plan. The former #42 checklist is closed as subsumed by this issue and #39.
    - Do not invent conclusions for evidence that is still pending.
 
-4. [ ] [#40 — Write TIM-MARS method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40) — READY FOR WRITING
+4. [ ] [#40 — Write TIM-MARS method from the final implementation](https://github.com/FRCTavares/IST-Thesis-Code/issues/40) — METHOD SOURCE READY / CHAPTER 4 PENDING
    - The historical #89/#90 algorithm blocker is resolved and the final prospective TIM-MARS algorithm/configuration authority is frozen; Chapter 4 can proceed now.
-   - Final method prose must reflect the actual promoted implementation, including state transitions, trusted/protected appearance memory, hard-negative behavior, source-aware adaptive-memory update suppression, local/global reacquisition and controller-facing authority semantics.
-   - Keep algorithmic TIM-MARS method claims separate from the later closed-loop #50 systems experiment.
+   - The implementation-backed method authority and behaviour-to-test matrix are in `docs/algorithm/tim_mars_final_method_authority.md`. They reflect the promoted Stage-7 configuration and separate algorithmic authority from #50 physical evidence.
+   - Remaining closure step: write and review dissertation Chapter 4 against that map, verify its figures/equations and link the reviewed thesis section/commit in #40. The thesis-report source is not in this Pi repository.
    - The historical algorithm blocker is resolved and the GitHub blocked label has been removed.
 
 5. [ ] [#41 — Write explicit thesis limitations from final evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/41) — EVIDENCE DEPENDENT
