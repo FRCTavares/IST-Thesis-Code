@@ -8,6 +8,12 @@ Open executable issues: **9**.
 
 Last reconciled with GitHub: **18 September 2026**.
 
+**Physical access blocked until 22 September 2026:** execute #64 → #50 →
+#32 in that order using `docs/flight/22-september-evidence-plan.md`. #50 stays
+P0, #64 stays P1 and is a prerequisite to #32. Remote writing for #40/#66/
+#67/#41 can proceed; #39 waits for the retained physical decisions and runtime
+evidence.
+
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules

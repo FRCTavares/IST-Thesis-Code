@@ -1,5 +1,11 @@
 # Issue #64 — High-Resolution Appearance-Source Evaluation
 
+**PHYSICAL ACCESS BLOCKED UNTIL 22 SEPTEMBER 2026** for the final
+representative VGA-versus-HD live decision. The camera interface enumerates
+remotely, but no representative physical scene or live capture was validated
+on 18 September. Execute the active protocol below before #50/#32; see
+`docs/flight/22-september-evidence-plan.md`.
+
 This document places the current live resolution qualification before the
 historical experiments and frozen R3 evidence. The later FHD preparation
 sections are retained for provenance, not active deployment selection.
@@ -46,8 +52,8 @@ practical, but do not use this live matrix to infer identity benefit from
 unmatched human motion.
 
 Use `--res vga` or `--res hd` with `--record-structured-visual --no-control`
-and the default dashboard publisher load. Set `--tracker bytetrack --target-memory mars` for TIM cells, `--tracker bytetrack --target-memory off`
-for raw ByteTrack and `--tracker deepsort --target-memory off` for raw DeepSORT.
+and the default dashboard publisher load. Set `--tracker bytetrack --mem mars` for TIM cells, `--tracker bytetrack --mem off`
+for raw ByteTrack and `--tracker deepsort --mem off` for raw DeepSORT.
 Do not pass `--control-mavros`, `--field-record`, `--record-raw`, or the active
 camera preflight stream probe. In a second shell, resolve the launched run's
 `ros2_ws/log/live_stack/latest` symlink to its exact run directory and attach:

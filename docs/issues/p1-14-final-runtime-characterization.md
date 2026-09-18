@@ -6,6 +6,11 @@ This file freezes the execution and reporting protocol for the final promoted
 onboard runtime characterization. Preparing this protocol does not create final
 evidence and does not close Issue #32.
 
+**PHYSICAL ACCESS BLOCKED UNTIL 22 SEPTEMBER 2026** for the final mounted
+measurement. Run only after the #64 and #50 retain/reject decisions; use
+`docs/flight/22-september-evidence-plan.md` for the field sequence. Remote
+runner validation is not final integrated evidence.
+
 ## Dependency gate
 
 Retained final characterization begins only after:

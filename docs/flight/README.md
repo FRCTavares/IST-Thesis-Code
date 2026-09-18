@@ -1,9 +1,13 @@
 # Flight Day
 
-Last reviewed: 2026-09-17
+Last reviewed: 2026-09-18
 
 This is the canonical command sheet for the remaining physical flight work and
 the only current day-of-flight operator sheet.
+
+The 22 September sequence and frozen decisions for #64 → #50 → #32 are in
+[22-september-evidence-plan.md](22-september-evidence-plan.md). Physical
+execution remains blocked until the complete hardware is available.
 
 H01/H02/H03 source captures are already complete and are not part of this procedure.
 

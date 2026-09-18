@@ -5,13 +5,18 @@
 This is the detailed Issue #50 preparation record, not the day-of-flight
 operator sheet. Current flight-day authority is `docs/flight/README.md`.
 
-**NOT YET EXECUTABLE AS A RETAINED FLIGHT PROCEDURE.**
+**PHYSICAL ACCESS BLOCKED UNTIL 22 SEPTEMBER 2026.** The current retained
+flight commands are in `docs/flight/README.md`; the #64 → #50 → #32 field
+sequence and decision gates are in
+`docs/flight/22-september-evidence-plan.md`. No FCU is connected during the
+remote preparation period. These are prepared commands, not physical evidence.
 
 Issue #50 owns the current closed-loop aircraft validation. The archived P023
 documents are historical and must not be used as current launch instructions.
 
-Before a final #50 flight command is frozen, the following still require
-current-system verification:
+The following numbered checklist records the earlier pre-runbook preparation
+state. Software command/profile work is reflected in the current runbook;
+physical checks still require direct observation with the real FCU:
 
 1. provision and validate the approved AERONEXT fallback Wi-Fi profile;
 2. verify `ISR Aero.Next GCS` remains first-priority field Wi-Fi;

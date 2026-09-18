@@ -90,8 +90,8 @@ check_repository() {
             docs/data/splits/tim_mars_split_v4.json --verify-hashes 2>&1
     )"
     stage_rc=$?
-    if [[ "$stage_rc" -eq 0 ]] && grep -Fq 'final_ready=0/3' <<< "$stage_output"; then
-        pass "Stage-7 freeze: final_ready=0/3"
+    if [[ "$stage_rc" -eq 0 ]] && grep -Fq 'final_ready=3/3' <<< "$stage_output"; then
+        pass "Stage-7 freeze: final_ready=3/3"
     else
         fail "Stage-7 freeze validation" \
             "python3 tools/analysis/validate_tim_evaluation_split.py docs/data/splits/tim_mars_split_v4.json --verify-hashes"
