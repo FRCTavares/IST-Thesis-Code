@@ -145,6 +145,32 @@ still has an empty approved Pixhawk Wi-Fi fallback setting. #50's inherited
 fallback gate must be resolved with an explicitly approved profile before
 aircraft operation; do not invent a network profile or credentials.
 
+### Approved field-network fallback operator note
+
+Before #50 aircraft operation, bring the **explicitly approved AERONEXT
+local-router** network name/SSID, its NetworkManager connection-profile name,
+and the expected Pi IPv4 address/default route for that profile. The
+authorised operator provisions credentials in NetworkManager on the Pi;
+credentials do not belong in this repository or trial metadata. Enter only
+the approved **connection-profile name** as
+`THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION` in
+`/etc/default/thesis-host-health` (the file read by
+`tools/host/set_pi_network_mode.sh`). The primary remains
+`ISR Aero.Next GCS`; a management-rescue profile is not a field fallback.
+
+With the real FCU connected, validate both primary-available and
+primary-unavailable transitions using
+`sudo tools/host/set_pi_network_mode.sh pixhawk` and `status`.
+Record the active wlan0 connection, default route, `pixhawk-apm` on eth0
+without an eth0 default route, inactive Tailscale, Pixhawk ping/MAVROS
+connection and the field preflight result. Exercise the fail-closed case
+when neither approved field profile can activate, with the aircraft
+disarmed; retain the transition log and restore the primary after the test.
+Do not expose a password or PSK in retained output. The #64 no-control
+camera decision can proceed without this profile; #50 aircraft operation
+cannot proceed while this inherited fallback gate is unresolved. Do not
+substitute an unapproved Wi-Fi connection.
+
 Follow docs/flight/README.md in order. With Pixhawk Ethernet connected:
 
     sudo tools/host/set_pi_network_mode.sh pixhawk
