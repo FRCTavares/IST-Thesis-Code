@@ -2,6 +2,19 @@
 
 Status: frozen on 24 July 2026
 
+## Current evidence interpretation — 18 September 2026
+
+The questions below preserve the July research framing. H01–H03 have since
+been prospectively captured and evaluated under the Stage-7 freeze; #27 and
+#58 are closed. The comparison is scenario dependent, with TIM-MARS stronger
+on H01 re-entry and DeepSORT more available on H03. The canonical live
+selected-target path uses CPU MARS appearance embeddings with Hailo-8 person
+detection. #44 completed a separate Hailo appearance-offload study; that
+study does not mean Hailo ReID is the final controller-authoritative path.
+#32 still owns sustained integrated onboard feasibility, #50 physical
+closed-loop evidence, and #39 the final claim wording. Dated pre-capture
+statements below describe their historical stage.
+
 ## Main research question
 
 > Can a fully onboard RGB selected-person-following architecture combine computationally lightweight multi-object tracking with post-tracker identity validation to improve correct-target continuity and reduce controller-facing wrong-target publication during occlusions, crossings, temporary absences, re-entry, and tracker identity instability on a small UAV?
@@ -170,11 +183,11 @@ That evidence is:
 
 ### Final held-out evidence
 
-Issue #27 owns the prospective H01-H03 held-out recordings and remains
-schedule-blocked until September 2026.
-
-The final answer to the algorithmic subquestion must not be frozen before the
-held-out gate passes.
+Issue #27 completed the prospective H01–H03 evaluation. The 12-cell
+comparison and protocol-repair qualification are reviewed in
+`docs/results/selected_target_tracking/p058_heldout_architecture_comparison_20260916.md`.
+The final algorithmic claim remains bounded by three scenarios and the
+scenario-dependent DeepSORT trade-off.
 
 ### Onboard runtime evidence
 

@@ -1,5 +1,20 @@
 # Final Experiment Inventory
 
+## Current final H01–H03 architecture evidence
+
+The final selected-person comparison is the 12-cell H01–H03 result reviewed in
+`docs/results/selected_target_tracking/p058_heldout_architecture_comparison_20260916.md`
+with adjacent JSON. Its retained Pi report directory is
+`reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/`;
+`manifest_lock.json` and `run_provenance.json` bind the four architecture
+arms, source bags, frozen split/config/model hashes, evaluator and clean
+protocol-repair run commit. The first prospective and intermediate repair
+runs remain separately retained. Source identity and hashes are in
+`docs/data/splits/tim_mars_split_v4.json`; the active comparison contract is
+`docs/data/splits/tim_mars_final_comparison_v3.json`. The large report and
+source bags are local/archived artifacts rather than ordinary tracked files.
+See `docs/data/reproduce_final_results.md` for the current verifier.
+
 ## Naming note
 
 Several final evidence folders keep their historical `paper_final_*` names because they were generated for the submitted ROBOT2026 paper. These names are frozen for traceability; they should not be used as the naming pattern for new thesis reruns.

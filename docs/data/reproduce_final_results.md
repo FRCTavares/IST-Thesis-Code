@@ -4,7 +4,33 @@ This document records how the final thesis result artifacts are organized and ho
 to verify that the local repository contains the evidence used for the reported
 TIM-MARS evaluation.
 
-## Current reproducibility command
+## Current H01–H03 result and reproduction entrypoint
+
+The final selected-person architecture comparison is the frozen 12-cell
+H01–H03 result in
+`docs/results/selected_target_tracking/p058_heldout_architecture_comparison_20260916.md`
+and its adjacent JSON record. The retained Pi output is
+`reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/`
+(clean run commit `dc4c5c39cfbe9911b63cb9757d01ca3de096f696`).
+The first prospective run and both post-access bootstrap protocol repairs
+remain distinct, immutable evidence; the final 12/12 result is explicitly
+protocol-repair evidence, not a new prospective freeze.
+
+From the repository root, verify the frozen split and source hashes:
+
+    python3 tools/analysis/validate_tim_evaluation_split.py docs/data/splits/tim_mars_split_v4.json --repo-root . --verify-hashes --require-final-ready
+
+The current comparison runner is
+`tools/experiments/run_p058_final_architecture_comparison.py` with
+`--set final_held_out`; use `--validate-only` for a contract preflight, or
+`--run` with a new `--run-id` and retained bags for an independent rerun.
+Do not overwrite the September evidence directories. A fresh checkout also
+needs the source bags, model binaries and generated report archive identified
+by the frozen split, manifest lock and final inventory; these large artifacts
+are not all Git-tracked. The reviewed result JSON, provenance hashes and
+source paths are tracked under `docs/results/selected_target_tracking/`.
+
+## Development matrix and historical paper artifacts
 
 The current implementation and frozen development matrix are reproduced with:
 
@@ -20,12 +46,9 @@ For a preflight without running the matrix:
 
     python3 tools/reproduce_tim_mars.py --validate-only
 
-The final held-out command is:
-
-    python3 tools/reproduce_tim_mars.py --set final_held_out
-
-That mode intentionally fails until H01-H03 are captured, annotated, frozen,
-and accepted by the final-release split validator.
+`tools/reproduce_tim_mars.py --set final_held_out` is the component-matrix
+entrypoint; it is not the runner for the final four-arm #58 architecture
+comparison above. The H01–H03 release gate is now ready (`3/3`).
 
 The historical `paper_final_*` artifacts below remain frozen for traceability.
 They are not silently treated as current canonical evidence and are not mixed
@@ -40,7 +63,7 @@ The final result artifacts are documented in:
 That inventory is the source of truth for promoted final replay bags, reports,
 and annotation CSVs.
 
-## Final result tables
+## Historical paper result tables
 
 The compact thesis-facing result tables are stored in:
 
@@ -55,7 +78,7 @@ The annotation-driven DeepSORT rows are not autonomous baselines. They measure
 whether DeepSORT contained the correct physical target track when the correct
 target-ID handoff was supplied from annotations.
 
-## Final replay bags
+## Historical paper replay bags
 
 The final replay bags are stored under historical submitted-paper folder names:
 
@@ -68,7 +91,7 @@ The final replay bags are stored under historical submitted-paper folder names:
 The `paper_final_*` names are frozen for traceability. New thesis reruns should
 use the naming contract documented in `bags/README.md`.
 
-## Final reports
+## Historical paper reports
 
 The final report directories are:
 
@@ -81,7 +104,7 @@ The final report directories are:
 - `reports/paper_final_sequence_audit_2026_07_04/`
 - `reports/paper_final_tables_2026_07_04/`
 
-## Final annotations
+## Historical paper annotations
 
 The final annotation CSVs are:
 

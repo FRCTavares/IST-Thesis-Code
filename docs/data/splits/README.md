@@ -1,12 +1,12 @@
 # TIM-MARS frozen evaluation split
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-09-18
 
-The active prospective machine-readable authority is:
+The frozen final machine-readable authority is:
 
 `docs/data/splits/tim_mars_split_v4.json`
 
-The matching active prospective comparison authority is:
+The matching frozen final comparison authority is:
 
 `docs/data/splits/tim_mars_final_comparison_v3.json`
 
@@ -45,11 +45,12 @@ development/legacy data and are not relabeled as held-out data.
 | --- | --- | --- |
 | Development | May hard re-entry; June Seq01; OCSORT-frozen Seq03 and Seq04 | Threshold selection, debugging, regression tests, and ablations during development |
 | Legacy validation | June Seq02 | Diagnostic comparison only; no tuning and no held-out claim |
-| Final held-out | H01 exit/re-entry; H02 crossing; H03 occlusion/distractor | One final evaluation after capture, annotation, identity records, and hashes are frozen |
+| Final held-out | H01 exit/re-entry; H02 crossing; H03 occlusion/distractor | Frozen evaluation complete; no outcome-driven tuning |
 
-The three final sequences are currently `reserved_pending_capture`. They are
-not ready for final evaluation, and issue #27 must remain open until the
-release gate passes.
+The three final sequences are now frozen as ready. The live split validator
+passes `final_ready=3/3`; #27 is closed. Final per-scenario results and the
+post-access bootstrap protocol-repair qualification are in
+`docs/results/selected_target_tracking/p058_heldout_architecture_comparison_20260916.md`.
 
 ## People and clothing overlap
 
@@ -76,7 +77,7 @@ If a threshold changes after held-out outcomes are viewed, create a new split
 version and move the accessed recordings out of the final held-out set. They
 may remain development data but cannot support the final held-out claim.
 
-## Capture-to-release procedure
+## Capture-to-release procedure (completed September 2026)
 
 For each H01–H03 recording:
 
@@ -103,4 +104,4 @@ The normal schema/freeze check intentionally permits pending captures:
 python3 tools/analysis/validate_tim_evaluation_split.py
 ```
 
-It must report `final_ready=0/3` until the September held-out recordings are captured, annotated, identity/outfit-audited, hashed, and frozen.
+That was the pre-capture gate. The current verified state is `final_ready=3/3`.
