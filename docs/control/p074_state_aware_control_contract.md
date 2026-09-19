@@ -11,6 +11,14 @@ The controller may consume:
 - `/target_memory_mars` for controller-authoritative target geometry;
 - `/target_memory_mars/status` for TIM-MARS state, control intent, selection generation, and diagnostics.
 
+The target state uses best-effort, volatile delivery because it is a high-rate
+frame stream guarded by source-time freshness and target/status causal matching.
+The status stream uses reliable, volatile delivery at both endpoints because
+it carries authority revocation, selection-generation and session changes.
+Controller-side freshness remains mandatory: reliable delivery does not make an
+old status current, and volatile durability prevents a newly started controller
+from receiving a latched authority state.
+
 The controller must never derive motion authority from:
 
 - `/target`;

@@ -31,6 +31,10 @@ from std_msgs.msg import (
     String,
     UInt32,
 )
+from thesis_bringup.authority_qos import (
+    authority_status_qos,
+    target_state_qos,
+)
 from thesis_bringup.freshness import (
     classify_freshness,
     FRESHNESS_CONTRACT_VERSION,
@@ -230,10 +234,10 @@ class TargetMemoryMarsNode(Node):
 
         self._log_memory_config(cfg)
 
-        qos = self._best_effort_qos()
-        self._create_ros_interfaces(qos)
+        target_qos = target_state_qos()
+        self._create_ros_interfaces(target_qos)
         self._setup_async_reid_transport()
-        self._setup_appearance_backend(qos)
+        self._setup_appearance_backend(target_qos)
 
         self._log_node_ready()
 
@@ -296,33 +300,36 @@ class TargetMemoryMarsNode(Node):
             f"hard_negative_reject_margin={cfg.hard_negative_reject_margin:.3f} "
         )
 
-    @staticmethod
-    def _best_effort_qos() -> QoSProfile:
-        return QoSProfile(
-            history=HistoryPolicy.KEEP_LAST,
-            depth=10,
-            reliability=ReliabilityPolicy.BEST_EFFORT,
-        )
-
-    def _create_ros_interfaces(self, qos: QoSProfile) -> None:
+    def _create_ros_interfaces(self, target_qos: QoSProfile) -> None:
         command_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=10,
             reliability=ReliabilityPolicy.RELIABLE,
         )
-        self._target_pub = self.create_publisher(TargetState, self._target_topic, qos)
+        self._target_pub = self.create_publisher(
+            TargetState,
+            self._target_topic,
+            target_qos,
+        )
         self._timing_target_pub = self.create_publisher(
             Timing,
             self._timing_target_topic,
-            qos,
+            target_qos,
         )
-        self._status_pub = self.create_publisher(String, self._status_topic, qos)
+        # Status carries authority revocation and selection-epoch changes.
+        # Reliable delivery is paired with controller-side freshness checks;
+        # VOLATILE durability prevents replay to a newly started controller.
+        self._status_pub = self.create_publisher(
+            String,
+            self._status_topic,
+            authority_status_qos(),
+        )
 
         self._tracks_sub = self.create_subscription(
             Track2DArray,
             self._tracks_topic,
             self._on_tracks,
-            qos,
+            target_qos,
         )
         self._select_sub = self.create_subscription(
             UInt32,
@@ -343,7 +350,7 @@ class TargetMemoryMarsNode(Node):
                 TargetState,
                 self._mirror_target_topic,
                 self._on_raw_target,
-                qos,
+                target_qos,
             )
 
     def _setup_async_reid_transport(self) -> None:

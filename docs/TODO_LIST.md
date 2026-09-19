@@ -35,7 +35,7 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 
 1. [ ] [#50 — Complete flight readiness and retained UAV closed-loop evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/50) — FIELD REQUIRED
    - Current live-system priority. H01/H02/H03 capture and fixed-input held-out evaluation are complete and are not part of the remaining flight work.
-   - Real Pixhawk/MAVROS operation, `BODY_NED`, ISR-first field networking, passive retained recording, controller authority/freshness checks, and the current field tooling have been exercised. Remaining aircraft work must still satisfy the current fail-closed flight-day contract.
+   - Real Pixhawk/MAVROS operation, `BODY_NED`, ISR-first field networking, passive retained recording, controller authority/freshness checks, and the current field tooling have been exercised. The TIM-MARS status QoS contract is now aligned and remotely validated with the actual ROS nodes; this does not replace the remaining physical gates.
    - Complete the remaining approved field-network fallback validation and the retained physical closed-loop comparison defined with #74.
    - Physical comparison contract: matched trusted-person following, baseline hover/zero after loss versus the bounded last-trusted-direction yaw-recovery candidate, with eligible loss opportunities and observation/censoring rules declared before result inspection. Retain failed attempts, aborts and manual takeovers. Wrong-person non-zero command duration is safety blocking.
    - #74 is closed after implementation and deterministic validation; #50 owns the physical retain/reject decision.
@@ -68,8 +68,8 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 2. [ ] [#66 — Complete thesis background, related work, architecture, and evidence-safe method draft by 7 September 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/66) — OVERDUE MILESTONE / IN PROGRESS
    - The original 7 September milestone has passed; retain it as historical scheduling context rather than pretending it is still a future deadline.
    - Chapters 1 and 2 have complete working drafts and have undergone visual review.
-   - Chapter 3 Sections 3.1–3.8 have complete working drafts; the hardware and ROS 2 architecture figures are present.
-   - Finish the remaining Chapter 3 visual/implementation-consistency pass and keep a supervisor-ready compiled PDF.
+   - Chapter 3 Sections 3.1–3.8 have complete working drafts; F06 and the corrected F07 architecture figure are present, and the status QoS interface has remote actual-node validation.
+   - Complete the F08 processing-sequence draft, add the F05 platform photograph after physical access, publish the reviewed report revision, and keep a supervisor-ready compiled PDF.
    - Use the published Chapter 4 method completed under #40 as the implementation authority for remaining architecture prose; keep physical and runtime conclusions evidence-gated.
 
 3. [ ] [#67 — Complete thesis experiments, results, and discussion draft by 30 September 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/67) — ACTIVE THESIS DEADLINE

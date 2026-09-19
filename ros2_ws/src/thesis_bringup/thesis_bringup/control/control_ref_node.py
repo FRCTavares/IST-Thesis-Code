@@ -17,6 +17,10 @@ from rclpy.qos import (
     ReliabilityPolicy,
 )
 from std_msgs.msg import String
+from thesis_bringup.authority_qos import (
+    authority_status_qos,
+    target_state_qos,
+)
 from thesis_bringup.control.state_aware_policy import (
     resolve_bounded_recovery_yaw,
     resolve_state_aware_policy,
@@ -349,11 +353,7 @@ class ControlRefNode(Node):
         self._ambiguity_prev = False
         self._ambiguity_count = 0
 
-        target_qos = QoSProfile(
-            history=HistoryPolicy.KEEP_LAST,
-            depth=10,
-            reliability=ReliabilityPolicy.BEST_EFFORT,
-        )
+        target_qos = target_state_qos()
 
         self.sub_target = self.create_subscription(
             TargetState,
@@ -362,11 +362,7 @@ class ControlRefNode(Node):
             target_qos,
         )
 
-        status_qos = QoSProfile(
-            history=HistoryPolicy.KEEP_LAST,
-            depth=10,
-            reliability=ReliabilityPolicy.RELIABLE,
-        )
+        status_qos = authority_status_qos()
         self.sub_status = self.create_subscription(
             String,
             status_topic,

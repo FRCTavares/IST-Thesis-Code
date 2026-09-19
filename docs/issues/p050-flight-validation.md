@@ -55,6 +55,22 @@ The software command contract is therefore substantially narrower, but the
 retained aircraft command remains blocked until the real Pixhawk/network,
 ground-sign and pilot-takeover gates in `docs/flight/README.md` pass.
 
+### 19 September controller-status QoS correction
+
+Remote architecture review found that TIM-MARS offered best-effort delivery
+for `/target_memory_mars/status`, while `control_ref_node` requested reliable
+delivery. ROS 2 Jazzy treats that pair as incompatible, so the status-dependent
+authority path could not be considered integrated. The shared authority QoS
+contract now retains best-effort, volatile delivery for the high-rate target
+state and uses reliable, volatile delivery for authority status at both
+endpoints. Focused transport and fail-closed tests plus a non-actuating ROS 2
+node exchange verify status reception, trusted-state passage to controller
+logic, and zero output for LOST or stale status.
+
+This is remote software validation only. It does not replace any restrained,
+props-off, FCU-response, process-loss, takeover or physical-flight gate in the
+current runbook.
+
 ### 14 September real-hardware MAVLink target validation
 
 Ground-only testing with the real Pixhawk 6X showed that the current FCU
