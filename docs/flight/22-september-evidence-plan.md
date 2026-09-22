@@ -1,11 +1,17 @@
 # 22 September 2026 physical evidence sequence
 
-Status on 18 September: PHYSICAL ACCESS BLOCKED UNTIL 22 SEPTEMBER 2026.
-This sheet fixes the order and decision rules. It does not record a result.
-Use docs/flight/README.md for the detailed aircraft operator procedure and
-docs/issues/p064-high-resolution-appearance-source.md and
-docs/issues/p1-14-final-runtime-characterization.md for the frozen measurement
-contracts. Stop on a failed prerequisite; keep the failed attempt.
+Status updated 22 September 2026: physical access resumed and the operational
+#64 source-resolution decision for the remaining aircraft programme is **VGA
+640x480**. The predeclared #64 eight-cell matrix is not complete; the
+time-constrained HD comparison is documented as a protocol deviation in
+`docs/issues/p064-high-resolution-appearance-source.md`. Proceed to #50 using
+VGA, then to #32 only after the #50 controller retain/reject decision.
+
+This sheet preserves the original decision rules and historical #64 procedure
+below. Use `docs/flight/README.md` for the detailed aircraft operator procedure
+and `docs/issues/p1-14-final-runtime-characterization.md` for the final runtime
+contract. Stop on a failed physical prerequisite and retain every failed
+attempt.
 
 ## Common start and frozen boundaries
 
@@ -30,9 +36,12 @@ On the Pi, with complete hardware physically available:
 A failed test or dirty source requires diagnosis before retained collection.
 Do not rebuild, pull, retune TIM-MARS, change tracker/model thresholds, change
 the detector's 640x640 inference input, alter the H01-H03 held-out record, or
-revive FHD. The order is #64, then #50, then #32. Record the actual Git SHA,
-commands, selected physical person, camera geometry, FCU mode and hash outputs
-with each retained run. Each run gets a unique RUN_ID and tag.
+revive FHD. The operational #64 resolution decision is now frozen as VGA for the remaining
+aircraft work. Proceed with #50, then #32 only after #50 records the retained
+controller policy. The unfinished #64 matrix may be completed later as
+supplementary evidence. Record the actual Git SHA, commands, selected physical
+person, camera geometry, FCU mode and hash outputs with each retained run. Each
+run gets a unique RUN_ID and tag.
 
 ## 1. #64: bounded source-resolution decision, aircraft control OFF
 

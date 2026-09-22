@@ -1,14 +1,58 @@
 # Issue #64 — High-Resolution Appearance-Source Evaluation
 
-**PHYSICAL ACCESS BLOCKED UNTIL 22 SEPTEMBER 2026** for the final
-representative VGA-versus-HD live decision. The camera interface enumerates
-remotely, but no representative physical scene or live capture was validated
-on 18 September. Execute the active protocol below before #50/#32; see
-`docs/flight/22-september-evidence-plan.md`.
+**Operational source-resolution decision recorded 22 September 2026:** retain
+**VGA 640x480** for the remaining #50 aircraft work and the final #32 mounted
+characterization. This is a bounded deployment decision, not a claim that the
+predeclared eight-cell #64 matrix is complete. The remaining matrix cells may be
+collected later as supplementary evidence. Detector inference remains fixed at
+640x640.
 
 This document places the current live resolution qualification before the
 historical experiments and frozen R3 evidence. The later FHD preparation
 sections are retained for provenance, not active deployment selection.
+
+## Operational retain decision — 22 September 2026
+
+The remaining aircraft programme will use **VGA 640x480**.
+
+Formal VGA TIM Cell 1, run `2026-09-22__17-25-58`, passed its retained runtime
+evidence gate with `observed_zero` recorder transport, valid provenance and
+visual evidence. The detector and validated-target paths both operated at about
+30.00 Hz, validated-target p95 latency was 81.325 ms, appearance-image-age p95
+was 272.77 ms, and stale appearance-image skips were 356/5400 (6.59%). Mean
+process-tree CPU was 348.52%, RSS was 1,153,026 KiB, maximum temperature was
+67.5 C, and no throttling was observed.
+
+Under a documented time-constrained operator decision, the matched HD TIM
+condition was then attempted out of the frozen matrix order. Run
+`2026-09-22__17-42-16` is therefore a **protocol-deviation comparison**, not a
+valid completion of formal Cell 5 and not evidence that the eight-cell matrix is
+complete. The retained 1280x720 structured recording had `observed_zero`
+transport loss and valid provenance. Offline re-analysis recovered the complete
+structured timing metrics. Detector rate was 29.961 Hz, validated-target rate
+29.972 Hz, validated-target p95 latency 91.317 ms, CPU 354.18%, RSS
+1,286,890 KiB, maximum temperature 69.2 C, and throttling remained zero.
+
+The decisive negative result is appearance freshness: HD appearance-image-age
+p95 increased to 663.43 ms and stale-image skips increased to 1487/5395
+(27.56%). This exceeds the predeclared 10% HD TIM freshness ceiling and is also
+substantially worse than the matched VGA result. The separate visual file is a
+genuine 1280x720 recording and decoded successfully, but the current visual
+verification schema is VGA-specific and therefore marked that HD visual
+invalid; this tooling limitation does not convert the protocol-deviation run
+into formal Cell-5 evidence.
+
+Together with the earlier controlled R3 result, which showed no material
+native-HD identity benefit for the large/close target, the available evidence
+does not justify increasing the flight source resolution. **HD is therefore not
+promoted and VGA remains the frozen operational source resolution for #50 and
+#32.**
+
+The remaining Cells 2--4 and 6--8, plus a properly ordered/repeated HD condition
+if desired, remain follow-up work. Issue #64 stays open until that incomplete
+matrix is either completed or explicitly retired. Those future runs must not be
+described as already-collected evidence and must not silently change the Friday
+flight configuration.
 
 ## Current VGA-versus-HD live qualification — predeclared 18 September 2026
 

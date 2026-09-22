@@ -6,12 +6,15 @@ closing evidence.
 
 Open executable issues: **8**.
 
-Last reconciled with GitHub: **19 September 2026**.
+Last reconciled with GitHub: **22 September 2026**.
 
-**Physical access blocked until 22 September 2026:** execute #64 → #50 →
-#32 in that order using `docs/flight/22-september-evidence-plan.md`. #50 stays
-P0, #64 stays P1 and is a prerequisite to #32. Remote writing for #66/
-#67/#41 can proceed; #39 waits for the retained physical decisions and runtime
+**Physical access resumed on 22 September 2026.** The operational #64
+source-resolution decision for the remaining aircraft work is now **VGA
+640x480**. Proceed with #50 physical flight-readiness/controller evidence, then
+#32 final mounted characterization after the #50 controller retain/reject
+decision. The incomplete #64 eight-cell matrix may be finished later as
+supplementary evidence, but it must not silently change the frozen Friday flight
+profile. #39 still waits for the retained physical decisions and final runtime
 evidence.
 
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
@@ -62,8 +65,10 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 **Parallel thesis workstream:** thesis writing proceeds alongside the remaining field and runtime evidence work. Do not postpone evidence-safe writing while waiting for field work.
 
 1. [ ] [#64 — Resolve high-resolution appearance crops on representative small-target UAV footage](https://github.com/FRCTavares/IST-Thesis-Code/issues/64) — FIELD DEPENDENT / #32 PREREQUISITE
-   - VGA remains the verified live default. FHD failed appearance freshness and is excluded. The controlled R3 native-HD result showed no benefit for a large target.
-   - Execute the predeclared bounded VGA-versus-HD live qualification with no aircraft authority. If HD fails, retain VGA. If it passes, require one matched small/distant appearance-pixel identity comparison before changing the default.
+   - **Operational retain decision — 22 September 2026:** retain **VGA 640x480** for Friday aircraft work and the downstream #50/#32 configuration. Detector inference remains fixed at 640x640. FHD remains excluded and the controlled R3 native-HD result showed no material identity benefit for the large/close target.
+   - Formal Cell 1 `2026-09-22__17-25-58` passed with recorder transport `observed_zero`, valid provenance/visual evidence, detector/validated-target rate about 30.00 Hz, validated-target p95 81.325 ms, appearance-image-age p95 272.77 ms, stale appearance 356/5400 (6.59%), CPU 348.52%, RSS 1,153,026 KiB, maximum temperature 67.5 C and zero throttling.
+   - The time-constrained out-of-order HD TIM comparison `2026-09-22__17-42-16` is a documented protocol deviation, not completion of formal Cell 5. Its structured recording and provenance were usable after offline re-analysis, but the VGA-specific visual verifier rejected the genuine 1280x720 visual. Runtime remained near 30 Hz with validated-target p95 91.317 ms, CPU 354.18%, RSS 1,286,890 KiB, maximum temperature 69.2 C and zero throttling; however appearance-image-age p95 increased to 663.43 ms and stale appearance increased to 1487/5395 (27.56%), exceeding the predeclared 10% HD TIM freshness ceiling.
+   - Therefore HD is not promoted for the remaining flight programme. The frozen eight-cell matrix remains incomplete and #64 stays open until the remaining cells are completed or explicitly retired; that follow-up must not be represented as completed formal matrix evidence.
    - 22 September Cell-1 VGA/TIM attempt `2026-09-22__12-30-10` remains retained and INVALID: timing/resources were healthy, but startup provenance was missing and the structured recorder reported 23 transport losses. It is not Cell-1 evidence.
    - Cell-1 VGA/TIM attempt `2026-09-22__13-35-08` also remains retained and INVALID: detector/tracker ran at about 29.97 Hz, validated-target p95 was 126.57 ms, thermal throttling was zero, but the structured recorder reported 3 transport losses. A camera dashboard publish hit an invalid ROS context during the post-measurement shutdown sequence. Recorder subscription buffering and camera teardown handling require engineering stress validation before another formal cell.
    - Non-scientific tooling smokes: `2026-09-22__12-46-09` had zero transport loss and valid visual output but failed provenance because a premature graph snapshot recorded zero `/detections` and `/tracks` publishers; `2026-09-22__12-54-54` failed before recording when a transient CLI publisher gate timed out. Neither is matrix evidence.
