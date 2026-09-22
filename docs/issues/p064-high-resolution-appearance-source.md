@@ -159,8 +159,11 @@ requires a representative native-HD small/distant sequence and a matched
 appearance-pixel comparison under the existing physical-target safety and
 materiality contract, with common detector/tracker evidence. A positive
 identity result must not alter completed H01–H03 evaluation or frozen models.
-Until that evidence and a documented retain/reject decision, VGA remains the
-live default and #64 stays open.
+Under the predeclared 18 September protocol, VGA was to remain the live
+default and #64 was to stay open until that evidence and a documented
+retain/reject decision. The 22 September closure decision above supersedes that
+planned continuation after the primary HD TIM-MARS condition failed the frozen
+appearance-freshness gate.
 
 ## 0. Experimental Status and Decision Logic
 
@@ -372,8 +375,9 @@ This conclusion remains bounded by target scale. R3 target height is
 534.64--561.11 px (median 549.72 px, 76.35% of image height), so it does not
 represent the distant/small-person geometry expected from the aircraft.
 
-**Issue #64 is therefore PAUSED, not closed, pending one representative
-drone-POV / flight-geometry capture.**
+**Historical status at this checkpoint:** Issue #64 was paused pending one
+representative drone-POV / flight-geometry capture. This status was later
+superseded by the 22 September 2026 negative retain decision documented above.
 
 The completed R3 experiment remains frozen on YOLOv6n so its controlled
 resolution comparison is not changed retrospectively. The future
