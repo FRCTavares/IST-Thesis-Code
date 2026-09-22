@@ -122,7 +122,7 @@ def test_repository_gate_accepts_completed_frozen_split_and_rejects_old_state():
 
 def test_passive_gate_uses_only_field_record_no_control():
     live = _function("run_passive_live_gate", "print_human_gates")
-    assert '--field-record --no-control --tag' in live
+    assert '--res vga --field-record --no-control --tag' in live
     assert "--control-mavros" not in live
     assert "--record-raw" not in live
     assert "printf 'stop\\n'" in live

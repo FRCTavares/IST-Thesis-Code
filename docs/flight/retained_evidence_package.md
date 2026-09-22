@@ -31,6 +31,7 @@ Every retained field trial should contain:
 - `run_logs/dashboard_bridge.log`
 - `run_logs/target_memory_mars.log`
 - `run_logs/operator_events.jsonl`
+- `run_logs/controller_process_loss.txt` for the mandatory process-loss gate (exact before/after timestamps; optional for other runs)
 - separate `visual_<RUN_ID>.mkv`
 - `visual_evidence_status.json`
 

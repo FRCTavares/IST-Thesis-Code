@@ -5,11 +5,24 @@
 This is the detailed Issue #50 preparation record, not the day-of-flight
 operator sheet. Current flight-day authority is `docs/flight/README.md`.
 
-**PHYSICAL ACCESS BLOCKED UNTIL 22 SEPTEMBER 2026.** The current retained
-flight commands are in `docs/flight/README.md`; the #64 → #50 → #32 field
-sequence and decision gates are in
-`docs/flight/22-september-evidence-plan.md`. No FCU is connected during the
-remote preparation period. These are prepared commands, not physical evidence.
+**ACTIVE #50 — Friday 25 September 2026 physical gates pending.** Issue #64
+closed on 22 September with VGA 640x480 retained; HD was not promoted and FHD
+remains excluded. The canonical linear operator sheet is
+`docs/flight/README.md`. Home-side software/documentation checks prepare the
+trial but do not establish FCU, restrained, process-loss, takeover or flight
+evidence. #32 final mounted characterization follows the physical #50
+baseline-versus-yaw-recovery retain/reject decision.
+
+The remaining physical sequence is: provision and validate the explicitly
+approved AERONEXT fallback; verify primary/fallback/fail-closed field-network
+states with Pixhawk attached; static preflight; passive MAVROS/recorder gate;
+compute-only sign/freshness gate; restrained BODY_NED command-path and exact
+controller process-loss response; pilot RC/failsafe/PreArm go/no-go; baseline
+flight; predeclared matched pairs; per-trial MCAP/visual/operator events and
+exact DataFlash; physical-person annotation and final controller decision.
+The 22 September remote inspection found the fallback setting empty and no
+clearly named approved AERONEXT profile among saved NetworkManager profile
+names. No credentials or host network state were changed remotely.
 
 Issue #50 owns the current closed-loop aircraft validation. The archived P023
 documents are historical and must not be used as current launch instructions.
@@ -266,7 +279,7 @@ truncation, shutdown-order mistakes and incomplete packaging:
   manifest). It never talks to an FCU and never selects "latest".
   **Real-hardware retrieval verification is pending** — no Pixhawk available.
 
-Full copy-paste procedure: `docs/flight/field_day_runbook.md`.
+Full copy-paste procedure: `docs/flight/README.md`. The field-day runbook is only a short backup.
 
 ### Combined raw recording (diagnostic)
 
@@ -298,6 +311,5 @@ Required before aircraft operation:
 - no automatic arming;
 - manual pilot takeover available.
 
-The exact retained ground/hover/flight launch commands must be frozen in
-`docs/flight/README.md` after the current live-stack/control audit. Until then,
-do not substitute commands from `docs/archive/flight/`.
+The exact retained ground/hover/flight commands are frozen in
+`docs/flight/README.md`. Do not substitute commands from `docs/archive/flight/`.

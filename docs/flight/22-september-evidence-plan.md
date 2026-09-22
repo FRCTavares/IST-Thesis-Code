@@ -251,8 +251,8 @@ For the retained physical comparison, use the baseline command from
 docs/flight/README.md first, then the candidate command only after a clean
 baseline and pilot go decision:
 
-    ./tools/start_live_stack.sh --res "$RETAINED_RES" --field-record --control-mavros --tag "$TAG"
-    ./tools/start_live_stack.sh --res "$RETAINED_RES" --field-record --control-mavros --control-yaw-recovery --acknowledge-yaw-recovery-candidate --tag "$TAG"
+    ./tools/start_live_stack.sh --res vga --field-record --control-mavros --tag "$TAG"
+    ./tools/start_live_stack.sh --res vga --field-record --control-mavros --control-yaw-recovery --acknowledge-yaw-recovery-candidate --tag "$TAG"
 
 Run approximately three eligible matched pairs of the same target and
 controlled loss/re-entry situation, alternating order baseline/candidate,
@@ -306,15 +306,14 @@ this is integrated runtime evidence, not 20 minutes of flight evidence. Use
 the retained controller option and same recording/UI load as the final stack.
 No run before both decisions.
 
-In terminal A, set RETAINED_RES to vga or hd and set RECOVERY_FLAGS to the
+In terminal A, use frozen VGA and set RECOVERY_FLAGS to the
 empty array for hover/zero, or to the two candidate flags if that policy was
 retained:
 
     export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
     export TAG=p032_final_mounted
-    export RETAINED_RES=vga
     RECOVERY_FLAGS=()
-    ./tools/start_live_stack.sh --res "$RETAINED_RES" --field-record --control-mavros "${RECOVERY_FLAGS[@]}" --tag "$TAG"
+    ./tools/start_live_stack.sh --res vga --field-record --control-mavros "${RECOVERY_FLAGS[@]}" --tag "$TAG"
 
 Only if yaw was retained, first set:
 

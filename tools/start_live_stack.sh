@@ -508,6 +508,7 @@ archive_run_evidence_logs() {
 
     archive_args+=(
         --optional-file operator_events.jsonl
+        --optional-file controller_process_loss.txt
         --optional-file recorder_finalize_outcome.txt
     )
 

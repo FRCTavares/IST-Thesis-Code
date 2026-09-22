@@ -6,10 +6,10 @@ This file freezes the execution and reporting protocol for the final promoted
 onboard runtime characterization. Preparing this protocol does not create final
 evidence and does not close Issue #32.
 
-**PHYSICAL ACCESS BLOCKED UNTIL 22 SEPTEMBER 2026** for the final mounted
-measurement. Run only after the #64 and #50 retain/reject decisions; use
-`docs/flight/22-september-evidence-plan.md` for the field sequence. Remote
-runner validation is not final integrated evidence.
+**FINAL PHYSICAL RUN PENDING #50.** Issue #64 closed on 22 September 2026
+with VGA 640x480 retained. Run the final mounted measurement only after #50
+records the retained controller policy; use `docs/flight/README.md` for the
+field sequence. Remote runner validation is not final integrated evidence.
 
 ## Dependency gate
 
@@ -21,8 +21,7 @@ Retained final characterization begins only after:
    contract.
 3. Issue #50 has resolved the physical controller policy, including whether the
    bounded #74 yaw-recovery behavior is promoted or remains disabled.
-4. Issue #64 is resolved before final characterization if its remaining
-   drone-POV evidence changes the promoted image-resolution choice.
+4. Issue #64 is resolved: VGA 640x480 is retained; HD is not promoted.
 5. The final detector, tracker, TIM-MARS, controller, model hashes and runtime
    configuration are frozen.
 
@@ -50,7 +49,7 @@ without claiming physical closed-loop flight behavior.
 ## Measurement window
 
 For the final mounted Pi/camera/Hailo/controller system, start the production
-live stack with the retained #64 source resolution and retained #50/#74
+live stack with VGA 640x480 and retained #50/#74
 controller configuration. Attach
 `tools/experiments/measure_p032_live_resources.py` to that run's `pids.txt`
 without changing launcher ownership. The helper starts the PID-tree and

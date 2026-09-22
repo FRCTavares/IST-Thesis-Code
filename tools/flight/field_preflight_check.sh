@@ -440,7 +440,7 @@ check_passive_evidence() {
 
 run_passive_live_gate() {
     local run_id tag bag_dir run_dir deadline ready=0 gate_start elapsed remaining launcher_rc
-    local launch=("$THESIS_ROOT/tools/start_live_stack.sh" --field-record --no-control --tag)
+    local launch=("$THESIS_ROOT/tools/start_live_stack.sh" --res vga --field-record --no-control --tag)
 
     if ! [[ "$PASSIVE_GATE_SECONDS" =~ ^[0-9]+$ ]] \
         || (( PASSIVE_GATE_SECONDS < 30 || PASSIVE_GATE_SECONDS > 45 )); then
