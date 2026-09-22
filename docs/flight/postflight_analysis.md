@@ -48,27 +48,71 @@ range. A command is not an aircraft response.
 
 ## 3. Physical-person reference and time alignment
 
-The field MCAP intentionally has **no image topic**. The separate 640x480
-MJPEG visual has about 10 fps and Matroska PTS relative to its first frame
-from ffmpeg input wallclock. `run_metadata.json.visual.started_at_utc` is the
-recorder-launch time, **not** an exact first-frame acquisition timestamp.
-The existing physical-v2 evaluator is for source-timestamped image/reference
-bags; do not run it on a field video as if its frame timestamps were identical
-to ROS source-image timestamps.
+The field MCAP intentionally has **no image topic**. Rosbag receipt times
+are Pi system-clock epoch nanoseconds; camera and controller message headers
+also use the live ROS system clock (no simulated time). Operator events retain
+UTC plus monotonic samples, with a clock pair at `trial_start`.
 
-Start from the unpopulated
-`docs/results/live/templates/p050_visual_alignment.json` and retain a
-physical-person annotation and explicit alignment record for each scientific
-trial: original video/frame or PTS, intended physical person,
-presence/occlusion/out-of-FOV state, distractors, target loss and correct
-return, reproducible visual-to-MCAP anchors, alignment method, estimated
-uncertainty, annotator and review. Tie operator `target_selected` to the
-dashboard selection transaction in `target_authority_events.jsonl`; a
-requested track ID is not physical truth. Preserve visible ambiguous
-intervals as unresolved; do not assign false precision to a 10 fps visual or
-count TIM-MARS LOCKED as correct physical-person identity. If alignment or
-image coverage cannot distinguish a wrong-person command, the safety result
-is **unresolved and candidate promotion is blocked**.
+The separate MJPEG/MKV receives dashboard frames over HTTP. ffmpeg stamps
+input packets from its **system wall clock** and rebases the Matroska packet
+PTS to the first input packet; the saved `creation_time` and
+`run_metadata.json.visual.started_at_utc` are the **pre-launch** UTC value,
+not first-frame UTC. The camera-origin header timestamp is lost at the HTTP
+video boundary. The actual rate is variable: the retained VGA #64 file has
+2,143 packets over 285.72 s (7.50 fps) and a 1.0 s maximum packet gap;
+the protocol-deviation HD file has 905 over 282.16 s (3.21 fps) and a
+2.8 s gap. The stream's nominal 25 fps is not its measured rate. Use each
+packet PTS, never frame index divided by requested or nominal fps.
+
+After the normal package check, compute **conditional ffmpeg packet-receipt**
+windows for the exact run (once; do not overwrite an existing result):
+
+```bash
+python3 tools/analysis/bound_visual_mcap_time.py --bag-dir "$BAG" --run-id "$RUN_ID" --json-out "$BAG/visual_packet_receipt_bounds.json" --csv-out "$BAG/visual_packet_receipt_bounds.csv"
+```
+
+The helper requires a passed visual verifier, matching RUN_ID, intact
+finalized-file mtime, nondecreasing packet PTS/count, and the reviewed nominal
+25-Hz MJPEG timebase. Let `L` be ffmpeg pre-launch UTC, `F` the finalized
+file mtime, `p_i` a packet PTS, `p_0` the first, `p_N` the last, and `q`
+the larger of one nominal 25-Hz input tick (40 ms) and the observed minimum
+positive PTS increment. Under continuous system wall time,
+authentic original mtime, and this ffmpeg timestamp contract, packet `i`
+reached ffmpeg in the conservative UTC interval
+`[max(L, L + p_i - p_0 - q), F - (p_N - p_0) + (p_i - p_0) + 2q]`.
+The first packet is bounded by `[L, F - (p_N - p_0) + q]`.
+The extra ticks cover rebasing/quantization; they are not camera-to-recorder
+latency estimates. The older #64 VGA run gives a conditional first-packet
+window of 0.380 s and a maximum per-packet window of 0.460 s using its
+current filesystem mtime. Its old visual status did **not** pin that mtime,
+so this demonstration is diagnostic rather than certified provenance.
+New runs retain the finalized mtime in `visual_evidence_status.json` and
+the helper refuses an altered copy. Check operator-event wall/monotonic
+pairs for clock discontinuities; an unresolved clock jump invalidates the
+conditional bound.
+
+**Packet receipt is not camera capture.** The dashboard image keeps its
+camera source stamp inside ROS, but neither that stamp nor a per-frame identity
+is carried into the MKV or field MCAP. The capture-to-HTTP/ffmpeg delay has
+no measured upper bound in the current evidence. Therefore the packet-receipt
+CSV alone cannot align physical-person identity to controller commands or
+prove zero wrong-person non-zero duration. The physical-v2 evaluator requires
+source-timestamped image/reference bags; do not feed it this video as though
+its PTS were source timestamps.
+
+Start from `docs/results/live/templates/p050_visual_alignment.json`.
+For each scientific attempt, retain original packet PTS, intended physical
+person, presence/occlusion/out-of-FOV and distractor intervals, independently
+reviewed cross-modal anchors if available, their method and uncertainty,
+annotator, and every visual coverage gap. Tie operator `target_selected` to
+the dashboard selection transaction; tracker ID and TIM-MARS LOCKED are not
+physical truth. An annotation interval maps to command time only through
+a separately justified **source-capture** interval. Expand interval endpoints
+by its uncertainty; missing packets and uncovered transitions remain
+unresolved. If any possible wrong-person interval overlaps a non-zero
+command, report unresolved or wrong-person duration as supported, **never
+zero by default**. Candidate promotion remains blocked unless every relevant
+non-zero command can be attributed with adequate physical-person coverage.
 
 ## 4. Controller-facing durations and pair eligibility
 

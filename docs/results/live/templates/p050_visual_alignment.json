@@ -13,5 +13,12 @@
   "target_loss_and_correct_return_intervals": [],
   "wrong_person_or_unresolved_command_intervals": [],
   "coverage_gaps": [],
-  "notes": "Keep original frame/PTS and independent physical identity; never equate recorder-launch UTC with first-frame UTC or tracker ID with physical truth."
+  "notes": "Packet receipt bounds are not source capture bounds; unresolved physical-person/non-zero-command overlap blocks candidate promotion.",
+  "visual_timing_source": "PENDING_PHYSICAL_EVIDENCE",
+  "packet_receipt_bounds_json_and_csv": "PENDING_PHYSICAL_EVIDENCE",
+  "packet_receipt_mapping_method": "PENDING_PHYSICAL_EVIDENCE",
+  "packet_receipt_max_uncertainty_s": "PENDING_PHYSICAL_EVIDENCE",
+  "source_capture_alignment_method": "PENDING_PHYSICAL_EVIDENCE",
+  "source_capture_alignment_uncertainty_s": "PENDING_PHYSICAL_EVIDENCE",
+  "physical_person_command_attribution_resolved": "PENDING_PHYSICAL_EVIDENCE"
 }

@@ -46,6 +46,9 @@ def verify_visual(
         return report
 
     report["bytes"] = visual.stat().st_size
+    # Capture the original finalized-file mtime before any later copy or backup.
+    # This is provenance for offline packet-receipt bounds, not capture time.
+    report["file_mtime_ns"] = visual.stat().st_mtime_ns
     try:
         probe = _run([
             "ffprobe", "-v", "error", "-select_streams", "v:0",
@@ -72,7 +75,10 @@ def verify_visual(
             "duration_s": duration,
             "decoded_frames": frames,
             "measured_fps": round(frames / duration, 6) if duration > 0 else None,
-            "container_creation_time": (fmt.get("tags") or {}).get("CREATION_TIME"),
+            "container_creation_time": (
+                (fmt.get("tags") or {}).get("creation_time")
+                or (fmt.get("tags") or {}).get("CREATION_TIME")
+            ),
         })
         if stream.get("codec_name") != "mjpeg":
             errors.append("visual codec is not MJPEG")

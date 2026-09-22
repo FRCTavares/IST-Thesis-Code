@@ -172,7 +172,9 @@ def test_visual_verifier_accepts_decodable_timestamped_mjpeg(tmp_path):
     result = subprocess.run(
         ["ffmpeg", "-hide_banner", "-nostdin", "-v", "error",
          "-f", "lavfi", "-i", "testsrc2=size=640x480:rate=10",
-         "-frames:v", "10", "-c:v", "mjpeg", "-y", str(visual)],
+         "-frames:v", "10", "-c:v", "mjpeg",
+         "-metadata", "creation_time=2026-09-22T16:26:07Z",
+         "-y", str(visual)],
         capture_output=True, text=True, timeout=45,
     )
     assert result.returncode == 0, result.stderr
@@ -182,6 +184,8 @@ def test_visual_verifier_accepts_decodable_timestamped_mjpeg(tmp_path):
     assert report["passed"] is True
     assert report["codec"] == "mjpeg"
     assert report["decoded_frames"] == 10
+    assert report["file_mtime_ns"] == visual.stat().st_mtime_ns
+    assert report["container_creation_time"].startswith("2026-09-22T16:26:07")
     assert report["timestamps"]["nondecreasing"] is True
     assert report["decode_to_null"]["returncode"] == 0
 

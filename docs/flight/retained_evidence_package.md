@@ -33,7 +33,11 @@ Every retained field trial should contain:
 - `run_logs/operator_events.jsonl`
 - `run_logs/controller_process_loss.txt` for the mandatory process-loss gate (exact before/after timestamps; optional for other runs)
 - separate `visual_<RUN_ID>.mkv`
-- `visual_evidence_status.json`
+- `visual_evidence_status.json` (packet PTS, actual gaps, original finalized
+  file mtime for new runs)
+- postflight `visual_packet_receipt_bounds.json` and
+  `visual_packet_receipt_bounds.csv` when physical attribution is attempted;
+  these bound ffmpeg receipt conditionally, not camera capture
 
 When the controller runs, also require:
 
@@ -56,7 +60,7 @@ Do not add:
 
 to normal field flights.
 
-Neither `/camera/image_raw` nor `/camera/dashboard` should be stored in the structured field MCAP.
+Neither `/camera/image_raw` nor `/camera/dashboard` should be stored in the structured field MCAP. The separate MKV strips the dashboard image's ROS camera-source stamp. Its packet PTS and original file mtime can conditionally bound ffmpeg receipt, but cannot alone prove physical-person identity at a controller command. See `docs/flight/postflight_analysis.md`; unresolved source-time attribution blocks yaw-recovery promotion.
 
 ## Retained MAVROS topics
 
