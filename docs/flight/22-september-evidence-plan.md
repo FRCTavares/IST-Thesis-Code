@@ -1,11 +1,11 @@
 # 22 September 2026 physical evidence sequence
 
-Status updated 22 September 2026: physical access resumed and the operational
-#64 source-resolution decision for the remaining aircraft programme is **VGA
-640x480**. The predeclared #64 eight-cell matrix is not complete; the
-time-constrained HD comparison is documented as a protocol deviation in
-`docs/issues/p064-high-resolution-appearance-source.md`. Proceed to #50 using
-VGA, then to #32 only after the #50 controller retain/reject decision.
+Status updated 22 September 2026: **Issue #64 is closed with VGA 640x480
+retained** for the remaining aircraft programme. The predeclared eight-cell
+matrix was intentionally curtailed after the primary HD TIM-MARS comparison
+failed the frozen appearance-freshness gate; the uncollected rows are retired,
+not claimed as completed. Proceed to #50 using VGA, then to #32 only after the
+#50 controller retain/reject decision.
 
 This sheet preserves the original decision rules and historical #64 procedure
 below. Use `docs/flight/README.md` for the detailed aircraft operator procedure
@@ -36,14 +36,19 @@ On the Pi, with complete hardware physically available:
 A failed test or dirty source requires diagnosis before retained collection.
 Do not rebuild, pull, retune TIM-MARS, change tracker/model thresholds, change
 the detector's 640x640 inference input, alter the H01-H03 held-out record, or
-revive FHD. The operational #64 resolution decision is now frozen as VGA for the remaining
-aircraft work. Proceed with #50, then #32 only after #50 records the retained
-controller policy. The unfinished #64 matrix may be completed later as
-supplementary evidence. Record the actual Git SHA, commands, selected physical
-person, camera geometry, FCU mode and hash outputs with each retained run. Each
-run gets a unique RUN_ID and tag.
+revive FHD. The #64 resolution decision is complete: VGA is frozen for the remaining
+aircraft work and the unfinished runtime-matrix rows are retired. Proceed with
+#50, then #32 only after #50 records the retained controller policy. Record the
+actual Git SHA, commands, selected physical person, camera geometry, FCU mode
+and hash outputs with each retained run. Each run gets a unique RUN_ID and tag.
 
-## 1. #64: bounded source-resolution decision, aircraft control OFF
+## 1. #64: bounded source-resolution decision — CLOSED
+
+**Decision:** retain VGA 640x480; HD not promoted. The procedure below is kept
+as the predeclared historical protocol. Only Cell 1 was completed formally; the
+time-constrained HD TIM-MARS comparison was a protocol deviation, and the
+remaining matrix rows are retired.
+
 
 Preconditions: mounted TEVS camera and Hailo are healthy; a comparable
 person, scene and lighting are available; no aircraft authority. A distractor

@@ -1,11 +1,12 @@
 # Issue #64 — High-Resolution Appearance-Source Evaluation
 
-**Operational source-resolution decision recorded 22 September 2026:** retain
-**VGA 640x480** for the remaining #50 aircraft work and the final #32 mounted
-characterization. This is a bounded deployment decision, not a claim that the
-predeclared eight-cell #64 matrix is complete. The remaining matrix cells may be
-collected later as supplementary evidence. Detector inference remains fixed at
-640x640.
+**CLOSED — negative retain decision, 22 September 2026:** retain **VGA
+640x480** for the remaining #50 aircraft work and the final #32 mounted
+characterization. HD is not promoted. The predeclared eight-cell runtime matrix
+was intentionally curtailed after the primary matched TIM-MARS HD comparison
+exceeded the frozen appearance-freshness rejection ceiling. The uncollected rows
+are explicitly retired, not represented as completed evidence. Detector
+inference remains fixed at 640x640.
 
 This document places the current live resolution qualification before the
 historical experiments and frozen R3 evidence. The later FHD preparation
@@ -48,11 +49,16 @@ does not justify increasing the flight source resolution. **HD is therefore not
 promoted and VGA remains the frozen operational source resolution for #50 and
 #32.**
 
-The remaining Cells 2--4 and 6--8, plus a properly ordered/repeated HD condition
-if desired, remain follow-up work. Issue #64 stays open until that incomplete
-matrix is either completed or explicitly retired. Those future runs must not be
-described as already-collected evidence and must not silently change the Friday
-flight configuration.
+The remaining Cells 2--4 and 6--8 and a properly ordered/repeated HD Cell 5
+are **retired rather than completed**. The full eight-cell matrix therefore must
+not be described as collected or passed. Continuing those rows could provide
+additional architecture-level cost decomposition and repeatability evidence, but
+it is not required for the bounded deployment decision: the primary HD TIM-MARS
+condition already exceeded the frozen 10% stale-appearance ceiling, and prior R3
+evidence showed no material native-HD identity benefit. Issue #64 is therefore
+closed with the negative decision to retain VGA. Any future supplementary
+resolution study is separate follow-up work and must not silently change the
+frozen flight configuration.
 
 ## Current VGA-versus-HD live qualification — predeclared 18 September 2026
 
