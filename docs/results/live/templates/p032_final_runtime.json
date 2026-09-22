@@ -1,0 +1,19 @@
+{
+  "status": "PENDING_PHYSICAL_EVIDENCE",
+  "run_id": "PENDING_PHYSICAL_EVIDENCE",
+  "tag": "p032_final_mounted_vga",
+  "bag_dir": "PENDING_PHYSICAL_EVIDENCE",
+  "git_sha": "PENDING_PHYSICAL_EVIDENCE",
+  "retained_controller_policy": "PENDING_PHYSICAL_EVIDENCE",
+  "model_and_config_hashes": "PENDING_PHYSICAL_EVIDENCE",
+  "dataflash_path_and_sha256": "PENDING_PHYSICAL_EVIDENCE",
+  "warm_up_s": 60,
+  "active_s": 1200,
+  "full_interval_metrics": "PENDING_PHYSICAL_EVIDENCE",
+  "post_warm_up_metrics": "PENDING_PHYSICAL_EVIDENCE",
+  "coverage_and_provenance": "PENDING_PHYSICAL_EVIDENCE",
+  "latency_cadence_gap_drop_cache_process_memory_thermal_clock_throttle_and_overhead": "PENDING_PHYSICAL_EVIDENCE",
+  "hailo_contention": "PENDING_PHYSICAL_EVIDENCE",
+  "electrical_power": "PENDING_PHYSICAL_EVIDENCE",
+  "integrity_and_claim_decision": "PENDING_PHYSICAL_EVIDENCE"
+}

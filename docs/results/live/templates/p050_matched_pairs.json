@@ -1,0 +1,20 @@
+{
+  "status": "PENDING_PHYSICAL_EVIDENCE",
+  "analysis_commit": "PENDING_PHYSICAL_EVIDENCE",
+  "attempts": [],
+  "eligible_pairs": [],
+  "retained_controller_policy": "PENDING_PHYSICAL_EVIDENCE",
+  "decision_reason": "PENDING_PHYSICAL_EVIDENCE",
+  "interpretation_limit": "Descriptive matched physical evidence; no statistical superiority or formal safety claim.",
+  "required_per_attempt_fields": [
+    "run_id", "tag", "pair_number", "condition", "bag_dir",
+    "git_sha", "model_and_config_hashes", "dataflash_path_and_sha256",
+    "annotation_path_and_sha256", "alignment_method_and_uncertainty",
+    "operator_event_path", "eligibility_and_rejection_reason",
+    "trusted_visible_locked_before_loss_s", "observation_horizon_s",
+    "observed_duration_s", "correct_return_s_or_right_censor",
+    "wrong_person_nonzero_s", "stale_invalid_nonzero_s",
+    "recovery_translation_s", "unsafe_motion", "saturation",
+    "pilot_takeover", "integrity_verdict"
+  ]
+}

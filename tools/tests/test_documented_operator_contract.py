@@ -144,7 +144,7 @@ def test_flight_day_sheet_stays_compact_and_fail_closed():
     text = FLIGHT_DAY.read_text(encoding="utf-8")
 
     assert len(text.splitlines()) < 425
-    assert "only current day-of-flight operator sheet" in text
+    assert "**Canonical #50 procedure.**" in text
     assert "ssh francisco@192.168.8.174" in text
     assert "set_pi_network_mode.sh pixhawk" in text
     assert "set_pi_network_mode.sh unattended" in text
@@ -152,19 +152,19 @@ def test_flight_day_sheet_stays_compact_and_fail_closed():
     # recording mode, not a day-of-flight launch command.
     assert "--record-structured-visual" not in text
     assert (
-        "./tools/start_live_stack.sh --field-record --no-control "
+        "./tools/start_live_stack.sh --res vga --field-record --no-control "
         '--tag "$TAG"'
     ) in text
     assert (
-        "./tools/start_live_stack.sh --field-record --control-mavros "
+        "./tools/start_live_stack.sh --res vga --field-record --control-mavros "
         '--tag "$TAG"'
     ) in text
     assert "--acknowledge-yaw-recovery-candidate" in text
     assert "summarize_field_evidence.py --bag-dir" in text
     # H01/H02/H03 prospective source acquisition is complete. The current
     # day-of-flight sheet must not re-advertise the retired capture commands.
-    assert "H01/H02/H03 source captures are already complete" in text
-    assert "are not part of this procedure" in text
+    assert "H01/H02/H03 are complete" in text
+    assert "#64 is closed: VGA is retained" in text
     for scenario in ("h01", "h02", "h03"):
         assert f"record_p027_heldout_sequence.sh {scenario}" not in text
     assert "--field-record --record-raw" not in text

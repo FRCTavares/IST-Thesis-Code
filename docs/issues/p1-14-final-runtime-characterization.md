@@ -11,6 +11,10 @@ with VGA 640x480 retained. Run the final mounted measurement only after #50
 records the retained controller policy; use `docs/flight/README.md` for the
 field sequence. Remote runner validation is not final integrated evidence.
 
+The exact two-branch post-#50 run and analysis commands are in
+`docs/issues/p032-final-mounted-runbook.md`; final table fields are in
+`docs/results/live/templates/p032_final_runtime.md`.
+
 ## Dependency gate
 
 Retained final characterization begins only after:

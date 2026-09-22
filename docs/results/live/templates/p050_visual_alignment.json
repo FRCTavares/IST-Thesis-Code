@@ -1,0 +1,17 @@
+{
+  "status": "PENDING_PHYSICAL_EVIDENCE",
+  "run_id": "PENDING_PHYSICAL_EVIDENCE",
+  "tag": "PENDING_PHYSICAL_EVIDENCE",
+  "bag_dir": "PENDING_PHYSICAL_EVIDENCE",
+  "video_path_and_sha256": "PENDING_PHYSICAL_EVIDENCE",
+  "intended_physical_person": "PENDING_PHYSICAL_EVIDENCE",
+  "annotator_and_reviewer": "PENDING_PHYSICAL_EVIDENCE",
+  "alignment_method": "PENDING_PHYSICAL_EVIDENCE",
+  "alignment_anchors": [],
+  "estimated_alignment_uncertainty_s": "PENDING_PHYSICAL_EVIDENCE",
+  "person_presence_and_distractor_intervals": [],
+  "target_loss_and_correct_return_intervals": [],
+  "wrong_person_or_unresolved_command_intervals": [],
+  "coverage_gaps": [],
+  "notes": "Keep original frame/PTS and independent physical identity; never equate recorder-launch UTC with first-frame UTC or tracker ID with physical truth."
+}
