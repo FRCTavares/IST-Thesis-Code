@@ -36,9 +36,11 @@ with each retained run. Each run gets a unique RUN_ID and tag.
 
 ## 1. #64: bounded source-resolution decision, aircraft control OFF
 
-Preconditions: mounted TEVS camera and Hailo are healthy; representative
-small/distant person and distractor conditions are available; no aircraft
-authority. The remotely enumerated camera was not streamed on 18 September.
+Preconditions: mounted TEVS camera and Hailo are healthy; a comparable
+person, scene and lighting are available; no aircraft authority. A distractor
+is required only for the conditional small/distant identity comparison after
+HD passes the runtime matrix. The remotely enumerated camera was not streamed
+on 18 September.
 Verify native capture and dashboard geometry from the actual run metadata.
 Avoid the active camera stream probe and unnecessary mode restarts.
 
@@ -54,6 +56,23 @@ Run four VGA cells, then four HD cells, in this exact order within each block:
 | 6 | hd | bytetrack | off | detector,tracker |
 | 7 | hd | deepsort | off | detector,tracker |
 | 8 | hd | bytetrack | mars | detector,tracker,tim |
+
+The prepared one-command runner implements the same flags, 240 s resource
+measurement, 60 s warm-up, normal stack finalization, and evidence checks:
+
+    tools/experiments/run_p064_cell.sh 1
+
+Use cell numbers `2` through `8` for the remaining rows, in order. It prints
+the exact RUN_ID, configuration and bag path, refuses an existing run, and
+prompts for a physical target track ID and brief description only in TIM
+cells. Select the intended person using the displayed track IDs and dashboard;
+keep scene and human motion comparable between matched VGA/HD runs. Raw cells
+proceed without selection.
+The runner retains invalid attempts, writes `p064_cell_result.json` in each
+bag or run log directory, and updates `reports/p064_matrix_summary.json` and
+`reports/p064_matrix_summary.md`. Its classification is a runtime-evidence
+gate, not a human identity judgment. The manual two-terminal procedure below
+remains available for diagnosis.
 
 For each cell, set the table values and a unique TAG such as p064_vga_tim_r1.
 In terminal A:

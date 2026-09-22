@@ -49,7 +49,7 @@ def sha256_file(path: Path) -> str | None:
     return digest.hexdigest()
 
 
-def validate(payload: dict[str, Any]) -> tuple[list[str], list[str]]:
+def validate(payload: dict[str, Any], *, strict_topic_inventory: bool = False) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -171,12 +171,20 @@ def validate(payload: dict[str, Any]) -> tuple[list[str], list[str]]:
     for topic in recorded_topics:
         info = topic_qos_inventory.get(topic)
         if info is None:
-            warnings.append(f"topic {topic}: no QoS inventory entry captured")
+            (errors if strict_topic_inventory else warnings).append(
+                f"topic {topic}: no QoS inventory entry captured"
+            )
             continue
         if "error" in info:
-            warnings.append(f"topic {topic}: introspection failed: {info['error']}")
+            (errors if strict_topic_inventory else warnings).append(
+                f"topic {topic}: introspection failed: {info['error']}"
+            )
             continue
         publisher_count = info.get("publisher_count")
+        if strict_topic_inventory and (not isinstance(publisher_count, int)
+                                       or isinstance(publisher_count, bool)
+                                       or publisher_count < 0):
+            errors.append(f"topic {topic}: publisher count unavailable")
         if publisher_count == 0:
             errors.append(
                 f"topic {topic}: listed as recorded but had zero publishers at "
@@ -192,6 +200,7 @@ def main() -> int:
     parser.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON result to stdout"
     )
+    parser.add_argument("--strict-topic-inventory", action="store_true")
     args = parser.parse_args()
 
     if not args.metadata_path.is_file():
@@ -204,7 +213,9 @@ def main() -> int:
         print(f"[error] metadata file is not valid JSON: {exc}", file=sys.stderr)
         return 2
 
-    errors, warnings = validate(payload)
+    errors, warnings = validate(
+        payload, strict_topic_inventory=args.strict_topic_inventory
+    )
     passed = len(errors) == 0
 
     if args.json:

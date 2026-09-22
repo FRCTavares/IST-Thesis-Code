@@ -241,7 +241,12 @@ def verify_package(
         optional("control_log", control_log)
 
     require("dashboard_bridge_log", logs / "dashboard_bridge.log")
-    require("target_memory_mars_log", logs / "target_memory_mars.log")
+    provenance = _json(bag_dir / "run_metadata.json")
+    recorded_topics = (provenance or {}).get("bag", {}).get("recorded_topics", [])
+    if "/target_memory_mars" in recorded_topics:
+        require("target_memory_mars_log", logs / "target_memory_mars.log")
+    else:
+        optional("target_memory_mars_log", logs / "target_memory_mars.log")
 
     raw_bag = bag_dir.parent / f"{bag_dir.name}__image_raw"
     if expect_raw_bag:
@@ -427,6 +432,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--field-record", action="store_true")
     parser.add_argument("--expect-raw-bag", action="store_true")
     parser.add_argument("--expect-visual", action="store_true")
+    parser.add_argument("--runtime-only", action="store_true",
+                        help="accept a complete runtime package while postflight work remains pending")
     parser.add_argument("--expect-operator-events", action="store_true")
     parser.add_argument("--repo-root", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=None)
@@ -462,7 +469,8 @@ def main(argv: list[str] | None = None) -> int:
     for item in report.get("pending", []):
         print(f"           - {item}")
 
-    return 0 if status == STATUS_COMPLETE else 1
+    return 0 if (status == STATUS_COMPLETE or
+                 args.runtime_only and report.get("runtime_status") == STATUS_COMPLETE) else 1
 
 
 if __name__ == "__main__":

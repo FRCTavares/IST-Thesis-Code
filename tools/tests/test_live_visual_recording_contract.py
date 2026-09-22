@@ -113,6 +113,46 @@ def test_structured_topics_exclude_images_and_visual_uses_same_run_id():
     assert "kill_tree \"$pid\" INT" in SHUTDOWN
 
 
+def test_structured_visual_provenance_is_captured_after_recorders_start():
+    recorder = 'start_ros_bg rosbag ros2 bag record'
+    visual = 'start_ros_bg visual_record ffmpeg'
+    provenance = 'write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json"'
+    assert LAUNCHER.index(recorder) < LAUNCHER.index(visual) < LAUNCHER.index(provenance)
+    assert 'wait_for_recorded_topic_publishers' not in LAUNCHER
+    assert 'visual_preflight_run_metadata.json' not in LAUNCHER
+    assert '--strict-topic-inventory' in LAUNCHER
+    assert 'visual run provenance remained invalid with live recorders' in LAUNCHER
+
+
+def test_structured_visual_recorder_uses_fastwrite_and_512m_cache():
+    assert '--storage-preset-profile fastwrite' in LAUNCHER
+    assert '--max-cache-size 536870912' in LAUNCHER
+
+
+def test_visual_output_is_ready_before_provenance_capture():
+    wait = 'for _ in {1..50}; do'
+    nonempty = '[[ -s "$VISUAL_FILE" ]]'
+    capture = 'write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json"'
+    assert wait in LAUNCHER
+    assert nonempty in LAUNCHER
+    assert LAUNCHER.index(wait) < LAUNCHER.index(capture)
+    assert 'visual recorder produced no non-empty output within 5 s' in LAUNCHER
+    assert 'for visual_attempt in 1 2 3; do' in LAUNCHER
+    assert 'visual_record_attempt_${visual_attempt}.log' in LAUNCHER
+    assert 'if [[ -s "$VISUAL_FILE" ]]; then' in LAUNCHER
+    assert '-reconnect_streamed 1' in LAUNCHER
+
+
+def test_visual_provenance_is_fail_closed():
+    capture = LAUNCHER.index('write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json"')
+    window = LAUNCHER[capture - 200:capture + 800]
+    assert 'if write_live_run_provenance' in window
+    assert '--strict-topic-inventory' in window
+    assert 'provenance_ok=1' in window
+    assert 'stop_stack' in window
+    assert '|| true' not in window
+
+
 def test_source_only_mode_does_not_inherit_visual_recording(fake_root):
     result = _parse(fake_root, "--source-record-no-mavros")
     assert result.returncode == 0, result.stdout + result.stderr

@@ -102,11 +102,12 @@ def test_field_raw_recorder_has_high_throughput_storage_contract():
     assert "sleep 3" not in block
 
 
-def test_main_retained_recorder_has_expanded_cache():
+def test_main_retained_recorder_uses_fastwrite_and_expanded_cache():
     launcher = LAUNCHER.read_text(encoding="utf-8")
 
     assert "VIDEO_ROSBAG_EXTRA_ARGS=(" in launcher
-    assert "--max-cache-size 268435456" in launcher
+    assert "--storage-preset-profile fastwrite" in launcher
+    assert "--max-cache-size 536870912" in launcher
     assert '"${VIDEO_ROSBAG_EXTRA_ARGS[@]}"' in launcher
 
 

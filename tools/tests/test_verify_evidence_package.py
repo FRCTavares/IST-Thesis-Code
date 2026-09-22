@@ -470,3 +470,19 @@ def test_structured_visual_package_rejects_image_topic_and_failed_visual(tmp_pat
     assert report["runtime_status"] == "incomplete_runtime_evidence"
     assert any("image topic" in problem for problem in report["problems"])
     assert any("visual evidence" in problem for problem in report["problems"])
+
+
+def test_runtime_only_exit_accepts_pending_annotation_but_not_missing_visual(tmp_path):
+    bag = _build_package(tmp_path, control=False)
+    _add_visual_evidence(bag)
+    command = [sys.executable, str(REPO_ROOT / "tools/live/verify_evidence_package.py"),
+               "--bag-dir", str(bag), "--run-id", "evp_test", "--expect-visual",
+               "--runtime-only"]
+    result = subprocess.run(command, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads((bag / "evidence_package_status.json").read_text())
+    assert report["status"] == "pending_postflight_annotation"
+    assert report["runtime_status"] == "complete_runtime_evidence"
+    (bag / "visual_evp_test.mkv").unlink()
+    result = subprocess.run(command, capture_output=True, text=True)
+    assert result.returncode != 0

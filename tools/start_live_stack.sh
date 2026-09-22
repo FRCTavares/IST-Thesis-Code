@@ -485,12 +485,19 @@ archive_run_evidence_logs() {
         --run-id "$RUN_ID"
         --bag-dir "$bag_dir"
         --log dashboard_bridge.log
-        --log target_memory_mars.log
         --log rosbag.log
     )
+    if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
+        archive_args+=(--log target_memory_mars.log)
+    else
+        archive_args+=(--optional-file target_memory_mars.log)
+    fi
 
     if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
         archive_args+=(--log visual_record.log)
+        for visual_attempt in 1 2 3; do
+            archive_args+=(--optional-file "visual_record_attempt_${visual_attempt}.log")
+        done
     fi
 
     if [[ "${ENABLE_CONTROL:-0}" -eq 1 ]]; then
@@ -587,13 +594,16 @@ verify_retained_evidence() {
     fi
     if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
         pkg_args+=(--expect-visual)
+        if [[ "${ENABLE_CONTROL:-0}" -eq 0 && "${FIELD_MAVROS_RECORD:-0}" -eq 0 ]]; then
+            pkg_args+=(--runtime-only)
+        fi
     fi
     if [[ -f "$RUN_DIR/operator_events.jsonl" ]]; then
         pkg_args+=(--expect-operator-events)
     fi
 
     if python3 "$THESIS_ROOT/tools/live/verify_evidence_package.py" "${pkg_args[@]}"; then
-        echo "[ok] retained evidence package verified"
+        echo "[ok] retained runtime evidence package verified"
     else
         echo ""
         echo "############################################################"
@@ -816,9 +826,8 @@ write_video_bag_metadata() {
 # Issue #54 schema-v1 provenance record: git commit/state, exact invocation,
 # hardware/software versions, model/config hashes, resolved ROS parameters,
 # topic/QoS inventory, selected target, and runtime switch history. Written
-# atomically alongside the plain-text summary above. Best-effort: a failure
-# here degrades provenance for this run but must not take down live
-# recording, so it never calls stop_stack.
+# atomically alongside the plain-text summary above. The caller decides
+# whether a capture failure stops the run.
 write_live_run_provenance() {
     local bag_kind="$1"
     local output_path="$2"
@@ -852,6 +861,9 @@ write_live_run_provenance() {
     local -a hash_args=()
     if [[ -n "${PERCEPTION_HAILO_HEF_PATH:-}" ]]; then
         hash_args+=(--hash-file "detector_hef=$PERCEPTION_HAILO_HEF_PATH")
+    fi
+    if [[ "${TRACKER_TYPE:-}" == "deepsort" ]]; then
+        hash_args+=(--hash-file "tracker_reid_model=$REID_MODEL_PATH")
     fi
     if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
         hash_args+=(--hash-file "tim_mars_reid_model=$TARGET_MEMORY_MARS_MODEL_PATH")
@@ -912,7 +924,9 @@ write_live_run_provenance() {
         "${control_param_args[@]}" \
         "${switch_log_args[@]}"; then
         echo "[warn] failed to write live-run provenance record: $output_path"
+        return 1
     fi
+    return 0
 }
 
 post_target_selection() {
@@ -1604,13 +1618,13 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         VIDEO_BAG_TOPICS+=(
             /target_memory_mars
             /target_memory_mars/status
+            /timing_target
         )
     fi
 
     VIDEO_BAG_TOPICS+=(
         /timing
         /timing_tracker
-        /timing_target
     )
 
     # Controller outputs exist only when the controller is running. Passive
@@ -1656,13 +1670,9 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         exit 1
     fi
 
-    # Complete the costly ROS graph/parameter and model-hash introspection
-    # before the evidence recorders start. Controller provenance in particular
-    # can contend with a live structured recorder during startup.
     if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
         VISUAL_FILE="$VIDEO_BAG_OUT_DIR/visual_${RUN_ID}.mkv"
         VISUAL_STARTED_AT_UTC=""
-        write_live_run_provenance video "$RUN_DIR/visual_preflight_run_metadata.json" "${VIDEO_BAG_TOPICS[@]}"
     fi
 
     echo "[ok] video bag recording enabled"
@@ -1678,7 +1688,8 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
     # Main MCAP retains structured topics only in the flight visual profile.
     # The MJPEG visual file is separate from rosbag storage.
     VIDEO_ROSBAG_EXTRA_ARGS=(
-        --max-cache-size 268435456
+        --storage-preset-profile fastwrite
+        --max-cache-size 536870912
     )
 
     if [[ -f "$QOS_OVERRIDE_FILE" ]]; then
@@ -1711,15 +1722,43 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
 
     if [[ -d "$VIDEO_BAG_OUT_DIR" ]]; then
         if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
-            VISUAL_STARTED_AT_UTC="$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)"
-            start_ros_bg visual_record ffmpeg -hide_banner -nostdin -loglevel warning \
-                -use_wallclock_as_timestamps 1 \
-                -i "http://127.0.0.1:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45" \
-                -an -c:v copy -metadata "creation_time=$VISUAL_STARTED_AT_UTC" \
-                -f matroska "$VISUAL_FILE"
-            sleep 1
-            if ! check_proc_alive visual_record; then
-                echo "[error] visual recorder failed to start"
+            visual_ready=0
+            for visual_attempt in 1 2 3; do
+                VISUAL_STARTED_AT_UTC="$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)"
+                start_ros_bg visual_record ffmpeg -hide_banner -nostdin -loglevel warning \
+                    -use_wallclock_as_timestamps 1 \
+                    -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
+                    -reconnect_on_network_error 1 -reconnect_on_http_error 5xx \
+                    -reconnect_delay_max 2 \
+                    -i "http://127.0.0.1:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45" \
+                    -an -c:v copy -metadata "creation_time=$VISUAL_STARTED_AT_UTC" \
+                    -f matroska "$VISUAL_FILE"
+                for _ in {1..50}; do
+                    if [[ -s "$VISUAL_FILE" ]]; then
+                        break
+                    fi
+                    if ! kill -0 "${PROC_PIDS[visual_record]}" 2>/dev/null; then
+                        break
+                    fi
+                    sleep 0.1
+                done
+                if [[ -s "$VISUAL_FILE" ]]; then
+                    if check_proc_alive visual_record; then
+                        visual_ready=1
+                    fi
+                    break
+                fi
+                if kill -0 "${PROC_PIDS[visual_record]}" 2>/dev/null; then
+                    echo "[error] visual recorder produced no non-empty output within 5 s"
+                    break
+                fi
+                echo "[warn] visual recorder connection ended before first frame; startup attempt $visual_attempt"
+                cp "$RUN_DIR/visual_record.log" "$RUN_DIR/visual_record_attempt_${visual_attempt}.log"
+                remove_tracked_pid_entry "${PROC_PIDS[visual_record]}" visual_record
+                rm -f "$VISUAL_FILE"
+            done
+            if [[ "$visual_ready" -ne 1 ]]; then
+                echo "[error] visual recorder failed before producing stable output"
                 stop_stack
                 exit 1
             fi
@@ -1728,15 +1767,25 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         write_video_bag_metadata "$VIDEO_BAG_OUT_DIR/flight_metadata.txt" "${VIDEO_BAG_TOPICS[@]}"
         echo "[ok] video bag metadata: $VIDEO_BAG_OUT_DIR/flight_metadata.txt"
 
-        # Full live provenance performs many ROS graph/parameter queries.
-        # When a paired raw recorder is requested, start that recorder first
-        # so evidence capture is not delayed by provenance introspection.
+        # Capture the graph while both evidence recorders are running. A
+        # transient discovery snapshot may be retried, but only a complete
+        # positive-publisher inventory is accepted for this visual profile.
         if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
-            python3 "$THESIS_ROOT/tools/live/attach_visual_run_metadata.py" \
-                --precomputed "$RUN_DIR/visual_preflight_run_metadata.json" \
-                --output "$VIDEO_BAG_OUT_DIR/run_metadata.json" \
-                --run-id "$RUN_ID" --visual-file "$VISUAL_FILE" \
-                --visual-started-at-utc "$VISUAL_STARTED_AT_UTC" || true
+            provenance_ok=0
+            for provenance_attempt in 1 2 3; do
+                if write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json" "${VIDEO_BAG_TOPICS[@]}" &&
+                    python3 "$THESIS_ROOT/tools/live/validate_live_run_metadata.py" \
+                        "$VIDEO_BAG_OUT_DIR/run_metadata.json" --strict-topic-inventory; then
+                    provenance_ok=1
+                    break
+                fi
+                echo "[warn] visual provenance attempt $provenance_attempt failed"
+            done
+            if [[ "$provenance_ok" -ne 1 ]]; then
+                echo "[error] visual run provenance remained invalid with live recorders"
+                stop_stack
+                exit 1
+            fi
         elif [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -ne 1 ]]; then
             write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json" "${VIDEO_BAG_TOPICS[@]}"
         fi
