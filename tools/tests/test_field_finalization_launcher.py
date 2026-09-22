@@ -42,13 +42,93 @@ def test_background_processes_reset_sigint_sigquit_before_exec():
     end = LAUNCHER.index("\n}\n", start)
     helper = LAUNCHER[start:end]
 
-    # Bash non-interactive async jobs otherwise inherit SIGINT/SIGQUIT ignored.
-    # The tracked PID must be the exec'd process with normal signal handling.
-    assert "trap - INT QUIT" in helper
-    assert 'exec "$@"' in helper
-    assert helper.index("trap - INT QUIT") < helper.index('exec "$@"')
+    # Bash asynchronous jobs inherit SIGINT/SIGQUIT ignored. Reset the actual
+    # process dispositions to SIG_DFL before replacing the wrapper with exec.
+    assert "signal.signal(signal.SIGINT, signal.SIG_DFL)" in helper
+    assert "signal.signal(signal.SIGQUIT, signal.SIG_DFL)" in helper
+    assert "os.execvp(sys.argv[1], sys.argv[1:])" in helper
     assert 'local pid=$!' in helper
-    assert '"$@" >"$RUN_DIR/${name}.log" 2>&1 &' not in helper
+
+    # Comments may mention the retired trap implementation; executable lines
+    # must not still use it.
+    executable = "\n".join(
+        line for line in helper.splitlines()
+        if not line.lstrip().startswith("#")
+    )
+    assert "trap - INT QUIT" not in executable
+
+
+def test_start_ros_bg_child_really_honors_sigint(tmp_path):
+    start = LAUNCHER.index("start_ros_bg() {")
+    end = LAUNCHER.index("\n}\n", start) + len("\n}\n")
+    helper = LAUNCHER[start:end]
+
+    script = f"""
+set +e
+declare -A PROC_PIDS=()
+RUN_DIR="$PWD"
+PID_FILE="$PWD/pids.txt"
+log_start() {{ :; }}
+
+{helper}
+
+start_ros_bg signal_probe python3 -c 'import time; time.sleep(60)'
+pid="${{PROC_PIDS[signal_probe]}}"
+
+sleep 0.5
+
+if ! kill -0 "$pid" 2>/dev/null; then
+    echo "FAIL: child exited before SIGINT"
+    exit 2
+fi
+
+kill -INT "$pid"
+
+exited=0
+for _ in $(seq 1 30); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+        exited=1
+        break
+    fi
+
+    state="$(ps -o stat= -p "$pid" 2>/dev/null | tr -d '[:space:]')"
+    case "$state" in
+        Z*|X*)
+            exited=1
+            break
+            ;;
+    esac
+
+    sleep 0.1
+done
+
+if [ "$exited" -ne 1 ]; then
+    echo "FAIL: start_ros_bg child ignored SIGINT"
+    kill -TERM "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+    exit 3
+fi
+
+wait "$pid" 2>/dev/null
+rc=$?
+
+echo "PASS: start_ros_bg child exited after SIGINT rc=$rc"
+exit 0
+"""
+
+    completed = subprocess.run(
+        ["bash", "-c", script],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    assert completed.returncode == 0, (
+        f"stdout:\n{completed.stdout}\n"
+        f"stderr:\n{completed.stderr}"
+    )
+    assert "PASS: start_ros_bg child exited after SIGINT" in completed.stdout
 
 def test_recorder_finalize_grace_default_is_generous():
     assert 'RECORDER_FINALIZE_GRACE_S="${RECORDER_FINALIZE_GRACE_S:-10}"' in DEFAULTS

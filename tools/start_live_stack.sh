@@ -77,18 +77,18 @@ log_stop() { log_verbose_tag stop "$@"; }
 log_done() { log_verbose_tag done "$@"; }
 log_hint() { log_verbose_tag hint "$@"; }
 
-# Start a ROS process in the background, track pid, and redirect logs to this run directory.
+# Start a process in the background, track pid, and redirect logs to this run directory.
 start_ros_bg() {
     local name="$1"
     shift
 
-    # In a non-interactive shell, asynchronous commands inherit SIGINT/SIGQUIT
-    # as ignored. Reset those dispositions in the child before exec so the
-    # tracked process can honor the shutdown contract's graceful SIGINT.
-    (
-        trap - INT QUIT
-        exec "$@"
-    ) >"$RUN_DIR/${name}.log" 2>&1 &
+    # Bash starts asynchronous jobs with SIGINT/SIGQUIT ignored. A subshell
+    # `trap - INT QUIT` is not sufficient here because "default" can still
+    # resolve to the inherited ignored disposition of the async child.
+    #
+    # Reset both signals explicitly to SIG_DFL in a tiny exec wrapper. os.execvp
+    # then replaces the wrapper in-place, so $! remains the exact tracked PID.
+    python3 -c 'import os, signal, sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGQUIT, signal.SIG_DFL); os.execvp(sys.argv[1], sys.argv[1:])'         "$@" >"$RUN_DIR/${name}.log" 2>&1 &
 
     local pid=$!
     PROC_PIDS["$name"]="$pid"
@@ -644,6 +644,9 @@ stop_stack() {
     # 1) Stop the application publishers/nodes first so the controller emits
     #    its final safe-zero + shutdown diagnostic while the recorders are
     #    still running. Recorders are deliberately excluded here.
+    if [[ -n "${RUN_DIR:-}" && -f "$RUN_DIR/perception_camera.log" ]]; then
+        printf '[shutdown] managed application stop requested wall_ns=%s\n' "$(date +%s%N)" >> "$RUN_DIR/perception_camera.log"
+    fi
     stop_app_nodes
 
     # 2) Brief settle so the last in-flight messages reach the recorders.
@@ -871,6 +874,9 @@ write_live_run_provenance() {
     fi
     if [[ "$bag_kind" == "source" && -n "${SOURCE_QOS_OVERRIDE_FILE:-}" ]]; then
         hash_args+=(--hash-file "source_recorder_qos=$SOURCE_QOS_OVERRIDE_FILE")
+    fi
+    if [[ "$bag_kind" == "video" && "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
+        hash_args+=(--hash-file "structured_recorder_qos=$THESIS_ROOT/tools/live/structured_record_qos_overrides.yaml")
     fi
 
     local -a switch_log_args=()
@@ -1684,12 +1690,32 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
 
 
     QOS_OVERRIDE_FILE="/etc/thesis/live_record_qos_overrides.yaml"
+    if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
+        QOS_OVERRIDE_FILE="$THESIS_ROOT/tools/live/structured_record_qos_overrides.yaml"
+        if [[ ! -f "$QOS_OVERRIDE_FILE" ]]; then
+            echo "[error] structured recorder QoS contract missing: $QOS_OVERRIDE_FILE"
+            stop_stack
+            exit 1
+        fi
+    fi
 
     # Main MCAP retains structured topics only in the flight visual profile.
     # The MJPEG visual file is separate from rosbag storage.
+    STRUCTURED_ROSBAG_LOG_LEVEL="${THESIS_STRUCTURED_ROSBAG_LOG_LEVEL:-info}"
+    case "$STRUCTURED_ROSBAG_LOG_LEVEL" in
+        debug|info|warn|error|fatal)
+            ;;
+        *)
+            echo "[error] invalid structured rosbag log level: $STRUCTURED_ROSBAG_LOG_LEVEL"
+            stop_stack
+            exit 1
+            ;;
+    esac
+
     VIDEO_ROSBAG_EXTRA_ARGS=(
         --storage-preset-profile fastwrite
         --max-cache-size 536870912
+        --log-level "$STRUCTURED_ROSBAG_LOG_LEVEL"
     )
 
     if [[ -f "$QOS_OVERRIDE_FILE" ]]; then

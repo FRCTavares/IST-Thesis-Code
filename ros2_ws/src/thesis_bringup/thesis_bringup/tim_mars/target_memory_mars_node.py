@@ -306,15 +306,23 @@ class TargetMemoryMarsNode(Node):
             depth=10,
             reliability=ReliabilityPolicy.RELIABLE,
         )
+        # Preserve BEST_EFFORT target_qos for the live /tracks subscription.
+        # The high-rate structured outputs independently offer RELIABLE delivery
+        # so rosbag can request lossless evidence transport.
+        recording_qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+            reliability=ReliabilityPolicy.RELIABLE,
+        )
         self._target_pub = self.create_publisher(
             TargetState,
             self._target_topic,
-            target_qos,
+            recording_qos,
         )
         self._timing_target_pub = self.create_publisher(
             Timing,
             self._timing_target_topic,
-            target_qos,
+            recording_qos,
         )
         # Status carries authority revocation and selection-epoch changes.
         # Reliable delivery is paired with controller-side freshness checks;

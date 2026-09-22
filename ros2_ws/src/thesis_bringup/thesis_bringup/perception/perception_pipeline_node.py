@@ -256,10 +256,12 @@ class PerceptionPipelineNode(Node):
         self._logged_own_data = False
         self._preprocess_log_lock = threading.Lock()
 
+        # Structured outputs offer RELIABLE delivery so the evidence recorder can
+        # request lossless transport. Operational consumers remain BEST_EFFORT.
         qos_pub = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
-            depth=1,
-            reliability=ReliabilityPolicy.BEST_EFFORT,
+            depth=10,
+            reliability=ReliabilityPolicy.RELIABLE,
         )
 
         self.pub_dets = self.create_publisher(Detection2DArray, "/detections", qos_pub)

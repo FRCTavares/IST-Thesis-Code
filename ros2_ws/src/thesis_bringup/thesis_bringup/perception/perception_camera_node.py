@@ -18,6 +18,7 @@ import time
 import cv2
 import rclpy
 from rclpy.executors import ExternalShutdownException
+from rclpy._rclpy_pybind11 import RCLError
 from rclpy.qos import (
     DurabilityPolicy,
     HistoryPolicy,
@@ -472,15 +473,23 @@ class PerceptionCameraNode(PerceptionPipelineNode):
                 self._retry_reopen()
                 continue
 
+            if self._camera_stop.is_set() or not rclpy.ok():
+                return
             self._last_frame_monotonic = now
             self._camera_frame_id += 1
 
-            msg = self._frame_to_msg(frame)
-            if self._image_raw_pub is not None:
-                self._image_raw_pub.publish(msg)
-            self._maybe_publish_dashboard_frame(msg, now_monotonic=time.monotonic())
-            self._maybe_publish_fps()
-            self.on_image(msg)
+            try:
+                msg = self._frame_to_msg(frame)
+                if self._image_raw_pub is not None:
+                    self._image_raw_pub.publish(msg)
+                self._maybe_publish_dashboard_frame(msg, now_monotonic=time.monotonic())
+                self._maybe_publish_fps()
+                self.on_image(msg)
+            except RCLError as exc:
+                if ((self._camera_stop.is_set() or not rclpy.ok())
+                        and "publisher's context is invalid" in str(exc)):
+                    return
+                raise
 
             if self._fps > 0.0:
                 next_frame_time += 1.0 / self._fps
@@ -494,7 +503,9 @@ class PerceptionCameraNode(PerceptionPipelineNode):
         self._camera_stop.set()
 
         if self._camera_thread is not None:
-            self._camera_thread.join(timeout=2.0)
+            self._camera_thread.join(timeout=5.0)
+            if self._camera_thread.is_alive():
+                raise RuntimeError("camera capture thread did not stop before node destruction")
 
         if self._cap is not None:
             try:

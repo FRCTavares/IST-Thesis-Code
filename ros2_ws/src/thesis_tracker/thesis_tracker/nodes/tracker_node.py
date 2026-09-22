@@ -151,25 +151,33 @@ class TrackerNode(Node):
         self._param_callback_handle = self.add_on_set_parameters_callback(self._on_set_parameters)
 
         # Setup ROS communication
-        qos = QoSProfile(
+        # Keep latency-sensitive runtime subscriptions BEST_EFFORT/depth 1.
+        qos_sub = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
             reliability=ReliabilityPolicy.BEST_EFFORT,
         )
+        # Structured outputs offer RELIABLE delivery for the evidence recorder.
+        # BEST_EFFORT runtime subscribers remain compatible with this offer.
+        qos_pub = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+            reliability=ReliabilityPolicy.RELIABLE,
+        )
 
         self.sub = self.create_subscription(
-            Detection2DArray, "/detections", self.on_detections, qos
+            Detection2DArray, "/detections", self.on_detections, qos_sub
         )
         self.declare_parameter("image_topic", "/camera/image_raw")
         self.image_topic = str(self.get_parameter("image_topic").value)
         self.sub_image = self.create_subscription(
-            Image, self.image_topic, self.on_image, qos
+            Image, self.image_topic, self.on_image, qos_sub
         )
         self.sub_timing = self.create_subscription(
-            Timing, "/timing", self.on_timing, qos
+            Timing, "/timing", self.on_timing, qos_sub
         )
-        self.pub = self.create_publisher(Track2DArray, "/tracks", qos)
-        self.pub_timing = self.create_publisher(Timing, "/timing_tracker", qos)
+        self.pub = self.create_publisher(Track2DArray, "/tracks", qos_pub)
+        self.pub_timing = self.create_publisher(Timing, "/timing_tracker", qos_pub)
 
         self.frame_context: dict[int, tuple[int, int]] = {}
         self.max_context = 512

@@ -1,0 +1,48 @@
+# Recorder subscription buffering for the nine structured runtime streams.
+# Structured runtime publishers offer RELIABLE delivery; recorder depth
+# absorbs brief scheduling stalls without changing algorithmic behavior.
+/camera/fps:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+/detections:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+/tracks:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+/target:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+/target_memory_mars:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+/target_memory_mars/status:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+/timing_target:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+/timing:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile
+/timing_tracker:
+  history: keep_last
+  depth: 256
+  reliability: reliable
+  durability: volatile

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 from datetime import datetime
 import json
 import os
@@ -14,7 +15,9 @@ import threading
 import time
 import urllib.request
 
-from summarize_p064_matrix import CELLS, ROOT
+import websockets
+
+from summarize_p064_matrix import CELLS, ROOT, camera_ros_faults, read_json
 
 
 def read_lines(process: subprocess.Popen[str], log: Path, lines: queue.Queue[str]) -> None:
@@ -27,7 +30,14 @@ def read_lines(process: subprocess.Popen[str], log: Path, lines: queue.Queue[str
             lines.put(line)
 
 
-def start_stack(cell: int, run_id: str, tag: str, *, smoke: bool) -> tuple[subprocess.Popen[str], Path]:
+def start_stack(
+    cell: int,
+    run_id: str,
+    tag: str,
+    *,
+    smoke: bool,
+    rosbag_debug: bool = False,
+) -> tuple[subprocess.Popen[str], Path]:
     resolution, tracker, memory, _ = CELLS[cell]
     run_dir = ROOT / "ros2_ws/log/live_stack" / run_id
     bag = ROOT / "bags/live_camera" / f"{run_id}__video__{tag}"
@@ -38,6 +48,8 @@ def start_stack(cell: int, run_id: str, tag: str, *, smoke: bool) -> tuple[subpr
                "--tracker", tracker, "--mem", memory,
                "--record-structured-visual", "--no-control", "--tag", tag]
     env = dict(os.environ, RUN_ID=run_id)
+    if rosbag_debug:
+        env["THESIS_STRUCTURED_ROSBAG_LOG_LEVEL"] = "debug"
     print(f"Cell {cell}: {resolution.upper()} | {tracker} | memory={memory} | control=off")
     print(f"RUN_ID={run_id} TAG={tag}")
     print("Command:", " ".join(command))
@@ -62,10 +74,82 @@ def wait_ready(process: subprocess.Popen[str], lines: queue.Queue[str], run_id: 
     return False
 
 
+DASHBOARD_WS_URL = "ws://127.0.0.1:8765"
+
+
+async def _dashboard_snapshot(timeout_s: float) -> dict:
+    try:
+        async with websockets.connect(
+            DASHBOARD_WS_URL,
+            open_timeout=timeout_s,
+            close_timeout=1.0,
+            ping_interval=None,
+        ) as websocket:
+            raw = await asyncio.wait_for(websocket.recv(), timeout=timeout_s)
+    except Exception as exc:
+        raise ValueError(f"dashboard WebSocket snapshot unavailable: {exc}") from exc
+
+    try:
+        payload = json.loads(raw)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"dashboard WebSocket returned invalid JSON: {exc}") from exc
+
+    if not isinstance(payload, dict) or not isinstance(payload.get("tracks"), list):
+        raise ValueError("dashboard WebSocket snapshot has no tracks list")
+    return payload
+
+
+def dashboard_tracks(timeout_s: float = 2.0) -> list[dict]:
+    payload = asyncio.run(_dashboard_snapshot(timeout_s))
+    tracks: list[dict] = []
+    for item in payload["tracks"]:
+        if not isinstance(item, dict):
+            continue
+        try:
+            track_id = int(item["id"])
+            x = float(item["x"])
+            y = float(item["y"])
+            w = float(item["w"])
+            h = float(item["h"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if track_id <= 0:
+            continue
+        tracks.append({"id": track_id, "x": x, "y": y, "w": w, "h": h})
+    tracks.sort(key=lambda item: item["id"])
+    return tracks
+
+
+def print_dashboard_tracks(tracks: list[dict]) -> None:
+    if not tracks:
+        print("[info] dashboard reports no active tracks")
+        return
+    print("Available tracks from existing dashboard bridge:")
+    print("  ID    x       y       w       h")
+    for track in tracks:
+        print(
+            f"  {track['id']:<5} "
+            f"{track['x']:.3f}   {track['y']:.3f}   "
+            f"{track['w']:.3f}   {track['h']:.3f}"
+        )
+
+
+def request_target(target_id: int) -> None:
+    payload = json.dumps({"target": target_id}).encode()
+    request = urllib.request.Request(
+        "http://127.0.0.1:8090/api/target",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=5) as response:
+        if response.status < 200 or response.status >= 300:
+            raise ValueError(f"target selection returned HTTP {response.status}")
+
+
 def choose_target() -> tuple[int, str]:
     while True:
-        subprocess.run([sys.executable, str(ROOT / "tools/live/print_track_ids.py"),
-                        "--timeout", "4.0"], check=False)
+        print_dashboard_tracks(dashboard_tracks(timeout_s=2.0))
         choice = input("Select the physical person's track ID (Enter refreshes IDs): ").strip()
         if not choice:
             continue
@@ -73,17 +157,45 @@ def choose_target() -> tuple[int, str]:
             print("Enter a positive displayed track ID.")
             continue
         target_id = int(choice)
-        payload = json.dumps({"target": target_id}).encode()
-        request = urllib.request.Request("http://127.0.0.1:8090/api/target", data=payload,
-                                         headers={"Content-Type": "application/json"}, method="POST")
-        with urllib.request.urlopen(request, timeout=5) as response:
-            if response.status < 200 or response.status >= 300:
-                raise ValueError(f"target selection returned HTTP {response.status}")
+        request_target(target_id)
         description = input("Brief physical description of the selected person: ").strip()
         if not description:
             raise ValueError("physical target description is required")
         print(f"Selected track ID {target_id}. Keep the physical person and motion comparable.")
         return target_id, description
+
+
+def choose_engineering_target() -> int | None:
+    for _ in range(8):
+        tracks = dashboard_tracks(timeout_s=2.0)
+        if tracks:
+            # Engineering-only automatic choice: prefer the largest current
+            # normalised bbox. Formal cells remain explicitly human-selected.
+            selected = max(
+                tracks,
+                key=lambda item: (item["w"] * item["h"], -item["id"]),
+            )
+            target_id = int(selected["id"])
+            request_target(target_id)
+            print(f"Engineering smoke selected dashboard track {target_id}")
+            return target_id
+        time.sleep(2)
+    print("[warn] engineering smoke has no selected target; appearance load is limited")
+    return None
+
+
+def dashboard_bridge_faults(run_dir: Path) -> list[str]:
+    log = run_dir / "dashboard_bridge.log"
+    if not log.is_file():
+        return ["dashboard_bridge.log missing"]
+    text = log.read_text(encoding="utf-8", errors="replace")
+    signatures = (
+        "Traceback (most recent call last):",
+        "[ros2run]: Process exited with failure",
+        "Control API server failed:",
+        "WebSocket server start failed:",
+    )
+    return [signature for signature in signatures if signature in text]
 
 
 def run_command(command: list[str], *, log: Path | None = None) -> int:
@@ -118,11 +230,18 @@ def main() -> int:
     parser.add_argument("cell", type=int, choices=CELLS)
     parser.add_argument("--engineering-smoke", type=int, metavar="SECONDS",
                         help="bounded tooling run; never formal evidence")
+    parser.add_argument(
+        "--rosbag-debug",
+        action="store_true",
+        help="engineering diagnostic only; enable verbose recorder logging",
+    )
     args = parser.parse_args()
     cell = args.cell
     smoke = args.engineering_smoke is not None
-    if smoke and not 10 <= args.engineering_smoke <= 60:
-        parser.error("engineering smoke duration must be 10-60 seconds")
+    if smoke and not 10 <= args.engineering_smoke <= 300:
+        parser.error("engineering smoke duration must be 10-300 seconds")
+    if args.rosbag_debug and not smoke:
+        parser.error("--rosbag-debug is only valid with --engineering-smoke")
     if not smoke:
         dirty = subprocess.check_output(["git", "status", "--short", "--untracked-files=no"],
                                         cwd=ROOT, text=True).strip()
@@ -137,7 +256,13 @@ def main() -> int:
     run_id = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
     tag = CELLS[cell][3] if not smoke else f"p064_runner_engineering_smoke_c{cell}"
     bag = ROOT / "bags/live_camera" / f"{run_id}__video__{tag}"
-    process, run_dir = start_stack(cell, run_id, tag, smoke=smoke)
+    process, run_dir = start_stack(
+        cell,
+        run_id,
+        tag,
+        smoke=smoke,
+        rosbag_debug=args.rosbag_debug,
+    )
     lines: queue.Queue[str] = queue.Queue()
     thread = threading.Thread(target=read_lines, args=(process, run_dir / "p064_launcher.log", lines), daemon=True)
     thread.start()
@@ -147,8 +272,11 @@ def main() -> int:
     sampler_rc: int | None = None
     if ready:
         try:
-            if CELLS[cell][2] == "mars" and not smoke:
-                selected, target_description = choose_target()
+            if CELLS[cell][2] == "mars":
+                if smoke:
+                    selected = choose_engineering_target()
+                else:
+                    selected, target_description = choose_target()
             groups = "detector,tracker,tim" if CELLS[cell][2] == "mars" else "detector,tracker"
             duration = 240 if not smoke else args.engineering_smoke
             warmup = 60 if not smoke else 0
@@ -201,12 +329,39 @@ def main() -> int:
     if bag.is_dir():
         (bag / "p064_collection_status.json").write_text(collection_text)
     if smoke:
+        transport = read_json(bag / "recorder_transport_status.json") or {}
+        package = read_json(bag / "evidence_package_status.json") or {}
+        visual = read_json(bag / "visual_evidence_status.json") or {}
+        faults, teardown_errors = camera_ros_faults(run_dir, None)
+        dashboard_faults = dashboard_bridge_faults(run_dir)
+        root_noise = [str(path) for path in (ROOT / "log", ROOT / "hailort.log")
+                      if path.exists()]
+        passed = (ready and stopped and sampler_rc == 0 and not root_noise
+                  and all(analysis_results.get(key) == 0 for key in
+                          ("per_topic", "full_horizon_timing", "transport",
+                           "provenance", "package"))
+                  and transport.get("quality_status") == "observed_zero"
+                  and package.get("provenance_validation", {}).get("passed") is True
+                  and visual.get("passed") is True and not faults
+                  and not dashboard_faults)
         result = {"run_id": run_id, "tag": tag, "classification": "non_scientific_smoke",
+                  "passed": passed, "duration_s": args.engineering_smoke,
+                  "recorder_log_level": "debug" if args.rosbag_debug else "info",
+                  "selected_target_id": selected, "camera_ros_fault_signatures": faults,
+                  "camera_teardown_context_errors": teardown_errors,
+                  "dashboard_bridge_fault_signatures": dashboard_faults,
+                  "root_runtime_noise": root_noise,
+                  "recorder_transport_status": transport.get("quality_status"),
+                  "recorder_loss_count": transport.get("recorders", {}).get("main", {}).get(
+                      "reported_transport_loss_count"),
+                  "provenance_passed": package.get("provenance_validation", {}).get("passed"),
+                  "visual_passed": visual.get("passed"),
                   "launcher_ready": ready, "sampler_returncode": sampler_rc,
-                  "launcher_finalized": stopped, "bag_dir": str(bag)}
+                  "launcher_finalized": stopped, "analysis_returncodes": analysis_results,
+                  "bag_dir": str(bag)}
         (run_dir / "p064_smoke_result.json").write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result, indent=2))
-        return 0 if ready and stopped and sampler_rc == 0 else 1
+        return 0 if passed else 1
     command = [sys.executable, str(ROOT / "tools/experiments/summarize_p064_matrix.py"),
                "--cell", str(cell), "--run-id", run_id]
     if selected is not None:

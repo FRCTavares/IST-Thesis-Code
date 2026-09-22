@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import importlib.util
+import yaml
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LAUNCHER = (ROOT / "tools/start_live_stack.sh").read_text()
 RUNNER = (ROOT / "tools/experiments/run_p064_cell.py").read_text()
 SHELL = (ROOT / "tools/experiments/run_p064_cell.sh").read_text()
+CAMERA = (ROOT / "ros2_ws/src/thesis_bringup/thesis_bringup/perception/perception_camera_node.py").read_text()
+QOS = yaml.safe_load((ROOT / "tools/live/structured_record_qos_overrides.yaml").read_text())
 
 
 def load(path: Path, name: str):
@@ -188,3 +191,215 @@ def test_hd_tim_frozen_gate_boundaries(tmp_path, monkeypatch):
     failed = summary.summarize(5, "run1", bag, run, operator_target_id=3)
     assert failed["classification"] == "fail"
     assert "validated-target p95 above 200 ms" in failed["reasons"]
+    for i, ns in enumerate(stamps["/timing_target"]):
+        messages["/timing_target"][i] = (ns, SimpleNamespace(e2e_validated_target_ms=50))
+    write("recorder_transport_status.json", {"quality_status": "observed_nonzero"})
+    invalid = summary.summarize(5, "run1", bag, run, operator_target_id=3)
+    assert invalid["classification"] == "invalid"
+    assert "recorder transport not observed zero" in invalid["reasons"]
+    write("recorder_transport_status.json", {"quality_status": "observed_zero"})
+    write("evidence_package_status.json", {"runtime_status": "complete_runtime_evidence",
+                                           "provenance_validation": {"passed": False}})
+    invalid = summary.summarize(5, "run1", bag, run, operator_target_id=3)
+    assert invalid["classification"] == "invalid"
+    assert "provenance invalid or unavailable" in invalid["reasons"]
+
+
+def test_structured_recorder_qos_matches_all_nine_offered_publishers():
+    offered = {
+        "/camera/fps": "reliable",
+        "/detections": "reliable",
+        "/tracks": "reliable",
+        "/target": "reliable",
+        "/target_memory_mars": "reliable",
+        "/target_memory_mars/status": "reliable",
+        "/timing_target": "reliable",
+        "/timing": "reliable",
+        "/timing_tracker": "reliable",
+    }
+    assert QOS.keys() == offered.keys()
+    for topic, reliability in offered.items():
+        assert QOS[topic] == {
+            "history": "keep_last", "depth": 256,
+            "reliability": reliability, "durability": "volatile",
+        }
+    visual_block = LAUNCHER.split('if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then', 1)[1]
+    assert 'structured_record_qos_overrides.yaml' in visual_block
+    assert '--qos-profile-overrides-path "$QOS_OVERRIDE_FILE"' in LAUNCHER
+    assert '--storage-preset-profile fastwrite' in LAUNCHER
+    assert '--max-cache-size 536870912' in LAUNCHER
+    assert 'structured_recorder_qos=' in LAUNCHER
+
+
+def test_camera_shutdown_requires_capture_thread_exit():
+    assert 'except RCLError as exc:' in CAMERA
+    assert 'self._camera_stop.is_set() or not rclpy.ok()' in CAMERA
+    assert "publisher\'s context is invalid" in CAMERA
+    assert 'if self._camera_thread.is_alive():' in CAMERA
+    assert 'raise RuntimeError("camera capture thread did not stop before node destruction")' in CAMERA
+
+
+def test_known_teardown_exception_only_after_managed_stop(tmp_path):
+    log = tmp_path / "perception_camera.log"
+    trace = (
+        "Exception in thread perception_camera_capture:\n"
+        "Traceback (most recent call last):\n"
+        "  File \"camera.py\", line 481, in _camera_loop\n"
+        "    self._maybe_publish_dashboard_frame(msg, now_monotonic=time.monotonic())\n"
+        "  File \"camera.py\", line 414, in _maybe_publish_dashboard_frame\n"
+        "    self._dashboard_pub.publish(msg)\n"
+        "rclpy._rclpy_pybind11.RCLError: Failed to publish: publisher's context is invalid\n"
+    )
+    log.write_text(trace)
+    faults, ignored = summary.camera_ros_faults(tmp_path, 100)
+    assert faults and ignored == 0
+    log.write_text("[shutdown] managed application stop requested wall_ns=101\n" + trace)
+    faults, ignored = summary.camera_ros_faults(tmp_path, 100)
+    assert faults == [] and ignored == 1
+    faults, ignored = summary.camera_ros_faults(tmp_path, 102)
+    assert faults and ignored == 0
+    log.write_text("[shutdown] managed application stop requested wall_ns=101\n"
+                   + trace.replace("publisher's context is invalid", "middleware unavailable"))
+    faults, ignored = summary.camera_ros_faults(tmp_path, 100)
+    assert faults and ignored == 0
+    log.write_text("[shutdown] managed application stop requested wall_ns=101\n"
+                   + trace + "Traceback (most recent call last):\n")
+    faults, ignored = summary.camera_ros_faults(tmp_path, 100)
+    assert faults and ignored == 1
+    log.write_text("[ERROR] camera stalled during active capture\n"
+                   "[shutdown] managed application stop requested wall_ns=101\n" + trace)
+    faults, ignored = summary.camera_ros_faults(tmp_path, 100)
+    assert faults and ignored == 1
+
+
+def test_exact_run_id_is_preserved_in_invalid_result(tmp_path):
+    run_id = "2026-09-22__13-35-08"
+    result = summary.summarize(1, run_id, tmp_path / "missing_bag",
+                               tmp_path / "missing_run")
+    assert result["run_id"] == run_id
+    assert result["classification"] == "invalid"
+
+
+def test_engineering_smoke_uses_formal_recorder_log_level_by_default():
+    assert 'parser.add_argument(' in RUNNER
+    assert '"--rosbag-debug"' in RUNNER
+    assert 'if rosbag_debug:' in RUNNER
+    assert 'env["THESIS_STRUCTURED_ROSBAG_LOG_LEVEL"] = "debug"' in RUNNER
+    assert '"recorder_log_level": "debug" if args.rosbag_debug else "info"' in RUNNER
+    assert 'if args.rosbag_debug and not smoke:' in RUNNER
+    assert '"${THESIS_STRUCTURED_ROSBAG_LOG_LEVEL:-info}"' in LAUNCHER
+    assert '--log-level "$STRUCTURED_ROSBAG_LOG_LEVEL"' in LAUNCHER
+
+
+def test_p064_target_discovery_reuses_existing_dashboard_bridge():
+    assert "print_track_ids.py" not in RUNNER
+    assert 'DASHBOARD_WS_URL = "ws://127.0.0.1:8765"' in RUNNER
+    assert "websockets.connect(" in RUNNER
+    assert 'payload.get("tracks")' in RUNNER
+    assert "Available tracks from existing dashboard bridge:" in RUNNER
+    assert "Engineering smoke selected dashboard track" in RUNNER
+
+
+def test_p064_formal_target_selection_remains_human_explicit():
+    assert 'choice = input("Select the physical person\'s track ID' in RUNNER
+    assert 'description = input("Brief physical description of the selected person:' in RUNNER
+    assert "# Engineering-only automatic choice" in RUNNER
+
+
+def test_p064_smoke_fails_closed_on_dashboard_bridge_fault():
+    assert "def dashboard_bridge_faults(" in RUNNER
+    assert '"Traceback (most recent call last):"' in RUNNER
+    assert '"[ros2run]: Process exited with failure"' in RUNNER
+    assert "dashboard_faults = dashboard_bridge_faults(run_dir)" in RUNNER
+    assert "and not dashboard_faults" in RUNNER
+    assert '"dashboard_bridge_fault_signatures": dashboard_faults' in RUNNER
+
+def test_p064_structured_runtime_publishers_offer_reliable_recording_qos():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+
+    qos_text = (
+        root / "tools/live/structured_record_qos_overrides.yaml"
+    ).read_text(encoding="utf-8")
+
+    for topic in (
+        "/detections",
+        "/tracks",
+        "/target",
+        "/target_memory_mars",
+        "/timing_target",
+        "/timing",
+        "/timing_tracker",
+    ):
+        start = qos_text.index(f"{topic}:")
+        next_topic = qos_text.find("\n/", start + 1)
+        end = len(qos_text) if next_topic < 0 else next_topic
+        assert "reliability: reliable" in qos_text[start:end]
+
+    perception = (
+        root
+        / "ros2_ws/src/thesis_bringup/thesis_bringup/perception/"
+        "perception_pipeline_node.py"
+    ).read_text(encoding="utf-8")
+    perception_qos = perception[
+        perception.index("qos_pub = QoSProfile("):
+        perception.index("self.pub_dets =")
+    ]
+    assert "depth=10" in perception_qos
+    assert "ReliabilityPolicy.RELIABLE" in perception_qos
+
+    tracker = (
+        root
+        / "ros2_ws/src/thesis_tracker/thesis_tracker/nodes/tracker_node.py"
+    ).read_text(encoding="utf-8")
+    tracker_sub = tracker[
+        tracker.index("qos_sub = QoSProfile("):
+        tracker.index("qos_pub = QoSProfile(")
+    ]
+    tracker_pub = tracker[
+        tracker.index("qos_pub = QoSProfile("):
+        tracker.index("self.sub = self.create_subscription(")
+    ]
+    assert "depth=1" in tracker_sub
+    assert "ReliabilityPolicy.BEST_EFFORT" in tracker_sub
+    assert "depth=10" in tracker_pub
+    assert "ReliabilityPolicy.RELIABLE" in tracker_pub
+    assert '"/tracks", qos_pub' in tracker
+    assert '"/timing_tracker", qos_pub' in tracker
+
+    tim = (
+        root
+        / "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/"
+        "target_memory_mars_node.py"
+    ).read_text(encoding="utf-8")
+    tim_interfaces = tim[
+        tim.index("def _create_ros_interfaces("):
+        tim.index("def _setup_async_reid_transport(")
+    ]
+    assert "recording_qos = QoSProfile(" in tim_interfaces
+    assert "ReliabilityPolicy.RELIABLE" in tim_interfaces
+    assert "self._target_topic,\n            recording_qos," in tim_interfaces
+    assert "self._timing_target_topic,\n            recording_qos," in tim_interfaces
+    assert "self._tracks_topic,\n            self._on_tracks,\n            target_qos," in tim_interfaces
+
+    dashboard = (
+        root
+        / "ros2_ws/src/thesis_bringup/thesis_bringup/dashboard/"
+        "dashboard_bridge_node.py"
+    ).read_text(encoding="utf-8")
+    assert "recording_qos = QoSProfile(" in dashboard
+    assert (
+        "self._target_topic,\n            recording_qos,"
+        in dashboard
+    )
+
+    authority = (
+        root
+        / "ros2_ws/src/thesis_bringup/thesis_bringup/authority_qos.py"
+    ).read_text(encoding="utf-8")
+    target_state = authority[
+        authority.index("def target_state_qos()"):
+        authority.index("def authority_status_qos()")
+    ]
+    assert "ReliabilityPolicy.BEST_EFFORT" in target_state

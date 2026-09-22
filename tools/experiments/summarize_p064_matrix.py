@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 from pathlib import Path
 from typing import Any
 
@@ -102,6 +103,44 @@ def resource_window(run_dir: Path) -> tuple[int, int, dict[str, Any]]:
     anchor = min(anchors, key=lambda row: abs(row["monotonic_ns"] - start))
     offset = anchor["wall_time_ns"] - anchor["monotonic_ns"]
     return start + offset, end + offset, analysis
+
+
+def camera_ros_faults(run_dir: Path, interval_end_ns: int | None) -> tuple[list[str], int]:
+    signatures = ("i2c timeout", "stream on failed", "csi2_stop_channel",
+                  "camera stalled", "traceback (most recent call last)",
+                  "segmentation fault")
+    faults: list[str] = []
+    teardown_context_errors = 0
+    for name in ("perception_camera.log", "tracker.log", "web_video.log",
+                 "target_memory_mars.log"):
+        path = run_dir / name
+        if not path.is_file():
+            continue
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        shutdown_at: int | None = None
+        for index, line in enumerate(lines):
+            match = re.fullmatch(
+                r"\[shutdown\] managed application stop requested wall_ns=(\d+)",
+                line,
+            )
+            if match and name == "perception_camera.log":
+                shutdown_at = int(match.group(1))
+            if not any(signature in line.lower() for signature in signatures):
+                continue
+            if (name == "perception_camera.log"
+                    and "traceback (most recent call last)" in line.lower()
+                    and shutdown_at is not None
+                    and (interval_end_ns is None or shutdown_at > interval_end_ns)
+                    and index > 0
+                    and lines[index - 1] == "Exception in thread perception_camera_capture:"):
+                trace = "\n".join(lines[index:index + 14])
+                if ("_dashboard_pub.publish(msg)" in trace
+                        and "rclpy._rclpy_pybind11.RCLError: Failed to publish: publisher's context is invalid"
+                        in trace):
+                    teardown_context_errors += 1
+                    continue
+            faults.append(f"{name}: {line[:200]}")
+    return faults, teardown_context_errors
 
 
 def summarize(cell: int, run_id: str, bag: Path, run_dir: Path,
@@ -305,17 +344,9 @@ def summarize(cell: int, run_id: str, bag: Path, run_dir: Path,
             valid_embeddings=sum(int(row.get("appearance_backend_valid", 0)) for _, row in status))
         if not eligible:
             reasons.append("eligible appearance attempts missing")
-    fault_signatures = ("i2c timeout", "stream on failed", "csi2_stop_channel",
-                        "camera stalled", "traceback (most recent call last)",
-                        "segmentation fault")
-    faults = []
-    for name in ("perception_camera.log", "tracker.log", "web_video.log", "target_memory_mars.log"):
-        path = run_dir / name
-        if path.is_file():
-            for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-                if any(signature in line.lower() for signature in fault_signatures):
-                    faults.append(f"{name}: {line[:200]}")
+    faults, teardown_context_errors = camera_ros_faults(run_dir, end)
     result["metrics"]["camera_ros_fault_signatures"] = faults
+    result["metrics"]["camera_teardown_context_errors"] = teardown_context_errors
     if faults:
         reasons.append("camera or ROS fault signature requires review")
     if reasons:

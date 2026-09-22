@@ -404,6 +404,12 @@ class DashboardBridgeNode(Node):
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
         )
+        recording_qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+        )
         command_qos = QoSProfile(
             reliability=ReliabilityPolicy.RELIABLE,
             durability=DurabilityPolicy.VOLATILE,
@@ -411,7 +417,11 @@ class DashboardBridgeNode(Node):
             depth=10,
         )
 
-        self._target_pub = self.create_publisher(TargetState, self._target_topic, qos)
+        self._target_pub = self.create_publisher(
+            TargetState,
+            self._target_topic,
+            recording_qos,
+        )
         self._target_select_pub = self.create_publisher(
             UInt32,
             self._target_select_topic,
