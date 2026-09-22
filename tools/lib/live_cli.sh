@@ -717,11 +717,12 @@ if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
     fi
     CAMERA_DASHBOARD_FPS=15.0
     CAMERA_APPLY_RATE_CONTROLS_BOOL="true"
-    if [[ "$CAMERA_WIDTH" != "640" || "$CAMERA_HEIGHT" != "480" ||
+    if [[ ! ( ( "$CAMERA_WIDTH" == "640" && "$CAMERA_HEIGHT" == "480" ) ||
+                ( "$CAMERA_WIDTH" == "1280" && "$CAMERA_HEIGHT" == "720" ) ) ||
           ( "$CAMERA_FPS" != "30.0" && "$CAMERA_FPS" != "30" ) ||
           "$CAMERA_SENSOR_AE_MAX" != "33333" || "$CAMERA_SENSOR_AE_UPPER" != "8333" ||
           "$CAMERA_SENSOR_EXPOSURE_MODE" != "1" ]]; then
-        echo "[error] structured visual recording requires the validated VGA/30 Hz auto-exposure profile"
+        echo "[error] structured visual recording requires VGA or HD at 30 Hz with the frozen auto-exposure settings"
         exit 1
     fi
 fi
