@@ -50,7 +50,8 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
    - #64 is P1 but a prerequisite for this P0 measurement; complete its bounded retain/reject decision first.
 
 3. [ ] [#39 — Freeze final thesis claims after final evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/39) — BLOCKED BY FINAL SYSTEM EVIDENCE
-   - Final claim freeze remains blocked until the final embedded-deployment evidence under #32 is complete. The prospective H01/H02/H03 evaluation under #27 and tracker comparison under #58 are complete. Hailo appearance-offload work under #44 is already closed and must be treated as completed evidence rather than an open dependency.
+   - Final claim freeze remains blocked until the final embedded-deployment evidence under #32 is complete. The prospective H01/H02/H03 capture/annotation under #27 remains frozen, but the #58 tracker-comparison metrics are provisionally reopened for an evaluator timebase correctness repair discovered on 21 September 2026: physical-reference `t_s` uses source-image time while the prior v2 output reader used MCAP-record-relative time. Do not freeze #58 numerical claims until the completed post-access comparison is reviewed and the thesis text and figures are updated. Hailo appearance-offload work under #44 is already closed and must be treated as completed evidence rather than an open dependency.
+   - H01/H02/H03 architecture outputs have now been reproduced from the exact 16 September authority commit (`dc4c5c39`): ByteTrack, TIM-MARS and DeepSORT match their retained semantic fingerprints, all 12 frozen-v2 evaluations match, and independent Target-ReID repeats match every message timestamp and deserialised field (1,865/1,544/1,485 messages). The original Target-ReID MCAPs were pruned; retain that direct-comparison limit and the raw hash differences in provenance. All 12 corrected source-time evaluations reconcile. The old/corrected/delta tables and F19/F20 timing impact are in `docs/results/selected_target_tracking/p058_source_time_repair_20260922.*` and `p058_source_time_repair_interpretation_20260922.md`; durable reproduction/run provenance is tracked under `p058_source_time_repair_provenance_20260922/`. The frozen physical-v2 reference, scoring core and original evaluator remain unchanged.
    - Do not claim universal TIM-MARS dominance: the final held-out evidence shows a scenario-dependent comparison with DeepSORT, while TIM-MARS substantially improves safety over raw ByteTrack and retains substantially more availability than the conservative fixed-template Target-ReID baseline.
    - Remaining evidence dependencies are the #64 resolution decision, the #50 physical controller decision, and the final sustained onboard evidence under #32.
    - Final claim freeze must reconcile implementation/configuration authority, held-out evidence, embedded evidence, explicit limitations and the dissertation literature-gap matrix.
@@ -74,14 +75,14 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
 
 3. [ ] [#67 — Complete thesis experiments, results, and discussion draft by 30 September 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/67) — ACTIVE THESIS DEADLINE
    - Produce the complete supervisor-ready dissertation draft by 30 September within the applicable MEEC page limit.
-   - #27 and #58 final evidence are now available and should be incorporated.
+   - #27 held-out source/annotation evidence remains frozen. The 21 September #58 source-time evaluator repair now has 12/12 reproduced historical cells and 12/12 reconciled corrected evaluations, with old/corrected/delta tables retained side by side. Review the repair evidence before replacing the previous #58 duration table and F19/F20 exact timing labels in the thesis; do not propagate the old values meanwhile.
    - Remaining evidence-dependent results/discussion include the #64 VGA-versus-HD resolution decision, #50 physical system evidence and #32 final onboard characterization.
    - Integrate explicit limitations through #41 and final figures/evidence tables from the dissertation plan. The former #42 checklist is closed as subsumed by this issue and #39.
    - Do not invent conclusions for evidence that is still pending.
 
 4. [ ] [#41 — Write explicit thesis limitations from final evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/41) — EVIDENCE DEPENDENT
    - Maintain explicit limitations covering small/poor-quality crops, tracker dependence, appearance-domain gap, finite held-out scope, calibration dependence, target absence, long-gap recovery limits, embedded resource constraints and the absence of formal safety guarantees.
-   - #27/#58 evidence is complete; final wording still depends on the #64 retained-resolution decision, #50 and #32.
+   - #27 capture/annotation evidence remains frozen; #58 quantitative evidence has a completed post-access source-time comparison pending review and thesis integration. Final wording also depends on the #64 retained-resolution decision, #50 and #32.
    - Report negative results and rejected mechanisms rather than hiding them.
 
 5. [ ] [#68 — Complete thesis review, formatting, and final submission by 31 October 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/68)

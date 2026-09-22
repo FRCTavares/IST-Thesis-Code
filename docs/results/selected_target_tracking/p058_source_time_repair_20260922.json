@@ -1,0 +1,2986 @@
+{
+  "cells": [
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 62.06643951699999,
+        "residual_s": 7.105427357601002e-15
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h01_dc4c5c39/bytetrack_raw/raw_target.json",
+      "corrected_report_sha256": "c1d344a50b4b0c68e89a88145f8b105ad069b0c5f611bdf0dd19c2713e7c90c6",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 62.06643951699999,
+        "residual_s": 7.105427357601002e-15
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h01_exit_reentry/evaluation/bytetrack_raw/raw_target.json",
+      "historical_report_sha256": "45e1376a7cda2a65f1025a34d09a4ac18bd9331cf2c6596f4e8ae8d7d0088ba7",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 2.139034989150702,
+          "delta": -1.1877342499274501,
+          "old": 3.326769239078152,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 4.566355193,
+          "delta": 0.033233661999999775,
+          "old": 4.533121531,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.8595086929198993,
+          "delta": 0.0488592394510009,
+          "old": 0.8106494534688984,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.8804286264276735,
+          "delta": 0.07134368092464205,
+          "old": 0.8090849455030314,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 31.200413448999996,
+          "delta": -0.06619433200000913,
+          "old": 31.266607781000005,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 218,
+          "delta": 3,
+          "old": 215,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.133013131000002,
+          "delta": 0.0,
+          "old": 0.133013131000002,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.033189253999999835,
+          "delta": 0.0,
+          "old": 0.033189253999999835,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 4.566355193,
+          "delta": 0.033233661999999775,
+          "old": 4.533121531,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 22.300219459999994,
+          "delta": 0.0,
+          "old": 22.300219459999994,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 1.1667243529999993,
+          "delta": -0.03375663700002285,
+          "old": 1.2004809900000222,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 3.866438284000009,
+          "delta": 0.03296067000001024,
+          "old": 3.8334776139999986,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h01_dc4c5c39_20260921/sequences/heldout_h01_exit_reentry/generated_bags/bytetrack_fixed",
+      "output_read_stats": {
+        "/target": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1865,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1865
+        }
+      },
+      "reference_sha256": "63361fb28372913886fc5735c7d9067c5ec24212627ccddf0a6370c4d8469042",
+      "sequence_id": "heldout_h01_exit_reentry",
+      "source_bag_path": "bags/source/held_out/2026-09/h01_exit_reentry/2026-09-15__16-31-10__source__p027_h01_exit_reentry__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789486281308955860
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 62.06643951699999,
+        "residual_s": 7.105427357601002e-15
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h01_dc4c5c39/target_reid_090/raw_target.json",
+      "corrected_report_sha256": "6ab3baad04e3f85a55eff7268f8db58545a3a24c9d4fd08d8e0d629324ec5843",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 62.066439517000006,
+        "residual_s": 7.105427357601002e-15
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h01_exit_reentry/evaluation/target_reid_090/raw_target.json",
+      "historical_report_sha256": "1d8f82b9f39a37e20cd2f760c3fa20ca1c0752fb765b3bd5aad36ad1c23062bc",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 2.0780708278777884,
+          "delta": -3.4603199210375375,
+          "old": 5.538390748915326,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 2.59983795999999,
+          "delta": -0.033261109000013,
+          "old": 2.633099069000003,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.8586851562379176,
+          "delta": 0.12269001142010016,
+          "old": 0.7359951448178175,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.8659068832155209,
+          "delta": 0.09918445091356787,
+          "old": 0.766722432301953,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 37.03336896600001,
+          "delta": 0.03326110900000856,
+          "old": 37.000107857,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 129,
+          "delta": -2,
+          "old": 131,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.133013131000002,
+          "delta": 0.0,
+          "old": 0.133013131000002,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 2.59983795999999,
+          "delta": -0.033261109000013,
+          "old": 2.633099069000003,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 22.300219459999994,
+          "delta": 0.0,
+          "old": 22.300219459999994,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h01_dc4c5c39_20260921/sequences/heldout_h01_exit_reentry/generated_bags/target_reid_090",
+      "output_read_stats": {
+        "/target_reid": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1865,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1865
+        }
+      },
+      "reference_sha256": "63361fb28372913886fc5735c7d9067c5ec24212627ccddf0a6370c4d8469042",
+      "sequence_id": "heldout_h01_exit_reentry",
+      "source_bag_path": "bags/source/held_out/2026-09/h01_exit_reentry/2026-09-15__16-31-10__source__p027_h01_exit_reentry__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789486281308955860
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 62.06643951699999,
+        "residual_s": 7.105427357601002e-15
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h01_dc4c5c39/bytetrack_tim_mars/tim_target_memory.json",
+      "corrected_report_sha256": "2b1446932e38b7503a6256e1444b9633bf24c40c6ca1ba6b2e8dba7dbf1ac4c7",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 62.066439517000006,
+        "residual_s": 7.105427357601002e-15
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h01_exit_reentry/evaluation/bytetrack_tim_mars/tim_target_memory.json",
+      "historical_report_sha256": "2ba35566b4ac89d689943a276d7529a825ba5f273d03abe7c209787f49397d44",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 2.894892364001932,
+          "delta": -3.168422580129394,
+          "old": 6.063314944131326,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 30.299888245999995,
+          "delta": 0.2836714910001703,
+          "old": 30.016216754999824,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.8352824919916813,
+          "delta": 0.0923829907346736,
+          "old": 0.7428995012570077,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.8453932163660641,
+          "delta": 0.09061124264820686,
+          "old": 0.7547819737178573,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 9.333318680000007,
+          "delta": -0.18369381300017373,
+          "old": 9.51701249300018,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 1495,
+          "delta": 18,
+          "old": 1477,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.133013131000002,
+          "delta": 0.0,
+          "old": 0.133013131000002,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 30.299888245999995,
+          "delta": 0.2836714910001703,
+          "old": 30.016216754999824,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 22.300219459999994,
+          "delta": 0.0,
+          "old": 22.300219459999994,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 0.0,
+          "delta": -0.09997767800000013,
+          "old": 0.09997767800000013,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h01_dc4c5c39_20260921/sequences/heldout_h01_exit_reentry/generated_bags/bytetrack_tim_mars",
+      "output_read_stats": {
+        "/target": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1865,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1865
+        },
+        "/target_memory_mars": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1865,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1865
+        }
+      },
+      "reference_sha256": "63361fb28372913886fc5735c7d9067c5ec24212627ccddf0a6370c4d8469042",
+      "sequence_id": "heldout_h01_exit_reentry",
+      "source_bag_path": "bags/source/held_out/2026-09/h01_exit_reentry/2026-09-15__16-31-10__source__p027_h01_exit_reentry__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789486281308955860
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 62.06643951699999,
+        "residual_s": 7.105427357601002e-15
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h01_dc4c5c39/deepsort_raw/raw_target.json",
+      "corrected_report_sha256": "77d09d6a524efbfae03566817be0e174bc5392533051e32dd119c19d9e5a71ad",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 62.06643951699999,
+        "residual_s": 7.105427357601002e-15
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h01_exit_reentry/evaluation/deepsort_raw/raw_target.json",
+      "historical_report_sha256": "2b04870d7740fb72dfa6a0fb0ac78880267a98e7bfd08e3f0af29f0e581f4ba4",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 2.2746381461724927,
+          "delta": -2.153118448952742,
+          "old": 4.427756595125235,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 9.433317300999999,
+          "delta": 0.11674330099998542,
+          "old": 9.316574000000013,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.8330552644656457,
+          "delta": 0.08600961957838593,
+          "old": 0.7470456448872598,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.8378815337700359,
+          "delta": 0.0812358646184358,
+          "old": 0.7566456691516001,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 30.199889625000004,
+          "delta": -0.01676562299998352,
+          "old": 30.216655247999988,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 459,
+          "delta": 7,
+          "old": 452,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.133013131000002,
+          "delta": 0.0,
+          "old": 0.133013131000002,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 9.433317301,
+          "delta": 0.1167433009999872,
+          "old": 9.316574000000013,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 22.300219459999994,
+          "delta": 0.0,
+          "old": 22.300219459999994,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 0.0,
+          "delta": -0.09997767800000013,
+          "old": 0.09997767800000013,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h01_dc4c5c39_20260921/sequences/heldout_h01_exit_reentry/generated_bags/deepsort_fixed",
+      "output_read_stats": {
+        "/target": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1865,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1865
+        }
+      },
+      "reference_sha256": "63361fb28372913886fc5735c7d9067c5ec24212627ccddf0a6370c4d8469042",
+      "sequence_id": "heldout_h01_exit_reentry",
+      "source_bag_path": "bags/source/held_out/2026-09/h01_exit_reentry/2026-09-15__16-31-10__source__p027_h01_exit_reentry__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789486281308955860
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 51.399725327,
+        "residual_s": 0.0
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h02_dc4c5c39/bytetrack_raw/raw_target.json",
+      "corrected_report_sha256": "c88934d1f5ee6e6431b88e53cd3c59df99cb206c3654c7eee56cdd034b1df70a",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 51.399725327000006,
+        "residual_s": 7.105427357601002e-15
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h02_crossing/evaluation/bytetrack_raw/raw_target.json",
+      "historical_report_sha256": "47318e0fc46ec8dc91c6a1d26a1db6a56f79c6650664db11aa11230e452e1631",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 4.084417563225301,
+          "delta": -1.1691808989309775,
+          "old": 5.253598462156279,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 16.233310777000003,
+          "delta": 0.16660834700000393,
+          "old": 16.06670243,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.804583829572368,
+          "delta": 0.036219822934397405,
+          "old": 0.7683640066379706,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.8123041011348275,
+          "delta": 0.034413310828082855,
+          "old": 0.7778907903067447,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 13.733299949000001,
+          "delta": 0.06657443000000818,
+          "old": 13.666725518999993,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 799,
+          "delta": 6,
+          "old": 793,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.033327126000003204,
+          "delta": 0.0,
+          "old": 0.033327126000003204,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 16.233310777000003,
+          "delta": 0.16660834700000748,
+          "old": 16.066702429999996,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 5.733018364999999,
+          "delta": 0.0,
+          "old": 5.733018364999999,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.29997646099999997,
+          "delta": 0.06662280199999993,
+          "old": 0.23335365900000005,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 15.666769109999994,
+          "delta": -0.23318277700001389,
+          "old": 15.899951887000007,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/generated_bags/bytetrack_fixed",
+      "output_read_stats": {
+        "/target": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1544,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1544
+        }
+      },
+      "reference_sha256": "804f98472af93eba9cbe36c3fe432dc7fd5b6f1c3d413cbc0280808996250d90",
+      "sequence_id": "heldout_h02_crossing",
+      "source_bag_path": "bags/source/held_out/2026-09/h02_crossing/2026-09-15__16-35-33__source__p027_h02_crossing__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789486544612758276
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 51.399725327,
+        "residual_s": 0.0
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h02_dc4c5c39/target_reid_090/raw_target.json",
+      "corrected_report_sha256": "844434c4541f95b85ccbe5c8eab22fea8ebf949982c38505921ba8ed3ee00ef0",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 51.399725327,
+        "residual_s": 0.0
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h02_crossing/evaluation/target_reid_090/raw_target.json",
+      "historical_report_sha256": "0f1896a46524afa8d672d1c669714de0ae1ad2d6a039b92b486e791e6cbb2fcb",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 10.346191483773408,
+          "delta": 0.9564327060795552,
+          "old": 9.389758777693853,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 0.10002404200000115,
+          "delta": -6.518999995819286e-06,
+          "old": 0.10003056099999696,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.64511002281246,
+          "delta": 0.0024250646536385645,
+          "old": 0.6426849581588214,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.6377615988174574,
+          "delta": 0.0,
+          "old": 0.6377615988174574,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 45.533355793999995,
+          "delta": 6.518999995819286e-06,
+          "old": 45.533349275,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 5,
+          "delta": 0,
+          "old": 5,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.033327126000003204,
+          "delta": 0.0,
+          "old": 0.033327126000003204,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 0.10002404200000115,
+          "delta": -6.518999995819286e-06,
+          "old": 0.10003056099999696,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 5.733018364999999,
+          "delta": 0.0,
+          "old": 5.733018364999999,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.06686964400000006,
+          "delta": 0.00033283900000036226,
+          "old": 0.0665368049999997,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/generated_bags/target_reid_090",
+      "output_read_stats": {
+        "/target_reid": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1544,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1544
+        }
+      },
+      "reference_sha256": "804f98472af93eba9cbe36c3fe432dc7fd5b6f1c3d413cbc0280808996250d90",
+      "sequence_id": "heldout_h02_crossing",
+      "source_bag_path": "bags/source/held_out/2026-09/h02_crossing/2026-09-15__16-35-33__source__p027_h02_crossing__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789486544612758276
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 51.399725327000006,
+        "residual_s": 7.105427357601002e-15
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h02_dc4c5c39/bytetrack_tim_mars/tim_target_memory.json",
+      "corrected_report_sha256": "0be79d91be90dbc6f334a97fc229cd21225449ed5066bcc4b88e9e9bbe63912f",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 51.39972532699999,
+        "residual_s": 7.105427357601002e-15
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h02_crossing/evaluation/bytetrack_tim_mars/tim_target_memory.json",
+      "historical_report_sha256": "bd9b1283677773f7d0789cdeefc5af54ff6f2cf83d17c86c1aa4c85fe5ae8680",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 3.3728763343655364,
+          "delta": -2.0298841179155214,
+          "old": 5.402760452281058,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 11.633283985999999,
+          "delta": -0.06676934400000079,
+          "old": 11.70005333,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.8293030149428245,
+          "delta": 0.05626661997802307,
+          "old": 0.7730363949648015,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.8313970217194782,
+          "delta": 0.053506231412733474,
+          "old": 0.7778907903067447,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 34.00009585,
+          "delta": 0.06676934400000789,
+          "old": 33.93332650599999,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 571,
+          "delta": -4,
+          "old": 575,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.033327126000003204,
+          "delta": 0.0,
+          "old": 0.033327126000003204,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 11.633283985999999,
+          "delta": -0.06676934400000079,
+          "old": 11.70005333,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 5.733018364999999,
+          "delta": 0.0,
+          "old": 5.733018364999999,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.29997646099999997,
+          "delta": 0.06662280199999993,
+          "old": 0.23335365900000005,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/generated_bags/bytetrack_tim_mars",
+      "output_read_stats": {
+        "/target_memory_mars": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1544,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1544
+        }
+      },
+      "reference_sha256": "804f98472af93eba9cbe36c3fe432dc7fd5b6f1c3d413cbc0280808996250d90",
+      "sequence_id": "heldout_h02_crossing",
+      "source_bag_path": "bags/source/held_out/2026-09/h02_crossing/2026-09-15__16-35-33__source__p027_h02_crossing__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789486544612758276
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 51.399725327,
+        "residual_s": 0.0
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h02_dc4c5c39/deepsort_raw/raw_target.json",
+      "corrected_report_sha256": "bfafe20ad9237026a4f98ddbabe73c003273f4d00e6a6004a0da956b3030f3d9",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 51.399725327,
+        "residual_s": 0.0
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h02_crossing/evaluation/deepsort_raw/raw_target.json",
+      "historical_report_sha256": "d49122efb6e04529ba2cd7fc27f651b9b26222f6b79ad374a49b1ef9058592b8",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 3.335481224081223,
+          "delta": -1.4074251671199396,
+          "old": 4.742906391201163,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 13.600045426000001,
+          "delta": -0.06656627000000093,
+          "old": 13.666611696000002,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.821758516065108,
+          "delta": 0.04113932751593807,
+          "old": 0.7806191885491699,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.8310197485284784,
+          "delta": 0.04306237455205375,
+          "old": 0.7879573739764246,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 32.033334409999995,
+          "delta": 0.06656626999999915,
+          "old": 31.966768139999996,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 671,
+          "delta": -2,
+          "old": 673,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.033327126000003204,
+          "delta": 0.0,
+          "old": 0.033327126000003204,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 13.600045426000001,
+          "delta": -0.06656626999999915,
+          "old": 13.666611696,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 5.733018364999999,
+          "delta": 0.0,
+          "old": 5.733018364999999,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.29997646099999997,
+          "delta": 0.06662280199999993,
+          "old": 0.23335365900000005,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/generated_bags/deepsort_fixed",
+      "output_read_stats": {
+        "/target": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1544,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1544
+        }
+      },
+      "reference_sha256": "804f98472af93eba9cbe36c3fe432dc7fd5b6f1c3d413cbc0280808996250d90",
+      "sequence_id": "heldout_h02_crossing",
+      "source_bag_path": "bags/source/held_out/2026-09/h02_crossing/2026-09-15__16-35-33__source__p027_h02_crossing__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789486544612758276
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 49.433053779999995,
+        "residual_s": 7.105427357601002e-15
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h03_dc4c5c39/bytetrack_raw/raw_target.json",
+      "corrected_report_sha256": "78c62fbff461cf1d971a5fce37948b579c6084d4cd72612bf2142e330bc1459b",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 49.43305378000001,
+        "residual_s": 7.105427357601002e-15
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h03_occlusion_distractor/evaluation/bytetrack_raw/raw_target.json",
+      "historical_report_sha256": "641093699cca2ab7cee551a24161ea857aa9c303313e0840743b1900e2c95729",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 2.6967790103783535,
+          "delta": -0.7305743201486976,
+          "old": 3.427353330527051,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 27.182607491999796,
+          "delta": -0.049944738000039735,
+          "old": 27.232552229999836,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.8224842880576712,
+          "delta": 0.026455045735057192,
+          "old": 0.796029242322614,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.8375724317435752,
+          "delta": 0.024337374151174318,
+          "old": 0.8132350575924009,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 2.1332391770000108,
+          "delta": 0.13354285499973884,
+          "old": 1.999696322000272,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 1336,
+          "delta": -2,
+          "old": 1338,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.0333238209999962,
+          "delta": 0.0,
+          "old": 0.0333238209999962,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 27.182607491999796,
+          "delta": -0.049944738000039735,
+          "old": 27.232552229999836,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 3.3000942820000034,
+          "delta": 0.0,
+          "old": 3.3000942820000034,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 16.783789008000195,
+          "delta": -0.0835981169996991,
+          "old": 16.867387124999894,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/generated_bags/bytetrack_fixed",
+      "output_read_stats": {
+        "/target": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1485,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1485
+        }
+      },
+      "reference_sha256": "a7f39a2afb631f39a33d4aaad859774e4abbc49c66dbe91ac5466587a79e9f04",
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "source_bag_path": "bags/source/held_out/2026-09/h03_occlusion_distractor/2026-09-15__16-55-25__source__p027_h03_occlusion_distractor__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789487735873995680
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 49.43305378000001,
+        "residual_s": 7.105427357601002e-15
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h03_dc4c5c39/target_reid_090/raw_target.json",
+      "corrected_report_sha256": "4940eceda5c5126b5adc3819e4faa941b29f185ba7dd3dc7968b95aa5c4f8771",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 49.43305378,
+        "residual_s": 0.0
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h03_occlusion_distractor/evaluation/target_reid_090/raw_target.json",
+      "historical_report_sha256": "96627810147797a8e2ae2682515749e235eeed367ae62ab6bbc1389598a9ef7d",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 0.9335275397246893,
+          "delta": -0.4249424027437877,
+          "old": 1.358469942468477,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 0.4960256470000001,
+          "delta": 0.02895603499999999,
+          "old": 0.46706961200000013,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.9212141153262071,
+          "delta": 0.021048519425268197,
+          "old": 0.9001655959009389,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.9384504496084172,
+          "delta": 0.0091813241066383,
+          "old": 0.9292691255017789,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 45.603610030000006,
+          "delta": -0.028956034999993108,
+          "old": 45.632566065,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 25,
+          "delta": 1,
+          "old": 24,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.0333238209999962,
+          "delta": 0.0,
+          "old": 0.0333238209999962,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 0.4960256470000001,
+          "delta": 0.028956035000000047,
+          "old": 0.4670696120000001,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 3.3000942820000034,
+          "delta": 0.0,
+          "old": 3.3000942820000034,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/generated_bags/target_reid_090",
+      "output_read_stats": {
+        "/target_reid": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1485,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1485
+        }
+      },
+      "reference_sha256": "a7f39a2afb631f39a33d4aaad859774e4abbc49c66dbe91ac5466587a79e9f04",
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "source_bag_path": "bags/source/held_out/2026-09/h03_occlusion_distractor/2026-09-15__16-55-25__source__p027_h03_occlusion_distractor__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789487735873995680
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 49.43305378,
+        "residual_s": 0.0
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h03_dc4c5c39/bytetrack_tim_mars/tim_target_memory.json",
+      "corrected_report_sha256": "f2dbb676b6249c0ff01b3171a6bc3354a2e07023433c4c26c0097fcb55ec5891",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 49.43305378,
+        "residual_s": 0.0
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h03_occlusion_distractor/evaluation/bytetrack_tim_mars/tim_target_memory.json",
+      "historical_report_sha256": "b5699dbd82eab0aef6b323b58fb1fa07884418efbb3a8caf7f3e7e6de311b739",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 2.63015453483287,
+          "delta": -0.7604799237663,
+          "old": 3.39063445859917,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 20.866269431,
+          "delta": -0.06666369999999944,
+          "old": 20.932933131,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.8224972907470506,
+          "delta": 0.027800348027465227,
+          "old": 0.7946969427195854,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.8381698104622464,
+          "delta": 0.0253427489671616,
+          "old": 0.8128270614950848,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 25.233366246000003,
+          "delta": 0.06666369999999944,
+          "old": 25.166702546000003,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 1026,
+          "delta": -3,
+          "old": 1029,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.0333238209999962,
+          "delta": 0.0,
+          "old": 0.0333238209999962,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 20.866269431,
+          "delta": -0.06666369999999944,
+          "old": 20.932933131,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 3.3000942820000034,
+          "delta": 0.0,
+          "old": 3.3000942820000034,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/generated_bags/bytetrack_tim_mars",
+      "output_read_stats": {
+        "/target_memory_mars": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1485,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1485
+        }
+      },
+      "reference_sha256": "a7f39a2afb631f39a33d4aaad859774e4abbc49c66dbe91ac5466587a79e9f04",
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "source_bag_path": "bags/source/held_out/2026-09/h03_occlusion_distractor/2026-09-15__16-55-25__source__p027_h03_occlusion_distractor__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789487735873995680
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 49.43305378,
+        "residual_s": 0.0
+      },
+      "corrected_report": "reports/p058_source_time_evaluator_repair/h03_dc4c5c39/deepsort_raw/raw_target.json",
+      "corrected_report_sha256": "1174c454f1ba5c303f259f5b22d71ed3b52e07d6288f29ba27f28ff365504fb2",
+      "historical_reconciliation": {
+        "ok": true,
+        "primary_bucket_total_s": 49.433053779999995,
+        "residual_s": 7.105427357601002e-15
+      },
+      "historical_report": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h03_occlusion_distractor/evaluation/deepsort_raw/raw_target.json",
+      "historical_report_sha256": "01fde5aa47c73280598e418e023d17d187021297154657dcbd680f12b1632914",
+      "metrics": {
+        "centre_error_px_duration_weighted_mean": {
+          "corrected": 2.7511512720609,
+          "delta": -0.8551989585203201,
+          "old": 3.6063502305812203,
+          "unit": "px"
+        },
+        "correct_target_output_duration_s": {
+          "corrected": 45.199796817,
+          "delta": 0.01620540299993678,
+          "old": 45.18359141400006,
+          "unit": "s"
+        },
+        "identity_unresolved_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "iou_duration_weighted_mean": {
+          "corrected": 0.8157752077936459,
+          "delta": 0.027758971210287364,
+          "old": 0.7880162365833585,
+          "unit": "fraction"
+        },
+        "iou_median": {
+          "corrected": 0.8261860135752666,
+          "delta": 0.028325103481095626,
+          "old": 0.7978609100941709,
+          "unit": "fraction"
+        },
+        "lost_or_suppressed_duration_s": {
+          "corrected": 0.8998388600000015,
+          "delta": 0.05048114300007023,
+          "old": 0.8493577169999312,
+          "unit": "s"
+        },
+        "n_samples": {
+          "corrected": 2236,
+          "delta": 0,
+          "old": 2236,
+          "unit": "count"
+        },
+        "reference_gap_duration_s": {
+          "corrected": 0.0333238209999962,
+          "delta": 0.0,
+          "old": 0.0333238209999962,
+          "unit": "s"
+        },
+        "reference_gap_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "reference_unavailable_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "scored_duration_s": {
+          "corrected": 45.199796817,
+          "delta": 0.016205402999929674,
+          "old": 45.18359141400007,
+          "unit": "s"
+        },
+        "target_absent_duration_s": {
+          "corrected": 3.3000942820000034,
+          "delta": 0.0,
+          "old": 3.3000942820000034,
+          "unit": "s"
+        },
+        "target_absent_with_output_duration_s": {
+          "corrected": 0.0,
+          "delta": 0.0,
+          "old": 0.0,
+          "unit": "s"
+        },
+        "wrong_person_output_duration_s": {
+          "corrected": 0.0,
+          "delta": -0.06668654600000323,
+          "old": 0.06668654600000323,
+          "unit": "s"
+        }
+      },
+      "output_bag_path": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/generated_bags/deepsort_fixed",
+      "output_read_stats": {
+        "/target": {
+          "bag_record_timestamp": 0,
+          "duplicate_replaced": 0,
+          "header.stamp": 0,
+          "messages_seen": 1485,
+          "non_monotonic_skipped": 0,
+          "src_stamp_ns": 1485
+        }
+      },
+      "reference_sha256": "a7f39a2afb631f39a33d4aaad859774e4abbc49c66dbe91ac5466587a79e9f04",
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "source_bag_path": "bags/source/held_out/2026-09/h03_occlusion_distractor/2026-09-15__16-55-25__source__p027_h03_occlusion_distractor__image_raw_detections",
+      "source_image_topic": "/camera/image_raw",
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789487735873995680
+    }
+  ],
+  "corrected_result_root": "reports/p058_source_time_evaluator_repair",
+  "delta_definition": "corrected minus old",
+  "historical_authority_commit": "dc4c5c39cfbe9911b63cb9757d01ca3de096f696",
+  "historical_result_root": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554",
+  "rows": [
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 4.566355193,
+      "delta": 0.033233661999999775,
+      "metric": "correct_target_output_duration_s",
+      "old": 4.533121531,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 3.866438284000009,
+      "delta": 0.03296067000001024,
+      "metric": "wrong_person_output_duration_s",
+      "old": 3.8334776139999986,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 31.200413448999996,
+      "delta": -0.06619433200000913,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 31.266607781000005,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 22.300219459999994,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 22.300219459999994,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 1.1667243529999993,
+      "delta": -0.03375663700002285,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 1.2004809900000222,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.133013131000002,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.133013131000002,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.033189253999999835,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.033189253999999835,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.8595086929198993,
+      "delta": 0.0488592394510009,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.8106494534688984,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.8804286264276735,
+      "delta": 0.07134368092464205,
+      "metric": "iou_median",
+      "old": 0.8090849455030314,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 2.139034989150702,
+      "delta": -1.1877342499274501,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 3.326769239078152,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 4.566355193,
+      "delta": 0.033233661999999775,
+      "metric": "scored_duration_s",
+      "old": 4.533121531,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 218,
+      "delta": 3,
+      "metric": "n_samples",
+      "old": 215,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 2.59983795999999,
+      "delta": -0.033261109000013,
+      "metric": "correct_target_output_duration_s",
+      "old": 2.633099069000003,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "wrong_person_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 37.03336896600001,
+      "delta": 0.03326110900000856,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 37.000107857,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 22.300219459999994,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 22.300219459999994,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.133013131000002,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.133013131000002,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.8586851562379176,
+      "delta": 0.12269001142010016,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.7359951448178175,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.8659068832155209,
+      "delta": 0.09918445091356787,
+      "metric": "iou_median",
+      "old": 0.766722432301953,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 2.0780708278777884,
+      "delta": -3.4603199210375375,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 5.538390748915326,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 2.59983795999999,
+      "delta": -0.033261109000013,
+      "metric": "scored_duration_s",
+      "old": 2.633099069000003,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 129,
+      "delta": -2,
+      "metric": "n_samples",
+      "old": 131,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 30.299888245999995,
+      "delta": 0.2836714910001703,
+      "metric": "correct_target_output_duration_s",
+      "old": 30.016216754999824,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": -0.09997767800000013,
+      "metric": "wrong_person_output_duration_s",
+      "old": 0.09997767800000013,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 9.333318680000007,
+      "delta": -0.18369381300017373,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 9.51701249300018,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 22.300219459999994,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 22.300219459999994,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.133013131000002,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.133013131000002,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.8352824919916813,
+      "delta": 0.0923829907346736,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.7428995012570077,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.8453932163660641,
+      "delta": 0.09061124264820686,
+      "metric": "iou_median",
+      "old": 0.7547819737178573,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 2.894892364001932,
+      "delta": -3.168422580129394,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 6.063314944131326,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 30.299888245999995,
+      "delta": 0.2836714910001703,
+      "metric": "scored_duration_s",
+      "old": 30.016216754999824,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 1495,
+      "delta": 18,
+      "metric": "n_samples",
+      "old": 1477,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 9.433317300999999,
+      "delta": 0.11674330099998542,
+      "metric": "correct_target_output_duration_s",
+      "old": 9.316574000000013,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": -0.09997767800000013,
+      "metric": "wrong_person_output_duration_s",
+      "old": 0.09997767800000013,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 30.199889625000004,
+      "delta": -0.01676562299998352,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 30.216655247999988,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 22.300219459999994,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 22.300219459999994,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.133013131000002,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.133013131000002,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.8330552644656457,
+      "delta": 0.08600961957838593,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.7470456448872598,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.8378815337700359,
+      "delta": 0.0812358646184358,
+      "metric": "iou_median",
+      "old": 0.7566456691516001,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 2.2746381461724927,
+      "delta": -2.153118448952742,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 4.427756595125235,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 9.433317301,
+      "delta": 0.1167433009999872,
+      "metric": "scored_duration_s",
+      "old": 9.316574000000013,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 459,
+      "delta": 7,
+      "metric": "n_samples",
+      "old": 452,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 16.233310777000003,
+      "delta": 0.16660834700000393,
+      "metric": "correct_target_output_duration_s",
+      "old": 16.06670243,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 15.666769109999994,
+      "delta": -0.23318277700001389,
+      "metric": "wrong_person_output_duration_s",
+      "old": 15.899951887000007,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 13.733299949000001,
+      "delta": 0.06657443000000818,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 13.666725518999993,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 5.733018364999999,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 5.733018364999999,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.29997646099999997,
+      "delta": 0.06662280199999993,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.23335365900000005,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.033327126000003204,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.033327126000003204,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.804583829572368,
+      "delta": 0.036219822934397405,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.7683640066379706,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.8123041011348275,
+      "delta": 0.034413310828082855,
+      "metric": "iou_median",
+      "old": 0.7778907903067447,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 4.084417563225301,
+      "delta": -1.1691808989309775,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 5.253598462156279,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 16.233310777000003,
+      "delta": 0.16660834700000748,
+      "metric": "scored_duration_s",
+      "old": 16.066702429999996,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 799,
+      "delta": 6,
+      "metric": "n_samples",
+      "old": 793,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.10002404200000115,
+      "delta": -6.518999995819286e-06,
+      "metric": "correct_target_output_duration_s",
+      "old": 0.10003056099999696,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "wrong_person_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 45.533355793999995,
+      "delta": 6.518999995819286e-06,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 45.533349275,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 5.733018364999999,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 5.733018364999999,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.06686964400000006,
+      "delta": 0.00033283900000036226,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.0665368049999997,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.033327126000003204,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.033327126000003204,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.64511002281246,
+      "delta": 0.0024250646536385645,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.6426849581588214,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.6377615988174574,
+      "delta": 0.0,
+      "metric": "iou_median",
+      "old": 0.6377615988174574,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 10.346191483773408,
+      "delta": 0.9564327060795552,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 9.389758777693853,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.10002404200000115,
+      "delta": -6.518999995819286e-06,
+      "metric": "scored_duration_s",
+      "old": 0.10003056099999696,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 5,
+      "delta": 0,
+      "metric": "n_samples",
+      "old": 5,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 11.633283985999999,
+      "delta": -0.06676934400000079,
+      "metric": "correct_target_output_duration_s",
+      "old": 11.70005333,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "wrong_person_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 34.00009585,
+      "delta": 0.06676934400000789,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 33.93332650599999,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 5.733018364999999,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 5.733018364999999,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.29997646099999997,
+      "delta": 0.06662280199999993,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.23335365900000005,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.033327126000003204,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.033327126000003204,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.8293030149428245,
+      "delta": 0.05626661997802307,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.7730363949648015,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.8313970217194782,
+      "delta": 0.053506231412733474,
+      "metric": "iou_median",
+      "old": 0.7778907903067447,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 3.3728763343655364,
+      "delta": -2.0298841179155214,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 5.402760452281058,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 11.633283985999999,
+      "delta": -0.06676934400000079,
+      "metric": "scored_duration_s",
+      "old": 11.70005333,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 571,
+      "delta": -4,
+      "metric": "n_samples",
+      "old": 575,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 13.600045426000001,
+      "delta": -0.06656627000000093,
+      "metric": "correct_target_output_duration_s",
+      "old": 13.666611696000002,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "wrong_person_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 32.033334409999995,
+      "delta": 0.06656626999999915,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 31.966768139999996,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 5.733018364999999,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 5.733018364999999,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.29997646099999997,
+      "delta": 0.06662280199999993,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.23335365900000005,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.033327126000003204,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.033327126000003204,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.821758516065108,
+      "delta": 0.04113932751593807,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.7806191885491699,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.8310197485284784,
+      "delta": 0.04306237455205375,
+      "metric": "iou_median",
+      "old": 0.7879573739764246,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 3.335481224081223,
+      "delta": -1.4074251671199396,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 4.742906391201163,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 13.600045426000001,
+      "delta": -0.06656626999999915,
+      "metric": "scored_duration_s",
+      "old": 13.666611696,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 671,
+      "delta": -2,
+      "metric": "n_samples",
+      "old": 673,
+      "sequence_id": "heldout_h02_crossing",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 27.182607491999796,
+      "delta": -0.049944738000039735,
+      "metric": "correct_target_output_duration_s",
+      "old": 27.232552229999836,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 16.783789008000195,
+      "delta": -0.0835981169996991,
+      "metric": "wrong_person_output_duration_s",
+      "old": 16.867387124999894,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 2.1332391770000108,
+      "delta": 0.13354285499973884,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 1.999696322000272,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 3.3000942820000034,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 3.3000942820000034,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.0333238209999962,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.0333238209999962,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.8224842880576712,
+      "delta": 0.026455045735057192,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.796029242322614,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 0.8375724317435752,
+      "delta": 0.024337374151174318,
+      "metric": "iou_median",
+      "old": 0.8132350575924009,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 2.6967790103783535,
+      "delta": -0.7305743201486976,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 3.427353330527051,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 27.182607491999796,
+      "delta": -0.049944738000039735,
+      "metric": "scored_duration_s",
+      "old": 27.232552229999836,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "corrected": 1336,
+      "delta": -2,
+      "metric": "n_samples",
+      "old": 1338,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.4960256470000001,
+      "delta": 0.02895603499999999,
+      "metric": "correct_target_output_duration_s",
+      "old": 0.46706961200000013,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "wrong_person_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 45.603610030000006,
+      "delta": -0.028956034999993108,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 45.632566065,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 3.3000942820000034,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 3.3000942820000034,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0333238209999962,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.0333238209999962,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.9212141153262071,
+      "delta": 0.021048519425268197,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.9001655959009389,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.9384504496084172,
+      "delta": 0.0091813241066383,
+      "metric": "iou_median",
+      "old": 0.9292691255017789,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.9335275397246893,
+      "delta": -0.4249424027437877,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 1.358469942468477,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 0.4960256470000001,
+      "delta": 0.028956035000000047,
+      "metric": "scored_duration_s",
+      "old": 0.4670696120000001,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "corrected": 25,
+      "delta": 1,
+      "metric": "n_samples",
+      "old": 24,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 20.866269431,
+      "delta": -0.06666369999999944,
+      "metric": "correct_target_output_duration_s",
+      "old": 20.932933131,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "wrong_person_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 25.233366246000003,
+      "delta": 0.06666369999999944,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 25.166702546000003,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 3.3000942820000034,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 3.3000942820000034,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0333238209999962,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.0333238209999962,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.8224972907470506,
+      "delta": 0.027800348027465227,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.7946969427195854,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 0.8381698104622464,
+      "delta": 0.0253427489671616,
+      "metric": "iou_median",
+      "old": 0.8128270614950848,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 2.63015453483287,
+      "delta": -0.7604799237663,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 3.39063445859917,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 20.866269431,
+      "delta": -0.06666369999999944,
+      "metric": "scored_duration_s",
+      "old": 20.932933131,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "corrected": 1026,
+      "delta": -3,
+      "metric": "n_samples",
+      "old": 1029,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "count"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 45.199796817,
+      "delta": 0.01620540299993678,
+      "metric": "correct_target_output_duration_s",
+      "old": 45.18359141400006,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": -0.06668654600000323,
+      "metric": "wrong_person_output_duration_s",
+      "old": 0.06668654600000323,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "identity_unresolved_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.8998388600000015,
+      "delta": 0.05048114300007023,
+      "metric": "lost_or_suppressed_duration_s",
+      "old": 0.8493577169999312,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 3.3000942820000034,
+      "delta": 0.0,
+      "metric": "target_absent_duration_s",
+      "old": 3.3000942820000034,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "target_absent_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_unavailable_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0333238209999962,
+      "delta": 0.0,
+      "metric": "reference_gap_duration_s",
+      "old": 0.0333238209999962,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.0,
+      "delta": 0.0,
+      "metric": "reference_gap_with_output_duration_s",
+      "old": 0.0,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.8157752077936459,
+      "delta": 0.027758971210287364,
+      "metric": "iou_duration_weighted_mean",
+      "old": 0.7880162365833585,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 0.8261860135752666,
+      "delta": 0.028325103481095626,
+      "metric": "iou_median",
+      "old": 0.7978609100941709,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "fraction"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 2.7511512720609,
+      "delta": -0.8551989585203201,
+      "metric": "centre_error_px_duration_weighted_mean",
+      "old": 3.6063502305812203,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "px"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 45.199796817,
+      "delta": 0.016205402999929674,
+      "metric": "scored_duration_s",
+      "old": 45.18359141400007,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "s"
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "corrected": 2236,
+      "delta": 0,
+      "metric": "n_samples",
+      "old": 2236,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "unit": "count"
+    }
+  ],
+  "schema_version": 1,
+  "scope": "post-access source-time evaluator correctness repair",
+  "sequence_origins": {
+    "heldout_h01_exit_reentry": {
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789486281308955860
+    },
+    "heldout_h02_crossing": {
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789486544612758276
+    },
+    "heldout_h03_occlusion_distractor": {
+      "source_time_origin_clock": "header.stamp",
+      "source_time_origin_ns": 1789487735873995680
+    }
+  }
+}

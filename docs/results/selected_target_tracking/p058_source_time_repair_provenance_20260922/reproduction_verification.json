@@ -1,0 +1,244 @@
+{
+  "authority_commit": "dc4c5c39cfbe9911b63cb9757d01ca3de096f696",
+  "cells_verified": 12,
+  "checks": [
+    {
+      "architecture_id": "bytetrack_raw",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [],
+      "historical_semantic_fingerprint_match": true,
+      "reproduced_raw_payload_hashes": [],
+      "semantic_fingerprint": "c2ea9471211d362e20427e45bb98c531064dcd6ea9d22f3e1f8339ab2e28f70d",
+      "sequence_id": "heldout_h01_exit_reentry",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": null,
+      "target_reid_retained_metadata_match": null
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [
+        {
+          "path": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h01_exit_reentry/generated_bags/target_reid_090/target_reid_090_0.mcap",
+          "sha256": "6340b0ec5628a8becd92ab68612813fdcd3a353fd3013f0b50e74f22b3c8ef65",
+          "size_bytes": 494908
+        }
+      ],
+      "historical_semantic_fingerprint_match": false,
+      "reproduced_raw_payload_hashes": [
+        {
+          "path": "reports/p058_final_architecture_comparison/p058_timebase_repro_h01_dc4c5c39_20260921/sequences/heldout_h01_exit_reentry/generated_bags/target_reid_090/target_reid_090_0.mcap",
+          "sha256": "1d4179605d3c9dec6b87a83765233c50fbb829d1f8066179539acb52d9da907d",
+          "size_bytes": 494908
+        }
+      ],
+      "semantic_fingerprint": null,
+      "sequence_id": "heldout_h01_exit_reentry",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": {
+        "bag_a": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h01_dc4c5c39_20260921/sequences/heldout_h01_exit_reentry/generated_bags/target_reid_090",
+        "bag_b": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h01_dc4c5c39_20260921/sequences/heldout_h01_exit_reentry/diagnostics/target_reid_repeat_1",
+        "count_a": 1865,
+        "count_b": 1865,
+        "first_timestamp_ns_a": 1789486281259991940,
+        "first_timestamp_ns_b": 1789486281259991940,
+        "last_timestamp_ns_a": 1789486343392653166,
+        "last_timestamp_ns_b": 1789486343392653166,
+        "record_times_and_all_deserialised_fields_equal": true,
+        "semantic_sha256_a": "f2ccda7c72dcee19f795e56004c10ea6ba7dec5a10f0d16f63c3d7ff8e20e950",
+        "semantic_sha256_b": "f2ccda7c72dcee19f795e56004c10ea6ba7dec5a10f0d16f63c3d7ff8e20e950"
+      },
+      "target_reid_retained_metadata_match": true
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [],
+      "historical_semantic_fingerprint_match": true,
+      "reproduced_raw_payload_hashes": [],
+      "semantic_fingerprint": "d25182c805105d892279406625ca9f108296c638cc1af07d2df4e80a6dc990de",
+      "sequence_id": "heldout_h01_exit_reentry",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": null,
+      "target_reid_retained_metadata_match": null
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [],
+      "historical_semantic_fingerprint_match": true,
+      "reproduced_raw_payload_hashes": [],
+      "semantic_fingerprint": "1572f54f2d382ff1e988efd2f49c78fd4a3fd7b4e35aed2ce6ec1cf1e313ae8f",
+      "sequence_id": "heldout_h01_exit_reentry",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": null,
+      "target_reid_retained_metadata_match": null
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [],
+      "historical_semantic_fingerprint_match": true,
+      "reproduced_raw_payload_hashes": [],
+      "semantic_fingerprint": "0e951eb9dbfe6ba8c17cb095efd0c9e8cbe3bbde6f4dfb03854a4ececbe0f40b",
+      "sequence_id": "heldout_h02_crossing",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": null,
+      "target_reid_retained_metadata_match": null
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [
+        {
+          "path": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h02_crossing/generated_bags/target_reid_090/target_reid_090_0.mcap",
+          "sha256": "d4523f257871d9b9a8110ff7947e0c952635f652a8b6e92d42a5a2b6f6428cfd",
+          "size_bytes": 410485
+        }
+      ],
+      "historical_semantic_fingerprint_match": false,
+      "reproduced_raw_payload_hashes": [
+        {
+          "path": "reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/generated_bags/target_reid_090/target_reid_090_0.mcap",
+          "sha256": "0dc41dad5d1d73b886c5f729dc229dc6e488c9d887fb9a4f875575d25d45e282",
+          "size_bytes": 410485
+        }
+      ],
+      "semantic_fingerprint": null,
+      "sequence_id": "heldout_h02_crossing",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": {
+        "bag_a": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/generated_bags/target_reid_090",
+        "bag_b": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/diagnostics/target_reid_repeat_1",
+        "count_a": 1544,
+        "count_b": 1544,
+        "first_timestamp_ns_a": 1789486544568460494,
+        "first_timestamp_ns_b": 1789486544568460494,
+        "last_timestamp_ns_a": 1789486595995975583,
+        "last_timestamp_ns_b": 1789486595995975583,
+        "record_times_and_all_deserialised_fields_equal": true,
+        "semantic_sha256_a": "883f58215a37e8e5bbce57c9fd8828924755b87a2573c5d9d52c099e420d27f7",
+        "semantic_sha256_b": "883f58215a37e8e5bbce57c9fd8828924755b87a2573c5d9d52c099e420d27f7"
+      },
+      "target_reid_retained_metadata_match": true
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [],
+      "historical_semantic_fingerprint_match": true,
+      "reproduced_raw_payload_hashes": [],
+      "semantic_fingerprint": "78b7d2441791d606796f834ad4bcc817fdb978b8a588e78419b21d48f58af5e4",
+      "sequence_id": "heldout_h02_crossing",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": null,
+      "target_reid_retained_metadata_match": null
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [],
+      "historical_semantic_fingerprint_match": true,
+      "reproduced_raw_payload_hashes": [],
+      "semantic_fingerprint": "5eddcd935136e4fea3f398b90081835b5fc61ba239682c38d7a08ac440aeea18",
+      "sequence_id": "heldout_h02_crossing",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": null,
+      "target_reid_retained_metadata_match": null
+    },
+    {
+      "architecture_id": "bytetrack_raw",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [],
+      "historical_semantic_fingerprint_match": true,
+      "reproduced_raw_payload_hashes": [],
+      "semantic_fingerprint": "95228ca10e59f93580a1be429e7cb2dd64220350453b0d225bfa2ae7c67d3285",
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": null,
+      "target_reid_retained_metadata_match": null
+    },
+    {
+      "architecture_id": "target_reid_090",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [
+        {
+          "path": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554/sequences/heldout_h03_occlusion_distractor/generated_bags/target_reid_090/target_reid_090_0.mcap",
+          "sha256": "d07f0d29ae469c4a577c8474667b8d22c7e9f6692af0118d4d6fb6375432ced1",
+          "size_bytes": 394968
+        }
+      ],
+      "historical_semantic_fingerprint_match": false,
+      "reproduced_raw_payload_hashes": [
+        {
+          "path": "reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/generated_bags/target_reid_090/target_reid_090_0.mcap",
+          "sha256": "594ccc18bb240e70269ca23e0b0087e160b619cdf853e842f59595daa64b943d",
+          "size_bytes": 394968
+        }
+      ],
+      "semantic_fingerprint": null,
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": {
+        "bag_a": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/generated_bags/target_reid_090",
+        "bag_b": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/diagnostics/target_reid_repeat_1",
+        "count_a": 1485,
+        "count_b": 1485,
+        "first_timestamp_ns_a": 1789487735860640720,
+        "first_timestamp_ns_b": 1789487735860640720,
+        "last_timestamp_ns_a": 1789487785326638380,
+        "last_timestamp_ns_b": 1789487785326638380,
+        "record_times_and_all_deserialised_fields_equal": true,
+        "semantic_sha256_a": "3b704b61fbc90fbb8c3044803c87c4b365ef3675cd1b46226bf9eb45453a01a0",
+        "semantic_sha256_b": "3b704b61fbc90fbb8c3044803c87c4b365ef3675cd1b46226bf9eb45453a01a0"
+      },
+      "target_reid_retained_metadata_match": true
+    },
+    {
+      "architecture_id": "bytetrack_tim_mars",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [],
+      "historical_semantic_fingerprint_match": true,
+      "reproduced_raw_payload_hashes": [],
+      "semantic_fingerprint": "a02218243b827fc64e6ba454671f80c778755f8d3770b299c9f17ff552998374",
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": null,
+      "target_reid_retained_metadata_match": null
+    },
+    {
+      "architecture_id": "deepsort_raw",
+      "bootstrap_match": true,
+      "frozen_v2_evaluation_match": true,
+      "historical_raw_payload_hashes": [],
+      "historical_semantic_fingerprint_match": true,
+      "reproduced_raw_payload_hashes": [],
+      "semantic_fingerprint": "a47b9301bc56b97f5c95bc503200a32132c91fa970a03ac7ff22fe72de88f980",
+      "sequence_id": "heldout_h03_occlusion_distractor",
+      "status_match": true,
+      "target_reid_repeat_semantic_check": null,
+      "target_reid_retained_metadata_match": null
+    }
+  ],
+  "h01_reproduction_root": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h01_dc4c5c39_20260921",
+  "h02_h03_reproduction_root": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922",
+  "historical_cells_sha256": {
+    "heldout_h01_exit_reentry": "26a879feadac797b371f0b2191ff34086d67c6047ed8711a451194df926bf2de",
+    "heldout_h02_crossing": "a36067e3b961e857fcd49267b97e6c745081df4198a6f253b1bd702b17750bab",
+    "heldout_h03_occlusion_distractor": "645bd71adb2ab4d2602b90c8ead9e342d81b7c62d67ea4caf1ff51a79421e66d"
+  },
+  "historical_result_root": "reports/p058_final_architecture_comparison/p058_final_architecture_protocol_repair_v2_20260916_184554",
+  "note": "Target-ReID original MCAP payloads were pruned. Each detached replay matches the retained frozen-v2 evaluation and metadata; an independent repeat matches every record timestamp and deserialised TargetState field. Raw CDR/MCAP SHA differences are reported but are not a semantic contract.",
+  "schema_version": 1
+}

@@ -1,0 +1,194 @@
+[
+  {
+    "sequence": "heldout_h02_crossing",
+    "architecture": "bytetrack_raw",
+    "topic": "/target",
+    "output_bag": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/generated_bags/bytetrack_fixed",
+    "report": "/home/francisco/Desktop/Thesis-Code/reports/p058_source_time_evaluator_repair/h02_dc4c5c39/bytetrack_raw/raw_target.json",
+    "origin_ns": 1789486544612758276,
+    "origin_clock": "header.stamp",
+    "output_read_stats": {
+      "/target": {
+        "bag_record_timestamp": 0,
+        "duplicate_replaced": 0,
+        "header.stamp": 0,
+        "messages_seen": 1544,
+        "non_monotonic_skipped": 0,
+        "src_stamp_ns": 1544
+      }
+    },
+    "reconciliation": {
+      "ok": true,
+      "primary_bucket_total_s": 51.399725327,
+      "residual_s": 0.0
+    }
+  },
+  {
+    "sequence": "heldout_h02_crossing",
+    "architecture": "target_reid_090",
+    "topic": "/target_reid",
+    "output_bag": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/generated_bags/target_reid_090",
+    "report": "/home/francisco/Desktop/Thesis-Code/reports/p058_source_time_evaluator_repair/h02_dc4c5c39/target_reid_090/raw_target.json",
+    "origin_ns": 1789486544612758276,
+    "origin_clock": "header.stamp",
+    "output_read_stats": {
+      "/target_reid": {
+        "bag_record_timestamp": 0,
+        "duplicate_replaced": 0,
+        "header.stamp": 0,
+        "messages_seen": 1544,
+        "non_monotonic_skipped": 0,
+        "src_stamp_ns": 1544
+      }
+    },
+    "reconciliation": {
+      "ok": true,
+      "primary_bucket_total_s": 51.399725327,
+      "residual_s": 0.0
+    }
+  },
+  {
+    "sequence": "heldout_h02_crossing",
+    "architecture": "bytetrack_tim_mars",
+    "topic": "/target_memory_mars",
+    "output_bag": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/generated_bags/bytetrack_tim_mars",
+    "report": "/home/francisco/Desktop/Thesis-Code/reports/p058_source_time_evaluator_repair/h02_dc4c5c39/bytetrack_tim_mars/tim_target_memory.json",
+    "origin_ns": 1789486544612758276,
+    "origin_clock": "header.stamp",
+    "output_read_stats": {
+      "/target_memory_mars": {
+        "bag_record_timestamp": 0,
+        "duplicate_replaced": 0,
+        "header.stamp": 0,
+        "messages_seen": 1544,
+        "non_monotonic_skipped": 0,
+        "src_stamp_ns": 1544
+      }
+    },
+    "reconciliation": {
+      "ok": true,
+      "primary_bucket_total_s": 51.399725327000006,
+      "residual_s": 7.105427357601002e-15
+    }
+  },
+  {
+    "sequence": "heldout_h02_crossing",
+    "architecture": "deepsort_raw",
+    "topic": "/target",
+    "output_bag": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h02_crossing/generated_bags/deepsort_fixed",
+    "report": "/home/francisco/Desktop/Thesis-Code/reports/p058_source_time_evaluator_repair/h02_dc4c5c39/deepsort_raw/raw_target.json",
+    "origin_ns": 1789486544612758276,
+    "origin_clock": "header.stamp",
+    "output_read_stats": {
+      "/target": {
+        "bag_record_timestamp": 0,
+        "duplicate_replaced": 0,
+        "header.stamp": 0,
+        "messages_seen": 1544,
+        "non_monotonic_skipped": 0,
+        "src_stamp_ns": 1544
+      }
+    },
+    "reconciliation": {
+      "ok": true,
+      "primary_bucket_total_s": 51.399725327,
+      "residual_s": 0.0
+    }
+  },
+  {
+    "sequence": "heldout_h03_occlusion_distractor",
+    "architecture": "bytetrack_raw",
+    "topic": "/target",
+    "output_bag": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/generated_bags/bytetrack_fixed",
+    "report": "/home/francisco/Desktop/Thesis-Code/reports/p058_source_time_evaluator_repair/h03_dc4c5c39/bytetrack_raw/raw_target.json",
+    "origin_ns": 1789487735873995680,
+    "origin_clock": "header.stamp",
+    "output_read_stats": {
+      "/target": {
+        "bag_record_timestamp": 0,
+        "duplicate_replaced": 0,
+        "header.stamp": 0,
+        "messages_seen": 1485,
+        "non_monotonic_skipped": 0,
+        "src_stamp_ns": 1485
+      }
+    },
+    "reconciliation": {
+      "ok": true,
+      "primary_bucket_total_s": 49.433053779999995,
+      "residual_s": 7.105427357601002e-15
+    }
+  },
+  {
+    "sequence": "heldout_h03_occlusion_distractor",
+    "architecture": "target_reid_090",
+    "topic": "/target_reid",
+    "output_bag": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/generated_bags/target_reid_090",
+    "report": "/home/francisco/Desktop/Thesis-Code/reports/p058_source_time_evaluator_repair/h03_dc4c5c39/target_reid_090/raw_target.json",
+    "origin_ns": 1789487735873995680,
+    "origin_clock": "header.stamp",
+    "output_read_stats": {
+      "/target_reid": {
+        "bag_record_timestamp": 0,
+        "duplicate_replaced": 0,
+        "header.stamp": 0,
+        "messages_seen": 1485,
+        "non_monotonic_skipped": 0,
+        "src_stamp_ns": 1485
+      }
+    },
+    "reconciliation": {
+      "ok": true,
+      "primary_bucket_total_s": 49.43305378000001,
+      "residual_s": 7.105427357601002e-15
+    }
+  },
+  {
+    "sequence": "heldout_h03_occlusion_distractor",
+    "architecture": "bytetrack_tim_mars",
+    "topic": "/target_memory_mars",
+    "output_bag": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/generated_bags/bytetrack_tim_mars",
+    "report": "/home/francisco/Desktop/Thesis-Code/reports/p058_source_time_evaluator_repair/h03_dc4c5c39/bytetrack_tim_mars/tim_target_memory.json",
+    "origin_ns": 1789487735873995680,
+    "origin_clock": "header.stamp",
+    "output_read_stats": {
+      "/target_memory_mars": {
+        "bag_record_timestamp": 0,
+        "duplicate_replaced": 0,
+        "header.stamp": 0,
+        "messages_seen": 1485,
+        "non_monotonic_skipped": 0,
+        "src_stamp_ns": 1485
+      }
+    },
+    "reconciliation": {
+      "ok": true,
+      "primary_bucket_total_s": 49.43305378,
+      "residual_s": 0.0
+    }
+  },
+  {
+    "sequence": "heldout_h03_occlusion_distractor",
+    "architecture": "deepsort_raw",
+    "topic": "/target",
+    "output_bag": "/home/francisco/Desktop/Thesis-Code-p058-repro-dc4c5c39/reports/p058_final_architecture_comparison/p058_timebase_repro_h02_h03_dc4c5c39_ros_env_20260922/sequences/heldout_h03_occlusion_distractor/generated_bags/deepsort_fixed",
+    "report": "/home/francisco/Desktop/Thesis-Code/reports/p058_source_time_evaluator_repair/h03_dc4c5c39/deepsort_raw/raw_target.json",
+    "origin_ns": 1789487735873995680,
+    "origin_clock": "header.stamp",
+    "output_read_stats": {
+      "/target": {
+        "bag_record_timestamp": 0,
+        "duplicate_replaced": 0,
+        "header.stamp": 0,
+        "messages_seen": 1485,
+        "non_monotonic_skipped": 0,
+        "src_stamp_ns": 1485
+      }
+    },
+    "reconciliation": {
+      "ok": true,
+      "primary_bucket_total_s": 49.43305378,
+      "residual_s": 0.0
+    }
+  }
+]
