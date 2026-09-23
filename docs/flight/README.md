@@ -4,7 +4,7 @@
 
 ## 0. Frozen revision and configuration
 
-Expected freeze: `main` at the commit titled `22-09-26: prepare final flight evidence runbook`; compare the full `git rev-parse HEAD` SHA with `origin/main` and the SHA in the 22 September handoff. Require a clean tracked tree. Every #50 launch uses `--res vga` (camera 640x480); YOLOv8s Hailo inference stays 640x640. Keep the frozen ByteTrack, TIM-MARS, model and controller parameters. No pull, install, rebuild, retune, HD/FHD trial, `--record-raw`, or scientific gate change at the field. Logs belong under `ros2_ws/log/`; root `log/` and `hailort.log` must be absent.
+Frozen flight-stack base: `56771a09ab52eb2289e25fe94ec1ebb18fad5d45` (`22-09-26: bound visual packet receipt time`). Any later handoff commit may change documentation only; verify its full SHA against `origin/main` and inspect the commits after this base before aircraft work. Require a clean tracked tree. Every #50 launch uses `--res vga` (camera 640x480); YOLOv8s Hailo inference stays 640x640. Keep the frozen ByteTrack, TIM-MARS, model and controller parameters. No pull, install, rebuild, retune, HD/FHD trial, `--record-raw`, or scientific gate change at the field. Logs belong under `ros2_ws/log/`; root `log/` and `hailort.log` must be absent.
 
 ## 1. People, site and equipment
 
