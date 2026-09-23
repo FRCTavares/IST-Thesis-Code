@@ -288,7 +288,19 @@ For a post-stop integrity correction, retain an explicit separate postflight dec
 
 ## 17. End of day
 
-Copy/backup every bag and native DataFlash with hashes, including failed/aborted attempts; verify copied sizes/hashes and manifest before removing no originals. Return to unattended networking only after Pixhawk work ends:
+After each run's package checks and, for controller trials, exact DataFlash archival (§16), back up every retained bag, including failed/aborted attempts. On the **Mac**, while it can still SSH to the Pi field address, use that attempt's actual RUN_ID/TAG (repeat for every attempt):
+
+```bash
+export RUN_ID="<exact RUN_ID>" TAG="<exact TAG>"
+printf -v RUN_NAME "%s__video__%s" "$RUN_ID" "$TAG"
+mkdir -p "$HOME/Developer/Thesis/Friday-Flight-Backup/live_camera/$RUN_NAME"
+rsync -a "francisco@192.168.8.174:/home/francisco/Desktop/Thesis-Code/bags/live_camera/$RUN_NAME/" \
+  "$HOME/Developer/Thesis/Friday-Flight-Backup/live_camera/$RUN_NAME/"
+rsync -anc --itemize-changes "francisco@192.168.8.174:/home/francisco/Desktop/Thesis-Code/bags/live_camera/$RUN_NAME/" \
+  "$HOME/Developer/Thesis/Friday-Flight-Backup/live_camera/$RUN_NAME/"
+```
+
+The final dry-run must print no changed files; investigate any output or rsync error. `-a` preserves the visual file mtime used in timing provenance; `-c` checks content on the second pass. Keep originals on the Pi and confirm the copied manifest, MCAP, visual, events and archived exact DataFlash are present. The Mac destination is outside both repositories. Then return to unattended networking only after Pixhawk work ends:
 
 ```bash
 sudo tools/host/set_pi_network_mode.sh unattended
