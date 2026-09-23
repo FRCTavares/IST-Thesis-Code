@@ -8,7 +8,7 @@ not claimed as completed. Proceed to #50 using VGA, then to #32 only after the
 #50 controller retain/reject decision.
 
 This sheet preserves the original decision rules and historical #64 procedure
-below. Use `docs/flight/README.md` for the detailed aircraft operator procedure
+below. Use `docs/flight/field_day_runbook.md` for the detailed aircraft operator procedure
 and `docs/issues/p1-14-final-runtime-characterization.md` for the final runtime
 contract. Stop on a failed physical prerequisite and retain every failed
 attempt.
@@ -204,7 +204,7 @@ camera decision can proceed without this profile; #50 aircraft operation
 cannot proceed while this inherited fallback gate is unresolved. Do not
 substitute an unapproved Wi-Fi connection.
 
-Follow docs/flight/README.md in order. With Pixhawk Ethernet connected:
+Follow docs/flight/field_day_runbook.md in order. With Pixhawk Ethernet connected:
 
     sudo tools/host/set_pi_network_mode.sh pixhawk
     sudo tools/host/set_pi_network_mode.sh status
@@ -215,7 +215,7 @@ Follow docs/flight/README.md in order. With Pixhawk Ethernet connected:
 Require approved field Wi-Fi, no Ethernet default route, inactive Tailscale,
 connected MAVROS and passing passive recorder. Do not continue on failure.
 Run the compute-only ground gate and restrained command-path gate with the
-exact commands in docs/flight/README.md, using the retained --res choice.
+exact commands in docs/flight/field_day_runbook.md, using the retained --res choice.
 At the restrained gate, aircraft disarmed and props removed or safely
 restrained, confirm a non-zero reference, then deliberately stop the exact
 control_ref_node process while MCAP records. Identify the PID from
@@ -248,7 +248,7 @@ documented fail-closed FCU response and pilot takeover; if stale non-zero
 authority persists or response cannot be established, STOP before flight.
 
 For the retained physical comparison, use the baseline command from
-docs/flight/README.md first, then the candidate command only after a clean
+docs/flight/field_day_runbook.md first, then the candidate command only after a clean
 baseline and pilot go decision:
 
     ./tools/start_live_stack.sh --res vga --field-record --control-mavros --tag "$TAG"
@@ -268,7 +268,7 @@ recording both the elapsed observation and why it ended.
 For every trial use operator_event.py trial_start, target_selected, trial_end;
 on a takeover or abort add operator_takeover/abort and trial_verdict, with
 condition baseline or candidate matching the launch. The full syntax is in
-docs/flight/README.md and tools/live/operator_event.py --help. Preserve
+docs/flight/field_day_runbook.md and tools/live/operator_event.py --help. Preserve
 MCAP, visual recording, target-authority events, operator events, run logs,
 provenance, exact DataFlash .bin, failed starts, takeovers and aborted trials.
 For each exact RUN_ID/TAG after normal stop:

@@ -4,7 +4,7 @@ Use this file to check what must be saved after a physical trial.
 
 Flight commands:
 
-    docs/flight/README.md
+    docs/flight/field_day_runbook.md
 
 ## Canonical trial directory
 

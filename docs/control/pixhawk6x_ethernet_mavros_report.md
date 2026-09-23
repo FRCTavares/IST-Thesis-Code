@@ -4,7 +4,7 @@
 
 **Historical connectivity evidence only — do not copy its direct MAVROS or
 address commands for field day.** The current operator authority is
-`docs/flight/README.md`. The physically revalidated topology is Pi
+`docs/flight/field_day_runbook.md`. The physically revalidated topology is Pi
 `wlan0=192.168.8.174`, Pi `eth0=192.168.144.183`, and Pixhawk
 `192.168.144.14`. The current launcher probes the validated MAVLink target
 `10.1` before the historical `9.1` fallback and owns MAVROS

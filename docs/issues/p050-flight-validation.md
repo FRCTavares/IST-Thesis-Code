@@ -2,13 +2,13 @@
 
 ## Status
 
-This is the detailed Issue #50 preparation record, not the day-of-flight
-operator sheet. Current flight-day authority is `docs/flight/README.md`.
+This is the detailed Issue #50 preparation/evidence record. **Do not follow this file during flight operations.**
+The only day-of-flight operator sheet is `docs/flight/field_day_runbook.md`. Current flight-day authority is `docs/flight/field_day_runbook.md`.
 
 **ACTIVE #50 — Friday 25 September 2026 physical gates pending.** Issue #64
 closed on 22 September with VGA 640x480 retained; HD was not promoted and FHD
 remains excluded. The canonical linear operator sheet is
-`docs/flight/README.md`. Home-side software/documentation checks prepare the
+`docs/flight/field_day_runbook.md`. Home-side software/documentation checks prepare the
 trial but do not establish FCU, restrained, process-loss, takeover or flight
 evidence. #32 final mounted characterization follows the physical #50
 baseline-versus-yaw-recovery retain/reject decision.
@@ -66,7 +66,7 @@ yaw recovery remains forced OFF by the live launcher.
 
 The software command contract is therefore substantially narrower, but the
 retained aircraft command remains blocked until the real Pixhawk/network,
-ground-sign and pilot-takeover gates in `docs/flight/README.md` pass.
+ground-sign and pilot-takeover gates in `docs/flight/field_day_runbook.md` pass.
 
 ### 19 September controller-status QoS correction
 
@@ -237,7 +237,7 @@ validator. `flight_metadata.txt` records `trial_condition` and
 `control_yaw_recovery_enabled`. The operator records the matching `trial_start`
 event (`--condition candidate --recovery-enabled` / `--condition baseline`);
 the launcher prints the exact command at startup. No arming/mode-change
-authority is added; `docs/flight/README.md` physical gates still apply.
+authority is added; `docs/flight/field_day_runbook.md` physical gates still apply.
 
 ### 10 September retained-finalization hardening
 
@@ -279,7 +279,7 @@ truncation, shutdown-order mistakes and incomplete packaging:
   manifest). It never talks to an FCU and never selects "latest".
   **Real-hardware retrieval verification is pending** — no Pixhawk available.
 
-Full copy-paste procedure: `docs/flight/README.md`. The field-day runbook is only a short backup.
+Full copy-paste procedure: `docs/flight/field_day_runbook.md`. The field-day runbook is only a short backup.
 
 ### Combined raw recording (diagnostic)
 
@@ -312,4 +312,4 @@ Required before aircraft operation:
 - manual pilot takeover available.
 
 The exact retained ground/hover/flight commands are frozen in
-`docs/flight/README.md`. Do not substitute commands from `docs/archive/flight/`.
+`docs/flight/field_day_runbook.md`. Do not substitute commands from `docs/archive/flight/`.

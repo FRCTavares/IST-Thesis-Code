@@ -13,7 +13,8 @@ ROOT_README = REPO_ROOT / "README.md"
 INDEX = REPO_ROOT / "docs/design/tim_tooling_index.md"
 TOOLS_README = TOOLS_ROOT / "README.md"
 P027_RUNBOOK = REPO_ROOT / "docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md"
-FLIGHT_DAY = REPO_ROOT / "docs/flight/README.md"
+FLIGHT_INDEX = REPO_ROOT / "docs/flight/README.md"
+FLIGHT_DAY = REPO_ROOT / "docs/flight/field_day_runbook.md"
 EXPERIMENTS_README = TOOLS_ROOT / "experiments/README.md"
 
 REPOSITORY_PATH_PREFIXES = (
@@ -142,27 +143,23 @@ printf '\\n'
 
 def test_flight_day_sheet_stays_compact_and_fail_closed():
     text = FLIGHT_DAY.read_text(encoding="utf-8")
+    index = FLIGHT_INDEX.read_text(encoding="utf-8")
 
-    assert len(text.splitlines()) < 425
+    assert len(text.splitlines()) < 180
     assert "**Canonical #50 procedure.**" in text
+    assert "docs/flight/field_day_runbook.md" in index
     assert "ssh francisco@192.168.8.174" in text
     assert "set_pi_network_mode.sh pixhawk" in text
     assert "set_pi_network_mode.sh unattended" in text
-    # The non-MAVROS structured-visual profile is a ground-development
-    # recording mode, not a day-of-flight launch command.
+    assert "field_preflight_check.sh --passive-live-gate" in text
     assert "--record-structured-visual" not in text
-    assert (
-        "./tools/start_live_stack.sh --res vga --field-record --no-control "
-        '--tag "$TAG"'
-    ) in text
     assert (
         "./tools/start_live_stack.sh --res vga --field-record --control-mavros "
         '--tag "$TAG"'
     ) in text
     assert "--acknowledge-yaw-recovery-candidate" in text
-    assert "summarize_field_evidence.py --bag-dir" in text
-    # H01/H02/H03 prospective source acquisition is complete. The current
-    # day-of-flight sheet must not re-advertise the retired capture commands.
+    assert "tools/flight/verify_field_run.sh" in text
+    assert "tools/flight/kill_exact_controller_for_gate.sh" in text
     assert "H01/H02/H03 are complete" in text
     assert "#64 is closed: VGA is retained" in text
     for scenario in ("h01", "h02", "h03"):

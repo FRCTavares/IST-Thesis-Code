@@ -2,7 +2,7 @@
 
 Use after each Friday run, then across the matched pairs. This is an analysis
 checklist, not a new flight procedure or a change to the frozen #50 promotion
-criteria. The canonical field sheet remains `docs/flight/README.md`.
+criteria. The canonical field sheet remains `docs/flight/field_day_runbook.md`.
 
 ## 1. Resolve and preserve each exact attempt
 
@@ -143,7 +143,7 @@ per-run records. Retain a machine-readable companion with RUN_ID, TAG, exact
 bag path, Git SHA, annotation/alignment/DataFlash paths and hashes, eligibility,
 censoring, per-pair comparison and every safety flag. All cells stay
 `PENDING_PHYSICAL_EVIDENCE` until supported. Candidate promotion requires
-all frozen conditions in `docs/flight/README.md`: at least three eligible
+all frozen conditions in `docs/flight/field_day_runbook.md`: at least three eligible
 pairs, earlier correct reacquisition in at least two, no later/worse censoring
 in the remaining pair, zero wrong-person/stale non-zero command and recovery
 translation, and no added unsafe motion, unacceptable saturation or takeover.

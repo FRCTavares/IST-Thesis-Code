@@ -29,8 +29,7 @@ Only `mars` and `off` are supported target-memory operator modes.
 - Dashboard compatibility launcher: `tools/start_ui_stack.sh`
 - Authoritative dashboard frontend: `FRCTavares/IST-Thesis-UI`
 - ROS workspace build: `tools/thesis_build.sh`
-- Flight-day operator sheet: `docs/flight/README.md`
-- Flight-day runbook (copy-paste): `docs/flight/field_day_runbook.md`
+- Flight-day operator sheet: `docs/flight/field_day_runbook.md`
 - Retained flight-evidence package: `docs/flight/retained_evidence_package.md`
 - Operator event recorder: `tools/live/operator_event.py`
 - Run-evidence log archiver: `tools/live/archive_run_evidence.py`

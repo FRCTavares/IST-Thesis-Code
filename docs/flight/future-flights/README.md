@@ -2,7 +2,7 @@
 
 Use:
 
-    docs/flight/README.md
+    docs/flight/field_day_runbook.md
 
 That file is the canonical flight-day command sheet.
 

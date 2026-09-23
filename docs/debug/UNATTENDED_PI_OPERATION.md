@@ -41,7 +41,7 @@ runbook. Join `ISR Aero.Next GCS` and use:
 ssh francisco@192.168.8.174
 ```
 
-Then follow `docs/flight/README.md`. The same address is used by the
+Then follow `docs/flight/field_day_runbook.md`. The same address is used by the
 management-only Rescue profile; field authority still requires the explicit
 `sudo tools/host/set_pi_network_mode.sh pixhawk` transition.
 

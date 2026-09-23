@@ -12,7 +12,7 @@ system.
 | Path | Role |
 | --- | --- |
 | `p074_state_aware_control_contract.md` | Frozen Issue #74 state-aware selected-person control contract. |
-| `pixhawk6x_ethernet_mavros_report.md` | Historical Ethernet/MAVROS evidence; current field commands live in `docs/flight/README.md`. |
+| `pixhawk6x_ethernet_mavros_report.md` | Historical Ethernet/MAVROS evidence; current field commands live in `docs/flight/field_day_runbook.md`. |
 
 ## Rules
 

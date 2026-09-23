@@ -8,7 +8,7 @@ evidence and does not close Issue #32.
 
 **FINAL PHYSICAL RUN PENDING #50.** Issue #64 closed on 22 September 2026
 with VGA 640x480 retained. Run the final mounted measurement only after #50
-records the retained controller policy; use `docs/flight/README.md` for the
+records the retained controller policy; use `docs/flight/field_day_runbook.md` for the
 field sequence. Remote runner validation is not final integrated evidence.
 
 The exact two-branch post-#50 run and analysis commands are in

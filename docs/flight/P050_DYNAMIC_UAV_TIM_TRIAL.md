@@ -25,7 +25,7 @@ Do not add:
 
 Complete the field and passive MAVROS gates in:
 
-    docs/flight/README.md
+    docs/flight/field_day_runbook.md
 
 ## Terminal A — start
 
