@@ -1535,37 +1535,23 @@ if [[ "$RECORD_MAVROS" -eq 1 ]]; then
 
     mavros_log ok "setpoint_velocity mav_frame verified: BODY_NED"
 
-    mavros_log info "waiting for /mavros/set_stream_rate service, timeout 10s"
-    MAVROS_STREAM_SERVICE_READY=0
+    # The service call itself is the bounded readiness/request operation.
+    # Repeated `ros2 service list` discovery calls can each block in DDS graph
+    # discovery and made the nominal 10 s readiness gate take several minutes
+    # on the real Pi. A direct call was physically validated against the
+    # connected Pixhawk and immediately enabled RAW_IMU telemetry.
+    mavros_log info "requesting MAVROS streams at ${MAVROS_STREAM_RATE} Hz, timeout 15s"
 
-    for i in {1..20}; do
-        if ros2 service list 2>/dev/null | grep -qx "/mavros/set_stream_rate"; then
-            MAVROS_STREAM_SERVICE_READY=1
-            break
-        fi
-
-        if (( i % 5 == 0 )); then
-            mavros_log info "still waiting for stream-rate service, attempt ${i}/20"
-        fi
-
-        sleep 0.5
-    done
-
-    if [[ "$MAVROS_STREAM_SERVICE_READY" -ne 1 ]]; then
-        mavros_log error "/mavros/set_stream_rate service not available"
-        stop_stack
-        exit 1
-    fi
-
-    mavros_log ok "stream-rate service available"
-    mavros_log info "requesting MAVROS streams at ${MAVROS_STREAM_RATE} Hz"
-
-    if ! ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate \
+    if ! timeout 15 ros2 service call \
+        /mavros/set_stream_rate \
+        mavros_msgs/srv/StreamRate \
         "{stream_id: 0, message_rate: ${MAVROS_STREAM_RATE}, on_off: true}"; then
-        mavros_log error "failed to request MAVROS stream rate"
+        mavros_log error "failed to request MAVROS stream rate within 15s"
         stop_stack
         exit 1
     fi
+
+    mavros_log ok "MAVROS stream-rate request completed"
 
     mavros_log info "checking /mavros/imu/data_raw, timeout 10s"
     MAVROS_IMU_READY=0
@@ -2138,7 +2124,7 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
         echo "[source] MAVROS target resolved: ${MAVROS_RESOLVED_TGT_SYSTEM}.${MAVROS_RESOLVED_TGT_COMPONENT}"
 
         echo "[source] requesting MAVLink streams"
-        bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate "{stream_id: 0, message_rate: 50, on_off: true}"' || true
+        bash -lc 'source /opt/ros/jazzy/setup.bash && export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}" && timeout 15 ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate "{stream_id: 0, message_rate: 50, on_off: true}"' || true
 
         echo "[source] starting MAVROS recorder: $SOURCE_MAVROS_BAG_OUT_DIR"
 

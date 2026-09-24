@@ -95,6 +95,44 @@ def test_retained_bag_records_actual_stamped_mavros_command():
         assert redundant_topic not in LAUNCHER
 
 
+def test_stream_rate_request_is_direct_bounded_and_fail_closed():
+    start = LAUNCHER.index(
+        'mavros_log ok "setpoint_velocity mav_frame verified: BODY_NED"'
+    )
+    end = LAUNCHER.index(
+        'mavros_log info "checking /mavros/imu/data_raw, timeout 10s"'
+    )
+    stream_gate = LAUNCHER[start:end]
+
+    assert "if ros2 service list" not in stream_gate
+    assert "MAVROS_STREAM_SERVICE_READY" not in stream_gate
+    assert "still waiting for stream-rate service" not in stream_gate
+    assert (
+        "timeout 15 ros2 service call \\\n"
+        "        /mavros/set_stream_rate \\\n"
+        "        mavros_msgs/srv/StreamRate"
+        in stream_gate
+    )
+    assert (
+        'mavros_log error "failed to request MAVROS stream rate within 15s"'
+        in stream_gate
+    )
+
+    source_start = LAUNCHER.index(
+        'echo "[source] requesting MAVLink streams"'
+    )
+    source_end = LAUNCHER.index(
+        'echo "[source] starting MAVROS recorder: $SOURCE_MAVROS_BAG_OUT_DIR"'
+    )
+    source_gate = LAUNCHER[source_start:source_end]
+
+    assert (
+        "timeout 15 ros2 service call /mavros/set_stream_rate "
+        "mavros_msgs/srv/StreamRate"
+        in source_gate
+    )
+
+
 def test_field_path_fails_closed_on_missing_raw_imu():
     assert "/mavros/imu/data_raw missing in retained field mode" in LAUNCHER
     assert 'if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then' in LAUNCHER
