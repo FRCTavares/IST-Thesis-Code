@@ -31,3 +31,15 @@ def test_returns_none_without_tevs_entity():
 - entity 18: rp1-cfe-csi2_ch0 (1 pad, 1 link)
 """
     assert _extract_tevs_sensor_entity(topology) is None
+
+
+def test_integrated_camera_fails_closed_on_rate_control_failure():
+    import inspect
+
+    from thesis_bringup.perception.perception_camera_node import PerceptionCameraNode
+
+    source = inspect.getsource(PerceptionCameraNode._configure_camera)
+
+    assert "rate_result = self._run_shell" in source
+    assert "if rate_result.returncode != 0:" in source
+    assert "aborting before capture stream-on" in source

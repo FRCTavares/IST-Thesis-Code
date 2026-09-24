@@ -350,10 +350,15 @@ class PerceptionCameraNode(PerceptionPipelineNode):
             if self._sensor_exposure_mode == 0:
                 controls.append(f"exposure={self._sensor_manual_exposure}")
 
-            self._run_shell(
+            rate_result = self._run_shell(
                 f"v4l2-ctl -d {self._sensor_subdev} --set-ctrl={','.join(controls)}",
                 allow_failure=True,
             )
+            if rate_result.returncode != 0:
+                raise RuntimeError(
+                    "Sensor rate control apply failed while configuring integrated camera; "
+                    "aborting before capture stream-on to avoid a wedged camera path"
+                )
             time.sleep(self._command_delay_s)
 
         self.get_logger().info("TEVS camera configured successfully for integrated capture")
