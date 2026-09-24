@@ -154,6 +154,28 @@ verify_pixhawk_ethernet_state() {
     fi
 }
 
+verify_field_network_state() {
+    local pixhawk_interface="$1"
+    local active_wifi=""
+
+    verify_pixhawk_ethernet_state "$pixhawk_interface" || return 1
+
+    active_wifi="$(
+        nmcli -g GENERAL.CONNECTION device show "$INTERFACE" 2>/dev/null \
+            || true
+    )"
+
+    if ! is_field_wifi "$active_wifi"; then
+        echo "[error] approved field Wi-Fi is not active on $INTERFACE: ${active_wifi:-none}" >&2
+        return 1
+    fi
+
+    if ! ip route show default dev "$INTERFACE" | grep -q .; then
+        echo "[error] approved field Wi-Fi does not own a default route on $INTERFACE" >&2
+        return 1
+    fi
+}
+
 activate_field_wifi() {
     local candidate=""
     local active_wifi=""
@@ -268,8 +290,8 @@ case "$MODE" in
                 ifname "$pixhawk_interface"
         fi
 
-        verify_pixhawk_ethernet_state "$pixhawk_interface" || {
-            echo "[error] refusing to persist Pixhawk mode with invalid Ethernet state" >&2
+        verify_field_network_state "$pixhawk_interface" || {
+            echo "[error] refusing to persist Pixhawk mode with invalid field network state" >&2
             disconnect_active_field_wifi || true
             exit 1
         }
@@ -279,8 +301,8 @@ case "$MODE" in
         # Close the small transition race between the pre-persist validation
         # and making pixhawk mode authoritative. A loss after this point is
         # also caught by the NetworkManager dispatcher.
-        if ! verify_pixhawk_ethernet_state "$pixhawk_interface"; then
-            echo "[error] Pixhawk link disappeared during field transition; returning unattended" >&2
+        if ! verify_field_network_state "$pixhawk_interface"; then
+            echo "[error] field network became invalid during field transition; returning unattended" >&2
             enter_unattended_mode || true
             exit 1
         fi
@@ -289,9 +311,9 @@ case "$MODE" in
         maybe_start_health_check
         echo "[ok] Pixhawk mode: field Wi-Fi=$active_wifi, Pixhawk Ethernet active on $pixhawk_interface, Tailscale disabled"
         ;;
-    unattended-if-pixhawk-invalid)
+    unattended-if-field-invalid|unattended-if-pixhawk-invalid)
         if [ "${THESIS_HOST_MODE:-unattended}" != "pixhawk" ]; then
-            echo "[ok] stale Pixhawk-disconnect request ignored: configured mode is ${THESIS_HOST_MODE:-unattended}"
+            echo "[ok] stale field-network exit request ignored: configured mode is ${THESIS_HOST_MODE:-unattended}"
             exit 0
         fi
 
@@ -302,13 +324,13 @@ case "$MODE" in
         )"
 
         if [ -n "$pixhawk_interface" ] \
-            && verify_pixhawk_ethernet_state "$pixhawk_interface" \
+            && verify_field_network_state "$pixhawk_interface" \
                 >/dev/null 2>&1; then
-            echo "[ok] stale Pixhawk-disconnect request ignored: Ethernet link is healthy"
+            echo "[ok] stale field-network exit request ignored: field network is healthy"
             exit 0
         fi
 
-        echo "[warn] confirmed Pixhawk Ethernet loss; returning unattended"
+        echo "[warn] confirmed field-network contract loss; returning unattended"
         enter_unattended_mode
         ;;
     unattended)

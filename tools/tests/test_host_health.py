@@ -395,18 +395,18 @@ def test_network_mode_script_is_fail_closed():
 
     ethernet_up = 'nmcli connection up "$PIXHAWK_ETHERNET"'
     ethernet_ifname = 'ifname "$pixhawk_interface"'
-    ethernet_verify = 'verify_pixhawk_ethernet_state "$pixhawk_interface"'
+    field_verify = 'verify_field_network_state "$pixhawk_interface"'
 
     assert ethernet_up in mode_script
     ethernet_up_pos = mode_script.index(ethernet_up)
     assert mode_script.index(ethernet_ifname, ethernet_up_pos) > ethernet_up_pos
 
     first_verify = mode_script.index(
-        ethernet_verify,
+        field_verify,
         ethernet_up_pos,
     )
     persist = mode_script.index(mode_persist, first_verify)
-    second_verify = mode_script.index(ethernet_verify, persist)
+    second_verify = mode_script.index(field_verify, persist)
 
     assert ethernet_up_pos < first_verify < persist
     assert persist < second_verify < mode_script.index(
@@ -725,6 +725,9 @@ def test_pixhawk_disconnect_dispatcher_can_only_request_unattended_exit():
     assert "pre-down|down" in dispatcher
     assert 'THESIS_HOST_MODE:-unattended' in dispatcher
     assert "THESIS_HOST_PIXHAWK_ETHERNET_CONNECTION" in dispatcher
+    assert "THESIS_HOST_INTERFACE" in dispatcher
+    assert '"$INTERFACE" != "$PIXHAWK_INTERFACE"' in dispatcher
+    assert '"$INTERFACE" != "$FIELD_WIFI_INTERFACE"' in dispatcher
     assert 'connection.interface-name' in dispatcher
     assert "systemctl start --no-block thesis-pixhawk-disconnect.service" in dispatcher
     assert "thesis-network-mode pixhawk" not in dispatcher
@@ -741,10 +744,10 @@ def test_pixhawk_disconnect_service_is_host_only_unattended_transition():
         line for line in service.splitlines() if line.startswith("ExecStart=")
     ]
     assert exec_lines == [
-        "ExecStart=/usr/local/sbin/thesis-network-mode unattended-if-pixhawk-invalid"
+        "ExecStart=/usr/local/sbin/thesis-network-mode unattended-if-field-invalid"
     ]
     assert "THESIS_HOST_SKIP_HEALTH_RECHECK=1" in service
-    assert exec_lines[0].split()[-1] == "unattended-if-pixhawk-invalid"
+    assert exec_lines[0].split()[-1] == "unattended-if-field-invalid"
     assert exec_lines[0].split()[-1] != "pixhawk"
     assert "start_live_stack" not in service
     assert "mavros" not in service.lower()
@@ -772,17 +775,31 @@ def test_pixhawk_disconnect_service_revalidates_after_serialized_transition():
 
     assert (
         "ExecStart=/usr/local/sbin/thesis-network-mode "
-        "unattended-if-pixhawk-invalid"
+        "unattended-if-field-invalid"
     ) in service
-    assert "unattended-if-pixhawk-invalid)" in mode_script
+    assert (
+        "unattended-if-field-invalid|unattended-if-pixhawk-invalid)"
+        in mode_script
+    )
+    assert "verify_field_network_state() {" in mode_script
     assert (
         'verify_pixhawk_ethernet_state "$pixhawk_interface"'
         in mode_script
     )
-    assert "stale Pixhawk-disconnect request ignored" in mode_script
-    assert "confirmed Pixhawk Ethernet loss" in mode_script
+    assert 'is_field_wifi "$active_wifi"' in mode_script
+    assert 'ip route show default dev "$INTERFACE"' in mode_script
+    assert (
+        'verify_field_network_state "$pixhawk_interface"'
+        in mode_script
+    )
+    assert "stale field-network exit request ignored" in mode_script
+    assert "confirmed field-network contract loss" in mode_script
+    assert (
+        "unattended-if-field-invalid|unattended-if-pixhawk-invalid)"
+        in mode_script
+    )
     assert mode_script.index('flock -x 9') < mode_script.index(
-        "unattended-if-pixhawk-invalid)"
+        "unattended-if-field-invalid|unattended-if-pixhawk-invalid)"
     )
 
 

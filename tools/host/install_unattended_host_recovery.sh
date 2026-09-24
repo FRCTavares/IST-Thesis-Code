@@ -172,7 +172,7 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
     echo "[dry-run] enable NetworkManager.service tailscaled.service ssh.socket thesis-host-health.timer"
     echo "[dry-run] enforce configured field Wi-Fi profiles with connection.autoconnect=no"
     echo "[dry-run] provision low-priority autoconnecting GCS management-rescue profile when primary GCS credentials exist"
-    echo "[dry-run] install Pixhawk-link dispatcher fail-closed exit hook and service"
+    echo "[dry-run] install field-network dispatcher fail-closed exit hook and service"
     if [[ "$CONFIGURE_FIREWALL" -eq 1 ]]; then
         echo "[dry-run] enable UFW: deny inbound, allow tailscale0, allow UDP 41641 on $INTERFACE, allow Pixhawk UDP 14550 on eth0, allow restricted GCS-subnet SSH on $INTERFACE"
     fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Host-only fail-closed trigger. It never enters field mode and never starts
+# Host-only fail-closed trigger for field Ethernet or Wi-Fi loss. It never enters field mode and never starts
 # ROS, MAVROS, perception, control, recording, or aircraft-facing services.
 
 set -u
@@ -26,12 +26,17 @@ set +a
 [ "${THESIS_HOST_MODE:-unattended}" = "pixhawk" ] || exit 0
 
 PIXHAWK_ETHERNET="${THESIS_HOST_PIXHAWK_ETHERNET_CONNECTION:-pixhawk-apm}"
+FIELD_WIFI_INTERFACE="${THESIS_HOST_INTERFACE:-wlan0}"
 PIXHAWK_INTERFACE="$(
     nmcli -g connection.interface-name         connection show "$PIXHAWK_ETHERNET" 2>/dev/null         | head -n 1
 )"
 
 [ -n "$PIXHAWK_INTERFACE" ] || exit 0
-[ "$INTERFACE" = "$PIXHAWK_INTERFACE" ] || exit 0
+
+if [ "$INTERFACE" != "$PIXHAWK_INTERFACE" ] \
+    && [ "$INTERFACE" != "$FIELD_WIFI_INTERFACE" ]; then
+    exit 0
+fi
 
 # Do not block NetworkManager's dispatcher queue while the serialized network
 # mode transition performs the unattended fail-closed exit.

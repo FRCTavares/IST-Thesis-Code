@@ -29,6 +29,12 @@ mode; it does not activate `pixhawk-apm`, MAVROS, control, or field authority.
 The actual `ISR Aero.Next GCS` field-authority profile remains
 non-autoconnecting and requires the explicit `pixhawk` transition.
 
+While `pixhawk` mode is authoritative, loss of either the dedicated Pixhawk
+Ethernet contract or the approved field Wi-Fi/default-route contract triggers a
+serialized fail-closed transition back to `unattended`. Before acting, that
+transition revalidates the complete field-network contract so a stale or
+already-recovered NetworkManager event does not tear down a valid field state.
+
 Do not add router port forwarding, a public SSH listener, Tailscale Funnel, or
 public dashboard/API exposure.
 

@@ -1,5 +1,5 @@
 [Unit]
-Description=Fail closed from Pixhawk field networking after Ethernet loss
+Description=Fail closed from Pixhawk field networking after field-network contract loss
 Documentation=file:///home/francisco/Desktop/Thesis-Code/docs/debug/UNATTENDED_PI_OPERATION.md
 After=NetworkManager.service
 Wants=NetworkManager.service
@@ -8,7 +8,7 @@ Wants=NetworkManager.service
 Type=oneshot
 EnvironmentFile=-/etc/default/thesis-host-health
 Environment=THESIS_HOST_SKIP_HEALTH_RECHECK=1
-ExecStart=/usr/local/sbin/thesis-network-mode unattended-if-pixhawk-invalid
+ExecStart=/usr/local/sbin/thesis-network-mode unattended-if-field-invalid
 TimeoutStartSec=60s
 User=root
 Group=root
