@@ -6,7 +6,7 @@ closing evidence.
 
 Open executable issues: **7**.
 
-Last reconciled with GitHub: **23 September 2026**.
+Last reconciled with GitHub: **24 September 2026**.
 
 **Issue #64 closed on 22 September 2026 with VGA retained.** HD was not
 promoted after the primary matched TIM-MARS comparison exceeded the frozen
@@ -50,6 +50,7 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
    - 23 September field-document compaction: `docs/flight/field_day_runbook.md` is the single compact #50 operator sheet; the previous detailed sheet is archived. Reference records are not operator instructions. Small helpers centralize exact process-loss and run verification without changing runtime behaviour.
    - 24 September remote pre-field audit: canonical `safe-camera` remains the default live profile with a 0.90 s controller freshness timeout; the ROS runtime imports the audited controller and state-aware policy source byte-for-byte. Corrected stale CLI help that still described 0.80 s as the default and added a regression assertion. No controller, recovery-bound, launch, recording, or flight behaviour changed; all remaining physical gates are unchanged.
    - 24 September field-network readiness audit: the primary `ISR Aero.Next GCS` and dedicated `pixhawk-apm` profiles are provisioned, but the approved AERONEXT fallback is not yet provisioned (`THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION` is empty and no `AERONEXT` NetworkManager profile exists). The Pi remains in unattended/Tailscale mode and the Pixhawk Ethernet link is physically down. Fallback provisioning plus primary/fallback/fail-closed validation therefore remain field-blocked; do not invent credentials or perform the transition over the Tailscale SSH session.
+   - 24 September home-preparation freeze: a fresh `thesis_bringup` build passed; the complete #50-focused software suite passed 195/195 tests in the sourced ROS environment; runtime controller/policy imports match the audited source byte-for-byte; all canonical field scripts pass shell syntax; `git diff --check` passes; and no root `log/` or `hailort.log` exists. No substantive #50 engineering or documentation task remains that can be completed without the approved fallback credentials/profile, real Pixhawk/aircraft, pilot/spotter, or retained physical evidence. Remaining #50 work is lab/field work only.
 
 2. [ ] [#32 — Complete end-to-end runtime and onboard resource characterisation](https://github.com/FRCTavares/IST-Thesis-Code/issues/32)
    - Reusable timing, provenance, selective-ReID workload and cache instrumentation is complete; the pre-#58 retained evidence gate is complete. Final live PID-tree CPU/RSS attachment and analysis tooling is implemented and locally validated, without changing production process ownership.

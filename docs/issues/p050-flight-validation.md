@@ -24,6 +24,23 @@ The 22 September remote inspection found the fallback setting empty and no
 clearly named approved AERONEXT profile among saved NetworkManager profile
 names. No credentials or host network state were changed remotely.
 
+### 24 September home-preparation freeze
+
+Home-side Issue #50 preparation is complete. Final remote verification used the
+sourced ROS 2 Jazzy/workspace environment and passed 195/195 focused #50 tests.
+A fresh `thesis_bringup` package build passed, the imported controller and
+state-aware policy match the audited source byte-for-byte, the canonical field
+scripts pass shell syntax, `git diff --check` passes, and no root-level `log/`
+or `hailort.log` exists. The stale runbook wording in this record was also
+corrected so `docs/flight/field_day_runbook.md` is unambiguously the only
+field-operator authority.
+
+No further #50 software, configuration, evidence-template or operator-procedure
+work is currently justified from home. Remaining work requires the approved
+AERONEXT fallback credentials/profile and/or direct physical access to the real
+Pixhawk, aircraft, pilot/spotter and retained flight evidence. Those physical
+steps remain exactly the sequence stated above and in the canonical runbook.
+
 Issue #50 owns the current closed-loop aircraft validation. The archived P023
 documents are historical and must not be used as current launch instructions.
 
@@ -279,7 +296,7 @@ truncation, shutdown-order mistakes and incomplete packaging:
   manifest). It never talks to an FCU and never selects "latest".
   **Real-hardware retrieval verification is pending** — no Pixhawk available.
 
-Full copy-paste procedure: `docs/flight/field_day_runbook.md`. The field-day runbook is only a short backup.
+The canonical copy-paste operator procedure is `docs/flight/field_day_runbook.md`; follow that file during field operations.
 
 ### Combined raw recording (diagnostic)
 
