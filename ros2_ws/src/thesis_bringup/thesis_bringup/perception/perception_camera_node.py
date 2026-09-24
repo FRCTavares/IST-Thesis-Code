@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections import deque
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import threading
@@ -28,6 +29,19 @@ from rclpy.qos import (
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
 from thesis_bringup.perception.perception_pipeline_node import PerceptionPipelineNode
+
+
+def _extract_tevs_sensor_entity(topology: str) -> str | None:
+    """Return the first TEVS media entity from media-ctl topology output."""
+    entity_names = re.findall(
+        r"- entity\s+\d+:\s+([^\n(]+)\s*\(",
+        topology,
+    )
+    for name in entity_names:
+        candidate = name.strip()
+        if candidate.startswith("tevs "):
+            return candidate
+    return None
 
 
 class PerceptionCameraNode(PerceptionPipelineNode):
@@ -275,18 +289,19 @@ class PerceptionCameraNode(PerceptionPipelineNode):
         if self._sensor_entity in graph:
             return
 
-        for line in graph.splitlines():
-            line = line.strip()
-            if line.startswith("- entity") and "tevs " in line:
-                parts = line.split("'")
-                if len(parts) >= 2:
-                    detected = parts[1]
-                    self.get_logger().warn(
-                        f"Configured sensor_entity='{self._sensor_entity}' not present on "
-                        f"{self._media_dev}; using '{detected}' instead"
-                    )
-                    self._sensor_entity = detected
-                    return
+        detected = _extract_tevs_sensor_entity(graph)
+        if detected is not None:
+            self.get_logger().warn(
+                f"Configured sensor_entity='{self._sensor_entity}' not present on "
+                f"{self._media_dev}; using '{detected}' instead"
+            )
+            self._sensor_entity = detected
+            return
+
+        self.get_logger().warn(
+            f"No TEVS sensor entity auto-detected on {self._media_dev}; "
+            f"using configured value '{self._sensor_entity}'"
+        )
 
     def _configure_camera(self) -> None:
         self.get_logger().info("Configuring TEVS camera before integrated capture start")
