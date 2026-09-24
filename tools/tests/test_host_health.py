@@ -358,8 +358,28 @@ def test_field_stack_enters_network_mode_instead_of_direct_ethernet_up():
 
     assert live_stack.count(
         'sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk'
-    ) == 2
+    ) == 1
+    assert "ensure_field_network_mode()" in live_stack
+    assert live_stack.count("if ! ensure_field_network_mode; then") == 2
+    assert "tools/host/check_pi_field_network.sh" in live_stack
     assert "sudo nmcli connection up pixhawk-apm" not in live_stack
+
+
+def test_read_only_field_network_validator_is_fail_closed():
+    verifier = (
+        REPO_ROOT / "tools/host/check_pi_field_network.sh"
+    ).read_text(encoding="utf-8")
+
+    assert "sudo" not in verifier
+    assert 'THESIS_HOST_MODE:-unattended' in verifier
+    assert "THESIS_HOST_PIXHAWK_WIFI_CONNECTION" in verifier
+    assert "THESIS_HOST_PIXHAWK_WIFI_FALLBACK_CONNECTION" in verifier
+    assert "THESIS_HOST_PIXHAWK_ETHERNET_CONNECTION" in verifier
+    assert "EXPECTED_GCS_CIDR" in verifier
+    assert "EXPECTED_PIXHAWK_PI_CIDR" in verifier
+    assert 'systemctl is-active tailscaled.service' in verifier
+    assert 'ip route get "$PIXHAWK_ADDRESS"' in verifier
+    assert 'ping -c 1 -W 1 "$PIXHAWK_ADDRESS"' in verifier
 
 
 def test_network_mode_script_is_fail_closed():

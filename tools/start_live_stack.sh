@@ -1435,14 +1435,35 @@ if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
     fi
 fi
 
+ensure_field_network_mode() {
+    local verifier="$THESIS_ROOT/tools/host/check_pi_field_network.sh"
+
+    if [[ -x "$verifier" ]] && "$verifier" >/dev/null 2>&1; then
+        echo "[field] existing Pixhawk field-network contract already valid"
+        return 0
+    fi
+
+    echo "[field] existing field-network contract not valid; requesting transition"
+    if ! sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk; then
+        return 1
+    fi
+
+    if [[ ! -x "$verifier" ]] || ! "$verifier"; then
+        echo "[error] Pixhawk transition completed but field-network validation failed"
+        return 1
+    fi
+
+    return 0
+}
+
 # Start MAVROS telemetry when --record-mavros is enabled.
 # This keeps --record-mavros self-contained:
 # launch MAVROS, wait for FCU connection, request streams, then start bag recording.
 if [[ "$RECORD_MAVROS" -eq 1 ]]; then
     if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
-        echo "[field] enforcing ISR-first/Pixhawk network mode before MAVROS startup"
-        if ! sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk; then
-            echo "[error] failed to enter Pixhawk field-network mode"
+        echo "[field] enforcing ISR-first/Pixhawk network contract before MAVROS startup"
+        if ! ensure_field_network_mode; then
+            echo "[error] failed to establish Pixhawk field-network contract"
             stop_stack
             exit 1
         fi
@@ -2098,8 +2119,12 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
     fi
 
     if [[ "${SOURCE_MAVROS_RECORD:-0}" -eq 1 ]]; then
-        echo "[source] enforcing AERONEXT/Pixhawk network mode (Tailscale will stop)"
-        sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk
+        echo "[source] enforcing AERONEXT/Pixhawk network contract"
+        if ! ensure_field_network_mode; then
+            echo "[error] failed to establish Pixhawk field-network contract"
+            stop_stack
+            exit 1
+        fi
 
         echo "[source] starting MAVROS Pixhawk 6X Ethernet link"
         export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
