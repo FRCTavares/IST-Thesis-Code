@@ -105,7 +105,7 @@ Options:
                                         --field-record --control-mavros.
     --acknowledge-yaw-recovery-candidate
                                         Explicit acknowledgement required by --control-yaw-recovery.
-    --control-stale-timeout-s <N>       Control stale target timeout seconds (default: 0.80)
+    --control-stale-timeout-s <N>       Control stale target timeout seconds (safe-camera default: 0.90; profile-specific)
     --no-web-video                      Do not start web_video_server
     --record-video                      Legacy dashboard-in-MCAP diagnostic recording
     --record-structured-visual          Non-MAVROS structured MCAP + separate MJPEG visual

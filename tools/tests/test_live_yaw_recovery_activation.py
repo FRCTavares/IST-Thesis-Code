@@ -238,3 +238,4 @@ def test_help_text_documents_the_gated_candidate():
     assert "--control-yaw-recovery" in USAGE
     assert "--acknowledge-yaw-recovery-candidate" in USAGE
     assert "default OFF" in USAGE
+    assert "safe-camera default: 0.90; profile-specific" in USAGE
