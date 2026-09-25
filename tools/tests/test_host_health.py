@@ -360,7 +360,9 @@ def test_field_stack_enters_network_mode_instead_of_direct_ethernet_up():
         'sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk'
     ) == 1
     assert "ensure_field_network_mode()" in live_stack
-    assert live_stack.count("if ! ensure_field_network_mode; then") == 2
+    assert "verify_field_network_mode()" in live_stack
+    assert live_stack.count("if ! ensure_field_network_mode; then") == 1
+    assert live_stack.count("if ! verify_field_network_mode; then") == 3
     assert "tools/host/check_pi_field_network.sh" in live_stack
     assert "sudo nmcli connection up pixhawk-apm" not in live_stack
 

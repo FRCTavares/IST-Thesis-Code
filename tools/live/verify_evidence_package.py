@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import subprocess
@@ -43,6 +44,28 @@ STATUS_COMPLETE = "complete_runtime_evidence"
 STATUS_INCOMPLETE = "incomplete_runtime_evidence"
 STATUS_PENDING_ANNOTATION = "pending_postflight_annotation"
 STATUS_PENDING_DATAFLASH = "pending_pixhawk_dataflash"
+
+BCB_TRIALS = {
+    "bcb_baseline_a": {
+        "condition": "baseline",
+        "recovery_enabled": False,
+    },
+    "bcb_candidate": {
+        "condition": "candidate",
+        "recovery_enabled": True,
+    },
+    "bcb_baseline_b": {
+        "condition": "baseline",
+        "recovery_enabled": False,
+    },
+}
+
+BCB_OPPORTUNITIES = {
+    "O1": "right_loss",
+    "O2": "left_loss",
+    "O3": "distractor_loss",
+}
+BCB_OBSERVATION_HORIZON_S = 10.0
 
 
 def _json(path: Path) -> dict[str, Any] | None:
@@ -148,6 +171,441 @@ def _validate_dataflash_manifest(
     return result
 
 
+def _load_operator_event_contract(repo_root: Path):
+    path = repo_root / "tools/live/operator_event.py"
+    spec = importlib.util.spec_from_file_location(
+        "_operator_event_contract",
+        path,
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load operator-event contract: {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _validate_bcb_operator_events(
+    path: Path,
+    *,
+    run_id: str,
+    trial_id: str,
+    repo_root: Path,
+) -> dict[str, Any]:
+    """Validate the frozen final three-flight B-C-B operator-event contract.
+
+    This is intentionally stricter than --expect-operator-events. Historical
+    evidence keeps the old existence-only contract; only explicitly identified
+    final B-C-B trials use this structural/lifecycle validation.
+    """
+    result: dict[str, Any] = {
+        "path": str(path),
+        "run_id": run_id,
+        "trial_id": trial_id,
+        "valid": False,
+        "record_count": 0,
+        "problems": [],
+        "event_counts": {},
+        "opportunity_outcomes": {},
+    }
+    problems: list[str] = result["problems"]
+
+    expected_trial = BCB_TRIALS.get(trial_id)
+    if expected_trial is None:
+        problems.append(f"unsupported B-C-B trial id: {trial_id!r}")
+        return result
+
+    if not path.is_file():
+        problems.append("operator_events.jsonl missing")
+        return result
+
+    try:
+        operator_event = _load_operator_event_contract(repo_root)
+    except Exception as exc:
+        problems.append(f"could not load operator-event validator: {exc}")
+        return result
+
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        problems.append(f"could not read operator_events.jsonl: {exc}")
+        return result
+
+    if not lines:
+        problems.append("operator_events.jsonl is empty")
+        return result
+
+    records: list[dict[str, Any]] = []
+    record_indices: list[int] = []
+
+    for line_number, raw in enumerate(lines, start=1):
+        if not raw.strip():
+            problems.append(f"line {line_number}: blank JSONL record")
+            continue
+
+        try:
+            record = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            problems.append(
+                f"line {line_number}: invalid JSON: {exc.msg}"
+            )
+            continue
+
+        if not isinstance(record, dict):
+            problems.append(f"line {line_number}: record is not a JSON object")
+            continue
+
+        records.append(record)
+        record_indices.append(line_number - 1)
+
+        for error in operator_event.validate_event(record):
+            problems.append(f"line {line_number}: {error}")
+
+        if record.get("run_id") != run_id:
+            problems.append(
+                f"line {line_number}: run_id {record.get('run_id')!r} "
+                f"does not match {run_id!r}"
+            )
+
+        if record.get("trial_id") != trial_id:
+            problems.append(
+                f"line {line_number}: trial_id {record.get('trial_id')!r} "
+                f"does not match {trial_id!r}"
+            )
+
+    result["record_count"] = len(records)
+
+    by_event: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+    for index, record in zip(record_indices, records):
+        event = record.get("event")
+        if isinstance(event, str):
+            by_event.setdefault(event, []).append((index, record))
+
+    result["event_counts"] = {
+        event: len(items)
+        for event, items in sorted(by_event.items())
+    }
+
+    target_selected = by_event.get("target_selected", [])
+    trial_starts = by_event.get("trial_start", [])
+    trial_ends = by_event.get("trial_end", [])
+    trial_verdicts = by_event.get("trial_verdict", [])
+    aborts = by_event.get("abort", [])
+    takeovers = by_event.get("operator_takeover", [])
+
+    for event_name, items in (
+        ("trial_start", trial_starts),
+        ("trial_end", trial_ends),
+        ("trial_verdict", trial_verdicts),
+    ):
+        if len(items) != 1:
+            problems.append(
+                f"expected exactly one {event_name}, found {len(items)}"
+            )
+
+    trial_start_index = trial_starts[0][0] if len(trial_starts) == 1 else None
+    trial_end_index = trial_ends[0][0] if len(trial_ends) == 1 else None
+    verdict_index = (
+        trial_verdicts[0][0]
+        if len(trial_verdicts) == 1
+        else None
+    )
+
+    if len(trial_starts) == 1:
+        detail = trial_starts[0][1].get("detail", {})
+        if detail.get("condition") != expected_trial["condition"]:
+            problems.append(
+                "trial_start condition does not match B-C-B tag "
+                f"({detail.get('condition')!r} != "
+                f"{expected_trial['condition']!r})"
+            )
+        if (
+            detail.get("recovery_enabled")
+            is not expected_trial["recovery_enabled"]
+        ):
+            problems.append(
+                "trial_start recovery_enabled does not match B-C-B tag "
+                f"({detail.get('recovery_enabled')!r} != "
+                f"{expected_trial['recovery_enabled']!r})"
+            )
+        if detail.get("scenario") != "bcb_three_opportunity":
+            problems.append(
+                "trial_start scenario must be 'bcb_three_opportunity'"
+            )
+
+    verdict = None
+    if len(trial_verdicts) == 1:
+        verdict = trial_verdicts[0][1].get("detail", {}).get("verdict")
+
+    result["trial_disposition"] = verdict
+
+    expected_boundaries = [
+        ("O1", "start"),
+        ("O1", "end"),
+        ("O2", "start"),
+        ("O2", "end"),
+        ("O3", "start"),
+        ("O3", "end"),
+    ]
+
+    boundary_records: list[tuple[int, str, str, dict[str, Any]]] = []
+
+    for opportunity_id, expected_scenario in BCB_OPPORTUNITIES.items():
+        starts = [
+            (index, record)
+            for index, record in by_event.get("opportunity_start", [])
+            if record.get("detail", {}).get("opportunity_id")
+            == opportunity_id
+        ]
+        ends = [
+            (index, record)
+            for index, record in by_event.get("opportunity_end", [])
+            if record.get("detail", {}).get("opportunity_id")
+            == opportunity_id
+        ]
+
+        if len(starts) > 1:
+            problems.append(
+                f"expected at most one {opportunity_id} "
+                f"opportunity_start, found {len(starts)}"
+            )
+        if len(ends) > 1:
+            problems.append(
+                f"expected at most one {opportunity_id} "
+                f"opportunity_end, found {len(ends)}"
+            )
+
+        if len(starts) == 1:
+            index, record = starts[0]
+            detail = record.get("detail", {})
+            if detail.get("scenario") != expected_scenario:
+                problems.append(
+                    f"{opportunity_id} scenario must be "
+                    f"{expected_scenario!r}"
+                )
+            if (
+                detail.get("observation_horizon_s")
+                != BCB_OBSERVATION_HORIZON_S
+            ):
+                problems.append(
+                    f"{opportunity_id} observation horizon must be "
+                    f"{BCB_OBSERVATION_HORIZON_S:.1f} s"
+                )
+            boundary_records.append(
+                (index, opportunity_id, "start", record)
+            )
+
+        if len(ends) == 1:
+            index, record = ends[0]
+            result["opportunity_outcomes"][opportunity_id] = (
+                record.get("detail", {}).get("outcome")
+            )
+            boundary_records.append(
+                (index, opportunity_id, "end", record)
+            )
+
+    boundary_records.sort(key=lambda item: item[0])
+    actual_boundaries = [
+        (opportunity_id, kind)
+        for _, opportunity_id, kind, _ in boundary_records
+    ]
+
+    result["opportunity_boundary_sequence"] = [
+        f"{opportunity_id}_{kind}"
+        for opportunity_id, kind in actual_boundaries
+    ]
+    result["full_opportunity_sequence_recorded"] = (
+        actual_boundaries == expected_boundaries
+    )
+
+    if verdict == "accepted":
+        result["contract_path"] = "nominal_complete"
+
+        if actual_boundaries != expected_boundaries:
+            for opportunity_id in BCB_OPPORTUNITIES:
+                start_count = sum(
+                    1
+                    for _, op_id, kind, _ in boundary_records
+                    if op_id == opportunity_id and kind == "start"
+                )
+                end_count = sum(
+                    1
+                    for _, op_id, kind, _ in boundary_records
+                    if op_id == opportunity_id and kind == "end"
+                )
+                if start_count != 1:
+                    problems.append(
+                        f"accepted B-C-B trial requires exactly one "
+                        f"{opportunity_id} opportunity_start, found "
+                        f"{start_count}"
+                    )
+                if end_count != 1:
+                    problems.append(
+                        f"accepted B-C-B trial requires exactly one "
+                        f"{opportunity_id} opportunity_end, found "
+                        f"{end_count}"
+                    )
+
+            if actual_boundaries != expected_boundaries:
+                problems.append(
+                    "accepted B-C-B opportunity boundaries must be exactly "
+                    "O1 start/end -> O2 start/end -> O3 start/end"
+                )
+
+        if len(aborts) != 0:
+            problems.append(
+                "accepted B-C-B trial must not contain an abort event"
+            )
+
+        if takeovers:
+            problems.append(
+                "accepted B-C-B trial must not contain operator_takeover"
+            )
+
+        if not target_selected:
+            problems.append(
+                "accepted B-C-B trial requires target_selected before O1"
+            )
+
+        if (
+            trial_start_index is not None
+            and boundary_records
+            and target_selected
+            and not any(
+                trial_start_index < index < boundary_records[0][0]
+                for index, _ in target_selected
+            )
+        ):
+            problems.append(
+                "target_selected must occur after trial_start and before O1"
+            )
+
+        if len(trial_ends) == 1:
+            end_reason = (
+                trial_ends[0][1]
+                .get("detail", {})
+                .get("end_reason")
+            )
+            if end_reason != "nominal_complete":
+                problems.append(
+                    "accepted B-C-B trial_end must use "
+                    "end_reason='nominal_complete'"
+                )
+
+    elif verdict == "rejected":
+        result["contract_path"] = "aborted_prefix"
+
+        if len(aborts) != 1:
+            problems.append(
+                f"rejected B-C-B trial requires exactly one abort event, "
+                f"found {len(aborts)}"
+            )
+
+        if len(trial_ends) == 1:
+            end_reason = (
+                trial_ends[0][1]
+                .get("detail", {})
+                .get("end_reason")
+            )
+            if end_reason != "pilot_abort":
+                problems.append(
+                    "rejected B-C-B trial_end must use "
+                    "end_reason='pilot_abort'"
+                )
+
+        # A rejected flight may terminate at any point in the frozen sequence.
+        # The observed boundaries must therefore be an exact prefix. This
+        # permits an opportunity_start with no matching end if the safety abort
+        # happened during that opportunity, without fabricating an end marker.
+        if (
+            len(actual_boundaries) > len(expected_boundaries)
+            or actual_boundaries
+            != expected_boundaries[:len(actual_boundaries)]
+        ):
+            problems.append(
+                "rejected B-C-B opportunity boundaries must form a "
+                "coherent prefix of O1 start/end -> O2 start/end -> "
+                "O3 start/end"
+            )
+
+        if len(aborts) == 1:
+            abort_index = aborts[0][0]
+
+            if (
+                trial_start_index is not None
+                and abort_index <= trial_start_index
+            ):
+                problems.append(
+                    "abort must occur after trial_start"
+                )
+
+            if (
+                trial_end_index is not None
+                and abort_index >= trial_end_index
+            ):
+                problems.append(
+                    "abort must occur before trial_end"
+                )
+
+            if any(
+                index > abort_index
+                for index, _, _, _ in boundary_records
+            ):
+                problems.append(
+                    "opportunity events must not occur after abort"
+                )
+
+            if any(
+                index > abort_index
+                for index, _ in target_selected
+            ):
+                problems.append(
+                    "target_selected must not occur after abort"
+                )
+
+            if boundary_records:
+                first_boundary_index = boundary_records[0][0]
+                if not any(
+                    trial_start_index is not None
+                    and trial_start_index < index < first_boundary_index
+                    for index, _ in target_selected
+                ):
+                    problems.append(
+                        "an attempted B-C-B opportunity requires "
+                        "target_selected before the first opportunity"
+                    )
+
+    elif verdict is not None:
+        problems.append(
+            f"unexpected B-C-B trial verdict: {verdict!r}"
+        )
+
+    # Shared lifecycle ordering. A rejected run is valid retained evidence even
+    # when it is not a complete comparison flight.
+    if (
+        trial_start_index is not None
+        and trial_end_index is not None
+        and verdict_index is not None
+    ):
+        if not (
+            trial_start_index < trial_end_index < verdict_index
+        ):
+            problems.append(
+                "B-C-B lifecycle requires trial_start before trial_end "
+                "before trial_verdict"
+            )
+
+        if any(
+            index <= trial_start_index or index >= trial_end_index
+            for index, _, _, _ in boundary_records
+        ):
+            problems.append(
+                "opportunity boundaries must occur inside the trial"
+            )
+
+    result["valid"] = not problems
+    return result
+
+
 def verify_package(
     *,
     bag_dir: Path,
@@ -156,6 +614,7 @@ def verify_package(
     field_record: bool,
     expect_operator_events: bool,
     repo_root: Path,
+    expect_bcb_opportunities: str | None = None,
     expect_raw_bag: bool = False,
     expect_visual: bool = False,
 ) -> tuple[str, dict[str, Any]]:
@@ -278,10 +737,32 @@ def verify_package(
         problems.append("required artifact missing: mcap_storage_file")
 
     op_events = logs / "operator_events.jsonl"
+    if expect_bcb_opportunities is not None:
+        expect_operator_events = True
+
     if expect_operator_events:
         require("operator_events_jsonl", op_events, note="operator recorded events")
     else:
         optional("operator_events_jsonl", op_events)
+
+    if expect_bcb_opportunities is not None:
+        bcb_validation = _validate_bcb_operator_events(
+            op_events,
+            run_id=run_id,
+            trial_id=expect_bcb_opportunities,
+            repo_root=repo_root,
+        )
+        report["operator_event_validation"] = bcb_validation
+        report["required"]["bcb_operator_event_contract"] = {
+            "present": op_events.is_file(),
+            "valid": bcb_validation["valid"],
+            "trial_id": expect_bcb_opportunities,
+        }
+        if not bcb_validation["valid"]:
+            problems.extend(
+                f"B-C-B operator-event contract: {reason}"
+                for reason in bcb_validation["problems"]
+            )
 
     # --- bag integrity ---
     integrity = _json(bag_dir / "bag_integrity.json")
@@ -435,6 +916,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runtime-only", action="store_true",
                         help="accept a complete runtime package while postflight work remains pending")
     parser.add_argument("--expect-operator-events", action="store_true")
+    parser.add_argument(
+        "--expect-bcb-opportunities",
+        choices=tuple(BCB_TRIALS),
+        metavar="TAG",
+        default=None,
+        help=(
+            "Require the strict final B-C-B O1/O2/O3 operator-event "
+            "contract for the supplied trial tag."
+        ),
+    )
     parser.add_argument("--repo-root", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
@@ -453,6 +944,7 @@ def main(argv: list[str] | None = None) -> int:
         field_record=args.field_record,
         expect_operator_events=args.expect_operator_events,
         repo_root=repo_root,
+        expect_bcb_opportunities=args.expect_bcb_opportunities,
         expect_raw_bag=args.expect_raw_bag,
         expect_visual=args.expect_visual,
     )

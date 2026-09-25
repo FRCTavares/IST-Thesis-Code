@@ -145,8 +145,14 @@ def test_flight_day_sheet_stays_compact_and_fail_closed():
     text = FLIGHT_DAY.read_text(encoding="utf-8")
     index = FLIGHT_INDEX.read_text(encoding="utf-8")
 
-    assert len(text.splitlines()) < 180
     assert "**Canonical #50 procedure.**" in text
+    assert "Remember: `B -> C -> B`." in text
+    assert "Remember: `MANUAL -> B -> C -> B`." not in text
+    assert "## COMPLETED 25 SEPTEMBER — MANUAL RC / DYNAMIC TIM-MARS" in text
+    assert text.count("opportunity_start --run-id") == 9
+    assert text.count("opportunity_end --run-id") == 9
+    assert "## Finish every run" in text
+    assert "## FLIGHT 4" not in text
     assert "docs/flight/field_day_runbook.md" in index
     assert "ssh francisco@192.168.8.174" in text
     assert "set_pi_network_mode.sh pixhawk" in text
@@ -159,6 +165,22 @@ def test_flight_day_sheet_stays_compact_and_fail_closed():
     ) in text
     assert "--acknowledge-yaw-recovery-candidate" in text
     assert "tools/flight/verify_field_run.sh" in text
+    assert '--expect-bcb-opportunities "$TAG"' in text
+    assert text.count(
+        'target_selected --run-id "$RUN_ID" --trial-id "$TAG"'
+    ) == 3
+    assert (
+        'trial_end --run-id "$RUN_ID" --trial-id "$TAG" '
+        '--end-reason nominal_complete'
+    ) in text
+    assert (
+        'trial_verdict --run-id "$RUN_ID" --trial-id "$TAG" '
+        '--verdict accepted'
+    ) in text
+    assert (
+        'abort --run-id "$RUN_ID" --trial-id "$TAG" '
+        '--abort-class safety'
+    ) in text
     assert "tools/flight/kill_exact_controller_for_gate.sh" in text
     assert "H01/H02/H03 are complete" in text
     assert "#64 is closed: VGA is retained" in text

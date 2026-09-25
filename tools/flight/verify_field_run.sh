@@ -31,6 +31,16 @@ if [[ "$MODE" == "--control-trial" ]]; then
     ARGS+=(--control-trial)
 fi
 
+case "$TAG" in
+    bcb_baseline_a|bcb_candidate|bcb_baseline_b)
+        if [[ "$MODE" != "--control-trial" ]]; then
+            echo "FAIL: final B-C-B tag requires --control-trial"
+            exit 2
+        fi
+        ARGS+=(--expect-bcb-opportunities "$TAG")
+        ;;
+esac
+
 python3 tools/live/verify_evidence_package.py "${ARGS[@]}" || RC=1
 python3 tools/live/summarize_field_evidence.py --bag-dir "$BAG" || RC=1
 python3 tools/live/assess_bag_topics.py "$BAG" --out "$BAG/per_topic_quality.json" || RC=1

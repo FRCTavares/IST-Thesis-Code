@@ -32,6 +32,34 @@ def test_retained_field_mode_rejects_preexisting_mavros():
     assert "pgrep -f" in LAUNCHER
 
 
+def test_field_network_is_settled_before_ros_and_only_verified_afterward():
+    settle = LAUNCHER.index(
+        "[field] settling ISR-first/Pixhawk network contract before ROS participant startup"
+    )
+    first_ros_participant = LAUNCHER.index("start_ros_bg perception_camera")
+    mavros_recheck = LAUNCHER.index(
+        "[field] re-validating frozen ISR-first/Pixhawk network contract before MAVROS startup"
+    )
+
+    assert settle < first_ros_participant < mavros_recheck
+
+    mavros_gate = LAUNCHER[
+        LAUNCHER.index("# Start MAVROS telemetry when --record-mavros is enabled."):
+        LAUNCHER.index('MAVROS_START_TS="$(date +%s)"')
+    ]
+    assert "verify_field_network_mode" in mavros_gate
+    assert "ensure_field_network_mode" not in mavros_gate
+
+    source_start = LAUNCHER.index('if [[ "${SOURCE_MAVROS_RECORD:-0}" -eq 1 ]]; then')
+    source_end = LAUNCHER.index(
+        'echo "[source] starting MAVROS Pixhawk 6X Ethernet link"',
+        source_start,
+    )
+    source_gate = LAUNCHER[source_start:source_end]
+    assert "verify_field_network_mode" in source_gate
+    assert "ensure_field_network_mode" not in source_gate
+
+
 def test_body_frame_is_verified_before_controller_mirroring_starts():
     field_network = LAUNCHER.index(
         'set_pi_network_mode.sh" pixhawk'

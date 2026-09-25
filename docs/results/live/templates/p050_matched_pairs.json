@@ -1,15 +1,21 @@
 {
   "status": "PENDING_PHYSICAL_EVIDENCE",
   "analysis_commit": "PENDING_PHYSICAL_EVIDENCE",
+  "protocol": "three_flight_bcb_v1",
+  "planned_flight_order": [
+    "baseline_a",
+    "candidate",
+    "baseline_b"
+  ],
   "attempts": [],
-  "eligible_pairs": [],
+  "eligible_opportunity_triplets": [],
   "retained_controller_policy": "PENDING_PHYSICAL_EVIDENCE",
   "decision_reason": "PENDING_PHYSICAL_EVIDENCE",
-  "interpretation_limit": "Descriptive matched physical evidence; no statistical superiority or formal safety claim.",
+  "interpretation_limit": "Descriptive three-flight B-C-B physical evidence. The three within-flight opportunities are repeated observations, not independent flight replicates; no statistical superiority or formal safety claim.",
   "required_per_attempt_fields": [
     "run_id",
     "tag",
-    "pair_number",
+    "flight_role",
     "condition",
     "bag_dir",
     "git_sha",
@@ -23,10 +29,6 @@
     "unresolved_command_intervals",
     "operator_event_path",
     "eligibility_and_rejection_reason",
-    "trusted_visible_locked_before_loss_s",
-    "observation_horizon_s",
-    "observed_duration_s",
-    "correct_return_s_or_right_censor",
     "wrong_person_nonzero_s",
     "stale_invalid_nonzero_s",
     "recovery_translation_s",
@@ -34,5 +36,24 @@
     "saturation",
     "pilot_takeover",
     "integrity_verdict"
+  ],
+  "required_per_opportunity_fields": [
+    "run_id",
+    "tag",
+    "condition",
+    "opportunity_id",
+    "operator_start_event_and_timestamp",
+    "operator_end_event_and_timestamp",
+    "operator_outcome",
+    "operator_event_path_and_sha256",
+    "physical_loss_time_source_and_uncertainty",
+    "physical_return_time_source_and_uncertainty",
+    "predeclared_loss",
+    "flight_role",
+    "trusted_visible_locked_before_loss_s",
+    "observation_horizon_s",
+    "observed_duration_s",
+    "correct_return_s_or_right_censor",
+    "eligibility_and_rejection_reason"
   ]
 }

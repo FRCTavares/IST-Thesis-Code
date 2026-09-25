@@ -130,17 +130,34 @@ def test_structured_visual_recorder_uses_fastwrite_and_512m_cache():
 
 
 def test_visual_output_is_ready_before_provenance_capture():
-    wait = 'for _ in {1..50}; do'
-    nonempty = '[[ -s "$VISUAL_FILE" ]]'
+    progress_path = 'VISUAL_PROGRESS_FILE="$RUN_DIR/visual_record_progress.txt"'
+    output_ready = "grep -Eq '^out_time_us=[1-9][0-9]*$' \"$VISUAL_PROGRESS_FILE\""
     capture = 'write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json"'
-    assert wait in LAUNCHER
-    assert nonempty in LAUNCHER
-    assert LAUNCHER.index(wait) < LAUNCHER.index(capture)
-    assert 'visual recorder produced no non-empty output within 5 s' in LAUNCHER
-    assert 'for visual_attempt in 1 2 3; do' in LAUNCHER
-    assert 'visual_record_attempt_${visual_attempt}.log' in LAUNCHER
-    assert 'if [[ -s "$VISUAL_FILE" ]]; then' in LAUNCHER
-    assert '-reconnect_streamed 1' in LAUNCHER
+
+    assert progress_path in LAUNCHER
+    assert '-progress "$VISUAL_PROGRESS_FILE"' in LAUNCHER
+    assert "-stats_period 0.1" in LAUNCHER
+    assert "for _ in {1..150}; do" in LAUNCHER
+    assert output_ready in LAUNCHER
+    assert LAUNCHER.index(output_ready) < LAUNCHER.index(capture)
+
+    startup = LAUNCHER[
+        LAUNCHER.index("for visual_attempt in 1 2 3; do"):
+        LAUNCHER.index('write_video_bag_metadata "$VIDEO_BAG_OUT_DIR/flight_metadata.txt"')
+    ]
+
+    assert '[[ -s "$VISUAL_FILE" ]]' not in startup
+    assert "^frame=" not in startup
+    assert "visual recorder made no positive output progress within 15 s" in startup
+    assert "stop_visual_recorder" in startup
+    assert "retrying visual recorder startup" in startup
+    assert "remove_tracked_pid_entry" in startup
+    assert "unset 'PROC_PIDS[visual_record]'" in startup
+    assert 'rm -f "$VISUAL_FILE" "$VISUAL_PROGRESS_FILE"' in startup
+    assert '-reconnect_streamed 1' in startup
+
+    assert 'archive_args+=(--optional-file visual_record_progress.txt)' in LAUNCHER
+    assert 'visual_record_progress_attempt_${visual_attempt}.txt' in LAUNCHER
 
 
 def test_visual_provenance_is_fail_closed():

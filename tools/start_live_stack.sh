@@ -495,8 +495,10 @@ archive_run_evidence_logs() {
 
     if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
         archive_args+=(--log visual_record.log)
+        archive_args+=(--optional-file visual_record_progress.txt)
         for visual_attempt in 1 2 3; do
             archive_args+=(--optional-file "visual_record_attempt_${visual_attempt}.log")
+            archive_args+=(--optional-file "visual_record_progress_attempt_${visual_attempt}.txt")
         done
     fi
 
@@ -901,6 +903,9 @@ write_live_run_provenance() {
             --resolved-node-params control_ref_node
             --expect-param "control_ref_node:enable_yaw_recovery=$control_recovery_expect"
             --expect-param "control_ref_node:enable_diagnostics=true"
+            --expect-param "control_ref_node:yaw_kp=0.6"
+            --expect-param "control_ref_node:max_yaw_z=0.2"
+            --expect-param "control_ref_node:invert_yaw=true"
         )
     fi
 
@@ -1010,6 +1015,40 @@ if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then
     fi
 fi
 
+# Field networking must be settled before the first ROS/DDS participant is
+# created. Changing interfaces after ROS startup can strand existing DDS
+# participants on the pre-transition network while later participants discover
+# only the post-transition graph.
+verify_field_network_mode() {
+    local verifier="$THESIS_ROOT/tools/host/check_pi_field_network.sh"
+
+    if [[ ! -x "$verifier" ]]; then
+        echo "[error] field-network verifier missing or not executable: $verifier"
+        return 1
+    fi
+
+    "$verifier"
+}
+
+ensure_field_network_mode() {
+    if verify_field_network_mode >/dev/null 2>&1; then
+        echo "[field] existing Pixhawk field-network contract already valid"
+        return 0
+    fi
+
+    echo "[field] existing field-network contract not valid; requesting transition"
+    if ! sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk; then
+        return 1
+    fi
+
+    if ! verify_field_network_mode; then
+        echo "[error] Pixhawk transition completed but field-network validation failed"
+        return 1
+    fi
+
+    return 0
+}
+
 # Phase 1: host preflight + camera stream sanity checks.
 log_info "run: $RUN_ID"
 log_info "logs: $RUN_DIR"
@@ -1054,6 +1093,18 @@ detect_camera_media_device || true
 preflight_enable_csi_capture_link || true
 if ! preflight_validate_camera_stream; then
     exit 1
+fi
+
+# A retained field path may change wlan0, routing and Tailscale state. Settle
+# that network contract before sourcing/starting any ROS participant so all DDS
+# participants are created against one frozen interface topology.
+if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 || "${SOURCE_MAVROS_RECORD:-0}" -eq 1 ]]; then
+    echo "[field] settling ISR-first/Pixhawk network contract before ROS participant startup"
+    if ! ensure_field_network_mode; then
+        echo "[error] failed to establish Pixhawk field-network contract before ROS startup"
+        stop_stack
+        exit 1
+    fi
 fi
 
 # Phase 2: source ROS overlays after preflight succeeds.
@@ -1435,35 +1486,14 @@ if [[ "${RUN_TARGET_MEMORY_MARS:-0}" -eq 1 ]]; then
     fi
 fi
 
-ensure_field_network_mode() {
-    local verifier="$THESIS_ROOT/tools/host/check_pi_field_network.sh"
-
-    if [[ -x "$verifier" ]] && "$verifier" >/dev/null 2>&1; then
-        echo "[field] existing Pixhawk field-network contract already valid"
-        return 0
-    fi
-
-    echo "[field] existing field-network contract not valid; requesting transition"
-    if ! sudo "$THESIS_ROOT/tools/host/set_pi_network_mode.sh" pixhawk; then
-        return 1
-    fi
-
-    if [[ ! -x "$verifier" ]] || ! "$verifier"; then
-        echo "[error] Pixhawk transition completed but field-network validation failed"
-        return 1
-    fi
-
-    return 0
-}
-
 # Start MAVROS telemetry when --record-mavros is enabled.
 # This keeps --record-mavros self-contained:
 # launch MAVROS, wait for FCU connection, request streams, then start bag recording.
 if [[ "$RECORD_MAVROS" -eq 1 ]]; then
     if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
-        echo "[field] enforcing ISR-first/Pixhawk network contract before MAVROS startup"
-        if ! ensure_field_network_mode; then
-            echo "[error] failed to establish Pixhawk field-network contract"
+        echo "[field] re-validating frozen ISR-first/Pixhawk network contract before MAVROS startup"
+        if ! verify_field_network_mode; then
+            echo "[error] field-network contract changed after ROS startup; refusing MAVROS startup"
             stop_stack
             exit 1
         fi
@@ -1589,6 +1619,9 @@ if [[ "$ENABLE_CONTROL" -eq 1 ]]; then
         -p target_topic:=/target_memory_mars \
         -p status_topic:=/target_memory_mars/status \
         -p enable_yaw_recovery:=$CONTROL_ENABLE_YAW_RECOVERY \
+        -p yaw_kp:=0.60 \
+        -p max_yaw_z:=0.20 \
+        -p invert_yaw:=true \
         -p img_w:=${CAMERA_WIDTH}.0 \
         -p img_h:=${CAMERA_HEIGHT}.0 \
         -p enable_mavros:=$CONTROL_MAVROS_BOOL \
@@ -1686,6 +1719,7 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
 
     if [[ "${FLIGHT_VISUAL_RECORD:-0}" -eq 1 ]]; then
         VISUAL_FILE="$VIDEO_BAG_OUT_DIR/visual_${RUN_ID}.mkv"
+        VISUAL_PROGRESS_FILE="$RUN_DIR/visual_record_progress.txt"
         VISUAL_STARTED_AT_UTC=""
     fi
 
@@ -1759,16 +1793,25 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
             visual_ready=0
             for visual_attempt in 1 2 3; do
                 VISUAL_STARTED_AT_UTC="$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)"
+                rm -f "$VISUAL_PROGRESS_FILE"
                 start_ros_bg visual_record ffmpeg -hide_banner -nostdin -loglevel warning \
                     -use_wallclock_as_timestamps 1 \
+                    -progress "$VISUAL_PROGRESS_FILE" -stats_period 0.1 \
                     -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
                     -reconnect_on_network_error 1 -reconnect_on_http_error 5xx \
                     -reconnect_delay_max 2 \
                     -i "http://127.0.0.1:8080/stream?topic=/camera/dashboard&type=mjpeg&qos_profile=sensor_data&quality=45" \
                     -an -c:v copy -metadata "creation_time=$VISUAL_STARTED_AT_UTC" \
                     -f matroska "$VISUAL_FILE"
-                for _ in {1..50}; do
-                    if [[ -s "$VISUAL_FILE" ]]; then
+
+                # Startup readiness is based on ffmpeg advancing its output
+                # timeline. With stream copy, ffmpeg may not emit frame=<n>, and
+                # Matroska may buffer before file bytes become visible. A positive
+                # out_time_us therefore proves that the live input/output path has
+                # actually advanced without depending on container flush timing.
+                for _ in {1..150}; do
+                    if [[ -f "$VISUAL_PROGRESS_FILE" ]] &&
+                       grep -Eq '^out_time_us=[1-9][0-9]*$' "$VISUAL_PROGRESS_FILE"; then
                         break
                     fi
                     if ! kill -0 "${PROC_PIDS[visual_record]}" 2>/dev/null; then
@@ -1776,20 +1819,46 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
                     fi
                     sleep 0.1
                 done
-                if [[ -s "$VISUAL_FILE" ]]; then
+
+                if [[ -f "$VISUAL_PROGRESS_FILE" ]] &&
+                   grep -Eq '^out_time_us=[1-9][0-9]*$' "$VISUAL_PROGRESS_FILE"; then
                     if check_proc_alive visual_record; then
                         visual_ready=1
+                        break
                     fi
-                    break
                 fi
-                if kill -0 "${PROC_PIDS[visual_record]}" 2>/dev/null; then
-                    echo "[error] visual recorder produced no non-empty output within 5 s"
-                    break
+
+                visual_attempt_pid="${PROC_PIDS[visual_record]:-}"
+
+                if [[ -n "$visual_attempt_pid" ]] &&
+                   kill -0 "$visual_attempt_pid" 2>/dev/null; then
+                    echo "[warn] visual recorder made no positive output progress within 15 s; stopping startup attempt $visual_attempt"
+                    if ! stop_visual_recorder; then
+                        echo "[error] visual recorder startup attempt $visual_attempt did not stop cleanly"
+                        break
+                    fi
+                else
+                    echo "[warn] visual recorder connection ended before positive output progress; startup attempt $visual_attempt"
                 fi
-                echo "[warn] visual recorder connection ended before first frame; startup attempt $visual_attempt"
-                cp "$RUN_DIR/visual_record.log" "$RUN_DIR/visual_record_attempt_${visual_attempt}.log"
-                remove_tracked_pid_entry "${PROC_PIDS[visual_record]}" visual_record
-                rm -f "$VISUAL_FILE"
+
+                cp "$RUN_DIR/visual_record.log"                     "$RUN_DIR/visual_record_attempt_${visual_attempt}.log"
+                if [[ -f "$VISUAL_PROGRESS_FILE" ]]; then
+                    cp "$VISUAL_PROGRESS_FILE"                         "$RUN_DIR/visual_record_progress_attempt_${visual_attempt}.txt"
+                fi
+
+                if [[ -n "$visual_attempt_pid" ]]; then
+                    if ! remove_tracked_pid_entry "$visual_attempt_pid" visual_record; then
+                        echo "[error] failed to clear visual recorder PID tracking after startup attempt $visual_attempt"
+                        break
+                    fi
+                fi
+                unset 'PROC_PIDS[visual_record]'
+
+                rm -f "$VISUAL_FILE" "$VISUAL_PROGRESS_FILE"
+
+                if [[ "$visual_attempt" -lt 3 ]]; then
+                    echo "[warn] retrying visual recorder startup"
+                fi
             done
             if [[ "$visual_ready" -ne 1 ]]; then
                 echo "[error] visual recorder failed before producing stable output"
@@ -2105,9 +2174,9 @@ if [[ "${SOURCE_RECORD_MODE:-0}" -eq 1 ]]; then
     fi
 
     if [[ "${SOURCE_MAVROS_RECORD:-0}" -eq 1 ]]; then
-        echo "[source] enforcing AERONEXT/Pixhawk network contract"
-        if ! ensure_field_network_mode; then
-            echo "[error] failed to establish Pixhawk field-network contract"
+        echo "[source] re-validating frozen ISR-first/Pixhawk network contract"
+        if ! verify_field_network_mode; then
+            echo "[error] field-network contract changed after ROS startup; refusing source MAVROS startup"
             stop_stack
             exit 1
         fi

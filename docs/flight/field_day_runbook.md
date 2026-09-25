@@ -114,24 +114,33 @@ geofence, camera/Hailo and recorder healthy.
 
 **No airborne run starts before Pilot GO.**
 
-Today's airborne order:
+Final comparison airborne order:
 
-1. Flight 0 — manual RC / dynamic TIM-MARS observation
-2. Flight 1 — pair 1 baseline
-3. Flight 2 — pair 1 candidate
-4. Flight 3 — pair 2 candidate
-5. Flight 4 — pair 2 baseline
-6. Flight 5 — pair 3 baseline
-7. Flight 6 — pair 3 candidate
+1. Flight 1 — Baseline A (`bcb_baseline_a`)
+2. Flight 2 — Candidate (`bcb_candidate`)
+3. Flight 3 — Baseline B (`bcb_baseline_b`)
 
-Remember: `MANUAL -> B C | C B | B C`.
+Remember: `B -> C -> B`.
+
+The manual-RC dynamic TIM-MARS flight was already completed on 25 September
+2026 and is retained as supporting/commissioning evidence. It is **not repeated**
+as part of the final physical comparison.
 
 ---
 
-## FLIGHT 0 — MANUAL RC / DYNAMIC TIM-MARS
+## COMPLETED 25 SEPTEMBER — MANUAL RC / DYNAMIC TIM-MARS
 
-Purpose: pilot owns all motion; controller disabled. Record TIM-MARS under real
-moving-UAV imagery. Aim for roughly 90--120 s. Do not fly aggressively.
+**Do not repeat for the final B-C-B comparison.**
+
+Retained run: `2026-09-25__10-29-29`, tag
+`dynamic_uav_tim_manual_r1`.
+
+Purpose: supporting moving-UAV TIM-MARS observation with pilot-owned motion and
+controller disabled. The retained run had healthy runtime/visual/transport
+evidence, but predates the final opportunity-event contract and therefore is
+not one of the three final controller-comparison flights.
+
+The commands below are retained as the historical procedure used for that run.
 
 ### Terminal A — START
 
@@ -209,11 +218,11 @@ KEEP even if imperfect. Do not retune TIM-MARS from this flight.
 
 ---
 
-## MATCHED-FLIGHT RULES — FLIGHTS 1--6
+## COMPARISON RULES — FLIGHTS 1–3
 
-Same physical target/route/loss opportunity within each pair.
-Eligible trial: >=3 s trusted visible control before safe loss + comparable return.
-Evaluation horizon: 10 s.
+Match O1/O2/O3 target, route, loss and return pattern across all three flights.
+Each opportunity requires >=3 s trusted visible control before safe loss and
+a comparable return. Evaluation horizon: 10 s.
 
 TAKE OVER for wrong-person/stale non-zero command, unexpected motion/mode,
 unsafe saturation, or evidence failure. No candidate after an unsafe baseline.
@@ -224,22 +233,89 @@ Terminal B:
 
 ```bash
 read -r -p "Abort reason: " ACTUAL_REASON
-python3 tools/live/operator_event.py abort --run-id "$RUN_ID" --abort-class safety --reason "$ACTUAL_REASON"
-python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID" --end-reason pilot_abort
-python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --verdict rejected --integrity-reason "$ACTUAL_REASON"
+python3 tools/live/operator_event.py abort --run-id "$RUN_ID" --trial-id "$TAG" --abort-class safety --reason "$ACTUAL_REASON"
+python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID" --trial-id "$TAG" --end-reason pilot_abort
+python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --trial-id "$TAG" --verdict rejected --integrity-reason "$ACTUAL_REASON"
 ```
 
 Then `stop` normally and KEEP the run.
 
+If the abort occurs during an opportunity, do **not** invent the missing
+`opportunity_end` afterward. The strict verifier accepts the retained event
+sequence as an aborted coherent prefix; the run remains retained evidence but
+does not count as a complete B-C-B comparison flight.
+
 ---
 
-## FLIGHT 1 — PAIR 1 BASELINE
+## FINAL PHYSICAL COMPARISON — THREE-FLIGHT B–C–B
+
+This supersedes the earlier six-flight `B C | C B | B C` plan.
+
+The final scientific field comparison uses at most three planned flights in one
+session:
+
+| Flight | Role | Condition | Tag |
+|---|---|---|---|
+| 1 | Baseline A | recovery disabled | `bcb_baseline_a` |
+| 2 | Candidate | bounded yaw-only recovery enabled | `bcb_candidate` |
+| 3 | Baseline B | recovery disabled | `bcb_baseline_b` |
+
+The three flights use the same frozen normal-follow controller:
+
+- `yaw_kp = 0.60`
+- `max_yaw_z = 0.20 rad/s`
+- `max_delta_yaw_z = 0.03`
+- `invert_yaw = true`
+
+The candidate changes only the already-frozen LOST recovery policy:
+
+- `recovery_yaw_rate = 0.10 rad/s`
+- `recovery_max_duration_s = 1.0 s`
+- `recovery_max_integrated_yaw_rad = 0.10 rad`
+- translation remains prohibited during recovery.
+
+Do not retune between Flights 1–3. Any controller/recovery parameter change
+ends this comparison and requires a new frozen comparison sequence.
+
+### Three predeclared loss opportunities per flight
+
+Each flight contains three repeated loss/return opportunities. They are repeated
+observations inside one flight, **not three independent flights**.
+
+- **O1 — right loss:** selected person traverses slowly toward camera-right,
+  exits view, then returns from the same side.
+- **O2 — left loss:** selected person traverses slowly toward camera-left,
+  exits view, then returns from the same side.
+- **O3 — distractor + loss:** distractor crosses near the selected person;
+  after separation, the selected person continues laterally out of view and
+  returns separated from the distractor.
+
+For every O1/O2/O3:
+
+1. selected person must have at least `3.0 s` of trusted visible LOCKED control
+   immediately before the induced loss;
+2. loss must be safe and observable;
+3. observation horizon is `10.0 s`;
+4. record correct-person return/reacquisition or right-censor at `10.0 s`;
+5. after the opportunity, re-establish separated trusted following for at least
+   `3.0 s` before beginning the next opportunity.
+
+Use the same target, route geometry, loss direction and return pattern for the
+corresponding O1/O2/O3 across all three flights as closely as practical.
+
+Any wrong-person authority, unexpected aircraft motion, stale non-zero command,
+unsafe saturation, pilot takeover, recorder/evidence failure or other safety
+concern triggers the existing abort block. KEEP the run.
+
+---
+
+## FLIGHT 1 — BASELINE A
 
 ### Terminal A — START
 
 ```bash
 export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
-export TAG=pair1_baseline
+export TAG=bcb_baseline_a
 echo "$RUN_ID"
 ./tools/start_live_stack.sh --res vga --field-record --control-mavros --tag "$TAG"
 ```
@@ -249,12 +325,12 @@ echo "$RUN_ID"
 ```bash
 read -r -p "RUN_ID: " RUN_ID
 export RUN_ID
-export TAG=pair1_baseline
-read -r -p "Trial note — target/route/loss: " NOTE
-python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition baseline --scenario "$TAG" --note "$NOTE horizon=10.0s"
+export TAG=bcb_baseline_a
+read -r -p "Trial note — target/route: " NOTE
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition baseline --scenario bcb_three_opportunity --note "$NOTE opportunities=O1-right,O2-left,O3-distractor-loss; horizon_each=10.0s"
 ```
 
-Terminal A at `live-stack>`:
+Terminal A:
 
 ```bash
 ids
@@ -271,45 +347,66 @@ Terminal B:
 ```bash
 read -r -p "Person: " PERSON
 read -r -p "Track ID: " TRACK_ID
-python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --trial-id "$TAG" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
 ```
 
-Fly pair-1 baseline loss/return. Baseline LOST response = hover/zero.
-
-### Terminal B — FINISH
+Terminal B: timestamp each predeclared opportunity immediately before it
+starts and immediately after it ends. The pilot directs all aircraft motion.
+For O1:
 
 ```bash
-python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID" --end-reason nominal_complete
-python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --verdict accepted --integrity-reason "field eligible; final annotation pending"
+python3 tools/live/operator_event.py opportunity_start --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O1 --scenario right_loss
 ```
 
-### Terminal A — STOP + VERIFY + DATAFLASH
-
-At `live-stack>`:
+Perform O1 right-side loss and return. Then:
 
 ```bash
-stop
+read -r -p "O1 outcome (completed/right_censored/aborted/invalid): " OUTCOME
+python3 tools/live/operator_event.py opportunity_end --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O1 --outcome "$OUTCOME"
 ```
 
-Then:
+For O2:
 
 ```bash
-tools/flight/verify_field_run.sh "$RUN_ID" "$TAG" --control-trial
-printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"
-read -r -p "Exact DataFlash .bin: " DATAFLASH
-python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"
-python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --control-trial --field-record --expect-visual --expect-operator-events
+python3 tools/live/operator_event.py opportunity_start --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O2 --scenario left_loss
 ```
+
+Perform O2 left-side loss and return. Then:
+
+```bash
+read -r -p "O2 outcome (completed/right_censored/aborted/invalid): " OUTCOME
+python3 tools/live/operator_event.py opportunity_end --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O2 --outcome "$OUTCOME"
+```
+
+For O3:
+
+```bash
+python3 tools/live/operator_event.py opportunity_start --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O3 --scenario distractor_loss
+```
+
+Perform O3 distractor crossing, selected-person loss and return. Then:
+
+```bash
+read -r -p "O3 outcome (completed/right_censored/aborted/invalid): " OUTCOME
+python3 tools/live/operator_event.py opportunity_end --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O3 --outcome "$OUTCOME"
+```
+
+Record the observed outcome, including censoring or invalidity. Here,
+`completed` means that the prescribed opportunity was completed; it does not
+assert successful correct-person reacquisition. Derive actual reacquisition
+timing and identity correctness from retained ROS/video evidence. Follow
+`Finish every run`.
+
 
 ---
 
-## FLIGHT 2 — PAIR 1 CANDIDATE
+## FLIGHT 2 — CANDIDATE
 
 ### Terminal A — START
 
 ```bash
 export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
-export TAG=pair1_candidate
+export TAG=bcb_candidate
 echo "$RUN_ID"
 ./tools/start_live_stack.sh --res vga --field-record --control-mavros --control-yaw-recovery --acknowledge-yaw-recovery-candidate --tag "$TAG"
 ```
@@ -319,12 +416,12 @@ echo "$RUN_ID"
 ```bash
 read -r -p "RUN_ID: " RUN_ID
 export RUN_ID
-export TAG=pair1_candidate
-read -r -p "Trial note — target/route/loss: " NOTE
-python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition candidate --scenario "$TAG" --recovery-enabled --note "$NOTE horizon=10.0s"
+export TAG=bcb_candidate
+read -r -p "Trial note — target/route: " NOTE
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition candidate --scenario bcb_three_opportunity --recovery-enabled --note "$NOTE opportunities=O1-right,O2-left,O3-distractor-loss; horizon_each=10.0s"
 ```
 
-Terminal A at `live-stack>`:
+Terminal A:
 
 ```bash
 ids
@@ -341,115 +438,66 @@ Terminal B:
 ```bash
 read -r -p "Person: " PERSON
 read -r -p "Track ID: " TRACK_ID
-python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --trial-id "$TAG" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
 ```
 
-Fly the matched pair-1 loss/return. Candidate recovery remains frozen; no retuning.
-
-### Terminal B — FINISH
+Terminal B: timestamp each predeclared opportunity immediately before it
+starts and immediately after it ends. The pilot directs all aircraft motion.
+For O1:
 
 ```bash
-python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID" --end-reason nominal_complete
-python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --verdict accepted --integrity-reason "field eligible; final annotation pending"
+python3 tools/live/operator_event.py opportunity_start --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O1 --scenario right_loss
 ```
 
-### Terminal A — STOP + VERIFY + DATAFLASH
-
-At `live-stack>`:
+Perform O1 right-side loss and return. Then:
 
 ```bash
-stop
+read -r -p "O1 outcome (completed/right_censored/aborted/invalid): " OUTCOME
+python3 tools/live/operator_event.py opportunity_end --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O1 --outcome "$OUTCOME"
 ```
 
-Then:
+For O2:
 
 ```bash
-tools/flight/verify_field_run.sh "$RUN_ID" "$TAG" --control-trial
-printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"
-read -r -p "Exact DataFlash .bin: " DATAFLASH
-python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"
-python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --control-trial --field-record --expect-visual --expect-operator-events
+python3 tools/live/operator_event.py opportunity_start --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O2 --scenario left_loss
 ```
+
+Perform O2 left-side loss and return. Then:
+
+```bash
+read -r -p "O2 outcome (completed/right_censored/aborted/invalid): " OUTCOME
+python3 tools/live/operator_event.py opportunity_end --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O2 --outcome "$OUTCOME"
+```
+
+For O3:
+
+```bash
+python3 tools/live/operator_event.py opportunity_start --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O3 --scenario distractor_loss
+```
+
+Perform O3 distractor crossing, selected-person loss and return. Then:
+
+```bash
+read -r -p "O3 outcome (completed/right_censored/aborted/invalid): " OUTCOME
+python3 tools/live/operator_event.py opportunity_end --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O3 --outcome "$OUTCOME"
+```
+
+Record the observed outcome, including censoring or invalidity. Here,
+`completed` means that the prescribed opportunity was completed; it does not
+assert successful correct-person reacquisition. Derive actual reacquisition
+timing and identity correctness from retained ROS/video evidence. Follow
+`Finish every run`.
+
 
 ---
 
-## FLIGHT 3 — PAIR 2 CANDIDATE
+## FLIGHT 3 — BASELINE B
 
 ### Terminal A — START
 
 ```bash
 export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
-export TAG=pair2_candidate
-echo "$RUN_ID"
-./tools/start_live_stack.sh --res vga --field-record --control-mavros --control-yaw-recovery --acknowledge-yaw-recovery-candidate --tag "$TAG"
-```
-
-### Terminal B — START + TARGET EVENT
-
-```bash
-read -r -p "RUN_ID: " RUN_ID
-export RUN_ID
-export TAG=pair2_candidate
-read -r -p "Trial note — target/route/loss: " NOTE
-python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition candidate --scenario "$TAG" --recovery-enabled --note "$NOTE horizon=10.0s"
-```
-
-Terminal A at `live-stack>`:
-
-```bash
-ids
-```
-
-Then:
-
-```bash
-target <id>
-```
-
-Terminal B:
-
-```bash
-read -r -p "Person: " PERSON
-read -r -p "Track ID: " TRACK_ID
-python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
-```
-
-Fly pair-2 candidate loss/return.
-
-### Terminal B — FINISH
-
-```bash
-python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID" --end-reason nominal_complete
-python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --verdict accepted --integrity-reason "field eligible; final annotation pending"
-```
-
-### Terminal A — STOP + VERIFY + DATAFLASH
-
-At `live-stack>`:
-
-```bash
-stop
-```
-
-Then:
-
-```bash
-tools/flight/verify_field_run.sh "$RUN_ID" "$TAG" --control-trial
-printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"
-read -r -p "Exact DataFlash .bin: " DATAFLASH
-python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"
-python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --control-trial --field-record --expect-visual --expect-operator-events
-```
-
----
-
-## FLIGHT 4 — PAIR 2 BASELINE
-
-### Terminal A — START
-
-```bash
-export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
-export TAG=pair2_baseline
+export TAG=bcb_baseline_b
 echo "$RUN_ID"
 ./tools/start_live_stack.sh --res vga --field-record --control-mavros --tag "$TAG"
 ```
@@ -459,12 +507,12 @@ echo "$RUN_ID"
 ```bash
 read -r -p "RUN_ID: " RUN_ID
 export RUN_ID
-export TAG=pair2_baseline
-read -r -p "Trial note — target/route/loss: " NOTE
-python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition baseline --scenario "$TAG" --note "$NOTE horizon=10.0s"
+export TAG=bcb_baseline_b
+read -r -p "Trial note — target/route: " NOTE
+python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition baseline --scenario bcb_three_opportunity --note "$NOTE opportunities=O1-right,O2-left,O3-distractor-loss; horizon_each=10.0s"
 ```
 
-Terminal A at `live-stack>`:
+Terminal A:
 
 ```bash
 ids
@@ -481,183 +529,117 @@ Terminal B:
 ```bash
 read -r -p "Person: " PERSON
 read -r -p "Track ID: " TRACK_ID
-python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
+python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --trial-id "$TAG" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
 ```
 
-Fly the matched pair-2 baseline loss/return. Baseline LOST response = hover/zero.
-
-### Terminal B — FINISH
+Terminal B: timestamp each predeclared opportunity immediately before it
+starts and immediately after it ends. The pilot directs all aircraft motion.
+For O1:
 
 ```bash
-python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID" --end-reason nominal_complete
-python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --verdict accepted --integrity-reason "field eligible; final annotation pending"
+python3 tools/live/operator_event.py opportunity_start --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O1 --scenario right_loss
 ```
 
-### Terminal A — STOP + VERIFY + DATAFLASH
-
-At `live-stack>`:
+Perform O1 right-side loss and return. Then:
 
 ```bash
+read -r -p "O1 outcome (completed/right_censored/aborted/invalid): " OUTCOME
+python3 tools/live/operator_event.py opportunity_end --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O1 --outcome "$OUTCOME"
+```
+
+For O2:
+
+```bash
+python3 tools/live/operator_event.py opportunity_start --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O2 --scenario left_loss
+```
+
+Perform O2 left-side loss and return. Then:
+
+```bash
+read -r -p "O2 outcome (completed/right_censored/aborted/invalid): " OUTCOME
+python3 tools/live/operator_event.py opportunity_end --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O2 --outcome "$OUTCOME"
+```
+
+For O3:
+
+```bash
+python3 tools/live/operator_event.py opportunity_start --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O3 --scenario distractor_loss
+```
+
+Perform O3 distractor crossing, selected-person loss and return. Then:
+
+```bash
+read -r -p "O3 outcome (completed/right_censored/aborted/invalid): " OUTCOME
+python3 tools/live/operator_event.py opportunity_end --run-id "$RUN_ID" --trial-id "$TAG" --opportunity-id O3 --outcome "$OUTCOME"
+```
+
+Record the observed outcome, including censoring or invalidity. Here,
+`completed` means that the prescribed opportunity was completed; it does not
+assert successful correct-person reacquisition. Derive actual reacquisition
+timing and identity correctness from retained ROS/video evidence. Follow
+`Finish every run`.
+
+
+## Finish every run
+
+For nominal completion, Terminal B after O3. For an abort, use the abort block
+instead and then continue at `stop`:
+
+```bash
+python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID" --trial-id "$TAG" --end-reason nominal_complete
+python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --trial-id "$TAG" --verdict accepted --integrity-reason "field run complete; final annotation and evidence review pending"
+```
+
+Then `stop` at Terminal A's `live-stack>` prompt:
+
+```text
 stop
 ```
 
-Then:
+After stop finalizes the recorders, verify and archive the exact run:
 
 ```bash
 tools/flight/verify_field_run.sh "$RUN_ID" "$TAG" --control-trial
 printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"
 read -r -p "Exact DataFlash .bin: " DATAFLASH
 python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"
-python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --control-trial --field-record --expect-visual --expect-operator-events
+python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --control-trial --field-record --expect-visual --expect-operator-events --expect-bcb-opportunities "$TAG"
 ```
 
----
-
-## FLIGHT 5 — PAIR 3 BASELINE
-
-### Terminal A — START
-
-```bash
-export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
-export TAG=pair3_baseline
-echo "$RUN_ID"
-./tools/start_live_stack.sh --res vga --field-record --control-mavros --tag "$TAG"
-```
-
-### Terminal B — START + TARGET EVENT
-
-```bash
-read -r -p "RUN_ID: " RUN_ID
-export RUN_ID
-export TAG=pair3_baseline
-read -r -p "Trial note — target/route/loss: " NOTE
-python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition baseline --scenario "$TAG" --note "$NOTE horizon=10.0s"
-```
-
-Terminal A at `live-stack>`:
-
-```bash
-ids
-```
-
-Then:
-
-```bash
-target <id>
-```
-
-Terminal B:
-
-```bash
-read -r -p "Person: " PERSON
-read -r -p "Track ID: " TRACK_ID
-python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
-```
-
-Fly pair-3 baseline loss/return. Baseline LOST response = hover/zero.
-
-### Terminal B — FINISH
-
-```bash
-python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID" --end-reason nominal_complete
-python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --verdict accepted --integrity-reason "field eligible; final annotation pending"
-```
-
-### Terminal A — STOP + VERIFY + DATAFLASH
-
-At `live-stack>`:
-
-```bash
-stop
-```
-
-Then:
-
-```bash
-tools/flight/verify_field_run.sh "$RUN_ID" "$TAG" --control-trial
-printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"
-read -r -p "Exact DataFlash .bin: " DATAFLASH
-python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"
-python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --control-trial --field-record --expect-visual --expect-operator-events
-```
-
----
-
-## FLIGHT 6 — PAIR 3 CANDIDATE
-
-### Terminal A — START
-
-```bash
-export RUN_ID="$(date +%Y-%m-%d__%H-%M-%S)"
-export TAG=pair3_candidate
-echo "$RUN_ID"
-./tools/start_live_stack.sh --res vga --field-record --control-mavros --control-yaw-recovery --acknowledge-yaw-recovery-candidate --tag "$TAG"
-```
-
-### Terminal B — START + TARGET EVENT
-
-```bash
-read -r -p "RUN_ID: " RUN_ID
-export RUN_ID
-export TAG=pair3_candidate
-read -r -p "Trial note — target/route/loss: " NOTE
-python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition candidate --scenario "$TAG" --recovery-enabled --note "$NOTE horizon=10.0s"
-```
-
-Terminal A at `live-stack>`:
-
-```bash
-ids
-```
-
-Then:
-
-```bash
-target <id>
-```
-
-Terminal B:
-
-```bash
-read -r -p "Person: " PERSON
-read -r -p "Track ID: " TRACK_ID
-python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" --track-id "$TRACK_ID" --intended-physical-person "$PERSON"
-```
-
-Fly the matched pair-3 candidate loss/return. Candidate recovery remains frozen.
-
-### Terminal B — FINISH
-
-```bash
-python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID" --end-reason nominal_complete
-python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --verdict accepted --integrity-reason "field eligible; final annotation pending"
-```
-
-### Terminal A — STOP + VERIFY + DATAFLASH
-
-At `live-stack>`:
-
-```bash
-stop
-```
-
-Then:
-
-```bash
-tools/flight/verify_field_run.sh "$RUN_ID" "$TAG" --control-trial
-printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"
-read -r -p "Exact DataFlash .bin: " DATAFLASH
-python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"
-python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --control-trial --field-record --expect-visual --expect-operator-events
-```
+The recorded provisional verdict never overrides later evidence review. Retain
+failed, aborted, censored and ineligible runs.
 
 KEEP every failed, aborted, or ineligible run.
 
 ## Decision
-After reviewed physical-person evidence, candidate only with ≥3 eligible pairs;
-earlier correct-person reacquisition in ≥2; not worse in remaining pair; zero
-wrong-person/stale non-zero; zero recovery translation; no added unsafe
-motion/saturation/takeover. Otherwise baseline. No field retuning.
+
+An opportunity triplet O1/O2/O3 is eligible only when the corresponding
+opportunity is eligible and physically attributable in Baseline A, Candidate,
+and Baseline B.
+
+A controller-policy promotion decision requires at least **two eligible
+opportunity triplets**.
+
+Candidate recovery is promoted only if all safety/integrity conditions pass and:
+
+- with three eligible triplets, Candidate reacquires the correct person earlier
+  than **both** baseline flights in at least two triplets and is no worse than
+  either baseline in the remaining triplet;
+- with only two eligible triplets, Candidate must reacquire earlier than both
+  baselines in both;
+- wrong-person non-zero command duration is zero;
+- stale/invalid non-zero command duration is zero;
+- recovery translation duration is zero;
+- Candidate adds no unsafe motion, unacceptable saturation or pilot takeover.
+
+Otherwise retain the baseline hover-on-loss policy and report the comparison as
+inconclusive or non-promoting, as supported by the evidence.
+
+The three within-flight opportunities are repeated descriptive observations,
+not independent flight replicates. Do not claim statistical superiority.
+
+No field retuning.
+
 ## Backup + exit
 Mac, every run:
 ```bash

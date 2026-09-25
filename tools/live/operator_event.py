@@ -26,6 +26,10 @@ Examples:
         --condition baseline --scenario following
     python3 tools/live/operator_event.py target_selected --run-id "$RUN_ID" \
         --track-id 7 --intended-physical-person "person in red jacket"
+    python3 tools/live/operator_event.py opportunity_start --run-id "$RUN_ID" \
+        --opportunity-id O1 --scenario right_loss
+    python3 tools/live/operator_event.py opportunity_end --run-id "$RUN_ID" \
+        --opportunity-id O1 --outcome completed
     python3 tools/live/operator_event.py operator_takeover --run-id "$RUN_ID" \
         --trigger pilot_rc --from-mode GUIDED --to-mode LOITER
     python3 tools/live/operator_event.py abort --run-id "$RUN_ID" \
@@ -53,6 +57,8 @@ EVENT_TYPES = (
     "trial_start",
     "trial_end",
     "target_selected",
+    "opportunity_start",
+    "opportunity_end",
     "operator_takeover",
     "abort",
     "unexpected_behavior",
@@ -72,6 +78,9 @@ ABORT_CLASSES = (
 TRIAL_CONDITIONS = ("baseline", "candidate")
 VERDICTS = ("accepted", "rejected")
 SEVERITIES = ("info", "concern", "critical")
+OPPORTUNITY_SCENARIOS = {"O1": "right_loss", "O2": "left_loss", "O3": "distractor_loss"}
+OPPORTUNITY_OUTCOMES = ("completed", "right_censored", "aborted", "invalid")
+OBSERVATION_HORIZON_S = 10.0
 
 
 def _repo_root() -> Path:
@@ -143,6 +152,14 @@ def build_detail(args: argparse.Namespace) -> dict[str, Any]:
         return detail
     if event == "trial_end":
         return {"end_reason": args.end_reason}
+    if event == "opportunity_start":
+        return {
+            "opportunity_id": args.opportunity_id,
+            "scenario": args.scenario,
+            "observation_horizon_s": args.observation_horizon_s,
+        }
+    if event == "opportunity_end":
+        return {"opportunity_id": args.opportunity_id, "outcome": args.outcome}
     if event == "target_selected":
         return {
             "requested_track_id": args.track_id,
@@ -216,6 +233,20 @@ def validate_event(record: dict[str, Any]) -> list[str]:
             )
         if not str(detail.get("scenario") or "").strip():
             errors.append("trial_start.detail.scenario must be non-empty")
+    elif event == "opportunity_start":
+        opportunity_id = detail.get("opportunity_id")
+        if not isinstance(opportunity_id, str) or opportunity_id not in OPPORTUNITY_SCENARIOS:
+            errors.append("opportunity_start.detail.opportunity_id must be O1, O2, or O3")
+        elif detail.get("scenario") != OPPORTUNITY_SCENARIOS[opportunity_id]:
+            errors.append(f"opportunity_start.detail.scenario must be {OPPORTUNITY_SCENARIOS[opportunity_id]}")
+        horizon = detail.get("observation_horizon_s")
+        if isinstance(horizon, bool) or not isinstance(horizon, (int, float)) or horizon != OBSERVATION_HORIZON_S:
+            errors.append("opportunity_start.detail.observation_horizon_s must be 10.0")
+    elif event == "opportunity_end":
+        if not isinstance(detail.get("opportunity_id"), str) or detail.get("opportunity_id") not in OPPORTUNITY_SCENARIOS:
+            errors.append("opportunity_end.detail.opportunity_id must be O1, O2, or O3")
+        if detail.get("outcome") not in OPPORTUNITY_OUTCOMES:
+            errors.append(f"opportunity_end.detail.outcome must be one of {OPPORTUNITY_OUTCOMES}")
     elif event == "trial_verdict":
         if detail.get("verdict") not in VERDICTS:
             errors.append(
@@ -301,6 +332,26 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("trial_end", help="End of a retained trial.")
     _add_common(p)
     p.add_argument("--end-reason", required=True)
+
+    p = sub.add_parser("opportunity_start", help="Timestamp a predeclared loss/return opportunity.")
+    _add_common(p)
+    p.add_argument("--opportunity-id", required=True, choices=tuple(OPPORTUNITY_SCENARIOS))
+    p.add_argument("--scenario", required=True, choices=tuple(OPPORTUNITY_SCENARIOS.values()))
+    p.add_argument("--observation-horizon-s", type=float, default=OBSERVATION_HORIZON_S,
+                   help="Frozen observation horizon in seconds (10.0).")
+
+    p = sub.add_parser(
+        "opportunity_end",
+        help=(
+            "Timestamp an opportunity conclusion. 'completed' means the "
+            "prescribed opportunity ended; it is not proof of successful "
+            "correct-person reacquisition. Derive physical timing/identity "
+            "from retained evidence."
+        ),
+    )
+    _add_common(p)
+    p.add_argument("--opportunity-id", required=True, choices=tuple(OPPORTUNITY_SCENARIOS))
+    p.add_argument("--outcome", required=True, choices=OPPORTUNITY_OUTCOMES)
 
     p = sub.add_parser("target_selected", help="Operator selected a target.")
     _add_common(p)

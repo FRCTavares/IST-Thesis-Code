@@ -486,3 +486,541 @@ def test_runtime_only_exit_accepts_pending_annotation_but_not_missing_visual(tmp
     (bag / "visual_evp_test.mkv").unlink()
     result = subprocess.run(command, capture_output=True, text=True)
     assert result.returncode != 0
+# --------------------------------------------------------------------------- #
+# Strict final B-C-B operator-event contract
+# --------------------------------------------------------------------------- #
+
+def _bcb_records(tag: str, *, run_id: str = "evp_test") -> list[dict]:
+    if tag == "bcb_candidate":
+        condition = "candidate"
+        recovery_enabled = True
+    else:
+        condition = "baseline"
+        recovery_enabled = False
+
+    def record(event: str, detail: dict, index: int) -> dict:
+        return {
+            "schema_version": 1,
+            "event": event,
+            "ts_utc": f"2026-09-25T12:00:{index:02d}Z",
+            "ts_monotonic_ns": 1_000_000_000 + index,
+            "host": "test-host",
+            "run_id": run_id,
+            "trial_id": tag,
+            "git_sha": "0" * 40,
+            "detail": detail,
+        }
+
+    rows = [
+        record("trial_start", {
+            "condition": condition,
+            "scenario": "bcb_three_opportunity",
+            "recovery_enabled": recovery_enabled,
+            "clock_pair": {"monotonic_ns": 1, "system_ns": 2},
+        }, 1),
+        record("target_selected", {
+            "requested_track_id": 7,
+            "method": "dashboard",
+            "intended_physical_person": "selected test person",
+        }, 2),
+    ]
+
+    opportunity_specs = (
+        ("O1", "right_loss"),
+        ("O2", "left_loss"),
+        ("O3", "distractor_loss"),
+    )
+    index = 3
+    for opportunity_id, scenario in opportunity_specs:
+        rows.append(record("opportunity_start", {
+            "opportunity_id": opportunity_id,
+            "scenario": scenario,
+            "observation_horizon_s": 10.0,
+        }, index))
+        index += 1
+        rows.append(record("opportunity_end", {
+            "opportunity_id": opportunity_id,
+            "outcome": "completed",
+        }, index))
+        index += 1
+
+    rows.extend([
+        record("trial_end", {"end_reason": "nominal_complete"}, index),
+        record("trial_verdict", {
+            "verdict": "accepted",
+            "integrity_reason": "fixture complete",
+        }, index + 1),
+    ])
+    return rows
+
+
+def _write_bcb_events(
+    bag: Path,
+    tag: str,
+    *,
+    records: list[dict] | None = None,
+) -> Path:
+    path = bag / "run_logs/operator_events.jsonl"
+    rows = records if records is not None else _bcb_records(tag)
+    path.write_text(
+        "".join(json.dumps(row) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+    return path
+
+
+@pytest.mark.parametrize(
+    "tag",
+    ("bcb_baseline_a", "bcb_candidate", "bcb_baseline_b"),
+)
+def test_strict_bcb_operator_event_contract_accepts_complete_trial(tmp_path, tag):
+    bag = _build_package(tmp_path)
+    _write_bcb_events(bag, tag)
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities=tag,
+        repo_root=REPO_ROOT,
+    )
+
+    assert report["runtime_status"] == "complete_runtime_evidence"
+    assert report["operator_event_validation"]["valid"] is True
+    assert report["operator_event_validation"]["opportunity_outcomes"] == {
+        "O1": "completed",
+        "O2": "completed",
+        "O3": "completed",
+    }
+
+
+def test_strict_bcb_rejects_malformed_json(tmp_path):
+    bag = _build_package(tmp_path)
+    path = bag / "run_logs/operator_events.jsonl"
+    path.write_text("{not-json}\n", encoding="utf-8")
+
+    status, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_baseline_a",
+        repo_root=REPO_ROOT,
+    )
+
+    assert status == "incomplete_runtime_evidence"
+    assert any(
+        "invalid JSON" in problem
+        for problem in report["operator_event_validation"]["problems"]
+    )
+
+
+def test_strict_bcb_rejects_wrong_run_or_trial_identity(tmp_path):
+    bag = _build_package(tmp_path)
+    rows = _bcb_records("bcb_baseline_a")
+    rows[2]["run_id"] = "wrong_run"
+    rows[3]["trial_id"] = "bcb_candidate"
+    _write_bcb_events(bag, "bcb_baseline_a", records=rows)
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_baseline_a",
+        repo_root=REPO_ROOT,
+    )
+
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+    problems = report["operator_event_validation"]["problems"]
+    assert any("run_id" in problem for problem in problems)
+    assert any("trial_id" in problem for problem in problems)
+
+
+def test_strict_bcb_rejects_missing_and_duplicate_opportunity_boundaries(tmp_path):
+    bag = _build_package(tmp_path)
+    rows = _bcb_records("bcb_baseline_a")
+
+    o1_start = next(
+        row for row in rows
+        if row["event"] == "opportunity_start"
+        and row["detail"]["opportunity_id"] == "O1"
+    )
+    rows.insert(3, dict(o1_start))
+    rows = [
+        row for row in rows
+        if not (
+            row["event"] == "opportunity_end"
+            and row["detail"]["opportunity_id"] == "O3"
+        )
+    ]
+    _write_bcb_events(bag, "bcb_baseline_a", records=rows)
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_baseline_a",
+        repo_root=REPO_ROOT,
+    )
+
+    problems = report["operator_event_validation"]["problems"]
+    assert any("O1 opportunity_start" in problem for problem in problems)
+    assert any("O3 opportunity_end" in problem for problem in problems)
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+
+
+def test_strict_bcb_rejects_changed_scenario_or_horizon(tmp_path):
+    bag = _build_package(tmp_path)
+    rows = _bcb_records("bcb_baseline_a")
+
+    o1 = next(
+        row for row in rows
+        if row["event"] == "opportunity_start"
+        and row["detail"]["opportunity_id"] == "O1"
+    )
+    o1["detail"]["scenario"] = "left_loss"
+
+    o2 = next(
+        row for row in rows
+        if row["event"] == "opportunity_start"
+        and row["detail"]["opportunity_id"] == "O2"
+    )
+    o2["detail"]["observation_horizon_s"] = 5.0
+
+    _write_bcb_events(bag, "bcb_baseline_a", records=rows)
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_baseline_a",
+        repo_root=REPO_ROOT,
+    )
+
+    problems = report["operator_event_validation"]["problems"]
+    assert any("scenario" in problem for problem in problems)
+    assert any("horizon" in problem for problem in problems)
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+
+
+def test_strict_bcb_rejects_candidate_with_recovery_disabled(tmp_path):
+    bag = _build_package(tmp_path)
+    rows = _bcb_records("bcb_candidate")
+    rows[0]["detail"]["recovery_enabled"] = False
+    _write_bcb_events(bag, "bcb_candidate", records=rows)
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_candidate",
+        repo_root=REPO_ROOT,
+    )
+
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+    assert any(
+        "recovery_enabled" in problem
+        for problem in report["operator_event_validation"]["problems"]
+    )
+
+
+def test_strict_bcb_rejects_lifecycle_reordering(tmp_path):
+    bag = _build_package(tmp_path)
+    rows = _bcb_records("bcb_baseline_a")
+
+    o1_end_index = next(
+        i for i, row in enumerate(rows)
+        if row["event"] == "opportunity_end"
+        and row["detail"]["opportunity_id"] == "O1"
+    )
+    o2_start_index = next(
+        i for i, row in enumerate(rows)
+        if row["event"] == "opportunity_start"
+        and row["detail"]["opportunity_id"] == "O2"
+    )
+    rows[o1_end_index], rows[o2_start_index] = (
+        rows[o2_start_index],
+        rows[o1_end_index],
+    )
+
+    _write_bcb_events(bag, "bcb_baseline_a", records=rows)
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_baseline_a",
+        repo_root=REPO_ROOT,
+    )
+
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+    assert any(
+        "accepted B-C-B opportunity boundaries must be exactly" in problem
+        for problem in report["operator_event_validation"]["problems"]
+    )
+
+
+def _bcb_rejected_prefix(
+    tag: str,
+    boundary_count: int,
+    *,
+    run_id: str = "evp_test",
+) -> list[dict]:
+    complete = _bcb_records(tag, run_id=run_id)
+    boundaries = complete[2:8]
+
+    rows = [complete[0]]
+
+    if boundary_count > 0:
+        rows.append(complete[1])
+
+    rows.extend(boundaries[:boundary_count])
+
+    base_index = 20
+
+    def record(event: str, detail: dict, offset: int) -> dict:
+        return {
+            "schema_version": 1,
+            "event": event,
+            "ts_utc": f"2026-09-25T12:01:{base_index + offset:02d}Z",
+            "ts_monotonic_ns": 2_000_000_000 + offset,
+            "host": "test-host",
+            "run_id": run_id,
+            "trial_id": tag,
+            "git_sha": "0" * 40,
+            "detail": detail,
+        }
+
+    rows.extend([
+        record(
+            "abort",
+            {
+                "abort_class": "safety",
+                "reason": "fixture safety abort",
+            },
+            0,
+        ),
+        record(
+            "trial_end",
+            {"end_reason": "pilot_abort"},
+            1,
+        ),
+        record(
+            "trial_verdict",
+            {
+                "verdict": "rejected",
+                "integrity_reason": "fixture safety abort",
+            },
+            2,
+        ),
+    ])
+
+    return rows
+
+
+@pytest.mark.parametrize("boundary_count", (0, 1, 2, 3, 4, 5, 6))
+def test_strict_bcb_accepts_rejected_coherent_prefix(
+    tmp_path,
+    boundary_count,
+):
+    bag = _build_package(tmp_path)
+    rows = _bcb_rejected_prefix(
+        "bcb_baseline_a",
+        boundary_count,
+    )
+    _write_bcb_events(
+        bag,
+        "bcb_baseline_a",
+        records=rows,
+    )
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_baseline_a",
+        repo_root=REPO_ROOT,
+    )
+
+    validation = report["operator_event_validation"]
+    assert report["runtime_status"] == "complete_runtime_evidence"
+    assert validation["valid"] is True
+    assert validation["trial_disposition"] == "rejected"
+    assert validation["contract_path"] == "aborted_prefix"
+
+
+def test_strict_bcb_rejected_prefix_does_not_require_fabricated_end(
+    tmp_path,
+):
+    bag = _build_package(tmp_path)
+
+    # Boundary count 3 means:
+    # O1 start, O1 end, O2 start, then immediate abort.
+    rows = _bcb_rejected_prefix(
+        "bcb_candidate",
+        3,
+    )
+    _write_bcb_events(
+        bag,
+        "bcb_candidate",
+        records=rows,
+    )
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_candidate",
+        repo_root=REPO_ROOT,
+    )
+
+    validation = report["operator_event_validation"]
+    assert validation["valid"] is True
+    assert validation["opportunity_boundary_sequence"] == [
+        "O1_start",
+        "O1_end",
+        "O2_start",
+    ]
+    assert validation["full_opportunity_sequence_recorded"] is False
+
+
+def test_strict_bcb_rejected_run_requires_explicit_abort(tmp_path):
+    bag = _build_package(tmp_path)
+    rows = _bcb_rejected_prefix(
+        "bcb_baseline_a",
+        2,
+    )
+    rows = [
+        row for row in rows
+        if row["event"] != "abort"
+    ]
+    _write_bcb_events(
+        bag,
+        "bcb_baseline_a",
+        records=rows,
+    )
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_baseline_a",
+        repo_root=REPO_ROOT,
+    )
+
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+    assert any(
+        "requires exactly one abort" in problem
+        for problem
+        in report["operator_event_validation"]["problems"]
+    )
+
+
+def test_strict_bcb_rejected_run_rejects_skipped_opportunity(tmp_path):
+    bag = _build_package(tmp_path)
+    rows = _bcb_rejected_prefix(
+        "bcb_baseline_a",
+        0,
+    )
+
+    complete = _bcb_records("bcb_baseline_a")
+
+    # Insert target selection followed directly by O2 start: this is not a
+    # coherent prefix because O1 was skipped.
+    rows.insert(1, complete[1])
+    rows.insert(2, complete[4])
+
+    _write_bcb_events(
+        bag,
+        "bcb_baseline_a",
+        records=rows,
+    )
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_baseline_a",
+        repo_root=REPO_ROOT,
+    )
+
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+    assert any(
+        "coherent prefix" in problem
+        for problem
+        in report["operator_event_validation"]["problems"]
+    )
+
+
+def test_strict_bcb_accepted_run_still_requires_full_triplet(tmp_path):
+    bag = _build_package(tmp_path)
+    rows = _bcb_records("bcb_baseline_a")
+
+    rows = [
+        row for row in rows
+        if not (
+            row["event"] == "opportunity_end"
+            and row["detail"]["opportunity_id"] == "O3"
+        )
+    ]
+    _write_bcb_events(
+        bag,
+        "bcb_baseline_a",
+        records=rows,
+    )
+
+    _, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        expect_bcb_opportunities="bcb_baseline_a",
+        repo_root=REPO_ROOT,
+    )
+
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+    assert any(
+        "accepted B-C-B trial requires exactly one O3 opportunity_end"
+        in problem
+        for problem
+        in report["operator_event_validation"]["problems"]
+    )
+
+
+
+def test_field_run_wrapper_activates_strict_contract_for_only_final_bcb_tags():
+    wrapper = (
+        REPO_ROOT / "tools/flight/verify_field_run.sh"
+    ).read_text(encoding="utf-8")
+
+    for tag in (
+        "bcb_baseline_a",
+        "bcb_candidate",
+        "bcb_baseline_b",
+    ):
+        assert tag in wrapper
+
+    assert 'ARGS+=(--expect-bcb-opportunities "$TAG")' in wrapper
+    assert "final B-C-B tag requires --control-trial" in wrapper

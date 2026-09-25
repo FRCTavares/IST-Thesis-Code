@@ -1,6 +1,6 @@
 # #50 post-flight evidence-to-results workflow
 
-Use after each Friday run, then across the matched pairs. This is an analysis
+Use after each retained run, then across the three-flight comparison. This is an analysis
 checklist, not a new flight procedure or a change to the frozen #50 promotion
 criteria. The canonical field sheet remains `docs/flight/field_day_runbook.md`.
 
@@ -114,7 +114,7 @@ command, report unresolved or wrong-person duration as supported, **never
 zero by default**. Candidate promotion remains blocked unless every relevant
 non-zero command can be attributed with adequate physical-person coverage.
 
-## 4. Controller-facing durations and pair eligibility
+## 4. Controller-facing durations and B–C–B opportunity eligibility
 
 Reconstruct the complete command timeline from `/control_ref/cmd_vel` and
 `/control_ref/diagnostics`, cross-check
@@ -126,29 +126,52 @@ translation durations explicitly; keep command values separate from observed
 aircraft motion. Record saturation, pilot abort/takeover, process-loss and
 recorder failure. Do not invent a zero when a stream or attribution is absent.
 
-For each attempt record visible trusted LOCKED control before loss (must be
->=3.0 s), safe observable loss, the pair's predeclared target/route/loss
-opportunity, and comparable return opportunity. Record each 10.0 s horizon,
-correct physical-person return time or right-censor at the horizon, plus the
-observation actually completed. Keep rejected/ineligible/aborted attempts with
-their reasons; only eligible matched baseline/candidate pairs enter the
-descriptive comparison. The pair order is 1 baseline→candidate, 2
-candidate→baseline, 3 baseline→candidate unless a documented safe deviation
-was declared before outcomes were seen.
+The final comparison is a three-flight `Baseline A -> Candidate -> Baseline B`
+sandwich. Each flight contains the same three predeclared opportunities:
+O1 right loss, O2 left loss, and O3 distractor crossing followed by loss.
+These are repeated within-flight observations, not independent flight
+replicates.
+
+For each opportunity in each flight, retain its matching `opportunity_start`
+and `opportunity_end` JSONL records: O1/right_loss, O2/left_loss, or
+O3/distractor_loss, the frozen 10.0 s horizon, operator outcome, UTC and
+monotonic timestamps, and any note. Check event order and reconcile the markers
+with ROS/video evidence; a marker timestamps the operator's action, not the
+physical loss or reacquisition itself. Missing or inconsistent markers require
+an explicit eligibility reason; do not invent them from video.
+
+Record visible trusted LOCKED control before loss (must be >=3.0 s), safe
+observable loss, the predeclared target/route/loss opportunity, and comparable
+return. Derive physical loss, correct-person return time or right-censor at
+10.0 s, and observed duration from retained evidence, with uncertainty.
+Do not use an operator outcome as a measured reacquisition time.
+
+An opportunity triplet is eligible only if its matching O1/O2/O3 observation is
+eligible in all three flights. Keep rejected/ineligible/aborted attempts and
+individual opportunities with their reasons. A controller-policy decision
+requires at least two eligible opportunity triplets.
 
 ## 5. Decision and thesis outputs
 
 Fill `docs/results/live/templates/p050_matched_pairs.md` only from reviewed
-per-run records. Retain a machine-readable companion with RUN_ID, TAG, exact
-bag path, Git SHA, annotation/alignment/DataFlash paths and hashes, eligibility,
-censoring, per-pair comparison and every safety flag. All cells stay
-`PENDING_PHYSICAL_EVIDENCE` until supported. Candidate promotion requires
-all frozen conditions in `docs/flight/field_day_runbook.md`: at least three eligible
-pairs, earlier correct reacquisition in at least two, no later/worse censoring
-in the remaining pair, zero wrong-person/stale non-zero command and recovery
-translation, and no added unsafe motion, unacceptable saturation or takeover.
-Otherwise retain baseline and state why candidate was unpromoted. This is
-descriptive evidence, not statistical superiority.
+per-run and per-opportunity records. Retain a machine-readable companion with
+RUN_ID, TAG, exact bag path, Git SHA, annotation/alignment/DataFlash paths and
+hashes, flight role, opportunity ID, matching operator event records/timestamps,
+eligibility, censoring, comparison and every safety flag. All cells stay `PENDING_PHYSICAL_EVIDENCE` until supported.
+
+Candidate promotion requires all frozen conditions in
+`docs/flight/field_day_runbook.md`. With three eligible opportunity triplets,
+Candidate must reacquire the correct person earlier than both Baseline A and
+Baseline B in at least two triplets and be no worse than either baseline in the
+remaining triplet. With only two eligible triplets, Candidate must be earlier
+than both baselines in both. In every case, wrong-person/stale-invalid non-zero
+command and recovery translation must be zero and Candidate must add no unsafe
+motion, unacceptable saturation or takeover.
+
+Otherwise retain baseline and state whether the result was non-promoting or
+inconclusive. This is descriptive physical evidence, not statistical
+superiority. The three within-flight opportunities must never be presented as
+three independent flights.
 
 After #50's controller decision, execute #32 using
 `docs/issues/p032-final-mounted-runbook.md`; only then freeze #39 claims.
