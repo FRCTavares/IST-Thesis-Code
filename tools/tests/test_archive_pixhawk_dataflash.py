@@ -52,7 +52,7 @@ def test_explicit_bin_is_copied_with_verified_hash(tmp_path):
     assert manifest["source"]["sha256"] == expected
     assert manifest["archived"]["sha256"] == expected
     assert manifest["sha256_match"] is True
-    assert manifest["hardware_verification"] == "pending"
+    assert manifest["hardware_verification"] == "validated_2026-09-25_mavros_explicit_id"
     assert manifest["retrieval_method"] == "explicit_operator_supplied_file"
     assert manifest["source"]["path"] == str(src)
     # source preserved
@@ -133,3 +133,77 @@ def test_helper_never_selects_latest_or_by_mtime():
     # it only acts on the explicitly supplied path
     sig = inspect.signature(apd.archive_dataflash)
     assert "source_bin" in sig.parameters
+
+
+def test_mavros_provenance_is_retained_with_explicit_bin(tmp_path):
+    bag = _bag(tmp_path)
+    provenance = tmp_path / "retrieval"
+    provenance.mkdir()
+
+    src = provenance / "log_21.bin"
+    src.write_bytes(b"PIXHAWK-DATAFLASH")
+
+    for name, payload in (
+        ("before.json", b'{"entries":[20]}\n'),
+        ("after.json", b'{"entries":[20,21]}\n'),
+        ("association.json", b'{"selected":{"id":21,"size":17}}\n'),
+        ("log_21.bin.retrieval.json", b'{"log_id":21}\n'),
+    ):
+        (provenance / name).write_bytes(payload)
+
+    code, manifest = apd.archive_dataflash(
+        run_id="r21",
+        bag_dir=bag,
+        source_bin=src,
+        provenance_dir=provenance,
+    )
+
+    assert code == 0
+    assert (
+        manifest["retrieval_method"]
+        == "mavros_explicit_id_with_catalogue_association"
+    )
+
+    archived_dir = bag / "pixhawk_dataflash"
+
+    for name in (
+        "log_21.bin",
+        "before.json",
+        "after.json",
+        "association.json",
+        "log_21.bin.retrieval.json",
+    ):
+        assert (archived_dir / name).is_file()
+
+    assert len(manifest["retrieval_provenance"]) == 4
+    assert {
+        item["name"] for item in manifest["retrieval_provenance"]
+    } == {
+        "before.json",
+        "after.json",
+        "association.json",
+        "log_21.bin.retrieval.json",
+    }
+
+
+def test_provenance_mode_fails_closed_when_sidecar_missing(tmp_path):
+    bag = _bag(tmp_path)
+    provenance = tmp_path / "retrieval"
+    provenance.mkdir()
+
+    src = provenance / "log_21.bin"
+    src.write_bytes(b"x")
+
+    (provenance / "before.json").write_text("{}")
+    (provenance / "after.json").write_text("{}")
+    (provenance / "association.json").write_text("{}")
+
+    code, result = apd.archive_dataflash(
+        run_id="r21",
+        bag_dir=bag,
+        source_bin=src,
+        provenance_dir=provenance,
+    )
+
+    assert code == 2
+    assert "provenance is incomplete" in result["error"]

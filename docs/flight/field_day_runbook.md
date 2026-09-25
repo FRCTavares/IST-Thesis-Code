@@ -326,6 +326,13 @@ echo "$RUN_ID"
 read -r -p "RUN_ID: " RUN_ID
 export RUN_ID
 export TAG=bcb_baseline_a
+export DATAFLASH_DIR="ros2_ws/log/dataflash/${RUN_ID}__${TAG}"
+mkdir -p "$DATAFLASH_DIR"
+printf 'Expected DataFlash contract: LOG_DISARMED=0 LOG_FILE_DSRMROT=1 LOG_BACKEND_TYPE=1\n'
+ros2 param get /mavros/param LOG_DISARMED
+ros2 param get /mavros/param LOG_FILE_DSRMROT
+ros2 param get /mavros/param LOG_BACKEND_TYPE
+python3 tools/live/retrieve_pixhawk_dataflash.py catalogue --output "$DATAFLASH_DIR/before.json"
 read -r -p "Trial note — target/route: " NOTE
 python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition baseline --scenario bcb_three_opportunity --note "$NOTE opportunities=O1-right,O2-left,O3-distractor-loss; horizon_each=10.0s"
 ```
@@ -417,6 +424,13 @@ echo "$RUN_ID"
 read -r -p "RUN_ID: " RUN_ID
 export RUN_ID
 export TAG=bcb_candidate
+export DATAFLASH_DIR="ros2_ws/log/dataflash/${RUN_ID}__${TAG}"
+mkdir -p "$DATAFLASH_DIR"
+printf 'Expected DataFlash contract: LOG_DISARMED=0 LOG_FILE_DSRMROT=1 LOG_BACKEND_TYPE=1\n'
+ros2 param get /mavros/param LOG_DISARMED
+ros2 param get /mavros/param LOG_FILE_DSRMROT
+ros2 param get /mavros/param LOG_BACKEND_TYPE
+python3 tools/live/retrieve_pixhawk_dataflash.py catalogue --output "$DATAFLASH_DIR/before.json"
 read -r -p "Trial note — target/route: " NOTE
 python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition candidate --scenario bcb_three_opportunity --recovery-enabled --note "$NOTE opportunities=O1-right,O2-left,O3-distractor-loss; horizon_each=10.0s"
 ```
@@ -508,6 +522,13 @@ echo "$RUN_ID"
 read -r -p "RUN_ID: " RUN_ID
 export RUN_ID
 export TAG=bcb_baseline_b
+export DATAFLASH_DIR="ros2_ws/log/dataflash/${RUN_ID}__${TAG}"
+mkdir -p "$DATAFLASH_DIR"
+printf 'Expected DataFlash contract: LOG_DISARMED=0 LOG_FILE_DSRMROT=1 LOG_BACKEND_TYPE=1\n'
+ros2 param get /mavros/param LOG_DISARMED
+ros2 param get /mavros/param LOG_FILE_DSRMROT
+ros2 param get /mavros/param LOG_BACKEND_TYPE
+python3 tools/live/retrieve_pixhawk_dataflash.py catalogue --output "$DATAFLASH_DIR/before.json"
 read -r -p "Trial note — target/route: " NOTE
 python3 tools/live/operator_event.py trial_start --run-id "$RUN_ID" --trial-id "$TAG" --condition baseline --scenario bcb_three_opportunity --note "$NOTE opportunities=O1-right,O2-left,O3-distractor-loss; horizon_each=10.0s"
 ```
@@ -588,7 +609,15 @@ instead and then continue at `stop`:
 ```bash
 python3 tools/live/operator_event.py trial_end --run-id "$RUN_ID" --trial-id "$TAG" --end-reason nominal_complete
 python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --trial-id "$TAG" --verdict accepted --integrity-reason "field run complete; final annotation and evidence review pending"
+export DATAFLASH_DIR="ros2_ws/log/dataflash/${RUN_ID}__${TAG}"
+python3 tools/live/retrieve_pixhawk_dataflash.py catalogue --output "$DATAFLASH_DIR/after.json"
+python3 tools/live/retrieve_pixhawk_dataflash.py compare --before "$DATAFLASH_DIR/before.json" --after "$DATAFLASH_DIR/after.json" --output "$DATAFLASH_DIR/association.json"
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); s=d.get("selected"); print("selected_log_id=%s expected_size=%s" % (s["id"], s["size"])) if s else print("NO_UNIQUE_LOG")' "$DATAFLASH_DIR/association.json"
 ```
+
+Before stopping, the DataFlash comparison above must report `status=unique_new_log` and print one explicit log ID/size. If it reports zero or multiple new IDs, keep the run but do not guess from the highest ID, timestamp or file age; mark the DataFlash association for manual review.
+
+The pre-flight logging contract for the final B-C-B comparison is `LOG_DISARMED=0`, `LOG_FILE_DSRMROT=1`, `LOG_BACKEND_TYPE=1`. Do not proceed with the scientific flight if the displayed values differ.
 
 Then `stop` at Terminal A's `live-stack>` prompt:
 
@@ -596,13 +625,89 @@ Then `stop` at Terminal A's `live-stack>` prompt:
 stop
 ```
 
-After stop finalizes the recorders, verify and archive the exact run:
+After stop finalizes the scientific recorders, verify the exact run first:
 
 ```bash
 tools/flight/verify_field_run.sh "$RUN_ID" "$TAG" --control-trial
 printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"
-read -r -p "Exact DataFlash .bin: " DATAFLASH
-python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"
+```
+
+The live stack owned MAVROS, so after `stop` restart MAVROS only for the
+DataFlash transfer. Keep the aircraft landed and disarmed and keep the
+validated field network active. Read the already-associated explicit log
+ID and size from `association.json`:
+
+```bash
+if read -r LOG_ID LOG_SIZE < <(
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); s=d.get("selected"); assert s is not None; print(s["id"], s["size"])' "$DATAFLASH_DIR/association.json"
+); then
+    printf 'DataFlash log_id=%s expected_size=%s\n' "$LOG_ID" "$LOG_SIZE"
+    ASSOCIATION_RC=0
+else
+    echo "STOP: no unique DataFlash association; do not guess a log ID."
+    ASSOCIATION_RC=1
+fi
+```
+
+Only when `ASSOCIATION_RC=0`, start MAVROS using the same validated FCU
+contract and require connected + disarmed before downloading:
+
+```bash
+MAVROS_DOWNLOAD_PID=""
+MAVROS_READY=0
+DOWNLOAD_RC=1
+DATAFLASH="$DATAFLASH_DIR/log_${LOG_ID}.bin"
+MAVROS_DOWNLOAD_LOG="$DATAFLASH_DIR/mavros_download.log"
+
+if [ "${ASSOCIATION_RC:-1}" -ne 0 ]; then
+    echo "STOP: DataFlash association is not unique."
+elif pgrep -f '/mavros/mavros_node|/mavros_node([[:space:]]|$)' >/dev/null 2>&1; then
+    echo "STOP: unexpected pre-existing MAVROS process."
+else
+    setsid ros2 launch mavros apm.launch \
+      fcu_url:="udp://:14550@" \
+      tgt_system:="10" \
+      tgt_component:="1" \
+      >"$MAVROS_DOWNLOAD_LOG" 2>&1 &
+
+    MAVROS_DOWNLOAD_PID=$!
+
+    for _ in $(seq 1 15); do
+        STATE="$(timeout 2s ros2 topic echo /mavros/state --once 2>/dev/null)"
+
+        if printf '%s\n' "$STATE" | rg -q 'connected: true' \
+          && printf '%s\n' "$STATE" | rg -q 'armed: false'; then
+            MAVROS_READY=1
+            break
+        fi
+
+        sleep 1
+    done
+fi
+
+if [ "$MAVROS_READY" -eq 1 ]; then
+    python3 tools/live/retrieve_pixhawk_dataflash.py download \
+      --log-id "$LOG_ID" \
+      --expected-size "$LOG_SIZE" \
+      --output "$DATAFLASH"
+    DOWNLOAD_RC=$?
+else
+    echo "STOP: MAVROS did not reach connected + disarmed for DataFlash transfer."
+fi
+
+if [ -n "$MAVROS_DOWNLOAD_PID" ]; then
+    kill -TERM -- "-$MAVROS_DOWNLOAD_PID" 2>/dev/null || true
+    wait "$MAVROS_DOWNLOAD_PID" 2>/dev/null || true
+fi
+
+printf 'dataflash_download=%s\n' "$DOWNLOAD_RC"
+```
+
+Do not archive when `dataflash_download` is non-zero. After a successful
+explicit-ID download:
+
+```bash
+python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH" --provenance-dir "$DATAFLASH_DIR"
 python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --control-trial --field-record --expect-visual --expect-operator-events --expect-bcb-opportunities "$TAG"
 ```
 

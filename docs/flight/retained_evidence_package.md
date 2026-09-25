@@ -168,21 +168,49 @@ TIM-MARS `LOCKED` is not physical ground truth. Final physical-person correctnes
 
 ## Pixhawk DataFlash
 
-Retrieve the exact `.bin` belonging to the trial.
+The native MAVROS `log_transfer` path was validated on the real Pixhawk while
+disarmed on 25 September 2026: a 21-entry catalogue was received completely,
+explicit log ID 15 was downloaded as 708747 bytes, `LOG_REQUEST_END` succeeded,
+and the downloaded and archived copies had the same SHA-256.
 
-Do not automatically choose the newest file.
+The final B-C-B association workflow is fail-closed:
 
-Archive it:
+1. before each flight, with MAVROS connected and the aircraft disarmed, verify
+   `LOG_DISARMED=0`, `LOG_FILE_DSRMROT=1`, and `LOG_BACKEND_TYPE=1`;
+2. capture an explicit pre-flight catalogue;
+3. after landing/disarming, capture an explicit post-flight catalogue;
+4. compare the catalogues and require exactly one newly observed log ID;
+5. download that explicit ID with its reported size after the scientific
+   recorder has stopped;
+6. archive the resulting `.bin` into the exact retained run.
 
-    read -r -p "Exact DataFlash .bin path: " DATAFLASH
+The FCU catalogue timestamps observed during hardware validation were unusable
+(epoch-like or unavailable), so timestamps are not an association key. Never
+substitute the highest ID, newest timestamp or filesystem age when catalogue
+comparison is ambiguous.
 
-    python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"
+Catalogue and comparison:
+
+    python3 tools/live/retrieve_pixhawk_dataflash.py catalogue --output "$DATAFLASH_DIR/before.json"
+
+    python3 tools/live/retrieve_pixhawk_dataflash.py catalogue --output "$DATAFLASH_DIR/after.json"
+
+    python3 tools/live/retrieve_pixhawk_dataflash.py compare --before "$DATAFLASH_DIR/before.json" --after "$DATAFLASH_DIR/after.json" --output "$DATAFLASH_DIR/association.json"
+
+After the scientific recorder has stopped, restart MAVROS only with the
+validated `udp://:14550@`, target-system `10`, target-component `1`
+contract. Confirm `/mavros/state` reports connected and disarmed, then
+download the explicit ID and size reported by `association.json`:
+
+    python3 tools/live/retrieve_pixhawk_dataflash.py download --log-id "$LOG_ID" --expected-size "$LOG_SIZE" --output "$DATAFLASH"
+
+Then archive it:
+
+    python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH" --provenance-dir "$DATAFLASH_DIR"
 
 Then verify a controller trial:
 
     python3 tools/live/verify_evidence_package.py --bag-dir "$BAG" --run-id "$RUN_ID" --control-trial --field-record --expect-visual --expect-operator-events
-
-Real Pixhawk DataFlash retrieval still requires physical validation.
 
 ## Final scientific completion
 

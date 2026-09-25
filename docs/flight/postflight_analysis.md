@@ -38,13 +38,27 @@ python3 tools/analysis/summarize_control_diagnostics.py "$BAG" --out "$BAG/contr
 ```
 
 Omit `--control-trial` and the diagnostics command for no-control attempts.
-If DataFlash was not yet archived, a pending postflight result is expected;
-archive only the human-selected exact `.bin` via
-`tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH"`,
-then rerun verification. Preserve the source and manifest. Check MCAP
+If DataFlash was not yet archived, a pending postflight result is expected.
+For the final B-C-B flights, use the retained pre/post catalogue pair and
+`association.json`; automatic association is valid only when comparison reports
+exactly one new log ID. Catalogue timestamps are not trusted on this Pixhawk.
+
+After the scientific recorder has stopped, restart MAVROS only with the
+validated `udp://:14550@`, target-system `10`, target-component `1`
+contract. Confirm `/mavros/state` reports connected and disarmed, then
+download only the explicit ID and reported size:
+
+    python3 tools/live/retrieve_pixhawk_dataflash.py download --log-id "$LOG_ID" --expected-size "$LOG_SIZE" --output "$DATAFLASH"
+
+Archive only that explicit file:
+
+    python3 tools/live/archive_pixhawk_dataflash.py --run-id "$RUN_ID" --bag-dir "$BAG" --source-bin "$DATAFLASH" --provenance-dir "$DATAFLASH_DIR"
+
+Preserve the retrieval metadata, catalogue snapshots, association record,
+source `.bin` and archive manifest. Then rerun verification. Check MCAP
 finalization, observed-zero transport, visual decode, command/diagnostic and
-controller/MAVROS pairing, FCU echo/state/pose/velocity and DataFlash time
-range. A command is not an aircraft response.
+controller/MAVROS pairing, FCU echo/state/pose/velocity and DataFlash coverage.
+A command is not an aircraft response.
 
 ## 3. Physical-person reference and time alignment
 

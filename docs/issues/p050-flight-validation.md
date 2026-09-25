@@ -291,10 +291,18 @@ truncation, shutdown-order mistakes and incomplete packaging:
   the `apm` denylist; required present, not non-zero.
 - **Overwrite safety**: `refuse_existing_bag_dir` fails before recording into
   an existing non-empty directory (RUN_ID stays deterministic, Issue #118).
-- **Pixhawk DataFlash**: `tools/live/archive_pixhawk_dataflash.py` archives an
-  explicitly-supplied `.bin` (SHA-256, refuse overwrite, preserve source,
-  manifest). It never talks to an FCU and never selects "latest".
-  **Real-hardware retrieval verification is pending** — no Pixhawk available.
+- **Pixhawk DataFlash**: `tools/live/retrieve_pixhawk_dataflash.py` now uses
+  the installed MAVROS `log_transfer` plugin for explicit catalogue capture,
+  fail-closed pre/post catalogue comparison, and explicit-ID download;
+  `tools/live/archive_pixhawk_dataflash.py` then archives the supplied `.bin`
+  with SHA-256 and overwrite protection. Real-hardware validation on
+  25 September 2026 received the complete 21-entry catalogue and downloaded
+  explicit log ID 15 as 708747 bytes; the retrieval and archived copies had
+  identical SHA-256 and `LOG_REQUEST_END` succeeded. The FCU remained connected
+  and disarmed. Catalogue timestamps were unusable and are therefore not used
+  for association. The final evidence contract is `LOG_DISARMED=0`,
+  `LOG_FILE_DSRMROT=1`, `LOG_BACKEND_TYPE=1`, with exactly one new ID required
+  between the retained pre/post catalogues; ambiguity fails closed.
 
 The canonical copy-paste operator procedure is `docs/flight/field_day_runbook.md`; follow that file during field operations.
 

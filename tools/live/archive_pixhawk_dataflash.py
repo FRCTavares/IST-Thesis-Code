@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Associate an ArduPilot / Pixhawk DataFlash ``.bin`` with a retained trial.
 
-Issue #50/#74 field hardening. The native FCU log is retrieved with the
-actual field tooling (Mission Planner / MAVProxy / QGroundControl / a wired
-SD-card copy) -- this helper does **not** talk to an FCU and does **not** pick
-"the latest log". The operator identifies the exact file for the trial and
-passes it in explicitly:
+Issue #50/#74 field hardening. The native FCU log may be retrieved through
+the repository's MAVROS DataFlash helper or another controlled field method.
+This archiver does **not** talk to an FCU and does **not** select a log. The
+operator identifies the exact file for the trial and passes it in explicitly:
 
     python3 tools/live/archive_pixhawk_dataflash.py \\
         --run-id "$RUN_ID" \\
@@ -17,9 +16,10 @@ explicit ``.bin`` path; refuses to overwrite an existing archived file or
 manifest; preserves the source; copies exact bytes; records SHA-256 of both
 source and archived copy; and writes ``pixhawk_dataflash/dataflash_manifest.json``.
 
-Real-hardware retrieval verification is **pending** -- there is no Pixhawk to
-test against; ``hardware_verification`` in the manifest is ``pending`` until a
-field session confirms the end-to-end download step.
+The MAVROS catalogue and explicit-ID DataFlash retrieval path was validated on
+real hardware while disarmed on 25 September 2026. The archive manifest records
+that workflow-level hardware-validation state; the exact source file remains an
+explicit operator input.
 """
 
 from __future__ import annotations
@@ -38,6 +38,7 @@ from typing import Any
 MANIFEST_NAME = "dataflash_manifest.json"
 SCHEMA_VERSION = 1
 DEFAULT_SUBDIR = "pixhawk_dataflash"
+HARDWARE_VERIFICATION = "validated_2026-09-25_mavros_explicit_id"
 
 
 def _sha256(path: Path) -> str:
@@ -70,6 +71,7 @@ def archive_dataflash(
     run_id: str,
     bag_dir: Path,
     source_bin: Path,
+    provenance_dir: Path | None = None,
     subdir: str = DEFAULT_SUBDIR,
 ) -> tuple[int, dict[str, Any]]:
     if not run_id.strip():
@@ -79,16 +81,47 @@ def archive_dataflash(
     if not source_bin.is_file():
         return 2, {"error": f"--source-bin is not a file: {source_bin}"}
 
+    provenance_sources: list[Path] = []
+    if provenance_dir is not None:
+        if not provenance_dir.is_dir():
+            return 2, {
+                "error": f"--provenance-dir is not a directory: {provenance_dir}"
+            }
+
+        provenance_sources = [
+            provenance_dir / "before.json",
+            provenance_dir / "after.json",
+            provenance_dir / "association.json",
+            provenance_dir / f"{source_bin.name}.retrieval.json",
+        ]
+
+        missing = [str(item) for item in provenance_sources if not item.is_file()]
+        if missing:
+            return 2, {
+                "error": (
+                    "explicit DataFlash provenance is incomplete; missing: "
+                    + ", ".join(missing)
+                )
+            }
+
     dest_dir = bag_dir / subdir
     dest_path = dest_dir / source_bin.name
     manifest_path = dest_dir / MANIFEST_NAME
 
-    if dest_path.exists() or manifest_path.exists():
+    provenance_destinations = [
+        dest_dir / item.name for item in provenance_sources
+    ]
+    provenance_conflicts = [
+        str(item) for item in provenance_destinations if item.exists()
+    ]
+
+    if dest_path.exists() or manifest_path.exists() or provenance_conflicts:
         return 3, {
             "error": (
                 f"refusing to overwrite existing DataFlash archive in {dest_dir} "
                 f"(dest exists: {dest_path.exists()}, manifest exists: "
-                f"{manifest_path.exists()})"
+                f"{manifest_path.exists()}, provenance conflicts: "
+                f"{provenance_conflicts})"
             )
         }
 
@@ -99,6 +132,34 @@ def archive_dataflash(
 
     shutil.copy2(source_bin, dest_path, follow_symlinks=True)
 
+    retained_provenance = []
+    for source in provenance_sources:
+        destination = dest_dir / source.name
+        shutil.copy2(source, destination, follow_symlinks=True)
+
+        provenance_source_sha = _sha256(source)
+        provenance_destination_sha = _sha256(destination)
+        provenance_source_bytes = source.stat().st_size
+        provenance_destination_bytes = destination.stat().st_size
+
+        if (
+            provenance_source_sha != provenance_destination_sha
+            or provenance_source_bytes != provenance_destination_bytes
+        ):
+            return 1, {
+                "error": f"provenance copy mismatch: {source}",
+            }
+
+        retained_provenance.append(
+            {
+                "name": source.name,
+                "source_path": str(source),
+                "archived_path": str(destination),
+                "bytes": provenance_destination_bytes,
+                "sha256": provenance_destination_sha,
+            }
+        )
+
     archived_sha = _sha256(dest_path)
     archived_bytes = dest_path.stat().st_size
     match = archived_sha == source_sha and archived_bytes == source_bytes
@@ -108,8 +169,13 @@ def archive_dataflash(
         "archived_at_utc": datetime.now(timezone.utc).isoformat(),
         "run_id": run_id,
         "bag_dir": str(bag_dir),
-        "retrieval_method": "explicit_operator_supplied_file",
-        "hardware_verification": "pending",
+        "retrieval_method": (
+            "mavros_explicit_id_with_catalogue_association"
+            if provenance_dir is not None
+            else "explicit_operator_supplied_file"
+        ),
+        "hardware_verification": HARDWARE_VERIFICATION,
+        "retrieval_provenance": retained_provenance,
         "source": {
             "path": str(source_bin),
             "name": source_bin.name,
@@ -136,6 +202,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--bag-dir", required=True, type=Path)
     parser.add_argument("--source-bin", required=True, type=Path)
+    parser.add_argument(
+        "--provenance-dir",
+        type=Path,
+        help=(
+            "run-specific directory containing before.json, after.json, "
+            "association.json and <source>.retrieval.json"
+        ),
+    )
     parser.add_argument("--subdir", default=DEFAULT_SUBDIR)
     args = parser.parse_args(argv)
 
@@ -143,6 +217,11 @@ def main(argv: list[str] | None = None) -> int:
         run_id=args.run_id,
         bag_dir=args.bag_dir.resolve(),
         source_bin=args.source_bin.resolve(),
+        provenance_dir=(
+            args.provenance_dir.resolve()
+            if args.provenance_dir is not None
+            else None
+        ),
         subdir=args.subdir,
     )
 
@@ -162,7 +241,7 @@ def main(argv: list[str] | None = None) -> int:
         f"sha256 {result['archived']['sha256'][:12]}...) -> "
         f"{result['archived']['path']}"
     )
-    print("[note] real-hardware retrieval verification remains pending")
+    print("[note] MAVROS explicit-ID retrieval path hardware-validated 2026-09-25")
     return 0
 
 
