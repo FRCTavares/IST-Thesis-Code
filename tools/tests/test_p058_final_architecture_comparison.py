@@ -619,14 +619,27 @@ def test_frozen_guard_blocks_behaviour_change_allows_readme():
     )
 
 
-def test_verify_frozen_git_paths_passes_on_current_tree():
-    # The active contract's frozen paths carry only documentation edits since
-    # the algorithm authority, so the behaviour-aware guard must pass.
-    summary = RUN.verify_frozen_git_paths(contract())
-    assert summary["algorithm_authority_commit"] == (
-        RUN.ACTIVE_ALGORITHM_FREEZE_COMMIT
-    )
-    assert summary["behaviour_bearing_frozen_file_count"] > 0
+def test_verify_frozen_git_paths_blocks_current_postfreeze_tree():
+    # The Stage-7 authority is historical and immutable. Current HEAD contains
+    # legitimate later behaviour-bearing runtime changes, so direct execution
+    # from current source must fail closed rather than silently redefining the
+    # prospective 8 September algorithm freeze.
+    try:
+        RUN.verify_frozen_git_paths(contract())
+    except SystemExit as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("historical frozen-path guard unexpectedly accepted current HEAD")
+
+    assert "frozen-path guard blocked execution" in message
+    assert "A new explicitly versioned prospective freeze is required" in message
+    for path in (
+        "perception_camera_node.py",
+        "perception_pipeline_node.py",
+        "target_memory_mars_node.py",
+        "tracker_node.py",
+    ):
+        assert path in message
 
 
 # --- Pinned replay environment ------------------------------------------

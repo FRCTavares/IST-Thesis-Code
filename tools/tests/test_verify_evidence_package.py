@@ -164,6 +164,226 @@ def test_complete_runtime_evidence_when_all_present(tmp_path):
     assert status == "pending_pixhawk_dataflash"
 
 
+def test_disarmed_state_scope_ignores_disconnect_outside_trial():
+    result = vep._assess_disarmed_state_samples(
+        [
+            (90, False, False),
+            (110, True, False),
+            (150, True, False),
+            (190, True, False),
+            (210, False, False),
+        ],
+        trial_start_ns=100,
+        trial_end_ns=200,
+    )
+
+    assert result["valid"] is True
+    assert result["in_trial_sample_count"] == 3
+    assert result["in_trial_connected_false_count"] == 0
+    assert result["in_trial_armed_true_count"] == 0
+    assert result["outside_trial_connected_false_count"] == 2
+
+
+@pytest.mark.parametrize(
+    ("connected", "armed", "reason_fragment"),
+    (
+        (False, False, "disconnected samples inside the trial interval"),
+        (True, True, "armed samples inside the trial interval"),
+    ),
+)
+def test_disarmed_state_scope_rejects_bad_state_inside_trial(
+    connected, armed, reason_fragment
+):
+    result = vep._assess_disarmed_state_samples(
+        [
+            (110, True, False),
+            (150, connected, armed),
+            (190, True, False),
+        ],
+        trial_start_ns=100,
+        trial_end_ns=200,
+    )
+
+    assert result["valid"] is False
+    assert any(
+        reason_fragment in reason
+        for reason in result["reasons"]
+    )
+
+
+def test_disarmed_state_scope_rejects_empty_trial_window():
+    result = vep._assess_disarmed_state_samples(
+        [
+            (90, True, False),
+            (210, True, False),
+        ],
+        trial_start_ns=100,
+        trial_end_ns=200,
+    )
+
+    assert result["valid"] is False
+    assert any(
+        "zero samples inside the trial interval" in reason
+        for reason in result["reasons"]
+    )
+
+
+def test_disarmed_trial_window_uses_matching_run_and_trial(tmp_path):
+    path = tmp_path / "operator_events.jsonl"
+    rows = [
+        {
+            "schema_version": 1,
+            "event": "trial_start",
+            "ts_utc": "2026-09-26T09:00:00.000000Z",
+            "run_id": "other",
+            "trial_id": "p032_final_mounted_vga",
+            "detail": {},
+        },
+        {
+            "schema_version": 1,
+            "event": "trial_start",
+            "ts_utc": "2026-09-26T10:00:00.000000Z",
+            "run_id": "evp_test",
+            "trial_id": "p032_final_mounted_vga",
+            "detail": {},
+        },
+        {
+            "schema_version": 1,
+            "event": "trial_end",
+            "ts_utc": "2026-09-26T10:21:00.000000Z",
+            "run_id": "evp_test",
+            "trial_id": "p032_final_mounted_vga",
+            "detail": {},
+        },
+    ]
+    path.write_text(
+        "".join(json.dumps(row) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+    result = vep._read_trial_window(
+        path,
+        run_id="evp_test",
+        trial_id="p032_final_mounted_vga",
+    )
+
+    assert result["valid"] is True
+    assert result["end_ns"] > result["start_ns"]
+
+
+def test_disarmed_trial_window_requires_exact_start_and_end(tmp_path):
+    path = tmp_path / "operator_events.jsonl"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "event": "trial_start",
+                "ts_utc": "2026-09-26T10:00:00.000000Z",
+                "run_id": "evp_test",
+                "trial_id": "p032_final_mounted_vga",
+                "detail": {},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = vep._read_trial_window(
+        path,
+        run_id="evp_test",
+        trial_id="p032_final_mounted_vga",
+    )
+
+    assert result["valid"] is False
+    assert any(
+        "exactly one matching trial_end" in reason
+        for reason in result["reasons"]
+    )
+
+
+def test_proven_disarmed_runtime_scope_marks_postflight_items_not_applicable(
+    tmp_path, monkeypatch
+):
+    bag = _build_package(tmp_path)
+
+    monkeypatch.setattr(
+        vep,
+        "_validate_disarmed_runtime_characterization",
+        lambda bag_dir, run_id: {
+            "valid": True,
+            "scenario_tag": "p032_final_mounted_vga",
+            "sample_count": 42,
+            "connected_false_count": 0,
+            "armed_true_count": 0,
+            "reasons": [],
+        },
+    )
+
+    status, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        repo_root=REPO_ROOT,
+        disarmed_runtime_characterization=True,
+    )
+
+    assert status == "complete_runtime_evidence"
+    assert report["runtime_status"] == "complete_runtime_evidence"
+    assert report["pending"] == []
+    assert report["pending_postflight"]["pixhawk_dataflash"]["applies"] is False
+    assert report["pending_postflight"]["physical_v2_annotation"]["applies"] is False
+
+
+def test_unproven_disarmed_runtime_scope_is_incomplete(tmp_path, monkeypatch):
+    bag = _build_package(tmp_path)
+
+    monkeypatch.setattr(
+        vep,
+        "_validate_disarmed_runtime_characterization",
+        lambda bag_dir, run_id: {
+            "valid": False,
+            "scenario_tag": "p032_final_mounted_vga",
+            "sample_count": 42,
+            "connected_false_count": 0,
+            "armed_true_count": 1,
+            "reasons": ["/mavros/state contains 1 armed samples"],
+        },
+    )
+
+    status, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        repo_root=REPO_ROOT,
+        disarmed_runtime_characterization=True,
+    )
+
+    assert status == "incomplete_runtime_evidence"
+    assert report["runtime_status"] == "incomplete_runtime_evidence"
+    assert any(
+        "disarmed runtime characterization scope was not proven" in problem
+        for problem in report["problems"]
+    )
+
+
+def test_disarmed_runtime_scope_rejects_wrong_scenario_before_bag_read(tmp_path):
+    bag = _build_package(tmp_path)
+    result = vep._validate_disarmed_runtime_characterization(
+        bag,
+        run_id="evp_test",
+    )
+
+    assert result["valid"] is False
+    assert any(
+        "scenario_tag=p032_final_mounted_vga" in reason
+        for reason in result["reasons"]
+    )
+
+
 def test_dataflash_present_advances_to_pending_annotation(tmp_path):
     bag = _build_package(tmp_path)
     _add_valid_dataflash(bag)
@@ -235,6 +455,138 @@ def test_tampered_dataflash_archive_remains_pending(tmp_path):
 
 
 # F. missing required runtime artifact -> incomplete, nothing deleted
+def _add_valid_mavros_dataflash(bag: Path, run_id: str = "evp_test"):
+    archived = _add_valid_dataflash(bag, run_id=run_id)
+    df = archived.parent
+    manifest_path = df / "dataflash_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    payloads = {
+        "before.json": b'{"schema_version":1,"entries":[{"id":20,"size":100}]}\n',
+        "after.json": b'{"schema_version":1,"entries":[{"id":20,"size":100},{"id":21,"size":22}]}\n',
+        "association.json": b'{"selected":{"id":21,"size":22}}\n',
+        f"{archived.name}.retrieval.json": (
+            b'{"log_id":21,"expected_size":22,"received_size":22}\n'
+        ),
+    }
+
+    sidecars = {}
+    provenance = []
+
+    for name, payload in payloads.items():
+        path = df / name
+        path.write_bytes(payload)
+        sidecars[name] = path
+        provenance.append(
+            {
+                "name": name,
+                "bytes": len(payload),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+            }
+        )
+
+    manifest["retrieval_method"] = (
+        "mavros_explicit_id_with_catalogue_association"
+    )
+    manifest["retrieval_provenance"] = provenance
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    return archived, sidecars
+
+
+def test_mavros_dataflash_provenance_sidecars_validate(tmp_path):
+    bag = _build_package(tmp_path)
+    _archived, sidecars = _add_valid_mavros_dataflash(bag)
+
+    evidence = vep._validate_dataflash_manifest(
+        bag / "pixhawk_dataflash" / "dataflash_manifest.json",
+        run_id="evp_test",
+    )
+
+    assert evidence["valid"] is True
+    provenance = evidence["retrieval_provenance"]
+    assert provenance["required"] is True
+    assert provenance["valid"] is True
+    assert {item["name"] for item in provenance["files"]} == set(sidecars)
+
+
+def test_mavros_dataflash_missing_sidecar_remains_pending(tmp_path):
+    bag = _build_package(tmp_path)
+    _archived, sidecars = _add_valid_mavros_dataflash(bag)
+    sidecars["association.json"].unlink()
+
+    status, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        repo_root=REPO_ROOT,
+    )
+
+    assert status == "pending_pixhawk_dataflash"
+    evidence = report["pending_postflight"]["pixhawk_dataflash"]
+    assert evidence["valid"] is False
+    assert any(
+        "retrieval provenance file is missing: association.json" in reason
+        for reason in evidence["reasons"]
+    )
+
+
+def test_mavros_dataflash_tampered_sidecar_remains_pending(tmp_path):
+    bag = _build_package(tmp_path)
+    _archived, sidecars = _add_valid_mavros_dataflash(bag)
+    sidecars["before.json"].write_bytes(b"tampered-provenance\n")
+
+    status, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        repo_root=REPO_ROOT,
+    )
+
+    assert status == "pending_pixhawk_dataflash"
+    evidence = report["pending_postflight"]["pixhawk_dataflash"]
+    assert evidence["valid"] is False
+    assert any(
+        (
+            "retrieval provenance byte count does not match manifest" in reason
+            or "retrieval provenance SHA-256 does not match manifest" in reason
+        )
+        and "before.json" in reason
+        for reason in evidence["reasons"]
+    )
+
+
+def test_mavros_dataflash_manifest_requires_provenance_list(tmp_path):
+    bag = _build_package(tmp_path)
+    _archived, _sidecars = _add_valid_mavros_dataflash(bag)
+
+    manifest_path = bag / "pixhawk_dataflash" / "dataflash_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.pop("retrieval_provenance")
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    status, report = vep.verify_package(
+        bag_dir=bag,
+        run_id="evp_test",
+        control_trial=True,
+        field_record=True,
+        expect_operator_events=True,
+        repo_root=REPO_ROOT,
+    )
+
+    assert status == "pending_pixhawk_dataflash"
+    evidence = report["pending_postflight"]["pixhawk_dataflash"]
+    assert evidence["valid"] is False
+    assert any(
+        "retrieval_provenance missing or invalid" in reason
+        for reason in evidence["reasons"]
+    )
+
+
 def test_missing_required_runtime_artifact_is_incomplete(tmp_path):
     bag = _build_package(tmp_path)
     (bag / "run_logs" / "control.log").unlink()

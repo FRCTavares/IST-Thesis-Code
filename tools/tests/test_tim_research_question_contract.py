@@ -136,4 +136,8 @@ def test_closed_issue_is_removed_and_final_claim_is_blocked():
         in text
     )
     assert "Hailo appearance-offload work under #44 is already closed" in text
-    assert "tracker comparison under #58 are complete" in text
+    assert (
+        "The #58 source-time repair, 12-cell comparison, thesis table and "
+        "F19/F20 labels have been reconciled and integrated"
+        in text
+    )

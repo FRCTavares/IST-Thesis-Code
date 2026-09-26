@@ -5,41 +5,57 @@
 This is the detailed Issue #50 preparation/evidence record. **Do not follow this file during flight operations.**
 The only day-of-flight operator sheet is `docs/flight/field_day_runbook.md`. Current flight-day authority is `docs/flight/field_day_runbook.md`.
 
-**ACTIVE #50 — Friday 25 September 2026 physical gates pending.** Issue #64
-closed on 22 September with VGA 640x480 retained; HD was not promoted and FHD
-remains excluded. The canonical linear operator sheet is
-`docs/flight/field_day_runbook.md`. Home-side software/documentation checks prepare the
-trial but do not establish FCU, restrained, process-loss, takeover or flight
-evidence. #32 final mounted characterization follows the physical #50
-baseline-versus-yaw-recovery retain/reject decision.
+**ACTIVE #50 — next executable work requires physical Pixhawk/aircraft access.**
+Issue #64 closed on 22 September with VGA 640x480 retained; HD was not promoted
+and FHD remains excluded. The only day-of-field operator authority is
+`docs/flight/field_day_runbook.md`.
 
-The remaining physical sequence is: provision and validate the explicitly
-approved AERONEXT fallback; verify primary/fallback/fail-closed field-network
-states with Pixhawk attached; static preflight; passive MAVROS/recorder gate;
-compute-only sign/freshness gate; restrained BODY_NED command-path and exact
-controller process-loss response; pilot RC/failsafe/PreArm go/no-go; baseline
-flight; predeclared matched pairs; per-trial MCAP/visual/operator events and
-exact DataFlash; physical-person annotation and final controller decision.
-The 22 September remote inspection found the fallback setting empty and no
-clearly named approved AERONEXT profile among saved NetworkManager profile
-names. No credentials or host network state were changed remotely.
+The 25 September field session completed the major integration gates: primary
+ISR/Pixhawk networking, corrected BODY_NED yaw sign, retained commissioning
+flight, visual-recorder readiness and startup-order repair, and real-hardware
+MAVROS DataFlash catalogue/download validation. The final DataFlash workflow now
+retains pre/post catalogues, fail-closed explicit-ID association, retrieval
+metadata, the exact `.bin`, and SHA-256 archive provenance.
 
-### 24 September home-preparation freeze
+The frozen next normal-follow configuration is `yaw_kp=0.60`,
+`max_yaw_z=0.20`, `max_delta_yaw_z=0.03`, `invert_yaw=true`. The bounded
+candidate remains yaw-only at `0.10 rad/s`, maximum `1.0 s` and `0.10 rad`
+integrated yaw, with zero recovery translation.
 
-Home-side Issue #50 preparation is complete. Final remote verification used the
-sourced ROS 2 Jazzy/workspace environment and passed 195/195 focused #50 tests.
-A fresh `thesis_bringup` package build passed, the imported controller and
-state-aware policy match the audited source byte-for-byte, the canonical field
-scripts pass shell syntax, `git diff --check` passes, and no root-level `log/`
-or `hailort.log` exists. The stale runbook wording in this record was also
-corrected so `docs/flight/field_day_runbook.md` is unambiguously the only
-field-operator authority.
+Before another airborne comparison, the remaining pre-flight requirement is the
+safe disarmed/ground validation of that frozen normal-follow configuration,
+followed by pilot go/no-go. The final scientific comparison is then the
+three-flight `Baseline A -> Candidate -> Baseline B` sequence with O1/O2/O3
+predeclared loss/return opportunities and no field retuning. After capture,
+physical-person annotation, evidence reconstruction and the controller-policy
+retain/reject decision remain.
 
-No further #50 software, configuration, evidence-template or operator-procedure
-work is currently justified from home. Remaining work requires the approved
-AERONEXT fallback credentials/profile and/or direct physical access to the real
-Pixhawk, aircraft, pilot/spotter and retained flight evidence. Those physical
-steps remain exactly the sequence stated above and in the canonical runbook.
+The approved AERONEXT fallback profile/credentials are unavailable and cannot be
+provisioned from known project information. This is retained as an explicit
+unavailable-path limitation; no credentials or fallback PASS are fabricated.
+The validated primary field path remains `ISR Aero.Next GCS` plus
+`pixhawk-apm`.
+
+### 26 September home-preparation freeze
+
+Home-side Issue #50 engineering preparation is complete at commit `3298c343`.
+The final DataFlash hardening package passed 127/127 relevant tests, Python
+compilation, `git diff --check`, root-cleanliness checks and was pushed to
+`origin/main`. The production DataFlash helper had already been validated
+against the real Pixhawk while disarmed on 25 September.
+
+The canonical field sheet now contains the frozen three-flight B-C-B protocol,
+O1/O2/O3 event capture, final logging-parameter checks, fail-closed DataFlash
+association, explicit-ID download and retained association provenance. The
+visual-recorder readiness race and ROS/DDS startup-order defect found during the
+25 September session are physically revalidated and closed.
+
+No further pre-field #50 software, configuration, evidence-template or
+operator-procedure work is currently justified from home. The next executable
+#50 action requires the real Pixhawk/aircraft: safe disarmed ground validation
+of the frozen normal-follow configuration. Subsequent work is pilot-owned field
+capture followed by evidence-derived annotation/reconstruction and the final
+controller-policy decision.
 
 Issue #50 owns the current closed-loop aircraft validation. The archived P023
 documents are historical and must not be used as current launch instructions.

@@ -192,6 +192,26 @@ def test_flight_day_sheet_stays_compact_and_fail_closed():
     assert "100.105.37.101" not in text
 
 
+def test_p032_final_mounted_contract_is_disarmed_and_fail_closed():
+    runbook = (
+        REPO_ROOT / "docs/issues/p032-final-mounted-runbook.md"
+    ).read_text(encoding="utf-8")
+    wrapper = (
+        REPO_ROOT / "tools/flight/verify_field_run.sh"
+    ).read_text(encoding="utf-8")
+
+    assert "--disarmed-runtime-characterization" in runbook
+    assert "--disarmed-runtime-characterization" in wrapper
+    assert "Exact DataFlash .bin" not in runbook
+    assert "unrelated `.bin`" in runbook
+    assert 'target_selected --run-id "$RUN_ID" --trial-id "$TAG"' in runbook
+    assert 'trial_end --run-id "$RUN_ID" --trial-id "$TAG"' in runbook
+    assert 'trial_verdict --run-id "$RUN_ID" --trial-id "$TAG"' in runbook
+    assert "inside the exact `trial_start` to `trial_end` interval" in runbook
+    assert "Startup and shutdown state transitions" in runbook
+    assert "armed=false" in runbook
+
+
 def test_documented_build_recording_and_evaluation_commands_are_supported():
     tools_readme = TOOLS_README.read_text(encoding="utf-8")
     root_readme = ROOT_README.read_text(encoding="utf-8")

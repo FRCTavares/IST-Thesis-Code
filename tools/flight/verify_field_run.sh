@@ -4,9 +4,10 @@ set +u
 RUN_ID="${1:-}"
 TAG="${2:-}"
 MODE="${3:-}"
+SCOPE="${4:-}"
 
 if [[ -z "$RUN_ID" || -z "$TAG" ]]; then
-    echo "Usage: $0 RUN_ID TAG [--control-trial]"
+    echo "Usage: $0 RUN_ID TAG [--control-trial] [--disarmed-runtime-characterization]"
     exit 2
 fi
 
@@ -29,6 +30,20 @@ ARGS=(
 
 if [[ "$MODE" == "--control-trial" ]]; then
     ARGS+=(--control-trial)
+elif [[ -n "$MODE" ]]; then
+    echo "FAIL: unsupported verification mode: $MODE"
+    exit 2
+fi
+
+if [[ "$SCOPE" == "--disarmed-runtime-characterization" ]]; then
+    if [[ "$MODE" != "--control-trial" ]]; then
+        echo "FAIL: disarmed runtime characterization requires --control-trial"
+        exit 2
+    fi
+    ARGS+=(--disarmed-runtime-characterization)
+elif [[ -n "$SCOPE" ]]; then
+    echo "FAIL: unsupported verification scope: $SCOPE"
+    exit 2
 fi
 
 case "$TAG" in

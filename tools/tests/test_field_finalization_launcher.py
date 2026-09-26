@@ -222,6 +222,14 @@ def test_no_recovery_bounds_leaked_as_cli_knobs_still_holds():
         assert knob not in LAUNCHER
 
 
+def test_p032_stop_time_verifier_uses_disarmed_runtime_scope():
+    fn = LAUNCHER[LAUNCHER.index("verify_retained_evidence() {"):]
+    fn = fn[:fn.index("\n}\n")]
+
+    assert 'if [[ "${BAG_TAG:-}" == "p032_final_mounted_vga" ]]; then' in fn
+    assert "pkg_args+=(--disarmed-runtime-characterization)" in fn
+
+
 def test_verifier_helpers_require_an_explicit_bag_dir(tmp_path):
     # M: none of the finalization helpers can auto-pick "the latest" bag/run.
     import sys

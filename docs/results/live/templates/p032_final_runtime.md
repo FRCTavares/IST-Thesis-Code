@@ -3,8 +3,7 @@
 Exact RUN_ID/TAG/bag: PENDING_PHYSICAL_EVIDENCE. Git SHA and clean-tree state:
 PENDING_PHYSICAL_EVIDENCE. Retained #50 controller decision: PENDING_PHYSICAL_EVIDENCE.
 Camera VGA 640x480; detector inference 640x640. Model/config hashes, FCU,
-ROS/HailoRT/kernel versions, sampler provenance and DataFlash:
-PENDING_PHYSICAL_EVIDENCE.
+ROS/HailoRT/kernel versions and sampler provenance: PENDING_PHYSICAL_EVIDENCE.
 
 The bounded window is 60 s warm-up + 1200 s active. Report both complete
 bounded and post-warm-up populations; show gaps/stalls rather than selecting
@@ -30,7 +29,15 @@ only active bursts.
 ## Integrity and decision
 
 - Full-window PID-root and sampler coverage: PENDING_PHYSICAL_EVIDENCE.
-- MCAP/visual/operator/DataFlash package integrity: PENDING_PHYSICAL_EVIDENCE.
+- MCAP/visual/operator/provenance package integrity: PENDING_PHYSICAL_EVIDENCE.
+- Retained MAVROS state: PENDING_PHYSICAL_EVIDENCE; require every
+  `/mavros/state` sample inside the retained `trial_start` to `trial_end`
+  interval to report `connected=true`, `armed=false`. Startup/shutdown samples
+  outside that interval remain visible but are not part of the #32 measurement.
+- Physical-v2 annotation: NOT_APPLICABLE only for the proven disarmed
+  `p032_final_mounted_vga` characterization.
+- Pixhawk DataFlash: NOT_APPLICABLE only for the same proven disarmed runtime
+  characterization; do not attach an unrelated historical `.bin`.
 - Validated-target rate >=10 Hz (>=15 Hz desired): PENDING_PHYSICAL_EVIDENCE.
 - p95 camera-to-validated-target <=200 ms: PENDING_PHYSICAL_EVIDENCE.
 - Nonzero thermal throttling investigated: PENDING_PHYSICAL_EVIDENCE.

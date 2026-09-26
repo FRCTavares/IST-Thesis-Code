@@ -10,7 +10,9 @@ trial. Checks the runtime-side artifacts that the Pi produces, distinguishing:
   failure;
 - **pending post-flight** artifacts that must never be fabricated on the Pi:
   the physical-v2 annotation and the native ArduPilot / Pixhawk DataFlash
-  ``.bin``.
+  ``.bin``. The explicitly scoped #32 disarmed runtime characterization may
+  mark those two artifacts not applicable only when retained MAVROS state
+  evidence proves the run remained connected and disarmed.
 
 Writes ``evidence_package_status.json`` beside the bag. ``status`` is one of:
 
@@ -166,6 +168,456 @@ def _validate_dataflash_manifest(
         reasons.append("archived DataFlash SHA-256 missing or invalid")
     elif _sha256(archived_path) != expected_sha.lower():
         reasons.append("archived DataFlash SHA-256 does not match manifest")
+
+    retrieval_method = manifest.get("retrieval_method")
+    result["retrieval_method"] = retrieval_method
+    result["retrieval_provenance"] = {
+        "required": False,
+        "valid": None,
+        "files": [],
+        "reasons": [],
+    }
+
+    if retrieval_method in (None, "explicit_operator_supplied_file"):
+        # Backward compatibility for historical/manual manifests. These do not
+        # claim catalogue-based association and therefore have no retained
+        # catalogue sidecar contract to verify.
+        pass
+    elif retrieval_method == "mavros_explicit_id_with_catalogue_association":
+        provenance_result = {
+            "required": True,
+            "valid": False,
+            "files": [],
+            "reasons": [],
+        }
+        result["retrieval_provenance"] = provenance_result
+        provenance_reasons: list[str] = provenance_result["reasons"]
+
+        provenance = manifest.get("retrieval_provenance")
+        expected_names = {
+            "before.json",
+            "after.json",
+            "association.json",
+            f"{name}.retrieval.json",
+        }
+
+        if not isinstance(provenance, list):
+            provenance_reasons.append(
+                "manifest retrieval_provenance missing or invalid"
+            )
+        else:
+            by_name: dict[str, dict[str, Any]] = {}
+
+            for index, item in enumerate(provenance):
+                if not isinstance(item, dict):
+                    provenance_reasons.append(
+                        f"retrieval provenance entry {index} is not an object"
+                    )
+                    continue
+
+                provenance_name = item.get("name")
+                if (
+                    not isinstance(provenance_name, str)
+                    or not provenance_name
+                    or Path(provenance_name).name != provenance_name
+                ):
+                    provenance_reasons.append(
+                        f"retrieval provenance entry {index} has an unsafe name"
+                    )
+                    continue
+
+                if provenance_name in by_name:
+                    provenance_reasons.append(
+                        f"duplicate retrieval provenance entry: {provenance_name}"
+                    )
+                    continue
+
+                by_name[provenance_name] = item
+
+            actual_names = set(by_name)
+            missing_names = sorted(expected_names - actual_names)
+            extra_names = sorted(actual_names - expected_names)
+
+            if missing_names:
+                provenance_reasons.append(
+                    "retrieval provenance manifest is missing expected entries: "
+                    + ", ".join(missing_names)
+                )
+            if extra_names:
+                provenance_reasons.append(
+                    "retrieval provenance manifest contains unexpected entries: "
+                    + ", ".join(extra_names)
+                )
+
+            for provenance_name in sorted(expected_names & actual_names):
+                item = by_name[provenance_name]
+                provenance_path = manifest_path.parent / provenance_name
+                file_result: dict[str, Any] = {
+                    "name": provenance_name,
+                    "path": str(provenance_path),
+                    "present": provenance_path.is_file(),
+                    "valid": False,
+                }
+                provenance_result["files"].append(file_result)
+
+                file_reasons: list[str] = []
+
+                if not provenance_path.is_file():
+                    file_reasons.append(
+                        f"retrieval provenance file is missing: {provenance_name}"
+                    )
+                else:
+                    provenance_bytes = item.get("bytes")
+                    if (
+                        not isinstance(provenance_bytes, int)
+                        or provenance_bytes <= 0
+                    ):
+                        file_reasons.append(
+                            "retrieval provenance byte count missing or invalid: "
+                            f"{provenance_name}"
+                        )
+                    elif provenance_path.stat().st_size != provenance_bytes:
+                        file_reasons.append(
+                            "retrieval provenance byte count does not match "
+                            f"manifest: {provenance_name}"
+                        )
+
+                    provenance_sha = item.get("sha256")
+                    if (
+                        not isinstance(provenance_sha, str)
+                        or len(provenance_sha) != 64
+                    ):
+                        file_reasons.append(
+                            "retrieval provenance SHA-256 missing or invalid: "
+                            f"{provenance_name}"
+                        )
+                    elif _sha256(provenance_path) != provenance_sha.lower():
+                        file_reasons.append(
+                            "retrieval provenance SHA-256 does not match "
+                            f"manifest: {provenance_name}"
+                        )
+
+                file_result["valid"] = not file_reasons
+                file_result["reasons"] = file_reasons
+                provenance_reasons.extend(file_reasons)
+
+        provenance_result["valid"] = not provenance_reasons
+        reasons.extend(provenance_reasons)
+    else:
+        reasons.append(
+            f"unsupported DataFlash retrieval_method: {retrieval_method!r}"
+        )
+
+    result["valid"] = not reasons
+    return result
+
+
+def _utc_iso_to_ns(value: Any) -> int | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None:
+        return None
+
+    parsed = parsed.astimezone(timezone.utc)
+    epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
+    delta = parsed - epoch
+
+    return (
+        (delta.days * 86400 + delta.seconds) * 1_000_000_000
+        + delta.microseconds * 1000
+    )
+
+
+def _read_trial_window(
+    operator_events_path: Path,
+    *,
+    run_id: str,
+    trial_id: str,
+) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "valid": False,
+        "path": str(operator_events_path),
+        "run_id": run_id,
+        "trial_id": trial_id,
+        "start_utc": None,
+        "end_utc": None,
+        "start_ns": None,
+        "end_ns": None,
+        "reasons": [],
+    }
+    reasons: list[str] = result["reasons"]
+
+    if not operator_events_path.is_file():
+        reasons.append("archived operator_events.jsonl is missing")
+        return result
+
+    starts: list[dict[str, Any]] = []
+    ends: list[dict[str, Any]] = []
+
+    try:
+        lines = operator_events_path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        reasons.append(f"could not read archived operator events: {exc}")
+        return result
+
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            reasons.append(
+                f"operator_events.jsonl line {line_number} is not valid JSON"
+            )
+            continue
+
+        if not isinstance(record, dict):
+            reasons.append(
+                f"operator_events.jsonl line {line_number} is not an object"
+            )
+            continue
+
+        if record.get("run_id") != run_id or record.get("trial_id") != trial_id:
+            continue
+
+        event = record.get("event")
+        if event == "trial_start":
+            starts.append(record)
+        elif event == "trial_end":
+            ends.append(record)
+
+    if len(starts) != 1:
+        reasons.append(
+            f"expected exactly one matching trial_start, found {len(starts)}"
+        )
+    if len(ends) != 1:
+        reasons.append(
+            f"expected exactly one matching trial_end, found {len(ends)}"
+        )
+
+    if reasons:
+        return result
+
+    start_utc = starts[0].get("ts_utc")
+    end_utc = ends[0].get("ts_utc")
+    start_ns = _utc_iso_to_ns(start_utc)
+    end_ns = _utc_iso_to_ns(end_utc)
+
+    result["start_utc"] = start_utc
+    result["end_utc"] = end_utc
+    result["start_ns"] = start_ns
+    result["end_ns"] = end_ns
+
+    if start_ns is None:
+        reasons.append("trial_start ts_utc is missing or invalid")
+    if end_ns is None:
+        reasons.append("trial_end ts_utc is missing or invalid")
+
+    if reasons:
+        return result
+
+    if end_ns <= start_ns:
+        reasons.append("trial_end must occur after trial_start")
+        return result
+
+    result["valid"] = True
+    return result
+
+
+def _assess_disarmed_state_samples(
+    samples: list[tuple[int, bool, bool]],
+    *,
+    trial_start_ns: int,
+    trial_end_ns: int,
+) -> dict[str, Any]:
+    in_trial = [
+        (timestamp_ns, connected, armed)
+        for timestamp_ns, connected, armed in samples
+        if trial_start_ns <= timestamp_ns <= trial_end_ns
+    ]
+    outside = [
+        (timestamp_ns, connected, armed)
+        for timestamp_ns, connected, armed in samples
+        if timestamp_ns < trial_start_ns or timestamp_ns > trial_end_ns
+    ]
+
+    disconnected = sum(
+        1 for _, connected, _ in in_trial if not connected
+    )
+    armed = sum(
+        1 for _, _, armed_state in in_trial if armed_state
+    )
+
+    outside_disconnected = sum(
+        1 for _, connected, _ in outside if not connected
+    )
+    outside_armed = sum(
+        1 for _, _, armed_state in outside if armed_state
+    )
+
+    reasons: list[str] = []
+    if not in_trial:
+        reasons.append(
+            "retained /mavros/state has zero samples inside the trial interval"
+        )
+    if disconnected:
+        reasons.append(
+            f"/mavros/state contains {disconnected} disconnected samples "
+            "inside the trial interval"
+        )
+    if armed:
+        reasons.append(
+            f"/mavros/state contains {armed} armed samples "
+            "inside the trial interval"
+        )
+
+    return {
+        "valid": not reasons,
+        "total_sample_count": len(samples),
+        "in_trial_sample_count": len(in_trial),
+        "in_trial_connected_false_count": disconnected,
+        "in_trial_armed_true_count": armed,
+        "outside_trial_sample_count": len(outside),
+        "outside_trial_connected_false_count": outside_disconnected,
+        "outside_trial_armed_true_count": outside_armed,
+        "reasons": reasons,
+    }
+
+
+def _validate_disarmed_runtime_characterization(
+    bag_dir: Path,
+    *,
+    run_id: str,
+) -> dict[str, Any]:
+    """Prove the narrow #32 disarmed-runtime scope from retained evidence."""
+    result: dict[str, Any] = {
+        "valid": False,
+        "scenario_tag": None,
+        "state_topic": "/mavros/state",
+        "trial_window": None,
+        "state_assessment": None,
+        "reasons": [],
+    }
+    reasons: list[str] = result["reasons"]
+
+    metadata_path = bag_dir / "run_metadata.json"
+    metadata = _json(metadata_path)
+    if metadata is None:
+        reasons.append("run_metadata.json missing or unreadable")
+        return result
+
+    if metadata.get("run_id") != run_id:
+        reasons.append(
+            "run_metadata run_id does not match evidence-package run_id"
+        )
+
+    scenario_tag = metadata.get("scenario_tag")
+    result["scenario_tag"] = scenario_tag
+    if scenario_tag != "p032_final_mounted_vga":
+        reasons.append(
+            "disarmed runtime characterization is restricted to "
+            "scenario_tag=p032_final_mounted_vga"
+        )
+
+    bag_metadata = metadata.get("bag")
+    recorded_topics = (
+        bag_metadata.get("recorded_topics", [])
+        if isinstance(bag_metadata, dict)
+        else []
+    )
+    if "/mavros/state" not in recorded_topics:
+        reasons.append(
+            "run metadata does not declare retained /mavros/state"
+        )
+
+    if reasons:
+        return result
+
+    trial_window = _read_trial_window(
+        bag_dir / "run_logs" / "operator_events.jsonl",
+        run_id=run_id,
+        trial_id="p032_final_mounted_vga",
+    )
+    result["trial_window"] = trial_window
+
+    if not trial_window["valid"]:
+        reasons.extend(
+            f"trial window: {reason}"
+            for reason in trial_window["reasons"]
+        )
+        return result
+
+    try:
+        from rclpy.serialization import deserialize_message
+        from rosbag2_py import ConverterOptions, SequentialReader, StorageOptions
+        from rosidl_runtime_py.utilities import get_message
+    except Exception as exc:
+        reasons.append(f"ROS bag dependencies unavailable: {exc}")
+        return result
+
+    try:
+        reader = SequentialReader()
+        reader.open(
+            StorageOptions(uri=str(bag_dir), storage_id="mcap"),
+            ConverterOptions("cdr", "cdr"),
+        )
+        topic_types = {
+            topic.name: topic.type
+            for topic in reader.get_all_topics_and_types()
+        }
+    except Exception as exc:
+        reasons.append(f"could not open retained MCAP: {exc}")
+        return result
+
+    state_type = topic_types.get("/mavros/state")
+    if not state_type:
+        reasons.append("retained MCAP is missing /mavros/state")
+        return result
+
+    try:
+        state_cls = get_message(state_type)
+    except Exception as exc:
+        reasons.append(f"could not resolve MAVROS State type: {exc}")
+        return result
+
+    samples: list[tuple[int, bool, bool]] = []
+
+    try:
+        while reader.has_next():
+            topic, raw, bag_ns = reader.read_next()
+            if topic != "/mavros/state":
+                continue
+
+            msg = deserialize_message(raw, state_cls)
+            samples.append(
+                (
+                    int(bag_ns),
+                    bool(msg.connected),
+                    bool(msg.armed),
+                )
+            )
+    except Exception as exc:
+        reasons.append(
+            f"could not inspect retained /mavros/state: {exc}"
+        )
+        return result
+
+    assessment = _assess_disarmed_state_samples(
+        samples,
+        trial_start_ns=int(trial_window["start_ns"]),
+        trial_end_ns=int(trial_window["end_ns"]),
+    )
+    result["state_assessment"] = assessment
+
+    if not assessment["valid"]:
+        reasons.extend(assessment["reasons"])
 
     result["valid"] = not reasons
     return result
@@ -617,6 +1069,7 @@ def verify_package(
     expect_bcb_opportunities: str | None = None,
     expect_raw_bag: bool = False,
     expect_visual: bool = False,
+    disarmed_runtime_characterization: bool = False,
 ) -> tuple[str, dict[str, Any]]:
     report: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -849,18 +1302,64 @@ def verify_package(
     if prov.get("ran") and not prov.get("passed"):
         problems.append("run_metadata.json failed the provenance validator")
 
+    # --- explicit #32 disarmed-runtime scope ---
+    disarmed_scope_valid = False
+    if disarmed_runtime_characterization:
+        if not control_trial or not field_record:
+            problems.append(
+                "--disarmed-runtime-characterization requires both "
+                "--control-trial and --field-record"
+            )
+        if expect_bcb_opportunities is not None:
+            problems.append(
+                "--disarmed-runtime-characterization is incompatible with "
+                "final B-C-B opportunity verification"
+            )
+
+        disarmed_check = _validate_disarmed_runtime_characterization(
+            bag_dir,
+            run_id=run_id,
+        )
+        report["disarmed_runtime_characterization"] = disarmed_check
+        disarmed_scope_valid = bool(disarmed_check["valid"])
+
+        if not disarmed_scope_valid:
+            detail = "; ".join(disarmed_check.get("reasons", []))
+            problems.append(
+                "disarmed runtime characterization scope was not proven"
+                + (f": {detail}" if detail else "")
+            )
+    else:
+        report["disarmed_runtime_characterization"] = {
+            "valid": None,
+            "requested": False,
+        }
+
     # --- pending post-flight artifacts (never fabricated) ---
     annotation = _find_annotation(bag_dir)
-    report["pending_postflight"]["physical_v2_annotation"] = {
+    annotation_check = {
         "present": annotation is not None,
         "file": annotation,
+        "applies": not disarmed_scope_valid,
     }
+    if disarmed_scope_valid:
+        annotation_check["not_applicable_reason"] = (
+            "final #32 disarmed runtime/resource characterization does not "
+            "require physical-target correctness annotation"
+        )
+    report["pending_postflight"]["physical_v2_annotation"] = annotation_check
+
     dataflash = bag_dir / "pixhawk_dataflash" / "dataflash_manifest.json"
     df_check = _validate_dataflash_manifest(dataflash, run_id=run_id)
     df_present = bool(df_check["valid"])
     df_check["present"] = df_present
     df_check["manifest"] = str(dataflash) if dataflash.is_file() else None
-    df_check["applies"] = control_trial or field_record
+    df_check["applies"] = (control_trial or field_record) and not disarmed_scope_valid
+    if disarmed_scope_valid:
+        df_check["not_applicable_reason"] = (
+            "final #32 characterization remained connected and disarmed; "
+            "native DataFlash is not required for the runtime/resource claim"
+        )
     report["pending_postflight"]["pixhawk_dataflash"] = df_check
 
     runtime_ok = not problems
@@ -869,9 +1368,13 @@ def verify_package(
     )
 
     pending: list[str] = []
-    if (control_trial or field_record) and not df_present:
+    if (
+        (control_trial or field_record)
+        and not disarmed_scope_valid
+        and not df_present
+    ):
         pending.append(STATUS_PENDING_DATAFLASH)
-    if annotation is None:
+    if annotation is None and not disarmed_scope_valid:
         pending.append(STATUS_PENDING_ANNOTATION)
     report["pending"] = pending
 
@@ -913,6 +1416,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--field-record", action="store_true")
     parser.add_argument("--expect-raw-bag", action="store_true")
     parser.add_argument("--expect-visual", action="store_true")
+    parser.add_argument(
+        "--disarmed-runtime-characterization",
+        action="store_true",
+        help=(
+            "Narrow #32 scope: physical annotation and DataFlash are not "
+            "applicable only when retained p032_final_mounted_vga "
+            "/mavros/state proves every sample inside the retained trial "
+            "interval connected and disarmed."
+        ),
+    )
     parser.add_argument("--runtime-only", action="store_true",
                         help="accept a complete runtime package while postflight work remains pending")
     parser.add_argument("--expect-operator-events", action="store_true")
@@ -947,6 +1460,7 @@ def main(argv: list[str] | None = None) -> int:
         expect_bcb_opportunities=args.expect_bcb_opportunities,
         expect_raw_bag=args.expect_raw_bag,
         expect_visual=args.expect_visual,
+        disarmed_runtime_characterization=args.disarmed_runtime_characterization,
     )
 
     out = args.out or (bag_dir / REPORT_NAME)

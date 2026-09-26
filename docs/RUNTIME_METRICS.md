@@ -233,14 +233,27 @@ available memory and core-voltage telemetry. Core voltage is not an electrical
 power measurement. Power is reported only if a reproducible electrical
 measurement method is available.
 
+The final mounted #32 run is a disarmed, stationary runtime/resource
+characterization rather than a flight-dynamics experiment. Its retained package
+uses the explicit `--disarmed-runtime-characterization` verifier scope. That
+scope is fail-closed: it is valid only for `p032_final_mounted_vga` when the
+retained MCAP contains `/mavros/state` and every state sample inside the
+retained `trial_start` to `trial_end` interval reports `connected=true` and
+`armed=false`. Startup and shutdown transitions outside that interval are
+retained for provenance but do not invalidate the #32 measurement. Only under
+that proven scope are
+physical-v2 annotation and native Pixhawk DataFlash marked not applicable.
+This exemption does not apply to #50/B-C-B field trials and does not relax
+runtime, controller, visual, transport, provenance or resource checks.
+
 Raw-image DDS transport cost remains a separate measured quantity under Issue
 #54 rather than a theoretical width-times-height-times-rate estimate. Hailo
 utilization/contention is reported only when directly observable from available
 Hailo tooling; otherwise it is explicitly unavailable rather than inferred from
 CPU or latency.
 
-The execution protocol is maintained in
-`docs/issues/p1-14-final-runtime-characterization.md`.
+The final mounted execution protocol is maintained in
+`docs/issues/p032-final-mounted-runbook.md`.
 
 ## Historical evidence
 

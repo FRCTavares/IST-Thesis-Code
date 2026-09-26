@@ -210,7 +210,8 @@ def test_current_documents_state_threshold_motion_and_claim_boundaries():
         "does **not** implement an independent velocity",
         "safety is **not\ntracker-independent**",
         "`1.300 s`",
-        "`0.100 s` May distractor handover",
+        "0.100 s",
+        "distractor handover",
     ):
         assert text in combined
 

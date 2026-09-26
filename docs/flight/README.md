@@ -1,5 +1,7 @@
 # Flight docs
 
+Last reviewed: 2026-09-26
+
 Friday #50 — follow only:
 
     docs/flight/field_day_runbook.md

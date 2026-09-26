@@ -592,6 +592,9 @@ verify_retained_evidence() {
     if [[ "${FIELD_MAVROS_RECORD:-0}" -eq 1 ]]; then
         pkg_args+=(--field-record)
     fi
+    if [[ "${BAG_TAG:-}" == "p032_final_mounted_vga" ]]; then
+        pkg_args+=(--disarmed-runtime-characterization)
+    fi
     if [[ "${FIELD_RAW_IMAGE_RECORD:-0}" -eq 1 ]]; then
         pkg_args+=(--expect-raw-bag)
     fi
