@@ -118,4 +118,3 @@ inherently read it. Its handling contract is:
 - [Flight-day operator sheet](../flight/README.md)
 - [Control contracts](../control/README.md)
 - Launcher: `tools/start_live_stack.sh`, `tools/lib/live_cli.sh`
-- M6 integration gate: `tools/live/run_issue55_m6_integration.sh`

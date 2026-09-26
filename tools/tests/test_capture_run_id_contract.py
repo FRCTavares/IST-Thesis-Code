@@ -88,71 +88,57 @@ if [[ "$TEST_BEHAVIOR" == failure ]]; then exit 7; fi
     return env
 
 
-def capture_paths(root, kind):
-    tag = "p027_h01_exit_reentry" if kind == "p027" else "p064_drone_small_target_r1"
-    base = root / "bags/source/held_out/2026-09/h01_exit_reentry" if kind == "p027" else root / "ram"
+def capture_paths(root):
+    tag = "p027_h01_exit_reentry"
+    base = root / "bags/source/held_out/2026-09/h01_exit_reentry"
     source = base / f"known_test_id__source__{tag}__image_raw_detections"
     final = root / "bags/source_video" / source.name
     return source, final
 
 
-def run_helper(kind, env):
-    name = "record_p027_heldout_sequence.sh" if kind == "p027" else "record_p064_drone_sequence.sh"
-    arg = "h01" if kind == "p027" else "small_target_r1"
-    return subprocess.run(["bash", str(ROOT / "tools/experiments" / name), arg],
-                          env=env, capture_output=True, text=True, check=False)
+def run_helper(env):
+    return subprocess.run(
+        [
+            "bash",
+            str(ROOT / "tools/experiments/record_p027_heldout_sequence.sh"),
+            "h01",
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
-@pytest.mark.parametrize("kind", ["p027", "p064"])
-def test_delayed_capture_uses_exact_id(tmp_path, kind):
-    result = run_helper(kind, fixture_tree(tmp_path))
+def test_delayed_capture_uses_exact_id(tmp_path):
+    result = run_helper(fixture_tree(tmp_path))
     assert result.returncode == 0, result.stdout + result.stderr
-    source, final = capture_paths(tmp_path, kind)
+    source, _ = capture_paths(tmp_path)
     assert (source / "fixture.mcap").read_text() == "synthetic payload"
     assert str(source) in result.stdout
-    if kind == "p064":
-        assert (final / "fixture.mcap").read_bytes() == (source / "fixture.mcap").read_bytes()
 
 
-@pytest.mark.parametrize("kind", ["p027", "p064"])
 @pytest.mark.parametrize("behavior", ["missing", "failure"])
-def test_failure_preserves_evidence(tmp_path, kind, behavior):
+def test_failure_preserves_evidence(tmp_path, behavior):
     env = fixture_tree(tmp_path, behavior)
-    source, final = capture_paths(tmp_path, kind)
+    source, final = capture_paths(tmp_path)
     neighbor = source.parent / "previous_capture"
     neighbor.mkdir(parents=True)
     sentinel = neighbor / "evidence"
     sentinel.write_bytes(b"never change")
-    result = run_helper(kind, env)
+
+    result = run_helper(env)
+
     assert result.returncode != 0
     assert sentinel.read_bytes() == b"never change"
-    produced = source.parent / "unexpected_capture" if behavior == "missing" else source
+
+    produced = (
+        source.parent / "unexpected_capture"
+        if behavior == "missing"
+        else source
+    )
     assert (produced / "fixture.mcap").read_text() == "synthetic payload"
     assert not final.exists()
+
     if behavior == "missing":
         assert str(source) in result.stdout
-
-
-def test_p064_existing_destination_is_not_overwritten(tmp_path):
-    env = fixture_tree(tmp_path)
-    source, final = capture_paths(tmp_path, "p064")
-    final.mkdir(parents=True)
-    (final / "evidence").write_bytes(b"original")
-    result = run_helper("p064", env)
-    assert result.returncode != 0
-    assert (final / "evidence").read_bytes() == b"original"
-    assert (source / "fixture.mcap").exists()
-
-
-def test_p064_copy_failure_retains_ram(tmp_path):
-    env = fixture_tree(tmp_path)
-    fake_bin = tmp_path / "bin"
-    fake_bin.mkdir()
-    cp = fake_bin / "cp"
-    cp.write_text("#!/usr/bin/env bash\nexit 9\n")
-    cp.chmod(0o755)
-    env["PATH"] = f"{fake_bin}:{env['PATH']}"
-    result = run_helper("p064", env)
-    source, _ = capture_paths(tmp_path, "p064")
-    assert result.returncode == 9
-    assert (source / "fixture.mcap").exists()

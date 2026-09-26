@@ -23,7 +23,6 @@ Representative entrypoints by category — not every file is listed.
 | `run_tim_component_ablation.py` | Ablation | Frozen seven-row component-ablation matrix (Issue #28). |
 | `run_tim_parameter_sensitivity.py`, `run_bytetrack_tim_sensitivity.py` | Sensitivity | Historical Issue #31 OFAT sweep; Issue #58b ByteTrack config screen. |
 | `record_p027_heldout_sequence.sh` | Capture (frozen) | Held-out source capture helper (Issue #27). |
-| `record_p064_drone_sequence.sh` | Capture | Representative small-target capture (Issue #64). |
 | `publish_annotated_track_target.py`, `publish_selected_track_target.py` | Publishers | Oracle-style and fixed-ID `/target` sources for controlled replays. |
 | `wait_for_track_selection.py`, `select_largest_track_id.py`, `write_tim_run_metadata.py`, `build_common_input_bag.py`, `images_to_camera_bag.py` | Support | Track selection, run-metadata provenance, input-bag construction. |
 | `run_p058_target_reid_replay.py` (frozen), `run_tim_resilience_development.py` | Issue-scoped | Issue #58 Target-ReID replay; Issue #90 resilience study. |

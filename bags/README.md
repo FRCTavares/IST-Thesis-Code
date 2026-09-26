@@ -54,11 +54,12 @@ using:
 
     tools/experiments/record_p027_heldout_sequence.sh
 
-For Issue #64, `record_p064_drone_sequence.sh` preserves the completed source
-capture under `bags/source_video/`.
+Historical Issue #64 source captures remain under `bags/source_video/`.
+The dedicated #64 capture helper was retired after the 22 September VGA retain
+decision; the retained source evidence itself is unchanged.
 
-Do not relocate these paths before their owning experiment/provenance contract
-is complete merely to make the directory tree look more uniform.
+Do not relocate protected evidence merely to make the directory tree look more
+uniform.
 
 ## Protection and deletion rules
 

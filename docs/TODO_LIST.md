@@ -17,6 +17,12 @@ physical flight-readiness/controller evidence, then #32 final mounted
 characterization after the #50 controller retain/reject decision. #39 still
 waits for the retained physical decisions and final runtime evidence.
 
+26 September repository maintenance: closed Issue #55 M6-only integration
+tooling and the retired Issue #64 live-matrix/capture helpers were removed from
+the maintained tool surface after dependency/provenance review. The #64
+appearance-replay/evaluation tooling and retained evidence remain unchanged;
+active #50 and #32 tooling is unaffected.
+
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules

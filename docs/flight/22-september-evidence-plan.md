@@ -71,22 +71,15 @@ Run four VGA cells, then four HD cells, in this exact order within each block:
 | 7 | hd | deepsort | off | detector,tracker |
 | 8 | hd | bytetrack | mars | detector,tracker,tim |
 
-The prepared one-command runner implements the same flags, 240 s resource
-measurement, 60 s warm-up, normal stack finalization, and evidence checks:
+A dedicated one-command #64 runtime-cell runner originally implemented the
+same flags, 240 s resource measurement, 60 s warm-up, normal stack finalization,
+and evidence checks. That issue-specific runner and matrix summarizer were
+retired after the 22 September negative retain decision. The historical matrix
+definition below is preserved as protocol provenance; Cells 2--4 and 6--8 were
+not subsequently represented as completed evidence.
 
-    tools/experiments/run_p064_cell.sh 1
-
-Use cell numbers `2` through `8` for the remaining rows, in order. It prints
-the exact RUN_ID, configuration and bag path, refuses an existing run, and
-prompts for a physical target track ID and brief description only in TIM
-cells. Select the intended person using the displayed track IDs and dashboard;
-keep scene and human motion comparable between matched VGA/HD runs. Raw cells
-proceed without selection.
-The runner retains invalid attempts, writes `p064_cell_result.json` in each
-bag or run log directory, and updates `reports/p064_matrix_summary.json` and
-`reports/p064_matrix_summary.md`. Its classification is a runtime-evidence
-gate, not a human identity judgment. The manual two-terminal procedure below
-remains available for diagnosis.
+The manual procedure below is likewise retained only as the historical
+22 September plan, not as an active deployment-selection workflow.
 
 For each cell, set the table values and a unique TAG such as p064_vga_tim_r1.
 In terminal A:
@@ -139,25 +132,18 @@ no TIM authority-latency claim. A camera fault can justify a declared repeat
 with the failed attempt retained; a gate failure is a result, not a reason to
 keep tuning HD.
 
-If HD fails, retain VGA. If HD passes, capture one representative native-HD
-small/distant source with a distractor, crossing or occlusion, exit and re-entry.
-This capture is no-control development evidence, not a held-out replacement:
+If HD had passed, the plan was to capture one representative native-HD
+small/distant source with a distractor, crossing or occlusion, exit and
+re-entry. That conditional continuation was never required because HD failed
+the frozen appearance-freshness gate and VGA was retained. The dedicated #64
+capture helper was therefore retired after closure.
 
-    tools/experiments/record_p064_drone_sequence.sh small_distant_r1
-
-The wrapper records native /camera/image_raw and /detections to RAM first and
-copies to bags/source_video/<RUN_ID>__source__p064_drone_small_distant_r1__image_raw_detections/.
-Check /dev/shm capacity before capture and keep both copies until hashes and
-message cadence are verified. Require the predeclared 3.0 s warm-up exclusion,
-exact image/detection timestamp pairing in the retained interval, and no
-retained gap of 67 ms or more. The physical target and small-scale interval
-must be established by human review before TIM output inspection. Freeze one
-ByteTrack candidate stream, then compare native 1280x720 appearance with
-INTER_AREA 640x360 complete-frame downsampling from the same frames. Use the
-existing deterministic tracker/TIM runners and physical-v2 evaluator; retain
-their manifests, source/variant/candidate digests, annotation, and both reports.
-The exact target ID and evaluation interval are human decisions, not values to
-guess in a shell command.
+The intended evidence contract is preserved here for provenance: a 3.0 s
+warm-up exclusion, exact image/detection timestamp pairing, no retained gap of
+67 ms or more, human-established physical target and small-scale interval, and
+a matched native-1280x720 versus INTER_AREA 640x360 appearance comparison from
+the same frames. These requirements describe the superseded conditional plan,
+not an outstanding experiment.
 
 Native HD must not increase wrong-person or absent-with-output duration beyond
 1e-6 s reconciliation tolerance. Then require at least 5 percentage points
