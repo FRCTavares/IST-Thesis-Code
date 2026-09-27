@@ -7,12 +7,14 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 LIVE = ROOT / "tools/live"
 LAUNCHER = (ROOT / "tools/start_live_stack.sh").read_text(encoding="utf-8")
 CLI = (ROOT / "tools/lib/live_cli.sh").read_text(encoding="utf-8")
 SHUTDOWN = (ROOT / "tools/lib/live_shutdown.sh").read_text(encoding="utf-8")
+STRUCTURED_QOS = ROOT / "tools/live/structured_record_qos_overrides.yaml"
 
 
 def _load(name: str):
@@ -126,6 +128,47 @@ def test_structured_visual_recorder_uses_fastwrite_and_512m_cache():
     assert '--storage-preset-profile fastwrite' in LAUNCHER
     assert '--max-cache-size 536870912' in LAUNCHER
 
+
+
+def test_structured_visual_recorder_uses_reliable_qos_contract():
+    qos = yaml.safe_load(STRUCTURED_QOS.read_text(encoding="utf-8"))
+
+    expected_topics = (
+        "/camera/fps",
+        "/detections",
+        "/tracks",
+        "/target",
+        "/target_memory_mars",
+        "/target_memory_mars/status",
+        "/timing_target",
+        "/timing",
+        "/timing_tracker",
+    )
+
+    assert set(qos) == set(expected_topics)
+
+    for topic in expected_topics:
+        assert qos[topic] == {
+            "history": "keep_last",
+            "depth": 256,
+            "reliability": "reliable",
+            "durability": "volatile",
+        }
+
+    assert (
+        'QOS_OVERRIDE_FILE="$THESIS_ROOT/tools/live/'
+        'structured_record_qos_overrides.yaml"'
+    ) in LAUNCHER
+    assert '--qos-profile-overrides-path "$QOS_OVERRIDE_FILE"' in LAUNCHER
+
+
+def test_structured_visual_recorder_log_level_is_formal_and_overridable():
+    assert (
+        'STRUCTURED_ROSBAG_LOG_LEVEL='
+        '"${THESIS_STRUCTURED_ROSBAG_LOG_LEVEL:-info}"'
+    ) in LAUNCHER
+    assert "debug|info|warn|error|fatal)" in LAUNCHER
+    assert '--log-level "$STRUCTURED_ROSBAG_LOG_LEVEL"' in LAUNCHER
 
 def test_visual_output_is_ready_before_provenance_capture():
     progress_path = 'VISUAL_PROGRESS_FILE="$RUN_DIR/visual_record_progress.txt"'

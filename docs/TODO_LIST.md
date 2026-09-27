@@ -47,6 +47,18 @@ retired after H01-H03 were finalized and frozen. Active `p027_handoff.py`,
 split validation, final architecture comparison and frozen #27/#58 authorities
 remain unchanged.
 
+27 September generic-tool audit: three redundant analysis helpers were retired
+after confirming that no retained result, provenance record or active procedure
+depends on them. Legacy bag lock/ID diagnostics are superseded by the
+physical-reference continuity/evaluation path; the old live percentile
+collector is superseded in final #32 work by the offline schema-v4 timing
+analyser plus dedicated #32 resource measurement; and the early standalone
+MARS similarity probe is no longer part of the retained evaluation workflow.
+The live timing invariant checker, TIM candidate-score extractor and clean TIM
+replay runner remain maintained. Generic structured-recorder QoS/log-level and
+integrated-camera shutdown regression coverage was restored after the retired
+#64 runtime test had previously carried those cross-cutting assertions.
+
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules

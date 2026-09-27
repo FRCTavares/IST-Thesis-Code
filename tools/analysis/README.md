@@ -1,6 +1,6 @@
 # tools/analysis
 
-Last reviewed: 2026-09-10
+Last reviewed: 2026-09-27
 
 ## Purpose
 
@@ -21,10 +21,10 @@ here are pinned by the prospective-freeze manifest.
 | `validate_tim_evaluation_split.py` | Gate | Validates the frozen split, hashes, people/clothing records and the final-release gate. |
 | `derive_presence_conditioned_metrics.py` | Reporting | Pure downstream presence-conditioned percentages from one physical-v2 report. |
 | `p058_target_reid_*.py` | Baseline | Simple post-MOT Target-ReID arm for Issue #58 (baseline/calibration/runtime/sweep). |
-| `analyse_bag_timing.py`, `check_live_timing_invariants.py`, `collect_live_timing_stats.py` | Timing | Offline stats/plots and live `/timing` invariant/percentile checks. Import `tools.timing_contract`. |
-| `analyse_bag_tracking.py`, `analyse_tracker_target_continuity.py`, `analyse_tim_*` | Diagnostics | Tracker continuity, state occupancy, ReID workload, resilience-evidence analysis. |
+| `analyse_bag_timing.py`, `check_live_timing_invariants.py` | Timing | Offline schema-v4 stats/plots and live `/timing` ordering/sanity checks. Import `tools.timing_contract`. |
+| `analyse_tracker_target_continuity.py`, `analyse_tim_*` | Diagnostics | Physical-reference tracker continuity, state occupancy, ReID workload, and resilience-evidence analysis. |
 | `summarize_control_diagnostics.py` | Diagnostics | Integrity summary of recorded `/control_ref/diagnostics` (Issue #74): mode occupancy, reason counts, recovery-attempt bookkeeping, and the hard check that recovery is never active with non-zero translation. Not the final #50/#74 analyser. |
-| `extract_tim_all_scores.py`, `extract_tim_mars_reid_similarity.py` | Diagnostics | Candidate `all_scores` and MARS/ReID similarity extraction to explain accept/reject decisions. |
+| `extract_tim_all_scores.py` | Diagnostics | Candidate `all_scores` extraction from TIM-MARS status messages to explain accept/reject decisions. |
 | `aggregate_*_report.py`, `plot_parameter_sensitivity.py`, `render_bbox_size_report_outputs.py` | Aggregation | Combine per-cell experiment output into reports, tables and figures. |
 | `external_tracking_dataset.py`, `external_target_initialization.py`, `resolve_external_candidate_stream.py`, `evaluate_external_frame_outcomes.py`, `run_external_sequence_report.py`, `build_oracle_candidate_bag.py` | External benchmark reproduction | Frozen Issue #30 adapters, target resolution, outcome scoring and oracle/report reproduction from the retained manifest and bags. |
 | `cvat_physical_reference.py` | Annotation bridge | Exact-frame CVAT ↔ physical-reference-v2 conversion (fail-closed). |

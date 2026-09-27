@@ -34,6 +34,9 @@ TOP_LEVEL_FILES = {
 }
 
 REMOVED_TOOLS = {
+    "analysis/analyse_bag_tracking.py",
+    "analysis/collect_live_timing_stats.py",
+    "analysis/extract_tim_mars_reid_similarity.py",
     "thesis_eval.sh",
     "thesis_live.sh",
 }
@@ -94,7 +97,6 @@ def test_removed_or_moved_tools_do_not_return():
 def test_entrypoint_and_library_modes_match_their_roles():
     for relative_path in (
         "analysis/analyse_bag_timing.py",
-        "analysis/analyse_bag_tracking.py",
         "bag/render_tim_comparison_video.py",
     ):
         assert is_executable(TOOLS_ROOT / relative_path)
@@ -107,7 +109,6 @@ def test_timing_entrypoints_bootstrap_the_repository_import_path():
     for relative_path in (
         "analysis/analyse_bag_timing.py",
         "analysis/check_live_timing_invariants.py",
-        "analysis/collect_live_timing_stats.py",
     ):
         source = (TOOLS_ROOT / relative_path).read_text(encoding="utf-8")
         assert "Path(__file__).resolve().parents[2]" in source
