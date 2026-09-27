@@ -39,6 +39,14 @@ shared `tools/experiments/sample_hardware_health.py` path because it is reused
 outside #44. Frozen #27/#58 authority paths and the shared #64 appearance
 contract were intentionally left in place.
 
+27 September repository maintenance: two superseded one-time helpers were
+retired after dependency review. Visual timing is now written directly by the
+maintained live provenance path, so the old visual-metadata attachment helper
+is no longer required. The Stage-7 held-out readiness finalizer was also
+retired after H01-H03 were finalized and frozen. Active `p027_handoff.py`,
+split validation, final architecture comparison and frozen #27/#58 authorities
+remain unchanged.
+
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules

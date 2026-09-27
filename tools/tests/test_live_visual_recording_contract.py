@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 import subprocess
 import sys
 from pathlib import Path
@@ -25,7 +24,6 @@ def _load(name: str):
 
 
 visual_verifier = _load("verify_visual_evidence")
-visual_metadata = _load("attach_visual_run_metadata")
 
 
 @pytest.fixture
@@ -221,26 +219,3 @@ def test_visual_verifier_rejects_missing_and_corrupt_file(tmp_path):
         bag, "test_run", recorder_alive_at_stop=True, finalization="graceful"
     )
     assert corrupt["passed"] is False
-
-
-def test_visual_start_attaches_only_to_matching_precomputed_run(tmp_path):
-    bag = tmp_path / "bag"
-    bag.mkdir()
-    visual = bag / "visual_run123.mkv"
-    visual.write_bytes(b"x")
-    precomputed = tmp_path / "precomputed.json"
-    precomputed.write_text(json.dumps({
-        "run_id": "run123",
-        "bag": {"out_dir": str(bag)},
-        "visual": {"file": str(visual), "started_at_utc": ""},
-    }))
-    result = visual_metadata.attach(
-        precomputed, bag / "run_metadata.json", "run123", visual,
-        "2026-09-14T20:00:00.000000000Z",
-    )
-    assert result["visual"]["started_at_utc"].startswith("2026-09-14")
-    with pytest.raises(ValueError, match="run ID mismatch"):
-        visual_metadata.attach(
-            precomputed, bag / "run_metadata.json", "another", visual,
-            "2026-09-14T20:00:00Z",
-        )

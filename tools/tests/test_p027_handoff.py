@@ -13,9 +13,13 @@ import test_cvat_physical_reference as CTEST
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools/analysis"))
-sys.path.insert(0, str(ROOT / "tools/experiments"))
 import p027_handoff as H
-import finalize_p027_heldout_entry as F
+
+SCENARIOS = {
+    "h01": "heldout_h01_exit_reentry",
+    "h02": "heldout_h02_crossing",
+    "h03": "heldout_h03_occlusion_distractor",
+}
 
 
 def ready_fixture(root, entry_id):
@@ -64,7 +68,7 @@ def stage7(root):
     split = V.manifest(root, final_ready=False)
     split["split_id"] = H.ACTIVE_SPLIT_ID
     entries = [ready_fixture(root, entry_id)[0]
-               for entry_id in F.SCENARIOS.values()]
+               for entry_id in SCENARIOS.values()]
     split["sets"]["final_held_out"] = entries
     contract_path = V.bind_final_comparison_contract(root, split)
     return split, json.loads(contract_path.read_text())
@@ -117,7 +121,7 @@ def test_ready_metadata_missing_fails_closed(tmp_path, field):
 
 @pytest.mark.parametrize("change", ["add", "omit", "redirect", "duplicate"])
 def test_source_inventory_cannot_miss_or_redirect_payload(tmp_path, change):
-    entry, _ = ready_fixture(tmp_path, F.SCENARIOS["h01"])
+    entry, _ = ready_fixture(tmp_path, SCENARIOS["h01"])
     if change == "add":
         (tmp_path / entry["source_path"] / "extra.mcap").write_bytes(b"extra")
     elif change == "omit":
@@ -130,57 +134,15 @@ def test_source_inventory_cannot_miss_or_redirect_payload(tmp_path, change):
         H.validate_ready_entry(entry, tmp_path, verify_hashes=True)
 
 
-def proposal_fixture(tmp_path):
-    ready, manifest = ready_fixture(tmp_path, F.SCENARIOS["h01"])
-    pending = copy.deepcopy(ready)
-    for key in ("source_path", "annotation_path", "annotation_sha256", "selected_target_id"):
-        pending.pop(key)
-    pending.update(status="reserved_pending_capture", files=[])
-    split = {"split_id": H.ACTIVE_SPLIT_ID, "sets": {"final_held_out": [pending]}}
-    kwargs = dict(root=tmp_path, scenario="h01", source_path=ready["source_path"],
-                  annotation_path=ready["annotation_path"], frame_manifest=manifest.name,
-                  metadata={key: ready[key] for key in H.METADATA_FIELDS})
-    return split, kwargs
-
-
-def test_proposal_is_non_mutating_and_requires_no_algorithm_output(tmp_path):
-    split, kwargs = proposal_fixture(tmp_path)
-    before = copy.deepcopy(split)
-    candidate, entry = F.propose(split, **kwargs)
-    assert split == before
-    assert candidate["sets"]["final_held_out"][0] == entry
-    assert entry["status"] == "ready"
-    assert entry["selected_target_id"] == 0
-    assert entry["expected_source_path"] == before["sets"]["final_held_out"][0]["expected_source_path"]
-    H.validate_ready_entry(entry, tmp_path, verify_hashes=True)
-
-
-def test_refinalization_refused(tmp_path):
-    split, kwargs = proposal_fixture(tmp_path)
-    candidate, _ = F.propose(split, **kwargs)
-    with pytest.raises(ValueError, match="pending"):
-        F.propose(candidate, **kwargs)
-
-
 @pytest.mark.parametrize("field,value", [
     ("people_group", "pending_capture"), ("overlap_record", ""),
     ("selected_target_id", 1), ("selected_target_id", False),
 ])
 def test_placeholder_and_tracker_identity_refused(tmp_path, field, value):
-    entry, _ = ready_fixture(tmp_path, F.SCENARIOS["h01"])
+    entry, _ = ready_fixture(tmp_path, SCENARIOS["h01"])
     entry[field] = value
     with pytest.raises(ValueError):
         H.validate_ready_entry(entry, tmp_path, verify_hashes=True)
-
-
-def test_manifest_from_another_source_refused(tmp_path):
-    split, kwargs = proposal_fixture(tmp_path)
-    path = tmp_path / kwargs["frame_manifest"]
-    manifest = json.loads(path.read_text())
-    manifest["source_bag_path"] = "bags/another_source"
-    path.write_text(json.dumps(manifest))
-    with pytest.raises(ValueError, match="source differs"):
-        F.propose(split, **kwargs)
 
 
 def test_pending_stage7_still_valid(tmp_path):
@@ -190,61 +152,11 @@ def test_pending_stage7_still_valid(tmp_path):
     assert V.validate(split, tmp_path, require_final_ready=True)
 
 
-def test_proposal_cli_refuses_existing_output_without_mutation(tmp_path, monkeypatch):
-    output = tmp_path / "existing"
-    output.mkdir()
-    sentinel = output / "evidence"
-    sentinel.write_bytes(b"preserve")
-    monkeypatch.setattr(sys, "argv", ["finalize", "--scenario", "h01",
-        "--source-path", "unused", "--annotation-path", "unused",
-        "--frame-manifest", "unused", "--metadata", "unused",
-        "--output-dir", str(output), "--confirm-human-reviewed"])
-    with pytest.raises(SystemExit):
-        F.main()
-    assert sentinel.read_bytes() == b"preserve"
-
-
-def test_proposal_cli_validates_candidate_and_emits_only_review_files(tmp_path, monkeypatch):
-    split, _ = stage7(tmp_path)
-    ready = split["sets"]["final_held_out"][0]
-    metadata_path = tmp_path / "operator_metadata.json"
-    metadata_path.write_text(json.dumps({key: ready[key] for key in H.METADATA_FIELDS}))
-    actual_source, actual_annotation = ready["source_path"], ready["annotation_path"]
-    ready.update(status="reserved_pending_capture", files=[])
-    for key in ("source_path", "annotation_path", "annotation_sha256", "selected_target_id"):
-        ready.pop(key)
-    split_path = tmp_path / "split.json"
-    split_path.write_text(json.dumps(split, indent=2) + "\n")
-    before = split_path.read_bytes()
-    output = tmp_path / "proposal"
-    monkeypatch.setattr(F, "ROOT", tmp_path)
-    monkeypatch.setattr(sys, "argv", ["finalize", "--scenario", "h01",
-        "--split", str(split_path), "--source-path", actual_source,
-        "--annotation-path", actual_annotation,
-        "--frame-manifest", F.SCENARIOS["h01"] + "_frames.json",
-        "--metadata", str(metadata_path), "--output-dir", str(output),
-        "--confirm-human-reviewed"])
-    F.main()
-    assert split_path.read_bytes() == before
-    candidate = json.loads((output / "split.proposed.json").read_text())
-    assert V.validate(candidate, tmp_path, verify_hashes=True, require_final_ready=True) == []
-    assert set(path.name for path in output.iterdir()) == {
-        "split.patch", "ready-entry.json", "split.proposed.json", "proposal-provenance.json"}
-    patch = (output / "split.patch").read_text()
-    assert "--- a/split.json" in patch and "+++ b/split.json" in patch
-    # Exercise the emitted patch in a synthetic repository only.
-    import subprocess
-    subprocess.run(["git", "apply", "--check", str(output / "split.patch")],
-                   cwd=tmp_path, check=True)
-    subprocess.run(["git", "apply", str(output / "split.patch")], cwd=tmp_path, check=True)
-    assert json.loads(split_path.read_text()) == candidate
-
-
 @pytest.mark.parametrize("scenario", ["h01", "h02", "h03"])
 def test_blank_cvat_templates_require_human_fields(tmp_path, scenario):
     path = ROOT / f"docs/data/preparation/p027/{scenario}_cvat_preparation.json"
     template = json.loads(path.read_text())
-    assert template["sequence_id"] == F.SCENARIOS[scenario]
+    assert template["sequence_id"] == SCENARIOS[scenario]
     assert "samples" not in template and "semantic_intervals" not in template
     assert "selected_target_id" not in template
     with pytest.raises(ValueError):
@@ -258,7 +170,7 @@ def test_blank_cvat_templates_require_human_fields(tmp_path, scenario):
 
 
 def test_source_with_algorithm_topics_is_refused_without_reading_payload(tmp_path):
-    entry, _ = ready_fixture(tmp_path, F.SCENARIOS["h01"])
+    entry, _ = ready_fixture(tmp_path, SCENARIOS["h01"])
     path = tmp_path / entry["source_path"] / "metadata.yaml"
     data = yaml.safe_load(path.read_text())
     data["rosbag2_bagfile_information"]["topics_with_message_count"].append(
