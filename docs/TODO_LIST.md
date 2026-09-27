@@ -23,6 +23,14 @@ the maintained tool surface after dependency/provenance review. The #64
 appearance-replay/evaluation tooling and retained evidence remain unchanged;
 active #50 and #32 tooling is unaffected.
 
+27 September repository maintenance: the closed Issue #30 benchmark-setup
+surface was reduced to its final reproduction contract. Dataset acquisition,
+cataloguing, annotation-only profiling, pre-outcome benchmark selection and
+one-time ROS 2 manifest-population utilities/tests were retired after confirming
+that the frozen manifest and final reproduction workflow do not invoke them.
+The retained P030 adapters, replay/report builders, oracle path, aggregators,
+bbox-size analysis, manifests and evidence are unchanged.
+
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules

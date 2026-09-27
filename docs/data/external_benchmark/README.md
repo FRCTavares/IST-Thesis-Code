@@ -52,36 +52,22 @@ development sequences plus `uav0000117_02622_v`, `uav0000137_00458_v`, and
 
 ## Split-level acquisition provenance
 
-`dataset_sources.json` schema version 2 records verified archives per split.
+`dataset_sources.json` schema version 2 retains the acquisition provenance used
+while constructing the benchmark, including archive filename, SHA-256, byte
+size, installed split path, verification date, sequence count, annotation count
+and image count. Large archives and extracted images remain ignored.
 
-A dataset may therefore be:
+The Issue #30 acquisition/cataloguing/profiling/selection utilities were
+development-time setup machinery. They were retired after the benchmark was
+frozen and the final evaluation closed. Their implementation and tests remain
+recoverable from Git history; `dataset_sources.json`, the frozen sequence
+manifest, the schema, retained source data and final evaluation tooling remain
+the reproducibility authority.
 
-- `not_downloaded` when no admissible split is verified;
-- `partially_verified` when only some admissible splits are verified;
-- `fully_verified` only when every admissible split is verified.
-
-Each acquisition record retains the archive filename, SHA-256, byte size,
-installed split path, verification date, sequence count, annotation count and
-image count. Large archives and extracted images remain ignored.
-
-The tracked verifier checks those fields against local storage without selecting
-a sequence, target identity or frame range.
-
-## Annotation-only sequence profiles
-
-`profile_external_tracking_dataset.py` creates deterministic profiles from the
-tracked source registry, local catalogue, normalized annotations and existing
-candidate-selection policy.
-
-Profiles contain sequence geometry, annotation counts, explicit exclusion
-reasons and physical-target candidate facts. They do not contain tracker IDs,
-TIM-MARS scores, recovery outcomes or benchmark selections.
-
-MOT17 and DanceTrack use the official frame rate in `seqinfo.ini`. A dataset
-without source timing metadata, including the installed VisDrone layout, must
-receive `--frame-rate` explicitly. Such an input is labelled
-`explicit_cli_unfrozen` and remains unfrozen until its provenance is resolved
-and the benchmark manifest is deliberately frozen.
+Historical profiling and selection were annotation-only and did not inspect
+tracker or TIM-MARS outcomes. MOT17 and DanceTrack timing came from their source
+metadata where available; VisDrone exported-frame cadence was not promoted to
+authoritative physical time.
 
 ## VisDrone timing provenance
 

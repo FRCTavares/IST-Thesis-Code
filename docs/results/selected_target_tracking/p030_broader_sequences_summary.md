@@ -26,15 +26,17 @@ settings, or ByteTrack settings.
   run in this evidence set (verified directly from each replay bag's own
   `tim_replay_metadata.json`); there is no configuration drift between
   sequences or between this issue's slices.
-- Regression validation: 71 focused tests across
+- At final promotion, the Issue #30 branch passed 71 focused tests plus
+  17 TIM-MARS runtime tests. The development-time acquisition, profiling,
+  benchmark-selection and manifest-population utilities/tests used during that
+  historical validation were later retired after the manifest and result were
+  frozen. Current retained reproduction coverage includes
   `tools/tests/test_aggregate_first_phase_report.py`,
-  `test_aggregate_oracle_report.py`, `test_select_first_phase_benchmark.py`,
-  `test_add_ros2_first_phase_sequences.py`,
+  `test_aggregate_oracle_report.py`,
   `test_run_external_sequence_report.py`,
   `test_resolve_external_candidate_stream.py`,
   `test_build_oracle_candidate_bag.py`, and
-  `test_bbox_size_stratified_report.py`, plus 17 tests in
-  `ros2_ws/src/thesis_bringup/test/test_tim_mars_runtime.py`.
+  `test_bbox_size_stratified_report.py`.
 - Full engineering history, forensic investigations, and every intermediate
   finding: `docs/issues/p1-12-broader-sequences.md` (29 slices).
 
