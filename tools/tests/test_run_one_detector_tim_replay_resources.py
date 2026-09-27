@@ -32,7 +32,7 @@ def test_existing_resource_collectors_are_reused():
         in content
     )
     assert (
-        "tools/experiments/sample_p044_hardware_health.py"
+        "tools/experiments/sample_hardware_health.py"
         in content
     )
 

@@ -7,7 +7,8 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNNER = (
     ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p044"
     / "run_p044_hailo_reid_load_matrix.sh"
 )
 
@@ -127,7 +128,8 @@ def test_accepted_pair_runner_is_not_replaced() -> None:
     pair_runner = (
         ROOT
         / "tools"
-        / "experiments"
+        / "issues"
+        / "p044"
         / "run_p044_hailo_reid_pair.sh"
     )
 

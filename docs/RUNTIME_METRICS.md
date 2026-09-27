@@ -183,7 +183,7 @@ Issue #32 accepts two distinct raw resource modes:
   `tools/experiments/sample_process_groups.py`. It samples Linux process-group
   membership and retains its historical schema.
 - Production live PID trees: `p032_live_process_tree_sample_v1` from
-  `tools/experiments/sample_p032_live_process_trees.py`. The production launcher
+  `tools/issues/p032/sample_p032_live_process_trees.py`. The production launcher
   tracks exec'd process roots in `pids.txt`; it does not allocate one process
   group per node. The live sampler pins each root by PID plus Linux start time
   and follows its current descendants without changing launcher ownership or
@@ -191,11 +191,11 @@ Issue #32 accepts two distinct raw resource modes:
   sample. Short-lived descendants that vanish between samples and children
   reparented away from the root cannot be recovered from `/proc` snapshots.
 
-Both resource streams can feed `tools/analysis/analyse_p032_final_resources.py`
+Both resource streams can feed `tools/issues/p032/analyse_p032_final_resources.py`
 with the unchanged `p044_hardware_health_sample_v1` hardware-health stream.
 The output schema is `p032_final_resource_analysis_v1`; the two resource
 collection methods must remain identified separately in provenance. Live runs
-use the default-off `tools/experiments/measure_p032_live_resources.py` attachment
+use the default-off `tools/issues/p032/measure_p032_live_resources.py` attachment
 against an existing `ros2_ws/log/live_stack/<run-id>/pids.txt`. It starts both
 samplers, records explicit monotonic measurement bounds, finalizes them, runs
 analysis and retains raw JSONL, sampler summaries, provenance and analysis under

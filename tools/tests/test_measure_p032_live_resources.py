@@ -10,7 +10,7 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODULE_PATH = ROOT / "tools/experiments/measure_p032_live_resources.py"
+MODULE_PATH = ROOT / "tools/issues/p032/measure_p032_live_resources.py"
 SPEC = importlib.util.spec_from_file_location("p032_live_measurement_under_test", MODULE_PATH)
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)

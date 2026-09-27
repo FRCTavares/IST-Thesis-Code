@@ -108,7 +108,7 @@ Do not pass `--control-mavros`, `--field-record`, `--record-raw`, or the active
 camera preflight stream probe. In a second shell, resolve the launched run's
 `ros2_ws/log/live_stack/latest` symlink to its exact run directory and attach:
 
-    python3 tools/experiments/measure_p032_live_resources.py \
+    python3 tools/issues/p032/measure_p032_live_resources.py \
       --run-dir ros2_ws/log/live_stack/<run-id> \
       --architecture-groups detector,tracker,tim \
       --duration-s 240 --warm-up-s 60

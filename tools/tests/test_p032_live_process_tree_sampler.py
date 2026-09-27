@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[2]
 MODULE_PATH = (
     ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p032"
     / "sample_p032_live_process_trees.py"
 )
 

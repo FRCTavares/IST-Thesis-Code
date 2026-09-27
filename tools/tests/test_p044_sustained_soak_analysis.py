@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 PATH = (
     ROOT
-    / "tools/experiments/analyze_p044_sustained_soak.py"
+    / "tools/issues/p044/analyze_p044_sustained_soak.py"
 )
 
 SPEC = importlib.util.spec_from_file_location(

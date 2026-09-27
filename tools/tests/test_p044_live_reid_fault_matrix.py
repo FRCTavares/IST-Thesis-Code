@@ -7,13 +7,15 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNNER = (
     ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p044"
     / "run_p044_live_reid_fault_matrix.sh"
 )
 COLLECTOR = (
     ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p044"
     / "collect_p044_transport_evidence.py"
 )
 

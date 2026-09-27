@@ -55,7 +55,7 @@ without claiming physical closed-loop flight behavior.
 For the final mounted Pi/camera/Hailo/controller system, start the production
 live stack with VGA 640x480 and retained #50/#74
 controller configuration. Attach
-`tools/experiments/measure_p032_live_resources.py` to that run's `pids.txt`
+`tools/issues/p032/measure_p032_live_resources.py` to that run's `pids.txt`
 without changing launcher ownership. The helper starts the PID-tree and
 hardware samplers, waits for first samples, records monotonic start/end bounds,
 then finalizes and analyses both streams. Its default group list is detector,
@@ -68,7 +68,7 @@ Use a nominal 20-minute active measurement after a 60-second warm-up, for a
 nominal 21-minute bounded run. After the retained live stack is healthy, attach
 from a second shell with:
 
-    python3 tools/experiments/measure_p032_live_resources.py \
+    python3 tools/issues/p032/measure_p032_live_resources.py \
       --run-dir ros2_ws/log/live_stack/<run-id> \
       --duration-s 1260 --warm-up-s 60
 

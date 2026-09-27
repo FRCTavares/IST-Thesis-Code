@@ -30,6 +30,9 @@ here are pinned by the prospective-freeze manifest.
 | `cvat_physical_reference.py` | Annotation bridge | Exact-frame CVAT ↔ physical-reference-v2 conversion (fail-closed). |
 | `templates/` | Assets | Blank annotation templates consumed by the evaluators and the UI. |
 
+
+Issue-specific analysis that is not a reusable analysis primitive lives under `tools/issues/`; active final runtime/resource characterization is under `tools/issues/p032/`, while frozen literal-path authorities such as the #58 Target-ReID modules remain in place.
+
 ## Rules
 
 - CLI evaluators are thin layers: they must import evaluation semantics from

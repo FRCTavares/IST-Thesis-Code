@@ -4,11 +4,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = (
     ROOT
-    / "tools/experiments/run_p044_sustained_reid_soak.sh"
+    / "tools/issues/p044/run_p044_sustained_reid_soak.sh"
 )
 ANALYSER = (
     ROOT
-    / "tools/experiments/analyze_p044_sustained_soak.py"
+    / "tools/issues/p044/analyze_p044_sustained_soak.py"
 )
 
 
@@ -61,7 +61,7 @@ def test_runner_collects_sustained_health_and_resources() -> None:
 
     required = (
         "sample_process_groups.py",
-        "sample_p044_hardware_health.py",
+        "sample_hardware_health.py",
         'DURATION_S="${5:-180.0}"',
         "--group \"perception=$perception_pgid\"",
         "--group \"tim=$tim_pgid\"",

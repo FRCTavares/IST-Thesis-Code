@@ -15,7 +15,7 @@ import time
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 PROCESS_TO_GROUP = {
     "perception_camera": "detector",
     "tracker": "tracker",
@@ -150,10 +150,10 @@ def measure(args: argparse.Namespace) -> int:
     resource_dir = output / "process_trees"
     hardware_dir = output / "hardware"
     commands = (
-        [sys.executable, str(ROOT / "tools/experiments/sample_p032_live_process_trees.py"),
+        [sys.executable, str(ROOT / "tools/issues/p032/sample_p032_live_process_trees.py"),
          "--output-dir", str(resource_dir), "--interval-s", str(args.interval_s),
          *(item for group, (pid, _) in roots.items() for item in ("--root", f"{group}={pid}"))],
-        [sys.executable, str(ROOT / "tools/experiments/sample_p044_hardware_health.py"),
+        [sys.executable, str(ROOT / "tools/experiments/sample_hardware_health.py"),
          "--output-dir", str(hardware_dir), "--interval-s", str(args.hardware_interval_s)],
     )
     provenance: dict[str, Any] = {
@@ -231,7 +231,7 @@ def measure(args: argparse.Namespace) -> int:
     if any(proc.returncode != 0 for proc in processes):
         raise ValueError("resource sampler failed; inspect sampler logs")
     command = [
-        sys.executable, str(ROOT / "tools/analysis/analyse_p032_final_resources.py"),
+        sys.executable, str(ROOT / "tools/issues/p032/analyse_p032_final_resources.py"),
         "--resources-samples", str(resource_dir / "samples.jsonl"),
         "--hardware-samples", str(hardware_dir / "samples.jsonl"),
         "--output-json", str(output / "analysis.json"),

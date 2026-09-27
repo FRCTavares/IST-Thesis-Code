@@ -163,8 +163,8 @@ HARDWARE_HEALTH_INTERVAL_S="${HARDWARE_HEALTH_INTERVAL_S:-1.0}"
 P032_RESOURCE_WARM_UP_S="${P032_RESOURCE_WARM_UP_S:-60.0}"
 
 RESOURCE_SAMPLER="$THESIS_ROOT/tools/experiments/sample_process_groups.py"
-HARDWARE_HEALTH_SAMPLER="$THESIS_ROOT/tools/experiments/sample_p044_hardware_health.py"
-P032_RESOURCE_ANALYSER="$THESIS_ROOT/tools/analysis/analyse_p032_final_resources.py"
+HARDWARE_HEALTH_SAMPLER="$THESIS_ROOT/tools/experiments/sample_hardware_health.py"
+P032_RESOURCE_ANALYSER="$THESIS_ROOT/tools/issues/p032/analyse_p032_final_resources.py"
 
 P032_ANALYSIS_START_MONOTONIC_NS=""
 P032_ANALYSIS_END_MONOTONIC_NS=""

@@ -8,7 +8,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 RUNNER = (
     REPO_ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p044"
     / "run_p044_guarded_cpu_policy_matrix.sh"
 )
 

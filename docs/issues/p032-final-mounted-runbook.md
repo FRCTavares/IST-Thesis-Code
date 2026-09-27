@@ -52,7 +52,7 @@ The aircraft itself remains disarmed and stationary.
 ## 3. Measure
 
     RUN_DIR="ros2_ws/log/live_stack/$RUN_ID"
-    python3 tools/experiments/measure_p032_live_resources.py --run-dir "$RUN_DIR" --architecture-groups detector,tracker,tim,controller --duration-s 1260 --warm-up-s 60
+    python3 tools/issues/p032/measure_p032_live_resources.py --run-dir "$RUN_DIR" --architecture-groups detector,tracker,tim,controller --duration-s 1260 --warm-up-s 60
 
 Require the full 60 s warm-up + 1200 s active interval. Do not shorten the
 measurement by selecting only active bursts or by removing stalls afterward.

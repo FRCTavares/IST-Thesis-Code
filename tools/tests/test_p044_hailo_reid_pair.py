@@ -10,13 +10,15 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNNER = (
     ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p044"
     / "run_p044_hailo_reid_pair.sh"
 )
 COLLECTOR = (
     ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p044"
     / "collect_p044_transport_evidence.py"
 )
 

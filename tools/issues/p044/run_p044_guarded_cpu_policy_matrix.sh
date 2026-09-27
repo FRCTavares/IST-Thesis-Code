@@ -16,7 +16,7 @@ set +u
 set -o pipefail
 
 THESIS_ROOT="$(
-  cd "$(dirname "${BASH_SOURCE[0]}")/../.." &&
+  cd "$(dirname "${BASH_SOURCE[0]}")/../../.." &&
     pwd
 )" || exit 1
 
@@ -275,7 +275,7 @@ payload = {
         "appearance_compute_min_interval_ms": 250.0,
     },
     "runner": (
-        "tools/experiments/"
+        "tools/issues/p044/"
         "run_p044_guarded_cpu_policy_matrix.sh"
     ),
     "wrapper": str(wrapper.relative_to(root)),

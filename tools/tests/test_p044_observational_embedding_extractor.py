@@ -15,7 +15,8 @@ ROOT = Path(__file__).resolve().parents[2]
 EXTRACTOR = (
     ROOT
     / "tools"
-    / "analysis"
+    / "issues"
+    / "p044"
     / "extract_p044_observational_embeddings.py"
 )
 

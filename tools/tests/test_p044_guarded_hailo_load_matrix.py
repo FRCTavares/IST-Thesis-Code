@@ -9,21 +9,24 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNNER = (
     ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p044"
     / "run_p044_guarded_hailo_load_matrix.sh"
 )
 
 ACCEPTED_RUNNER = (
     ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p044"
     / "run_p044_hailo_reid_load_matrix.sh"
 )
 
 COLLECTOR = (
     ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p044"
     / "collect_p044_transport_evidence.py"
 )
 

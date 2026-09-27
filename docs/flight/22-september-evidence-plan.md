@@ -97,7 +97,7 @@ publication, copy the displayed RUN_ID from terminal A:
     export RUN_ID=REPLACE_WITH_DISPLAYED_RUN_ID
     RUN_DIR="$(readlink -f "ros2_ws/log/live_stack/$RUN_ID")"
     if test -f "$RUN_DIR/pids.txt"; then
-        python3 tools/experiments/measure_p032_live_resources.py --run-dir "$RUN_DIR" --architecture-groups detector,tracker,tim --duration-s 240 --warm-up-s 60
+        python3 tools/issues/p032/measure_p032_live_resources.py --run-dir "$RUN_DIR" --architecture-groups detector,tracker,tim --duration-s 240 --warm-up-s 60
     else
         echo "Exact live run not found; do not attach the sampler" >&2
     fi
@@ -311,7 +311,7 @@ publication:
     export RUN_ID=REPLACE_WITH_DISPLAYED_RUN_ID
     RUN_DIR="$(readlink -f "ros2_ws/log/live_stack/$RUN_ID")"
     if test -f "$RUN_DIR/pids.txt"; then
-        python3 tools/experiments/measure_p032_live_resources.py --run-dir "$RUN_DIR" --architecture-groups detector,tracker,tim,controller --duration-s 1260 --warm-up-s 60
+        python3 tools/issues/p032/measure_p032_live_resources.py --run-dir "$RUN_DIR" --architecture-groups detector,tracker,tim,controller --duration-s 1260 --warm-up-s 60
     else
         echo "Exact live run not found; do not attach the sampler" >&2
     fi

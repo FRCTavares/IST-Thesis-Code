@@ -16,6 +16,7 @@ DOMAIN_DIRECTORIES = {
     "experiments",
     "flight",
     "host",
+    "issues",
     "lib",
     "live",
     "mac",

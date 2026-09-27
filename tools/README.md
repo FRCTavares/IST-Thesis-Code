@@ -2,6 +2,10 @@
 
 Last reviewed: 2026-09-17
 
+## Issue-scoped tooling
+
+Issue-specific retained or active experiment suites live under `tools/issues/` when their paths are not part of a frozen evidence contract. Generic helpers stay in their functional directories. Frozen literal-path authorities such as the #27/#58 prospective-evaluation tooling are intentionally not relocated solely for cosmetic consistency.
+
 ## Purpose
 
 Executable tooling for the thesis system — building the workspace, running the
@@ -29,7 +33,8 @@ compatibility interface.
 | Path | Role |
 | --- | --- |
 | `analysis/` | Offline and live analysis: selected-target and bbox correctness, event summaries, timing checks, TIM diagnostics, physical-reference tooling. |
-| `experiments/` | TIM-MARS and tracker replay runners, capture helpers, controlled target publishers. Flat by design. |
+| `experiments/` | Reusable TIM-MARS/tracker replay infrastructure, capture helpers, publishers and shared measurement utilities. |
+| `issues/` | Active or retained issue-specific suites whose literal paths are not frozen evidence interfaces. |
 | `bag/` | Standalone bag → overlay/comparison video renderers. |
 | `catalogue/` | Builds the TIM evaluation evidence catalogue with pinned hashes. |
 | `camera/` | Camera V4L2 mode probing (hardware diagnostics). |

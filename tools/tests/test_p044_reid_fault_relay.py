@@ -18,7 +18,8 @@ ROOT = Path(__file__).resolve().parents[2]
 RELAY_PATH = (
     ROOT
     / "tools"
-    / "experiments"
+    / "issues"
+    / "p044"
     / "p044_reid_fault_relay.py"
 )
 

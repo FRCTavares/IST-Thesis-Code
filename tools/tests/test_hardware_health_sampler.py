@@ -10,11 +10,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 PATH = (
     ROOT
-    / "tools/experiments/sample_p044_hardware_health.py"
+    / "tools/experiments/sample_hardware_health.py"
 )
 
 SPEC = importlib.util.spec_from_file_location(
-    "p044_hardware_health_under_test",
+    "hardware_health_under_test",
     PATH,
 )
 assert SPEC is not None

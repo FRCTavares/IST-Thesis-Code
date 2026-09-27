@@ -24,7 +24,7 @@ if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
 fi
 
 THESIS_ROOT="$(
-  cd "$(dirname "${BASH_SOURCE[0]}")/../.." &&
+  cd "$(dirname "${BASH_SOURCE[0]}")/../../.." &&
     pwd
 )"
 
@@ -51,7 +51,7 @@ REID_HEF="$THESIS_ROOT/models/reid/repvgg_a0_person_reid_512.hef"
 MARS_MODEL="$THESIS_ROOT/models/reid/mars-small128.pb"
 TIM_CONFIG="$THESIS_ROOT/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
 
-COLLECTOR="$THESIS_ROOT/tools/experiments/collect_p044_transport_evidence.py"
+COLLECTOR="$THESIS_ROOT/tools/issues/p044/collect_p044_transport_evidence.py"
 RESOURCE_SAMPLER="$THESIS_ROOT/tools/experiments/sample_process_groups.py"
 
 HEAD="$(git rev-parse HEAD)"

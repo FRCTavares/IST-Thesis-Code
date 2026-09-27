@@ -31,6 +31,14 @@ that the frozen manifest and final reproduction workflow do not invoke them.
 The retained P030 adapters, replay/report builders, oracle path, aggregators,
 bbox-size analysis, manifests and evidence are unchanged.
 
+27 September tooling organization: non-frozen issue-specific tooling is now
+separated from reusable infrastructure. Active #32 resource-characterization
+tools live under `tools/issues/p032/`; closed #44 reproduction tooling lives
+under `tools/issues/p044/`. The hardware-health sampler was promoted to the
+shared `tools/experiments/sample_hardware_health.py` path because it is reused
+outside #44. Frozen #27/#58 authority paths and the shared #64 appearance
+contract were intentionally left in place.
+
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules

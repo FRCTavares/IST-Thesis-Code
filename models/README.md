@@ -97,7 +97,7 @@ model-switch catalogue is not exercised by the frozen runtime. The eleven
 - Loaded by `perception_pipeline_node` (`reid_hef_path`, default
   `models/reid/repvgg_a0_person_reid_512.hef`, `reid_enabled` default false).
 - Used by: the Issue #44 asynchronous Hailo appearance-offload measurements
-  (`tools/experiments/run_p044_*`). Not part of the canonical algorithm — the
+  (`tools/issues/p044/run_p044_*`). Not part of the canonical algorithm — the
   cross-process transport (`appearance_async_reid_enabled`) defaults to false and
   CPU MARS remains authoritative for TIM-MARS decisions.
 - Canonical: no. Tracked: no (`models/reid/*.hef`). Present only on the Pi.

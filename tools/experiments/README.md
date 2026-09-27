@@ -26,14 +26,17 @@ Representative entrypoints by category — not every file is listed.
 | `publish_annotated_track_target.py`, `publish_selected_track_target.py` | Publishers | Oracle-style and fixed-ID `/target` sources for controlled replays. |
 | `wait_for_track_selection.py`, `select_largest_track_id.py`, `write_tim_run_metadata.py`, `build_common_input_bag.py`, `images_to_camera_bag.py` | Support | Track selection, run-metadata provenance, input-bag construction. |
 | `run_p058_target_reid_replay.py` (frozen), `run_tim_resilience_development.py` | Issue-scoped | Issue #58 Target-ReID replay; Issue #90 resilience study. |
-| `run_p044_*.sh`, `sample_p044_*.py`, `collect_p044_transport_evidence.py`, `analyze_p044_sustained_soak.py`, `p044_*_relay.py` | Historical | Issue #44 (closed) Hailo ReID-offload evidence, retained for reproduction. |
-| `p064_appearance_contract.py`, `prepare_p064_video_source.py`, `prepare_p064_appearance_variants.py`, `measure_p054_raw_image_transport_cost.sh`, `capture_external_detector_tracker.sh`, `profile_tim_resilience_service.py`, `sample_process_groups.py` | Issue-scoped | Per-issue capture, measurement and profiling helpers. |
+| `../issues/p044/` | Historical issue suite | Issue #44 (closed) Hailo ReID-offload evidence retained for reproduction. |
+| `p064_appearance_contract.py`, `prepare_p064_video_source.py`, `prepare_p064_appearance_variants.py`, `measure_p054_raw_image_transport_cost.sh`, `capture_external_detector_tracker.sh`, `profile_tim_resilience_service.py`, `sample_process_groups.py`, `sample_hardware_health.py` | Specialized/support | Retained specialized experiment contracts plus shared resource and hardware measurement helpers. |
 
 ## Rules
 
-- The flat structure is intentional — do not add `current/`, `historical/` or
-  other subdirectories; frozen manifests and reproduction docs pin these paths.
-- Paths pinned in the prospective-freeze JSON must not move before H01–H03.
+- Keep reusable experiment/replay infrastructure in this directory.
+  Issue-specific suites whose literal paths are not frozen belong under
+  `tools/issues/`.
+- Paths embedded in frozen manifests, prospective evidence contracts or
+  retained reproduction authorities are compatibility interfaces and must not
+  be relocated merely for cosmetic consistency.
 - Full-pipeline runners regenerate tracker IDs; use them only when annotations
   and evaluation tolerate regenerated IDs.
 - Prefer explicit output roots for final runs so bags and reports trace back to

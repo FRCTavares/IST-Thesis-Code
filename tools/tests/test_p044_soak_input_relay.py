@@ -9,7 +9,7 @@ from thesis_msgs.msg import Track2DArray
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PATH = ROOT / "tools/experiments/p044_soak_input_relay.py"
+PATH = ROOT / "tools/issues/p044/p044_soak_input_relay.py"
 
 SPEC = importlib.util.spec_from_file_location(
     "p044_soak_input_relay_under_test",

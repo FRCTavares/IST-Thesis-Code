@@ -4,7 +4,7 @@ set +e
 set +u
 
 THESIS_ROOT="$(
-  cd "$(dirname "${BASH_SOURCE[0]}")/../.." &&
+  cd "$(dirname "${BASH_SOURCE[0]}")/../../.." &&
   pwd
 )"
 
@@ -39,11 +39,11 @@ REID_HEF="$THESIS_ROOT/models/reid/repvgg_a0_person_reid_512.hef"
 MARS_MODEL="$THESIS_ROOT/models/reid/mars-small128.pb"
 TIM_CONFIG="$THESIS_ROOT/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml"
 
-COLLECTOR="$THESIS_ROOT/tools/experiments/collect_p044_transport_evidence.py"
-INPUT_RELAY="$THESIS_ROOT/tools/experiments/p044_soak_input_relay.py"
+COLLECTOR="$THESIS_ROOT/tools/issues/p044/collect_p044_transport_evidence.py"
+INPUT_RELAY="$THESIS_ROOT/tools/issues/p044/p044_soak_input_relay.py"
 RESOURCE_SAMPLER="$THESIS_ROOT/tools/experiments/sample_process_groups.py"
-HEALTH_SAMPLER="$THESIS_ROOT/tools/experiments/sample_p044_hardware_health.py"
-ANALYSER="$THESIS_ROOT/tools/experiments/analyze_p044_sustained_soak.py"
+HEALTH_SAMPLER="$THESIS_ROOT/tools/experiments/sample_hardware_health.py"
+ANALYSER="$THESIS_ROOT/tools/issues/p044/analyze_p044_sustained_soak.py"
 
 SOURCE_IMAGE_TOPIC="/p044/soak/source/image"
 SOURCE_TRACKS_TOPIC="/p044/soak/source/tracks"
@@ -85,7 +85,7 @@ section() {
 
 matching_runtime_pids() {
   pgrep -f \
-    '/thesis_bringup/perception_pipeline_node|/thesis_bringup/target_memory_mars_node|collect_p044_transport_evidence.py|p044_soak_input_relay.py|sample_process_groups.py|sample_p044_hardware_health.py|ros2 bag play|ros2 bag record' \
+    '/thesis_bringup/perception_pipeline_node|/thesis_bringup/target_memory_mars_node|collect_p044_transport_evidence.py|p044_soak_input_relay.py|sample_process_groups.py|sample_hardware_health.py|ros2 bag play|ros2 bag record' \
     2>/dev/null |
     awk -v self="$$" '$1 != self {print}' ||
     true

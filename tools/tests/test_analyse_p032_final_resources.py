@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[2]
 MODULE_PATH = (
     ROOT
     / "tools"
-    / "analysis"
+    / "issues"
+    / "p032"
     / "analyse_p032_final_resources.py"
 )
 
