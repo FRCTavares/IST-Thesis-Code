@@ -5,12 +5,14 @@ references for ground validation and optional MAVROS publication. It includes
 target freshness checks, saturation, slew limiting, and fail-safe zero output.
 """
 
+import signal
 from typing import Optional
 
 from geometry_msgs.msg import TwistStamped
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.signals import SignalHandlerOptions
 from rclpy.qos import (
     HistoryPolicy,
     QoSProfile,
@@ -1455,10 +1457,32 @@ class ControlRefNode(Node):
 
 
 def main(args=None) -> None:
-    rclpy.init(args=args)
+    # Own SIGINT/SIGTERM instead of allowing rclpy's default handlers to
+    # invalidate the context immediately.  A signal only requests shutdown;
+    # any in-progress publish_pair() therefore finishes before the loop exits.
+    # The final safe-zero command + matching diagnostic can then be emitted
+    # while the ROS context and publishers are still valid.
+    rclpy.init(
+        args=args,
+        signal_handler_options=SignalHandlerOptions.NO,
+    )
     node = ControlRefNode()
+    shutdown_requested = False
+
+    def request_shutdown(_signum, _frame) -> None:
+        nonlocal shutdown_requested
+        shutdown_requested = True
+
+    previous_handlers = {
+        signal.SIGINT: signal.getsignal(signal.SIGINT),
+        signal.SIGTERM: signal.getsignal(signal.SIGTERM),
+    }
+    signal.signal(signal.SIGINT, request_shutdown)
+    signal.signal(signal.SIGTERM, request_shutdown)
+
     try:
-        rclpy.spin(node)
+        while rclpy.ok() and not shutdown_requested:
+            rclpy.spin_once(node, timeout_sec=0.1)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
@@ -1478,6 +1502,12 @@ def main(args=None) -> None:
             rclpy.try_shutdown()
         except Exception:
             pass
+
+        for signum, previous_handler in previous_handlers.items():
+            try:
+                signal.signal(signum, previous_handler)
+            except Exception:
+                pass
 
 
 if __name__ == '__main__':

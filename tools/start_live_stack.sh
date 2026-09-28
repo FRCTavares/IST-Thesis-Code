@@ -1784,7 +1784,11 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
         exit 1
     fi
 
-    for _ in {1..20}; do
+    # rosbag2 may create its output directory after process startup. Do not
+    # silently continue without metadata/visual evidence: allow a bounded
+    # startup window, then fail closed if the exact retained directory is
+    # still absent.
+    for _ in {1..100}; do
         if [[ -d "$VIDEO_BAG_OUT_DIR" ]]; then
             break
         fi
@@ -1896,7 +1900,9 @@ if [[ "$ENABLE_ROSBAG" -eq 1 ]]; then
             write_live_run_provenance video "$VIDEO_BAG_OUT_DIR/run_metadata.json" "${VIDEO_BAG_TOPICS[@]}"
         fi
     else
-        echo "[warn] video bag output directory not visible yet; metadata was not written"
+        echo "[error] video bag output directory was not created within 10 s: $VIDEO_BAG_OUT_DIR"
+        stop_stack
+        exit 1
     fi
 fi
 

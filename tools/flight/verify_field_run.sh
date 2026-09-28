@@ -7,7 +7,7 @@ MODE="${3:-}"
 SCOPE="${4:-}"
 
 if [[ -z "$RUN_ID" || -z "$TAG" ]]; then
-    echo "Usage: $0 RUN_ID TAG [--control-trial] [--disarmed-runtime-characterization]"
+    echo "Usage: $0 RUN_ID TAG [--control-trial|--ground-qualification] [--disarmed-runtime-characterization|--ground-qualification]"
     exit 2
 fi
 
@@ -28,8 +28,12 @@ ARGS=(
     --expect-operator-events
 )
 
+GROUND_QUALIFICATION=0
+
 if [[ "$MODE" == "--control-trial" ]]; then
     ARGS+=(--control-trial)
+elif [[ "$MODE" == "--ground-qualification" ]]; then
+    GROUND_QUALIFICATION=1
 elif [[ -n "$MODE" ]]; then
     echo "FAIL: unsupported verification mode: $MODE"
     exit 2
@@ -41,9 +45,27 @@ if [[ "$SCOPE" == "--disarmed-runtime-characterization" ]]; then
         exit 2
     fi
     ARGS+=(--disarmed-runtime-characterization)
+elif [[ "$SCOPE" == "--ground-qualification" ]]; then
+    if [[ "$MODE" != "--control-trial" ]]; then
+        echo "FAIL: ground qualification in argument 4 requires --control-trial"
+        exit 2
+    fi
+    GROUND_QUALIFICATION=1
 elif [[ -n "$SCOPE" ]]; then
     echo "FAIL: unsupported verification scope: $SCOPE"
     exit 2
+fi
+
+if [[ "$GROUND_QUALIFICATION" -eq 1 ]]; then
+    case "$TAG" in
+        ground_compute_vga|ground_process_loss_vga)
+            ARGS+=(--runtime-only)
+            ;;
+        *)
+            echo "FAIL: --ground-qualification is restricted to ground_compute_vga or ground_process_loss_vga"
+            exit 2
+            ;;
+    esac
 fi
 
 case "$TAG" in

@@ -129,6 +129,28 @@ def test_structured_visual_recorder_uses_fastwrite_and_512m_cache():
     assert '--max-cache-size 536870912' in LAUNCHER
 
 
+def test_video_bag_directory_readiness_is_bounded_and_fail_closed():
+    recorder = LAUNCHER.index("start_ros_bg rosbag ros2 bag record")
+    end = LAUNCHER.index(
+        'if [[ "$ENABLE_DATASET_BAG" -eq 1 ]]; then',
+        recorder,
+    )
+    block = LAUNCHER[recorder:end]
+
+    assert "for _ in {1..100}; do" in block
+    assert '[[ -d "$VIDEO_BAG_OUT_DIR" ]]' in block
+    assert (
+        "video bag output directory was not created within 10 s"
+        in block
+    )
+    assert "stop_stack" in block
+    assert "exit 1" in block
+    assert (
+        "video bag output directory not visible yet; metadata was not written"
+        not in block
+    )
+
+
 
 def test_structured_visual_recorder_uses_reliable_qos_contract():
     qos = yaml.safe_load(STRUCTURED_QOS.read_text(encoding="utf-8"))

@@ -70,10 +70,15 @@ python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --verdict 
 ```
 Then `stop`:
 ```bash
-tools/flight/verify_field_run.sh "$RUN_ID" "$TAG"
+tools/flight/verify_field_run.sh "$RUN_ID" "$TAG" --ground-qualification
 printf -v BAG "bags/live_camera/%s__video__%s" "$RUN_ID" "$TAG"
 python3 tools/analysis/summarize_control_diagnostics.py "$BAG"
 ```
+`--ground-qualification` requires complete runtime evidence but permits the
+ground-only package to remain explicitly pending for DataFlash and physical
+postflight annotation. It is restricted to the two fixed ground tags above and
+does not relax final B-C-B verification.
+
 STOP on ambiguity.
 ## Restrained control + process loss
 Props off/restrained. **Do not arm.**
@@ -105,7 +110,7 @@ python3 tools/live/operator_event.py trial_verdict --run-id "$RUN_ID" --verdict 
 ```
 Then `stop`:
 ```bash
-tools/flight/verify_field_run.sh "$RUN_ID" "$TAG" --control-trial
+tools/flight/verify_field_run.sh "$RUN_ID" "$TAG" --control-trial --ground-qualification
 ```
 PASS: fail-closed FCU response + effective takeover. STOP otherwise.
 ## Pilot GO

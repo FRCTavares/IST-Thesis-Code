@@ -39,3 +39,38 @@ def test_pairing_requires_same_stamp_count_and_values():
     report = mod.pairing(left, [(10, 1.0, 2.0), (20, 3.0, 5.0)])
     assert report["passed"] is False
     assert report["paired_value_mismatch_count"] == 1
+
+
+
+def test_pairing_allows_only_one_leading_zero_recorder_join_sample():
+    paired = [(20, 1.0, 2.0), (30, 3.0, 4.0)]
+
+    report = mod.pairing(
+        [(10, 0.0, 0.0), *paired],
+        paired,
+        allow_leading_zero_truncation=True,
+    )
+    assert report["passed"] is True
+    assert report["leading_left_ignored_count"] == 1
+    assert report["left_unpaired_count"] == 0
+
+    nonzero = mod.pairing(
+        [(10, 0.1, 0.0), *paired],
+        paired,
+        allow_leading_zero_truncation=True,
+    )
+    assert nonzero["passed"] is False
+
+    repeated = mod.pairing(
+        [(5, 0.0, 0.0), (10, 0.0, 0.0), *paired],
+        paired,
+        allow_leading_zero_truncation=True,
+    )
+    assert repeated["passed"] is False
+
+    trailing = mod.pairing(
+        [*paired, (40, 0.0, 0.0)],
+        paired,
+        allow_leading_zero_truncation=True,
+    )
+    assert trailing["passed"] is False

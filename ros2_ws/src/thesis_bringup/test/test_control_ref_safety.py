@@ -281,7 +281,8 @@ def test_nonpositive_image_dimensions_are_rejected(dimension):
 
 
 def test_node_shutdown_path_requests_a_final_zero_command():
-    tree = ast.parse(CONTROL_SOURCE.read_text(encoding="utf-8"))
+    source = CONTROL_SOURCE.read_text(encoding="utf-8")
+    tree = ast.parse(source)
     main = next(
         node for node in tree.body
         if isinstance(node, ast.FunctionDef) and node.name == "main"
@@ -296,3 +297,23 @@ def test_node_shutdown_path_requests_a_final_zero_command():
         for node in finalbody
         for call in ast.walk(node)
     )
+
+    main_source = source[source.index("def main(args=None) -> None:"):]
+    assert "signal_handler_options=SignalHandlerOptions.NO" in main_source
+    assert "signal.signal(signal.SIGINT, request_shutdown)" in main_source
+    assert "signal.signal(signal.SIGTERM, request_shutdown)" in main_source
+    assert "while rclpy.ok() and not shutdown_requested:" in main_source
+    assert "rclpy.spin_once(node, timeout_sec=0.1)" in main_source
+
+    handler = main_source[
+        main_source.index("def request_shutdown"):
+        main_source.index("previous_handlers")
+    ]
+    assert "shutdown_requested = True" in handler
+    assert "rclpy.shutdown" not in handler
+    assert "rclpy.try_shutdown" not in handler
+
+    final_zero = main_source.index("node.publish_zero()")
+    destroy = main_source.index("node.destroy_node()")
+    shutdown = main_source.index("rclpy.try_shutdown()")
+    assert final_zero < destroy < shutdown

@@ -165,6 +165,16 @@ def test_flight_day_sheet_stays_compact_and_fail_closed():
     ) in text
     assert "--acknowledge-yaw-recovery-candidate" in text
     assert "tools/flight/verify_field_run.sh" in text
+    assert (
+        'verify_field_run.sh "$RUN_ID" "$TAG" --ground-qualification'
+        in text
+    )
+    assert (
+        'verify_field_run.sh "$RUN_ID" "$TAG" --control-trial '
+        '--ground-qualification'
+        in text
+    )
+    assert "does not relax final B-C-B verification" in text
     assert '--expect-bcb-opportunities "$TAG"' in text
     assert text.count(
         'target_selected --run-id "$RUN_ID" --trial-id "$TAG"'

@@ -60,16 +60,77 @@ def _twist(msg: Any) -> tuple[float, ...]:
             float(msg.twist.angular.y), float(msg.twist.angular.z))
 
 
-def pairing(left: list[tuple], right: list[tuple], *, numeric_tolerance: float = 0.0) -> dict[str, Any]:
-    left_stamps = Counter(item[0] for item in left)
-    right_stamps = Counter(item[0] for item in right)
+def pairing(
+    left: list[tuple],
+    right: list[tuple],
+    *,
+    numeric_tolerance: float = 0.0,
+    allow_leading_zero_truncation: bool = False,
+) -> dict[str, Any]:
+    """Compare stamped streams, optionally excluding one recorder-join zero.
+
+    rosbag subscriptions are established independently. For controller
+    evidence, one stream can therefore retain one initial all-zero sample
+    before the other stream has joined. Only that single leading zero before
+    the first shared header stamp may be excluded. Non-zero, repeated,
+    mid-stream and trailing asymmetries remain strict failures.
+    """
+    left_eval = list(left)
+    right_eval = list(right)
+    leading_left_ignored = 0
+    leading_right_ignored = 0
+
+    common_stamps = (
+        set(item[0] for item in left_eval)
+        & set(item[0] for item in right_eval)
+    )
+    first_common_stamp = min(common_stamps) if common_stamps else None
+
+    def _ignorable_prefix(prefix: list[tuple]) -> bool:
+        if len(prefix) != 1:
+            return False
+        return all(
+            math.isclose(
+                float(value),
+                0.0,
+                rel_tol=0.0,
+                abs_tol=numeric_tolerance,
+            )
+            for value in prefix[0][1:]
+        )
+
+    if allow_leading_zero_truncation and first_common_stamp is not None:
+        left_prefix = [
+            item for item in left_eval
+            if item[0] < first_common_stamp
+        ]
+        right_prefix = [
+            item for item in right_eval
+            if item[0] < first_common_stamp
+        ]
+
+        if _ignorable_prefix(left_prefix):
+            leading_left_ignored = 1
+            left_eval = [
+                item for item in left_eval
+                if item[0] >= first_common_stamp
+            ]
+        if _ignorable_prefix(right_prefix):
+            leading_right_ignored = 1
+            right_eval = [
+                item for item in right_eval
+                if item[0] >= first_common_stamp
+            ]
+
+    left_stamps = Counter(item[0] for item in left_eval)
+    right_stamps = Counter(item[0] for item in right_eval)
     left_only = sum((left_stamps - right_stamps).values())
     right_only = sum((right_stamps - left_stamps).values())
     left_by_stamp: dict[int, list[tuple]] = defaultdict(list)
     right_by_stamp: dict[int, list[tuple]] = defaultdict(list)
-    for item in left:
+    for item in left_eval:
         left_by_stamp[item[0]].append(item[1:])
-    for item in right:
+    for item in right_eval:
         right_by_stamp[item[0]].append(item[1:])
     value_mismatch = 0
     for stamp in left_stamps.keys() & right_stamps.keys():
@@ -83,8 +144,13 @@ def pairing(left: list[tuple], right: list[tuple], *, numeric_tolerance: float =
             ):
                 value_mismatch += 1
     return {
-        "left_count": len(left), "right_count": len(right),
-        "left_unpaired_count": left_only, "right_unpaired_count": right_only,
+        "left_count": len(left),
+        "right_count": len(right),
+        "leading_left_ignored_count": leading_left_ignored,
+        "leading_right_ignored_count": leading_right_ignored,
+        "first_common_stamp_ns": first_common_stamp,
+        "left_unpaired_count": left_only,
+        "right_unpaired_count": right_only,
         "paired_value_mismatch_count": value_mismatch,
         "passed": left_only == right_only == value_mismatch == 0,
     }
@@ -131,9 +197,17 @@ def assess_bag(bag: Path, required: list[str], nonzero: list[str]) -> dict[str, 
     mirror = "/mavros/setpoint_velocity/cmd_vel"
     if command in types or diagnostic in types:
         comparisons["command_diagnostic"] = pairing(
-            pairs[command], pairs[diagnostic], numeric_tolerance=1e-6)
+            pairs[command],
+            pairs[diagnostic],
+            numeric_tolerance=1e-6,
+            allow_leading_zero_truncation=True,
+        )
     if mirror in types:
-        comparisons["command_mavros_mirror"] = pairing(pairs[command], pairs[mirror])
+        comparisons["command_mavros_mirror"] = pairing(
+            pairs[command],
+            pairs[mirror],
+            allow_leading_zero_truncation=True,
+        )
     return {
         "schema_version": 1,
         "bag_dir": str(bag),

@@ -1376,3 +1376,17 @@ def test_field_run_wrapper_activates_strict_contract_for_only_final_bcb_tags():
 
     assert 'ARGS+=(--expect-bcb-opportunities "$TAG")' in wrapper
     assert "final B-C-B tag requires --control-trial" in wrapper
+
+
+def test_field_run_wrapper_scopes_ground_qualification_to_fixed_ground_tags():
+    wrapper = (
+        REPO_ROOT / "tools/flight/verify_field_run.sh"
+    ).read_text(encoding="utf-8")
+
+    assert "--ground-qualification" in wrapper
+    assert "ground_compute_vga|ground_process_loss_vga" in wrapper
+    assert "ARGS+=(--runtime-only)" in wrapper
+    assert (
+        "--ground-qualification is restricted to ground_compute_vga or "
+        "ground_process_loss_vga"
+    ) in wrapper
