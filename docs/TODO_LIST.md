@@ -59,6 +59,18 @@ replay runner remain maintained. Generic structured-recorder QoS/log-level and
 integrated-camera shutdown regression coverage was restored after the retired
 #64 runtime test had previously carried those cross-cutting assertions.
 
+27 September repository-wide cleanup audit complete: the remaining tracked
+tooling, ROS 2 source, root layout, model artifacts and promoted report packages
+were reviewed after the targeted cleanup waves. No further tracked deletion is
+justified without weakening current runtime support, scientific reproduction,
+frozen provenance or recovery workflows. All 20 tracked report directories are
+registered in `reports/PROMOTED.md`; promoted evidence packages remain deliberate
+exceptions to the generated-report ignore policy. Model tracking also remains
+unchanged under the existing provenance/storage decision: `yolov8s.hef` and
+`mars-small128.pb` are canonical, while non-canonical tracked HEFs remain in
+place pending provenance recovery and any separately planned artifact migration.
+The repository root is clean of runtime `log/` and `hailort.log` noise.
+
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules
