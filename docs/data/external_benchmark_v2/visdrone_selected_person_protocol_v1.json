@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "p125_visdrone_selected_person_v1",
+  "status": "draft_not_frozen",
+  "issue": 125,
+  "created_date": "2026-09-29",
+  "baseline_commit": "45eefd4548bedb5ecad957a080fe6328f218d3b3",
+  "policy": {
+    "algorithm_outcome_access_allowed_before_freeze": false,
+    "external_outcome_tuning_allowed": false,
+    "tim_mars_parameter_changes_allowed": false,
+    "target_reid_threshold_changes_allowed": false,
+    "tracker_config_tuning_from_visdrone_allowed": false,
+    "episode_selection_from_algorithm_outcomes_allowed": false,
+    "gt_only_corpus_audit_allowed": true,
+    "h01_h03_evidence_must_remain_untouched": true,
+    "p030_frozen_evidence_must_remain_untouched": true,
+    "p058_frozen_evidence_must_remain_untouched": true
+  },
+  "dataset": {
+    "id": "visdrone_mot",
+    "version": "VisDrone2019-MOT",
+    "admissible_splits": [
+      "train",
+      "val"
+    ],
+    "test_splits_admissible": false,
+    "person_class_id": 1,
+    "people_group_class_id": 2,
+    "source_frame_index_base": 1,
+    "timing_policy": "frame_index_only_until_exported_sequence_cadence_is_resolved",
+    "official_annotation_reference": "https://github.com/VisDrone/VisDrone2018-MOT-toolkit",
+    "annotation_semantics": {
+      "truncation": {
+        "0": "none",
+        "1": "partial_1_to_50_percent"
+      },
+      "occlusion": {
+        "0": "none",
+        "1": "partial_1_to_50_percent",
+        "2": "heavy_50_to_100_percent"
+      }
+    },
+    "current_acquisitions": {
+      "val": {
+        "status": "verified_existing_p030_source",
+        "archive_filename": "VisDrone2019-MOT-val.zip",
+        "archive_sha256": "e53571990dfc79229e0a8ae10264bc4fa604a027c44b06e3a097417e4fa55705",
+        "archive_size_bytes": 1602397759,
+        "local_relative_path": "data/datasets/external/visdrone_mot/val",
+        "sequence_count": 7,
+        "annotation_count": 7,
+        "registered_image_count": 2846,
+        "verified_date": "2026-08-06",
+        "frame_domain_reconciliation_required": true
+      },
+      "train": {
+        "status": "not_yet_acquired_or_verified_for_p125",
+        "local_relative_path": "data/datasets/external/visdrone_mot/train",
+        "archive_sha256": null,
+        "sequence_count": null,
+        "annotation_count": null,
+        "image_count": null
+      }
+    }
+  },
+  "gt_only_eligibility_draft": {
+    "minimum_selection_bbox_height_px": 20,
+    "minimum_target_present_frames_from_selection": 30,
+    "maximum_selection_truncation": 1,
+    "maximum_selection_occlusion": 1,
+    "initialization_window_frames": 10,
+    "selection_frame_rule": "earliest_frame_passing_all_gt_only_eligibility_gates",
+    "all_eligible_identities_become_episode_candidates": true,
+    "may_change_after_gt_only_audit_before_freeze": true
+  },
+  "initialization_draft": {
+    "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",
+    "minimum_match_iou": 0.5,
+    "minimum_match_margin": 0.1,
+    "confirmation_frames": 2,
+    "per_tracker_resolution_required": true,
+    "physical_gt_identity_exposed_to_runtime": false
+  },
+  "architectures_planned": [
+    {
+      "id": "sort_raw",
+      "config": "ros2_ws/src/thesis_bringup/config/tracker_sort.yaml"
+    },
+    {
+      "id": "bytetrack_raw",
+      "config": "ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml"
+    },
+    {
+      "id": "ocsort_raw",
+      "config": "ros2_ws/src/thesis_bringup/config/tracker_ocsort.yaml"
+    },
+    {
+      "id": "deepsort_raw",
+      "config": "ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml"
+    },
+    {
+      "id": "target_reid_0_90",
+      "threshold": 0.9,
+      "candidate_stream": "bytetrack"
+    },
+    {
+      "id": "bytetrack_tim_mars",
+      "config": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+      "candidate_stream": "bytetrack"
+    }
+  ],
+  "evaluation_draft": {
+    "target_present_outcomes": [
+      "correct",
+      "wrong_person",
+      "identity_unresolved",
+      "lost_suppressed"
+    ],
+    "reference_gap_policy": "reference_unavailable_or_target_not_annotated_not_primary_absence",
+    "target_iou_threshold": 0.3,
+    "other_person_iou_threshold": 0.3,
+    "primary_time_unit": "frames",
+    "duration_seconds_reporting_allowed": false
+  },
+  "statistics_draft": {
+    "cluster_unit": "source_sequence",
+    "primary_paired_population": "bytetrack_initialisable_episodes",
+    "primary_effect": "wrong_fraction_tim_minus_bytetrack",
+    "co_primary_tradeoff_effect": "correct_fraction_tim_minus_bytetrack",
+    "cluster_bootstrap_replicates": 10000,
+    "confidence_level": 0.95,
+    "formal_test": "two_sided_sequence_level_paired_sign_flip_or_randomisation",
+    "random_seed": null,
+    "random_seed_required_before_freeze": true
+  },
+  "freeze_gate": {
+    "required_before_architecture_outcomes": [
+      "train_and_val_source_provenance_reconciled",
+      "validation_image_annotation_frame_domain_reconciled",
+      "gt_only_corpus_audit_completed",
+      "episode_manifest_generated_from_gt_only_rules",
+      "eligibility_rules_frozen",
+      "model_and_config_sha256_recorded",
+      "evaluator_semantics_frozen",
+      "statistics_seed_and_hypotheses_frozen",
+      "protocol_status_changed_to_frozen_in_dedicated_commit"
+    ]
+  }
+}

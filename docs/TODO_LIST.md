@@ -4,9 +4,9 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
-Open executable issues: **7**.
+Open executable issues: **8**.
 
-Last reconciled with GitHub: **24 September 2026**.
+Last reconciled with GitHub: **29 September 2026**.
 
 **Issue #64 closed on 22 September 2026 with VGA retained.** HD was not
 promoted after the primary matched TIM-MARS comparison exceeded the frozen
@@ -71,7 +71,7 @@ unchanged under the existing provenance/storage decision: `yolov8s.hef` and
 place pending provenance recovery and any separately planned artifact migration.
 The repository root is clean of runtime `log/` and `hailort.log` noise.
 
-The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
+29 September Issue #125 opened for the final broad public VisDrone selected-person benchmark. The first implementation tranche is deliberately pre-result only: acquire/reconcile public data, audit ground truth, freeze all-eligible target episodes, and lock evaluation/statistical semantics before any tracker, Target-ReID or TIM-MARS outcome is inspected. This work must not delay #50 field execution.\n\nThe authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules
 
@@ -162,12 +162,18 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
    - Integrate explicit limitations through #41 and final figures/evidence tables from the dissertation plan. The former #42 checklist is closed as subsumed by this issue and #39.
    - Do not invent conclusions for evidence that is still pending.
 
-3. [ ] [#41 — Write explicit thesis limitations from final evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/41) — EVIDENCE DEPENDENT
+3. [ ] [#125 — Add large-scale public VisDrone selected-person benchmark and multi-architecture statistical evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/125) — ACTIVE PRE-RESULT PROTOCOL
+   - Add a broad public UAV selected-person evidence class addressing the ROBOT reviewer's public-dataset, broader-tracker and statistical-analysis limitations without retuning TIM-MARS.
+   - Current allowed work is GT/data-contract only: verify train + validation provenance, reconcile frame domains, audit all pedestrian identities and freeze deterministic episode eligibility. Do not inspect detector/tracker/Target-ReID/TIM-MARS aggregate outcomes before the protocol freeze commit.
+   - Planned frozen arms are SORT raw, ByteTrack raw, OC-SORT raw, DeepSORT raw, Target-ReID 0.90, and ByteTrack + canonical TIM-MARS using one shared YOLOv8s detector cache.
+   - Keep this evidence separate from H01-H03, #50 closed-loop flight and #32 sustained runtime. #125 must not delay #50 and must be reconciled into #67/#39 only after promoted evidence exists.
+
+4. [ ] [#41 — Write explicit thesis limitations from final evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/41) — EVIDENCE DEPENDENT
    - Maintain explicit limitations covering small/poor-quality crops, tracker dependence, appearance-domain gap, finite held-out scope, calibration dependence, target absence, long-gap recovery limits, embedded resource constraints and the absence of formal safety guarantees.
    - #27 capture/annotation evidence remains frozen; #58 corrected source-time quantitative evidence is integrated in the Mac report with its repair qualification. The #64 retained-resolution decision is complete; final wording still depends on #50 and #32.
    - Report negative results and rejected mechanisms rather than hiding them.
 
-4. [ ] [#68 — Complete thesis review, formatting, and final submission by 31 October 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/68)
+5. [ ] [#68 — Complete thesis review, formatting, and final submission by 31 October 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/68)
    - Begins in earnest once the complete supervisor-ready draft exists.
    - Own supervisor revisions, proofreading, current IST/MEEC formatting compliance, abstracts/keywords, extended abstract, required declarations, final reproducibility checks, release archival and submission.
    - Do not reopen completed algorithm work unless a genuine correctness or evidence defect is found.
