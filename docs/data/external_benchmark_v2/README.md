@@ -29,9 +29,21 @@ The current Issue #30 source registry already records:
 - exported sequence cadence as unresolved, so the existing benchmark time
   policy is frame-index only.
 
-Issue #125 must reconcile the validation image and annotation frame domains
-rather than silently assuming those counts are identical. The training split is
-admissible but still has to be acquired and verified before the final freeze.
+The 29 September GT-only Pi audit reconciled the validation frame domain. The
+verified archive contains seven sequences and 2,846 images, but the earlier
+local extraction omitted the 978-image 4K sequence
+`uav0000268_05773_v`. It was restored from that same SHA-256-verified archive.
+The seven extracted sequences now have 2,846 image frames and 2,846 annotated
+frames, with zero image-only or annotation-only frames.
+
+The draft eligibility rules yield 194 candidate episodes from 225 annotated
+pedestrian identities: 23 lack 30 target-present frames after their earliest
+eligible selection frame, and 8 have no eligible selection frame. The local
+GT-only audit is
+`artifacts/reports/p125_gt_only/visdrone_val_gt_only_audit.json` (SHA-256
+`f1f1e2f8318f6379aa6fde092807002b2df6bf1f4811fae1600a478d636be09a`).
+These are validation-only draft counts, not frozen benchmark episodes. The
+training split still has to be acquired and verified before the final freeze.
 
 ## Official VisDrone annotation semantics used by the draft
 

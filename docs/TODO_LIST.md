@@ -71,7 +71,11 @@ unchanged under the existing provenance/storage decision: `yolov8s.hef` and
 place pending provenance recovery and any separately planned artifact migration.
 The repository root is clean of runtime `log/` and `hailort.log` noise.
 
-29 September Issue #125 opened for the final broad public VisDrone selected-person benchmark. The first implementation tranche is deliberately pre-result only: acquire/reconcile public data, audit ground truth, freeze all-eligible target episodes, and lock evaluation/statistical semantics before any tracker, Target-ReID or TIM-MARS outcome is inspected. This work must not delay #50 field execution.\n\nThe authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
+29 September Issue #125 opened for the final broad public VisDrone selected-person benchmark. The first implementation tranche is deliberately pre-result only: acquire/reconcile public data, audit ground truth, freeze all-eligible target episodes, and lock evaluation/statistical semantics before any tracker, Target-ReID or TIM-MARS outcome is inspected. This work must not delay #50 field execution.
+
+The Pi GT-only validation audit restored the previously omitted 978-image 4K sequence from the verified archive. All seven validation sequences now reconcile at 2,846 image and annotation frames, with no frame-domain gaps. Draft eligibility yields 194 candidate episodes from 225 pedestrian identities (23 too short after selection; 8 with no eligible selection frame). Train acquisition and the combined GT-only manifest remain pending, so the protocol stays `draft_not_frozen`.
+
+The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules
 
@@ -164,7 +168,7 @@ The repository root is clean of runtime `log/` and `hailort.log` noise.
 
 3. [ ] [#125 — Add large-scale public VisDrone selected-person benchmark and multi-architecture statistical evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/125) — ACTIVE PRE-RESULT PROTOCOL
    - Add a broad public UAV selected-person evidence class addressing the ROBOT reviewer's public-dataset, broader-tracker and statistical-analysis limitations without retuning TIM-MARS.
-   - Current allowed work is GT/data-contract only: verify train + validation provenance, reconcile frame domains, audit all pedestrian identities and freeze deterministic episode eligibility. Do not inspect detector/tracker/Target-ReID/TIM-MARS aggregate outcomes before the protocol freeze commit.
+   - Current allowed work is GT/data-contract only: validation provenance and frame domains are reconciled; acquire/verify train, audit its ground truth, then freeze the combined deterministic episode manifest. Do not inspect detector/tracker/Target-ReID/TIM-MARS aggregate outcomes before the protocol freeze commit.
    - Planned frozen arms are SORT raw, ByteTrack raw, OC-SORT raw, DeepSORT raw, Target-ReID 0.90, and ByteTrack + canonical TIM-MARS using one shared YOLOv8s detector cache.
    - Keep this evidence separate from H01-H03, #50 closed-loop flight and #32 sustained runtime. #125 must not delay #50 and must be reconciled into #67/#39 only after promoted evidence exists.
 

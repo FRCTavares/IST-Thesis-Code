@@ -52,7 +52,22 @@
         "annotation_count": 7,
         "registered_image_count": 2846,
         "verified_date": "2026-08-06",
-        "frame_domain_reconciliation_required": true
+        "local_extraction_reconciled_date": "2026-09-29",
+        "local_extraction_note": "The existing P030 extraction omitted the 978-image 4K sequence uav0000268_05773_v. Restored it from the SHA-256-verified local archive; all seven validation sequences are now extracted.",
+        "frame_domain_reconciliation_required": false,
+        "gt_only_audit": {
+          "status": "validation_only_complete_draft_eligibility",
+          "report_relative_path": "artifacts/reports/p125_gt_only/visdrone_val_gt_only_audit.json",
+          "report_sha256": "f1f1e2f8318f6379aa6fde092807002b2df6bf1f4811fae1600a478d636be09a",
+          "image_frames": 2846,
+          "annotation_frames": 2846,
+          "image_only_frames": 0,
+          "annotation_only_frames": 0,
+          "pedestrian_identities": 225,
+          "draft_eligible_episode_candidates": 194,
+          "excluded_insufficient_target_present_frames": 23,
+          "excluded_no_eligible_selection_frame": 8
+        }
       },
       "train": {
         "status": "not_yet_acquired_or_verified_for_p125",
