@@ -70,12 +70,33 @@
         }
       },
       "train": {
-        "status": "not_yet_acquired_or_verified_for_p125",
+        "status": "verified_cross_checked_public_mirror",
+        "official_dataset_reference": "https://github.com/VisDrone/VisDrone-Dataset",
+        "official_download_url": "https://drive.google.com/file/d/1-qX2d-P1Xr64ke6nTdlm33om1VxCUTSh/view?usp=sharing",
+        "official_download_limitation": "Google Drive reported too many recent downloads on 2026-09-29; a public mirror archive was acquired and cross-checked against a second mirror SHA-256 record.",
+        "source_url": "https://huggingface.co/datasets/vanthanh/VisDrone2019-MOT/resolve/main/VisDrone2019-MOT-train.zip",
+        "independent_mirror_metadata_url": "https://huggingface.co/api/datasets/myn0908/visdrone-dataset/tree/main?recursive=true&expand=true",
+        "mirror_cross_check": "Both public mirrors publish the same train SHA-256; both publish the val SHA-256 matching the independently verified P030 local validation archive.",
+        "download_date": "2026-09-29",
+        "archive_filename": "VisDrone2019-MOT-train.zip",
+        "archive_size_bytes": 8080572990,
+        "archive_sha256": "566d08fb53fff4e539f386f5a408ccf17854fd53814dc756bdede2de1dbb4014",
         "local_relative_path": "data/datasets/external/visdrone_mot/train",
-        "archive_sha256": null,
-        "sequence_count": null,
-        "annotation_count": null,
-        "image_count": null
+        "sequence_count": 56,
+        "annotation_count": 56,
+        "image_count": 24201,
+        "annotation_frame_count": 24198,
+        "image_frames_without_gt_rows": {
+          "uav0000281_00460_v": [23, 24, 25]
+        },
+        "gt_only_audit": {
+          "report_relative_path": "artifacts/reports/p125_gt_only/visdrone_train_gt_only_audit.json",
+          "report_sha256": "07c5adceee8c877011486f8c5f6856dc7b8bdf20b79e8ed3c653e1b7f65aeb0e",
+          "pedestrian_identities": 1822,
+          "draft_eligible_episode_candidates": 1361,
+          "excluded_insufficient_target_present_frames": 411,
+          "excluded_no_eligible_selection_frame": 50
+        }
       }
     }
   },
@@ -88,6 +109,15 @@
     "selection_frame_rule": "earliest_frame_passing_all_gt_only_eligibility_gates",
     "all_eligible_identities_become_episode_candidates": true,
     "may_change_after_gt_only_audit_before_freeze": true
+  },
+  "gt_only_candidate_manifest": {
+    "status": "complete_but_not_frozen",
+    "relative_path": "docs/data/external_benchmark_v2/visdrone_gt_only_episode_manifest_v1.json",
+    "sha256": "34ea378dc1b692a5f62e249a2181daa7d1dde59caf0501187fb3c4b00dcb9941",
+    "sequence_count": 63,
+    "pedestrian_identity_count": 2047,
+    "draft_candidate_episode_count": 1555,
+    "image_frames_without_gt_rows_policy": "source images with no GT rows are reference-unavailable for target-present scoring; never infer physical target absence"
   },
   "initialization_draft": {
     "candidate_match_rule": "frozen_target_unique_iou_confirmation_v1",

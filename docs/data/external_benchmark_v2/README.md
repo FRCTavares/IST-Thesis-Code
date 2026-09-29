@@ -42,8 +42,33 @@ eligible selection frame, and 8 have no eligible selection frame. The local
 GT-only audit is
 `artifacts/reports/p125_gt_only/visdrone_val_gt_only_audit.json` (SHA-256
 `f1f1e2f8318f6379aa6fde092807002b2df6bf1f4811fae1600a478d636be09a`).
-These are validation-only draft counts, not frozen benchmark episodes. The
-training split still has to be acquired and verified before the final freeze.
+The training archive was acquired on the Pi from a public mirror after the
+official Google Drive link returned a download-limit message. Two independent
+mirrors publish the same train SHA-256
+`566d08fb53fff4e539f386f5a408ccf17854fd53814dc756bdede2de1dbb4014`;
+their validation archive hash also matches the existing independently verified
+Issue #30 archive. The downloaded 8,080,572,990-byte train ZIP passed a full
+SHA-256 and ZIP integrity check. Its extraction contains 56 sequences, 56
+annotation files and 24,201 images.
+
+The train GT-only audit has 24,198 frames with annotation rows. Images 23–25
+in `uav0000281_00460_v` have no GT rows; all annotation frames have source
+images. Those three frames are explicitly reference-unavailable for
+target-present scoring, never evidence of physical target absence. The draft
+rules yield 1,361 candidate episodes from 1,822 pedestrian identities (411
+lack enough remaining target-present frames and 50 have no eligible selection
+frame). The ignored train audit SHA-256 is
+`07c5adceee8c877011486f8c5f6856dc7b8bdf20b79e8ed3c653e1b7f65aeb0e`.
+
+The tracked combined `visdrone_gt_only_episode_manifest_v1.json` has 63
+sequence source inventories with annotation hashes and frame ranges, 2,047
+pedestrian identities and 1,555 draft candidate episodes.
+Its SHA-256 is
+`34ea378dc1b692a5f62e249a2181daa7d1dde59caf0501187fb3c4b00dcb9941`.
+These are GT-only candidates, not frozen benchmark episodes. The protocol
+remains **draft_not_frozen** while selection, initialization, evaluator,
+model/config hashes and statistical details are finalized before any
+architecture outcome access.
 
 ## Official VisDrone annotation semantics used by the draft
 
@@ -63,14 +88,22 @@ outcomes and may be used during the pre-result audit.
 
 ## GT-only audit
 
-The only executable benchmark step allowed before freeze is:
+The GT-only preparation commands are:
 
     thesis_env/bin/python tools/issues/p125/audit_visdrone_selected_person_corpus.py \
       --split val \
       --out artifacts/reports/p125_gt_only/visdrone_val_gt_only_audit.json
 
-After the official train split is acquired and verified, run the same command
-with `--split train`.
+    thesis_env/bin/python tools/issues/p125/audit_visdrone_selected_person_corpus.py \
+      --split train \
+      --out artifacts/reports/p125_gt_only/visdrone_train_gt_only_audit.json
+
+    thesis_env/bin/python tools/issues/p125/build_visdrone_gt_only_episode_manifest.py \
+      --train-audit artifacts/reports/p125_gt_only/visdrone_train_gt_only_audit.json \
+      --val-audit artifacts/reports/p125_gt_only/visdrone_val_gt_only_audit.json \
+      --train-archive data/datasets/external/visdrone_mot/_archives/VisDrone2019-MOT-train.zip \
+      --val-archive data/datasets/external/visdrone_mot/_archives/VisDrone2019-MOT-val.zip \
+      --out docs/data/external_benchmark_v2/visdrone_gt_only_episode_manifest_v1.json
 
 The audit:
 
@@ -83,7 +116,10 @@ The audit:
   previous performance reports.
 
 Generated audit JSON belongs under ignored `artifacts/reports/` until the
-freeze decision is reviewed.
+freeze decision is reviewed. The compact combined candidate manifest is
+tracked for review. The manifest builder rejects missing source images,
+unreconciled identities, mismatched split rules and duplicate episodes; it
+records image frames with no GT rows as reference-unavailable.
 
 ## Draft eligibility
 

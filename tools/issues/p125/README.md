@@ -16,6 +16,11 @@ Current pre-result tooling:
   frame-domain audit. It may read source images and official VisDrone ground
   truth only. It must not read detector, tracker, Target-ReID, TIM-MARS, or
   previous result artifacts.
+- `build_visdrone_gt_only_episode_manifest.py` combines the train and
+  validation audits only after reconciled frame-domain, eligibility-config,
+  identity, and episode-count reconciliation. It hashes both source archives
+  and both audit files, and writes a deterministic `draft_not_frozen` manifest.
+  It never reads architecture outcomes.
 
 The first implementation stage is deliberately outcome-blind. Do not add
 architecture outcome generation here until
