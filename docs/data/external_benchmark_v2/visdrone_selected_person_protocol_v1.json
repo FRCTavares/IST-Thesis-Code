@@ -87,7 +87,11 @@
         "image_count": 24201,
         "annotation_frame_count": 24198,
         "image_frames_without_gt_rows": {
-          "uav0000281_00460_v": [23, 24, 25]
+          "uav0000281_00460_v": [
+            23,
+            24,
+            25
+          ]
         },
         "gt_only_audit": {
           "report_relative_path": "artifacts/reports/p125_gt_only/visdrone_train_gt_only_audit.json",
@@ -125,7 +129,11 @@
     "minimum_match_margin": 0.1,
     "confirmation_frames": 2,
     "per_tracker_resolution_required": true,
-    "physical_gt_identity_exposed_to_runtime": false
+    "physical_gt_identity_exposed_to_runtime": false,
+    "match_confirmation_rule": "same_tracker_id_on_two_consecutive_source_frames_with_target_gt_and_unique_spatial_match",
+    "missing_target_gt_or_failed_match_resets_confirmation": true,
+    "per_arm_initialization_failure_retained": true,
+    "bytetrack_family_uses_one_shared_initialization": true
   },
   "architectures_planned": [
     {
@@ -166,18 +174,51 @@
     "target_iou_threshold": 0.3,
     "other_person_iou_threshold": 0.3,
     "primary_time_unit": "frames",
-    "duration_seconds_reporting_allowed": false
+    "duration_seconds_reporting_allowed": false,
+    "frame_classifier": "tools/issues/p125/evaluate_visdrone_selected_person.py",
+    "person_attribution_rule": "highest_person_iou_at_least_0.30_and_at_least_0.10_above_second_best",
+    "unique_iou_margin": 0.1,
+    "ambiguous_region_output_coverage_threshold": 0.5,
+    "ambiguous_region_classes": [
+      "ignored_region_0",
+      "people_group_2"
+    ],
+    "ambiguous_region_precedence": "identity_unresolved_even_if_person_iou_is_unique",
+    "unmatched_controller_output": "identity_unresolved",
+    "no_valid_controller_output": "lost_suppressed",
+    "target_without_gt_row": "reference_unavailable_or_target_not_annotated_outside_primary_denominator",
+    "scored_frame_domain": "source_frames_at_or_after_selection_with_valid_target_gt_row",
+    "primary_reconciliation": "correct_plus_wrong_person_plus_identity_unresolved_plus_lost_suppressed_equals_target_present_scored_frames",
+    "gt_bbox_height_strata_px": [
+      "<20",
+      "20-39",
+      "40-79",
+      "80-159",
+      ">=160"
+    ]
   },
   "statistics_draft": {
     "cluster_unit": "source_sequence",
     "primary_paired_population": "bytetrack_initialisable_episodes",
     "primary_effect": "wrong_fraction_tim_minus_bytetrack",
-    "co_primary_tradeoff_effect": "correct_fraction_tim_minus_bytetrack",
     "cluster_bootstrap_replicates": 10000,
     "confidence_level": 0.95,
-    "formal_test": "two_sided_sequence_level_paired_sign_flip_or_randomisation",
-    "random_seed": null,
-    "random_seed_required_before_freeze": true
+    "formal_test": "two_sided_cluster_sign_flip_monte_carlo",
+    "random_seed": 12520260930,
+    "random_seed_required_before_freeze": false,
+    "secondary_tradeoff_effect": "correct_fraction_tim_minus_bytetrack",
+    "point_estimator": "arithmetic_mean_of_paired_episode_level_fractions",
+    "frame_micro_view": "secondary_descriptive",
+    "bootstrap_sampling_population": "source_sequences_with_at_least_one_bytetrack_initialisable_episode",
+    "bootstrap_interval_method": "percentile_2.5_97.5",
+    "bootstrap_resample_rule": "sample_participating_source_sequences_with_replacement_and_keep_all_paired_episodes_per_draw",
+    "formal_test_draws": 100000,
+    "formal_test_statistic": "episode_weighted_mean_of_sequence_signed_paired_wrong_fraction_sums",
+    "formal_test_p_value": "plus_one_tail_correction",
+    "formal_test_rng_seed": 12520260931,
+    "bootstrap_percentile_interpolation": "linear_at_p_times_n_minus_one",
+    "all_zero_differences_p_value": 1.0,
+    "secondary_formal_tests_planned": false
   },
   "freeze_gate": {
     "required_before_architecture_outcomes": [
@@ -191,5 +232,33 @@
       "statistics_seed_and_hypotheses_frozen",
       "protocol_status_changed_to_frozen_in_dedicated_commit"
     ]
+  },
+  "pre_result_implementation_hashes_draft": {
+    "models/hef/yolov8s.hef": "69540ff855740371d229f4caca1ab908635a72fec55fdc1541e73f2fc17ec43b",
+    "models/reid/mars-small128.pb": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+    "ros2_ws/src/thesis_bringup/config/tracker_sort.yaml": "78051b9606cae6d2f6c8de25bffe38d26697e2edf153a9961bbf31934016319c",
+    "ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906",
+    "ros2_ws/src/thesis_bringup/config/tracker_ocsort.yaml": "b7967161815ecaacf903c4c8f3b5c09f601423b38ce46cefa9e00b89a36af89c",
+    "ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml": "d586e2e04c283313606cb366b64c0e7bad19692207f185d7dd9b89c89e33efb0",
+    "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c",
+    "ros2_ws/src/thesis_bringup/thesis_bringup/perception/preprocessing.py": "a6c346a2658553ce96e263c1b99a20b48371af5b2230b8386efc9ea81daa76e5",
+    "ros2_ws/src/thesis_bringup/thesis_bringup/perception/inference_engines.py": "e2cb6b82c2d820b9e3ef7b3edc1d058640b7dc731a01a741eea127806580a642",
+    "ros2_ws/src/thesis_bringup/thesis_bringup/perception/perception_pipeline_node.py": "69e84fe1580afa806cb67c4a9652ce4fa25db42a27050cae0f901baa83ceca48",
+    "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py": "2c307fddb43f1e31069b3bc4f8dedb0178af3ecddcd4c2123c4b13bfd3235c9b",
+    "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py": "09660439d0db1910453dd75baf0514b7db59c1a74a96a3d25da2e7dd96dbffb8",
+    "tools/analysis/external_target_initialization.py": "470f173421bb9815018b05a995ce056e0e58d8f4657167b0003ab43bb44d6531",
+    "tools/analysis/p058_target_reid_runtime.py": "895c7f9bb95b9444db54350793676c3e9d7dd3f1279b52088e6fca4d8b438858"
+  },
+  "shared_detector_draft": {
+    "input_width": 640,
+    "input_height": 640,
+    "source_image_encoding": "bgr8",
+    "resize": "cv2.INTER_LINEAR_direct_resize",
+    "inference_encoding": "rgb8",
+    "label": "person",
+    "minimum_score": 0.35,
+    "coordinate_transform_contract": "tim_mars_source_pixels_resize_v1",
+    "same_detection_cache_for_all_six_arms": true,
+    "parity_validation_required_before_full_corpus": true
   }
 }

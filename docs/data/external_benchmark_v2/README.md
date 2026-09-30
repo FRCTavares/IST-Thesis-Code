@@ -137,6 +137,31 @@ These are **draft rules**, not final claims. They may be reconciled from the
 GT-only corpus audit before outcome access. Once architecture outcomes are
 generated, they may no longer be changed to improve results.
 
+## Draft attribution and inference contract
+
+The separate #125 frame classifier uses a 0.30 IoU threshold for any
+individually annotated pedestrian and requires the best person's IoU to
+exceed the second best by at least 0.10. A valid output with no unique
+person match is identity-unresolved. Coverage of at least half the output
+box by an ignored or grouped region also makes attribution unresolved.
+No valid controller-facing output is LOST/suppressed. Frames without a
+target GT row remain outside the four-bucket primary denominator.
+
+Paired TIM-MARS minus ByteTrack effects use the arithmetic mean of
+episode-level fractions among ByteTrack-initialisable episodes. The draft
+statistics plan uses source sequence as the cluster, 10,000 fixed-seed
+cluster-bootstrap replicates, percentile 95% intervals and one two-sided
+100,000-draw cluster sign-flip test for wrong-person fraction. Correct-person
+availability is a descriptive trade-off effect. The fixed seed is
+`12520260930`. The tools have only been tested on synthetic episodes;
+architecture results remain inaccessible until the dedicated freeze commit.
+
+The protocol records the exact YOLOv8s, MARS, tracker YAML, TIM-MARS YAML
+and relevant runtime-source SHA-256 values. The detector draft uses the
+production 640 × 640 direct resize, BGR-to-RGB conversion, `person` label
+and 0.35 minimum score. Detector parity and the complete episode evaluator
+remain pre-result implementation gates.
+
 ## Freeze gate
 
 Before any detector/tracker/TIM aggregate outcome is inspected:
