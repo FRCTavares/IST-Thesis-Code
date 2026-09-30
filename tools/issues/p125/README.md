@@ -48,7 +48,7 @@ Frozen protocol tooling:
   invokes the existing direct Hailo engine once per image, and writes an
   immutable cache under ignored artifacts. Its committed-freeze check runs
   before any image or Hailo engine is opened. A fake engine and synthetic
-  images tested the writer; all seven validation sequences now have
+  images tested the writer; all 63 train and validation sequences now have
   real same-HEF immutable detector caches.
 - `run_same_hef_detector_parity_smoke.py` uses the frozen YOLOv8s HEF on fixed
   validation frames 1–3 of `uav0000086_00000_v`. It compares direct-cache
@@ -65,13 +65,13 @@ Frozen protocol tooling:
   ByteTrack configuration so image and track updates align. The source image
   files lack capture timestamps, so this clock is an assumption; TIM-MARS
   millisecond policies run against it and results must not claim measured time.
-  Fake-backend tests and seven real validation sequence replays have run.
+  Fake-backend tests and all 63 real train and validation sequence replays have run.
 - `write_raw_tracker_replay.py` is the frozen-only one-sequence command for
   SORT, ByteTrack, OC-SORT and DeepSORT. It verifies the shared detector cache,
   source files, model/config hashes and frame domain before using the existing
   production tracker constructor. DeepSORT receives the matching BGR image
-  before each logical-frame update. Four raw replays completed on all seven
-  validation sequences after the freeze.
+  before each logical-frame update. Four raw replays completed on all 63
+  train and validation sequences after the freeze.
 - `resolve_episode_initialization.py` applies the existing frozen-target
   unique-IoU confirmation rule to each GT episode after tracker replay. Raw
   controller authority starts on the confirmation frame; failed
@@ -80,7 +80,7 @@ Frozen protocol tooling:
 - `score_raw_tracker_sequence.py` is the frozen-only raw-arm scoring command.
   It validates replay provenance, loads the frozen GT episodes, retains each
   per-tracker initialization result, and applies the common physical-person
-  scorer. The four raw arms have scored all validation sequences.
+  scorer. The four raw arms have scored all train and validation sequences.
 - `target_reid_episode.py` adapts one confirmed ByteTrack selection to the
   existing Target-ReID runtime. The confirmation frame only bootstraps the
   appearance anchor. Failed tracker initialization or anchor bootstrap leaves
@@ -90,7 +90,7 @@ Frozen protocol tooling:
   scorer. It validates the ByteTrack replay and frozen model/config/source
   hashes, shares one MARS extractor across fresh per-episode anchors, and
   records every episode's initialization and bootstrap status. All
-  seven validation sequences have completed this arm.
+  63 train and validation sequences have completed this arm.
 - `tim_mars_episode.py` applies the confirmed ByteTrack selection to the
   existing TIM-MARS runtime and maps only control-valid publications into
   the common scorer. Failed initialization remains explicit no-output.
@@ -98,11 +98,12 @@ Frozen protocol tooling:
   TIM-MARS sequence scorer. It verifies frozen replay and implementation
   hashes, loads the canonical runtime configuration through the existing
   deterministic replay builder, and gives each episode fresh target memory
-  while sharing one MARS extractor. All seven validation sequences
+  while sharing one MARS extractor. All 63 train and validation sequences
   have completed this arm.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
-  cluster sign-flip test. It has only been exercised on synthetic data.
+  cluster sign-flip test. The predeclared analysis completed on all 63
+  train and validation sequences.
 
 - `summarize_visdrone_selected_person_corpus.py` reconciles detector,
   tracker and six-arm score hashes against the frozen manifest; it checks
@@ -117,3 +118,9 @@ The protocol and GT-only manifest were frozen together after archive, audit,
 manifest and implementation-hash checks. The same-HEF smoke passed before
 sequence outcomes. Real output remains under ignored `artifacts/reports/`;
 the nominal replay clock is an assumption, not measured capture time.
+
+The completed full-corpus aggregate is ignored under `artifacts/reports/` and
+has SHA-256 `a6bb198d106485460310843c6b7fe500a9a23cd6a2e2c6976e0849ebae5bd217`.
+The primary paired comparison includes 104 ByteTrack-initialisable episodes from
+34 source sequences. Canonical TIM-MARS was not changed in response to these
+outcomes.
