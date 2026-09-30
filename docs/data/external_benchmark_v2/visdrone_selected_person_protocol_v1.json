@@ -133,7 +133,10 @@
     "match_confirmation_rule": "same_tracker_id_on_two_consecutive_source_frames_with_target_gt_and_unique_spatial_match",
     "missing_target_gt_or_failed_match_resets_confirmation": true,
     "per_arm_initialization_failure_retained": true,
-    "bytetrack_family_uses_one_shared_initialization": true
+    "bytetrack_family_uses_one_shared_initialization": true,
+    "raw_authority_starts_at_confirmation_frame": true,
+    "failed_initialization_output_policy": "explicit_no_controller_output_for_all_episode_frames",
+    "episode_initialization_adapter": "tools/issues/p125/resolve_episode_initialization.py"
   },
   "architectures_planned": [
     {

@@ -55,6 +55,11 @@ Current pre-result tooling:
   production tracker constructor. DeepSORT receives the matching BGR image
   before each logical-frame update. This command has only been exercised on
   the current draft protocol's refusal path.
+- `resolve_episode_initialization.py` applies the existing frozen-target
+  unique-IoU confirmation rule to each GT episode after tracker replay. Raw
+  controller authority starts on the confirmation frame; failed
+  initialization stays explicit and publishes no target. Only synthetic
+  tracker records have been used in tests.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.
