@@ -176,6 +176,7 @@
     "primary_time_unit": "frames",
     "duration_seconds_reporting_allowed": false,
     "frame_classifier": "tools/issues/p125/evaluate_visdrone_selected_person.py",
+    "controller_output_adapter": "tools/issues/p125/controller_output_adapter.py",
     "episode_scorer_status": "primary_four_bucket_and_core_events_synthetic_verified_runtime_stream_pending",
     "event_rules": {
       "wrong_person_event": "contiguous_source_frames_with_same_uniquely_matched_other_identity",

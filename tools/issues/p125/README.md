@@ -29,6 +29,10 @@ Current pre-result tooling:
   frame from selection through the final target GT observation, including GT
   gaps; `None` means no controller output. Runtime-stream integration remains
   pending.
+- `controller_output_adapter.py` maps the four raw tracker backend outputs,
+  Target-ReID publications, and control-valid TIM-MARS publications into the
+  scorer's box and tracker-ID maps. Suppressed TIM-MARS candidate belief is
+  excluded. These adapters are synthetic-tested; they do not execute runtimes.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.
