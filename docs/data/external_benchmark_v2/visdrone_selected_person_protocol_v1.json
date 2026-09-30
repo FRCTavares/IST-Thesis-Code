@@ -176,7 +176,16 @@
     "primary_time_unit": "frames",
     "duration_seconds_reporting_allowed": false,
     "frame_classifier": "tools/issues/p125/evaluate_visdrone_selected_person.py",
-    "episode_scorer_status": "primary_four_bucket_synthetic_verified_event_metrics_and_runtime_stream_pending",
+    "episode_scorer_status": "primary_four_bucket_and_core_events_synthetic_verified_runtime_stream_pending",
+    "event_rules": {
+      "wrong_person_event": "contiguous_source_frames_with_same_uniquely_matched_other_identity",
+      "correct_to_wrong_handover": "correct_on_immediately_previous_source_frame_then_wrong_person",
+      "lost_run": "contiguous_target_present_source_frames_without_valid_output",
+      "reference_gap_reappearance": "first_valid_target_gt_frame_after_one_or_more_target_gt_gap_frames",
+      "correct_reacquisition_delay": "source_frames_from_first_reappearance_gt_to_first_later_correct_authority_before_next_gap",
+      "physical_target_tracker_id_changes": "pending_runtime_candidate_stream_integration",
+      "false_or_ambiguous_reacquisition": "pending_runtime_candidate_stream_integration"
+    },
     "person_attribution_rule": "highest_person_iou_at_least_0.30_and_at_least_0.10_above_second_best",
     "unique_iou_margin": 0.1,
     "ambiguous_region_output_coverage_threshold": 0.5,

@@ -129,6 +129,10 @@ def test_episode_scoring_keeps_gt_gap_outside_four_bucket_denominator():
     assert result["scoring"]["target_present_scored_frames"] == 4
     assert result["scoring"]["reference_gap_frames"] == 1
     assert list(result["scoring"]["counts"].values()) == [1, 1, 1, 1]
+    assert result["events"]["wrong_person_event_count"] == 1
+    assert result["events"]["correct_to_wrong_handover_count"] == 1
+    assert result["events"]["reference_gap_reappearance_count"] == 1
+    assert result["events"]["successful_correct_reacquisition_count"] == 0
 
 
 def test_episode_rejects_missing_source_image_and_invalid_selection():
@@ -154,3 +158,51 @@ def test_episode_rejects_missing_source_image_and_invalid_selection():
             output_bboxes_by_frame={},
             config=CONFIG,
         )
+
+
+def event_record(frame, bucket, identity=None):
+    return {
+        "normalized_frame_index": frame,
+        "bucket": bucket,
+        "matched_identity": identity,
+    }
+
+
+def test_event_runs_and_reappearance_recovery_use_source_frames():
+    events = MODULE.derive_events([
+        event_record(0, MODULE.CORRECT, 1),
+        event_record(1, MODULE.WRONG_PERSON, 2),
+        event_record(2, MODULE.WRONG_PERSON, 2),
+        event_record(3, MODULE.LOST_SUPPRESSED),
+        event_record(4, MODULE.LOST_SUPPRESSED),
+        event_record(5, MODULE.REFERENCE_UNAVAILABLE),
+        event_record(6, MODULE.IDENTITY_UNRESOLVED),
+        event_record(7, MODULE.CORRECT, 1),
+    ])
+    assert events["wrong_person_events"] == [{
+        "start_frame_index": 1,
+        "end_frame_index": 2,
+        "matched_identity": 2,
+    }]
+    assert events["correct_to_wrong_handover_count"] == 1
+    assert events["lost_runs"] == [{
+        "start_frame_index": 3,
+        "end_frame_index": 4,
+        "length_frames": 2,
+    }]
+    assert events["reference_gap_reappearances"] == [{
+        "reference_gap_start_frame_index": 5,
+        "first_reappearance_frame_index": 6,
+        "first_correct_frame_index": 7,
+        "frames_to_correct_reacquisition": 1,
+    }]
+
+
+def test_wrong_identity_change_starts_new_event_and_frame_gap_breaks_run():
+    events = MODULE.derive_events([
+        event_record(0, MODULE.WRONG_PERSON, 2),
+        event_record(1, MODULE.WRONG_PERSON, 3),
+        event_record(3, MODULE.WRONG_PERSON, 3),
+    ])
+    assert events["wrong_person_event_count"] == 3
+    assert events["correct_to_wrong_handover_count"] == 0

@@ -153,8 +153,9 @@ statistics plan uses source sequence as the cluster, 10,000 fixed-seed
 cluster-bootstrap replicates, percentile 95% intervals and one two-sided
 100,000-draw cluster sign-flip test for wrong-person fraction. Correct-person
 availability is a descriptive trade-off effect. The fixed seed is
-`12520260930`. The frame classifier and episode scorer have only been tested on synthetic
-output streams; event metrics and runtime-stream integration remain pending.
+`12520260930`. The frame classifier, episode scorer and core source-frame event rules have
+only been tested on synthetic output streams. Tracker-ID-specific events and
+runtime-stream integration remain pending.
 Architecture results remain inaccessible until the dedicated freeze commit.
 
 The protocol records the exact YOLOv8s, MARS, tracker YAML, TIM-MARS YAML

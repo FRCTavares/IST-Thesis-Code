@@ -255,5 +255,113 @@ def evaluate_episode(
         "selection_frame_index": selection_frame_index,
         "last_target_observation_frame_index": last_target_frame,
         "scoring": summary,
+        "events": derive_events(frame_records),
         "frames": frame_records,
+    }
+
+
+def derive_events(frame_records: Sequence[dict[str, object]]) -> dict[str, object]:
+    """Derive source-frame events without interpreting GT gaps as absence."""
+    if not frame_records:
+        raise ValueError("event derivation requires frame records")
+    frames = [int(record["normalized_frame_index"]) for record in frame_records]
+    if frames != sorted(set(frames)):
+        raise ValueError("event frames must be sorted and unique")
+    wrong_events: list[dict[str, int]] = []
+    lost_runs: list[dict[str, int]] = []
+    reappearances: list[dict[str, int | None]] = []
+    correct_to_wrong = 0
+
+    active_wrong: dict[str, int] | None = None
+    active_lost: dict[str, int] | None = None
+    gap_start: int | None = None
+    recovery_pending: dict[str, int | None] | None = None
+    previous_frame: int | None = None
+    previous_bucket: str | None = None
+
+    for record in frame_records:
+        frame = int(record["normalized_frame_index"])
+        bucket = str(record["bucket"])
+        if bucket not in (*PRIMARY_BUCKETS, REFERENCE_UNAVAILABLE):
+            raise ValueError(f"unknown event bucket {bucket!r}")
+        adjacent = previous_frame is not None and frame == previous_frame + 1
+        if not adjacent:
+            active_wrong = None
+            active_lost = None
+            if gap_start is not None:
+                gap_start = None
+            recovery_pending = None
+
+        if bucket == REFERENCE_UNAVAILABLE:
+            if gap_start is None:
+                gap_start = frame
+            active_wrong = None
+            active_lost = None
+        else:
+            if gap_start is not None:
+                recovery_pending = {
+                    "reference_gap_start_frame_index": gap_start,
+                    "first_reappearance_frame_index": frame,
+                    "first_correct_frame_index": None,
+                    "frames_to_correct_reacquisition": None,
+                }
+                reappearances.append(recovery_pending)
+                gap_start = None
+            if bucket == CORRECT and recovery_pending is not None:
+                recovery_pending["first_correct_frame_index"] = frame
+                recovery_pending["frames_to_correct_reacquisition"] = (
+                    frame - int(recovery_pending["first_reappearance_frame_index"])
+                )
+                recovery_pending = None
+
+            if bucket == WRONG_PERSON:
+                identity = record["matched_identity"]
+                if identity is None:
+                    raise ValueError("wrong-person frame lacks physical identity")
+                if adjacent and previous_bucket == CORRECT:
+                    correct_to_wrong += 1
+                if (
+                    active_wrong is None
+                    or active_wrong["matched_identity"] != int(identity)
+                    or not adjacent
+                ):
+                    active_wrong = {
+                        "start_frame_index": frame,
+                        "end_frame_index": frame,
+                        "matched_identity": int(identity),
+                    }
+                    wrong_events.append(active_wrong)
+                else:
+                    active_wrong["end_frame_index"] = frame
+            else:
+                active_wrong = None
+
+            if bucket == LOST_SUPPRESSED:
+                if active_lost is None or not adjacent:
+                    active_lost = {
+                        "start_frame_index": frame,
+                        "end_frame_index": frame,
+                        "length_frames": 1,
+                    }
+                    lost_runs.append(active_lost)
+                else:
+                    active_lost["end_frame_index"] = frame
+                    active_lost["length_frames"] += 1
+            else:
+                active_lost = None
+
+        previous_frame = frame
+        previous_bucket = bucket
+
+    return {
+        "wrong_person_events": wrong_events,
+        "wrong_person_event_count": len(wrong_events),
+        "correct_to_wrong_handover_count": correct_to_wrong,
+        "lost_runs": lost_runs,
+        "reference_gap_reappearances": reappearances,
+        "reference_gap_reappearance_count": len(reappearances),
+        "successful_correct_reacquisition_count": sum(
+            event["first_correct_frame_index"] is not None
+            for event in reappearances
+        ),
     }
