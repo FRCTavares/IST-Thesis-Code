@@ -27,6 +27,31 @@ detections, source boxes and scores. The immutable report is
 This compares detector semantics with the real HEF; it does not exercise ROS
 subscription scheduling.
 
+## Validation execution checkpoint
+
+All seven validation sequences have completed one frozen shared detector cache,
+four raw tracker replays and six scored arms, covering 2,846 source images and
+all 194 frozen validation episodes. Their immutable outputs are under ignored
+`artifacts/reports/p125_shared_detector_cache/`,
+`p125_raw_tracker_replay/`, `p125_scored_raw/`,
+`p125_scored_target_reid/`, and `p125_scored_tim_mars/`.
+The reconciled validation report is
+`artifacts/reports/p125_aggregate/val.json` (SHA-256
+`548ffbbd211f45391f6c136fb27d8facfa0bf7ee3162c0dd9cfa9b7ed5228602`).
+It verifies 77 source artifact hashes, exact episode coverage and the four
+bucket counts for every episode. The 194 episodes contain 30,851
+person-present scored frames per arm. ByteTrack initialized 21 episodes;
+20 initialized on all four raw trackers. The full train+validation population
+and frozen sequence-clustered statistics remain pending, so this validation
+checkpoint is descriptive only.
+
+The first bounded run on `uav0000305_00000_v` yielded three person detections
+and no tracker initializations. `uav0000086_00000_v` yielded 6,917 person
+detections and 18 ByteTrack initializations among its 50 episodes. These
+sequence-level facts help distinguish the pipeline check from the frozen
+primary paired subset; neither is a corpus-level effect estimate. No tracker,
+Target-ReID or TIM-MARS parameter was changed after observing outcomes.
+
 The current Issue #30 source registry already records:
 
 - VisDrone2019-MOT validation as verified;
