@@ -50,6 +50,14 @@ Frozen protocol tooling:
   immutable cache under ignored artifacts. Its committed-freeze check runs
   before any image or Hailo engine is opened. Only a fake engine and synthetic
   images have been used to test the writer.
+- `run_same_hef_detector_parity_smoke.py` uses the frozen YOLOv8s HEF on fixed
+  validation frames 1–3 of `uav0000086_00000_v`. It compares direct-cache
+  preprocessing and detections against the production perception node's
+  frame-preparation and publication methods. All 59 person detections matched
+  in source pixels and score within the recorded tolerances; the immutable
+  ignored report SHA-256 is
+  `ee6c321156f6a0309c2c395ece9f5f1e800bfe4cfabf6340fe27d73bcacde8c4`.
+  The check uses node methods directly and does not test ROS scheduling.
 - `replay_shared_detector_cache.py` validates cache provenance and exact
   image-frame coverage, then feeds one cached detection stream into a supplied
   canonical tracker backend. It applies each tracker's YAML minimum score and

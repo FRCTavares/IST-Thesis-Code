@@ -18,7 +18,14 @@ ByteTrack + canonical TIM-MARS.
 `visdrone_gt_only_episode_manifest_v1.json` are **frozen** together at the
 pre-result checkpoint of 30 September 2026. The freeze precedes every real
 detector, tracker, Target-ReID and TIM-MARS outcome. A same-HEF fixed-frame
-detector smoke comparison remains required before full-corpus execution.
+detector smoke comparison was required before full-corpus execution and has
+passed on validation frames 1–3 of `uav0000086_00000_v`. Direct-cache and
+live perception node methods produced matching 21, 19 and 19 person
+detections, source boxes and scores. The immutable report is
+`artifacts/reports/p125_detector_parity_smoke/val/uav0000086_00000_v_frames_1_2_3.json`
+(SHA-256 `ee6c321156f6a0309c2c395ece9f5f1e800bfe4cfabf6340fe27d73bcacde8c4`).
+This compares detector semantics with the real HEF; it does not exercise ROS
+subscription scheduling.
 
 The current Issue #30 source registry already records:
 
@@ -163,7 +170,7 @@ and relevant runtime-source SHA-256 values. The frozen detector path uses the
 production 640 × 640 direct resize, BGR-to-RGB conversion, `person` label
 and 0.35 minimum score. Shared preprocessing and source-coordinate mapping
 matched the live perception publication method on synthetic inputs. A fixed
-real-frame same-HEF smoke comparison remains a gate before full-corpus work.
+real-frame same-HEF smoke comparison passed before full-corpus work.
 
 The source images have no capture timestamps. Runtime mechanics use a
 declared nominal 30 Hz replay clock from canonical ByteTrack; all benchmark
