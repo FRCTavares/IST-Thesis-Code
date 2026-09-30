@@ -1,6 +1,6 @@
 # tools/issues/p125
 
-Last reviewed: 2026-09-29
+Last reviewed: 2026-09-30
 
 ## P125 — Public VisDrone selected-person benchmark
 
@@ -10,7 +10,7 @@ This directory is intentionally issue-scoped because the benchmark has a
 prospective pre-result freeze contract. Reusable production algorithms stay in
 their existing locations and must not be copied here.
 
-Current pre-result tooling:
+Frozen protocol tooling:
 
 - `audit_visdrone_selected_person_corpus.py` performs the GT-only corpus and
   frame-domain audit. It may read source images and official VisDrone ground
@@ -19,7 +19,8 @@ Current pre-result tooling:
 - `build_visdrone_gt_only_episode_manifest.py` combines the train and
   validation audits only after reconciled frame-domain, eligibility-config,
   identity, and episode-count checks. It hashes both source archives and
-  both audit files, and writes a deterministic `draft_not_frozen` manifest.
+  both audit files, and writes a deterministic draft manifest. Reproduction
+  output must go to a temporary path because the tracked manifest is frozen.
 - `evaluate_visdrone_selected_person.py` defines the four primary
   physical-person frame buckets and scores one selected identity through its
   last target observation. Missing GT rows stay outside the primary denominator.
@@ -37,7 +38,7 @@ Current pre-result tooling:
   scorer's box and tracker-ID maps. Suppressed TIM-MARS candidate belief is
   excluded. These adapters are synthetic-tested; they do not execute runtimes.
 - `shared_detector_cache.py` delegates image preparation and coordinate
-  mapping to production preprocessing, applies the draft person/score filter,
+  mapping to production preprocessing, applies the frozen person/score filter,
   and requires exact source-frame coverage. Its cache document builder
   rejects any protocol that is not frozen. The input gateway also requires the
   protocol and episode manifest to match HEAD and share a freeze commit. Only
@@ -62,7 +63,7 @@ Current pre-result tooling:
   source files, model/config hashes and frame domain before using the existing
   production tracker constructor. DeepSORT receives the matching BGR image
   before each logical-frame update. This command has only been exercised on
-  the current draft protocol's refusal path.
+  the draft protocol's refusal path before the dedicated freeze.
 - `resolve_episode_initialization.py` applies the existing frozen-target
   unique-IoU confirmation rule to each GT episode after tracker replay. Raw
   controller authority starts on the confirmation frame; failed
@@ -81,7 +82,7 @@ Current pre-result tooling:
   scorer. It validates the ByteTrack replay and frozen model/config/source
   hashes, shares one MARS extractor across fresh per-episode anchors, and
   records every episode's initialization and bootstrap status. Its real-data
-  path remains unopened while the protocol is draft.
+  path had not been opened on real data at the freeze checkpoint.
 - `tim_mars_episode.py` applies the confirmed ByteTrack selection to the
   existing TIM-MARS runtime and maps only control-valid publications into
   the common scorer. Failed initialization remains explicit no-output.
@@ -90,15 +91,13 @@ Current pre-result tooling:
   hashes, loads the canonical runtime configuration through the existing
   deterministic replay builder, and gives each episode fresh target memory
   while sharing one MARS extractor. Its real-data path remains unopened while
-  the protocol is draft; synthetic timing and scorer checks pass.
+  the protocol freeze; synthetic timing and scorer checks pass.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.
 
-These tools do not read architecture outcomes during protocol preparation.
-
-The first implementation stage is deliberately outcome-blind. Do not add
-architecture outcome generation here until
-`docs/data/external_benchmark_v2/visdrone_selected_person_protocol_v1.json`
-has been reconciled from the GT-only audit and changed from
-`draft_not_frozen` to `frozen` in a dedicated committed checkpoint.
+The protocol and GT-only manifest were frozen together after archive, audit,
+manifest and implementation-hash checks. Before full-corpus execution, compare
+one small fixed-frame direct detector cache against the normal perception node
+using the same HEF. Keep all real outcomes separate from this pre-result
+checkpoint and retain the declared nominal replay clock limitation.

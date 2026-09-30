@@ -1,9 +1,10 @@
 {
   "schema_version": 1,
   "benchmark_id": "p125_visdrone_selected_person_v1",
-  "status": "draft_not_frozen",
+  "status": "frozen",
   "issue": 125,
   "created_date": "2026-09-29",
+  "frozen_date": "2026-09-30",
   "baseline_commit": "45eefd4548bedb5ecad957a080fe6328f218d3b3",
   "policy": {
     "algorithm_outcome_access_allowed_before_freeze": false,
@@ -28,7 +29,7 @@
     "person_class_id": 1,
     "people_group_class_id": 2,
     "source_frame_index_base": 1,
-    "timing_policy": "frame_index_only_until_exported_sequence_cadence_is_resolved",
+    "timing_policy": "frame_metrics_with_declared_nominal_30_hz_runtime_clock;_capture_timestamps_unavailable",
     "official_annotation_reference": "https://github.com/VisDrone/VisDrone2018-MOT-toolkit",
     "annotation_semantics": {
       "truncation": {
@@ -112,15 +113,15 @@
     "initialization_window_frames": 10,
     "selection_frame_rule": "earliest_frame_passing_all_gt_only_eligibility_gates",
     "all_eligible_identities_become_episode_candidates": true,
-    "may_change_after_gt_only_audit_before_freeze": true
+    "may_change_after_gt_only_audit_before_freeze": false
   },
   "gt_only_candidate_manifest": {
-    "status": "complete_but_not_frozen",
+    "status": "frozen",
     "relative_path": "docs/data/external_benchmark_v2/visdrone_gt_only_episode_manifest_v1.json",
-    "sha256": "34ea378dc1b692a5f62e249a2181daa7d1dde59caf0501187fb3c4b00dcb9941",
+    "sha256": "2e5a5bd00f9c93d05519a4db6d8f3e4a45fffe4b61d4640e104375b3cb56563d",
     "sequence_count": 63,
     "pedestrian_identity_count": 2047,
-    "draft_candidate_episode_count": 1555,
+    "candidate_episode_count": 1555,
     "image_frames_without_gt_rows_policy": "source images with no GT rows are reference-unavailable for target-present scoring; never infer physical target absence"
   },
   "initialization_draft": {
@@ -223,7 +224,7 @@
     "confidence_level": 0.95,
     "formal_test": "two_sided_cluster_sign_flip_monte_carlo",
     "random_seed": 12520260930,
-    "random_seed_required_before_freeze": false,
+    "random_seed_required_before_freeze": true,
     "secondary_tradeoff_effect": "correct_fraction_tim_minus_bytetrack",
     "point_estimator": "arithmetic_mean_of_paired_episode_level_fractions",
     "frame_micro_view": "secondary_descriptive",
@@ -250,6 +251,15 @@
       "statistics_seed_and_hypotheses_frozen",
       "protocol_status_changed_to_frozen_in_dedicated_commit"
     ]
+  },
+  "pre_result_freeze_review": {
+    "train_and_val_archive_sha256_recomputed": true,
+    "gt_audit_sha256_recomputed": true,
+    "gt_only_manifest_reproduced_byte_for_byte": true,
+    "model_config_and_source_hash_count_verified": 15,
+    "synthetic_live_detector_mapping_parity_verified": true,
+    "same_hef_node_smoke_required_before_full_corpus": true,
+    "architecture_outcomes_inspected_before_freeze": false
   },
   "pre_result_implementation_hashes_draft": {
     "models/hef/yolov8s.hef": "69540ff855740371d229f4caca1ab908635a72fec55fdc1541e73f2fc17ec43b",

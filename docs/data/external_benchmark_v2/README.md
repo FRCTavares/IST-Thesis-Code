@@ -14,10 +14,11 @@ ByteTrack + canonical TIM-MARS.
 
 ## Current status
 
-`visdrone_selected_person_protocol_v1.json` is **draft_not_frozen**.
-
-At this stage only ground-truth/data-contract work is allowed. Architecture
-outcome generation is forbidden until the protocol is frozen.
+`visdrone_selected_person_protocol_v1.json` and
+`visdrone_gt_only_episode_manifest_v1.json` are **frozen** together at the
+pre-result checkpoint of 30 September 2026. The freeze precedes every real
+detector, tracker, Target-ReID and TIM-MARS outcome. A same-HEF fixed-frame
+detector smoke comparison remains required before full-corpus execution.
 
 The current Issue #30 source registry already records:
 
@@ -36,7 +37,7 @@ local extraction omitted the 978-image 4K sequence
 The seven extracted sequences now have 2,846 image frames and 2,846 annotated
 frames, with zero image-only or annotation-only frames.
 
-The draft eligibility rules yield 194 candidate episodes from 225 annotated
+The frozen eligibility rules yield 194 episodes from 225 annotated
 pedestrian identities: 23 lack 30 target-present frames after their earliest
 eligible selection frame, and 8 have no eligible selection frame. The local
 GT-only audit is
@@ -54,23 +55,22 @@ annotation files and 24,201 images.
 The train GT-only audit has 24,198 frames with annotation rows. Images 23–25
 in `uav0000281_00460_v` have no GT rows; all annotation frames have source
 images. Those three frames are explicitly reference-unavailable for
-target-present scoring, never evidence of physical target absence. The draft
-rules yield 1,361 candidate episodes from 1,822 pedestrian identities (411
+target-present scoring, never evidence of physical target absence. The frozen
+rules yield 1,361 episodes from 1,822 pedestrian identities (411
 lack enough remaining target-present frames and 50 have no eligible selection
 frame). The ignored train audit SHA-256 is
 `07c5adceee8c877011486f8c5f6856dc7b8bdf20b79e8ed3c653e1b7f65aeb0e`.
 
 The tracked combined `visdrone_gt_only_episode_manifest_v1.json` has 63
 sequence source inventories with annotation hashes and frame ranges, 2,047
-pedestrian identities and 1,555 draft candidate episodes.
+pedestrian identities and 1,555 frozen GT-only episodes.
 Its SHA-256 is
-`34ea378dc1b692a5f62e249a2181daa7d1dde59caf0501187fb3c4b00dcb9941`.
-These are GT-only candidates, not frozen benchmark episodes. The protocol
-remains **draft_not_frozen** while selection, initialization, evaluator,
-model/config hashes and statistical details are finalized before any
-architecture outcome access.
+`2e5a5bd00f9c93d05519a4db6d8f3e4a45fffe4b61d4640e104375b3cb56563d`.
+The source archive and GT audit hashes were recomputed, 15 model/config/source
+hashes were checked, and the draft GT-only content reproduced byte for byte
+before the two documents were frozen.
 
-## Official VisDrone annotation semantics used by the draft
+## Official VisDrone annotation semantics
 
 For VisDrone MOT ground truth:
 
@@ -103,7 +103,7 @@ The GT-only preparation commands are:
       --val-audit artifacts/reports/p125_gt_only/visdrone_val_gt_only_audit.json \
       --train-archive data/datasets/external/visdrone_mot/_archives/VisDrone2019-MOT-train.zip \
       --val-archive data/datasets/external/visdrone_mot/_archives/VisDrone2019-MOT-val.zip \
-      --out docs/data/external_benchmark_v2/visdrone_gt_only_episode_manifest_v1.json
+      --out /tmp/visdrone_gt_only_episode_manifest_draft.json
 
 The audit:
 
@@ -115,15 +115,16 @@ The audit:
 - never reads detections, tracker output, Target-ReID output, TIM-MARS output or
   previous performance reports.
 
-Generated audit JSON belongs under ignored `artifacts/reports/` until the
-freeze decision is reviewed. The compact combined candidate manifest is
-tracked for review. The manifest builder rejects missing source images,
+Generated audit JSON belongs under ignored `artifacts/reports/`. The frozen
+manifest is tracked. The builder still emits draft status, so reproductions
+must write to a temporary path and compare the GT-only contents rather than
+overwrite the frozen file. The builder rejects missing source images,
 unreconciled identities, mismatched split rules and duplicate episodes; it
 records image frames with no GT rows as reference-unavailable.
 
-## Draft eligibility
+## Frozen eligibility
 
-The current pre-outcome proposal is:
+The predeclared rule is:
 
 - VisDrone class `1`;
 - valid official GT row;
@@ -133,11 +134,10 @@ The current pre-outcome proposal is:
 - at least 30 target-present annotated frames from selection onward;
 - at most a 10-frame initialization window.
 
-These are **draft rules**, not final claims. They may be reconciled from the
-GT-only corpus audit before outcome access. Once architecture outcomes are
-generated, they may no longer be changed to improve results.
+The rule is fixed before outcome access and cannot be changed to improve
+results.
 
-## Draft attribution and inference contract
+## Frozen attribution and inference contract
 
 The separate #125 frame classifier uses a 0.30 IoU threshold for any
 individually annotated pedestrian and requires the best person's IoU to
@@ -148,25 +148,31 @@ No valid controller-facing output is LOST/suppressed. Frames without a
 target GT row remain outside the four-bucket primary denominator.
 
 Paired TIM-MARS minus ByteTrack effects use the arithmetic mean of
-episode-level fractions among ByteTrack-initialisable episodes. The draft
+episode-level fractions among ByteTrack-initialisable episodes. The frozen
 statistics plan uses source sequence as the cluster, 10,000 fixed-seed
 cluster-bootstrap replicates, percentile 95% intervals and one two-sided
 100,000-draw cluster sign-flip test for wrong-person fraction. Correct-person
 availability is a descriptive trade-off effect. The fixed seed is
-`12520260930`. The frame classifier, episode scorer and source-frame event rules, including
-attributable tracker-ID changes, have only been tested on synthetic output
-streams. Runtime-stream integration remains pending.
-Architecture results remain inaccessible until the dedicated freeze commit.
+`12520260930`. The scorer retains GT height, occlusion and truncation per
+target-present frame and mean target IoU over correct frames only. Frame and
+event rules and all six frozen-only arm paths passed synthetic checks before
+the freeze. No real architecture outcome was generated for protocol tuning.
 
 The protocol records the exact YOLOv8s, MARS, tracker YAML, TIM-MARS YAML
-and relevant runtime-source SHA-256 values. The detector draft uses the
+and relevant runtime-source SHA-256 values. The frozen detector path uses the
 production 640 × 640 direct resize, BGR-to-RGB conversion, `person` label
-and 0.35 minimum score. Detector parity and the complete episode evaluator
-remain pre-result implementation gates.
+and 0.35 minimum score. Shared preprocessing and source-coordinate mapping
+matched the live perception publication method on synthetic inputs. A fixed
+real-frame same-HEF smoke comparison remains a gate before full-corpus work.
 
-## Freeze gate
+The source images have no capture timestamps. Runtime mechanics use a
+declared nominal 30 Hz replay clock from canonical ByteTrack; all benchmark
+durations and reacquisition delays are reported in source frames, not measured
+seconds.
 
-Before any detector/tracker/TIM aggregate outcome is inspected:
+## Freeze checkpoint
+
+The committed freeze follows these completed pre-result checks:
 
 1. acquire and verify train + validation source provenance;
 2. reconcile the validation image/annotation count discrepancy;
@@ -175,7 +181,7 @@ Before any detector/tracker/TIM aggregate outcome is inspected:
 5. freeze selection/initialization/evaluator rules;
 6. record exact model and config SHA-256 values;
 7. freeze statistics seed, cluster-bootstrap procedure and primary hypothesis;
-8. commit the final protocol with status `frozen`.
+8. commit the protocol and GT-only manifest together with status `frozen`.
 
 A later correctness-only protocol repair must preserve the first generated
 output and document the defect, rationale and deterministic rerun. It must not
