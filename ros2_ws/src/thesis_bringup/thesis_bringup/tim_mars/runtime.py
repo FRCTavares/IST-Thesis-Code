@@ -73,6 +73,7 @@ class TimMarsRuntimeConfig:
     development_ablation_prevent_repeated_source_adaptive_update: bool = False
     development_ablation_retire_overage_hard_negatives_pre_score: bool = False
     development_ablation_require_distinct_source_for_persistence: bool = False
+    development_ablation_global_recovery_distinct_source: bool = False
 
 
 @dataclass(frozen=True)
@@ -178,6 +179,9 @@ class TimMarsRuntime:
             ),
             development_ablation_require_distinct_source_for_persistence=bool(
                 self.config.development_ablation_require_distinct_source_for_persistence
+            ),
+            development_ablation_global_recovery_distinct_source=bool(
+                self.config.development_ablation_global_recovery_distinct_source
             ),
         )
         selected_id = int(self.config.selected_track_id)

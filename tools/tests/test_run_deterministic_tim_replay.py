@@ -1410,6 +1410,7 @@ def test_tim_ablation_controls_are_default_off(monkeypatch):
     assert not arguments.ablation_zero_appearance_ranking_contribution
     assert not arguments.ablation_retire_overage_hard_negatives_pre_score
     assert not arguments.ablation_require_distinct_source_for_persistence
+    assert not arguments.ablation_global_recovery_distinct_source
 
 
 def test_tim_ablation_controls_are_explicit(monkeypatch):
@@ -1443,6 +1444,7 @@ def test_tim_ablation_controls_are_explicit(monkeypatch):
             "--ablation-zero-appearance-ranking-contribution",
             "--ablation-retire-overage-hard-negatives-pre-score",
             "--ablation-require-distinct-source-for-persistence",
+            "--ablation-global-recovery-distinct-source",
         ],
     )
 
@@ -1464,6 +1466,7 @@ def test_tim_ablation_controls_are_explicit(monkeypatch):
     assert arguments.ablation_zero_appearance_ranking_contribution
     assert arguments.ablation_retire_overage_hard_negatives_pre_score
     assert arguments.ablation_require_distinct_source_for_persistence
+    assert arguments.ablation_global_recovery_distinct_source
 
 
 def test_ab09_uses_existing_hard_negative_memory_switch():
@@ -1568,6 +1571,7 @@ def test_ab15_ab19_runtime_controls_reach_the_memory_state_machine():
     )
     assert not default_runtime.memory._development_ablation_retire_overage_hard_negatives_pre_score
     assert not default_runtime.memory._development_ablation_require_distinct_source_for_persistence
+    assert not default_runtime.memory._development_ablation_global_recovery_distinct_source
 
     ablated = MODULE.build_runtime(
         dict(canonical),
@@ -1575,10 +1579,12 @@ def test_ab15_ab19_runtime_controls_reach_the_memory_state_machine():
             **base,
             ablation_retire_overage_hard_negatives_pre_score=True,
             ablation_require_distinct_source_for_persistence=True,
+            ablation_global_recovery_distinct_source=True,
         ),
     )
     assert ablated.memory._development_ablation_retire_overage_hard_negatives_pre_score
     assert ablated.memory._development_ablation_require_distinct_source_for_persistence
+    assert ablated.memory._development_ablation_global_recovery_distinct_source
 
 
 def _ab16_runtime_args(**overrides):

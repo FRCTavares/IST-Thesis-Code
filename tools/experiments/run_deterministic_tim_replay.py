@@ -338,6 +338,14 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--ablation-global-recovery-distinct-source",
+        action="store_true",
+        help=(
+            "Development-only: repeated known appearance source images do not "
+            "advance long-gap global identity recovery confirmation."
+        ),
+    )
+    parser.add_argument(
         "--ablation-require-distinct-source-for-persistence",
         action="store_true",
         help=(
@@ -927,6 +935,9 @@ def build_runtime(
                 "ablation_require_distinct_source_for_persistence",
                 False,
             )
+        ),
+        development_ablation_global_recovery_distinct_source=bool(
+            getattr(args, "ablation_global_recovery_distinct_source", False)
         ),
         ),
         mars_backend=backend,
@@ -1948,6 +1959,9 @@ def build_resolved_runtime_payload(
                     False,
                 )
             ),
+            "global_recovery_distinct_source": bool(
+                getattr(args, "ablation_global_recovery_distinct_source", False)
+            ),
             "disable_global_reacquisition": bool(
                 getattr(
                     args,
@@ -2085,6 +2099,9 @@ def build_resolved_runtime_payload(
         ),
         "ablation_require_distinct_source_for_persistence": argument_source(
             "--ablation-require-distinct-source-for-persistence"
+        ),
+        "ablation_global_recovery_distinct_source": argument_source(
+            "--ablation-global-recovery-distinct-source"
         ),
         "ablation_disable_global_reacquisition": argument_source(
             "--ablation-disable-global-reacquisition"

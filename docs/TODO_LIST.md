@@ -71,6 +71,8 @@ unchanged under the existing provenance/storage decision: `yolov8s.hef` and
 place pending provenance recovery and any separately planned artifact migration.
 The repository root is clean of runtime `log/` and `hailort.log` noise.
 
+30 September separate TIM-MARS development probe: a default-off, global-recovery-only distinct-appearance-source confirmation control was tested on the three established physical-person development recordings. It reduced correct output by 13.657228735 s in total, with no measured wrong-person reduction. It is not promoted; the canonical runtime, H01–H03 evidence and frozen Issue #125 comparison remain unchanged. The isolated report is `docs/results/selected_target_tracking/tim_vnext_global_distinct_source_development_20260930.md`. Further improvement needs annotated false-recovery development cases and a new independent prospective test set.
+
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
 ## Execution rules

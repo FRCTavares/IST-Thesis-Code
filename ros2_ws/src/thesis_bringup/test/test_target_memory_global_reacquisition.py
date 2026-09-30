@@ -1,8 +1,11 @@
+from dataclasses import replace
+
 import numpy as np
 
 from thesis_bringup.tim_mars.crop_quality import (
     AppearanceCropQuality,
 )
+from thesis_bringup.tim_mars.types import AppearanceObservationProvenance
 from thesis_bringup.tim_mars.target_memory import (
     CandidateTrack,
     TargetIdentityMemory,
@@ -726,3 +729,43 @@ def test_operator_clear_prevents_future_global_auto_reacquisition():
     assert output.target_track_id is None
     assert output.candidate_track_id is None
     assert output.reason == "no_operator_selected_target"
+
+
+def test_global_distinct_source_development_control_requires_new_image():
+    target = feat([1.0, 0.0, 0.0])
+    tim = TargetIdentityMemory(
+        cfg(), development_ablation_global_recovery_distinct_source=True
+    )
+    tim.select(tr(1, (80, 100, 150, 280), appearance=target))
+    enter_global_lost(tim)
+
+    def candidate(source_ns):
+        bbox = (500, 290, 570, 470)
+        original = tr(44, bbox, appearance=target)
+        provenance = AppearanceObservationProvenance(
+            source_frame_id=None,
+            source_image_timestamp_ns=source_ns,
+            embedded_ns=source_ns,
+            embedding_age_ms=0.0,
+            frame_generation=0,
+            track_generation=0,
+            source_bbox=bbox,
+            source_crop_quality=None,
+        )
+        return replace(original, appearance_provenance=provenance)
+
+    first = tim.update([candidate(100)])
+    repeated = tim.update([candidate(100)])
+    fresh = tim.update([candidate(133)])
+
+    assert not first.control_valid
+    assert not repeated.control_valid
+    assert repeated.reason.startswith("recovery_persistence_pending:")
+    assert fresh.control_valid
+    assert fresh.target_track_id == 44
+    assert tim._require_distinct_source_for_proposal(
+        "global_identity_reacquisition"
+    )
+    assert not tim._require_distinct_source_for_proposal(
+        "rank_aware_reacquisition"
+    )

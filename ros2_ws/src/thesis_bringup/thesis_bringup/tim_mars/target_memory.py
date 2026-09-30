@@ -144,6 +144,7 @@ class TargetIdentityMemory:
         development_ablation_prevent_repeated_source_adaptive_update: bool = False,
         development_ablation_retire_overage_hard_negatives_pre_score: bool = False,
         development_ablation_require_distinct_source_for_persistence: bool = False,
+        development_ablation_global_recovery_distinct_source: bool = False,
     ) -> None:
         self.cfg = cfg or TargetMemoryConfig()
         self._development_ablation_disable_forced_same_id_challenge = bool(
@@ -172,6 +173,9 @@ class TargetIdentityMemory:
         )
         self._development_ablation_require_distinct_source_for_persistence = bool(
             development_ablation_require_distinct_source_for_persistence
+        )
+        self._development_ablation_global_recovery_distinct_source = bool(
+            development_ablation_global_recovery_distinct_source
         )
         self._m = _Memory()
         self._appearance_update_cooldown_frames_remaining = 0
@@ -684,6 +688,7 @@ class TargetIdentityMemory:
                     required=required,
                     count=self._preview_confirmation_count(
                         int(candidate.track_id),
+                        proposal_source=proposal_source,
                         source_observation=(
                             self._appearance_source_observation(
                                 candidate
@@ -727,17 +732,29 @@ class TargetIdentityMemory:
             diagnostic_reason=str(diagnostic_reason),
         )
 
+    def _require_distinct_source_for_proposal(
+        self, proposal_source: str
+    ) -> bool:
+        return bool(
+            self._development_ablation_require_distinct_source_for_persistence
+            or (
+                self._development_ablation_global_recovery_distinct_source
+                and proposal_source == "global_identity_reacquisition"
+            )
+        )
+
     def _preview_confirmation_count(
         self,
         track_id: int,
         *,
+        proposal_source: str,
         source_observation: Optional[tuple] = None,
     ) -> int:
         return self._candidate_persistence.preview(
             int(track_id),
             source_observation=source_observation,
             require_distinct_source=(
-                self._development_ablation_require_distinct_source_for_persistence
+                self._require_distinct_source_for_proposal(proposal_source)
             ),
         )
 
@@ -842,7 +859,9 @@ class TargetIdentityMemory:
                 )
             ),
             require_distinct_source=(
-                self._development_ablation_require_distinct_source_for_persistence
+                self._require_distinct_source_for_proposal(
+                    proposal.proposal_source
+                )
             ),
         )
 
