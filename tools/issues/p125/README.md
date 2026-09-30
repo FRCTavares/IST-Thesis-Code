@@ -26,14 +26,19 @@ Current pre-result tooling:
   Core wrong-person, handover, LOST-run, first output after LOST,
   reference-gap/reacquisition and attributable target tracker-ID-change events
   are derived from source-frame records. The scorer requires one explicit
-  output entry for every source
-  frame from selection through the final target GT observation, including GT
-  gaps; `None` means no controller output. Runtime-stream integration remains
+  output entry for every source frame from selection through the final
+  target GT observation, including GT gaps; `None` means no controller output. Runtime-stream integration remains
   pending.
 - `controller_output_adapter.py` maps the four raw tracker backend outputs,
   Target-ReID publications, and control-valid TIM-MARS publications into the
   scorer's box and tracker-ID maps. Suppressed TIM-MARS candidate belief is
   excluded. These adapters are synthetic-tested; they do not execute runtimes.
+- `shared_detector_cache.py` delegates image preparation and coordinate
+  mapping to production preprocessing, applies the draft person/score filter,
+  and requires exact source-frame coverage. Its cache document builder
+  rejects any protocol that is not frozen. The input gateway also requires the
+  protocol and episode manifest to match HEAD and share a freeze commit. Only
+  synthetic arrays and decoded detections have been used in tests.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.
