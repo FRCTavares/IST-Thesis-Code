@@ -135,6 +135,36 @@ def test_episode_scoring_keeps_gt_gap_outside_four_bucket_denominator():
     assert result["events"]["successful_correct_reacquisition_count"] == 0
 
 
+def test_episode_rejects_missing_output_frame_including_reference_gap():
+    rows = [gt_row(0, 1, TARGET), gt_row(2, 1, TARGET)]
+    with pytest.raises(ValueError, match="missing source frames") as error:
+        MODULE.evaluate_episode(
+            split="train",
+            sequence_name="synthetic",
+            dataset_identity=1,
+            selection_frame_index=0,
+            source_frame_indices=[0, 1, 2],
+            gt_rows=rows,
+            output_bboxes_by_frame={0: TARGET, 2: None},
+            config=CONFIG,
+        )
+    assert "[1]" in str(error.value)
+
+
+def test_explicit_no_output_stays_lost_without_hiding_stream_gap():
+    result = MODULE.evaluate_episode(
+        split="val",
+        sequence_name="synthetic",
+        dataset_identity=1,
+        selection_frame_index=0,
+        source_frame_indices=[0, 1],
+        gt_rows=[gt_row(0, 1, TARGET), gt_row(1, 1, TARGET)],
+        output_bboxes_by_frame={0: TARGET, 1: None},
+        config=CONFIG,
+    )
+    assert result["scoring"]["counts"][MODULE.LOST_SUPPRESSED] == 1
+
+
 def test_episode_rejects_missing_source_image_and_invalid_selection():
     with pytest.raises(ValueError, match="no source image"):
         MODULE.evaluate_episode(

@@ -25,7 +25,10 @@ Current pre-result tooling:
   last target observation. Missing GT rows stay outside the primary denominator.
   Core wrong-person, handover, LOST-run, reference-gap/reacquisition and
   attributable target tracker-ID-change events are derived from source-frame
-  records. Runtime-stream integration remains pending.
+  records. The scorer requires one explicit output entry for every source
+  frame from selection through the final target GT observation, including GT
+  gaps; `None` means no controller output. Runtime-stream integration remains
+  pending.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.

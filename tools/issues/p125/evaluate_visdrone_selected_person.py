@@ -181,7 +181,9 @@ def evaluate_episode(
     `gt_rows` uses the established VisDrone annotation adapter fields:
     normalized_frame_index, identity, bbox_xyxy, class_id, and
     include_as_person_candidate. The output map is an already generated
-    architecture stream; this function never chooses or changes that stream.
+    architecture stream; every source frame in the scored episode domain
+    must be present, with None explicitly marking no controller output.
+    This function never chooses or changes that stream.
     """
     if not split or not sequence_name or dataset_identity <= 0:
         raise ValueError("split, sequence and positive identity are required")
@@ -224,6 +226,16 @@ def evaluate_episode(
     if not target_frames or target_frames[0] != selection_frame_index:
         raise ValueError("selection frame lacks valid target GT")
     last_target_frame = target_frames[-1]
+    scoring_frames = [
+        frame for frame in frames
+        if selection_frame_index <= frame <= last_target_frame
+    ]
+    missing_output_frames = set(scoring_frames) - set(output_bboxes_by_frame)
+    if missing_output_frames:
+        raise ValueError(
+            "output stream missing source frames in episode domain: "
+            f"{sorted(missing_output_frames)}"
+        )
     outcomes: list[FrameAttribution] = []
     frame_records: list[dict[str, object]] = []
     for frame in frames:

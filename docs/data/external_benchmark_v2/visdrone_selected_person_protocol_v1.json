@@ -196,6 +196,7 @@
     "ambiguous_region_precedence": "identity_unresolved_even_if_person_iou_is_unique",
     "unmatched_controller_output": "identity_unresolved",
     "no_valid_controller_output": "lost_suppressed",
+    "output_stream_coverage": "one_explicit_record_per_source_frame_from_selection_through_final_target_gt_observation_including_gt_gaps;_none_means_no_valid_output;_missing_record_is_error",
     "target_without_gt_row": "reference_unavailable_or_target_not_annotated_outside_primary_denominator",
     "scored_frame_domain": "source_frames_at_or_after_selection_with_valid_target_gt_row",
     "primary_reconciliation": "correct_plus_wrong_person_plus_identity_unresolved_plus_lost_suppressed_equals_target_present_scored_frames",
