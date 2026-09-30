@@ -277,6 +277,7 @@
     "same_detection_cache_for_all_six_arms": true,
     "tracker_replay_adapter": "tools/issues/p125/replay_shared_detector_cache.py",
     "raw_tracker_replay_writer": "tools/issues/p125/write_raw_tracker_replay.py",
+    "raw_tracker_episode_scorer": "tools/issues/p125/score_raw_tracker_sequence.py",
     "logical_frame_tick_ns": 1000000000,
     "logical_tick_is_physical_time": false,
     "parity_validation_required_before_full_corpus": true,

@@ -60,6 +60,10 @@ Current pre-result tooling:
   controller authority starts on the confirmation frame; failed
   initialization stays explicit and publishes no target. Only synthetic
   tracker records have been used in tests.
+- `score_raw_tracker_sequence.py` is the frozen-only raw-arm scoring command.
+  It validates replay provenance, loads the frozen GT episodes, retains each
+  per-tracker initialization result, and applies the common physical-person
+  scorer. Its sequence scoring path has only been tested with synthetic rows.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.

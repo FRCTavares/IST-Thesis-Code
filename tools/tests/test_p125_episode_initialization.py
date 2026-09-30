@@ -42,7 +42,7 @@ def tracker_frame(frame, identities):
     return {
         "normalized_frame_index": frame,
         "tracks": [
-            {"track_id": identity, "bbox_xyxy": BOX, "score": 0.8}
+            {"track_id": identity, "bbox_xyxy": list(BOX), "score": 0.8}
             for identity in identities
         ],
     }
@@ -104,6 +104,85 @@ def test_ambiguous_match_retains_failure_and_suppresses_all_output():
     )
     assert all(value is None for value in boxes.values())
     assert all(value is None for value in identities.values())
+
+
+def test_raw_sequence_scoring_retains_initialization_failure(tmp_path):
+    scorer_path = MODULE_PATH.with_name("score_raw_tracker_sequence.py")
+    scorer_spec = importlib.util.spec_from_file_location("p125_raw_sequence_scorer", scorer_path)
+    assert scorer_spec is not None and scorer_spec.loader is not None
+    scorer = importlib.util.module_from_spec(scorer_spec)
+    sys.modules[scorer_spec.name] = scorer
+    scorer_spec.loader.exec_module(scorer)
+    episodes = [{
+        **EPISODE, "split": "val", "sequence_name": "synthetic"
+    }]
+    frames = [
+        {
+            **tracker_frame(index, [7, 8]),
+            "source_frame_number": index + 1,
+            "logical_frame_stamp_ns": (index + 1) * 1_000_000_000,
+        }
+        for index in range(3)
+    ]
+    replay = {
+        "schema": "p125_raw_tracker_sequence_replay_v1",
+        "arm": "sort_raw",
+        "split": "val",
+        "sequence_name": "synthetic",
+        "protocol_sha256": "a" * 64,
+        "manifest_sha256": "b" * 64,
+        "freeze_commit": "c" * 40,
+        "detector_cache_sha256": "d" * 64,
+        "tracker_config_sha256": "e" * 64,
+        "logical_frame_tick_ns": 1_000_000_000,
+        "logical_tick_is_physical_time": False,
+        "frame_count": 3,
+        "frames": frames,
+    }
+    validated = scorer.validate_raw_replay(
+        replay,
+        arm="sort_raw",
+        split="val",
+        sequence_name="synthetic",
+        source_frame_numbers=[1, 2, 3],
+        protocol_sha256="a" * 64,
+        manifest_sha256="b" * 64,
+        freeze_commit="c" * 40,
+        detector_cache_sha256="d" * 64,
+        tracker_config_sha256="e" * 64,
+    )
+    with pytest.raises(ValueError, match="detector_cache_sha256"):
+        scorer.validate_raw_replay(
+            replay,
+            arm="sort_raw",
+            split="val",
+            sequence_name="synthetic",
+            source_frame_numbers=[1, 2, 3],
+            protocol_sha256="a" * 64,
+            manifest_sha256="b" * 64,
+            freeze_commit="c" * 40,
+            detector_cache_sha256="f" * 64,
+            tracker_config_sha256="e" * 64,
+        )
+    results = scorer.score_raw_episodes(
+        split="val",
+        sequence_name="synthetic",
+        episodes=episodes,
+        gt_rows=[gt_row(0), gt_row(1), gt_row(2)],
+        tracker_frames=validated,
+        initialization_rules={
+            "minimum_match_iou": 0.5,
+            "minimum_match_margin": 0.1,
+            "confirmation_frames": 2,
+        },
+        evaluation_rules={
+            "target_iou_threshold": 0.3,
+            "unique_iou_margin": 0.1,
+            "ambiguous_region_output_coverage_threshold": 0.5,
+        },
+    )
+    assert results[0]["initialization"]["success"] is False
+    assert results[0]["evaluation"]["scoring"]["counts"]["lost_suppressed"] == 3
 
 
 def test_missing_tracker_window_endpoint_is_rejected():
