@@ -88,19 +88,22 @@ def test_invalid_box_and_duplicate_physical_identity_rejected():
         classify(TARGET, others=((1, OTHER),))
 
 
-def gt_row(frame, identity, bbox, *, class_id=1, included=True):
+def gt_row(frame, identity, bbox, *, class_id=1, included=True,
+           occlusion=None, truncation=None):
     return SimpleNamespace(
         normalized_frame_index=frame,
         identity=identity,
         bbox_xyxy=bbox,
         class_id=class_id,
         include_as_person_candidate=included,
+        occlusion=occlusion,
+        truncation=truncation,
     )
 
 
 def test_episode_scoring_keeps_gt_gap_outside_four_bucket_denominator():
     rows = [
-        gt_row(0, 1, TARGET),
+        gt_row(0, 1, TARGET, occlusion=1, truncation=0),
         gt_row(1, 1, TARGET),
         gt_row(1, 2, OTHER),
         gt_row(3, 1, TARGET),
@@ -129,6 +132,13 @@ def test_episode_scoring_keeps_gt_gap_outside_four_bucket_denominator():
     assert result["scoring"]["target_present_scored_frames"] == 4
     assert result["scoring"]["reference_gap_frames"] == 1
     assert list(result["scoring"]["counts"].values()) == [1, 1, 1, 1]
+    assert result["correct_only_localization"] == {
+        "frame_count": 1, "mean_target_iou": 1.0,
+    }
+    assert result["frames"][0]["target_bbox_height_px"] == 10.0
+    assert result["frames"][0]["target_occlusion"] == 1
+    assert result["frames"][0]["target_truncation"] == 0
+    assert result["frames"][2]["target_bbox_height_px"] is None
     assert result["events"]["wrong_person_event_count"] == 1
     assert result["events"]["correct_to_wrong_handover_count"] == 1
     assert result["events"]["reference_gap_reappearance_count"] == 1
@@ -163,6 +173,18 @@ def test_explicit_no_output_stays_lost_without_hiding_stream_gap():
         config=CONFIG,
     )
     assert result["scoring"]["counts"][MODULE.LOST_SUPPRESSED] == 1
+
+
+def test_no_correct_output_has_null_localization_mean():
+    result = MODULE.evaluate_episode(
+        split="val", sequence_name="synthetic", dataset_identity=1,
+        selection_frame_index=0, source_frame_indices=[0],
+        gt_rows=[gt_row(0, 1, TARGET)],
+        output_bboxes_by_frame={0: None}, config=CONFIG,
+    )
+    assert result["correct_only_localization"] == {
+        "frame_count": 0, "mean_target_iou": None,
+    }
 
 
 def test_episode_rejects_missing_source_image_and_invalid_selection():

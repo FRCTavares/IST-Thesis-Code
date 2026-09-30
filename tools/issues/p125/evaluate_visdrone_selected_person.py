@@ -265,11 +265,32 @@ def evaluate_episode(
         frame_records.append({
             "normalized_frame_index": frame,
             "output_tracker_identity": tracker_ids.get(frame),
+            "target_bbox_height_px": (
+                float(target_bbox[3] - target_bbox[1])
+                if target_bbox is not None else None
+            ),
+            "target_occlusion": (
+                int(target_rows[0].occlusion)
+                if target_rows and getattr(target_rows[0], "occlusion", None) is not None
+                else None
+            ),
+            "target_truncation": (
+                int(target_rows[0].truncation)
+                if target_rows and getattr(target_rows[0], "truncation", None) is not None
+                else None
+            ),
             **asdict(attribution),
         })
     summary = summarize_target_present(outcomes)
     if summary["target_present_scored_frames"] != len(target_frames):
         raise ValueError("target-present denominator does not match target GT")
+    correct_ious = [
+        float(record["target_iou"])
+        for record in frame_records
+        if record["bucket"] == CORRECT
+    ]
+    if len(correct_ious) != summary["counts"][CORRECT]:
+        raise ValueError("correct-only localization count does not reconcile")
     return {
         "split": split,
         "sequence_name": sequence_name,
@@ -277,6 +298,12 @@ def evaluate_episode(
         "selection_frame_index": selection_frame_index,
         "last_target_observation_frame_index": last_target_frame,
         "scoring": summary,
+        "correct_only_localization": {
+            "frame_count": len(correct_ious),
+            "mean_target_iou": (
+                sum(correct_ious) / len(correct_ious) if correct_ious else None
+            ),
+        },
         "events": derive_events(frame_records),
         "frames": frame_records,
     }

@@ -180,7 +180,7 @@
     "duration_seconds_reporting_allowed": false,
     "frame_classifier": "tools/issues/p125/evaluate_visdrone_selected_person.py",
     "controller_output_adapter": "tools/issues/p125/controller_output_adapter.py",
-    "episode_scorer_status": "primary_four_bucket_and_core_events_synthetic_verified_runtime_stream_pending",
+    "episode_scorer_status": "all_six_frozen_only_runners_synthetic_verified_no_real_outcomes",
     "event_rules": {
       "wrong_person_event": "contiguous_source_frames_with_same_uniquely_matched_other_identity",
       "correct_to_wrong_handover": "correct_on_immediately_previous_source_frame_then_wrong_person",
@@ -210,7 +210,10 @@
       "40-79",
       "80-159",
       ">=160"
-    ]
+    ],
+    "scale_stratification_unit": "target_present_source_frame_gt_bbox_height_px",
+    "occlusion_stratification_unit": "target_present_source_frame_gt_occlusion_value_or_unknown",
+    "correct_only_localization": "per_episode_mean_target_iou_over_correct_frames_only;_null_when_no_correct_frames"
   },
   "statistics_draft": {
     "cluster_unit": "source_sequence",

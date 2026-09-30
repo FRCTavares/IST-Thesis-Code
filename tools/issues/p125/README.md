@@ -27,8 +27,11 @@ Current pre-result tooling:
   reference-gap/reacquisition and attributable target tracker-ID-change events
   are derived from source-frame records. The scorer requires one explicit
   output entry for every source frame from selection through the final
-  target GT observation, including GT gaps; `None` means no controller output. Runtime-stream integration remains
-  pending.
+  target GT observation, including GT gaps; `None` means no controller output.
+  Per-frame target GT height, occlusion and truncation support predeclared
+  stratification; the correct-only localization summary averages target IoU
+  and is null when there are no correct frames. All six arm adapters feed
+  this scorer through frozen-only sequence commands.
 - `controller_output_adapter.py` maps the four raw tracker backend outputs,
   Target-ReID publications, and control-valid TIM-MARS publications into the
   scorer's box and tracker-ID maps. Suppressed TIM-MARS candidate belief is
