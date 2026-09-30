@@ -38,7 +38,9 @@ Current pre-result tooling:
   and requires exact source-frame coverage. Its cache document builder
   rejects any protocol that is not frozen. The input gateway also requires the
   protocol and episode manifest to match HEAD and share a freeze commit. Only
-  synthetic arrays and decoded detections have been used in tests.
+  synthetic arrays and decoded detections have been used in tests. A ROS-backed
+  synthetic check compares the cache's mapped boxes with the live perception
+  node's detection publication method without starting Hailo inference.
 - `write_shared_detector_cache.py` prepares one frozen-manifest sequence,
   invokes the existing direct Hailo engine once per image, and writes an
   immutable cache under ignored artifacts. Its committed-freeze check runs

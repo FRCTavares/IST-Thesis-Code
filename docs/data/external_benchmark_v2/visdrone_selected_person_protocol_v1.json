@@ -285,6 +285,7 @@
     "tim_mars_temporal_policy_clock": "same_nominal_30_hz_logical_replay_clock;_millisecond_thresholds_use_this_declared_assumption",
     "logical_tick_is_physical_time": false,
     "parity_validation_required_before_full_corpus": true,
+    "parity_validation_status": "synthetic_shared_preprocessor_and_live_detection_publication_mapping_verified",
     "cache_contract": "tools/issues/p125/shared_detector_cache.py",
     "cache_writer": "tools/issues/p125/write_shared_detector_cache.py",
     "cache_generation_requires_committed_frozen_protocol": true,

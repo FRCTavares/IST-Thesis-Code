@@ -6,6 +6,7 @@ import importlib.util
 import json
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 
 import cv2
 import numpy as np
@@ -56,6 +57,44 @@ def test_detection_mapping_applies_score_label_and_source_coordinates():
         "score": 0.35,
         "class_id": 0,
     }]
+
+
+def test_live_detection_publication_matches_cache_mapping_on_synthetic_rows():
+    pytest.importorskip("rclpy")
+    from thesis_bringup.perception.perception_pipeline_node import PerceptionPipelineNode
+
+    source = np.zeros((7, 11, 3), dtype=np.uint8)
+    _, transform = MODULE.prepare_source_image(
+        source, inference_width=640, inference_height=640
+    )
+    rows = [
+        {"x": 0.15, "y": 0.20, "w": 0.25, "h": 0.30,
+         "score": 0.35, "label": "person", "class_id": 0},
+        {"x": 0.0, "y": 0.0, "w": 0.1, "h": 0.1,
+         "score": 0.34, "label": "person", "class_id": 0},
+        {"x": 0.6, "y": 0.6, "w": 0.2, "h": 0.2,
+         "score": 0.9, "label": "car", "class_id": 2},
+    ]
+    expected = MODULE.source_pixel_detections(
+        rows, transform=transform, minimum_score=0.35
+    )
+    live = PerceptionPipelineNode._build_detection_array(
+        SimpleNamespace(min_score=0.35, label="person", img_w=640, img_h=640),
+        SimpleNamespace(transform=transform, frame_id=1,
+                        t_cam_msg_seen_ns=1, stamp_sec=0, stamp_nanosec=1),
+        {"detections": rows},
+    )
+    assert len(live.detections) == len(expected) == 1
+    detection = live.detections[0]
+    centre = detection.bbox.center.position
+    width, height = detection.bbox.size_x, detection.bbox.size_y
+    published_box = (
+        centre.x - width / 2, centre.y - height / 2,
+        centre.x + width / 2, centre.y + height / 2,
+    )
+    assert published_box == pytest.approx(expected[0]["bbox_xyxy"])
+    assert detection.results[0].hypothesis.class_id == "person"
+    assert detection.results[0].hypothesis.score == expected[0]["score"]
 
 
 def test_cache_requires_freeze_and_exact_frame_coverage():
