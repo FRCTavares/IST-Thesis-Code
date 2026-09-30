@@ -39,6 +39,11 @@ Current pre-result tooling:
   rejects any protocol that is not frozen. The input gateway also requires the
   protocol and episode manifest to match HEAD and share a freeze commit. Only
   synthetic arrays and decoded detections have been used in tests.
+- `write_shared_detector_cache.py` prepares one frozen-manifest sequence,
+  invokes the existing direct Hailo engine once per image, and writes an
+  immutable cache under ignored artifacts. Its committed-freeze check runs
+  before any image or Hailo engine is opened. Only a fake engine and synthetic
+  images have been used to test the writer.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.

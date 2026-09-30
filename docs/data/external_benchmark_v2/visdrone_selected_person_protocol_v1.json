@@ -269,10 +269,12 @@
     "inference_encoding": "rgb8",
     "label": "person",
     "minimum_score": 0.35,
+    "infer_timeout_ms": 300,
     "coordinate_transform_contract": "tim_mars_source_pixels_resize_v1",
     "same_detection_cache_for_all_six_arms": true,
     "parity_validation_required_before_full_corpus": true,
     "cache_contract": "tools/issues/p125/shared_detector_cache.py",
+    "cache_writer": "tools/issues/p125/write_shared_detector_cache.py",
     "cache_generation_requires_committed_frozen_protocol": true,
     "exact_image_frame_coverage_required": true
   }

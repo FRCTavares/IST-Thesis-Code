@@ -116,6 +116,66 @@ def test_frozen_inputs_reject_separate_commits(tmp_path):
         )
 
 
+def test_one_sequence_writer_uses_each_image_once_and_rejects_timeout(tmp_path):
+    writer_path = MODULE_PATH.with_name("write_shared_detector_cache.py")
+    writer_spec = importlib.util.spec_from_file_location("p125_cache_writer", writer_path)
+    assert writer_spec is not None and writer_spec.loader is not None
+    writer = importlib.util.module_from_spec(writer_spec)
+    sys.modules[writer_spec.name] = writer
+    writer_spec.loader.exec_module(writer)
+    image_dir = tmp_path / "images"
+    image_dir.mkdir()
+    for frame in (1, 2):
+        image = np.full((4, 6, 3), frame, dtype=np.uint8)
+        assert cv2.imwrite(str(image_dir / f"{frame:07d}.jpg"), image)
+    paths = writer.image_paths_by_source_frame(image_dir)
+
+    class FakeEngine:
+        def __init__(self):
+            self.calls = []
+
+        def infer(self, rgb, source_frame, frame_index, source_stamp_ns, timeout_ms):
+            self.calls.append((source_frame, frame_index, rgb.shape, timeout_ms))
+            return {"detections": []}
+
+    engine = FakeEngine()
+    result = writer.generate_sequence_cache(
+        image_paths=paths,
+        engine=engine,
+        protocol_sha256="b" * 64,
+        split="val",
+        sequence_name="synthetic",
+        inference_width=8,
+        inference_height=8,
+        minimum_score=0.35,
+        infer_timeout_ms=300,
+    )
+    assert result["source_frame_count"] == 2
+    assert engine.calls == [(1, 0, (8, 8, 3), 300), (2, 1, (8, 8, 3), 300)]
+    output = tmp_path / "cache.json"
+    digest = writer.write_cache_once(output, result)
+    assert digest == writer.write_cache_once(output, result)
+    with pytest.raises(ValueError, match="differs"):
+        writer.write_cache_once(output, {**result, "source_frame_count": 3})
+
+    class TimeoutEngine:
+        def infer(self, *args):
+            return None
+
+    with pytest.raises(RuntimeError, match="timeout"):
+        writer.generate_sequence_cache(
+            image_paths=paths,
+            engine=TimeoutEngine(),
+            protocol_sha256="b" * 64,
+            split="val",
+            sequence_name="synthetic",
+            inference_width=8,
+            inference_height=8,
+            minimum_score=0.35,
+            infer_timeout_ms=300,
+        )
+
+
 def test_invalid_source_image_and_detector_values_are_rejected():
     with pytest.raises(ValueError, match="HWC uint8 BGR"):
         MODULE.prepare_source_image(np.zeros((4, 5), dtype=np.uint8))
