@@ -95,10 +95,10 @@ def test_replay_uses_tracker_specific_score_and_one_logical_tick_per_frame():
         before_frame=lambda frame, stamp: before.append((frame, stamp)),
     )
     assert backend.calls == [
-        ([(1.0, 2.0, 11.0, 12.0)], [0.6], 1_000_000_000),
-        ([], [], 2_000_000_000),
+        ([(1.0, 2.0, 11.0, 12.0)], [0.6], 33_333_333),
+        ([], [], 66_666_666),
     ]
-    assert before == [(1, 1_000_000_000), (2, 2_000_000_000)]
+    assert before == [(1, 33_333_333), (2, 66_666_666)]
     assert replay[0]["tracks"][0]["track_id"] == 7
     assert replay[1]["normalized_frame_index"] == 1
 
@@ -140,7 +140,7 @@ def test_deepsort_image_callback_uses_matching_bgr_frame_and_logical_stamp(tmp_p
     )
     callback(1, MODULE.LOGICAL_FRAME_TICK_NS)
     message = backend.images[0]
-    assert (message.header.stamp.sec, message.header.stamp.nanosec) == (1, 0)
+    assert (message.header.stamp.sec, message.header.stamp.nanosec) == (0, 33_333_333)
     assert (message.width, message.height, message.step, message.encoding) == (
         4, 3, 12, "bgr8"
     )

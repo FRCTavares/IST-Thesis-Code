@@ -120,7 +120,7 @@ def test_raw_sequence_scoring_retains_initialization_failure(tmp_path):
         {
             **tracker_frame(index, [7, 8]),
             "source_frame_number": index + 1,
-            "logical_frame_stamp_ns": (index + 1) * 1_000_000_000,
+            "logical_frame_stamp_ns": (index + 1) * 33_333_333,
         }
         for index in range(3)
     ]
@@ -134,7 +134,7 @@ def test_raw_sequence_scoring_retains_initialization_failure(tmp_path):
         "freeze_commit": "c" * 40,
         "detector_cache_sha256": "d" * 64,
         "tracker_config_sha256": "e" * 64,
-        "logical_frame_tick_ns": 1_000_000_000,
+        "logical_frame_tick_ns": 33_333_333,
         "logical_tick_is_physical_time": False,
         "frame_count": 3,
         "frames": frames,

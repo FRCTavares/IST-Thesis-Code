@@ -57,8 +57,8 @@ def make_deepsort_image_callback(
             raise ValueError(f"unreadable DeepSORT source image: {image_paths[source_frame]}")
         height, width = image.shape[:2]
         message = Image()
-        message.header.stamp.sec = logical_stamp_ns // LOGICAL_FRAME_TICK_NS
-        message.header.stamp.nanosec = logical_stamp_ns % LOGICAL_FRAME_TICK_NS
+        message.header.stamp.sec = logical_stamp_ns // 1_000_000_000
+        message.header.stamp.nanosec = logical_stamp_ns % 1_000_000_000
         message.height = height
         message.width = width
         message.encoding = "bgr8"
@@ -95,6 +95,13 @@ def main() -> int:
     )
     protocol = frozen["protocol"]
     manifest = frozen["manifest"]
+    clock = protocol["shared_detector_draft"]
+    if (
+        clock["logical_frame_tick_ns"] != LOGICAL_FRAME_TICK_NS
+        or clock["logical_frame_rate_hz"] != 30
+        or clock["logical_tick_is_physical_time"] is not False
+    ):
+        raise ValueError("tracker replay clock differs from frozen protocol")
     inventory = [
         entry for entry in manifest["sequence_inventory"]
         if entry["split"] == args.split and entry["sequence_name"] == args.sequence

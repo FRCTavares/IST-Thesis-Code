@@ -11,9 +11,6 @@ from typing import Any, Callable, Sequence
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from controller_output_adapter import NO_OUTPUT, from_target_reid, observation_maps  # noqa: E402
 
-LOGICAL_FRAME_TICK_NS = 1_000_000_000
-
-
 def track_message(frame: dict[str, Any]) -> SimpleNamespace:
     """Present recorded pixel-space ByteTrack boxes to the ROS-free runtime."""
     stamp_ns = int(frame["logical_frame_stamp_ns"])

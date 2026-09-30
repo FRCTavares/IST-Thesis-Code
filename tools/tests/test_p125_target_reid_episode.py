@@ -22,7 +22,7 @@ SPEC.loader.exec_module(MODULE)
 def frame(index, tracks):
     return {
         "normalized_frame_index": index,
-        "logical_frame_stamp_ns": (index + 1) * 1_000_000_000,
+        "logical_frame_stamp_ns": (index + 1) * 33_333_333,
         "tracks": [
             {"track_id": identity, "bbox_xyxy": list(box), "score": 0.8}
             for identity, box in tracks
@@ -81,7 +81,7 @@ def test_confirmation_is_anchor_only_and_later_publications_are_scored():
     assert bootstrap == 1
     assert boxes == {0: None, 1: None, 2: BOX, 3: None}
     assert identities == {0: None, 1: None, 2: 7, 3: None}
-    assert runtimes[0].stamps == [2_000_000_000, 3_000_000_000, 4_000_000_000]
+    assert runtimes[0].stamps == [66_666_666, 99_999_999, 133_333_332]
     assert runtimes[0].messages[0].tracks[0].cx == 7.0
 
 

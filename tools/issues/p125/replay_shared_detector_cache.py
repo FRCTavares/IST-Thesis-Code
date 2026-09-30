@@ -11,7 +11,10 @@ import math
 from typing import Any, Callable, Sequence
 
 
-LOGICAL_FRAME_TICK_NS = 1_000_000_000
+# The public image sequences have no capture timestamps. Use the canonical
+# ByteTrack configuration's nominal 30 Hz for deterministic offline replay.
+# This is a declared replay assumption, not measured VisDrone elapsed time.
+LOGICAL_FRAME_TICK_NS = 33_333_333
 
 
 def validate_sequence_cache(

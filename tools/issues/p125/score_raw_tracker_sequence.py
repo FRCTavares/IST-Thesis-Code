@@ -24,6 +24,7 @@ from resolve_episode_initialization import (  # noqa: E402
     resolve_initialization,
 )
 from shared_detector_cache import read_committed_frozen_inputs  # noqa: E402
+from replay_shared_detector_cache import LOGICAL_FRAME_TICK_NS  # noqa: E402
 from write_raw_tracker_replay import ARM_CONFIGS, sha256_file  # noqa: E402
 from write_shared_detector_cache import (  # noqa: E402
     image_paths_by_source_frame,
@@ -60,7 +61,7 @@ def validate_raw_replay(
         if replay.get(key) != expected:
             raise ValueError(f"raw tracker replay {key} mismatch")
     if (
-        replay.get("logical_frame_tick_ns") != 1_000_000_000
+        replay.get("logical_frame_tick_ns") != LOGICAL_FRAME_TICK_NS
         or replay.get("logical_tick_is_physical_time") is not False
     ):
         raise ValueError("raw tracker replay logical frame clock mismatch")
@@ -73,7 +74,7 @@ def validate_raw_replay(
         if (
             frame["normalized_frame_index"] != frame["source_frame_number"] - 1
             or frame.get("logical_frame_stamp_ns")
-            != frame["source_frame_number"] * 1_000_000_000
+            != frame["source_frame_number"] * LOGICAL_FRAME_TICK_NS
         ):
             raise ValueError("raw tracker replay frame mapping mismatch")
         tracks = frame.get("tracks")

@@ -47,7 +47,10 @@ Current pre-result tooling:
 - `replay_shared_detector_cache.py` validates cache provenance and exact
   image-frame coverage, then feeds one cached detection stream into a supplied
   canonical tracker backend. It applies each tracker's YAML minimum score and
-  uses dimensionless logical frame ticks so image and track updates align.
+  uses a declared nominal 30 Hz logical replay clock from the canonical
+  ByteTrack configuration so image and track updates align. The source image
+  files lack capture timestamps, so this clock is an assumption; TIM-MARS
+  millisecond policies run against it and results must not claim measured time.
   Only fake backends have been used in tests.
 - `write_raw_tracker_replay.py` is the frozen-only one-sequence command for
   SORT, ByteTrack, OC-SORT and DeepSORT. It verifies the shared detector cache,
