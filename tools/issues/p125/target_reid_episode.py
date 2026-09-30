@@ -21,12 +21,17 @@ def track_message(frame: dict[str, Any]) -> SimpleNamespace:
         x1, y1, x2, y2 = (float(value) for value in track["bbox_xyxy"])
         tracks.append(SimpleNamespace(
             id=int(track["track_id"]),
+            score=float(track["score"]),
             cx=(x1 + x2) / 2,
             cy=(y1 + y2) / 2,
             w=x2 - x1,
             h=y2 - y1,
         ))
-    return SimpleNamespace(src_stamp_ns=stamp_ns, tracks=tracks)
+    return SimpleNamespace(
+        frame_id=int(frame["source_frame_number"]),
+        src_stamp_ns=stamp_ns,
+        tracks=tracks,
+    )
 
 
 def target_reid_authority_maps(

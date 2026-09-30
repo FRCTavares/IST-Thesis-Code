@@ -21,6 +21,7 @@ SPEC.loader.exec_module(MODULE)
 
 def frame(index, tracks):
     return {
+        "source_frame_number": index + 1,
         "normalized_frame_index": index,
         "logical_frame_stamp_ns": (index + 1) * 33_333_333,
         "tracks": [

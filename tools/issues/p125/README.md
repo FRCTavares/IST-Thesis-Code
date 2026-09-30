@@ -77,6 +77,15 @@ Current pre-result tooling:
   hashes, shares one MARS extractor across fresh per-episode anchors, and
   records every episode's initialization and bootstrap status. Its real-data
   path remains unopened while the protocol is draft.
+- `tim_mars_episode.py` applies the confirmed ByteTrack selection to the
+  existing TIM-MARS runtime and maps only control-valid publications into
+  the common scorer. Failed initialization remains explicit no-output.
+- `write_tim_mars_sequence.py` is the frozen-only ByteTrack + canonical
+  TIM-MARS sequence scorer. It verifies frozen replay and implementation
+  hashes, loads the canonical runtime configuration through the existing
+  deterministic replay builder, and gives each episode fresh target memory
+  while sharing one MARS extractor. Its real-data path remains unopened while
+  the protocol is draft; synthetic timing and scorer checks pass.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.
