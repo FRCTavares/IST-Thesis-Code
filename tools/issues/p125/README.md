@@ -23,9 +23,9 @@ Current pre-result tooling:
 - `evaluate_visdrone_selected_person.py` defines the four primary
   physical-person frame buckets and scores one selected identity through its
   last target observation. Missing GT rows stay outside the primary denominator.
-  Core wrong-person, handover, LOST-run and reference-gap/reacquisition events
-  are derived from source-frame records. Runtime-stream integration and
-  tracker-ID-specific events remain pending.
+  Core wrong-person, handover, LOST-run, reference-gap/reacquisition and
+  attributable target tracker-ID-change events are derived from source-frame
+  records. Runtime-stream integration remains pending.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.

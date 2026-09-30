@@ -174,6 +174,7 @@ def evaluate_episode(
     gt_rows: Sequence[Any],
     output_bboxes_by_frame: dict[int, BBox | None],
     config: AttributionConfig,
+    output_tracker_ids_by_frame: dict[int, int | None] | None = None,
 ) -> dict[str, object]:
     """Score one selected GT identity through its final valid observation.
 
@@ -194,6 +195,14 @@ def evaluate_episode(
     frame_set = set(frames)
     if set(output_bboxes_by_frame) - frame_set:
         raise ValueError("output stream contains a frame outside the source images")
+    tracker_ids = output_tracker_ids_by_frame or {}
+    if set(tracker_ids) - frame_set:
+        raise ValueError("tracker-ID stream contains a frame outside the source images")
+    for frame, identity in tracker_ids.items():
+        if identity is not None and identity <= 0:
+            raise ValueError(f"invalid output tracker ID on frame {frame}")
+        if identity is not None and output_bboxes_by_frame.get(frame) is None:
+            raise ValueError("tracker ID requires a controller-facing output box")
 
     person_by_frame: dict[int, list[Any]] = {}
     ambiguous_by_frame: dict[int, list[BBox]] = {}
@@ -243,6 +252,7 @@ def evaluate_episode(
         outcomes.append(attribution)
         frame_records.append({
             "normalized_frame_index": frame,
+            "output_tracker_identity": tracker_ids.get(frame),
             **asdict(attribution),
         })
     summary = summarize_target_present(outcomes)
@@ -278,6 +288,8 @@ def derive_events(frame_records: Sequence[dict[str, object]]) -> dict[str, objec
     recovery_pending: dict[str, int | None] | None = None
     previous_frame: int | None = None
     previous_bucket: str | None = None
+    last_attributable_target_tracker_id: int | None = None
+    target_tracker_id_changes: list[dict[str, int]] = []
 
     for record in frame_records:
         frame = int(record["normalized_frame_index"])
@@ -313,6 +325,22 @@ def derive_events(frame_records: Sequence[dict[str, object]]) -> dict[str, objec
                     frame - int(recovery_pending["first_reappearance_frame_index"])
                 )
                 recovery_pending = None
+            if bucket == CORRECT:
+                tracker_id = record.get("output_tracker_identity")
+                if tracker_id is not None:
+                    tracker_id = int(tracker_id)
+                    if tracker_id <= 0:
+                        raise ValueError("attributable output tracker ID must be positive")
+                    if (
+                        last_attributable_target_tracker_id is not None
+                        and tracker_id != last_attributable_target_tracker_id
+                    ):
+                        target_tracker_id_changes.append({
+                            "frame_index": frame,
+                            "from_tracker_identity": last_attributable_target_tracker_id,
+                            "to_tracker_identity": tracker_id,
+                        })
+                    last_attributable_target_tracker_id = tracker_id
 
             if bucket == WRONG_PERSON:
                 identity = record["matched_identity"]
@@ -364,4 +392,6 @@ def derive_events(frame_records: Sequence[dict[str, object]]) -> dict[str, objec
             event["first_correct_frame_index"] is not None
             for event in reappearances
         ),
+        "target_tracker_id_changes_where_attributable": target_tracker_id_changes,
+        "target_tracker_id_change_count": len(target_tracker_id_changes),
     }

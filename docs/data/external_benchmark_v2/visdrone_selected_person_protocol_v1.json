@@ -183,7 +183,7 @@
       "lost_run": "contiguous_target_present_source_frames_without_valid_output",
       "reference_gap_reappearance": "first_valid_target_gt_frame_after_one_or_more_target_gt_gap_frames",
       "correct_reacquisition_delay": "source_frames_from_first_reappearance_gt_to_first_later_correct_authority_before_next_gap",
-      "physical_target_tracker_id_changes": "pending_runtime_candidate_stream_integration",
+      "physical_target_tracker_id_changes": "change_between_successive_correct_target_outputs_with_known_tracker_ids",
       "false_or_ambiguous_reacquisition": "pending_runtime_candidate_stream_integration"
     },
     "person_attribution_rule": "highest_person_iou_at_least_0.30_and_at_least_0.10_above_second_best",

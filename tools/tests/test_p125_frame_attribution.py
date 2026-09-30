@@ -206,3 +206,42 @@ def test_wrong_identity_change_starts_new_event_and_frame_gap_breaks_run():
     ])
     assert events["wrong_person_event_count"] == 3
     assert events["correct_to_wrong_handover_count"] == 0
+
+
+def test_episode_counts_tracker_id_change_only_on_attributable_target():
+    rows = [gt_row(frame, 1, TARGET) for frame in range(4)]
+    rows.append(gt_row(1, 2, OTHER))
+    result = MODULE.evaluate_episode(
+        split="val",
+        sequence_name="synthetic",
+        dataset_identity=1,
+        selection_frame_index=0,
+        source_frame_indices=[0, 1, 2, 3],
+        gt_rows=rows,
+        output_bboxes_by_frame={
+            0: TARGET, 1: OTHER, 2: TARGET, 3: TARGET,
+        },
+        output_tracker_ids_by_frame={0: 10, 1: 11, 2: 10, 3: 12},
+        config=CONFIG,
+    )
+    assert result["events"]["target_tracker_id_changes_where_attributable"] == [{
+        "frame_index": 3,
+        "from_tracker_identity": 10,
+        "to_tracker_identity": 12,
+    }]
+    assert result["events"]["target_tracker_id_change_count"] == 1
+
+
+def test_tracker_id_without_output_box_is_rejected():
+    with pytest.raises(ValueError, match="requires a controller-facing output box"):
+        MODULE.evaluate_episode(
+            split="val",
+            sequence_name="synthetic",
+            dataset_identity=1,
+            selection_frame_index=0,
+            source_frame_indices=[0],
+            gt_rows=[gt_row(0, 1, TARGET)],
+            output_bboxes_by_frame={},
+            output_tracker_ids_by_frame={0: 10},
+            config=CONFIG,
+        )
