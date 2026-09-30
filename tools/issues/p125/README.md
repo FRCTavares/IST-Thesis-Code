@@ -64,6 +64,16 @@ Current pre-result tooling:
   It validates replay provenance, loads the frozen GT episodes, retains each
   per-tracker initialization result, and applies the common physical-person
   scorer. Its sequence scoring path has only been tested with synthetic rows.
+- `target_reid_episode.py` adapts one confirmed ByteTrack selection to the
+  existing Target-ReID runtime. The confirmation frame only bootstraps the
+  appearance anchor. Failed tracker initialization or anchor bootstrap leaves
+  explicit no-output records for the episode; later output uses only published
+  Target-ReID decisions. Its timing and failure paths are synthetic-tested.
+- `write_target_reid_sequence.py` is the frozen-only Target-ReID 0.90 sequence
+  scorer. It validates the ByteTrack replay and frozen model/config/source
+  hashes, shares one MARS extractor across fresh per-episode anchors, and
+  records every episode's initialization and bootstrap status. Its real-data
+  path remains unopened while the protocol is draft.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.
