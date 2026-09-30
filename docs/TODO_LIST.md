@@ -4,9 +4,9 @@ This file is the ordered view of open executable GitHub Issues. Issue bodies are
 the source of truth for scope, acceptance criteria, commands, experiments, and
 closing evidence.
 
-Open executable issues: **7**.
+Open executable issues: **8**.
 
-Last reconciled with GitHub: **24 September 2026**.
+Last reconciled with GitHub: **29 September 2026**.
 
 **Issue #64 closed on 22 September 2026 with VGA retained.** HD was not
 promoted after the primary matched TIM-MARS comparison exceeded the frozen
@@ -70,6 +70,10 @@ unchanged under the existing provenance/storage decision: `yolov8s.hef` and
 `mars-small128.pb` are canonical, while non-canonical tracked HEFs remain in
 place pending provenance recovery and any separately planned artifact migration.
 The repository root is clean of runtime `log/` and `hailort.log` noise.
+
+29 September Issue #125 opened for the final broad public VisDrone selected-person benchmark. The first implementation tranche is deliberately pre-result only: acquire/reconcile public data, audit ground truth, freeze all-eligible target episodes, and lock evaluation/statistical semantics before any tracker, Target-ReID or TIM-MARS outcome is inspected. This work must not delay #50 field execution.
+
+The Pi GT-only validation audit restored the previously omitted 978-image 4K sequence from the verified archive. All seven validation sequences reconcile at 2,846 image and annotation frames, yielding 194 eligible episodes from 225 pedestrian identities. The cross-verified train archive adds 56 sequences, 24,201 images and 24,198 frames with GT rows; three image frames have no GT rows and are reference-unavailable for target-present scoring. Train eligibility yields 1,361 episodes from 1,822 pedestrian identities. The combined GT-only manifest has 63 sequences and 1,555 episodes from 2,047 identities. Both source archives, both GT audits, the deterministic manifest and 15 canonical hashes were reverified before the dedicated pre-result freeze.
 
 The authoritative open-issue count is maintained in GitHub; this file keeps the ordered active queue.
 
@@ -162,12 +166,18 @@ The authoritative open-issue count is maintained in GitHub; this file keeps the 
    - Integrate explicit limitations through #41 and final figures/evidence tables from the dissertation plan. The former #42 checklist is closed as subsumed by this issue and #39.
    - Do not invent conclusions for evidence that is still pending.
 
-3. [ ] [#41 — Write explicit thesis limitations from final evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/41) — EVIDENCE DEPENDENT
+3. [ ] [#125 — Add large-scale public VisDrone selected-person benchmark and multi-architecture statistical evaluation](https://github.com/FRCTavares/IST-Thesis-Code/issues/125) — FROZEN PROTOCOL / FULL CORPUS SCORED
+   - Add a broad public UAV selected-person evidence class addressing the ROBOT reviewer's public-dataset, broader-tracker and statistical-analysis limitations without retuning TIM-MARS.
+   - Train and validation provenance, GT audits, exact frame domains and all 1,555 eligible episodes were locked before outcome access. The nominal 30 Hz replay clock is an assumption, not measured capture time. The post-freeze same-HEF smoke matched 59 person detections across three fixed frames (report SHA-256 `ee6c321156f6a0309c2c395ece9f5f1e800bfe4cfabf6340fe27d73bcacde8c4`). All seven validation sequences (2,846 source images, 194 frozen episodes) have completed one shared detector cache and all six scored arms. The validation aggregate reconciles 77 source artifact hashes and every four-bucket count (SHA-256 `548ffbbd211f45391f6c136fb27d8facfa0bf7ee3162c0dd9cfa9b7ed5228602`). Only 21 episodes were ByteTrack-initialisable; validation results are descriptive. All 56 train sequences and seven validation sequences are scored, and the full 63-sequence aggregate reconciles 693 source artifact hashes and all 1,555 frozen episodes (SHA-256 `a6bb198d106485460310843c6b7fe500a9a23cd6a2e2c6976e0849ebae5bd217`). On 104 paired ByteTrack-initialisable episodes from 34 source sequences, TIM-MARS minus raw ByteTrack has episode-macro correct fraction −0.0401 (sequence-cluster bootstrap 95% interval −0.1281 to 0.0418) and wrong-person fraction +0.0318 (interval −0.0328 to 0.0875; two-sided sequence-cluster sign-flip p=0.4129). These estimates do not establish a population advantage or disadvantage; the observed wrong-person increase is a safety concern. Preserve the frozen outputs and complete the evidence report and thesis integration before closing #125.
+   - Frozen arms are SORT raw, ByteTrack raw, OC-SORT raw, DeepSORT raw, Target-ReID 0.90, and ByteTrack + canonical TIM-MARS using one shared YOLOv8s detector cache.
+   - Keep this evidence separate from H01-H03, #50 closed-loop flight and #32 sustained runtime. #125 must not delay #50 and must be reconciled into #67/#39 only after promoted evidence exists.
+
+4. [ ] [#41 — Write explicit thesis limitations from final evidence](https://github.com/FRCTavares/IST-Thesis-Code/issues/41) — EVIDENCE DEPENDENT
    - Maintain explicit limitations covering small/poor-quality crops, tracker dependence, appearance-domain gap, finite held-out scope, calibration dependence, target absence, long-gap recovery limits, embedded resource constraints and the absence of formal safety guarantees.
    - #27 capture/annotation evidence remains frozen; #58 corrected source-time quantitative evidence is integrated in the Mac report with its repair qualification. The #64 retained-resolution decision is complete; final wording still depends on #50 and #32.
    - Report negative results and rejected mechanisms rather than hiding them.
 
-4. [ ] [#68 — Complete thesis review, formatting, and final submission by 31 October 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/68)
+5. [ ] [#68 — Complete thesis review, formatting, and final submission by 31 October 2026](https://github.com/FRCTavares/IST-Thesis-Code/issues/68)
    - Begins in earnest once the complete supervisor-ready draft exists.
    - Own supervisor revisions, proofreading, current IST/MEEC formatting compliance, abstracts/keywords, extended abstract, required declarations, final reproducibility checks, release archival and submission.
    - Do not reopen completed algorithm work unless a genuine correctness or evidence defect is found.
