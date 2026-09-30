@@ -176,6 +176,7 @@
     "primary_time_unit": "frames",
     "duration_seconds_reporting_allowed": false,
     "frame_classifier": "tools/issues/p125/evaluate_visdrone_selected_person.py",
+    "episode_scorer_status": "primary_four_bucket_synthetic_verified_event_metrics_and_runtime_stream_pending",
     "person_attribution_rule": "highest_person_iou_at_least_0.30_and_at_least_0.10_above_second_best",
     "unique_iou_margin": 0.1,
     "ambiguous_region_output_coverage_threshold": 0.5,

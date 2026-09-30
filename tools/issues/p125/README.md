@@ -21,7 +21,9 @@ Current pre-result tooling:
   identity, and episode-count checks. It hashes both source archives and
   both audit files, and writes a deterministic `draft_not_frozen` manifest.
 - `evaluate_visdrone_selected_person.py` defines the four primary
-  physical-person frame buckets and keeps missing GT rows outside scoring.
+  physical-person frame buckets and scores one selected identity through its
+  last target observation. Missing GT rows stay outside the primary denominator.
+  Event metrics and runtime-stream integration are still pending.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.

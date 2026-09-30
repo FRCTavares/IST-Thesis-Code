@@ -8,8 +8,8 @@ supplied controller-facing box against official person ground truth.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
-from typing import Sequence
+from dataclasses import asdict, dataclass
+from typing import Any, Sequence
 
 BBox = tuple[float, float, float, float]
 
@@ -161,4 +161,99 @@ def summarize_target_present(
             name: counts[name] / total if total else None
             for name in PRIMARY_BUCKETS
         },
+    }
+
+
+def evaluate_episode(
+    *,
+    split: str,
+    sequence_name: str,
+    dataset_identity: int,
+    selection_frame_index: int,
+    source_frame_indices: Sequence[int],
+    gt_rows: Sequence[Any],
+    output_bboxes_by_frame: dict[int, BBox | None],
+    config: AttributionConfig,
+) -> dict[str, object]:
+    """Score one selected GT identity through its final valid observation.
+
+    `gt_rows` uses the established VisDrone annotation adapter fields:
+    normalized_frame_index, identity, bbox_xyxy, class_id, and
+    include_as_person_candidate. The output map is an already generated
+    architecture stream; this function never chooses or changes that stream.
+    """
+    if not split or not sequence_name or dataset_identity <= 0:
+        raise ValueError("split, sequence and positive identity are required")
+    if selection_frame_index < 0:
+        raise ValueError("selection frame must be non-negative")
+    frames = list(source_frame_indices)
+    if not frames or frames != sorted(set(frames)):
+        raise ValueError("source frame indices must be sorted and unique")
+    if selection_frame_index not in frames:
+        raise ValueError("selection frame has no source image")
+    frame_set = set(frames)
+    if set(output_bboxes_by_frame) - frame_set:
+        raise ValueError("output stream contains a frame outside the source images")
+
+    person_by_frame: dict[int, list[Any]] = {}
+    ambiguous_by_frame: dict[int, list[BBox]] = {}
+    for row in gt_rows:
+        frame = int(row.normalized_frame_index)
+        if frame not in frame_set:
+            raise ValueError("GT annotation frame has no source image")
+        if bool(row.include_as_person_candidate):
+            person_by_frame.setdefault(frame, []).append(row)
+        elif int(row.class_id) in (0, 2):
+            ambiguous_by_frame.setdefault(frame, []).append(row.bbox_xyxy)
+
+    target_frames = sorted(
+        frame
+        for frame, rows in person_by_frame.items()
+        if frame >= selection_frame_index
+        and any(int(row.identity) == dataset_identity for row in rows)
+    )
+    if not target_frames or target_frames[0] != selection_frame_index:
+        raise ValueError("selection frame lacks valid target GT")
+    last_target_frame = target_frames[-1]
+    outcomes: list[FrameAttribution] = []
+    frame_records: list[dict[str, object]] = []
+    for frame in frames:
+        if frame < selection_frame_index or frame > last_target_frame:
+            continue
+        people = person_by_frame.get(frame, [])
+        target_rows = [
+            row for row in people if int(row.identity) == dataset_identity
+        ]
+        if len(target_rows) > 1:
+            raise ValueError("duplicate target GT identity in frame")
+        target_bbox = target_rows[0].bbox_xyxy if target_rows else None
+        others = [
+            (int(row.identity), row.bbox_xyxy)
+            for row in people
+            if int(row.identity) != dataset_identity
+        ]
+        attribution = classify_frame(
+            target_bbox=target_bbox,
+            target_identity=dataset_identity,
+            other_people=others,
+            ambiguous_regions=ambiguous_by_frame.get(frame, ()),
+            output_bbox=output_bboxes_by_frame.get(frame),
+            config=config,
+        )
+        outcomes.append(attribution)
+        frame_records.append({
+            "normalized_frame_index": frame,
+            **asdict(attribution),
+        })
+    summary = summarize_target_present(outcomes)
+    if summary["target_present_scored_frames"] != len(target_frames):
+        raise ValueError("target-present denominator does not match target GT")
+    return {
+        "split": split,
+        "sequence_name": sequence_name,
+        "dataset_identity": dataset_identity,
+        "selection_frame_index": selection_frame_index,
+        "last_target_observation_frame_index": last_target_frame,
+        "scoring": summary,
+        "frames": frame_records,
     }
