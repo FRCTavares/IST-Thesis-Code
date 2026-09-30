@@ -44,6 +44,17 @@ Current pre-result tooling:
   immutable cache under ignored artifacts. Its committed-freeze check runs
   before any image or Hailo engine is opened. Only a fake engine and synthetic
   images have been used to test the writer.
+- `replay_shared_detector_cache.py` validates cache provenance and exact
+  image-frame coverage, then feeds one cached detection stream into a supplied
+  canonical tracker backend. It applies each tracker's YAML minimum score and
+  uses dimensionless logical frame ticks so image and track updates align.
+  Only fake backends have been used in tests.
+- `write_raw_tracker_replay.py` is the frozen-only one-sequence command for
+  SORT, ByteTrack, OC-SORT and DeepSORT. It verifies the shared detector cache,
+  source files, model/config hashes and frame domain before using the existing
+  production tracker constructor. DeepSORT receives the matching BGR image
+  before each logical-frame update. This command has only been exercised on
+  the current draft protocol's refusal path.
 - `analyse_visdrone_selected_person_statistics.py` implements fixed-seed
   paired episode effects, source-sequence cluster bootstrap and the primary
   cluster sign-flip test. It has only been exercised on synthetic data.
