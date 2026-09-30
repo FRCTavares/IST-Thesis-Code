@@ -238,6 +238,37 @@ def test_wrong_identity_change_starts_new_event_and_frame_gap_breaks_run():
     assert events["correct_to_wrong_handover_count"] == 0
 
 
+def test_first_output_after_lost_classifies_false_ambiguous_and_correct():
+    events = MODULE.derive_events([
+        event_record(0, MODULE.LOST_SUPPRESSED),
+        event_record(1, MODULE.LOST_SUPPRESSED),
+        event_record(2, MODULE.WRONG_PERSON, 2),
+        event_record(3, MODULE.LOST_SUPPRESSED),
+        event_record(4, MODULE.IDENTITY_UNRESOLVED),
+        event_record(5, MODULE.LOST_SUPPRESSED),
+        event_record(6, MODULE.CORRECT, 1),
+    ])
+    assert [event["outcome"] for event in events["post_lost_first_outputs"]] == [
+        MODULE.WRONG_PERSON,
+        MODULE.IDENTITY_UNRESOLVED,
+        MODULE.CORRECT,
+    ]
+    assert events["post_lost_false_reacquisition_count"] == 1
+    assert events["post_lost_ambiguous_reacquisition_count"] == 1
+    assert events["post_lost_correct_reacquisition_count"] == 1
+
+
+def test_reference_gap_and_missing_source_frame_do_not_create_reacquisition():
+    events = MODULE.derive_events([
+        event_record(0, MODULE.LOST_SUPPRESSED),
+        event_record(1, MODULE.REFERENCE_UNAVAILABLE),
+        event_record(2, MODULE.WRONG_PERSON, 2),
+        event_record(4, MODULE.LOST_SUPPRESSED),
+        event_record(6, MODULE.WRONG_PERSON, 2),
+    ])
+    assert events["post_lost_first_outputs"] == []
+
+
 def test_episode_counts_tracker_id_change_only_on_attributable_target():
     rows = [gt_row(frame, 1, TARGET) for frame in range(4)]
     rows.append(gt_row(1, 2, OTHER))

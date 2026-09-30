@@ -23,9 +23,10 @@ Current pre-result tooling:
 - `evaluate_visdrone_selected_person.py` defines the four primary
   physical-person frame buckets and scores one selected identity through its
   last target observation. Missing GT rows stay outside the primary denominator.
-  Core wrong-person, handover, LOST-run, reference-gap/reacquisition and
-  attributable target tracker-ID-change events are derived from source-frame
-  records. The scorer requires one explicit output entry for every source
+  Core wrong-person, handover, LOST-run, first output after LOST,
+  reference-gap/reacquisition and attributable target tracker-ID-change events
+  are derived from source-frame records. The scorer requires one explicit
+  output entry for every source
   frame from selection through the final target GT observation, including GT
   gaps; `None` means no controller output. Runtime-stream integration remains
   pending.

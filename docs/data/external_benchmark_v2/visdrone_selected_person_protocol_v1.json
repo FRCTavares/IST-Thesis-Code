@@ -185,7 +185,7 @@
       "reference_gap_reappearance": "first_valid_target_gt_frame_after_one_or_more_target_gt_gap_frames",
       "correct_reacquisition_delay": "source_frames_from_first_reappearance_gt_to_first_later_correct_authority_before_next_gap",
       "physical_target_tracker_id_changes": "change_between_successive_correct_target_outputs_with_known_tracker_ids",
-      "false_or_ambiguous_reacquisition": "pending_runtime_candidate_stream_integration"
+      "post_lost_first_output_reacquisition": "first_immediately_adjacent_non_lost_target_present_output_after_each_contiguous_lost_run;_classify_correct_wrong_person_or_identity_unresolved;_gt_gap_or_source_gap_breaks_transition"
     },
     "person_attribution_rule": "highest_person_iou_at_least_0.30_and_at_least_0.10_above_second_best",
     "unique_iou_margin": 0.1,

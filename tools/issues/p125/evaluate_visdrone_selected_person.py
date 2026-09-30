@@ -291,6 +291,7 @@ def derive_events(frame_records: Sequence[dict[str, object]]) -> dict[str, objec
         raise ValueError("event frames must be sorted and unique")
     wrong_events: list[dict[str, int]] = []
     lost_runs: list[dict[str, int]] = []
+    post_lost_first_outputs: list[dict[str, int | str]] = []
     reappearances: list[dict[str, int | None]] = []
     correct_to_wrong = 0
 
@@ -376,6 +377,18 @@ def derive_events(frame_records: Sequence[dict[str, object]]) -> dict[str, objec
             else:
                 active_wrong = None
 
+            if (
+                bucket in (CORRECT, WRONG_PERSON, IDENTITY_UNRESOLVED)
+                and active_lost is not None
+                and adjacent
+            ):
+                post_lost_first_outputs.append({
+                    "lost_start_frame_index": active_lost["start_frame_index"],
+                    "lost_end_frame_index": active_lost["end_frame_index"],
+                    "first_output_frame_index": frame,
+                    "outcome": bucket,
+                })
+
             if bucket == LOST_SUPPRESSED:
                 if active_lost is None or not adjacent:
                     active_lost = {
@@ -398,6 +411,19 @@ def derive_events(frame_records: Sequence[dict[str, object]]) -> dict[str, objec
         "wrong_person_event_count": len(wrong_events),
         "correct_to_wrong_handover_count": correct_to_wrong,
         "lost_runs": lost_runs,
+        "post_lost_first_outputs": post_lost_first_outputs,
+        "post_lost_false_reacquisition_count": sum(
+            event["outcome"] == WRONG_PERSON
+            for event in post_lost_first_outputs
+        ),
+        "post_lost_ambiguous_reacquisition_count": sum(
+            event["outcome"] == IDENTITY_UNRESOLVED
+            for event in post_lost_first_outputs
+        ),
+        "post_lost_correct_reacquisition_count": sum(
+            event["outcome"] == CORRECT
+            for event in post_lost_first_outputs
+        ),
         "reference_gap_reappearances": reappearances,
         "reference_gap_reappearance_count": len(reappearances),
         "successful_correct_reacquisition_count": sum(
