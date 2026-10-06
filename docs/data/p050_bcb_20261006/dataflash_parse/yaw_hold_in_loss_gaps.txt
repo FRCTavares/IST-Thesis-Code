@@ -1,0 +1,6 @@
+F1 loss gap n=160 mean|YDes|=1.75 mean|Y|=1.28 max|Y|=10.16 deg/s
+F1 follow n=300 mean|YDes|=1.46 mean|Y|=0.92 max|Y|=4.25 deg/s
+F2 loss gap n=146 mean|YDes|=1.40 mean|Y|=1.08 max|Y|=6.33 deg/s
+F2 follow n=300 mean|YDes|=3.49 mean|Y|=3.26 max|Y|=14.46 deg/s
+F3 loss gap n=122 mean|YDes|=2.73 mean|Y|=1.21 max|Y|=11.56 deg/s
+F3 follow n=300 mean|YDes|=6.26 mean|Y|=5.79 max|Y|=12.99 deg/s
