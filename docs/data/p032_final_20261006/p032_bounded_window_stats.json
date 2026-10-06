@@ -1,0 +1,116 @@
+{
+ "/timing": {
+  "full_bounded_1260s": {
+   "n": 35057,
+   "rate_hz": 27.823,
+   "gap_ms_p50": 34.4,
+   "gap_ms_p95": 52.8,
+   "gap_ms_p99": 69.6,
+   "gap_ms_max": 413.7,
+   "lat_ms_p50": 34.6,
+   "lat_ms_p95": 66.7,
+   "lat_ms_p99": 79.7,
+   "lat_ms_max": 136.8
+  },
+  "post_warmup_1200s": {
+   "n": 33371,
+   "rate_hz": 27.81,
+   "gap_ms_p50": 34.5,
+   "gap_ms_p95": 52.7,
+   "gap_ms_p99": 69.5,
+   "gap_ms_max": 413.7,
+   "lat_ms_p50": 34.6,
+   "lat_ms_p95": 66.9,
+   "lat_ms_p99": 79.5,
+   "lat_ms_max": 136.8
+  }
+ },
+ "/timing_tracker": {
+  "full_bounded_1260s": {
+   "n": 35037,
+   "rate_hz": 27.808,
+   "gap_ms_p50": 34.6,
+   "gap_ms_p95": 55.6,
+   "gap_ms_p99": 71.0,
+   "gap_ms_max": 109.5,
+   "lat_ms_p50": 6.9,
+   "lat_ms_p95": 14.1,
+   "lat_ms_p99": 20.2,
+   "lat_ms_max": 56.1
+  },
+  "post_warmup_1200s": {
+   "n": 33353,
+   "rate_hz": 27.795,
+   "gap_ms_p50": 34.7,
+   "gap_ms_p95": 55.6,
+   "gap_ms_p99": 70.9,
+   "gap_ms_max": 109.5,
+   "lat_ms_p50": 6.9,
+   "lat_ms_p95": 14.1,
+   "lat_ms_p99": 20.2,
+   "lat_ms_max": 56.1
+  }
+ },
+ "/timing_target": {
+  "full_bounded_1260s": {
+   "n": 35040,
+   "rate_hz": 27.811,
+   "gap_ms_p50": 27.3,
+   "gap_ms_p95": 120.8,
+   "gap_ms_p99": 140.6,
+   "gap_ms_max": 328.8,
+   "lat_ms_p50": 70.0,
+   "lat_ms_p95": 142.2,
+   "lat_ms_p99": 168.6,
+   "lat_ms_max": 350.7
+  },
+  "post_warmup_1200s": {
+   "n": 33354,
+   "rate_hz": 27.797,
+   "gap_ms_p50": 27.3,
+   "gap_ms_p95": 120.8,
+   "gap_ms_p99": 140.8,
+   "gap_ms_max": 328.8,
+   "lat_ms_p50": 70.2,
+   "lat_ms_p95": 142.4,
+   "lat_ms_p99": 169.1,
+   "lat_ms_max": 350.7
+  }
+ },
+ "/control_ref/cmd_vel": {
+  "full_bounded_1260s": {
+   "n": 37789,
+   "rate_hz": 29.992,
+   "gap_ms_p50": 33.4,
+   "gap_ms_p95": 40.0,
+   "gap_ms_p99": 45.0,
+   "gap_ms_max": 80.5
+  },
+  "post_warmup_1200s": {
+   "n": 35990,
+   "rate_hz": 29.993,
+   "gap_ms_p50": 33.4,
+   "gap_ms_p95": 40.0,
+   "gap_ms_p99": 45.0,
+   "gap_ms_max": 80.5
+  }
+ },
+ "/target_memory_mars": {
+  "full_bounded_1260s": {
+   "n": 35040,
+   "rate_hz": 27.811,
+   "gap_ms_p50": 27.3,
+   "gap_ms_p95": 120.7,
+   "gap_ms_p99": 140.2,
+   "gap_ms_max": 329.0
+  },
+  "post_warmup_1200s": {
+   "n": 33354,
+   "rate_hz": 27.797,
+   "gap_ms_p50": 27.4,
+   "gap_ms_p95": 120.7,
+   "gap_ms_p99": 140.3,
+   "gap_ms_max": 329.0
+  }
+ }
+}

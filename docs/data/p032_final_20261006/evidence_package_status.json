@@ -1,0 +1,196 @@
+{
+  "archive_manifest_complete": true,
+  "bag_dir": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga",
+  "bag_integrity_passed": true,
+  "diagnostics_message_count": 43660,
+  "disarmed_runtime_characterization": {
+    "reasons": [],
+    "scenario_tag": "p032_final_mounted_vga",
+    "state_assessment": {
+      "in_trial_armed_true_count": 0,
+      "in_trial_connected_false_count": 0,
+      "in_trial_sample_count": 1388,
+      "outside_trial_armed_true_count": 0,
+      "outside_trial_connected_false_count": 0,
+      "outside_trial_sample_count": 77,
+      "reasons": [],
+      "total_sample_count": 1465,
+      "valid": true
+    },
+    "state_topic": "/mavros/state",
+    "trial_window": {
+      "end_ns": 1791296240973129000,
+      "end_utc": "2026-10-06T14:17:20.973129Z",
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_logs/operator_events.jsonl",
+      "reasons": [],
+      "run_id": "2026-10-06__14-52-31",
+      "start_ns": 1791294852919364000,
+      "start_utc": "2026-10-06T13:54:12.919364Z",
+      "trial_id": "p032_final_mounted_vga",
+      "valid": true
+    },
+    "valid": true
+  },
+  "optional": {},
+  "pending": [],
+  "pending_postflight": {
+    "physical_v2_annotation": {
+      "applies": false,
+      "file": null,
+      "not_applicable_reason": "final #32 disarmed runtime/resource characterization does not require physical-target correctness annotation",
+      "present": false
+    },
+    "pixhawk_dataflash": {
+      "applies": false,
+      "archived_file": null,
+      "manifest": null,
+      "manifest_present": false,
+      "not_applicable_reason": "final #32 characterization remained connected and disarmed; native DataFlash is not required for the runtime/resource claim",
+      "present": false,
+      "reasons": [
+        "manifest missing or unreadable"
+      ],
+      "valid": false
+    }
+  },
+  "problems": [],
+  "provenance_validation": {
+    "passed": true,
+    "ran": true,
+    "returncode": 0
+  },
+  "recorder_finalize_outcome": "graceful",
+  "recorder_transport": {
+    "bag_dir": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga",
+    "note": "Main count is aggregate across recorded topics; it is not a per-topic loss count or rate. No acceptable-loss threshold is assumed.",
+    "observation_complete": true,
+    "quality_status": "observed_zero",
+    "raw_bag_dir": null,
+    "recorders": {
+      "main": {
+        "event_publisher_exited_observed": true,
+        "log_present": true,
+        "observation_basis": "complete_jazzy_stop_without_loss_warning",
+        "parse_ok": true,
+        "recorder": "rosbag",
+        "recording_stopped_observed": true,
+        "reported_transport_loss_count": 0,
+        "scope": "multi_topic_aggregate",
+        "source_log": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_logs/rosbag.log",
+        "status": "observed_zero"
+      }
+    },
+    "runtime_evidence_acceptable": true,
+    "schema_version": 1,
+    "verified_at_utc": "2026-10-06T14:17:29.298106+00:00"
+  },
+  "recorder_transport_quality_status": "observed_zero",
+  "required": {
+    "archive_manifest_json": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_logs/archive_manifest.json",
+      "present": true
+    },
+    "bag_integrity_json": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/bag_integrity.json",
+      "present": true
+    },
+    "control_log": {
+      "note": "required whenever the controller ran",
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_logs/control.log",
+      "present": true
+    },
+    "dashboard_bridge_log": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_logs/dashboard_bridge.log",
+      "present": true
+    },
+    "flight_metadata_txt": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/flight_metadata.txt",
+      "present": true
+    },
+    "mcap_storage_file": {
+      "files": [
+        "2026-10-06__14-52-31__video__p032_final_mounted_vga_0.mcap"
+      ],
+      "present": true
+    },
+    "metadata_yaml": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/metadata.yaml",
+      "present": true
+    },
+    "operator_events_jsonl": {
+      "note": "operator recorded events",
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_logs/operator_events.jsonl",
+      "present": true
+    },
+    "recorder_transport_status_json": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/recorder_transport_status.json",
+      "present": true
+    },
+    "rosbag_log": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_logs/rosbag.log",
+      "present": true
+    },
+    "run_metadata_json": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_metadata.json",
+      "present": true
+    },
+    "target_authority_events_jsonl": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/target_authority_events.jsonl",
+      "present": true
+    },
+    "target_memory_mars_log": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_logs/target_memory_mars.log",
+      "present": true
+    },
+    "visual_evidence_status_json": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/visual_evidence_status.json",
+      "present": true
+    },
+    "visual_file": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/visual_2026-10-06__14-52-31.mkv",
+      "present": true
+    },
+    "visual_recorder_log": {
+      "path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_logs/visual_record.log",
+      "present": true
+    }
+  },
+  "run_id": "2026-10-06__14-52-31",
+  "runtime_status": "complete_runtime_evidence",
+  "schema_version": 1,
+  "status": "complete_runtime_evidence",
+  "trial_kind": "control_field",
+  "verified_at_utc": "2026-10-06T14:19:16.649074+00:00",
+  "visual_evidence": {
+    "bytes": 163817061,
+    "codec": "mjpeg",
+    "container_creation_time": "2026-10-06T13:53:06.186465Z",
+    "decode_to_null": {
+      "returncode": 0,
+      "warnings_tail": "[null @ 0xaaaabab64490] Application provided invalid, non monotonically increasing dts to muxer in stream 0: 18268 >= 18268\n"
+    },
+    "decoded_frames": 6350,
+    "duration_s": 1454.32,
+    "errors": [],
+    "file_mtime_ns": 1791296241269486618,
+    "file_present": true,
+    "finalization": "graceful",
+    "height": 480,
+    "measured_fps": 4.366302,
+    "passed": true,
+    "recorder_alive_at_stop": true,
+    "run_id": "2026-10-06__14-52-31",
+    "schema_version": 1,
+    "timestamps": {
+      "basis": "ffmpeg input wallclock, Matroska PTS relative to first frame",
+      "duplicate_count": 1,
+      "first_pts_s": 0.0,
+      "last_pts_s": 1454.28,
+      "max_gap_s": 1.8,
+      "nondecreasing": true,
+      "packet_count": 6350
+    },
+    "visual_file": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/visual_2026-10-06__14-52-31.mkv",
+    "width": 640
+  }
+}

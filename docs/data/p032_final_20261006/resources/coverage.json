@@ -1,0 +1,36 @@
+{
+  "hardware": {
+    "hardware": {
+      "first_gap_s": 4.87106828,
+      "last_gap_s": 2.360911802,
+      "maximum_gap_s": 5.132536306,
+      "sample_count": 250
+    }
+  },
+  "process_trees": {
+    "controller": {
+      "first_gap_s": 0.872024609,
+      "last_gap_s": 0.719647978,
+      "maximum_gap_s": 1.003054532,
+      "sample_count": 1259
+    },
+    "detector": {
+      "first_gap_s": 0.872024609,
+      "last_gap_s": 0.719647978,
+      "maximum_gap_s": 1.003054532,
+      "sample_count": 1259
+    },
+    "tim": {
+      "first_gap_s": 0.872024609,
+      "last_gap_s": 0.719647978,
+      "maximum_gap_s": 1.003054532,
+      "sample_count": 1259
+    },
+    "tracker": {
+      "first_gap_s": 0.872024609,
+      "last_gap_s": 0.719647978,
+      "maximum_gap_s": 1.003054532,
+      "sample_count": 1259
+    }
+  }
+}

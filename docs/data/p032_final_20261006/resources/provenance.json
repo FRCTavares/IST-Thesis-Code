@@ -1,0 +1,48 @@
+{
+  "analysis_end_monotonic_ns": 341883757791299,
+  "analysis_start_monotonic_ns": 340623757271181,
+  "architecture_groups": [
+    "detector",
+    "tracker",
+    "tim",
+    "controller"
+  ],
+  "duration_s": 1260.0,
+  "git_commit": "00c120e9054b37658ebf91effd5890bde1786428",
+  "git_status_short": "",
+  "hardware_interval_s": 5.0,
+  "live_process_roots": {
+    "controller": {
+      "pid": 1194763,
+      "process": "control",
+      "starttime_ticks": 34054987
+    },
+    "detector": {
+      "pid": 1192660,
+      "process": "perception_camera",
+      "starttime_ticks": 34052001
+    },
+    "tim": {
+      "pid": 1193087,
+      "process": "target_memory_mars",
+      "starttime_ticks": 34052608
+    },
+    "tracker": {
+      "pid": 1192726,
+      "process": "tracker",
+      "starttime_ticks": 34052203
+    }
+  },
+  "live_run_metadata_paths": [
+    "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga/run_metadata.json"
+  ],
+  "resource_interval_s": 1.0,
+  "run_dir": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/live_stack/2026-10-06__14-52-31",
+  "run_id": "2026-10-06__14-52-31",
+  "sampler_return_codes": [
+    0,
+    0
+  ],
+  "schema": "p032_live_resource_measurement_v1",
+  "warm_up_s": 60.0
+}

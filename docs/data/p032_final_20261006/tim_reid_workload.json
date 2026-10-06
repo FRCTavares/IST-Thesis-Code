@@ -1,0 +1,181 @@
+{
+  "backend_wall_ms_all": {
+    "max": 290.061912,
+    "mean": 84.76850230676517,
+    "min": 53.684914,
+    "n": 5144,
+    "p50": 83.6594045,
+    "p90": 97.45886999999999,
+    "p95": 103.48393504999999,
+    "p99": 125.07751947999996,
+    "std": 12.238187386462807
+  },
+  "backend_wall_ms_steady_state": {
+    "max": 290.061912,
+    "mean": 84.76850230676517,
+    "min": 53.684914,
+    "n": 5144,
+    "p50": 83.6594045,
+    "p90": 97.45886999999999,
+    "p95": 103.48393504999999,
+    "p99": 125.07751947999996,
+    "std": 12.238187386462807
+  },
+  "bag_path": "/home/francisco/Desktop/Thesis-Code/bags/live_camera/2026-10-06__14-52-31__video__p032_final_mounted_vga",
+  "correlations": {
+    "backend_wall_vs_tim_mars_processing": 0.9964544411234431,
+    "requested_count_vs_backend_wall": 0.2757782151886586
+  },
+  "duration_s": 1453.992704936,
+  "excluded_non_frame_status_records": 1,
+  "git_commit": null,
+  "grouped_backend_wall_ms_by_requested_crops": {
+    "1": {
+      "max": 184.496267,
+      "mean": 84.63530067620717,
+      "min": 53.684914,
+      "n": 5136,
+      "p50": 83.63830899999999,
+      "p90": 97.391958,
+      "p95": 103.156035,
+      "p99": 122.06255009999995,
+      "std": 11.60954578008511
+    },
+    "2": {
+      "max": 290.061912,
+      "mean": 170.283949125,
+      "min": 134.486618,
+      "n": 8,
+      "p50": 150.083306,
+      "p90": 225.95757170000002,
+      "p95": 258.00974184999995,
+      "p99": 283.65147797,
+      "std": 49.49896571469884
+    }
+  },
+  "integrity": {
+    "all_required_fields_present": true,
+    "cache_accounting_identity_all_records": true,
+    "cache_accounting_identity_totals": true,
+    "has_backend_calls": true,
+    "has_positive_backend_wall_time": true,
+    "non_call_records_with_nonzero_backend_wall_ms": 0,
+    "returned_not_greater_than_requested": true,
+    "valid_not_greater_than_returned": true
+  },
+  "non_backend_processing_ms": {
+    "max": 13.914041999999995,
+    "mean": 1.540459928265941,
+    "min": 0.4462079999999986,
+    "n": 5144,
+    "p50": 1.2006990000000002,
+    "p90": 2.467888399999995,
+    "p95": 3.9053687499999934,
+    "p99": 5.831927479999997,
+    "std": 1.0357965035291903
+  },
+  "processing_displacement_mean_ms": 84.41548078156609,
+  "ratios": {
+    "backend_call_record_fraction": 0.12706568189116418,
+    "backend_calls_per_second": 3.5378444352142893,
+    "backend_wall_fraction_of_run_all": 0.29989777416743874,
+    "backend_wall_fraction_of_run_steady_state": 0.29989777416743874,
+    "cache_hit_rate": 0.994227791074194,
+    "requested_crops_per_second": 3.543346526093316,
+    "requested_per_call": 1.0015552099533438,
+    "returned_per_requested": 1.0,
+    "status_records_per_second": 27.84264313195569,
+    "valid_embeddings_per_second": 3.543346526093316,
+    "valid_per_requested": 1.0
+  },
+  "run_name": "2026-10-06__14-52-31__video__p032_final_mounted_vga",
+  "schema": "p032_tim_mars_reid_workload_summary_v3",
+  "status_records_total": 40484,
+  "status_topic": "/target_memory_mars/status",
+  "tim_mars_processing_all_ms": {
+    "max": 294.534148,
+    "mean": 12.619792081145171,
+    "min": 0.273837,
+    "n": 40483,
+    "p50": 1.123717,
+    "p90": 77.9674188,
+    "p95": 87.8434532,
+    "p99": 101.18195940000001,
+    "std": 28.512416325011287
+  },
+  "tim_mars_processing_backend_call_ms": {
+    "max": 294.534148,
+    "mean": 86.3089622350311,
+    "min": 55.076966,
+    "n": 5144,
+    "p50": 85.159645,
+    "p90": 99.15358849999998,
+    "p95": 105.01605669999994,
+    "p99": 126.63982819999998,
+    "std": 12.307479713421953
+  },
+  "tim_mars_processing_non_call_ms": {
+    "max": 40.246757,
+    "mean": 1.8934814534650102,
+    "min": 0.273837,
+    "n": 35339,
+    "p50": 1.067141,
+    "p90": 4.463127,
+    "p95": 5.970508099999999,
+    "p99": 9.294950380000007,
+    "std": 1.9436652269675996
+  },
+  "total_backend_wall_ms_all": 436049.175866,
+  "total_backend_wall_ms_steady_state": 436049.175866,
+  "totals": {
+    "appearance_backend_calls": 5144,
+    "appearance_backend_requested": 5152,
+    "appearance_backend_returned": 5152,
+    "appearance_backend_valid": 5152,
+    "appearance_cache_expired": 4,
+    "appearance_cache_hits": 35310,
+    "appearance_cache_invalidated": 0,
+    "appearance_cache_lookups": 35515,
+    "appearance_cache_misses": 201,
+    "appearance_candidates": 40667,
+    "appearance_encoding_eligible": 5152,
+    "appearance_features_valid": 40462,
+    "excluded_non_frame_status_records": 1,
+    "status_records": 40483,
+    "status_records_total": 40484
+  },
+  "warmup": {
+    "excluded_backend_calls_from_steady_state": 0,
+    "first_call": {
+      "backend_calls": 1,
+      "call_index": 0,
+      "non_backend_processing_ms": 0.4597080000000062,
+      "processing_ms": 84.343998,
+      "requested": 1,
+      "returned": 1,
+      "status_record_index": 4,
+      "time_s": 0.213693848,
+      "valid": 1,
+      "wall_ms": 83.88429,
+      "wall_ms_per_crop": 83.88429
+    },
+    "first_call_is_largest": false,
+    "first_call_is_warmup_outlier": false,
+    "largest_call": {
+      "backend_calls": 1,
+      "call_index": 3449,
+      "non_backend_processing_ms": 4.472236000000009,
+      "processing_ms": 294.534148,
+      "requested": 2,
+      "returned": 2,
+      "status_record_index": 27054,
+      "time_s": 973.555453063,
+      "valid": 2,
+      "wall_ms": 290.061912,
+      "wall_ms_per_crop": 145.030956
+    },
+    "median_backend_wall_ms": 83.6594045,
+    "warmup_reference_median_backend_wall_ms": 83.657906,
+    "warmup_threshold_ms": 250.973718
+  }
+}

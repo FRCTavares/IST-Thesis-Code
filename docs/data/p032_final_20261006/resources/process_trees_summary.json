@@ -1,0 +1,113 @@
+{
+  "groups": {
+    "controller": {
+      "cpu_percent": {
+        "count": 1259,
+        "maximum": 13.998482802438424,
+        "mean": 11.287065006120983,
+        "p50": 10.998856151956764,
+        "p95": 12.998428145581755
+      },
+      "member_count": {
+        "count": 1260,
+        "maximum": 2.0,
+        "mean": 2.0,
+        "p50": 2.0,
+        "p95": 2.0
+      },
+      "root_missing_count": 0,
+      "root_pid": 1194763,
+      "root_starttime_ticks": 34054987,
+      "rss_kib": {
+        "count": 1260,
+        "maximum": 107756.0,
+        "mean": 107756.0,
+        "p50": 107756.0,
+        "p95": 107756.0
+      },
+      "sample_count": 1260
+    },
+    "detector": {
+      "cpu_percent": {
+        "count": 1259,
+        "maximum": 62.99336912898537,
+        "mean": 46.93950686033456,
+        "p50": 46.99390042669411,
+        "p95": 50.99316987288876
+      },
+      "member_count": {
+        "count": 1260,
+        "maximum": 2.0,
+        "mean": 2.0,
+        "p50": 2.0,
+        "p95": 2.0
+      },
+      "root_missing_count": 0,
+      "root_pid": 1192660,
+      "root_starttime_ticks": 34052001,
+      "rss_kib": {
+        "count": 1260,
+        "maximum": 223400.0,
+        "mean": 223391.22857142857,
+        "p50": 223392.0,
+        "p95": 223396.0
+      },
+      "sample_count": 1260
+    },
+    "tim": {
+      "cpu_percent": {
+        "count": 1259,
+        "maximum": 48.973421487504254,
+        "mean": 30.056175903648306,
+        "p50": 30.97891686442308,
+        "p95": 33.98923177971019
+      },
+      "member_count": {
+        "count": 1260,
+        "maximum": 2.0,
+        "mean": 2.0,
+        "p50": 2.0,
+        "p95": 2.0
+      },
+      "root_missing_count": 0,
+      "root_pid": 1193087,
+      "root_starttime_ticks": 34052608,
+      "rss_kib": {
+        "count": 1260,
+        "maximum": 885344.0,
+        "mean": 872504.1714285715,
+        "p50": 871088.0,
+        "p95": 885020.0
+      },
+      "sample_count": 1260
+    },
+    "tracker": {
+      "cpu_percent": {
+        "count": 1259,
+        "maximum": 209.83684975095014,
+        "mean": 180.07472930028706,
+        "p50": 180.97815666040373,
+        "p95": 195.97691000178622
+      },
+      "member_count": {
+        "count": 1260,
+        "maximum": 2.0,
+        "mean": 2.0,
+        "p50": 2.0,
+        "p95": 2.0
+      },
+      "root_missing_count": 0,
+      "root_pid": 1192726,
+      "root_starttime_ticks": 34052203,
+      "rss_kib": {
+        "count": 1260,
+        "maximum": 142620.0,
+        "mean": 142598.0888888889,
+        "p50": 142612.0,
+        "p95": 142620.0
+      },
+      "sample_count": 1260
+    }
+  },
+  "schema": "p032_live_process_tree_resources_v1"
+}
