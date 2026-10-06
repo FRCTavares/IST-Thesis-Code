@@ -1,0 +1,309 @@
+{
+  "captured_at_utc": "2026-10-02T15:00:47.243850+00:00",
+  "entries": [
+    {
+      "id": 1,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 6777243,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 776975070,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 2,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 1030567,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 315532800,
+        "sec": 0,
+        "usable": false
+      }
+    },
+    {
+      "id": 3,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 807424,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 315532800,
+        "sec": 0,
+        "usable": false
+      }
+    },
+    {
+      "id": 4,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 386048,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 315532800,
+        "sec": 0,
+        "usable": false
+      }
+    },
+    {
+      "id": 5,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 409600,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 315532800,
+        "sec": 0,
+        "usable": false
+      }
+    },
+    {
+      "id": 6,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 4157440,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 315532800,
+        "sec": 0,
+        "usable": false
+      }
+    },
+    {
+      "id": 7,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 3518361,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 315532800,
+        "sec": 0,
+        "usable": false
+      }
+    },
+    {
+      "id": 8,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 1255424,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 315532800,
+        "sec": 0,
+        "usable": false
+      }
+    },
+    {
+      "id": 9,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 2374588,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 315532800,
+        "sec": 0,
+        "usable": false
+      }
+    },
+    {
+      "id": 10,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 1499136,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 315532800,
+        "sec": 0,
+        "usable": false
+      }
+    },
+    {
+      "id": 11,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 21719106,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 777550726,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 12,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 27924397,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 778753786,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 13,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 499712,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 315532800,
+        "sec": 0,
+        "usable": false
+      }
+    },
+    {
+      "id": 14,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 48799470,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 781873646,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 15,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 708747,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 781890840,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 16,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 19161646,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 789486736,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 17,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 1604438,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 789487108,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 18,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 3578422,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 789488026,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 19,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 2775264,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 790328274,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 20,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 27629118,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 790331050,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 21,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 6976822,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 790331960,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 22,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 11890688,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 790951714,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 23,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 11329536,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 790952276,
+        "sec": 1,
+        "usable": false
+      }
+    },
+    {
+      "id": 24,
+      "last_log_num": 24,
+      "num_logs": 24,
+      "size": 9715712,
+      "time_utc": {
+        "iso8601": null,
+        "nanosec": 790952930,
+        "sec": 1,
+        "usable": false
+      }
+    }
+  ],
+  "entries_received": 24,
+  "hardware_path": "mavros_log_transfer",
+  "hardware_validation": "validated_2026-09-25",
+  "reported_last_log_num": 24,
+  "reported_num_logs": 24,
+  "schema_version": 1,
+  "service": "/mavros/log_transfer/raw/log_request_list",
+  "state": {
+    "armed": false,
+    "connected": true,
+    "guided": true,
+    "manual_input": true,
+    "mode": "LOITER",
+    "system_status": 3
+  },
+  "topic": "/mavros/log_transfer/raw/log_entry"
+}

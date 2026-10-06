@@ -1,0 +1,72 @@
+{
+  "after": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/dataflash/2026-10-02__15-37-40__bcb_baseline_a/after.json",
+  "after_log_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "before": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/dataflash/2026-10-02__15-37-40__bcb_baseline_a/before.json",
+  "before_log_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22
+  ],
+  "compared_at_utc": "2026-10-02T14:46:57.337332+00:00",
+  "new_log_ids": [
+    23
+  ],
+  "removed_log_ids": [],
+  "schema_version": 1,
+  "selected": {
+    "id": 23,
+    "last_log_num": 23,
+    "num_logs": 23,
+    "size": 11329536,
+    "time_utc": {
+      "iso8601": null,
+      "nanosec": 790952276,
+      "sec": 1,
+      "usable": false
+    }
+  },
+  "status": "unique_new_log"
+}

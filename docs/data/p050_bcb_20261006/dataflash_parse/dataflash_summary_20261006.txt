@@ -1,0 +1,35 @@
+== log_22.bin span 266.1
+modes [(210.2, 5, 5), (210.3, 5, 5), (246.6, 4, 4), (447.4, 5, 5)]
+events [(214.5, 'AUTO_ARMED'), (460.2, 'LAND_COMPLETE_MAYBE'), (461.0, 'LAND_COMPLETE'), (461.4, 'DISARM')]
+errors []
+batt first/min/last V 16.74 15.58 15.89 at_min_t 455.3
+max alt 4.7
+msgs [(210.3, 'GPS 1: probing for u-blox at 230400 baud'), (223.1, 'EKF3 IMU1 MAG0 in-flight yaw alignment complete'), (223.2, 'EKF3 IMU0 MAG0 in-flight yaw alignment complete'), (413.1, 'Disarm for log download')]
+== log_23.bin span 252.9
+modes [(786.0, 5, 5), (786.1, 5, 5), (807.0, 4, 4), (1015.9, 5, 5)]
+events [(789.1, 'AUTO_ARMED'), (1022.5, 'LAND_COMPLETE_MAYBE'), (1023.3, 'LAND_COMPLETE'), (1023.9, 'DISARM')]
+errors []
+batt first/min/last V 15.9 15.01 15.31 at_min_t 1021.3
+max alt 5.2
+msgs [(786.1, 'GPS 1: probing for u-blox at 230400 baud'), (795.9, 'EKF3 IMU0 MAG0 in-flight yaw alignment complete'), (795.9, 'EKF3 IMU1 MAG0 in-flight yaw alignment complete')]
+== log_24.bin span 217.5
+modes [(1475.2, 5, 5), (1475.3, 5, 5), (1515.1, 4, 4), (1667.2, 5, 5)]
+events [(1478.2, 'AUTO_ARMED'), (1676.1, 'LAND_COMPLETE_MAYBE'), (1676.9, 'LAND_COMPLETE'), (1677.7, 'DISARM')]
+errors []
+batt first/min/last V 15.3 14.72 15.03 at_min_t 1673.4
+max alt 6.6
+msgs [(1475.3, 'GPS 1: probing for u-blox at 230400 baud'), (1483.9, 'EKF3 IMU1 MAG0 in-flight yaw alignment complete'), (1484.0, 'EKF3 IMU0 MAG0 in-flight yaw alignment complete')]
+== log_26.bin span 223.6
+modes [(245.8, 5, 5), (245.9, 5, 5), (266.6, 4, 4), (445.1, 5, 5)]
+events [(248.5, 'AUTO_ARMED'), (453.4, 'LAND_COMPLETE_MAYBE'), (454.2, 'LAND_COMPLETE'), (454.4, 'DISARM')]
+errors []
+batt first/min/last V 16.72 15.72 16.01 at_min_t 451.0
+max alt 5.4
+msgs [(245.9, 'GPS 1: probing for u-blox at 230400 baud'), (256.3, 'EKF3 IMU0 MAG0 in-flight yaw alignment complete'), (256.3, 'EKF3 IMU1 MAG0 in-flight yaw alignment complete')]
+== log_25.bin span 25.0
+modes [(191.7, 5, 5), (191.8, 5, 5)]
+events [(195.0, 'AUTO_ARMED'), (200.6, 'LAND_COMPLETE_MAYBE'), (201.4, 'LAND_COMPLETE'), (201.8, 'DISARM')]
+errors []
+batt first/min/last V 16.75 16.52 16.73 at_min_t 199.0
+max alt 1.5
+msgs [(191.8, 'GPS 1: probing for u-blox at 230400 baud')]

@@ -1,0 +1,23 @@
+{
+  "bytes": 11329536,
+  "expected_size": 11329536,
+  "hardware_path": "mavros_log_transfer",
+  "hardware_validation": "validated_2026-09-25",
+  "log_data_messages": 125884,
+  "log_id": 23,
+  "output": "/home/francisco/Desktop/Thesis-Code/ros2_ws/log/dataflash/2026-10-02__15-37-40__bcb_baseline_a/log_23.bin",
+  "retrieved_at_utc": "2026-10-06T10:48:56.786130+00:00",
+  "schema_version": 1,
+  "selection": "explicit_log_id",
+  "service": "/mavros/log_transfer/raw/log_request_data",
+  "sha256": "cd51bad7dd691a04cbb749a3fb58997e4ed5af931ce04792612edba150148565",
+  "state": {
+    "armed": false,
+    "connected": true,
+    "guided": false,
+    "manual_input": true,
+    "mode": "STABILIZE",
+    "system_status": 3
+  },
+  "topic": "/mavros/log_transfer/raw/log_data"
+}

@@ -1,0 +1,23 @@
+{
+  "bytes": 11890688,
+  "expected_size": 11890688,
+  "hardware_path": "mavros_log_transfer",
+  "hardware_validation": "validated_2026-09-25",
+  "log_data_messages": 132119,
+  "log_id": 22,
+  "output": "/home/francisco/flight_evidence_20261006_dataflash/attempt_15-28-36_review/log_22.bin",
+  "retrieved_at_utc": "2026-10-06T11:53:01.576336+00:00",
+  "schema_version": 1,
+  "selection": "explicit_log_id",
+  "service": "/mavros/log_transfer/raw/log_request_data",
+  "sha256": "731d8523f4004247b442f43c2075daca69ceb2fb5cc69f67fa77c7d264dc656e",
+  "state": {
+    "armed": false,
+    "connected": true,
+    "guided": false,
+    "manual_input": true,
+    "mode": "STABILIZE",
+    "system_status": 3
+  },
+  "topic": "/mavros/log_transfer/raw/log_data"
+}

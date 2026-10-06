@@ -1,0 +1,163 @@
+{
+ "F1": {
+  "unpaired_cmd_samples": 0,
+  "duration_s_by_mode_reason": {
+   "HOVER|zero": 40.68,
+   "NO_TARGET|zero": 0.05,
+   "NORMAL_FOLLOW|trusted|nonzero": 131.19,
+   "NORMAL_FOLLOW|zero": 36.99,
+   "NORMAL_FOLLOW_with_stale_or_invalid_flag": 0.13,
+   "NF_flagged_NONZERO_cmd": 0.13
+  },
+  "recovery_samples": 0,
+  "recovery_t": null,
+  "recovery_max_abs_linear": 0,
+  "recovery_wz_values": [],
+  "recovery_segments": [],
+  "flagged_samples": [
+   [
+    1790952170.417,
+    [
+     0.025036595662434893,
+     0.0,
+     0.0,
+     0.028064546585082995
+    ],
+    [
+     true,
+     false,
+     true
+    ],
+    "trusted_locked_normal"
+   ],
+   [
+    1790952170.712,
+    [
+     0.02394884109497071,
+     0.0,
+     0.0,
+     0.027295961380004896
+    ],
+    [
+     true,
+     false,
+     true
+    ],
+    "trusted_locked_normal"
+   ],
+   [
+    1790952171.049,
+    [
+     0.021679776509602868,
+     0.0,
+     0.0,
+     0.018652868270874024
+    ],
+    [
+     true,
+     false,
+     true
+    ],
+    "trusted_locked_normal"
+   ],
+   [
+    1790952175.818,
+    [
+     0.0,
+     0.0,
+     0.0,
+     -0.03
+    ],
+    [
+     true,
+     false,
+     true
+    ],
+    "trusted_locked_normal"
+   ],
+   [
+    1790952179.173,
+    [
+     0.0,
+     0.0,
+     0.0,
+     -0.03
+    ],
+    [
+     true,
+     false,
+     true
+    ],
+    "trusted_locked_normal"
+   ]
+  ]
+ },
+ "F2": {
+  "unpaired_cmd_samples": 0,
+  "duration_s_by_mode_reason": {
+   "NORMAL_FOLLOW|trusted|nonzero": 125.58,
+   "HOVER|zero": 24.04,
+   "NORMAL_FOLLOW|zero": 1.39,
+   "RECOVERY_YAW_ONLY|zero": 0.05,
+   "RECOVERY_YAW_ONLY|recent_lost_trusted_direction|nonzero": 0.97
+  },
+  "recovery_samples": 31,
+  "recovery_t": [
+   1790952850.802,
+   1790952892.631
+  ],
+  "recovery_max_abs_linear": 0.0,
+  "recovery_wz_values": [
+   -0.1,
+   -0.09,
+   -0.06,
+   -0.03,
+   0.0
+  ],
+  "recovery_segments": [
+   [
+    1790952850.8,
+    1790952851.63,
+    0.86
+   ],
+   [
+    1790952892.51,
+    1790952892.63,
+    0.16
+   ]
+  ],
+  "flagged_samples": []
+ },
+ "F3": {
+  "unpaired_cmd_samples": 0,
+  "duration_s_by_mode_reason": {
+   "NORMAL_FOLLOW|trusted|nonzero": 114.29,
+   "HOVER|zero": 28.83,
+   "NORMAL_FOLLOW|zero": 35.31,
+   "NORMAL_FOLLOW_with_stale_or_invalid_flag": 0.04,
+   "NF_flagged_NONZERO_cmd": 0.04
+  },
+  "recovery_samples": 0,
+  "recovery_t": null,
+  "recovery_max_abs_linear": 0,
+  "recovery_wz_values": [],
+  "recovery_segments": [],
+  "flagged_samples": [
+   [
+    1790953475.186,
+    [
+     0.03562620162963868,
+     0.0,
+     0.0,
+     -0.08845742225646976
+    ],
+    [
+     true,
+     false,
+     true
+    ],
+    "trusted_locked_normal"
+   ]
+  ]
+ }
+}

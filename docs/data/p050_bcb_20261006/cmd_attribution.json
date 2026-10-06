@@ -1,0 +1,66 @@
+{
+ "F1": {
+  "unpaired_cmd_samples": 0,
+  "duration_s_by_mode_reason": {
+   "HOVER|zero": 40.68,
+   "NO_TARGET|zero": 0.05,
+   "NORMAL_FOLLOW|trusted|nonzero": 131.19,
+   "NORMAL_FOLLOW|zero": 36.99,
+   "NORMAL_FOLLOW_with_stale_or_invalid_flag": 0.13
+  },
+  "recovery_samples": 0,
+  "recovery_t": null,
+  "recovery_max_abs_linear": 0,
+  "recovery_wz_values": [],
+  "recovery_segments": []
+ },
+ "F2": {
+  "unpaired_cmd_samples": 0,
+  "duration_s_by_mode_reason": {
+   "NORMAL_FOLLOW|trusted|nonzero": 125.58,
+   "HOVER|zero": 24.04,
+   "NORMAL_FOLLOW|zero": 1.39,
+   "RECOVERY_YAW_ONLY|zero": 0.05,
+   "RECOVERY_YAW_ONLY|recent_lost_trusted_direction|nonzero": 0.97
+  },
+  "recovery_samples": 31,
+  "recovery_t": [
+   1790952850.802,
+   1790952892.631
+  ],
+  "recovery_max_abs_linear": 0.0,
+  "recovery_wz_values": [
+   -0.1,
+   -0.09,
+   -0.06,
+   -0.03,
+   0.0
+  ],
+  "recovery_segments": [
+   [
+    1790952850.8,
+    1790952851.63,
+    0.86
+   ],
+   [
+    1790952892.51,
+    1790952892.63,
+    0.16
+   ]
+  ]
+ },
+ "F3": {
+  "unpaired_cmd_samples": 0,
+  "duration_s_by_mode_reason": {
+   "NORMAL_FOLLOW|trusted|nonzero": 114.29,
+   "HOVER|zero": 28.83,
+   "NORMAL_FOLLOW|zero": 35.31,
+   "NORMAL_FOLLOW_with_stale_or_invalid_flag": 0.04
+  },
+  "recovery_samples": 0,
+  "recovery_t": null,
+  "recovery_max_abs_linear": 0,
+  "recovery_wz_values": [],
+  "recovery_segments": []
+ }
+}

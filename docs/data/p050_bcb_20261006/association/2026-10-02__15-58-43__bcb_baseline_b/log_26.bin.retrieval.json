@@ -1,0 +1,23 @@
+{
+  "bytes": 10018816,
+  "expected_size": 10018816,
+  "hardware_path": "mavros_log_transfer",
+  "hardware_validation": "validated_2026-09-25",
+  "log_data_messages": 111321,
+  "log_id": 26,
+  "output": "/home/francisco/flight_evidence_20261006_dataflash/flight3_review/log_26.bin",
+  "retrieved_at_utc": "2026-10-06T11:06:28.003086+00:00",
+  "schema_version": 1,
+  "selection": "explicit_log_id",
+  "service": "/mavros/log_transfer/raw/log_request_data",
+  "sha256": "f32ab431615b60312a616ebbcbc399c9a7b612bd745f6098eac43ddd5af56612",
+  "state": {
+    "armed": false,
+    "connected": true,
+    "guided": false,
+    "manual_input": true,
+    "mode": "STABILIZE",
+    "system_status": 3
+  },
+  "topic": "/mavros/log_transfer/raw/log_data"
+}

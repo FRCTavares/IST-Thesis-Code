@@ -1,0 +1,191 @@
+{
+ "F1": {
+  "guided_s": 208.9,
+  "armed_s": 234.9,
+  "takeoff_to_guided_s": 17.9,
+  "guided_to_land_s": 7.4,
+  "yaw_rate_des_max_degs": 17.46,
+  "yaw_rate_act_max_degs": 15.65,
+  "yaw_rate_rms_err_degs": 2.65,
+  "frac_time_yawdes_nonzero": 0.819,
+  "alt_in_guided_min_max_m": [
+   4.35,
+   4.54
+  ],
+  "max_abs_climb_ms": 12,
+  "rc_max_dev_us_ch124": 1,
+  "rc_samples_over50us": 0,
+  "rc_first_last_active_s_after_guided": null,
+  "throttle_ch3_min_max": [
+   1567,
+   1567
+  ],
+  "final60s": {
+   "alt_start": 4.45,
+   "alt_end": 1.24,
+   "alt_samples_every10s": [
+    4.4,
+    4.5,
+    4.5,
+    4.4,
+    4.5,
+    4.4
+   ],
+   "volt_every10s": [
+    15.14,
+    15.14,
+    15.09,
+    15.09,
+    15.06,
+    15.05
+   ],
+   "thr_in_every10s": [
+    1567,
+    1567,
+    1567,
+    1567,
+    1567,
+    1567
+   ],
+   "mode_changes": [
+    [
+     208.9,
+     5
+    ]
+   ]
+  },
+  "after_guided_exit": {
+   "alt_at_exit": 4.46,
+   "alt_at_land": 1.24,
+   "min_climbrate": -87,
+   "min_volt_after": 15.01,
+   "volt_at_exit": 15.04
+  }
+ },
+ "F2": {
+  "guided_s": 152.0,
+  "armed_s": 199.5,
+  "takeoff_to_guided_s": 37.0,
+  "guided_to_land_s": 9.8,
+  "yaw_rate_des_max_degs": 27.4,
+  "yaw_rate_act_max_degs": 14.46,
+  "yaw_rate_rms_err_degs": 3.98,
+  "frac_time_yawdes_nonzero": 0.855,
+  "alt_in_guided_min_max_m": [
+   5.57,
+   5.76
+  ],
+  "max_abs_climb_ms": 13,
+  "rc_max_dev_us_ch124": 2,
+  "rc_samples_over50us": 0,
+  "rc_first_last_active_s_after_guided": null,
+  "throttle_ch3_min_max": [
+   1558,
+   1607
+  ],
+  "final60s": {
+   "alt_start": 5.74,
+   "alt_end": 2.32,
+   "alt_samples_every10s": [
+    5.7,
+    5.7,
+    5.7,
+    5.7,
+    5.7,
+    5.7
+   ],
+   "volt_every10s": [
+    14.82,
+    14.8,
+    14.8,
+    14.79,
+    14.77,
+    14.75
+   ],
+   "thr_in_every10s": [
+    1606,
+    1606,
+    1606,
+    1606,
+    1606,
+    1606
+   ],
+   "mode_changes": [
+    [
+     152.0,
+     5
+    ]
+   ]
+  },
+  "after_guided_exit": {
+   "alt_at_exit": 5.68,
+   "alt_at_land": 2.32,
+   "min_climbrate": -79,
+   "min_volt_after": 14.72,
+   "volt_at_exit": 14.76
+  }
+ },
+ "F3": {
+  "guided_s": 178.5,
+  "armed_s": 205.9,
+  "takeoff_to_guided_s": 18.1,
+  "guided_to_land_s": 9.1,
+  "yaw_rate_des_max_degs": 20.72,
+  "yaw_rate_act_max_degs": 14.86,
+  "yaw_rate_rms_err_degs": 4.98,
+  "frac_time_yawdes_nonzero": 0.933,
+  "alt_in_guided_min_max_m": [
+   4.7,
+   4.9
+  ],
+  "max_abs_climb_ms": 12,
+  "rc_max_dev_us_ch124": 1,
+  "rc_samples_over50us": 0,
+  "rc_first_last_active_s_after_guided": null,
+  "throttle_ch3_min_max": [
+   1539,
+   1540
+  ],
+  "final60s": {
+   "alt_start": 4.82,
+   "alt_end": 1.63,
+   "alt_samples_every10s": [
+    4.8,
+    4.8,
+    4.8,
+    4.8,
+    4.8,
+    4.9
+   ],
+   "volt_every10s": [
+    15.98,
+    15.96,
+    15.92,
+    15.88,
+    15.83,
+    15.78
+   ],
+   "thr_in_every10s": [
+    1540,
+    1540,
+    1540,
+    1540,
+    1540,
+    1540
+   ],
+   "mode_changes": [
+    [
+     178.5,
+     5
+    ]
+   ]
+  },
+  "after_guided_exit": {
+   "alt_at_exit": 4.83,
+   "alt_at_land": 1.63,
+   "min_climbrate": -80,
+   "min_volt_after": 15.72,
+   "volt_at_exit": 15.78
+  }
+ }
+}
