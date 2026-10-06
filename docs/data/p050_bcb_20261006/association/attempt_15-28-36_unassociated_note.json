@@ -1,0 +1,18 @@
+{
+ "schema": "unassociated_dataflash_note_v1",
+ "created_utc": "2026-10-06T12:30:00Z",
+ "run_id": "2026-10-02__15-28-36",
+ "trial_id": "bcb_baseline_a",
+ "status": "NOT associated by the standard catalogue procedure; archive_pixhawk_dataflash.py refused (no before/after/association records exist for this attempt)",
+ "log_id": 22,
+ "bytes": 11890688,
+ "sha256": "731d8523f4004247b442f43c2075daca69ceb2fb5cc69f67fa77c7d264dc656e",
+ "match_basis": [
+  "last catalogue entry (id 22, 11,890,688 B) before Flight 1 'before.json' captured 2026-10-02T14:39:45Z, taken after this attempt",
+  "bag /mavros/state: armed 14:30:48Z, GUIDED 14:31:24Z-14:34:45Z (about 201 s), disarm 14:34:59Z; log 22: arm 214.5 s, GUIDED 246.6-447.4 s (200.8 s), disarm 461.4 s",
+  "battery first/min/last: bag 16.75/15.58/15.92 V; log 22 16.74/15.58/15.89 V"
+ ],
+ "limits": "Match by elimination and arm/mode/battery agreement only; no absolute clock link; not an association record. Not part of the B-C-B comparison.",
+ "fcu_message": "log contains 'Disarm for log download' at log time 413.1 s (about 166 s into GUIDED); source not established",
+ "original_files_modified": false
+}
