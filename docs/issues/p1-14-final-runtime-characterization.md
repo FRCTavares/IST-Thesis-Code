@@ -6,10 +6,7 @@ This file freezes the execution and reporting protocol for the final promoted
 onboard runtime characterization. Preparing this protocol does not create final
 evidence and does not close Issue #32.
 
-**FINAL PHYSICAL RUN PENDING #50.** Issue #64 closed on 22 September 2026
-with VGA 640x480 retained. Run the final mounted measurement only after #50
-records the retained controller policy; use `docs/flight/field_day_runbook.md` for the
-field sequence. Remote runner validation is not final integrated evidence.
+**FINAL MOUNTED RUN COMPLETED 6 OCTOBER 2026** (run `2026-10-06__14-52-31`, tag `p032_final_mounted_vga`, baseline controller retained by #50, VGA 640x480, 60 s warm-up plus 1200 s active, aircraft disarmed and stationary). Result and qualifications: `docs/results/live/p032_final_runtime_20261006.md`; raw outputs: `docs/data/p032_final_20261006/`. The wrapper verification `verify_field_run.sh` exited non-zero on a controller start-up pairing check (two leading zero commands against a tolerance of one); the run is kept and the failure disclosed in the result. Hailo utilisation and electrical power were not measured.
 
 The exact two-branch post-#50 run and analysis commands are in
 `docs/issues/p032-final-mounted-runbook.md`; final table fields are in

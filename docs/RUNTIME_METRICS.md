@@ -266,3 +266,7 @@ Current analysis code should use only the schema-v4 contract defined in:
 
 - `tools/timing_contract.py`
 - `ros2_ws/src/thesis_msgs/msg/Timing.msg`
+
+## Final mounted result (6 October 2026)
+
+The final mounted #32 run (`p032_final_mounted_vga`, baseline controller, VGA, disarmed and stationary, 60 s warm-up plus 1200 s active) measured, over the bounded window: validated-target output 27.8 Hz; camera-to-validated-target latency p50 70.0, p95 142.2, p99 168.6, max 350.7 ms; detector end-to-end p95 66.7 ms; core CPU of the detector, tracker, TIM and controller groups 268 % of 400 % (tracker group 180 %, detector 47 %, TIM 30 %, controller 11 %); core RSS 1.35 GB; temperature mean 69.4 degrees C, maximum 71.4; ARM clock 2.4 GHz throughout; throttle value constantly 0x80000 (sticky soft-limit-occurred bit, no active throttle bit); recorder transport observed zero. Hailo utilisation and electrical power are unavailable. One scene with one person; not a flight condition. Full table and qualifications: `docs/results/live/p032_final_runtime_20261006.md`.
