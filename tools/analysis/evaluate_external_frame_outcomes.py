@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Frame-level physical-target outcome classification for Issue #30.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Frame-level physical-target outcome classification for Issue #30.
 
 This is the MOT-style (per-frame ground-truth box) evaluator distinct from

@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# Thesis-Code
+# Purpose: Measure the retained raw-image transport variants for the Issue #54
+# engineering comparison.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 # Issue #54, required-work item 9: measure the raw-image stream's onboard
 # cost on the Pi (not merely calculate width*height*bpp*fps and call it
 # measured DDS bandwidth). Runs the live stack twice, minimal downstream

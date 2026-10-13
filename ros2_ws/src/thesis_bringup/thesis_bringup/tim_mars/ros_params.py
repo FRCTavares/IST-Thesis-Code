@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: ROS parameter declaration and configuration bridge for TIM-MARS.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """ROS parameter declaration and configuration bridge for TIM-MARS.
 
 This module declares the ROS parameter surface of target_memory_mars_node.py,

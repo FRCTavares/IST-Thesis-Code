@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Integrity summary of the /control_ref/diagnostics topic (Issue
+# #74).
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Integrity summary of the ``/control_ref/diagnostics`` topic (Issue #74).
 
 This is a diagnostic / integrity helper, **not** the final #50/#74 scientific

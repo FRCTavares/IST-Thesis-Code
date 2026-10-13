@@ -768,3 +768,11 @@ test ! -e log
 test ! -e hailort.log
 ```
 Then `docs/issues/p032-final-mounted-runbook.md` with retained #50 policy.
+
+
+## Local operator-sheet preservation
+
+The author-edited six-flight operator sheet from the Mac checkout is retained
+in `docs/archive/field_day_runbook_author_before_sync_20261004.md`. This current
+procedure follows Pi main revision `00c120e9`, including the superseding
+three-flight B-C-B plan and native-log attribution safeguards.

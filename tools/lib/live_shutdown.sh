@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# Thesis-Code
+# Purpose: Stop application publishers and finalise their recorders in the
+# required evidence-retention order.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 
 # Issue #50/#74 field hardening: deliberate shutdown ordering for retained
 # recordings. Scientific recorders must never be killed before the publishers

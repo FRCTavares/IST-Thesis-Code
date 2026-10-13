@@ -29,7 +29,7 @@ pre-freeze development promotions, not changes after held-out access.
 - Configuration:
   `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
 - SHA-256:
-  `b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c`
+  `4aa87dff874e4130db1e2068172539f6964caf1288342900ddc17e5c0108e898`
 - Established by commit:
   `79f11b631688889bf5ffbeb3c16ef543a53f9973` (2026-09-08), the merge of PR #101 promoting the
   Stage-3 AB-16 source-aware adaptive positive-memory policy.
@@ -186,3 +186,9 @@ The later corrected raw-versus-final dual-oracle authority remains:
 Do not replace the final row of the earlier seven-row matrix with values from
 the later corrected audit. The implementation, configuration, and evaluation
 contracts differ, so doing so would create an invalid mixed-version result.
+
+
+Delivery note (5 October 2026): the current canonical file includes the
+purpose/authorship comment header. Its parsed parameters are unchanged. The
+frozen Stage-7 configuration retains SHA `b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c`; use the
+pinned historical source for byte-exact reproduction.

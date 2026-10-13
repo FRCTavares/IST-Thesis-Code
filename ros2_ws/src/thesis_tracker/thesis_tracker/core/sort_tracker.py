@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Implement the minimal SORT tracker and its Kalman association core.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Implement the minimal SORT tracker and its Kalman association core."""
 
 from dataclasses import dataclass, field
@@ -491,6 +501,7 @@ class SortTrack:
     age: int = 0          # total frames since created
     time_since_update: int = 0
     last_frame_id: Optional[int] = None
+    detection_index: Optional[int] = None
 
     def predict(self) -> None:
         """Predict the next track state and advance age counters."""
@@ -540,6 +551,7 @@ class Sort:
         # Predict existing tracks
         """Process one detection frame and return the surviving tracks."""
         for tr in self.tracks:
+            tr.detection_index = None
             tr.predict()
 
         self._ensure_match_buffers(len(self.tracks), len(dets))
@@ -559,6 +571,7 @@ class Sort:
         # Update matched
         for ti, di in matches:
             self.tracks[ti].update(dets[di], frame_id)
+            self.tracks[ti].detection_index = di
 
         # Create new tracks
         for di in unmatched_d:
@@ -574,6 +587,7 @@ class Sort:
                     age=0,
                     time_since_update=0,
                     last_frame_id=frame_id,
+                    detection_index=di,
                 )
             )
 

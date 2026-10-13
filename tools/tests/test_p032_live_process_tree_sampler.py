@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Tests for the non-intrusive Issue #32 live process-tree sampler.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Tests for the non-intrusive Issue #32 live process-tree sampler."""
 
 from __future__ import annotations

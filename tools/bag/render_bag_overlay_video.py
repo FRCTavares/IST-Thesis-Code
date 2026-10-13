@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Render overlay videos from thesis rosbag2 outputs.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Render overlay videos from thesis rosbag2 outputs.
 
 This support tool reads image, detection, tracking, target, and timing topics

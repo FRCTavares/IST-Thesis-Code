@@ -1,6 +1,6 @@
 # Flight docs
 
-Last reviewed: 2026-09-26
+Last reviewed: 2026-10-04
 
 Friday #50 — follow only:
 

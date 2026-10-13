@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Test interval-aware physical-target scoring and identity
+# attribution against the frozen v2 contract.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Focused tests for the Issue #25 M2-v2 interval-aware evaluation core
 (tools/analysis/physical_target_bbox_evaluation_v2.py), proving the frozen
 v2 contract (docs/issues/p1-10-physical-reference-v2-contract.md, sections

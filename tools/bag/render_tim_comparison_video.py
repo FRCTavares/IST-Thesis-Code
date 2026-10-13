@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Render one paired raw-target versus TIM-MARS comparison video.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Render one paired raw-target versus TIM-MARS comparison video.
 
 This module renders single-stream and paired raw-vs-TIM videos from rosbag2

@@ -1,0 +1,2216 @@
+{
+  "schema": 1,
+  "maintained_files": 389,
+  "files": [
+    {
+      "path": ".envrc",
+      "sha256": "275617b38426d0300148842ce6297fe214ef24cdec71dc0445b808dfd208e449",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/config/mavros_pixhawk.yaml",
+      "sha256": "8ebdece06baa4d308a15780785c525aecaf87d79ce480b8602d5de248307492a",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml",
+      "sha256": "4aa87dff874e4130db1e2068172539f6964caf1288342900ddc17e5c0108e898",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml",
+      "sha256": "b0fa6c12633c5cfd6f8cb8a683c79bb80ec47bc1a1d5fb990a46b221476e7f2b",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml",
+      "sha256": "b5aab8c03127eff9fe8ef55f9fa7125f052fa5a96ed9b37127debe24727c16db",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/config/tracker_ocsort.yaml",
+      "sha256": "5fb0ac9acf5398b49e62556071da2f8599a3d04753bbe7fb69e301d3ac2ff716",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/config/tracker_sort.yaml",
+      "sha256": "db4888e7744d3574abc06a50bf81a9c171b00a10cba7491ab178519c2917b228",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/launch/camera_bringup.launch.py",
+      "sha256": "266713ec2ad92f3cb6b281e48027063a4c907812ede0a88f3da74782228d75b0",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/launch/eval_replay.launch.py",
+      "sha256": "3b29584309ee681128881f4f81c35c32569a723b5c283b0776150ad46746102f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/package.xml",
+      "sha256": "1ddbfd230217604304108bd9d3f362fb0e19a41e4c15afad48da07b958518b19",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/setup.cfg",
+      "sha256": "d13bfd034752d4e1643d721c8fd0a7894557e7f34529c7b400ccf463eadaf2b4",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/setup.py",
+      "sha256": "7e8a887e18d370f806ccdb4d1a9912e781f1aadb59b3b7daa09f01d2033de0b7",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_ab16_production_promotion.py",
+      "sha256": "d6f7d68f7e7708170842311ee96026e300598df8e5221618dd7cea84179e47fb",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_appearance_async.py",
+      "sha256": "55977150bde5110bc70f2e0528c2d0b5277bad2f813ec9f7c292261f3d0022fe",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_appearance_attachment.py",
+      "sha256": "b2bb0c51af98a440998c3b0d4b55b3efb680a21ab2de4957e8efd72f55f3f379",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_appearance_cache_identity_safety.py",
+      "sha256": "fdbe8ac18051aa5acaeb1921baf6f4c23f974e80f14bef45c2cd925df48587ae",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_appearance_memory.py",
+      "sha256": "5691768170156cf9ed83942cbba670005a1404730407534b2510ad243b6eb425",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_appearance_memory_provenance.py",
+      "sha256": "a2641c3d7613f75f870251e1e838a2c4a8337952dfb432ef6e25cac50a59aacd",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_appearance_request_policy.py",
+      "sha256": "1ae67b6a1d46b6cf4e1d6712cf6388fbe18c213177ad1549b55474548de265e9",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_appearance_request_producer.py",
+      "sha256": "1f5a1798cf5cabd30f69bb27475307ca2ab4118bca784718da66215532eebcf0",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_appearance_request_transport.py",
+      "sha256": "f7d02a7f8ea122a79e2fe7c037930ebaeb838bf3d948d8646f522508e25fe35d",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_appearance_ros_transport.py",
+      "sha256": "52fed70aa59ab6a07f90ce360703642eb800df20bb659eebea92994acbec731f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_appearance_worker.py",
+      "sha256": "f9686cc7e457c3ae5b4598c956697a5c7543d5c6ad8561643617ee4c73072d69",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_authority_qos_contract.py",
+      "sha256": "025b606e1206008ee77bab83be59f878ad8b676d227dc1d10d28376206ff6bd9",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_candidate_persistence_tracker.py",
+      "sha256": "d4b04eb74dc395a93528a7fb98155341182bb6bc091e4bb614b2eec37f68c44d",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_control_ref_diagnostics.py",
+      "sha256": "0db65f96d79a74debaf2db711871a53b70a4c50510691767981791ac8bcbb2f4",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_control_ref_safety.py",
+      "sha256": "fdd33d315ef1d4463d788664c36fd2ad8acf6697131f10e812d29b3d2888ba9d",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_control_ref_state_authority.py",
+      "sha256": "21fffd21311da93f99b0e55e176ea500478c6ae31e95f08df489fe98fa66121f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_coordinate_time_contract.py",
+      "sha256": "c505689c164a30b71984c627d0c78264a174a87a425360ed33c640fb14ce6058",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_copyright.py",
+      "sha256": "746749b8b895aa6ca50316be96d481acc312540633f7b0efa7dc2e04df794584",
+      "attribution": "upstream integration"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_dashboard_api_contract.py",
+      "sha256": "284da9f66e7bbffbb5f723ece9ffe761ef01b5c19f25ba5fa02a5cc68526b07a",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_flake8.py",
+      "sha256": "986d2c742ff500b06226f8d59d12cbcdd195967043b7a5beb449271d3c500108",
+      "attribution": "upstream integration"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_freshness.py",
+      "sha256": "15ebe131f1f4bf4e1367dc8392a8651ecc9ad730b64207bbc9f6b982f6f78365",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_hailo_shared_runtime.py",
+      "sha256": "283fc720123da8d0e0763eba72d7ba17b91af30699d4cf566ace6b60de290cd8",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_hard_negative_lifecycle_provenance.py",
+      "sha256": "09cf8c937334bbdc373fa49ec8438f74998e5835a1754ac86eeb179a6c403586",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_live_target_authority.py",
+      "sha256": "e5d4e058614ec6871ec8a7bfa68a03c8fb23f1c819c750d53fe6affaa909d57f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_p044_reid_fault_injection_matrix.py",
+      "sha256": "04232d3006d2900219882521d7498d9d126553cfbad0ebc05fe9b39eec8e5439",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_package_metadata.py",
+      "sha256": "26319ceec4389319af89bcdcdfed9acd654c305344ad5d21c33db6ce08e9ada1",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_pep257.py",
+      "sha256": "e928e420de1feed4011357afc38149fde37a71b9240338cf8ee962b02ff44a12",
+      "attribution": "upstream integration"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_perception_camera_sensor_entity.py",
+      "sha256": "2e789b7dab3938f465d60641f49d9c52ad2a8fdf7297bba5dbb0c90f9e26739b",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_perception_reid_status_static.py",
+      "sha256": "ca033e3df9d20379dd357812d4aa1e6f3541f0238259aa4d3a232ff3501428eb",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_positive_memory_bootstrap_runtime_provenance.py",
+      "sha256": "692d9bfe221a9b6b0bb16cdc50e937697c8491eb57456270f527bc5138f2e114",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_reid_request_executor.py",
+      "sha256": "13f20389f64474d6420df0c79a405419310d20f1d9e0dfae76652d295adbd0d9",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_repvgg_reid_adapter.py",
+      "sha256": "1b74e61bdc532a9787444da4ac9fa0f52c3b9d1f3ee2c6a8e483a2cac5f766e7",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_state_aware_control_policy.py",
+      "sha256": "60758ecb5b1dea6bc4c327d16114e4209f71e57bcc78ab17da873f60ccb12677",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_appearance.py",
+      "sha256": "11c6fdcf53de99b463de75ebce5806efeb2bdf46ef1d05e091ea66271ef5e7f9",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_failure_characterization.py",
+      "sha256": "f17cb34bc297d33a9c20c1119ad42e278ba03dd4fc0a57eb7ae0ad518cf0dcb1",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_global_reacquisition.py",
+      "sha256": "d02658da2c858aa3e4fc7ce3cb3d99350793f1bd6edcdd798a5434d2daa47c8b",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_hard_negative_fragment_safety.py",
+      "sha256": "85dcad7193093505e52bf9cbb305c5ff2a6771c4af5f9a870248370da5ddd822",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_hard_negative_transaction.py",
+      "sha256": "0b1d97a4d16657a30a971c9b1f65c7ab221ac41af1e49b1f86829fe6d1c01953",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_identity_lineage.py",
+      "sha256": "4e92272e32a573d9b2115d2b6885e7d2b457c611f02bf733a4184a03ae031858",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_mars_async_transport_static.py",
+      "sha256": "c91da753a15b7631f41434aba5bd240a3730cded64191946f41311da0cfb290a",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_mars_node_static.py",
+      "sha256": "fb273f0ba0379dfed121081479adbb5cde429b08da15cc925d569789889381e8",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_protected_appearance.py",
+      "sha256": "851a3a04c2156b4032dd094695359ae0d7c1171231a3ee94ff090573dd374e8e",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_rank_aware_reacquisition.py",
+      "sha256": "5e5776076cf89d0bd7c568cc620e47a474632a6f3f65f446115310f94f1a17cc",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_synthetic.py",
+      "sha256": "964a61208d7c437272b17b3f00d35706437a66f4eeeb04a8d361831178edb3b5",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_target_memory_transactional_gate.py",
+      "sha256": "978b6b1a5d50f47e746c1c44f6cab4160a0416ff3480a856216e0aca6ae03716",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_tim_identity_resilience.py",
+      "sha256": "c0f748bd91df9740ef6470b5626d1742b1e715b5f54a36064f82b5815005f78c",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_tim_mars_crop_quality.py",
+      "sha256": "0804205748f1c083c23f1ba186884a3ace2b6be1c37241ee73df68492b019430",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_tim_mars_ros_messages.py",
+      "sha256": "7386d9752a941f7e6dc2eab24b75a589840a810bf55673359feba3a4709b16aa",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_tim_mars_ros_params.py",
+      "sha256": "eae6516813bb3d06e919131a71e1bdfd1f79dd0a83596eb2857cbcd19f7ff030",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_tim_mars_runtime.py",
+      "sha256": "b2d9182e02163f9564bc4168a93927b90880552907002bb3a6f0508f196eca5c",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/test/test_tim_mars_selection_generation.py",
+      "sha256": "3db582d87aefa182ae34474a5a3174b0a09be4c44050388aebdb8979f988b6d4",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/__init__.py",
+      "sha256": "c63cba0ed3423496803081cfc5f9911aafb38a6b52082b1cb9154967c3bebd2c",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/authority_qos.py",
+      "sha256": "6f1a61d015cedf7f537f47e63c3876ed65b5e3b61058dc6209bd7e56e17b1052",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/camera/__init__.py",
+      "sha256": "f9b7079ee2d84a3c41716a51de636e0656cc9907eadc26ea964eeac644117603",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/camera/camera_capture_node.py",
+      "sha256": "3d338d171a126c5001333e050715cbab7e100351dca9587a731b4ba82d0ecde0",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/camera/video_file_publisher_node.py",
+      "sha256": "6dc365be4a9d185940cf043424048173ce592535d8b8fb7000951224406578c7",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/control/__init__.py",
+      "sha256": "0f925d365394d3f76d28ecc157a9e9a19ffcaa079bea0851e78430857d905fa3",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/control/control_ref_node.py",
+      "sha256": "b416ab92306fa816083ab171c84dbe3730d14a9522433aa0f0b65e04c3ef58f9",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/control/state_aware_policy.py",
+      "sha256": "849570ada112492c92fe010d8a6915e5967e2f6e1990ddd34d114448bc8f218c",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/control/tim_authority_status.py",
+      "sha256": "4ca6a1e7ff3be75441105695672e9c1b05064903c47c34469c6c14b52d6dafd7",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/dashboard/__init__.py",
+      "sha256": "d4b6093bf6302f227b2d25166502ee584f047eb3578d178952a667bfe58e8615",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/dashboard/dashboard_bridge_node.py",
+      "sha256": "693535567f84db88549ecd1b04a785f10fa8841e11fdc498f97b9f3fecd20228",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/dashboard/dashboard_models.py",
+      "sha256": "35e99e5cbdc9d9ece53ac38071efa4d9a49e6347b4a1c2dfacf04dddb7c99c24",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/dashboard/dashboard_system_metrics.py",
+      "sha256": "7bc348bce23858222ab0286166fc7a058d12e727b1a67db35f530528ce0585a2",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/freshness.py",
+      "sha256": "34b4c0ce9a3fd9e748682467fea1b5afeaeccbb0e8ee3b710ece5ee63b3185cf",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/mavros/__init__.py",
+      "sha256": "bd90dbe89892e1fec8bdaf7dc829370e99667e68ab28f6cf1f84c6cff63482e0",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/mavros/mavros_imu_monitor_node.py",
+      "sha256": "8e475afb1b0cb70a8d64d9f9e83218abd725314b0e6aa5707f2729112775b06f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/perception/__init__.py",
+      "sha256": "d83c7ea2e464355983792a2922f18a88b9f7b3cb34780d4692cce41ad1bee579",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/perception/hailo_shared_runtime.py",
+      "sha256": "31a6bfd5824583638837f5d1788e77303f30cc961ea89fc5ec81e22e64414eba",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/perception/inference_engines.py",
+      "sha256": "7aa0eb48d59e46319ec56fd54ba1be7b9bd1516b5734a0c2636cc0ea9580c4c1",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/perception/perception_camera_node.py",
+      "sha256": "1d97c1bd24508bbac0edc55cdac35ba4c57eef544256b800d58e858c34889ee3",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/perception/perception_pipeline_node.py",
+      "sha256": "cafc6bb9faa132531f9bf30b5e0bffe453888277db898e4c716cf90e7b4fb93c",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/perception/pipeline_types.py",
+      "sha256": "76e107ac4b3628ba0256ba69abc8b0dcfa4f15e399517d389744d18fe1643055",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/perception/pipeline_utils.py",
+      "sha256": "6615fb06e27bd2773053182ee31f93571339098ec9bc35aeb3ec4b065bc8035b",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/perception/preprocessing.py",
+      "sha256": "7d87612835a1bfbb1d7d053c3d4d16866ec50a2b365571f997a393f5ea81ae1f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/perception/reid_request_executor.py",
+      "sha256": "9d2970927487d61eaba4b23f1dcb3b5dad1e8ec03a44558a6f29876fce0c06e0",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/__init__.py",
+      "sha256": "1ddb0248f31cb465a3fc841cb1f134d68e62ea36fb20dc7a0414de0cf98519da",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/appearance_async.py",
+      "sha256": "f2a1610cf155648f194e25e24c53682f27ffab945869722600d25ed1434f266b",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/appearance_attachment.py",
+      "sha256": "d562d690244d06d70427d8ffe9e321682d0be8219ff379c377bf766c826278bc",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/appearance_memory.py",
+      "sha256": "c33f1d80db8d5963eb6f2a80e6f8553cc45eb50b45f89f64de95d73affe70d85",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/appearance_policy.py",
+      "sha256": "e059a13ee35ce323034b23b8fce7b2a303f61071788393abae289d12168ac3cb",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/appearance_request_policy.py",
+      "sha256": "7e8d4e51c058104d2585567c5da3023c16d07906184bf3f817d884ca9993035f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/appearance_request_producer.py",
+      "sha256": "77993aac96377700f34f1cfb87d7e322c2fcfc6f84cdb558a161b80fc4a03c1e",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/appearance_request_transport.py",
+      "sha256": "dc22e5e4704808b1295a183d4cc685b9ac6575bb35f7f4327ebce2f1eea81e9f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/appearance_ros_transport.py",
+      "sha256": "ba496e6dd4b9c76e82e6975464c73881114f34ec903eb6162cde2f143eb7ce66",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/appearance_worker.py",
+      "sha256": "9ac9fea3dcd4c82fd065d725ca35b9234e00330287716521c2506790d8d824a0",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/candidate_safety_policy.py",
+      "sha256": "3c420d511a68d4e303d786d09babbfc0d6f9cb1a3309f6eae71deb7059c3f341",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/crop_quality.py",
+      "sha256": "a67fcb0c686fdaa79e021a6a4de27811b30c32518464ad307f13f12a209dfe2f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/geometry_scoring.py",
+      "sha256": "e773e385e8a2c414ade8b532eb56b20ac7524b390b99155d843cd73ab82cd73a",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/hard_negative_memory.py",
+      "sha256": "6b2ed146f3e74163aaaf4ab03b40e06e91e973182f6a233e33e49ea290bd4e36",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/mars_reid_backend.py",
+      "sha256": "1cee709fce3e7cb5ed377ab712274b978a2d73961053cb7f3d3d20a2a0aa4a43",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/memory_state.py",
+      "sha256": "4a0df8985ab301887c745b0cbc4926bb52dd6a86b5828535a3868cc69ace0d62",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/positive_appearance_memory.py",
+      "sha256": "1aefb09e11cce2b0c5a293c59393ca3ed24b213930d21fa6c2d2b1c5b2d14df0",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/reacquisition_policy.py",
+      "sha256": "3355c6481eac34ac38835c268d29b599b4a1e5a8661892800c1072b59f61d90a",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/repvgg_reid_adapter.py",
+      "sha256": "f77bc966d7d35da792030397f55607b2480cdbea574930fc7913f8c7bac99147",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/ros_messages.py",
+      "sha256": "0000fd562db8b04be4e2b18cd2262f0498d9eb5341ce37ec3a0ab1aedeb5d44c",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/ros_params.py",
+      "sha256": "a20572b492fb599caa4896d5acb63e36f82f3ffcc943d1cd698c4bfa601adc8a",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/runtime.py",
+      "sha256": "043cf197bd67da57ba22437043f2220288477cfcfa7e2441caa5a037c274a41f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory.py",
+      "sha256": "b4e1b6c2edc59f159fd755fd05bf691e0db2208b9941598e682f8e96caee7c89",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/target_memory_mars_node.py",
+      "sha256": "83214431a9e4ed20881f40b3fd3c3f2545d64b252988b5bcac83998d0654abde",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/thesis_bringup/tim_mars/types.py",
+      "sha256": "275586454ed1aef1d4ed7fa258926ca7405e4b303a9ba3ae74d95f2a82e2a6e7",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_msgs/CMakeLists.txt",
+      "sha256": "28e02ab99bcdf89b80070a1d62134d924b7d0e157d505e048ab0b52bd18740f2",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_msgs/msg/AppearanceEmbeddingRequest.msg",
+      "sha256": "a036c40b6a235cb01d6a907c25d93848baf9b957b24fe511fc6ab902b73f6666",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_msgs/msg/AppearanceEmbeddingResult.msg",
+      "sha256": "94c36815ebee659f138f6160f6186b2d2a2bef0866513a37e5e518916bcb686e",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_msgs/msg/ControlDiagnostics.msg",
+      "sha256": "5b1f6aa0e987e0875750d7d765855c97bf6450082768f20db93eb2b6966474fa",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_msgs/msg/TargetState.msg",
+      "sha256": "d4084be97a8d8d5931139d06c5b675cc91a13c72535a666157b1311f247e76f2",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_msgs/msg/Timing.msg",
+      "sha256": "da1dcb98f0c72de829176eac977d3e127abc1569ca5e45ba77e1f148533626b7",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_msgs/msg/Track2D.msg",
+      "sha256": "d167c3eb8ee411f207b24666f19e0019d58d2a756da9df4b61c3e65b7cb31cee",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_msgs/msg/Track2DArray.msg",
+      "sha256": "661ede3f9431d105bf1a3ac0829e855be6515f3e6000f3aba28ce51b1c1c087f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_msgs/package.xml",
+      "sha256": "a7729d752bd97e9bfe171f8270de8a6511494a45c49cd8d45579bec5406ece9d",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/package.xml",
+      "sha256": "2cd8e237a8b6717fcd29773300e75ed11af3b2f7dce3668c8e53a895bd9d7643",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/setup.cfg",
+      "sha256": "fd00485c54e57780204251ee5ccfc8badb78c8b11c371e594bf450712c951426",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/setup.py",
+      "sha256": "65fddf57901bc02ffe55b20007962124627a5fad9a38fd6e57b5c156f311538a",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/test/test_causal_image_contract.py",
+      "sha256": "7918ebc23580285143daa4c7f8d08f165fed1e29c7e833205e10a9aad9ea1336",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/test/test_copyright.py",
+      "sha256": "6f6a31e5ee351dbc40aef102686e0ae951ee7af3eefac9eaf1419cdc13e58ba8",
+      "attribution": "upstream integration"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/test/test_flake8.py",
+      "sha256": "78b670f9d915badc0076e5302eb09dd4623fbbd5a834c2128291cc0a2caf36f4",
+      "attribution": "upstream integration"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/test/test_pep257.py",
+      "sha256": "f5a1fa0c90fb32fd59c6ed09bc1c1f74ba2fbe6247debde88a2d1050cb2ef16b",
+      "attribution": "upstream integration"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/test/test_tracker_config_contract.py",
+      "sha256": "251d8e3141a934dfbc57f91ae79de646551c158974e97bafe4c95818529dc22d",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/test/test_tracker_source_stamp.py",
+      "sha256": "711d279321a772f6f1fc44cb3fc267702311f5e3408d578affd0782f9382e70e",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/thesis_tracker/__init__.py",
+      "sha256": "20956a065f4f2e7f03b45a8c53f6c29b7c1e7da1e5f7577f38bed0d4bdafd302",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/thesis_tracker/backends/__init__.py",
+      "sha256": "8b30d1af1c6b53239e05934386646615daca0039a8b475c3707ce5e700bb1f44",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/thesis_tracker/backends/bytetrack_backend.py",
+      "sha256": "642e93fd33615425a21e963f44d9e08f575a1d3e9b63aa04e5c6cf8d0e53855f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/thesis_tracker/backends/deepsort_core_backend.py",
+      "sha256": "30bee1539b5ca95b2c992c848369a84a2af9b8ad3efb016cf38ea5874a2cdd71",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/thesis_tracker/backends/ocsort_backend.py",
+      "sha256": "41c5feaeea3e799b9eda82c1eafddc5254666c0f17d1cd08772d6c3f1914685d",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/thesis_tracker/backends/sort_backend.py",
+      "sha256": "df75a62889fcd4ddc23fe1e171f1898ccfc1b72b80939abcf59435d32de29742",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/thesis_tracker/core/__init__.py",
+      "sha256": "6cd87d23d4525e83641c048498e6f58f9dd891d3145cedba2abf5e6b1b1a2d8f",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/thesis_tracker/core/sort_tracker.py",
+      "sha256": "296237d812ea60bc4fac222c859ab303bdaea9f1446c6967260404c7ade32df8",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/thesis_tracker/nodes/__init__.py",
+      "sha256": "00fbe66eb263427d9de72b8d1c5bd4583eaecdef23299a6034d93131f5cadb6c",
+      "attribution": "project author"
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/thesis_tracker/nodes/tracker_node.py",
+      "sha256": "e30b3068b6e6ed6cfe3d5a8f4f21837978b53f82969c5ab222adab58c68ca2da",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/aggregate_bytetrack_tim_sensitivity.py",
+      "sha256": "3b50f21e3f43af3a3016d1a76279a5fb1f4e76ae6ccbff4241723d5703207b97",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/aggregate_first_phase_report.py",
+      "sha256": "b139e782a0f554c70df7b87a0e9ab896baceb8b18230b51bb98a5828be299efd",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/aggregate_oracle_report.py",
+      "sha256": "9b267585240014fc7fb97e732a2368747c6baca251d07a078b27191ff4cdeec8",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/aggregate_parameter_sensitivity_report.py",
+      "sha256": "d931fdc721ff3a9b275bf09d08173fb8c88fce445fffcc74167be68fa1995df8",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/analyse_bag_timing.py",
+      "sha256": "57ffc120f428fd6cf73544f98c38cff6424aa1b0105931bd2b2840a8ff0d67b6",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/analyse_tim_reid_workload.py",
+      "sha256": "02b189f454b8af68879a837675335f53d0808566ffc7a12e58a7d8c1aac105c4",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/analyse_tim_resilience_evidence.py",
+      "sha256": "b306419d8433f2813d5a1cdce75a3ad96d856094362d8cf1fa91d642e5b57861",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/analyse_tim_state_occupancy.py",
+      "sha256": "7b50b290899bd5eb5576479e8edff288ef90ea029e9636ac6528c5ac2ed6596d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/analyse_tracker_target_continuity.py",
+      "sha256": "ec641720ddd9d1118940334fd45d1faa8b42cb49e11642e855539adc07c04de2",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/bbox_size_stratified_report.py",
+      "sha256": "c8d9ac74500322158cbca297f319935ccbd06f2a1560f316d1a4959f18727a9d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/bound_visual_mcap_time.py",
+      "sha256": "f714e29fe4c4dac8935fdfc43ae0b271a3454d22e0afdbdaa32d82fc3e8e8e39",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/build_oracle_candidate_bag.py",
+      "sha256": "8cdd2c4bbb8de9321f14fcd97b8694e4234432f5a120a64b2116515c42ccd231",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/check_live_timing_invariants.py",
+      "sha256": "37c3d74309ee7665708bde3721316d68c89419c428e51838a64a999298bb2308",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/check_source_headers.py",
+      "sha256": "3d91529c0754f70dd98ac1c211d61f691784f0c1ede03a65e925d1a39a04445f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/compare_target_reid_semantic.py",
+      "sha256": "c2d21253d45cc173fee9119f1dc11b7a9c58afc5f977417a9a2d3eb2a31f873d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/cvat_physical_reference.py",
+      "sha256": "109e0d81ae5c492020280a239890f5d3dd437f368f4adeecb0aa71c62d57ccb8",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/derive_presence_conditioned_metrics.py",
+      "sha256": "b6108f7765027ce8b730103ad46ec9f9d01fd02d966bb603322bf5e44bbd48d8",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/evaluate_external_frame_outcomes.py",
+      "sha256": "b5c3b4395edc86ab6898dec88c09629cda11e21c3e0ce0fbd1708bc7ff67ade6",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/evaluate_physical_target_bbox.py",
+      "sha256": "d841c7367547bef33cb3bb556154a2bb55b6566bef857904beae89618684f0e5",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/evaluate_physical_target_bbox_v2.py",
+      "sha256": "c63451b8417d9cc4ab921c3fecc0469b839518a9b784d41e3fa2ab03bf444dcf",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/evaluate_physical_target_bbox_v2_source_time_repair.py",
+      "sha256": "27e6c1001623d0c3d44255b568f26ef34fc77f434facf0a7f0a68726e328d2a8",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/evaluate_tim_by_event_type.py",
+      "sha256": "a77186f668d2e6dd3ff21c3742c018e481d768631d6f8dff059b13a0fa6c21c1",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/evaluate_tim_event_recovery.py",
+      "sha256": "029f0584e46b59e64d022ac84ccd0d194bf1a60a31c0b597e2e943c599884fdc",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/evaluate_tim_target_bbox_correctness.py",
+      "sha256": "5bc41d41728de385eed65d1bd3f4215984120bc9c998efdbc08759dfd4c7be33",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/evaluate_tim_target_correctness.py",
+      "sha256": "8c6e686ba657d6f8f73bb656da9a1afba58f58efd37208c9aac36635393da82a",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/external_target_initialization.py",
+      "sha256": "afe01f2872c71d3cac693da119cb218e0b28b2553ce0bd507ac834ebe7ebbabd",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/external_tracking_dataset.py",
+      "sha256": "f2baaf096e335494e4ab2612a67e9dc1b9dc450030e7173631e14aa44cb1b8a8",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/extract_tim_all_scores.py",
+      "sha256": "48e8a4776cf735d455e3f5b63efd6b53acc98db054249aa8b3c752d9bb5d16d6",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/git_history_compat.py",
+      "sha256": "15aea07cbd215761c8bf2dc31ab00f2c0d74e4855bf1e2f571e3a788b83785e9",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/p027_handoff.py",
+      "sha256": "82d2109385df660fd298c640d177914d966c670d76a69dee650f7549d95877ab",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/p058_target_reid_baseline.py",
+      "sha256": "bb1027e320bf6915a2201a3fdb8009fc0c610c29a1c1b02d4fdd2edd8704030d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/p058_target_reid_calibration.py",
+      "sha256": "d091f2a9a74efa180768cd3fe0affd755d2a8d9da7e2d1f08ea173bfa0006c61",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/p058_target_reid_runtime.py",
+      "sha256": "b15bc4009665f8fe3a511ebe4e2a2ab8d870ec96e084267c48c5d91b6c7724bb",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/p058_target_reid_sweep_spec.py",
+      "sha256": "45ab575e0c1d53ead0efe09ba432aaee14b7ed0ae3737808875664b8dbb64e64",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/physical_target_bbox_evaluation.py",
+      "sha256": "16f49749368daa2c0406d57f7632eb68c4e04aa5539e5138effc1c5e6988d8d9",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/physical_target_bbox_evaluation_v2.py",
+      "sha256": "fd999263c4c49ce638a58c09756cd1f62146fda187b6dfb7bdac8c4132c3052d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/physical_target_reference.py",
+      "sha256": "38b72bdbd2144f285c197654a2c282cd0470f2d612ff95b438b24289aa336169",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/physical_target_reference_v2.py",
+      "sha256": "73446929b67608f6014f8fa48dbad6257ac75af11682fa9a9d7100bd3fa52480",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/plot_parameter_sensitivity.py",
+      "sha256": "371c8b59fa559762b3332df1d90899191b705ec4fe8594efef1f1c1dd9cad24d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/reconcile_p058_source_time_repair.py",
+      "sha256": "396040601ce88cca4341e5b60db32de82820139934d3471e8e556aa47f502d21",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/render_bbox_size_report_outputs.py",
+      "sha256": "74b6a43e59c16dadb96a6c27b132d2901ddff1cac0a8a083b312e8b9a4290a03",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/resolve_bootstrap_target.py",
+      "sha256": "4659e8926f4f0f58f8aea9b7a1c3e7f7d808e8ec4b5ae4948cbba75bf0de660a",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/resolve_external_candidate_stream.py",
+      "sha256": "c8c36e7a8701dc0bc551c6455817e7ac0da0f6b05bf6d803ef677be3528b4b55",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/run_external_sequence_report.py",
+      "sha256": "1f902aabb837e98a5b8a46be90117e0cf679a9a0baf2d45cb9fadd7bb9adb601",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/summarize_control_diagnostics.py",
+      "sha256": "8df3a7210073dd7944c282ad7e86b6fdee096e2a8e455e112e516f675a23051f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/tim_evaluation.py",
+      "sha256": "7fde5795246720f72e21a08b3b42a7d39b1bf38c916d3e2423f950dccf6c6fe2",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/validate_tim_evaluation_split.py",
+      "sha256": "9d4af1b3df42c6091b67e6ae1bab61a980282dd8dd99a483a0041d5c16d45969",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/analysis/verify_p058_source_time_reproduction.py",
+      "sha256": "6eb3b5c8837ea20b059e147a53f99a667c77021436e0434a8f26521b01f14b79",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/bag/render_bag_overlay_video.py",
+      "sha256": "b95977f1a6880833c071f20ea8e853b246118e3979708cdcd3edef66c9a41a7d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/bag/render_tim_comparison_video.py",
+      "sha256": "e825c020e1e225dbf05aca8b6304661c954f7a69e8c1e8cf22cebf26b463d28f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/camera/probe_camera_modes.sh",
+      "sha256": "f48d644c6c0e86707b86f55c07ee8ff67465d7a1283e04d780ca9e26c91d3436",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/catalogue/build_tim_eval_catalogue.py",
+      "sha256": "179a76d5911cbc5d01507d3818dce7b4e43d798fc82a736fd67cb3a69bf529f5",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/build_common_input_bag.py",
+      "sha256": "66f2285e7330db48121e89620a9ad291faf0c06c2cff48baaac9cc2c19db25dd",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/capture_external_detector_tracker.sh",
+      "sha256": "b91dddbb565274447152a35861b94899253df7f33006fffc9a57e253eb34d99c",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/images_to_camera_bag.py",
+      "sha256": "d5ac227b1b330d11433873bbb16cd47bf7c9fb47dc26d836d0f424080d69960c",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/measure_p054_raw_image_transport_cost.sh",
+      "sha256": "d66f6cb4a6440a01e08526c5256e0b7224e7cdc213e758cda2e20d7051944f82",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/p064_appearance_contract.py",
+      "sha256": "aebc9faed6170644bdd6d52ae76b88612b8e4f1833bed798117c0782690163c8",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/prepare_p064_appearance_variants.py",
+      "sha256": "9495fa513e836e231d12c846f3ca3a1b89b38d648e4649102dbe8ddae347525f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/prepare_p064_video_source.py",
+      "sha256": "857e03e8d17ba74f03209ead02408c86ff37108f9adcb0e24b1aea2781c50cec",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/profile_tim_resilience_service.py",
+      "sha256": "531493db468423a2838972f3c2ffa355828c74a603b546931649409e28eac865",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/publish_annotated_track_target.py",
+      "sha256": "ae6c0d7fb4c43e4c9633c12e23ff66796baf84776dc53bf1d1dd0ccda84c9a36",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/publish_selected_track_target.py",
+      "sha256": "49950ab47c89a49794991a54199e8e71ca3912435aa2493cfad8e2e0164eab75",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/record_p027_heldout_sequence.sh",
+      "sha256": "c896e89658f1d89bcfcccea645de5c7ebe5b8f7cb097f0c0b85920961f4238b9",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_bytetrack_tim_sensitivity.py",
+      "sha256": "5d3b2bcb66f1928836516e4fdf5734924473d4a51645e7a3414f5ae6671adee2",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_deterministic_tim_replay.py",
+      "sha256": "ef6b6be6aa0c2d461cf4c77880855d68a92559c1c38687c8a904f649e8577886",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_deterministic_tracker_replay.py",
+      "sha256": "9e6e4c2319c949c6e5f36c61ac3c5695fbd6ea345ea49b49b6752e85f23e11cb",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_one_clean_tim_replay.sh",
+      "sha256": "e57706a412c92b5278a17c003c193b6f060204a41acc8b1794d59f7b44a52049",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_one_detector_tim_replay.sh",
+      "sha256": "f00bc11c21f9b15b86edb60d526b1d10b0c5f1b1db4d7f98a44790d9fe166455",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_one_memory_tim_replay.sh",
+      "sha256": "438769950546512070e35d12b7d6e70e08bc5516ef7ba0033cd56660dc57c392",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_p058_final_architecture_comparison.py",
+      "sha256": "02e45bf994b550140246f14319007babacba02ae54af6c4994dff75a79f0e8c3",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_p058_target_reid_replay.py",
+      "sha256": "50818aaf5d18ed5a70539d7ea7d863ca4e8ef520dc2ad2c4f090821e3e2e641e",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_tim_component_ablation.py",
+      "sha256": "8dce76404df8bc86f74a19c221e59c3972758e90b4c6c71258c622f14208e943",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_tim_parameter_sensitivity.py",
+      "sha256": "f01c5d6ef4141dfcdc38bbcb080977a8cb9199c8d27598c07f97bc62d19b67d0",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/run_tim_resilience_development.py",
+      "sha256": "739426a3712116ce5e0aa2017a7bfc9bb60992474073ef5fbf97be798c7bc537",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/sample_hardware_health.py",
+      "sha256": "06deaed378af22afa1fc7b8b9835876ab3c74a4f69ee0a049b41f3d2e115b8e3",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/sample_process_groups.py",
+      "sha256": "93c81c536f379b2c4ffe5a994bf9c58ebe74c9dcf4e9c589f7c275f947374ec4",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/select_largest_track_id.py",
+      "sha256": "5b675d4ef70fb1763cfa38694d72fded65d9f2fd651da8f8bc355b7382aa3d98",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/wait_for_track_selection.py",
+      "sha256": "8489061b770b246edd280a7e2a161c115a11775371d274f4e979789b898c1169",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/experiments/write_tim_run_metadata.py",
+      "sha256": "0838a841b2e54683193ad10770a93af67ef8b3cad69493d82f33ee75aa78554f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/flight/field_preflight_check.sh",
+      "sha256": "1a9aa083b615267b3eafb0b52d14e841a547672c05a8362db9bf2a8619c1dba0",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/flight/kill_exact_controller_for_gate.sh",
+      "sha256": "a729a77b623a3d8aa075f153fd834633a967a8d157094b2a3fb1a11e3120d3ea",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/flight/verify_field_run.sh",
+      "sha256": "4d3e2a1b515b5f8ad57966172fc65c39dce0925f5a08afcd784438c8ca700a93",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/check_pi_field_network.sh",
+      "sha256": "04a70a51ec31fb7817493c3b9e01936ba6c5096086f150fef1dc509af7272705",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/install_unattended_host_recovery.sh",
+      "sha256": "4fc51f3895c418363e43f343b57d7e5b4d466f296c92a0a146a016fe23f274a4",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/networkmanager/dispatcher.d/90-thesis-pixhawk-disconnect",
+      "sha256": "42b8170356213c5be612e0853181cba01a205b7d257e3302ba84c98647ae2a03",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/set_pi_network_mode.sh",
+      "sha256": "7a27de7a939ba562d9853615339a5546ddcb83755d57d38356407902627ee689",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/systemd/journald.conf.d/10-thesis-retention.conf",
+      "sha256": "c1d94cdde0c8f9e07a644275fe15752817e527efa04f5c077d3d2499b45cae40",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/systemd/ssh.service.d/10-thesis-recovery.conf",
+      "sha256": "e32e7b1395f3ab13032ef71d760864206e9c5d33afe90f76604f3de7c12474e0",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/systemd/system.conf.d/10-thesis-watchdog.conf",
+      "sha256": "f2ed253511c3c135f431416c8d5d00deafc1046c75bb5f52e936b29ce0fe00f6",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/systemd/tailscaled.service.d/10-thesis-recovery.conf",
+      "sha256": "307950a6efe6dfc3989a922eabbfdc08b6a67322328b4144d0922c5a91014e67",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/systemd/thesis-host-health.default",
+      "sha256": "ac4feff13b9068a03ab08f0c0a7487b5a8644cb6cb3424a2fc80ebfa7914d607",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/systemd/thesis-host-health.service",
+      "sha256": "53636f44ef8666115a28243667a587a0813b400a647ab5f0d08f0b1548677c9d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/systemd/thesis-host-health.timer",
+      "sha256": "361a770c52926c9658bf9f012ff4c63472eace5be5f2ae92af9c601d7410f3a2",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/systemd/thesis-pixhawk-disconnect.service",
+      "sha256": "443650b93943fc97cf4cceef122ba33810ca11987866ec9f8b60f15ff49e0b76",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/host/thesis_host_health.py",
+      "sha256": "7b494e884639177f0abc7e6e1329f103dce3b42781df21bfa7de0b92f7767bcb",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p032/analyse_p032_final_resources.py",
+      "sha256": "ca1eb1dce21da115d7e950ab8a9ebe93ce25fe86ee49b60f03189dd8da325806",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p032/measure_p032_live_resources.py",
+      "sha256": "6cbc689b58894e228fca3bdb7901528f6e7146c9625a9f939a8f5ea937c5a3e6",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p032/sample_p032_live_process_trees.py",
+      "sha256": "6b53bcfc8cb0f5d6472071aadc3d6e30f95919e4498fbf1cff71bf01bf1c91a1",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/analyze_p044_sustained_soak.py",
+      "sha256": "1900688d9e5efd91efc3fde17ec035168decaae64b343d828005457ed8aa70d2",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/collect_p044_transport_evidence.py",
+      "sha256": "90e0383e48330623f37c196c0cecc2ce2bcce37bc2a5bca92d6c5916af22276b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/extract_p044_observational_embeddings.py",
+      "sha256": "c8527e7f4d81c896159dfbc3d36eede0ef8ff2f943ade8a8673caeba58ca03e7",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/p044_reid_fault_relay.py",
+      "sha256": "a9e0aff9f6a9db2980bd7b33cfebf3ae4cb60bcb315a809c9dd50350fc4de55b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/p044_soak_input_relay.py",
+      "sha256": "75d7eb7258134ad8adb012f2c82dd3e84de1d2023dbad9bdc6b66b34ae04ba23",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/run_p044_guarded_cpu_policy_matrix.sh",
+      "sha256": "44eb9f934440177293747bedc05fff09112acf274d9dce53f205d788bf404b64",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/run_p044_guarded_hailo_load_matrix.sh",
+      "sha256": "e6b89f9dda6cf28984153a3bb6e776cc08304f60596ac80fb95ed9aeadde7d61",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/run_p044_hailo_reid_load_matrix.sh",
+      "sha256": "1146b4cd4b5be53e7900bbaa98ec0a38258fd97fbd4b912c9f7e838a09d05b1b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/run_p044_hailo_reid_pair.sh",
+      "sha256": "6755e1034c88b4c09870d6530c35865e35fe2ddae74effebbafd56873d8a4f5c",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/run_p044_live_reid_fault_matrix.sh",
+      "sha256": "e6d977e73164156cebc04805f6563ddc738340f978af1f2681d5d7c10c28a6ea",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/issues/p044/run_p044_sustained_reid_soak.sh",
+      "sha256": "21811759f8a2729e6bbcd831ec160dd233f6574d916196214ccfb6cdbdaadf84",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/lib/live_camera.sh",
+      "sha256": "a4cb9c708503206ca4e0d2166ce2c07cecd34eeacb6a85de7f7f6765a6c86792",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/lib/live_cli.sh",
+      "sha256": "3dda3abc93d67571bb76cb07fe9f87d4100d05773ea9419ad1af272a33cda7ae",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/lib/live_defaults.sh",
+      "sha256": "39b9cf4827494dd13f9fe966c86f0097541e1d8d1642ee6d1998dfce7ee2bfb2",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/lib/live_run_id.sh",
+      "sha256": "4f4ab2d52004a9d84048e8e2d931286d1b8031e09867209ae010b240bc0d5abe",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/lib/live_shutdown.sh",
+      "sha256": "3689d192727ac8f63692d6d2362165434625557394099dbdfc72f544f8caaf67",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/lib/live_storage.sh",
+      "sha256": "ad7a4742df71ee35afd23567f87ef1fc1faec2e5ddb349191c35ae36ac56c378",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/lib/live_usage.sh",
+      "sha256": "ab9cba5eae7672a38626ce7eea1707c7ef25e97e229d57191ee5d1e261de4989",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/lib/run_in_owned_process_group.py",
+      "sha256": "1de3d978a2796f94bc649fd39e3927f54a427bef38af0dedcfcfe5f731b4c99b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/archive_pixhawk_dataflash.py",
+      "sha256": "6284c62a0a70adfd66b582c3b598b88ec9cb5fa2967ffc4dfd278691d54a54c0",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/archive_run_evidence.py",
+      "sha256": "5af874e99b0a5359d07f93db6a2897825bad0ef8963ce160133455de83fd4288",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/assess_bag_topics.py",
+      "sha256": "64f30f4258f36f7f2cafc913e7351b003545b389806e9bc8f2ab68497e1cb6e5",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/operator_event.py",
+      "sha256": "f4e2e4600463c9e5de9425434f2ea7424d568b3d7b23efdf2d4fad1197d4efe8",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/print_track_ids.py",
+      "sha256": "7996c3579901c1af6e989206ff5d271dbc04eb3109e5a8736b5ae168c0268437",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/retrieve_pixhawk_dataflash.py",
+      "sha256": "95000c55809ef16857bf5a443bd2816555144c455cc4bad3994a5cd13292ea78",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/source_record_qos_overrides.yaml",
+      "sha256": "a38d9d7bbc1fa506b69c5280d41c1d0c13f78ee9ba0df57a0a3ec24d1509ca52",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/source_reliable_perception_camera.py",
+      "sha256": "1050cba927618e78c0108648f440e663cdbbe181e65307a2a2356eacd95096c5",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/structured_record_qos_overrides.yaml",
+      "sha256": "3eee47dbfd09ea57a26e4e63fd1af2934a32685eed0042e6491e43c0cefcbd58",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/summarize_field_evidence.py",
+      "sha256": "98f4348a03317edda0e5afcbfb949e56fbabf1ed34c582748d37e632ef058f01",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/validate_live_run_metadata.py",
+      "sha256": "67464981445ba7afb316cd9fdc237124d3ae4998d482ab178de97ad4a805ffe1",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/validate_target_authority_ground_run.py",
+      "sha256": "20a0412f561a6d14ca7d3506281407783f1dba0ceaa41c583787c07ef77df9c8",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/verify_evidence_package.py",
+      "sha256": "700e98137ac64fc8f3efe23bd004d8023cc60778053fa4e43551dccbe1ca83de",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/verify_recorder_transport.py",
+      "sha256": "6227e293a8d1de43530300df932c334e11aa731fe178ca545cde5d666f7387d5",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/verify_retained_bag.py",
+      "sha256": "6bc07c80464fbe3eff6fbcbb0f18ecf5de78db816c16fd98493f05946cee351f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/verify_visual_evidence.py",
+      "sha256": "0407c5d7fecee5a6502d374d666467ac0a7c52cce2e9024bb3b2a770dcd2999f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/live/write_live_run_metadata.py",
+      "sha256": "89a12bfcdd4e06c37e494e460a2234a9822c8069e6ff3077cb4f208a82480819",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/mac/thesis_field_connect.sh",
+      "sha256": "5fd28947f2278160c957b694b1af11d587635d2d6cfed238ae4cc3cd56ef1d05",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/reproduce_tim_mars.py",
+      "sha256": "87f12c8f6986fe8c10ac8e381d246ca21d384da365e921190acd70776cddbc8e",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/setup/check_delivery_environment.py",
+      "sha256": "1c2cf10e4ca426fb0e07e8ea44ee6742e686d146e2057b614879c7e3b8ea100b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/setup/install_host_hailo_bindings.sh",
+      "sha256": "c8342033d6eac8ce7739fd02285814253564425671a97c3a7ff5648726eca1cd",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/setup/requirements-mars.txt",
+      "sha256": "a77836a689e2cabf7f198f66ad9d318bf3ae7838e2afd2a9ed18f6a28c115ecb",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/setup/setup_local_tappas_runtime.sh",
+      "sha256": "ec28be4af2a2bb5409dd6f26148cd6e100a43d13ebde5f278bac43c5fd4fe3bd",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/start_live_stack.sh",
+      "sha256": "e5a3e300962fc2909b16a59053b4accebb0306a03204a9dc448ed9332614af37",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/start_ui_stack.sh",
+      "sha256": "816ac42eb317e560ba8121fefacf821eb064c06c326bff2023fe48de5f4734b0",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_aggregate_first_phase_report.py",
+      "sha256": "469ee6d0409aa091a42928e7f7d766e7dc00fb15800204794575e444531be34e",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_aggregate_oracle_report.py",
+      "sha256": "6235ddfc4ae36316d30363f2ad5e1218b7955b359105c5223204870fab1d6c93",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_aggregate_parameter_sensitivity_report.py",
+      "sha256": "9601bf23c6dbb6486337bfa5b6b5b11eae18cd1d42f78e890122cc2b60e5ef78",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_analyse_p032_final_resources.py",
+      "sha256": "4bf4c134e30e52742a5a874687e168b6678f98e49576480230013de63fcd3922",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_analyse_tim_reid_workload.py",
+      "sha256": "5037d668072ec286c6b2901ca7cada088edb252b1fdcf993745a775ff3bc7a00",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_archive_pixhawk_dataflash.py",
+      "sha256": "eb12952188e6136388a382c1c7d6d18efe874a41f58cb3ed0c73f456a84322dd",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_assess_bag_topics.py",
+      "sha256": "f83390f90be6f9f2c01a030b5d5b0eeba3d3444aa7969bd31c33eb433fef5c1b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_bbox_size_stratified_report.py",
+      "sha256": "dd64571295f0f4be4040511cea06502db296fd98b616354f37e24ce25fdc86a0",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_build_common_input_bag.py",
+      "sha256": "41c994a7548987a1bb698cc7d8dec7b3f5e1be097d0e8702d8efb0f584ae0fe8",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_build_oracle_candidate_bag.py",
+      "sha256": "4232bc823fd6bf81602739aa749d905990762e477e2076dd0743b2184d4c85ad",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_bytetrack_tim_sensitivity.py",
+      "sha256": "237b7478f683fc2af44c38ecca76e3511fb9f8f283fbd7c41a9c6565d00a3b78",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_capture_run_id_contract.py",
+      "sha256": "8ed3cdfbfacbc5b5f6820299d04b2aed394f8d69e799a98521ef9a1b3b4cb0ec",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_control_diagnostics_topic.py",
+      "sha256": "f32b8b120786f26044c25969e29ff2d74e21771f947705793bc5f78ed7e6d91b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_cvat_physical_reference.py",
+      "sha256": "464992caa65c3fe43602f1d76041a1bd6667ac78dbede8e2cf930f163e47ed82",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_derive_presence_conditioned_metrics.py",
+      "sha256": "dab9e66903667400b8b4563bfcdf405ec7f1066150b991afbba659be5061fa82",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_documentation_hierarchy.py",
+      "sha256": "233d10c13ba24cd94662df53a6076937002e14802ee11c5ed99aa994df196180",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_documentation_references.py",
+      "sha256": "c07bc77eea471dc82b061eab9dc194469356f7e5320e6fa85aeb989334835125",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_documented_operator_contract.py",
+      "sha256": "eb01845e2258415884b07a94b2568d60f0a335c2662f08500061a492837f0345",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_evaluate_external_frame_outcomes.py",
+      "sha256": "3bbc1f8811cd2105bb58833e5cc1e77e996bef98d72ab1d163098bc26c820402",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_evaluate_physical_target_bbox.py",
+      "sha256": "183adc06436750359d031a3f3f645ed486cd8ed6a6c3314cf8ca991a2711da51",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_evaluate_physical_target_bbox_v2_source_time_repair.py",
+      "sha256": "2101f8c105829d2a4f39b7a8274a0c7530451e6996c194b978b1a6f6aa89c3f7",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_evaluate_tim_by_event_type.py",
+      "sha256": "d9c12fd4f5b5f08066dd8b11a273a88a3fce463ba036861b535973ade0975973",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_evaluate_tim_event_recovery.py",
+      "sha256": "39dca07b2c2f48cd902ab8f90bcccc5bb1e34318644cc78118d7d0a65ec91c24",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_evaluate_tim_target_correctness.py",
+      "sha256": "3dbd41edfa4a34265a55765b2fabae1181c092651fbaeb68000f4b0645d7c314",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_external_target_initialization.py",
+      "sha256": "9bd212416d63e8374ac75caa08e6c19f8482d4bc3c70635865670772126670f4",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_external_tracking_dataset.py",
+      "sha256": "84c50bee8cc938415940eec1ad1e39ebb3b712c90acbe328577f8ccfb0af26a4",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_field_finalization_launcher.py",
+      "sha256": "1af7a923b23f4ecf099603d31356bebdddcdf9ba3637b4257eb11f11c0285fd9",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_field_preflight_check.py",
+      "sha256": "fdec3b2d03bb14dfa2daee981feb1dac0971d1b9144707fc25bed5b1d72e4247",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_hardware_health_sampler.py",
+      "sha256": "cb80387bc53d7a3935a5eae507b131b6c0efaeb7e967456e34b78a36598f2e80",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_host_health.py",
+      "sha256": "a6cd106928369a51124a216d481d37912511cf440d60cc1ad3d6a97b9b23e10e",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_images_to_camera_bag.py",
+      "sha256": "5b8d69909cb846497d65c68f81949acd38cc0f72382267d53d84705cad4209f1",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_live_appearance_wiring.py",
+      "sha256": "612c1528e4480068b5e7db33d6c05990abd4861d021ab2d3ea16ab4566d860fb",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_live_camera_shutdown_contract.py",
+      "sha256": "3f6184e1110edde3be053ba1535395ffa2696eabb29cfee1faac3165d5fec1a0",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_live_mavros_control_contract.py",
+      "sha256": "947f116cfdfda12fcd557c4dca67f0eb1984ea37ee44a567b62b7729e7d7b7c7",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_live_raw_recording_contract.py",
+      "sha256": "9beb49263fa5ee04e5164f7e20fcd3be8d9e9f4b8ab8e35a03980a91f25d4ab7",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_live_recording_storage_guard.py",
+      "sha256": "c8149cece7c5495e1b877acc915a3e072057034a72afb6a01dae7abcc911a8d1",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_live_shutdown_ordering.py",
+      "sha256": "55ec9f896fdf59a2d7560599d29603a691600bd873fa306a5ccafe9cedac6297",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_live_visual_recording_contract.py",
+      "sha256": "3effd63d974757543fb3e9e43bc63aff40bcd7452312d4a5c5e15772f289a889",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_live_yaw_recovery_activation.py",
+      "sha256": "cea7b226a866f94ea72bea8596855127ccfcc2da183afb2de913989aef9c5a8d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_mac_field_connect.py",
+      "sha256": "138e067012d3e12f1559df3b1941154a083844e7257693eaccd444922e6775c9",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_measure_p032_live_resources.py",
+      "sha256": "e15c51ccbeb8c061fd884e14641d64b6884920cbdda051a9c136f4322d7c03fd",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_operator_opportunity_events.py",
+      "sha256": "eba4403b9bb050d70720927a0da80b1d13499d0658d9742534d8f6ea614d8a5d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_output_freshness_evaluators.py",
+      "sha256": "e82e59e6f5b275553b6c039ab95a1503002dc1f2db15d54099cc477c4e86f85b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p027_handoff.py",
+      "sha256": "74ec92e4d65bc2eb4de71af1cbdbab7001f1df14b035bc45359560d0fd5dd412",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p027_heldout_capture_contract.py",
+      "sha256": "39c8d8cfc7750e188af80680b010af809fff625261e4025517708858022530b7",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p028_ablation_package.py",
+      "sha256": "9d6dca16da878e1d3ac3b5840b71cb91977d77fc3c5ad7c4429405de1cce3d7f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p032_live_process_tree_sampler.py",
+      "sha256": "15319807fb9ac935f987e9fd6bbafec9b03bd309bc3761fe34534af9cb28d53f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_guarded_cpu_policy_matrix.py",
+      "sha256": "e6fbd9db711889a6a4c1a11ddf88f0f82a1542641aa8b5ca47c281a9059dca7c",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_guarded_hailo_load_matrix.py",
+      "sha256": "1b87ed9aede0e465c15c12ff7e2429ac4dc4852b67e50ec4c5d5fb6dbda0e853",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_hailo_reid_load_matrix.py",
+      "sha256": "2ee9af766bd91c213ec2a637794bd1c837704cceb10aefdd67f0babc0c86fad2",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_hailo_reid_pair.py",
+      "sha256": "455d3c7ecdc0da80682c796c80af06499cd8b1ea913950e9a5d4d71864fe9f58",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_live_reid_fault_matrix.py",
+      "sha256": "90321128de5f8e8a228da3f1430ba5ec15a3026c5c63e3d749ac0a3d38fc30d0",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_observational_embedding_extractor.py",
+      "sha256": "40ff6ee6bc393f303d49638faa84dda0c6f9cbdd49aa4100d1b2bed9a5595f7a",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_process_group_sampler.py",
+      "sha256": "82057c1c6d7666d1cd4a3b94f3bd3849da6dd139d9562d259af2ebcaaae7ee96",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_reid_fault_relay.py",
+      "sha256": "711c8f1438d626a175c9fbf649a824d28f656a5ae95a6fb944bdda1c693f3176",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_soak_input_relay.py",
+      "sha256": "9b76ad5183931c9faf3d42b5d224cfa8c044bee71e3088a4ec3a882097367c5f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_sustained_reid_soak_runner.py",
+      "sha256": "91a6ff320586d2af13559949face37119ff3e120b8f2c302e24033596cffe431",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p044_sustained_soak_analysis.py",
+      "sha256": "4fe73e4b66ad43615a7d56dee70b7218d50663a3507fb96660f005b701a2aefe",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p050_flight_evidence_retention.py",
+      "sha256": "92c90e01a39f7c77a82fec090da5367bbb0f1a465b296cbcf5de7296ad55978a",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p054_live_run_metadata.py",
+      "sha256": "08b47439c8863d8639b1ebd68e654f78b72e5e6510624870c278f36b3599f390",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p054_raw_image_transport_contract.py",
+      "sha256": "cbc386debb1faa7c201f6abb460fbf460635f57687b2f71da8a5eef38d83f3b9",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p058_final_architecture_comparison.py",
+      "sha256": "94b98fd3735dea4dd496c6a66ad7c46d5bf6305e3653850803d47a64bd42b898",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p058_target_reid_baseline.py",
+      "sha256": "321cb9f450a0dc595b1b1680d17adb86db0e2482be3fcb23af6c0f37c76f2cd7",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p058_target_reid_calibration.py",
+      "sha256": "fb19011c7de7cc99aa75a433cdedfa119b57b2455e279f110079169f42aade64",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p058_target_reid_runtime.py",
+      "sha256": "2bd0287efb9352959b9b63c6a4e9b385a25579cc9aa3ea367a9f282dfb6a5fba",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p058_target_reid_sweep_spec.py",
+      "sha256": "033b174186fbdf227b149bfcb828241b2d71d838f98bb6f538d232956742175f",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_p064_appearance_resolution.py",
+      "sha256": "c63fa7cf131541e97c7b2258f3fda9c02213969da705c2a192716b38866adce6",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_physical_target_bbox_evaluation.py",
+      "sha256": "af901d4e3571ad4dbec5106574825806d64fd31f9f6d0e0c6d63869249108db9",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_physical_target_bbox_evaluation_v2.py",
+      "sha256": "e6b26064fa306348a7423fd2a15ac00822c0dd6f237bea0b2fedb98cd4f73be9",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_physical_target_reference.py",
+      "sha256": "e5e4e37c449502d659e6b5989c40e30769aa9a378ecacf9de9cc3f1deb1ee330",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_physical_target_reference_v2.py",
+      "sha256": "ce766564faf7cd2c75873a2659cb3bd1e3c04a78e3b3f4476ca1b75279097901",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_plot_parameter_sensitivity.py",
+      "sha256": "aca042865eaecafa6c5ef163ade62daf42804474f7d530cd0024ecda7b20ce33",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_prepare_p064_video_source.py",
+      "sha256": "07d279f7b971b39c00ed7b1fa4b07163de0fc43bc19c057c0a73261624c4a58b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_render_bag_overlay_coordinate_contract.py",
+      "sha256": "bb7dc4bb40d48c05c087d2600c90f7c4332fdab1e74d4e9013d29b9edc9e8f90",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_render_tim_comparison_video.py",
+      "sha256": "a172262c96a762c2080de7ef9ffab8e7ba7921d30770c5f0290309737855871b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_repository_layout.py",
+      "sha256": "21ea3fd03b7d66b2e18579be3a1c34bb2f2f3118401a41f458ef7bf90448e61e",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_reproduce_tim_mars.py",
+      "sha256": "85f52fcc17cf2a44fb90a0c474df3767e94c04d8fb9433a82d47f58e6b53be66",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_resolve_bootstrap_target.py",
+      "sha256": "bc5c9ab9ee09141a04cd8947d88e4f497d7acfb57d485b0302a8096446fe329c",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_resolve_external_candidate_stream.py",
+      "sha256": "fb7f47e41ef4f6b1176367e0d667d6736f3a239b954d46fb4aa2bf45f1b5f6a6",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_retrieve_pixhawk_dataflash.py",
+      "sha256": "9c2daff4c56f1bbd9405b1a2f50e3e59335231d7d97a0e58f23d95424181e25d",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_ros2_ws_layout.py",
+      "sha256": "826d8c793f4ee7a9f9df3768b396422f9e825b8b6ad8ab40197c3772af5413ce",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_run_deterministic_tim_replay.py",
+      "sha256": "a7ada44a27a1dd33f13346b24581efc862ae29a221a71b9708163be7476c9473",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_run_deterministic_tracker_replay.py",
+      "sha256": "8f896732bdf9be0200e57fdd233b9af7a22b10f22a6e846c7576ed3e001e9052",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_run_external_sequence_report.py",
+      "sha256": "60fc71fbd2232de168dea3c0253957046595c5525ada0fae122d45134db2126a",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_run_one_detector_tim_replay_contract.py",
+      "sha256": "ca7811463d66dd61a93c208581758ac4208be668b0501e1aac5a0738c0dca8b4",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_run_one_detector_tim_replay_resources.py",
+      "sha256": "08ce6688ef29239f23494d5386496c150fd7d804077261bd955b1a61dbfe0630",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_run_one_memory_tim_replay.py",
+      "sha256": "2f9abcc9339d7a6172c1fac1c7532626e2985ffc6b5430b37e6c735299a16d7a",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_run_p058_target_reid_replay.py",
+      "sha256": "c040295a4673e9a00e12ca63e9cf8765ff39dc58678380eaafced0852a56768c",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_run_tim_component_ablation.py",
+      "sha256": "75420bd84bb3cb7d71dbcaa576334d4acced1e531129dd7ff101041128a217aa",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_run_tim_parameter_sensitivity.py",
+      "sha256": "6b76025a4975d624909d38d2e1e6b3b9029437adf96857f02519563fd5020d0c",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_summarize_field_evidence.py",
+      "sha256": "bbcc9ad0681d2bf5bd7ca4471b44c6eea15ae9468ae4dece8cff27bc86f013e2",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_tim_documentation_contract.py",
+      "sha256": "d924a9b35cb1ecd56f2f9bc7a15d97e69015d6c22b80fcb0aee51df0c8588e41",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_tim_eval_catalogue.py",
+      "sha256": "955411a02b1320ba3d5e9ed3e777c4391bc9bbdbed54b37a54ecd0ed572afb85",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_tim_event_recovery_primitives.py",
+      "sha256": "06b004805503d92e8c49c50536c9f673c4d0d7f3140ed7e9bf3aa48a75dea07e",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_tim_research_question_contract.py",
+      "sha256": "1bffd65fa1f893709bf0b96e1d83ff3e45077cc555137fb312a754e694ebd4cd",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_tim_resilience_development.py",
+      "sha256": "aaf38d3c2d387eaddfbb9e0922ead8684a809295ccafef91aa56f0bec02a5408",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_tools_layout.py",
+      "sha256": "f92343c4774fad40b6badb5f33d26c1ce384d2abe6faf96172422dbd607db12c",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_validate_tim_evaluation_split.py",
+      "sha256": "d1a7bbf8b9e76146f9637db45da2eb96e771c06847ae2f5203b718af8db553e6",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_verify_evidence_package.py",
+      "sha256": "490b1dd557d979490a124c3ef73ad90531f0389b8979b024d739273f2db1dd4b",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_verify_recorder_transport.py",
+      "sha256": "3991848b9703c2b73cafcdb6bc9d7595f75758de9cb09645b38dc34ca7aa438a",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_verify_retained_bag.py",
+      "sha256": "4cee1a6ffa4bd21a499fa352b15b9ac193ef5740d250cc1ee35ffb5d1fd9e226",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_visual_time_bounds.py",
+      "sha256": "6a2f45fea95d3bcdbec997f8e7d98f97b1d727b02217c01f62c718ba9cee8edb",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_wait_for_track_selection.py",
+      "sha256": "d6d1c5f60fa27a12338d42776ba243372262e10b9a376d0f62d04de04201064c",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/tests/test_write_tim_run_metadata.py",
+      "sha256": "63a1c803be6db01ea8be63ec03d6ebe37fd7d5c149a7ea14287a5aa180c2ba75",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/thesis_build.sh",
+      "sha256": "5687f3356f313e74a00da81f2552bef2eb9cd75ed44b3f594f22f29004c354e2",
+      "attribution": "project author"
+    },
+    {
+      "path": "tools/timing_contract.py",
+      "sha256": "84539e81bf746a097e47ac95a4ce27b1e24fc2b010acc08de6640b690ea830d6",
+      "attribution": "project author"
+    }
+  ],
+  "exclusions": [
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__annotation_inputs__2026-06-19__seq01__clean_four_person__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__annotation_inputs__2026-06-19__seq02__target_reentry__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__annotation_inputs__2026-06-19__seq03__crossing_ambiguity__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__annotation_inputs__2026-06-19__seq04__occlusion_no_exit__annotation_input__det_yolov8s__trk_bytetrack__tim_off__target_largest__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__replay__paper_final_deepsort_may_2026_07_03__2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__tracker_deepsort__tim_mars__target_1__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__replay__paper_final_deepsort_may_memory_2026_07_03__final_may_deepsort_annotation_mirror_memory__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__replay__paper_final_deepsort_may_memory_2026_07_03__final_may_deepsort_selected_id_1_memory__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__curated_inputs__hard_reentry_2026-05-14__2026-05-14__11-03-26__dataset__tim_v1_hard_reentry_id_switch_raw__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__curated_inputs__two_person_2026-05-14__2026-05-14__10-59-01__dataset__tim_v1_two_person_no_crossing_raw__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-03-29__control_validation_clean__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-04-29__10-26-03__video__clean_walk_yolov6n_ocsort__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-04-29__10-28-08__video__single_person_occlusion_yolov6n_ocsort__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-04-29__10-30-08__video__fov_exit_reentry_yolov6n_ocsort__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-04-30__10-52-20__video__flight_01__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-04-30__12-29-33__video__oficial_flight_01__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-04-30__12-42-17__video__oficial_flight_02__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-05-11__10-44-58__video__tim_v1j_two_person_ambiguity__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-05-11__11-30-18__video__tim_v1m_appearance_critical_crossing__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-05-11__11-31-27__video__tim_v1m_appearance_critical_crossing__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-05-14__11-03-26__video__hard_reentry_bytetrack_tim_mars_v4_margin010_target1__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-06-17__11-19-06__video__two_person_tim_mars__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-06-17__12-34-54__video__integrated_vga_dash30_full__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-06-19__10-27-03__video__2026-06-19__seq01__clean_two_person__yolov8s_bytetrack_tim_mars__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-06-19__11-58-02__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__full_pipeline__2026-06-19__11-59-23__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__image_raw__2026-06-19__11-56-07__source__2026-06-19__seq01__clean_four_person__image_raw__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__mavros__2026-06-19__11-56-07__source__2026-06-19__seq01__clean_four_person__mavros__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__mavros__2026-06-19__11-58-02__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars__mavros__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/archive/bag_cleanup_2026_07_09/deleted_bag_metadata/bags__source__archive__lab_old__mavros__2026-06-19__11-59-23__video__2026-06-19__seq01__clean_four_person__yolov8s_bytetrack_tim_mars__mavros__metadata.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/data/ablations/tim_mars_component_ablation_v1.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/data/catalogue/bag_inventory.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/data/catalogue/tim_eval_catalogue.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/data/parameter_sensitivity/tim_mars_parameter_sensitivity_v1.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/data/tracker_sensitivity/bytetrack_tim_sensitivity_v1.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/results/selected_target_tracking/p058_source_time_repair_provenance_20260922/repeat_target_reid_h02_h03.py",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/results/selected_target_tracking/p058_source_time_repair_provenance_20260922/run_p058_corrected_h02_h03.py",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/results/selected_target_tracking/tim_pinned_replay_env_20260908.sh",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "docs/results/selected_target_tracking/tim_resilience_development_20260907/available_image_challenge.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p002_historical_deepsort_93e047b5_2026_07_19/current/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p002_historical_deepsort_93e047b5_2026_07_19/july12/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p004_ocsort_tim_1b7dc400_2026_07_20/seq03_r1/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p004_ocsort_tim_1b7dc400_2026_07_20/seq03_r2/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p004_ocsort_tim_1b7dc400_2026_07_20/seq04_r1/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p004_ocsort_tim_1b7dc400_2026_07_20/seq04_r2/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p004_tim_matrix_1b7dc400_2026_07_20/bytetrack/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p004_tim_matrix_1b7dc400_2026_07_20/deepsort/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p004_tim_matrix_1b7dc400_2026_07_20/ocsort/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p004_tim_matrix_1b7dc400_2026_07_20/sort/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p006b_hard_negative_03409564_2026_07_21/may/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p006b_hard_negative_03409564_2026_07_21/seq01/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p006b_hard_negative_03409564_2026_07_21/seq03/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p006b_hard_negative_03409564_2026_07_21/seq04/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p014_protected_appearance_2026_07_17/tim_mars_canonical_config.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p014_protected_appearance_2026_07_17/tim_mars_replay_profile.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p017_fragment_safety_f1049263_2026_07_27/tim_mars_canonical.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "reports/p018_hard_negative_lifecycle_6ba28c61_2026_07_28/tim_mars_canonical.yaml",
+      "reason": "Frozen or historical research/evidence artifact; retain original bytes."
+    },
+    {
+      "path": "ros2_ws/src/thesis_bringup/resource/thesis_bringup",
+      "reason": "Empty ament package marker; must remain empty."
+    },
+    {
+      "path": "ros2_ws/src/thesis_tracker/resource/thesis_tracker",
+      "reason": "Empty ament package marker; must remain empty."
+    },
+    {
+      "path": "tools/analysis/templates/physical_target_reference_template.json",
+      "reason": "Machine-readable template/data; no comment header in its format."
+    },
+    {
+      "path": "tools/analysis/templates/physical_target_reference_v2_template.json",
+      "reason": "Machine-readable template/data; no comment header in its format."
+    },
+    {
+      "path": "tools/analysis/templates/target_correctness_annotations_template.csv",
+      "reason": "Machine-readable template/data; no comment header in its format."
+    },
+    {
+      "path": "tools/tests/fixtures/external_tracking/dancetrack_gt.txt",
+      "reason": "Test fixture data; preserve its source format and values."
+    },
+    {
+      "path": "tools/tests/fixtures/external_tracking/dancetrack_seqinfo.ini",
+      "reason": "Test fixture data; preserve its source format and values."
+    },
+    {
+      "path": "tools/tests/fixtures/external_tracking/motchallenge_gt.txt",
+      "reason": "Test fixture data; preserve its source format and values."
+    },
+    {
+      "path": "tools/tests/fixtures/external_tracking/visdrone_gt.txt",
+      "reason": "Test fixture data; preserve its source format and values."
+    }
+  ],
+  "failures": [],
+  "status": "PASS",
+  "audit_date": "2026-10-05"
+}

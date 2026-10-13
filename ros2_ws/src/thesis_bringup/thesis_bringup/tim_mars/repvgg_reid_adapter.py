@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Pure preprocessing and postprocessing for Hailo RepVGG Person ReID.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Pure preprocessing and postprocessing for Hailo RepVGG Person ReID.
 
 The tracked HEF has this host-visible tensor contract:

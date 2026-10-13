@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: TIM-MARS selected-target memory package.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """TIM-MARS selected-target memory package.
 
 This package contains the TIM-MARS selected-target memory layer used above

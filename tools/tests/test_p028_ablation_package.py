@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Contracts for the promoted P0.28 ablation package.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Contracts for the promoted P0.28 ablation package."""
 
 from __future__ import annotations
@@ -219,4 +229,5 @@ def test_closed_issue_is_removed_from_queue():
     assert "[#57 —" not in text
     # The open-issue count is reconciled with GitHub regularly; assert only that
     # the count line still exists in its canonical form, not a fixed value.
-    assert re.search(r"Open executable issues: \*\*\d+\*\*\.", text)
+    assert re.search(r"Last reconciled with GitHub: \*\*\d{1,2} [A-Za-z]+ \d{4}\*\*", text)
+    assert re.search(r"\*\*\d+ open Code issues\*\*", text)

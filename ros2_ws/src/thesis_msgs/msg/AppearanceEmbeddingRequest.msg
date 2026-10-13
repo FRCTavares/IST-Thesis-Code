@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Define a causally identified crop request for asynchronous
+# appearance embedding.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 # Causal request identifier. Unique for one TIM-MARS process lifetime.
 uint64 request_id
 

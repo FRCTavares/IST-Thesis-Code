@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Render CSV and figure outputs from the bbox-size-stratified report
+# JSON.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Render CSV and figure outputs from the bbox-size-stratified report JSON.
 
 Read-only, deterministic rendering of an already-generated

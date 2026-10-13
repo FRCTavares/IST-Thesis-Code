@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# Thesis-Code
+# Purpose: Define live-stack defaults and profile settings before command-line
+# overrides are applied.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 
 TRACKER_TYPE="bytetrack"
 PERCEPTION_MODE="integrated-camera"

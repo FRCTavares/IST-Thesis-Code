@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Join retained TIM status, crop provenance and physical-v2 frame
+# evidence.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Join retained TIM status, crop provenance and physical-v2 frame evidence.
 
 Frame counts are diagnostic. Duration metrics remain owned by the unchanged

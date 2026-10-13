@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# Thesis-Code
+# Purpose: Choose and validate one run identifier shared by live logs and
+# recording directories.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 
 # Choose once, before creating any run or capture directory. An explicitly
 # empty value is invalid; an unset value retains the normal timestamp default.

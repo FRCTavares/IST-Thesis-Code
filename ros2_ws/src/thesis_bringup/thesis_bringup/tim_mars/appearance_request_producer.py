@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Pure staging of causally identified appearance request crops.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Pure staging of causally identified appearance request crops.
 
 This module converts already-selected TIM-MARS candidate observations into

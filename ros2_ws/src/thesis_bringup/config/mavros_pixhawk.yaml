@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Configure the MAVROS connection and plugins used with the Pixhawk
+# flight controller.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 /**:
   ros__parameters:
     fcu_url: ""

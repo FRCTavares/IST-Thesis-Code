@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Contracts for separate visual recording in non-held-out live runs.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Contracts for separate visual recording in non-held-out live runs."""
 from __future__ import annotations
 

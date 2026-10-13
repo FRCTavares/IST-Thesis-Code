@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Issue #74: /control_ref/diagnostics is recorded and summarisable.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Issue #74: /control_ref/diagnostics is recorded and summarisable.
 
 Non-ROS contracts: the launcher records the topic (and therefore its run

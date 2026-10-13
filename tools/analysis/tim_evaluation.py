@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Shared selected-target evaluation semantics.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Shared selected-target evaluation semantics.
 
 This module is the single authority for annotation parsing, target-message

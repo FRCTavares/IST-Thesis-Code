@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Resolve pre-migration Git commit IDs to their equivalent rewritten
+# IDs.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Resolve pre-migration Git commit IDs to their equivalent rewritten IDs.
 
 Historical experiment and prospective-freeze records retain the commit IDs

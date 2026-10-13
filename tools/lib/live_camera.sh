@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# Thesis-Code
+# Purpose: Provide camera preflight, process cleanup and startup-readiness
+# helpers to the live launcher.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 
 # Camera and host-preflight helpers for tools/start_live_stack.sh.
 # This file expects the entrypoint to define logging/process helpers and live-stack config vars.

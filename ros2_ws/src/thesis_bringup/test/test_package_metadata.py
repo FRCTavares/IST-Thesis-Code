@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Validate the public metadata contract for thesis_bringup.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Validate the public metadata contract for thesis_bringup."""
 
 from __future__ import annotations

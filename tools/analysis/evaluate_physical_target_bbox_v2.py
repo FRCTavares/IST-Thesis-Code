@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Issue #25 identity-independent selected-target bbox evaluator --
+# v2.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Issue #25 identity-independent selected-target bbox evaluator -- v2.
 
 THIS IS THE ``tim_physical_target_bbox_v2`` EVALUATOR, distinct from both:

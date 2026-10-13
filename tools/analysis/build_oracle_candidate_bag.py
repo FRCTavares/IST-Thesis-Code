@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Build an oracle-candidate bag: real images + ground-truth-derived
+# tracks.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Build an oracle-candidate bag: real images + ground-truth-derived tracks.
 
 Oracle-candidate mode (Issue #30) replaces the detector and tracker with an

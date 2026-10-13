@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Video-file image publisher for replay and development workflows.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Video-file image publisher for replay and development workflows.
 
 This node publishes frames from a local video file as ROS image messages so the

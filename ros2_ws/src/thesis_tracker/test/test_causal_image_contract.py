@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Test DeepSORT causal image selection and coordinate-contract
+# parsing.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Test DeepSORT causal image selection and coordinate-contract parsing."""
 
 from __future__ import annotations

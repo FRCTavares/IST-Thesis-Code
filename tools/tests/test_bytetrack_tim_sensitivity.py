@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Tests for the frozen ByteTrack / TIM-MARS configuration sensitivity
+# runner.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Tests for the frozen ByteTrack / TIM-MARS configuration sensitivity runner.
 
 These validate the manifest and tooling *before* any physical-v2 outcome
@@ -12,6 +23,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -158,9 +170,21 @@ def test_canonical_hash_mismatch_fails_closed():
         RUN.verify_canonical_hash(manifest, CANONICAL_PATH)
 
 
-def test_manifest_pins_the_live_canonical_hash():
+def _frozen_canonical_fixture(tmp_path):
+    relative = str(CANONICAL_PATH.relative_to(REPO_ROOT))
+    data = subprocess.check_output(['git', 'show', 'HEAD:' + relative], cwd=REPO_ROOT)
+    path = tmp_path / 'frozen_canonical.yaml'
+    path.write_bytes(data)
+    return path
+
+
+def test_manifest_pins_the_historical_canonical_hash(tmp_path):
     manifest, _ = _manifest_and_canonical()
-    assert RUN.verify_canonical_hash(manifest, CANONICAL_PATH) == RUN.sha256_file(CANONICAL_PATH)
+    frozen = _frozen_canonical_fixture(tmp_path)
+    assert RUN.verify_canonical_hash(manifest, frozen) == RUN.sha256_file(frozen)
+    # The documented delivery file must never pass as its byte-exact predecessor.
+    with pytest.raises(SystemExit):
+        RUN.verify_canonical_hash(manifest, CANONICAL_PATH)
 
 
 # -- development-only / held-out guard ------------------------------------
@@ -202,11 +226,14 @@ def test_manifest_reserved_ids_match_split_final_held_out_and_are_never_used():
 def test_materialize_writes_byte_identical_baseline_and_never_touches_canonical(tmp_path):
     manifest, _ = _manifest_and_canonical()
     before = CANONICAL_PATH.read_bytes()
-    lock = RUN.materialize_configurations(manifest, MANIFEST_PATH, CANONICAL_PATH, tmp_path)
+    frozen = _frozen_canonical_fixture(tmp_path)
+    frozen_before = frozen.read_bytes()
+    lock = RUN.materialize_configurations(manifest, MANIFEST_PATH, frozen, tmp_path)
     assert CANONICAL_PATH.read_bytes() == before
+    assert frozen.read_bytes() == frozen_before
     baseline = next(c for c in lock["configurations"] if c["id"] == RUN.BASELINE_ID)
-    assert baseline["sha256"] == RUN.sha256_file(CANONICAL_PATH)
-    assert (tmp_path / "configs" / "canonical_baseline.yaml").read_bytes() == before
+    assert baseline["sha256"] == RUN.sha256_file(frozen)
+    assert (tmp_path / "configs" / "canonical_baseline.yaml").read_bytes() == frozen_before
     assert len(lock["configurations"]) == 7
 
 

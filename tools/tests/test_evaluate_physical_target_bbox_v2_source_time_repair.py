@@ -1,8 +1,21 @@
+# Thesis-Code
+# Purpose: Regression tests for the post-access physical-v2 source-time
+# correction.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Regression tests for the post-access physical-v2 source-time correction."""
 
 from __future__ import annotations
 
+import ast
 import hashlib
+import subprocess
 import importlib.util
 import inspect
 import sys
@@ -169,4 +182,12 @@ def test_frozen_v2_files_remain_byte_identical():
     analysis = REPO_ROOT / "tools" / "analysis"
 
     for filename, digest in expected.items():
-        assert _sha256(analysis / filename) == digest
+        relative = str((analysis / filename).relative_to(REPO_ROOT))
+        frozen = subprocess.check_output(
+            ['git', 'show', 'HEAD:' + relative], cwd=REPO_ROOT,
+        )
+        assert hashlib.sha256(frozen).hexdigest() == digest
+        # Delivery comments differ; the frozen executable AST must not.
+        assert ast.dump(ast.parse((analysis / filename).read_bytes())) == ast.dump(
+            ast.parse(frozen)
+        )

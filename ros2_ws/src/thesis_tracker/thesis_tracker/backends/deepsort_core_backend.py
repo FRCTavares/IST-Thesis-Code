@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: DeepSORT backend with matching cascade, Mahalanobis gating, and
+# appearance gallery.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """DeepSORT backend with matching cascade, Mahalanobis gating, and appearance gallery.
 
 This follows the structure of nwojke/deep_sort while fitting the local tracker

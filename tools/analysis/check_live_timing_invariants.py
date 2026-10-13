@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Validate live timing invariants from /timing, /timing_tracker,
+# /timing_target, /detections.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Validate live timing invariants from /timing, /timing_tracker, /timing_target, /detections.
 
 This utility runs for a short duration (or until one message per topic in --once mode),

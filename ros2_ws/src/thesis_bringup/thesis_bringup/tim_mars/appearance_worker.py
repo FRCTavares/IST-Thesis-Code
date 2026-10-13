@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Hardware-independent worker boundary for asynchronous appearance
+# inference.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Hardware-independent worker boundary for asynchronous appearance inference.
 
 This module does not import HailoRT, ROS, or cv_bridge. It converts one causal

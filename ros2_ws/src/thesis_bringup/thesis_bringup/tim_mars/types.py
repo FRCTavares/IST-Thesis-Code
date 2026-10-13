@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Shared public data types for TIM-MARS.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Shared public data types for TIM-MARS.
 
 This module contains the enums, dataclasses, and aliases shared across the

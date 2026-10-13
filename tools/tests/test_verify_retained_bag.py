@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Issue #50/#74: deterministic retained-bag integrity check (no ROS).
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Issue #50/#74: deterministic retained-bag integrity check (no ROS)."""
 
 from __future__ import annotations

@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Pure state-aware selected-person control policy for Issue #74.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Pure state-aware selected-person control policy for Issue #74.
 
 This module owns no ROS subscriptions and receives no raw tracker or detector

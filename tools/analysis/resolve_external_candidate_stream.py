@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Resolve the frozen tracker identity for one captured external
+# sequence.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Resolve the frozen tracker identity for one captured external sequence.
 
 Reads a manifest sequence entry (already frozen by Slice 14/16), reads the

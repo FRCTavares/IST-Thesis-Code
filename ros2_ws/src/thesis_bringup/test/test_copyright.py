@@ -1,3 +1,10 @@
+# Thesis-Code
+# Purpose: Run the upstream ament check for copyright notices in the
+# thesis_bringup ROS 2 package.
+# Thesis integration: Francisco Tavares
+# Upstream: Open Source Robotics Foundation ament test template.
+# Original copyright and Apache-2.0 licence are retained below.
+#
 # Copyright 2015 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +24,6 @@ import pytest
 
 
 # Remove the `skip` decorator once the source file(s) have a copyright header
-@pytest.mark.skip(reason='No copyright header has been placed in the generated source file.')
 @pytest.mark.copyright
 @pytest.mark.linter
 def test_copyright():

@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Dataset-neutral external pedestrian-tracking annotations.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Dataset-neutral external pedestrian-tracking annotations.
 
 This module normalizes MOTChallenge-compatible and VisDrone-MOT rows into one

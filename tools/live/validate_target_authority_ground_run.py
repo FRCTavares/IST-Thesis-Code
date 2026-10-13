@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Run one isolated ROS ground check of the live target-authority
+# chain.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Run one isolated ROS ground check of the live target-authority chain.
 
 The check starts only dashboard_bridge_node, target_memory_mars_node, a

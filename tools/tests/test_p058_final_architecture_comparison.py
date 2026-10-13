@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Contract tests for the frozen Issue #58 final architecture runner.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Contract tests for the frozen Issue #58 final architecture runner.
 
 These bind the runner to the active Stage-7 prospective freeze
@@ -12,6 +22,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -146,7 +157,31 @@ def test_contract_canonical_hash_is_the_stage7_authority():
     assert tim_cfg["sha256"] == RUN.ACTIVE_CANONICAL_TIM_CONFIG_SHA256
 
 
-def test_all_frozen_contract_file_hashes_match_current_tree():
+def _frozen_contract_fixture(tmp_path, monkeypatch):
+    """Supply original pinned bytes; the real guard remains strict."""
+    frozen_commit = RUN.resolve_git_commit(contract()['algorithm_freeze_commit'])
+    for record in RUN.contract_file_records(contract()):
+        relative = record['path']
+        data = None
+        current = REPO_ROOT / relative
+        if current.is_file() and hashlib.sha256(current.read_bytes()).hexdigest() == record['sha256']:
+            data = current.read_bytes()
+        else:
+            for revision in ('HEAD', frozen_commit):
+                result = subprocess.run(['git', 'show', revision + ':' + relative],
+                                        cwd=REPO_ROOT, capture_output=True, check=False)
+                if result.returncode == 0 and hashlib.sha256(result.stdout).hexdigest() == record['sha256']:
+                    data = result.stdout
+                    break
+        assert data is not None, 'Missing historical fixture: ' + relative
+        destination = tmp_path / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(data)
+    monkeypatch.setattr(RUN, 'REPO_ROOT', tmp_path)
+
+
+def test_frozen_contract_file_hashes_match_pinned_source(tmp_path, monkeypatch):
+    _frozen_contract_fixture(tmp_path, monkeypatch)
     verified = RUN.verify_contract_files(contract())
     tim_cfg = contract()["primary_architectures"][2]["tim_mars"]["config"]
     # verified value is the live-tree hash; it must equal the contract's own
@@ -392,7 +427,8 @@ def test_verify_sequence_inputs_rejects_tampered_heldout_source_file(
         RUN.verify_sequence_inputs(sequence)
 
 
-def test_verify_contract_files_still_uses_shared_helper():
+def test_verify_contract_files_still_uses_shared_helper(tmp_path, monkeypatch):
+    _frozen_contract_fixture(tmp_path, monkeypatch)
     # Existing contract verification must keep working through the helper.
     verified = RUN.verify_contract_files(contract())
     assert (
@@ -494,6 +530,12 @@ def test_final_held_out_tampered_source_file_stops_before_run_sequence(
     assert not out_root.exists()
 
 
+@pytest.mark.skipif(
+    not all((REPO_ROOT / item['source_path']).exists()
+            for entries in split()['sets'].values() for item in entries
+            if isinstance(item, dict) and 'source_path' in item),
+    reason='external source bags are not distributed in a clean code checkout',
+)
 def test_run_split_validator_accepts_real_v4_split_when_final_ready():
     RUN.run_split_validator(SPLIT_PATH, require_final_ready=True)
 

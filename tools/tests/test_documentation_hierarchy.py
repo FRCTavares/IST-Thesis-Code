@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Contracts for the maintained documentation hierarchy.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Contracts for the maintained documentation hierarchy."""
 
 from __future__ import annotations
@@ -116,9 +126,10 @@ def test_issue_57_is_removed_after_completion():
     text = (DOCS / "TODO_LIST.md").read_text(encoding="utf-8")
 
     assert "[#57 —" not in text
-    # The open-issue count is reconciled with GitHub regularly; assert only that
-    # the count line still exists in its canonical form, not a fixed value.
-    assert re.search(r"Open executable issues: \*\*\d+\*\*\.", text)
+    # The completion queue now includes milestone issues. Retain its dated
+    # reconciliation and count without treating it as a completion percentage.
+    assert re.search(r"Last reconciled with GitHub: \*\*\d{1,2} [A-Za-z]+ \d{4}\*\*", text)
+    assert re.search(r"\*\*\d+ open Code issues\*\*", text)
 
 def test_maintained_documentation_domains_have_reviewed_readmes():
     required = (

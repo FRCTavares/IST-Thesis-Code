@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Reacquisition and ambiguity helper policies for TIM-MARS.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Reacquisition and ambiguity helper policies for TIM-MARS.
 
 This module contains small confirmation counters and stateless helper functions

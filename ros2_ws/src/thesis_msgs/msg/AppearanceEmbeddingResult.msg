@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Define the matching appearance result, provenance and explicit
+# completion status.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 # Correlates this result with one in-flight causal request.
 uint64 request_id
 

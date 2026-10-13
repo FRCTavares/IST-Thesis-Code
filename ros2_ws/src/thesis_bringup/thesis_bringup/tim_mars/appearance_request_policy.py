@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Pure CPU candidate-request policy for TIM-MARS appearance encoding.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Pure CPU candidate-request policy for TIM-MARS appearance encoding.
 
 This module decides which current tracker candidates should request an

@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Issue #74 bounded yaw-only recovery: deliberate, default-OFF
+# launcher opt-in.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Issue #74 bounded yaw-only recovery: deliberate, default-OFF launcher opt-in.
 
 The candidate policy itself is frozen and already tested; this file only

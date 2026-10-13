@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Repository-wide local Markdown reference validation.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Repository-wide local Markdown reference validation."""
 
 from __future__ import annotations
@@ -228,6 +238,9 @@ def test_canonical_doc_inline_path_references_resolve():
 
                 if token.startswith(_REPO_TOP_LEVEL):
                     candidate = token.split("#", 1)[0].rstrip("/")
+                    # These directories are produced by colcon, not a clean checkout.
+                    if candidate in {"ros2_ws/build", "ros2_ws/install", "ros2_ws/log"}:
+                        continue
                     if not (ROOT / candidate).exists():
                         broken.append(f"{rel}:{line_number}: `{token}` does not exist")
                     continue

@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: ROS 2 runtime node for TIM-MARS selected-target memory.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """ROS 2 runtime node for TIM-MARS selected-target memory.
 
 This node wires ROS topics, parameters, optional raw target-selection mirroring,

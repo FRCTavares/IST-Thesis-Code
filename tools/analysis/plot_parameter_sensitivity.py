@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Generate deterministic thesis figures for the Issue #31 (P1.13)
+# parameter sensitivity aggregate.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Generate deterministic thesis figures for the Issue #31 (P1.13) parameter
 sensitivity aggregate. Reads only the already-computed aggregate CSV; does
 not touch TIM-MARS, replay, or evaluation. Uses the non-interactive Agg

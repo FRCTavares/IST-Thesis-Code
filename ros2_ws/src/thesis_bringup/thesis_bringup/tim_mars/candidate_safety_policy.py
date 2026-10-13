@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Candidate acceptance safety policies for TIM-MARS.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Candidate acceptance safety policies for TIM-MARS.
 
 These functions evaluate candidate evidence without mutating target-memory

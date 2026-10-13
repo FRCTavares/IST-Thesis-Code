@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Archive the controller/live run logs into a retained flight-
+# evidence package.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Archive the controller/live run logs into a retained flight-evidence package.
 
 Issue #50/#74 evidence retention: after a retained physical closed-loop trial

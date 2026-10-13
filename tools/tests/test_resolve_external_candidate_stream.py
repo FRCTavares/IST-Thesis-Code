@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Tests for resolving the frozen tracker identity of a captured
+# sequence.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Tests for resolving the frozen tracker identity of a captured sequence."""
 
 from __future__ import annotations
@@ -255,7 +266,9 @@ class TestEnsureUncompressedBag:
 
         assert result == bag_dir
 
-    def test_compressed_bag_is_decompressed_correctly(self, tmp_path):
+    def test_compressed_bag_is_decompressed_correctly(self, tmp_path, monkeypatch):
+        import shutil
+        monkeypatch.setattr(shutil, 'disk_usage', lambda _: shutil._ntuple_diskusage(100 * 2**30, 0, 100 * 2**30))
         bag_dir = tmp_path / "bag"
         original_payload = write_fake_bag(bag_dir, compressed=True)
 
@@ -266,8 +279,10 @@ class TestEnsureUncompressedBag:
         assert (result / "bag_0.mcap").read_bytes() == original_payload
 
     def test_decompressed_metadata_marks_compression_empty(
-        self, tmp_path
+        self, tmp_path, monkeypatch
     ):
+        import shutil
+        monkeypatch.setattr(shutil, 'disk_usage', lambda _: shutil._ntuple_diskusage(100 * 2**30, 0, 100 * 2**30))
         # A genuinely uncompressed bag written by the real rosbag2 writer
         # still carries compression_format/compression_mode as empty
         # strings, not absent -- confirmed against a real uncompressed bag's

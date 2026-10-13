@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Tests for the frozen issue #31 parameter-sensitivity sweep runner.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Tests for the frozen issue #31 parameter-sensitivity sweep runner.
 
 These tests validate the manifest/tooling *before* any TIM replay outcome

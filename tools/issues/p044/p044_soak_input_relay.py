@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Refresh replayed image and track timestamps for a sustained P044
+# soak.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Refresh replayed image and track timestamps for a sustained P044 soak.
 
 The relay is experiment-only. It prevents direct rosbag loop playback from

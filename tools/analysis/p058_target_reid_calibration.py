@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Safety-first threshold selector for the Issue #58 Target-ReID
+# baseline.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Safety-first threshold selector for the Issue #58 Target-ReID baseline.
 
 Selection preserves the historical Issue #58 asymmetric calibration contract:

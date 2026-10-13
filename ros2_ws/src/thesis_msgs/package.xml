@@ -1,10 +1,23 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<!--
+Thesis-Code
+Purpose: Declare the thesis_msgs ROS 2 package metadata, dependencies and
+build type.
+Author: Francisco Tavares
+Copyright (c) 2026 Francisco Carreira Tavares
+SPDX-License-Identifier: MIT
+
+Use of this source code is governed by an MIT-style
+license that can be found in the LICENSE file or at
+https://opensource.org/licenses/MIT.
+-->
+
 <package format="3">
   <name>thesis_msgs</name>
   <version>0.0.0</version>
   <description>Thesis custom message definitions.</description>
-  <maintainer email="francisco.carreira.tavares@gmail.com">francisco</maintainer>
+  <maintainer email="francisco.carreira.tavares@gmail.com">Francisco Carreira Tavares</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

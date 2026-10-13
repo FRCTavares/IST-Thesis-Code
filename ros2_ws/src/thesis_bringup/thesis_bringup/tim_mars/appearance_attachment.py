@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Runtime appearance attachment for TIM-MARS candidates.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Runtime appearance attachment for TIM-MARS candidates.
 
 This module attaches optional MARS ReID embeddings to CandidateTrack objects

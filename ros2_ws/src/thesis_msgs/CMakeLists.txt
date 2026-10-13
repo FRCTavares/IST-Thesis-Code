@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Generate and export the custom ROS 2 interfaces in the thesis_msgs
+# package.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 cmake_minimum_required(VERSION 3.8)
 project(thesis_msgs)
 

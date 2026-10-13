@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Write a sorted image sequence into a ROS 2 bag on
+# /camera/image_raw.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Write a sorted image sequence into a ROS 2 bag on /camera/image_raw.
 
 Used to feed external (non-ROS) datasets such as DanceTrack and VisDrone-MOT

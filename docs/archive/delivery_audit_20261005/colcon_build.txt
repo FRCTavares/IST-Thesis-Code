@@ -1,0 +1,8 @@
+Starting >>> thesis_msgs
+Finished <<< thesis_msgs [27.1s]
+Starting >>> thesis_tracker
+Finished <<< thesis_tracker [2.65s]
+Starting >>> thesis_bringup
+Finished <<< thesis_bringup [2.26s]
+
+Summary: 3 packages finished [32.3s]

@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Selected-target to velocity-reference controller node.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Selected-target to velocity-reference controller node.
 
 This node converts the current selected target state into body-frame velocity
@@ -12,12 +22,12 @@ from geometry_msgs.msg import TwistStamped
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
-from rclpy.signals import SignalHandlerOptions
 from rclpy.qos import (
     HistoryPolicy,
     QoSProfile,
     ReliabilityPolicy,
 )
+from rclpy.signals import SignalHandlerOptions
 from std_msgs.msg import String
 from thesis_bringup.authority_qos import (
     authority_status_qos,

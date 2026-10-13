@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Image preprocessing helpers for thesis perception inference.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Image preprocessing helpers for thesis perception inference.
 
 This module contains resizing, padding, coordinate mapping, and preprocessing

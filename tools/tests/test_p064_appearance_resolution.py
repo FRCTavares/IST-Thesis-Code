@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Focused Issue #64 controlled-appearance contract tests.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Focused Issue #64 controlled-appearance contract tests."""
 
 from __future__ import annotations

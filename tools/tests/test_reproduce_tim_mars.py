@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Tests for the top-level TIM-MARS reproducibility command.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Tests for the top-level TIM-MARS reproducibility command."""
 
 from __future__ import annotations

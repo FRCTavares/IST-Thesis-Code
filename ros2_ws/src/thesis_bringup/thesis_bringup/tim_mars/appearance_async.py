@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Causal request and result contracts for asynchronous ReID
+# inference.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Causal request and result contracts for asynchronous ReID inference.
 
 This module is deliberately ROS-free and Hailo-free. It defines the lifecycle

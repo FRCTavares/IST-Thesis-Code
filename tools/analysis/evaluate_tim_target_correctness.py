@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Evaluate raw and TIM-MARS selected-target correctness.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Evaluate raw and TIM-MARS selected-target correctness.
 
 All evaluation semantics live in :mod:`tim_evaluation`. This file owns only

@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Prepare a compressed exact-timestamp video source bag for Issue
+# #64.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Prepare a compressed exact-timestamp video source bag for Issue #64.
 
 The source video is decoded once with FFmpeg.  Per-frame timestamps come from

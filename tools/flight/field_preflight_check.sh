@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# Thesis-Code
+# Purpose: Check the declared field prerequisites and optionally run the
+# passive no-control recording gate.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 # Fail-closed, non-actuating field preflight for the retained flight workflow.
 # The default path only observes host/repository state. The optional live gate
 # runs the existing passive --field-record --no-control profile and stops it

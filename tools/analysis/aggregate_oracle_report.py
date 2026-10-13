@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Aggregate oracle-candidate-mode results into one Issue #30 report.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Aggregate oracle-candidate-mode results into one Issue #30 report.
 
 Oracle-candidate mode (``tools/analysis/build_oracle_candidate_bag.py``)

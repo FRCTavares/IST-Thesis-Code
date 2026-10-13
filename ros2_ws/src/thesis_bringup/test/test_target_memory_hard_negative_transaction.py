@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Specify transactional hard-negative memory behaviour for TIM-MARS.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Specify transactional hard-negative memory behaviour for TIM-MARS.
 
 These tests define the required ordering between candidate evidence preparation,

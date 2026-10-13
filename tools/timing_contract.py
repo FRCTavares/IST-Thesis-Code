@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Canonical runtime timing metric contract for the direct-Hailo
+# thesis stack.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Canonical runtime timing metric contract for the direct-Hailo thesis stack.
 
 Schema v4 describes only the current architecture:

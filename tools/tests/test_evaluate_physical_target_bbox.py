@@ -1,3 +1,15 @@
+# Thesis-Code
+# Purpose: Tests for the Issue #25 evaluator CLI's non-bag-I/O helpers, and
+# for the CLI's explicit distinction from the legacy tracker-ID evaluator
+# (section 20).
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Tests for the Issue #25 evaluator CLI's non-bag-I/O helpers, and for the
 CLI's explicit distinction from the legacy tracker-ID evaluator (section 20).
 

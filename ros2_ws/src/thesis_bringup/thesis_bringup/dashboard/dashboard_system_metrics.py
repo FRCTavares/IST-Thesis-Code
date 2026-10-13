@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Host system metric readers for dashboard telemetry.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Host system metric readers for dashboard telemetry.
 
 These helpers read Linux proc/sysfs values used by the dashboard bridge. They

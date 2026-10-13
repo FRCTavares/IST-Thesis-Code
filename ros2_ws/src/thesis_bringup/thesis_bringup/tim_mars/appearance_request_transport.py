@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: TIM-owned causal ledger for asynchronous RepVGG transport.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """TIM-owned causal ledger for asynchronous RepVGG transport.
 
 The coordinator is ROS-free and Hailo-free. It converts immutable staged

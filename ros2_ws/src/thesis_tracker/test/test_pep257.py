@@ -1,3 +1,10 @@
+# Thesis-Code
+# Purpose: Run the upstream ament check for Python docstring style in the
+# thesis_tracker ROS 2 package.
+# Thesis integration: Francisco Tavares
+# Upstream: Open Source Robotics Foundation ament test template.
+# Original copyright and Apache-2.0 licence are retained below.
+#
 # Copyright 2015 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

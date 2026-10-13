@@ -28,6 +28,7 @@ here are pinned by the prospective-freeze manifest.
 | `aggregate_*_report.py`, `plot_parameter_sensitivity.py`, `render_bbox_size_report_outputs.py` | Aggregation | Combine per-cell experiment output into reports, tables and figures. |
 | `external_tracking_dataset.py`, `external_target_initialization.py`, `resolve_external_candidate_stream.py`, `evaluate_external_frame_outcomes.py`, `run_external_sequence_report.py`, `build_oracle_candidate_bag.py` | External benchmark reproduction | Frozen Issue #30 adapters, target resolution, outcome scoring and oracle/report reproduction from the retained manifest and bags. |
 | `cvat_physical_reference.py` | Annotation bridge | Exact-frame CVAT ↔ physical-reference-v2 conversion (fail-closed). |
+| `check_source_headers.py` | Delivery audit | Verify purpose, authorship and retained upstream notices across maintained source files. |
 | `templates/` | Assets | Blank annotation templates consumed by the evaluators and the UI. |
 
 

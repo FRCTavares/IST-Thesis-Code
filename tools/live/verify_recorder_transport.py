@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Record exact rosbag transport-loss observations from archived
+# recorder logs.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Record exact rosbag transport-loss observations from archived recorder logs.
 
 Structural MCAP integrity is independent of transport quality. A missing,

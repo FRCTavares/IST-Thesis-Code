@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Structural contracts for the maintained tools directory.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Structural contracts for the maintained tools directory."""
 
 from pathlib import Path
@@ -58,7 +68,10 @@ def test_every_tool_domain_is_documented():
 
 
 def test_top_level_contains_only_stable_shared_entrypoints():
-    actual = {path.name for path in TOOLS_ROOT.iterdir() if path.is_file()}
+    actual = {
+        path.name for path in TOOLS_ROOT.iterdir()
+        if path.is_file() and path.name != ".DS_Store"
+    }
     assert actual == TOP_LEVEL_FILES
 
 

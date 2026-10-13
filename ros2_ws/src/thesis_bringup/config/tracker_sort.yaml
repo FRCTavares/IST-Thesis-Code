@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Configure the SORT backend and ROS 2 tracker publication settings.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 # SORT (Simple Online and Realtime Tracking) configuration
 # Baseline tracker with Kalman filter + Hungarian IoU matching
 

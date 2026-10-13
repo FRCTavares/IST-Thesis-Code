@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Camera-source node for modular perception experiments.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Camera-source node for modular perception experiments.
 
 This node provides a camera image source path used by perception pipeline
@@ -18,8 +28,8 @@ import time
 
 import cv2
 import rclpy
-from rclpy.executors import ExternalShutdownException
 from rclpy._rclpy_pybind11 import RCLError
+from rclpy.executors import ExternalShutdownException
 from rclpy.qos import (
     DurabilityPolicy,
     HistoryPolicy,

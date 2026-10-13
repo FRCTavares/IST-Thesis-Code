@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Tests for the image-sequence-to-ROS2-bag source converter.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Tests for the image-sequence-to-ROS2-bag source converter."""
 
 from __future__ import annotations

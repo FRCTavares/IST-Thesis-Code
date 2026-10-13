@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Report controller mode, target authority, freshness and command-
+# decision diagnostics.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 # Issue #74 controller decision + bounded-recovery diagnostics.
 #
 # One message is published for every command the controller emits on its

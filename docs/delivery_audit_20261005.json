@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "date": "2026-10-05",
+  "main_revision": "00c120e9054b37658ebf91effd5890bde1786428",
+  "maintained_headers": 389,
+  "header_failures": 0,
+  "python_files_compile": 325,
+  "tools_tests": {
+    "passed": 1330,
+    "skipped": 2,
+    "skip_reason": "External source bags absent from isolated code checkout"
+  },
+  "ros_package_tests": {
+    "bringup_passed": 531,
+    "tracker_passed": 13,
+    "scope": "Isolated build; local DDS domain 87; unrelated pytest plugin autoload disabled"
+  },
+  "ros_build_packages_passed": 3,
+  "live_software_model_and_entrypoint_check": "PASS",
+  "installed_ros_entrypoints_checked": 9,
+  "runtime_sources_unchanged_from_before_this_audit": 251,
+  "protected_model_report_result_files_unchanged": 629,
+  "historical_evidence_versions_and_active_parameters_unchanged": true,
+  "runtime_algorithm_changes": 0,
+  "complete_retained_snapshot_files_verified": 2929,
+  "source_deletion_candidates_without_any_reference": [],
+  "files_removed_from_maintained_source": [],
+  "pi_environment_consistency_warnings": [
+    "pynacl 1.5.0 requires cffi, which is not installed.",
+    "opencv-python 4.12.0.88 has requirement numpy<2.3.0,>=2; python_version >= \"3.9\", but you have numpy 1.26.4."
+  ],
+  "remaining_external_prerequisites": [
+    "Source videos/bags, annotations and detector caches per run manifests",
+    "ROS/Hailo/camera/Pixhawk setup and external UI where required",
+    "Git history for historical git-show reproduction helpers"
+  ],
+  "remaining_evidence_dependencies": [
+    "Code #50 native-log attribution verdict",
+    "Code #32 sustained-runtime acceptance verdict"
+  ],
+  "boundary": "Source/packaging/software verification complete; no new experiments, live hardware test or clean host installation; not evidence acceptance.",
+  "commit_or_push": false
+}

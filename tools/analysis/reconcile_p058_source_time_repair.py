@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Compare retained #58 physical-v2 results with source-time-corrected
+# results.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Compare retained #58 physical-v2 results with source-time-corrected results.
 
 This is a reporting tool. It reads immutable historical JSON and separately

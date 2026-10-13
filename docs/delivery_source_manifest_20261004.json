@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "author": "Francisco Tavares",
+  "delivery_main_revision": "00c120e9054b37658ebf91effd5890bde1786428",
+  "local_delivery_changes": "Professional headers and documented metadata/packaging fixes; not committed.",
+  "research_manifest_sha256": "4e2cd4d03cf17a7aee07e40ba0c8f94259aad9ded3fd326651ab8036c7426497",
+  "research_manifest": "archive/delivery_sources_20261004/campaign_FREEZE.json",
+  "frozen_source_archive": "archive/delivery_sources_20261004/frozen_tim_sources.tar.gz",
+  "frozen_source_archive_sha256": "db060ea9bb2853dc2cc6d8711b6cb6f753b0a67b58258bcc8441f87368cf80bd",
+  "verified_frozen_source_and_config_files": 116,
+  "retained_source_revisions": {
+    "flight_checkout_head": "00c120e9054b37658ebf91effd5890bde1786428",
+    "dev_head": "6c0172d867994340d5eddc974dab7aa2b802b07f",
+    "frozen_worktree_head": "0757e74e9ee6f0b3b2e689cfb8558633557cd79d",
+    "dev_branch": "tim-mars-vnext-anchorless-20260930",
+    "dev_status_porcelain": "M tools/experiments/final_campaign/fc_freeze.py"
+  },
+  "python": "3.12.3",
+  "ultralytics_version": "8.3.227",
+  "models": {
+    "/home/francisco/Desktop/Thesis-Code-frozen-issue125/models/hef/yolov8s.hef": "69540ff855740371d229f4caca1ab908635a72fec55fdc1541e73f2fc17ec43b",
+    "/home/francisco/Desktop/Thesis-Code-frozen-issue125/models/reid/mars-small128.pb": "e96f3cc09dbce76e2f6aeff09c8f2502916b4745f21e27911ee50d102a4a75f1",
+    "/home/francisco/tim_vnext_runs/venv_onnx_probe/mars.onnx": "c94a939a50703e424325a246d9261f9b4c126dd4119514ff74975b290a7bff08"
+  },
+  "configs": {
+    "/home/francisco/Desktop/Thesis-Code-frozen-issue125/ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml": "b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c",
+    "/home/francisco/Desktop/Thesis-Code-frozen-issue125/ros2_ws/src/thesis_bringup/config/tracker_bytetrack.yaml": "e0e5c7c80a2f2b74cb6640e2ea90d9651c33f193c34365dc0d5a7ac9badaa906",
+    "/home/francisco/Desktop/Thesis-Code-frozen-issue125/ros2_ws/src/thesis_bringup/config/tracker_deepsort.yaml": "d586e2e04c283313606cb366b64c0e7bad19692207f185d7dd9b89c89e33efb0",
+    "/home/francisco/Desktop/Thesis-Code-frozen-issue125/ros2_ws/src/thesis_bringup/config/tracker_ocsort.yaml": "b7967161815ecaacf903c4c8f3b5c09f601423b38ce46cefa9e00b89a36af89c",
+    "/home/francisco/Desktop/Thesis-Code-frozen-issue125/ros2_ws/src/thesis_bringup/config/tracker_sort.yaml": "78051b9606cae6d2f6c8de25bffe38d26697e2edf153a9961bbf31934016319c",
+    "/home/francisco/Desktop/Thesis-Code-tim-vnext2/ros2_ws/src/thesis_bringup/config/tracker_botsort.yaml": "28d90795c62810a5d2a5c6d1d9bfc56e7260d8f9a180170983cceee783b6d969",
+    "/home/francisco/tim_vnext_runs/tim_overrides_candidate_full.json": "c489899edf277ffb4fcd01c70108673a46ad08af09977ae4fbc733fcd3b60ae5"
+  },
+  "retained_reference": {
+    "arm_spec": {
+      "FG2X_FLAGS_source": "\"vFG2x\": {**_FX, \"dev_switch_proximity\": True, \"dev_switch_max_dist_heights\": 2.0},",
+      "bridge_max_age_ms": 1000,
+      "candidate_v1_source_line": "\"candidate_v1\": dict(flags=FG2X_FLAGS, encoder=\"mars\", bridge=30, authority=True, record=True, bridge_max_age_ms=1000),"
+    },
+    "bridge_contract": "BridgeAuthority(max_age_ms=1000): 1000 ms of source-stamp time since the last TIM-verified frame, checked before publication, equality allowed; max_age_frames=30 is superseded; authority period_ns 33,333,333 (continuity gap 2.5 periods)",
+    "encoder": "TIM_MARS_ONNX_MODEL=mars.onnx, TIM_MARS_ONNX_THREADS=1",
+    "freeze_artefacts": [
+      "docs/results/selected_target_tracking/testdev_confirmation_protocol_20261002.md (Bridge contract (resolved))",
+      "commit c0e4db6e (wire the 1000 ms bridge budget, add candidate_v1)"
+    ],
+    "name": "TIM vNext candidate_v1 (synchronous guarded TIM-MARS, authority-gated visual-track bridge, FP32 ONNX Runtime MARS)",
+    "overrides": "/home/francisco/tim_vnext_runs/tim_overrides_candidate_full.json",
+    "pipeline_arm": "candidate_v1"
+  },
+  "remaining_evidence_dependencies": [
+    "Code #50: native Pixhawk log attribution verdict",
+    "Code #32: sustained-runtime acceptance verdict or explicit missing-evidence conclusion"
+  ],
+  "archive_boundary": "Provenance snapshot of 116 manifest-pinned source/configuration files, not a standalone ROS install or a copy of videos, datasets and all dependencies. Use pinned complete research checkouts and the original run manifests for historical replay.",
+  "complete_research_source_snapshots_20261005": [
+    {
+      "configuration": "tim_mars",
+      "archive": "retained_tim_mars_source.tar.gz",
+      "revision": "0757e74e9ee6f0b3b2e689cfb8558633557cd79d",
+      "files_verified": 1239,
+      "archive_sha256": "0a7d85fa879014d65078da6b54952361392dafe47fad65a91edbfeef0b39c74e",
+      "bytes": 26481061
+    },
+    {
+      "configuration": "tim_mars_g",
+      "archive": "retained_tim_mars_g_source.tar.gz",
+      "revision": "6c0172d867994340d5eddc974dab7aa2b802b07f",
+      "files_verified": 1690,
+      "archive_sha256": "82a6a6778b050256dbb47e1c490233ec5e3230f72cb65c5764613bd60e1a5ce7",
+      "bytes": 40458246
+    }
+  ],
+  "complete_snapshot_directory": "archive/delivery_sources_20261005"
+}

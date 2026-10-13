@@ -1,3 +1,16 @@
+# Thesis-Code
+# Purpose: Contract tests for Issue #54: raw-image publication must be
+# configurable, default off (no perception/tracking/TIM/dashboard consumer
+# needs it), and auto-enabled exactly when a recording path that genuinely
+# needs it is active.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Contract tests for Issue #54: raw-image publication must be configurable,
 default off (no perception/tracking/TIM/dashboard consumer needs it), and
 auto-enabled exactly when a recording path that genuinely needs it is

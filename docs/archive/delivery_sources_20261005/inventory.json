@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "snapshots": [
+    {
+      "configuration": "tim_mars",
+      "archive": "retained_tim_mars_source.tar.gz",
+      "revision": "0757e74e9ee6f0b3b2e689cfb8558633557cd79d",
+      "files_verified": 1239,
+      "archive_sha256": "0a7d85fa879014d65078da6b54952361392dafe47fad65a91edbfeef0b39c74e",
+      "bytes": 26481061
+    },
+    {
+      "configuration": "tim_mars_g",
+      "archive": "retained_tim_mars_g_source.tar.gz",
+      "revision": "6c0172d867994340d5eddc974dab7aa2b802b07f",
+      "files_verified": 1690,
+      "archive_sha256": "82a6a6778b050256dbb47e1c490233ec5e3230f72cb65c5764613bd60e1a5ce7",
+      "bytes": 40458246
+    }
+  ],
+  "scope": "Complete tracked research source/docs/evidence, canonical models and verified manifest overlays; noncanonical models omitted; external data/environment/Git history not bundled."
+}

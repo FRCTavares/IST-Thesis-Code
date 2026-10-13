@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Identity-safety contract for TIM-MARS appearance caching.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Identity-safety contract for TIM-MARS appearance caching.
 
 A cached embedding belongs to one continuously observed tracker instance.

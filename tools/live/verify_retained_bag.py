@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Thesis-Code
+# Purpose: Deterministic integrity check of a finalized retained rosbag2 bag.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Deterministic integrity check of a finalized retained rosbag2 bag.
 
 Issue #50/#74 field hardening. After a retained video / field bag's recorder

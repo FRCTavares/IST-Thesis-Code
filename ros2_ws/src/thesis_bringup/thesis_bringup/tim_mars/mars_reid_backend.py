@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: MARS ReID backend wrapper used by TIM-MARS.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """MARS ReID backend wrapper used by TIM-MARS.
 
 This module wraps the DeepSORT MARS-small128 extractor so TIM-MARS can reuse the

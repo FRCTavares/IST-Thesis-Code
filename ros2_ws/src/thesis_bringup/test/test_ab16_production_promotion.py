@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: AB-16 production promotion: source-aware adaptive positive-memory
+# updates.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """AB-16 production promotion: source-aware adaptive positive-memory updates.
 
 The Stage-1 AB-16 mechanism is promoted to a canonical ``TargetMemoryConfig``

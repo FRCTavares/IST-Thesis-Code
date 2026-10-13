@@ -1,0 +1,11 @@
+# Thesis-Code
+# Purpose: Declare the CPU MARS encoder dependency used by live TIM-MARS and DeepSORT.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by the MIT licence in LICENSE.
+
+# The ROS/system Python modules come from rosdep/apt and the system-site venv.
+# This is an installation requirement, not a complete historical environment lock.
+tensorflow==2.21.0

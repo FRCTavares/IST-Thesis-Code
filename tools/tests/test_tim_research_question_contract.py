@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Contract tests for the frozen TIM-MARS research questions.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Contract tests for the frozen TIM-MARS research questions."""
 
 from __future__ import annotations
@@ -123,21 +133,11 @@ def test_documentation_navigation_links_the_contract():
 
 
 def test_closed_issue_is_removed_and_final_claim_is_blocked():
-    text = TODO_PATH.read_text(encoding="utf-8")
+    text = TODO_PATH.read_text(encoding='utf-8')
 
-    assert "[#38 —" not in text
-    assert text.count("[#39 —") == 1
-    assert "under #32" in text
-    # The held-out (#27) and tracker-comparison (#58) evidence are complete,
-    # while the final claim (#39) remains blocked on embedded-deployment #32.
-    # Issue #44 is closed and folded in as completed evidence.
-    assert (
-        "blocked until the final embedded-deployment evidence under #32 is complete"
-        in text
-    )
-    assert "Hailo appearance-offload work under #44 is already closed" in text
-    assert (
-        "The #58 source-time repair, 12-cell comparison, thesis table and "
-        "F19/F20 labels have been reconciled and integrated"
-        in text
-    )
+    assert '[#38 —' not in text
+    assert text.count('[Code #39 —') == 1
+    assert '**DEPENDS ON #127/#50/#32/#41**' in text
+    assert '[Code #50 —' in text and '**NATIVE LOGS PENDING**' in text
+    assert '[Code #32 —' in text and '**ACCEPTANCE AUDIT**' in text
+    assert 'A negative or inconclusive result is a valid completed conclusion.' in text

@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: Recorder transport loss is retained separately from MCAP integrity.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Recorder transport loss is retained separately from MCAP integrity."""
 from __future__ import annotations
 

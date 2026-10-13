@@ -1,3 +1,14 @@
+# Thesis-Code
+# Purpose: Launch bag playback, the selected tracker and dashboard bridge for
+# tracker evaluation.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 from datetime import datetime
 import os
 

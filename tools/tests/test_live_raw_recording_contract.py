@@ -1,6 +1,19 @@
+# Thesis-Code
+# Purpose: Contract tests for optional raw capture alongside the normal live
+# stack.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """Contract tests for optional raw capture alongside the normal live stack."""
 
 from pathlib import Path
+
+import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -161,7 +174,7 @@ def test_source_raw_recording_has_storage_gate_camera_qos_and_issue64_topics():
     assert 'SOURCE_QOS_OVERRIDE_FILE="$THESIS_ROOT/tools/live/source_record_qos_overrides.yaml"' in launcher
     assert "source reliable QoS contract missing" in launcher
     assert '--qos-profile-overrides-path "$SOURCE_QOS_OVERRIDE_FILE"' in launcher
-    assert SOURCE_QOS.read_text(encoding="utf-8") == (
+    assert yaml.safe_load(SOURCE_QOS.read_text(encoding="utf-8")) == yaml.safe_load(
         "/camera/image_raw:\n"
         "  reliability: reliable\n"
         "  durability: volatile\n"

@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: P1.4 contracts for protected and adaptive appearance memory.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """P1.4 contracts for protected and adaptive appearance memory."""
 
 import numpy as np

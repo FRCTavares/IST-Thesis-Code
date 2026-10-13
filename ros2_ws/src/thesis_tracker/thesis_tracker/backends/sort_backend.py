@@ -1,3 +1,13 @@
+# Thesis-Code
+# Purpose: SORT (Simple Online and Realtime Tracking) backend.
+# Author: Francisco Tavares
+# Copyright (c) 2026 Francisco Carreira Tavares
+# SPDX-License-Identifier: MIT
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 """SORT (Simple Online and Realtime Tracking) backend."""
 
 from __future__ import annotations
@@ -73,7 +83,7 @@ class SortBackend:
         dets_xyxy:
             Detection bounding boxes in corner-coordinate form.
         scores:
-            Detection scores accepted for backend compatibility.
+            Current detector scores, aligned one-to-one with detection boxes.
         frame_time_ns:
             Frame timestamp accepted for backend compatibility.
 
@@ -83,8 +93,10 @@ class SortBackend:
             Confirmed tracks matched in the current frame.
 
         """
-        # SORT doesn't use scores or timestamps internally,
-        # but we accept them for interface consistency
+        # Confidence is metadata from the exact SORT association; it does not
+        # influence matching, Kalman updates, or confirmation.
+        if len(scores) != len(dets_xyxy):
+            raise ValueError("SORT requires one confidence per detection")
         sort_tracks = self.tracker.update(dets_xyxy, frame_id=None)
 
         # Convert to TrackOutput, filter to confirmed tracks only
@@ -92,13 +104,13 @@ class SortBackend:
         for tr in sort_tracks:
             # SORT confirmation rule: hits >= min_hits AND recently matched
             confirmed = (tr.hits >= self.min_hits) and (tr.time_since_update == 0)
-            if not confirmed:
+            if not confirmed or tr.detection_index is None:
                 continue
 
             outputs.append(TrackOutput(
                 track_id=tr.track_id,
                 bbox_xyxy=tr.bbox(),
-                score=0.0,  # SORT doesn't maintain detection scores
+                score=float(scores[tr.detection_index]),
                 age=tr.age,
                 time_since_update=tr.time_since_update
             ))
