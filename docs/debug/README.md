@@ -5,7 +5,7 @@ Last reviewed: 2026-09-09
 ## Purpose
 
 Current recovery procedures for hardware and host failures that can prevent the
-canonical thesis runtime from starting or operating correctly.
+TIM-MARS live runtime from starting or operating correctly.
 
 ## Contents
 
@@ -19,4 +19,4 @@ canonical thesis runtime from starting or operating correctly.
 
 - These are current operational runbooks, not experiment-result authority.
 - Prefer narrow diagnosis and targeted recovery over broad process/device resets.
-- Historical recovery procedures belong under `docs/archive/`.
+- Superseded recovery procedures belong in Git history, not here.

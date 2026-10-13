@@ -26,7 +26,7 @@ The canonical tracker (`tracker_node`, ByteTrack) belongs to `thesis_tracker`.
 
 | Executable | Module | Role |
 | --- | --- | --- |
-| `perception_pipeline_node` | `perception/` | Modular image-topic perception + asynchronous Hailo RepVGG appearance-embedding worker (Issue #44). Base class of `perception_camera_node`. |
+| `perception_pipeline_node` | `perception/` | Modular image-topic perception + asynchronous Hailo RepVGG appearance-embedding worker. Base class of `perception_camera_node`. |
 | `camera_capture_node` | `camera/` | Standalone `/camera/image_raw` publisher for the modular path (`camera_bringup.launch.py`) and high-resolution capture. |
 
 ### Support / development
@@ -63,10 +63,8 @@ evaluation).
   drives control.
 - Detailed TIM-MARS behaviour belongs in `thesis_bringup/tim_mars/README.md`,
   not this package README.
-- Configuration, message, and algorithm paths referenced by a prospective or
-  frozen evidence contract must not be changed or moved outside the
-  corresponding protocol — see
-  `docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json`.
+- Changing a canonical parameter, topic or message affects recorded bags and
+  the launcher; update `tools/` and `docs/` in the same change.
 
 ## See also
 

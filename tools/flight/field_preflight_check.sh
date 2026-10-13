@@ -71,7 +71,7 @@ load_project_defaults() {
 }
 
 check_repository() {
-    local actual_root revision tracked_changes stage_output stage_rc
+    local actual_root revision tracked_changes
     actual_root="$(git -C "$THESIS_ROOT" rev-parse --show-toplevel 2>/dev/null || true)"
     if [[ "$actual_root" == "$THESIS_ROOT" && "$(pwd -P)" == "$THESIS_ROOT" ]]; then
         pass "repository root: $THESIS_ROOT"
@@ -93,25 +93,6 @@ check_repository() {
     else
         fail "unexpected tracked worktree changes" "git status --short"
         printf '%s\n' "$tracked_changes" | sed 's/^/      /'
-    fi
-
-    # H01/H02/H03 retain their historical prospective source freeze.
-    # The #50 aircraft runtime includes documented post-heldout transport and
-    # provenance follow-on commits, so this field gate checks completion of
-    # the Stage-7 evidence contract without reapplying the historical runtime
-    # byte-identity check to the current aircraft stack.
-    stage_output="$(
-        cd "$THESIS_ROOT" || exit 1
-        python3 tools/analysis/validate_tim_evaluation_split.py \
-            docs/data/splits/tim_mars_split_v4.json --require-final-ready 2>&1
-    )"
-    stage_rc=$?
-    if [[ "$stage_rc" -eq 0 ]] && grep -Fq 'final_ready=3/3' <<< "$stage_output"; then
-        pass "Stage-7 evidence contract: final_ready=3/3"
-    else
-        fail "Stage-7 evidence contract validation" \
-            "python3 tools/analysis/validate_tim_evaluation_split.py docs/data/splits/tim_mars_split_v4.json --require-final-ready"
-        printf '%s\n' "$stage_output" | sed 's/^/      /'
     fi
 }
 

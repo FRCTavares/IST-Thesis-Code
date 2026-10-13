@@ -60,7 +60,7 @@ Do not add:
 
 to normal field flights.
 
-Neither `/camera/image_raw` nor `/camera/dashboard` should be stored in the structured field MCAP. The separate MKV strips the dashboard image's ROS camera-source stamp. Its packet PTS and original file mtime can conditionally bound ffmpeg receipt, but cannot alone prove physical-person identity at a controller command. See `docs/flight/postflight_analysis.md`; unresolved source-time attribution blocks yaw-recovery promotion.
+Neither `/camera/image_raw` nor `/camera/dashboard` should be stored in the structured field MCAP. The separate MKV strips the dashboard image's ROS camera-source stamp. Its packet PTS and original file mtime can conditionally bound ffmpeg receipt, but cannot alone prove physical-person identity at a controller command. Post-flight source-time attribution analysis is part of the research archive.
 
 ## Retained MAVROS topics
 

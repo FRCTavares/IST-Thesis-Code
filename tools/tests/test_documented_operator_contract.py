@@ -22,15 +22,11 @@ TOOLS_ROOT = REPO_ROOT / "tools"
 ROOT_README = REPO_ROOT / "README.md"
 INDEX = REPO_ROOT / "docs/design/tim_tooling_index.md"
 TOOLS_README = TOOLS_ROOT / "README.md"
-P027_RUNBOOK = REPO_ROOT / "docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md"
-FLIGHT_INDEX = REPO_ROOT / "docs/flight/README.md"
 FLIGHT_DAY = REPO_ROOT / "docs/flight/field_day_runbook.md"
-EXPERIMENTS_README = TOOLS_ROOT / "experiments/README.md"
 
 REPOSITORY_PATH_PREFIXES = (
     "docs/",
     "models/",
-    "reports/",
     "ros2_ws/",
     "tools/",
 )
@@ -50,7 +46,7 @@ def markdown_repository_paths(document: Path) -> set[str]:
 
 def test_every_indexed_repository_path_exists():
     paths = markdown_repository_paths(INDEX)
-    assert len(paths) >= 30
+    assert len(paths) >= 20
     missing = [
         relative_path
         for relative_path in sorted(paths)
@@ -151,93 +147,27 @@ printf '\\n'
     assert "--skip-install" not in result.stdout
 
 
-def test_flight_day_sheet_stays_compact_and_fail_closed():
+def test_field_day_runbook_references_existing_flight_tools():
     text = FLIGHT_DAY.read_text(encoding="utf-8")
-    index = FLIGHT_INDEX.read_text(encoding="utf-8")
 
-    assert "**Canonical #50 procedure.**" in text
-    assert "Remember: `B -> C -> B`." in text
-    assert "Remember: `MANUAL -> B -> C -> B`." not in text
-    assert "## COMPLETED 25 SEPTEMBER — MANUAL RC / DYNAMIC TIM-MARS" in text
-    assert text.count("opportunity_start --run-id") == 9
-    assert text.count("opportunity_end --run-id") == 9
-    assert "## Finish every run" in text
-    assert "## FLIGHT 4" not in text
-    assert "docs/flight/field_day_runbook.md" in index
-    assert "ssh francisco@192.168.8.174" in text
-    assert "set_pi_network_mode.sh pixhawk" in text
-    assert "set_pi_network_mode.sh unattended" in text
-    assert "field_preflight_check.sh --passive-live-gate" in text
-    assert "--record-structured-visual" not in text
-    assert (
-        "./tools/start_live_stack.sh --res vga --field-record --control-mavros "
-        '--tag "$TAG"'
-    ) in text
-    assert "--acknowledge-yaw-recovery-candidate" in text
     assert "tools/flight/verify_field_run.sh" in text
-    assert (
-        'verify_field_run.sh "$RUN_ID" "$TAG" --ground-qualification'
-        in text
-    )
-    assert (
-        'verify_field_run.sh "$RUN_ID" "$TAG" --control-trial '
-        '--ground-qualification'
-        in text
-    )
-    assert "does not relax final B-C-B verification" in text
-    assert '--expect-bcb-opportunities "$TAG"' in text
-    assert text.count(
-        'target_selected --run-id "$RUN_ID" --trial-id "$TAG"'
-    ) == 3
-    assert (
-        'trial_end --run-id "$RUN_ID" --trial-id "$TAG" '
-        '--end-reason nominal_complete'
-    ) in text
-    assert (
-        'trial_verdict --run-id "$RUN_ID" --trial-id "$TAG" '
-        '--verdict accepted'
-    ) in text
-    assert (
-        'abort --run-id "$RUN_ID" --trial-id "$TAG" '
-        '--abort-class safety'
-    ) in text
     assert "tools/flight/kill_exact_controller_for_gate.sh" in text
-    assert "H01/H02/H03 are complete" in text
-    assert "#64 is closed: VGA is retained" in text
-    for scenario in ("h01", "h02", "h03"):
-        assert f"record_p027_heldout_sequence.sh {scenario}" not in text
-    assert "--field-record --record-raw" not in text
+    assert "field_preflight_check.sh" in text
+    assert "set_pi_network_mode.sh" in text
+    for tool in (
+        "tools/flight/verify_field_run.sh",
+        "tools/flight/kill_exact_controller_for_gate.sh",
+        "tools/flight/field_preflight_check.sh",
+        "tools/host/set_pi_network_mode.sh",
+    ):
+        assert (REPO_ROOT / tool).is_file()
     assert "git pull" not in text
-    assert "100.69.42.62" not in text
-    assert "100.105.37.101" not in text
 
 
-def test_p032_final_mounted_contract_is_disarmed_and_fail_closed():
-    runbook = (
-        REPO_ROOT / "docs/issues/p032-final-mounted-runbook.md"
-    ).read_text(encoding="utf-8")
-    wrapper = (
-        REPO_ROOT / "tools/flight/verify_field_run.sh"
-    ).read_text(encoding="utf-8")
-
-    assert "--disarmed-runtime-characterization" in runbook
-    assert "--disarmed-runtime-characterization" in wrapper
-    assert "Exact DataFlash .bin" not in runbook
-    assert "unrelated `.bin`" in runbook
-    assert 'target_selected --run-id "$RUN_ID" --trial-id "$TAG"' in runbook
-    assert 'trial_end --run-id "$RUN_ID" --trial-id "$TAG"' in runbook
-    assert 'trial_verdict --run-id "$RUN_ID" --trial-id "$TAG"' in runbook
-    assert "inside the exact `trial_start` to `trial_end` interval" in runbook
-    assert "Startup and shutdown state transitions" in runbook
-    assert "armed=false" in runbook
-
-
-def test_documented_build_recording_and_evaluation_commands_are_supported():
+def test_documented_build_and_recording_commands_are_supported():
     tools_readme = TOOLS_README.read_text(encoding="utf-8")
     root_readme = ROOT_README.read_text(encoding="utf-8")
-    p027_runbook = P027_RUNBOOK.read_text(encoding="utf-8")
     flight_day = FLIGHT_DAY.read_text(encoding="utf-8")
-    experiments = EXPERIMENTS_README.read_text(encoding="utf-8")
     live_cli = (TOOLS_ROOT / "lib/live_cli.sh").read_text(
         encoding="utf-8"
     )
@@ -252,7 +182,6 @@ def test_documented_build_recording_and_evaluation_commands_are_supported():
         check=True,
     )
 
-    assert "--record --record-raw" in tools_readme
     assert "--record-structured-visual" in tools_readme
     assert "not an approved aircraft launch command" in tools_readme
     for option in (
@@ -266,16 +195,5 @@ def test_documented_build_recording_and_evaluation_commands_are_supported():
         assert (
             option in root_readme
             or option in tools_readme
-            or option in p027_runbook
             or option in flight_day
         )
-
-    command = (
-        "python3 tools/experiments/"
-        "run_tim_component_ablation.py --set development"
-    )
-    assert command in experiments
-    assert (
-        TOOLS_ROOT
-        / "experiments/run_tim_component_ablation.py"
-    ).is_file()

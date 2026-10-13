@@ -1,96 +1,39 @@
-# Thesis documentation
+# Documentation
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-10-13
 
-This directory contains the maintained research contracts, operational
-documentation, frozen data definitions, curated result summaries, and
-historical records for the TIM-MARS thesis project.
+This directory holds the operating documentation for the TIM-MARS system on the
+Raspberry Pi 5 + Hailo-8: setup, daily operation, architecture, algorithm and
+interface contracts, field procedures and recovery runbooks.
 
 ## Start here
 
-The core thesis authority is:
-
-1. [Frozen research questions](research_question.md)
-2. [Research position and novelty contract](NOVELTY.md)
-3. [Active GitHub issue queue](TODO_LIST.md)
-4. [TIM-MARS algorithm and final scope](algorithm/tim_mars_versions.md)
-5. [Evidence versions and claim boundaries](algorithm/tim_mars_evidence_versions.md)
-6. [Maintained implementation and tooling index](design/tim_tooling_index.md)
-
-## Authority hierarchy
-
-Use repository sources in this order:
-
-1. current implementation and canonical runtime configuration;
-2. frozen research, algorithm, coordinate, freshness, and split contracts;
-3. versioned evidence maps and promoted tracked result summaries;
-4. generated reports with complete provenance;
-5. archived historical material for traceability only.
-
-Generated content under `reports/` is not automatically thesis authority.
-A result becomes citable only after it is reviewed and promoted into
-`docs/results/` or an explicitly tracked evidence package.
+1. [Getting started](GETTING_STARTED.md) - install, build, environment checks.
+2. [Operations](OPERATIONS.md) - run, select a target, record, verify, troubleshoot.
+3. [Architecture](ARCHITECTURE.md) - nodes, topics, the control-authority rule.
+4. [Field day runbook](flight/field_day_runbook.md) - before anything leaves the ground.
 
 ## Folder map
 
-- `algorithm/` — active algorithm definitions, evidence-version boundaries,
-  coordinate contracts, and output-freshness contracts.
-- `control/` — maintained Pixhawk, MAVROS, and controller integration notes.
-- `data/` — annotations, experiment manifests, splits, catalogues, and
-  machine-readable research inputs.
-- `debug/` — current Hailo, camera, and unattended-host recovery procedures.
-- `design/` — maintained implementation and tooling indexes.
-- `flight/` — current recording, readiness, and run-provenance procedures.
-- `issues/` — issue-specific engineering records, implementation contracts,
-  and methodological development history that remain useful for traceability.
-- `live/` — operational contracts for the live dashboard stack: network
-  exposure, access control, and the operator trust boundary.
-- `results/` — reviewed current evidence and thesis-facing result summaries.
-- `archive/` — superseded result interpretations and historical cleanup
-  records retained only for traceability.
+- `algorithm/` - TIM-MARS definition, coordinate/image-time and output-freshness contracts.
+- `control/` - controller, Pixhawk and MAVROS integration contracts.
+- `debug/` - Hailo, camera and unattended-host recovery procedures.
+- `design/` - source-header and README conventions, and the maintained tooling index.
+- `flight/` - field-day procedure, retained evidence package, post-flight checks.
+- `live/` - dashboard network exposure and access-control contract.
+- `RUNTIME_METRICS.md` - timing schema v4 and resource-sampling vocabulary.
 
-## Current selected-target evidence
+## Authority order
 
-Start with:
+When documents disagree, trust in this order:
 
-- [Canonical selected-target evidence](results/selected_target_tracking/hard_reentry_multi_tracker_summary.md)
-- [Current dual-oracle development audit](results/selected_target_tracking/p028_wrong_oracle_audit.md)
-- [Seven-row development component ablation](results/selected_target_tracking/p028_component_ablation_development/README.md)
-- [Compute and throughput summary](results/selected_target_tracking/hard_reentry_compute_throughput_summary.md)
-- [Current result index](results/README.md)
+1. the current implementation and `tim_mars_canonical.yaml`;
+2. the coordinate, freshness and control contracts under `algorithm/` and `control/`;
+3. the operating runbooks in this directory;
+4. anything else.
 
-Consult the evidence-version authority before combining values from different
-documents.
+## Research archive
 
-## Frozen evaluation inputs
-
-- [Data directory index](data/README.md)
-- [Evaluation split policy](data/splits/README.md)
-- [Component-ablation specification](data/ablations/README.md)
-- [Evidence catalogue](data/catalogue/README.md)
-
-Annotation CSV files are research inputs. They do not need individual links
-from this top-level page when their authoritative manifest or result document
-records their exact paths and hashes.
-
-## Operational documentation
-
-- [Flight-day operator sheet](flight/README.md)
-- [Dashboard trust boundary](live/dashboard_trust_boundary.md)
-- [Hailo recovery](debug/HAILO_RECOVERY.md)
-- [Live camera recovery](debug/LIVE_STACK_CAMERA_RECOVERY.md)
-- [Unattended Pi operation](debug/UNATTENDED_PI_OPERATION.md)
-- [Pixhawk 6X Ethernet and MAVROS report](control/pixhawk6x_ethernet_mavros_report.md)
-
-## Historical-material policy
-
-Files under `archive/` are preserved for provenance but must not be used as the
-current methodology or result authority.
-
-Historical roadmap records, when retained, belong under `archive/` with other
-superseded planning material. No separate top-level planning directory is
-maintained.
-
-Do not delete historical files merely because they are superseded. Move them
-with `git mv`, document why they are historical, and retain any required
-provenance.
+The thesis analysis, evaluation splits, annotation workflows, experiment
+reports and delivery audits are no longer in the working tree. They are kept in
+Git history at tag `archive/thesis-final-20261013`.

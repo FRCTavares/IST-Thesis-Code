@@ -62,7 +62,7 @@ Run from the repository root:
 
 ```bash
 python3 tools/analysis/check_source_headers.py
-python3 tools/analysis/check_source_headers.py --json artifacts/source_header_audit.json
+python3 tools/analysis/check_source_headers.py --json analysis_out/source_header_audit.json
 ```
 
 The audit reads maintained tracked files and unignored new source files. It does

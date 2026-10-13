@@ -1,14 +1,10 @@
-# ------------------------------
 # OS / editor
-# ------------------------------
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
 
-# ------------------------------
 # Python
-# ------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,162 +12,49 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .hypothesis/
-.tox/
-.nox/
 .coverage
 .coverage.*
 htmlcov/
-
-# Python virtual environments
 .venv/
 venv/
 env/
 ENV/
 */venv/
-
-# Packaging/build
+thesis_env/
 build/
 dist/
 *.egg-info/
 .eggs/
-pip-wheel-metadata/
 
-
-# ------------------------------
-# Node / frontend
-# ------------------------------
+# Node (dashboard checkouts)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
 *.tsbuildinfo
-
-# Common frontend build outputs
 coverage/
 
-# ------------------------------
-# Logs and runtime files
-# ------------------------------
+# Runtime noise
 *.log
 *.pid
-*.seed
 *.pid.lock
+hailo-rpi5-examples/
 
-# ------------------------------
-# ROS 2 generated folders
-# ------------------------------
+# ROS 2 workspace build products and logs
 ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
-
-# ------------------------------
-# Project-specific generated artifacts
-# ------------------------------
-# Hailo rpi5 examples, optionally cloned into the repo root and picked up by
-# tools/setup/install_host_hailo_bindings.sh
-hailo-rpi5-examples/
-
-# Local model binaries (tracking policy is documented in models/README.md)
-models/reid/*.pb
-models/reid/*.hef
-
-# Rendered bag videos and generated media outputs
-artifacts/reports/videos/
-artifacts/reports/flight_summaries/
-artifacts/figures/
-
-# Local report outputs
-artifacts/reports/compare/tmp_*/
-
-# Live benchmark raw outputs
-artifacts/reports/timing/live_matrix_*/
-!artifacts/reports/timing/live_matrix_*/summary.csv
-!artifacts/reports/timing/live_matrix_*/summary_ranked.md
-
-
-# ------------------------------
-# Datasets
-# ------------------------------
-data/datasets/external/
-data/datasets/processed/
-
-# Dataset visual previews
-artifacts/reports/dataset_checks/visdrone_gt_preview/
-
-# Generated tracker matrix artefacts
-artifacts/reports/tracking/visdrone_gt_tracker_matrix_*/
-
-# Generated detector-tracker matrix artefacts
-artifacts/reports/tracking/visdrone_detector_tracker_matrix_*/
-
-# Generated detector preview artefacts
-artifacts/reports/dataset_checks/hailo_visdrone_yolov6n_preview.jpg
-
-# Generated full detector sweep artefacts
-artifacts/reports/tracking/visdrone_full_detector_sweep_*/
-
-# ------------------------------
-# Thesis generated artifacts
-# ------------------------------
-artifacts/reports/
-artifacts/figures/
-artifacts/videos/
-artifacts/logs/
-
-# ------------------------------
-# Generated experiment artifacts
-# ------------------------------
-artifacts/bags/**
-artifacts/reports/**
-artifacts/figures/**
-artifacts/videos/**
-artifacts/logs/**
-
-# Keep optional folder metadata
-!artifacts/
-!artifacts/README.md
-!artifacts/**/.gitkeep
-
-# Also ignore migrated colcon/root log folder
-artifacts/log/**
-
-# TIM-V2E generated embedding crop datasets
-datasets/tim_embedding/
-
-# TIM-V2E generated filtered embedding crop datasets
-datasets/tim_embedding_filtered/
-
-# TIM-V2E generated model checkpoints
-reports/tim_v2_embedding/**/*.pt
-models/tim_embedding/**/*.pt
-
-# TIM-V2E generated overlay videos
-reports/tim_v2_embedding/videos/
-
-# Local TIM audit UI state
-tools/visualization/.tim_audit_favourites.json
-
-# Local Python environments
-.venv-tim-ui/
-
-# Local build/runtime logs
-log/
-
-# Local ROS 2 bag data
-/bags/*
-!/bags/README.md
-
-# Generated local reports
-/reports/*
-!/reports/README.md
-!/reports/PROMOTED.md
-
-thesis_env/
-reports/local_env_snapshots/
-
-# Root/runtime logs
 /log/
 /hailort.log
 /ros2_ws/hailort.log
 
+# Local recordings: only the README is tracked
+/bags/*
+!/bags/README.md
+
+# Generated analysis output
+/analysis_out/
+
+# Model files that are present only on the Pi (mars-small128.pb is force-added)
+models/reid/*.pb
+models/reid/*.hef

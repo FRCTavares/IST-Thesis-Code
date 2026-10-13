@@ -20,13 +20,10 @@ TOOLS_ROOT = REPO_ROOT / "tools"
 
 DOMAIN_DIRECTORIES = {
     "analysis",
-    "bag",
     "camera",
-    "catalogue",
     "experiments",
     "flight",
     "host",
-    "issues",
     "lib",
     "live",
     "mac",
@@ -36,7 +33,6 @@ DOMAIN_DIRECTORIES = {
 
 TOP_LEVEL_FILES = {
     "README.md",
-    "reproduce_tim_mars.py",
     "start_live_stack.sh",
     "start_ui_stack.sh",
     "thesis_build.sh",
@@ -104,14 +100,10 @@ def test_folder_readmes_follow_the_documentation_standard():
 def test_removed_or_moved_tools_do_not_return():
     for relative_path in REMOVED_TOOLS:
         assert not (TOOLS_ROOT / relative_path).exists()
-    assert (TOOLS_ROOT / "bag/render_tim_comparison_video.py").is_file()
 
 
 def test_entrypoint_and_library_modes_match_their_roles():
-    for relative_path in (
-        "analysis/analyse_bag_timing.py",
-        "bag/render_tim_comparison_video.py",
-    ):
+    for relative_path in ("analysis/analyse_bag_timing.py",):
         assert is_executable(TOOLS_ROOT / relative_path)
 
     for path in (TOOLS_ROOT / "lib").glob("*.sh"):
@@ -129,17 +121,13 @@ def test_timing_entrypoints_bootstrap_the_repository_import_path():
         assert "from tools.timing_contract import" in source
 
 
-def test_timing_analyser_defaults_generated_figures_to_artifacts():
+def test_timing_analyser_defaults_generated_output_to_analysis_out():
     source = (TOOLS_ROOT / "analysis/analyse_bag_timing.py").read_text(
         encoding="utf-8"
     )
 
     assert (
-        'os.path.join(thesis_root, "artifacts", "figures", "timing", bag_name)'
+        'os.path.join(thesis_root, "analysis_out", "timing", bag_name)'
         in source
     )
-    assert (
-        'os.path.join(thesis_root, "figures", "timing", bag_name)'
-        not in source
-    )
-    assert "default: artifacts/figures/timing/<bag>/" in source
+    assert "default: analysis_out/timing/<bag>/" in source

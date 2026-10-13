@@ -1,8 +1,0 @@
-/camera/dashboard
-/camera/fps
-/camera/image_raw
-/detections
-/parameter_events
-/perception/reid/status
-/rosout
-/timing

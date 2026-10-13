@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document captures Hailo AI HAT / Hailo PCI recovery procedures for the thesis live stack.
+This document captures Hailo AI HAT / Hailo PCI recovery procedures for the TIM-MARS live stack.
 
 Use this guide when:
 
@@ -15,7 +15,7 @@ Use this guide when:
 
 Related operator docs:
 
-- `RUNBOOK.md` for routine startup commands
+- `../OPERATIONS.md` for routine startup commands
 - `LIVE_STACK_CAMERA_RECOVERY.md` for TEVS/camera bring-up
 - `tools/start_live_stack.sh` for live-stack orchestration
 

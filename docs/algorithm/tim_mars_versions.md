@@ -1,8 +1,13 @@
 # TIM-MARS algorithm versions and final scope
 
-This document defines the implemented thesis algorithm. Result claims belong
-to a specific evidence version; use
-`docs/algorithm/tim_mars_evidence_versions.md` before quoting any metric.
+> **Research archive.** Experiment results, evidence maps, splits, ablation
+> manifests and thesis result summaries cited by this document were removed
+> from the working tree when the repository moved to operations. They are
+> preserved in Git history at tag `archive/thesis-final-20261013`.
+
+This document defines the implemented TIM-MARS algorithm. Result claims belong
+to a specific evidence version recorded in the research archive; do not quote a
+metric from here.
 
 ## Thesis name and safety objective
 
@@ -24,10 +29,8 @@ of publishing a likely distractor.
 
 ## Final implemented components
 
-The historical development component matrix is
-`docs/data/ablations/tim_mars_component_ablation_v1.yaml`. Its final row
-records these six identity-policy components; the Stage-7 implementation map
-is `tim_mars_final_method_authority.md`:
+The final method records these six identity-policy components; the
+implementation map is `tim_mars_final_method_authority.md`:
 
 1. **Geometric memory and state hysteresis.** The last trusted ID, bbox,
    quality, missed-frame count, and finite state are retained. Candidate
@@ -118,19 +121,10 @@ fingerprint.
 
 ## Evidence status
 
-The Stage-7 H01–H03 held-out evaluation is complete. See
-`docs/results/selected_target_tracking/README.md` for the frozen prospective
-record and the retained first run, and
-`docs/results/selected_target_tracking/p058_heldout_architecture_comparison_20260916.md`
-for the final post-access protocol-repair 12-cell comparison. The latter must
-not be described as a flawless single-run prospective execution. DeepSORT
-and TIM-MARS have scenario-dependent strengths; neither dominates globally.
-
-The earlier P0.28 development oracles reported 0.000 s optimistic-spatial
-wrong output and 1.300 s conservative annotated-ID wrong output, including
-a 0.100 s May distractor handover. Those are historical development results,
-not the H01–H03 authority. See `p028_wrong_oracle_audit.md` and the
-evidence-version map.
+The H01-H03 held-out evaluation is complete and DeepSORT and TIM-MARS have
+scenario-dependent strengths; neither dominates globally. The evaluation
+records, development oracles and their claim boundaries are in the research
+archive (see the note at the top of this document).
 
 ## Tracker dependence
 

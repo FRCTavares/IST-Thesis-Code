@@ -105,10 +105,8 @@ def test_default_static_path_is_observational_and_checks_required_contracts():
     assert "check_no_stale_processes" in static
 
     repository = _function("check_repository", "check_storage")
-    assert "validate_tim_evaluation_split.py" in repository
-    assert "final_ready=3/3" in repository
-    assert "--require-final-ready" in repository
-    assert "--verify-hashes" not in repository
+    assert "validate_tim_evaluation_split.py" not in repository
+    assert "git" in repository
     assert "RECORDING_MIN_FREE_GIB" in SOURCE
     assert 'ip route show default dev "$ETHERNET_INTERFACE"' in SOURCE
     assert "systemctl is-active tailscaled.service" in SOURCE
@@ -118,19 +116,6 @@ def test_default_static_path_is_observational_and_checks_required_contracts():
     assert "command -v ros2" not in SOURCE
     assert "-x /opt/ros/jazzy/bin/ros2" in SOURCE
     assert "ancestor chain" in SOURCE
-
-
-def test_repository_gate_accepts_completed_frozen_split_and_rejects_old_state():
-    completed = _source_and_run(
-        "python3() { printf '[ok] split=frozen final_ready=3/3\\n'; }; "
-        "FAILURES=0; check_repository; echo \"FAILURES=$FAILURES\""
-    )
-    assert "PASS  Stage-7 evidence contract: final_ready=3/3" in completed.stdout
-    incomplete = _source_and_run(
-        "python3() { printf '[ok] split=frozen final_ready=0/3\\n'; }; "
-        "FAILURES=0; check_repository; echo \"FAILURES=$FAILURES\""
-    )
-    assert "FAIL  Stage-7 evidence contract validation" in incomplete.stdout
 
 
 def test_passive_gate_uses_only_field_record_no_control():

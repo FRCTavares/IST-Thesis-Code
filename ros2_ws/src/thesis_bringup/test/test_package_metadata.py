@@ -22,7 +22,7 @@ REPOSITORY_ROOT = PACKAGE_ROOT.parents[2]
 PACKAGE_XML = PACKAGE_ROOT / 'package.xml'
 SETUP_PY = PACKAGE_ROOT / 'setup.py'
 LICENSE_FILE = REPOSITORY_ROOT / 'LICENSE'
-README = REPOSITORY_ROOT / 'README.md'
+README = REPOSITORY_ROOT / 'docs' / 'GETTING_STARTED.md'
 
 EXPECTED_VERSION = '0.1.0'
 EXPECTED_LICENSE = 'MIT'
@@ -139,7 +139,7 @@ def test_repository_has_mit_license_and_install_contract():
     assert license_text.startswith('MIT License')
     assert 'Copyright (c) 2026 Francisco Carreira Tavares' in license_text
 
-    assert '## Clean-checkout installation' in readme
+    assert '## 1. Clone and install dependencies' in readme
     assert 'rosdep install' in readme
     assert 'tools/thesis_build.sh' in readme
-    assert 'Hailo runtime is platform-specific' in readme
+    assert 'platform-specific' in readme

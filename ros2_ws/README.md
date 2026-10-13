@@ -4,14 +4,14 @@ Last reviewed: 2026-09-09
 
 ## Purpose
 
-The ROS 2 implementation of the thesis system: message contracts, the tracker,
+The ROS 2 implementation of the TIM-MARS system: message contracts, the tracker,
 and the runtime composition (perception, TIM-MARS, control, dashboard, MAVROS
 monitoring).
 
 Distro: ROS 2 Jazzy. `ROS_DOMAIN_ID=42`.
 
 This README covers the workspace and package boundaries. Day-to-day operation
-lives in the repository `README.md` and `tools/README.md`; the TIM-MARS
+lives in `docs/OPERATIONS.md` and `tools/README.md`; the TIM-MARS
 algorithm lives in
 `src/thesis_bringup/thesis_bringup/tim_mars/README.md`.
 
@@ -60,10 +60,10 @@ raw-publication option.
 
 - **Canonical live runtime:** the integrated `perception_camera_node` path
   above, started by `tools/start_live_stack.sh`.
-- **Retained experimental / reproduction path:** `camera_capture_node`
+- **Retained experimental path:** `camera_capture_node`
   publishing `/camera/image_raw` + `perception_pipeline_node` running the
   detector and an asynchronous Hailo RepVGG appearance-embedding worker. Built
-  for the Issue #44 embedded-ReID comparison; still executable and tested, and
+  for the embedded-ReID comparison; still executable and tested, and
   `PerceptionPipelineNode` is also the base class of `perception_camera_node`.
   It is not a co-equal live runtime.
 
@@ -75,9 +75,7 @@ parameters), `tracker_{sort,ocsort,bytetrack,deepsort}.yaml`,
 
 `src/thesis_bringup/launch/`: `camera_bringup.launch.py` (the modular-path
 camera side), `eval_replay.launch.py` (bag playback + `tracker_node` +
-`dashboard_bridge_node` for tracker evaluation). Deterministic TIM-MARS replay
-is driven by `tools/experiments/run_deterministic_tim_replay.py`, not by a
-launch file.
+`dashboard_bridge_node` for inspecting a recorded run).
 
 ## Build and test
 
@@ -93,17 +91,15 @@ Low-level workspace tests: `colcon test && colcon test-result --verbose` from
 
 - Package-level ROS contracts belong in the package-root READMEs; this file
   stays at workspace scope.
-- Operational and analysis procedures live in the repository `README.md` and
-  `tools/README.md`, not here.
+- Operational procedures live in `docs/OPERATIONS.md` and `tools/README.md`,
+  not here.
 - `build/`, `install/`, and `log/` are generated and never committed.
-- Configuration, message, algorithm, and evaluation paths referenced by a
-  prospective or frozen evidence contract must not be changed or moved outside
-  the corresponding protocol — see
-  `docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json`.
+- Changing a message, topic or canonical parameter file affects recorded
+  bags and the launcher; update `tools/` and `docs/` in the same change.
 
 ## See also
 
-- `tools/README.md` — build, live operation, experiments
+- `tools/README.md` — build, live operation, host and flight tools
 - `docs/RUNTIME_METRICS.md` — Timing schema v4 vocabulary
-- `docs/design/tim_tooling_index.md` — replay / evaluation path authority
+- `docs/design/tim_tooling_index.md` — path authority
 - `docs/debug/` — Hailo, camera, and host recovery procedures

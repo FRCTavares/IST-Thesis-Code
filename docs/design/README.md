@@ -13,7 +13,7 @@ indexes.
 | --- | --- |
 | `SOURCE_HEADERS.md` | Purpose, authorship and licence conventions for maintained source files. |
 | `README_STANDARD.md` | Standard for architectural folder README files. |
-| `tim_tooling_index.md` | Maintained TIM-MARS implementation, tooling, and evidence-path index. |
+| `tim_tooling_index.md` | Maintained TIM-MARS implementation and tooling path index. |
 
 ## Rules
 

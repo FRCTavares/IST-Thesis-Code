@@ -21,7 +21,7 @@ messages are generated from `msg/*.msg` by `rosidl` (`CMakeLists.txt`).
 
 `AppearanceEmbeddingRequest` / `AppearanceEmbeddingResult` are current
 supported infrastructure. Their asynchronous transport is default-disabled and
-was primarily exercised by the Issue #44 embedded-ReID comparison; they are not
+was primarily exercised by the embedded-ReID comparison; they are not
 removed or historical-only.
 
 ## Rules

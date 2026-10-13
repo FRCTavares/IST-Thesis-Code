@@ -2,7 +2,7 @@
 
 ## Scope and safety boundary
 
-This runbook keeps the thesis Raspberry Pi reachable through Tailscale and SSH.
+This runbook keeps the TIM-MARS Raspberry Pi reachable through Tailscale and SSH.
 
 This mode is only for unattended/bench recovery. When Ethernet is connected to
 the Pixhawk 6, switch to the mandatory field mode before starting MAVROS:
@@ -17,7 +17,7 @@ the Pixhawk is disconnected with:
 
     sudo ./tools/host/set_pi_network_mode.sh unattended
 
-It does not start the thesis live stack, ROS, MAVROS, control, arming, or any
+It does not start the live stack, ROS, MAVROS, control, arming, or any
 aircraft-facing service. Host availability and aircraft operation are separate
 authority domains.
 

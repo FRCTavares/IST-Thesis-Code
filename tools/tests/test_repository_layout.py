@@ -31,12 +31,9 @@ ALLOWED_ROOT_FILES = {".envrc", ".gitignore", "LICENSE", "README.md"}
 
 # Deliberate tracked architectural root directories.
 ARCHITECTURAL_ROOT_DIRECTORIES = {
-    "artifacts",
     "bags",
-    "data",
     "docs",
     "models",
-    "reports",
     "ros2_ws",
     "tools",
 }
@@ -74,11 +71,8 @@ def test_every_architectural_root_directory_has_a_readme():
 
 
 STORAGE_ROOT_DIRECTORIES = {
-    "artifacts",
     "bags",
-    "data",
     "models",
-    "reports",
 }
 
 
@@ -99,13 +93,13 @@ def test_models_readme_names_the_current_canonical_models():
 
     assert "models/hef/yolov8s.hef" in text
     assert "models/reid/mars-small128.pb" in text
-    assert "**current canonical live and prospective detector**" in text
+    assert "**current canonical live detector**" in text
     assert "**canonical live detector default**" not in text
 
 
 def test_root_readme_follows_the_documentation_standard():
     text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
-    assert _first_heading(text) == "# Thesis-Code"
+    assert _first_heading(text) == "# TIM-MARS"
     assert re.search(r"^Last reviewed: \d{4}-\d{2}-\d{2}$", text, re.MULTILINE)
 
 

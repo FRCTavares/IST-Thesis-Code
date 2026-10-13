@@ -1,7 +1,7 @@
 # Runtime Metrics
 
 This document defines the current runtime metrics used by the thesis live stack
-and Issue #32.
+and its resource sampling.
 
 The current contract is **Timing schema v4**. It describes only the current
 direct/in-process Hailo architecture. Old container, Docker, and ZMQ timing
@@ -175,85 +175,43 @@ Keep these quantities conceptually separate:
   processing time.
 - `pub_dt_ms` is cadence/jitter evidence, not processing latency.
 
-## Final sustained resource characterization
+## Resource sampling
 
-Issue #32 accepts two distinct raw resource modes:
+Two samplers under `tools/experiments/` record CPU, memory and thermal state of
+a running stack as JSONL:
 
-- Historical/replay process groups: `p044_process_group_sample_v1` from
-  `tools/experiments/sample_process_groups.py`. It samples Linux process-group
-  membership and retains its historical schema.
-- Production live PID trees: `p032_live_process_tree_sample_v1` from
-  `tools/issues/p032/sample_p032_live_process_trees.py`. The production launcher
-  tracks exec'd process roots in `pids.txt`; it does not allocate one process
-  group per node. The live sampler pins each root by PID plus Linux start time
-  and follows its current descendants without changing launcher ownership or
-  shutdown behavior. A lost root invalidates a complete live architecture
-  sample. Short-lived descendants that vanish between samples and children
-  reparented away from the root cannot be recovered from `/proc` snapshots.
+- `sample_process_groups.py` samples Linux process-group membership
+  (`p044_process_group_sample_v1`).
+- `sample_hardware_health.py` samples temperature, ARM frequency, throttling,
+  available memory and core voltage (`p044_hardware_health_sample_v1`).
 
-Both resource streams can feed `tools/issues/p032/analyse_p032_final_resources.py`
-with the unchanged `p044_hardware_health_sample_v1` hardware-health stream.
-The output schema is `p032_final_resource_analysis_v1`; the two resource
-collection methods must remain identified separately in provenance. Live runs
-use the default-off `tools/issues/p032/measure_p032_live_resources.py` attachment
-against an existing `ros2_ws/log/live_stack/<run-id>/pids.txt`. It starts both
-samplers, records explicit monotonic measurement bounds, finalizes them, runs
-analysis and retains raw JSONL, sampler summaries, provenance and analysis under
-that run's `p032_resources/` directory. It requires every requested root and
-rejects identity loss and sampler coverage gaps. The launcher itself does
-not start resource sampling.
+The production launcher tracks exec'd process roots in
+`ros2_ws/log/live_stack/<run-id>/pids.txt` rather than allocating one process
+group per node. Sampling is never started by the launcher itself.
 
-The analyser excludes samples outside explicit monotonic bounds, so sampler
-pre-roll and post-roll do not contaminate the measurement. Reports retain both
-the complete bounded population and the steady-state population after warm-up.
-CPU uses Linux user plus system ticks divided by elapsed monotonic time:
-100% means one fully occupied logical CPU, and a multi-core process tree may
-exceed 100%. The first in-window CPU interval is excluded because it may start before the
-analysis bound. RSS is summed resident memory of current members; shared pages
-can appear in more than one process's RSS and
-this sum is not unique physical memory.
+CPU uses Linux user plus system ticks divided by elapsed monotonic time: 100%
+means one fully occupied logical CPU, and a multi-core process tree may exceed
+100%. RSS is summed resident memory of current members; shared pages can appear
+in more than one process's RSS, so the sum is not unique physical memory.
+Core voltage is not an electrical power measurement; report power only if a
+reproducible electrical measurement exists.
 
-For finite numeric metrics the report retains `n`, mean, population standard
-deviation, minimum, p50, p90, p95, p99, and maximum. Architecture CPU and RSS
-totals are calculated only at timestamps where all requested core groups have
-a sample, preventing partial sums from being interpreted as whole-path
-measurements.
+For the controller-path compute budget map `perception_camera` to detector,
+`tracker` to tracker, `target_memory_mars` to TIM-MARS and `control` to the
+controller. Dashboard, replay, recorder and sampling helpers are excluded from
+that core total and must not be silently conflated with it.
 
-The core controller-path resource total maps live `perception_camera` to
-`detector`, `tracker` to `tracker`, `target_memory_mars` to `tim`, and `control`
-to `controller`. Include TIM-MARS and controller only when active. The default
-live attachment requires all four groups; an explicit group list records a
-smaller architecture. Dashboard, replay, recorder and sampling/analysis
-helpers are excluded from that core total. Their enabled
-state remains part of run provenance where relevant, and they must not be
-silently conflated with the controller-path compute budget.
+Raw-image DDS transport cost is a separate measured quantity, not a
+width-times-height-times-rate estimate. Hailo utilization is reported only when
+directly observable from Hailo tooling; otherwise it is unavailable rather than
+inferred from CPU or latency.
 
-Hardware-health reporting retains temperature, ARM frequency, throttling,
-available memory and core-voltage telemetry. Core voltage is not an electrical
-power measurement. Power is reported only if a reproducible electrical
-measurement method is available.
-
-The final mounted #32 run is a disarmed, stationary runtime/resource
-characterization rather than a flight-dynamics experiment. Its retained package
-uses the explicit `--disarmed-runtime-characterization` verifier scope. That
-scope is fail-closed: it is valid only for `p032_final_mounted_vga` when the
-retained MCAP contains `/mavros/state` and every state sample inside the
-retained `trial_start` to `trial_end` interval reports `connected=true` and
-`armed=false`. Startup and shutdown transitions outside that interval are
-retained for provenance but do not invalidate the #32 measurement. Only under
-that proven scope are
-physical-v2 annotation and native Pixhawk DataFlash marked not applicable.
-This exemption does not apply to #50/B-C-B field trials and does not relax
-runtime, controller, visual, transport, provenance or resource checks.
-
-Raw-image DDS transport cost remains a separate measured quantity under Issue
-#54 rather than a theoretical width-times-height-times-rate estimate. Hailo
-utilization/contention is reported only when directly observable from available
-Hailo tooling; otherwise it is explicitly unavailable rather than inferred from
-CPU or latency.
-
-The final mounted execution protocol is maintained in
-`docs/issues/p032-final-mounted-runbook.md`.
+A disarmed, stationary mounted run can be verified with
+`tools/flight/verify_field_run.sh ... --disarmed-runtime-characterization`. That
+scope is fail-closed: it is valid only for the `p032_final_mounted_vga` tag when
+the retained MCAP contains `/mavros/state` and every state sample inside the
+`trial_start` to `trial_end` interval reports `connected=true` and
+`armed=false`. It does not apply to flight trials.
 
 ## Historical evidence
 

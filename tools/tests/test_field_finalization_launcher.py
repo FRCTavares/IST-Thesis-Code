@@ -267,14 +267,14 @@ def test_canonical_field_sheet_records_nominal_trial_end_before_stop_archival():
     sheet = (
         REPO_ROOT / "docs/flight/field_day_runbook.md"
     ).read_text(encoding="utf-8")
-    section = sheet[sheet.index("## Finish every run"):]
+    section = sheet[sheet.index("## 8. Finish every run"):]
     trial_end = section.index('operator_event.py trial_end --run-id "$RUN_ID"')
     stop_command = section.index("Then `stop`", trial_end)
     verify_step = section.index("tools/flight/verify_field_run.sh", stop_command)
     assert trial_end < stop_command < verify_step
 
     index = (REPO_ROOT / "docs/flight/README.md").read_text(encoding="utf-8")
-    assert "docs/flight/field_day_runbook.md" in index
+    assert "field_day_runbook.md" in index
 
 
 def test_stop_time_required_topics_follow_enabled_subsystems():

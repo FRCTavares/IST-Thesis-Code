@@ -5,7 +5,7 @@ Date: 2026-09-01
 ## Purpose
 
 This is the path authority for the maintained TIM-MARS implementation,
-operator entrypoints, replay/evaluation tools, and promoted evidence. Every
+operator entrypoints and runtime tooling. Every
 repository path in this document is checked automatically by
 `tools/tests/test_documented_operator_contract.py`.
 
@@ -37,7 +37,8 @@ Only `mars` and `off` are supported target-memory operator modes.
 - Evidence-package completeness check: `tools/live/verify_evidence_package.py`
 - Pixhawk DataFlash archiver: `tools/live/archive_pixhawk_dataflash.py`
 - Controller diagnostics summary: `tools/analysis/summarize_control_diagnostics.py`
-- Held-out capture helper: `tools/experiments/record_p027_heldout_sequence.sh`
+- Timing analysis: `tools/analysis/analyse_bag_timing.py`, `tools/analysis/check_live_timing_invariants.py`
+- Resource samplers: `tools/experiments/sample_hardware_health.py`, `tools/experiments/sample_process_groups.py`
 - Tools overview: `tools/README.md`
 
 The browser frontend is independently owned by `FRCTavares/IST-Thesis-UI`,
@@ -46,56 +47,13 @@ normally checked out at `~/Desktop/IST-Thesis-UI`. Its authoritative launcher is
 `tools/start_ui_stack.sh` entrypoint is retained only as an operator
 compatibility shim and must not contain frontend build/runtime implementation.
 
-## Replay and evaluation
+## Replay
 
-- Single reproducibility command: `tools/reproduce_tim_mars.py`
-- Deterministic TIM replay: `tools/experiments/run_deterministic_tim_replay.py`
-- Component-ablation runner: `tools/experiments/run_tim_component_ablation.py`
-- Replay instructions: `tools/experiments/README.md`
-- Physical-target bbox evaluator: `tools/analysis/evaluate_tim_target_bbox_correctness.py`
-- Tracker-ID diagnostic evaluator: `tools/analysis/evaluate_tim_target_correctness.py`
-- Event evaluator: `tools/analysis/evaluate_tim_by_event_type.py`
-- Candidate-score extractor: `tools/analysis/extract_tim_all_scores.py`
-- Evaluation split validator: `tools/analysis/validate_tim_evaluation_split.py`
-- Analysis instructions: `tools/analysis/README.md`
+- Bag playback with tracker and dashboard bridge: `ros2_ws/src/thesis_bringup/launch/eval_replay.launch.py`
+- Timing contract used by the analysers: `tools/timing_contract.py`
 
-## Frozen experiment definitions
+## Research archive
 
-- Active prospective development/final split: `docs/data/splits/tim_mars_split_v4.json`
-- Active prospective architecture comparison: `docs/data/splits/tim_mars_final_comparison_v3.json`
-- Historical July split: `docs/data/splits/tim_mars_split_v1.json`
-- Split policy: `docs/data/splits/README.md`
-- Component-ablation manifest: `docs/data/ablations/tim_mars_component_ablation_v1.yaml`
-- Component-ablation interpretation: `docs/data/ablations/README.md`
-
-## Visual review
-
-- Side-by-side raw/TIM renderer: `tools/bag/render_tim_comparison_video.py`
-- General bag overlay renderer: `tools/bag/render_bag_overlay_video.py`
-- Manual annotation frontend: CVAT (external); no repository-local annotation UI is maintained.
-
-## Promoted tracked evidence
-
-- Evidence-version authority: `docs/algorithm/tim_mars_evidence_versions.md`
-- Machine-readable evidence map: `docs/data/catalogue/tim_evidence_versions.json`
-- Current dual-oracle development audit: `docs/results/selected_target_tracking/p028_wrong_oracle_audit.md`
-- Seven-row development component ablation: `docs/results/selected_target_tracking/p028_component_ablation_development/README.md`
-- Current rank-aware safety evidence: `reports/p007_rank_aware_add2b8b8_2026_07_21/closure_summary.md`
-- Hard-negative structural evidence: `reports/p006b_hard_negative_03409564_2026_07_21/closure_summary.md`
-- Selected-target summary: `docs/results/selected_target_tracking/hard_reentry_multi_tracker_summary.md`
-- Throughput summary: `docs/results/selected_target_tracking/hard_reentry_compute_throughput_summary.md`
-
-Ordinary generated outputs belong under `reports/` and are not authoritative
-until promoted into a tracked evidence package or curated under
-`docs/results/`. See `reports/README.md`.
-
-## Experiment evidence rule
-
-Every promoted TIM-MARS experiment must include:
-
-1. source bag and annotation identity;
-2. selected target and canonical configuration hash;
-3. runtime overrides, Git commit, and repository state;
-4. physical-target correctness and tracker-ID fragmentation diagnostics;
-5. explicit comparison with the raw tracker;
-6. a safety decision where wrong-person output is worse than suppressed output.
+Evaluation, annotation, ablation and experiment tooling, split definitions and
+result summaries are not part of this tree. They are at Git tag
+`archive/thesis-final-20261013`.

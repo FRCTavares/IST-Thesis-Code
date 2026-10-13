@@ -1,13 +1,17 @@
 # TIM-MARS final method authority
 
-Reviewed 18 September 2026. This is the implementation map for dissertation
-Chapter 4. It describes the Stage-7 frozen algorithm, not a new experiment.
+> **Research archive.** Experiment results, evidence maps, splits, ablation
+> manifests and thesis result summaries cited by this document were removed
+> from the working tree when the repository moved to operations. They are
+> preserved in Git history at tag `archive/thesis-final-20261013`.
+
+Reviewed 18 September 2026. This is the implementation map for the final
+TIM-MARS algorithm (Stage-7 freeze).
 The algorithm authority is commit
 `79f11b631688889bf5ffbeb3c16ef543a53f9973`; the canonical parameter
 file is `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
 (SHA-256 `b0a98334cadf635aa831d1bbe335f172686339f81def3efd2200211479c50f8c`).
-The immutable freeze is
-`docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.{md,json}`.
+The immutable freeze record is in the research archive.
 Later repository HEADs are runtime/provenance identities, not a redefinition
 of this algorithm. Verify the file hash before quoting these values.
 
@@ -254,7 +258,7 @@ Development-only ablation switches, old-ID distrust/handoff variants,
 active appearance-first reselection, hold-last-on-reject, historical V4 risk
 presets, and `geometry_winner` selective ReID experiments are not the final
 algorithm. FHD is not the active source profile. Historical parameter values
-in `tim_mars_evidence_versions.md` belong to their own evidence versions.
+belong to their own evidence versions in the research archive.
 
 ## Behaviour-to-test map
 
@@ -277,10 +281,8 @@ in `tim_mars_evidence_versions.md` belong to their own evidence versions.
 | Zero controller fields, diagnostic status and freshness classification | `test_tim_mars_ros_messages.py`, `test_target_memory_mars_node_static.py`, `test_freshness.py` |
 
 These are deterministic method tests, not substitute physical controller
-evidence. The held-out evidence contract is in the Stage-7 freeze; the final
-architecture comparison is recorded as **post-access protocol-repair**
-evidence in `docs/results/selected_target_tracking/p058_heldout_architecture_comparison_20260916.md`.
-Its retained first run and repairs must remain visible in thesis results.
+evidence. The held-out evidence contract and the final architecture comparison
+(**post-access protocol-repair** evidence) are in the research archive.
 EOF'
 
 ## Delivery source documentation — 5 October 2026

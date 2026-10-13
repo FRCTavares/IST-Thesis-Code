@@ -129,8 +129,8 @@ Options:
                                          Issue #54). Auto-enabled by --record-raw, --record-dataset,
                                          and source-record modes. At the default capture geometry
                                          (640x480 bgr8 @ 30 FPS) this is an analytical payload of
-                                         ~26.4 MiB/s of DDS traffic; see docs/issues/
-                                         p1-21-raw-image-transport-provenance.md for measured cost.
+                                         ~26.4 MiB/s of DDS traffic, so keep it off unless
+                                         recording raw frames.
     --camera-no-publish-image-raw       Force-disable /camera/image_raw publishing; errors if a raw-
                                          image recording flag is also active
     --record-dataset                    Record raw camera imagery + perception/TIM telemetry for offline replay

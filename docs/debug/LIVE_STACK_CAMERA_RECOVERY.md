@@ -16,9 +16,9 @@ Use this guide when:
 
 Related operator docs:
 
-- `RUNBOOK.md` for routine startup commands
+- `../OPERATIONS.md` for routine startup commands
 - `HAILO_RECOVERY.md` for Hailo/AI HAT driver recovery
-- `README.md` for path selection
+- `README.md` for the list of recovery guides
 
 ---
 

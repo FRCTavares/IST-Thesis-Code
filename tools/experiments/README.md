@@ -1,59 +1,21 @@
 # tools/experiments
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-10-13
 
 ## Purpose
 
-Replay and capture runners that reproduce TIM-MARS and tracker evaluations.
-These are not generic utilities: each encodes a thesis-specific contract for
-bag naming, output roots, ROS topics and selected-target publication mode. The
-layout is deliberately flat because these paths are cited verbatim by frozen
-manifests and by reproduction documentation.
+Resource and hardware samplers used to measure a running stack. The replay,
+ablation, sensitivity and capture runners that used to live here belonged to
+the thesis evaluation and are at Git tag `archive/thesis-final-20261013`.
 
 ## Contents
 
-Representative entrypoints by category — not every file is listed.
-
-| Path | Category | Role |
+| Path | Role | Why it exists |
 | --- | --- | --- |
-| `run_one_memory_tim_replay.sh` | Core replay | Memory-only TIM-MARS replay over existing tracks/targets/annotations. |
-| `run_deterministic_tim_replay.py` | Core replay (frozen) | Deterministic TIM-MARS replay with resolved-runtime provenance. |
-| `run_deterministic_tracker_replay.py` | Core replay (frozen) | Freezes one tracker and a fixed-ID raw target from recorded evidence. |
-| `run_one_clean_tim_replay.sh`, `run_one_detector_tim_replay.sh` | Full/partial pipeline | Replay with reused or regenerated detector/tracker outputs. |
-| `run_tim_component_ablation.py` | Ablation | Frozen seven-row component-ablation matrix (Issue #28). |
-| `run_tim_parameter_sensitivity.py`, `run_bytetrack_tim_sensitivity.py` | Sensitivity | Historical Issue #31 OFAT sweep; Issue #58b ByteTrack config screen. |
-| `record_p027_heldout_sequence.sh` | Capture (frozen) | Held-out source capture helper (Issue #27). |
-| `publish_annotated_track_target.py`, `publish_selected_track_target.py` | Publishers | Oracle-style and fixed-ID `/target` sources for controlled replays. |
-| `wait_for_track_selection.py`, `select_largest_track_id.py`, `write_tim_run_metadata.py`, `build_common_input_bag.py`, `images_to_camera_bag.py` | Support | Track selection, run-metadata provenance, input-bag construction. |
-| `run_p058_target_reid_replay.py` (frozen), `run_tim_resilience_development.py` | Issue-scoped | Issue #58 Target-ReID replay; Issue #90 resilience study. |
-| `../issues/p044/` | Historical issue suite | Issue #44 (closed) Hailo ReID-offload evidence retained for reproduction. |
-| `p064_appearance_contract.py`, `prepare_p064_video_source.py`, `prepare_p064_appearance_variants.py`, `measure_p054_raw_image_transport_cost.sh`, `capture_external_detector_tracker.sh`, `profile_tim_resilience_service.py`, `sample_process_groups.py`, `sample_hardware_health.py` | Specialized/support | Retained specialized experiment contracts plus shared resource and hardware measurement helpers. |
+| `sample_process_groups.py` | Sampler | Samples Linux process-group CPU/RSS as JSONL (`p044_process_group_sample_v1`). |
+| `sample_hardware_health.py` | Sampler | Samples temperature, ARM frequency, throttling, available memory and core voltage (`p044_hardware_health_sample_v1`). |
 
 ## Rules
 
-- Keep reusable experiment/replay infrastructure in this directory.
-  Issue-specific suites whose literal paths are not frozen belong under
-  `tools/issues/`.
-- Paths embedded in frozen manifests, prospective evidence contracts or
-  retained reproduction authorities are compatibility interfaces and must not
-  be relocated merely for cosmetic consistency.
-- Full-pipeline runners regenerate tracker IDs; use them only when annotations
-  and evaluation tolerate regenerated IDs.
-- Prefer explicit output roots for final runs so bags and reports trace back to
-  the experiment.
-
-## Reproduce the canonical matrix
-
-    python3 tools/experiments/run_tim_component_ablation.py --set development
-
-Single end-to-end reproduction command:
-`python3 tools/reproduce_tim_mars.py --set development`.
-
-## See also
-
-- `docs/design/tim_tooling_index.md` — replay/evaluation path authority
-- `docs/data/reproduce_final_results.md` — full reproduction steps
-- `docs/issues/p1-14-final-runtime-characterization.md` — Issue #32 context;
-  the default-off controller (`RUN_CONTROLLER`) and resource-sampling
-  (`RESOURCE_SAMPLING_ENABLED`) modes are documented in the header and inline
-  checks of `run_one_detector_tim_replay.sh`
+- Samplers only observe; they never start, stop or signal ROS nodes.
+- Metric definitions are in `docs/RUNTIME_METRICS.md`.

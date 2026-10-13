@@ -135,33 +135,14 @@ def test_all_local_markdown_links_resolve():
 
 def test_core_documentation_cross_references_exist():
     required = (
+        ROOT / "README.md",
         ROOT / "docs" / "README.md",
-        ROOT / "docs" / "NOVELTY.md",
-        ROOT / "docs" / "research_question.md",
-        ROOT / "docs" / "TODO_LIST.md",
-        ROOT
-        / "docs"
-        / "algorithm"
-        / "tim_mars_versions.md",
-        ROOT
-        / "docs"
-        / "algorithm"
-        / "tim_mars_evidence_versions.md",
-        ROOT
-        / "docs"
-        / "design"
-        / "tim_tooling_index.md",
-        ROOT
-        / "docs"
-        / "results"
-        / "selected_target_tracking"
-        / "p028_component_ablation_development"
-        / "README.md",
-        ROOT
-        / "docs"
-        / "results"
-        / "selected_target_tracking"
-        / "p028_wrong_oracle_audit.md",
+        ROOT / "docs" / "GETTING_STARTED.md",
+        ROOT / "docs" / "OPERATIONS.md",
+        ROOT / "docs" / "ARCHITECTURE.md",
+        ROOT / "docs" / "algorithm" / "tim_mars_versions.md",
+        ROOT / "docs" / "design" / "tim_tooling_index.md",
+        ROOT / "docs" / "flight" / "field_day_runbook.md",
     )
 
     for path in required:
@@ -172,22 +153,21 @@ def test_core_documentation_cross_references_exist():
 # below. These files describe the repository layout; a stale path here misleads
 # a reader immediately, and such references are usually written as inline code
 # spans rather than Markdown links, so the link checker above does not see them.
-# `artifacts/README.md` is intentionally excluded: it documents disposable output
-# directories that only exist after a tool has run.
 CANONICAL_PATH_DOCS = (
     "README.md",
     "ros2_ws/README.md",
     "bags/README.md",
-    "reports/README.md",
-    "reports/PROMOTED.md",
     "models/README.md",
     "docs/README.md",
+    "docs/GETTING_STARTED.md",
+    "docs/OPERATIONS.md",
+    "docs/ARCHITECTURE.md",
 )
 
 # Directories whose contents are always tracked, so a path into them must exist.
-# bags/, reports/, artifacts/, data/, and models/reid are deliberately excluded:
-# literal paths there may refer to ignored, generated, local, or selectively
-# promoted evidence rather than files that must exist in every checkout.
+# bags/ and models/reid are deliberately excluded: literal paths there may
+# refer to ignored, generated or local files rather than files that must exist
+# in every checkout.
 _REPO_TOP_LEVEL = (
     "docs/",
     "tools/",

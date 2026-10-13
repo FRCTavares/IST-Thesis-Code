@@ -1,42 +1,34 @@
 # tools
 
-Last reviewed: 2026-09-17
-
-## Issue-scoped tooling
-
-Issue-specific retained or active experiment suites live under `tools/issues/` when their paths are not part of a frozen evidence contract. Generic helpers stay in their functional directories. Frozen literal-path authorities such as the #27/#58 prospective-evaluation tooling are intentionally not relocated solely for cosmetic consistency.
+Last reviewed: 2026-10-13
 
 ## Purpose
 
-Executable tooling for the thesis system — building the workspace, running the
-live stack, reproducing the TIM-MARS evaluation, offline analysis, and
+Executable tooling for the TIM-MARS system — building the workspace, running the
+live stack, flight preflight and evidence verification, runtime analysis, and
 Raspberry Pi host recovery — plus the assets those tools own. Domain
 commands live in the subdirectory that owns them; only stable entrypoints and
 one repository-wide contract sit directly under `tools/`.
 
 ## Entrypoints
 
-The first four are stable user/operator-facing repository entrypoints. Reports,
+The first three are stable user/operator-facing repository entrypoints. Reports,
 runbooks and tests reference them by path, so treat their paths as a
 compatibility interface.
 
 | Path | Kind | Why it exists |
 | --- | --- | --- |
 | `tools/thesis_build.sh` | Build | Builds the ROS 2 workspace with repository-local colcon logs. |
-| `tools/start_live_stack.sh` | Live operation | Starts camera → perception → tracker → TIM-MARS → control/dashboard in a fixed order. Part of the frozen live path. |
+| `tools/start_live_stack.sh` | Live operation | Starts camera → perception → tracker → TIM-MARS → control/dashboard in a fixed order.  |
 | `tools/start_ui_stack.sh` | UI compatibility | Delegates dashboard startup to `IST-Thesis-UI/tools/start_dashboard.sh`; this repository contains no frontend runtime. |
-| `tools/reproduce_tim_mars.py` | Reproducibility | Verifies the frozen split and hashes, builds, runs the canonical component matrix, and checks tables and provenance. |
 | `tools/timing_contract.py` | Contract (library) | Canonical schema-v4 timing fields, topic ownership, metric tiers and warning thresholds. Imported as `tools.timing_contract`; not a CLI. |
 
 ## Contents
 
 | Path | Role |
 | --- | --- |
-| `analysis/` | Offline and live analysis: selected-target and bbox correctness, event summaries, timing checks, TIM diagnostics, physical-reference tooling. |
-| `experiments/` | Reusable TIM-MARS/tracker replay infrastructure, capture helpers, publishers and shared measurement utilities. |
-| `issues/` | Active or retained issue-specific suites whose literal paths are not frozen evidence interfaces. |
-| `bag/` | Standalone bag → overlay/comparison video renderers. |
-| `catalogue/` | Builds the TIM evaluation evidence catalogue with pinned hashes. |
+| `analysis/` | Runtime diagnostics: timing statistics, control-diagnostics summary, visual-time bounds, source-header audit. |
+| `experiments/` | Resource and hardware samplers for a running stack. |
 | `camera/` | Camera V4L2 mode probing (hardware diagnostics). |
 | `live/` | Live inspection, evidence verification, and the strict offline field-evidence summary gate. |
 | `host/` | Raspberry Pi networking / unattended recovery and its `systemd/` assets. |
@@ -44,7 +36,7 @@ compatibility interface.
 | `mac/` | macOS-side connection helpers for field operation. |
 | `setup/` | Host Hailo / TAPPAS runtime setup helpers. |
 | `lib/` | Shared implementation used by the launcher and experiment tools (sourced shell fragments; the process-group supervisor). Not standalone executables. |
-| `tests/` | pytest contracts for all non-ROS tooling, plus `fixtures/`. |
+| `tests/` | pytest contracts for the non-ROS tooling and the launcher. |
 
 ## Recording modes
 
@@ -73,21 +65,15 @@ current CLI contract.
   contract. Everything domain-specific goes in the owning subdirectory.
 - Documented entrypoint paths are a compatibility interface — grep for a tool
   before renaming or moving it.
-- Keep tool-owned assets beside the tool (`host/systemd/`,
-  `analysis/templates/`). No separate deploy tree.
-- Manual annotation is performed in CVAT; no repository-local annotation UI is maintained.
-- Paths pinned in
-  `docs/results/selected_target_tracking/tim_mars_prospective_freeze_20260908.json`
-  must not move before H01–H03.
+- Keep tool-owned assets beside the tool (`host/systemd/`). No separate deploy tree.
 - Generated `__pycache__/`, `*.pyc` and `.pytest_cache/` are never committed.
 
 ## See also
 
 - Path authority: `docs/design/tim_tooling_index.md`
-- README standard for this repository: `docs/design/README_STANDARD.md`
-- Reproduction: `docs/data/reproduce_final_results.md`
-- Flight-day operator sheet: `docs/flight/README.md`
-- Frozen Issue #27 detail: `docs/flight/P027_HELDOUT_CAPTURE_RUNBOOK.md`
-- Combined raw field capture diagnostic:
-  `./tools/start_live_stack.sh --record --record-raw --tag NON_HELD_OUT_DIAGNOSTIC`
-  (not an approved aircraft launch command; see `docs/flight/README.md`)
+- README standard: `docs/design/README_STANDARD.md`
+- Operating the stack: `docs/OPERATIONS.md`
+- Field-day procedure: `docs/flight/field_day_runbook.md`
+- Non-aircraft raw capture diagnostic:
+  `./tools/start_live_stack.sh --record --record-raw --tag DIAGNOSTIC`
+  (not an approved aircraft launch command)

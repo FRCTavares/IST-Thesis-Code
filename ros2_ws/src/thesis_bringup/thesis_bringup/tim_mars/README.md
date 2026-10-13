@@ -11,27 +11,24 @@ The core safety principle is simple: when identity evidence is weak, TIM-MARS
 prefers uncertainty or no publication over publishing a plausible but possibly
 wrong target.
 
-## Canonical thesis configuration
+## Canonical configuration
 
 The canonical algorithmic parameter set is stored in:
 
 - `ros2_ws/src/thesis_bringup/config/tim_mars_canonical.yaml`
 
-The detailed frozen method and report/commit claim boundaries are recorded in:
+The final method and its behaviour-to-test map are recorded in:
 
 - `docs/algorithm/tim_mars_final_method_authority.md`
-- `docs/algorithm/tim_mars_evidence_versions.md`
-- `docs/data/catalogue/tim_evidence_versions.json`
 
-“Canonical” identifies current reproducible bytes; it does not make historical
-reports interchangeable or imply a universal safety result.
+“Canonical” identifies the current parameter bytes; it does not imply a
+universal safety result.
 
 The installed runtime copy is stored in:
 
 - `ros2_ws/install/thesis_bringup/share/thesis_bringup/config/tim_mars_canonical.yaml`
 
-The live stack and the active clean, memory-only, and detector replay runners
-load this file through `--params-file`.
+The live stack loads this file through `--params-file`.
 
 Launchers may override only runtime-specific values:
 
@@ -222,7 +219,7 @@ ROS-free and Hailo-free.
 - `mars_reid_backend.py`: thin wrapper around the DeepSORT MARS-small128
   extractor (`models/reid/mars-small128.pb`, 128-D, CPU).
 
-### Asynchronous Hailo RepVGG offload (optional, Issue #44)
+### Asynchronous Hailo RepVGG offload (optional)
 
 Off by default (`appearance_async_reid_enabled=false`). CPU MARS stays
 authoritative for TIM-MARS decisions; this path is used for embedded
@@ -258,11 +255,11 @@ appearance-offload measurement. Request flow:
 - `target_memory_mars_node.py`: the ROS 2 node wiring subscriptions,
   publications, image handling, and the async ReID transport.
 
-## Final thesis note
+## Scope note
 
-For thesis evaluation, TIM-MARS should be treated as a control-facing safety
-layer. It is not a replacement for the detector or tracker. Its contribution is
-conservative selected-target publication under identity ambiguity, short target
-loss, distractors, and tracker ID instability. The interface is tracker-modular,
-but safety is not tracker-independent. The current development evidence is not
-flawless and must not be presented as a zero-wrong-target or held-out result.
+TIM-MARS is a control-facing safety layer. It is not a replacement for the
+detector or tracker. Its contribution is conservative selected-target
+publication under identity ambiguity, short target loss, distractors, and
+tracker ID instability. The interface is tracker-modular, but safety is not
+tracker-independent, and the evidence behind it is not a zero-wrong-target
+guarantee.

@@ -1,17 +1,24 @@
 # Flight docs
 
-Last reviewed: 2026-10-04
+Last reviewed: 2026-10-13
 
-Friday #50 — follow only:
+## Purpose
 
-    docs/flight/field_day_runbook.md
+Procedures for taking the system outside: field network, preflight gates,
+ground qualification, a recorded run, and what must be kept afterwards.
 
-After #50 controller decision:
+## Contents
 
-    docs/issues/p032-final-mounted-runbook.md
+| Path | Role |
+| --- | --- |
+| `field_day_runbook.md` | The operator sheet: ready, network, preflight, ground checks, a recorded run, DataFlash, verification, backup. Follow only this file on the day. |
+| `retained_evidence_package.md` | What a retained field run must contain and how it is verified. |
 
-Reference only: `postflight_analysis.md`, `retained_evidence_package.md`,
-`../issues/p050-flight-validation.md`.
+## Rules
 
-Archived pre-compaction sheet:
-`../archive/flight/2026-09-23_friday_operator_sheet_full.md`.
+- The pilot owns arming, mode changes, motion and takeover. The software never
+  arms the aircraft.
+- Stop on any failure or ambiguity. Keep every attempt, including failed and
+  aborted runs.
+- Do not retune controller or TIM-MARS parameters in the field.
+- Commands come from the runbook, not from chat history or old notes.

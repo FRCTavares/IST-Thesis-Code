@@ -541,8 +541,8 @@ def main():
     ap.add_argument("bag", help="Path to rosbag2 directory (e.g. bags/raw/2026-02-25__slice__primary)")
 
     # Optional outputs, auto-filled if not given
-    ap.add_argument("--out", default="", help="Output markdown path (default: reports/timing/<bag>__timing.md)")
-    ap.add_argument("--figdir", default="", help="Directory to save figures (default: artifacts/figures/timing/<bag>/)")
+    ap.add_argument("--out", default="", help="Output markdown path (default: analysis_out/timing/<bag>__timing.md)")
+    ap.add_argument("--figdir", default="", help="Directory to save figures (default: analysis_out/timing/<bag>/)")
 
     ap.add_argument("--timing-topic", default="/timing")
     ap.add_argument(
@@ -572,8 +572,8 @@ def main():
 
     # Default locations
     thesis_root = os.environ.get("THESIS_ROOT", os.path.expanduser("~/Desktop/Thesis-Code"))
-    default_out = os.path.join(thesis_root, "reports", "timing", f"{bag_name}__timing.md")
-    default_figdir = os.path.join(thesis_root, "artifacts", "figures", "timing", bag_name)
+    default_out = os.path.join(thesis_root, "analysis_out", "timing", f"{bag_name}__timing.md")
+    default_figdir = os.path.join(thesis_root, "analysis_out", "timing", bag_name)
 
     out_path = args.out if args.out.strip() else default_out
     figdir = args.figdir if args.figdir.strip() else default_figdir
