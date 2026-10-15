@@ -19,7 +19,7 @@ where one is needed this document says how to obtain or replace it.
 | Repository | `/home/francisco/Desktop/Thesis-Code` (branch `main`, remote `origin` on GitHub: `FRCTavares/IST-Thesis-Code`) |
 | Dashboard repo | `/home/francisco/Desktop/IST-Thesis-UI` (`FRCTavares/IST-Thesis-UI`) |
 | Python env | `thesis_env/` in the repository (loaded by `direnv`, see [GETTING_STARTED.md](GETTING_STARTED.md)) |
-| Recordings | `bags/` in the repository, plus `~/flight_evidence_*`, `~/flight_recovery_*`, `~/flight_sheets_*`, `~/flight_state_*` |
+| Recordings | `bags/` in the repository (not tracked). Field-day extras (DataFlash logs, recovery data, flight sheets and state) are under `bags/field_evidence/` |
 | Hardware sources | `~/src/hardware` (Hailo PCIe driver, kernel and TEVS camera driver sources) and `~/src/vendor` |
 
 ### Renaming the host
@@ -156,5 +156,5 @@ campaign runs and the research archive on a personal Mac; those are not
 available to other maintainers through this repository. The research
 *source* history is in Git: tag `archive/thesis-final-20261013`.
 Final recordings on the Pi (`bags/source`, `bags/reference`, `bags/live_camera`,
-`bags/source_video`) may exist **only** there, so copy them off the Pi before
+`bags/source_video`, `bags/field_evidence`) may exist **only** there, so copy them off the Pi before
 reflashing or replacing the SD card.

@@ -19,6 +19,7 @@ is committed.
 | `source/` | operators | Curated source, held-out and official-flight recordings kept for reference |
 | `reference/` | operators | Known-good reference bags |
 | `ground/` | operators | Ground-validation recordings |
+| `field_evidence/` | operators | Field-day extras kept next to the bags: DataFlash logs, flight recovery data, flight sheets and state (2026-10-02 / 2026-10-06 flights) |
 | `replay/` | replay tools | Generated replay output; disposable |
 
 ## Rules
