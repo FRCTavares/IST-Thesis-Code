@@ -49,4 +49,4 @@ The `tracker_node` parameter default is `sort`; the per-backend YAML in
 
 - `thesis_tracker/README.md` — internal Python layout (`nodes/`, `backends/`, `core/`)
 - `../thesis_bringup/config/` — per-backend parameters
-- `docs/design/tim_tooling_index.md`
+- `docs/CONTRIBUTING.md`

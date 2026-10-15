@@ -142,7 +142,7 @@ def test_core_documentation_cross_references_exist():
         ROOT / "docs" / "OPERATIONS.md",
         ROOT / "docs" / "ARCHITECTURE.md",
         ROOT / "docs" / "algorithm" / "tim_mars_versions.md",
-        ROOT / "docs" / "design" / "tim_tooling_index.md",
+        ROOT / "docs" / "CONTRIBUTING.md",
         ROOT / "docs" / "flight" / "field_day_runbook.md",
     )
 

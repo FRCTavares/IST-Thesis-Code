@@ -28,22 +28,7 @@ git-ignored; `ros2_ws/log/` is the approved location for build and runtime logs.
 
 ## Canonical live dataflow
 
-```
-perception_camera_node       integrated camera + in-process Hailo YOLOv8s
-  -> /detections (vision_msgs/Detection2DArray)
-  -> /timing (thesis_msgs/Timing, schema v4)
-  -> /camera/fps, /camera/dashboard
-tracker_node                 ByteTrack (config/tracker_bytetrack.yaml)
-  -> /tracks (thesis_msgs/Track2DArray), /timing_tracker
-dashboard_bridge_node
-  -> /target (raw selected target — telemetry / selection-mirror only)
-  -> /target_memory_mars/select, /target_memory_mars/clear
-target_memory_mars_node      TIM-MARS (config/tim_mars_canonical.yaml)
-  -> /target_memory_mars (thesis_msgs/TargetState)   <- only controller authority
-  -> /target_memory_mars/status, /timing_target
-control_ref_node             target_topic default /target_memory_mars
-  -> /control_ref/cmd_vel (geometry_msgs/TwistStamped); optional MAVROS mirror
-```
+See [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) for the node and topic map.
 
 `/target_memory_mars` is the only controller-authoritative selected target. Raw
 `/target` is dashboard telemetry and selection-mirror plumbing and never
@@ -101,5 +86,5 @@ Low-level workspace tests: `colcon test && colcon test-result --verbose` from
 
 - `tools/README.md` — build, live operation, host and flight tools
 - `docs/RUNTIME_METRICS.md` — Timing schema v4 vocabulary
-- `docs/design/tim_tooling_index.md` — path authority
+- `docs/CONTRIBUTING.md` — checks and change rules
 - `docs/debug/` — Hailo, camera, and host recovery procedures

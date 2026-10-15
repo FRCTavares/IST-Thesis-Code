@@ -15,7 +15,7 @@ tracked Git state, never a local ``ls``, so generated or ignored local content
 such as ``thesis_env/``, ``ros2_ws/build/``, ``ros2_ws/install/``,
 ``ros2_ws/log/`` and ``.pytest_cache/`` does not affect these tests.
 
-See docs/design/README_STANDARD.md for the folder-README convention.
+See docs/CONTRIBUTING.md for the folder-README convention.
 """
 
 from __future__ import annotations

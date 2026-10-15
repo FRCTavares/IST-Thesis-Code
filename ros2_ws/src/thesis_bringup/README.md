@@ -70,4 +70,4 @@ evaluation).
 
 - `thesis_bringup/tim_mars/README.md` — algorithm and canonical configuration
 - `thesis_bringup/README.md` — internal Python layout
-- `docs/RUNTIME_METRICS.md`, `docs/design/tim_tooling_index.md`
+- `docs/RUNTIME_METRICS.md`, `docs/CONTRIBUTING.md`

@@ -13,54 +13,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-import re
 import subprocess
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TOOLS_ROOT = REPO_ROOT / "tools"
 ROOT_README = REPO_ROOT / "README.md"
-INDEX = REPO_ROOT / "docs/design/tim_tooling_index.md"
 TOOLS_README = TOOLS_ROOT / "README.md"
 FLIGHT_DAY = REPO_ROOT / "docs/flight/field_day_runbook.md"
-
-REPOSITORY_PATH_PREFIXES = (
-    "docs/",
-    "models/",
-    "ros2_ws/",
-    "tools/",
-)
-
-
-def markdown_repository_paths(document: Path) -> set[str]:
-    """Extract repository-relative paths from inline-code spans."""
-    text = document.read_text(encoding="utf-8")
-    paths = set()
-    for token in re.findall(r"`([^`\n]+)`", text):
-        if " " in token:
-            continue
-        if token.startswith(REPOSITORY_PATH_PREFIXES):
-            paths.add(token.rstrip("/"))
-    return paths
-
-
-def test_every_indexed_repository_path_exists():
-    paths = markdown_repository_paths(INDEX)
-    assert len(paths) >= 20
-    missing = [
-        relative_path
-        for relative_path in sorted(paths)
-        if not (REPO_ROOT / relative_path).exists()
-    ]
-    assert missing == []
-
-
-def test_tooling_index_has_no_removed_runtime_or_ui_paths():
-    index = INDEX.read_text(encoding="utf-8").lower()
-    assert "user-interface" not in index
-    assert "thesis_bringup/target_memory.py" not in index
-    assert "nodes/target_memory_mars_node.py" not in index
-    assert "hsv" not in index
 
 
 def test_internal_live_ui_tree_is_removed_from_thesis_code():

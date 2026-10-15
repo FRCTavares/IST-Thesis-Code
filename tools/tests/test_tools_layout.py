@@ -84,7 +84,7 @@ def _first_heading(text: str) -> str:
 def test_folder_readmes_follow_the_documentation_standard():
     """Every tools folder README identifies its path and carries a review date.
 
-    See docs/design/README_STANDARD.md. This guardrail does not check the
+    See docs/CONTRIBUTING.md. This guardrail does not check the
     review date's value, prose, line count, or table shape.
     """
     root_readme = (TOOLS_ROOT / "README.md").read_text(encoding="utf-8")

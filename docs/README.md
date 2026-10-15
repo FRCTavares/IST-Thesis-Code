@@ -19,9 +19,9 @@ interface contracts, field procedures and recovery runbooks.
 - `algorithm/` - TIM-MARS definition, coordinate/image-time and output-freshness contracts.
 - `control/` - controller, Pixhawk and MAVROS integration contracts.
 - `debug/` - Hailo, camera and unattended-host recovery procedures.
-- `design/` - source-header and README conventions, and the maintained tooling index.
 - `flight/` - field-day procedure, retained evidence package, post-flight checks.
 - `live/` - dashboard network exposure and access-control contract.
+- `CONTRIBUTING.md` - checks to run, change rules, documentation and header conventions.
 - `RUNTIME_METRICS.md` - timing schema v4 and resource-sampling vocabulary.
 
 ## Authority order

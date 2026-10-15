@@ -284,11 +284,3 @@ These are deterministic method tests, not substitute physical controller
 evidence. The held-out evidence contract and the final architecture comparison
 (**post-access protocol-repair** evidence) are in the research archive.
 EOF'
-
-## Delivery source documentation — 5 October 2026
-
-The historical source authority above retains its original configuration hash.
-The current delivery file has an added purpose/authorship comment header and
-SHA-256 `4aa87dff874e4130db1e2068172539f6964caf1288342900ddc17e5c0108e898`. Parsed parameters and
-algorithm logic are unchanged. Historical byte-exact gates must use the pinned
-source snapshot rather than accepting a new hash as old flight evidence.

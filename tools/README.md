@@ -70,8 +70,7 @@ current CLI contract.
 
 ## See also
 
-- Path authority: `docs/design/tim_tooling_index.md`
-- README standard: `docs/design/README_STANDARD.md`
+- Checks and change rules: `docs/CONTRIBUTING.md`
 - Operating the stack: `docs/OPERATIONS.md`
 - Field-day procedure: `docs/flight/field_day_runbook.md`
 - Non-aircraft raw capture diagnostic:

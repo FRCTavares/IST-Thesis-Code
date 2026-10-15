@@ -16,7 +16,7 @@ Timing-schema or perception-path wording; and the package READMEs name the
 public executables / backends they are the contract for.
 
 Does not check prose, length, table formatting, section order, or the review
-date's value. See docs/design/README_STANDARD.md.
+date's value. See docs/CONTRIBUTING.md.
 """
 
 from __future__ import annotations

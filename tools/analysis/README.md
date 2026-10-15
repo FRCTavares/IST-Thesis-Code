@@ -30,4 +30,4 @@ at Git tag `archive/thesis-final-20261013`.
 ## See also
 
 - `docs/RUNTIME_METRICS.md` - timing schema v4
-- `docs/design/tim_tooling_index.md` - path authority
+- `docs/CONTRIBUTING.md` - checks and change rules
