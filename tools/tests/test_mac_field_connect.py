@@ -23,7 +23,7 @@ def test_shell_syntax_and_fixed_identity_contract():
     subprocess.run(["bash", "-n", str(SCRIPT)], check=True)
     assert 'PI_ADDRESS="192.168.8.174"' in SOURCE
     assert 'PI_USER="francisco"' in SOURCE
-    assert 'PI_HOSTNAME="fcstpi"' in SOURCE
+    assert 'PI_HOSTNAME="tim-mars-pi"' in SOURCE
     assert 'REMOTE_REPOSITORY="/home/francisco/Desktop/Thesis-Code"' in SOURCE
 
 

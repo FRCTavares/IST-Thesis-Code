@@ -13,7 +13,7 @@ where one is needed this document says how to obtain or replace it.
 
 | Item | Value |
 | --- | --- |
-| Hostname | `fcstpi` |
+| Hostname | `tim-mars-pi` (was `fcstpi` until 2026-10-15; older notes, logs and Tailscale entries may still say `fcstpi`) |
 | User | `francisco` (member of `sudo`, `docker`, `dialout`, `video`, `gpio`, `i2c`, `spi`) |
 | OS | Ubuntu 24.04 LTS, Raspberry Pi 5, kernel `6.8.0-*-raspi` |
 | Repository | `/home/francisco/Desktop/Thesis-Code` (branch `main`, remote `origin` on GitHub: `FRCTavares/IST-Thesis-Code`) |
@@ -22,11 +22,25 @@ where one is needed this document says how to obtain or replace it.
 | Recordings | `bags/` in the repository, plus `~/flight_evidence_*`, `~/flight_recovery_*`, `~/flight_sheets_*`, `~/flight_state_*` |
 | Hardware sources | `~/src/hardware` (Hailo PCIe driver, kernel and TEVS camera driver sources) and `~/src/vendor` |
 
+### Renaming the host
+
+`tools/mac/thesis_field_connect.sh` checks the remote hostname, so the name in
+that script (`PI_HOSTNAME`) and the Pi's real hostname must match. To rename:
+
+```bash
+sudo hostnamectl set-hostname tim-mars-pi
+sudo sed -i 's/^127.0.1.1 .*/127.0.1.1 tim-mars-pi/' /etc/hosts
+sudo tailscale set --hostname=tim-mars-pi     # only if the Pi is on a tailnet
+hostnamectl --static                          # verify
+```
+
+Reconnect SSH afterwards; the Pi's IP addresses do not change.
+
 ## How to reach the Pi
 
 The Pi has three network roles. Only the first depends on Tailscale.
 
-1. **Remote, any network: Tailscale** (`ssh francisco@fcstpi`). This was the
+1. **Remote, any network: Tailscale** (`ssh francisco@tim-mars-pi`). This was the
    normal path and belongs to the previous maintainer's Tailscale account.
 2. **Local field network: `ISR Aero.Next GCS`** Wi-Fi. Join it and use
    `ssh francisco@192.168.8.174`. This works without Tailscale.
@@ -55,7 +69,7 @@ Do this once someone is physically at the Pi or connected over the GCS network:
 
 ```bash
 sudo tailscale logout                    # leave the previous owner's tailnet
-sudo tailscale up --hostname fcstpi      # prints a login URL: sign in with the new account
+sudo tailscale up --hostname tim-mars-pi      # prints a login URL: sign in with the new account
 tailscale status
 ```
 

@@ -58,7 +58,7 @@ management-only Rescue profile; field authority still requires the explicit
 
 Baseline captured on 22 July 2026:
 
-- host: Raspberry Pi 5, hostname `fcstpi`
+- host: Raspberry Pi 5, hostname `fcstpi` (renamed `tim-mars-pi` on 2026-10-15)
 - OS: Ubuntu 24.04.4 LTS (Noble)
 - kernel: `6.8.0-1060-raspi`
 - systemd: 255 (`255.4-1ubuntu8.16`)
@@ -154,8 +154,8 @@ Verify all of the following:
 ## Normal remote connection
 
 ```bash
-tailscale ping fcstpi
-ssh francisco@fcstpi
+tailscale ping tim-mars-pi
+ssh francisco@tim-mars-pi
 ```
 
 The stable Tailscale IP may be used when MagicDNS is unavailable. Do not fall
