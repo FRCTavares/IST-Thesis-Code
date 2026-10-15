@@ -137,6 +137,7 @@ def test_core_documentation_cross_references_exist():
     required = (
         ROOT / "README.md",
         ROOT / "docs" / "README.md",
+        ROOT / "docs" / "HANDOVER.md",
         ROOT / "docs" / "GETTING_STARTED.md",
         ROOT / "docs" / "OPERATIONS.md",
         ROOT / "docs" / "ARCHITECTURE.md",
@@ -159,6 +160,7 @@ CANONICAL_PATH_DOCS = (
     "bags/README.md",
     "models/README.md",
     "docs/README.md",
+    "docs/HANDOVER.md",
     "docs/GETTING_STARTED.md",
     "docs/OPERATIONS.md",
     "docs/ARCHITECTURE.md",

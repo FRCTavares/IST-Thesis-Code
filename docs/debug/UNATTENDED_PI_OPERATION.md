@@ -1,5 +1,8 @@
 # Unattended Raspberry Pi Operation Runbook
 
+> Remote access in this runbook assumes the Pi is on a Tailscale network. If it
+> is not (or has moved to a new one), start with [../HANDOVER.md](../HANDOVER.md).
+
 ## Scope and safety boundary
 
 This runbook keeps the TIM-MARS Raspberry Pi reachable through Tailscale and SSH.

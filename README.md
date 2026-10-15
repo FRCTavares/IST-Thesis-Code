@@ -32,6 +32,7 @@ camera --> perception (YOLOv8s on Hailo-8) --> tracker (ByteTrack) --> raw /targ
 
 | I want to... | Read |
 | --- | --- |
+| Take over the Pi (access, Tailscale, keys, Wi-Fi) | [docs/HANDOVER.md](docs/HANDOVER.md) |
 | Set up a new Pi / build the workspace | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) |
 | Run, record and stop the live stack | [docs/OPERATIONS.md](docs/OPERATIONS.md) |
 | Understand how the pieces fit together | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |

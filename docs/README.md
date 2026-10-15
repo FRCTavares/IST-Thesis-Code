@@ -8,10 +8,11 @@ interface contracts, field procedures and recovery runbooks.
 
 ## Start here
 
-1. [Getting started](GETTING_STARTED.md) - install, build, environment checks.
-2. [Operations](OPERATIONS.md) - run, select a target, record, verify, troubleshoot.
-3. [Architecture](ARCHITECTURE.md) - nodes, topics, the control-authority rule.
-4. [Field day runbook](flight/field_day_runbook.md) - before anything leaves the ground.
+1. [Handover](HANDOVER.md) - reaching the Pi, Tailscale, SSH keys, Wi-Fi profiles, first-day checklist.
+2. [Getting started](GETTING_STARTED.md) - install, build, environment checks.
+3. [Operations](OPERATIONS.md) - run, select a target, record, verify, troubleshoot.
+4. [Architecture](ARCHITECTURE.md) - nodes, topics, the control-authority rule.
+5. [Field day runbook](flight/field_day_runbook.md) - before anything leaves the ground.
 
 ## Folder map
 
